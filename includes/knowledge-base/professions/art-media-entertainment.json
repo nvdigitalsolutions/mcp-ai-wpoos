@@ -27,7 +27,9 @@
         "search_content",
         "save_post",
         "generate_openai_image",
-        "generate_gemini_image"
+        "generate_gemini_image",
+        "resize_image",
+        "crop_image"
       ]
     },
     {
@@ -54,7 +56,10 @@
         "web_search",
         "search_content",
         "save_post",
-        "search_attachments"
+        "search_attachments",
+        "resize_image",
+        "crop_image",
+        "generate_image_caption"
       ]
     },
     {
@@ -80,7 +85,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "generate_sora_video",
+        "generate_veo_video",
+        "analyze_video"
       ]
     },
     {
@@ -184,7 +193,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_sora_video",
+        "generate_veo_video",
+        "analyze_video",
+        "generate_openai_image"
       ]
     },
     {
@@ -345,7 +358,9 @@
         "search_content",
         "save_post",
         "generate_openai_image",
-        "generate_gemini_image"
+        "generate_gemini_image",
+        "resize_image",
+        "crop_image"
       ]
     },
     {
@@ -370,7 +385,9 @@
         "web_search",
         "search_content",
         "save_post",
-        "get_rankmath_seo"
+        "get_rankmath_seo",
+        "generate_openai_image",
+        "resize_image"
       ]
     },
     {
@@ -394,7 +411,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "resize_image",
+        "search_attachments"
       ]
     },
     {
@@ -420,7 +440,9 @@
         "search_content",
         "save_post",
         "post_facebook_instagram",
-        "post_linkedin_update"
+        "post_linkedin_update",
+        "generate_openai_image",
+        "get_rankmath_seo"
       ]
     },
     {
@@ -444,7 +466,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_sora_video",
+        "generate_veo_video",
+        "analyze_video",
+        "generate_video_caption"
       ]
     },
     {
@@ -468,7 +494,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "create_cron_job"
       ]
     },
     {
@@ -492,7 +521,9 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {
@@ -516,7 +547,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_sora_video",
+        "generate_veo_video",
+        "analyze_video",
+        "generate_openai_image"
       ]
     },
     {
@@ -540,7 +575,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_sora_video",
+        "generate_veo_video",
+        "analyze_video",
+        "generate_video_caption"
       ]
     },
     {
@@ -564,7 +603,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "resize_image",
+        "search_attachments"
       ]
     },
     {
@@ -588,7 +630,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_music",
+        "transcribe_openai_audio",
+        "generate_openai_speech"
       ]
     },
     {
@@ -612,7 +657,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "resize_image",
+        "search_attachments"
       ]
     }
   ]

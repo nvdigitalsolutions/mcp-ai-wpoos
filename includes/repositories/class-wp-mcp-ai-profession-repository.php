@@ -308,6 +308,10 @@ class WP_MCP_AI_Profession_Repository {
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, array_map( 'sanitize_key', $data['default_tools'] ) );
 		}
 
+		if ( isset( $data['supported_mime_types'] ) && is_array( $data['supported_mime_types'] ) ) {
+			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES, array_map( 'sanitize_text_field', $data['supported_mime_types'] ) );
+		}
+
 		// Clear cache.
 		$this->clear_cache( $post_id );
 

@@ -24,7 +24,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "generate_openai_image"
       ]
     },
     {
@@ -50,7 +53,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "generate_openai_image"
       ]
     },
     {
@@ -76,7 +82,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "generate_openai_image"
       ]
     },
     {
@@ -102,7 +111,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "get_site_summary",
+        "check_site_security",
+        "count_tokens"
       ]
     },
     {
@@ -154,7 +167,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "generate_openai_image"
       ]
     },
     {
@@ -180,7 +196,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "generate_openai_image"
       ]
     },
     {
@@ -233,7 +252,10 @@
         "web_search",
         "search_content",
         "save_post",
-        "google_analytics_report"
+        "google_analytics_report",
+        "create_chart",
+        "query_mesh_intelligent",
+        "count_tokens"
       ]
     },
     {
@@ -259,7 +281,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "count_tokens"
       ]
     },
     {
@@ -285,7 +310,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {
@@ -311,7 +339,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {
@@ -337,7 +368,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {
@@ -361,7 +395,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "get_site_health",
+        "check_site_security",
+        "purge_cache",
+        "get_system_logs"
       ]
     },
     {
@@ -386,7 +424,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "get_site_summary",
+        "check_site_security",
+        "count_tokens"
       ]
     },
     {
@@ -411,7 +453,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {
@@ -436,7 +481,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "query_mesh_intelligent",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {

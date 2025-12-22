@@ -75,7 +75,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "create_chart",
+        "analyze_file_suitability"
       ]
     },
     {
@@ -273,7 +276,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "send_group_email"
       ]
     },
     {
@@ -297,7 +303,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "reliefweb_reports",
+        "create_chart",
+        "get_open_meteo_forecast",
+        "send_group_email"
       ]
     },
     {
@@ -320,7 +330,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "reliefweb_reports",
+        "create_chart",
+        "get_open_meteo_forecast",
+        "send_group_email"
       ]
     },
     {
@@ -343,7 +357,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "count_tokens"
       ]
     },
     {
@@ -367,7 +384,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "reliefweb_reports",
+        "create_chart",
+        "get_open_meteo_forecast",
+        "send_group_email"
       ]
     },
     {
@@ -391,7 +412,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "count_tokens"
       ]
     },
     {
@@ -416,7 +440,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "send_group_email"
       ]
     },
     {
@@ -441,7 +468,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "send_group_email"
       ]
     },
     {
@@ -465,8 +495,9 @@
         "web_search",
         "search_content",
         "save_post",
-        "generate_openai_image",
-        "generate_gemini_image"
+        "reliefweb_reports",
+        "create_chart",
+        "send_group_email"
       ]
     },
     {
@@ -517,7 +548,9 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "count_tokens"
       ]
     },
     {
@@ -541,7 +574,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "count_tokens"
       ]
     },
     {
@@ -566,7 +602,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "send_group_email"
       ]
     },
     {
@@ -591,7 +630,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "send_group_email"
       ]
     },
     {
@@ -615,7 +657,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "count_tokens"
       ]
     }
   ]

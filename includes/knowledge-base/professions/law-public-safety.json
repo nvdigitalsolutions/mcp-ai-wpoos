@@ -25,7 +25,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "analyze_comment_content",
+        "count_tokens",
+        "create_chart"
       ]
     },
     {
@@ -276,7 +280,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "analyze_comment_content",
+        "count_tokens",
+        "create_chart"
       ]
     }
   ]

@@ -139,23 +139,27 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 			}
 		}
 
+		// Extract category first since we need it for MIME types.
+		$category = isset( $profession['category'] ) ? sanitize_key( $profession['category'] ) : 'other';
+
 		// Sanitize and structure the data.
 		$validated = array(
-			'title'            => sanitize_text_field( $profession['title'] ),
-			'slug'             => sanitize_title( $profession['slug'] ),
-			'description'      => isset( $profession['description'] ) ? wp_kses_post( $profession['description'] ) : '',
-			'category'         => sanitize_key( $profession['category'] ),
-			'role_description' => isset( $profession['role_description'] ) ? wp_kses_post( $profession['role_description'] ) : '',
-			'expertise'        => isset( $profession['expertise'] ) && is_array( $profession['expertise'] )
+			'title'                => sanitize_text_field( $profession['title'] ),
+			'slug'                 => sanitize_title( $profession['slug'] ),
+			'description'          => isset( $profession['description'] ) ? wp_kses_post( $profession['description'] ) : '',
+			'category'             => $category,
+			'role_description'     => isset( $profession['role_description'] ) ? wp_kses_post( $profession['role_description'] ) : '',
+			'expertise'            => isset( $profession['expertise'] ) && is_array( $profession['expertise'] )
 				? array_map( 'sanitize_text_field', $profession['expertise'] )
 				: array(),
-			'warnings'         => isset( $profession['warnings'] ) && is_array( $profession['warnings'] )
+			'warnings'             => isset( $profession['warnings'] ) && is_array( $profession['warnings'] )
 				? array_map( 'sanitize_text_field', $profession['warnings'] )
 				: array(),
-			'knowledge_base'   => isset( $profession['knowledge_base'] ) ? wp_kses_post( $profession['knowledge_base'] ) : '',
-			'default_tools'    => isset( $profession['default_tools'] ) && is_array( $profession['default_tools'] )
+			'knowledge_base'       => isset( $profession['knowledge_base'] ) ? wp_kses_post( $profession['knowledge_base'] ) : '',
+			'default_tools'        => isset( $profession['default_tools'] ) && is_array( $profession['default_tools'] )
 				? array_map( 'sanitize_key', $profession['default_tools'] )
 				: array(),
+			'supported_mime_types' => $this->get_supported_mimes_for_category( $category ),
 		);
 
 		return $validated;
@@ -203,5 +207,64 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 		}
 
 		return $categories;
+	}
+
+	/**
+	 * Get supported MIME types for a profession category.
+	 *
+	 * @param string $category Profession category.
+	 * @return array Array of MIME type strings.
+	 */
+	protected function get_supported_mimes_for_category( $category ) {
+		$base_mimes = array( 'text/plain' );
+
+		switch ( $category ) {
+			case 'advisory':
+			case 'financial':
+			case 'legal':
+				return array_merge(
+					$base_mimes,
+					array(
+						'application/pdf',
+						'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+					)
+				);
+
+			case 'creative':
+				return array_merge(
+					$base_mimes,
+					array(
+						'image/jpeg',
+						'image/png',
+						'image/webp',
+						'application/pdf',
+					)
+				);
+
+			case 'technical':
+				return array_merge(
+					$base_mimes,
+					array(
+						'application/pdf',
+						'text/csv',
+					)
+				);
+
+			case 'healthcare':
+				return array_merge(
+					$base_mimes,
+					array(
+						'application/pdf',
+						'image/jpeg',
+						'image/png',
+					)
+				);
+
+			default:
+				return array_merge(
+					$base_mimes,
+					array( 'application/pdf' )
+				);
+		}
 	}
 }

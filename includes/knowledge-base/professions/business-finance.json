@@ -25,7 +25,10 @@
         "web_search",
         "search_content",
         "save_post",
-        "get_quickbooks_report"
+        "get_quickbooks_report",
+        "create_chart",
+        "send_group_email",
+        "create_cron_job"
       ]
     },
     {
@@ -51,7 +54,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "get_quickbooks_report",
+        "create_chart",
+        "send_group_email",
+        "search_attachments"
       ]
     },
     {
@@ -78,7 +85,9 @@
         "search_content",
         "save_post",
         "get_woo_products",
-        "get_woo_recent_orders"
+        "get_woo_recent_orders",
+        "create_chart",
+        "get_site_summary"
       ]
     },
     {
@@ -105,7 +114,9 @@
         "search_content",
         "save_post",
         "google_analytics_report",
-        "post_facebook_instagram"
+        "post_facebook_instagram",
+        "create_chart",
+        "generate_openai_image"
       ]
     },
     {
@@ -261,7 +272,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_places",
+        "geocode_address",
+        "generate_openai_image",
+        "send_group_email"
       ]
     },
     {
@@ -286,7 +301,9 @@
         "web_search",
         "search_content",
         "save_post",
-        "get_quickbooks_report"
+        "get_quickbooks_report",
+        "create_chart",
+        "send_group_email"
       ]
     },
     {
@@ -309,7 +326,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "get_quickbooks_report"
+        "save_post",
+        "get_quickbooks_report",
+        "create_chart",
+        "send_group_email"
       ]
     },
     {
@@ -332,7 +352,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "search_attachments"
       ]
     },
     {
@@ -357,7 +380,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "search_attachments"
       ]
     },
     {
@@ -381,7 +407,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "search_attachments"
       ]
     },
     {
@@ -405,7 +434,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "search_attachments"
       ]
     }
   ]
