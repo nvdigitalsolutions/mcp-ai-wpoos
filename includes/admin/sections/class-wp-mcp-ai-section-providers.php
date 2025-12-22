@@ -56,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Ollama, LM Studio).', 'wp-mcp-ai' );
+			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Hugging Face, Ollama, LM Studio).', 'wp-mcp-ai' );
 		}
 
 		/**
@@ -95,7 +95,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'custom',
 					'label'       => __( 'Provider Priority Order', 'wp-mcp-ai' ),
 					'description' => __( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable.', 'wp-mcp-ai' ),
-					'default'     => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
+					'default'     => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ),
 				),
 
 				// OpenAI Settings.
@@ -489,6 +489,46 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => '',
 				),
 
+				// Hugging Face Settings.
+				'enable_huggingface'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Hugging Face Provider', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable Hugging Face Inference API as an available provider', 'wp-mcp-ai' ),
+					'description'    => __( 'When disabled, Hugging Face will not be available for use by assistants or API requests.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'huggingface_api_key'               => array(
+					'type'         => 'password',
+					'label'        => __( 'Hugging Face API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: Hugging Face tokens URL */
+						__( 'Your Hugging Face API token. Get one from <a href="%s" target="_blank">Hugging Face Settings</a>. Use a token with "Inference" permissions.', 'wp-mcp-ai' ),
+						'https://huggingface.co/settings/tokens'
+					),
+					'placeholder'  => 'hf_...',
+					'autocomplete' => 'new-password',
+				),
+				'huggingface_endpoint_url'          => array(
+					'type'        => 'url',
+					'label'       => __( 'Hugging Face Endpoint URL', 'wp-mcp-ai' ),
+					'description' => __( 'URL for the Hugging Face Inference API. Use the default for the public API, or provide a custom endpoint URL for Inference Endpoints or private deployments. The plugin automatically appends the correct path (/chat/completions or /models).', 'wp-mcp-ai' ),
+					'placeholder' => 'https://api-inference.huggingface.co/v1',
+					/**
+					 * Filter the default Hugging Face endpoint URL.
+					 *
+					 * @since 1.0.0
+					 *
+					 * @param string $url Default URL. Default 'https://api-inference.huggingface.co/v1'.
+					 */
+					'default'     => apply_filters( 'wp_mcp_ai_default_huggingface_endpoint_url', 'https://api-inference.huggingface.co/v1' ),
+				),
+				'huggingface_model'                 => array(
+					'type'        => 'text',
+					'label'       => __( 'Hugging Face Model', 'wp-mcp-ai' ),
+					'description' => __( 'The model identifier to use with Hugging Face. Examples: "meta-llama/Llama-3.3-70B-Instruct", "mistralai/Mistral-7B-Instruct-v0.3", "microsoft/Phi-3-mini-4k-instruct". Must be a chat/instruction model with a chat_template defined.', 'wp-mcp-ai' ),
+					'placeholder' => 'meta-llama/Llama-3.3-70B-Instruct',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'               => array(
 					'type'         => 'password',
@@ -546,6 +586,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-desktop',
 					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
+				),
+				'huggingface' => array(
+					'id'     => 'huggingface',
+					'label'  => __( 'Hugging Face', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'enable_huggingface', 'huggingface_api_key', 'huggingface_endpoint_url', 'huggingface_model' ),
 				),
 				'google_maps' => array(
 					'id'     => 'google_maps',
@@ -812,7 +858,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			$errors = array();
 
 			// Validate URLs.
-			$url_fields = array( 'ollama_endpoint_url', 'lm_studio_endpoint_url' );
+			$url_fields = array( 'ollama_endpoint_url', 'lm_studio_endpoint_url', 'huggingface_endpoint_url' );
 			foreach ( $url_fields as $field ) {
 				if ( isset( $input[ $field ] ) && ! empty( $input[ $field ] ) ) {
 					$result = WP_MCP_AI_Settings_Validator::validate_url( $input[ $field ] );
