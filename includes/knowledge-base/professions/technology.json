@@ -401,7 +401,11 @@
         "Validate assumptions with data"
       ],
       "knowledge_base": "### UI/UX Design\n- Start with user research and personas\n- Create low-fidelity wireframes first\n- Test early and often with users\n- Design for accessibility from the start\n- Use consistent patterns and components\n- Measure and iterate based on user feedback",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post"
+      ]
     },
     {
       "title": "Quality Assurance Engineer",

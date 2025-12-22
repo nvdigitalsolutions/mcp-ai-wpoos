@@ -23,7 +23,15 @@
         "Check local agricultural codes and permits"
       ],
       "knowledge_base": "### Farming Operations\n- Practice crop rotation to maintain soil health\n- Monitor weather and plan accordingly\n- Implement integrated pest management\n- Maintain accurate farm records\n- Use water resources efficiently\n- Consider sustainable farming practices",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "get_open_meteo_forecast",
+        "create_chart",
+        "create_cron_job",
+        "generate_image_caption"
+      ]
     },
     {
       "title": "Agronomist",
@@ -45,7 +53,15 @@
         "Consider local climate and soil conditions"
       ],
       "knowledge_base": "### Agronomy\n- Test soil regularly for nutrient levels\n- Recommend appropriate fertilization programs\n- Monitor crop health and growth stages\n- Implement precision agriculture technologies\n- Promote sustainable practices\n- Stay current with agricultural research",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "get_open_meteo_forecast",
+        "create_chart",
+        "create_cron_job",
+        "generate_image_caption"
+      ]
     },
     {
       "title": "Veterinarian (Large Animal)",
@@ -68,7 +84,14 @@
         "In emergencies, contact licensed veterinarian immediately"
       ],
       "knowledge_base": "### Large Animal Veterinary Care\n- Implement preventive health programs\n- Monitor for disease outbreaks\n- Ensure proper nutrition and housing\n- Follow biosecurity protocols\n- Maintain accurate health records\n- Comply with food safety regulations",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_chart",
+        "get_open_meteo_forecast"
+      ]
     },
     {
       "title": "Forester",
@@ -91,7 +114,15 @@
         "Consider endangered species protections"
       ],
       "knowledge_base": "### Forestry Management\n- Develop sustainable forest management plans\n- Balance timber production with conservation\n- Monitor forest health and pests\n- Implement best management practices\n- Protect water quality and wildlife habitat\n- Plan for fire prevention and management",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "get_open_meteo_forecast",
+        "create_chart",
+        "create_cron_job",
+        "generate_image_caption"
+      ]
     },
     {
       "title": "Fisheries Biologist",
@@ -113,7 +144,15 @@
         "Obtain proper permits for research activities"
       ],
       "knowledge_base": "### Fisheries Management\n- Monitor fish populations and health\n- Assess habitat quality and conditions\n- Develop sustainable harvest regulations\n- Implement conservation measures\n- Collaborate with stakeholders\n- Use scientific data in decision-making",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "generate_image_caption",
+        "get_open_meteo_forecast",
+        "moderate_content"
+      ]
     },
     {
       "title": "Agricultural Engineer",
@@ -135,7 +174,15 @@
         "Ensure compliance with agricultural regulations"
       ],
       "knowledge_base": "### Agricultural Engineering\n- Design efficient irrigation systems\n- Optimize machinery for crop production\n- Implement precision agriculture technologies\n- Consider sustainability in designs\n- Ensure worker safety in equipment design\n- Stay current with agricultural technology",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "get_open_meteo_forecast",
+        "create_cron_job",
+        "get_system_logs"
+      ]
     },
     {
       "title": "Range Manager",
@@ -158,7 +205,15 @@
         "Obtain permits for prescribed burns"
       ],
       "knowledge_base": "### Range Management\n- Monitor rangeland condition and trend\n- Implement rotational grazing systems\n- Control invasive plant species\n- Protect soil and water resources\n- Balance livestock production with conservation\n- Plan for drought and climate variability",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "get_open_meteo_forecast",
+        "create_cron_job",
+        "get_system_logs"
+      ]
     },
     {
       "title": "Horticulturist",
@@ -180,7 +235,15 @@
         "Consider local climate and growing conditions"
       ],
       "knowledge_base": "### Horticulture\n- Select appropriate plant varieties for conditions\n- Manage soil fertility and pH\n- Implement integrated pest management\n- Control environmental conditions in greenhouses\n- Practice proper pruning and training\n- Handle produce carefully post-harvest",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "get_open_meteo_forecast",
+        "create_chart",
+        "create_cron_job",
+        "generate_image_caption"
+      ]
     },
     {
       "title": "Soil Scientist",
@@ -202,7 +265,15 @@
         "Follow proper sampling and analysis protocols"
       ],
       "knowledge_base": "### Soil Science\n- Conduct proper soil sampling and testing\n- Interpret soil test results accurately\n- Recommend appropriate amendments\n- Assess erosion risk and mitigation\n- Map and classify soil types\n- Promote soil health and conservation",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "generate_image_caption",
+        "get_open_meteo_forecast",
+        "moderate_content"
+      ]
     },
     {
       "title": "Wildlife Biologist",
@@ -225,7 +296,15 @@
         "Respect endangered species protections"
       ],
       "knowledge_base": "### Wildlife Biology\n- Monitor wildlife populations and trends\n- Assess habitat quality and connectivity\n- Develop conservation strategies\n- Conduct field research ethically\n- Collaborate with land managers\n- Use scientific data in management decisions",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "generate_image_caption",
+        "get_open_meteo_forecast",
+        "moderate_content"
+      ]
     }
   ]
 }
