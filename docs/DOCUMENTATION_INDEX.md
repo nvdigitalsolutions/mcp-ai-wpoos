@@ -105,6 +105,26 @@ Comprehensive analysis and documentation of Gemini integration capabilities:
   - [GEMINI_OPENAI_TOOLS_ARCHITECTURE.md](features/ai-providers/gemini/GEMINI_OPENAI_TOOLS_ARCHITECTURE.md) - Architecture docs
   - [GEMINI_TOOL_SANITIZATION_FIX.md](implementation-history/2025/fixes/gemini/GEMINI_TOOL_SANITIZATION_FIX.md) - Implementation details
 
+### Hugging Face Inference API Integration (December 22, 2025)
+Complete integration of Hugging Face Inference API as a provider for open-source models:
+
+- **[HUGGINGFACE_SETUP.md](HUGGINGFACE_SETUP.md)** ⭐ **NEW**
+  - Step-by-step setup guide for Hugging Face provider
+  - API token generation and configuration
+  - Model selection guide (Llama, Mistral, Phi, Qwen, and more)
+  - Inference Endpoints setup for production workloads
+  - Troubleshooting common issues
+  - Cost optimization and best practices
+  - Comparison with other providers
+
+**Key Features:**
+- OpenAI-compatible API interface
+- Access to thousands of open-source models
+- Flexible pricing (free tier, Pro, Inference Endpoints)
+- Support for custom fine-tuned models
+- Privacy-friendly (can self-host)
+- Integrated with provider priority and fallback system
+
 ### GPT-5.2 Model Support (December 16, 2025)
 Complete OpenAI GPT-5.2 model family integration with comprehensive testing and documentation:
 

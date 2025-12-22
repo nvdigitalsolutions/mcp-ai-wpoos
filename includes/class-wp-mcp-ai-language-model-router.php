@@ -89,7 +89,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
 			$priority_list = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
-				: array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
+				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
 
 			$last_error = null;
 
