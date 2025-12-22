@@ -187,7 +187,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Customs regulations vary by country and product type', 'wp-mcp-ai' ),
 					__( 'Always verify current duty rates with customs authorities', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'Import/Export Specialist', 'wp-mcp-ai' ),
@@ -205,7 +205,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Trade regulations vary by country and are subject to change', 'wp-mcp-ai' ),
 					__( 'Consult licensed customs brokers for complex transactions', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'Financial Advisor', 'wp-mcp-ai' ),
@@ -316,7 +316,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Employment laws vary by jurisdiction and change frequently', 'wp-mcp-ai' ),
 					__( 'Consult legal counsel for employment-related legal matters', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'IT Consultant', 'wp-mcp-ai' ),
@@ -354,7 +354,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Always comply with local health codes and food safety regulations', 'wp-mcp-ai' ),
 					__( 'Licensing and permit requirements vary by location', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'search_attachments' ),
 			),
 
 			// CREATIVE SERVICES PROFESSIONS.
@@ -451,7 +451,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Validate designs through user testing before final implementation', 'wp-mcp-ai' ),
 					__( 'Consider accessibility requirements for all user groups', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'resize_image', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'Video Producer', 'wp-mcp-ai' ),
@@ -470,7 +470,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Obtain proper releases and permissions from all participants', 'wp-mcp-ai' ),
 					__( 'Respect copyright for music, footage, and other licensed content', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_video_caption' ),
 			),
 			array(
 				'title'            => __( 'Photographer', 'wp-mcp-ai' ),
@@ -529,7 +529,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Respect copyright and intellectual property rights for all creative works', 'wp-mcp-ai' ),
 					__( 'Ensure proper contracts and releases for cast and crew', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_openai_image' ),
 			),
 			array(
 				'title'            => __( 'Film Producer', 'wp-mcp-ai' ),
@@ -548,7 +548,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Obtain proper insurance and bonding for production', 'wp-mcp-ai' ),
 					__( 'Ensure all contracts, rights, and releases are legally binding', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'send_group_email', 'create_cron_job' ),
 			),
 			array(
 				'title'            => __( 'Screenwriter', 'wp-mcp-ai' ),
@@ -567,7 +567,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Register scripts with Writers Guild or copyright office', 'wp-mcp-ai' ),
 					__( 'Understand option agreements and rights management', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'count_tokens', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'Cinematographer', 'wp-mcp-ai' ),
@@ -586,7 +586,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Follow safety protocols for lighting and camera rigging', 'wp-mcp-ai' ),
 					__( 'Respect location permits and filming regulations', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_openai_image' ),
 			),
 			array(
 				'title'            => __( 'Film Editor', 'wp-mcp-ai' ),
@@ -605,7 +605,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Maintain backups of all footage and project files', 'wp-mcp-ai' ),
 					__( 'Respect music licensing and sound effect usage rights', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_sora_video', 'generate_veo_video', 'analyze_video', 'generate_video_caption' ),
 			),
 			array(
 				'title'            => __( 'Video Editor', 'wp-mcp-ai' ),
@@ -647,7 +647,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Ensure set construction meets safety codes and regulations', 'wp-mcp-ai' ),
 					__( 'Secure proper permissions for location modifications', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'resize_image', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'Sound Designer', 'wp-mcp-ai' ),
@@ -666,7 +666,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Respect music licensing and sound library terms of use', 'wp-mcp-ai' ),
 					__( 'Follow hearing protection standards during mixing', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_music', 'transcribe_openai_audio', 'generate_openai_speech' ),
 			),
 
 			// WHO (WORLD HEALTH ORGANIZATION) PROFESSIONS.
