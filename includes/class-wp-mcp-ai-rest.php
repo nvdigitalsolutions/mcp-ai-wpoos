@@ -2260,13 +2260,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $scoped_id;
 
-			if ( ! $assistant_id ) {
+			if ( ! $assistant_id && ! $profession_id ) {
 				return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 			}
 
-			$assistant_post = $this->validate_assistant_access( $assistant_id );
-			if ( is_wp_error( $assistant_post ) ) {
-				return $assistant_post;
+			// Validate assistant access only if we have an assistant ID.
+			// For profession testing without an associated assistant, we'll use an empty config.
+			if ( $assistant_id ) {
+				$assistant_post = $this->validate_assistant_access( $assistant_id );
+				if ( is_wp_error( $assistant_post ) ) {
+					return $assistant_post;
+				}
 			}
 
 			$sanitized_messages = $this->validator->sanitize_messages( $request->get_param( 'messages' ) );
