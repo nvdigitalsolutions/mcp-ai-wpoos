@@ -318,10 +318,10 @@ wp eval "WP_MCP_AI_Profession_Playbook_Seeder::cleanup_all_duplicates();"
 ### Monitoring
 
 Check playbook statistics in **Settings → WP oOS → Advanced → Playbook Management**:
-- Total Playbook Attachments
-- Professions with Playbooks
+- **Total Playbook Attachments** - Shows only active attachments (those currently referenced in profession's memory_files)
+- **Professions with Playbooks** - Shows count of professions with at least one active playbook
 
-These numbers should match if there are no duplicates.
+These numbers should match (one active attachment per profession) if the system is working correctly. Orphaned attachments from version history are excluded from the count but remain in the media library for reference.
 
 ## Security Considerations
 
@@ -355,6 +355,26 @@ These numbers should match if there are no duplicates.
 - `includes/admin/sections/class-wp-mcp-ai-section-advanced.php` - Admin UI with updated button descriptions
 
 ## Changelog
+
+### Version 1.7.2 (December 2025) - Fixed Attachment Statistics
+**Issue:** Statistics displayed inflated attachment counts including orphaned attachments from version history.
+
+**Problem:** The `get_playbook_statistics()` method counted all attachments with the `_wp_mcp_ai_playbook_profession_id` meta key, including orphaned attachments that were replaced when content changed. This resulted in showing "Total Playbook Attachments: 1475" when there should only be ~200 active attachments (one per profession).
+
+**Solution:**
+- Modified `get_playbook_statistics()` to count only "active" attachments
+- Active attachments are those still referenced in a profession's `memory_files` meta
+- Orphaned attachments (version history) are now correctly excluded from the count
+
+**Files Modified:**
+- `includes/admin/sections/class-wp-mcp-ai-section-advanced.php` - Updated statistics calculation logic
+- `tests/test-playbook-statistics.php` - Added test for orphaned attachment scenario
+- `docs/implementation-history/2025/summaries/DUPLICATE_PLAYBOOK_CLEANUP.md` - Updated monitoring section
+
+**Impact:**
+- Statistics now accurately show only active attachments (one per profession)
+- "Total Playbook Attachments" count matches "Professions with Playbooks" count
+- Orphaned attachments remain in media library for version history but don't inflate the count
 
 ### Version 1.7.1 (December 2025) - Enhanced Deduplication
 **Issue:** Duplicates not being removed on save and inconsistent messaging about deduplication.

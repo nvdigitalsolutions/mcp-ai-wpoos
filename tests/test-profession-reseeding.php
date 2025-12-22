@@ -280,6 +280,129 @@ class Test_Profession_Reseeding extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test default_tools are properly saved and retrieved.
+	 */
+	public function test_default_tools_persistence() {
+		$repository = new WP_MCP_AI_Profession_Repository();
+
+		// Create profession with default_tools.
+		$profession_data = array(
+			'title'            => 'Tools Test Profession',
+			'slug'             => 'test_tools_profession',
+			'description'      => 'Test',
+			'category'         => 'technical',
+			'role_description' => 'Test',
+			'expertise'        => array(),
+			'warnings'         => array(),
+			'knowledge_base'   => 'Test',
+			'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+		);
+
+		$post_id = $repository->save( $profession_data );
+		$this->assertIsInt( $post_id );
+
+		// Retrieve and verify default_tools.
+		$saved_tools = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
+		$this->assertIsArray( $saved_tools, 'default_tools should be an array' );
+		$this->assertCount( 3, $saved_tools, 'Should have 3 tools' );
+		$this->assertContains( 'web_search', $saved_tools );
+		$this->assertContains( 'search_content', $saved_tools );
+		$this->assertContains( 'save_post', $saved_tools );
+
+		// Verify array has sequential keys.
+		$this->assertEquals( array_values( $saved_tools ), $saved_tools, 'Array should have sequential keys' );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test default_tools update preserves data correctly.
+	 */
+	public function test_default_tools_update() {
+		$repository = new WP_MCP_AI_Profession_Repository();
+
+		// Create profession with initial tools.
+		$profession_data = array(
+			'title'            => 'Update Tools Test',
+			'slug'             => 'test_update_tools',
+			'description'      => 'Test',
+			'category'         => 'technical',
+			'role_description' => 'Test',
+			'expertise'        => array(),
+			'warnings'         => array(),
+			'knowledge_base'   => 'Test',
+			'default_tools'    => array( 'web_search', 'search_content' ),
+		);
+
+		$post_id = $repository->save( $profession_data );
+		$this->assertIsInt( $post_id );
+
+		// Update with new tools.
+		$updated_data = array(
+			'id'               => $post_id,
+			'title'            => 'Update Tools Test',
+			'slug'             => 'test_update_tools',
+			'description'      => 'Test',
+			'category'         => 'technical',
+			'role_description' => 'Test',
+			'expertise'        => array(),
+			'warnings'         => array(),
+			'knowledge_base'   => 'Test',
+			'default_tools'    => array( 'save_post', 'create_chart', 'send_group_email' ),
+		);
+
+		$result = $repository->save( $updated_data );
+		$this->assertEquals( $post_id, $result, 'Update should return same post ID' );
+
+		// Verify tools were updated.
+		$saved_tools = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
+		$this->assertIsArray( $saved_tools );
+		$this->assertCount( 3, $saved_tools, 'Should have 3 tools after update' );
+		$this->assertContains( 'save_post', $saved_tools );
+		$this->assertContains( 'create_chart', $saved_tools );
+		$this->assertContains( 'send_group_email', $saved_tools );
+		$this->assertNotContains( 'web_search', $saved_tools, 'Old tool should not be present' );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test default_tools with empty values are filtered out.
+	 */
+	public function test_default_tools_filter_empty() {
+		$repository = new WP_MCP_AI_Profession_Repository();
+
+		// Create profession with some empty tool slugs.
+		$profession_data = array(
+			'title'            => 'Filter Empty Tools Test',
+			'slug'             => 'test_filter_empty_tools',
+			'description'      => 'Test',
+			'category'         => 'technical',
+			'role_description' => 'Test',
+			'expertise'        => array(),
+			'warnings'         => array(),
+			'knowledge_base'   => 'Test',
+			'default_tools'    => array( 'web_search', '', 'search_content', null, 'save_post', '' ),
+		);
+
+		$post_id = $repository->save( $profession_data );
+		$this->assertIsInt( $post_id );
+
+		// Verify empty values were filtered out.
+		$saved_tools = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
+		$this->assertIsArray( $saved_tools );
+		$this->assertCount( 3, $saved_tools, 'Should only have 3 non-empty tools' );
+		$this->assertContains( 'web_search', $saved_tools );
+		$this->assertContains( 'search_content', $saved_tools );
+		$this->assertContains( 'save_post', $saved_tools );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
 	 * Test profession data sanitization.
 	 */
 	public function test_profession_data_sanitization() {

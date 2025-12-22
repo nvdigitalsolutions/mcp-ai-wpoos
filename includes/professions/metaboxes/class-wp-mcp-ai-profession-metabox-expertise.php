@@ -49,9 +49,11 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 			$expertise = array();
 		}
 
+		// Ensure default_tools is always an array and filter out empty values.
 		if ( ! is_array( $default_tools ) ) {
 			$default_tools = array();
 		}
+		$default_tools = array_filter( array_map( 'sanitize_key', $default_tools ) );
 
 		// Get available tools from registry.
 		$available_tools = $this->get_available_tools();
@@ -90,18 +92,84 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 					</th>
 					<td>
 						<?php if ( ! empty( $available_tools ) ) : ?>
-							<div id="profession-default-tools-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">
+							<!-- Search and Filter Controls -->
+							<div class="profession-tools-controls" style="margin-bottom: 15px;">
+								<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px;">
+									<input 
+										type="text" 
+										id="profession-tools-search" 
+										class="regular-text" 
+										placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>"
+										aria-label="<?php esc_attr_e( 'Search tools', 'wp-mcp-ai' ); ?>"
+										style="flex: 1; min-width: 200px;"
+									/>
+									<button type="button" class="button" id="clear-tools-search">
+										<?php esc_html_e( 'Clear Search', 'wp-mcp-ai' ); ?>
+									</button>
+								</div>
+								<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+									<button type="button" class="button button-secondary" id="select-all-tools">
+										<?php esc_html_e( 'Select All', 'wp-mcp-ai' ); ?>
+									</button>
+									<button type="button" class="button button-secondary" id="deselect-all-tools">
+										<?php esc_html_e( 'Deselect All', 'wp-mcp-ai' ); ?>
+									</button>
+									<button type="button" class="button" id="reset-tools">
+										<?php esc_html_e( 'Reset to Initial', 'wp-mcp-ai' ); ?>
+									</button>
+									<span id="tools-selected-count" style="margin-left: 10px; color: #666;">
+										<?php
+										$current_count = is_array( $default_tools ) ? count( $default_tools ) : 0;
+										$settings = get_option( 'wp_mcp_ai_settings', array() );
+										$recommended_count = isset( $settings['profession_default_tool_count'] ) ? absint( $settings['profession_default_tool_count'] ) : 10;
+										
+										// Determine color based on count
+										$count_color = '#666'; // Default gray
+										if ( $current_count > $recommended_count + 5 ) {
+											$count_color = '#d63638'; // Red - too many
+										} elseif ( $current_count >= $recommended_count - 2 && $current_count <= $recommended_count + 2 ) {
+											$count_color = '#00a32a'; // Green - optimal
+										} elseif ( $current_count < 3 ) {
+											$count_color = '#d63638'; // Red - too few
+										}
+										?>
+										<strong style="color: <?php echo esc_attr( $count_color ); ?>;" id="tools-count-number"><?php echo esc_html( $current_count ); ?></strong> 
+										<span id="tools-count-label"><?php esc_html_e( 'selected', 'wp-mcp-ai' ); ?></span>
+										<small style="color: #999; margin-left: 5px;">
+											(<?php 
+											/* translators: %d: Recommended tool count */
+											printf( esc_html__( 'recommended: %d', 'wp-mcp-ai' ), $recommended_count ); 
+											?>)
+										</small>
+									</span>
+								</div>
+							</div>
+
+							<!-- Tools List -->
+							<div id="profession-default-tools-list" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">
 								<?php foreach ( $available_tools as $tool ) : ?>
 									<?php
-									$tool_slug  = method_exists( $tool, 'get_slug' ) ? $tool->get_slug() : '';
+									$tool_slug  = method_exists( $tool, 'get_slug' ) ? sanitize_key( trim( $tool->get_slug() ) ) : '';
 									$tool_name  = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $tool_slug;
 									$tool_desc  = method_exists( $tool, 'get_description' ) ? $tool->get_description() : '';
 									$is_checked = in_array( $tool_slug, $default_tools, true );
 									?>
-									<div style="margin-bottom: 8px;">
-										<label style="display: inline-flex; align-items: flex-start; cursor: pointer;">
-											<input type="checkbox" name="profession_default_tools[]" value="<?php echo esc_attr( $tool_slug ); ?>" <?php checked( $is_checked ); ?> style="margin-right: 8px; margin-top: 2px;" />
-											<span>
+									<div class="profession-tool-item" 
+										style="margin-bottom: 8px; padding: 8px; background: #f9f9f9; border-radius: 3px;"
+										data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
+										data-tool-name="<?php echo esc_attr( strtolower( $tool_name ) ); ?>"
+										data-tool-description="<?php echo esc_attr( strtolower( $tool_desc ) ); ?>"
+										data-initially-checked="<?php echo $is_checked ? '1' : '0'; ?>">
+										<label style="display: inline-flex; align-items: flex-start; cursor: pointer; width: 100%;">
+											<input 
+												type="checkbox" 
+												class="profession-tool-checkbox"
+												name="profession_default_tools[]" 
+												value="<?php echo esc_attr( $tool_slug ); ?>" 
+												<?php checked( $is_checked ); ?> 
+												style="margin-right: 8px; margin-top: 2px;" 
+											/>
+											<span style="flex: 1;">
 												<strong><?php echo esc_html( $tool_name ); ?></strong>
 												<?php if ( $tool_desc ) : ?>
 													<br><small style="color: #666;"><?php echo esc_html( wp_trim_words( $tool_desc, 15 ) ); ?></small>
@@ -111,8 +179,22 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 									</div>
 								<?php endforeach; ?>
 							</div>
-							<p class="description">
-								<?php esc_html_e( 'Select the default tools that should be pre-selected when creating assistants with this profession. Choose 4-8 essential tools that align with the profession\'s expertise.', 'wp-mcp-ai' ); ?>
+
+							<!-- No Results Message (Hidden by default) -->
+							<div id="no-tools-found" style="display: none; padding: 20px; text-align: center; color: #666;">
+								<?php esc_html_e( 'No tools found matching your search.', 'wp-mcp-ai' ); ?>
+							</div>
+
+							<p class="description" style="margin-top: 10px;">
+								<?php
+								$settings = get_option( 'wp_mcp_ai_settings', array() );
+								$recommended_count = isset( $settings['profession_default_tool_count'] ) ? absint( $settings['profession_default_tool_count'] ) : 10;
+								printf(
+									/* translators: %d: Recommended tool count from settings */
+									esc_html__( 'Select the default tools that should be pre-selected when creating assistants with this profession. Recommended: %d tools (configurable in Settings → Advanced). Aim for tools that align with this profession\'s expertise.', 'wp-mcp-ai' ),
+									$recommended_count
+								);
+								?>
 							</p>
 						<?php else : ?>
 							<p class="description">
@@ -151,6 +233,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
+			// Expertise area management
 			$('#add-profession-expertise').on('click', function() {
 				var expertiseHtml = '<div class="profession-expertise-item" style="margin-bottom: 10px;">' +
 					'<input type="text" name="profession_expertise[]" value="" class="large-text" />' +
@@ -162,8 +245,141 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 			$(document).on('click', '.remove-expertise', function() {
 				$(this).closest('.profession-expertise-item').remove();
 			});
+
+			// Tools management functionality
+			var searchDebounceTimer = null;
+			var $toolsList = $('#profession-default-tools-list');
+			var $noResultsMsg = $('#no-tools-found');
+			var $searchInput = $('#profession-tools-search');
+			var $selectedCount = $('#tools-selected-count');
+
+			// Update selected count
+			function updateSelectedCount() {
+				var count = $('.profession-tool-checkbox:checked').length;
+				$selectedCount.html('<strong>' + count + '</strong> <?php echo esc_js( __( 'selected', 'wp-mcp-ai' ) ); ?>');
+			}
+
+			// Filter tools based on search term
+			function filterTools() {
+				var searchTerm = $searchInput.val().toLowerCase().trim();
+				var $toolItems = $('.profession-tool-item');
+				var visibleCount = 0;
+
+				$toolItems.each(function() {
+					var $item = $(this);
+					var toolName = $item.data('tool-name') || '';
+					var toolDesc = $item.data('tool-description') || '';
+
+					var matches = searchTerm === '' ||
+						toolName.indexOf(searchTerm) !== -1 ||
+						toolDesc.indexOf(searchTerm) !== -1;
+
+					if (matches) {
+						$item.show();
+						visibleCount++;
+					} else {
+						$item.hide();
+					}
+				});
+
+				// Toggle no results message
+				if (visibleCount === 0 && searchTerm !== '') {
+					$toolsList.hide();
+					$noResultsMsg.show();
+				} else {
+					$toolsList.show();
+					$noResultsMsg.hide();
+				}
+			}
+
+			// Search input handler with debounce
+			$searchInput.on('input', function() {
+				clearTimeout(searchDebounceTimer);
+				searchDebounceTimer = setTimeout(filterTools, 300);
+			});
+
+			// Clear search button
+			$('#clear-tools-search').on('click', function() {
+				$searchInput.val('');
+				filterTools();
+				$searchInput.focus();
+			});
+
+			// Toggle all visible tools (used by Select All and Deselect All)
+			function toggleAllVisibleTools(checked) {
+				$('.profession-tool-item:visible .profession-tool-checkbox').prop('checked', checked);
+				updateSelectedCount();
+			}
+
+			// Select all visible tools
+			$('#select-all-tools').on('click', function() {
+				toggleAllVisibleTools(true);
+			});
+
+			// Deselect all visible tools
+			$('#deselect-all-tools').on('click', function() {
+				toggleAllVisibleTools(false);
+			});
+
+			// Reset to initial state
+			$('#reset-tools').on('click', function() {
+				// Use native confirm as it's consistent with WordPress admin UX patterns
+				if (!confirm('<?php echo esc_js( __( 'Are you sure you want to reset the tools selection to the initial state?', 'wp-mcp-ai' ) ); ?>')) {
+					return;
+				}
+
+				$('.profession-tool-item').each(function() {
+					var $item = $(this);
+					var $checkbox = $item.find('.profession-tool-checkbox');
+					var initiallyChecked = $item.data('initially-checked') === 1;
+					$checkbox.prop('checked', initiallyChecked);
+				});
+				updateSelectedCount();
+			});
+
+			// Update count when checkboxes change
+			$(document).on('change', '.profession-tool-checkbox', function() {
+				updateSelectedCount();
+			});
+
+			// Initialize count on page load
+			updateSelectedCount();
 		});
 		</script>
+
+		<style>
+			.profession-tool-item {
+				transition: background-color 0.2s ease;
+			}
+			.profession-tool-item:hover {
+				background-color: #f0f0f0 !important;
+			}
+			#profession-tools-search {
+				padding: 6px 10px;
+				font-size: 14px;
+				border: 1px solid #8c8f94;
+				border-radius: 4px;
+				box-shadow: 0 0 0 transparent;
+				transition: border-color .1s ease-in-out, box-shadow .1s linear;
+			}
+			#profession-tools-search:focus {
+				border-color: #2271b1;
+				box-shadow: 0 0 0 1px #2271b1;
+				outline: 2px solid transparent;
+			}
+			.profession-tools-controls .button {
+				height: 32px;
+				line-height: 30px;
+				padding: 0 12px;
+			}
+			#tools-selected-count {
+				display: inline-block;
+				padding: 4px 8px;
+				background: #f0f0f0;
+				border-radius: 3px;
+				font-size: 13px;
+			}
+		</style>
 		<?php
 	}
 

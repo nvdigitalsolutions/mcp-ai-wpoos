@@ -139,22 +139,36 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		// Check if attachment already exists.
 		$existing_attachment = self::find_existing_playbook_attachment( $profession->ID );
 
-		if ( $existing_attachment && ! $force ) {
-			// Check if content has changed.
-			$existing_hash = get_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_hash', true );
+		if ( $existing_attachment ) {
+			if ( $force ) {
+				// Force regeneration - orphan the old attachment and create a new one.
+				// Remove from profession's memory files.
+				self::remove_attachment_from_memory_files( $profession->ID, $existing_attachment->ID );
 
-			if ( $existing_hash === $content_hash ) {
-				// Content unchanged, ensure it's in memory files and MIME types are set.
-				self::ensure_attachment_in_memory_files( $profession->ID, $existing_attachment->ID );
-				self::ensure_supported_mime_types( $profession->ID );
-				return;
+				// Remove the profession association meta, but keep the attachment in media library.
+				delete_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_profession_id' );
+
+				// Fall through to create new attachment below.
+			} else {
+				// Check if content has changed.
+				$existing_hash = get_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_hash', true );
+
+				if ( $existing_hash === $content_hash ) {
+					// Content unchanged, ensure it's in memory files and MIME types are set.
+					self::ensure_attachment_in_memory_files( $profession->ID, $existing_attachment->ID );
+					self::ensure_supported_mime_types( $profession->ID );
+					return;
+				}
+
+				// Content changed - orphan the old attachment and create a new one.
+				// Remove from profession's memory files.
+				self::remove_attachment_from_memory_files( $profession->ID, $existing_attachment->ID );
+
+				// Remove the profession association meta, but keep the attachment in media library.
+				delete_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_profession_id' );
+
+				// Fall through to create new attachment below.
 			}
-
-			// Content changed - update the existing attachment file.
-			self::update_playbook_attachment( $existing_attachment->ID, $content, $content_hash );
-			self::ensure_attachment_in_memory_files( $profession->ID, $existing_attachment->ID );
-			self::ensure_supported_mime_types( $profession->ID );
-			return;
 		}
 
 		// Create new attachment.
@@ -237,13 +251,13 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 	 * Remove duplicate playbook attachments for a profession.
 	 *
 	 * Keeps only the most recent attachment associated with the profession.
-	 * Older duplicate attachments are removed from the profession's memory files
-	 * but remain in the media library for reference.
+	 * Older duplicate attachments are removed from the profession's memory files.
 	 *
-	 * @param int $profession_id Profession post ID.
+	 * @param int  $profession_id Profession post ID.
+	 * @param bool $delete        Whether to delete old attachments or just orphan them. Default false.
 	 * @return int Number of duplicates removed from profession.
 	 */
-	protected static function remove_duplicate_playbooks( $profession_id ) {
+	protected static function remove_duplicate_playbooks( $profession_id, $delete = false ) {
 		$attachments = self::find_all_playbook_attachments( $profession_id );
 
 		if ( count( $attachments ) <= 1 ) {
@@ -262,8 +276,22 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			// Remove from profession's memory files.
 			self::remove_attachment_from_memory_files( $profession_id, $attachment_id );
 
-			// Remove the profession association meta, but keep the attachment in media library.
-			delete_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id' );
+			if ( $delete ) {
+				// Verify this is a system-created playbook before deleting.
+				$hash          = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
+				$attached_file = get_attached_file( $attachment_id );
+
+				// Only delete if it has the hash marker and is in the system directory.
+				if ( ! empty( $hash ) && $attached_file && false !== strpos( $attached_file, 'wp-mcp-ai/profession-playbooks' ) ) {
+					wp_delete_attachment( $attachment_id, true );
+				} else {
+					// Not safe to delete, just orphan it.
+					delete_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id' );
+				}
+			} else {
+				// Remove the profession association meta, but keep the attachment in media library.
+				delete_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id' );
+			}
 
 			$removed_count++;
 		}
@@ -294,6 +322,92 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			$memory_files = array_values( $memory_files );
 			update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );
 		}
+	}
+
+	/**
+	 * Safely delete orphaned system-created playbook attachments.
+	 *
+	 * Only deletes attachments that:
+	 * - Have the _wp_mcp_ai_playbook_hash meta (system-created marker)
+	 * - Do NOT have the _wp_mcp_ai_playbook_profession_id meta (orphaned)
+	 * - Are in the wp-mcp-ai/profession-playbooks directory
+	 *
+	 * This ensures we never delete user-uploaded attachments.
+	 *
+	 * @param int $limit Maximum number of attachments to delete per call. Default 50.
+	 * @return array {
+	 *     Deletion results.
+	 *
+	 *     @type int   $deleted_count   Number of attachments deleted.
+	 *     @type array $deleted_ids     Array of deleted attachment IDs.
+	 *     @type array $skipped_ids     Array of attachment IDs that were skipped (not system-created).
+	 * }
+	 */
+	public static function delete_orphaned_system_playbooks( $limit = 50 ) {
+		global $wpdb;
+
+		// Find attachments with playbook hash but no profession association (orphaned).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$orphaned_attachments = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT p.ID, pm_hash.meta_value as hash
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} pm_hash ON p.ID = pm_hash.post_id
+				LEFT JOIN {$wpdb->postmeta} pm_prof ON p.ID = pm_prof.post_id 
+					AND pm_prof.meta_key = '_wp_mcp_ai_playbook_profession_id'
+				WHERE p.post_type = 'attachment'
+				AND p.post_status = 'inherit'
+				AND pm_hash.meta_key = '_wp_mcp_ai_playbook_hash'
+				AND pm_prof.meta_id IS NULL
+				LIMIT %d",
+				absint( $limit )
+			)
+		);
+
+		$deleted_count = 0;
+		$deleted_ids   = array();
+		$skipped_ids   = array();
+
+		foreach ( $orphaned_attachments as $attachment ) {
+			$attachment_id = absint( $attachment->ID );
+
+			// Double-check: Verify this is a system-created playbook.
+			$hash             = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
+			$profession_id    = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
+			$attachment_path  = get_attached_file( $attachment_id );
+
+			// Safety checks: Only delete if:
+			// 1. Has playbook hash (system-created)
+			// 2. No profession association (orphaned)
+			// 3. File is in the system playbook directory
+			if ( empty( $hash ) || ! empty( $profession_id ) ) {
+				$skipped_ids[] = $attachment_id;
+				continue;
+			}
+
+			// Verify file path is in the system playbook directory.
+			if ( $attachment_path && false === strpos( $attachment_path, 'wp-mcp-ai/profession-playbooks' ) ) {
+				// Not in system directory, skip for safety.
+				$skipped_ids[] = $attachment_id;
+				continue;
+			}
+
+			// Safe to delete - this is an orphaned system-created playbook.
+			$deleted = wp_delete_attachment( $attachment_id, true );
+
+			if ( $deleted ) {
+				$deleted_count++;
+				$deleted_ids[] = $attachment_id;
+			} else {
+				$skipped_ids[] = $attachment_id;
+			}
+		}
+
+		return array(
+			'deleted_count' => $deleted_count,
+			'deleted_ids'   => $deleted_ids,
+			'skipped_ids'   => $skipped_ids,
+		);
 	}
 
 	/**

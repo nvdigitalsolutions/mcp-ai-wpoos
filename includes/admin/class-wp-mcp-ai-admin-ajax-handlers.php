@@ -79,6 +79,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
 				'wp_ajax_wp_mcp_ai_regenerate_playbook'    => 'handle_regenerate_playbook',
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
+				'wp_ajax_wp_mcp_ai_delete_old_playbooks'   => 'handle_delete_old_playbooks',
 				'wp_ajax_wp_mcp_ai_get_models_for_provider' => 'handle_get_models_for_provider',
 			);
 
@@ -2219,6 +2220,80 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$message = $force
 				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'wp-mcp-ai' )
 				: __( 'Profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.', 'wp-mcp-ai' );
+
+			wp_send_json_success(
+				array(
+					'message' => $message,
+				)
+			);
+		}
+
+		/**
+		 * Handle delete old playbooks AJAX request.
+		 *
+		 * Permanently deletes orphaned playbook attachments from the media library.
+		 *
+		 * @since 1.7.0
+		 */
+		private function handle_delete_old_playbooks() {
+			check_ajax_referer( 'wp_mcp_ai_delete_old_playbooks', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			global $wpdb;
+
+			// Find all playbook attachments that are NOT associated with any profession.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$orphaned_attachments = $wpdb->get_col(
+				"SELECT p.ID 
+				FROM {$wpdb->posts} p
+				WHERE p.post_type = 'attachment'
+				AND p.post_mime_type = 'text/plain'
+				AND p.post_title LIKE '%playbook%'
+				AND NOT EXISTS (
+					SELECT 1 
+					FROM {$wpdb->postmeta} pm 
+					WHERE pm.post_id = p.ID 
+					AND pm.meta_key = '_wp_mcp_ai_playbook_profession_id'
+				)"
+			);
+
+			if ( empty( $orphaned_attachments ) ) {
+				wp_send_json_success(
+					array(
+						'message' => __( 'No orphaned playbook attachments found to delete.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			$deleted_count = 0;
+
+			// Delete each orphaned attachment permanently.
+			foreach ( $orphaned_attachments as $attachment_id ) {
+				// Use wp_delete_attachment with force_delete = true to permanently delete.
+				if ( wp_delete_attachment( $attachment_id, true ) ) {
+					++$deleted_count;
+				}
+			}
+
+			/* translators: %d: number of deleted playbook attachments */
+			$message = sprintf(
+				_n(
+					'Successfully deleted %d orphaned playbook attachment from media library.',
+					'Successfully deleted %d orphaned playbook attachments from media library.',
+					$deleted_count,
+					'wp-mcp-ai'
+				),
+				$deleted_count
+			);
 
 			wp_send_json_success(
 				array(

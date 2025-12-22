@@ -24,7 +24,11 @@
       "knowledge_base": "### Medical Practice\n- Use evidence-based medicine in all recommendations\n- Consider patient safety as the highest priority\n- Maintain awareness of medical ethics and legal requirements\n- Stay current with medical research and guidelines\n- Recognize the limits of your knowledge and recommend specialist consultation when appropriate",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_cron_job",
+        "create_chart"
       ]
     },
     {
@@ -49,7 +53,11 @@
       "knowledge_base": "### Nursing Care\n- Focus on holistic patient care\n- Emphasize patient education and empowerment\n- Coordinate care across healthcare settings\n- Advocate for patient safety and quality care\n- Maintain professional boundaries and ethics",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_cron_job",
+        "create_chart"
       ]
     },
     {
@@ -75,7 +83,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "create_chart",
+        "analyze_file_suitability"
       ]
     },
     {
@@ -100,7 +111,11 @@
       "knowledge_base": "### Nursing Standards\n- Prioritize patient safety and comfort\n- Maintain accurate documentation\n- Follow infection control protocols\n- Use evidence-based nursing practices\n- Communicate effectively with healthcare team",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_cron_job",
+        "create_chart"
       ]
     },
     {
@@ -125,7 +140,11 @@
       "knowledge_base": "### Dental Care\n- Emphasize preventive care and oral hygiene\n- Consider patient comfort and anxiety management\n- Follow infection control standards\n- Use current dental materials and techniques\n- Recommend regular dental check-ups",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_cron_job",
+        "create_chart"
       ]
     },
     {
@@ -150,7 +169,11 @@
       "knowledge_base": "### Physical Therapy\n- Focus on functional outcomes and quality of life\n- Use evidence-based therapeutic interventions\n- Progress exercises based on patient tolerance\n- Educate patients on injury prevention\n- Collaborate with other healthcare providers",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_chart",
+        "get_jetformbuilder_forms"
       ]
     },
     {
@@ -175,7 +198,11 @@
       "knowledge_base": "### Psychological Practice\n- Maintain confidentiality and ethical boundaries\n- Use evidence-based therapeutic approaches\n- Consider cultural and individual differences\n- Assess for safety and risk factors\n- Collaborate with psychiatrists for medication needs",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_chart",
+        "get_jetformbuilder_forms"
       ]
     },
     {
@@ -199,7 +226,11 @@
       "knowledge_base": "### Occupational Therapy\n- Focus on meaningful activities and participation\n- Adapt environments and tasks for success\n- Promote independence and quality of life\n- Consider physical, cognitive, and psychosocial factors\n- Use client-centered approach",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_chart",
+        "get_jetformbuilder_forms"
       ]
     },
     {
@@ -224,7 +255,11 @@
       "knowledge_base": "### Medical Imaging\n- Minimize radiation exposure (ALARA principle)\n- Ensure proper patient positioning\n- Verify correct examination and protocols\n- Maintain image quality standards\n- Communicate with radiologists and referring physicians",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "generate_image_caption",
+        "analyze_video",
+        "create_chart",
+        "moderate_content"
       ]
     },
     {
@@ -249,7 +284,11 @@
       "knowledge_base": "### Respiratory Care\n- Monitor oxygen saturation and blood gases\n- Assess respiratory mechanics and effort\n- Prevent ventilator-associated complications\n- Educate patients on breathing techniques\n- Collaborate with interdisciplinary team",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_chart",
+        "get_jetformbuilder_forms"
       ]
     },
     {
@@ -273,7 +312,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "send_group_email"
       ]
     },
     {
@@ -297,7 +339,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "reliefweb_reports",
+        "create_chart",
+        "get_open_meteo_forecast",
+        "send_group_email"
       ]
     },
     {
@@ -320,7 +366,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "reliefweb_reports",
+        "create_chart",
+        "get_open_meteo_forecast",
+        "send_group_email"
       ]
     },
     {
@@ -343,7 +393,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "count_tokens"
       ]
     },
     {
@@ -367,7 +420,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "reliefweb_reports",
+        "create_chart",
+        "get_open_meteo_forecast",
+        "send_group_email"
       ]
     },
     {
@@ -391,7 +448,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "count_tokens"
       ]
     },
     {
@@ -416,7 +476,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "send_group_email"
       ]
     },
     {
@@ -441,7 +504,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "send_group_email"
       ]
     },
     {
@@ -465,8 +531,9 @@
         "web_search",
         "search_content",
         "save_post",
-        "generate_openai_image",
-        "generate_gemini_image"
+        "reliefweb_reports",
+        "create_chart",
+        "send_group_email"
       ]
     },
     {
@@ -491,8 +558,9 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post",
-        "send_group_email"
+        "moderate_content",
+        "send_group_email",
+        "create_chart"
       ]
     },
     {
@@ -517,7 +585,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_image_caption",
+        "generate_openai_image",
+        "moderate_content",
+        "create_chart"
       ]
     },
     {
@@ -541,7 +613,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "count_tokens"
       ]
     },
     {
@@ -566,7 +641,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "send_group_email"
       ]
     },
     {
@@ -591,7 +669,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "send_group_email"
       ]
     },
     {
@@ -615,7 +696,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "count_tokens"
       ]
     }
   ]

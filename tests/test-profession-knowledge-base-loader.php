@@ -82,6 +82,7 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'warnings', $first_profession );
 		$this->assertArrayHasKey( 'knowledge_base', $first_profession );
 		$this->assertArrayHasKey( 'default_tools', $first_profession );
+		$this->assertArrayHasKey( 'supported_mime_types', $first_profession );
 	}
 
 	/**
@@ -120,6 +121,8 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 			$this->assertIsArray( $profession['expertise'] );
 			$this->assertIsArray( $profession['warnings'] );
 			$this->assertIsArray( $profession['default_tools'] );
+			$this->assertIsArray( $profession['supported_mime_types'], 'supported_mime_types should be an array' );
+			$this->assertNotEmpty( $profession['supported_mime_types'], 'supported_mime_types should not be empty' );
 		}
 	}
 
@@ -149,6 +152,48 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'category', $data, basename( $file ) . ' should have category field' );
 			$this->assertArrayHasKey( 'professions', $data, basename( $file ) . ' should have professions array' );
 			$this->assertIsArray( $data['professions'], basename( $file ) . ' professions should be an array' );
+		}
+	}
+
+	/**
+	 * Test that supported MIME types are correctly assigned based on category.
+	 */
+	public function test_mime_types_assigned_by_category() {
+		$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+		$professions = $loader->load_all();
+
+		foreach ( $professions as $profession ) {
+			$category           = $profession['category'];
+			$supported_mimes    = $profession['supported_mime_types'];
+
+			// All professions should have supported_mime_types.
+			$this->assertIsArray( $supported_mimes, "Profession {$profession['slug']} should have supported_mime_types array" );
+			$this->assertNotEmpty( $supported_mimes, "Profession {$profession['slug']} should have at least one MIME type" );
+
+			// All professions should support text/plain.
+			$this->assertContains( 'text/plain', $supported_mimes, "All professions should support text/plain" );
+
+			// Check category-specific MIME types.
+			switch ( $category ) {
+				case 'creative':
+					$this->assertContains( 'image/jpeg', $supported_mimes, "Creative professions should support JPEG images" );
+					$this->assertContains( 'image/png', $supported_mimes, "Creative professions should support PNG images" );
+					break;
+				case 'financial':
+				case 'legal':
+				case 'advisory':
+					$this->assertContains( 'application/pdf', $supported_mimes, "Financial/legal/advisory professions should support PDF" );
+					$this->assertContains( 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', $supported_mimes, "Financial/legal/advisory professions should support DOCX" );
+					break;
+				case 'technical':
+					$this->assertContains( 'application/pdf', $supported_mimes, "Technical professions should support PDF" );
+					$this->assertContains( 'text/csv', $supported_mimes, "Technical professions should support CSV" );
+					break;
+				case 'healthcare':
+					$this->assertContains( 'application/pdf', $supported_mimes, "Healthcare professions should support PDF" );
+					$this->assertContains( 'image/jpeg', $supported_mimes, "Healthcare professions should support JPEG images" );
+					break;
+			}
 		}
 	}
 
