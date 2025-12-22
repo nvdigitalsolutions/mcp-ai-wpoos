@@ -27,7 +27,7 @@ class WP_MCP_AI_Enhanced_Team_Loading_Test extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $teams, 'Team loading should not return WP_Error' );
 		$this->assertIsArray( $teams, 'Teams should be an array' );
-		$this->assertGreaterThanOrEqual( 72, count( $teams ), 'Should have at least 72 teams (10 original + 62 new)' );
+		$this->assertGreaterThanOrEqual( 75, count( $teams ), 'Should have at least 75 teams (10 original + 65 new)' );
 	}
 
 	/**
@@ -94,6 +94,98 @@ class WP_MCP_AI_Enhanced_Team_Loading_Test extends WP_UnitTestCase {
 
 		$this->assertNotNull( $igcse_team, 'IGCSE Academic Support Team should exist' );
 		$this->assertCount( 5, $igcse_team['members'], 'Should have 5 IGCSE tutors' );
+	}
+
+	/**
+	 * Test that extended education teams load correctly.
+	 */
+	public function test_extended_education_teams_load() {
+		$file_path = WP_MCP_AI_PATH . 'includes/knowledge-base/teams/education-extended-teams.json';
+		$teams     = $this->loader->load_from_file( $file_path );
+
+		$this->assertNotWPError( $teams, 'Extended education teams should load without errors' );
+		$this->assertIsArray( $teams, 'Teams should be an array' );
+		$this->assertCount( 8, $teams, 'Should have 8 extended education teams' );
+
+		// Verify IGCSE Mathematics Team.
+		$igcse_math_team = null;
+		foreach ( $teams as $team ) {
+			if ( 'igcse_mathematics_team' === $team['slug'] ) {
+				$igcse_math_team = $team;
+				break;
+			}
+		}
+		$this->assertNotNull( $igcse_math_team, 'IGCSE Mathematics Team should exist' );
+		$this->assertCount( 1, $igcse_math_team['members'], 'Should have 1 mathematics tutor' );
+		$this->assertContains( 'igcse_mathematics_tutor', $igcse_math_team['members'] );
+
+		// Verify IGCSE Science Tutoring Team.
+		$igcse_science_team = null;
+		foreach ( $teams as $team ) {
+			if ( 'igcse_science_tutoring_team' === $team['slug'] ) {
+				$igcse_science_team = $team;
+				break;
+			}
+		}
+		$this->assertNotNull( $igcse_science_team, 'IGCSE Science Tutoring Team should exist' );
+		$this->assertCount( 4, $igcse_science_team['members'], 'Should have 4 science tutors' );
+		$this->assertContains( 'igcse_biology_tutor', $igcse_science_team['members'] );
+		$this->assertContains( 'igcse_chemistry_tutor', $igcse_science_team['members'] );
+		$this->assertContains( 'igcse_physics_tutor', $igcse_science_team['members'] );
+		$this->assertContains( 'igcse_sciences_tutor', $igcse_science_team['members'] );
+
+		// Verify IGCSE Humanities Tutoring Team.
+		$igcse_humanities_team = null;
+		foreach ( $teams as $team ) {
+			if ( 'igcse_humanities_tutoring_team' === $team['slug'] ) {
+				$igcse_humanities_team = $team;
+				break;
+			}
+		}
+		$this->assertNotNull( $igcse_humanities_team, 'IGCSE Humanities Tutoring Team should exist' );
+		$this->assertCount( 3, $igcse_humanities_team['members'], 'Should have 3 humanities tutors' );
+		$this->assertContains( 'igcse_history_tutor', $igcse_humanities_team['members'] );
+		$this->assertContains( 'igcse_geography_tutor', $igcse_humanities_team['members'] );
+		$this->assertContains( 'igcse_english_tutor', $igcse_humanities_team['members'] );
+
+		// Verify IGCSE Languages & Technology Team.
+		$igcse_lang_tech_team = null;
+		foreach ( $teams as $team ) {
+			if ( 'igcse_languages_technology_team' === $team['slug'] ) {
+				$igcse_lang_tech_team = $team;
+				break;
+			}
+		}
+		$this->assertNotNull( $igcse_lang_tech_team, 'IGCSE Languages & Technology Team should exist' );
+		$this->assertCount( 3, $igcse_lang_tech_team['members'], 'Should have 3 language/tech tutors' );
+		$this->assertContains( 'igcse_english_tutor', $igcse_lang_tech_team['members'] );
+		$this->assertContains( 'igcse_computer_science_tutor', $igcse_lang_tech_team['members'] );
+		$this->assertContains( 'igcse_business_studies_tutor', $igcse_lang_tech_team['members'] );
+
+		// Verify IGCSE Year-Level Tutoring Team.
+		$igcse_year_team = null;
+		foreach ( $teams as $team ) {
+			if ( 'igcse_year_level_tutoring_team' === $team['slug'] ) {
+				$igcse_year_team = $team;
+				break;
+			}
+		}
+		$this->assertNotNull( $igcse_year_team, 'IGCSE Year-Level Tutoring Team should exist' );
+		$this->assertCount( 3, $igcse_year_team['members'], 'Should have 3 year-level tutors' );
+		$this->assertContains( 'igcse_year_9_tutor', $igcse_year_team['members'] );
+		$this->assertContains( 'igcse_year_10_tutor', $igcse_year_team['members'] );
+		$this->assertContains( 'igcse_year_11_tutor', $igcse_year_team['members'] );
+
+		// Verify IGCSE Academic Support Team (comprehensive).
+		$igcse_academic_team = null;
+		foreach ( $teams as $team ) {
+			if ( 'igcse_academic_support_team' === $team['slug'] ) {
+				$igcse_academic_team = $team;
+				break;
+			}
+		}
+		$this->assertNotNull( $igcse_academic_team, 'IGCSE Academic Support Team should exist' );
+		$this->assertCount( 5, $igcse_academic_team['members'], 'Should have 5 comprehensive tutors' );
 	}
 
 	/**
