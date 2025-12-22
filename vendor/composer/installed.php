@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-playbook-attachment-count',
-        'version' => 'dev-copilot/fix-playbook-attachment-count',
-        'reference' => '31bfd7377297384450e03483bb82b6e25358f506',
+        'pretty_version' => 'dev-copilot/add-hugging-face-client-provider',
+        'version' => 'dev-copilot/add-hugging-face-client-provider',
+        'reference' => '76341dba45c4571f3c715a098fb8863c526ac5c2',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-playbook-attachment-count',
-            'version' => 'dev-copilot/fix-playbook-attachment-count',
-            'reference' => '31bfd7377297384450e03483bb82b6e25358f506',
+            'pretty_version' => 'dev-copilot/add-hugging-face-client-provider',
+            'version' => 'dev-copilot/add-hugging-face-client-provider',
+            'reference' => '76341dba45c4571f3c715a098fb8863c526ac5c2',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
