@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/add-hugging-face-client-provider',
         'version' => 'dev-copilot/add-hugging-face-client-provider',
-        'reference' => '76341dba45c4571f3c715a098fb8863c526ac5c2',
+        'reference' => '04f4ff56d58450bc13c7256e552eced8e657b7d6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/add-hugging-face-client-provider',
             'version' => 'dev-copilot/add-hugging-face-client-provider',
-            'reference' => '76341dba45c4571f3c715a098fb8863c526ac5c2',
+            'reference' => '04f4ff56d58450bc13c7256e552eced8e657b7d6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
