@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-search-filter-to-assistant-post-type',
-        'version' => 'dev-copilot/add-search-filter-to-assistant-post-type',
-        'reference' => '6edf45a74191a3b1b5da58979d1ff1f08d753479',
+        'pretty_version' => 'dev-copilot/enhance-team-deployments-playbooks',
+        'version' => 'dev-copilot/enhance-team-deployments-playbooks',
+        'reference' => '2478bb0d41a262729031a8c6f2a39067c67ffca1',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-search-filter-to-assistant-post-type',
-            'version' => 'dev-copilot/add-search-filter-to-assistant-post-type',
-            'reference' => '6edf45a74191a3b1b5da58979d1ff1f08d753479',
+            'pretty_version' => 'dev-copilot/enhance-team-deployments-playbooks',
+            'version' => 'dev-copilot/enhance-team-deployments-playbooks',
+            'reference' => '2478bb0d41a262729031a8c6f2a39067c67ffca1',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
