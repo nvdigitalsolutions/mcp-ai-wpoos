@@ -1380,6 +1380,197 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		}
 
 		/**
+		 * Create a geospatial query with Google Maps grounding.
+		 *
+		 * @param string $query   Natural language query about locations or places.
+		 * @param array  $options Additional options (model, location, timeout).
+		 * @return array|WP_Error Response with geospatial context token or error.
+		 */
+		public function create_geospatial_query( $query, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_api_key',
+					__( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$query = sanitize_textarea_field( $query );
+
+			if ( '' === $query ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_query',
+					__( 'A query must be supplied for geospatial search.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$model = $this->resolve_model( $options );
+
+			if ( empty( $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_model',
+					__( 'No Gemini model has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_model' => __( 'Choose a Gemini model in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			// Build the payload with Google Maps grounding.
+			$payload = array(
+				'contents' => array(
+					array(
+						'role'  => 'user',
+						'parts' => array(
+							array(
+								'text' => $query,
+							),
+						),
+					),
+				),
+				'tools'    => array(
+					array(
+						'google_search_retrieval' => array(
+							'dynamic_retrieval_config' => array(
+								'mode'              => 'MODE_DYNAMIC',
+								'dynamic_threshold' => 0.3,
+							),
+						),
+					),
+					array(
+						'google_maps' => array(
+							'enabled' => true,
+						),
+					),
+				),
+			);
+
+			// Add optional location context for better results.
+			if ( isset( $options['location'] ) && is_array( $options['location'] ) ) {
+				if ( isset( $options['location']['latitude'] ) && isset( $options['location']['longitude'] ) ) {
+					$payload['location_context'] = array(
+						'latitude'  => floatval( $options['location']['latitude'] ),
+						'longitude' => floatval( $options['location']['longitude'] ),
+					);
+				}
+			}
+
+			// Add generation config if temperature is specified.
+			if ( isset( $options['temperature'] ) ) {
+				$payload['generationConfig'] = array(
+					'temperature' => floatval( $options['temperature'] ),
+				);
+			}
+
+			/**
+			 * Allow third parties to filter the Gemini geospatial payload prior to dispatch.
+			 *
+			 * @param array  $payload Prepared request payload.
+			 * @param array  $options Original method options.
+			 * @param string $query   Query text supplied by the caller.
+			 */
+			$payload = apply_filters( 'wp_mcp_ai_gemini_geospatial_payload', $payload, $options, $query );
+
+			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+			$url      = $endpoint;
+
+			$request_args = array(
+				'headers' => array(
+					'Content-Type'   => 'application/json',
+					'x-goog-api-key' => $api_key,
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $this->resolve_timeout( $options ),
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'gemini_geospatial_request',
+				'Sending geospatial query request to Gemini with Google Maps grounding.',
+				array(
+					'query' => $query,
+					'model' => $model,
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Gemini geospatial request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
+					__( 'Gemini', 'wp-mcp-ai' )
+				);
+			}
+
+			$code     = wp_remote_retrieve_response_code( $response );
+			$body     = wp_remote_retrieve_body( $response );
+			$decoded  = json_decode( $body, true );
+			$json_err = json_last_error();
+
+			if ( JSON_ERROR_NONE !== $json_err ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini geospatial response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
+
+				WP_MCP_AI_Logger::log_error(
+					'Gemini returned an error response for geospatial query.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $decoded,
+					)
+				);
+			}
+
+			$normalized = $this->normalize_response( $decoded );
+
+			// Extract Google Maps context token if available.
+			if ( isset( $decoded['candidates'][0]['googleMapsWidgetContextToken'] ) ) {
+				$normalized['google_maps_context_token'] = $decoded['candidates'][0]['googleMapsWidgetContextToken'];
+			}
+
+			if ( ! isset( $normalized['model'] ) && ! empty( $model ) ) {
+				$normalized['model'] = $model;
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'gemini_geospatial_response',
+				'Gemini geospatial query completed.',
+				array(
+					'has_context_token' => isset( $normalized['google_maps_context_token'] ),
+				)
+			);
+
+			return $normalized;
+		}
+
+		/**
 		 * Build the request payload sent to Gemini.
 		 *
 		 * @param array $messages Chat messages.
