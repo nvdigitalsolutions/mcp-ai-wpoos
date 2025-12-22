@@ -242,6 +242,15 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 			$this->tool_recommender = new WP_MCP_AI_Profession_Tool_Recommender( $tool_registry );
 			return $this->tool_recommender;
 		} catch ( Exception $e ) {
+			// Log the exception for debugging.
+			error_log(
+				sprintf(
+					'WP_MCP_AI: Failed to initialize tool recommender: %s in %s:%d',
+					$e->getMessage(),
+					$e->getFile(),
+					$e->getLine()
+				)
+			);
 			// If something fails, return null and fallback to JSON tools.
 			return null;
 		}
