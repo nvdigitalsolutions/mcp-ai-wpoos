@@ -24,16 +24,26 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 	protected $knowledge_base_path;
 
 	/**
+	 * Tool recommender instance.
+	 *
+	 * @var WP_MCP_AI_Profession_Tool_Recommender|null
+	 */
+	protected $tool_recommender;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param string $knowledge_base_path Optional path to knowledge base directory.
+	 * @param string                                     $knowledge_base_path Optional path to knowledge base directory.
+	 * @param WP_MCP_AI_Profession_Tool_Recommender|null $tool_recommender    Optional tool recommender instance.
 	 */
-	public function __construct( $knowledge_base_path = null ) {
+	public function __construct( $knowledge_base_path = null, $tool_recommender = null ) {
 		if ( null === $knowledge_base_path ) {
 			$this->knowledge_base_path = WP_MCP_AI_PATH . 'includes/knowledge-base/professions/';
 		} else {
 			$this->knowledge_base_path = trailingslashit( $knowledge_base_path );
 		}
+
+		$this->tool_recommender = $tool_recommender;
 	}
 
 	/**
@@ -139,13 +149,21 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 			}
 		}
 
-		// Extract category first since we need it for MIME types.
+		// Extract category and slug for tool recommendations.
 		$category = isset( $profession['category'] ) ? sanitize_key( $profession['category'] ) : 'other';
+		$slug     = isset( $profession['slug'] ) ? sanitize_title( $profession['slug'] ) : '';
+
+		// Get default tools from JSON and enhance with recommendations.
+		$json_tools = isset( $profession['default_tools'] ) && is_array( $profession['default_tools'] )
+			? array_map( 'sanitize_key', $profession['default_tools'] )
+			: array();
+
+		$default_tools = $this->enhance_default_tools( $json_tools, $slug, $category );
 
 		// Sanitize and structure the data.
 		$validated = array(
 			'title'                => sanitize_text_field( $profession['title'] ),
-			'slug'                 => sanitize_title( $profession['slug'] ),
+			'slug'                 => $slug,
 			'description'          => isset( $profession['description'] ) ? wp_kses_post( $profession['description'] ) : '',
 			'category'             => $category,
 			'role_description'     => isset( $profession['role_description'] ) ? wp_kses_post( $profession['role_description'] ) : '',
@@ -156,13 +174,77 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 				? array_map( 'sanitize_text_field', $profession['warnings'] )
 				: array(),
 			'knowledge_base'       => isset( $profession['knowledge_base'] ) ? wp_kses_post( $profession['knowledge_base'] ) : '',
-			'default_tools'        => isset( $profession['default_tools'] ) && is_array( $profession['default_tools'] )
-				? array_map( 'sanitize_key', $profession['default_tools'] )
-				: array(),
+			'default_tools'        => $default_tools,
 			'supported_mime_types' => $this->get_supported_mimes_for_category( $category ),
 		);
 
 		return $validated;
+	}
+
+	/**
+	 * Enhance default tools using the tool recommender.
+	 *
+	 * Combines tools from JSON with recommended tools for the profession.
+	 * JSON tools take precedence to preserve any custom selections.
+	 *
+	 * @param array  $json_tools Tools from JSON file.
+	 * @param string $slug       Profession slug.
+	 * @param string $category   Profession category.
+	 * @return array Enhanced array of tool slugs.
+	 */
+	protected function enhance_default_tools( $json_tools, $slug, $category ) {
+		// If JSON already has tools and it's more than the basic 3, use those.
+		if ( ! empty( $json_tools ) && count( $json_tools ) > 3 ) {
+			return $json_tools;
+		}
+
+		// Get tool recommender instance.
+		$recommender = $this->get_tool_recommender();
+		if ( ! $recommender ) {
+			// Fallback to JSON tools if recommender not available.
+			return $json_tools;
+		}
+
+		// Get recommended tools for this profession.
+		$recommended_tools = $recommender->get_recommended_tools( $slug, $category );
+
+		// If we have JSON tools, merge them with recommendations (JSON tools first).
+		if ( ! empty( $json_tools ) ) {
+			$enhanced_tools = array_unique( array_merge( $json_tools, $recommended_tools ) );
+		} else {
+			$enhanced_tools = $recommended_tools;
+		}
+
+		return $enhanced_tools;
+	}
+
+	/**
+	 * Get or initialize the tool recommender.
+	 *
+	 * @return WP_MCP_AI_Profession_Tool_Recommender|null Tool recommender instance or null if unavailable.
+	 */
+	protected function get_tool_recommender() {
+		if ( null !== $this->tool_recommender ) {
+			return $this->tool_recommender;
+		}
+
+		// Try to initialize the recommender.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Tool_Recommender' ) ) {
+			return null;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			return null;
+		}
+
+		try {
+			$tool_registry           = WP_MCP_AI_Tool_Registry::get_instance();
+			$this->tool_recommender = new WP_MCP_AI_Profession_Tool_Recommender( $tool_registry );
+			return $this->tool_recommender;
+		} catch ( Exception $e ) {
+			// If something fails, return null and fallback to JSON tools.
+			return null;
+		}
 	}
 
 	/**
