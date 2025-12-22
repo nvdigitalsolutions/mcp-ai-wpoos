@@ -34,9 +34,9 @@
 						ModelSelector.handleProviderChange( $providerSelect, $modelField );
 					} );
 
-					// Load initial models for the selected provider (convert text input to dropdown).
+					// Load initial models for the selected provider only if not already loaded.
 					const initialProvider = $providerSelect.val();
-					if ( initialProvider ) {
+					if ( initialProvider && ModelSelector.needsModelsLoad( $modelField ) ) {
 						ModelSelector.loadModels( initialProvider, $modelField );
 					}
 				}
@@ -53,6 +53,34 @@
 			// If model field is still a text input, we're good - it will be replaced on first load.
 			// If it's already a select, it's been previously converted.
 			console.log( 'WP MCP AI: Initialized model selector for provider field:', $providerSelect.attr( 'id' ) );
+		},
+
+		/**
+		 * Check if the model field needs to load models via AJAX.
+		 * Returns false if models are already loaded (select with options).
+		 *
+		 * @param {jQuery} $modelField Model field element.
+		 * @return {bool} True if models need to be loaded, false otherwise.
+		 */
+		needsModelsLoad: function( $modelField ) {
+			// If it's a text input, we need to load models.
+			if ( $modelField.is( 'input[type="text"]' ) ) {
+				return true;
+			}
+
+			// If it's a select, check if it has model options already.
+			if ( $modelField.is( 'select' ) ) {
+				// Count options excluding the placeholder/empty option.
+				const optionCount = $modelField.find( 'option' ).filter( function() {
+					return $( this ).val() !== '';
+				} ).length;
+
+				// If there are model options already, no need to load.
+				return optionCount === 0;
+			}
+
+			// Default to loading if unknown field type.
+			return true;
 		},
 
 		/**
