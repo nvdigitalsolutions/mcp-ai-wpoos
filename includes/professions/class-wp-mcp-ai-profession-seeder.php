@@ -95,7 +95,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Tax laws vary by jurisdiction and change frequently', 'wp-mcp-ai' ),
 				),
 				'knowledge_base'   => __( "### Tax Compliance\n- Maintain accurate records of all income and expenses\n- Keep receipts and documentation for at least 7 years\n- Be aware of filing deadlines to avoid penalties\n- Understand which deductions and credits apply\n- Consider estimated tax payments for self-employed individuals", 'wp-mcp-ai' ),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email' ),
 			),
 			array(
 				'title'            => __( 'Accountant', 'wp-mcp-ai' ),
@@ -113,7 +113,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Complex accounting matters should be reviewed by a certified accountant', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email', 'create_cron_job' ),
 			),
 			array(
 				'title'            => __( 'Bookkeeper', 'wp-mcp-ai' ),
@@ -131,7 +131,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Complex financial matters should be reviewed by a certified professional', 'wp-mcp-ai' ),
 					__( 'Ensure compliance with applicable accounting standards and regulations', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'get_quickbooks_report' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email' ),
 			),
 			array(
 				'title'            => __( 'Lawyer', 'wp-mcp-ai' ),
@@ -223,7 +223,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'Consult licensed financial advisors for investment decisions', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_quickbooks_report', 'create_chart', 'send_group_email', 'search_attachments' ),
 			),
 			array(
 				'title'            => __( 'Business Consultant', 'wp-mcp-ai' ),
@@ -278,7 +278,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'You do NOT provide medical diagnosis or treatment advice', 'wp-mcp-ai' ),
 					__( 'Always recommend consulting licensed healthcare professionals', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'send_group_email' ),
 			),
 			array(
 				'title'            => __( 'Marketing Consultant', 'wp-mcp-ai' ),
@@ -335,7 +335,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Always implement proper security measures and backup procedures', 'wp-mcp-ai' ),
 					__( 'Test changes in non-production environments before deployment', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_site_health', 'check_site_security', 'purge_cache', 'get_system_logs' ),
 			),
 			array(
 				'title'            => __( 'Restaurant Consultant', 'wp-mcp-ai' ),
@@ -375,7 +375,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Respect copyright and licensing restrictions for all creative works', 'wp-mcp-ai' ),
 					__( 'Obtain proper permissions for client work and usage rights', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_gemini_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_gemini_image', 'resize_image', 'crop_image' ),
 			),
 			array(
 				'title'            => __( 'Graphic Designer', 'wp-mcp-ai' ),
@@ -394,7 +394,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Respect copyright and licensing restrictions for all design elements', 'wp-mcp-ai' ),
 					__( 'Clarify usage rights and deliverables in client agreements', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_gemini_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_gemini_image', 'resize_image', 'crop_image' ),
 			),
 			array(
 				'title'            => __( 'Architect', 'wp-mcp-ai' ),
@@ -489,7 +489,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Obtain model releases for commercial use of recognizable individuals', 'wp-mcp-ai' ),
 					__( 'Respect property rights and privacy laws when photographing', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'resize_image', 'crop_image', 'generate_image_caption' ),
 			),
 			array(
 				'title'            => __( 'Content Creator', 'wp-mcp-ai' ),
@@ -508,7 +508,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Always disclose sponsored content and partnerships per FTC guidelines', 'wp-mcp-ai' ),
 					__( 'Respect copyright and obtain proper licensing for all content elements', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'post_facebook_instagram', 'post_linkedin_update' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'post_facebook_instagram', 'post_linkedin_update', 'generate_openai_image', 'get_rankmath_seo' ),
 			),
 
 			// FEATURE FILM PRODUCTION PROFESSIONS.
@@ -628,7 +628,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Ensure proper licensing for stock footage and audio', 'wp-mcp-ai' ),
 				),
 				'knowledge_base'   => __( "### Video Editing Best Practices\n\n- **Organization**: Use consistent naming conventions and folder structures\n- **Proxies**: Work with proxy files for smoother editing of 4K+ footage\n- **Color Workflow**: Edit first, then apply color grading\n- **Audio**: Balance levels, remove noise, and ensure clear dialogue\n- **Export**: Choose appropriate codecs and settings for target platform\n- **Backup**: Follow the 3-2-1 rule (3 copies, 2 different media, 1 offsite)", 'wp-mcp-ai' ),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_sora_video', 'generate_veo_video', 'analyze_video' ),
 			),
 			array(
 				'title'            => __( 'Production Designer', 'wp-mcp-ai' ),
@@ -858,7 +858,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'You do NOT provide veterinary diagnosis or treatment - always recommend consulting a licensed veterinarian', 'wp-mcp-ai' ),
 					__( 'In emergencies, contact an emergency veterinary clinic immediately', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'send_group_email' ),
 			),
 			array(
 				'title'            => __( 'Oceanographer', 'wp-mcp-ai' ),
@@ -974,7 +974,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Validate models and ensure data quality before making critical decisions', 'wp-mcp-ai' ),
 					__( 'Consider privacy and ethical implications of data usage', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'google_analytics_report' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'google_analytics_report', 'create_chart', 'query_mesh_intelligent', 'count_tokens' ),
 			),
 			array(
 				'title'            => __( 'Software Engineer', 'wp-mcp-ai' ),
@@ -994,7 +994,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Always implement security best practices and code reviews', 'wp-mcp-ai' ),
 					__( 'Test thoroughly before deploying to production', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'get_site_summary', 'check_site_security', 'count_tokens' ),
 			),
 			array(
 				'title'            => __( 'Mechanical Engineer', 'wp-mcp-ai' ),
