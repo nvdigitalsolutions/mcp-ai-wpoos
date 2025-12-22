@@ -600,6 +600,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<?php esc_html_e( 'Regenerates all playbooks even if unchanged and removes duplicates (slower, use after major updates).', 'wp-mcp-ai' ); ?>
 							</span>
 						</p>
+
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-delete-old-playbooks-btn" style="color: #a00;">
+								<span class="dashicons dashicons-trash" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Delete Old Playbooks from Media Library', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Permanently deletes orphaned playbook attachments that are no longer associated with any profession.', 'wp-mcp-ai' ); ?>
+							</span>
+						</p>
 					</div>
 
 					<div id="wp-mcp-ai-playbook-sync-message" class="notice" style="display: none; margin: 15px 0;">
@@ -1094,6 +1104,73 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							syncPlaybooks(true);
 						}
 					});
+
+					$('#wp-mcp-ai-delete-old-playbooks-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will permanently delete all orphaned playbook attachments from the media library. This cannot be undone! Continue?', 'wp-mcp-ai' ) ); ?>)) {
+							deleteOldPlaybooks();
+						}
+					});
+
+					function deleteOldPlaybooks() {
+						var $button = $('#wp-mcp-ai-delete-old-playbooks-btn');
+						var $message = $('#wp-mcp-ai-playbook-sync-message');
+						var originalText = $button.html();
+
+						// Disable all playbook buttons
+						$('#wp-mcp-ai-sync-playbooks-btn, #wp-mcp-ai-sync-playbooks-force-btn, #wp-mcp-ai-delete-old-playbooks-btn')
+							.prop('disabled', true)
+							.addClass('disabled');
+
+						// Update button text
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Deleting...', 'wp-mcp-ai' ) ); ?>');
+
+						// Hide any previous messages
+						$message.hide().removeClass('notice-success notice-error notice-warning');
+
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: 'wp_mcp_ai_delete_old_playbooks',
+								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_delete_old_playbooks' ) ); ?>
+							},
+							success: function(response) {
+								if (response.success) {
+									$message
+										.removeClass('notice-error notice-warning')
+										.addClass('notice-success')
+										.find('p').html(response.data.message);
+									$message.show();
+
+									// Reload after a short delay
+									setTimeout(function() {
+										location.reload();
+									}, 2000);
+								} else {
+									$message
+										.removeClass('notice-success notice-warning')
+										.addClass('notice-error')
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								// Re-enable buttons and restore text
+								$('#wp-mcp-ai-sync-playbooks-btn, #wp-mcp-ai-sync-playbooks-force-btn, #wp-mcp-ai-delete-old-playbooks-btn')
+									.prop('disabled', false)
+									.removeClass('disabled');
+								$button.html(originalText);
+							}
+						});
+					}
 				});
 				</script>
 			</div>
