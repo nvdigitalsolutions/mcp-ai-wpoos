@@ -59,7 +59,16 @@
         "Test across browsers and devices"
       ],
       "knowledge_base": "### Web Development\n- Use semantic HTML for accessibility\n- Optimize images and assets for performance\n- Implement responsive design for all screen sizes\n- Follow web security best practices (OWASP)\n- Use browser developer tools for debugging\n- Keep frameworks and dependencies updated",
-      "default_tools": ["web_search", "search_content", "save_post", "get_rankmath_seo"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "get_rankmath_seo",
+        "create_chart",
+        "get_site_summary",
+        "purge_cache",
+        "check_site_security"
+      ]
     },
     {
       "title": "WP oOS Developer",
@@ -137,7 +146,16 @@
         "Follow change management procedures"
       ],
       "knowledge_base": "### Network Administration\n- Monitor network performance and availability\n- Implement defense-in-depth security\n- Use VLANs to segment network traffic\n- Keep firmware and software updated\n- Document network topology and configurations\n- Plan for redundancy and failover",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "get_site_summary",
+        "get_system_logs",
+        "check_site_security",
+        "moderate_content",
+        "purge_cache"
+      ]
     },
     {
       "title": "Cybersecurity Specialist",
@@ -160,7 +178,16 @@
         "Keep security tools and knowledge current"
       ],
       "knowledge_base": "### Cybersecurity\n- Implement defense-in-depth strategy\n- Use principle of least privilege\n- Keep all systems patched and updated\n- Monitor for suspicious activity\n- Conduct regular security assessments\n- Develop and test incident response plans",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "check_site_security",
+        "get_system_logs",
+        "moderate_content",
+        "get_site_summary",
+        "create_cron_job"
+      ]
     },
     {
       "title": "Database Administrator",
@@ -183,7 +210,15 @@
         "Document all database changes"
       ],
       "knowledge_base": "### Database Administration\n- Perform regular backups and test restores\n- Monitor database performance metrics\n- Optimize queries and indexes\n- Implement proper access controls\n- Plan for scalability and growth\n- Maintain data integrity with constraints",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "get_system_logs",
+        "check_site_security",
+        "create_chart",
+        "get_site_summary"
+      ]
     },
     {
       "title": "Systems Administrator",
@@ -206,7 +241,18 @@
         "Follow change control procedures"
       ],
       "knowledge_base": "### Systems Administration\n- Automate repetitive tasks with scripts\n- Monitor system health and performance\n- Keep systems patched and updated\n- Implement configuration management\n- Plan for disaster recovery\n- Document procedures and runbooks",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "get_system_logs",
+        "check_site_security",
+        "create_cron_job",
+        "list_cron_jobs",
+        "purge_cache",
+        "get_site_summary",
+        "create_chart"
+      ]
     },
     {
       "title": "DevOps Engineer",
@@ -229,7 +275,18 @@
         "Version control infrastructure code"
       ],
       "knowledge_base": "### DevOps\n- Automate everything possible\n- Use infrastructure as code principles\n- Implement continuous integration and deployment\n- Monitor applications and infrastructure\n- Foster collaboration between dev and ops\n- Embrace fail-fast and learn quickly",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_cron_job",
+        "list_cron_jobs",
+        "purge_cache",
+        "get_site_summary",
+        "check_site_security",
+        "get_system_logs",
+        "create_chart"
+      ]
     },
     {
       "title": "IT Support Specialist",
@@ -252,7 +309,13 @@
         "Escalate complex issues appropriately"
       ],
       "knowledge_base": "### IT Support\n- Listen carefully to user issues\n- Ask clarifying questions\n- Document steps taken and solutions\n- Communicate in non-technical terms\n- Follow up to ensure resolution\n- Build knowledge base of common issues",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "get_system_logs",
+        "get_site_summary"
+      ]
     },
     {
       "title": "Cloud Architect",
@@ -275,7 +338,15 @@
         "Plan for disaster recovery"
       ],
       "knowledge_base": "### Cloud Architecture\n- Design for scalability and elasticity\n- Use managed services when appropriate\n- Implement multi-region redundancy for critical systems\n- Optimize costs through rightsizing and automation\n- Follow well-architected framework principles\n- Plan for security and compliance from the start",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "check_site_security",
+        "purge_cache",
+        "get_site_summary",
+        "create_chart"
+      ]
     },
     {
       "title": "Mobile App Developer",
@@ -298,7 +369,16 @@
         "Optimize for battery and performance"
       ],
       "knowledge_base": "### Mobile Development\n- Design for touch interactions and small screens\n- Optimize app size and performance\n- Handle offline scenarios gracefully\n- Implement proper error handling\n- Follow platform-specific design guidelines\n- Test across different devices and screen sizes",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "resize_image",
+        "crop_image"
+      ]
     },
     {
       "title": "UI/UX Designer",
@@ -344,7 +424,14 @@
         "Consider edge cases and negative scenarios"
       ],
       "knowledge_base": "### Quality Assurance\n- Develop comprehensive test plans\n- Test both happy paths and edge cases\n- Automate repetitive test scenarios\n- Document bugs clearly with reproduction steps\n- Perform regression testing after changes\n- Advocate for quality throughout development",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "moderate_content",
+        "check_site_security",
+        "get_system_logs"
+      ]
     }
   ]
 }
