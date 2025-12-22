@@ -468,6 +468,173 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Render search and filter bar for tools.
+		 *
+		 * @param array $group_labels Array of group IDs and labels.
+		 */
+		protected function render_tools_search_filter( $group_labels ) {
+			?>
+			<!-- Tools Search and Filter Bar -->
+			<div class="wp-mcp-ai-tools-filter-bar" style="margin: 1rem 0; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+				<div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+					<label for="wp-mcp-ai-metabox-tool-search" style="font-weight: 600;">
+						<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
+					</label>
+					<input type="search" 
+							id="wp-mcp-ai-metabox-tool-search" 
+							placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
+							style="flex: 1; max-width: 300px;">
+
+					<label for="wp-mcp-ai-metabox-tool-group" style="font-weight: 600; margin-left: 10px;">
+						<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
+					</label>
+					<select id="wp-mcp-ai-metabox-tool-group" style="min-width: 200px;">
+						<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
+						<?php foreach ( $group_labels as $group_key => $group_label ) : ?>
+							<option value="<?php echo esc_attr( $group_key ); ?>">
+								<?php echo esc_html( $group_label ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+
+					<button type="button" id="wp-mcp-ai-metabox-clear-filters" class="button" style="display: none;">
+						<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
+					</button>
+				</div>
+			</div>
+
+			<script type="text/javascript">
+			( function() {
+				document.addEventListener( 'DOMContentLoaded', function() {
+					var searchInput = document.getElementById( 'wp-mcp-ai-metabox-tool-search' );
+					var groupSelect = document.getElementById( 'wp-mcp-ai-metabox-tool-group' );
+					var clearButton = document.getElementById( 'wp-mcp-ai-metabox-clear-filters' );
+					var toolsContainer = document.querySelector( '.wp-mcp-ai-tools' );
+
+					if ( ! searchInput || ! groupSelect || ! clearButton || ! toolsContainer ) {
+						return;
+					}
+
+					function filterTools() {
+						var searchTerm = searchInput.value.toLowerCase().trim();
+						var selectedGroup = groupSelect.value;
+
+						// Show/hide clear button.
+						if ( searchTerm || selectedGroup ) {
+							clearButton.style.display = '';
+						} else {
+							clearButton.style.display = 'none';
+						}
+
+						// Get all tool groups.
+						var groups = toolsContainer.querySelectorAll( '.wp-mcp-ai-tools__group' );
+
+						groups.forEach( function( group ) {
+							var groupId = '';
+							var summary = group.querySelector( 'summary' );
+							
+							// Extract group ID from classes or data attributes.
+							if ( summary ) {
+								var summaryId = summary.getAttribute( 'id' ) || '';
+								var match = summaryId.match( /wp-mcp-ai-tools-summary-(.+)/ );
+								if ( match ) {
+									groupId = match[1];
+								}
+							}
+
+							// Filter by selected group.
+							var groupMatches = ! selectedGroup || groupId === selectedGroup;
+
+							// Get all tool items in this group.
+							var toolItems = group.querySelectorAll( '.wp-mcp-ai-tools__item' );
+							var visibleCount = 0;
+
+							toolItems.forEach( function( item ) {
+								var toolName = '';
+								var toolDesc = '';
+
+								var nameElement = item.querySelector( '.wp-mcp-ai-tools__name' );
+								var descElement = item.querySelector( '.wp-mcp-ai-tools__description' );
+
+								if ( nameElement ) {
+									toolName = nameElement.textContent.toLowerCase();
+								}
+								if ( descElement ) {
+									toolDesc = descElement.textContent.toLowerCase();
+								}
+
+								// Check if search term matches.
+								var searchMatches = ! searchTerm || 
+									toolName.indexOf( searchTerm ) !== -1 || 
+									toolDesc.indexOf( searchTerm ) !== -1;
+
+								// Show/hide item based on both filters.
+								if ( groupMatches && searchMatches ) {
+									item.style.display = '';
+									visibleCount++;
+								} else {
+									item.style.display = 'none';
+								}
+							} );
+
+							// Show/hide entire group if no visible items.
+							if ( groupMatches && visibleCount > 0 ) {
+								group.style.display = '';
+							} else {
+								group.style.display = 'none';
+							}
+						} );
+
+						// Show message if no results.
+						var existingMessage = toolsContainer.querySelector( '.wp-mcp-ai-no-results-message' );
+						var allGroups = toolsContainer.querySelectorAll( '.wp-mcp-ai-tools__group' );
+						var visibleGroups = 0;
+						
+						allGroups.forEach( function( group ) {
+							if ( group.style.display !== 'none' ) {
+								visibleGroups++;
+							}
+						} );
+
+						if ( visibleGroups === 0 && ( searchTerm || selectedGroup ) ) {
+							if ( ! existingMessage ) {
+								var message = document.createElement( 'p' );
+								message.className = 'wp-mcp-ai-no-results-message';
+								message.style.padding = '20px';
+								message.style.textAlign = 'center';
+								message.style.color = '#646970';
+								message.textContent = '<?php echo esc_js( __( 'No tools found matching your criteria.', 'wp-mcp-ai' ) ); ?>';
+								toolsContainer.appendChild( message );
+							}
+						} else if ( existingMessage ) {
+							existingMessage.remove();
+						}
+					}
+
+					// Attach event listeners.
+					searchInput.addEventListener( 'input', filterTools );
+					groupSelect.addEventListener( 'change', filterTools );
+					
+					clearButton.addEventListener( 'click', function() {
+						searchInput.value = '';
+						groupSelect.value = '';
+						filterTools();
+					} );
+
+					// Allow Enter key in search.
+					searchInput.addEventListener( 'keypress', function( e ) {
+						if ( e.which === 13 ) {
+							e.preventDefault();
+							filterTools();
+						}
+					} );
+				} );
+			} )();
+			</script>
+			<?php
+		}
+
+		/**
 		 * Render controls that allow editing the pre-built shortcuts contributed by tools.
 		 *
 		 * @param WP_Post $post               Post object.
@@ -1862,6 +2029,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			if ( ! isset( $group_labels['other'] ) ) {
 				$group_labels['other'] = __( 'Other tools', 'wp-mcp-ai' );
 			}
+
+			// Render search and filter bar.
+			$this->render_tools_search_filter( $group_labels );
 
 			$grouped_tools = array();
 
