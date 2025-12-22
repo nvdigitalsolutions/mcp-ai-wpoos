@@ -481,6 +481,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'purge_varnish_cache'            => 'external-tools',
 				'geocode_address'                => 'external-tools',
 				'search_places'                  => 'external-tools',
+				'gemini_geospatial_query'        => 'external-tools',
 				'list_github_repositories'       => 'external-tools',
 				'github_repository_operations'   => 'external-tools',
 				'manage_github_codespace'        => 'external-tools',
@@ -848,6 +849,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Google Maps Platform tools.
 				'WP_MCP_AI_Tool_Geocode_Address'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-geocode-address.php',
 				'WP_MCP_AI_Tool_Search_Places'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-places.php',
+				// Gemini Geospatial API tools.
+				'WP_MCP_AI_Tool_Gemini_Geospatial_Query' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-gemini-geospatial-query.php',
 				// Gemini image editing tool.
 				'WP_MCP_AI_Tool_Edit_Gemini_Image'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php',
 				// Product scraping tool.
