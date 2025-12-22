@@ -512,15 +512,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'url',
 					'label'       => __( 'Hugging Face Endpoint URL', 'wp-mcp-ai' ),
 					'description' => __( 'URL for the Hugging Face Inference API. Use the default for the public API, or provide a custom endpoint URL for Inference Endpoints or private deployments. The plugin automatically appends the correct path (/chat/completions or /models).', 'wp-mcp-ai' ),
-					'placeholder' => 'https://api-inference.huggingface.co/v1',
+					'placeholder' => 'https://router.huggingface.co/v1',
 					/**
 					 * Filter the default Hugging Face endpoint URL.
 					 *
 					 * @since 1.0.0
 					 *
-					 * @param string $url Default URL. Default 'https://api-inference.huggingface.co/v1'.
+					 * @param string $url Default URL. Default 'https://router.huggingface.co/v1'.
 					 */
-					'default'     => apply_filters( 'wp_mcp_ai_default_huggingface_endpoint_url', 'https://api-inference.huggingface.co/v1' ),
+					'default'     => apply_filters( 'wp_mcp_ai_default_huggingface_endpoint_url', 'https://router.huggingface.co/v1' ),
 				),
 				'huggingface_model'                 => array(
 					'type'        => 'text',

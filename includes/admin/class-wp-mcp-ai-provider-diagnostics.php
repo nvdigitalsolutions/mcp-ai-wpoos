@@ -178,9 +178,68 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- Hugging Face -->
+				<div class="card">
+					<h2><?php esc_html_e( '3. Hugging Face', 'wp-mcp-ai' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'API Key Configured', 'wp-mcp-ai' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['huggingface_api_key'] ) ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'wp-mcp-ai' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['huggingface_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'wp-mcp-ai' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Endpoint URL', 'wp-mcp-ai' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['huggingface_endpoint_url'] ) ) : ?>
+										<code><?php echo esc_html( $settings['huggingface_endpoint_url'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">⚠ <?php esc_html_e( 'Not Configured', 'wp-mcp-ai' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'wp-mcp-ai' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['huggingface_model'] ) ) : ?>
+										<code><?php echo esc_html( $settings['huggingface_model'] ); ?></code>
+									<?php else : ?>
+										<?php esc_html_e( 'Not Selected', 'wp-mcp-ai' ); ?>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="huggingface-test-result" style="margin: 15px 0;"></div>
+
+					<button 
+						type="button" 
+						class="button button-primary test-provider" 
+						data-provider="huggingface"
+						<?php echo esc_attr( empty( $settings['huggingface_api_key'] ) || empty( $settings['huggingface_endpoint_url'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test Hugging Face Connection', 'wp-mcp-ai' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['huggingface_api_key'] ) || empty( $settings['huggingface_endpoint_url'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your Hugging Face API key and endpoint URL in settings to enable testing.', 'wp-mcp-ai' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+					<?php endif; ?>
+				</div>
+
 				<!-- Ollama (Local AI) -->
 				<div class="card">
-					<h2><?php esc_html_e( '3. Ollama (Local AI)', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '4. Ollama (Local AI)', 'wp-mcp-ai' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -232,7 +291,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- LM Studio (Local AI) -->
 				<div class="card">
-					<h2><?php esc_html_e( '4. LM Studio (Local AI)', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '5. LM Studio (Local AI)', 'wp-mcp-ai' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -284,7 +343,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Provider Summary -->
 				<div class="card">
-					<h2><?php esc_html_e( '5. Provider Summary', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '6. Provider Summary', 'wp-mcp-ai' ); ?></h2>
 					<?php
 					$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 					$configured       = array();
@@ -294,6 +353,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					}
 					if ( ! empty( $settings['gemini_api_key'] ) ) {
 						$configured[] = 'Gemini';
+					}
+					if ( ! empty( $settings['huggingface_api_key'] ) && ! empty( $settings['huggingface_endpoint_url'] ) ) {
+						$configured[] = 'Hugging Face';
 					}
 					if ( ! empty( $settings['ollama_endpoint_url'] ) ) {
 						$configured[] = 'Ollama';
@@ -348,7 +410,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Troubleshooting -->
 				<div class="card">
-					<h2><?php esc_html_e( '6. Troubleshooting Guide', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '7. Troubleshooting Guide', 'wp-mcp-ai' ); ?></h2>
 					
 					<h3><?php esc_html_e( 'Common Issues:', 'wp-mcp-ai' ); ?></h3>
 					<ul>
@@ -366,6 +428,15 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 								<li><?php esc_html_e( 'Verify API key is correct and active', 'wp-mcp-ai' ); ?></li>
 								<li><?php esc_html_e( 'Check Google AI Studio for API quota limits', 'wp-mcp-ai' ); ?></li>
 								<li><?php esc_html_e( 'Ensure Generative Language API is enabled in Google Cloud Console', 'wp-mcp-ai' ); ?></li>
+							</ul>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'Hugging Face connection fails:', 'wp-mcp-ai' ); ?></strong>
+							<ul>
+								<li><?php esc_html_e( 'Verify API key is correct and active', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Check endpoint URL is correct (typically https://router.huggingface.co/v1)', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Ensure selected model is available and accessible with your API key', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Check Hugging Face account for usage limits and model access', 'wp-mcp-ai' ); ?></li>
 							</ul>
 						</li>
 						<li>
@@ -495,6 +566,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'gemini':
 					self::test_gemini( $settings );
+					break;
+
+				case 'huggingface':
+					self::test_huggingface( $settings );
 					break;
 
 				case 'ollama':
@@ -707,6 +782,58 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					array(
 						'message' => __( 'Ollama connection successful!', 'wp-mcp-ai' ),
 						'details' => $result,
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'wp-mcp-ai' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test Hugging Face connection.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_huggingface( $settings ) {
+			if ( empty( $settings['huggingface_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Hugging Face API key is not configured.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['huggingface_endpoint_url'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Hugging Face endpoint URL is not configured.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Hugging Face client class not found.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			try {
+				$client = new WP_MCP_AI_Huggingface_Client();
+				$result = $client->test_connection();
+
+				if ( is_wp_error( $result ) ) {
+					wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+					return;
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Hugging Face connection successful!', 'wp-mcp-ai' ),
+						'details' => array(
+							__( 'Endpoint', 'wp-mcp-ai' ) => $settings['huggingface_endpoint_url'],
+							__( 'Model', 'wp-mcp-ai' )    => isset( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : __( 'Not configured', 'wp-mcp-ai' ),
+						),
 					)
 				);
 			} catch ( Exception $e ) {
