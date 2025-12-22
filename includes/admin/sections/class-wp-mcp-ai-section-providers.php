@@ -718,7 +718,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		private function render_provider_priority_list( $field ) {
 			$label       = isset( $field['label'] ) ? $field['label'] : '';
 			$description = isset( $field['description'] ) ? $field['description'] : '';
-			$value       = WP_MCP_AI_Settings_Registry::get_setting( 'provider_priority_list', isset( $field['default'] ) ? $field['default'] : array() );
+			$saved_value = WP_MCP_AI_Settings_Registry::get_setting( 'provider_priority_list', array() );
+			$default     = isset( $field['default'] ) ? $field['default'] : array();
+
+			// Merge saved value with defaults to ensure all providers are included.
+			// Existing users may have old lists without 'huggingface'.
+			$value = is_array( $saved_value ) && ! empty( $saved_value ) ? $saved_value : $default;
+			
+			// Append any missing providers from defaults to the end.
+			foreach ( $default as $provider ) {
+				if ( ! in_array( $provider, $value, true ) ) {
+					$value[] = $provider;
+				}
+			}
 
 			$provider_labels = array(
 				'openai'       => __( 'OpenAI', 'wp-mcp-ai' ),
