@@ -115,7 +115,11 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 					?>
 				</p>
 			<?php else : ?>
-				<table class="widefat striped">
+				<?php
+				// Render search field using helper.
+				WP_MCP_AI_Profession_Search_Helper::render_search_field();
+				?>
+				<table class="widefat striped" id="wp-mcp-ai-professions-table">
 					<thead>
 						<tr>
 							<th style="width: 40px;"></th>
@@ -130,7 +134,7 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 							$category    = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_category', true );
 							$is_selected = in_array( $profession->ID, $primary_roles, true );
 							?>
-							<tr>
+							<tr class="wp-mcp-ai-profession-row" <?php echo WP_MCP_AI_Profession_Search_Helper::get_profession_data_attributes( $profession ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 								<td>
 									<input 
 										type="checkbox" 
@@ -164,6 +168,12 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 					<?php esc_html_e( 'Maximum 3 roles can be selected. Additional selections will uncheck the first selected role.', 'wp-mcp-ai' ); ?>
 				</p>
 
+				<?php
+				// Render search styles and script using helper.
+				WP_MCP_AI_Profession_Search_Helper::render_search_styles();
+				WP_MCP_AI_Profession_Search_Helper::render_search_script();
+				?>
+
 				<style>
 					.wp-mcp-ai-category-badge {
 						display: inline-block;
@@ -181,6 +191,7 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 					document.addEventListener( 'DOMContentLoaded', function() {
 						var checkboxes = document.querySelectorAll( '.wp-mcp-ai-primary-role-checkbox' );
 						
+						// Handle checkbox selection with max limit.
 						checkboxes.forEach( function( checkbox ) {
 							checkbox.addEventListener( 'change', function() {
 								var checked = document.querySelectorAll( '.wp-mcp-ai-primary-role-checkbox:checked' );

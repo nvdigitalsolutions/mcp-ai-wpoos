@@ -1,0 +1,46 @@
+{
+  "teams": [
+    {
+      "title": "Agricultural Production Team",
+      "slug": "agricultural_production_team",
+      "description": "Agricultural specialists for farming, livestock, and crop production.",
+      "members": [
+        "farmer",
+        "agronomist",
+        "agricultural_engineer",
+        "soil_scientist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "Environmental Conservation Team",
+      "slug": "environmental_conservation_team",
+      "description": "Environmental professionals for conservation and sustainability projects.",
+      "members": [
+        "environmental_scientist",
+        "wildlife_conservationist",
+        "forester",
+        "range_manager"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "Marine & Aquatic Sciences Team",
+      "slug": "marine_aquatic_sciences_team",
+      "description": "Marine biology and aquatic science specialists.",
+      "members": [
+        "marine_biologist",
+        "oceanographer",
+        "fisheries_biologist",
+        "aquaculture_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    }
+  ]
+}

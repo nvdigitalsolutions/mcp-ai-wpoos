@@ -105,109 +105,223 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 */
 		protected function get_tool_presets() {
 			$presets = array(
-				'content_writing'     => array(
-					'name'        => __( 'Content Writing', 'wp-mcp-ai' ),
-					'description' => __( 'Tools for creating and managing content, posts, and pages', 'wp-mcp-ai' ),
-					'tools'       => array(
-						'search_content',
-						'search_attachments',
-						'get_recent_posts',
-						'save_post',
-						'get_rankmath_seo',
-						'generate_openai_image',
-						'generate_gemini_image',
-						'web_search',
-					),
+
+			'ai_ml'               => array(
+				'name'        => __( 'AI/ML', 'wp-mcp-ai' ),
+				'description' => __( 'AI model management, embeddings, batches, and ML operations', 'wp-mcp-ai' ),
+				'tools'       => array(
+					'list_available_models',
+					'suggest_best_model',
+					'get_model_information',
+					'count_tokens',
+					'create_text_embeddings',
+					'batch_embed_content',
+					'semantic_content_search',
+					'create_batch',
+					'list_batches',
+					'get_batch_status',
+					'monitor_batch',
+					'create_vector_store',
+					'list_vector_stores',
+					'get_vector_store',
+					'manage_vector_store_files',
+					'openai_usage_analytics',
+					'open_openai_usage',
+					'open_openai_logs',
+					'moderate_content',
+					'analyze_comment_content',
 				),
-				'ecommerce'           => array(
-					'name'        => __( 'E-commerce Support', 'wp-mcp-ai' ),
-					'description' => __( 'WooCommerce and product management tools', 'wp-mcp-ai' ),
-					'tools'       => array(
-						'get_woo_recent_orders',
-						'get_woo_products',
-						'create_woo_product',
-						'send_group_email',
-						'send_mailjet_email',
-					),
+			),
+			'media'               => array(
+				'name'        => __( 'Media', 'wp-mcp-ai' ),
+				'description' => __( 'Image, video, and audio generation, editing, and processing tools', 'wp-mcp-ai' ),
+				'tools'       => array(
+					'generate_openai_image',
+					'generate_gemini_image',
+					'edit_gemini_image',
+					'edit_openai_image',
+					'create_image_variation',
+					'resize_image',
+					'crop_image',
+					'rotate_image',
+					'convert_image_format',
+					'remove_background',
+					'generate_image_alt_text',
+					'generate_image_caption',
+					'vision_object_localization',
+					'vision_product_search',
+					'generate_veo_video',
+					'generate_sora_video',
+					'check_video_status',
+					'analyze_video',
+					'extract_video_frames',
+					'get_video_metadata',
+					'generate_video_caption',
+					'generate_music',
+					'generate_jukebox_music',
+					'check_jukebox_status',
+					'generate_openai_speech',
+					'transcribe_openai_audio',
 				),
-				'site_management'     => array(
-					'name'        => __( 'Site Management', 'wp-mcp-ai' ),
-					'description' => __( 'WordPress core management and monitoring tools', 'wp-mcp-ai' ),
-					'tools'       => array(
-						'get_site_summary',
-						'get_system_logs',
-						'get_update_status',
-						'get_site_health',
-						'get_environment_status',
-						'check_site_security',
-						'purge_cache',
-						'create_cron_job',
-						'list_cron_jobs',
-					),
+			),
+			'content_writing'     => array(
+				'name'        => __( 'Content Writing', 'wp-mcp-ai' ),
+				'description' => __( 'Tools for creating and managing content, posts, and pages', 'wp-mcp-ai' ),
+				'tools'       => array(
+					'search_content',
+					'search_attachments',
+					'get_recent_posts',
+					'save_post',
+					'create_post',
+					'get_rankmath_seo',
+					'generate_openai_image',
+					'generate_gemini_image',
+					'web_search',
+					'semantic_content_search',
+					'moderate_content',
+					'analyze_comment_content',
+					'generate_image_caption',
+					'generate_image_alt_text',
+					'submit_document_prompt',
 				),
-				'seo_marketing'       => array(
-					'name'        => __( 'SEO & Marketing', 'wp-mcp-ai' ),
-					'description' => __( 'SEO analysis and social media management tools', 'wp-mcp-ai' ),
-					'tools'       => array(
-						'get_rankmath_seo',
-						'web_search',
-						'post_facebook_instagram',
-						'post_linkedin_update',
-						'get_facebook_instagram_insights',
-						'google_analytics_report',
-						'create_google_calendar_event',
-					),
+			),
+			'ecommerce'           => array(
+				'name'        => __( 'E-commerce Support', 'wp-mcp-ai' ),
+				'description' => __( 'WooCommerce and product management tools', 'wp-mcp-ai' ),
+				'tools'       => array(
+					'get_woo_recent_orders',
+					'get_woo_products',
+					'create_woo_product',
+					'send_group_email',
+					'send_mailjet_email',
+					'woo_orders',
+					'woo_products',
+					'product_actualization',
+					'scrape_product',
+					'lookup_product_price',
+					'crawl4ai_price_lookup',
+					'vision_product_search',
+					'get_import_duty',
 				),
-				'development'         => array(
-					'name'        => __( 'Development', 'wp-mcp-ai' ),
-					'description' => __( 'Code snippets, CLI, and technical development tools', 'wp-mcp-ai' ),
-					'tools'       => array(
-						'create_wpcode_snippet',
-						'check_wp_cli',
-						'get_system_logs',
-						'count_tokens',
-						'probe_chat',
-						'query_remote_site',
-					),
+			),
+			'site_management'     => array(
+				'name'        => __( 'Site Management', 'wp-mcp-ai' ),
+				'description' => __( 'WordPress core management and monitoring tools', 'wp-mcp-ai' ),
+				'tools'       => array(
+					'get_site_summary',
+					'get_system_logs',
+					'get_update_status',
+					'get_site_health',
+					'get_environment_status',
+					'check_site_security',
+					'purge_cache',
+					'purge_cloudflare_cache',
+					'purge_varnish_cache',
+					'create_cron_job',
+					'list_cron_jobs',
+					'get_cron_job',
+					'delete_cron_job',
+					'install_and_activate_plugin',
+					'install_and_activate_theme',
+					'update_option',
+					'site_creator',
 				),
-				'data_analytics'      => array(
-					'name'        => __( 'Data & Analytics', 'wp-mcp-ai' ),
-					'description' => __( 'Data collection, reporting, and analytics tools', 'wp-mcp-ai' ),
-					'tools'       => array(
-						'get_jetengine_items',
-						'list_jetengine_rest_routes',
-						'invoke_jetengine_route',
-						'get_jetformbuilder_forms',
-						'get_jetformbuilder_submissions',
-						'google_analytics_report',
-						'quickbooks_report',
-					),
+			),
+			'seo_marketing'       => array(
+				'name'        => __( 'SEO & Marketing', 'wp-mcp-ai' ),
+				'description' => __( 'SEO analysis and social media management tools', 'wp-mcp-ai' ),
+				'tools'       => array(
+					'get_rankmath_seo',
+					'web_search',
+					'post_facebook_instagram',
+					'post_linkedin_update',
+					'get_facebook_instagram_insights',
+					'google_analytics_report',
+					'create_google_calendar_event',
+					'post_tiktok_video',
+					'get_tiktok_insights',
+					'get_linkedin_insights',
+					'post_google_business_update',
+					'get_google_business_insights',
+					'send_telegram_message',
+					'send_whatsapp_message',
+					'schedule_notify_sms',
+					'search_gmail',
 				),
-				'design_professional' => array(
-					'name'        => __( 'Design Professional', 'wp-mcp-ai' ),
-					'description' => __( 'CAD, rendering, 3D modeling, branding, and visual design tools', 'wp-mcp-ai' ),
-					'tools'       => array(
-						'generate_openai_image',
-						'generate_gemini_image',
-						'edit_gemini_image',
-						'generate_veo_video',
-						'check_video_status',
-						'resize_image',
-						'crop_image',
-						'rotate_image',
-						'convert_image_format',
-						'create_chart',
-						'generate_music',
-						'analyze_video',
-						'extract_video_frames',
-						'get_video_metadata',
-						'vision_object_localization',
-						'vision_product_search',
-						'generate_image_alt_text',
-						'generate_image_caption',
-					),
+			),
+			'development'         => array(
+				'name'        => __( 'Development', 'wp-mcp-ai' ),
+				'description' => __( 'Code snippets, CLI, and technical development tools', 'wp-mcp-ai' ),
+				'tools'       => array(
+					'create_wpcode_snippet',
+					'check_wp_cli',
+					'get_system_logs',
+					'count_tokens',
+					'probe_chat',
+					'query_remote_site',
+					'github_repository_operations',
+					'list_github_repositories',
+					'manage_github_codespace',
+					'probe_remote_mcp',
+					'query_mesh_intelligent',
+					'run_openai_external_action',
+					'generic_rest',
+					'get_user_info',
 				),
-			);
+			),
+			'data_analytics'      => array(
+				'name'        => __( 'Data & Analytics', 'wp-mcp-ai' ),
+				'description' => __( 'Data collection, reporting, and analytics tools', 'wp-mcp-ai' ),
+				'tools'       => array(
+					'get_jetengine_items',
+					'list_jetengine_rest_routes',
+					'invoke_jetengine_route',
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					'google_analytics_report',
+					'quickbooks_report',
+					'jetengine',
+					'list_openai_files',
+					'get_openai_file_details',
+					'analyze_file_suitability',
+					'list_professions',
+					'get_profession',
+					'get_profession_stats',
+					'save_profession',
+					'create_chart',
+				),
+			),
+			'design_professional' => array(
+				'name'        => __( 'Design Professional', 'wp-mcp-ai' ),
+				'description' => __( 'CAD, rendering, 3D modeling, branding, and visual design tools', 'wp-mcp-ai' ),
+				'tools'       => array(
+					'generate_openai_image',
+					'generate_gemini_image',
+					'edit_gemini_image',
+					'edit_openai_image',
+					'generate_veo_video',
+					'check_video_status',
+					'resize_image',
+					'crop_image',
+					'rotate_image',
+					'convert_image_format',
+					'create_chart',
+					'generate_music',
+					'analyze_video',
+					'extract_video_frames',
+					'get_video_metadata',
+					'vision_object_localization',
+					'vision_product_search',
+					'generate_image_alt_text',
+					'generate_image_caption',
+					'remove_background',
+					'create_image_variation',
+					'get_elementor_templates',
+					'import_elementor_template_kit',
+					'elementor',
+				),
+			),
+		);
 
 			/**
 			 * Filter the tool selection presets.
@@ -239,7 +353,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			echo '<div class="wp-mcp-ai-tool-presets" style="margin-top: 1rem;">';
 			echo '<h3 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 14px;">' . esc_html__( 'Quick Tool Selection Presets', 'wp-mcp-ai' ) . '</h3>';
-			echo '<p class="description" style="margin-top: 0; margin-bottom: 1rem;">' . esc_html__( 'Click a preset to quickly select tools for common tasks. This will replace your current tool selection.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="description" style="margin-top: 0; margin-bottom: 1rem;">' . esc_html__( 'Click a preset to add its tools to your selection. Click again to remove them. You can combine multiple presets.', 'wp-mcp-ai' ) . '</p>';
 			echo '<div class="wp-mcp-ai-tool-presets__buttons" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">';
 
 			foreach ( $presets as $preset_key => $preset_data ) {
@@ -300,43 +414,50 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 									return;
 								}
 
-								// First, uncheck all tool checkboxes.
-								var allToolCheckboxes = document.querySelectorAll( '.wp-mcp-ai-tools__checkbox' );
-								allToolCheckboxes.forEach( function( checkbox ) {
-									if ( checkbox.checked ) {
-										checkbox.checked = false;
-										// Trigger change event to update UI.
-										var event = new Event( 'change', { bubbles: true } );
-										checkbox.dispatchEvent( event );
-									}
-								} );
+								// Check if preset is currently active (toggle behavior).
+								var isActive = button.classList.contains( 'wp-mcp-ai-preset-active' );
 
-								// Then, check the checkboxes for tools in the preset.
-								presetTools.forEach( function( toolSlug ) {
-									var checkbox = document.querySelector( 'input[name="wp_mcp_ai_tools[]"][value="' + toolSlug + '"]' );
-									if ( checkbox && ! checkbox.checked ) {
-										checkbox.checked = true;
-										// Trigger change event to update UI.
-										var event = new Event( 'change', { bubbles: true } );
-										checkbox.dispatchEvent( event );
-									}
-								} );
+								if ( isActive ) {
+									// Deactivate: uncheck all tools in this preset.
+									presetTools.forEach( function( toolSlug ) {
+										var checkbox = document.querySelector( 'input[name="wp_mcp_ai_tools[]"][value="' + toolSlug + '"]' );
+										if ( checkbox && checkbox.checked ) {
+											checkbox.checked = false;
+											// Trigger change event to update UI.
+											var event = new Event( 'change', { bubbles: true } );
+											checkbox.dispatchEvent( event );
+										}
+									} );
+
+									// Remove active state.
+									button.classList.remove( 'wp-mcp-ai-preset-active' );
+									button.style.backgroundColor = '';
+									button.style.color = '';
+									button.style.borderColor = '';
+								} else {
+									// Activate: check all tools in this preset (add to current selection).
+									presetTools.forEach( function( toolSlug ) {
+										var checkbox = document.querySelector( 'input[name="wp_mcp_ai_tools[]"][value="' + toolSlug + '"]' );
+										if ( checkbox && ! checkbox.checked ) {
+											checkbox.checked = true;
+											// Trigger change event to update UI.
+											var event = new Event( 'change', { bubbles: true } );
+											checkbox.dispatchEvent( event );
+										}
+									} );
+
+									// Add active state.
+									button.classList.add( 'wp-mcp-ai-preset-active' );
+									button.style.backgroundColor = '#2271b1';
+									button.style.color = '#fff';
+									button.style.borderColor = '#2271b1';
+								}
 
 								// Scroll to the tools section.
 								var toolsSection = document.querySelector( '.wp-mcp-ai-tools' );
 								if ( toolsSection ) {
 									toolsSection.scrollIntoView( { behavior: 'smooth', block: 'start' } );
 								}
-
-								// Show a brief visual confirmation.
-								button.style.backgroundColor = '#2271b1';
-								button.style.color = '#fff';
-								button.style.borderColor = '#2271b1';
-								setTimeout( function() {
-									button.style.backgroundColor = '';
-									button.style.color = '';
-									button.style.borderColor = '';
-								}, 500 );
 							} );
 						} );
 					} );
@@ -344,6 +465,173 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				</script>
 				<?php
 			}
+		}
+
+		/**
+		 * Render search and filter bar for tools.
+		 *
+		 * @param array $group_labels Array of group IDs and labels.
+		 */
+		protected function render_tools_search_filter( $group_labels ) {
+			?>
+			<!-- Tools Search and Filter Bar -->
+			<div class="wp-mcp-ai-tools-filter-bar" style="margin: 1rem 0; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+				<div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+					<label for="wp-mcp-ai-metabox-tool-search" style="font-weight: 600;">
+						<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
+					</label>
+					<input type="search" 
+							id="wp-mcp-ai-metabox-tool-search" 
+							placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
+							style="flex: 1; max-width: 300px;">
+
+					<label for="wp-mcp-ai-metabox-tool-group" style="font-weight: 600; margin-left: 10px;">
+						<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
+					</label>
+					<select id="wp-mcp-ai-metabox-tool-group" style="min-width: 200px;">
+						<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
+						<?php foreach ( $group_labels as $group_key => $group_label ) : ?>
+							<option value="<?php echo esc_attr( $group_key ); ?>">
+								<?php echo esc_html( $group_label ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+
+					<button type="button" id="wp-mcp-ai-metabox-clear-filters" class="button" style="display: none;">
+						<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
+					</button>
+				</div>
+			</div>
+
+			<script type="text/javascript">
+			( function() {
+				document.addEventListener( 'DOMContentLoaded', function() {
+					var searchInput = document.getElementById( 'wp-mcp-ai-metabox-tool-search' );
+					var groupSelect = document.getElementById( 'wp-mcp-ai-metabox-tool-group' );
+					var clearButton = document.getElementById( 'wp-mcp-ai-metabox-clear-filters' );
+					var toolsContainer = document.querySelector( '.wp-mcp-ai-tools' );
+
+					if ( ! searchInput || ! groupSelect || ! clearButton || ! toolsContainer ) {
+						return;
+					}
+
+					function filterTools() {
+						var searchTerm = searchInput.value.toLowerCase().trim();
+						var selectedGroup = groupSelect.value;
+
+						// Show/hide clear button.
+						if ( searchTerm || selectedGroup ) {
+							clearButton.style.display = '';
+						} else {
+							clearButton.style.display = 'none';
+						}
+
+						// Get all tool groups.
+						var groups = toolsContainer.querySelectorAll( '.wp-mcp-ai-tools__group' );
+
+						groups.forEach( function( group ) {
+							var groupId = '';
+							var summary = group.querySelector( 'summary' );
+							
+							// Extract group ID from classes or data attributes.
+							if ( summary ) {
+								var summaryId = summary.getAttribute( 'id' ) || '';
+								var match = summaryId.match( /wp-mcp-ai-tools-summary-(.+)/ );
+								if ( match ) {
+									groupId = match[1];
+								}
+							}
+
+							// Filter by selected group.
+							var groupMatches = ! selectedGroup || groupId === selectedGroup;
+
+							// Get all tool items in this group.
+							var toolItems = group.querySelectorAll( '.wp-mcp-ai-tools__item' );
+							var visibleCount = 0;
+
+							toolItems.forEach( function( item ) {
+								var toolName = '';
+								var toolDesc = '';
+
+								var nameElement = item.querySelector( '.wp-mcp-ai-tools__name' );
+								var descElement = item.querySelector( '.wp-mcp-ai-tools__description' );
+
+								if ( nameElement ) {
+									toolName = nameElement.textContent.toLowerCase();
+								}
+								if ( descElement ) {
+									toolDesc = descElement.textContent.toLowerCase();
+								}
+
+								// Check if search term matches.
+								var searchMatches = ! searchTerm || 
+									toolName.indexOf( searchTerm ) !== -1 || 
+									toolDesc.indexOf( searchTerm ) !== -1;
+
+								// Show/hide item based on both filters.
+								if ( groupMatches && searchMatches ) {
+									item.style.display = '';
+									visibleCount++;
+								} else {
+									item.style.display = 'none';
+								}
+							} );
+
+							// Show/hide entire group if no visible items.
+							if ( groupMatches && visibleCount > 0 ) {
+								group.style.display = '';
+							} else {
+								group.style.display = 'none';
+							}
+						} );
+
+						// Show message if no results.
+						var existingMessage = toolsContainer.querySelector( '.wp-mcp-ai-no-results-message' );
+						var allGroups = toolsContainer.querySelectorAll( '.wp-mcp-ai-tools__group' );
+						var visibleGroups = 0;
+						
+						allGroups.forEach( function( group ) {
+							if ( group.style.display !== 'none' ) {
+								visibleGroups++;
+							}
+						} );
+
+						if ( visibleGroups === 0 && ( searchTerm || selectedGroup ) ) {
+							if ( ! existingMessage ) {
+								var message = document.createElement( 'p' );
+								message.className = 'wp-mcp-ai-no-results-message';
+								message.style.padding = '20px';
+								message.style.textAlign = 'center';
+								message.style.color = '#646970';
+								message.textContent = '<?php echo esc_js( __( 'No tools found matching your criteria.', 'wp-mcp-ai' ) ); ?>';
+								toolsContainer.appendChild( message );
+							}
+						} else if ( existingMessage ) {
+							existingMessage.remove();
+						}
+					}
+
+					// Attach event listeners.
+					searchInput.addEventListener( 'input', filterTools );
+					groupSelect.addEventListener( 'change', filterTools );
+					
+					clearButton.addEventListener( 'click', function() {
+						searchInput.value = '';
+						groupSelect.value = '';
+						filterTools();
+					} );
+
+					// Allow Enter key in search.
+					searchInput.addEventListener( 'keypress', function( e ) {
+						if ( e.which === 13 ) {
+							e.preventDefault();
+							filterTools();
+						}
+					} );
+				} );
+			} )();
+			</script>
+			<?php
 		}
 
 		/**
@@ -1741,6 +2029,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			if ( ! isset( $group_labels['other'] ) ) {
 				$group_labels['other'] = __( 'Other tools', 'wp-mcp-ai' );
 			}
+
+			// Render search and filter bar.
+			$this->render_tools_search_filter( $group_labels );
 
 			$grouped_tools = array();
 

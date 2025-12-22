@@ -1,0 +1,31 @@
+{
+  "teams": [
+    {
+      "title": "Performing Arts & Media Production Team",
+      "slug": "performing_arts_media_team",
+      "description": "Actors, producers, and production design professionals for entertainment media.",
+      "members": [
+        "actor",
+        "production_designer",
+        "film_producer",
+        "pr_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.7
+    },
+    {
+      "title": "UX/UI Design Team",
+      "slug": "ux_ui_design_team",
+      "description": "User experience and interface design specialists.",
+      "members": [
+        "ux_ui_designer",
+        "ui_ux_designer",
+        "web_designer"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.6
+    }
+  ]
+}

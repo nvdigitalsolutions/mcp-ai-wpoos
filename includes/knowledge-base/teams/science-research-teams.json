@@ -1,0 +1,60 @@
+{
+  "teams": [
+    {
+      "title": "Life Sciences Research Team",
+      "slug": "life_sciences_research_team",
+      "description": "Biological and life sciences research professionals.",
+      "members": [
+        "biologist",
+        "research_scientist",
+        "wildlife_biologist",
+        "medical_researcher"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Physical Sciences Team",
+      "slug": "physical_sciences_team",
+      "description": "Physics, chemistry, and earth sciences professionals.",
+      "members": [
+        "physicist",
+        "chemist",
+        "geologist",
+        "meteorologist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.3
+    },
+    {
+      "title": "Clinical Research Team",
+      "slug": "clinical_research_team",
+      "description": "Clinical research and medical trials specialists.",
+      "members": [
+        "clinical_research_coordinator",
+        "clinical_pharmacologist",
+        "medical_researcher",
+        "epidemiologist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2
+    },
+    {
+      "title": "Social Sciences Team",
+      "slug": "social_sciences_team",
+      "description": "Social sciences and humanities research professionals.",
+      "members": [
+        "anthropologist",
+        "archaeologist",
+        "historian",
+        "philosopher"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    }
+  ]
+}
