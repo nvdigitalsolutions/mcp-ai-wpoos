@@ -20,8 +20,8 @@ Successfully restructured IGCSE teams to provide **modular, extensive, and compr
 
 ### Teams Created (6 Total)
 
-1. **IGCSE Mathematics Team** (1 tutor)
-   - Specialized mathematics tutoring
+1. **IGCSE Mathematics Team** (2 tutors)
+   - Specialized mathematics tutoring with Year 10 support
    - Core & Extended tiers (0580/0607)
    
 2. **IGCSE Science Tutoring Team** (4 tutors)
@@ -56,6 +56,7 @@ Successfully restructured IGCSE teams to provide **modular, extensive, and compr
 | **Teams Created** | 6 |
 | **Modular Design** | ✅ Yes |
 | **Subject Coverage** | ✅ Complete |
+| **Total Team Members** | 20 |
 
 ---
 
