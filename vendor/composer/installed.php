@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-team-deployments-playbooks',
-        'version' => 'dev-copilot/enhance-team-deployments-playbooks',
-        'reference' => '2478bb0d41a262729031a8c6f2a39067c67ffca1',
+        'pretty_version' => 'dev-copilot/update-professions-tool-defaults',
+        'version' => 'dev-copilot/update-professions-tool-defaults',
+        'reference' => '610b385b106fab70e75edd1b09bceae54aa85091',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-team-deployments-playbooks',
-            'version' => 'dev-copilot/enhance-team-deployments-playbooks',
-            'reference' => '2478bb0d41a262729031a8c6f2a39067c67ffca1',
+            'pretty_version' => 'dev-copilot/update-professions-tool-defaults',
+            'version' => 'dev-copilot/update-professions-tool-defaults',
+            'reference' => '610b385b106fab70e75edd1b09bceae54aa85091',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
