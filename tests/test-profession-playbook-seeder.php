@@ -183,9 +183,9 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test content update behavior - changing content updates hash and file.
+	 * Test content update behavior - changing content creates new attachment.
 	 */
-	public function test_content_update_changes_hash() {
+	public function test_content_update_creates_new_attachment() {
 		// Create a test profession.
 		$repository      = new WP_MCP_AI_Profession_Repository();
 		$profession_data = array(
@@ -204,13 +204,13 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		// Run sync first time.
 		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
 
-		$memory_files  = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
-		$attachment_id = end( $memory_files );
-		$initial_hash  = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
+		$memory_files       = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$initial_attachment_id = end( $memory_files );
+		$initial_hash       = get_post_meta( $initial_attachment_id, '_wp_mcp_ai_playbook_hash', true );
 
 		// Get initial file content.
-		$file_path       = get_attached_file( $attachment_id );
-		$initial_content = file_get_contents( $file_path );
+		$initial_file_path    = get_attached_file( $initial_attachment_id );
+		$initial_content      = file_get_contents( $initial_file_path );
 
 		// Modify profession to trigger content change (change title).
 		wp_update_post(
@@ -223,18 +223,35 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		// Run sync with force=true to trigger update.
 		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
 
-		// Check that hash changed.
-		$new_hash = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
+		// Get new attachment ID from memory files.
+		$new_memory_files = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$new_attachment_id = end( $new_memory_files );
+
+		// Check that a new attachment was created.
+		$this->assertNotEquals( $initial_attachment_id, $new_attachment_id, 'A new attachment should be created when content changes' );
+
+		// Check that new attachment has different hash.
+		$new_hash = get_post_meta( $new_attachment_id, '_wp_mcp_ai_playbook_hash', true );
 		$this->assertNotEquals( $initial_hash, $new_hash, 'Hash should change when content changes' );
 
-		// Check that file content changed.
-		$new_content = file_get_contents( $file_path );
-		$this->assertNotEquals( $initial_content, $new_content, 'File content should change' );
+		// Check that new file content has updated title.
+		$new_file_path = get_attached_file( $new_attachment_id );
+		$new_content   = file_get_contents( $new_file_path );
 		$this->assertStringContainsString( 'Test Update Modified', $new_content, 'New content should have updated title' );
+
+		// Check that old attachment is orphaned (no profession_id meta).
+		$old_profession_id = get_post_meta( $initial_attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
+		$this->assertEmpty( $old_profession_id, 'Old attachment should be orphaned (no profession_id meta)' );
+
+		// Check that old attachment still exists in media library.
+		$old_attachment = get_post( $initial_attachment_id );
+		$this->assertNotNull( $old_attachment, 'Old attachment should still exist in media library' );
+		$this->assertEquals( 'attachment', $old_attachment->post_type, 'Old attachment should still be an attachment' );
 
 		// Clean up.
 		wp_delete_post( $post_id, true );
-		wp_delete_attachment( $attachment_id, true );
+		wp_delete_attachment( $initial_attachment_id, true );
+		wp_delete_attachment( $new_attachment_id, true );
 	}
 
 	/**
@@ -608,5 +625,103 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		foreach ( $attachment_ids as $attachment_id ) {
 			wp_delete_attachment( $attachment_id, true );
 		}
+	}
+
+	/**
+	 * Test that orphaned playbooks can be identified and deleted.
+	 */
+	public function test_orphaned_playbooks_can_be_deleted() {
+		global $wpdb;
+
+		// Load required classes.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Repository' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-profession-repository.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+		}
+
+		// Create test profession.
+		$repository      = new WP_MCP_AI_Profession_Repository();
+		$profession_data = array(
+			'title'       => 'Test Orphaned',
+			'slug'        => 'test_orphaned',
+			'description' => 'Test orphaned playbooks.',
+			'category'    => 'technical',
+		);
+
+		$post_id = $repository->save( $profession_data );
+		$this->assertIsInt( $post_id );
+
+		// Mark professions as seeded.
+		update_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, true, false );
+
+		// Create first playbook.
+		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
+
+		$memory_files        = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$first_attachment_id = end( $memory_files );
+
+		// Modify profession to trigger content change.
+		wp_update_post(
+			array(
+				'ID'         => $post_id,
+				'post_title' => 'Test Orphaned Modified',
+			)
+		);
+
+		// Sync again to create a new attachment and orphan the old one.
+		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
+
+		$new_memory_files    = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$second_attachment_id = end( $new_memory_files );
+
+		// Verify a new attachment was created.
+		$this->assertNotEquals( $first_attachment_id, $second_attachment_id, 'Should create new attachment' );
+
+		// Verify first attachment is orphaned (no profession_id meta).
+		$first_profession_id = get_post_meta( $first_attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
+		$this->assertEmpty( $first_profession_id, 'First attachment should be orphaned' );
+
+		// Verify second attachment has profession_id meta.
+		$second_profession_id = get_post_meta( $second_attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
+		$this->assertEquals( $post_id, absint( $second_profession_id ), 'Second attachment should have profession_id' );
+
+		// Query for orphaned playbook attachments (same logic as AJAX handler).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$orphaned_attachments = $wpdb->get_col(
+			"SELECT p.ID 
+			FROM {$wpdb->posts} p
+			WHERE p.post_type = 'attachment'
+			AND p.post_mime_type = 'text/plain'
+			AND p.post_title LIKE '%playbook%'
+			AND NOT EXISTS (
+				SELECT 1 
+				FROM {$wpdb->postmeta} pm 
+				WHERE pm.post_id = p.ID 
+				AND pm.meta_key = '_wp_mcp_ai_playbook_profession_id'
+			)"
+		);
+
+		// Verify first attachment is in orphaned list.
+		$this->assertContains( $first_attachment_id, array_map( 'intval', $orphaned_attachments ), 'First attachment should be in orphaned list' );
+
+		// Verify second attachment is NOT in orphaned list.
+		$this->assertNotContains( $second_attachment_id, array_map( 'intval', $orphaned_attachments ), 'Second attachment should not be in orphaned list' );
+
+		// Delete orphaned attachments.
+		foreach ( $orphaned_attachments as $orphaned_id ) {
+			wp_delete_attachment( $orphaned_id, true );
+		}
+
+		// Verify first attachment was deleted.
+		$this->assertNull( get_post( $first_attachment_id ), 'First attachment should be deleted' );
+
+		// Verify second attachment still exists.
+		$this->assertNotNull( get_post( $second_attachment_id ), 'Second attachment should still exist' );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+		wp_delete_attachment( $second_attachment_id, true );
 	}
 }

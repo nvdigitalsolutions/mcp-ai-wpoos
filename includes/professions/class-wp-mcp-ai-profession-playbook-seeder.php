@@ -139,22 +139,36 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		// Check if attachment already exists.
 		$existing_attachment = self::find_existing_playbook_attachment( $profession->ID );
 
-		if ( $existing_attachment && ! $force ) {
-			// Check if content has changed.
-			$existing_hash = get_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_hash', true );
+		if ( $existing_attachment ) {
+			if ( $force ) {
+				// Force regeneration - orphan the old attachment and create a new one.
+				// Remove from profession's memory files.
+				self::remove_attachment_from_memory_files( $profession->ID, $existing_attachment->ID );
 
-			if ( $existing_hash === $content_hash ) {
-				// Content unchanged, ensure it's in memory files and MIME types are set.
-				self::ensure_attachment_in_memory_files( $profession->ID, $existing_attachment->ID );
-				self::ensure_supported_mime_types( $profession->ID );
-				return;
+				// Remove the profession association meta, but keep the attachment in media library.
+				delete_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_profession_id' );
+
+				// Fall through to create new attachment below.
+			} else {
+				// Check if content has changed.
+				$existing_hash = get_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_hash', true );
+
+				if ( $existing_hash === $content_hash ) {
+					// Content unchanged, ensure it's in memory files and MIME types are set.
+					self::ensure_attachment_in_memory_files( $profession->ID, $existing_attachment->ID );
+					self::ensure_supported_mime_types( $profession->ID );
+					return;
+				}
+
+				// Content changed - orphan the old attachment and create a new one.
+				// Remove from profession's memory files.
+				self::remove_attachment_from_memory_files( $profession->ID, $existing_attachment->ID );
+
+				// Remove the profession association meta, but keep the attachment in media library.
+				delete_post_meta( $existing_attachment->ID, '_wp_mcp_ai_playbook_profession_id' );
+
+				// Fall through to create new attachment below.
 			}
-
-			// Content changed - update the existing attachment file.
-			self::update_playbook_attachment( $existing_attachment->ID, $content, $content_hash );
-			self::ensure_attachment_in_memory_files( $profession->ID, $existing_attachment->ID );
-			self::ensure_supported_mime_types( $profession->ID );
-			return;
 		}
 
 		// Create new attachment.
