@@ -49,9 +49,11 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 			$expertise = array();
 		}
 
+		// Ensure default_tools is always an array and filter out empty values.
 		if ( ! is_array( $default_tools ) ) {
 			$default_tools = array();
 		}
+		$default_tools = array_filter( array_map( 'sanitize_key', $default_tools ) );
 
 		// Get available tools from registry.
 		$available_tools = $this->get_available_tools();
@@ -125,7 +127,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 							<div id="profession-default-tools-list" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">
 								<?php foreach ( $available_tools as $tool ) : ?>
 									<?php
-									$tool_slug  = method_exists( $tool, 'get_slug' ) ? $tool->get_slug() : '';
+									$tool_slug  = method_exists( $tool, 'get_slug' ) ? sanitize_key( trim( $tool->get_slug() ) ) : '';
 									$tool_name  = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $tool_slug;
 									$tool_desc  = method_exists( $tool, 'get_description' ) ? $tool->get_description() : '';
 									$is_checked = in_array( $tool_slug, $default_tools, true );
