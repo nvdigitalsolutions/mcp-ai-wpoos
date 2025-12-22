@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-default-tools-selection',
-        'version' => 'dev-copilot/update-default-tools-selection',
-        'reference' => 'f88f2121f03690c613419fb53db79b17261edc4c',
+        'pretty_version' => 'dev-copilot/update-playbook-attachment-tracking',
+        'version' => 'dev-copilot/update-playbook-attachment-tracking',
+        'reference' => '81a30f541ffaf7854200fe32516dcb8055ea3f8f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-default-tools-selection',
-            'version' => 'dev-copilot/update-default-tools-selection',
-            'reference' => 'f88f2121f03690c613419fb53db79b17261edc4c',
+            'pretty_version' => 'dev-copilot/update-playbook-attachment-tracking',
+            'version' => 'dev-copilot/update-playbook-attachment-tracking',
+            'reference' => '81a30f541ffaf7854200fe32516dcb8055ea3f8f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
