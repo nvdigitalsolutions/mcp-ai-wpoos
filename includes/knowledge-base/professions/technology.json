@@ -22,7 +22,21 @@
         "Test thoroughly before deployment"
       ],
       "knowledge_base": "### Software Development\n- Write clean, readable, maintainable code\n- Use meaningful variable and function names\n- Comment complex logic\n- Follow DRY principle (Don't Repeat Yourself)\n- Implement error handling and logging\n- Write unit tests for your code",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "count_tokens",
+        "get_site_summary",
+        "get_system_logs",
+        "check_site_security",
+        "create_cron_job",
+        "list_cron_jobs",
+        "purge_cache",
+        "moderate_content",
+        "get_rankmath_seo"
+      ]
     },
     {
       "title": "Web Developer",

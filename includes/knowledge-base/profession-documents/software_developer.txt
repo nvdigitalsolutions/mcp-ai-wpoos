@@ -41,6 +41,16 @@ Default Tools
 - web_search
 - search_content
 - save_post
+- create_chart
+- count_tokens
+- get_site_summary
+- get_system_logs
+- check_site_security
+- create_cron_job
+- list_cron_jobs
+- purge_cache
+- moderate_content
+- get_rankmath_seo
 
 Suggested Allowed File Types (MIME)
 -------------------------------
