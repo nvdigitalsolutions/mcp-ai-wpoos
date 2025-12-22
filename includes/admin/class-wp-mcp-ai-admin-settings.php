@@ -965,7 +965,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * @return array
 		 */
 		public static function get_available_providers() {
-			return array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
+			return array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
 		}
 
 		/**
@@ -4190,14 +4190,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings      = self::get_settings();
 			$priority_list = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
-				: array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
+				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
 
 			$provider_labels = array(
-				'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
-				'anthropic' => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
-				'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'       => __( 'OpenAI', 'wp-mcp-ai' ),
+				'anthropic'    => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'gemini'       => __( 'Gemini', 'wp-mcp-ai' ),
+				'huggingface'  => __( 'Hugging Face', 'wp-mcp-ai' ),
+				'ollama'       => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio'    => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 			?>
 		<div id="wp-mcp-ai-provider-priority-list" class="wp-mcp-ai-sortable-list">
