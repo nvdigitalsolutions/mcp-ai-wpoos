@@ -81,13 +81,21 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'Optional request timeout override in seconds.', 'wp-mcp-ai' ),
 				),
-				'response_format' => array(
+				'response_format'         => array(
 					'type'        => 'string',
-					'description' => __( 'Optional OpenAI response format (json or verbose_json).', 'wp-mcp-ai' ),
-					'enum'        => array( 'json', 'verbose_json' ),
+					'description' => __( 'Response format: json, verbose_json (default with metadata), text, srt (subtitle), or vtt (subtitle).', 'wp-mcp-ai' ),
+					'enum'        => array( 'json', 'verbose_json', 'text', 'srt', 'vtt' ),
 					'default'     => self::DEFAULT_FORMAT,
 				),
-				'language'        => array(
+				'timestamp_granularities' => array(
+					'type'        => 'array',
+					'description' => __( 'Timestamp detail level. Provide ["segment"] for paragraph-level timestamps, ["word"] for word-level timestamps, or both.', 'wp-mcp-ai' ),
+					'items'       => array(
+						'type' => 'string',
+						'enum' => array( 'word', 'segment' ),
+					),
+				),
+				'language'                => array(
 					'type'        => 'string',
 					'description' => __( 'Optional ISO language code hint for the transcription.', 'wp-mcp-ai' ),
 				),
@@ -181,6 +189,11 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			'mime_type'       => $audio['mime_type'],
 		);
 
+		// Add timestamp_granularities if provided.
+		if ( isset( $arguments['timestamp_granularities'] ) && is_array( $arguments['timestamp_granularities'] ) ) {
+			$options['timestamp_granularities'] = $arguments['timestamp_granularities'];
+		}
+
 		if ( isset( $arguments['temperature'] ) && '' !== $arguments['temperature'] ) {
 			$options['temperature'] = $arguments['temperature'];
 		} elseif ( '' !== $default_temperature ) {
@@ -235,6 +248,10 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 
 		if ( isset( $result['segments'] ) ) {
 			$payload['segments'] = $result['segments'];
+		}
+
+		if ( isset( $result['words'] ) ) {
+			$payload['words'] = $result['words'];
 		}
 
 		return apply_filters( 'wp_mcp_ai_transcribe_openai_audio_result', $payload, $arguments, $context );

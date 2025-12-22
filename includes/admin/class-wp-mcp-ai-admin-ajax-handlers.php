@@ -1473,7 +1473,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 */
 		public function handle_toggle_tool() {
 			// Verify nonce.
-			check_ajax_referer( 'wp_mcp_ai_admin', 'nonce' );
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			// Check permissions.
 			if ( ! current_user_can( 'manage_options' ) ) {

@@ -19,12 +19,12 @@
 **Time to read:** 15 minutes
 
 ### ✅ Ready to Test?
-**Read:** [VERIFICATION-CHECKLIST.md](VERIFICATION-CHECKLIST.md)  
+**Read:** [VERIFICATION-CHECKLIST.md](../VERIFICATION-CHECKLIST.md)  
 **Purpose:** Step-by-step manual testing procedures  
 **Time to complete:** 30-45 minutes
 
 ### 🔧 Need Integration Details?
-**Read:** [INTEGRATION-VERIFICATION-REPORT.md](INTEGRATION-VERIFICATION-REPORT.md)  
+**Read:** [INTEGRATION-VERIFICATION-REPORT.md](../verification/INTEGRATION-VERIFICATION-REPORT.md)  
 **Purpose:** Complete integration verification results (25/25 checks passed)  
 **Time to read:** 10 minutes
 
@@ -92,7 +92,7 @@
 2. Review [TOKEN-MANAGER-COMPLETE-SUMMARY.md](TOKEN-MANAGER-COMPLETE-SUMMARY.md)
 
 ### This Week
-3. Follow [VERIFICATION-CHECKLIST.md](VERIFICATION-CHECKLIST.md)
+3. Follow [VERIFICATION-CHECKLIST.md](../VERIFICATION-CHECKLIST.md)
 4. Test in WordPress dashboard
 5. Verify performance improvements
 
@@ -218,10 +218,10 @@ php /tmp/check-dashboard-widgets.php
 See: [TOKEN-MANAGER-ACTUAL-STATUS.md](TOKEN-MANAGER-ACTUAL-STATUS.md)
 
 ### For Testing Questions
-See: [VERIFICATION-CHECKLIST.md](VERIFICATION-CHECKLIST.md)
+See: [VERIFICATION-CHECKLIST.md](../VERIFICATION-CHECKLIST.md)
 
 ### For Integration Questions
-See: [INTEGRATION-VERIFICATION-REPORT.md](INTEGRATION-VERIFICATION-REPORT.md)
+See: [INTEGRATION-VERIFICATION-REPORT.md](../verification/INTEGRATION-VERIFICATION-REPORT.md)
 
 ### For Performance Questions
 See: [TOKEN-MANAGER-COMPLETE-SUMMARY.md](TOKEN-MANAGER-COMPLETE-SUMMARY.md)

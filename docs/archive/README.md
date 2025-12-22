@@ -76,7 +76,7 @@ For current, active documentation, see:
 - **[README.md](../../README.md)** - Main plugin documentation
 - **[docs/](../)** - Active documentation directory
 - **[docs/DOCUMENTATION_INDEX.md](../DOCUMENTATION_INDEX.md)** - Complete documentation index
-- **[docs/TESTING_AND_QUALITY_REPORT.md](../TESTING_AND_QUALITY_REPORT.md)** - Current testing and quality status
+- **[docs/TESTING_AND_QUALITY_REPORT.md](../guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Current testing and quality status
 
 ## Purpose
 
