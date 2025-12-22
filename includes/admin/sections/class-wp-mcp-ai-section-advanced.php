@@ -1190,38 +1190,50 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
 			}
 
-			// Get total number of playbook attachments.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$total_attachments = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(DISTINCT p.ID)
-					FROM {$wpdb->posts} p
-					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-					WHERE p.post_type = %s
-					AND p.post_status = %s
-					AND pm.meta_key = %s",
-					'attachment',
-					'inherit',
-					'_wp_mcp_ai_playbook_profession_id'
+			// Get total number of active playbook attachments.
+			// Active attachments are those still referenced in profession's memory_files.
+			// This excludes orphaned attachments from previous versions.
+			$active_attachments         = 0;
+			$professions_with_playbooks = 0;
+			
+			// Get all professions.
+			$professions = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_profession',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'fields'         => 'ids',
 				)
 			);
-
-			// Get number of unique professions with playbooks.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$professions_with_playbooks = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(DISTINCT pm.meta_value)
-					FROM {$wpdb->posts} p
-					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-					WHERE p.post_type = %s
-					AND p.post_status = %s
-					AND pm.meta_key = %s
-					AND pm.meta_value != ''",
-					'attachment',
-					'inherit',
-					'_wp_mcp_ai_playbook_profession_id'
-				)
-			);
+			
+			if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+			}
+			
+			// Count attachments that are in memory_files (active).
+			foreach ( $professions as $profession_id ) {
+				$memory_files = get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+				
+				if ( is_array( $memory_files ) && ! empty( $memory_files ) ) {
+					$has_playbook = false;
+					
+					// Filter to only count playbook attachments.
+					foreach ( $memory_files as $attachment_id ) {
+						$profession_id_meta = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
+						if ( ! empty( $profession_id_meta ) ) {
+							$active_attachments++;
+							$has_playbook = true;
+						}
+					}
+					
+					// Count this profession if it has at least one playbook.
+					if ( $has_playbook ) {
+						$professions_with_playbooks++;
+					}
+				}
+			}
+			
+			$total_attachments = $active_attachments;
 
 			// Check if playbooks were seeded.
 			$playbooks_seeded = get_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION, false );
