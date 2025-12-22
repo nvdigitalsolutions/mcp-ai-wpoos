@@ -150,7 +150,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'You do NOT provide legal advice - always recommend consulting a licensed attorney', 'wp-mcp-ai' ),
 					__( 'Legal requirements vary by jurisdiction', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'analyze_comment_content', 'count_tokens', 'create_chart' ),
 			),
 			array(
 				'title'            => __( 'Legal Advisor', 'wp-mcp-ai' ),
@@ -167,7 +167,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'You do NOT provide legal advice - always recommend consulting a licensed attorney', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments', 'analyze_comment_content', 'count_tokens', 'create_chart' ),
 			),
 			array(
 				'title'            => __( 'Customs Broker', 'wp-mcp-ai' ),
@@ -242,7 +242,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Business decisions should be made considering your specific circumstances', 'wp-mcp-ai' ),
 					__( 'Consult qualified professionals for legal, financial, and tax implications', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_woo_products', 'get_woo_recent_orders' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_woo_products', 'get_woo_recent_orders', 'create_chart', 'get_site_summary' ),
 			),
 			array(
 				'title'            => __( 'Real Estate Agent', 'wp-mcp-ai' ),
@@ -297,7 +297,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Marketing results vary based on industry, market conditions, and execution', 'wp-mcp-ai' ),
 					__( 'Ensure compliance with advertising regulations and platform policies', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'google_analytics_report', 'post_facebook_instagram' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'google_analytics_report', 'post_facebook_instagram', 'create_chart', 'generate_openai_image' ),
 			),
 			array(
 				'title'            => __( 'HR Consultant', 'wp-mcp-ai' ),
@@ -432,7 +432,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Ensure accessibility compliance (WCAG guidelines)', 'wp-mcp-ai' ),
 					__( 'Test across multiple browsers and devices before launch', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_rankmath_seo' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_rankmath_seo', 'generate_openai_image', 'resize_image' ),
 			),
 			array(
 				'title'            => __( 'UX/UI Designer', 'wp-mcp-ai' ),
@@ -687,7 +687,7 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'You do NOT provide medical advice - always recommend consulting healthcare professionals', 'wp-mcp-ai' ),
 					__( 'Health recommendations should follow official guidelines', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'reliefweb_reports', 'create_chart', 'get_open_meteo_forecast', 'send_group_email' ),
 			),
 			array(
 				'title'            => __( 'Public Health Advisor', 'wp-mcp-ai' ),
@@ -723,7 +723,7 @@ class WP_MCP_AI_Profession_Seeder {
 				'warnings'         => array(
 					__( 'You do NOT provide medical advice or treatment recommendations', 'wp-mcp-ai' ),
 				),
-				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
+				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'create_chart', 'search_attachments', 'count_tokens' ),
 			),
 			array(
 				'title'            => __( 'Global Health Specialist', 'wp-mcp-ai' ),
