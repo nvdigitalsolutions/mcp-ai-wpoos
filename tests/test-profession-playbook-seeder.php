@@ -724,4 +724,151 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		wp_delete_post( $post_id, true );
 		wp_delete_attachment( $second_attachment_id, true );
 	}
+
+	/**
+	 * Test delete_orphaned_system_playbooks method.
+	 *
+	 * Verifies that only orphaned system-created playbooks are deleted.
+	 */
+	public function test_delete_orphaned_system_playbooks() {
+		// Load required classes.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+		}
+
+		// Create a profession.
+		$profession_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Profession',
+			)
+		);
+
+		// Create an active system playbook (has profession meta and in memory_files).
+		$active_attachment_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'attachment',
+				'post_status' => 'inherit',
+				'post_title'  => 'Active Playbook',
+			)
+		);
+		update_post_meta( $active_attachment_id, '_wp_mcp_ai_playbook_profession_id', $profession_id );
+		update_post_meta( $active_attachment_id, '_wp_mcp_ai_playbook_hash', 'test_hash_active' );
+		update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, array( $active_attachment_id ) );
+
+		// Create an orphaned system playbook (has hash but no profession meta).
+		$orphaned_attachment_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'attachment',
+				'post_status' => 'inherit',
+				'post_title'  => 'Orphaned Playbook',
+			)
+		);
+		update_post_meta( $orphaned_attachment_id, '_wp_mcp_ai_playbook_hash', 'test_hash_orphaned' );
+		// Intentionally NOT setting profession meta to simulate orphaned state.
+
+		// Create a user-uploaded attachment (no hash, no profession meta).
+		$user_attachment_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'attachment',
+				'post_status' => 'inherit',
+				'post_title'  => 'User Upload',
+			)
+		);
+
+		// Use reflection to call the public method.
+		$method = new ReflectionMethod( 'WP_MCP_AI_Profession_Playbook_Seeder', 'delete_orphaned_system_playbooks' );
+		$method->setAccessible( true );
+
+		// Call the deletion method.
+		$result = $method->invoke( null, 50 );
+
+		// Verify results.
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'deleted_count', $result );
+		$this->assertArrayHasKey( 'deleted_ids', $result );
+		$this->assertArrayHasKey( 'skipped_ids', $result );
+
+		// Orphaned system playbook should be deleted.
+		$this->assertEquals( 1, $result['deleted_count'], 'Should delete 1 orphaned playbook' );
+		$this->assertContains( $orphaned_attachment_id, $result['deleted_ids'], 'Orphaned attachment should be in deleted list' );
+
+		// Verify orphaned attachment was actually deleted.
+		$this->assertNull( get_post( $orphaned_attachment_id ), 'Orphaned attachment should be deleted' );
+
+		// Active playbook should still exist.
+		$this->assertNotNull( get_post( $active_attachment_id ), 'Active attachment should still exist' );
+
+		// User upload should still exist.
+		$this->assertNotNull( get_post( $user_attachment_id ), 'User attachment should still exist' );
+
+		// Clean up.
+		wp_delete_post( $profession_id, true );
+		wp_delete_attachment( $active_attachment_id, true );
+		wp_delete_attachment( $user_attachment_id, true );
+	}
+
+	/**
+	 * Test remove_duplicate_playbooks with delete parameter.
+	 *
+	 * Verifies that duplicates can be deleted instead of just orphaned.
+	 */
+	public function test_remove_duplicate_playbooks_with_delete() {
+		// Load required classes.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Seeder' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
+		}
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+		}
+
+		// Create a profession.
+		$profession_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Profession',
+			)
+		);
+
+		// Create multiple playbook attachments.
+		$attachment_ids = array();
+		for ( $i = 1; $i <= 3; $i++ ) {
+			$attachment_id = $this->factory->post->create(
+				array(
+					'post_type'   => 'attachment',
+					'post_status' => 'inherit',
+					'post_title'  => "Playbook Version $i",
+				)
+			);
+			update_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', $profession_id );
+			update_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', "test_hash_$i" );
+			$attachment_ids[] = $attachment_id;
+		}
+
+		// Use reflection to call the protected method with delete=true.
+		$method = new ReflectionMethod( 'WP_MCP_AI_Profession_Playbook_Seeder', 'remove_duplicate_playbooks' );
+		$method->setAccessible( true );
+
+		// Call with delete=true.
+		$removed_count = $method->invoke( null, $profession_id, true );
+
+		// Should have removed 2 duplicates (keeping the most recent).
+		$this->assertEquals( 2, $removed_count, 'Should remove 2 duplicate playbooks' );
+
+		// First attachment (most recent) should still exist.
+		$this->assertNotNull( get_post( $attachment_ids[0] ), 'Most recent attachment should still exist' );
+
+		// Older attachments should be deleted.
+		$this->assertNull( get_post( $attachment_ids[1] ), 'Second attachment should be deleted' );
+		$this->assertNull( get_post( $attachment_ids[2] ), 'Third attachment should be deleted' );
+
+		// Clean up.
+		wp_delete_post( $profession_id, true );
+		wp_delete_attachment( $attachment_ids[0], true );
+	}
 }
