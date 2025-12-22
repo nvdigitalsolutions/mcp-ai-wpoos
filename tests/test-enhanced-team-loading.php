@@ -27,7 +27,7 @@ class WP_MCP_AI_Enhanced_Team_Loading_Test extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $teams, 'Team loading should not return WP_Error' );
 		$this->assertIsArray( $teams, 'Teams should be an array' );
-		$this->assertGreaterThanOrEqual( 51, count( $teams ), 'Should have at least 51 teams (10 original + 41 new)' );
+		$this->assertGreaterThanOrEqual( 72, count( $teams ), 'Should have at least 72 teams (10 original + 62 new)' );
 	}
 
 	/**
@@ -180,9 +180,9 @@ class WP_MCP_AI_Enhanced_Team_Loading_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that we have diverse coverage of professions across teams.
+	 * Test that we have 100% coverage of professions across teams.
 	 */
-	public function test_teams_utilize_diverse_professions() {
+	public function test_teams_utilize_all_professions() {
 		$teams = $this->loader->load_all();
 		$this->assertNotWPError( $teams, 'Teams should load without errors' );
 
@@ -194,9 +194,9 @@ class WP_MCP_AI_Enhanced_Team_Loading_Test extends WP_UnitTestCase {
 			}
 		}
 
-		// We should be using a good portion of available professions.
+		// We should be using ALL available professions (100% coverage).
 		$unique_profession_count = count( $used_professions );
-		$this->assertGreaterThanOrEqual( 50, $unique_profession_count, 'Teams should utilize at least 50 different professions' );
+		$this->assertEquals( 204, $unique_profession_count, 'Teams should utilize all 204 professions for 100% coverage' );
 	}
 
 	/**

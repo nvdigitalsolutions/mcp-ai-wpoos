@@ -1,0 +1,70 @@
+{
+  "teams": [
+    {
+      "title": "IGCSE Science Tutoring Team",
+      "slug": "igcse_science_tutoring_team",
+      "description": "IGCSE science tutors covering biology, chemistry, and physics.",
+      "members": [
+        "igcse_biology_tutor",
+        "igcse_chemistry_tutor",
+        "igcse_physics_tutor",
+        "igcse_sciences_tutor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "IGCSE Humanities Tutoring Team",
+      "slug": "igcse_humanities_tutoring_team",
+      "description": "IGCSE tutors for history and geography subjects.",
+      "members": [
+        "igcse_history_tutor",
+        "igcse_geography_tutor",
+        "igcse_english_tutor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "IGCSE Year-Level Tutoring Team",
+      "slug": "igcse_year_level_tutoring_team",
+      "description": "IGCSE tutors specializing in specific year levels (9, 10, 11).",
+      "members": [
+        "igcse_year_9_tutor",
+        "igcse_year_10_tutor",
+        "igcse_year_11_tutor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "Language & ESL Education Team",
+      "slug": "language_esl_education_team",
+      "description": "Language education and ESL teaching professionals.",
+      "members": [
+        "esl_teacher",
+        "interpreter_translator",
+        "librarian"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "Higher Education Team",
+      "slug": "higher_education_team",
+      "description": "College and university-level educators and administrators.",
+      "members": [
+        "college_professor",
+        "educational_administrator",
+        "librarian"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    }
+  ]
+}
