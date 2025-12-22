@@ -721,11 +721,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			$value       = WP_MCP_AI_Settings_Registry::get_setting( 'provider_priority_list', isset( $field['default'] ) ? $field['default'] : array() );
 
 			$provider_labels = array(
-				'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
-				'anthropic' => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
-				'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'       => __( 'OpenAI', 'wp-mcp-ai' ),
+				'anthropic'    => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'gemini'       => __( 'Gemini', 'wp-mcp-ai' ),
+				'huggingface'  => __( 'Hugging Face', 'wp-mcp-ai' ),
+				'ollama'       => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio'    => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 			?>
 			<tr>
@@ -824,7 +825,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array Sanitized provider priority list.
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
 			$sanitized       = array();
 
 			if ( ! is_array( $priority_list ) ) {
