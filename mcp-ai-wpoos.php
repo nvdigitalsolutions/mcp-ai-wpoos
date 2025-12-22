@@ -413,6 +413,9 @@ WP_MCP_AI_HTTP_Helper::init();
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
 
+// Load profession search helper for reusable search functionality.
+require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-profession-search-helper.php';
+
 // Load REST API context parameter fix to prevent caching issues.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php';
 
