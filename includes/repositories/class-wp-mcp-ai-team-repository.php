@@ -148,7 +148,8 @@ class WP_MCP_AI_Team_Repository {
 		// Update metadata.
 		if ( isset( $data['members'] ) && is_array( $data['members'] ) ) {
 			// Convert slugs to IDs if needed.
-			$member_ids = array();
+			$member_ids      = array();
+			$missing_members = array();
 			foreach ( $data['members'] as $member ) {
 				if ( is_numeric( $member ) ) {
 					$member_ids[] = absint( $member );
@@ -158,15 +159,26 @@ class WP_MCP_AI_Team_Repository {
 						array(
 							'post_type'      => 'mcp_ai_profession',
 							'name'           => sanitize_title( $member ),
+							'post_status'    => 'publish',
 							'posts_per_page' => 1,
 							'fields'         => 'ids',
 						)
 					);
 					if ( ! empty( $profession ) ) {
 						$member_ids[] = $profession[0];
+					} else {
+						// Log missing profession for debugging.
+						$missing_members[] = $member;
+						error_log( sprintf( 'WP_MCP_AI: Team %s references profession "%s" which does not exist in database.', $team_id, $member ) );
 					}
 				}
 			}
+			
+			// Log warning if some members couldn't be resolved.
+			if ( ! empty( $missing_members ) ) {
+				error_log( sprintf( 'WP_MCP_AI: Team ID %d saved with %d/%d members. Missing professions: %s', $team_id, count( $member_ids ), count( $data['members'] ), implode( ', ', $missing_members ) ) );
+			}
+			
 			update_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, $member_ids );
 		}
 
