@@ -2260,13 +2260,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $scoped_id;
 
-			if ( ! $assistant_id ) {
+			if ( ! $assistant_id && ! $profession_id ) {
 				return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 			}
 
-			$assistant_post = $this->validate_assistant_access( $assistant_id );
-			if ( is_wp_error( $assistant_post ) ) {
-				return $assistant_post;
+			// Validate assistant access only if we have an assistant ID.
+			// For profession testing without an associated assistant, we'll use an empty config.
+			if ( $assistant_id ) {
+				$assistant_post = $this->validate_assistant_access( $assistant_id );
+				if ( is_wp_error( $assistant_post ) ) {
+					return $assistant_post;
+				}
 			}
 
 			$sanitized_messages = $this->validator->sanitize_messages( $request->get_param( 'messages' ) );
@@ -4603,8 +4607,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$system_prompt = $role_description;
 			}
 
+			// Load the complete profession playbook (includes global, category, and profession-specific guidelines).
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Playbook_Loader' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-playbook-loader.php';
+			}
+
+			$playbook_loader = new WP_MCP_AI_Profession_Playbook_Loader();
+			$playbook        = $playbook_loader->build_playbook( $profession_id );
+
+			// Add playbook to system prompt if available.
+			if ( ! empty( $playbook ) ) {
+				$system_prompt .= "\n\n" . __( 'Professional Playbook:', 'wp-mcp-ai' ) . "\n" . $playbook;
+			}
+
+			// Also include the knowledge_base meta field if it has additional content not in the playbook.
 			if ( ! empty( $knowledge_base ) ) {
-				$system_prompt .= "\n\n" . __( 'Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
+				$system_prompt .= "\n\n" . __( 'Additional Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
 			}
 
 			// Merge profession configuration with assistant configuration.
