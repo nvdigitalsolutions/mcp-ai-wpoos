@@ -54,7 +54,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 	public function test_non_admin_cannot_toggle_tools() {
 		wp_set_current_user( $this->user_id );
 
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_admin' );
+		$_POST['nonce']       = wp_create_nonce( 'wp-mcp-ai-settings' );
 		$_POST['tool_slug']   = 'search_content';
 		$_POST['tool_action'] = 'disable';
 
@@ -76,7 +76,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 	public function test_admin_can_disable_tool() {
 		wp_set_current_user( $this->admin_user_id );
 
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_admin' );
+		$_POST['nonce']       = wp_create_nonce( 'wp-mcp-ai-settings' );
 		$_POST['tool_slug']   = 'search_content';
 		$_POST['tool_action'] = 'disable';
 
@@ -106,7 +106,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->disable_tool( 'search_content' );
 
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_admin' );
+		$_POST['nonce']       = wp_create_nonce( 'wp-mcp-ai-settings' );
 		$_POST['tool_slug']   = 'search_content';
 		$_POST['tool_action'] = 'enable';
 
@@ -131,7 +131,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 	public function test_missing_tool_slug_returns_error() {
 		wp_set_current_user( $this->admin_user_id );
 
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_admin' );
+		$_POST['nonce']       = wp_create_nonce( 'wp-mcp-ai-settings' );
 		$_POST['tool_action'] = 'disable';
 		// tool_slug is missing.
 
@@ -153,7 +153,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 	public function test_invalid_action_returns_error() {
 		wp_set_current_user( $this->admin_user_id );
 
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_admin' );
+		$_POST['nonce']       = wp_create_nonce( 'wp-mcp-ai-settings' );
 		$_POST['tool_slug']   = 'search_content';
 		$_POST['tool_action'] = 'invalid_action';
 
@@ -175,7 +175,7 @@ class Test_Tool_Toggle_AJAX extends WP_Ajax_UnitTestCase {
 	public function test_nonexistent_tool_returns_error() {
 		wp_set_current_user( $this->admin_user_id );
 
-		$_POST['nonce']       = wp_create_nonce( 'wp_mcp_ai_admin' );
+		$_POST['nonce']       = wp_create_nonce( 'wp-mcp-ai-settings' );
 		$_POST['tool_slug']   = 'nonexistent_tool';
 		$_POST['tool_action'] = 'disable';
 
