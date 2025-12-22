@@ -4532,15 +4532,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$assistant_post = get_post( $associated_assistant );
 						if ( $assistant_post && 'mcp_ai_assistant' === $assistant_post->post_type && 'publish' === $assistant_post->post_status ) {
 							// Use the profession's associated assistant.
+							// The assistant will have main knowledge, profession data will be appended.
 							return $associated_assistant;
 						}
 					}
 				}
 				
-				// No valid associated assistant - use default assistant (profession data will be merged).
-				$settings = WP_MCP_AI_Admin_Settings::get_settings();
-				$default  = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
-				return $default;
+				// No valid associated assistant - return 0 to allow profession-only testing.
+				// The profession configuration will be used standalone without an assistant base.
+				return 0;
 			}
 
 			$assistant_id = absint( $assistant_id );
@@ -4602,9 +4602,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$default_temp_val     = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_temperature', true );
 
 			// Build system prompt from profession data.
-			$system_prompt = '';
+			$profession_prompt = '';
 			if ( ! empty( $role_description ) ) {
-				$system_prompt = $role_description;
+				$profession_prompt = $role_description;
 			}
 
 			// Load the complete profession playbook (includes global, category, and profession-specific guidelines).
@@ -4617,28 +4617,54 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Add playbook to system prompt if available.
 			if ( ! empty( $playbook ) ) {
-				$system_prompt .= "\n\n" . __( 'Professional Playbook:', 'wp-mcp-ai' ) . "\n" . $playbook;
+				$profession_prompt .= "\n\n" . __( 'Professional Playbook:', 'wp-mcp-ai' ) . "\n" . $playbook;
 			}
 
 			// Also include the knowledge_base meta field if it has additional content not in the playbook.
 			if ( ! empty( $knowledge_base ) ) {
-				$system_prompt .= "\n\n" . __( 'Additional Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
+				$profession_prompt .= "\n\n" . __( 'Additional Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
 			}
+
+			// Determine if we have an assistant base configuration.
+			$has_assistant_base = ! empty( $assistant_config ) && isset( $assistant_config['system_prompt'] ) && ! empty( $assistant_config['system_prompt'] );
 
 			// Merge profession configuration with assistant configuration.
-			// Profession data takes priority over assistant defaults for testing.
-			if ( ! empty( $system_prompt ) ) {
-				$assistant_config['system_prompt'] = $system_prompt;
+			if ( ! empty( $profession_prompt ) ) {
+				if ( $has_assistant_base ) {
+					// If assistant exists, append profession knowledge to assistant's base knowledge.
+					// This allows the assistant to have main knowledge with professional expertise added.
+					$assistant_config['system_prompt'] .= "\n\n" . __( 'Professional Role & Expertise:', 'wp-mcp-ai' ) . "\n" . $profession_prompt;
+				} else {
+					// No assistant base - use profession knowledge as the primary system prompt.
+					$assistant_config['system_prompt'] = $profession_prompt;
+				}
 			}
 
+			// For tools: If assistant has tools and profession has tools, merge them.
+			// If only profession has tools, use profession tools.
+			// If only assistant has tools, keep assistant tools (handled by not modifying).
 			if ( is_array( $default_tools ) && ! empty( $default_tools ) ) {
-				$assistant_config['tools'] = $default_tools;
+				if ( isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) && ! empty( $assistant_config['tools'] ) ) {
+					// Merge tools, ensuring uniqueness and keeping profession tools prioritized.
+					$assistant_config['tools'] = array_unique( array_merge( $assistant_config['tools'], $default_tools ) );
+				} else {
+					// No assistant tools, use profession tools.
+					$assistant_config['tools'] = $default_tools;
+				}
 			}
 
+			// For memory files: Similar merge logic as tools.
 			if ( is_array( $memory_files ) && ! empty( $memory_files ) ) {
-				$assistant_config['memory_files'] = $memory_files;
+				if ( isset( $assistant_config['memory_files'] ) && is_array( $assistant_config['memory_files'] ) && ! empty( $assistant_config['memory_files'] ) ) {
+					// Merge memory files, ensuring uniqueness.
+					$assistant_config['memory_files'] = array_unique( array_merge( $assistant_config['memory_files'], $memory_files ) );
+				} else {
+					// No assistant memory files, use profession memory files.
+					$assistant_config['memory_files'] = $memory_files;
+				}
 			}
 
+			// Provider, model, and temperature from profession take priority when set (for testing specifics).
 			if ( ! empty( $default_provider_val ) ) {
 				$assistant_config['provider'] = $default_provider_val;
 			}

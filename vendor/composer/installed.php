@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-client-issues',
-        'version' => 'dev-copilot/fix-chat-client-issues',
-        'reference' => '5e3baacc2858fd68872c4f19cd0e27bdb88ff6e3',
+        'pretty_version' => 'dev-copilot/rethink-professional-test-model',
+        'version' => 'dev-copilot/rethink-professional-test-model',
+        'reference' => '25210038f92568a79cbdb4a323529bab5262d3aa',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-client-issues',
-            'version' => 'dev-copilot/fix-chat-client-issues',
-            'reference' => '5e3baacc2858fd68872c4f19cd0e27bdb88ff6e3',
+            'pretty_version' => 'dev-copilot/rethink-professional-test-model',
+            'version' => 'dev-copilot/rethink-professional-test-model',
+            'reference' => '25210038f92568a79cbdb4a323529bab5262d3aa',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
