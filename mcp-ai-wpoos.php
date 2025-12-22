@@ -457,6 +457,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ollama-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-lm-studio-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
 require_once WP_MCP_AI_PATH . 'includes/tool-response-helpers.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
