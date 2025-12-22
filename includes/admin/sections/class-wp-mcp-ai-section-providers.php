@@ -529,6 +529,44 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => 'meta-llama/Llama-3.3-70B-Instruct',
 				),
 
+				// Hugging Face Dataset Viewer Settings.
+				'enable_huggingface_datasets'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable HuggingFace Dataset Viewer', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable tools for querying HuggingFace datasets', 'wp-mcp-ai' ),
+					'description'    => __( 'When enabled, AI assistants can query 100,000+ machine learning datasets from HuggingFace Hub without downloading them. Useful for dataset discovery, preview, search, and filtering for few-shot learning.', 'wp-mcp-ai' ),
+					'default'        => true,
+				),
+				'huggingface_datasets_api_token'    => array(
+					'type'         => 'password',
+					'label'        => __( 'HuggingFace API Token (Optional)', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: Hugging Face tokens URL */
+						__( 'Optional: Only required for accessing private or gated datasets. Public datasets work without a token. Get one from <a href="%s" target="_blank">HuggingFace Settings</a>.', 'wp-mcp-ai' ),
+						'https://huggingface.co/settings/tokens'
+					),
+					'placeholder'  => 'hf_...',
+					'autocomplete' => 'new-password',
+				),
+				'huggingface_datasets_cache_ttl'    => array(
+					'type'        => 'number',
+					'label'       => __( 'Cache TTL (seconds)', 'wp-mcp-ai' ),
+					'description' => __( 'How long to cache dataset API responses. Longer values reduce API calls but may show stale data. Range: 60-86400 seconds (1 minute to 24 hours).', 'wp-mcp-ai' ),
+					'default'     => 3600,
+					'min'         => 60,
+					'max'         => 86400,
+					'step'        => 60,
+				),
+				'huggingface_datasets_default_limit' => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Row Limit', 'wp-mcp-ai' ),
+					'description' => __( 'Default number of rows to return when previewing datasets. Maximum 100 rows per request. Lower values reduce token usage.', 'wp-mcp-ai' ),
+					'default'     => 10,
+					'min'         => 1,
+					'max'         => 100,
+					'step'        => 1,
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'               => array(
 					'type'         => 'password',
@@ -591,7 +629,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'huggingface',
 					'label'  => __( 'Hugging Face', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'enable_huggingface', 'huggingface_api_key', 'huggingface_endpoint_url', 'huggingface_model' ),
+					'fields' => array( 'enable_huggingface', 'huggingface_api_key', 'huggingface_endpoint_url', 'huggingface_model', 'enable_huggingface_datasets', 'huggingface_datasets_api_token', 'huggingface_datasets_cache_ttl', 'huggingface_datasets_default_limit' ),
 				),
 				'google_maps' => array(
 					'id'     => 'google_maps',
