@@ -4515,7 +4515,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		protected function resolve_assistant_id( $assistant_id ) {
 			// Check if this is a profession test request with format "profession_123".
 			if ( is_string( $assistant_id ) && 0 === strpos( $assistant_id, 'profession_' ) ) {
-				// Extract the profession ID and use default assistant (profession data will be merged separately).
+				// Extract profession ID.
+				$profession_id = $this->extract_profession_id( $assistant_id );
+				
+				if ( $profession_id ) {
+					// Check if profession has an associated assistant.
+					$associated_assistant = get_post_meta( $profession_id, '_wp_mcp_ai_profession_associated_assistant', true );
+					$associated_assistant = absint( $associated_assistant );
+					
+					if ( $associated_assistant > 0 ) {
+						// Verify the associated assistant exists and is published.
+						$assistant_post = get_post( $associated_assistant );
+						if ( $assistant_post && 'mcp_ai_assistant' === $assistant_post->post_type && 'publish' === $assistant_post->post_status ) {
+							// Use the profession's associated assistant.
+							return $associated_assistant;
+						}
+					}
+				}
+				
+				// No valid associated assistant - use default assistant (profession data will be merged).
 				$settings = WP_MCP_AI_Admin_Settings::get_settings();
 				$default  = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 				return $default;
