@@ -175,10 +175,11 @@
         "web_search",
         "search_content",
         "save_post",
-        "moderate_content",
-        "send_group_email",
-        "get_jetformbuilder_forms",
-        "create_chart"
+        "generate_openai_image",
+        "generate_gemini_image",
+        "generate_video_caption",
+        "create_chart",
+        "get_jetformbuilder_forms"
       ]
     },
     {

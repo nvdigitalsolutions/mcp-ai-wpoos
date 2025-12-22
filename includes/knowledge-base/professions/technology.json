@@ -404,7 +404,12 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "resize_image",
+        "crop_image",
+        "create_chart"
       ]
     },
     {

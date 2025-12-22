@@ -585,8 +585,10 @@
       "default_tools": [
         "web_search",
         "search_content",
+        "save_post",
+        "generate_image_caption",
+        "generate_openai_image",
         "moderate_content",
-        "send_group_email",
         "create_chart"
       ]
     },
