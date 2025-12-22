@@ -353,7 +353,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			echo '<div class="wp-mcp-ai-tool-presets" style="margin-top: 1rem;">';
 			echo '<h3 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 14px;">' . esc_html__( 'Quick Tool Selection Presets', 'wp-mcp-ai' ) . '</h3>';
-			echo '<p class="description" style="margin-top: 0; margin-bottom: 1rem;">' . esc_html__( 'Click a preset to quickly select tools for common tasks. This will replace your current tool selection.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="description" style="margin-top: 0; margin-bottom: 1rem;">' . esc_html__( 'Click a preset to add its tools to your selection. Click again to remove them. You can combine multiple presets.', 'wp-mcp-ai' ) . '</p>';
 			echo '<div class="wp-mcp-ai-tool-presets__buttons" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">';
 
 			foreach ( $presets as $preset_key => $preset_data ) {
@@ -414,43 +414,50 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 									return;
 								}
 
-								// First, uncheck all tool checkboxes.
-								var allToolCheckboxes = document.querySelectorAll( '.wp-mcp-ai-tools__checkbox' );
-								allToolCheckboxes.forEach( function( checkbox ) {
-									if ( checkbox.checked ) {
-										checkbox.checked = false;
-										// Trigger change event to update UI.
-										var event = new Event( 'change', { bubbles: true } );
-										checkbox.dispatchEvent( event );
-									}
-								} );
+								// Check if preset is currently active (toggle behavior).
+								var isActive = button.classList.contains( 'wp-mcp-ai-preset-active' );
 
-								// Then, check the checkboxes for tools in the preset.
-								presetTools.forEach( function( toolSlug ) {
-									var checkbox = document.querySelector( 'input[name="wp_mcp_ai_tools[]"][value="' + toolSlug + '"]' );
-									if ( checkbox && ! checkbox.checked ) {
-										checkbox.checked = true;
-										// Trigger change event to update UI.
-										var event = new Event( 'change', { bubbles: true } );
-										checkbox.dispatchEvent( event );
-									}
-								} );
+								if ( isActive ) {
+									// Deactivate: uncheck all tools in this preset.
+									presetTools.forEach( function( toolSlug ) {
+										var checkbox = document.querySelector( 'input[name="wp_mcp_ai_tools[]"][value="' + toolSlug + '"]' );
+										if ( checkbox && checkbox.checked ) {
+											checkbox.checked = false;
+											// Trigger change event to update UI.
+											var event = new Event( 'change', { bubbles: true } );
+											checkbox.dispatchEvent( event );
+										}
+									} );
+
+									// Remove active state.
+									button.classList.remove( 'wp-mcp-ai-preset-active' );
+									button.style.backgroundColor = '';
+									button.style.color = '';
+									button.style.borderColor = '';
+								} else {
+									// Activate: check all tools in this preset (add to current selection).
+									presetTools.forEach( function( toolSlug ) {
+										var checkbox = document.querySelector( 'input[name="wp_mcp_ai_tools[]"][value="' + toolSlug + '"]' );
+										if ( checkbox && ! checkbox.checked ) {
+											checkbox.checked = true;
+											// Trigger change event to update UI.
+											var event = new Event( 'change', { bubbles: true } );
+											checkbox.dispatchEvent( event );
+										}
+									} );
+
+									// Add active state.
+									button.classList.add( 'wp-mcp-ai-preset-active' );
+									button.style.backgroundColor = '#2271b1';
+									button.style.color = '#fff';
+									button.style.borderColor = '#2271b1';
+								}
 
 								// Scroll to the tools section.
 								var toolsSection = document.querySelector( '.wp-mcp-ai-tools' );
 								if ( toolsSection ) {
 									toolsSection.scrollIntoView( { behavior: 'smooth', block: 'start' } );
 								}
-
-								// Show a brief visual confirmation.
-								button.style.backgroundColor = '#2271b1';
-								button.style.color = '#fff';
-								button.style.borderColor = '#2271b1';
-								setTimeout( function() {
-									button.style.backgroundColor = '';
-									button.style.color = '';
-									button.style.borderColor = '';
-								}, 500 );
 							} );
 						} );
 					} );
