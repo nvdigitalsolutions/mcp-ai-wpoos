@@ -136,17 +136,12 @@
 		const allowedFileMimes = (window.wpMcpAiChat && window.wpMcpAiChat.allowedFileMimes) ? window.wpMcpAiChat.allowedFileMimes : [];
 		const allowedExtensions = (window.wpMcpAiChat && window.wpMcpAiChat.allowedExtensions) ? window.wpMcpAiChat.allowedExtensions : [];
 
-		// Determine which assistant ID to use:
-		// 1. If profession has an associated assistant, use that assistant's ID directly
-		// 2. Otherwise, use 'profession_' prefix to signal backend to create temporary assistant
-		let assistantId;
-		if (professionData && professionData.associated_assistant > 0) {
-			// Use the associated assistant directly for testing
-			assistantId = professionData.associated_assistant;
-		} else {
-			// Fall back to profession-based temporary assistant
-			assistantId = 'profession_' + professionId;
-		}
+		// Always use 'profession_' prefix to signal backend to load profession configuration.
+		// The backend will:
+		// 1. Load profession data (knowledge, tools, settings)
+		// 2. If profession has an associated assistant, use it as base and merge profession data
+		// 3. If no associated assistant, create temporary assistant from profession data only
+		const assistantId = 'profession_' + professionId;
 
 		window.wpMcpAiChatInstances[instanceId] = {
 			assistantId: assistantId,
