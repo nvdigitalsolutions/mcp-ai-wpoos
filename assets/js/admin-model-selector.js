@@ -169,7 +169,8 @@
 			// Replace field.
 			$modelField.replaceWith( $select );
 
-			// Remove any error messages.
+			// Remove loading spinner and error messages.
+			$container.find( '.wp-mcp-ai-model-loading' ).remove();
 			$container.find( '.wp-mcp-ai-model-error' ).remove();
 		},
 
@@ -209,7 +210,8 @@
 			// Replace field.
 			$modelField.replaceWith( $input );
 
-			// Remove any error messages.
+			// Remove loading spinner and error messages.
+			$container.find( '.wp-mcp-ai-model-loading' ).remove();
 			$container.find( '.wp-mcp-ai-model-error' ).remove();
 		},
 
