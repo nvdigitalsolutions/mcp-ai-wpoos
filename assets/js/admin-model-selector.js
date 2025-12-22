@@ -163,10 +163,6 @@
 		convertToSelect: function( $modelField, models, currentValue, fieldId, fieldName, fieldClasses ) {
 			const $container = $modelField.parent();
 
-			// Remove loading spinner and error messages BEFORE replacing field.
-			$container.find( '.wp-mcp-ai-model-loading' ).remove();
-			$container.find( '.wp-mcp-ai-model-error' ).remove();
-
 			// Create new select element.
 			const $select = $( '<select></select>' )
 				.attr( 'id', fieldId )
@@ -198,8 +194,12 @@
 				$select.append( $customOption );
 			}
 
-			// Replace field.
+			// Replace field and clean up.
 			$modelField.replaceWith( $select );
+			
+			// Remove loading spinner and error messages AFTER replacing field.
+			$container.find( '.wp-mcp-ai-model-loading' ).remove();
+			$container.find( '.wp-mcp-ai-model-error' ).remove();
 		},
 
 		/**
@@ -231,10 +231,6 @@
 
 			const $container = $modelField.parent();
 
-			// Remove loading spinner and error messages BEFORE replacing field.
-			$container.find( '.wp-mcp-ai-model-loading' ).remove();
-			$container.find( '.wp-mcp-ai-model-error' ).remove();
-
 			// Create new text input.
 			const $input = $( '<input type="text" />' )
 				.attr( 'id', fieldId )
@@ -242,8 +238,12 @@
 				.attr( 'class', fieldClasses )
 				.val( currentValue );
 
-			// Replace field.
+			// Replace field and clean up.
 			$modelField.replaceWith( $input );
+			
+			// Remove loading spinner and error messages AFTER replacing field.
+			$container.find( '.wp-mcp-ai-model-loading' ).remove();
+			$container.find( '.wp-mcp-ai-model-error' ).remove();
 		},
 
 		/**
