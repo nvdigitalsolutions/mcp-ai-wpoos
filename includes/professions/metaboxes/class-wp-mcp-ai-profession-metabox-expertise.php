@@ -116,7 +116,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 										<?php esc_html_e( 'Reset to Initial', 'wp-mcp-ai' ); ?>
 									</button>
 									<span id="tools-selected-count" style="margin-left: 10px; color: #666;">
-										<strong><?php echo count( $default_tools ); ?></strong> <?php esc_html_e( 'selected', 'wp-mcp-ai' ); ?>
+										<strong><?php echo is_array( $default_tools ) ? count( $default_tools ) : 0; ?></strong> <?php esc_html_e( 'selected', 'wp-mcp-ai' ); ?>
 									</span>
 								</div>
 							</div>
@@ -273,20 +273,25 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 				$searchInput.focus();
 			});
 
+			// Toggle all visible tools (used by Select All and Deselect All)
+			function toggleAllVisibleTools(checked) {
+				$('.profession-tool-item:visible .profession-tool-checkbox').prop('checked', checked);
+				updateSelectedCount();
+			}
+
 			// Select all visible tools
 			$('#select-all-tools').on('click', function() {
-				$('.profession-tool-item:visible .profession-tool-checkbox').prop('checked', true);
-				updateSelectedCount();
+				toggleAllVisibleTools(true);
 			});
 
 			// Deselect all visible tools
 			$('#deselect-all-tools').on('click', function() {
-				$('.profession-tool-item:visible .profession-tool-checkbox').prop('checked', false);
-				updateSelectedCount();
+				toggleAllVisibleTools(false);
 			});
 
 			// Reset to initial state
 			$('#reset-tools').on('click', function() {
+				// Use native confirm as it's consistent with WordPress admin UX patterns
 				if (!confirm('<?php echo esc_js( __( 'Are you sure you want to reset the tools selection to the initial state?', 'wp-mcp-ai' ) ); ?>')) {
 					return;
 				}
