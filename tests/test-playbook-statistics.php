@@ -68,6 +68,11 @@ class Test_Playbook_Statistics extends WP_UnitTestCase {
 	 * Test statistics with playbook attachments.
 	 */
 	public function test_statistics_with_playbooks() {
+		// Ensure WP_MCP_AI_Profession_CPT is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+		}
+
 		// Create test profession.
 		$profession_id = $this->factory->post->create(
 			array(
@@ -79,6 +84,10 @@ class Test_Playbook_Statistics extends WP_UnitTestCase {
 
 		// Create playbook attachment.
 		$attachment_id = $this->create_test_playbook_attachment( $profession_id );
+
+		// Add attachment to profession's memory_files (make it active).
+		$memory_files = array( $attachment_id );
+		update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );
 
 		$section = new WP_MCP_AI_Section_Advanced();
 		$method  = new ReflectionMethod( 'WP_MCP_AI_Section_Advanced', 'get_playbook_statistics' );
@@ -136,6 +145,50 @@ class Test_Playbook_Statistics extends WP_UnitTestCase {
 
 		// Clean up.
 		delete_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION );
+	}
+
+	/**
+	 * Test statistics count only active attachments, not orphaned ones.
+	 */
+	public function test_statistics_exclude_orphaned_attachments() {
+		// Ensure WP_MCP_AI_Profession_CPT is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+		}
+
+		// Create test profession.
+		$profession_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Profession',
+			)
+		);
+
+		// Create an active playbook attachment.
+		$active_attachment_id = $this->create_test_playbook_attachment( $profession_id );
+
+		// Add active attachment to profession's memory_files.
+		$memory_files = array( $active_attachment_id );
+		update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, $memory_files );
+
+		// Create an orphaned attachment (has profession_id meta but not in memory_files).
+		$orphaned_attachment_id = $this->create_test_playbook_attachment( $profession_id );
+
+		$section = new WP_MCP_AI_Section_Advanced();
+		$method  = new ReflectionMethod( 'WP_MCP_AI_Section_Advanced', 'get_playbook_statistics' );
+		$method->setAccessible( true );
+
+		$stats = $method->invoke( $section );
+
+		// Should only count the active attachment, not the orphaned one.
+		$this->assertEquals( 1, $stats['total_attachments'], 'Should count only active attachments' );
+		$this->assertEquals( 1, $stats['professions_with_playbooks'], 'Should count profession with playbook' );
+
+		// Clean up.
+		wp_delete_post( $active_attachment_id, true );
+		wp_delete_post( $orphaned_attachment_id, true );
+		wp_delete_post( $profession_id, true );
 	}
 
 	/**
