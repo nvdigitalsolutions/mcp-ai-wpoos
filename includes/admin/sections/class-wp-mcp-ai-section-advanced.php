@@ -57,6 +57,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		public function get_fields() {
 			return array(
+				'profession_default_tool_count' => array(
+					'type'        => 'number',
+					'label'       => __( 'Recommended Default Tools per Profession', 'wp-mcp-ai' ),
+					'description' => __( 'Recommended number of default tools to assign per profession. This is a guideline for profession configuration - actual tool count can vary based on profession needs. Default: 10', 'wp-mcp-ai' ),
+					'default'     => 10,
+					'min'         => 3,
+					'max'         => 20,
+					'placeholder' => '10',
+				),
 				'memory_max_file_bytes'       => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Memory File Size (bytes)', 'wp-mcp-ai' ),
@@ -600,6 +609,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<?php esc_html_e( 'Regenerates all playbooks even if unchanged and removes duplicates (slower, use after major updates).', 'wp-mcp-ai' ); ?>
 							</span>
 						</p>
+
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-delete-old-playbooks-btn" style="color: #a00;">
+								<span class="dashicons dashicons-trash" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Delete Old Playbooks from Media Library', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Permanently deletes orphaned playbook attachments that are no longer associated with any profession.', 'wp-mcp-ai' ); ?>
+							</span>
+						</p>
 					</div>
 
 					<div id="wp-mcp-ai-playbook-sync-message" class="notice" style="display: none; margin: 15px 0;">
@@ -1094,6 +1113,73 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							syncPlaybooks(true);
 						}
 					});
+
+					$('#wp-mcp-ai-delete-old-playbooks-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will permanently delete all orphaned playbook attachments from the media library. This cannot be undone! Continue?', 'wp-mcp-ai' ) ); ?>)) {
+							deleteOldPlaybooks();
+						}
+					});
+
+					function deleteOldPlaybooks() {
+						var $button = $('#wp-mcp-ai-delete-old-playbooks-btn');
+						var $message = $('#wp-mcp-ai-playbook-sync-message');
+						var originalText = $button.html();
+
+						// Disable all playbook buttons
+						$('#wp-mcp-ai-sync-playbooks-btn, #wp-mcp-ai-sync-playbooks-force-btn, #wp-mcp-ai-delete-old-playbooks-btn')
+							.prop('disabled', true)
+							.addClass('disabled');
+
+						// Update button text
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Deleting...', 'wp-mcp-ai' ) ); ?>');
+
+						// Hide any previous messages
+						$message.hide().removeClass('notice-success notice-error notice-warning');
+
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: 'wp_mcp_ai_delete_old_playbooks',
+								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_delete_old_playbooks' ) ); ?>
+							},
+							success: function(response) {
+								if (response.success) {
+									$message
+										.removeClass('notice-error notice-warning')
+										.addClass('notice-success')
+										.find('p').html(response.data.message);
+									$message.show();
+
+									// Reload after a short delay
+									setTimeout(function() {
+										location.reload();
+									}, 2000);
+								} else {
+									$message
+										.removeClass('notice-success notice-warning')
+										.addClass('notice-error')
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								// Re-enable buttons and restore text
+								$('#wp-mcp-ai-sync-playbooks-btn, #wp-mcp-ai-sync-playbooks-force-btn, #wp-mcp-ai-delete-old-playbooks-btn')
+									.prop('disabled', false)
+									.removeClass('disabled');
+								$button.html(originalText);
+							}
+						});
+					}
 				});
 				</script>
 			</div>
@@ -1113,38 +1199,50 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-playbook-seeder.php';
 			}
 
-			// Get total number of playbook attachments.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$total_attachments = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(DISTINCT p.ID)
-					FROM {$wpdb->posts} p
-					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-					WHERE p.post_type = %s
-					AND p.post_status = %s
-					AND pm.meta_key = %s",
-					'attachment',
-					'inherit',
-					'_wp_mcp_ai_playbook_profession_id'
+			// Get total number of active playbook attachments.
+			// Active attachments are those still referenced in profession's memory_files.
+			// This excludes orphaned attachments from previous versions.
+			$active_attachments         = 0;
+			$professions_with_playbooks = 0;
+			
+			// Get all professions.
+			$professions = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_profession',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'fields'         => 'ids',
 				)
 			);
-
-			// Get number of unique professions with playbooks.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$professions_with_playbooks = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(DISTINCT pm.meta_value)
-					FROM {$wpdb->posts} p
-					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-					WHERE p.post_type = %s
-					AND p.post_status = %s
-					AND pm.meta_key = %s
-					AND pm.meta_value != ''",
-					'attachment',
-					'inherit',
-					'_wp_mcp_ai_playbook_profession_id'
-				)
-			);
+			
+			if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+			}
+			
+			// Count attachments that are in memory_files (active).
+			foreach ( $professions as $profession_id ) {
+				$memory_files = get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+				
+				if ( is_array( $memory_files ) && ! empty( $memory_files ) ) {
+					$has_playbook = false;
+					
+					// Filter to only count playbook attachments.
+					foreach ( $memory_files as $attachment_id ) {
+						$profession_id_meta = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
+						if ( ! empty( $profession_id_meta ) ) {
+							$active_attachments++;
+							$has_playbook = true;
+						}
+					}
+					
+					// Count this profession if it has at least one playbook.
+					if ( $has_playbook ) {
+						$professions_with_playbooks++;
+					}
+				}
+			}
+			
+			$total_attachments = $active_attachments;
 
 			// Check if playbooks were seeded.
 			$playbooks_seeded = get_option( WP_MCP_AI_Profession_Playbook_Seeder::SEEDED_OPTION, false );

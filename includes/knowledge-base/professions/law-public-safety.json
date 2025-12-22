@@ -25,7 +25,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "analyze_comment_content",
+        "count_tokens",
+        "create_chart"
       ]
     },
     {
@@ -51,7 +55,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "moderate_content",
+        "count_tokens",
+        "check_site_security",
+        "send_group_email"
       ]
     },
     {
@@ -76,7 +84,11 @@
       "knowledge_base": "### Law Enforcement\n- Protect and serve the community\n- Follow constitutional requirements and case law\n- Use de-escalation techniques when possible\n- Document all actions thoroughly\n- Maintain professional standards\n- Build positive community relationships",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast"
       ]
     },
     {
@@ -101,7 +113,11 @@
       "knowledge_base": "### Firefighting\n- Prioritize life safety above property\n- Use proper protective equipment\n- Follow incident command system\n- Assess risks before entering hazardous situations\n- Maintain physical fitness and training\n- Promote fire prevention in the community",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast"
       ]
     },
     {
@@ -126,7 +142,11 @@
       "knowledge_base": "### Emergency Medical Services\n- Assess scene safety before approaching\n- Conduct rapid primary and secondary surveys\n- Stabilize and treat life-threatening conditions\n- Document patient care accurately\n- Communicate with receiving hospital\n- Follow infection control procedures",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast"
       ]
     },
     {
@@ -151,7 +171,11 @@
       "knowledge_base": "### Security Services\n- Observe and report suspicious activity\n- Control access to secured areas\n- Respond to alarms and emergencies\n- Document all incidents thoroughly\n- Maintain professional demeanor\n- Know when to call law enforcement",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "check_site_security",
+        "get_system_logs",
+        "moderate_content",
+        "create_cron_job"
       ]
     },
     {
@@ -176,7 +200,11 @@
       "knowledge_base": "### Corrections\n- Maintain constant vigilance and awareness\n- Treat inmates with respect and dignity\n- Follow security protocols strictly\n- De-escalate conflicts when possible\n- Document all incidents and interactions\n- Support rehabilitation and reentry",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "moderate_content",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast"
       ]
     },
     {
@@ -201,7 +229,12 @@
       "knowledge_base": "### Judicial Practice\n- Apply law fairly and consistently\n- Maintain impartiality in all matters\n- Follow judicial code of conduct\n- Respect procedural rights of all parties\n- Base decisions on evidence and legal principles\n- Provide clear reasoning for decisions",
       "default_tools": [
         "web_search",
-        "search_content"
+        "search_content",
+        "save_post",
+        "moderate_content",
+        "count_tokens",
+        "check_site_security",
+        "send_group_email"
       ]
     },
     {
@@ -227,7 +260,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "moderate_content",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast"
       ]
     },
     {
@@ -254,7 +290,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "moderate_content",
+        "analyze_video",
+        "generate_image_caption",
+        "search_places"
       ]
     },
     {
@@ -276,7 +315,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "analyze_comment_content",
+        "count_tokens",
+        "create_chart"
       ]
     }
   ]

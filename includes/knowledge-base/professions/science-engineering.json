@@ -24,7 +24,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "generate_openai_image"
       ]
     },
     {
@@ -50,7 +53,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "generate_openai_image"
       ]
     },
     {
@@ -76,7 +82,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "generate_openai_image"
       ]
     },
     {
@@ -102,7 +111,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "get_site_summary",
+        "check_site_security",
+        "count_tokens"
       ]
     },
     {
@@ -128,7 +141,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "generate_openai_image",
+        "count_tokens",
+        "check_site_security"
       ]
     },
     {
@@ -154,7 +171,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "generate_openai_image"
       ]
     },
     {
@@ -180,7 +200,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "generate_openai_image"
       ]
     },
     {
@@ -206,7 +229,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "generate_openai_image",
+        "count_tokens",
+        "check_site_security"
       ]
     },
     {
@@ -233,7 +260,10 @@
         "web_search",
         "search_content",
         "save_post",
-        "google_analytics_report"
+        "google_analytics_report",
+        "create_chart",
+        "query_mesh_intelligent",
+        "count_tokens"
       ]
     },
     {
@@ -259,7 +289,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "search_attachments",
+        "count_tokens"
       ]
     },
     {
@@ -285,7 +318,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {
@@ -311,7 +347,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {
@@ -337,7 +376,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {
@@ -361,7 +403,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "get_site_health",
+        "check_site_security",
+        "purge_cache",
+        "get_system_logs"
       ]
     },
     {
@@ -386,7 +432,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "search_attachments",
+        "get_site_summary",
+        "check_site_security",
+        "count_tokens"
       ]
     },
     {
@@ -411,7 +461,10 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {
@@ -436,7 +489,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "query_mesh_intelligent",
+        "count_tokens",
+        "search_attachments"
       ]
     },
     {
@@ -462,7 +519,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "create_chart",
+        "send_group_email"
       ]
     },
     {
@@ -488,7 +549,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "create_chart",
+        "send_group_email"
       ]
     },
     {
@@ -514,7 +579,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "create_chart",
+        "send_group_email"
       ]
     },
     {
@@ -540,7 +609,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "check_site_security",
+        "get_system_logs",
+        "send_group_email"
       ]
     },
     {
@@ -566,7 +639,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "create_chart",
+        "send_group_email"
       ]
     },
     {
@@ -592,7 +669,12 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "resize_image",
+        "crop_image",
+        "send_group_email"
       ]
     },
     {
@@ -618,7 +700,12 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "generate_openai_image",
+        "generate_gemini_image",
+        "resize_image",
+        "crop_image",
+        "send_group_email"
       ]
     },
     {
@@ -644,7 +731,11 @@
       "default_tools": [
         "web_search",
         "search_content",
-        "save_post"
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast"
       ]
     }
   ]

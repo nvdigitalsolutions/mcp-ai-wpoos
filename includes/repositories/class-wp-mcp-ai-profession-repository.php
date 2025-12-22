@@ -305,7 +305,13 @@ class WP_MCP_AI_Profession_Repository {
 		}
 
 		if ( isset( $data['default_tools'] ) && is_array( $data['default_tools'] ) ) {
-			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, array_map( 'sanitize_key', $data['default_tools'] ) );
+			$sanitized_tools = array_map( 'sanitize_key', $data['default_tools'] );
+			$sanitized_tools = array_filter( $sanitized_tools ); // Remove empty values.
+			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, array_values( $sanitized_tools ) );
+		}
+
+		if ( isset( $data['supported_mime_types'] ) && is_array( $data['supported_mime_types'] ) ) {
+			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES, array_map( 'sanitize_text_field', $data['supported_mime_types'] ) );
 		}
 
 		// Clear cache.

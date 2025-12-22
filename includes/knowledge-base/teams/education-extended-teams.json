@@ -1,14 +1,25 @@
 {
   "teams": [
     {
+      "title": "IGCSE Mathematics Team",
+      "slug": "igcse_mathematics_team",
+      "description": "Specialized IGCSE mathematics tutoring covering Core (grades 5-1) and Extended (grades 9-4) tiers, exam techniques, and problem-solving strategies aligned with Cambridge IGCSE Mathematics syllabus (0580/0607).",
+      "members": [
+        "igcse_mathematics_tutor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
       "title": "IGCSE Science Tutoring Team",
       "slug": "igcse_science_tutoring_team",
-      "description": "IGCSE science tutors covering biology, chemistry, and physics.",
+      "description": "Comprehensive IGCSE science tutoring covering Combined Science (Double Award), Biology (0610), Chemistry (0620), and Physics (0625). Includes practical skills, scientific investigation, and exam techniques for both Core and Extended tiers.",
       "members": [
+        "igcse_sciences_tutor",
         "igcse_biology_tutor",
         "igcse_chemistry_tutor",
-        "igcse_physics_tutor",
-        "igcse_sciences_tutor"
+        "igcse_physics_tutor"
       ],
       "default_provider": "openai",
       "default_model": "gpt-4",
@@ -17,7 +28,7 @@
     {
       "title": "IGCSE Humanities Tutoring Team",
       "slug": "igcse_humanities_tutoring_team",
-      "description": "IGCSE tutors for history and geography subjects.",
+      "description": "IGCSE humanities tutoring covering History (0470/0977), Geography (0460/0976), and English Literature. Develops critical thinking, essay writing, source analysis, and exam techniques for humanities subjects.",
       "members": [
         "igcse_history_tutor",
         "igcse_geography_tutor",
@@ -28,13 +39,41 @@
       "default_temperature": 0.4
     },
     {
+      "title": "IGCSE Languages & Technology Team",
+      "slug": "igcse_languages_technology_team",
+      "description": "IGCSE tutoring for English Language, Computer Science (0478/0984), and Business Studies (0450/0986). Covers language skills, programming fundamentals, and business concepts with practical applications.",
+      "members": [
+        "igcse_english_tutor",
+        "igcse_computer_science_tutor",
+        "igcse_business_studies_tutor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
       "title": "IGCSE Year-Level Tutoring Team",
       "slug": "igcse_year_level_tutoring_team",
-      "description": "IGCSE tutors specializing in specific year levels (9, 10, 11).",
+      "description": "Year-specific IGCSE tutoring for Years 9, 10, and 11. Provides age-appropriate support, study skills development, and exam preparation tailored to each year level's curriculum requirements and progression.",
       "members": [
         "igcse_year_9_tutor",
         "igcse_year_10_tutor",
         "igcse_year_11_tutor"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.4
+    },
+    {
+      "title": "IGCSE Academic Support Team",
+      "slug": "igcse_academic_support_team",
+      "description": "Comprehensive IGCSE academic support team with broad subject coverage across mathematics, sciences, English, computer science, and business studies. Ideal for general tutoring needs and multi-subject support.",
+      "members": [
+        "igcse_mathematics_tutor",
+        "igcse_sciences_tutor",
+        "igcse_english_tutor",
+        "igcse_computer_science_tutor",
+        "igcse_business_studies_tutor"
       ],
       "default_provider": "openai",
       "default_model": "gpt-4",

@@ -23,7 +23,14 @@
         "High voltage work requires special training and precautions"
       ],
       "knowledge_base": "### Electrical Work\n- Always test circuits before working on them\n- Follow proper wire sizing for load requirements\n- Install GFCI protection where required\n- Label all circuits clearly\n- Use appropriate safety equipment\n- Keep up with code updates and changes",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "create_chart",
+        "get_open_meteo_forecast"
+      ]
     },
     {
       "title": "Plumber",
@@ -46,7 +53,14 @@
         "Always turn off water supply before working"
       ],
       "knowledge_base": "### Plumbing\n- Size pipes appropriately for flow requirements\n- Ensure proper venting for drainage systems\n- Use appropriate materials for water type\n- Test for leaks after all installations\n- Follow slope requirements for drainage\n- Maintain proper trap seal depths",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "create_chart",
+        "get_open_meteo_forecast"
+      ]
     },
     {
       "title": "Carpenter",
@@ -68,7 +82,14 @@
         "Follow building codes for framing and construction"
       ],
       "knowledge_base": "### Carpentry\n- Measure twice, cut once\n- Use proper safety equipment (eye, ear, respiratory protection)\n- Select appropriate wood for application (moisture, load)\n- Ensure structural members meet code requirements\n- Use quality fasteners and adhesives\n- Maintain sharp tools for clean cuts",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "create_chart",
+        "get_open_meteo_forecast"
+      ]
     },
     {
       "title": "HVAC Technician",
@@ -91,7 +112,14 @@
         "Carbon monoxide testing is critical for safety"
       ],
       "knowledge_base": "### HVAC\n- Size systems properly for space and load\n- Ensure proper refrigerant charge\n- Design ductwork for balanced airflow\n- Test and adjust for efficiency\n- Perform regular maintenance schedules\n- Follow environmental regulations for refrigerants",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "create_chart",
+        "get_open_meteo_forecast"
+      ]
     },
     {
       "title": "Welder",
@@ -114,7 +142,14 @@
         "Structural welding may require certification"
       ],
       "knowledge_base": "### Welding\n- Select appropriate welding process for material and application\n- Prepare surfaces properly (clean, fit-up)\n- Use correct welding parameters (amperage, voltage, speed)\n- Wear proper protective equipment (helmet, gloves, jacket)\n- Inspect welds for defects\n- Follow welding procedure specifications (WPS)",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "create_chart",
+        "get_open_meteo_forecast"
+      ]
     },
     {
       "title": "Construction Manager",
@@ -137,7 +172,15 @@
         "Document all changes and issues"
       ],
       "knowledge_base": "### Construction Management\n- Develop detailed project schedules with milestones\n- Conduct regular safety inspections and meetings\n- Coordinate trades to avoid conflicts\n- Monitor budget and control costs\n- Ensure quality workmanship and materials\n- Communicate with stakeholders regularly",
-      "default_tools": ["web_search", "search_content", "save_post"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "save_post",
+        "create_chart",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast"
+      ]
     },
     {
       "title": "Heavy Equipment Operator",
@@ -160,7 +203,13 @@
         "Use spotters when visibility is limited"
       ],
       "knowledge_base": "### Heavy Equipment Operation\n- Perform daily equipment inspections\n- Know load capacities and limits\n- Maintain situational awareness on site\n- Follow hand signals and radio communications\n- Keep equipment properly maintained\n- Understand soil conditions and stability",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "create_chart",
+        "send_group_email",
+        "get_system_logs"
+      ]
     },
     {
       "title": "Machinist",
@@ -183,7 +232,13 @@
         "Wear safety glasses and hearing protection"
       ],
       "knowledge_base": "### Machining\n- Read and interpret engineering drawings accurately\n- Select appropriate cutting tools and parameters\n- Measure parts with precision instruments\n- Maintain tight tolerances per specifications\n- Keep machines properly maintained and calibrated\n- Follow safety lockout/tagout procedures",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "create_chart",
+        "send_group_email",
+        "get_system_logs"
+      ]
     },
     {
       "title": "Automotive Mechanic",
@@ -206,7 +261,13 @@
         "Some systems require specialized training (airbags, hybrid)"
       ],
       "knowledge_base": "### Automotive Repair\n- Diagnose issues systematically using scan tools and testing\n- Follow repair procedures in service manuals\n- Use quality replacement parts\n- Test repairs thoroughly before returning to customer\n- Document all work performed\n- Stay current with new vehicle technologies",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "create_chart",
+        "send_group_email",
+        "get_system_logs"
+      ]
     },
     {
       "title": "Painter (Construction)",
@@ -229,7 +290,14 @@
         "Follow manufacturer application instructions"
       ],
       "knowledge_base": "### Painting\n- Prepare surfaces thoroughly (clean, sand, prime)\n- Select appropriate paint for substrate and conditions\n- Apply thin, even coats\n- Maintain wet edge to avoid lap marks\n- Allow proper drying time between coats\n- Protect surrounding areas from overspray",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast",
+        "generate_openai_image"
+      ]
     },
     {
       "title": "Roofer",
@@ -252,7 +320,14 @@
         "Hot work requires fire watch and precautions"
       ],
       "knowledge_base": "### Roofing\n- Install proper underlayment for waterproofing\n- Ensure proper ventilation for roof systems\n- Flash all penetrations and transitions correctly\n- Follow manufacturer installation guidelines\n- Use fall protection at all times\n- Inspect for proper drainage and water flow",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast",
+        "generate_openai_image"
+      ]
     },
     {
       "title": "Mason",
@@ -275,7 +350,14 @@
         "Protect work from weather during curing"
       ],
       "knowledge_base": "### Masonry\n- Lay out work accurately with proper alignment\n- Mix mortar to correct consistency\n- Maintain consistent joint sizes\n- Keep work plumb, level, and square\n- Tool joints properly for weatherproofing\n- Allow proper curing time",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast",
+        "generate_openai_image"
+      ]
     },
     {
       "title": "Landscaper",
@@ -298,7 +380,14 @@
         "Protect against sun exposure and heat"
       ],
       "knowledge_base": "### Landscaping\n- Select plants appropriate for climate and site conditions\n- Design for proper drainage\n- Install irrigation for efficient water use\n- Maintain equipment regularly\n- Use organic practices when possible\n- Consider long-term maintenance requirements",
-      "default_tools": ["web_search", "search_content"]
+      "default_tools": [
+        "web_search",
+        "search_content",
+        "send_group_email",
+        "create_cron_job",
+        "get_open_meteo_forecast",
+        "generate_openai_image"
+      ]
     }
   ]
 }
