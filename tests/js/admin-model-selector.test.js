@@ -63,12 +63,11 @@ describe( 'Admin Model Selector', () => {
 		};
 
 		// Execute the IIFE - we need to extract ModelSelector from it
-		// Since it's in a closure, we'll need to modify how we test it
-		// For now, let's test it indirectly through the behavior
+		// Note: Using eval() here for testing legacy IIFE code pattern.
+		// Ideally the source file would be refactored to export ModelSelector as a module,
+		// but that's beyond the scope of this minimal fix.
+		// This is safe in a test environment as the code is from our own repository.
 		eval( modelSelectorCode );
-
-		// The ModelSelector object is in a closure, but we can test its effects
-		// by triggering the initialization and checking behaviors
 	} );
 
 	afterEach( () => {
@@ -133,7 +132,10 @@ describe( 'Admin Model Selector', () => {
 						...element,
 						length: optionElements.length,
 						filter: jest.fn( ( callback ) => {
-							const filtered = optionElements.filter( callback );
+							// Properly filter elements based on callback return value
+							const filtered = optionElements.filter( ( opt, index ) => {
+								return callback.call( opt, index, opt );
+							} );
 							return {
 								...element,
 								length: filtered.length,

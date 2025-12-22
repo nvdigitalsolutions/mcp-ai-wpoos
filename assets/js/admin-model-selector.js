@@ -60,7 +60,7 @@
 		 * Returns false if models are already loaded (select with options).
 		 *
 		 * @param {jQuery} $modelField Model field element.
-		 * @return {bool} True if models need to be loaded, false otherwise.
+		 * @return {boolean} True if models need to be loaded, false otherwise.
 		 */
 		needsModelsLoad: function( $modelField ) {
 			// If it's a text input, we need to load models.
