@@ -4,6 +4,27 @@
 
 ### Added
 
+#### Gemini Geospatial API Integration (December 22, 2024)
+- **AI-Powered Location Queries**: Integrated Gemini Geospatial API for contextual, location-based queries with Google Maps grounding
+  - **New Client Method**: Added `create_geospatial_query()` to `WP_MCP_AI_Gemini_Client`
+    - Natural language queries about places, directions, and local information
+    - Google Maps grounding with access to 250M+ places database
+    - Optional location context (latitude/longitude) for better results
+    - Returns `googleMapsWidgetContextToken` for frontend map visualization
+  - **New Tool**: `gemini_geospatial_query` - Location-based AI queries for assistants
+    - Ask about restaurants, attractions, routes, and area information
+    - Supports multimodal responses with map context tokens
+    - Configurable temperature and model selection
+    - Proper capability checks and authentication
+  - **Google Maps Integration**: Responses include context tokens for Google Maps JavaScript API
+  - **Contextual View Component**: Enable interactive map visualizations in frontend
+  - **Reduced Hallucinations**: Factual grounding with real-time Google Maps data
+  - **Use Cases**: Location discovery, route planning, local recommendations, area exploration
+  - **WordPress Integration**: User authentication, capability checks, multisite support
+  - **Test Coverage**: 8 comprehensive test cases covering all functionality
+  - **Comprehensive Documentation**: Complete usage guide with examples
+  - See [Gemini Geospatial Documentation](docs/GEMINI_GEOSPATIAL.md)
+
 #### OpenAI Batch API Integration (December 21, 2025)
 - **Batch Processing for Cost Savings**: Integrated OpenAI Batch API for asynchronous bulk operations with 50% cost reduction
   - **New Client Methods**: Added 4 Batch API methods to `WP_MCP_AI_OpenAI_Client`
