@@ -12,12 +12,20 @@ This document provides a comprehensive index of all documentation available for 
 
 ---
 
-## 🆕 Master Consolidation Documents (December 20, 2025) ⭐ **START HERE**
+## 🆕 Master Consolidation Documents (December 20-22, 2025) ⭐ **START HERE**
 
 ### Complete Consolidation
 Comprehensive consolidation of ALL fixes, summaries, code reviews, and improvements from 2025:
 
-- **[MASTER_CONSOLIDATION_2025.md](MASTER_CONSOLIDATION_2025.md)** ⭐ **PRIMARY REFERENCE**
+- **[CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md](implementation-history/2025/summaries/CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md)** ⭐ **NEW (Dec 22)**
+  - **CENTRAL INDEX** of all major implementations, fixes, and improvements completed in 2025
+  - Quick navigation to all feature implementations, API enhancements, bug fixes
+  - Includes Gemini Geospatial, OpenAI Batch/Moderation, IGCSE Teams, code quality improvements
+  - Complete cross-references to detailed implementation documents
+  - Statistics and quality metrics summary
+  - [2025 Implementation History Index](implementation-history/2025/INDEX.md) - Directory structure navigation
+
+- **[MASTER_CONSOLIDATION_2025.md](MASTER_CONSOLIDATION_2025.md)** ⭐ **PRIMARY REFERENCE (Dec 20)**
   - **SINGLE SOURCE OF TRUTH** for all 2025 work
   - Complete consolidation of 55+ source documents
   - Zero information loss - everything preserved
