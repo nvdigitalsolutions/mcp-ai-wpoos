@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-openai-image-error',
-        'version' => 'dev-copilot/fix-openai-image-error',
-        'reference' => 'bf0540b2f639037a686696eafac8595304fba53d',
+        'pretty_version' => 'dev-copilot/integrate-gemini-geospatial-api',
+        'version' => 'dev-copilot/integrate-gemini-geospatial-api',
+        'reference' => 'd773acbe9866238d37afbe0161d1f65711e3117c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-openai-image-error',
-            'version' => 'dev-copilot/fix-openai-image-error',
-            'reference' => 'bf0540b2f639037a686696eafac8595304fba53d',
+            'pretty_version' => 'dev-copilot/integrate-gemini-geospatial-api',
+            'version' => 'dev-copilot/integrate-gemini-geospatial-api',
+            'reference' => 'd773acbe9866238d37afbe0161d1f65711e3117c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
