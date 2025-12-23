@@ -70,8 +70,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows' ) ) {
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'dataset' => array(
 					'type'        => 'string',
 					'description' => 'Dataset name (e.g., "squad", "imdb")',
@@ -93,7 +93,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows' ) ) {
 					'maximum'     => 100,
 				),
 			),
-			'required'             => array( 'dataset', 'split' ),
+			'required'   => array( 'dataset', 'split' ),
 			'additionalProperties' => false,
 		);
 	}

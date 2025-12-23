@@ -70,8 +70,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics' ) ) {
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'dataset' => array(
 					'type'        => 'string',
 					'description' => 'Dataset name (e.g., "squad", "imdb")',
@@ -86,7 +86,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics' ) ) {
 					'description' => 'Split name (e.g., "train", "test", "validation")',
 				),
 			),
-			'required'             => array( 'dataset', 'split' ),
+			'required'   => array( 'dataset', 'split' ),
 			'additionalProperties' => false,
 		);
 	}

@@ -70,14 +70,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'dataset' => array(
 					'type'        => 'string',
 					'description' => 'Dataset name (e.g., "squad", "imdb")',
 				),
 			),
-			'required'             => array( 'dataset' ),
+			'required'   => array( 'dataset' ),
 			'additionalProperties' => false,
 		);
 	}

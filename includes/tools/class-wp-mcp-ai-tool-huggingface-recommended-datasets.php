@@ -70,8 +70,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'use_case' => array(
 					'type'        => 'string',
 					'description' => 'The use case (e.g., "comment moderation", "blog summarization", "product categorization", "multilingual translation")',
@@ -90,7 +90,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 					'maximum'     => 20,
 				),
 			),
-			'required'             => array( 'use_case' ),
+			'required'   => array( 'use_case' ),
 			'additionalProperties' => false,
 		);
 	}
