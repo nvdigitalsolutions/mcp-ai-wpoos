@@ -496,25 +496,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 
 				// Safety & Moderation.
 				array(
-					'dataset'     => 'jigsaw_toxicity_pred',
-					'name'        => 'Jigsaw Toxic Comments',
-					'category'    => 'nlp',
-					'priority'    => 'critical',
-					'description' => 'Content moderation with 160K toxic comments',
-					'size'        => '160K comments',
-					'tags'        => array( 'moderation', 'toxic', 'comment', 'safety', 'filter' ),
-					'use_cases'   => array( 'comment moderation', 'content filtering', 'safety checks' ),
-					'example'     => 'Get examples: huggingface_dataset_preview_rows(dataset="jigsaw_toxicity_pred", split="train", limit=5)',
-				),
-				array(
 					'dataset'     => 'google/civil_comments',
 					'name'        => 'Civil Comments',
 					'category'    => 'nlp',
 					'priority'    => 'critical',
-					'description' => 'Nuanced moderation with 2M comments',
+					'description' => 'Nuanced moderation with 2M comments and toxicity labels',
 					'size'        => '2M comments',
-					'tags'        => array( 'moderation', 'comment', 'civility', 'community', 'discussion' ),
-					'use_cases'   => array( 'comment quality', 'discussion moderation', 'community management' ),
+					'tags'        => array( 'moderation', 'comment', 'civility', 'community', 'discussion', 'toxic', 'safety', 'filter' ),
+					'use_cases'   => array( 'comment quality', 'discussion moderation', 'community management', 'comment moderation', 'content filtering', 'safety checks' ),
 					'example'     => 'Get examples: huggingface_dataset_preview_rows(dataset="google/civil_comments", split="train", limit=5)',
 				),
 

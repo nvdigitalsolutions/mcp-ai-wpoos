@@ -182,8 +182,7 @@ Parameters:
 - **Food-101** (`ethz/food101`) - Food product categorization
 
 ### Community Management
-- **Jigsaw Toxic** (`jigsaw_toxicity_pred`) - Comment moderation
-- **Civil Comments** (`google/civil_comments`) - Discussion quality
+- **Civil Comments** (`google/civil_comments`) - Comment moderation and discussion quality
 - **Ubuntu Dialogs** (`ubuntu_dialogs_corpus`) - Support conversations
 
 ### SEO & Accessibility
@@ -245,7 +244,7 @@ Parameters:
 #### 1. Improve Comment Moderation
 ```
 Assistant, analyze my pending comments and suggest which ones might need moderation 
-based on the Jigsaw Toxic Comments dataset patterns.
+based on the Civil Comments dataset patterns.
 ```
 
 #### 2. Generate Alt Text for Images

@@ -29,10 +29,9 @@
 7. **MS COCO Captions** - Image-text (330K) - Accessibility features
 8. **LibriSpeech** - Speech recognition (1000 hours) - Audio transcription
 9. **Common Voice** - Multilingual speech (100+ languages) - International sites
-10. **Jigsaw Toxic** - Content moderation (160K) - Comment filtering
-11. **Civil Comments** - Discussion quality (2M) - Community management
-12. **mC4** - Multilingual text (101 languages) - Global WordPress sites
-13. **WMT Translation** - Machine translation (10+ pairs) - Multilingual content
+10. **Civil Comments** - Content moderation and discussion quality (2M) - Comment filtering and community management
+11. **mC4** - Multilingual text (101 languages) - Global WordPress sites
+12. **WMT Translation** - Machine translation (10+ pairs) - Multilingual content
 14. **XSum** - Concise summaries (227K) - Meta descriptions
 15. **VQA** - Visual Q&A (1.1M questions) - Image-based chatbots
 
@@ -58,7 +57,7 @@
    - Smart AI-powered recommendations
    - Input: Use case description
    - Output: Top 5 relevant datasets with scores
-   - Example: "comment moderation" → Jigsaw Toxic, Civil Comments
+   - Example: "comment moderation" → Civil Comments
 
 2. **huggingface_dataset_is_valid**
    - Validate dataset existence
@@ -166,7 +165,7 @@
 
 ### 3. Community Management
 ```
-✅ Filter toxic comments (Jigsaw Toxic)
+✅ Filter toxic comments (Civil Comments)
 ✅ Promote civil discussion (Civil Comments)
 ✅ Support chatbot responses (SQuAD, Ubuntu Dialogs)
 ```
@@ -259,7 +258,7 @@
    → Assistant uses IMDB dataset
 
 ✅ "What datasets help with comment moderation?"
-   → Assistant recommends Jigsaw Toxic, Civil Comments
+   → Assistant recommends Civil Comments
 
 ✅ "Generate alt text for my images"
    → Assistant uses Flickr30k patterns
