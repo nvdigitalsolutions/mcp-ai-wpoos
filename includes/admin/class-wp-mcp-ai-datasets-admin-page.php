@@ -318,16 +318,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 					'tags'        => array( 'speech', 'audio', 'transcription' ),
 					'example'     => 'huggingface_dataset_preview_rows(dataset="librispeech_asr", config="clean", split="train.100", limit=5)',
 				),
-				array(
-					'dataset'     => 'jigsaw_toxicity_pred',
-					'name'        => 'Jigsaw Toxic',
-					'category'    => 'nlp',
-					'priority'    => 'critical',
-					'description' => 'Content moderation with 160K toxic comments',
-					'size'        => '160K comments',
-					'tags'        => array( 'moderation', 'toxic', 'safety' ),
-					'example'     => 'huggingface_dataset_preview_rows(dataset="jigsaw_toxicity_pred", split="train", limit=5)',
-				),
+
 				array(
 					'dataset'     => 'ag_news',
 					'name'        => 'AG News',
