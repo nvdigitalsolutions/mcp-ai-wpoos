@@ -314,6 +314,22 @@ class WP_MCP_AI_Profession_Repository {
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES, array_map( 'sanitize_text_field', $data['supported_mime_types'] ) );
 		}
 
+		// Save default AI settings.
+		if ( isset( $data['default_provider'] ) ) {
+			update_post_meta( $post_id, '_wp_mcp_ai_profession_default_provider', sanitize_key( $data['default_provider'] ) );
+		}
+
+		if ( isset( $data['default_model'] ) ) {
+			update_post_meta( $post_id, '_wp_mcp_ai_profession_default_model', sanitize_text_field( $data['default_model'] ) );
+		}
+
+		if ( isset( $data['default_temperature'] ) ) {
+			$temperature = floatval( $data['default_temperature'] );
+			if ( $temperature >= 0 && $temperature <= 2 ) {
+				update_post_meta( $post_id, '_wp_mcp_ai_profession_default_temperature', $temperature );
+			}
+		}
+
 		// Clear cache.
 		$this->clear_cache( $post_id );
 
