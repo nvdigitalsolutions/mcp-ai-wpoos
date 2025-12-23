@@ -302,9 +302,37 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test profession without associated assistant and no default assistant works standalone.
+	 * Test profession without associated assistant uses default assistant when available.
 	 */
-	public function test_profession_without_assistant_standalone() {
+	public function test_profession_without_assistant_uses_default() {
+		// Ensure default assistant is set.
+		update_option( 'wp_mcp_ai_default_assistant', $this->assistant_id );
+
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$method     = $reflection->getMethod( 'resolve_assistant_id' );
+		$method->setAccessible( true );
+
+		// Test that resolve_assistant_id returns default assistant.
+		$result = $method->invoke( $this->rest_controller, 'profession_' . $this->profession_id );
+		$this->assertEquals( $this->assistant_id, $result, 'Should return default assistant when no associated assistant' );
+
+		// Test that profession configuration is merged with default assistant config.
+		$load_method = $reflection->getMethod( 'load_profession_configuration' );
+		$load_method->setAccessible( true );
+
+		// Get default assistant config.
+		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $this->assistant_id );
+		$merged_config    = $load_method->invoke( $this->rest_controller, $this->profession_id, $assistant_config );
+
+		// Verify profession knowledge is appended to assistant knowledge.
+		$this->assertStringContainsString( 'Professional Role & Expertise:', $merged_config['system_prompt'], 'Should have append header when using default assistant' );
+		$this->assertStringContainsString( 'professional tax advisor', $merged_config['system_prompt'], 'Should append profession knowledge' );
+	}
+
+	/**
+	 * Test profession without associated assistant and no default assistant returns 0.
+	 */
+	public function test_profession_without_assistant_no_default() {
 		// Remove default assistant setting.
 		delete_option( 'wp_mcp_ai_default_assistant' );
 
