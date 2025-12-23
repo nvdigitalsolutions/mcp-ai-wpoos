@@ -34,7 +34,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 		 */
 		public function add_menu_page() {
 			add_submenu_page(
-				'wp-mcp-ai',
+				'wp-mcp-ai-dashboard',
 				__( 'HuggingFace Datasets', 'wp-mcp-ai' ),
 				__( 'HF Datasets', 'wp-mcp-ai' ),
 				'manage_options',
@@ -106,7 +106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 							printf(
 								/* translators: %s: settings page URL */
 								esc_html__( 'HuggingFace Datasets integration is not enabled. %s to activate it.', 'wp-mcp-ai' ),
-								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings&tab=providers' ) ) . '">' . esc_html__( 'Go to Settings', 'wp-mcp-ai' ) . '</a>'
+								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=huggingface_datasets' ) ) . '">' . esc_html__( 'Go to Settings', 'wp-mcp-ai' ) . '</a>'
 							);
 							?>
 						</p>
