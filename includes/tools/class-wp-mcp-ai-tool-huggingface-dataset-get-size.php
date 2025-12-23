@@ -18,6 +18,25 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Size' ) ) {
 	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Size {
 
 		/**
+		 * Check if the tool is available.
+		 *
+		 * @return bool
+		 */
+		public static function is_available() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			return ! empty( $settings['enable_huggingface_datasets'] );
+		}
+
+		/**
+		 * Message explaining why the tool is unavailable.
+		 *
+		 * @return string
+		 */
+		public static function get_unavailable_reason() {
+			return __( 'The HuggingFace Dataset Get Size tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in WP oOS → Providers settings.', 'wp-mcp-ai' );
+		}
+
+		/**
 		 * Get tool slug.
 		 *
 		 * @return string
