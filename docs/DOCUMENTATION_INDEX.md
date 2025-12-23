@@ -1,14 +1,36 @@
 # WP oOS Documentation Index
 
-**Last Updated:** December 20, 2025  
+**Last Updated:** December 23, 2025  
 **Plugin Version:** 1.0.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (WP oOS) plugin.
 
-**Total Documentation:** 535+ files (514+ in docs/ folder, 15 essential files in root)
+**Total Documentation:** 535+ files (514+ in docs/ folder, 16 essential files in root)
 
-> **📌 DECEMBER 20, 2025 UPDATE**: MASTER CONSOLIDATION COMPLETE - All fixes and summaries consolidated into single source of truth with ZERO information loss.
+> **📌 DECEMBER 23, 2025 UPDATE**: Weekly commits summary added - Complete consolidation of all changes from December 16-23, 2025 with ZERO information loss.
+
+---
+
+## 🆕 Weekly Summaries ⭐ **LATEST UPDATES**
+
+### Weekly Commits Summary (December 16-23, 2025)
+Comprehensive consolidation of all commits and changes from the past week:
+
+- **[WEEKLY_COMMITS_SUMMARY_2025-12-23.md](../WEEKLY_COMMITS_SUMMARY_2025-12-23.md)** ⭐ **NEW (Dec 23)**
+  - **COMPLETE WEEKLY REVIEW** of all commits from December 16-23, 2025
+  - Primary PR #2364: Profession model architecture improvements
+  - 2 commits reviewed, 300+ files changed, ~100,000 lines
+  - Major changes: Profession test model re-architecture, model settings merge fix
+  - New features: 6 AI integrations (Gemini Geospatial, OpenAI Batch, Moderation, GPT-5.2, GPT-Image-1.5, Symfony Process)
+  - Bug fixes: 11 major fixes (async tools, SSE streaming, chat UI, security)
+  - Documentation: Status updates, consolidation, organization (549 files)
+  - Code quality: Improved to 98/100 (97.5% issue reduction)
+  - Testing: 40+ new test cases, comprehensive coverage
+  - Breaking changes: Pro tool reorganization (6 tools moved)
+  - Migration guide included
+  - Statistics and next steps documented
+  - Zero information loss - everything preserved
 
 ---
 
