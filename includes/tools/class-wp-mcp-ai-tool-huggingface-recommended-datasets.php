@@ -69,8 +69,30 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 	 * @return array
 	 */
 	public function get_parameters_schema() {
-		$definition = $this->get_definition();
-		return isset( $definition['parameters'] ) ? $definition['parameters'] : array();
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'use_case' => array(
+					'type'        => 'string',
+					'description' => 'The use case (e.g., "comment moderation", "blog summarization", "product categorization", "multilingual translation")',
+				),
+				'category' => array(
+					'type'        => 'string',
+					'enum'        => array( 'nlp', 'vision', 'audio', 'multimodal', 'all' ),
+					'description' => 'Filter by category',
+					'default'     => 'all',
+				),
+				'limit'    => array(
+					'type'        => 'integer',
+					'description' => 'Number of recommendations to return',
+					'default'     => 5,
+					'minimum'     => 1,
+					'maximum'     => 20,
+				),
+			),
+			'required'             => array( 'use_case' ),
+			'additionalProperties' => false,
+		);
 	}
 
 		/**

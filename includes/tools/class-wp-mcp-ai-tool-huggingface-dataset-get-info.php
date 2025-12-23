@@ -69,8 +69,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Info' ) ) {
 	 * @return array
 	 */
 	public function get_parameters_schema() {
-		$definition = $this->get_definition();
-		return isset( $definition['parameters'] ) ? $definition['parameters'] : array();
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'dataset' => array(
+					'type'        => 'string',
+					'description' => 'Dataset name (e.g., "squad", "imdb")',
+				),
+			),
+			'required'             => array( 'dataset' ),
+			'additionalProperties' => false,
+		);
 	}
 
 		/**

@@ -69,8 +69,47 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 	 * @return array
 	 */
 	public function get_parameters_schema() {
-		$definition = $this->get_definition();
-		return isset( $definition['parameters'] ) ? $definition['parameters'] : array();
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'dataset' => array(
+					'type'        => 'string',
+					'description' => 'Dataset name (e.g., "squad", "imdb")',
+				),
+				'config'  => array(
+					'type'        => 'string',
+					'description' => 'Configuration name (default: "default")',
+					'default'     => 'default',
+				),
+				'split'   => array(
+					'type'        => 'string',
+					'description' => 'Split name (e.g., "train", "test")',
+				),
+				'where'   => array(
+					'type'        => 'string',
+					'description' => 'Filter expression (e.g., "label = 1", "score > 0.5")',
+				),
+				'orderby' => array(
+					'type'        => 'string',
+					'description' => 'Column to sort by (e.g., "score DESC")',
+				),
+				'offset'  => array(
+					'type'        => 'integer',
+					'description' => 'Starting row for pagination (0-based)',
+					'default'     => 0,
+					'minimum'     => 0,
+				),
+				'length'  => array(
+					'type'        => 'integer',
+					'description' => 'Number of results to return (max 100)',
+					'default'     => 10,
+					'minimum'     => 1,
+					'maximum'     => 100,
+				),
+			),
+			'required'             => array( 'dataset', 'split', 'where' ),
+			'additionalProperties' => false,
+		);
 	}
 
 		/**
