@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-minimum-base-model',
-        'version' => 'dev-copilot/update-minimum-base-model',
-        'reference' => '08b60ca09e7980b62cc40a30c2ebd9c2ed1a5a5d',
+        'pretty_version' => 'dev-copilot/fix-array-offset-warning-again',
+        'version' => 'dev-copilot/fix-array-offset-warning-again',
+        'reference' => 'c51a82ef2fd488af513c8e7a3defaf80f14b2d78',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-minimum-base-model',
-            'version' => 'dev-copilot/update-minimum-base-model',
-            'reference' => '08b60ca09e7980b62cc40a30c2ebd9c2ed1a5a5d',
+            'pretty_version' => 'dev-copilot/fix-array-offset-warning-again',
+            'version' => 'dev-copilot/fix-array-offset-warning-again',
+            'reference' => 'c51a82ef2fd488af513c8e7a3defaf80f14b2d78',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
