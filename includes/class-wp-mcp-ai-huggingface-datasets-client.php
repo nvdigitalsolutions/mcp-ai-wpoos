@@ -490,7 +490,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 
 			$response = wp_remote_get( $url, $args );
 
-			return $this->handle_response( $response, $endpoint );
+			return $this->handle_response( $response, $endpoint, $params );
 		}
 
 		/**
@@ -498,9 +498,10 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 		 *
 		 * @param array|WP_Error $response HTTP response.
 		 * @param string         $endpoint Endpoint for context.
+		 * @param array          $params   Request parameters for context.
 		 * @return array|WP_Error Processed response or error.
 		 */
-		protected function handle_response( $response, $endpoint = '' ) {
+		protected function handle_response( $response, $endpoint = '', $params = array() ) {
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error(
 					'huggingface_datasets_connection_failed',
@@ -526,9 +527,49 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 						'status'   => $status_code,
 						'endpoint' => $endpoint,
 						'body'     => substr( $body, 0, 500 ),
+						'dataset'  => isset( $params['dataset'] ) ? $params['dataset'] : 'unknown',
 					)
 				);
 
+				// Provide specific error message for 404 errors with dataset suggestions.
+				if ( 404 === $status_code && isset( $params['dataset'] ) ) {
+					$dataset       = $params['dataset'];
+					$error_message = sprintf(
+						/* translators: %s: Dataset name */
+						__( 'Dataset "%s" not found on HuggingFace Hub.', 'wp-mcp-ai' ),
+						$dataset
+					);
+
+					// Add helpful suggestions for common renamed datasets.
+					$dataset_suggestions = $this->get_dataset_name_suggestions( $dataset );
+					if ( ! empty( $dataset_suggestions ) ) {
+						// Format suggestions with quotes.
+						$formatted_suggestions = array();
+						foreach ( $dataset_suggestions as $suggestion ) {
+							$formatted_suggestions[] = '"' . $suggestion . '"';
+						}
+
+						$error_message .= ' ' . sprintf(
+							/* translators: %s: Suggested dataset name */
+							__( 'Did you mean: %s?', 'wp-mcp-ai' ),
+							implode( ', ', $formatted_suggestions )
+						);
+					} else {
+						$error_message .= ' ' . __( 'Please verify the dataset name at https://huggingface.co/datasets', 'wp-mcp-ai' );
+					}
+
+					return new WP_Error(
+						'wp_mcp_ai_hf_datasets_not_found',
+						$error_message,
+						array(
+							'status'      => $status_code,
+							'dataset'     => $dataset,
+							'suggestions' => $dataset_suggestions,
+						)
+					);
+				}
+
+				// Generic error for other status codes.
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_api_error',
 					sprintf(
@@ -666,6 +707,92 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 				'status'  => 'success',
 				'message' => __( 'Successfully connected to HuggingFace Dataset Viewer API.', 'wp-mcp-ai' ),
 			);
+		}
+
+		/**
+		 * Get dataset name suggestions for common renamed or moved datasets.
+		 *
+		 * This method maintains a curated list of popular datasets that have been
+		 * renamed or moved on HuggingFace Hub. When a dataset is not found (404),
+		 * this provides helpful suggestions to users.
+		 *
+		 * @param string $dataset The dataset name that was not found.
+		 * @return array Array of suggested dataset names.
+		 *
+		 * @since 1.0.0
+		 *
+		 * To update this mapping:
+		 * 1. Check the current dataset name at https://huggingface.co/datasets
+		 * 2. Add the old/common name as the key
+		 * 3. Add the current canonical name as the value
+		 * 4. Verify the mapping works on HuggingFace Hub
+		 * 5. Add a test case in tests/test-huggingface-datasets-client.php
+		 */
+		protected function get_dataset_name_suggestions( $dataset ) {
+			// Map of old/common names to their current canonical names.
+			// All names verified against HuggingFace Hub as of December 2024.
+			// See: https://huggingface.co/datasets
+			$dataset_map = array(
+				// Text Classification & Sentiment Analysis.
+				'imdb'                => 'stanfordnlp/imdb',
+
+				// Question Answering.
+				'squad'               => 'rajpurkar/squad',
+				'squad_v2'            => 'rajpurkar/squad_v2',
+
+				// NLU Benchmarks.
+				'glue'                => 'nyu-mll/glue',
+				'super_glue'          => 'super_glue',
+				'superglue'           => 'super_glue',
+
+				// Machine Translation.
+				'wmt'                 => 'wmt/wmt14',
+				'wmt14'               => 'wmt/wmt14',
+				'wmt16'               => 'wmt/wmt16',
+				'wmt17'               => 'wmt/wmt17',
+				'wmt19'               => 'wmt/wmt19',
+
+				// Summarization.
+				'cnn_dailymail'       => 'abisee/cnn_dailymail',
+				'multi_news'          => 'alexfabbri/multi_news',
+				'xsum'                => 'EdinburghNLP/xsum',
+
+				// Speech & Audio.
+				'common_voice'        => 'mozilla-foundation/common_voice_17_0',
+				'librispeech'         => 'openslr/librispeech_asr',
+				'librispeech_asr'     => 'openslr/librispeech_asr',
+
+				// General Text Corpora.
+				'wikipedia'           => 'wikimedia/wikipedia',
+				'bookcorpus'          => 'bookcorpus',
+				'c4'                  => 'allenai/c4',
+
+				// Code.
+				'code_search_net'     => 'code_search_net',
+				'the_pile'            => 'EleutherAI/pile',
+			);
+
+			// Normalize dataset name for comparison.
+			$normalized_dataset = strtolower( trim( $dataset ) );
+
+			// Check if we have a direct mapping.
+			if ( isset( $dataset_map[ $normalized_dataset ] ) ) {
+				return array( $dataset_map[ $normalized_dataset ] );
+			}
+
+			// Check if the dataset might be missing an organization prefix.
+			$suggestions = array();
+			foreach ( $dataset_map as $old_name => $new_name ) {
+				// If the provided name matches the end part of a known dataset.
+				if ( strpos( $new_name, '/' ) !== false ) {
+					$parts = explode( '/', $new_name );
+					if ( strtolower( end( $parts ) ) === $normalized_dataset ) {
+						$suggestions[] = $new_name;
+					}
+				}
+			}
+
+			return $suggestions;
 		}
 	}
 }
