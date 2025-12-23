@@ -450,6 +450,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-quiz-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-enhanced-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
