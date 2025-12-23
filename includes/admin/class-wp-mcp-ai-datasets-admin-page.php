@@ -20,6 +20,13 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 	class WP_MCP_AI_Datasets_Admin_Page {
 
 		/**
+		 * Page hook suffix.
+		 *
+		 * @var string
+		 */
+		private $page_hook;
+
+		/**
 		 * Initialize the admin page.
 		 */
 		public function __construct() {
@@ -33,7 +40,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 		 * Add admin menu page.
 		 */
 		public function add_menu_page() {
-			add_submenu_page(
+			$this->page_hook = add_submenu_page(
 				'wp-mcp-ai-dashboard',
 				__( 'HuggingFace Datasets', 'wp-mcp-ai' ),
 				__( 'HF Datasets', 'wp-mcp-ai' ),
@@ -49,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 		 * @param string $hook Current page hook.
 		 */
 		public function enqueue_scripts( $hook ) {
-			if ( 'wp-mcp-ai_page_wp-mcp-ai-datasets' !== $hook ) {
+			if ( $this->page_hook !== $hook ) {
 				return;
 			}
 
