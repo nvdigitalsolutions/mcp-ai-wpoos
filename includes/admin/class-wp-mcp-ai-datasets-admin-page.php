@@ -62,14 +62,14 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 
 			wp_enqueue_style(
 				'wp-mcp-ai-datasets-admin',
-				plugins_url( 'assets/css/datasets-admin.css', WP_MCP_AI_PLUGIN_FILE ),
+				WP_MCP_AI_URL . 'assets/css/datasets-admin.css',
 				array(),
 				WP_MCP_AI_VERSION
 			);
 
 			wp_enqueue_script(
 				'wp-mcp-ai-datasets-admin',
-				plugins_url( 'assets/js/datasets-admin.js', WP_MCP_AI_PLUGIN_FILE ),
+				WP_MCP_AI_URL . 'assets/js/datasets-admin.js',
 				array( 'jquery', 'wp-util' ),
 				WP_MCP_AI_VERSION,
 				true
