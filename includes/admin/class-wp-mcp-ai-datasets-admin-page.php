@@ -398,7 +398,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 			}
 
 			try {
-				$client = WP_MCP_AI_Container::get( 'client.huggingface_datasets' );
+				$client = WP_MCP_AI_Container::get_instance()->get( 'client.huggingface_datasets' );
 
 				// Get dataset info and preview.
 				$splits  = $client->get_splits( $dataset );

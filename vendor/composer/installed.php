@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-array-offset-warning-again',
-        'version' => 'dev-copilot/fix-array-offset-warning-again',
-        'reference' => 'c51a82ef2fd488af513c8e7a3defaf80f14b2d78',
+        'pretty_version' => 'dev-copilot/fix-error-loading-dataset',
+        'version' => 'dev-copilot/fix-error-loading-dataset',
+        'reference' => '2b0584804cf7f2887dd8bf487002709c1a782454',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-array-offset-warning-again',
-            'version' => 'dev-copilot/fix-array-offset-warning-again',
-            'reference' => 'c51a82ef2fd488af513c8e7a3defaf80f14b2d78',
+            'pretty_version' => 'dev-copilot/fix-error-loading-dataset',
+            'version' => 'dev-copilot/fix-error-loading-dataset',
+            'reference' => '2b0584804cf7f2887dd8bf487002709c1a782454',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

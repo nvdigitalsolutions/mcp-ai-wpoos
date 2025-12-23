@@ -82,7 +82,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 			}
 
 			// Get client.
-			$client = WP_MCP_AI_Container::get( 'client.huggingface_datasets' );
+			$client = WP_MCP_AI_Container::get_instance()->get( 'client.huggingface_datasets' );
 
 			// Get splits.
 			$result = $client->get_splits( $dataset );
