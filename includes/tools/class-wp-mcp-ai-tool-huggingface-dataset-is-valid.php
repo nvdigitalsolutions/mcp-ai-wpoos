@@ -45,6 +45,34 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 			return 'huggingface_dataset_is_valid';
 		}
 
+	/**
+	 * Get tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'HuggingFace Dataset Is Valid', 'wp-mcp-ai' );
+	}
+
+	/**
+	 * Get tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Check if a HuggingFace dataset exists and is valid', 'wp-mcp-ai' );
+	}
+
+	/**
+	 * Get tool parameters schema.
+	 *
+	 * @return array
+	 */
+	public function get_parameters_schema() {
+		$definition = $this->get_definition();
+		return isset( $definition['parameters'] ) ? $definition['parameters'] : array();
+	}
+
 		/**
 		 * Get tool definition for MCP.
 		 *

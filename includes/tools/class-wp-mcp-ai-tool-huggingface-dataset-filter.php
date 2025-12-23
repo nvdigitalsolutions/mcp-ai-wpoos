@@ -45,6 +45,34 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 			return 'huggingface_dataset_filter';
 		}
 
+	/**
+	 * Get tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'HuggingFace Dataset Filter', 'wp-mcp-ai' );
+	}
+
+	/**
+	 * Get tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Filter rows in a HuggingFace dataset based on conditions', 'wp-mcp-ai' );
+	}
+
+	/**
+	 * Get tool parameters schema.
+	 *
+	 * @return array
+	 */
+	public function get_parameters_schema() {
+		$definition = $this->get_definition();
+		return isset( $definition['parameters'] ) ? $definition['parameters'] : array();
+	}
+
 		/**
 		 * Get tool definition for MCP.
 		 *
