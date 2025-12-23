@@ -132,6 +132,80 @@ class Test_Block_Render_Non_Block_Context extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test assistant-builder render.php handles missing $block variable gracefully.
+	 */
+	public function test_assistant_builder_render_without_block_variable() {
+		// Explicitly unset $block to simulate non-block context.
+		$block = null;
+		unset( $block );
+
+		$attributes = array(
+			'showAssistantSelector' => true,
+			'showToolsGrid'         => true,
+			'showKnowledgeBase'     => true,
+		);
+
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
+
+		// This should not produce any warnings or errors.
+		ob_start();
+		include WP_MCP_AI_PATH . 'includes/blocks/assistant-builder/render.php';
+		$output = ob_get_clean();
+
+		// Should still produce valid output.
+		$this->assertNotEmpty( $output );
+		$this->assertStringContainsString( 'wp-block-wp-mcp-ai-assistant-builder', $output );
+		$this->assertStringContainsString( 'data-block-id=', $output );
+	}
+
+	/**
+	 * Test chat render.php handles missing $block variable gracefully.
+	 */
+	public function test_chat_render_without_block_variable() {
+		// Explicitly unset $block to simulate non-block context.
+		$block = null;
+		unset( $block );
+
+		$attributes = array(
+			'assistantId'     => 0,
+			'enableStreaming' => true,
+		);
+
+		// This should not produce any warnings or errors.
+		ob_start();
+		include WP_MCP_AI_PATH . 'includes/blocks/chat/render.php';
+		$output = ob_get_clean();
+
+		// Should still produce valid output.
+		$this->assertNotEmpty( $output );
+		$this->assertStringContainsString( 'wp-block-wp-mcp-ai-chat', $output );
+	}
+
+	/**
+	 * Test assistant-selector render.php handles missing $block variable gracefully.
+	 */
+	public function test_assistant_selector_render_without_block_variable() {
+		// Explicitly unset $block to simulate non-block context.
+		$block = null;
+		unset( $block );
+
+		$attributes = array(
+			'label'           => 'Test Selector',
+			'showStartButton' => true,
+		);
+
+		// This should not produce any warnings or errors.
+		ob_start();
+		include WP_MCP_AI_PATH . 'includes/blocks/assistant-selector/render.php';
+		$output = ob_get_clean();
+
+		// Should still produce valid output.
+		$this->assertNotEmpty( $output );
+		$this->assertStringContainsString( 'wp-block-wp-mcp-ai-assistant-selector', $output );
+		$this->assertStringContainsString( 'data-block-id=', $output );
+	}
+
+	/**
 	 * Test tools-grid render.php denies access for users without permission.
 	 */
 	public function test_tools_grid_render_permission_check() {
