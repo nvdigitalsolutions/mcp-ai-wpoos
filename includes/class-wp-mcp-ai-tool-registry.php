@@ -486,6 +486,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'github_repository_operations'   => 'external-tools',
 				'manage_github_codespace'        => 'external-tools',
 				'generic_rest'                   => 'external-tools',
+				// HuggingFace Datasets API tools.
+				'huggingface_dataset_search'     => 'external-tools',
+				'huggingface_dataset_get_info'   => 'external-tools',
+				'huggingface_dataset_get_size'   => 'external-tools',
+				'huggingface_dataset_get_rows'   => 'external-tools',
+				'huggingface_dataset_preview_rows' => 'external-tools',
+				'huggingface_dataset_list_splits' => 'external-tools',
+				'huggingface_dataset_get_statistics' => 'external-tools',
+				'huggingface_dataset_get_parquet' => 'external-tools',
+				'huggingface_dataset_is_valid'   => 'external-tools',
+				'huggingface_dataset_filter'     => 'external-tools',
+				'huggingface_recommended_datasets' => 'external-tools',
 			);
 
 			/**
