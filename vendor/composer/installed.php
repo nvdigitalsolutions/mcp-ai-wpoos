@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-client-error-yet-again',
-        'version' => 'dev-copilot/fix-chat-client-error-yet-again',
-        'reference' => '31930b049a584b007e378f43fe77bb0f490da6c5',
+        'pretty_version' => 'dev-copilot/create-tools-for-tutors',
+        'version' => 'dev-copilot/create-tools-for-tutors',
+        'reference' => '5d2bea3d5fa3f2e5444476e1560f18f7f03e46a7',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-client-error-yet-again',
-            'version' => 'dev-copilot/fix-chat-client-error-yet-again',
-            'reference' => '31930b049a584b007e378f43fe77bb0f490da6c5',
+            'pretty_version' => 'dev-copilot/create-tools-for-tutors',
+            'version' => 'dev-copilot/create-tools-for-tutors',
+            'reference' => '5d2bea3d5fa3f2e5444476e1560f18f7f03e46a7',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
