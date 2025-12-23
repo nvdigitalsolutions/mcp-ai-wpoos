@@ -1,0 +1,128 @@
+<?php
+/**
+ * Tool for getting paginated rows from HuggingFace dataset.
+ *
+ * @package WP_MCP_AI
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
+	/**
+	 * Provides paginated access to dataset rows with offset and length control.
+	 *
+	 * @since 1.0.0
+	 */
+	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows {
+
+		/**
+		 * Get tool slug.
+		 *
+		 * @return string
+		 */
+		public function get_slug() {
+			return 'huggingface_dataset_get_rows';
+		}
+
+		/**
+		 * Get tool definition for MCP.
+		 *
+		 * @return array
+		 */
+		public function get_definition() {
+			return array(
+				'name'        => 'Get Dataset Rows',
+				'description' => 'Get paginated rows from a HuggingFace dataset split with offset and length control',
+				'parameters'  => array(
+					'dataset' => array(
+						'type'        => 'string',
+						'required'    => true,
+						'description' => 'Dataset name (e.g., "squad", "imdb")',
+					),
+					'config'  => array(
+						'type'        => 'string',
+						'required'    => false,
+						'description' => 'Configuration name (default: "default")',
+						'default'     => 'default',
+					),
+					'split'   => array(
+						'type'        => 'string',
+						'required'    => true,
+						'description' => 'Split name (e.g., "train", "test", "validation")',
+					),
+					'offset'  => array(
+						'type'        => 'integer',
+						'required'    => false,
+						'description' => 'Starting row (0-based index)',
+						'default'     => 0,
+						'minimum'     => 0,
+					),
+					'length'  => array(
+						'type'        => 'integer',
+						'required'    => false,
+						'description' => 'Number of rows to return (max 100)',
+						'default'     => 10,
+						'minimum'     => 1,
+						'maximum'     => 100,
+					),
+				),
+			);
+		}
+
+		/**
+		 * Get required capability.
+		 *
+		 * @return string
+		 */
+		public function get_required_capability() {
+			return apply_filters( 'wp_mcp_ai_tool_huggingface_datasets_capability', 'read' );
+		}
+
+		/**
+		 * Execute the tool.
+		 *
+		 * @param array $arguments Tool arguments.
+		 * @param array $context   Execution context.
+		 * @return array|WP_Error
+		 */
+		public function execute( $arguments, $context ) {
+			// Check if HuggingFace Datasets is enabled.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( empty( $settings['enable_huggingface_datasets'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_hf_datasets_disabled',
+					__( 'HuggingFace Datasets integration is not enabled. Enable it in WP oOS → Providers settings.', 'wp-mcp-ai' )
+				);
+			}
+
+			// Sanitize inputs.
+			$dataset = sanitize_text_field( $arguments['dataset'] );
+			$config  = isset( $arguments['config'] ) ? sanitize_text_field( $arguments['config'] ) : 'default';
+			$split   = sanitize_text_field( $arguments['split'] );
+			$offset  = isset( $arguments['offset'] ) ? absint( $arguments['offset'] ) : 0;
+			$length  = isset( $arguments['length'] ) ? absint( $arguments['length'] ) : 10;
+			$length  = max( 1, min( 100, $length ) );
+
+			if ( empty( $dataset ) || empty( $split ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_hf_datasets_missing_params',
+					__( 'Dataset and split are required.', 'wp-mcp-ai' )
+				);
+			}
+
+			// Get client.
+			$client = WP_MCP_AI_Container::get_instance()->get( 'client.huggingface_datasets' );
+
+			// Get rows.
+			$result = $client->get_rows( $dataset, $config, $split, $offset, $length );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			return $result;
+		}
+	}
+}
