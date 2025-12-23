@@ -356,4 +356,20 @@ class WP_MCP_AI_Assistant_Repository {
 
 		return 'mcp_ai_' . $meta_key;
 	}
+
+	/**
+	 * Get preferred datasets for an assistant.
+	 *
+	 * @param int $assistant_id Assistant ID.
+	 * @return array Array of preferred datasets or empty array.
+	 */
+	public function get_preferred_datasets( $assistant_id ) {
+		$datasets = $this->get_meta( $assistant_id, 'preferred_datasets', array() );
+
+		if ( ! is_array( $datasets ) ) {
+			return array();
+		}
+
+		return $datasets;
+	}
 }

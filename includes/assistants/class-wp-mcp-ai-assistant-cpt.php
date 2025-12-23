@@ -4262,6 +4262,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'external_action_identifier' => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
 				'external_action_type'       => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
 				'required_capability'        => get_post_meta( $assistant_id, self::META_REQUIRED_CAPABILITY, true ),
+				'preferred_datasets'         => get_post_meta( $assistant_id, self::META_PREFERRED_DATASETS, true ),
 			);
 
 			if ( ! is_array( $config['tools'] ) ) {
@@ -4356,6 +4357,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$config['required_capability'] = '';
 			} else {
 				$config['required_capability'] = self::sanitize_required_capability_meta( $config['required_capability'] );
+			}
+
+			if ( ! is_array( $config['preferred_datasets'] ) ) {
+				$config['preferred_datasets'] = array();
+			} else {
+				$config['preferred_datasets'] = self::sanitize_preferred_datasets_meta( $config['preferred_datasets'] );
 			}
 
 			return $config;
