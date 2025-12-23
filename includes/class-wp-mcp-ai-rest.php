@@ -4649,15 +4649,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		// Provider, model, and temperature from profession take priority when set (for testing specifics).
-		if ( ! empty( $default_provider_val ) ) {
+		// Use explicit checks instead of empty() to handle edge cases like temperature = 0.
+		if ( null !== $default_provider_val && '' !== $default_provider_val && false !== $default_provider_val ) {
 			$assistant_config['provider'] = $default_provider_val;
 		}
 
-		if ( ! empty( $default_model_val ) ) {
+		if ( null !== $default_model_val && '' !== $default_model_val && false !== $default_model_val ) {
 			$assistant_config['model'] = $default_model_val;
 		}
 
-		if ( ! empty( $default_temp_val ) && is_numeric( $default_temp_val ) ) {
+		if ( null !== $default_temp_val && false !== $default_temp_val && '' !== $default_temp_val && is_numeric( $default_temp_val ) ) {
 			$assistant_config['temperature'] = floatval( $default_temp_val );
 		}
 

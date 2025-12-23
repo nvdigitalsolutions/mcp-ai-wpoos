@@ -143,9 +143,13 @@
 		// 3. If no associated assistant, create temporary assistant from profession data only
 		const assistantId = 'profession_' + professionId;
 
+		// Store associated assistant information if available for reference
+		const associatedAssistantId = professionData && professionData.associated_assistant ? professionData.associated_assistant : 0;
+
 		window.wpMcpAiChatInstances[instanceId] = {
 			assistantId: assistantId,
 			professionId: professionId,
+			associatedAssistantId: associatedAssistantId,
 			userId: (window.wpMcpAiChat && typeof window.wpMcpAiChat.currentUserId !== 'undefined') ? window.wpMcpAiChat.currentUserId : 0,
 			messagesEndpoint: baseRestUrl + '/chat-client',
 			toolsEndpoint: baseRestUrl + '/tools',
