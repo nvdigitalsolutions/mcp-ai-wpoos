@@ -4615,9 +4615,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		// Merge profession configuration with assistant configuration.
 		if ( ! empty( $profession_prompt ) ) {
 			if ( $has_assistant_base ) {
-				// If assistant exists, prepend profession role to existing instructions.
-				// This matches how assistants handle primary roles with additional instructions.
-				$assistant_config['system_prompt'] = $profession_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $assistant_config['system_prompt'];
+				// If assistant exists, append profession role to existing instructions.
+				// This ensures the assistant's base knowledge is primary and profession data supplements it.
+				$assistant_config['system_prompt'] .= "\n\n" . __( 'Professional Role & Expertise:', 'wp-mcp-ai' ) . "\n" . $profession_prompt;
 			} else {
 				// No assistant base - use profession role as the primary system prompt.
 				$assistant_config['system_prompt'] = $profession_prompt;
