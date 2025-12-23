@@ -95,48 +95,48 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 		);
 	}
 
-		/**
-		 * Get tool definition for MCP.
-		 *
-		 * @return array
-		 */
-		public function get_definition() {
-			return array(
-				'name'        => 'Get Recommended HuggingFace Datasets',
-				'description' => 'Get curated dataset recommendations based on your use case (content creation, e-commerce, moderation, etc.)',
-				'parameters'  => array(
-					'use_case' => array(
-						'type'        => 'string',
-						'required'    => true,
-						'description' => 'The use case (e.g., "comment moderation", "blog summarization", "product categorization", "multilingual translation")',
-					),
-					'category'    => array(
-						'type'        => 'string',
-						'required'    => false,
-						'enum'        => array( 'nlp', 'vision', 'audio', 'multimodal', 'all' ),
-						'description' => 'Filter by category',
-						'default'     => 'all',
-					),
-					'limit'       => array(
-						'type'        => 'integer',
-						'required'    => false,
-						'description' => 'Number of recommendations to return',
-						'default'     => 5,
-						'minimum'     => 1,
-						'maximum'     => 20,
-					),
+	/**
+	 * Get tool definition for MCP.
+	 *
+	 * @return array
+	 */
+	public function get_definition() {
+		return array(
+			'name'        => 'Get Recommended HuggingFace Datasets',
+			'description' => 'Get curated dataset recommendations based on your use case (content creation, e-commerce, moderation, etc.)',
+			'parameters'  => array(
+				'use_case' => array(
+					'type'        => 'string',
+					'required'    => true,
+					'description' => 'The use case (e.g., "comment moderation", "blog summarization", "product categorization", "multilingual translation")',
 				),
-			);
-		}
+				'category'    => array(
+					'type'        => 'string',
+					'required'    => false,
+					'enum'        => array( 'nlp', 'vision', 'audio', 'multimodal', 'all' ),
+					'description' => 'Filter by category',
+					'default'     => 'all',
+				),
+				'limit'       => array(
+					'type'        => 'integer',
+					'required'    => false,
+					'description' => 'Number of recommendations to return',
+					'default'     => 5,
+					'minimum'     => 1,
+					'maximum'     => 20,
+				),
+			),
+		);
+	}
 
-		/**
-		 * Get required capability.
-		 *
-		 * @return string
-		 */
-		public function get_required_capability() {
-			return apply_filters( 'wp_mcp_ai_tool_huggingface_datasets_capability', 'read' );
-		}
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return apply_filters( 'wp_mcp_ai_tool_huggingface_datasets_capability', 'read' );
+	}
 
 	/**
 	 * Get capability flags for this tool.
@@ -154,10 +154,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 		);
 	}
 
-		/**
-		 * Execute the tool.
-		 *
-		 * @param array $arguments Tool arguments.
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
 		 * @param array $context   Execution context.
 		 * @return array|WP_Error
 		 */

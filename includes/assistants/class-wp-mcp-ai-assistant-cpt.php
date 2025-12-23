@@ -1373,12 +1373,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'schema' => array(
 							'type'  => 'array',
 							'items' => array(
-								'type'       => 'object',
-								'properties' => array(
-									'dataset' => array(
+								'type'                 => 'object',
+								'properties'           => array(
+									'dataset'  => array(
 										'type' => 'string',
 									),
-									'name'    => array(
+									'name'     => array(
 										'type' => 'string',
 									),
 									'category' => array(
@@ -3927,14 +3927,15 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			if ( isset( $_POST['wp_mcp_ai_datasets_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_datasets_meta_nonce'] ) ), 'wp_mcp_ai_datasets_meta' ) ) {
 				$preferred_datasets = array();
 				if ( isset( $_POST['wp_mcp_ai_preferred_datasets'] ) && is_array( $_POST['wp_mcp_ai_preferred_datasets'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_text_field() and sanitize_preferred_datasets_meta().
+					$raw_datasets = wp_unslash( $_POST['wp_mcp_ai_preferred_datasets'] );
 					// Each checkbox value is a JSON-encoded dataset object.
-					foreach ( $_POST['wp_mcp_ai_preferred_datasets'] as $dataset_json ) {
-						$dataset = json_decode( sanitize_text_field( wp_unslash( $dataset_json ) ), true );
+					foreach ( $raw_datasets as $dataset_json ) {
+						$dataset = json_decode( sanitize_text_field( $dataset_json ), true );
 						if ( is_array( $dataset ) ) {
 							$preferred_datasets[] = $dataset;
 						}
 					}
-					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_preferred_datasets_meta().
 					$preferred_datasets = self::sanitize_preferred_datasets_meta( $preferred_datasets );
 				}
 

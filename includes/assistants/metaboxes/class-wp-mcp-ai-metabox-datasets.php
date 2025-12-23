@@ -158,15 +158,20 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 							data-description="<?php echo esc_attr( strtolower( $dataset_info['description'] ) ); ?>"
 							data-tags="<?php echo esc_attr( strtolower( implode( ' ', $dataset_info['tags'] ) ) ); ?>">
 							<td>
-								<input 
-									type="checkbox" 
-									name="wp_mcp_ai_preferred_datasets[]" 
-									value="<?php echo esc_attr( wp_json_encode( array(
+								<?php
+								$dataset_value = wp_json_encode(
+									array(
 										'dataset'  => $dataset_info['dataset'],
 										'name'     => $dataset_info['name'],
 										'category' => $dataset_info['category'],
 										'priority' => $dataset_info['priority'],
-									) ) ); ?>"
+									)
+								);
+								?>
+								<input 
+									type="checkbox" 
+									name="wp_mcp_ai_preferred_datasets[]" 
+									value="<?php echo esc_attr( $dataset_value ); ?>"
 									class="wp-mcp-ai-dataset-checkbox"
 									<?php checked( $is_selected ); ?>
 								/>
