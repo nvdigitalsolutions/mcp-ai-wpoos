@@ -55,6 +55,17 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array Tool results.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check user permissions - stats viewing requires read capability.
+		$user_id             = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$required_capability = apply_filters( 'wp_mcp_ai_profession_stats_capability', 'read', $context, $arguments );
+
+		if ( $required_capability && $user_id && ! user_can( $user_id, $required_capability ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'You do not have permission to view profession statistics.', 'wp-mcp-ai' ),
+			);
+		}
+
 		// Get profession service.
 		if ( ! function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
 			return array(
