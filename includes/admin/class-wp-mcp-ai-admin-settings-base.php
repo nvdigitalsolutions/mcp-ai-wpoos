@@ -181,10 +181,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			if ( ! is_array( $priority_list ) ) {
-				return array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
+				return array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
 			}
 
-			$available_providers = array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
+			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
 			$sanitized           = array();
 			$seen                = array();
 
@@ -264,7 +264,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'default_model'                        => 'gpt-4.1',
 				'default_gemini_model'                 => 'gemini-2.5-flash',
 				'default_provider'                     => 'openai',
-				'provider_priority_list'               => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
+				'provider_priority_list'               => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ),
 				'web_search_provider'                  => 'duckduckgo',
 				'brave_search_api_key'                 => '',
 				'google_maps_api_key'                  => '',

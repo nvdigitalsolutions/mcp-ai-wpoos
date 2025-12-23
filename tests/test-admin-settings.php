@@ -927,6 +927,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertContains( 'gemini', $defaults['provider_priority_list'] );
 		$this->assertContains( 'ollama', $defaults['provider_priority_list'] );
 		$this->assertContains( 'lm_studio', $defaults['provider_priority_list'] );
+		$this->assertContains( 'huggingface', $defaults['provider_priority_list'] );
+		$this->assertContains( 'anthropic', $defaults['provider_priority_list'] );
 	}
 
 	/**
@@ -1056,5 +1058,41 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		// Verify that jquery-ui-sortable is in the dependencies.
 		$this->assertContains( 'jquery-ui-sortable', $script_data->deps, 'The wp-mcp-ai-admin-settings script should have jquery-ui-sortable as a dependency.' );
+	}
+
+	/**
+	 * Test that render_provider_priority_list includes huggingface even if not in saved settings.
+	 * This simulates an existing installation that was upgraded and doesn't have huggingface in their saved list.
+	 */
+	public function test_render_provider_priority_list_includes_missing_providers() {
+		// Simulate an old saved setting without huggingface.
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'provider_priority_list' => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
+			)
+		);
+
+		// Get the admin settings instance.
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		// Capture the output of the render method.
+		ob_start();
+		$admin_settings->render_provider_priority_list_field();
+		$output = ob_get_clean();
+
+		// Verify that huggingface is now included in the rendered output.
+		$this->assertStringContainsString( 'data-provider="huggingface"', $output, 'Hugging Face should be included in the rendered priority list even if not in saved settings.' );
+		$this->assertStringContainsString( 'Hugging Face', $output, 'Hugging Face label should be visible in the output.' );
+
+		// Also verify other providers are still there.
+		$this->assertStringContainsString( 'data-provider="openai"', $output );
+		$this->assertStringContainsString( 'data-provider="gemini"', $output );
+		$this->assertStringContainsString( 'data-provider="anthropic"', $output );
+		$this->assertStringContainsString( 'data-provider="ollama"', $output );
+		$this->assertStringContainsString( 'data-provider="lm_studio"', $output );
+
+		// Clean up.
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 	}
 }

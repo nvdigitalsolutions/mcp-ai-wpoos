@@ -281,6 +281,20 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'client.huggingface',
+			function () {
+				return new WP_MCP_AI_Huggingface_Client();
+			}
+		);
+
+		$this->singleton(
+			'client.huggingface_datasets',
+			function () {
+				return new WP_MCP_AI_Huggingface_Datasets_Client();
+			}
+		);
+
+		$this->singleton(
 			'client.anthropic',
 			function () {
 				return new WP_MCP_AI_Anthropic_Client();
@@ -296,7 +310,8 @@ class WP_MCP_AI_Container {
 					$container->get( 'client.gemini' ),
 					$container->get( 'client.ollama' ),
 					$container->get( 'client.lm_studio' ),
-					$container->get( 'client.anthropic' )
+					$container->get( 'client.anthropic' ),
+					$container->get( 'client.huggingface' )
 				);
 			}
 		);

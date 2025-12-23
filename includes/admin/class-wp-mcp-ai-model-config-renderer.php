@@ -124,6 +124,9 @@ class WP_MCP_AI_Model_Config_Renderer {
 				.wp-mcp-ai-model-provider-badge.gemini {
 					background-color: #4285f4;
 				}
+				.wp-mcp-ai-model-provider-badge.huggingface {
+					background-color: #ff9d00;
+				}
 				.wp-mcp-ai-model-provider-badge.ollama,
 				.wp-mcp-ai-model-provider-badge.lm_studio {
 					background-color: #666;
