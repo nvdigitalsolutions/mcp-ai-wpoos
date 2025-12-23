@@ -434,6 +434,9 @@ class WP_MCP_AI_Shortcode {
 			// Fetch settings once for use throughout this method.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
+			// Check if this is a profession test request.
+			$is_profession_test = is_string( $assistant_id ) && 0 === strpos( $assistant_id, 'profession_' );
+
 			if ( ! $assistant_id ) {
 				$assistant_id = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 			}
@@ -449,30 +452,69 @@ class WP_MCP_AI_Shortcode {
 				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'No assistant has been selected. Please provide an assistant attribute or configure a default.', 'wp-mcp-ai' ) . '</div>';
 			}
 
-			$assistant = get_post( $assistant_id );
-			if ( ! $assistant || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant->post_type || 'publish' !== $assistant->post_status ) {
-				WP_MCP_AI_Logger::log_error(
-					'Shortcode attempted to render unavailable assistant',
-					array(
-						'assistant_id'     => $assistant_id,
-						'assistant_exists' => (bool) $assistant,
-						'post_type'        => $assistant ? $assistant->post_type : null,
-						'post_status'      => $assistant ? $assistant->post_status : null,
-						'attributes'       => $atts,
-					)
-				);
-				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested assistant is not available.', 'wp-mcp-ai' ) . '</div>';
+			// For profession tests, validate the profession and get associated assistant for permissions.
+			if ( $is_profession_test ) {
+				$profession_id = absint( str_replace( 'profession_', '', $assistant_id ) );
+				$profession    = get_post( $profession_id );
+				
+				if ( ! $profession || 'mcp_ai_profession' !== $profession->post_type ) {
+					WP_MCP_AI_Logger::log_error(
+						'Shortcode attempted to render unavailable profession',
+						array(
+							'assistant_id'      => $assistant_id,
+							'profession_id'     => $profession_id,
+							'profession_exists' => (bool) $profession,
+							'post_type'         => $profession ? $profession->post_type : null,
+							'attributes'        => $atts,
+						)
+					);
+					return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested profession is not available.', 'wp-mcp-ai' ) . '</div>';
+				}
+				
+				// For permissions check, use the profession's associated assistant or default assistant.
+				$permissions_assistant_id = get_post_meta( $profession_id, '_wp_mcp_ai_profession_associated_assistant', true );
+				$permissions_assistant_id = absint( $permissions_assistant_id );
+				if ( ! $permissions_assistant_id ) {
+					$permissions_assistant_id = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+				}
+				$assistant = $permissions_assistant_id ? get_post( $permissions_assistant_id ) : null;
+			} else {
+				$permissions_assistant_id = absint( $assistant_id );
+				$assistant                = get_post( $assistant_id );
+			}
+
+			// Validate assistant for permissions (not required for profession tests with no associated assistant).
+			if ( ! $is_profession_test || $permissions_assistant_id ) {
+				if ( ! $assistant || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant->post_type || 'publish' !== $assistant->post_status ) {
+					WP_MCP_AI_Logger::log_error(
+						'Shortcode attempted to render unavailable assistant',
+						array(
+							'assistant_id'           => $assistant_id,
+							'permissions_assistant_id' => isset( $permissions_assistant_id ) ? $permissions_assistant_id : null,
+							'is_profession_test'     => $is_profession_test,
+							'assistant_exists'       => (bool) $assistant,
+							'post_type'              => $assistant ? $assistant->post_type : null,
+							'post_status'            => $assistant ? $assistant->post_status : null,
+							'attributes'             => $atts,
+						)
+					);
+					return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested assistant is not available.', 'wp-mcp-ai' ) . '</div>';
+				}
 			}
 
 			$guest_token = '';
 			if ( $allow_guests ) {
-				$guest_token = self::generate_guest_token( $assistant_id );
+				// Use permissions_assistant_id for guest token if available, otherwise assistant_id.
+				$guest_token_assistant_id = isset( $permissions_assistant_id ) ? $permissions_assistant_id : $assistant_id;
+				$guest_token              = self::generate_guest_token( $guest_token_assistant_id );
 			}
 
 			// Use the effective capability (per-assistant or global).
-			$capability = function_exists( 'wp_mcp_ai_get_effective_chat_capability' )
-				? wp_mcp_ai_get_effective_chat_capability( $assistant_id, 'shortcode' )
-				: wp_mcp_ai_get_required_chat_capability( $assistant_id, 'shortcode' );
+			// For profession tests, use the permissions_assistant_id for capability check.
+			$capability_assistant_id = isset( $permissions_assistant_id ) ? $permissions_assistant_id : $assistant_id;
+			$capability              = function_exists( 'wp_mcp_ai_get_effective_chat_capability' )
+				? wp_mcp_ai_get_effective_chat_capability( $capability_assistant_id, 'shortcode' )
+				: wp_mcp_ai_get_required_chat_capability( $capability_assistant_id, 'shortcode' );
 
 			if ( $guest_token ) {
 				$capability = 'public';
@@ -520,14 +562,18 @@ class WP_MCP_AI_Shortcode {
 			// This ensures that if users have access to the widget, they have access to its built-in tools.
 			$can_upload_attachments = current_user_can( 'upload_files' ) || $allow_guests;
 
-			$assistant_content = get_post_field( 'post_content', $assistant_id );
-			if ( $assistant_content ) {
-				$assistant_content = apply_filters( 'the_content', $assistant_content );
+			// Get assistant content if available (not applicable for profession tests without associated assistant).
+			$assistant_content = '';
+			if ( ! $is_profession_test && $assistant ) {
+				$assistant_content = get_post_field( 'post_content', $assistant->ID );
+				if ( $assistant_content ) {
+					$assistant_content = apply_filters( 'the_content', $assistant_content );
+				}
 			}
 
 			$config = array(
 				'id'                    => $instance_id,
-				'assistantId'           => $assistant_id,
+				'assistantId'           => $assistant_id, // This preserves "profession_XXX" format for profession tests.
 				'userId'                => get_current_user_id(),
 				'restUrl'               => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ),
 				'messagesEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
@@ -550,7 +596,9 @@ class WP_MCP_AI_Shortcode {
 			// Add async tool timeout using helper method (reuses $settings already fetched).
 			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
 
-			$tool_shortcuts = self::get_assistant_tool_shortcuts( $assistant_id );
+			// Get tool shortcuts - for profession tests, get them from the profession's associated assistant if available.
+			$shortcuts_assistant_id = $is_profession_test && isset( $permissions_assistant_id ) ? $permissions_assistant_id : $assistant_id;
+			$tool_shortcuts         = self::get_assistant_tool_shortcuts( $shortcuts_assistant_id );
 			if ( ! empty( $tool_shortcuts ) ) {
 				$config['toolShortcuts'] = $tool_shortcuts;
 			}
@@ -768,17 +816,30 @@ class WP_MCP_AI_Shortcode {
 	/**
 	 * Resolve the assistant identifier provided via shortcode attributes.
 	 *
-	 * Accepts numeric IDs or assistant slugs and gracefully falls back when
-	 * the supplied value cannot be resolved.
+	 * Accepts numeric IDs, assistant slugs, or profession test identifiers (profession_XXX).
+	 * Gracefully falls back when the supplied value cannot be resolved.
 	 *
 	 * @param mixed $assistant Assistant shortcode attribute value.
-	 * @return int Assistant post ID when available, otherwise 0.
+	 * @return int|string|false Assistant post ID when available, profession test identifier (profession_XXX) for profession testing, or 0 if not found.
 	 */
 	public static function resolve_assistant_id( $assistant ) {
 		$assistant = is_scalar( $assistant ) ? trim( (string) $assistant ) : '';
 
 		if ( '' === $assistant ) {
 			return 0;
+		}
+
+		// Check if this is a profession test request (profession_XXX format).
+		if ( is_string( $assistant ) && 0 === strpos( $assistant, 'profession_' ) ) {
+			$profession_id = absint( str_replace( 'profession_', '', $assistant ) );
+			if ( $profession_id ) {
+				// Verify it's actually a profession post.
+				$profession_post = get_post( $profession_id );
+				if ( $profession_post && 'mcp_ai_profession' === $profession_post->post_type ) {
+					// Return the full profession identifier to preserve it through the flow.
+					return 'profession_' . $profession_id;
+				}
+			}
 		}
 
 		$maybe_id = absint( $assistant );

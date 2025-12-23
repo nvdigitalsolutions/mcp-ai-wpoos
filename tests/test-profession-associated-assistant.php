@@ -270,4 +270,110 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		$this->assertSame( 0, $valid_associated_assistant, 'Should fall back to 0 when assistant is unpublished' );
 		$this->assertSame( '', $assistant_title, 'Assistant title should be empty when assistant is unpublished' );
 	}
+
+	/**
+	 * Test that REST API resolves associated assistant when testing profession.
+	 */
+	public function test_rest_resolves_associated_assistant_for_profession_test() {
+		// Ensure REST class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
+		}
+
+		// Set associated assistant for profession.
+		update_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, $this->assistant_id );
+
+		// Create REST instance to access protected method.
+		$rest = new WP_MCP_AI_REST();
+		$reflection = new ReflectionClass( $rest );
+		$method = $reflection->getMethod( 'resolve_assistant_id' );
+		$method->setAccessible( true );
+
+		// Test with profession_ prefix.
+		$resolved_id = $method->invoke( $rest, 'profession_' . $this->profession_id );
+
+		$this->assertSame(
+			$this->assistant_id,
+			$resolved_id,
+			'Should resolve to associated assistant when testing profession'
+		);
+	}
+
+	/**
+	 * Test that REST API uses default assistant when profession has no associated assistant.
+	 */
+	public function test_rest_uses_default_when_no_associated_assistant() {
+		// Ensure REST class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
+		}
+
+		// Create a default assistant and set it in settings.
+		$default_assistant_id = wp_insert_post(
+			array(
+				'post_type'    => 'mcp_ai_assistant',
+				'post_title'   => 'Default Assistant',
+				'post_status'  => 'publish',
+			)
+		);
+
+		// Set as default assistant.
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			update_option( 'wp_mcp_ai_settings', array( 'default_assistant' => $default_assistant_id ) );
+		}
+
+		// Create REST instance to access protected method.
+		$rest = new WP_MCP_AI_REST();
+		$reflection = new ReflectionClass( $rest );
+		$method = $reflection->getMethod( 'resolve_assistant_id' );
+		$method->setAccessible( true );
+
+		// Test with profession_ prefix (no associated assistant set).
+		$resolved_id = $method->invoke( $rest, 'profession_' . $this->profession_id );
+
+		$this->assertSame(
+			$default_assistant_id,
+			$resolved_id,
+			'Should resolve to default assistant when profession has no associated assistant'
+		);
+
+		// Clean up.
+		wp_delete_post( $default_assistant_id, true );
+	}
+
+	/**
+	 * Test that profession configuration is loaded and merged with assistant config.
+	 */
+	public function test_profession_configuration_merged_with_assistant() {
+		// Ensure REST class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest.php';
+		}
+
+		// Set profession meta data.
+		update_post_meta( $this->profession_id, '_wp_mcp_ai_profession_role_description', 'Marketing expert role' );
+		update_post_meta( $this->profession_id, '_wp_mcp_ai_profession_knowledge_base', 'Marketing strategies and tactics' );
+		update_post_meta( $this->profession_id, '_wp_mcp_ai_profession_default_tools', array( 'search_posts', 'create_post' ) );
+
+		// Create REST instance to access protected method.
+		$rest = new WP_MCP_AI_REST();
+		$reflection = new ReflectionClass( $rest );
+		$method = $reflection->getMethod( 'load_profession_configuration' );
+		$method->setAccessible( true );
+
+		// Test with base assistant config.
+		$base_config = array(
+			'system_prompt' => 'Base assistant prompt',
+			'tools' => array( 'default_tool' ),
+		);
+
+		$merged_config = $method->invoke( $rest, $this->profession_id, $base_config );
+
+		// Verify profession data overrides base config.
+		$this->assertStringContainsString( 'Marketing expert role', $merged_config['system_prompt'], 'Should include profession role description' );
+		$this->assertStringContainsString( 'Marketing strategies and tactics', $merged_config['system_prompt'], 'Should include profession knowledge base' );
+		$this->assertIsArray( $merged_config['tools'], 'Tools should be an array' );
+		$this->assertContains( 'search_posts', $merged_config['tools'], 'Should include profession tools' );
+		$this->assertContains( 'create_post', $merged_config['tools'], 'Should include profession tools' );
+	}
 }

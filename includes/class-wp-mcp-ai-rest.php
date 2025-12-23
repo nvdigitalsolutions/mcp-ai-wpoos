@@ -2260,13 +2260,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $scoped_id;
 
-			if ( ! $assistant_id ) {
+			if ( ! $assistant_id && ! $profession_id ) {
 				return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 			}
 
-			$assistant_post = $this->validate_assistant_access( $assistant_id );
-			if ( is_wp_error( $assistant_post ) ) {
-				return $assistant_post;
+			// Validate assistant access only if we have an assistant ID.
+			// For profession testing without an associated assistant, we'll use an empty config.
+			if ( $assistant_id ) {
+				$assistant_post = $this->validate_assistant_access( $assistant_id );
+				if ( is_wp_error( $assistant_post ) ) {
+					return $assistant_post;
+				}
 			}
 
 			$sanitized_messages = $this->validator->sanitize_messages( $request->get_param( 'messages' ) );
@@ -4515,10 +4519,29 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		protected function resolve_assistant_id( $assistant_id ) {
 			// Check if this is a profession test request with format "profession_123".
 			if ( is_string( $assistant_id ) && 0 === strpos( $assistant_id, 'profession_' ) ) {
-				// Extract the profession ID and use default assistant (profession data will be merged separately).
-				$settings = WP_MCP_AI_Admin_Settings::get_settings();
-				$default  = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
-				return $default;
+				// Extract profession ID.
+				$profession_id = $this->extract_profession_id( $assistant_id );
+				
+				if ( $profession_id ) {
+					// Check if profession has an associated assistant.
+					$associated_assistant = get_post_meta( $profession_id, '_wp_mcp_ai_profession_associated_assistant', true );
+					$associated_assistant = absint( $associated_assistant );
+					
+					if ( $associated_assistant > 0 ) {
+						// Verify the associated assistant exists and is published.
+						$assistant_post = get_post( $associated_assistant );
+						if ( $assistant_post && 'mcp_ai_assistant' === $assistant_post->post_type && 'publish' === $assistant_post->post_status ) {
+							// Use the profession's associated assistant.
+							// The assistant will have main knowledge, profession data will be appended.
+							return $associated_assistant;
+						}
+					}
+				}
+				
+				// No valid associated assistant - return 0 to allow profession-only testing.
+				// The profession will be treated as a temporary primary role, using the same
+				// logic that assistants use when they have primary roles assigned.
+				return 0;
 			}
 
 			$assistant_id = absint( $assistant_id );
@@ -4568,54 +4591,78 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$profession_id = absint( $profession_id );
 			if ( ! $profession_id ) {
 				return $assistant_config;
+		}
+
+		// Use the same primary role logic that assistants use.
+		// Temporarily treat this profession as the primary role for testing.
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/assistants/class-wp-mcp-ai-assistant-cpt.php';
+		}
+
+		// Build profession prompt using the assistant's primary role logic.
+		$profession_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
+
+		// Get profession meta data for additional configuration.
+		$default_tools        = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_tools', true );
+		$memory_files         = get_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', true );
+		$default_provider_val = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_provider', true );
+		$default_model_val    = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_model', true );
+		$default_temp_val     = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_temperature', true );
+
+		// Determine if we have an assistant base configuration.
+		$has_assistant_base = ! empty( $assistant_config ) && isset( $assistant_config['system_prompt'] ) && ! empty( $assistant_config['system_prompt'] );
+
+		// Merge profession configuration with assistant configuration.
+		if ( ! empty( $profession_prompt ) ) {
+			if ( $has_assistant_base ) {
+				// If assistant exists, append profession role to existing instructions.
+				// This ensures the assistant's base knowledge is primary and profession data supplements it.
+				$assistant_config['system_prompt'] .= "\n\n" . __( 'Professional Role & Expertise:', 'wp-mcp-ai' ) . "\n" . $profession_prompt;
+			} else {
+				// No assistant base - use profession role as the primary system prompt.
+				$assistant_config['system_prompt'] = $profession_prompt;
 			}
+		}
 
-			// Get profession meta data.
-			$role_description     = get_post_meta( $profession_id, '_wp_mcp_ai_profession_role_description', true );
-			$knowledge_base       = get_post_meta( $profession_id, '_wp_mcp_ai_profession_knowledge_base', true );
-			$default_tools        = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_tools', true );
-			$memory_files         = get_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', true );
-			$default_provider_val = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_provider', true );
-			$default_model_val    = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_model', true );
-			$default_temp_val     = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_temperature', true );
-
-			// Build system prompt from profession data.
-			$system_prompt = '';
-			if ( ! empty( $role_description ) ) {
-				$system_prompt = $role_description;
-			}
-
-			if ( ! empty( $knowledge_base ) ) {
-				$system_prompt .= "\n\n" . __( 'Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
-			}
-
-			// Merge profession configuration with assistant configuration.
-			// Profession data takes priority over assistant defaults for testing.
-			if ( ! empty( $system_prompt ) ) {
-				$assistant_config['system_prompt'] = $system_prompt;
-			}
-
-			if ( is_array( $default_tools ) && ! empty( $default_tools ) ) {
+		// For tools: If assistant has tools and profession has tools, merge them.
+		// If only profession has tools, use profession tools.
+		// If only assistant has tools, keep assistant tools (handled by not modifying).
+		if ( is_array( $default_tools ) && ! empty( $default_tools ) ) {
+			if ( isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) && ! empty( $assistant_config['tools'] ) ) {
+				// Merge tools, ensuring uniqueness and keeping profession tools prioritized.
+				$assistant_config['tools'] = array_unique( array_merge( $assistant_config['tools'], $default_tools ) );
+			} else {
+				// No assistant tools, use profession tools.
 				$assistant_config['tools'] = $default_tools;
 			}
+		}
 
-			if ( is_array( $memory_files ) && ! empty( $memory_files ) ) {
+		// For memory files: Similar merge logic as tools.
+		if ( is_array( $memory_files ) && ! empty( $memory_files ) ) {
+			if ( isset( $assistant_config['memory_files'] ) && is_array( $assistant_config['memory_files'] ) && ! empty( $assistant_config['memory_files'] ) ) {
+				// Merge memory files, ensuring uniqueness.
+				$assistant_config['memory_files'] = array_unique( array_merge( $assistant_config['memory_files'], $memory_files ) );
+			} else {
+				// No assistant memory files, use profession memory files.
 				$assistant_config['memory_files'] = $memory_files;
 			}
+		}
 
-			if ( ! empty( $default_provider_val ) ) {
-				$assistant_config['provider'] = $default_provider_val;
-			}
+		// Provider, model, and temperature from profession take priority when set (for testing specifics).
+		// Use explicit checks instead of empty() to handle edge cases like temperature = 0.
+		if ( null !== $default_provider_val && '' !== $default_provider_val && false !== $default_provider_val ) {
+			$assistant_config['provider'] = $default_provider_val;
+		}
 
-			if ( ! empty( $default_model_val ) ) {
-				$assistant_config['model'] = $default_model_val;
-			}
+		if ( null !== $default_model_val && '' !== $default_model_val && false !== $default_model_val ) {
+			$assistant_config['model'] = $default_model_val;
+		}
 
-			if ( ! empty( $default_temp_val ) && is_numeric( $default_temp_val ) ) {
-				$assistant_config['temperature'] = floatval( $default_temp_val );
-			}
+		if ( null !== $default_temp_val && false !== $default_temp_val && '' !== $default_temp_val && is_numeric( $default_temp_val ) ) {
+			$assistant_config['temperature'] = floatval( $default_temp_val );
+		}
 
-			return $assistant_config;
+		return $assistant_config;
 		}
 
 		/**

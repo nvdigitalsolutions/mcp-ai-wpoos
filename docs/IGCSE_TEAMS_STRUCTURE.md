@@ -17,16 +17,18 @@ The IGCSE teams have been restructured to provide **modular, extensive, and comp
 **Slug:** `igcse_mathematics_team`  
 **Specialization:** Mathematics (Core & Extended)
 
-**Members (1):**
+**Members (2):**
 - IGCSE Mathematics Tutor
+- IGCSE Year 10 Tutor
 
 **Coverage:**
 - Cambridge IGCSE Mathematics (0580/0607)
 - Core tier (grades 5-1)
 - Extended tier (grades 9-4)
 - Exam techniques and problem-solving strategies
+- Year 10 developmental support
 
-**Use Case:** Dedicated mathematics tutoring for students needing focused math support.
+**Use Case:** Dedicated mathematics tutoring for students needing focused math support with year-appropriate guidance.
 
 ---
 

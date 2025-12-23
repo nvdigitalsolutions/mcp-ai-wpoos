@@ -965,7 +965,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * @return array
 		 */
 		public static function get_available_providers() {
-			return array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
+			return array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
 		}
 
 		/**
@@ -4188,16 +4188,29 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_provider_priority_list_field() {
 			$settings      = self::get_settings();
-			$priority_list = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
+			$saved_list    = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
-				: array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
+				: array();
+			$default_list  = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+
+			// Merge saved value with defaults to ensure all providers are included.
+			// Existing users may have old lists without 'huggingface'.
+			$priority_list = ! empty( $saved_list ) ? $saved_list : $default_list;
+			
+			// Append any missing providers from defaults to the end.
+			foreach ( $default_list as $provider ) {
+				if ( ! in_array( $provider, $priority_list, true ) ) {
+					$priority_list[] = $provider;
+				}
+			}
 
 			$provider_labels = array(
-				'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
-				'anthropic' => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
-				'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'       => __( 'OpenAI', 'wp-mcp-ai' ),
+				'anthropic'    => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'gemini'       => __( 'Gemini', 'wp-mcp-ai' ),
+				'huggingface'  => __( 'Hugging Face', 'wp-mcp-ai' ),
+				'ollama'       => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio'    => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 			?>
 		<div id="wp-mcp-ai-provider-priority-list" class="wp-mcp-ai-sortable-list">

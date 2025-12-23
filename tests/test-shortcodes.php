@@ -398,4 +398,88 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			$this->assertStringContainsString( '/wp-json/mcp-ai/v1', $config['restUrl'], 'restUrl should point to the MCP AI REST namespace.' );
 		}
 	}
+
+	/**
+	 * Test that profession identifiers are preserved in shortcode rendering.
+	 *
+	 * This ensures that when testing a profession with format "profession_XXX",
+	 * the identifier is preserved through the shortcode rendering and passed
+	 * to JavaScript, allowing the REST API to detect and load profession knowledge.
+	 */
+	public function test_profession_identifier_preserved_in_shortcode() {
+		// Create a test profession.
+		$profession_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Profession',
+			)
+		);
+
+		// Add some knowledge base content to the profession.
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_knowledge_base', 'This is test knowledge base content for the profession.' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_role_description', 'You are a test professional.' );
+
+		// Render the shortcode with profession_XXX format.
+		$profession_identifier = 'profession_' . $profession_id;
+		
+		wp_scripts()->reset();
+		
+		$markup = do_shortcode( sprintf( '[%s assistant="%s"]', WP_MCP_AI_Shortcode::SHORTCODE, $profession_identifier ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+
+		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertArrayHasKey( $handle, wp_scripts()->registered );
+
+		$registered = wp_scripts()->registered[ $handle ];
+
+		// Get the inline script that contains the config.
+		$instance_config = implode( "\n", $registered->extra['before'] ?? array() );
+
+		// Parse the JSON config to verify the profession identifier is preserved.
+		preg_match( '/wpMcpAiChatInstances\["[^"]+"\]\s*=\s*({.*?});/', $instance_config, $matches );
+		$this->assertNotEmpty( $matches, 'Should find instance config in inline script.' );
+		
+		if ( ! empty( $matches[1] ) ) {
+			$config = json_decode( $matches[1], true );
+			$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
+			$this->assertArrayHasKey( 'assistantId', $config, 'Instance config should have assistantId key.' );
+			
+			// The critical assertion: assistantId should preserve the "profession_XXX" format.
+			$this->assertSame( $profession_identifier, $config['assistantId'], 'assistantId should preserve the profession_ prefix for REST API to detect.' );
+			$this->assertStringContainsString( 'profession_', $config['assistantId'], 'assistantId should contain profession_ prefix.' );
+		}
+	}
+
+	/**
+	 * Test that resolve_assistant_id preserves profession identifiers.
+	 */
+	public function test_resolve_assistant_id_preserves_profession_format() {
+		// Create a test profession.
+		$profession_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_status' => 'publish',
+				'post_title'  => 'Resolve Test Profession',
+			)
+		);
+
+		// Test that profession_XXX format is preserved.
+		$profession_identifier = 'profession_' . $profession_id;
+		$resolved              = WP_MCP_AI_Shortcode::resolve_assistant_id( $profession_identifier );
+		
+		$this->assertSame( $profession_identifier, $resolved, 'resolve_assistant_id should preserve profession_ prefix.' );
+		$this->assertIsString( $resolved, 'resolve_assistant_id should return string for profession identifiers.' );
+	}
+
+	/**
+	 * Test that resolve_assistant_id returns 0 for invalid profession identifiers.
+	 */
+	public function test_resolve_assistant_id_rejects_invalid_profession() {
+		// Test with non-existent profession ID.
+		$invalid_identifier = 'profession_99999999';
+		$resolved           = WP_MCP_AI_Shortcode::resolve_assistant_id( $invalid_identifier );
+		
+		$this->assertSame( 0, $resolved, 'resolve_assistant_id should return 0 for non-existent profession.' );
+	}
 }

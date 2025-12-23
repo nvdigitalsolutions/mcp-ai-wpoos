@@ -1742,6 +1742,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-team-knowledge-base-loader.php';
 			}
 
+			// Check if professions are seeded - teams need professions to exist first.
+			$profession_count = wp_count_posts( 'mcp_ai_profession' );
+			$published_professions = isset( $profession_count->publish ) ? $profession_count->publish : 0;
+			
+			if ( $published_professions < 10 ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %d: Number of professions found */
+							__( 'Not enough professions found in database (%d). Please reseed professions first using "Update Professions" or "Replace All Professions" button above before reseeding teams.', 'wp-mcp-ai' ),
+							$published_professions
+						),
+					)
+				);
+				return;
+			}
+
 			// If replace action, delete all existing teams.
 			if ( 'replace' === $action ) {
 				$existing_teams = get_posts(
@@ -1783,6 +1800,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$saved      = 0;
 			$updated    = 0;
 			$errors     = array();
+			$warnings   = array();
 
 			foreach ( $teams as $team_data ) {
 				// Check if team already exists by slug.
@@ -1797,6 +1815,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					$result          = $repository->save( $team_data );
 					if ( ! is_wp_error( $result ) ) {
 						++$updated;
+						
+						// Check if team has members.
+						$member_ids = get_post_meta( $result, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
+						if ( empty( $member_ids ) && ! empty( $team_data['members'] ) ) {
+							$warnings[] = sprintf(
+								/* translators: %s: Team slug */
+								__( 'Team "%s" has no members - profession posts may not exist', 'wp-mcp-ai' ),
+								$team_data['slug']
+							);
+						}
 					} else {
 						$errors[] = $result->get_error_message();
 					}
@@ -1805,6 +1833,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					$result = $repository->save( $team_data );
 					if ( ! is_wp_error( $result ) ) {
 						++$saved;
+						
+						// Check if team has members.
+						$member_ids = get_post_meta( $result, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
+						if ( empty( $member_ids ) && ! empty( $team_data['members'] ) ) {
+							$warnings[] = sprintf(
+								/* translators: %s: Team slug */
+								__( 'Team "%s" has no members - profession posts may not exist', 'wp-mcp-ai' ),
+								$team_data['slug']
+							);
+						}
 					} else {
 						$errors[] = $result->get_error_message();
 					}
@@ -1831,13 +1869,24 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					count( $errors )
 				);
 			}
+			
+			if ( ! empty( $warnings ) ) {
+				$message .= ' ' . sprintf(
+				/* translators: %d: Number of warnings */
+					__( 'Warnings: %d teams have no members. Try reseeding professions first.', 'wp-mcp-ai' ),
+					count( $warnings )
+				);
+				// Log the warnings for debugging.
+				error_log( 'WP_MCP_AI Team Reseed Warnings: ' . implode( '; ', $warnings ) );
+			}
 
 			wp_send_json_success(
 				array(
-					'message' => $message,
-					'created' => $saved,
-					'updated' => $updated,
-					'errors'  => count( $errors ),
+					'message'  => $message,
+					'created'  => $saved,
+					'updated'  => $updated,
+					'errors'   => count( $errors ),
+					'warnings' => count( $warnings ),
 				)
 			);
 		}
@@ -2334,7 +2383,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Validate provider.
-			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ) );
+			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ) );
 			if ( ! in_array( $provider, $allowed_providers, true ) ) {
 				wp_send_json_error(
 					array(

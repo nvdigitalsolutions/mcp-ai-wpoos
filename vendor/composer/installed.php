@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-playbook-attachment-count',
-        'version' => 'dev-copilot/fix-playbook-attachment-count',
-        'reference' => '31bfd7377297384450e03483bb82b6e25358f506',
+        'pretty_version' => 'dev-copilot/update-minimum-base-model',
+        'version' => 'dev-copilot/update-minimum-base-model',
+        'reference' => '08b60ca09e7980b62cc40a30c2ebd9c2ed1a5a5d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-playbook-attachment-count',
-            'version' => 'dev-copilot/fix-playbook-attachment-count',
-            'reference' => '31bfd7377297384450e03483bb82b6e25358f506',
+            'pretty_version' => 'dev-copilot/update-minimum-base-model',
+            'version' => 'dev-copilot/update-minimum-base-model',
+            'reference' => '08b60ca09e7980b62cc40a30c2ebd9c2ed1a5a5d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

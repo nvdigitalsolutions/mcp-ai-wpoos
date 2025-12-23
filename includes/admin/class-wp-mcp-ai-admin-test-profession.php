@@ -280,7 +280,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 						<div class="wp-mcp-ai-test-modal__body">
 							<div class="wp-mcp-ai-test-profession-info">
 								<p class="description">
-									<?php echo esc_html__( 'Testing profession behavior by creating a temporary assistant. Review the profession details below to understand the capabilities being tested.', 'wp-mcp-ai' ); ?>
+									<?php echo esc_html__( 'Testing profession behavior with its configured knowledge base and tools. Review the profession details below to understand the capabilities being tested.', 'wp-mcp-ai' ); ?>
 								</p>
 							</div>
 							<!-- Profession details will be populated here -->

@@ -264,10 +264,10 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	private function get_chat_endpoint_args() {
 		return array(
 			'assistant_id' => array(
-				'description'       => __( 'ID of the assistant to use for this chat. Defaults to the site default assistant.', 'wp-mcp-ai' ),
-				'type'              => 'integer',
+				'description'       => __( 'ID of the assistant to use for this chat. Can be an integer assistant ID or a string like "profession_123" for profession testing. Defaults to the site default assistant.', 'wp-mcp-ai' ),
+				'type'              => array( 'integer', 'string' ),
 				'required'          => false,
-				'sanitize_callback' => 'absint',
+				'sanitize_callback' => 'sanitize_text_field',
 			),
 			'messages'     => array(
 				'description'       => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
