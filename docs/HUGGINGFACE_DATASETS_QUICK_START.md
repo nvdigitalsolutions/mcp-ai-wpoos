@@ -47,6 +47,27 @@ Search the SQuAD dataset for questions about "artificial intelligence"
 [Assistant will use: huggingface_dataset_search(dataset="rajpurkar/squad", split="train", query="artificial intelligence", limit=10)]
 ```
 
+### Example 4: Get Paginated Dataset Rows
+```
+Get rows 100-110 from the IMDB training set
+
+[Assistant will use: huggingface_dataset_get_rows(dataset="stanfordnlp/imdb", split="train", offset=100, length=10)]
+```
+
+### Example 5: Filter Dataset by Criteria
+```
+Find all positive reviews (label = 1) in the IMDB dataset sorted by length
+
+[Assistant will use: huggingface_dataset_filter(dataset="stanfordnlp/imdb", split="train", where="label = 1", orderby="length DESC", length=20)]
+```
+
+### Example 6: Get Dataset Statistics
+```
+What are the statistics for the SQuAD training set?
+
+[Assistant will use: huggingface_dataset_get_statistics(dataset="rajpurkar/squad", split="train")]
+```
+
 ## Available Tools
 
 ### 1. `huggingface_recommended_datasets`
@@ -103,6 +124,46 @@ Parameters:
 
 ### 7. `huggingface_dataset_get_size`
 **Get size information** (rows, bytes)
+```php
+Parameters:
+  - dataset: Dataset name
+```
+
+### 8. `huggingface_dataset_get_rows`
+**Get paginated rows** with offset and length control
+```php
+Parameters:
+  - dataset: Dataset name
+  - split: Split name
+  - config: Configuration (optional)
+  - offset: Starting row (0-based, default: 0)
+  - length: Number of rows (1-100, default: 10)
+```
+
+### 9. `huggingface_dataset_filter`
+**Filter dataset rows** using SQL-like expressions
+```php
+Parameters:
+  - dataset: Dataset name
+  - split: Split name
+  - where: Filter expression (e.g., "label = 1", "score > 0.5")
+  - config: Configuration (optional)
+  - orderby: Sort column (optional, e.g., "score DESC")
+  - offset: Starting row (for pagination)
+  - length: Number of results (1-100)
+```
+
+### 10. `huggingface_dataset_get_statistics`
+**Get statistical information** about dataset split
+```php
+Parameters:
+  - dataset: Dataset name
+  - split: Split name
+  - config: Configuration (optional)
+```
+
+### 11. `huggingface_dataset_get_parquet`
+**Get Parquet file URLs** for efficient bulk data access
 ```php
 Parameters:
   - dataset: Dataset name
