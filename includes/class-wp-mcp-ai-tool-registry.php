@@ -860,6 +860,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Crop_Image'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crop-image.php',
 				'WP_MCP_AI_Tool_Rotate_Image'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-rotate-image.php',
 				'WP_MCP_AI_Tool_Convert_Image_Format'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-convert-image-format.php',
+				// HuggingFace Datasets API tools.
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Search' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-search.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Info' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-info.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Size' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-size.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-rows.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-preview-rows.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-list-splits.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-statistics.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-parquet.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-is-valid.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-filter.php',
+				'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-recommended-datasets.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
