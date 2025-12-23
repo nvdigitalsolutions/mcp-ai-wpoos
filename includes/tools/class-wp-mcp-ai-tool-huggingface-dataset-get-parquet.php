@@ -10,12 +10,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet' ) ) {
+
+	/**
+	 * Get capability flags for this tool.
+	 *
+	 * @return array<string> Array of capability flag strings.
+	 */
+	public function get_capability_flags() {
+		return array(
+			'external-api',        // Makes external API calls to HuggingFace.
+			'network-dependent',   // Requires internet connectivity.
+			'read-only',           // Only reads data, doesn't modify WordPress state.
+			'cacheable',           // Results can be cached.
+			'paginated',           // Supports pagination.
+			'large-response',      // May return large datasets.
+		);
+	}
+
 	/**
 	 * Retrieves Parquet file URLs for efficient dataset access.
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet {
+	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 		/**
 		 * Check if the tool is available.
