@@ -135,7 +135,72 @@ Comprehensive analysis and documentation of Gemini integration capabilities:
   - [GEMINI_OPENAI_TOOLS_ARCHITECTURE.md](features/ai-providers/gemini/GEMINI_OPENAI_TOOLS_ARCHITECTURE.md) - Architecture docs
   - [GEMINI_TOOL_SANITIZATION_FIX.md](implementation-history/2025/fixes/gemini/GEMINI_TOOL_SANITIZATION_FIX.md) - Implementation details
 
-### Hugging Face Inference API Integration (December 22, 2025)
+### Hugging Face Integration (December 23, 2025)
+Complete integration of Hugging Face capabilities including Inference API and Dataset Viewer:
+
+#### Hugging Face Datasets - Dataset Viewer API Integration ⭐ **NEW (Dec 23)**
+Access 50+ popular datasets directly from WordPress without downloading:
+
+- **[HUGGINGFACE_DATASETS_HOW_TO.md](guides/features/HUGGINGFACE_DATASETS_HOW_TO.md)** ⭐ **NEW**
+  - Complete step-by-step how-to guide with real examples
+  - Setup and configuration walkthrough
+  - All 11 dataset tools explained with expected outputs
+  - WordPress integration patterns (comments, posts, WooCommerce)
+  - Advanced patterns (chaining tools, caching, batch processing)
+  - REST API usage with cURL, JavaScript, jQuery
+  - Troubleshooting guide with solutions
+  - Best practices for production use
+  - 1,139 lines, comprehensive guide
+
+- **[huggingface-datasets-code-examples.md](examples/huggingface-datasets-code-examples.md)** ⭐ **NEW**
+  - 30+ complete, working code examples
+  - Basic PHP usage of all dataset tools
+  - AI Assistant conversation examples
+  - REST API examples (cURL, Fetch, jQuery)
+  - WordPress shortcodes and widgets
+  - WooCommerce product review sentiment analysis
+  - Complete comment moderation plugin example
+  - Copy-paste ready code snippets
+  - 962 lines, production-ready examples
+
+- **[HUGGINGFACE_DATASETS_QUICK_START.md](HUGGINGFACE_DATASETS_QUICK_START.md)**
+  - Quick reference guide for fast access
+  - Browse datasets in admin UI
+  - AI Assistant usage examples
+  - Available tools reference
+  - Top datasets by use case
+  - Tips and troubleshooting
+
+- **[HUGGINGFACE_TOP_DATASETS.md](HUGGINGFACE_TOP_DATASETS.md)**
+  - 50+ curated free datasets catalog
+  - Organized by category (NLP, Vision, Audio, Multimodal)
+  - Use cases and integration priority
+  - Dataset descriptions and sizes
+  - WordPress-specific applications
+
+**Dataset Tools (11 Total):**
+- `huggingface_dataset_is_valid` - Check dataset availability
+- `huggingface_dataset_get_info` - Get metadata and description
+- `huggingface_dataset_list_splits` - List train/test/validation splits
+- `huggingface_dataset_preview_rows` - Preview first N rows
+- `huggingface_dataset_get_rows` - Get paginated rows
+- `huggingface_dataset_search` - Search within dataset content
+- `huggingface_dataset_filter` - Filter with SQL-like WHERE clauses
+- `huggingface_dataset_get_statistics` - Get column statistics
+- `huggingface_dataset_get_size` - Get dataset size info
+- `huggingface_dataset_get_parquet` - Get Parquet download URLs
+- `huggingface_recommended_datasets` - Smart dataset recommendations
+
+**Key Features:**
+- Query 50+ datasets without downloading
+- Search, filter, and paginate dataset rows
+- Caching with configurable TTL (default: 1 hour)
+- Rate limiting (60 requests/hour, upgradeable)
+- WordPress integration patterns
+- AI Assistant ready
+- Admin UI for browsing datasets
+
+#### Hugging Face Inference API (December 22, 2025)
 Complete integration of Hugging Face Inference API as a provider for open-source models:
 
 - **[HUGGINGFACE_SETUP.md](HUGGINGFACE_SETUP.md)** ⭐ **NEW**
