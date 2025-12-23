@@ -93,7 +93,7 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 			$default_provider = 'openai';
 		}
 		if ( empty( $default_model ) ) {
-			$default_model = 'gpt-4';
+			$default_model = 'gpt-4.1';
 		}
 		if ( '' === $default_temperature ) {
 			$default_temperature = 0.7;
@@ -230,7 +230,7 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 		update_post_meta( $post_id, '_wp_mcp_ai_profession_default_provider', $default_provider );
 
 		// Save default model.
-		$default_model = isset( $_POST['profession_default_model'] ) ? sanitize_text_field( wp_unslash( $_POST['profession_default_model'] ) ) : 'gpt-4';
+		$default_model = isset( $_POST['profession_default_model'] ) ? sanitize_text_field( wp_unslash( $_POST['profession_default_model'] ) ) : 'gpt-4.1';
 		update_post_meta( $post_id, '_wp_mcp_ai_profession_default_model', $default_model );
 
 		// Save default temperature.

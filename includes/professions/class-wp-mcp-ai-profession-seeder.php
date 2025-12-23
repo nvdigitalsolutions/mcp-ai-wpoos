@@ -33,11 +33,56 @@ class WP_MCP_AI_Profession_Seeder {
 	public static function init() {
 		// Check if already seeded.
 		if ( get_option( self::SEEDED_OPTION, false ) ) {
+			// Run resync to update default model settings on existing professions.
+			add_action( 'admin_init', array( __CLASS__, 'resync_profession_defaults' ), 25 );
 			return;
 		}
 
 		// Seed professions.
 		add_action( 'admin_init', array( __CLASS__, 'seed_professions' ), 20 );
+	}
+
+	/**
+	 * Resync profession default settings.
+	 * Updates existing professions to use gpt-4.1 as default model.
+	 */
+	public static function resync_profession_defaults() {
+		// Check if resync has already been done.
+		if ( get_option( 'wp_mcp_ai_professions_defaults_resynced_4_1', false ) ) {
+			return;
+		}
+
+		$repository  = new WP_MCP_AI_Profession_Repository();
+		$professions = $repository->find_all();
+
+		if ( empty( $professions ) ) {
+			return;
+		}
+
+		foreach ( $professions as $profession ) {
+			// Get current default model.
+			$current_model = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_default_model', true );
+
+			// Only update if it's empty or set to legacy gpt-4.
+			if ( empty( $current_model ) || 'gpt-4' === $current_model ) {
+				update_post_meta( $profession->ID, '_wp_mcp_ai_profession_default_model', 'gpt-4.1' );
+			}
+
+			// Set default provider if not set.
+			$current_provider = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_default_provider', true );
+			if ( empty( $current_provider ) ) {
+				update_post_meta( $profession->ID, '_wp_mcp_ai_profession_default_provider', 'openai' );
+			}
+
+			// Set default temperature if not set.
+			$current_temp = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_default_temperature', true );
+			if ( '' === $current_temp ) {
+				update_post_meta( $profession->ID, '_wp_mcp_ai_profession_default_temperature', 0.7 );
+			}
+		}
+
+		// Mark as resynced.
+		update_option( 'wp_mcp_ai_professions_defaults_resynced_4_1', true, false );
 	}
 
 	/**
@@ -62,6 +107,17 @@ class WP_MCP_AI_Profession_Seeder {
 		}
 
 		foreach ( $professions as $profession_data ) {
+			// Add default AI settings if not present.
+			if ( ! isset( $profession_data['default_provider'] ) ) {
+				$profession_data['default_provider'] = 'openai';
+			}
+			if ( ! isset( $profession_data['default_model'] ) ) {
+				$profession_data['default_model'] = 'gpt-4.1';
+			}
+			if ( ! isset( $profession_data['default_temperature'] ) ) {
+				$profession_data['default_temperature'] = 0.7;
+			}
+
 			$repository->save( $profession_data );
 		}
 
