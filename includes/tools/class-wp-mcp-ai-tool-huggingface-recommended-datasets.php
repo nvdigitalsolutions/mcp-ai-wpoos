@@ -177,8 +177,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 			$limit    = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
 			$limit    = max( 1, min( 20, $limit ) );
 
+			// Get assistant's preferred datasets from context.
+			$preferred_datasets = array();
+			if ( isset( $context['assistant_config']['preferred_datasets'] ) && is_array( $context['assistant_config']['preferred_datasets'] ) ) {
+				$preferred_datasets = $context['assistant_config']['preferred_datasets'];
+			}
+
 			// Get recommendations.
-			$recommendations = $this->get_recommendations( $use_case, $category, $limit );
+			$recommendations = $this->get_recommendations( $use_case, $category, $limit, $preferred_datasets );
 
 			return array(
 				'use_case'        => $use_case,
@@ -191,14 +197,23 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 		/**
 		 * Get dataset recommendations based on use case.
 		 *
-		 * @param string $use_case Use case description.
-		 * @param string $category Category filter.
-		 * @param int    $limit    Number of recommendations.
+		 * @param string $use_case           Use case description.
+		 * @param string $category           Category filter.
+		 * @param int    $limit              Number of recommendations.
+		 * @param array  $preferred_datasets Assistant's preferred datasets.
 		 * @return array
 		 */
-		private function get_recommendations( $use_case, $category, $limit ) {
+		private function get_recommendations( $use_case, $category, $limit, $preferred_datasets = array() ) {
 			$use_case_lower = strtolower( $use_case );
 			$all_datasets   = $this->get_dataset_catalog();
+
+			// Create a map of preferred dataset IDs for quick lookup.
+			$preferred_ids = array();
+			foreach ( $preferred_datasets as $pref ) {
+				if ( isset( $pref['dataset'] ) ) {
+					$preferred_ids[] = $pref['dataset'];
+				}
+			}
 
 			// Score datasets based on relevance to use case.
 			$scored = array();
@@ -208,7 +223,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 					continue;
 				}
 
-				$score           = $this->calculate_relevance_score( $use_case_lower, $dataset );
+				$score = $this->calculate_relevance_score( $use_case_lower, $dataset );
+
+				// Boost score significantly if this is a preferred dataset.
+				if ( in_array( $dataset['dataset'], $preferred_ids, true ) ) {
+					$score += 50; // Add significant boost to preferred datasets.
+					$dataset['is_preferred'] = true;
+				} else {
+					$dataset['is_preferred'] = false;
+				}
+
 				$dataset['score'] = $score;
 
 				if ( $score > 0 ) {
