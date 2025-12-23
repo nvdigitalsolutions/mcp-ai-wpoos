@@ -4640,47 +4640,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		// For memory files: Similar merge logic as tools.
 		if ( is_array( $memory_files ) && ! empty( $memory_files ) ) {
 			if ( isset( $assistant_config['memory_files'] ) && is_array( $assistant_config['memory_files'] ) && ! empty( $assistant_config['memory_files'] ) ) {
-				}
+				// Merge memory files, ensuring uniqueness.
+				$assistant_config['memory_files'] = array_unique( array_merge( $assistant_config['memory_files'], $memory_files ) );
+			} else {
+				// No assistant memory files, use profession memory files.
+				$assistant_config['memory_files'] = $memory_files;
 			}
+		}
 
-			// For tools: If assistant has tools and profession has tools, merge them.
-			// If only profession has tools, use profession tools.
-			// If only assistant has tools, keep assistant tools (handled by not modifying).
-			if ( is_array( $default_tools ) && ! empty( $default_tools ) ) {
-				if ( isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) && ! empty( $assistant_config['tools'] ) ) {
-					// Merge tools, ensuring uniqueness and keeping profession tools prioritized.
-					$assistant_config['tools'] = array_unique( array_merge( $assistant_config['tools'], $default_tools ) );
-				} else {
-					// No assistant tools, use profession tools.
-					$assistant_config['tools'] = $default_tools;
-				}
-			}
+		// Provider, model, and temperature from profession take priority when set (for testing specifics).
+		if ( ! empty( $default_provider_val ) ) {
+			$assistant_config['provider'] = $default_provider_val;
+		}
 
-			// For memory files: Similar merge logic as tools.
-			if ( is_array( $memory_files ) && ! empty( $memory_files ) ) {
-				if ( isset( $assistant_config['memory_files'] ) && is_array( $assistant_config['memory_files'] ) && ! empty( $assistant_config['memory_files'] ) ) {
-					// Merge memory files, ensuring uniqueness.
-					$assistant_config['memory_files'] = array_unique( array_merge( $assistant_config['memory_files'], $memory_files ) );
-				} else {
-					// No assistant memory files, use profession memory files.
-					$assistant_config['memory_files'] = $memory_files;
-				}
-			}
+		if ( ! empty( $default_model_val ) ) {
+			$assistant_config['model'] = $default_model_val;
+		}
 
-			// Provider, model, and temperature from profession take priority when set (for testing specifics).
-			if ( ! empty( $default_provider_val ) ) {
-				$assistant_config['provider'] = $default_provider_val;
-			}
+		if ( ! empty( $default_temp_val ) && is_numeric( $default_temp_val ) ) {
+			$assistant_config['temperature'] = floatval( $default_temp_val );
+		}
 
-			if ( ! empty( $default_model_val ) ) {
-				$assistant_config['model'] = $default_model_val;
-			}
-
-			if ( ! empty( $default_temp_val ) && is_numeric( $default_temp_val ) ) {
-				$assistant_config['temperature'] = floatval( $default_temp_val );
-			}
-
-			return $assistant_config;
+		return $assistant_config;
 		}
 
 		/**
