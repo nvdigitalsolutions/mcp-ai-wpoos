@@ -225,6 +225,26 @@ class WP_MCP_AI_Tool_Recommendations {
 				'delete_cron_job',
 			),
 		),
+
+		// Dataset/Data operations - HuggingFace and external data sources.
+		'dataset_operations' => array(
+			'multiplier'      => 1.3,
+			'preferred_model' => 'gpt-4o-mini',
+			'description'     => 'Dataset queries and data retrieval from external sources',
+			'tools'           => array(
+				'huggingface_dataset_search',
+				'huggingface_dataset_get_info',
+				'huggingface_dataset_get_size',
+				'huggingface_dataset_get_rows',
+				'huggingface_dataset_preview_rows',
+				'huggingface_dataset_list_splits',
+				'huggingface_dataset_get_statistics',
+				'huggingface_dataset_get_parquet',
+				'huggingface_dataset_is_valid',
+				'huggingface_dataset_filter',
+				'huggingface_recommended_datasets',
+			),
+		),
 	);
 
 	/**
