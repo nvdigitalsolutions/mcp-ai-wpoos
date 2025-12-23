@@ -4538,9 +4538,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 				}
 				
-				// No valid associated assistant - return 0 to allow profession-only testing.
-				// The profession configuration will be used standalone without an assistant base.
-				return 0;
+				// No valid associated assistant - use default assistant so profession data is appended to it.
+				// This makes profession mode work like the chat client: default assistant + profession knowledge.
+				$settings = WP_MCP_AI_Admin_Settings::get_settings();
+				$default  = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+				
+				return $default;
 			}
 
 			$assistant_id = absint( $assistant_id );
