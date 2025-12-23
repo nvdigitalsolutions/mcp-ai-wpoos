@@ -82,12 +82,12 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'wp_mcp_ai_datasets' ),
 					'i18n'    => array(
-						'loading'       => __( 'Loading...', 'wp-mcp-ai' ),
-						'error'         => __( 'Error loading dataset', 'wp-mcp-ai' ),
-						'noResults'     => __( 'No datasets found', 'wp-mcp-ai' ),
-						'preview'       => __( 'Preview', 'wp-mcp-ai' ),
-						'download'      => __( 'Download Info', 'wp-mcp-ai' ),
-						'copied'        => __( 'Copied!', 'wp-mcp-ai' ),
+						'loading'           => __( 'Loading...', 'wp-mcp-ai' ),
+						'error'             => __( 'Error loading dataset', 'wp-mcp-ai' ),
+						'noResults'         => __( 'No datasets found', 'wp-mcp-ai' ),
+						'preview'           => __( 'Preview', 'wp-mcp-ai' ),
+						'download'          => __( 'Download Info', 'wp-mcp-ai' ),
+						'copied'            => __( 'Copied!', 'wp-mcp-ai' ),
 						'searchPlaceholder' => __( 'Search datasets by name or use case...', 'wp-mcp-ai' ),
 					),
 				)
@@ -194,9 +194,9 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 			$category_class = 'category-' . esc_attr( $dataset['category'] );
 			?>
 			<div class="wp-mcp-ai-dataset-card <?php echo esc_attr( $priority_class . ' ' . $category_class ); ?>" 
-				 data-dataset="<?php echo esc_attr( $dataset['dataset'] ); ?>"
-				 data-category="<?php echo esc_attr( $dataset['category'] ); ?>"
-				 data-priority="<?php echo esc_attr( $dataset['priority'] ); ?>">
+				data-dataset="<?php echo esc_attr( $dataset['dataset'] ); ?>"
+				data-category="<?php echo esc_attr( $dataset['category'] ); ?>"
+				data-priority="<?php echo esc_attr( $dataset['priority'] ); ?>">
 				
 				<div class="dataset-card-header">
 					<h3><?php echo esc_html( $dataset['name'] ); ?></h3>
@@ -240,8 +240,8 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 					</button>
 
 					<a href="https://huggingface.co/datasets/<?php echo esc_attr( $dataset['dataset'] ); ?>" 
-					   target="_blank" 
-					   class="button">
+						target="_blank" 
+						class="button">
 						<span class="dashicons dashicons-external"></span>
 						<?php esc_html_e( 'View on HF', 'wp-mcp-ai' ); ?>
 					</a>
@@ -401,8 +401,8 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 				$client = WP_MCP_AI_Container::get_instance()->get( 'client.huggingface_datasets' );
 
 				// Get dataset info and preview.
-				$splits  = $client->get_splits( $dataset );
-				$info    = $client->get_info( $dataset );
+				$splits = $client->get_splits( $dataset );
+				$info   = $client->get_info( $dataset );
 
 				// Try to get first split for preview.
 				$preview = null;
@@ -534,7 +534,12 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 			}
 			$html = ob_get_clean();
 
-			wp_send_json_success( array( 'html' => $html, 'count' => count( $filtered ) ) );
+			wp_send_json_success(
+				array(
+					'html'  => $html,
+					'count' => count( $filtered ),
+				)
+			);
 		}
 	}
 

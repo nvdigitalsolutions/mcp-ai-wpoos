@@ -93,9 +93,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 
 			// Format response.
 			return array(
-				'dataset'       => $dataset,
-				'splits'        => isset( $result['splits'] ) ? $result['splits'] : array(),
-				'total_splits'  => isset( $result['splits'] ) ? count( $result['splits'] ) : 0,
+				'dataset'      => $dataset,
+				'splits'       => isset( $result['splits'] ) ? $result['splits'] : array(),
+				'total_splits' => isset( $result['splits'] ) ? count( $result['splits'] ) : 0,
 			);
 		}
 	}
