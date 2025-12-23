@@ -1,0 +1,351 @@
+/**
+ * HuggingFace Datasets Admin Page Styles
+ */
+
+.wp-mcp-ai-datasets-page {
+	max-width: 1400px;
+	margin: 20px 0;
+}
+
+.wp-mcp-ai-datasets-header {
+	background: #fff;
+	padding: 20px;
+	margin-bottom: 20px;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.wp-mcp-ai-datasets-search {
+	margin: 20px 0;
+	display: flex;
+	gap: 10px;
+}
+
+.wp-mcp-ai-datasets-search input[type="text"] {
+	flex: 1;
+	max-width: 600px;
+	padding: 8px 12px;
+	font-size: 14px;
+}
+
+.wp-mcp-ai-datasets-filters {
+	display: flex;
+	gap: 15px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.wp-mcp-ai-datasets-filters label {
+	font-weight: 600;
+	margin: 0;
+}
+
+.wp-mcp-ai-datasets-filters select {
+	min-width: 200px;
+}
+
+.wp-mcp-ai-datasets-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+	gap: 20px;
+	margin-top: 20px;
+}
+
+.wp-mcp-ai-dataset-card {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 6px;
+	padding: 20px;
+	transition: all 0.3s ease;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	display: flex;
+	flex-direction: column;
+}
+
+.wp-mcp-ai-dataset-card:hover {
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	transform: translateY(-2px);
+	border-color: #2271b1;
+}
+
+.dataset-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 12px;
+	gap: 10px;
+}
+
+.dataset-card-header h3 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2327;
+	flex: 1;
+}
+
+.dataset-badge {
+	padding: 4px 10px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	white-space: nowrap;
+}
+
+.dataset-badge.priority-critical {
+	background: #dc3232;
+	color: #fff;
+}
+
+.dataset-badge.priority-high {
+	background: #f0b849;
+	color: #1d2327;
+}
+
+.dataset-badge.priority-medium {
+	background: #00a32a;
+	color: #fff;
+}
+
+.dataset-card-body {
+	flex: 1;
+	margin-bottom: 15px;
+}
+
+.dataset-description {
+	color: #50575e;
+	font-size: 14px;
+	line-height: 1.6;
+	margin-bottom: 12px;
+}
+
+.dataset-meta {
+	display: flex;
+	gap: 15px;
+	margin-bottom: 12px;
+	font-size: 13px;
+	color: #646970;
+}
+
+.dataset-meta span {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.dataset-meta .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.dataset-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 10px;
+}
+
+.dataset-tag {
+	background: #f0f0f1;
+	color: #2c3338;
+	padding: 3px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.dataset-card-footer {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding-top: 15px;
+	border-top: 1px solid #f0f0f1;
+}
+
+.dataset-card-footer .button {
+	font-size: 13px;
+	padding: 4px 10px;
+	height: auto;
+	line-height: 1.6;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.dataset-card-footer .button .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.dataset-card-footer .button-primary {
+	background: #2271b1;
+	border-color: #2271b1;
+}
+
+.dataset-card-footer .button-primary:hover {
+	background: #135e96;
+	border-color: #135e96;
+}
+
+/* Modal Styles */
+.wp-mcp-ai-modal {
+	position: fixed;
+	z-index: 100000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	background-color: rgba(0, 0, 0, 0.7);
+}
+
+.wp-mcp-ai-modal-content {
+	background-color: #fff;
+	margin: 5% auto;
+	padding: 0;
+	border: 1px solid #ccd0d4;
+	border-radius: 6px;
+	width: 90%;
+	max-width: 1000px;
+	max-height: 80vh;
+	overflow: auto;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+	position: relative;
+}
+
+.wp-mcp-ai-modal-close {
+	color: #646970;
+	position: sticky;
+	top: 0;
+	right: 20px;
+	float: right;
+	font-size: 32px;
+	font-weight: bold;
+	line-height: 1;
+	cursor: pointer;
+	background: #fff;
+	padding: 10px 15px;
+	z-index: 10;
+}
+
+.wp-mcp-ai-modal-close:hover,
+.wp-mcp-ai-modal-close:focus {
+	color: #1d2327;
+}
+
+.wp-mcp-ai-modal-body {
+	padding: 30px;
+}
+
+.wp-mcp-ai-modal-body h2 {
+	margin-top: 0;
+	color: #1d2327;
+	border-bottom: 2px solid #2271b1;
+	padding-bottom: 10px;
+}
+
+.wp-mcp-ai-modal-body h3 {
+	color: #1d2327;
+	margin-top: 25px;
+	margin-bottom: 15px;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.dataset-info-section,
+.dataset-splits-section,
+.dataset-preview-section,
+.dataset-usage-section {
+	margin-bottom: 25px;
+}
+
+.dataset-preview-data pre {
+	background: #f6f7f7;
+	padding: 15px;
+	border-radius: 4px;
+	overflow-x: auto;
+	font-size: 13px;
+	line-height: 1.6;
+	border: 1px solid #dcdcde;
+}
+
+.dataset-usage-section code {
+	display: block;
+	background: #f6f7f7;
+	padding: 12px;
+	border-radius: 4px;
+	margin-top: 10px;
+	font-size: 13px;
+	border: 1px solid #dcdcde;
+	overflow-x: auto;
+}
+
+.wp-mcp-ai-loading {
+	text-align: center;
+	padding: 40px 20px;
+	color: #646970;
+	font-size: 14px;
+}
+
+.wp-mcp-ai-loading::before {
+	content: "";
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	border: 3px solid #f0f0f1;
+	border-top-color: #2271b1;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+	margin-right: 10px;
+	vertical-align: middle;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.wp-mcp-ai-datasets-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.wp-mcp-ai-datasets-filters {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 10px;
+	}
+
+	.wp-mcp-ai-datasets-filters select {
+		min-width: 100%;
+	}
+
+	.wp-mcp-ai-modal-content {
+		width: 95%;
+		margin: 2% auto;
+	}
+}
+
+/* Filter states */
+.wp-mcp-ai-dataset-card.hidden {
+	display: none;
+}
+
+/* Copy feedback */
+.wp-mcp-ai-dataset-copy-code.copied {
+	background: #00a32a;
+	border-color: #00a32a;
+	color: #fff;
+}
+
+.wp-mcp-ai-dataset-copy-code.copied:hover {
+	background: #008a20;
+	border-color: #008a20;
+}
