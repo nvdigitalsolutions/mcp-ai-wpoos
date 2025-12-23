@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-huggingface-tools-visibility',
-        'version' => 'dev-copilot/fix-huggingface-tools-visibility',
-        'reference' => 'ca7efe8113982e80d22d4d797401bfd3b2277eee',
+        'pretty_version' => 'dev-copilot/add-huggingface-tools-to-settings-ui',
+        'version' => 'dev-copilot/add-huggingface-tools-to-settings-ui',
+        'reference' => '63f3d6250d3e9d068a610bb5f472aa78b1167c33',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-huggingface-tools-visibility',
-            'version' => 'dev-copilot/fix-huggingface-tools-visibility',
-            'reference' => 'ca7efe8113982e80d22d4d797401bfd3b2277eee',
+            'pretty_version' => 'dev-copilot/add-huggingface-tools-to-settings-ui',
+            'version' => 'dev-copilot/add-huggingface-tools-to-settings-ui',
+            'reference' => '63f3d6250d3e9d068a610bb5f472aa78b1167c33',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

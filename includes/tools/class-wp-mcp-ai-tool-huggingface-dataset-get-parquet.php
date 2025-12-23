@@ -15,7 +15,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet' ) ) {
 	 *
 	 * @since 1.0.0
 	 */
-	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet {
+	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 		/**
 		 * Check if the tool is available.
@@ -45,6 +45,34 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet' ) ) {
 			return 'huggingface_dataset_get_parquet';
 		}
 
+	/**
+	 * Get tool name.
+	 *
+	 * @return string
+	 */
+	public function get_name() {
+		return __( 'HuggingFace Dataset Get Parquet', 'wp-mcp-ai' );
+	}
+
+	/**
+	 * Get tool description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Get Parquet file URLs for a HuggingFace dataset split', 'wp-mcp-ai' );
+	}
+
+	/**
+	 * Get tool parameters schema.
+	 *
+	 * @return array
+	 */
+	public function get_parameters_schema() {
+		$definition = $this->get_definition();
+		return isset( $definition['parameters'] ) ? $definition['parameters'] : array();
+	}
+
 		/**
 		 * Get tool definition for MCP.
 		 *
@@ -72,6 +100,22 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet' ) ) {
 		public function get_required_capability() {
 			return apply_filters( 'wp_mcp_ai_tool_huggingface_datasets_capability', 'read' );
 		}
+
+	/**
+	 * Get capability flags for this tool.
+	 *
+	 * @return array<string> Array of capability flag strings.
+	 */
+	public function get_capability_flags() {
+		return array(
+			'external-api',        // Makes external API calls to HuggingFace.
+			'network-dependent',   // Requires internet connectivity.
+			'read-only',           // Only reads data, doesn't modify WordPress state.
+			'cacheable',           // Results can be cached.
+			'paginated',           // Supports pagination.
+			'large-response',      // May return large datasets.
+		);
+	}
 
 		/**
 		 * Execute the tool.
