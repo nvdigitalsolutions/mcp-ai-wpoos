@@ -143,7 +143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows' ) ) {
 		 * @param array $context   Execution context.
 		 * @return array|WP_Error
 		 */
-		public function execute( $arguments, $context ) {
+		public function execute( array $arguments = array(), array $context = array() ) {
 			// Check if HuggingFace Datasets is enabled.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			if ( empty( $settings['enable_huggingface_datasets'] ) ) {
