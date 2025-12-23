@@ -104,6 +104,75 @@ class WP_MCP_AI_Huggingface_Datasets_Client_Tests extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test get_dataset_name_suggestions for common_voice dataset.
+	 */
+	public function test_get_dataset_name_suggestions_for_common_voice() {
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'get_dataset_name_suggestions' );
+		$method->setAccessible( true );
+
+		$suggestions = $method->invoke( $this->client, 'common_voice' );
+
+		$this->assertIsArray( $suggestions );
+		$this->assertNotEmpty( $suggestions );
+		$this->assertContains( 'mozilla-foundation/common_voice_17_0', $suggestions );
+	}
+
+	/**
+	 * Test get_dataset_name_suggestions for bookcorpus dataset.
+	 */
+	public function test_get_dataset_name_suggestions_for_bookcorpus() {
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'get_dataset_name_suggestions' );
+		$method->setAccessible( true );
+
+		$suggestions = $method->invoke( $this->client, 'bookcorpus' );
+
+		$this->assertIsArray( $suggestions );
+		$this->assertNotEmpty( $suggestions );
+		$this->assertContains( 'bookcorpus', $suggestions );
+	}
+
+	/**
+	 * Test get_dataset_name_suggestions for wmt14 dataset.
+	 */
+	public function test_get_dataset_name_suggestions_for_wmt14() {
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'get_dataset_name_suggestions' );
+		$method->setAccessible( true );
+
+		$suggestions = $method->invoke( $this->client, 'wmt14' );
+
+		$this->assertIsArray( $suggestions );
+		$this->assertNotEmpty( $suggestions );
+		$this->assertContains( 'wmt/wmt14', $suggestions );
+	}
+
+	/**
+	 * Test get_dataset_name_suggestions for super_glue dataset variations.
+	 */
+	public function test_get_dataset_name_suggestions_for_super_glue() {
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'get_dataset_name_suggestions' );
+		$method->setAccessible( true );
+
+		$suggestions_underscore = $method->invoke( $this->client, 'super_glue' );
+		$suggestions_no_underscore = $method->invoke( $this->client, 'superglue' );
+
+		$this->assertIsArray( $suggestions_underscore );
+		$this->assertNotEmpty( $suggestions_underscore );
+		$this->assertContains( 'super_glue', $suggestions_underscore );
+
+		$this->assertIsArray( $suggestions_no_underscore );
+		$this->assertNotEmpty( $suggestions_no_underscore );
+		$this->assertContains( 'super_glue', $suggestions_no_underscore );
+	}
+
+	/**
 	 * Test that 404 errors include helpful suggestions.
 	 *
 	 * Note: This test mocks the API response to avoid making real API calls.

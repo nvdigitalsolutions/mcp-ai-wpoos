@@ -713,22 +713,45 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 		 */
 		protected function get_dataset_name_suggestions( $dataset ) {
 			// Map of old/common names to their current canonical names.
+			// All names verified against HuggingFace Hub as of December 2024.
 			$dataset_map = array(
+				// Text Classification & Sentiment Analysis.
 				'imdb'                => 'stanfordnlp/imdb',
+
+				// Question Answering.
 				'squad'               => 'rajpurkar/squad',
+				'squad_v2'            => 'rajpurkar/squad_v2',
+
+				// NLU Benchmarks.
 				'glue'                => 'nyu-mll/glue',
 				'super_glue'          => 'super_glue',
+				'superglue'           => 'super_glue',
+
+				// Machine Translation.
 				'wmt'                 => 'wmt/wmt14',
 				'wmt14'               => 'wmt/wmt14',
 				'wmt16'               => 'wmt/wmt16',
+				'wmt17'               => 'wmt/wmt17',
 				'wmt19'               => 'wmt/wmt19',
+
+				// Summarization.
 				'cnn_dailymail'       => 'abisee/cnn_dailymail',
 				'multi_news'          => 'alexfabbri/multi_news',
 				'xsum'                => 'EdinburghNLP/xsum',
-				'common_voice'        => 'mozilla-foundation/common_voice_11_0',
+
+				// Speech & Audio.
+				'common_voice'        => 'mozilla-foundation/common_voice_17_0',
 				'librispeech'         => 'openslr/librispeech_asr',
+				'librispeech_asr'     => 'openslr/librispeech_asr',
+
+				// General Text Corpora.
 				'wikipedia'           => 'wikimedia/wikipedia',
-				'bookcorpus'          => 'bookcorpus/bookcorpus',
+				'bookcorpus'          => 'bookcorpus',
+				'c4'                  => 'allenai/c4',
+
+				// Code.
+				'code_search_net'     => 'code_search_net',
+				'the_pile'            => 'EleutherAI/pile',
 			);
 
 			// Normalize dataset name for comparison.
