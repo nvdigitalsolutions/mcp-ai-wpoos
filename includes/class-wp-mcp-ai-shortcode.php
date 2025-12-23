@@ -521,13 +521,16 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			if ( $capability && 'public' !== $capability && ! current_user_can( $capability ) ) {
+				$current_user      = wp_get_current_user();
+				$user_capabilities = ( $current_user && isset( $current_user->allcaps ) ) ? $current_user->allcaps : array();
+				
 				WP_MCP_AI_Logger::log_warning(
 					'Shortcode access denied due to insufficient capability',
 					array(
 						'assistant_id'        => $assistant_id,
 						'required_capability' => $capability,
 						'user_id'             => get_current_user_id(),
-						'user_capabilities'   => wp_get_current_user()->allcaps ?? array(),
+						'user_capabilities'   => $user_capabilities,
 					)
 				);
 				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';
