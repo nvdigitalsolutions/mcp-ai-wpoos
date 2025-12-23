@@ -105,7 +105,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows' ) ) {
 			}
 
 			// Get client.
-			$client = WP_MCP_AI_Container::get( 'client.huggingface_datasets' );
+			$client = WP_MCP_AI_Container::get_instance()->get( 'client.huggingface_datasets' );
 
 			// Preview rows.
 			$result = $client->preview_rows( $dataset, $config, $split, $limit );

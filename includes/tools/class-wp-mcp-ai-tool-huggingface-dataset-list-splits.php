@@ -82,7 +82,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 			}
 
 			// Get client.
-			$client = WP_MCP_AI_Container::get( 'client.huggingface_datasets' );
+			$client = WP_MCP_AI_Container::get_instance()->get( 'client.huggingface_datasets' );
 
 			// Get splits.
 			$result = $client->get_splits( $dataset );
@@ -93,9 +93,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 
 			// Format response.
 			return array(
-				'dataset'       => $dataset,
-				'splits'        => isset( $result['splits'] ) ? $result['splits'] : array(),
-				'total_splits'  => isset( $result['splits'] ) ? count( $result['splits'] ) : 0,
+				'dataset'      => $dataset,
+				'splits'       => isset( $result['splits'] ) ? $result['splits'] : array(),
+				'total_splits' => isset( $result['splits'] ) ? count( $result['splits'] ) : 0,
 			);
 		}
 	}

@@ -119,7 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Search' ) ) {
 			}
 
 			// Get client.
-			$client = WP_MCP_AI_Container::get( 'client.huggingface_datasets' );
+			$client = WP_MCP_AI_Container::get_instance()->get( 'client.huggingface_datasets' );
 
 			// Search.
 			$result = $client->search( $dataset, $config, $split, $query, $offset, $limit );
