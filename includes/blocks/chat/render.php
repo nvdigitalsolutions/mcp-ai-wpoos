@@ -42,19 +42,20 @@ if ( $allow_sensitive_tools ) {
 $shortcode = '[mcp_ai_chat ' . implode( ' ', $shortcode_atts ) . ']';
 
 // Get wrapper attributes - handle both block and non-block contexts.
+// Check if we're in a proper block rendering context (has $block object).
 $wrapper_class = 'wp-block-wp-mcp-ai-chat';
 if ( $show_build_button ) {
 	$wrapper_class .= ' wp-block-wp-mcp-ai-chat--with-build';
 }
 
-if ( function_exists( 'get_block_wrapper_attributes' ) ) {
+if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
 			'class' => $wrapper_class,
 		)
 	);
 } else {
-	// Non-block context fallback.
+	// Non-block context fallback (e.g., direct include in admin pages).
 	$wrapper_attributes = sprintf( 'class="%s"', esc_attr( $wrapper_class ) );
 }
 
