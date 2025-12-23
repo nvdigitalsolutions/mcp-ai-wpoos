@@ -39,7 +39,7 @@ class Test_Token_Manager_Category_Filtering extends WP_UnitTestCase {
 			$all_tools_slugs,
 			function ( $tool_slug ) use ( $group_map ) {
 				$tool_group = isset( $group_map[ $tool_slug ] ) ? $group_map[ $tool_slug ] : 'other';
-				return $tool_group === 'external-tools';
+				return 'external-tools' === $tool_group;
 			}
 		);
 

@@ -10,23 +10,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows' ) ) {
-
-	/**
-	 * Get capability flags for this tool.
-	 *
-	 * @return array<string> Array of capability flag strings.
-	 */
-	public function get_capability_flags() {
-		return array(
-			'external-api',        // Makes external API calls to HuggingFace.
-			'network-dependent',   // Requires internet connectivity.
-			'read-only',           // Only reads data, doesn't modify WordPress state.
-			'cacheable',           // Results can be cached.
-			'paginated',           // Supports pagination.
-			'large-response',      // May return large datasets.
-		);
-	}
-
 	/**
 	 * Previews first rows of a dataset split for quick inspection.
 	 *
@@ -136,6 +119,22 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows' ) ) {
 		public function get_required_capability() {
 			return apply_filters( 'wp_mcp_ai_tool_huggingface_datasets_capability', 'read' );
 		}
+
+	/**
+	 * Get capability flags for this tool.
+	 *
+	 * @return array<string> Array of capability flag strings.
+	 */
+	public function get_capability_flags() {
+		return array(
+			'external-api',        // Makes external API calls to HuggingFace.
+			'network-dependent',   // Requires internet connectivity.
+			'read-only',           // Only reads data, doesn't modify WordPress state.
+			'cacheable',           // Results can be cached.
+			'paginated',           // Supports pagination.
+			'large-response',      // May return large datasets.
+		);
+	}
 
 		/**
 		 * Execute the tool.
