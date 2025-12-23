@@ -543,12 +543,16 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 					// Add helpful suggestions for common renamed datasets.
 					$dataset_suggestions = $this->get_dataset_name_suggestions( $dataset );
 					if ( ! empty( $dataset_suggestions ) ) {
+						// Format suggestions with quotes.
+						$formatted_suggestions = array();
+						foreach ( $dataset_suggestions as $suggestion ) {
+							$formatted_suggestions[] = '"' . $suggestion . '"';
+						}
+
 						$error_message .= ' ' . sprintf(
 							/* translators: %s: Suggested dataset name */
 							__( 'Did you mean: %s?', 'wp-mcp-ai' ),
-							implode( ', ', array_map( function ( $suggestion ) {
-								return '"' . $suggestion . '"';
-							}, $dataset_suggestions ) )
+							implode( ', ', $formatted_suggestions )
 						);
 					} else {
 						$error_message .= ' ' . __( 'Please verify the dataset name at https://huggingface.co/datasets', 'wp-mcp-ai' );
@@ -708,12 +712,26 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 		/**
 		 * Get dataset name suggestions for common renamed or moved datasets.
 		 *
+		 * This method maintains a curated list of popular datasets that have been
+		 * renamed or moved on HuggingFace Hub. When a dataset is not found (404),
+		 * this provides helpful suggestions to users.
+		 *
 		 * @param string $dataset The dataset name that was not found.
 		 * @return array Array of suggested dataset names.
+		 *
+		 * @since 1.0.0
+		 *
+		 * To update this mapping:
+		 * 1. Check the current dataset name at https://huggingface.co/datasets
+		 * 2. Add the old/common name as the key
+		 * 3. Add the current canonical name as the value
+		 * 4. Verify the mapping works on HuggingFace Hub
+		 * 5. Add a test case in tests/test-huggingface-datasets-client.php
 		 */
 		protected function get_dataset_name_suggestions( $dataset ) {
 			// Map of old/common names to their current canonical names.
 			// All names verified against HuggingFace Hub as of December 2024.
+			// See: https://huggingface.co/datasets
 			$dataset_map = array(
 				// Text Classification & Sentiment Analysis.
 				'imdb'                => 'stanfordnlp/imdb',
