@@ -501,6 +501,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			</thead>
 			<tbody>
 				<?php
+				// Apply category filter if provided.
+				if ( ! empty( $filter_group ) ) {
+					$registry  = WP_MCP_AI_Tool_Registry::get_instance();
+					$group_map = $registry->get_tool_group_map();
+
+					$all_tools = array_filter(
+						$all_tools,
+						function ( $tool_name, $tool_slug ) use ( $filter_group, $group_map ) {
+							// Check if tool belongs to the selected category.
+							$tool_group = isset( $group_map[ $tool_slug ] ) ? $group_map[ $tool_slug ] : 'other';
+							return $tool_group === $filter_group;
+						},
+						ARRAY_FILTER_USE_BOTH
+					);
+				}
+
 				// Apply search filter if provided.
 				if ( ! empty( $search ) ) {
 					$all_tools = array_filter(
