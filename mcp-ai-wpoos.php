@@ -598,6 +598,9 @@ if ( is_admin() ) {
 
 	// Load add assistant page (submenu of AI Assistants CPT - renamed to Create Assistant).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-assistant-page.php';
+
+	// Load HuggingFace Datasets admin page (submenu of WP oOS Dashboard).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-datasets-admin-page.php';
 	WP_MCP_AI_Add_Assistant_Page::init();
 
 	// Load build assistant page (submenu of AI Assistants CPT).
