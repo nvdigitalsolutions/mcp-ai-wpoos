@@ -45,7 +45,7 @@ class Test_Datasets_Admin_Page extends WP_UnitTestCase {
 		do_action( 'admin_menu' );
 
 		// Check that submenu exists under wp-mcp-ai-dashboard.
-		$this->assertArrayHasKey( 'wp-mcp-ai-dashboard', $submenu, 'WP oOS dashboard should have submenu items' );
+		$this->assertArrayHasKey( 'wp-mcp-ai-dashboard', $submenu, 'WP MCP AI dashboard should have submenu items' );
 
 		// Check that datasets page is in the submenu.
 		$found = false;
