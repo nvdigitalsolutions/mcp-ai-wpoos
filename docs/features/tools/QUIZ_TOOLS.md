@@ -143,7 +143,7 @@ Lists available quizzes with pagination.
 
 ### 4. submit_quiz_answer
 
-Submits answers for a quiz.
+Submits answers for a quiz with optional time tracking.
 
 **Slug**: `submit_quiz_answer`
 
@@ -153,13 +153,20 @@ Submits answers for a quiz.
   - `question_index` (integer, required): Zero-based question index
   - `answer` (string, required): The submitted answer
 - `user_id` (integer, optional): User ID submitting (defaults to current user)
+- `started_at` (string, optional): ISO 8601 timestamp when quiz was started. Required for quizzes with time limits.
 
 **Returns**:
 - `submission_id`: ID of the created submission
 - `quiz_id`: Quiz ID
 - `status`: Submission status (pending)
+- `time_limit`: Time limit in minutes (if quiz has one)
+- `started_at`: When quiz was started (if provided)
+- `completion_time_minutes`: Time taken to complete (if started_at provided)
 
-**Note**: Each user can only submit once per quiz.
+**Notes**: 
+- Each user can only submit once per quiz.
+- For quizzes with time limits, `started_at` is required and submission will be rejected if time limit is exceeded.
+- A 1-minute grace period is allowed for submission processing.
 
 ### 5. grade_quiz
 
@@ -271,12 +278,16 @@ Stores user submissions with metadata:
 - `_mcp_ai_submission_quiz_id`: Associated quiz ID
 - `_mcp_ai_submission_answers`: Array of user answers
 - `_mcp_ai_submission_status`: `pending` or `graded`
+- `_mcp_ai_submission_total_points`: Total possible points (copied from quiz)
 - `_mcp_ai_submission_grades`: Array of grades (when graded)
 - `_mcp_ai_submission_earned_points`: Total points earned
 - `_mcp_ai_submission_percentage`: Percentage score
 - `_mcp_ai_submission_passed`: Pass/fail boolean
 - `_mcp_ai_submission_graded_by`: User ID who graded
 - `_mcp_ai_submission_graded_at`: Grading timestamp
+- `_mcp_ai_submission_submitted_at`: Submission timestamp
+- `_mcp_ai_submission_started_at`: ISO 8601 timestamp when quiz started (if tracked)
+- `_mcp_ai_submission_completion_time`: Time taken in minutes (if tracked)
 - `_wp_mcp_ai_submission_cct_item_id`: Link to CCT item (when JetEngine active)
 
 **CCT Fields (when synced):**

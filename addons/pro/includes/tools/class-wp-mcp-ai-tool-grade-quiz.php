@@ -129,8 +129,13 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		// Get quiz metadata.
 		$total_points  = get_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', true );
 		$passing_score = get_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', true );
+		$questions     = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
 
-		// Sanitize grades.
+		if ( ! is_array( $questions ) ) {
+			$questions = array();
+		}
+
+		// Sanitize and validate grades.
 		$sanitized_grades = array();
 		$earned_points    = 0;
 
@@ -139,13 +144,45 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				continue;
 			}
 
-			$points = floatval( $grade_data['points_earned'] );
+			$question_index = absint( $grade_data['question_index'] );
+			$points         = floatval( $grade_data['points_earned'] );
+
+			// Validate question index exists.
+			if ( ! isset( $questions[ $question_index ] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_question_index',
+					sprintf(
+						/* translators: %d: question index */
+						__( 'Invalid question index: %d', 'wp-mcp-ai' ),
+						$question_index
+					)
+				);
+			}
+
+			$question      = $questions[ $question_index ];
+			$max_points    = isset( $question['points'] ) ? absint( $question['points'] ) : 1;
+
+			// Validate points earned don't exceed max points for question.
+			if ( $points > $max_points ) {
+				return new WP_Error(
+					'wp_mcp_ai_points_exceed_max',
+					sprintf(
+						/* translators: 1: question index, 2: points earned, 3: max points */
+						__( 'Points earned (%2$.1f) for question %1$d exceed maximum points (%3$d).', 'wp-mcp-ai' ),
+						$question_index + 1,
+						$points,
+						$max_points
+					)
+				);
+			}
+
+			// Ensure non-negative points.
 			if ( $points < 0 ) {
 				$points = 0;
 			}
 
 			$grade = array(
-				'question_index' => absint( $grade_data['question_index'] ),
+				'question_index' => $question_index,
 				'points_earned'  => $points,
 			);
 

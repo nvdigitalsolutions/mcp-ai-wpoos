@@ -152,6 +152,12 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 					'submitted_at'  => get_the_date( 'c' ),
 				);
 
+				// Add time tracking information.
+				$completion_time = get_post_meta( $submission_id, '_mcp_ai_submission_completion_time', true );
+				if ( $completion_time ) {
+					$submission_data['completion_time_minutes'] = floatval( $completion_time );
+				}
+
 				// Add grading info if graded.
 				if ( 'graded' === $submission_status ) {
 					$submission_data['earned_points'] = floatval( get_post_meta( $submission_id, '_mcp_ai_submission_earned_points', true ) );
