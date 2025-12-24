@@ -379,14 +379,30 @@ class WP_MCP_AI_Profession_CPT {
 			return array();
 		}
 
+		$valid_categories = array( 'nlp', 'vision', 'audio', 'multimodal' );
+		$valid_priorities = array( 'critical', 'high', 'medium', 'low' );
+
 		$sanitized = array();
 		foreach ( $datasets as $dataset ) {
 			if ( is_array( $dataset ) ) {
+				$category = isset( $dataset['category'] ) ? sanitize_text_field( $dataset['category'] ) : '';
+				$priority = isset( $dataset['priority'] ) ? sanitize_text_field( $dataset['priority'] ) : 'medium';
+
+				// Validate category - skip if invalid.
+				if ( ! in_array( $category, $valid_categories, true ) ) {
+					continue;
+				}
+
+				// Validate priority - default to 'medium' if invalid.
+				if ( ! in_array( $priority, $valid_priorities, true ) ) {
+					$priority = 'medium';
+				}
+
 				$sanitized[] = array(
 					'dataset'  => isset( $dataset['dataset'] ) ? sanitize_text_field( $dataset['dataset'] ) : '',
 					'name'     => isset( $dataset['name'] ) ? sanitize_text_field( $dataset['name'] ) : '',
-					'category' => isset( $dataset['category'] ) ? sanitize_text_field( $dataset['category'] ) : '',
-					'priority' => isset( $dataset['priority'] ) ? sanitize_text_field( $dataset['priority'] ) : 'medium',
+					'category' => $category,
+					'priority' => $priority,
 				);
 			}
 		}
