@@ -525,6 +525,23 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_quiz_results']     = 'wordpress-core';
 		}
 
+		// Add project management tool mappings if enabled.
+		if ( ! empty( $settings['enable_project_management'] ) ) {
+			$pro_tools['create_project']    = 'wordpress-core';
+			$pro_tools['update_project']    = 'wordpress-core';
+			$pro_tools['delete_project']    = 'wordpress-core';
+			$pro_tools['list_projects']     = 'wordpress-core';
+			$pro_tools['create_task']       = 'wordpress-core';
+			$pro_tools['update_task']       = 'wordpress-core';
+			$pro_tools['delete_task']       = 'wordpress-core';
+			$pro_tools['list_tasks']        = 'wordpress-core';
+			$pro_tools['create_event']      = 'wordpress-core';
+			$pro_tools['update_event']      = 'wordpress-core';
+			$pro_tools['delete_event']      = 'wordpress-core';
+			$pro_tools['list_events']       = 'wordpress-core';
+			$pro_tools['get_calendar_view'] = 'wordpress-core';
+		}
+
 		/**
 		 * Filter the Pro tool group assignments.
 		 *

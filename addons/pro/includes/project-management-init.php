@@ -20,7 +20,9 @@ function wp_mcp_ai_register_project_management_post_types() {
 		return;
 	}
 
-	if ( ! get_option( 'wp_mcp_ai_enable_project_management', false ) ) {
+	// Check if project management is enabled in settings.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $settings['enable_project_management'] ) ) {
 		return;
 	}
 

@@ -98,7 +98,8 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
 		}
-		return (bool) get_option( 'wp_mcp_ai_enable_project_management', false );
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_project_management'] );
 	}
 
 	/**
