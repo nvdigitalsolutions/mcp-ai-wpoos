@@ -32,6 +32,15 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
+	 * Check whether Rank Math Pro is active.
+	 *
+	 * @return bool
+	 */
+	protected function is_pro_active() {
+		return defined( 'RANK_MATH_PRO_VERSION' ) || defined( 'RANK_MATH_PRO_FILE' );
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -49,7 +58,7 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns Rank Math SEO details for a specific post, including focus keywords, SEO score, and schema configuration.', 'wp-mcp-ai' );
+		return __( 'Returns Rank Math SEO details for a specific post, including focus keywords, SEO score, schema configuration, and Pro features (Content AI, Analytics, Link Counter, Image SEO) if Rank Math Pro is installed.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -184,7 +193,7 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$schema_data = $this->get_schema_data( $post_id );
 
-		return array(
+		$result = array(
 			'summary'   => sprintf(
 				/* translators: 1: post title, 2: SEO score */
 				__( 'Rank Math SEO for "%1$s": Score %2$d/100', 'wp-mcp-ai' ),
@@ -202,6 +211,9 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 				'author_id' => (int) $post->post_author,
 			),
 			'rank_math' => array(
+				'version'          => defined( 'RANK_MATH_VERSION' ) ? sanitize_text_field( RANK_MATH_VERSION ) : null,
+				'is_pro'           => $this->is_pro_active(),
+				'pro_version'      => defined( 'RANK_MATH_PRO_VERSION' ) ? sanitize_text_field( RANK_MATH_PRO_VERSION ) : null,
 				'seo_score'        => $seo_score,
 				'seo_score_rating' => $score_rating,
 				'focus_keywords'   => $focus_keywords,
@@ -213,6 +225,13 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 				'schema'           => $schema_data,
 			),
 		);
+
+		// Add Rank Math Pro features if available.
+		if ( $this->is_pro_active() ) {
+			$result['rank_math']['pro_features'] = $this->get_pro_features( $post_id );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -317,13 +336,165 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
+	 * Retrieve Rank Math Pro features data for the post.
+	 *
+	 * @param int $post_id Post ID.
+	 *
+	 * @return array Pro features data.
+	 */
+	protected function get_pro_features( $post_id ) {
+		$pro_data = array();
+
+		// Content AI suggestions.
+		$content_ai_data = $this->get_meta_value( 'contentai_score', $post_id );
+		if ( ! empty( $content_ai_data ) ) {
+			$pro_data['content_ai'] = array(
+				'score'       => $content_ai_data,
+				'suggestions' => $this->get_meta_value( 'contentai_suggestions', $post_id ),
+			);
+		}
+
+		// Link counter (internal/external links).
+		$internal_links = $this->get_meta_value( 'internal_link_count', $post_id );
+		$external_links = $this->get_meta_value( 'external_link_count', $post_id );
+		if ( ! empty( $internal_links ) || ! empty( $external_links ) ) {
+			$pro_data['link_counter'] = array(
+				'internal_links' => absint( $internal_links ),
+				'external_links' => absint( $external_links ),
+			);
+		}
+
+		// Image SEO data.
+		$image_seo = $this->get_meta_value( 'image_seo_score', $post_id );
+		if ( ! empty( $image_seo ) ) {
+			$pro_data['image_seo'] = array(
+				'score'           => $image_seo,
+				'missing_alt'     => $this->get_meta_value( 'images_missing_alt', $post_id ),
+				'missing_title'   => $this->get_meta_value( 'images_missing_title', $post_id ),
+				'optimized_count' => $this->get_meta_value( 'images_optimized', $post_id ),
+			);
+		}
+
+		// Video schema (Pro enhanced).
+		$video_schema = $this->get_meta_value( 'snippet_video_url', $post_id );
+		if ( ! empty( $video_schema ) ) {
+			$pro_data['video_schema'] = array(
+				'url'         => esc_url_raw( $video_schema ),
+				'thumbnail'   => esc_url_raw( $this->get_meta_value( 'snippet_video_thumbnail', $post_id ) ),
+				'duration'    => $this->get_meta_value( 'snippet_video_duration', $post_id ),
+				'upload_date' => $this->get_meta_value( 'snippet_video_upload_date', $post_id ),
+			);
+		}
+
+		// Local SEO data (if applicable).
+		$local_seo = $this->get_meta_value( 'local_seo_type', $post_id );
+		if ( ! empty( $local_seo ) ) {
+			$pro_data['local_seo'] = array(
+				'business_type' => $local_seo,
+				'address'       => $this->get_meta_value( 'local_address', $post_id ),
+				'phone'         => $this->get_meta_value( 'local_phone', $post_id ),
+				'latitude'      => $this->get_meta_value( 'local_latitude', $post_id ),
+				'longitude'     => $this->get_meta_value( 'local_longitude', $post_id ),
+			);
+		}
+
+		// Analytics data (if Pro Analytics is enabled).
+		if ( class_exists( '\RankMathPro\Analytics\Posts' ) ) {
+			$analytics = $this->get_analytics_data( $post_id );
+			if ( ! empty( $analytics ) ) {
+				$pro_data['analytics'] = $analytics;
+			}
+		}
+
+		// Advanced schema templates.
+		$schema_templates = $this->get_meta_value( 'schema_templates', $post_id );
+		if ( ! empty( $schema_templates ) ) {
+			$pro_data['schema_templates'] = $this->sanitize_meta_output( $schema_templates );
+		}
+
+		return $pro_data;
+	}
+
+	/**
+	 * Retrieve analytics data from Rank Math Pro Analytics module.
+	 *
+	 * @param int $post_id Post ID.
+	 *
+	 * @return array|null Analytics data or null if unavailable.
+	 */
+	protected function get_analytics_data( $post_id ) {
+		// Check if Analytics module is active and available.
+		if ( ! class_exists( '\RankMathPro\Analytics\Posts' ) ) {
+			return null;
+		}
+
+		$analytics_data = array();
+
+		// Try to get analytics data from post meta or database.
+		$impressions = $this->get_meta_value( 'analytics_impressions', $post_id );
+		$clicks      = $this->get_meta_value( 'analytics_clicks', $post_id );
+		$position    = $this->get_meta_value( 'analytics_position', $post_id );
+
+		if ( ! empty( $impressions ) || ! empty( $clicks ) || ! empty( $position ) ) {
+			$analytics_data = array(
+				'impressions' => absint( $impressions ),
+				'clicks'      => absint( $clicks ),
+				'ctr'         => $impressions > 0 ? round( ( $clicks / $impressions ) * 100, 2 ) : 0,
+				'position'    => ! empty( $position ) ? round( floatval( $position ), 1 ) : null,
+			);
+		}
+
+		// Get keyword rankings if available.
+		global $wpdb;
+		$analytics_table = $wpdb->prefix . 'rank_math_analytics_objects';
+		
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $analytics_table ) ) ) === $analytics_table ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$keywords = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT keyword, position, clicks, impressions 
+					FROM `{$wpdb->prefix}rank_math_analytics_objects` 
+					WHERE object_id = %d 
+					ORDER BY impressions DESC 
+					LIMIT 10",
+					$post_id
+				)
+			);
+
+			if ( ! empty( $keywords ) ) {
+				$analytics_data['top_keywords'] = array_map(
+					function ( $row ) {
+						return array(
+							'keyword'     => sanitize_text_field( $row->keyword ),
+							'position'    => round( floatval( $row->position ), 1 ),
+							'clicks'      => absint( $row->clicks ),
+							'impressions' => absint( $row->impressions ),
+						);
+					},
+					$keywords
+				);
+			}
+		}
+
+		return ! empty( $analytics_data ) ? $analytics_data : null;
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array(
+		$flags = array(
 			'read-only',            // Only reads data, does not modify state.
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);
+
+		// Add Pro flag if Rank Math Pro is active.
+		if ( $this->is_pro_active() ) {
+			$flags[] = 'pro';
+		}
+
+		return $flags;
 	}
 }
