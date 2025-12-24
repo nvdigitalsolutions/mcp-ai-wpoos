@@ -1,7 +1,7 @@
 # WP oOS Documentation Index
 
-**Last Updated:** December 23, 2025  
-**Plugin Version:** 1.0.0  
+**Last Updated:** December 24, 2025  
+**Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (WP oOS) plugin.
