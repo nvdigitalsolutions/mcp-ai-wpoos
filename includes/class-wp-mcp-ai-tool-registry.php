@@ -416,6 +416,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'save_profession'                => 'wordpress-core',
 				'get_profession_stats'           => 'wordpress-core',
 
+				// Project Management - Pro feature tools for managing projects, tasks, and events.
+				'create_project'                 => 'project-management',
+				'update_project'                 => 'project-management',
+				'delete_project'                 => 'project-management',
+				'list_projects'                  => 'project-management',
+				'create_task'                    => 'project-management',
+				'update_task'                    => 'project-management',
+				'delete_task'                    => 'project-management',
+				'list_tasks'                     => 'project-management',
+				'create_event'                   => 'project-management',
+				'update_event'                   => 'project-management',
+				'delete_event'                   => 'project-management',
+				'list_events'                    => 'project-management',
+				'get_calendar_view'              => 'project-management',
+
 				// WordPress Plugins - Tools requiring specific WordPress plugins.
 				'get_elementor_templates'        => 'wordpress-plugins',
 				'get_woo_recent_orders'          => 'wordpress-plugins',
@@ -518,10 +533,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$this->init();
 
 			$default_labels = array(
-				'wordpress-core'    => __( 'WordPress Core', 'wp-mcp-ai' ),
-				'wordpress-plugins' => __( 'WordPress Plugins', 'wp-mcp-ai' ),
-				'external-tools'    => __( 'External Tools', 'wp-mcp-ai' ),
-				'other'             => __( 'Other tools', 'wp-mcp-ai' ),
+				'wordpress-core'      => __( 'WordPress Core', 'wp-mcp-ai' ),
+				'wordpress-plugins'   => __( 'WordPress Plugins', 'wp-mcp-ai' ),
+				'project-management'  => __( 'Project Management', 'wp-mcp-ai' ),
+				'external-tools'      => __( 'External Tools', 'wp-mcp-ai' ),
+				'other'               => __( 'Other tools', 'wp-mcp-ai' ),
 			);
 
 			/**
@@ -902,6 +918,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Simple_JWT_Token' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php',
 				'WP_MCP_AI_Tool_Vision_Product_Search'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-product-search.php',
 				'WP_MCP_AI_Tool_Vision_Object_Localization' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php',
+				// Project Management tools (Pro feature).
+				'WP_MCP_AI_Tool_Create_Project'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-project.php',
+				'WP_MCP_AI_Tool_Update_Project'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-project.php',
+				'WP_MCP_AI_Tool_Delete_Project'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-project.php',
+				'WP_MCP_AI_Tool_List_Projects'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-projects.php',
+				'WP_MCP_AI_Tool_Create_Task'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-task.php',
+				'WP_MCP_AI_Tool_Update_Task'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-task.php',
+				'WP_MCP_AI_Tool_Delete_Task'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-task.php',
+				'WP_MCP_AI_Tool_List_Tasks'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-tasks.php',
+				'WP_MCP_AI_Tool_Create_Event'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-event.php',
+				'WP_MCP_AI_Tool_Update_Event'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-event.php',
+				'WP_MCP_AI_Tool_Delete_Event'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-event.php',
+				'WP_MCP_AI_Tool_List_Events'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-events.php',
+				'WP_MCP_AI_Tool_Get_Calendar_View'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-calendar-view.php',
 			);
 
 			// Combine tools based on version mode.
