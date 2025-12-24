@@ -153,7 +153,7 @@ if ( null !== $default_temp_val && false !== $default_temp_val && '' !== $defaul
 
 ## New Features & Integrations
 
-### 1. Gemini Geospatial API Integration (December 22, 2024)
+### 1. Gemini Geospatial API Integration (December 22, 2025)
 
 **Feature:** AI-Powered Location Queries with Google Maps grounding
 
@@ -288,7 +288,7 @@ if ( null !== $default_temp_val && false !== $default_temp_val && '' !== $defaul
 
 ---
 
-### 5. OpenAI GPT-Image-1.5 Model Support (December 20, 2024)
+### 5. OpenAI GPT-Image-1.5 Model Support (December 20, 2025)
 
 **Feature:** Latest GPT-Image-1.5 image generation model
 

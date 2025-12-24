@@ -4,7 +4,7 @@
 
 ### Added
 
-#### Gemini Geospatial API Integration (December 22, 2024)
+#### Gemini Geospatial API Integration (December 22, 2025)
 - **AI-Powered Location Queries**: Integrated Gemini Geospatial API for contextual, location-based queries with Google Maps grounding
   - **New Client Method**: Added `create_geospatial_query()` to `WP_MCP_AI_Gemini_Client`
     - Natural language queries about places, directions, and local information
@@ -86,7 +86,7 @@
   - **Cost Savings Potential**: Context caching can reduce costs by 68% for cached tokens
   - See [GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md](docs/features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
 
-#### OpenAI GPT-Image-1.5 Model Support (December 20, 2024)
+#### OpenAI GPT-Image-1.5 Model Support (December 20, 2025)
 - **OpenAI GPT-Image-1.5 Image Generation**: Added support for the latest GPT-Image-1.5 model
   - **4× Faster**: Generation speed significantly improved compared to GPT-Image-1
   - **20% Cost Reduction**: New pricing structure with lower costs across all quality tiers

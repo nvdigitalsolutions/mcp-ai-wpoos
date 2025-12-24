@@ -227,7 +227,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - **Google Maps Grounding** - Access to 250M+ places database for factual, context-aware responses
 - **New Tool:** `gemini_geospatial_query` - Location-based AI queries with map visualization tokens
 - **Reduced Hallucinations** - Factual grounding with real-time Google Maps data
-- [Full Details →](docs/implementation-history/2025/summaries/FINAL_IMPLEMENTATION_SUMMARY.md#gemini-geospatial-api-integration-december-22-2024)
+- [Full Details →](docs/implementation-history/2025/summaries/FINAL_IMPLEMENTATION_SUMMARY.md#gemini-geospatial-api-integration-december-22-2025)
 
 ### 📦 OpenAI Batch API Integration (Dec 21, 2025)
 - **50% Cost Reduction** - Asynchronous bulk operations with dedicated quota and higher rate limits
