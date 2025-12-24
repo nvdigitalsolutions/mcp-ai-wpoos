@@ -27,8 +27,8 @@ class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'event_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Event ID to update (required)', 'wp-mcp-ai' ),
@@ -51,26 +51,26 @@ class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'description' => __( 'New start time (HH:MM) (optional)', 'wp-mcp-ai' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
-				'end_date'    => array(
+				'end_date'   => array(
 					'type'        => 'string',
 					'description' => __( 'New end date (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'end_time'    => array(
+				'end_time'   => array(
 					'type'        => 'string',
 					'description' => __( 'New end time (HH:MM) (optional)', 'wp-mcp-ai' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
-				'location'    => array(
+				'location'  => array(
 					'type'        => 'string',
 					'description' => __( 'New event location (optional)', 'wp-mcp-ai' ),
 				),
-				'type'        => array(
+				'type'      => array(
 					'type'        => 'string',
 					'description' => __( 'New event type (optional)', 'wp-mcp-ai' ),
 					'enum'        => array( 'meeting', 'deadline', 'milestone', 'reminder', 'other' ),
 				),
-				'attendees'   => array(
+				'attendees' => array(
 					'type'        => 'array',
 					'description' => __( 'New array of attendee user IDs (optional)', 'wp-mcp-ai' ),
 					'items'       => array( 'type' => 'integer' ),
@@ -154,8 +154,8 @@ class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		return array(
-			'success' => true,
-			'message' => __( 'Event updated successfully.', 'wp-mcp-ai' ),
+			'success'  => true,
+			'message'  => __( 'Event updated successfully.', 'wp-mcp-ai' ),
 			'event_id' => $event_id,
 		);
 	}

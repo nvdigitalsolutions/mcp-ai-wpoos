@@ -41,27 +41,27 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'start_date'      => array(
+			'type'       => 'object',
+			'properties' => array(
+				'start_date' => array(
 					'type'        => 'string',
 					'description' => __( 'Start date for calendar view (YYYY-MM-DD) (required)', 'wp-mcp-ai' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'end_date'        => array(
+				'end_date'   => array(
 					'type'        => 'string',
 					'description' => __( 'End date for calendar view (YYYY-MM-DD) (required)', 'wp-mcp-ai' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'project_id'      => array(
+				'project_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by specific project ID (optional)', 'wp-mcp-ai' ),
 				),
-				'user_id'         => array(
+				'user_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by specific user ID (shows items assigned to or attended by user) (optional)', 'wp-mcp-ai' ),
 				),
-				'include_types'   => array(
+				'include_types' => array(
 					'type'        => 'array',
 					'description' => __( 'Types to include in calendar view (default: all)', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -70,7 +70,7 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 					),
 					'default'     => array( 'projects', 'tasks', 'events' ),
 				),
-				'group_by_date'   => array(
+				'group_by_date' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Group results by date for easier calendar rendering (default: true)', 'wp-mcp-ai' ),
 					'default'     => true,
@@ -233,12 +233,12 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 				$project_start = get_post_meta( $id, '_project_start_date', true );
 				
 				$items[] = array(
-					'type'        => 'project',
-					'id'          => $id,
-					'title'       => get_the_title(),
-					'date'        => $project_start ?: get_the_date( 'Y-m-d' ),
-					'status'      => get_post_meta( $id, '_project_status', true ),
-					'project_id'  => $id,
+					'type'       => 'project',
+					'id'         => $id,
+					'title'      => get_the_title(),
+					'date'       => $project_start ?: get_the_date( 'Y-m-d' ),
+					'status'     => get_post_meta( $id, '_project_status', true ),
+					'project_id' => $id,
 				);
 			}
 			wp_reset_postdata();

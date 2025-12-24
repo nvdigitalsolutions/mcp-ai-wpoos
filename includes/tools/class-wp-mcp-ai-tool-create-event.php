@@ -41,8 +41,8 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'title'       => array(
 					'type'        => 'string',
 					'description' => __( 'Event title (required)', 'wp-mcp-ai' ),
@@ -63,33 +63,33 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'description' => __( 'Event start date in ISO 8601 format (YYYY-MM-DD) (required)', 'wp-mcp-ai' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'start_time'  => array(
+				'start_time' => array(
 					'type'        => 'string',
 					'description' => __( 'Event start time in 24-hour format (HH:MM) (optional, omit for all-day events)', 'wp-mcp-ai' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
-				'end_date'    => array(
+				'end_date'   => array(
 					'type'        => 'string',
 					'description' => __( 'Event end date in ISO 8601 format (YYYY-MM-DD) (optional, defaults to start_date)', 'wp-mcp-ai' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'end_time'    => array(
+				'end_time'   => array(
 					'type'        => 'string',
 					'description' => __( 'Event end time in 24-hour format (HH:MM) (optional)', 'wp-mcp-ai' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
-				'location'    => array(
+				'location' => array(
 					'type'        => 'string',
 					'description' => __( 'Event location (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 500,
 				),
-				'type'        => array(
+				'type'      => array(
 					'type'        => 'string',
 					'description' => __( 'Event type (optional)', 'wp-mcp-ai' ),
 					'enum'        => array( 'meeting', 'deadline', 'milestone', 'reminder', 'other' ),
 					'default'     => 'meeting',
 				),
-				'attendees'   => array(
+				'attendees' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of user IDs who will attend this event (optional)', 'wp-mcp-ai' ),
 					'items'       => array(

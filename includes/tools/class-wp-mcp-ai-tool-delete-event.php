@@ -76,8 +76,8 @@ class WP_MCP_AI_Tool_Delete_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		return array(
-			'success' => true,
-			'message' => __( 'Event deleted successfully.', 'wp-mcp-ai' ) ,
+			'success'  => true,
+			'message'  => __( 'Event deleted successfully.', 'wp-mcp-ai' ) ,
 			'event_id' => $event_id,
 		);
 	}

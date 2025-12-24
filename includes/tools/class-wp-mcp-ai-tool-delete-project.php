@@ -76,8 +76,8 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		return array(
-			'success' => true,
-			'message' => __( 'Project deleted successfully.', 'wp-mcp-ai' ),
+			'success'    => true,
+			'message'    => __( 'Project deleted successfully.', 'wp-mcp-ai' ),
 			'project_id' => $project_id,
 		);
 	}

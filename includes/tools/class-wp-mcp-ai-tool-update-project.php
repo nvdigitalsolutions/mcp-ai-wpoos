@@ -27,8 +27,8 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'project_id'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Project ID to update (required)', 'wp-mcp-ai' ),
@@ -128,8 +128,8 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		return array(
-			'success' => true,
-			'message' => __( 'Project updated successfully.', 'wp-mcp-ai' ),
+			'success'    => true,
+			'message'    => __( 'Project updated successfully.', 'wp-mcp-ai' ),
 			'project_id' => $project_id,
 		);
 	}

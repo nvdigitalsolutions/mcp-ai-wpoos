@@ -27,8 +27,8 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'task_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Task ID to update (required)', 'wp-mcp-ai' ),

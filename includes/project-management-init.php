@@ -28,7 +28,7 @@ function wp_mcp_ai_register_project_management_post_types() {
 	register_post_type(
 		'mcp_ai_project',
 		array(
-			'labels'              => array(
+			'labels'             => array(
 				'name'               => __( 'Projects', 'wp-mcp-ai' ),
 				'singular_name'      => __( 'Project', 'wp-mcp-ai' ),
 				'add_new'            => __( 'Add New', 'wp-mcp-ai' ),
@@ -40,16 +40,16 @@ function wp_mcp_ai_register_project_management_post_types() {
 				'not_found'          => __( 'No projects found', 'wp-mcp-ai' ),
 				'not_found_in_trash' => __( 'No projects found in trash', 'wp-mcp-ai' ),
 			),
-			'public'              => false,
-			'publicly_queryable'  => false,
-			'show_ui'             => true,
-			'show_in_menu'        => false,
-			'show_in_rest'        => true,
-			'has_archive'         => false,
-			'rewrite'             => false,
-			'capability_type'     => 'post',
-			'supports'            => array( 'title', 'editor', 'author' ),
-			'menu_icon'           => 'dashicons-portfolio',
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true,
+			'show_in_menu'       => false,
+			'show_in_rest'       => true,
+			'has_archive'        => false,
+			'rewrite'            => false,
+			'capability_type'    => 'post',
+			'supports'           => array( 'title', 'editor', 'author' ),
+			'menu_icon'          => 'dashicons-portfolio',
 		)
 	);
 
@@ -57,7 +57,7 @@ function wp_mcp_ai_register_project_management_post_types() {
 	register_post_type(
 		'mcp_ai_task',
 		array(
-			'labels'              => array(
+			'labels'             => array(
 				'name'               => __( 'Tasks', 'wp-mcp-ai' ),
 				'singular_name'      => __( 'Task', 'wp-mcp-ai' ),
 				'add_new'            => __( 'Add New', 'wp-mcp-ai' ),
@@ -69,16 +69,16 @@ function wp_mcp_ai_register_project_management_post_types() {
 				'not_found'          => __( 'No tasks found', 'wp-mcp-ai' ),
 				'not_found_in_trash' => __( 'No tasks found in trash', 'wp-mcp-ai' ),
 			),
-			'public'              => false,
-			'publicly_queryable'  => false,
-			'show_ui'             => true,
-			'show_in_menu'        => false,
-			'show_in_rest'        => true,
-			'has_archive'         => false,
-			'rewrite'             => false,
-			'capability_type'     => 'post',
-			'supports'            => array( 'title', 'editor', 'author' ),
-			'menu_icon'           => 'dashicons-list-view',
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true,
+			'show_in_menu'       => false,
+			'show_in_rest'       => true,
+			'has_archive'        => false,
+			'rewrite'            => false,
+			'capability_type'    => 'post',
+			'supports'           => array( 'title', 'editor', 'author' ),
+			'menu_icon'          => 'dashicons-list-view',
 		)
 	);
 
@@ -86,7 +86,7 @@ function wp_mcp_ai_register_project_management_post_types() {
 	register_post_type(
 		'mcp_ai_event',
 		array(
-			'labels'              => array(
+			'labels'             => array(
 				'name'               => __( 'Events', 'wp-mcp-ai' ),
 				'singular_name'      => __( 'Event', 'wp-mcp-ai' ),
 				'add_new'            => __( 'Add New', 'wp-mcp-ai' ),
@@ -98,16 +98,16 @@ function wp_mcp_ai_register_project_management_post_types() {
 				'not_found'          => __( 'No events found', 'wp-mcp-ai' ),
 				'not_found_in_trash' => __( 'No events found in trash', 'wp-mcp-ai' ),
 			),
-			'public'              => false,
-			'publicly_queryable'  => false,
-			'show_ui'             => true,
-			'show_in_menu'        => false,
-			'show_in_rest'        => true,
-			'has_archive'         => false,
-			'rewrite'             => false,
-			'capability_type'     => 'post',
-			'supports'            => array( 'title', 'editor', 'author' ),
-			'menu_icon'           => 'dashicons-calendar-alt',
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true,
+			'show_in_menu'       => false,
+			'show_in_rest'       => true,
+			'has_archive'        => false,
+			'rewrite'            => false,
+			'capability_type'    => 'post',
+			'supports'           => array( 'title', 'editor', 'author' ),
+			'menu_icon'          => 'dashicons-calendar-alt',
 		)
 	);
 }
