@@ -76,7 +76,8 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
 		}
-		return (bool) get_option( 'wp_mcp_ai_enable_project_management', false );
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_project_management'] );
 	}
 
 	public function execute( array $arguments = array(), array $context = array() ) {

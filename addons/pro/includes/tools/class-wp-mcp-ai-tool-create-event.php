@@ -119,7 +119,8 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
 		}
-		return (bool) get_option( 'wp_mcp_ai_enable_project_management', false );
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		return ! empty( $settings['enable_project_management'] );
 	}
 
 	/**
