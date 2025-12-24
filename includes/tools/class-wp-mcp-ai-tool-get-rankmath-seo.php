@@ -211,9 +211,9 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 				'author_id' => (int) $post->post_author,
 			),
 			'rank_math' => array(
-				'version'          => defined( 'RANK_MATH_VERSION' ) ? RANK_MATH_VERSION : null,
+				'version'          => defined( 'RANK_MATH_VERSION' ) ? sanitize_text_field( RANK_MATH_VERSION ) : null,
 				'is_pro'           => $this->is_pro_active(),
-				'pro_version'      => defined( 'RANK_MATH_PRO_VERSION' ) ? RANK_MATH_PRO_VERSION : null,
+				'pro_version'      => defined( 'RANK_MATH_PRO_VERSION' ) ? sanitize_text_field( RANK_MATH_PRO_VERSION ) : null,
 				'seo_score'        => $seo_score,
 				'seo_score_rating' => $score_rating,
 				'focus_keywords'   => $focus_keywords,
@@ -447,12 +447,14 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Get keyword rankings if available.
 		global $wpdb;
 		$analytics_table = $wpdb->prefix . 'rank_math_analytics_objects';
-		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $analytics_table ) ) === $analytics_table ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $analytics_table ) ) ) === $analytics_table ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$keywords = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT keyword, position, clicks, impressions 
-					FROM {$analytics_table} 
+					FROM `{$wpdb->prefix}rank_math_analytics_objects` 
 					WHERE object_id = %d 
 					ORDER BY impressions DESC 
 					LIMIT 10",
