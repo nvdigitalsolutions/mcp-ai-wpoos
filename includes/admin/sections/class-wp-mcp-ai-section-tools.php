@@ -499,7 +499,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management' ),
 				),
 				'media'          => array(
 					'id'     => 'media',
@@ -512,12 +512,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'label'  => __( 'AI Comments', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-comments',
 					'fields' => array( 'enable_ai_comments_moderation', 'ai_comments_sensitivity', 'ai_comments_min_confidence', 'ai_comments_auto_hold_low_confidence' ),
-				),
-				'project_management' => array(
-					'id'     => 'project_management',
-					'label'  => __( 'Project Management', 'wp-mcp-ai' ),
-					'icon'   => 'dashicons-portfolio',
-					'fields' => array( 'enable_project_management' ),
 				),
 			);
 
