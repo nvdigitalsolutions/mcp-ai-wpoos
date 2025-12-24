@@ -17,7 +17,7 @@ This document provides a comprehensive index of all documentation available for 
 ### Weekly Commits Summary (December 16-23, 2025)
 Comprehensive consolidation of all commits and changes from the past week:
 
-- **[WEEKLY_COMMITS_SUMMARY_2025-12-23.md](../WEEKLY_COMMITS_SUMMARY_2025-12-23.md)** ⭐ **NEW (Dec 23)**
+- **[WEEKLY_COMMITS_SUMMARY_2025-12-23.md](implementation-history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md)** ⭐ **NEW (Dec 23)**
   - **COMPLETE WEEKLY REVIEW** of all commits from December 16-23, 2025
   - Primary PR #2364: Profession model architecture improvements
   - 2 commits reviewed, 300+ files changed, ~100,000 lines
