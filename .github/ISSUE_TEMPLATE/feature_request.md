@@ -2,7 +2,7 @@
 name: Feature Request
 about: Suggest a new feature or enhancement for WP oOS
 title: '[FEATURE] '
-labels: enhancement
+labels: 'type:feature,status:needs-triage'
 assignees: ''
 ---
 
