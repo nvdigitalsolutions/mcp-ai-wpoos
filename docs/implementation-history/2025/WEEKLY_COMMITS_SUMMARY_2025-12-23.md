@@ -1029,7 +1029,7 @@ if ( null !== $value && '' !== $value && false !== $value ) {
 3. **Documentation Review**
    - [ ] Review `PROFESSIONAL_TEST_MODEL_TESTING_GUIDE.md`
    - [ ] Review `PROFESSIONAL_TEST_MODEL_CHANGES.md`
-   - [ ] Review `PROFESSION_MODEL_MERGE_FIX.md`
+   - [ ] Review `fixes/PROFESSION_MODEL_MERGE_FIX.md`
 
 ### Medium Priority
 
