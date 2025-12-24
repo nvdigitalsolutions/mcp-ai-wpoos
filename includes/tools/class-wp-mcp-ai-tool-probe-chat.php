@@ -83,7 +83,11 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to probe assistant chats.', 'wp-mcp-ai' ) );
 		}
 
-		$assistant_id = isset( $arguments['assistant_id'] ) ? absint( $arguments['assistant_id'] ) : 0;
+		
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+$assistant_id = isset( $arguments['assistant_id'] ) ? absint( $arguments['assistant_id'] ) : 0;
 		if ( $assistant_id <= 0 ) {
 			return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'Provide a valid assistant ID to run the probe.', 'wp-mcp-ai' ) );
 		}

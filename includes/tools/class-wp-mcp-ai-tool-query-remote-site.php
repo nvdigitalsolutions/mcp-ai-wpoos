@@ -72,7 +72,11 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 		// Check if mesh networking is enabled.
 		if ( empty( $settings['enable_mesh'] ) ) {
@@ -152,6 +156,19 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Build the chat endpoint URL.
 		$endpoint_url = trailingslashit( $peer_url ) . 'wp-json/mcp-ai/v1/chat';
+		
+		// Validate the endpoint URL.
+		$endpoint_url = esc_url_raw( $endpoint_url, array( 'http', 'https' ) );
+		if ( ! $endpoint_url || ! wp_http_validate_url( $endpoint_url ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_endpoint_url',
+				sprintf(
+					/* translators: %s: peer site name */
+					__( 'Invalid endpoint URL for peer site "%s".', 'wp-mcp-ai' ),
+					$peer_name
+				)
+			);
+		}
 
 		// Prepare the request body.
 		$body = array(

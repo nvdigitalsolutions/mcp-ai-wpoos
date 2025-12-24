@@ -66,6 +66,13 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
+		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'You do not have access to this site.', 'wp-mcp-ai' ),
+			);
+		}
+
 		// Get profession service.
 		if ( ! function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
 			return array(

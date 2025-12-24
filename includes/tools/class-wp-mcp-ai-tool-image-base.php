@@ -230,6 +230,11 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 			// If no local file path, download via HTTP.
 			if ( null === $file_path ) {
+				// Validate URL before making HTTP request.
+				if ( ! wp_http_validate_url( $image_url ) ) {
+					return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'The provided image URL is not valid.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				}
+				
 				$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
 
 				if ( is_wp_error( $response ) ) {
@@ -238,6 +243,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 				$status_code = wp_remote_retrieve_response_code( $response );
 				if ( $status_code < 200 || $status_code >= 300 ) {
+					/* translators: %d: HTTP status code */
 					return new WP_Error( 'wp_mcp_ai_download_error', sprintf( __( 'Failed to download image. HTTP %d', 'wp-mcp-ai' ), $status_code ), array( 'status' => $status_code ) );
 				}
 
