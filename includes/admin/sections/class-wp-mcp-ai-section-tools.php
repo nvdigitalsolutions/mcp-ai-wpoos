@@ -313,6 +313,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Allows this instance to be discovered by and connect to other WP oOS instances.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
+				'enable_quiz_system'                   => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Quiz System', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable quiz creation and assessment tools (Full Version only)', 'wp-mcp-ai' ),
+					'description'    => __( 'Enables the quiz/assessment system for tutors. Provides 7 tools for creating quizzes, managing submissions, and grading. Includes automatic JetEngine CCT synchronization when available. Requires edit_posts capability to create quizzes. This feature is only available in Full Version mode (not Base Version).', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 
 				// Media fields.
 				'enable_ai_media_library'              => array(
@@ -492,7 +499,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system' ),
 				),
 				'media'          => array(
 					'id'     => 'media',

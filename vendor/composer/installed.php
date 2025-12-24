@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/create-tools-for-tutors',
+        'version' => 'dev-copilot/create-tools-for-tutors',
+        'reference' => '5d2bea3d5fa3f2e5444476e1560f18f7f03e46a7',
         'pretty_version' => 'dev-copilot/add-project-task-events-tools',
         'version' => 'dev-copilot/add-project-task-events-tools',
         'reference' => '91da27e0c8c1461ad6a74a1d801c3c101c8720f4',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/create-tools-for-tutors',
+            'version' => 'dev-copilot/create-tools-for-tutors',
+            'reference' => '5d2bea3d5fa3f2e5444476e1560f18f7f03e46a7',
             'pretty_version' => 'dev-copilot/add-project-task-events-tools',
             'version' => 'dev-copilot/add-project-task-events-tools',
             'reference' => '91da27e0c8c1461ad6a74a1d801c3c101c8720f4',
