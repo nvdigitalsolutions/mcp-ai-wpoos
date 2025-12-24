@@ -81,6 +81,13 @@ class WP_MCP_AI_Profession_CPT {
 	const META_REGION = '_wp_mcp_ai_profession_region';
 
 	/**
+	 * Meta key for preferred datasets.
+	 *
+	 * @since 1.8.0
+	 */
+	const META_PREFERRED_DATASETS = '_wp_mcp_ai_profession_preferred_datasets';
+
+	/**
 	 * Metabox instances.
 	 *
 	 * @var array<string, WP_MCP_AI_Metabox_Base>
@@ -330,6 +337,21 @@ class WP_MCP_AI_Profession_CPT {
 				'default'           => '',
 			)
 		);
+
+		// Preferred datasets.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_PREFERRED_DATASETS,
+			array(
+				'type'              => 'array',
+				'description'       => __( 'Preferred HuggingFace datasets for this profession', 'wp-mcp-ai' ),
+				'single'            => true,
+				'sanitize_callback' => array( __CLASS__, 'sanitize_preferred_datasets' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => array(),
+			)
+		);
 	}
 
 	/**
@@ -344,6 +366,49 @@ class WP_MCP_AI_Profession_CPT {
 		}
 
 		return array_map( 'sanitize_text_field', $value );
+	}
+
+	/**
+	 * Sanitize preferred datasets meta.
+	 *
+	 * @param mixed $datasets Datasets array to sanitize.
+	 * @return array Sanitized datasets array.
+	 */
+	public static function sanitize_preferred_datasets( $datasets ) {
+		if ( ! is_array( $datasets ) ) {
+			return array();
+		}
+
+		$valid_categories = array( 'nlp', 'vision', 'audio', 'multimodal' );
+		$valid_priorities = array( 'critical', 'high', 'medium', 'low' );
+
+		$sanitized = array();
+		foreach ( $datasets as $dataset ) {
+			if ( is_array( $dataset ) ) {
+				$category = isset( $dataset['category'] ) ? sanitize_text_field( $dataset['category'] ) : '';
+				$priority = isset( $dataset['priority'] ) ? sanitize_text_field( $dataset['priority'] ) : 'medium';
+
+				// Validate category - skip if invalid.
+				if ( ! in_array( $category, $valid_categories, true ) ) {
+					continue;
+				}
+
+				// Validate priority - default to 'medium' if invalid.
+				if ( ! in_array( $priority, $valid_priorities, true ) ) {
+					$priority = 'medium';
+				}
+
+				$sanitized[] = array(
+					'dataset'  => isset( $dataset['dataset'] ) ? sanitize_text_field( $dataset['dataset'] ) : '',
+					'name'     => isset( $dataset['name'] ) ? sanitize_text_field( $dataset['name'] ) : '',
+					'category' => $category,
+					'priority' => $priority,
+				);
+			}
+		}
+
+		// Limit to 10 datasets.
+		return array_slice( $sanitized, 0, 10 );
 	}
 
 	/**
