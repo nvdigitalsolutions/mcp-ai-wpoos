@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-auto-assignment-datasets',
         'version' => 'dev-copilot/fix-auto-assignment-datasets',
-        'reference' => 'be9ec2cf637d0da82cd75492872875d704e60dbc',
+        'reference' => 'a63eaa99d373a52d4ea286e220ce09b175083fea',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-auto-assignment-datasets',
             'version' => 'dev-copilot/fix-auto-assignment-datasets',
-            'reference' => 'be9ec2cf637d0da82cd75492872875d704e60dbc',
+            'reference' => 'a63eaa99d373a52d4ea286e220ce09b175083fea',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -21,11 +21,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function wp_mcp_ai_get_profession_dataset_recommendations( $profession_slug ) {
 	$mappings = wp_mcp_ai_get_all_profession_dataset_mappings();
-	
+
 	if ( isset( $mappings[ $profession_slug ] ) ) {
 		return $mappings[ $profession_slug ];
 	}
-	
+
 	return array();
 }
 
@@ -37,7 +37,7 @@ function wp_mcp_ai_get_profession_dataset_recommendations( $profession_slug ) {
 function wp_mcp_ai_get_all_profession_dataset_mappings() {
 	return array(
 		// DATA SCIENCE & AI PROFESSIONS.
-		'data_scientist' => array(
+		'data_scientist'                => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -63,8 +63,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'computer_scientist' => array(
+
+		'computer_scientist'            => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -78,8 +78,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'research_scientist' => array(
+
+		'research_scientist'            => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -93,8 +93,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'statistician' => array(
+
+		'statistician'                  => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -102,9 +102,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// HEALTHCARE & MEDICAL PROFESSIONS.
-		'healthcare_advisor' => array(
+		'healthcare_advisor'            => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -118,8 +118,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'medical_researcher' => array(
+
+		'medical_researcher'            => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -133,8 +133,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'epidemiologist' => array(
+
+		'epidemiologist'                => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -142,8 +142,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'public_health_advisor' => array(
+
+		'public_health_advisor'         => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -151,8 +151,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'pharmacist' => array(
+
+		'pharmacist'                    => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -160,8 +160,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'pharmaceutical_researcher' => array(
+
+		'pharmaceutical_researcher'     => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -169,9 +169,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
+
 		// CREATIVE PROFESSIONS.
-		'graphic_designer' => array(
+		'graphic_designer'              => array(
 			array(
 				'dataset'  => 'detection-datasets/coco',
 				'name'     => 'COCO',
@@ -191,8 +191,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'graphic_artist' => array(
+
+		'graphic_artist'                => array(
 			array(
 				'dataset'  => 'detection-datasets/coco',
 				'name'     => 'COCO',
@@ -206,8 +206,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'web_designer' => array(
+
+		'web_designer'                  => array(
 			array(
 				'dataset'  => 'detection-datasets/coco',
 				'name'     => 'COCO',
@@ -221,8 +221,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'ux_ui_designer' => array(
+
+		'ux_ui_designer'                => array(
 			array(
 				'dataset'  => 'stanfordnlp/imdb',
 				'name'     => 'IMDB Movie Reviews',
@@ -236,8 +236,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'photographer' => array(
+
+		'photographer'                  => array(
 			array(
 				'dataset'  => 'detection-datasets/coco',
 				'name'     => 'COCO',
@@ -251,8 +251,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
-		'video_producer' => array(
+
+		'video_producer'                => array(
 			array(
 				'dataset'  => 'yerevann/coco-captions',
 				'name'     => 'MS COCO Captions',
@@ -266,8 +266,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'video_editor' => array(
+
+		'video_editor'                  => array(
 			array(
 				'dataset'  => 'yerevann/coco-captions',
 				'name'     => 'MS COCO Captions',
@@ -275,8 +275,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'film_director' => array(
+
+		'film_director'                 => array(
 			array(
 				'dataset'  => 'stanfordnlp/imdb',
 				'name'     => 'IMDB Movie Reviews',
@@ -290,8 +290,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'film_editor' => array(
+
+		'film_editor'                   => array(
 			array(
 				'dataset'  => 'stanfordnlp/imdb',
 				'name'     => 'IMDB Movie Reviews',
@@ -299,8 +299,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'cinematographer' => array(
+
+		'cinematographer'               => array(
 			array(
 				'dataset'  => 'detection-datasets/coco',
 				'name'     => 'COCO',
@@ -308,8 +308,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
-		'sound_designer' => array(
+
+		'sound_designer'                => array(
 			array(
 				'dataset'  => 'librispeech_asr',
 				'name'     => 'LibriSpeech',
@@ -323,9 +323,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
+
 		// CONTENT & WRITING PROFESSIONS.
-		'content_creator' => array(
+		'content_creator'               => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -345,8 +345,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'screenwriter' => array(
+
+		'screenwriter'                  => array(
 			array(
 				'dataset'  => 'stanfordnlp/imdb',
 				'name'     => 'IMDB Movie Reviews',
@@ -360,8 +360,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'medical_writer' => array(
+
+		'medical_writer'                => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -375,9 +375,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// MARKETING & BUSINESS PROFESSIONS.
-		'marketing_consultant' => array(
+		'marketing_consultant'          => array(
 			array(
 				'dataset'  => 'stanfordnlp/imdb',
 				'name'     => 'IMDB Movie Reviews',
@@ -397,8 +397,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'business_consultant' => array(
+
+		'business_consultant'           => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -412,9 +412,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// LEGAL & ADVISORY PROFESSIONS.
-		'lawyer' => array(
+		'lawyer'                        => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -428,8 +428,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'legal_advisor' => array(
+
+		'legal_advisor'                 => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -437,9 +437,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
+
 		// FINANCIAL PROFESSIONS.
-		'accountant' => array(
+		'accountant'                    => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -447,8 +447,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'tax_advisor' => array(
+
+		'tax_advisor'                   => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -456,8 +456,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'financial_advisor' => array(
+
+		'financial_advisor'             => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -465,9 +465,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// E-COMMERCE & RETAIL.
-		'restaurant_consultant' => array(
+		'restaurant_consultant'         => array(
 			array(
 				'dataset'  => 'yelp_review_full',
 				'name'     => 'Yelp Reviews',
@@ -481,9 +481,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
+
 		// COMMUNITY MANAGEMENT.
-		'hr_consultant' => array(
+		'hr_consultant'                 => array(
 			array(
 				'dataset'  => 'jigsaw_toxicity_pred',
 				'name'     => 'Jigsaw Toxic Comments',
@@ -497,7 +497,7 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// EMERGENCY & CRISIS.
 		'crisis_communications_manager' => array(
 			array(
@@ -513,9 +513,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// ENVIRONMENTAL & SCIENCE.
-		'marine_biologist' => array(
+		'marine_biologist'              => array(
 			array(
 				'dataset'  => 'detection-datasets/coco',
 				'name'     => 'COCO',
@@ -523,8 +523,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'oceanographer' => array(
+
+		'oceanographer'                 => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -532,8 +532,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'environmental_scientist' => array(
+
+		'environmental_scientist'       => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -541,9 +541,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// ENGINEERING PROFESSIONS.
-		'software_engineer' => array(
+		'software_engineer'             => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -551,8 +551,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'it_consultant' => array(
+
+		'it_consultant'                 => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -560,9 +560,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// FOOD & CULINARY PROFESSIONS.
-		'chef' => array(
+		'chef'                          => array(
 			array(
 				'dataset'  => 'ethz/food101',
 				'name'     => 'Food-101',
@@ -576,8 +576,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'restaurant_manager' => array(
+
+		'restaurant_manager'            => array(
 			array(
 				'dataset'  => 'yelp_review_full',
 				'name'     => 'Yelp Reviews',
@@ -597,8 +597,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'bartender' => array(
+
+		'bartender'                     => array(
 			array(
 				'dataset'  => 'yelp_review_full',
 				'name'     => 'Yelp Reviews',
@@ -606,9 +606,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// EDUCATION PROFESSIONS.
-		'elementary_school_teacher' => array(
+		'elementary_school_teacher'     => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -622,29 +622,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'high_school_teacher' => array(
-			array(
-				'dataset'  => 'rajpurkar/squad',
-				'name'     => 'SQuAD',
-				'category' => 'nlp',
-				'priority' => 'critical',
-			),
-			array(
-				'dataset'  => 'allenai/sciq',
-				'name'     => 'SciQ',
-				'category' => 'nlp',
-				'priority' => 'critical',
-			),
-			array(
-				'dataset'  => 'abisee/cnn_dailymail',
-				'name'     => 'CNN/DailyMail',
-				'category' => 'nlp',
-				'priority' => 'high',
-			),
-		),
-		
-		'college_professor' => array(
+
+		'high_school_teacher'           => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -664,8 +643,29 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'special_education_teacher' => array(
+
+		'college_professor'             => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+
+		'special_education_teacher'     => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -673,8 +673,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
-		'corporate_trainer' => array(
+
+		'corporate_trainer'             => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -688,8 +688,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'instructional_designer' => array(
+
+		'instructional_designer'        => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -703,8 +703,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'esl_teacher' => array(
+
+		'esl_teacher'                   => array(
 			array(
 				'dataset'  => 'mc4',
 				'name'     => 'mC4',
@@ -718,9 +718,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// IGCSE TUTORS.
-		'igcse_biology_tutor' => array(
+		'igcse_biology_tutor'           => array(
 			array(
 				'dataset'  => 'allenai/sciq',
 				'name'     => 'SciQ',
@@ -734,8 +734,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'igcse_chemistry_tutor' => array(
+
+		'igcse_chemistry_tutor'         => array(
 			array(
 				'dataset'  => 'allenai/sciq',
 				'name'     => 'SciQ',
@@ -749,8 +749,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'igcse_physics_tutor' => array(
+
+		'igcse_physics_tutor'           => array(
 			array(
 				'dataset'  => 'allenai/sciq',
 				'name'     => 'SciQ',
@@ -764,8 +764,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'igcse_mathematics_tutor' => array(
+
+		'igcse_mathematics_tutor'       => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -779,8 +779,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'igcse_sciences_tutor' => array(
+
+		'igcse_sciences_tutor'          => array(
 			array(
 				'dataset'  => 'allenai/sciq',
 				'name'     => 'SciQ',
@@ -794,8 +794,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'igcse_english_tutor' => array(
+
+		'igcse_english_tutor'           => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -809,8 +809,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'igcse_computer_science_tutor' => array(
+
+		'igcse_computer_science_tutor'  => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -818,9 +818,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
+
 		// JOURNALISM & WRITING.
-		'journalist' => array(
+		'journalist'                    => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -840,8 +840,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
-		'writer' => array(
+
+		'writer'                        => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -861,8 +861,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'social_media_manager' => array(
+
+		'social_media_manager'          => array(
 			array(
 				'dataset'  => 'stanfordnlp/imdb',
 				'name'     => 'IMDB Movie Reviews',
@@ -888,8 +888,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'pr_specialist' => array(
+
+		'pr_specialist'                 => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -909,9 +909,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// ADDITIONAL CREATIVE PROFESSIONS.
-		'actor' => array(
+		'actor'                         => array(
 			array(
 				'dataset'  => 'stanfordnlp/imdb',
 				'name'     => 'IMDB Movie Reviews',
@@ -919,8 +919,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
-		'animator' => array(
+
+		'animator'                      => array(
 			array(
 				'dataset'  => 'detection-datasets/coco',
 				'name'     => 'COCO',
@@ -934,8 +934,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'game_designer' => array(
+
+		'game_designer'                 => array(
 			array(
 				'dataset'  => 'detection-datasets/coco',
 				'name'     => 'COCO',
@@ -949,8 +949,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'musician' => array(
+
+		'musician'                      => array(
 			array(
 				'dataset'  => 'librispeech_asr',
 				'name'     => 'LibriSpeech',
@@ -964,8 +964,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'interior_designer' => array(
+
+		'interior_designer'             => array(
 			array(
 				'dataset'  => 'detection-datasets/coco',
 				'name'     => 'COCO',
@@ -979,8 +979,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'landscape_architect' => array(
+
+		'landscape_architect'           => array(
 			array(
 				'dataset'  => 'detection-datasets/coco',
 				'name'     => 'COCO',
@@ -994,9 +994,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// ADDITIONAL HEALTHCARE PROFESSIONS.
-		'physician' => array(
+		'physician'                     => array(
 			array(
 				'dataset'  => 'bigbio/med_qa',
 				'name'     => 'MedQA',
@@ -1010,8 +1010,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'nurse_practitioner' => array(
+
+		'nurse_practitioner'            => array(
 			array(
 				'dataset'  => 'bigbio/med_qa',
 				'name'     => 'MedQA',
@@ -1025,8 +1025,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'registered_nurse' => array(
+
+		'registered_nurse'              => array(
 			array(
 				'dataset'  => 'bigbio/med_qa',
 				'name'     => 'MedQA',
@@ -1034,8 +1034,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'dentist' => array(
+
+		'dentist'                       => array(
 			array(
 				'dataset'  => 'bigbio/med_qa',
 				'name'     => 'MedQA',
@@ -1043,8 +1043,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'psychologist' => array(
+
+		'psychologist'                  => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -1058,9 +1058,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// BUSINESS & FINANCE.
-		'entrepreneur' => array(
+		'entrepreneur'                  => array(
 			array(
 				'dataset'  => 'yelp_review_full',
 				'name'     => 'Yelp Reviews',
@@ -1074,8 +1074,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'sales_manager' => array(
+
+		'sales_manager'                 => array(
 			array(
 				'dataset'  => 'stanfordnlp/imdb',
 				'name'     => 'IMDB Movie Reviews',
@@ -1089,8 +1089,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
-		'project_manager' => array(
+
+		'project_manager'               => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -1098,8 +1098,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'economist' => array(
+
+		'economist'                     => array(
 			array(
 				'dataset'  => 'financial_phrasebank',
 				'name'     => 'Financial PhraseBank',
@@ -1113,8 +1113,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'retail_manager' => array(
+
+		'retail_manager'                => array(
 			array(
 				'dataset'  => 'yelp_review_full',
 				'name'     => 'Yelp Reviews',
@@ -1128,9 +1128,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// TECHNICAL PROFESSIONS.
-		'biologist' => array(
+		'biologist'                     => array(
 			array(
 				'dataset'  => 'abisee/cnn_dailymail',
 				'name'     => 'CNN/DailyMail',
@@ -1144,8 +1144,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'chemist' => array(
+
+		'chemist'                       => array(
 			array(
 				'dataset'  => 'allenai/sciq',
 				'name'     => 'SciQ',
@@ -1159,8 +1159,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'physicist' => array(
+
+		'physicist'                     => array(
 			array(
 				'dataset'  => 'allenai/sciq',
 				'name'     => 'SciQ',
@@ -1174,8 +1174,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'mathematician' => array(
+
+		'mathematician'                 => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -1189,8 +1189,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'software_developer' => array(
+
+		'software_developer'            => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -1198,8 +1198,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'web_developer' => array(
+
+		'web_developer'                 => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -1207,8 +1207,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'cybersecurity_specialist' => array(
+
+		'cybersecurity_specialist'      => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -1222,9 +1222,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
+
 		// MULTILINGUAL PROFESSIONS.
-		'interpreter_translator' => array(
+		'interpreter_translator'        => array(
 			array(
 				'dataset'  => 'mc4',
 				'name'     => 'mC4',
@@ -1238,9 +1238,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
+
 		// LEGAL PROFESSIONS.
-		'paralegal' => array(
+		'paralegal'                     => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -1254,8 +1254,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'judge' => array(
+
+		'judge'                         => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -1263,9 +1263,9 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'critical',
 			),
 		),
-		
+
 		// COMMUNITY & SOCIAL SERVICES.
-		'social_worker' => array(
+		'social_worker'                 => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -1279,8 +1279,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'librarian' => array(
+
+		'librarian'                     => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
@@ -1294,8 +1294,8 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
-		
-		'customer_service_rep' => array(
+
+		'customer_service_rep'          => array(
 			array(
 				'dataset'  => 'rajpurkar/squad',
 				'name'     => 'SQuAD',
