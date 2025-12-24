@@ -38,6 +38,12 @@ class WP_MCP_AI_Quiz_CPT {
 	 * Initialize the class.
 	 */
 	public static function init() {
+		// Only initialize if quiz system is enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_quiz_system'] ) ) {
+			return;
+		}
+
 		add_action( 'init', array( __CLASS__, 'register_post_types' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'sync_quiz_to_cct' ), 10, 2 );
 		add_action( 'save_post_' . self::SUBMISSION_POST_TYPE, array( __CLASS__, 'sync_submission_to_cct' ), 10, 2 );

@@ -4,6 +4,19 @@
 
 The Quiz Tools provide a complete assessment system for tutors and educators to create, manage, and grade quizzes. This toolkit includes 7 new tools that enable full quiz lifecycle management.
 
+**⚠️ Important: The quiz system must be enabled before use.**
+
+To enable the quiz system:
+1. Go to **WP Admin → Settings → WP oOS → Tools & Features**
+2. Navigate to the **Features** subtab
+3. Check **"Enable Quiz System"**
+4. Save changes
+
+Once enabled, the system will:
+- Register quiz and submission custom post types (CPT)
+- Load all 7 quiz management tools
+- Enable automatic JetEngine CCT synchronization (when available)
+
 **Storage Architecture:**
 - **CPT (Custom Post Type)**: Primary storage for quizzes and submissions
 - **CCT (Custom Content Type)**: Optional JetEngine synchronization for REST API access
