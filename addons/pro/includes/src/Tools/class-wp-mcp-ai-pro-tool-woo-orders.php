@@ -69,7 +69,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query WooCommerce orders. View order details, statuses, customer information, and order items.', 'wp-mcp-ai-pro' );
+		return __( 'Comprehensive WooCommerce order management. View order details, statuses, customer information, order items, update statuses, add notes, and process refunds.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -110,6 +110,34 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'customer' => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by customer ID.', 'wp-mcp-ai-pro' ),
+				),
+				'new_status'   => array(
+					'type'        => 'string',
+					'description' => __( 'New status for update_status action.', 'wp-mcp-ai-pro' ),
+					'enum'        => array( 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed' ),
+				),
+				'note'         => array(
+					'type'        => 'string',
+					'description' => __( 'Note content for add_note action.', 'wp-mcp-ai-pro' ),
+				),
+				'note_type'    => array(
+					'type'        => 'string',
+					'description' => __( 'Note type: customer (visible to customer) or private (internal only).', 'wp-mcp-ai-pro' ),
+					'enum'        => array( 'customer', 'private' ),
+					'default'     => 'private',
+				),
+				'refund_amount' => array(
+					'type'        => 'number',
+					'description' => __( 'Amount to refund (for refund action).', 'wp-mcp-ai-pro' ),
+				),
+				'refund_reason' => array(
+					'type'        => 'string',
+					'description' => __( 'Reason for refund.', 'wp-mcp-ai-pro' ),
+				),
+				'restock_items' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to restock items when refunding.', 'wp-mcp-ai-pro' ),
+					'default'     => true,
 				),
 			),
 			'required'   => array(),
