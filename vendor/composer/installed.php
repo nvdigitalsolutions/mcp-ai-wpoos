@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-tools-for-gaps-fixes',
-        'version' => 'dev-copilot/review-tools-for-gaps-fixes',
-        'reference' => '19f7bfc493f2c8d360dc67dfacbbf5483d9bffe5',
+        'pretty_version' => 'dev-copilot/add-pro-tools-integration',
+        'version' => 'dev-copilot/add-pro-tools-integration',
+        'reference' => '9e9f29e82e23666d2996966e1eac76cab264428f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-tools-for-gaps-fixes',
-            'version' => 'dev-copilot/review-tools-for-gaps-fixes',
-            'reference' => '19f7bfc493f2c8d360dc67dfacbbf5483d9bffe5',
+            'pretty_version' => 'dev-copilot/add-pro-tools-integration',
+            'version' => 'dev-copilot/add-pro-tools-integration',
+            'reference' => '9e9f29e82e23666d2996966e1eac76cab264428f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
