@@ -4,6 +4,11 @@
 
 The Quiz Tools provide a complete assessment system for tutors and educators to create, manage, and grade quizzes. This toolkit includes 7 new tools that enable full quiz lifecycle management.
 
+**Storage Architecture:**
+- **CPT (Custom Post Type)**: Primary storage for quizzes and submissions
+- **CCT (Custom Content Type)**: Optional JetEngine synchronization for REST API access
+- When JetEngine is active (Full Version), quiz data automatically syncs to CCT endpoints
+
 ## Features
 
 - **Multiple Question Types**: Support for multiple choice, true/false, and short answer questions
@@ -11,6 +16,25 @@ The Quiz Tools provide a complete assessment system for tutors and educators to 
 - **Flexible Grading**: Manual grading with per-question feedback
 - **Result Tracking**: Comprehensive results and submission management
 - **Permission Control**: Role-based access for tutors and students
+- **JetEngine Integration**: Automatic CCT synchronization for advanced queries and REST API access
+
+## Storage & REST API Access
+
+### Custom Post Types (CPT) - Always Available
+- `mcp_ai_quiz` - Quiz definitions stored as WordPress posts
+- `mcp_ai_submission` - User submissions stored as WordPress posts
+- Available in both Base and Full versions
+- Primary data source for all quiz tools
+
+### JetEngine CCT Sync (Full Version Only)
+When JetEngine is active, quiz data is automatically synchronized to:
+- `quizzes` CCT - Available at `/wp-json/jet-cct/quizzes`
+- `quiz_submissions` CCT - Available at `/wp-json/jet-cct/quiz_submissions`
+
+This enables:
+- Advanced filtering and queries via JetEngine REST API
+- Frontend queries in JetEngine listings
+- Integration with JetEngine forms and workflows
 
 ## Tools
 
@@ -210,7 +234,7 @@ Student uses get_quiz_results to see their score, answers, and feedback
 
 ## Custom Post Types
 
-The quiz system uses two custom post types:
+The quiz system uses two custom post types with optional JetEngine CCT synchronization:
 
 ### mcp_ai_quiz
 Stores quiz definitions with metadata:
@@ -219,6 +243,10 @@ Stores quiz definitions with metadata:
 - `_mcp_ai_quiz_questions`: Array of question objects
 - `_mcp_ai_quiz_total_points`: Total possible points
 - `_mcp_ai_quiz_passing_score`: Passing percentage
+- `_wp_mcp_ai_quiz_cct_item_id`: Link to CCT item (when JetEngine active)
+
+**CCT Fields (when synced):**
+- `title`, `description`, `author_id`, `time_limit`, `question_count`, `total_points`, `passing_score`, `cpt_post_id`
 
 ### mcp_ai_submission
 Stores user submissions with metadata:
@@ -231,6 +259,28 @@ Stores user submissions with metadata:
 - `_mcp_ai_submission_passed`: Pass/fail boolean
 - `_mcp_ai_submission_graded_by`: User ID who graded
 - `_mcp_ai_submission_graded_at`: Grading timestamp
+- `_wp_mcp_ai_submission_cct_item_id`: Link to CCT item (when JetEngine active)
+
+**CCT Fields (when synced):**
+- `quiz_id`, `student_id`, `status`, `earned_points`, `total_points`, `percentage`, `passed`, `graded_by`, `cpt_post_id`
+
+## JetEngine REST API Endpoints
+
+When JetEngine is active (Full Version), the following REST endpoints are available:
+
+### Quizzes
+- **GET** `/wp-json/jet-cct/quizzes` - List all quizzes
+- **GET** `/wp-json/jet-cct/quizzes/{id}` - Get specific quiz
+- **POST** `/wp-json/jet-cct/quizzes` - Create quiz (syncs to CPT)
+- **PUT** `/wp-json/jet-cct/quizzes/{id}` - Update quiz (syncs to CPT)
+- **DELETE** `/wp-json/jet-cct/quizzes/{id}` - Delete quiz (removes from CPT)
+
+### Submissions
+- **GET** `/wp-json/jet-cct/quiz_submissions` - List all submissions
+- **GET** `/wp-json/jet-cct/quiz_submissions/{id}` - Get specific submission
+- Query parameters: `quiz_id`, `student_id`, `status` for filtering
+
+**Note**: Changes made via CCT endpoints do NOT automatically sync back to CPT. Use the tool endpoints for full functionality.
 
 ## Security
 
