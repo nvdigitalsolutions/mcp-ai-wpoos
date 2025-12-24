@@ -35,6 +35,8 @@ class WP_MCP_AI_Profession_Seeder {
 		if ( get_option( self::SEEDED_OPTION, false ) ) {
 			// Run resync to update default model settings on existing professions.
 			add_action( 'admin_init', array( __CLASS__, 'resync_profession_defaults' ), 25 );
+			// Run resync to assign datasets to professions that don't have them.
+			add_action( 'admin_init', array( __CLASS__, 'resync_profession_datasets' ), 26 );
 			return;
 		}
 
@@ -83,6 +85,52 @@ class WP_MCP_AI_Profession_Seeder {
 
 		// Mark as resynced.
 		update_option( 'wp_mcp_ai_professions_defaults_resynced_4_1', true, false );
+	}
+
+	/**
+	 * Resync profession datasets.
+	 * Assigns HuggingFace datasets to professions that don't have them.
+	 *
+	 * @since 1.8.0
+	 */
+	public static function resync_profession_datasets() {
+		// Check if resync has already been done.
+		if ( get_option( 'wp_mcp_ai_professions_datasets_synced', false ) ) {
+			return;
+		}
+
+		// Load dataset mappings.
+		require_once WP_MCP_AI_PATH . 'includes/professions/profession-dataset-mappings.php';
+
+		$repository  = new WP_MCP_AI_Profession_Repository();
+		$professions = $repository->find_all();
+
+		if ( empty( $professions ) ) {
+			return;
+		}
+
+		foreach ( $professions as $profession ) {
+			// Get current preferred datasets.
+			$current_datasets = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
+
+			// Only update if empty or not an array.
+			if ( empty( $current_datasets ) || ! is_array( $current_datasets ) ) {
+				// Get profession slug from post name.
+				$profession_slug = $profession->post_name;
+
+				// Get datasets for this profession.
+				$datasets = wp_mcp_ai_get_profession_dataset_recommendations( $profession_slug );
+
+				// Assign datasets if available.
+				if ( ! empty( $datasets ) ) {
+					$sanitized_datasets = WP_MCP_AI_Profession_CPT::sanitize_preferred_datasets( $datasets );
+					update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, $sanitized_datasets );
+				}
+			}
+		}
+
+		// Mark as synced.
+		update_option( 'wp_mcp_ai_professions_datasets_synced', true, false );
 	}
 
 	/**
