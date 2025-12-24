@@ -444,6 +444,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'get_rankmath_seo'               => 'wordpress-plugins',
 				'create_wpcode_snippet'          => 'wordpress-plugins',
 				'generate_simple_jwt_token'      => 'wordpress-plugins',
+				'newsletter_add_subscriber'      => 'wordpress-plugins',
+				'newsletter_get_subscribers'     => 'wordpress-plugins',
+				'newsletter_unsubscribe'         => 'wordpress-plugins',
+				'newsletter_get_subscriber_stats' => 'wordpress-plugins',
+				'newsletter_create_email'        => 'wordpress-plugins',
+				'newsletter_get_emails'          => 'wordpress-plugins',
 
 				// External Tools - Tools requiring external APIs or credentials.
 				'generate_openai_image'          => 'external-tools',
@@ -920,6 +926,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Simple_JWT_Token' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php',
 				'WP_MCP_AI_Tool_Vision_Product_Search'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-product-search.php',
 				'WP_MCP_AI_Tool_Vision_Object_Localization' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php',
+				// Newsletter plugin tools.
+				'WP_MCP_AI_Tool_Newsletter_Add_Subscriber' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-add-subscriber.php',
+				'WP_MCP_AI_Tool_Newsletter_Get_Subscribers' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-get-subscribers.php',
+				'WP_MCP_AI_Tool_Newsletter_Unsubscribe'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-unsubscribe.php',
+				'WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-get-subscriber-stats.php',
+				'WP_MCP_AI_Tool_Newsletter_Create_Email'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-create-email.php',
+				'WP_MCP_AI_Tool_Newsletter_Get_Emails'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-get-emails.php',
 				// Project Management tools moved to Pro addon.
 			);
 
