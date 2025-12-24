@@ -70,6 +70,11 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'User ID submitting the answers. Defaults to current user.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
+				'started_at' => array(
+					'type'        => 'string',
+					'description' => __( 'ISO 8601 timestamp when the quiz was started. Used to validate time limits.', 'wp-mcp-ai' ),
+					'format'      => 'date-time',
+				),
 			),
 			'required'             => array( 'quiz_id', 'answers' ),
 			'additionalProperties' => false,
@@ -90,9 +95,10 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to submit quiz answers.', 'wp-mcp-ai' ) );
 		}
 
-		$quiz_id = isset( $arguments['quiz_id'] ) ? absint( $arguments['quiz_id'] ) : 0;
-		$answers = isset( $arguments['answers'] ) && is_array( $arguments['answers'] ) ? $arguments['answers'] : array();
-		$user_id = isset( $arguments['user_id'] ) ? absint( $arguments['user_id'] ) : $current_user_id;
+		$quiz_id    = isset( $arguments['quiz_id'] ) ? absint( $arguments['quiz_id'] ) : 0;
+		$answers    = isset( $arguments['answers'] ) && is_array( $arguments['answers'] ) ? $arguments['answers'] : array();
+		$user_id    = isset( $arguments['user_id'] ) ? absint( $arguments['user_id'] ) : $current_user_id;
+		$started_at = isset( $arguments['started_at'] ) ? sanitize_text_field( $arguments['started_at'] ) : '';
 
 		if ( ! $quiz_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'wp-mcp-ai' ) );
@@ -106,6 +112,46 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 
 		if ( ! $quiz || 'mcp_ai_quiz' !== $quiz->post_type ) {
 			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'wp-mcp-ai' ) );
+		}
+
+		// Get quiz time limit.
+		$time_limit = get_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', true );
+		$time_limit = absint( $time_limit );
+
+		// Validate time limit if quiz has one and started_at is provided.
+		if ( $time_limit > 0 && $started_at ) {
+			$started_timestamp = strtotime( $started_at );
+			$current_timestamp = current_time( 'timestamp' );
+
+			if ( false === $started_timestamp ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_timestamp', __( 'Invalid started_at timestamp format.', 'wp-mcp-ai' ) );
+			}
+
+			// Calculate elapsed time in minutes.
+			$elapsed_minutes = ( $current_timestamp - $started_timestamp ) / 60;
+
+			// Allow 1 minute grace period for submission processing.
+			if ( $elapsed_minutes > ( $time_limit + 1 ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_time_limit_exceeded',
+					sprintf(
+						/* translators: 1: time limit, 2: elapsed time */
+						__( 'Time limit exceeded. Quiz time limit: %1$d minutes. Time taken: %2$.1f minutes.', 'wp-mcp-ai' ),
+						$time_limit,
+						$elapsed_minutes
+					)
+				);
+			}
+		} elseif ( $time_limit > 0 && ! $started_at ) {
+			// Warn if time limit exists but no start time provided.
+			return new WP_Error(
+				'wp_mcp_ai_missing_start_time',
+				sprintf(
+					/* translators: %d: time limit in minutes */
+					__( 'This quiz has a %d minute time limit. Please provide started_at timestamp.', 'wp-mcp-ai' ),
+					$time_limit
+				)
+			);
 		}
 
 		// Check if submitting for another user.
@@ -134,17 +180,108 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'wp_mcp_ai_duplicate_submission', __( 'A submission for this quiz already exists.', 'wp-mcp-ai' ) );
 		}
 
-		// Sanitize answers.
+		// Get quiz questions for validation.
+		$questions = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
+		if ( ! is_array( $questions ) ) {
+			$questions = array();
+		}
+
+		// Validate and sanitize answers.
 		$sanitized_answers = array();
 		foreach ( $answers as $answer_data ) {
 			if ( ! isset( $answer_data['question_index'] ) || ! isset( $answer_data['answer'] ) ) {
 				continue;
 			}
 
+			$question_index = absint( $answer_data['question_index'] );
+			$answer_text    = sanitize_text_field( $answer_data['answer'] );
+
+			// Validate question index exists.
+			if ( ! isset( $questions[ $question_index ] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_question_index',
+					sprintf(
+						/* translators: %d: question index */
+						__( 'Invalid question index: %d', 'wp-mcp-ai' ),
+						$question_index
+					)
+				);
+			}
+
+			$question = $questions[ $question_index ];
+
+			// Validate answer based on question type.
+			if ( isset( $question['type'] ) ) {
+				switch ( $question['type'] ) {
+					case 'true_false':
+						// Validate true/false answer.
+						$answer_lower = strtolower( trim( $answer_text ) );
+						if ( ! in_array( $answer_lower, array( 'true', 'false', '1', '0', 'yes', 'no' ), true ) ) {
+							return new WP_Error(
+								'wp_mcp_ai_invalid_true_false_answer',
+								sprintf(
+									/* translators: %d: question index */
+									__( 'Invalid true/false answer for question %d. Use: true, false, yes, no, 1, or 0.', 'wp-mcp-ai' ),
+									$question_index + 1
+								)
+							);
+						}
+						// Normalize to true/false.
+						if ( in_array( $answer_lower, array( 'true', '1', 'yes' ), true ) ) {
+							$answer_text = 'true';
+						} else {
+							$answer_text = 'false';
+						}
+						break;
+
+					case 'multiple_choice':
+						// Validate answer is one of the options.
+						if ( isset( $question['options'] ) && is_array( $question['options'] ) ) {
+							$valid_option = false;
+							foreach ( $question['options'] as $option ) {
+								if ( sanitize_text_field( $option ) === $answer_text ) {
+									$valid_option = true;
+									break;
+								}
+							}
+							if ( ! $valid_option ) {
+								return new WP_Error(
+									'wp_mcp_ai_invalid_multiple_choice_answer',
+									sprintf(
+										/* translators: %d: question index */
+										__( 'Answer for question %d is not one of the valid options.', 'wp-mcp-ai' ),
+										$question_index + 1
+									)
+								);
+							}
+						}
+						break;
+
+					case 'short_answer':
+						// Short answer validation - just ensure not empty.
+						if ( empty( trim( $answer_text ) ) ) {
+							return new WP_Error(
+								'wp_mcp_ai_empty_answer',
+								sprintf(
+									/* translators: %d: question index */
+									__( 'Answer for question %d cannot be empty.', 'wp-mcp-ai' ),
+									$question_index + 1
+								)
+							);
+						}
+						break;
+				}
+			}
+
 			$sanitized_answers[] = array(
-				'question_index' => absint( $answer_data['question_index'] ),
-				'answer'         => sanitize_text_field( $answer_data['answer'] ),
+				'question_index' => $question_index,
+				'answer'         => $answer_text,
 			);
+		}
+
+		// Ensure we have at least one valid answer.
+		if ( empty( $sanitized_answers ) ) {
+			return new WP_Error( 'wp_mcp_ai_no_valid_answers', __( 'No valid answers were provided.', 'wp-mcp-ai' ) );
 		}
 
 		// Create submission post.
@@ -166,15 +303,35 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			return $submission_id;
 		}
 
+		// Get quiz total points for grading context.
+		$total_points = get_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', true );
+
+		// Calculate completion time if started_at was provided.
+		$completion_time_minutes = null;
+		if ( $started_at ) {
+			$started_timestamp = strtotime( $started_at );
+			$current_timestamp = current_time( 'timestamp' );
+			$completion_time_minutes = round( ( $current_timestamp - $started_timestamp ) / 60, 2 );
+		}
+
 		// Store submission metadata.
 		update_post_meta( $submission_id, '_mcp_ai_submission_quiz_id', $quiz_id );
 		update_post_meta( $submission_id, '_mcp_ai_submission_answers', $sanitized_answers );
 		update_post_meta( $submission_id, '_mcp_ai_submission_status', 'pending' );
+		update_post_meta( $submission_id, '_mcp_ai_submission_total_points', absint( $total_points ) );
 		update_post_meta( $submission_id, '_mcp_ai_submission_submitted_at', current_time( 'mysql' ) );
+
+		// Store time tracking data.
+		if ( $started_at ) {
+			update_post_meta( $submission_id, '_mcp_ai_submission_started_at', $started_at );
+		}
+		if ( null !== $completion_time_minutes ) {
+			update_post_meta( $submission_id, '_mcp_ai_submission_completion_time', $completion_time_minutes );
+		}
 
 		$submission = get_post( $submission_id );
 
-		return array(
+		$result = array(
 			'summary'       => sprintf(
 				/* translators: %s: quiz title */
 				__( 'Quiz submission created for: %s', 'wp-mcp-ai' ),
@@ -187,6 +344,19 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			'status'        => 'pending',
 			'submitted_at'  => $submission->post_date,
 		);
+
+		// Add time tracking information if available.
+		if ( $time_limit > 0 ) {
+			$result['time_limit'] = $time_limit;
+		}
+		if ( $started_at ) {
+			$result['started_at'] = $started_at;
+		}
+		if ( null !== $completion_time_minutes ) {
+			$result['completion_time_minutes'] = $completion_time_minutes;
+		}
+
+		return $result;
 	}
 
 	/**

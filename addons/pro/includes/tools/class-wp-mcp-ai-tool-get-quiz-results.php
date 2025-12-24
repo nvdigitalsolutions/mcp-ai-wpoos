@@ -174,6 +174,21 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 			'detailed_results' => $detailed_results,
 		);
 
+		// Add time tracking information.
+		$started_at = get_post_meta( $submission_id, '_mcp_ai_submission_started_at', true );
+		$completion_time = get_post_meta( $submission_id, '_mcp_ai_submission_completion_time', true );
+		$quiz_time_limit = get_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', true );
+
+		if ( $started_at ) {
+			$response['started_at'] = $started_at;
+		}
+		if ( $completion_time ) {
+			$response['completion_time_minutes'] = floatval( $completion_time );
+		}
+		if ( $quiz_time_limit ) {
+			$response['time_limit'] = absint( $quiz_time_limit );
+		}
+
 		// Add grading info if graded.
 		if ( 'graded' === $status ) {
 			$response['earned_points'] = floatval( $earned_points );

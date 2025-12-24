@@ -350,4 +350,162 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 		$this->assertEquals( 100, $result['percentage'] );
 		$this->assertTrue( $result['passed'] );
 	}
+
+	/**
+	 * Test time limit validation in submit_quiz_answer.
+	 */
+	public function test_submit_quiz_answer_time_limit_validation() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$student    = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Create a quiz with 5 minute time limit.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Timed Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Test question?',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', 5 );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', 1 );
+
+		// Try submitting with start time 10 minutes ago (should fail).
+		$started_at = gmdate( 'Y-m-d\TH:i:s\Z', time() - ( 10 * 60 ) );
+
+		$tool   = new WP_MCP_AI_Tool_Submit_Quiz_Answer();
+		$result = $tool->execute(
+			array(
+				'quiz_id'    => $quiz_id,
+				'started_at' => $started_at,
+				'answers'    => array(
+					array(
+						'question_index' => 0,
+						'answer'         => 'test',
+					),
+				),
+			),
+			array( 'user_id' => $student )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_time_limit_exceeded', $result->get_error_code() );
+	}
+
+	/**
+	 * Test answer type validation.
+	 */
+	public function test_submit_quiz_answer_validates_answer_types() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$student    = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Create a quiz with multiple choice question.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Multiple Choice Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Pick a color',
+				'type'     => 'multiple_choice',
+				'options'  => array( 'Red', 'Blue', 'Green' ),
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+
+		// Try submitting invalid answer (not in options).
+		$tool   = new WP_MCP_AI_Tool_Submit_Quiz_Answer();
+		$result = $tool->execute(
+			array(
+				'quiz_id' => $quiz_id,
+				'answers' => array(
+					array(
+						'question_index' => 0,
+						'answer'         => 'Yellow',
+					),
+				),
+			),
+			array( 'user_id' => $student )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_invalid_multiple_choice_answer', $result->get_error_code() );
+	}
+
+	/**
+	 * Test grade validation prevents exceeding max points.
+	 */
+	public function test_grade_quiz_validates_max_points() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$student    = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Create a quiz.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Test Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Test question',
+				'type'     => 'short_answer',
+				'points'   => 5,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', 5 );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', 70 );
+
+		// Create a submission.
+		$submission_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_submission',
+				'post_status' => 'pending',
+				'post_author' => $student,
+			)
+		);
+
+		update_post_meta( $submission_id, '_mcp_ai_submission_quiz_id', $quiz_id );
+		update_post_meta( $submission_id, '_mcp_ai_submission_status', 'pending' );
+
+		// Try grading with more points than allowed.
+		$tool   = new WP_MCP_AI_Tool_Grade_Quiz();
+		$result = $tool->execute(
+			array(
+				'submission_id' => $submission_id,
+				'grades'        => array(
+					array(
+						'question_index' => 0,
+						'points_earned'  => 10, // Exceeds max of 5.
+					),
+				),
+			),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_points_exceed_max', $result->get_error_code() );
+	}
 }
