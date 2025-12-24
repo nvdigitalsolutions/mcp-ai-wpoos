@@ -96,6 +96,9 @@ class WP_MCP_AI_Profession_Seeder {
 
 		$repository = new WP_MCP_AI_Profession_Repository();
 
+		// Load dataset mappings.
+		require_once WP_MCP_AI_PATH . 'includes/professions/profession-dataset-mappings.php';
+
 		// Try to load from JSON files first.
 		$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
 		$professions = $loader->load_all();
@@ -116,6 +119,14 @@ class WP_MCP_AI_Profession_Seeder {
 			}
 			if ( ! isset( $profession_data['default_temperature'] ) ) {
 				$profession_data['default_temperature'] = 0.7;
+			}
+
+			// Add dataset recommendations if not present and mapping exists.
+			if ( ! isset( $profession_data['preferred_datasets'] ) && isset( $profession_data['slug'] ) ) {
+				$datasets = wp_mcp_ai_get_profession_dataset_recommendations( $profession_data['slug'] );
+				if ( ! empty( $datasets ) ) {
+					$profession_data['preferred_datasets'] = $datasets;
+				}
 			}
 
 			$repository->save( $profession_data );
