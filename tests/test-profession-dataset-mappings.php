@@ -236,4 +236,124 @@ class Test_Profession_Dataset_Mappings extends WP_UnitTestCase {
 			}
 		}
 	}
+
+	/**
+	 * Test resync assigns datasets to professions with empty datasets.
+	 */
+	public function test_resync_assigns_datasets_to_professions_with_empty_datasets() {
+		// Create a test profession with a slug that has dataset mappings.
+		$profession_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Data Scientist',
+				'post_name'   => 'data_scientist',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Set empty dataset array (simulating the bug scenario).
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_preferred_datasets', array() );
+
+		// Delete the sync option to allow resync to run.
+		delete_option( 'wp_mcp_ai_professions_datasets_synced' );
+
+		// Run the resync.
+		WP_MCP_AI_Profession_Seeder::resync_profession_datasets();
+
+		// Get the datasets after resync.
+		$datasets = get_post_meta( $profession_id, '_wp_mcp_ai_profession_preferred_datasets', true );
+
+		// Verify datasets were assigned.
+		$this->assertIsArray( $datasets, 'Datasets should be an array' );
+		$this->assertNotEmpty( $datasets, 'Datasets should not be empty after resync' );
+		$this->assertGreaterThan( 0, count( $datasets ), 'Profession should have at least one dataset' );
+
+		// Verify dataset structure.
+		$first_dataset = $datasets[0];
+		$this->assertArrayHasKey( 'dataset', $first_dataset );
+		$this->assertArrayHasKey( 'name', $first_dataset );
+		$this->assertArrayHasKey( 'category', $first_dataset );
+		$this->assertArrayHasKey( 'priority', $first_dataset );
+	}
+
+	/**
+	 * Test resync continues to run until all professions have datasets.
+	 */
+	public function test_resync_continues_until_all_professions_have_datasets() {
+		// Create multiple test professions.
+		$profession_ids = array();
+		$profession_slugs = array( 'data_scientist', 'graphic_designer', 'content_creator' );
+
+		foreach ( $profession_slugs as $slug ) {
+			$profession_ids[] = $this->factory->post->create(
+				array(
+					'post_type'   => 'mcp_ai_profession',
+					'post_title'  => ucwords( str_replace( '_', ' ', $slug ) ),
+					'post_name'   => $slug,
+					'post_status' => 'publish',
+				)
+			);
+		}
+
+		// Set all professions to have empty datasets.
+		foreach ( $profession_ids as $id ) {
+			update_post_meta( $id, '_wp_mcp_ai_profession_preferred_datasets', array() );
+		}
+
+		// Delete the sync option to allow resync to run.
+		delete_option( 'wp_mcp_ai_professions_datasets_synced' );
+
+		// Run the resync.
+		WP_MCP_AI_Profession_Seeder::resync_profession_datasets();
+
+		// Verify all professions now have datasets.
+		foreach ( $profession_ids as $id ) {
+			$datasets = get_post_meta( $id, '_wp_mcp_ai_profession_preferred_datasets', true );
+			$this->assertIsArray( $datasets, 'Datasets should be an array' );
+			$this->assertNotEmpty( $datasets, "Profession {$id} should have datasets after resync" );
+		}
+
+		// Verify the sync option is now set.
+		$this->assertTrue( (bool) get_option( 'wp_mcp_ai_professions_datasets_synced', false ), 'Sync option should be set after successful sync' );
+	}
+
+	/**
+	 * Test resync does not overwrite existing datasets.
+	 */
+	public function test_resync_does_not_overwrite_existing_datasets() {
+		// Create a test profession.
+		$profession_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Data Scientist',
+				'post_name'   => 'data_scientist',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Set custom datasets.
+		$custom_datasets = array(
+			array(
+				'dataset'  => 'custom/dataset',
+				'name'     => 'Custom Dataset',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		);
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_preferred_datasets', $custom_datasets );
+
+		// Delete the sync option to allow resync to run.
+		delete_option( 'wp_mcp_ai_professions_datasets_synced' );
+
+		// Run the resync.
+		WP_MCP_AI_Profession_Seeder::resync_profession_datasets();
+
+		// Get the datasets after resync.
+		$datasets = get_post_meta( $profession_id, '_wp_mcp_ai_profession_preferred_datasets', true );
+
+		// Verify custom datasets were not overwritten.
+		$this->assertIsArray( $datasets );
+		$this->assertCount( 1, $datasets, 'Custom datasets should not be overwritten' );
+		$this->assertEquals( 'custom/dataset', $datasets[0]['dataset'], 'Custom dataset should remain' );
+	}
 }

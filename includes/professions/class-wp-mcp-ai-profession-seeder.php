@@ -90,11 +90,16 @@ class WP_MCP_AI_Profession_Seeder {
 	/**
 	 * Resync profession datasets.
 	 * Assigns HuggingFace datasets to professions that don't have them.
+	 * 
+	 * This function will continue to run on each admin_init until all professions
+	 * that have dataset mappings also have datasets assigned. Once complete, it
+	 * sets an option to prevent running again unless manually reset.
 	 *
 	 * @since 1.8.0
 	 */
 	public static function resync_profession_datasets() {
-		// Check if resync has already been done.
+		// Check if we've already completed a successful sync.
+		// Users can delete this option to force a resync if needed.
 		if ( get_option( 'wp_mcp_ai_professions_datasets_synced', false ) ) {
 			return;
 		}
@@ -109,28 +114,43 @@ class WP_MCP_AI_Profession_Seeder {
 			return;
 		}
 
+		$professions_needing_datasets = 0;
+		$professions_synced = 0;
+
+		// Check each profession and assign datasets if needed.
 		foreach ( $professions as $profession ) {
+			// Get profession slug from post name.
+			$profession_slug = $profession->post_name;
+
+			// Get datasets that should be assigned to this profession.
+			$expected_datasets = wp_mcp_ai_get_profession_dataset_recommendations( $profession_slug );
+
+			// Skip professions that don't have dataset mappings.
+			if ( empty( $expected_datasets ) ) {
+				continue;
+			}
+
+			// This profession has dataset mappings, so we should check if it has datasets.
+			$professions_needing_datasets++;
+
 			// Get current preferred datasets.
 			$current_datasets = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
 
-			// Only update if empty or not an array.
-			if ( empty( $current_datasets ) || ! is_array( $current_datasets ) ) {
-				// Get profession slug from post name.
-				$profession_slug = $profession->post_name;
-
-				// Get datasets for this profession.
-				$datasets = wp_mcp_ai_get_profession_dataset_recommendations( $profession_slug );
-
-				// Assign datasets if available.
-				if ( ! empty( $datasets ) ) {
-					$sanitized_datasets = WP_MCP_AI_Profession_CPT::sanitize_preferred_datasets( $datasets );
-					update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, $sanitized_datasets );
-				}
+			// Check if datasets are missing, not an array, or empty array.
+			if ( ! is_array( $current_datasets ) || empty( $current_datasets ) ) {
+				// Assign the mapped datasets.
+				$sanitized_datasets = WP_MCP_AI_Profession_CPT::sanitize_preferred_datasets( $expected_datasets );
+				update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, $sanitized_datasets );
+				$professions_synced++;
 			}
 		}
 
-		// Mark as synced.
-		update_option( 'wp_mcp_ai_professions_datasets_synced', true, false );
+		// Mark as synced if all professions that need datasets now have them.
+		// This means the function won't run again unless the option is manually deleted.
+		if ( $professions_needing_datasets > 0 && 0 === $professions_synced ) {
+			// All professions that need datasets already have them.
+			update_option( 'wp_mcp_ai_professions_datasets_synced', true, false );
+		}
 	}
 
 	/**
