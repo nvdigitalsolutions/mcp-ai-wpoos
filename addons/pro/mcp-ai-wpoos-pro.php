@@ -225,6 +225,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			// WooCommerce tools.
 			'WP_MCP_AI_Pro_Tool_Woo_Products'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
 			'WP_MCP_AI_Pro_Tool_Woo_Orders'               => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
+			'WP_MCP_AI_Pro_Tool_Woo_Customers'            => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-customers.php',
+			'WP_MCP_AI_Pro_Tool_Woo_Coupons'              => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-coupons.php',
 			// JetEngine tools.
 			'WP_MCP_AI_Pro_Tool_JetEngine'                => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
 			// Elementor tools.
@@ -472,6 +474,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// WooCommerce tools - Require WooCommerce plugin.
 			'woo_products'                    => 'wordpress-plugins',
 			'woo_orders'                      => 'wordpress-plugins',
+			'woo_customers'                   => 'wordpress-plugins',
+			'woo_coupons'                     => 'wordpress-plugins',
 			// JetEngine tools - Require JetEngine plugin.
 			'jetengine'                       => 'wordpress-plugins',
 			// Elementor tools - Require Elementor plugin.
@@ -550,6 +554,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 		if ( isset( $categories['medium_resource'] ) ) {
 			$categories['medium_resource']['tools'][] = 'woo_products';
 			$categories['medium_resource']['tools'][] = 'woo_orders';
+			$categories['medium_resource']['tools'][] = 'woo_customers';
+			$categories['medium_resource']['tools'][] = 'woo_coupons';
 			$categories['medium_resource']['tools'][] = 'jetengine';
 			$categories['medium_resource']['tools'][] = 'elementor';
 		}
