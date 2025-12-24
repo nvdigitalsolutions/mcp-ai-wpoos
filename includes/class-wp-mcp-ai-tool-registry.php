@@ -515,17 +515,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'huggingface_recommended_datasets' => 'external-tools',
 			);
 
-			// Add quiz tool mappings if enabled.
-			$settings = get_option( 'wp_mcp_ai_settings', array() );
-			if ( ! empty( $settings['enable_quiz_system'] ) ) {
-				$default_map['create_quiz']            = 'wordpress-core';
-				$default_map['get_quiz']               = 'wordpress-core';
-				$default_map['list_quizzes']           = 'wordpress-core';
-				$default_map['submit_quiz_answer']     = 'wordpress-core';
-				$default_map['grade_quiz']             = 'wordpress-core';
-				$default_map['get_quiz_submissions']   = 'wordpress-core';
-				$default_map['get_quiz_results']       = 'wordpress-core';
-			}
+			// Quiz tool mappings are now handled by the Pro addon.
 
 			/**
 			 * Filter the tool grouping map used throughout the admin UI.
@@ -944,22 +934,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			 */
 			$default_tools = apply_filters( 'wp_mcp_ai_default_tools', $default_tools, $is_base_version );
 
-			// Add quiz tools if enabled (Full Version only).
-			if ( ! $is_base_version ) {
-				$settings = get_option( 'wp_mcp_ai_settings', array() );
-				if ( ! empty( $settings['enable_quiz_system'] ) ) {
-					$quiz_tools = array(
-						'WP_MCP_AI_Tool_Create_Quiz'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-quiz.php',
-						'WP_MCP_AI_Tool_Get_Quiz'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz.php',
-						'WP_MCP_AI_Tool_List_Quizzes'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-quizzes.php',
-						'WP_MCP_AI_Tool_Submit_Quiz_Answer'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-quiz-answer.php',
-						'WP_MCP_AI_Tool_Grade_Quiz'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-grade-quiz.php',
-						'WP_MCP_AI_Tool_Get_Quiz_Submissions'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-submissions.php',
-						'WP_MCP_AI_Tool_Get_Quiz_Results'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
-					);
-					$default_tools = array_merge( $default_tools, $quiz_tools );
-				}
-			}
+			// Quiz tools are now loaded by the Pro addon.
 
 			foreach ( $default_tools as $class => $file ) {
 				if ( file_exists( $file ) ) {

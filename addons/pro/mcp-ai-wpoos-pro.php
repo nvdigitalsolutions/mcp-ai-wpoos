@@ -151,6 +151,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			wp_mcp_ai_pro_load_admin_sections();
 		}
 
+		// Load quiz system support files if enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings['enable_quiz_system'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-quiz-cpt.php';
+			// Load JetEngine quiz CCT if JetEngine is active.
+			if ( function_exists( 'jet_engine' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-quizzes-cct.php';
+			}
+		}
 		// Load Project Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/project-management-init.php';
 
@@ -260,6 +269,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-install-and-activate-theme.php',
 			'WP_MCP_AI_Pro_Tool_Update_Option'            => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-update-option.php',
 		);
+
+		// Add quiz tools if enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings['enable_quiz_system'] ) ) {
+			$quiz_tools = array(
+				'WP_MCP_AI_Tool_Create_Quiz'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-quiz.php',
+				'WP_MCP_AI_Tool_Get_Quiz'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz.php',
+				'WP_MCP_AI_Tool_List_Quizzes'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-quizzes.php',
+				'WP_MCP_AI_Tool_Submit_Quiz_Answer'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-quiz-answer.php',
+				'WP_MCP_AI_Tool_Grade_Quiz'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-grade-quiz.php',
+				'WP_MCP_AI_Tool_Get_Quiz_Submissions'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-submissions.php',
+				'WP_MCP_AI_Tool_Get_Quiz_Results'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $quiz_tools );
+		}
 
 		/**
 		 * Filter the list of Pro tools to register.
@@ -479,6 +503,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'install_and_activate_theme'      => 'wordpress-core',
 			'update_option'                   => 'wordpress-core',
 		);
+
+		// Add quiz tool mappings if enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings['enable_quiz_system'] ) ) {
+			$pro_tools['create_quiz']          = 'wordpress-core';
+			$pro_tools['get_quiz']             = 'wordpress-core';
+			$pro_tools['list_quizzes']         = 'wordpress-core';
+			$pro_tools['submit_quiz_answer']   = 'wordpress-core';
+			$pro_tools['grade_quiz']           = 'wordpress-core';
+			$pro_tools['get_quiz_submissions'] = 'wordpress-core';
+			$pro_tools['get_quiz_results']     = 'wordpress-core';
+		}
 
 		/**
 		 * Filter the Pro tool group assignments.

@@ -316,8 +316,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_quiz_system'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Quiz System', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable quiz creation and assessment tools (Full Version only)', 'wp-mcp-ai' ),
-					'description'    => __( 'Enables the quiz/assessment system for tutors. Provides 7 tools for creating quizzes, managing submissions, and grading. Includes automatic JetEngine CCT synchronization when available. Requires edit_posts capability to create quizzes. This feature is only available in Full Version mode (not Base Version).', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable quiz creation and assessment tools (Pro Version only)', 'wp-mcp-ai' ),
+					'description'    => __( 'Enables the quiz/assessment system for tutors. Provides 7 tools for creating quizzes, managing submissions, and grading. Includes automatic JetEngine CCT synchronization when available. Requires edit_posts capability to create quizzes. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
 
