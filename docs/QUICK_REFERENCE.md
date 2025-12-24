@@ -1,7 +1,7 @@
 # WP oOS Quick Reference Guide
 
-**Version:** 1.0.0  
-**Last Updated:** December 9, 2025
+**Version:** 1.1.0  
+**Last Updated:** December 24, 2025
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 

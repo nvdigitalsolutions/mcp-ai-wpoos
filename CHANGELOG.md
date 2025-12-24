@@ -1,5 +1,37 @@
 # WP oOS – Changelog
 
+## [1.1.0] - 2025-12-24
+
+### Changed
+- **Documentation Reorganization**: Completed comprehensive documentation restructuring (PR #2400)
+  - Reorganized 40 files from root and docs/ directories into logical categories
+  - Created clear category structure: archive/, features/, guides/, reference/, troubleshooting/
+  - Maintained zero information loss during reorganization
+  - Added `DOCUMENTATION_REORGANIZATION_SUMMARY.md` tracking document
+  - Clean root directory maintained (6 essential MD files only)
+  - Well-organized subdirectories with clear navigation via `docs/DOCUMENTATION_INDEX.md`
+- **Tool Count Clarification**: Updated documentation to accurately reflect tool counts
+  - 95 unique base tools (119 tool files including 24 validated variants)
+  - 64 Pro tools (34 in src/Tools/ + 30 in tools/)
+  - Total: 159 unique tools across base and Pro
+  - Added clear note about validated variants being counted separately
+- **Version Consistency**: Updated all documentation files to reflect current version 1.1.0
+  - Updated `README.md`, `docs/README.md`, `docs/DOCUMENTATION_INDEX.md`
+  - Ensured consistency across all version references
+
+### Added
+- **Code Review Documentation**: Added comprehensive code review for December 22-24, 2025
+  - Complete analysis of recent changes and code quality
+  - Security review (10/10 score - no vulnerabilities found)
+  - Documentation quality assessment (9/10 score)
+  - Architecture review and recommendations
+  - See `docs/implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-24.md`
+
+### Fixed
+- Version number inconsistencies across documentation files (1.0.0 → 1.1.0)
+- Tool count discrepancies in README.md and other docs
+- Last updated dates in documentation index files (now December 24, 2025)
+
 ## [Unreleased]
 
 ### Added

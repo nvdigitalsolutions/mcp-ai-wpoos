@@ -8,7 +8,7 @@
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple)](https://www.php.net/)
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
 
-**Version:** 1.0.0 (Beta)  
+**Version:** 1.1.0  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -89,9 +89,9 @@
 **WP oOS** is a modular AI framework for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face and Ollama (Local).
 It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
-The plugin works standalone with **95 core tools** (base version) and optionally extends through the **Pro addon**, which adds **38 Pro tools** including advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **133 built-in tools**.
+The plugin works standalone with **95 unique base tools** and optionally extends through the **Pro addon**, which adds **64 Pro tools** including advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **159 built-in tools**.
 
-> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted as the same tool, not separately. The base includes 95 unique tools (plus 24 validated variants = 119 files total).
+> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 95 unique tools plus 24 validated variants (119 base tool files) and 64 Pro tools (total 183 tool files across base and Pro).
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -609,11 +609,11 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 #### Final Steps
 
 1. Activate **Open Operator System Complete (WP oOS)** from WordPress admin
-2. You now have the **complete version** with all 109 tools (71 base + 38 Pro)
+2. You now have the **complete version** with all 159 tools (95 base + 64 Pro)
 
 **What you get from the repository clone:**
 - ✅ Complete plugin with base + Pro features combined
-- ✅ All 109 built-in tools ready to use
+- ✅ All 159 built-in tools ready to use
 - ✅ Single plugin activation (not separate base + pro)
 - ✅ Pro features automatically available (no separate Pro plugin to install)
 
@@ -643,7 +643,7 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 **What works WITHOUT JetEngine:**
 - ✅ All core AI assistant features
 - ✅ Chat interface and conversations
-- ✅ 74 base tools (105 in Full Version with other plugins)
+- ✅ 95 base tools (more with optional third-party plugins)
 - ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
 - ✅ Browser-based chat history (localStorage, 24 hours)
 - ✅ OpenAI/Gemini/Ollama integrations
@@ -673,7 +673,7 @@ WP oOS works perfectly with vanilla WordPress, but certain features require thir
 - `get_jetformbuilder_forms` - List JetFormBuilder forms (also requires JetFormBuilder)
 - `get_jetformbuilder_submissions` - Get form submissions (also requires JetFormBuilder)
 
-**✅ Still Works:** All core features, MCP server, 74 base tools, AI conversations
+**✅ Still Works:** All core features, MCP server, 95 base tools, AI conversations
 
 [Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 
@@ -779,9 +779,9 @@ WP oOS works perfectly with vanilla WordPress, but certain features require thir
 
 ### Base Version (Default)
 
-**WP oOS runs in Base Version mode by default**, providing 74 essential tools that work with vanilla WordPress without requiring any third-party plugins:
+**WP oOS runs in Base Version mode by default**, providing 95 essential tools that work with vanilla WordPress without requiring any third-party plugins:
 
-**Base Version includes 74 essential tools that work with vanilla WordPress:**
+**Base Version includes 95 essential tools that work with vanilla WordPress:**
 - Content management (search, save posts, attachments)
 - AI media generation (images via OpenAI/Gemini, speech, transcription, video)
 - Research tools (web search, weather, disaster alerts)
