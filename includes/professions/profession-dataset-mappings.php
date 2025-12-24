@@ -560,5 +560,760 @@ function wp_mcp_ai_get_all_profession_dataset_mappings() {
 				'priority' => 'high',
 			),
 		),
+		
+		// FOOD & CULINARY PROFESSIONS.
+		'chef' => array(
+			array(
+				'dataset'  => 'ethz/food101',
+				'name'     => 'Food-101',
+				'category' => 'vision',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'yelp_review_full',
+				'name'     => 'Yelp Reviews',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'restaurant_manager' => array(
+			array(
+				'dataset'  => 'yelp_review_full',
+				'name'     => 'Yelp Reviews',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'ethz/food101',
+				'name'     => 'Food-101',
+				'category' => 'vision',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'jigsaw_toxicity_pred',
+				'name'     => 'Jigsaw Toxic Comments',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'bartender' => array(
+			array(
+				'dataset'  => 'yelp_review_full',
+				'name'     => 'Yelp Reviews',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		// EDUCATION PROFESSIONS.
+		'elementary_school_teacher' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'high_school_teacher' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'college_professor' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'special_education_teacher' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+		),
+		
+		'corporate_trainer' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'instructional_designer' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'esl_teacher' => array(
+			array(
+				'dataset'  => 'mc4',
+				'name'     => 'mC4',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		// IGCSE TUTORS.
+		'igcse_biology_tutor' => array(
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'igcse_chemistry_tutor' => array(
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'igcse_physics_tutor' => array(
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'igcse_mathematics_tutor' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'igcse_sciences_tutor' => array(
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'igcse_english_tutor' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'igcse_computer_science_tutor' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+		),
+		
+		// JOURNALISM & WRITING.
+		'journalist' => array(
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'EdinburghNLP/xsum',
+				'name'     => 'XSum',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'ag_news',
+				'name'     => 'AG News',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+		),
+		
+		'writer' => array(
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'EdinburghNLP/xsum',
+				'name'     => 'XSum',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'stanfordnlp/imdb',
+				'name'     => 'IMDB Movie Reviews',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'social_media_manager' => array(
+			array(
+				'dataset'  => 'stanfordnlp/imdb',
+				'name'     => 'IMDB Movie Reviews',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'yelp_review_full',
+				'name'     => 'Yelp Reviews',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'jigsaw_toxicity_pred',
+				'name'     => 'Jigsaw Toxic Comments',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'google/civil_comments',
+				'name'     => 'Civil Comments',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'pr_specialist' => array(
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'ag_news',
+				'name'     => 'AG News',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'stanfordnlp/imdb',
+				'name'     => 'IMDB Movie Reviews',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		// ADDITIONAL CREATIVE PROFESSIONS.
+		'actor' => array(
+			array(
+				'dataset'  => 'stanfordnlp/imdb',
+				'name'     => 'IMDB Movie Reviews',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+		),
+		
+		'animator' => array(
+			array(
+				'dataset'  => 'detection-datasets/coco',
+				'name'     => 'COCO',
+				'category' => 'vision',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'yerevann/coco-captions',
+				'name'     => 'MS COCO Captions',
+				'category' => 'multimodal',
+				'priority' => 'high',
+			),
+		),
+		
+		'game_designer' => array(
+			array(
+				'dataset'  => 'detection-datasets/coco',
+				'name'     => 'COCO',
+				'category' => 'vision',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'stanfordnlp/imdb',
+				'name'     => 'IMDB Movie Reviews',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'musician' => array(
+			array(
+				'dataset'  => 'librispeech_asr',
+				'name'     => 'LibriSpeech',
+				'category' => 'audio',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'mozilla-foundation/common_voice_13_0',
+				'name'     => 'Common Voice',
+				'category' => 'audio',
+				'priority' => 'high',
+			),
+		),
+		
+		'interior_designer' => array(
+			array(
+				'dataset'  => 'detection-datasets/coco',
+				'name'     => 'COCO',
+				'category' => 'vision',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'nlphuji/flickr30k',
+				'name'     => 'Flickr30k',
+				'category' => 'multimodal',
+				'priority' => 'high',
+			),
+		),
+		
+		'landscape_architect' => array(
+			array(
+				'dataset'  => 'detection-datasets/coco',
+				'name'     => 'COCO',
+				'category' => 'vision',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'nlphuji/flickr30k',
+				'name'     => 'Flickr30k',
+				'category' => 'multimodal',
+				'priority' => 'high',
+			),
+		),
+		
+		// ADDITIONAL HEALTHCARE PROFESSIONS.
+		'physician' => array(
+			array(
+				'dataset'  => 'bigbio/med_qa',
+				'name'     => 'MedQA',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'nurse_practitioner' => array(
+			array(
+				'dataset'  => 'bigbio/med_qa',
+				'name'     => 'MedQA',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'registered_nurse' => array(
+			array(
+				'dataset'  => 'bigbio/med_qa',
+				'name'     => 'MedQA',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'dentist' => array(
+			array(
+				'dataset'  => 'bigbio/med_qa',
+				'name'     => 'MedQA',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'psychologist' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'google/civil_comments',
+				'name'     => 'Civil Comments',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		// BUSINESS & FINANCE.
+		'entrepreneur' => array(
+			array(
+				'dataset'  => 'yelp_review_full',
+				'name'     => 'Yelp Reviews',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'financial_phrasebank',
+				'name'     => 'Financial PhraseBank',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'sales_manager' => array(
+			array(
+				'dataset'  => 'stanfordnlp/imdb',
+				'name'     => 'IMDB Movie Reviews',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'yelp_review_full',
+				'name'     => 'Yelp Reviews',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+		),
+		
+		'project_manager' => array(
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'economist' => array(
+			array(
+				'dataset'  => 'financial_phrasebank',
+				'name'     => 'Financial PhraseBank',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'retail_manager' => array(
+			array(
+				'dataset'  => 'yelp_review_full',
+				'name'     => 'Yelp Reviews',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'zalando-datasets/fashion_mnist',
+				'name'     => 'Fashion MNIST',
+				'category' => 'vision',
+				'priority' => 'high',
+			),
+		),
+		
+		// TECHNICAL PROFESSIONS.
+		'biologist' => array(
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'chemist' => array(
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'physicist' => array(
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'mathematician' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'allenai/sciq',
+				'name'     => 'SciQ',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'software_developer' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'web_developer' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'cybersecurity_specialist' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'jigsaw_toxicity_pred',
+				'name'     => 'Jigsaw Toxic Comments',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		// MULTILINGUAL PROFESSIONS.
+		'interpreter_translator' => array(
+			array(
+				'dataset'  => 'mc4',
+				'name'     => 'mC4',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'mozilla-foundation/common_voice_13_0',
+				'name'     => 'Common Voice',
+				'category' => 'audio',
+				'priority' => 'critical',
+			),
+		),
+		
+		// LEGAL PROFESSIONS.
+		'paralegal' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'judge' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+		),
+		
+		// COMMUNITY & SOCIAL SERVICES.
+		'social_worker' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'google/civil_comments',
+				'name'     => 'Civil Comments',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'librarian' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'abisee/cnn_dailymail',
+				'name'     => 'CNN/DailyMail',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
+		
+		'customer_service_rep' => array(
+			array(
+				'dataset'  => 'rajpurkar/squad',
+				'name'     => 'SQuAD',
+				'category' => 'nlp',
+				'priority' => 'critical',
+			),
+			array(
+				'dataset'  => 'yelp_review_full',
+				'name'     => 'Yelp Reviews',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+			array(
+				'dataset'  => 'jigsaw_toxicity_pred',
+				'name'     => 'Jigsaw Toxic Comments',
+				'category' => 'nlp',
+				'priority' => 'high',
+			),
+		),
 	);
 }
