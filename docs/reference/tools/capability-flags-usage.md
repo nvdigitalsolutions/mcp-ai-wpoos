@@ -1,8 +1,13 @@
 # Capability Flags System - Usage Examples
 
+**Last Updated:** December 24, 2025  
+**Total Flags Documented:** 45+ unique flags
+
 ## Overview
 
 The capability flags system allows tools to declare their characteristics and requirements, enabling the orchestration layer to make intelligent decisions about tool execution.
+
+**Note:** This document has been updated to include all capability flags currently in use across the codebase. Some flags were previously undocumented but are now standardized.
 
 ## Implementation Status
 
@@ -180,24 +185,36 @@ if ( in_array( 'rate-limited', $flags, true ) ) {
 - `requires-model` - Requires AI model specification
 - `requires-vision-model` - Requires vision-capable AI model
 - `requires-multimodal-model` - Requires multimodal AI model
+- `requires-video-model` - Requires video-capable AI model
+- `requires-polling` - Requires polling for async results
 
 ### Operational Characteristics
 - `read-only` - Only reads data, doesn't modify state
+- `read` - Requires read capability (more permissive than specific capabilities)
 - `write` - Creates or modifies data
 - `state-changing` - Modifies database or site state
+- `modifies-state` - Synonym for state-changing
+- `modifies-data` - Modifies content data
 - `reversible` - Changes can be undone
 - `idempotent` - Safe to call multiple times
 - `performance-impact` - May affect site performance
 - `consumes-tokens` - Uses AI model tokens/credits
 - `model-dependent` - Behavior varies by AI model
+- `safe` - Tool has no side effects (read-only, no external changes)
+- `security` - Tool relates to security functionality
 
 ### Network & Performance
 - `local-only` - Works entirely locally
 - `external-api` - Makes external HTTP requests
 - `network-dependent` - Requires internet connectivity
 - `async` - May take significant time
+- `async-capable` - Can run asynchronously
+- `background-only` - Must run in background (prevents HTTP timeouts)
+- `background-preferred` - Preferred to run in background
 - `rate-limited` - Subject to rate limiting
 - `long-running` - Execution may take minutes/hours
+- `may-timeout` - May exceed typical HTTP timeout limits
+- `deferred-result` - Returns immediately, result available later
 
 ### Data Characteristics
 - `cacheable` - Results can be cached
@@ -205,6 +222,18 @@ if ( in_array( 'rate-limited', $flags, true ) ) {
 - `pii-data` - Returns personally identifiable information
 - `large-response` - May return large data sets
 - `paginated` - Supports pagination
+- `batch-operation` - Operates on multiple items at once
+
+### AI & ML Specific
+- `ai-powered` - Uses AI/ML capabilities beyond basic API calls
+- `model-dependent` - Behavior varies by AI model
+
+### WordPress Specific Capabilities
+These reference actual WordPress capabilities required:
+- `manage_options` - Requires administrator-level access
+- `edit_posts` - Requires post editing capability
+- `manage_woocommerce` - Requires WooCommerce management capability
+- `view_woocommerce_reports` - Requires WooCommerce reporting access
 
 ## Adding Capability Flags to a Tool
 
