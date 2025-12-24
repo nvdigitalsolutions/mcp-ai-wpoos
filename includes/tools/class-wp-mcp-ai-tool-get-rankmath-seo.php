@@ -32,6 +32,15 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
+	 * Check whether Rank Math Pro is active.
+	 *
+	 * @return bool
+	 */
+	protected function is_pro_active() {
+		return defined( 'RANK_MATH_PRO_VERSION' ) || defined( 'RANK_MATH_PRO_FILE' );
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
