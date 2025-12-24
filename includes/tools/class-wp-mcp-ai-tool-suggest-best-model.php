@@ -116,7 +116,11 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
-		// Validate task_type.
+		
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+// Validate task_type.
 		if ( ! isset( $arguments['task_type'] ) || empty( $arguments['task_type'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_task_type',

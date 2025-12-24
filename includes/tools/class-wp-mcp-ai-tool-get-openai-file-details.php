@@ -69,6 +69,10 @@ class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+
 		// Validate file_id.
 		if ( ! isset( $arguments['file_id'] ) || '' === $arguments['file_id'] ) {
 			return new WP_Error(

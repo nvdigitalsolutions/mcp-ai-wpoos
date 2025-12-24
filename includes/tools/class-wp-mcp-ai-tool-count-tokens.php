@@ -138,6 +138,10 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+
 		// Validate that either text or messages is provided, but not both.
 		$has_text     = isset( $arguments['text'] ) && is_string( $arguments['text'] );
 		$has_messages = isset( $arguments['messages'] ) && is_array( $arguments['messages'] );

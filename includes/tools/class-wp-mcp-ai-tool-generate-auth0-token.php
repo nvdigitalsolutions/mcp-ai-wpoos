@@ -99,6 +99,10 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
+		if ( is_multisite() && ! is_user_member_of_blog( $acting_user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+
 		// Validate required parameters.
 		$auth0_domain  = isset( $arguments['auth0_domain'] ) ? trim( sanitize_text_field( $arguments['auth0_domain'] ) ) : '';
 		$client_id     = isset( $arguments['client_id'] ) ? trim( sanitize_text_field( $arguments['client_id'] ) ) : '';

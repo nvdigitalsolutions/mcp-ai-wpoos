@@ -128,6 +128,10 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 			);
 		}
 
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+
 		// Check site creator settings.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_elementor_kit_import'] ) ) {
