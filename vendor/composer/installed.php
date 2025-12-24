@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-client-error-yet-again',
-        'version' => 'dev-copilot/fix-chat-client-error-yet-again',
-        'reference' => '31930b049a584b007e378f43fe77bb0f490da6c5',
+        'pretty_version' => 'dev-copilot/add-project-task-events-tools',
+        'version' => 'dev-copilot/add-project-task-events-tools',
+        'reference' => '91da27e0c8c1461ad6a74a1d801c3c101c8720f4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-client-error-yet-again',
-            'version' => 'dev-copilot/fix-chat-client-error-yet-again',
-            'reference' => '31930b049a584b007e378f43fe77bb0f490da6c5',
+            'pretty_version' => 'dev-copilot/add-project-task-events-tools',
+            'version' => 'dev-copilot/add-project-task-events-tools',
+            'reference' => '91da27e0c8c1461ad6a74a1d801c3c101c8720f4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
