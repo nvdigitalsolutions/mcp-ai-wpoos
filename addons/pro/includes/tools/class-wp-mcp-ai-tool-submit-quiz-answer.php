@@ -180,17 +180,108 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'wp_mcp_ai_duplicate_submission', __( 'A submission for this quiz already exists.', 'wp-mcp-ai' ) );
 		}
 
-		// Sanitize answers.
+		// Get quiz questions for validation.
+		$questions = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
+		if ( ! is_array( $questions ) ) {
+			$questions = array();
+		}
+
+		// Validate and sanitize answers.
 		$sanitized_answers = array();
 		foreach ( $answers as $answer_data ) {
 			if ( ! isset( $answer_data['question_index'] ) || ! isset( $answer_data['answer'] ) ) {
 				continue;
 			}
 
+			$question_index = absint( $answer_data['question_index'] );
+			$answer_text    = sanitize_text_field( $answer_data['answer'] );
+
+			// Validate question index exists.
+			if ( ! isset( $questions[ $question_index ] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_question_index',
+					sprintf(
+						/* translators: %d: question index */
+						__( 'Invalid question index: %d', 'wp-mcp-ai' ),
+						$question_index
+					)
+				);
+			}
+
+			$question = $questions[ $question_index ];
+
+			// Validate answer based on question type.
+			if ( isset( $question['type'] ) ) {
+				switch ( $question['type'] ) {
+					case 'true_false':
+						// Validate true/false answer.
+						$answer_lower = strtolower( trim( $answer_text ) );
+						if ( ! in_array( $answer_lower, array( 'true', 'false', '1', '0', 'yes', 'no' ), true ) ) {
+							return new WP_Error(
+								'wp_mcp_ai_invalid_true_false_answer',
+								sprintf(
+									/* translators: %d: question index */
+									__( 'Invalid true/false answer for question %d. Use: true, false, yes, no, 1, or 0.', 'wp-mcp-ai' ),
+									$question_index + 1
+								)
+							);
+						}
+						// Normalize to true/false.
+						if ( in_array( $answer_lower, array( 'true', '1', 'yes' ), true ) ) {
+							$answer_text = 'true';
+						} else {
+							$answer_text = 'false';
+						}
+						break;
+
+					case 'multiple_choice':
+						// Validate answer is one of the options.
+						if ( isset( $question['options'] ) && is_array( $question['options'] ) ) {
+							$valid_option = false;
+							foreach ( $question['options'] as $option ) {
+								if ( sanitize_text_field( $option ) === $answer_text ) {
+									$valid_option = true;
+									break;
+								}
+							}
+							if ( ! $valid_option ) {
+								return new WP_Error(
+									'wp_mcp_ai_invalid_multiple_choice_answer',
+									sprintf(
+										/* translators: %d: question index */
+										__( 'Answer for question %d is not one of the valid options.', 'wp-mcp-ai' ),
+										$question_index + 1
+									)
+								);
+							}
+						}
+						break;
+
+					case 'short_answer':
+						// Short answer validation - just ensure not empty.
+						if ( empty( trim( $answer_text ) ) ) {
+							return new WP_Error(
+								'wp_mcp_ai_empty_answer',
+								sprintf(
+									/* translators: %d: question index */
+									__( 'Answer for question %d cannot be empty.', 'wp-mcp-ai' ),
+									$question_index + 1
+								)
+							);
+						}
+						break;
+				}
+			}
+
 			$sanitized_answers[] = array(
-				'question_index' => absint( $answer_data['question_index'] ),
-				'answer'         => sanitize_text_field( $answer_data['answer'] ),
+				'question_index' => $question_index,
+				'answer'         => $answer_text,
 			);
+		}
+
+		// Ensure we have at least one valid answer.
+		if ( empty( $sanitized_answers ) ) {
+			return new WP_Error( 'wp_mcp_ai_no_valid_answers', __( 'No valid answers were provided.', 'wp-mcp-ai' ) );
 		}
 
 		// Create submission post.

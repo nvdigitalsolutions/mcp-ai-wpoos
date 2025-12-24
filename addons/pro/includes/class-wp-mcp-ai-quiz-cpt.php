@@ -392,16 +392,43 @@ class WP_MCP_AI_Quiz_CPT {
 	}
 
 	/**
-	 * Handle post deletion to clean up CCT items.
+	 * Handle post deletion to clean up CCT items and cascade delete submissions.
 	 *
 	 * @param int     $post_id Post ID.
 	 * @param WP_Post $post    Post object.
 	 */
 	public static function handle_post_deletion( $post_id, $post ) {
 		if ( self::POST_TYPE === $post->post_type ) {
+			// Delete quiz CCT item.
 			self::delete_quiz_cct_item( $post_id );
+
+			// Cascade delete all submissions for this quiz.
+			self::delete_quiz_submissions( $post_id );
 		} elseif ( self::SUBMISSION_POST_TYPE === $post->post_type ) {
 			self::delete_submission_cct_item( $post_id );
+		}
+	}
+
+	/**
+	 * Delete all submissions associated with a quiz.
+	 *
+	 * @param int $quiz_id Quiz post ID.
+	 */
+	protected static function delete_quiz_submissions( $quiz_id ) {
+		$submissions = get_posts(
+			array(
+				'post_type'   => self::SUBMISSION_POST_TYPE,
+				'meta_key'    => '_mcp_ai_submission_quiz_id',
+				'meta_value'  => $quiz_id,
+				'post_status' => array( 'publish', 'pending', 'trash' ),
+				'numberposts' => -1,
+				'fields'      => 'ids',
+			)
+		);
+
+		foreach ( $submissions as $submission_id ) {
+			// Force delete (bypass trash).
+			wp_delete_post( $submission_id, true );
 		}
 	}
 }
