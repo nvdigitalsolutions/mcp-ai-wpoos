@@ -933,6 +933,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-get-subscriber-stats.php',
 				'WP_MCP_AI_Tool_Newsletter_Create_Email'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-create-email.php',
 				'WP_MCP_AI_Tool_Newsletter_Get_Emails'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-get-emails.php',
+				// WP All Import/Export plugin tools.
+				'WP_MCP_AI_Tool_List_All_Export_Templates' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-all-export-templates.php',
+				'WP_MCP_AI_Tool_Trigger_All_Export'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-trigger-all-export.php',
+				'WP_MCP_AI_Tool_List_All_Import_Templates' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-all-import-templates.php',
+				'WP_MCP_AI_Tool_Trigger_All_Import'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-trigger-all-import.php',
+				'WP_MCP_AI_Tool_Get_All_Import_Status'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-all-import-status.php',
 				// Project Management tools moved to Pro addon.
 			);
 
