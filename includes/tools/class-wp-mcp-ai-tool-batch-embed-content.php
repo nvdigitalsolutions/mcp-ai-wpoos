@@ -116,6 +116,10 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+
 		// Get parameters.
 		$post_ids        = isset( $arguments['post_ids'] ) && is_array( $arguments['post_ids'] ) ? array_map( 'absint', $arguments['post_ids'] ) : array();
 		$post_types      = isset( $arguments['post_types'] ) && is_array( $arguments['post_types'] ) ? array_map( 'sanitize_text_field', $arguments['post_types'] ) : array( 'post', 'page' );
