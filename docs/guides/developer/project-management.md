@@ -73,9 +73,10 @@ Administrators can enable/disable the feature at:
 **Settings → WP oOS → Tools & Features → Project Management**
 
 ### Pro Feature
-- Only available in the full/pro version (not base version)
-- Checks `wp_mcp_ai_is_base_version()` function
-- Feature flag: `wp_mcp_ai_enable_project_management`
+- Only available in the Pro addon (requires `WP_MCP_AI_PRO_VERSION` constant to be defined)
+- UI indicates "(Pro Version only)" in the settings checkbox
+- Feature flag: `enable_project_management` setting
+- Tools and CPT registration are located in `addons/pro/` directory
 
 ### Tool Registration
 All tools are registered in the extended_tools array in:
@@ -165,26 +166,26 @@ Each tool declares its capability flags:
 
 ## Files Created
 
-### Tool Files (13 files)
-- `includes/tools/class-wp-mcp-ai-tool-create-project.php`
-- `includes/tools/class-wp-mcp-ai-tool-update-project.php`
-- `includes/tools/class-wp-mcp-ai-tool-delete-project.php`
-- `includes/tools/class-wp-mcp-ai-tool-list-projects.php`
-- `includes/tools/class-wp-mcp-ai-tool-create-task.php`
-- `includes/tools/class-wp-mcp-ai-tool-update-task.php`
-- `includes/tools/class-wp-mcp-ai-tool-delete-task.php`
-- `includes/tools/class-wp-mcp-ai-tool-list-tasks.php`
-- `includes/tools/class-wp-mcp-ai-tool-create-event.php`
-- `includes/tools/class-wp-mcp-ai-tool-update-event.php`
-- `includes/tools/class-wp-mcp-ai-tool-delete-event.php`
-- `includes/tools/class-wp-mcp-ai-tool-list-events.php`
-- `includes/tools/class-wp-mcp-ai-tool-get-calendar-view.php`
+### Tool Files (13 files in Pro addon)
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-create-project.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-update-project.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-delete-project.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-list-projects.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-create-task.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-update-task.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-delete-task.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-list-tasks.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-create-event.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-update-event.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-delete-event.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-list-events.php`
+- `addons/pro/includes/tools/class-wp-mcp-ai-tool-get-calendar-view.php`
 
 ### Infrastructure Files
-- `includes/project-management-init.php` - CPT registration
-- Modified: `includes/admin/sections/class-wp-mcp-ai-section-tools.php` - Feature toggle
+- `addons/pro/includes/project-management-init.php` - CPT registration
+- `addons/pro/mcp-ai-wpoos-pro.php` - Pro addon initialization
+- Modified: `includes/admin/sections/class-wp-mcp-ai-section-tools.php` - Feature toggle UI
 - Modified: `includes/class-wp-mcp-ai-tool-registry.php` - Tool registration
-- Modified: `mcp-ai-wpoos.php` - Load initialization
 
 ## Testing
 

@@ -396,7 +396,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Project Management', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable AI-powered project, task, and event management (Pro Version only)', 'wp-mcp-ai' ),
-					'description'    => __( 'Enables AI-powered project, task, and event management. Provides 14 tools for creating, updating, listing, and deleting projects, tasks, and events. Includes automatic JetEngine CCT synchronization when available. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
+					'description'    => __( 'Enables AI-powered project, task, and event management. Provides 13 tools for creating, updating, listing, and deleting projects, tasks, and events. Includes automatic JetEngine CCT synchronization when available. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
 			);
