@@ -156,6 +156,19 @@ $settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 		// Build the chat endpoint URL.
 		$endpoint_url = trailingslashit( $peer_url ) . 'wp-json/mcp-ai/v1/chat';
+		
+		// Validate the endpoint URL.
+		$endpoint_url = esc_url_raw( $endpoint_url, array( 'http', 'https' ) );
+		if ( ! $endpoint_url || ! wp_http_validate_url( $endpoint_url ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_endpoint_url',
+				sprintf(
+					/* translators: %s: peer site name */
+					__( 'Invalid endpoint URL for peer site "%s".', 'wp-mcp-ai' ),
+					$peer_name
+				)
+			);
+		}
 
 		// Prepare the request body.
 		$body = array(
