@@ -1,6 +1,6 @@
 # GPT-Image-1.5 Model Implementation
 
-**Date:** December 20, 2024  
+**Date:** December 20, 2025  
 **Status:** Complete  
 **PR Branch:** `copilot/update-settings-for-image-tool`
 
