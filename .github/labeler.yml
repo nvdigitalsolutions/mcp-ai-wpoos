@@ -1,0 +1,76 @@
+# Configuration for actions/labeler
+# Automatically labels PRs based on changed files
+
+# Area labels based on file paths
+
+area:core:
+  - 'mcp-ai-wpoos.php'
+  - 'includes/class-wp-mcp-ai-*.php'
+  - 'includes/class-*.php'
+
+area:pro:
+  - 'addons/pro/**/*'
+  - 'mcp-ai-wpoos-base.php'
+
+area:tools:
+  - 'includes/tools/**/*'
+  - 'addons/pro/includes/tools/**/*'
+
+area:admin-ui:
+  - 'includes/admin/**/*'
+  - 'includes/admin/sections/**/*'
+
+area:frontend:
+  - 'assets/js/chat*.js'
+  - 'assets/css/**/*'
+  - 'includes/elementor/**/*'
+
+area:api:
+  - 'includes/class-wp-mcp-ai-rest.php'
+  - 'includes/rest/**/*'
+  - 'includes/class-wp-mcp-ai-sse-*.php'
+
+area:testing:
+  - 'tests/**/*'
+  - 'phpunit.xml*'
+  - '.github/workflows/phpunit.yml'
+  - '.github/workflows/javascript-tests.yml'
+
+area:ci-cd:
+  - '.github/workflows/**/*'
+  - '.github/actions/**/*'
+
+area:docs:
+  - 'docs/**/*'
+  - 'README.md'
+  - 'CONTRIBUTING.md'
+  - 'CHANGELOG.md'
+  - '*.md'
+
+area:integrations:
+  - 'includes/integrations/**/*'
+  - 'includes/jetengine/**/*'
+  - 'includes/woocommerce/**/*'
+
+area:security:
+  - 'includes/class-wp-mcp-ai-nefarious-*.php'
+  - 'includes/security/**/*'
+  - 'SECURITY.md'
+
+area:performance:
+  - 'includes/class-wp-mcp-ai-performance-*.php'
+  - 'includes/performance/**/*'
+
+# Type labels
+
+type:documentation:
+  - '**/*.md'
+  - 'docs/**/*'
+
+# Dependencies
+
+dependencies:
+  - 'composer.json'
+  - 'composer.lock'
+  - 'package.json'
+  - 'package-lock.json'

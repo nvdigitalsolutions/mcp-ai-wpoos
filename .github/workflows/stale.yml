@@ -1,0 +1,52 @@
+name: Stale Issues and PRs
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Mark Stale Issues and PRs
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Mark stale issues
+        uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Issue settings
+          stale-issue-message: |
+            This issue has been automatically marked as stale because it has not had recent activity. 
+            It will be closed in 14 days if no further activity occurs. Thank you for your contributions.
+          close-issue-message: |
+            This issue was automatically closed because it has been stale for 14 days with no activity.
+            If you believe this issue is still relevant, please reopen it or create a new issue with updated information.
+          days-before-issue-stale: 90
+          days-before-issue-close: 14
+          stale-issue-label: 'status:stale'
+          exempt-issue-labels: 'pinned,security,priority:critical,priority:high,status:in-progress'
+          
+          # PR settings
+          stale-pr-message: |
+            This pull request has been automatically marked as stale because it has not had recent activity.
+            It will be closed in 7 days if no further activity occurs. Thank you for your contributions.
+          close-pr-message: |
+            This pull request was automatically closed because it has been stale for 7 days with no activity.
+            If you'd like to continue this work, please rebase and reopen the PR.
+          days-before-pr-stale: 60
+          days-before-pr-close: 7
+          stale-pr-label: 'status:stale'
+          exempt-pr-labels: 'pinned,wip,status:review-needed'
+          
+          # General settings
+          operations-per-run: 100
+          remove-stale-when-updated: true
+          ascending: true
