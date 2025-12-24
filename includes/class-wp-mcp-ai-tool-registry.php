@@ -927,19 +927,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			 */
 			$default_tools = apply_filters( 'wp_mcp_ai_default_tools', $default_tools, $is_base_version );
 
-			// Add quiz tools if enabled.
-			$settings = get_option( 'wp_mcp_ai_settings', array() );
-			if ( ! empty( $settings['enable_quiz_system'] ) ) {
-				$quiz_tools = array(
-					'WP_MCP_AI_Tool_Create_Quiz'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-quiz.php',
-					'WP_MCP_AI_Tool_Get_Quiz'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz.php',
-					'WP_MCP_AI_Tool_List_Quizzes'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-quizzes.php',
-					'WP_MCP_AI_Tool_Submit_Quiz_Answer'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-quiz-answer.php',
-					'WP_MCP_AI_Tool_Grade_Quiz'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-grade-quiz.php',
-					'WP_MCP_AI_Tool_Get_Quiz_Submissions'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-submissions.php',
-					'WP_MCP_AI_Tool_Get_Quiz_Results'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
-				);
-				$default_tools = array_merge( $default_tools, $quiz_tools );
+			// Add quiz tools if enabled (Full Version only).
+			if ( ! $is_base_version ) {
+				$settings = get_option( 'wp_mcp_ai_settings', array() );
+				if ( ! empty( $settings['enable_quiz_system'] ) ) {
+					$quiz_tools = array(
+						'WP_MCP_AI_Tool_Create_Quiz'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-quiz.php',
+						'WP_MCP_AI_Tool_Get_Quiz'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz.php',
+						'WP_MCP_AI_Tool_List_Quizzes'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-quizzes.php',
+						'WP_MCP_AI_Tool_Submit_Quiz_Answer'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-quiz-answer.php',
+						'WP_MCP_AI_Tool_Grade_Quiz'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-grade-quiz.php',
+						'WP_MCP_AI_Tool_Get_Quiz_Submissions'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-submissions.php',
+						'WP_MCP_AI_Tool_Get_Quiz_Results'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
+					);
+					$default_tools = array_merge( $default_tools, $quiz_tools );
+				}
 			}
 
 			foreach ( $default_tools as $class => $file ) {

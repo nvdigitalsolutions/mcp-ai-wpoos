@@ -4,13 +4,18 @@
 
 The Quiz Tools provide a complete assessment system for tutors and educators to create, manage, and grade quizzes. This toolkit includes 7 new tools that enable full quiz lifecycle management.
 
-**⚠️ Important: The quiz system must be enabled before use.**
+**⚠️ Important: This is a Full Version feature that must be enabled before use.**
+
+**Requirements:**
+- **Full Version** mode (not Base Version)
+- Feature must be enabled in settings
 
 To enable the quiz system:
-1. Go to **WP Admin → Settings → WP oOS → Tools & Features**
-2. Navigate to the **Features** subtab
-3. Check **"Enable Quiz System"**
-4. Save changes
+1. Ensure you are NOT in Base Version mode (do not define `WP_MCP_AI_BASE_VERSION` constant)
+2. Go to **WP Admin → Settings → WP oOS → Tools & Features**
+3. Navigate to the **Features** subtab
+4. Check **"Enable Quiz System"**
+5. Save changes
 
 Once enabled, the system will:
 - Register quiz and submission custom post types (CPT)

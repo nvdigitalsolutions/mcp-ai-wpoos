@@ -38,6 +38,11 @@ class WP_MCP_AI_Quiz_CPT {
 	 * Initialize the class.
 	 */
 	public static function init() {
+		// Only available in Full Version (not Base Version).
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			return;
+		}
+
 		// Only initialize if quiz system is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_quiz_system'] ) ) {
