@@ -390,6 +390,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'When enabled, comments that AI analyzes with low confidence will be held for moderation instead of being published or marked as spam.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
+
+				// Project Management fields.
+				'enable_project_management'            => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Project Management', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable AI-powered project, task, and event management', 'wp-mcp-ai' ),
+					'description'    => __( 'When enabled, AI assistants can manage projects, tasks, and events. This includes creating, updating, listing, and deleting projects, tasks, and events.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -503,6 +512,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'label'  => __( 'AI Comments', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-comments',
 					'fields' => array( 'enable_ai_comments_moderation', 'ai_comments_sensitivity', 'ai_comments_min_confidence', 'ai_comments_auto_hold_low_confidence' ),
+				),
+				'project_management' => array(
+					'id'     => 'project_management',
+					'label'  => __( 'Project Management', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-portfolio',
+					'fields' => array( 'enable_project_management' ),
 				),
 			);
 

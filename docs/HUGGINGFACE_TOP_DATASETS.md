@@ -638,19 +638,7 @@ This document catalogs the **top 50+ free HuggingFace datasets** that should be 
 
 ### 🛡️ Safety & Moderation
 
-#### 49. **Jigsaw Toxic Comments**
-- **Dataset**: `jigsaw_toxicity_pred`
-- **Size**: 160K comments with toxicity labels
-- **Purpose**: Content moderation
-- **Use Cases**:
-  - Comment filtering
-  - User-generated content moderation
-  - Hate speech detection
-  - Community safety
-- **Why Include**: Essential for WordPress comment sections
-- **Integration Priority**: ⭐⭐⭐⭐⭐ CRITICAL
-
-#### 50. **Civil Comments**
+#### 49. **Civil Comments**
 - **Dataset**: `google/civil_comments`
 - **Size**: 2M comments with toxicity annotations
 - **Purpose**: Nuanced content moderation
@@ -659,7 +647,11 @@ This document catalogs the **top 50+ free HuggingFace datasets** that should be 
   - Constructive discussion promotion
   - Multi-aspect toxicity detection
   - Community health
-- **Why Include**: More nuanced than binary moderation
+  - Comment filtering
+  - User-generated content moderation
+  - Hate speech detection
+  - Community safety
+- **Why Include**: Essential for WordPress comment sections - more nuanced than binary moderation with extensive toxicity labels
 - **Integration Priority**: ⭐⭐⭐⭐⭐ CRITICAL
 
 ---
@@ -681,9 +673,8 @@ These provide maximum value for WordPress sites:
 10. **Common Voice** - Multilingual speech
 11. **mC4** - Multilingual text
 12. **WMT Translation** - Translation
-13. **Jigsaw Toxic** - Content moderation
-14. **Civil Comments** - Comment safety
-15. **XSum** - Concise summaries
+13. **Civil Comments** - Content moderation and comment safety
+14. **XSum** - Concise summaries
 
 ### Tier 2: HIGH (Should Have) - 15 datasets
 Add significant value for specific use cases:
@@ -736,9 +727,9 @@ Provide value for niche use cases:
 **Datasets**:
 - SQuAD, IMDB, CNN/DailyMail, GLUE (NLP)
 - COCO, ImageNet, Flickr30k (Vision)
-- Jigsaw Toxic, Civil Comments (Safety)
+- Civil Comments (Safety)
 
-**Deliverable**: 9 tools with discovery, preview, and search capabilities
+**Deliverable**: 8 tools with discovery, preview, and search capabilities
 
 ### Phase 2: Multimodal & Speech (Week 3)
 **Focus**: Accessibility and multimedia
@@ -838,8 +829,7 @@ Provide value for niche use cases:
 - Financial PhraseBank (pricing sentiment)
 
 #### **Community Management**
-- Jigsaw Toxic (comment moderation)
-- Civil Comments (discussion quality)
+- Civil Comments (comment moderation and discussion quality)
 - Ubuntu Dialogs (support)
 - PersonaChat (chatbot personality)
 
@@ -880,10 +870,10 @@ Provide value for niche use cases:
         'coco'                => 'COCO (Image Detection)',
         'flickr30k'           => 'Flickr30k (Image Captions)',
         'librispeech_asr'     => 'LibriSpeech (Speech)',
-        'jigsaw_toxicity'     => 'Jigsaw (Content Moderation)',
+        'civil_comments'      => 'Civil Comments (Content Moderation)',
         // ... more options
     ),
-    'default'     => array( 'squad', 'imdb', 'coco', 'jigsaw_toxicity' ),
+    'default'     => array( 'squad', 'imdb', 'coco', 'civil_comments' ),
 ),
 
 'huggingface_datasets_cache_popular' => array(

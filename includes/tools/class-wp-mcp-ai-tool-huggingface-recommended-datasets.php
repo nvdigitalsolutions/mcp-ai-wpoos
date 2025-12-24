@@ -95,48 +95,48 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 		);
 	}
 
-		/**
-		 * Get tool definition for MCP.
-		 *
-		 * @return array
-		 */
-		public function get_definition() {
-			return array(
-				'name'        => 'Get Recommended HuggingFace Datasets',
-				'description' => 'Get curated dataset recommendations based on your use case (content creation, e-commerce, moderation, etc.)',
-				'parameters'  => array(
-					'use_case' => array(
-						'type'        => 'string',
-						'required'    => true,
-						'description' => 'The use case (e.g., "comment moderation", "blog summarization", "product categorization", "multilingual translation")',
-					),
-					'category'    => array(
-						'type'        => 'string',
-						'required'    => false,
-						'enum'        => array( 'nlp', 'vision', 'audio', 'multimodal', 'all' ),
-						'description' => 'Filter by category',
-						'default'     => 'all',
-					),
-					'limit'       => array(
-						'type'        => 'integer',
-						'required'    => false,
-						'description' => 'Number of recommendations to return',
-						'default'     => 5,
-						'minimum'     => 1,
-						'maximum'     => 20,
-					),
+	/**
+	 * Get tool definition for MCP.
+	 *
+	 * @return array
+	 */
+	public function get_definition() {
+		return array(
+			'name'        => 'Get Recommended HuggingFace Datasets',
+			'description' => 'Get curated dataset recommendations based on your use case (content creation, e-commerce, moderation, etc.)',
+			'parameters'  => array(
+				'use_case' => array(
+					'type'        => 'string',
+					'required'    => true,
+					'description' => 'The use case (e.g., "comment moderation", "blog summarization", "product categorization", "multilingual translation")',
 				),
-			);
-		}
+				'category'    => array(
+					'type'        => 'string',
+					'required'    => false,
+					'enum'        => array( 'nlp', 'vision', 'audio', 'multimodal', 'all' ),
+					'description' => 'Filter by category',
+					'default'     => 'all',
+				),
+				'limit'       => array(
+					'type'        => 'integer',
+					'required'    => false,
+					'description' => 'Number of recommendations to return',
+					'default'     => 5,
+					'minimum'     => 1,
+					'maximum'     => 20,
+				),
+			),
+		);
+	}
 
-		/**
-		 * Get required capability.
-		 *
-		 * @return string
-		 */
-		public function get_required_capability() {
-			return apply_filters( 'wp_mcp_ai_tool_huggingface_datasets_capability', 'read' );
-		}
+	/**
+	 * Get required capability.
+	 *
+	 * @return string
+	 */
+	public function get_required_capability() {
+		return apply_filters( 'wp_mcp_ai_tool_huggingface_datasets_capability', 'read' );
+	}
 
 	/**
 	 * Get capability flags for this tool.
@@ -154,10 +154,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 		);
 	}
 
-		/**
-		 * Execute the tool.
-		 *
-		 * @param array $arguments Tool arguments.
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
 		 * @param array $context   Execution context.
 		 * @return array|WP_Error
 		 */
@@ -177,8 +177,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 			$limit    = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
 			$limit    = max( 1, min( 20, $limit ) );
 
+			// Get assistant's preferred datasets from context.
+			$preferred_datasets = array();
+			if ( isset( $context['assistant_config']['preferred_datasets'] ) && is_array( $context['assistant_config']['preferred_datasets'] ) ) {
+				$preferred_datasets = $context['assistant_config']['preferred_datasets'];
+			}
+
 			// Get recommendations.
-			$recommendations = $this->get_recommendations( $use_case, $category, $limit );
+			$recommendations = $this->get_recommendations( $use_case, $category, $limit, $preferred_datasets );
 
 			return array(
 				'use_case'        => $use_case,
@@ -191,14 +197,23 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 		/**
 		 * Get dataset recommendations based on use case.
 		 *
-		 * @param string $use_case Use case description.
-		 * @param string $category Category filter.
-		 * @param int    $limit    Number of recommendations.
+		 * @param string $use_case           Use case description.
+		 * @param string $category           Category filter.
+		 * @param int    $limit              Number of recommendations.
+		 * @param array  $preferred_datasets Assistant's preferred datasets.
 		 * @return array
 		 */
-		private function get_recommendations( $use_case, $category, $limit ) {
+		private function get_recommendations( $use_case, $category, $limit, $preferred_datasets = array() ) {
 			$use_case_lower = strtolower( $use_case );
 			$all_datasets   = $this->get_dataset_catalog();
+
+			// Create a map of preferred dataset IDs for quick lookup.
+			$preferred_ids = array();
+			foreach ( $preferred_datasets as $pref ) {
+				if ( isset( $pref['dataset'] ) ) {
+					$preferred_ids[] = $pref['dataset'];
+				}
+			}
 
 			// Score datasets based on relevance to use case.
 			$scored = array();
@@ -208,7 +223,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 					continue;
 				}
 
-				$score           = $this->calculate_relevance_score( $use_case_lower, $dataset );
+				$score = $this->calculate_relevance_score( $use_case_lower, $dataset );
+
+				// Boost score significantly if this is a preferred dataset.
+				if ( in_array( $dataset['dataset'], $preferred_ids, true ) ) {
+					$score += 50; // Add significant boost to preferred datasets.
+					$dataset['is_preferred'] = true;
+				} else {
+					$dataset['is_preferred'] = false;
+				}
+
 				$dataset['score'] = $score;
 
 				if ( $score > 0 ) {
@@ -496,25 +520,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 
 				// Safety & Moderation.
 				array(
-					'dataset'     => 'jigsaw_toxicity_pred',
-					'name'        => 'Jigsaw Toxic Comments',
-					'category'    => 'nlp',
-					'priority'    => 'critical',
-					'description' => 'Content moderation with 160K toxic comments',
-					'size'        => '160K comments',
-					'tags'        => array( 'moderation', 'toxic', 'comment', 'safety', 'filter' ),
-					'use_cases'   => array( 'comment moderation', 'content filtering', 'safety checks' ),
-					'example'     => 'Get examples: huggingface_dataset_preview_rows(dataset="jigsaw_toxicity_pred", split="train", limit=5)',
-				),
-				array(
 					'dataset'     => 'google/civil_comments',
 					'name'        => 'Civil Comments',
 					'category'    => 'nlp',
 					'priority'    => 'critical',
-					'description' => 'Nuanced moderation with 2M comments',
+					'description' => 'Nuanced moderation with 2M comments and toxicity labels',
 					'size'        => '2M comments',
-					'tags'        => array( 'moderation', 'comment', 'civility', 'community', 'discussion' ),
-					'use_cases'   => array( 'comment quality', 'discussion moderation', 'community management' ),
+					'tags'        => array( 'moderation', 'comment', 'civility', 'community', 'discussion', 'toxic', 'safety', 'filter' ),
+					'use_cases'   => array( 'comment quality', 'discussion moderation', 'community management', 'comment moderation', 'content filtering', 'safety checks' ),
 					'example'     => 'Get examples: huggingface_dataset_preview_rows(dataset="google/civil_comments", split="train", limit=5)',
 				),
 

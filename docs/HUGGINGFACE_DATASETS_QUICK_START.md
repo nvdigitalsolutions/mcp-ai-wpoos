@@ -26,6 +26,57 @@ Access 50+ top free HuggingFace datasets directly from WordPress. No downloads r
 
 ## Using in AI Assistants
 
+## Assigning Preferred Datasets to Assistants
+
+You can configure which datasets an assistant should prioritize when making recommendations. This helps tailor the assistant's responses to your specific use case.
+
+### How to Assign Datasets
+
+1. Go to **Assistants → Edit Assistant**
+2. Scroll to the **Preferred Datasets** metabox
+3. Use the category filter or search to find relevant datasets
+4. Check the datasets you want the assistant to prefer (up to 10)
+5. Click **Update** to save
+
+### How It Works
+
+When the assistant uses the `huggingface_recommended_datasets` tool:
+- Preferred datasets receive a **+50 relevance boost**
+- They appear higher in recommendations even for unrelated queries
+- Results include an `is_preferred` flag showing which datasets match your preferences
+
+### Example Use Cases
+
+**Content Moderation Assistant**
+- Assign: "Jigsaw Toxic Comments", "Civil Comments"
+- Result: Always prioritizes toxicity detection datasets
+
+**E-commerce Product Assistant**  
+- Assign: "Fashion MNIST", "Yelp Reviews", "Food-101"
+- Result: Focuses on product-related datasets
+
+**Multilingual Support Assistant**
+- Assign: "mC4", "Common Voice", "XNLI"
+- Result: Emphasizes cross-language datasets
+
+**Research & Education Assistant**
+- Assign: "SQuAD", "SciQ", "arXiv", "MedQA"
+- Result: Academic and Q&A datasets take priority
+
+### Example Query
+
+```
+User: "What datasets can help with comment moderation?"
+
+Assistant (with Jigsaw & Civil Comments preferred):
+1. ✓ Jigsaw Toxic Comments (preferred) - 160K toxic comments
+2. ✓ Civil Comments (preferred) - 2M comments with nuanced moderation
+3. Ubuntu Dialogs - Support conversation patterns
+4. Yelp Reviews - Review sentiment analysis
+```
+
+The ✓ icon indicates datasets that match your assistant's preferences.
+
 ### Example 1: Get Sentiment Analysis Examples
 ```
 Please give me examples of sentiment analysis from the IMDB dataset
@@ -182,8 +233,7 @@ Parameters:
 - **Food-101** (`ethz/food101`) - Food product categorization
 
 ### Community Management
-- **Jigsaw Toxic** (`jigsaw_toxicity_pred`) - Comment moderation
-- **Civil Comments** (`google/civil_comments`) - Discussion quality
+- **Civil Comments** (`google/civil_comments`) - Comment moderation and discussion quality
 - **Ubuntu Dialogs** (`ubuntu_dialogs_corpus`) - Support conversations
 
 ### SEO & Accessibility
@@ -245,7 +295,7 @@ Parameters:
 #### 1. Improve Comment Moderation
 ```
 Assistant, analyze my pending comments and suggest which ones might need moderation 
-based on the Jigsaw Toxic Comments dataset patterns.
+based on the Civil Comments dataset patterns.
 ```
 
 #### 2. Generate Alt Text for Images

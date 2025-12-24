@@ -36,6 +36,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
 		const META_REQUIRED_CAPABILITY     = 'mcp_ai_required_capability';
 		const META_PRIMARY_ROLES           = '_wp_mcp_ai_primary_roles';
+		const META_PREFERRED_DATASETS      = '_wp_mcp_ai_preferred_datasets';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -73,6 +74,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$this->metaboxes['primary-roles']  = new WP_MCP_AI_Metabox_Primary_Roles( $this );
 			$this->metaboxes['base-knowledge'] = new WP_MCP_AI_Metabox_Base_Knowledge( $this );
 			$this->metaboxes['mesh-routing']   = new WP_MCP_AI_Metabox_Mesh_Routing( $this );
+			$this->metaboxes['datasets']       = new WP_MCP_AI_Metabox_Datasets( $this );
 
 			add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
@@ -1360,6 +1362,40 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					'auth_callback'     => $auth_callback,
 				)
 			);
+
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_PREFERRED_DATASETS,
+				array(
+					'type'              => 'array',
+					'single'            => true,
+					'show_in_rest'      => array(
+						'schema' => array(
+							'type'  => 'array',
+							'items' => array(
+								'type'                 => 'object',
+								'properties'           => array(
+									'dataset'  => array(
+										'type' => 'string',
+									),
+									'name'     => array(
+										'type' => 'string',
+									),
+									'category' => array(
+										'type' => 'string',
+									),
+									'priority' => array(
+										'type' => 'string',
+									),
+								),
+								'additionalProperties' => false,
+							),
+						),
+					),
+					'sanitize_callback' => array( __CLASS__, 'sanitize_preferred_datasets_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
 		}
 
 		/**
@@ -1611,6 +1647,48 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Sanitize preferred datasets meta.
+		 *
+		 * @param array|mixed $datasets Datasets to sanitize.
+		 * @return array Sanitized datasets array.
+		 */
+		public static function sanitize_preferred_datasets_meta( $datasets ) {
+			if ( ! is_array( $datasets ) ) {
+				return array();
+			}
+
+			$sanitized = array();
+			foreach ( $datasets as $dataset ) {
+				if ( ! is_array( $dataset ) ) {
+					continue;
+				}
+
+				// Sanitize dataset fields.
+				$item = array();
+				if ( isset( $dataset['dataset'] ) ) {
+					$item['dataset'] = sanitize_text_field( $dataset['dataset'] );
+				}
+				if ( isset( $dataset['name'] ) ) {
+					$item['name'] = sanitize_text_field( $dataset['name'] );
+				}
+				if ( isset( $dataset['category'] ) ) {
+					$item['category'] = sanitize_text_field( $dataset['category'] );
+				}
+				if ( isset( $dataset['priority'] ) ) {
+					$item['priority'] = sanitize_text_field( $dataset['priority'] );
+				}
+
+				// Only add if dataset field (required) is present.
+				if ( ! empty( $item['dataset'] ) ) {
+					$sanitized[] = $item;
+				}
+			}
+
+			// Limit to 10 datasets maximum to prevent bloat.
+			return array_slice( $sanitized, 0, 10 );
+		}
+
+		/**
 		 * Register meta boxes for the assistant CPT.
 		 */
 		public function register_meta_boxes() {
@@ -1696,8 +1774,21 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				);
 			}
 
-			// Only show mesh routing meta box if mesh is enabled.
+			// Only show datasets metabox if HuggingFace Datasets integration is enabled.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( ! empty( $settings['enable_huggingface_datasets'] ) && isset( $this->metaboxes['datasets'] ) ) {
+				$metabox = $this->metaboxes['datasets'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
+
+			// Only show mesh routing meta box if mesh is enabled.
 			if ( ! empty( $settings['enable_mesh'] ) && isset( $this->metaboxes['mesh-routing'] ) ) {
 				$metabox = $this->metaboxes['mesh-routing'];
 				add_meta_box(
@@ -3832,6 +3923,29 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 			}
 
+			// Handle preferred datasets meta.
+			if ( isset( $_POST['wp_mcp_ai_datasets_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_datasets_meta_nonce'] ) ), 'wp_mcp_ai_datasets_meta' ) ) {
+				$preferred_datasets = array();
+				if ( isset( $_POST['wp_mcp_ai_preferred_datasets'] ) && is_array( $_POST['wp_mcp_ai_preferred_datasets'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_text_field() and sanitize_preferred_datasets_meta().
+					$raw_datasets = wp_unslash( $_POST['wp_mcp_ai_preferred_datasets'] );
+					// Each checkbox value is a JSON-encoded dataset object.
+					foreach ( $raw_datasets as $dataset_json ) {
+						$dataset = json_decode( sanitize_text_field( $dataset_json ), true );
+						if ( is_array( $dataset ) ) {
+							$preferred_datasets[] = $dataset;
+						}
+					}
+					$preferred_datasets = self::sanitize_preferred_datasets_meta( $preferred_datasets );
+				}
+
+				if ( empty( $preferred_datasets ) ) {
+					delete_post_meta( $post_id, self::META_PREFERRED_DATASETS );
+				} else {
+					update_post_meta( $post_id, self::META_PREFERRED_DATASETS, $preferred_datasets );
+				}
+			}
+
 			// Handle defaults meta.
 			if ( isset( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) ), 'wp_mcp_ai_defaults_meta' ) ) {
 				$provider = isset( $_POST['wp_mcp_ai_provider'] )
@@ -4149,6 +4263,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'external_action_identifier' => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
 				'external_action_type'       => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
 				'required_capability'        => get_post_meta( $assistant_id, self::META_REQUIRED_CAPABILITY, true ),
+				'preferred_datasets'         => get_post_meta( $assistant_id, self::META_PREFERRED_DATASETS, true ),
 			);
 
 			if ( ! is_array( $config['tools'] ) ) {
@@ -4243,6 +4358,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$config['required_capability'] = '';
 			} else {
 				$config['required_capability'] = self::sanitize_required_capability_meta( $config['required_capability'] );
+			}
+
+			if ( ! is_array( $config['preferred_datasets'] ) ) {
+				$config['preferred_datasets'] = array();
+			} else {
+				$config['preferred_datasets'] = self::sanitize_preferred_datasets_meta( $config['preferred_datasets'] );
 			}
 
 			return $config;
