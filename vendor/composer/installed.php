@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-pro-tools-integration',
-        'version' => 'dev-copilot/add-pro-tools-integration',
-        'reference' => '9e9f29e82e23666d2996966e1eac76cab264428f',
+        'pretty_version' => 'dev-copilot/fix-auto-assignment-datasets',
+        'version' => 'dev-copilot/fix-auto-assignment-datasets',
+        'reference' => 'a63eaa99d373a52d4ea286e220ce09b175083fea',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-pro-tools-integration',
-            'version' => 'dev-copilot/add-pro-tools-integration',
-            'reference' => '9e9f29e82e23666d2996966e1eac76cab264428f',
+            'pretty_version' => 'dev-copilot/fix-auto-assignment-datasets',
+            'version' => 'dev-copilot/fix-auto-assignment-datasets',
+            'reference' => 'a63eaa99d373a52d4ea286e220ce09b175083fea',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
