@@ -209,7 +209,7 @@
 
 ### Root Documentation
 - [README.md](../../../README.md) - Main plugin documentation with latest updates
-- [ARCHITECTURE.md](../../../ARCHITECTURE.md) - System architecture
+- [ARCHITECTURE.md](../../architecture/ARCHITECTURE.md) - System architecture
 - [BUILD.md](../../../BUILD.md) - Build and development
 - [CHANGELOG.md](../../../CHANGELOG.md) - Complete version history
 - [CONTRIBUTING.md](../../../CONTRIBUTING.md) - Contribution guidelines

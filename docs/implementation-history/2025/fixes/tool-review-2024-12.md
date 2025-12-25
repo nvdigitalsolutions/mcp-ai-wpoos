@@ -434,8 +434,8 @@ All new multisite checks use consistent error code and message:
 
 - [Rank Math Pro Repository](https://github.com/wordpress-premium/rank-math-seo-pro)
 - [WordPress Multisite Security Best Practices](https://developer.wordpress.org/apis/security/checking-user-capabilities/)
-- [Tool Reference Documentation](../../reference/tools/tool-reference.md)
-- [Tool Capability Flags Interface](../../interfaces/interface-wp-mcp-ai-tool.php)
+- [Tool Reference Documentation](../../../reference/tools/tool-reference.md)
+- - Tool Capability Flags Interface: `interfaces/interface-wp-mcp-ai-tool.php`
 
 ## Related Issues
 

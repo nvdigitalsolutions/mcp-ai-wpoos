@@ -229,10 +229,10 @@ This directory contains comprehensive planning documentation for integrating Hug
 - [npm Package](https://www.npmjs.com/package/@huggingface/inference)
 
 ### WP oOS Plugin
-- [Architecture Documentation](./ARCHITECTURE.md)
-- [Tool Development Guide](./guides/tool-development.md)
-- [Testing Guide](./guides/testing.md)
-- [Contributing Guidelines](../CONTRIBUTING.md)
+<!-- Architecture documentation coming soon -->
+<!-- Tool development guide coming soon -->
+<!-- Testing guide coming soon -->
+- [Contributing Guidelines](../../../../CONTRIBUTING.md)
 
 ---
 

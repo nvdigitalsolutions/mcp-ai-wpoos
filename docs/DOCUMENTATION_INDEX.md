@@ -49,7 +49,7 @@ Comprehensive consolidation of ALL fixes, summaries, code reviews, and improveme
   - Statistics and quality metrics summary
   - [2025 Implementation History Index](implementation-history/2025/INDEX.md) - Directory structure navigation
 
-- **[MASTER_CONSOLIDATION_2025.md](MASTER_CONSOLIDATION_2025.md)** ⭐ **PRIMARY REFERENCE (Dec 20)**
+- **[MASTER_CONSOLIDATION_2025.md](implementation-history/2025/summaries/MASTER_CONSOLIDATION_2025.md)** ⭐ **PRIMARY REFERENCE (Dec 20)**
   - **SINGLE SOURCE OF TRUTH** for all 2025 work
   - Complete consolidation of 55+ source documents
   - Zero information loss - everything preserved
@@ -195,7 +195,7 @@ Access 50+ popular datasets directly from WordPress without downloading:
   - Copy-paste ready code snippets
   - 962 lines, production-ready examples
 
-- **[HUGGINGFACE_DATASETS_QUICK_START.md](HUGGINGFACE_DATASETS_QUICK_START.md)**
+- **[HUGGINGFACE_DATASETS_QUICK_START.md](features/ai-providers/huggingface/HUGGINGFACE_DATASETS_QUICK_START.md)**
   - Quick reference guide for fast access
   - Browse datasets in admin UI
   - AI Assistant usage examples
@@ -203,7 +203,7 @@ Access 50+ popular datasets directly from WordPress without downloading:
   - Top datasets by use case
   - Tips and troubleshooting
 
-- **[HUGGINGFACE_TOP_DATASETS.md](HUGGINGFACE_TOP_DATASETS.md)**
+- **[HUGGINGFACE_TOP_DATASETS.md](features/ai-providers/huggingface/HUGGINGFACE_TOP_DATASETS.md)**
   - 50+ curated free datasets catalog
   - Organized by category (NLP, Vision, Audio, Multimodal)
   - Use cases and integration priority
@@ -235,7 +235,7 @@ Access 50+ popular datasets directly from WordPress without downloading:
 #### Hugging Face Inference API (December 22, 2025)
 Complete integration of Hugging Face Inference API as a provider for open-source models:
 
-- **[HUGGINGFACE_SETUP.md](HUGGINGFACE_SETUP.md)** ⭐ **NEW**
+- **[HUGGINGFACE_SETUP.md](features/ai-providers/huggingface/HUGGINGFACE_SETUP.md)** ⭐ **NEW**
   - Step-by-step setup guide for Hugging Face provider
   - API token generation and configuration
   - Model selection guide (Llama, Mistral, Phi, Qwen, and more)

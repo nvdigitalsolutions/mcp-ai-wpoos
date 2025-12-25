@@ -309,10 +309,10 @@ A: HuggingFace Dataset Viewer API has rate limits (60 requests/hour for free tie
 
 ## Related Documentation
 
-- **[HuggingFace Datasets Quick Start](HUGGINGFACE_DATASETS_QUICK_START.md)** - Overview and basic usage
-- **[HuggingFace Top Datasets](HUGGINGFACE_TOP_DATASETS.md)** - Complete dataset catalog  
-- **[Tool Reference](tool-reference.md)** - All HuggingFace dataset tools
-- **[Assistant Configuration](assistant-configuration.md)** - General assistant setup
+- **[HuggingFace Datasets Quick Start](../../features/ai-providers/huggingface/HUGGINGFACE_DATASETS_QUICK_START.md)** - Overview and basic usage
+- **[HuggingFace Top Datasets](../../features/ai-providers/huggingface/HUGGINGFACE_TOP_DATASETS.md)** - Complete dataset catalog  
+- **[Tool Reference](../../reference/tools/tool-reference.md)** - All HuggingFace dataset tools
+- **<!-- Assistant Configuration guide coming soon -->** - General assistant setup
 
 ## Support
 

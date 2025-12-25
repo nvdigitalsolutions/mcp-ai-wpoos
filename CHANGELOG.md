@@ -55,7 +55,7 @@
   - **WordPress Integration**: User authentication, capability checks, multisite support
   - **Test Coverage**: 8 comprehensive test cases covering all functionality
   - **Comprehensive Documentation**: Complete usage guide with examples
-  - See [Gemini Geospatial Documentation](docs/GEMINI_GEOSPATIAL.md)
+  - See [Gemini Geospatial Documentation](docs/features/ai-providers/gemini/GEMINI_GEOSPATIAL.md)
 
 #### OpenAI Batch API Integration (December 21, 2025)
 - **Batch Processing for Cost Savings**: Integrated OpenAI Batch API for asynchronous bulk operations with 50% cost reduction

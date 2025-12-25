@@ -210,7 +210,7 @@ Three comprehensive documents were created to analyze the Gemini integration fro
 ### Architecture Docs
 - [`GEMINI_OPENAI_TOOLS_ARCHITECTURE.md`](GEMINI_OPENAI_TOOLS_ARCHITECTURE.md) - Tool architecture
 - [`RESOURCE-MANAGEMENT.md`](../../performance/RESOURCE-MANAGEMENT.md) - Resource limits
-- [`ARCHITECTURE.md`](../../../../ARCHITECTURE.md) - System architecture
+- [`ARCHITECTURE.md`](../../../architecture/ARCHITECTURE.md) - System architecture
 
 ### API Reference
 - [`rest-api.md`](../../../reference/api/rest-api.md) - REST API documentation
