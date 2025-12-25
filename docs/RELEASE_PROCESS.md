@@ -324,9 +324,11 @@ We're excited to announce the release of WP Open Operator System v1.x.x!
 - **From GitHub:** Download from [Releases](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases)
 
 **Documentation:**
-- [What's New Guide](link)
-- [Upgrade Guide](link) (if breaking changes)
-- [Full Changelog](link)
+<!-- TODO: Add links when these guides are created:
+- What's New Guide
+- Upgrade Guide (if breaking changes)
+- Full Changelog
+-->
 
 **Thank You:**
 Special thanks to our contributors: @user1, @user2, @user3

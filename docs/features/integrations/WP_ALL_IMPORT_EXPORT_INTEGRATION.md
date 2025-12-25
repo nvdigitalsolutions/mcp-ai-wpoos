@@ -374,5 +374,5 @@ Comprehensive test coverage in `tests/test-all-import-export-tools.php`:
 - [WP All Export Documentation](https://www.wpallimport.com/documentation/export-overview/)
 - [WP All Import Documentation](https://www.wpallimport.com/documentation/)
 - [WP All Import Action Reference](https://www.wpallimport.com/documentation/action-reference/)
-- [Tool Registry](../../includes/class-wp-mcp-ai-tool-registry.php)
-- [Pro Addon Registration](../../addons/pro/mcp-ai-wpoos-pro.php)
+- Tool Registry: `includes/class-wp-mcp-ai-tool-registry.php`
+- Pro Addon Registration: `addons/pro/mcp-ai-wpoos-pro.php`
