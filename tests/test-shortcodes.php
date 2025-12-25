@@ -422,9 +422,9 @@ class Test_Shortcodes extends WP_UnitTestCase {
 
 		// Render the shortcode with profession_XXX format.
 		$profession_identifier = 'profession_' . $profession_id;
-		
+
 		wp_scripts()->reset();
-		
+
 		$markup = do_shortcode( sprintf( '[%s assistant="%s"]', WP_MCP_AI_Shortcode::SHORTCODE, $profession_identifier ) );
 		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
 
@@ -439,12 +439,12 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		// Parse the JSON config to verify the profession identifier is preserved.
 		preg_match( '/wpMcpAiChatInstances\["[^"]+"\]\s*=\s*({.*?});/', $instance_config, $matches );
 		$this->assertNotEmpty( $matches, 'Should find instance config in inline script.' );
-		
+
 		if ( ! empty( $matches[1] ) ) {
 			$config = json_decode( $matches[1], true );
 			$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
 			$this->assertArrayHasKey( 'assistantId', $config, 'Instance config should have assistantId key.' );
-			
+
 			// The critical assertion: assistantId should preserve the "profession_XXX" format.
 			$this->assertSame( $profession_identifier, $config['assistantId'], 'assistantId should preserve the profession_ prefix for REST API to detect.' );
 			$this->assertStringContainsString( 'profession_', $config['assistantId'], 'assistantId should contain profession_ prefix.' );
@@ -467,7 +467,7 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		// Test that profession_XXX format is preserved.
 		$profession_identifier = 'profession_' . $profession_id;
 		$resolved              = WP_MCP_AI_Shortcode::resolve_assistant_id( $profession_identifier );
-		
+
 		$this->assertSame( $profession_identifier, $resolved, 'resolve_assistant_id should preserve profession_ prefix.' );
 		$this->assertIsString( $resolved, 'resolve_assistant_id should return string for profession identifiers.' );
 	}
@@ -479,7 +479,7 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		// Test with non-existent profession ID.
 		$invalid_identifier = 'profession_99999999';
 		$resolved           = WP_MCP_AI_Shortcode::resolve_assistant_id( $invalid_identifier );
-		
+
 		$this->assertSame( 0, $resolved, 'resolve_assistant_id should return 0 for non-existent profession.' );
 	}
 }

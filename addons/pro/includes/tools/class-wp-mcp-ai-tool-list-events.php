@@ -41,13 +41,13 @@ class WP_MCP_AI_Tool_List_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'project_id' => array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'project_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by project ID (optional)', 'wp-mcp-ai' ),
 				),
-				'type'        => array(
+				'type'         => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by event type (optional)', 'wp-mcp-ai' ),
 					'enum'        => array( 'meeting', 'deadline', 'milestone', 'reminder', 'other' ),
@@ -197,7 +197,7 @@ class WP_MCP_AI_Tool_List_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => get_post_meta( $event_id, '_event_type', true ) ?: 'meeting',
 					'attendees'   => get_post_meta( $event_id, '_event_attendees', true ) ?: array(),
 					'created_at'  => get_the_date( 'c' ),
-					'updated_at' => get_the_modified_date( 'c' ),
+					'updated_at'  => get_the_modified_date( 'c' ),
 				);
 			}
 			wp_reset_postdata();

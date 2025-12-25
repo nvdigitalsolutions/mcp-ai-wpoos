@@ -23,19 +23,34 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 	 * @var array
 	 */
 	const MODEL_COSTS = array(
-		'gpt-4o'                    => array( 'input' => 0.0025, 'output' => 0.01 ),
-		'gpt-4o-mini'               => array( 'input' => 0.00015, 'output' => 0.0006 ),
-		'gpt-4-turbo'               => array( 'input' => 0.01, 'output' => 0.03 ),
-		'gpt-4'                     => array( 'input' => 0.03, 'output' => 0.06 ),
-		'gpt-3.5-turbo'             => array( 'input' => 0.0005, 'output' => 0.0015 ),
-		'dall-e-3'                  => array( 'per_image' => 0.04 ), // Standard 1024x1024.
-		'dall-e-2'                  => array( 'per_image' => 0.02 ), // 1024x1024.
-		'text-embedding-3-small'    => array( 'input' => 0.00002 ),
-		'text-embedding-3-large'    => array( 'input' => 0.00013 ),
-		'text-embedding-ada-002'    => array( 'input' => 0.0001 ),
-		'tts-1'                     => array( 'per_character' => 0.000015 ),
-		'tts-1-hd'                  => array( 'per_character' => 0.00003 ),
-		'whisper-1'                 => array( 'per_minute' => 0.006 ),
+		'gpt-4o'                 => array(
+			'input'  => 0.0025,
+			'output' => 0.01,
+		),
+		'gpt-4o-mini'            => array(
+			'input'  => 0.00015,
+			'output' => 0.0006,
+		),
+		'gpt-4-turbo'            => array(
+			'input'  => 0.01,
+			'output' => 0.03,
+		),
+		'gpt-4'                  => array(
+			'input'  => 0.03,
+			'output' => 0.06,
+		),
+		'gpt-3.5-turbo'          => array(
+			'input'  => 0.0005,
+			'output' => 0.0015,
+		),
+		'dall-e-3'               => array( 'per_image' => 0.04 ), // Standard 1024x1024.
+		'dall-e-2'               => array( 'per_image' => 0.02 ), // 1024x1024.
+		'text-embedding-3-small' => array( 'input' => 0.00002 ),
+		'text-embedding-3-large' => array( 'input' => 0.00013 ),
+		'text-embedding-ada-002' => array( 'input' => 0.0001 ),
+		'tts-1'                  => array( 'per_character' => 0.000015 ),
+		'tts-1-hd'               => array( 'per_character' => 0.00003 ),
+		'whisper-1'              => array( 'per_minute' => 0.006 ),
 	);
 
 	/**
@@ -200,7 +215,7 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 		// This is a simplified implementation. In a real scenario, you'd query
 		// actual usage data from a custom table or transients.
 		// For now, we'll return mock data structure.
-		
+
 		$stats = array(
 			'total_requests' => 0,
 			'total_tokens'   => 0,
@@ -212,7 +227,7 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 
 		// Try to get activity logs from WP oOS logger.
 		$logs = get_option( 'wp_mcp_ai_recent_activity', array() );
-		
+
 		if ( ! is_array( $logs ) ) {
 			$logs = array();
 		}
@@ -232,7 +247,7 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 			}
 
 			// Count requests.
-			$stats['total_requests']++;
+			++$stats['total_requests'];
 
 			// Track model usage.
 			if ( isset( $log['model'] ) ) {
@@ -243,12 +258,12 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 						'tokens'   => 0,
 					);
 				}
-				$model_usage[ $model ]['requests']++;
+				++$model_usage[ $model ]['requests'];
 
 				if ( isset( $log['tokens'] ) ) {
-					$tokens = absint( $log['tokens'] );
+					$tokens                           = absint( $log['tokens'] );
 					$model_usage[ $model ]['tokens'] += $tokens;
-					$stats['total_tokens'] += $tokens;
+					$stats['total_tokens']           += $tokens;
 				}
 			}
 
@@ -258,7 +273,7 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 				if ( ! isset( $tool_usage[ $tool ] ) ) {
 					$tool_usage[ $tool ] = 0;
 				}
-				$tool_usage[ $tool ]++;
+				++$tool_usage[ $tool ];
 			}
 		}
 
@@ -292,16 +307,16 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 
 		if ( 'model' === $group_by && ! empty( $stats['breakdown'] ) ) {
 			foreach ( $stats['breakdown'] as $model => $usage ) {
-				$cost = $this->estimate_model_cost( $model, $usage );
+				$cost                                 = $this->estimate_model_cost( $model, $usage );
 				$stats['breakdown'][ $model ]['cost'] = $cost;
-				$total_cost += $cost;
+				$total_cost                          += $cost;
 			}
 		}
 
 		// Calculate costs for top models.
 		if ( ! empty( $stats['top_models'] ) ) {
 			foreach ( $stats['top_models'] as $model => $usage ) {
-				$cost = $this->estimate_model_cost( $model, $usage );
+				$cost                                  = $this->estimate_model_cost( $model, $usage );
 				$stats['top_models'][ $model ]['cost'] = $cost;
 			}
 		}
@@ -323,12 +338,12 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 			return 0;
 		}
 
-		$costs = self::MODEL_COSTS[ $model ];
+		$costs      = self::MODEL_COSTS[ $model ];
 		$total_cost = 0;
 
 		if ( isset( $costs['input'] ) && isset( $usage['tokens'] ) ) {
 			// Token-based pricing (per 1K tokens).
-			$token_cost = ( $usage['tokens'] / 1000 ) * $costs['input'];
+			$token_cost  = ( $usage['tokens'] / 1000 ) * $costs['input'];
 			$total_cost += $token_cost;
 		}
 

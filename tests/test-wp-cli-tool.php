@@ -1,9 +1,16 @@
 <?php
+/**
+ * Tests for the WP-CLI status tool.
+ *
+ * @package WP_MCP_AI
+ */
 
 require_once WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php';
 
 /**
- * Tests for the WP-CLI status tool.
+ * Class WP_MCP_AI_WP_CLI_Tool_Test
+ *
+ * Tests the WP-CLI detection and status tool functionality.
  */
 class WP_MCP_AI_WP_CLI_Tool_Test extends WP_UnitTestCase {
 	/**

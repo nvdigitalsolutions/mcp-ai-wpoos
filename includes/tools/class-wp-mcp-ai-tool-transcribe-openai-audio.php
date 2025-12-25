@@ -53,31 +53,31 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'attachment_id'   => array(
+				'attachment_id'           => array(
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'WordPress attachment ID that contains the audio file.', 'wp-mcp-ai' ),
 				),
-				'file_id'         => $this->get_file_id_parameter_schema(),
-				'url'             => $this->get_url_parameter_schema( 'audio' ),
-				'translate'       => array(
+				'file_id'                 => $this->get_file_id_parameter_schema(),
+				'url'                     => $this->get_url_parameter_schema( 'audio' ),
+				'translate'               => array(
 					'type'        => 'boolean',
 					'description' => __( 'When true the audio will be translated into English instead of a raw transcription.', 'wp-mcp-ai' ),
 					'default'     => true,
 				),
-				'model'           => array(
+				'model'                   => array(
 					'type'        => 'string',
 					'description' => __( 'Optional OpenAI model override for the transcription request.', 'wp-mcp-ai' ),
 					'default'     => self::DEFAULT_MODEL,
 				),
-				'prompt'          => array(
+				'prompt'                  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional prompt that provides context for the transcription.', 'wp-mcp-ai' ),
 				),
-				'temperature'     => array(
+				'temperature'             => array(
 					'type'        => array( 'number', 'integer', 'string' ),
 					'description' => __( 'Optional temperature override between 0 and 1.', 'wp-mcp-ai' ),
 				),
-				'timeout'         => array(
+				'timeout'                 => array(
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'Optional request timeout override in seconds.', 'wp-mcp-ai' ),
 				),

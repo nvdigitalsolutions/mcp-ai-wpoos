@@ -251,10 +251,10 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'success' => true,
 			'data'    => array(
-				'files'     => isset( $result['data'] ) ? $result['data'] : array(),
-				'has_more'  => isset( $result['has_more'] ) ? $result['has_more'] : false,
-				'first_id'  => isset( $result['first_id'] ) ? $result['first_id'] : null,
-				'last_id'   => isset( $result['last_id'] ) ? $result['last_id'] : null,
+				'files'    => isset( $result['data'] ) ? $result['data'] : array(),
+				'has_more' => isset( $result['has_more'] ) ? $result['has_more'] : false,
+				'first_id' => isset( $result['first_id'] ) ? $result['first_id'] : null,
+				'last_id'  => isset( $result['last_id'] ) ? $result['last_id'] : null,
 			),
 		);
 	}

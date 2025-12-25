@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_
 
 			$file_path = $export_record->options['current_filepath'] ?? '';
 			$file_url  = '';
-			
+
 			if ( $file_path && file_exists( $file_path ) ) {
 				$upload_dir = wp_upload_dir();
 				$file_url   = str_replace( $upload_dir['basedir'], $upload_dir['baseurl'], $file_path );

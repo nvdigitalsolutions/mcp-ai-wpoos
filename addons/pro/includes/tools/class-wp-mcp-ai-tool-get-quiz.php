@@ -85,11 +85,11 @@ class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		}
 
 		// Get quiz metadata.
-		$description    = get_post_meta( $quiz_id, '_mcp_ai_quiz_description', true );
-		$time_limit     = get_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', true );
-		$questions      = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
-		$total_points   = get_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', true );
-		$passing_score  = get_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', true );
+		$description   = get_post_meta( $quiz_id, '_mcp_ai_quiz_description', true );
+		$time_limit    = get_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', true );
+		$questions     = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
+		$total_points  = get_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', true );
+		$passing_score = get_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', true );
 
 		if ( ! is_array( $questions ) ) {
 			$questions = array();

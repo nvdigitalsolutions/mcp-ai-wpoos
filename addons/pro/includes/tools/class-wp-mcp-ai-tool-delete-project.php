@@ -60,7 +60,7 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		$project_id = isset( $arguments['project_id'] ) ? absint( $arguments['project_id'] ) : 0;
-		
+
 		if ( ! $project_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Project ID is required.', 'wp-mcp-ai' ) );
 		}

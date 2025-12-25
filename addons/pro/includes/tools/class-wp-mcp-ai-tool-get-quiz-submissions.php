@@ -41,12 +41,12 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'quiz_id' => array(
+				'quiz_id'  => array(
 					'type'        => 'integer',
 					'description' => __( 'The ID of the quiz.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'status'  => array(
+				'status'   => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by submission status: pending, graded, or all.', 'wp-mcp-ai' ),
 					'enum'        => array( 'pending', 'graded', 'all' ),

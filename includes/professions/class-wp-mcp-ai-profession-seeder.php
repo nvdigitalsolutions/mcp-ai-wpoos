@@ -90,7 +90,7 @@ class WP_MCP_AI_Profession_Seeder {
 	/**
 	 * Resync profession datasets.
 	 * Assigns HuggingFace datasets to professions that don't have them.
-	 * 
+	 *
 	 * This function will continue to run on each admin_init until all professions
 	 * that have dataset mappings also have datasets assigned. Once complete, it
 	 * sets an option to prevent running again unless manually reset.
@@ -115,7 +115,7 @@ class WP_MCP_AI_Profession_Seeder {
 		}
 
 		$professions_needing_datasets = 0;
-		$professions_synced = 0;
+		$professions_synced           = 0;
 
 		// Check each profession and assign datasets if needed.
 		foreach ( $professions as $profession ) {
@@ -131,7 +131,7 @@ class WP_MCP_AI_Profession_Seeder {
 			}
 
 			// This profession has dataset mappings, so we should check if it has datasets.
-			$professions_needing_datasets++;
+			++$professions_needing_datasets;
 
 			// Get current preferred datasets.
 			$current_datasets = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
@@ -141,7 +141,7 @@ class WP_MCP_AI_Profession_Seeder {
 				// Assign the mapped datasets.
 				$sanitized_datasets = WP_MCP_AI_Profession_CPT::sanitize_preferred_datasets( $expected_datasets );
 				update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, $sanitized_datasets );
-				$professions_synced++;
+				++$professions_synced;
 			}
 		}
 

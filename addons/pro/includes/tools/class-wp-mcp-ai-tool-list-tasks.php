@@ -41,13 +41,13 @@ class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'project_id' => array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'project_id'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by project ID (optional)', 'wp-mcp-ai' ),
 				),
-				'status'     => array(
+				'status'      => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by task status (optional)', 'wp-mcp-ai' ),
 					'enum'        => array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' ),
@@ -71,7 +71,7 @@ class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'description' => __( 'Filter tasks due before this date (YYYY-MM-DD) for calendar views (optional)', 'wp-mcp-ai' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'limit'      => array(
+				'limit'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of tasks to return (default: 50, max: 200)', 'wp-mcp-ai' ),
 					'default'     => 50,

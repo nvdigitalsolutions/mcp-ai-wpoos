@@ -60,7 +60,7 @@ class WP_MCP_AI_Tool_Delete_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		$event_id = isset( $arguments['event_id'] ) ? absint( $arguments['event_id'] ) : 0;
-		
+
 		if ( ! $event_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Event ID is required.', 'wp-mcp-ai' ) );
 		}
@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Delete_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		return array(
 			'success'  => true,
-			'message'  => __( 'Event deleted successfully.', 'wp-mcp-ai' ) ,
+			'message'  => __( 'Event deleted successfully.', 'wp-mcp-ai' ),
 			'event_id' => $event_id,
 		);
 	}

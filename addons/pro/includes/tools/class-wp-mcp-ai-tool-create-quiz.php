@@ -41,36 +41,36 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'        => array(
+				'title'         => array(
 					'type'        => 'string',
 					'description' => __( 'Title of the quiz.', 'wp-mcp-ai' ),
 				),
-				'description'  => array(
+				'description'   => array(
 					'type'        => 'string',
 					'description' => __( 'Optional description or instructions for the quiz.', 'wp-mcp-ai' ),
 				),
-				'time_limit'   => array(
+				'time_limit'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Time limit in minutes for completing the quiz. 0 for no limit.', 'wp-mcp-ai' ),
 					'default'     => 0,
 					'minimum'     => 0,
 				),
-				'questions'    => array(
+				'questions'     => array(
 					'type'        => 'array',
 					'description' => __( 'Array of questions for the quiz.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'question'      => array(
+							'question'       => array(
 								'type'        => 'string',
 								'description' => __( 'The question text.', 'wp-mcp-ai' ),
 							),
-							'type'          => array(
+							'type'           => array(
 								'type'        => 'string',
 								'description' => __( 'Question type: multiple_choice, true_false, or short_answer.', 'wp-mcp-ai' ),
 								'enum'        => array( 'multiple_choice', 'true_false', 'short_answer' ),
 							),
-							'options'       => array(
+							'options'        => array(
 								'type'        => 'array',
 								'description' => __( 'Answer options for multiple choice questions.', 'wp-mcp-ai' ),
 								'items'       => array( 'type' => 'string' ),
@@ -79,7 +79,7 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 								'type'        => 'string',
 								'description' => __( 'The correct answer (for grading reference).', 'wp-mcp-ai' ),
 							),
-							'points'        => array(
+							'points'         => array(
 								'type'        => 'integer',
 								'description' => __( 'Points awarded for correct answer.', 'wp-mcp-ai' ),
 								'default'     => 1,
@@ -117,10 +117,10 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Validate and sanitize inputs.
-		$title       = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$description = isset( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
-		$time_limit  = isset( $arguments['time_limit'] ) ? absint( $arguments['time_limit'] ) : 0;
-		$questions   = isset( $arguments['questions'] ) && is_array( $arguments['questions'] ) ? $arguments['questions'] : array();
+		$title         = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+		$description   = isset( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
+		$time_limit    = isset( $arguments['time_limit'] ) ? absint( $arguments['time_limit'] ) : 0;
+		$questions     = isset( $arguments['questions'] ) && is_array( $arguments['questions'] ) ? $arguments['questions'] : array();
 		$passing_score = isset( $arguments['passing_score'] ) ? absint( $arguments['passing_score'] ) : 70;
 
 		if ( '' === $title ) {
@@ -163,7 +163,7 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				$validated_question['correct_answer'] = sanitize_text_field( $question_data['correct_answer'] );
 			}
 
-			$total_points           += $validated_question['points'];
+			$total_points         += $validated_question['points'];
 			$validated_questions[] = $validated_question;
 		}
 

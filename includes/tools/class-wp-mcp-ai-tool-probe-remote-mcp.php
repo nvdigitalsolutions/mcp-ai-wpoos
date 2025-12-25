@@ -113,11 +113,10 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to run remote MCP probes.', 'wp-mcp-ai' ) );
 		}
 
-		
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
 		}
-$base_url = isset( $arguments['base_url'] ) ? trim( (string) $arguments['base_url'] ) : '';
+		$base_url = isset( $arguments['base_url'] ) ? trim( (string) $arguments['base_url'] ) : '';
 
 		if ( '' === $base_url ) {
 			return new WP_Error( 'wp_mcp_ai_remote_missing_url', __( 'Provide the base REST URL for the remote MCP deployment.', 'wp-mcp-ai' ) );

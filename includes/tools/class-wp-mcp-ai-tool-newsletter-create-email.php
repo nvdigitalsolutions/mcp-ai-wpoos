@@ -59,32 +59,32 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'subject'     => array(
+				'subject' => array(
 					'type'        => 'string',
 					'description' => __( 'Email subject line.', 'wp-mcp-ai' ),
 				),
-				'message'     => array(
+				'message' => array(
 					'type'        => 'string',
 					'description' => __( 'Email HTML content/body.', 'wp-mcp-ai' ),
 				),
-				'type'        => array(
+				'type'    => array(
 					'type'        => 'string',
 					'description' => __( 'Email type: message (standard newsletter) or followup (automated). Default: message.', 'wp-mcp-ai' ),
 					'enum'        => array( 'message', 'followup' ),
 					'default'     => 'message',
 				),
-				'status'      => array(
+				'status'  => array(
 					'type'        => 'string',
 					'description' => __( 'Email status: new (draft), sending, sent, paused. Default: new.', 'wp-mcp-ai' ),
 					'enum'        => array( 'new', 'sending', 'sent', 'paused' ),
 					'default'     => 'new',
 				),
-				'track'       => array(
+				'track'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Enable click and open tracking. Default: true.', 'wp-mcp-ai' ),
 					'default'     => true,
 				),
-				'lists'       => array(
+				'lists'   => array(
 					'type'        => 'array',
 					'description' => __( 'Target list IDs (1-40). Empty means all confirmed subscribers.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -138,13 +138,13 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 		$track   = isset( $arguments['track'] ) ? (int) (bool) $arguments['track'] : 1;
 
 		$email_data = array(
-			'subject'     => $subject,
-			'message'     => $message,
-			'type'        => $type,
-			'status'      => $status,
-			'track'       => $track,
-			'created'     => current_time( 'mysql' ),
-			'updated'     => current_time( 'mysql' ),
+			'subject' => $subject,
+			'message' => $message,
+			'type'    => $type,
+			'status'  => $status,
+			'track'   => $track,
+			'created' => current_time( 'mysql' ),
+			'updated' => current_time( 'mysql' ),
 		);
 
 		// Handle list targeting.
@@ -176,13 +176,13 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 		do_action( 'wp_mcp_ai_newsletter_email_created', $email_id, $email_data, $arguments, $context );
 
 		return array(
-			'success'   => true,
-			'email_id'  => $email_id,
-			'subject'   => $subject,
-			'type'      => $type,
-			'status'    => $status,
-			'message'   => __( 'Newsletter email created successfully.', 'wp-mcp-ai' ),
-			'edit_url'  => admin_url( 'admin.php?page=newsletter_emails_edit&id=' . $email_id ),
+			'success'  => true,
+			'email_id' => $email_id,
+			'subject'  => $subject,
+			'type'     => $type,
+			'status'   => $status,
+			'message'  => __( 'Newsletter email created successfully.', 'wp-mcp-ai' ),
+			'edit_url' => admin_url( 'admin.php?page=newsletter_emails_edit&id=' . $email_id ),
 		);
 	}
 

@@ -201,7 +201,10 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 							'name'      => array( 'type' => 'string' ),
 							'visible'   => array( 'type' => 'boolean' ),
 							'variation' => array( 'type' => 'boolean' ),
-							'options'   => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+							'options'   => array(
+								'type'  => 'array',
+								'items' => array( 'type' => 'string' ),
+							),
 						),
 					),
 				),
@@ -715,7 +718,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		$product_id   = $product->get_id();
 
 		// Force delete or move to trash based on argument.
-		$force = isset( $arguments['force'] ) && $arguments['force'];
+		$force   = isset( $arguments['force'] ) && $arguments['force'];
 		$deleted = $product->delete( $force );
 
 		if ( ! $deleted ) {
@@ -729,8 +732,8 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			'success'    => true,
 			'product_id' => $product_id,
 			'name'       => $product_name,
-			'message'    => $force 
-				? __( 'Product permanently deleted.', 'wp-mcp-ai-pro' ) 
+			'message'    => $force
+				? __( 'Product permanently deleted.', 'wp-mcp-ai-pro' )
 				: __( 'Product moved to trash.', 'wp-mcp-ai-pro' ),
 		);
 	}
@@ -796,7 +799,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		$term = get_term( $result['term_id'], 'product_cat' );
 
 		return array(
-			'success' => true,
+			'success'  => true,
 			'category' => array(
 				'id'          => $term->term_id,
 				'name'        => $term->name,
@@ -849,7 +852,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		$term = get_term( $result['term_id'], 'product_cat' );
 
 		return array(
-			'success' => true,
+			'success'  => true,
 			'category' => array(
 				'id'          => $term->term_id,
 				'name'        => $term->name,
