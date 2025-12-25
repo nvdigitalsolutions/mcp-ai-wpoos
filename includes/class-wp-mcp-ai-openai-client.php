@@ -1223,9 +1223,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			// Extract violation summary for logging.
-			$flagged_count  = 0;
-			$flagged_cats   = array();
-			$results        = isset( $decoded['results'] ) && is_array( $decoded['results'] ) ? $decoded['results'] : array();
+			$flagged_count = 0;
+			$flagged_cats  = array();
+			$results       = isset( $decoded['results'] ) && is_array( $decoded['results'] ) ? $decoded['results'] : array();
 
 			foreach ( $results as $result ) {
 				if ( isset( $result['flagged'] ) && $result['flagged'] ) {
@@ -1245,9 +1245,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'openai_moderation_completed',
 				'OpenAI moderation completed successfully.',
 				array(
-					'model'          => $model,
-					'results_count'  => count( $results ),
-					'flagged_count'  => $flagged_count,
+					'model'              => $model,
+					'results_count'      => count( $results ),
+					'flagged_count'      => $flagged_count,
 					'flagged_categories' => $flagged_cats,
 				)
 			);
@@ -2075,9 +2075,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $response;
 			}
 
-			$http_code    = wp_remote_retrieve_response_code( $response );
+			$http_code     = wp_remote_retrieve_response_code( $response );
 			$response_body = wp_remote_retrieve_body( $response );
-			$decoded      = json_decode( $response_body, true );
+			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
 				$error_message = __( 'OpenAI image edit request failed.', 'wp-mcp-ai' );
@@ -5027,7 +5027,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			// Validate endpoint.
-			$endpoint = sanitize_text_field( (string) $endpoint );
+			$endpoint          = sanitize_text_field( (string) $endpoint );
 			$allowed_endpoints = array( '/v1/chat/completions', '/v1/embeddings', '/v1/moderations' );
 			if ( ! in_array( $endpoint, $allowed_endpoints, true ) ) {
 				return new WP_Error(
@@ -5047,9 +5047,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			// Build payload.
 			$payload = array(
-				'input_file_id'      => $input_file_id,
-				'endpoint'           => $endpoint,
-				'completion_window'  => isset( $options['completion_window'] ) && '' !== $options['completion_window'] ? sanitize_text_field( $options['completion_window'] ) : '24h',
+				'input_file_id'     => $input_file_id,
+				'endpoint'          => $endpoint,
+				'completion_window' => isset( $options['completion_window'] ) && '' !== $options['completion_window'] ? sanitize_text_field( $options['completion_window'] ) : '24h',
 			);
 
 			// Add optional metadata.
@@ -5081,8 +5081,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				'openai_create_batch',
 				'Creating batch job with OpenAI.',
 				array(
-					'endpoint'       => $endpoint,
-					'input_file_id'  => $input_file_id,
+					'endpoint'      => $endpoint,
+					'input_file_id' => $input_file_id,
 				)
 			);
 
@@ -5419,8 +5419,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( isset( $options['limit'] ) && '' !== $options['limit'] ) {
-				$limit = absint( $options['limit'] );
-				$limit = max( 1, min( 100, $limit ) ); // Clamp between 1 and 100.
+				$limit                 = absint( $options['limit'] );
+				$limit                 = max( 1, min( 100, $limit ) ); // Clamp between 1 and 100.
 				$query_params['limit'] = $limit;
 			}
 

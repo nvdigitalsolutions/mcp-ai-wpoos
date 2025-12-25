@@ -41,8 +41,8 @@ class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
+			'type'                 => 'object',
+			'properties'           => array(
 				'status'      => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by project status (optional)', 'wp-mcp-ai' ),

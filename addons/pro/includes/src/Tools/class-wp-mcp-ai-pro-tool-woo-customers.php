@@ -393,13 +393,13 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 				'country'    => $customer->get_shipping_country(),
 			);
 
-			$data['orders_count']     = $customer->get_order_count();
-			$data['total_spent']      = $customer->get_total_spent();
-			$data['avatar_url']       = $customer->get_avatar_url();
-			$data['date_created']     = $customer->get_date_created() ? $customer->get_date_created()->format( 'c' ) : null;
-			$data['date_modified']    = $customer->get_date_modified() ? $customer->get_date_modified()->format( 'c' ) : null;
-			$data['last_order_id']    = $customer->get_last_order();
-			$data['last_order_date']  = $customer->get_last_order() ? wc_get_order( $customer->get_last_order() )->get_date_created()->format( 'c' ) : null;
+			$data['orders_count']    = $customer->get_order_count();
+			$data['total_spent']     = $customer->get_total_spent();
+			$data['avatar_url']      = $customer->get_avatar_url();
+			$data['date_created']    = $customer->get_date_created() ? $customer->get_date_created()->format( 'c' ) : null;
+			$data['date_modified']   = $customer->get_date_modified() ? $customer->get_date_modified()->format( 'c' ) : null;
+			$data['last_order_id']   = $customer->get_last_order();
+			$data['last_order_date'] = $customer->get_last_order() ? wc_get_order( $customer->get_last_order() )->get_date_created()->format( 'c' ) : null;
 		}
 
 		return $data;

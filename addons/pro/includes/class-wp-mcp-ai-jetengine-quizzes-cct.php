@@ -249,30 +249,30 @@ class WP_MCP_AI_JetEngine_Quizzes_CCT {
 			'rest_post_access'    => 'edit_posts',
 			'rest_delete_access'  => 'edit_posts',
 			'admin_columns'       => array(
-				'_ID'          => array(
+				'_ID'         => array(
 					'enabled'     => true,
 					'prefix'      => '#',
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'title'        => array(
+				'title'       => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'description'  => array(
+				'description' => array(
 					'enabled'     => true,
 					'is_sortable' => false,
 				),
-				'author_id'    => array(
+				'author_id'   => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'time_limit'   => array(
+				'time_limit'  => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'cct_created'  => array(
+				'cct_created' => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),

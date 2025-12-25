@@ -41,8 +41,8 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
+			'type'                 => 'object',
+			'properties'           => array(
 				'title'       => array(
 					'type'        => 'string',
 					'description' => __( 'Task title (required)', 'wp-mcp-ai' ),
@@ -64,7 +64,7 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'enum'        => array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' ),
 					'default'     => 'todo',
 				),
-				'priority'   => array(
+				'priority'    => array(
 					'type'        => 'string',
 					'description' => __( 'Task priority (optional)', 'wp-mcp-ai' ),
 					'enum'        => array( 'low', 'medium', 'high', 'urgent' ),

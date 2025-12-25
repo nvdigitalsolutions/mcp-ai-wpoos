@@ -83,10 +83,10 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_capability_flags() {
 		return array(
-			'external-api'     => true,
-			'consumes-tokens'  => false, // Moderation API is free to use.
-			'read-only'        => true,  // Does not modify any data.
-			'security'         => true,  // Used for safety and compliance.
+			'external-api'    => true,
+			'consumes-tokens' => false, // Moderation API is free to use.
+			'read-only'       => true,  // Does not modify any data.
+			'security'        => true,  // Used for safety and compliance.
 		);
 	}
 
@@ -155,7 +155,7 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 		} elseif ( is_array( $input ) ) {
 			// For batch moderation, sanitize each item.
 			$input = array_map(
-				function( $item ) {
+				function ( $item ) {
 					if ( is_string( $item ) ) {
 						return sanitize_textarea_field( $item );
 					}
@@ -165,9 +165,12 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 
 			// Remove empty items.
-			$input = array_filter( $input, function( $item ) {
-				return ! empty( $item );
-			} );
+			$input = array_filter(
+				$input,
+				function ( $item ) {
+					return ! empty( $item );
+				}
+			);
 
 			if ( empty( $input ) ) {
 				return new WP_Error(
@@ -286,8 +289,8 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array Summary information.
 	 */
 	protected function generate_summary( array $results ) {
-		$total_flagged  = 0;
-		$all_categories = array();
+		$total_flagged   = 0;
+		$all_categories  = array();
 		$category_counts = array();
 
 		foreach ( $results as $result ) {
@@ -315,12 +318,12 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 		arsort( $category_counts );
 
 		$summary = array(
-			'total_items'       => count( $results ),
-			'flagged_items'     => $total_flagged,
+			'total_items'        => count( $results ),
+			'flagged_items'      => $total_flagged,
 			'flagged_percentage' => count( $results ) > 0 ? round( ( $total_flagged / count( $results ) ) * 100, 2 ) : 0,
-			'is_safe'           => 0 === $total_flagged,
-			'categories_found'  => array_keys( $category_counts ),
-			'category_counts'   => $category_counts,
+			'is_safe'            => 0 === $total_flagged,
+			'categories_found'   => array_keys( $category_counts ),
+			'category_counts'    => $category_counts,
 		);
 
 		// Add text recommendation.

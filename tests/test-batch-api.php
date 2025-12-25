@@ -145,14 +145,14 @@ class WP_MCP_AI_Batch_API_Test extends WP_UnitTestCase {
 
 		$http_stub = function ( $preempt, $args, $url ) {
 			$payload = array(
-				'id'              => 'batch_test123',
-				'object'          => 'batch',
-				'endpoint'        => '/v1/chat/completions',
-				'status'          => 'completed',
-				'output_file_id'  => 'file-output789',
-				'created_at'      => time() - 3600,
-				'completed_at'    => time(),
-				'request_counts'  => array(
+				'id'             => 'batch_test123',
+				'object'         => 'batch',
+				'endpoint'       => '/v1/chat/completions',
+				'status'         => 'completed',
+				'output_file_id' => 'file-output789',
+				'created_at'     => time() - 3600,
+				'completed_at'   => time(),
+				'request_counts' => array(
 					'total'     => 100,
 					'completed' => 100,
 					'failed'    => 0,
@@ -305,10 +305,10 @@ class WP_MCP_AI_Batch_API_Test extends WP_UnitTestCase {
 
 		$http_stub = function ( $preempt, $args, $url ) {
 			$payload = array(
-				'id'            => 'batch_test123',
-				'status'        => 'validating',
-				'endpoint'      => '/v1/chat/completions',
-				'created_at'    => time(),
+				'id'         => 'batch_test123',
+				'status'     => 'validating',
+				'endpoint'   => '/v1/chat/completions',
+				'created_at' => time(),
 			);
 
 			return array(
@@ -350,11 +350,11 @@ class WP_MCP_AI_Batch_API_Test extends WP_UnitTestCase {
 
 		$http_stub = function ( $preempt, $args, $url ) {
 			$payload = array(
-				'id'              => 'batch_test123',
-				'status'          => 'completed',
-				'output_file_id'  => 'file-output789',
-				'created_at'      => time() - 3600,
-				'completed_at'    => time(),
+				'id'             => 'batch_test123',
+				'status'         => 'completed',
+				'output_file_id' => 'file-output789',
+				'created_at'     => time() - 3600,
+				'completed_at'   => time(),
 			);
 
 			return array(

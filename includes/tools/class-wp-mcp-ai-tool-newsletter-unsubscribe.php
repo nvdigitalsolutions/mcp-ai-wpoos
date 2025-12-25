@@ -59,16 +59,16 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'email'          => array(
+				'email'         => array(
 					'type'        => 'string',
 					'description' => __( 'Email address of the subscriber to unsubscribe.', 'wp-mcp-ai' ),
 					'format'      => 'email',
 				),
-				'subscriber_id'  => array(
+				'subscriber_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Subscriber ID to unsubscribe (alternative to email).', 'wp-mcp-ai' ),
 				),
-				'action'         => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: unsubscribe (set status to unsubscribed) or delete (remove completely).', 'wp-mcp-ai' ),
 					'enum'        => array( 'unsubscribe', 'delete' ),
@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 		$subscriber = null;
 		if ( ! empty( $arguments['subscriber_id'] ) ) {
 			$subscriber_id = absint( $arguments['subscriber_id'] );
-			$subscriber = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $subscriber_id ) );
+			$subscriber    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $subscriber_id ) );
 		} elseif ( ! empty( $arguments['email'] ) ) {
 			$email = sanitize_email( $arguments['email'] );
 			if ( ! is_email( $email ) ) {

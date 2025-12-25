@@ -185,7 +185,7 @@ class Test_Huggingface_Tools_Interface_Compliance extends WP_UnitTestCase {
 			);
 
 			$name = $tool->get_name();
-			
+
 			// All HuggingFace tools should have "HuggingFace" in their name.
 			$this->assertStringContainsString(
 				'HuggingFace',

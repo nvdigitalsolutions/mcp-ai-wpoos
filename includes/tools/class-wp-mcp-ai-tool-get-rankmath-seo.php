@@ -447,7 +447,7 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Get keyword rankings if available.
 		global $wpdb;
 		$analytics_table = $wpdb->prefix . 'rank_math_analytics_objects';
-		
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $analytics_table ) ) ) === $analytics_table ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared

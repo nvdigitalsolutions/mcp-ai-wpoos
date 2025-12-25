@@ -27,8 +27,8 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
+			'type'                 => 'object',
+			'properties'           => array(
 				'task_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Task ID to update (required)', 'wp-mcp-ai' ),
@@ -87,7 +87,7 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		$task_id = isset( $arguments['task_id'] ) ? absint( $arguments['task_id'] ) : 0;
-		
+
 		if ( ! $task_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Task ID is required.', 'wp-mcp-ai' ) );
 		}

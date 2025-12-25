@@ -320,7 +320,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 			foreach ( $raw_datasets as $dataset_json ) {
 				// Decode the JSON value.
 				$dataset_data = json_decode( $dataset_json, true );
-				
+
 				if ( is_array( $dataset_data ) && isset( $dataset_data['dataset'], $dataset_data['name'], $dataset_data['category'], $dataset_data['priority'] ) ) {
 					$selected_datasets[] = array(
 						'dataset'  => sanitize_text_field( $dataset_data['dataset'] ),

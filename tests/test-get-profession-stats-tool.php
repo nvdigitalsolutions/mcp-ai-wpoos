@@ -146,7 +146,7 @@ class WP_MCP_AI_Get_Profession_Stats_Tool_Test extends WP_UnitTestCase {
 		// Add filter to require manage_options capability.
 		add_filter(
 			'wp_mcp_ai_profession_stats_capability',
-			function( $default_cap ) {
+			function ( $default_cap ) {
 				return 'manage_options';
 			}
 		);

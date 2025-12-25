@@ -60,20 +60,20 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param WP_MCP_AI_OpenAI_Client        $openai_client        OpenAI client instance.
-		 * @param WP_MCP_AI_Gemini_Client        $gemini_client        Gemini client instance.
-		 * @param WP_MCP_AI_Ollama_Client        $ollama_client        Ollama client instance (optional).
-		 * @param WP_MCP_AI_LM_Studio_Client     $lm_studio_client     LM Studio client instance (optional).
-		 * @param WP_MCP_AI_Anthropic_Client     $anthropic_client     Anthropic client instance (optional).
-		 * @param WP_MCP_AI_Huggingface_Client   $huggingface_client   Hugging Face client instance (optional).
+		 * @param WP_MCP_AI_OpenAI_Client      $openai_client        OpenAI client instance.
+		 * @param WP_MCP_AI_Gemini_Client      $gemini_client        Gemini client instance.
+		 * @param WP_MCP_AI_Ollama_Client      $ollama_client        Ollama client instance (optional).
+		 * @param WP_MCP_AI_LM_Studio_Client   $lm_studio_client     LM Studio client instance (optional).
+		 * @param WP_MCP_AI_Anthropic_Client   $anthropic_client     Anthropic client instance (optional).
+		 * @param WP_MCP_AI_Huggingface_Client $huggingface_client   Hugging Face client instance (optional).
 		 */
 		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null ) {
-			$this->openai_client       = $openai_client;
-			$this->gemini_client       = $gemini_client;
-			$this->ollama_client       = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
-			$this->lm_studio_client    = $lm_studio_client ? $lm_studio_client : new WP_MCP_AI_LM_Studio_Client();
-			$this->anthropic_client    = $anthropic_client ? $anthropic_client : new WP_MCP_AI_Anthropic_Client();
-			$this->huggingface_client  = $huggingface_client ? $huggingface_client : new WP_MCP_AI_Huggingface_Client();
+			$this->openai_client      = $openai_client;
+			$this->gemini_client      = $gemini_client;
+			$this->ollama_client      = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
+			$this->lm_studio_client   = $lm_studio_client ? $lm_studio_client : new WP_MCP_AI_LM_Studio_Client();
+			$this->anthropic_client   = $anthropic_client ? $anthropic_client : new WP_MCP_AI_Anthropic_Client();
+			$this->huggingface_client = $huggingface_client ? $huggingface_client : new WP_MCP_AI_Huggingface_Client();
 		}
 
 		/**

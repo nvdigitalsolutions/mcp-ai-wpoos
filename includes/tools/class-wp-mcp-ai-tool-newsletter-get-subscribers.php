@@ -59,35 +59,35 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'limit'       => array(
+				'limit'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of subscribers to retrieve.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
-				'offset'      => array(
+				'offset'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of subscribers to skip for pagination.', 'wp-mcp-ai' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'status'      => array(
+				'status'  => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by subscription status: confirmed, not_confirmed, or unsubscribed.', 'wp-mcp-ai' ),
 					'enum'        => array( 'confirmed', 'not_confirmed', 'unsubscribed' ),
 				),
-				'list_id'     => array(
+				'list_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by list ID (1-40).', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 					'maximum'     => 40,
 				),
-				'email'       => array(
+				'email'   => array(
 					'type'        => 'string',
 					'description' => __( 'Search by email address (partial match supported).', 'wp-mcp-ai' ),
 				),
-				'name'        => array(
+				'name'    => array(
 					'type'        => 'string',
 					'description' => __( 'Search by name (partial match supported).', 'wp-mcp-ai' ),
 				),
@@ -131,7 +131,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 
 		// Filter by status.
 		if ( ! empty( $arguments['status'] ) ) {
-			$status = sanitize_key( $arguments['status'] );
+			$status     = sanitize_key( $arguments['status'] );
 			$status_map = array(
 				'confirmed'     => 'C',
 				'not_confirmed' => 'S',
@@ -153,14 +153,14 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 
 		// Filter by email.
 		if ( ! empty( $arguments['email'] ) ) {
-			$email = sanitize_text_field( $arguments['email'] );
+			$email           = sanitize_text_field( $arguments['email'] );
 			$where_clauses[] = 'email LIKE %s';
 			$where_values[]  = '%' . $wpdb->esc_like( $email ) . '%';
 		}
 
 		// Filter by name.
 		if ( ! empty( $arguments['name'] ) ) {
-			$name = sanitize_text_field( $arguments['name'] );
+			$name            = sanitize_text_field( $arguments['name'] );
 			$where_clauses[] = '(name LIKE %s OR surname LIKE %s)';
 			$where_values[]  = '%' . $wpdb->esc_like( $name ) . '%';
 			$where_values[]  = '%' . $wpdb->esc_like( $name ) . '%';
@@ -169,7 +169,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 		$where_sql = implode( ' AND ', $where_clauses );
 
 		// Build query.
-		$query = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
+		$query          = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
 		$where_values[] = $limit;
 		$where_values[] = $offset;
 
@@ -192,7 +192,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 		// Format subscribers.
 		$results = array();
 		foreach ( $subscribers as $subscriber ) {
-			$status_map = array(
+			$status_map   = array(
 				'C' => 'confirmed',
 				'S' => 'not_confirmed',
 				'U' => 'unsubscribed',

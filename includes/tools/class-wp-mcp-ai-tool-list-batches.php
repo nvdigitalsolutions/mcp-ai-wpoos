@@ -111,8 +111,8 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$options = array();
 
 		if ( isset( $arguments['limit'] ) && '' !== $arguments['limit'] ) {
-			$limit             = absint( $arguments['limit'] );
-			$options['limit']  = max( 1, min( 100, $limit ) );
+			$limit            = absint( $arguments['limit'] );
+			$options['limit'] = max( 1, min( 100, $limit ) );
 		}
 
 		if ( isset( $arguments['after'] ) && '' !== $arguments['after'] ) {
@@ -132,14 +132,14 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( isset( $result['data'] ) && is_array( $result['data'] ) ) {
 			foreach ( $result['data'] as $batch ) {
 				$batches[] = array(
-					'id'              => isset( $batch['id'] ) ? $batch['id'] : '',
-					'status'          => isset( $batch['status'] ) ? $batch['status'] : '',
-					'endpoint'        => isset( $batch['endpoint'] ) ? $batch['endpoint'] : '',
-					'created_at'      => isset( $batch['created_at'] ) ? gmdate( 'Y-m-d H:i:s', $batch['created_at'] ) : '',
-					'completed_at'    => isset( $batch['completed_at'] ) && null !== $batch['completed_at'] ? gmdate( 'Y-m-d H:i:s', $batch['completed_at'] ) : null,
-					'output_file_id'  => isset( $batch['output_file_id'] ) ? $batch['output_file_id'] : null,
-					'error_file_id'   => isset( $batch['error_file_id'] ) ? $batch['error_file_id'] : null,
-					'request_counts'  => isset( $batch['request_counts'] ) ? $batch['request_counts'] : array(),
+					'id'             => isset( $batch['id'] ) ? $batch['id'] : '',
+					'status'         => isset( $batch['status'] ) ? $batch['status'] : '',
+					'endpoint'       => isset( $batch['endpoint'] ) ? $batch['endpoint'] : '',
+					'created_at'     => isset( $batch['created_at'] ) ? gmdate( 'Y-m-d H:i:s', $batch['created_at'] ) : '',
+					'completed_at'   => isset( $batch['completed_at'] ) && null !== $batch['completed_at'] ? gmdate( 'Y-m-d H:i:s', $batch['completed_at'] ) : null,
+					'output_file_id' => isset( $batch['output_file_id'] ) ? $batch['output_file_id'] : null,
+					'error_file_id'  => isset( $batch['error_file_id'] ) ? $batch['error_file_id'] : null,
+					'request_counts' => isset( $batch['request_counts'] ) ? $batch['request_counts'] : array(),
 				);
 			}
 		}
@@ -186,7 +186,7 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			if ( ! isset( $status_counts[ $status ] ) ) {
 				$status_counts[ $status ] = 0;
 			}
-			$status_counts[ $status ]++;
+			++$status_counts[ $status ];
 		}
 
 		if ( ! empty( $status_counts ) ) {

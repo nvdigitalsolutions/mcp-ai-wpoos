@@ -121,21 +121,21 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 		$where_values  = array();
 
 		if ( ! empty( $arguments['status'] ) ) {
-			$status = sanitize_key( $arguments['status'] );
+			$status          = sanitize_key( $arguments['status'] );
 			$where_clauses[] = 'status = %s';
-			$where_values[] = $status;
+			$where_values[]  = $status;
 		}
 
 		if ( ! empty( $arguments['type'] ) ) {
-			$type = sanitize_key( $arguments['type'] );
+			$type            = sanitize_key( $arguments['type'] );
 			$where_clauses[] = 'type = %s';
-			$where_values[] = $type;
+			$where_values[]  = $type;
 		}
 
 		$where_sql = implode( ' AND ', $where_clauses );
 
 		// Build query.
-		$query = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
+		$query          = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d";
 		$where_values[] = $limit;
 		$where_values[] = $offset;
 
@@ -159,8 +159,8 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 		$results = array();
 		foreach ( $emails as $email ) {
 			$stats_table = $wpdb->prefix . 'newsletter_stats';
-			$sent_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$stats_table} WHERE email_id = %d", $email->id ) );
-			
+			$sent_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$stats_table} WHERE email_id = %d", $email->id ) );
+
 			$results[] = array(
 				'id'         => (int) $email->id,
 				'subject'    => $email->subject,

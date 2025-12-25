@@ -41,8 +41,8 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
+			'type'                 => 'object',
+			'properties'           => array(
 				'name'        => array(
 					'type'        => 'string',
 					'description' => __( 'Project name (required)', 'wp-mcp-ai' ),
@@ -60,7 +60,7 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'enum'        => array( 'planning', 'active', 'on-hold', 'completed', 'cancelled' ),
 					'default'     => 'planning',
 				),
-				'start_date' => array(
+				'start_date'  => array(
 					'type'        => 'string',
 					'description' => __( 'Project start date in ISO 8601 format (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',

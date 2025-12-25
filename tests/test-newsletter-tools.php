@@ -103,8 +103,8 @@ class Test_Newsletter_Tools extends WP_UnitTestCase {
 	 * Test newsletter tools are in correct group.
 	 */
 	public function test_newsletter_tools_in_plugins_group() {
-		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
-		$group_map  = $registry->get_tool_group_map();
+		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
+		$group_map = $registry->get_tool_group_map();
 
 		$newsletter_tools = array(
 			'newsletter_add_subscriber',

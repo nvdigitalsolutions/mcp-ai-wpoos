@@ -734,42 +734,42 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 			// See: https://huggingface.co/datasets
 			$dataset_map = array(
 				// Text Classification & Sentiment Analysis.
-				'imdb'                => 'stanfordnlp/imdb',
+				'imdb'            => 'stanfordnlp/imdb',
 
 				// Question Answering.
-				'squad'               => 'rajpurkar/squad',
-				'squad_v2'            => 'rajpurkar/squad_v2',
+				'squad'           => 'rajpurkar/squad',
+				'squad_v2'        => 'rajpurkar/squad_v2',
 
 				// NLU Benchmarks.
-				'glue'                => 'nyu-mll/glue',
-				'super_glue'          => 'super_glue',
-				'superglue'           => 'super_glue',
+				'glue'            => 'nyu-mll/glue',
+				'super_glue'      => 'super_glue',
+				'superglue'       => 'super_glue',
 
 				// Machine Translation.
-				'wmt'                 => 'wmt/wmt14',
-				'wmt14'               => 'wmt/wmt14',
-				'wmt16'               => 'wmt/wmt16',
-				'wmt17'               => 'wmt/wmt17',
-				'wmt19'               => 'wmt/wmt19',
+				'wmt'             => 'wmt/wmt14',
+				'wmt14'           => 'wmt/wmt14',
+				'wmt16'           => 'wmt/wmt16',
+				'wmt17'           => 'wmt/wmt17',
+				'wmt19'           => 'wmt/wmt19',
 
 				// Summarization.
-				'cnn_dailymail'       => 'abisee/cnn_dailymail',
-				'multi_news'          => 'alexfabbri/multi_news',
-				'xsum'                => 'EdinburghNLP/xsum',
+				'cnn_dailymail'   => 'abisee/cnn_dailymail',
+				'multi_news'      => 'alexfabbri/multi_news',
+				'xsum'            => 'EdinburghNLP/xsum',
 
 				// Speech & Audio.
-				'common_voice'        => 'mozilla-foundation/common_voice_17_0',
-				'librispeech'         => 'openslr/librispeech_asr',
-				'librispeech_asr'     => 'openslr/librispeech_asr',
+				'common_voice'    => 'mozilla-foundation/common_voice_17_0',
+				'librispeech'     => 'openslr/librispeech_asr',
+				'librispeech_asr' => 'openslr/librispeech_asr',
 
 				// General Text Corpora.
-				'wikipedia'           => 'wikimedia/wikipedia',
-				'bookcorpus'          => 'bookcorpus',
-				'c4'                  => 'allenai/c4',
+				'wikipedia'       => 'wikimedia/wikipedia',
+				'bookcorpus'      => 'bookcorpus',
+				'c4'              => 'allenai/c4',
 
 				// Code.
-				'code_search_net'     => 'code_search_net',
-				'the_pile'            => 'EleutherAI/pile',
+				'code_search_net' => 'code_search_net',
+				'the_pile'        => 'EleutherAI/pile',
 			);
 
 			// Normalize dataset name for comparison.

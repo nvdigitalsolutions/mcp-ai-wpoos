@@ -173,12 +173,12 @@ class WP_MCP_AI_Team_Repository {
 					}
 				}
 			}
-			
+
 			// Log warning if some members couldn't be resolved.
 			if ( ! empty( $missing_members ) ) {
 				error_log( sprintf( 'WP_MCP_AI: Team ID %d saved with %d/%d members. Missing professions: %s', $team_id, count( $member_ids ), count( $data['members'] ), implode( ', ', $missing_members ) ) );
 			}
-			
+
 			update_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, $member_ids );
 		}
 

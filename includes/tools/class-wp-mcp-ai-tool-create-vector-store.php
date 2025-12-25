@@ -46,11 +46,11 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'name'         => array(
+				'name'          => array(
 					'type'        => 'string',
 					'description' => __( 'Name of the vector store.', 'wp-mcp-ai' ),
 				),
-				'file_ids'     => array(
+				'file_ids'      => array(
 					'type'        => 'array',
 					'description' => __( 'Optional: Array of OpenAI file IDs to add to the vector store.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -72,7 +72,7 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 						),
 					),
 				),
-				'metadata'     => array(
+				'metadata'      => array(
 					'type'        => 'object',
 					'description' => __( 'Optional: Custom metadata as key-value pairs (max 16 pairs).', 'wp-mcp-ai' ),
 				),
@@ -117,7 +117,7 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 
 		if ( ! empty( $arguments['metadata'] ) && is_array( $arguments['metadata'] ) ) {
 			// Limit to 16 key-value pairs.
-			$metadata = array_slice( $arguments['metadata'], 0, 16 );
+			$metadata            = array_slice( $arguments['metadata'], 0, 16 );
 			$options['metadata'] = $metadata;
 		}
 
@@ -135,13 +135,13 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'success' => true,
 			'data'    => array(
-				'id'                => isset( $result['id'] ) ? $result['id'] : null,
-				'name'              => isset( $result['name'] ) ? $result['name'] : $name,
-				'status'            => isset( $result['status'] ) ? $result['status'] : null,
-				'file_counts'       => isset( $result['file_counts'] ) ? $result['file_counts'] : array(),
-				'created_at'        => isset( $result['created_at'] ) ? $result['created_at'] : null,
-				'expires_after'     => isset( $result['expires_after'] ) ? $result['expires_after'] : null,
-				'metadata'          => isset( $result['metadata'] ) ? $result['metadata'] : array(),
+				'id'            => isset( $result['id'] ) ? $result['id'] : null,
+				'name'          => isset( $result['name'] ) ? $result['name'] : $name,
+				'status'        => isset( $result['status'] ) ? $result['status'] : null,
+				'file_counts'   => isset( $result['file_counts'] ) ? $result['file_counts'] : array(),
+				'created_at'    => isset( $result['created_at'] ) ? $result['created_at'] : null,
+				'expires_after' => isset( $result['expires_after'] ) ? $result['expires_after'] : null,
+				'metadata'      => isset( $result['metadata'] ) ? $result['metadata'] : array(),
 			),
 		);
 	}

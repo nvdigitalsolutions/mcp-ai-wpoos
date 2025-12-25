@@ -216,7 +216,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 
 			// Get import key for cron URL.
 			$import_key = $import_record->import_key ?? '';
-			
+
 			if ( $import_key ) {
 				$trigger_url = add_query_arg(
 					array(
