@@ -212,7 +212,7 @@ Previously, this metabox was empty!
 - `includes/professions/profession-dataset-mappings.php` (761 lines added)
 
 ### Files Created
-- `DATASET_RESYNC_INSTRUCTIONS.md` (detailed resync guide)
+- `docs/guides/admin/DATASET_RESYNC_INSTRUCTIONS.md` (detailed resync guide)
 
 ### Validation
 - All 89 mappings validated for proper structure
