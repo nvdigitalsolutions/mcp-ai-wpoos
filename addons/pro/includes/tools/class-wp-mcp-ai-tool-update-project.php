@@ -13,18 +13,38 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Updates an existing project.
  */
 class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Get the unique slug identifier for this tool.
+	 *
+	 * @return string Tool slug identifier.
+	 */
 	public function get_slug() {
 		return 'update_project';
 	}
 
+	/**
+	 * Get the human-readable name of this tool.
+	 *
+	 * @return string Tool name.
+	 */
 	public function get_name() {
 		return __( 'Update Project', 'wp-mcp-ai' );
 	}
 
+	/**
+	 * Get the description of what this tool does.
+	 *
+	 * @return string Tool description.
+	 */
 	public function get_description() {
 		return __( 'Updates an existing project. Provide only the fields you want to update.', 'wp-mcp-ai' );
 	}
 
+	/**
+	 * Get the JSON schema for the tool's parameters.
+	 *
+	 * @return array JSON schema array defining the parameters.
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
@@ -67,10 +87,20 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 	}
 
+	/**
+	 * Get the capability flags required for this tool.
+	 *
+	 * @return array Array of capability flag strings.
+	 */
 	public function get_capability_flags() {
 		return array( 'database-write' );
 	}
 
+	/**
+	 * Check if this tool is available for use.
+	 *
+	 * @return bool True if tool is available, false otherwise.
+	 */
 	public static function is_available() {
 		// Project management is a Pro feature.
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
@@ -80,6 +110,13 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return ! empty( $settings['enable_project_management'] );
 	}
 
+	/**
+	 * Execute the tool with the given arguments and context.
+	 *
+	 * @param array $arguments The arguments passed to the tool.
+	 * @param array $context   The context in which the tool is being executed.
+	 * @return array|WP_Error Array with success status and project details, or WP_Error on failure.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
