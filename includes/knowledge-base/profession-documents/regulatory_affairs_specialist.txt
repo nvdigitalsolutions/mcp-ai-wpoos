@@ -3,6 +3,10 @@ Regulatory Affairs Specialist — Profession Knowledge Pack
 Slug: regulatory_affairs_specialist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages regulatory compliance for pharmaceuticals and medical devices.

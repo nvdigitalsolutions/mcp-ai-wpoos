@@ -259,7 +259,7 @@ The plugin demonstrates enterprise-grade quality and is production-ready with no
 ## Quick Reference Links
 
 - [Full Code Review](./CODE_REVIEW_2025-12-24.md) - Complete detailed analysis
-- [CHANGELOG v1.1.0](../../../CHANGELOG.md) - Release notes (search for "1.1.0")
-- [Documentation Reorganization Summary](../../../DOCUMENTATION_REORGANIZATION_SUMMARY.md) - PR #2400 details
-- [Documentation Index](../../DOCUMENTATION_INDEX.md) - Complete navigation
+- [CHANGELOG v1.1.0](../../../../CHANGELOG.md) - Release notes (search for "1.1.0")
+- [Documentation Reorganization Summary](../documentation/DOCUMENTATION_REORGANIZATION_SUMMARY.md) - PR #2400 details
+- [Documentation Index](../../../DOCUMENTATION_INDEX.md) - Complete navigation
 - [README](../../../README.md) - Main plugin documentation

@@ -3,6 +3,10 @@ Sales Manager — Profession Knowledge Pack
 Slug: sales_manager
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Leads sales teams and develops sales strategies

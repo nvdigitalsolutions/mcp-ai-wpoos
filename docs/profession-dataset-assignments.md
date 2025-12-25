@@ -224,5 +224,5 @@ Potential improvements:
 ## References
 
 - [HuggingFace Datasets Hub](https://huggingface.co/datasets)
-- [WP oOS Tool Reference](tool-reference.md)
+- [WP oOS Tool Reference](reference/tools/tool-reference.md)
 - [Profession CPT Documentation](../README.md)

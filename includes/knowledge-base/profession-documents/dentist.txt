@@ -3,6 +3,10 @@ Dentist — Profession Knowledge Pack
 Slug: dentist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides oral healthcare including diagnosis and treatment of dental conditions

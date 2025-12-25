@@ -109,9 +109,9 @@ class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface
 		);
 
 		return array(
-			'success'      => true,
-			'file'         => $file_details,
-			'summary'      => sprintf(
+			'success' => true,
+			'file'    => $file_details,
+			'summary' => sprintf(
 				/* translators: 1: filename, 2: file size in bytes */
 				__( 'Retrieved details for file "%1$s" (%2$d bytes).', 'wp-mcp-ai' ),
 				$file_details['filename'],

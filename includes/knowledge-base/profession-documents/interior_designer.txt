@@ -3,6 +3,10 @@ Interior Designer — Profession Knowledge Pack
 Slug: interior_designer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Creates functional and aesthetically pleasing interior spaces through space planning, material selection, and furniture specification

@@ -3,6 +3,10 @@ Psychologist — Profession Knowledge Pack
 Slug: psychologist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides mental health assessment and therapeutic interventions

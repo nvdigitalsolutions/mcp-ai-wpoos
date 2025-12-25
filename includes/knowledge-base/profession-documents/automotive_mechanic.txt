@@ -3,6 +3,10 @@ Automotive Mechanic — Profession Knowledge Pack
 Slug: automotive_mechanic
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Diagnoses and repairs automotive systems and components

@@ -51,5 +51,5 @@ Session and consolidation summaries:
 
 ## 🔗 Navigation
 - [Current Documentation](../)
-- [Master Consolidation 2025](../MASTER_CONSOLIDATION_2025.md) ⭐
+- [Master Consolidation 2025](2025/summaries/MASTER_CONSOLIDATION_2025.md) ⭐
 - [Archive](../archive/) - Pre-2025 historical documents

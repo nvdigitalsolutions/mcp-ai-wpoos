@@ -41,12 +41,12 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'quiz_id' => array(
+				'quiz_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'The ID of the quiz being answered.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'answers' => array(
+				'answers'    => array(
 					'type'        => 'array',
 					'description' => __( 'Array of answers to quiz questions.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 						'required'   => array( 'question_index', 'answer' ),
 					),
 				),
-				'user_id' => array(
+				'user_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'User ID submitting the answers. Defaults to current user.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
@@ -309,8 +309,8 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 		// Calculate completion time if started_at was provided.
 		$completion_time_minutes = null;
 		if ( $started_at ) {
-			$started_timestamp = strtotime( $started_at );
-			$current_timestamp = current_time( 'timestamp' );
+			$started_timestamp       = strtotime( $started_at );
+			$current_timestamp       = current_time( 'timestamp' );
 			$completion_time_minutes = round( ( $current_timestamp - $started_timestamp ) / 60, 2 );
 		}
 

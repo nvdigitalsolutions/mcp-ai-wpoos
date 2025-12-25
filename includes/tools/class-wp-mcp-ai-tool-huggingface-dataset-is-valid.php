@@ -45,42 +45,42 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 			return 'huggingface_dataset_is_valid';
 		}
 
-	/**
-	 * Get tool name.
-	 *
-	 * @return string
-	 */
-	public function get_name() {
-		return __( 'HuggingFace Dataset Is Valid', 'wp-mcp-ai' );
-	}
+		/**
+		 * Get tool name.
+		 *
+		 * @return string
+		 */
+		public function get_name() {
+			return __( 'HuggingFace Dataset Is Valid', 'wp-mcp-ai' );
+		}
 
-	/**
-	 * Get tool description.
-	 *
-	 * @return string
-	 */
-	public function get_description() {
-		return __( 'Check if a HuggingFace dataset exists and is valid', 'wp-mcp-ai' );
-	}
+		/**
+		 * Get tool description.
+		 *
+		 * @return string
+		 */
+		public function get_description() {
+			return __( 'Check if a HuggingFace dataset exists and is valid', 'wp-mcp-ai' );
+		}
 
-	/**
-	 * Get tool parameters schema.
-	 *
-	 * @return array
-	 */
-	public function get_parameters_schema() {
-		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'dataset' => array(
-					'type'        => 'string',
-					'description' => 'Dataset name (e.g., "squad", "imdb", "stanfordnlp/imdb")',
+		/**
+		 * Get tool parameters schema.
+		 *
+		 * @return array
+		 */
+		public function get_parameters_schema() {
+			return array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'dataset' => array(
+						'type'        => 'string',
+						'description' => 'Dataset name (e.g., "squad", "imdb", "stanfordnlp/imdb")',
+					),
 				),
-			),
-			'required'   => array( 'dataset' ),
-			'additionalProperties' => false,
-		);
-	}
+				'required'             => array( 'dataset' ),
+				'additionalProperties' => false,
+			);
+		}
 
 		/**
 		 * Get tool definition for MCP.
@@ -110,21 +110,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 			return apply_filters( 'wp_mcp_ai_tool_huggingface_datasets_capability', 'read' );
 		}
 
-	/**
-	 * Get capability flags for this tool.
-	 *
-	 * @return array<string> Array of capability flag strings.
-	 */
-	public function get_capability_flags() {
-		return array(
-			'external-api',        // Makes external API calls to HuggingFace.
-			'network-dependent',   // Requires internet connectivity.
-			'read-only',           // Only reads data, doesn't modify WordPress state.
-			'cacheable',           // Results can be cached.
-			'paginated',           // Supports pagination.
-			'large-response',      // May return large datasets.
-		);
-	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array<string> Array of capability flag strings.
+		 */
+		public function get_capability_flags() {
+			return array(
+				'external-api',        // Makes external API calls to HuggingFace.
+				'network-dependent',   // Requires internet connectivity.
+				'read-only',           // Only reads data, doesn't modify WordPress state.
+				'cacheable',           // Results can be cached.
+				'paginated',           // Supports pagination.
+				'large-response',      // May return large datasets.
+			);
+		}
 
 		/**
 		 * Execute the tool.

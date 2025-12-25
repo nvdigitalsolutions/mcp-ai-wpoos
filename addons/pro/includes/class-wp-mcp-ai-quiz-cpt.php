@@ -63,7 +63,7 @@ class WP_MCP_AI_Quiz_CPT {
 		register_post_type(
 			self::POST_TYPE,
 			array(
-				'labels'              => array(
+				'labels'             => array(
 					'name'               => _x( 'Quizzes', 'post type general name', 'wp-mcp-ai' ),
 					'singular_name'      => _x( 'Quiz', 'post type singular name', 'wp-mcp-ai' ),
 					'menu_name'          => _x( 'Quizzes', 'admin menu', 'wp-mcp-ai' ),
@@ -79,20 +79,20 @@ class WP_MCP_AI_Quiz_CPT {
 					'not_found'          => __( 'No quizzes found.', 'wp-mcp-ai' ),
 					'not_found_in_trash' => __( 'No quizzes found in Trash.', 'wp-mcp-ai' ),
 				),
-				'description'         => __( 'Quizzes created by tutors for students.', 'wp-mcp-ai' ),
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => true,
-				'menu_icon'           => 'dashicons-welcome-learn-more',
-				'query_var'           => false,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'menu_position'       => null,
-				'supports'            => array( 'title', 'author' ),
-				'show_in_rest'        => false,
+				'description'        => __( 'Quizzes created by tutors for students.', 'wp-mcp-ai' ),
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => true,
+				'menu_icon'          => 'dashicons-welcome-learn-more',
+				'query_var'          => false,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'has_archive'        => false,
+				'hierarchical'       => false,
+				'menu_position'      => null,
+				'supports'           => array( 'title', 'author' ),
+				'show_in_rest'       => false,
 			)
 		);
 
@@ -100,7 +100,7 @@ class WP_MCP_AI_Quiz_CPT {
 		register_post_type(
 			self::SUBMISSION_POST_TYPE,
 			array(
-				'labels'              => array(
+				'labels'             => array(
 					'name'               => _x( 'Quiz Submissions', 'post type general name', 'wp-mcp-ai' ),
 					'singular_name'      => _x( 'Quiz Submission', 'post type singular name', 'wp-mcp-ai' ),
 					'menu_name'          => _x( 'Quiz Submissions', 'admin menu', 'wp-mcp-ai' ),
@@ -116,20 +116,20 @@ class WP_MCP_AI_Quiz_CPT {
 					'not_found'          => __( 'No submissions found.', 'wp-mcp-ai' ),
 					'not_found_in_trash' => __( 'No submissions found in Trash.', 'wp-mcp-ai' ),
 				),
-				'description'         => __( 'User submissions for quizzes.', 'wp-mcp-ai' ),
-				'public'              => false,
-				'publicly_queryable'  => false,
-				'show_ui'             => true,
-				'show_in_menu'        => true,
-				'menu_icon'           => 'dashicons-clipboard',
-				'query_var'           => false,
-				'rewrite'             => false,
-				'capability_type'     => 'post',
-				'has_archive'         => false,
-				'hierarchical'        => false,
-				'menu_position'       => null,
-				'supports'            => array( 'author' ),
-				'show_in_rest'        => false,
+				'description'        => __( 'User submissions for quizzes.', 'wp-mcp-ai' ),
+				'public'             => false,
+				'publicly_queryable' => false,
+				'show_ui'            => true,
+				'show_in_menu'       => true,
+				'menu_icon'          => 'dashicons-clipboard',
+				'query_var'          => false,
+				'rewrite'            => false,
+				'capability_type'    => 'post',
+				'has_archive'        => false,
+				'hierarchical'       => false,
+				'menu_position'      => null,
+				'supports'           => array( 'author' ),
+				'show_in_rest'       => false,
 			)
 		);
 	}
@@ -179,11 +179,11 @@ class WP_MCP_AI_Quiz_CPT {
 			}
 
 			// Get quiz metadata.
-			$description    = get_post_meta( $post_id, '_mcp_ai_quiz_description', true );
-			$time_limit     = get_post_meta( $post_id, '_mcp_ai_quiz_time_limit', true );
-			$questions      = get_post_meta( $post_id, '_mcp_ai_quiz_questions', true );
-			$total_points   = get_post_meta( $post_id, '_mcp_ai_quiz_total_points', true );
-			$passing_score  = get_post_meta( $post_id, '_mcp_ai_quiz_passing_score', true );
+			$description   = get_post_meta( $post_id, '_mcp_ai_quiz_description', true );
+			$time_limit    = get_post_meta( $post_id, '_mcp_ai_quiz_time_limit', true );
+			$questions     = get_post_meta( $post_id, '_mcp_ai_quiz_questions', true );
+			$total_points  = get_post_meta( $post_id, '_mcp_ai_quiz_total_points', true );
+			$passing_score = get_post_meta( $post_id, '_mcp_ai_quiz_passing_score', true );
 
 			// Map CPT data to CCT fields.
 			$cct_data = array(
@@ -277,13 +277,13 @@ class WP_MCP_AI_Quiz_CPT {
 			}
 
 			// Get submission metadata.
-			$quiz_id        = get_post_meta( $post_id, '_mcp_ai_submission_quiz_id', true );
-			$status         = get_post_meta( $post_id, '_mcp_ai_submission_status', true );
-			$earned_points  = get_post_meta( $post_id, '_mcp_ai_submission_earned_points', true );
-			$total_points   = get_post_meta( $post_id, '_mcp_ai_submission_total_points', true );
-			$percentage     = get_post_meta( $post_id, '_mcp_ai_submission_percentage', true );
-			$passed         = get_post_meta( $post_id, '_mcp_ai_submission_passed', true );
-			$graded_by      = get_post_meta( $post_id, '_mcp_ai_submission_graded_by', true );
+			$quiz_id       = get_post_meta( $post_id, '_mcp_ai_submission_quiz_id', true );
+			$status        = get_post_meta( $post_id, '_mcp_ai_submission_status', true );
+			$earned_points = get_post_meta( $post_id, '_mcp_ai_submission_earned_points', true );
+			$total_points  = get_post_meta( $post_id, '_mcp_ai_submission_total_points', true );
+			$percentage    = get_post_meta( $post_id, '_mcp_ai_submission_percentage', true );
+			$passed        = get_post_meta( $post_id, '_mcp_ai_submission_passed', true );
+			$graded_by     = get_post_meta( $post_id, '_mcp_ai_submission_graded_by', true );
 
 			// Map CPT data to CCT fields.
 			$cct_data = array(

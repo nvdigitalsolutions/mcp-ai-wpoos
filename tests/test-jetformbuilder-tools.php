@@ -1,11 +1,18 @@
 <?php
 /**
  * Tests covering JetFormBuilder tool wrappers.
+ *
+ * @package WP_MCP_AI
  */
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-forms.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-submissions.php';
 
+/**
+ * Class WP_MCP_AI_JetFormBuilder_Tools_Test
+ *
+ * Tests the JetFormBuilder integration tools for form and submission management.
+ */
 class WP_MCP_AI_JetFormBuilder_Tools_Test extends WP_UnitTestCase {
 
 	/**
@@ -15,6 +22,9 @@ class WP_MCP_AI_JetFormBuilder_Tools_Test extends WP_UnitTestCase {
 	 */
 	protected $user_id;
 
+	/**
+	 * Set up test fixtures before each test.
+	 */
 	protected function setUp(): void {
 		parent::setUp();
 
@@ -24,6 +34,9 @@ class WP_MCP_AI_JetFormBuilder_Tools_Test extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_jetformbuilder_is_available', '__return_true' );
 	}
 
+	/**
+	 * Clean up after each test.
+	 */
 	protected function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_jetformbuilder_is_available', '__return_true' );
 		parent::tearDown();

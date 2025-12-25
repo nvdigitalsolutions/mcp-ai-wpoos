@@ -91,7 +91,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 			return array(
 				// Provider Priority List.
-				'provider_priority_list'            => array(
+				'provider_priority_list'             => array(
 					'type'        => 'custom',
 					'label'       => __( 'Provider Priority Order', 'wp-mcp-ai' ),
 					'description' => __( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable.', 'wp-mcp-ai' ),
@@ -99,14 +99,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// OpenAI Settings.
-				'enable_openai'                     => array(
+				'enable_openai'                      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable OpenAI Provider', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable OpenAI as an available provider', 'wp-mcp-ai' ),
 					'description'    => __( 'When disabled, OpenAI will not be available for use by assistants or API requests.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'openai_api_key'                    => array(
+				'openai_api_key'                     => array(
 					'type'         => 'password',
 					'label'        => __( 'OpenAI API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -117,14 +117,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder'  => 'sk-...',
 					'autocomplete' => 'new-password',
 				),
-				'default_model'                     => array(
+				'default_model'                      => array(
 					'type'        => 'select',
 					'label'       => __( 'Default OpenAI Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default model to use for OpenAI requests. This model will be used unless overridden by an assistant or specific API call. Consider cost, speed, and capability trade-offs.', 'wp-mcp-ai' ),
 					'options'     => $model_choices,
 					'default'     => 'gpt-4.1',
 				),
-				'openai_embedding_model'            => array(
+				'openai_embedding_model'             => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Embedding Model', 'wp-mcp-ai' ),
 					'description' => __( 'Model to use for generating text embeddings. text-embedding-3-small offers the best balance of performance and cost. text-embedding-3-large provides higher accuracy for complex tasks.', 'wp-mcp-ai' ),
@@ -135,14 +135,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'text-embedding-3-small',
 				),
-				'openai_organization_id'            => array(
+				'openai_organization_id'             => array(
 					'type'         => 'text',
 					'label'        => __( 'OpenAI Organization ID (Optional)', 'wp-mcp-ai' ),
 					'description'  => __( 'Your OpenAI organization ID if you belong to multiple organizations. This is optional for most users. Find it in your OpenAI account settings if needed.', 'wp-mcp-ai' ),
 					'placeholder'  => 'org-...',
 					'autocomplete' => 'off',
 				),
-				'openai_image_model'                => array(
+				'openai_image_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Image Model', 'wp-mcp-ai' ),
 					'description' => __( 'Default model for image generation via OpenAI. gpt-image-1 is the latest model with quality options. DALL-E 3 offers high quality with HD option. DALL-E 2 is faster and more economical.', 'wp-mcp-ai' ),
@@ -153,7 +153,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'gpt-image-1',
 				),
-				'openai_image_size'                 => array(
+				'openai_image_size'                  => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Image Size', 'wp-mcp-ai' ),
 					'description' => __( 'Default size for generated images. Square format (1024x1024) works best for most purposes. Portrait (2:3) and landscape (3:2) formats offer creative flexibility.', 'wp-mcp-ai' ),
@@ -165,7 +165,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => '1024x1024',
 				),
-				'openai_image_quality'              => array(
+				'openai_image_quality'               => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Image Quality', 'wp-mcp-ai' ),
 					'description' => __( 'Default quality setting for image generation. For gpt-image-1: low is faster/cheaper, medium balances quality and cost, high provides best results. For DALL-E models: standard or hd.', 'wp-mcp-ai' ),
@@ -179,7 +179,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'medium',
 				),
-				'openai_image_response_format'      => array(
+				'openai_image_response_format'       => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Image Response Format', 'wp-mcp-ai' ),
 					'description' => __( 'Format for receiving generated images from OpenAI. b64_json returns base64-encoded data directly (recommended). URL provides a hosted image link (expires after 1 hour).', 'wp-mcp-ai' ),
@@ -189,7 +189,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'b64_json',
 				),
-				'openai_transcribe_model'           => array(
+				'openai_transcribe_model'            => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Transcription Model', 'wp-mcp-ai' ),
 					'description' => __( 'Default model for audio transcription and translation. gpt-4o-mini-transcribe is optimized for transcription tasks.', 'wp-mcp-ai' ),
@@ -199,7 +199,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'gpt-4o-mini-transcribe',
 				),
-				'openai_transcribe_response_format' => array(
+				'openai_transcribe_response_format'  => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Transcription Response Format', 'wp-mcp-ai' ),
 					'description' => __( 'Default format for transcription responses. verbose_json includes timestamps and metadata, json returns text only.', 'wp-mcp-ai' ),
@@ -209,19 +209,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'verbose_json',
 				),
-				'openai_transcribe_language'        => array(
+				'openai_transcribe_language'         => array(
 					'type'        => 'text',
 					'label'       => __( 'OpenAI Transcription Language (Optional)', 'wp-mcp-ai' ),
 					'description' => __( 'Optional ISO-639-1 language code (e.g., "en" for English, "es" for Spanish) to hint the language of the audio. Leave empty for automatic detection.', 'wp-mcp-ai' ),
 					'placeholder' => 'en',
 				),
-				'openai_transcribe_temperature'     => array(
+				'openai_transcribe_temperature'      => array(
 					'type'        => 'text',
 					'label'       => __( 'OpenAI Transcription Temperature (Optional)', 'wp-mcp-ai' ),
 					'description' => __( 'Optional sampling temperature between 0 and 1. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. Leave empty to use default.', 'wp-mcp-ai' ),
 					'placeholder' => '0',
 				),
-				'openai_speech_model'               => array(
+				'openai_speech_model'                => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Text-to-Speech Model', 'wp-mcp-ai' ),
 					'description' => __( 'Default model for text-to-speech (TTS) generation. gpt-4o-mini-tts is optimized for voice synthesis. tts-1 is the standard quality model, tts-1-hd provides higher quality audio.', 'wp-mcp-ai' ),
@@ -232,7 +232,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'gpt-4o-mini-tts',
 				),
-				'openai_speech_voice'               => array(
+				'openai_speech_voice'                => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Text-to-Speech Voice', 'wp-mcp-ai' ),
 					'description' => __( 'Default voice for text-to-speech generation. Each voice has a distinct personality and tone. Preview voices at OpenAI documentation.', 'wp-mcp-ai' ),
@@ -246,7 +246,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'alloy',
 				),
-				'openai_speech_format'              => array(
+				'openai_speech_format'               => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Text-to-Speech Format', 'wp-mcp-ai' ),
 					'description' => __( 'Audio output format for TTS. MP3 offers best compatibility. OPUS is most efficient. AAC works well on Apple devices. FLAC is lossless quality. WAV is uncompressed.', 'wp-mcp-ai' ),
@@ -259,14 +259,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'mp3',
 				),
-				'enable_high_token_model_switch'    => array(
+				'enable_high_token_model_switch'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable High Token Model Switch', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically switch to fallback model on token overflow', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, if a request exceeds the current model\'s token limit, the system will automatically switch to the specified fallback model with higher capacity. This prevents errors and ensures requests are processed even with large contexts.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'high_token_fallback_model'         => array(
+				'high_token_fallback_model'          => array(
 					'type'        => 'text',
 					'label'       => __( 'High Token Fallback Model', 'wp-mcp-ai' ),
 					'description' => __( 'Model to use when token limit is exceeded. Should be a model with higher token capacity than your default. Examples: gemini-2.5-flash (1M tokens), gpt-4o (128k tokens). This setting works across all providers.', 'wp-mcp-ai' ),
@@ -275,14 +275,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Anthropic Settings.
-				'enable_anthropic'                  => array(
+				'enable_anthropic'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Anthropic Provider', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable Anthropic (Claude) as an available provider', 'wp-mcp-ai' ),
 					'description'    => __( 'When disabled, Anthropic will not be available for use by assistants or API requests.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'anthropic_api_key'                 => array(
+				'anthropic_api_key'                  => array(
 					'type'         => 'password',
 					'label'        => __( 'Anthropic API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -293,7 +293,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder'  => 'sk-ant-...',
 					'autocomplete' => 'new-password',
 				),
-				'anthropic_model'                   => array(
+				'anthropic_model'                    => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Anthropic Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default Claude model to use for Anthropic requests. Claude 3.5 Sonnet offers the best balance of intelligence and speed. Claude 3.5 Haiku is faster and more economical for simpler tasks.', 'wp-mcp-ai' ),
@@ -308,14 +308,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Google Gemini Settings.
-				'enable_gemini'                     => array(
+				'enable_gemini'                      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Gemini Provider', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable Google Gemini as an available provider', 'wp-mcp-ai' ),
 					'description'    => __( 'When disabled, Gemini will not be available for use by assistants or API requests.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'gemini_api_key'                    => array(
+				'gemini_api_key'                     => array(
 					'type'         => 'password',
 					'label'        => __( 'Gemini API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -326,7 +326,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder'  => 'AIza...',
 					'autocomplete' => 'new-password',
 				),
-				'default_gemini_model'              => array(
+				'default_gemini_model'               => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Gemini Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default model to use for Gemini requests. Gemini 2.5 Pro is the flagship model with best performance. Gemini 2.5 Flash is the latest stable model with multimodal support (text, image, video). Gemini 2.0 Flash is the previous stable generation. Gemini 1.5 Pro provides proven performance, while 1.5 Flash is faster and more economical.', 'wp-mcp-ai' ),
@@ -341,7 +341,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'gemini-2.5-flash',
 				),
-				'gemini_image_model'                => array(
+				'gemini_image_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Image Model', 'wp-mcp-ai' ),
 					'description' => __( 'Default model for image generation via Gemini. gemini-2.5-flash-image is the latest specialized image generation model. gemini-exp-1206 provides experimental features.', 'wp-mcp-ai' ),
@@ -351,7 +351,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'gemini-2.5-flash-image',
 				),
-				'gemini_image_mime_type'            => array(
+				'gemini_image_mime_type'             => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Image MIME Type', 'wp-mcp-ai' ),
 					'description' => __( 'Default image format for Gemini-generated images. PNG offers lossless compression, JPEG is smaller for photos, WebP provides best compression.', 'wp-mcp-ai' ),
@@ -362,7 +362,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'image/png',
 				),
-				'gemini_image_aspect_ratio'         => array(
+				'gemini_image_aspect_ratio'          => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Image Aspect Ratio', 'wp-mcp-ai' ),
 					'description' => __( 'Default aspect ratio for Gemini-generated images. Square (1:1) works for most purposes. Portrait (3:4, 9:16) and landscape (4:3, 16:9) offer creative flexibility.', 'wp-mcp-ai' ),
@@ -375,7 +375,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => '1:1',
 				),
-				'gemini_video_model'                => array(
+				'gemini_video_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Model', 'wp-mcp-ai' ),
 					'description' => __( 'Default model for video generation via Gemini Veo. veo-2.0-generate-001 is stable with fewer restrictions (supports 5-8 seconds, 720p max). veo-3.1-generate-preview is the latest with synchronized audio and 1080p support, but requires exactly 8 seconds for 1080p and has stricter quota limits.', 'wp-mcp-ai' ),
@@ -385,7 +385,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'veo-2.0-generate-001',
 				),
-				'gemini_video_resolution'           => array(
+				'gemini_video_resolution'            => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Resolution', 'wp-mcp-ai' ),
 					'description' => __( 'Default resolution for Gemini-generated videos. 720p is supported by all Veo models and works for all aspect ratios. 1080p is only available with Veo 3.1 for 16:9 aspect ratio and requires exactly 8 seconds duration. Note: Veo 2.0 always outputs 720p regardless of this setting.', 'wp-mcp-ai' ),
@@ -395,7 +395,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => '720p',
 				),
-				'gemini_video_aspect_ratio'         => array(
+				'gemini_video_aspect_ratio'          => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Aspect Ratio', 'wp-mcp-ai' ),
 					'description' => __( 'Default aspect ratio for Gemini-generated videos. 16:9 is landscape/widescreen format (supports both 720p and 1080p). 9:16 is vertical/portrait format (supports 720p only).', 'wp-mcp-ai' ),
@@ -405,7 +405,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => '16:9',
 				),
-				'gemini_video_duration'             => array(
+				'gemini_video_duration'              => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Video Duration', 'wp-mcp-ai' ),
 					'description' => __( 'Default duration for Gemini-generated videos in seconds. Veo 3.1 supports 4-8 seconds (with potential for extended clips via API), Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'wp-mcp-ai' ),
@@ -420,14 +420,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Ollama Settings.
-				'enable_ollama'                     => array(
+				'enable_ollama'                      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Ollama Provider', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable Ollama (Local AI) as an available provider', 'wp-mcp-ai' ),
 					'description'    => __( 'When disabled, Ollama will not be available for use by assistants or API requests.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'ollama_endpoint_url'               => array(
+				'ollama_endpoint_url'                => array(
 					'type'        => 'url',
 					'label'       => __( 'Ollama Endpoint URL', 'wp-mcp-ai' ),
 					'description' => __( 'URL where your Ollama server is running. Examples: "http://localhost:11434" (same machine), "http://192.168.2.222:11434" (private network). For remote WordPress (e.g., Cloudways) connecting to private LAN Ollama: ensure network routing/VPN is configured, then enter the private IP. The plugin handles SSL verification and connection timeouts automatically.', 'wp-mcp-ai' ),
@@ -441,13 +441,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					 */
 					'default'     => apply_filters( 'wp_mcp_ai_default_ollama_endpoint_url', 'http://localhost:11434' ),
 				),
-				'ollama_model'                      => array(
+				'ollama_model'                       => array(
 					'type'        => 'text',
 					'label'       => __( 'Ollama Model', 'wp-mcp-ai' ),
 					'description' => __( 'The model name to use with Ollama. Must match exactly a model you have pulled (e.g., llama3, mistral, codellama). Use \"ollama list\" in terminal to see available models.', 'wp-mcp-ai' ),
 					'placeholder' => 'llama3',
 				),
-				'ollama_network_interface'          => array(
+				'ollama_network_interface'           => array(
 					'type'        => 'text',
 					'label'       => __( 'Ollama Network Interface (Optional)', 'wp-mcp-ai' ),
 					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your Ollama is on a different machine (e.g., 192.168.2.100), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'wp-mcp-ai' ),
@@ -455,14 +455,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// LM Studio Settings.
-				'enable_lm_studio'                  => array(
+				'enable_lm_studio'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable LM Studio Provider', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable LM Studio (Local AI) as an available provider', 'wp-mcp-ai' ),
 					'description'    => __( 'When disabled, LM Studio will not be available for use by assistants or API requests.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'lm_studio_endpoint_url'            => array(
+				'lm_studio_endpoint_url'             => array(
 					'type'        => 'url',
 					'label'       => __( 'LM Studio Endpoint URL', 'wp-mcp-ai' ),
 					'description' => __( 'URL where your LM Studio server is running. Examples: "http://localhost:1234" (same machine), "http://192.168.2.222:1234" (private network). For remote WordPress (e.g., Cloudways) connecting to private LAN LM Studio: ensure network routing/VPN is configured, then enter the private IP. The plugin handles SSL verification and connection timeouts automatically.', 'wp-mcp-ai' ),
@@ -476,13 +476,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					 */
 					'default'     => apply_filters( 'wp_mcp_ai_default_lm_studio_endpoint_url', 'http://localhost:1234' ),
 				),
-				'lm_studio_model'                   => array(
+				'lm_studio_model'                    => array(
 					'type'        => 'text',
 					'label'       => __( 'LM Studio Model', 'wp-mcp-ai' ),
 					'description' => __( 'The model identifier for your loaded LM Studio model. This is typically shown in the LM Studio interface. Some installations accept \"local-model\" as a generic identifier.', 'wp-mcp-ai' ),
 					'placeholder' => 'local-model',
 				),
-				'lm_studio_network_interface'       => array(
+				'lm_studio_network_interface'        => array(
 					'type'        => 'text',
 					'label'       => __( 'LM Studio Network Interface (Optional)', 'wp-mcp-ai' ),
 					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your LM Studio is on a different machine (e.g., 192.168.2.222), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'wp-mcp-ai' ),
@@ -490,14 +490,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Hugging Face Settings.
-				'enable_huggingface'                => array(
+				'enable_huggingface'                 => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Hugging Face Provider', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable Hugging Face Inference API as an available provider', 'wp-mcp-ai' ),
 					'description'    => __( 'When disabled, Hugging Face will not be available for use by assistants or API requests.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'huggingface_api_key'               => array(
+				'huggingface_api_key'                => array(
 					'type'         => 'password',
 					'label'        => __( 'Hugging Face API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -508,7 +508,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder'  => 'hf_...',
 					'autocomplete' => 'new-password',
 				),
-				'huggingface_endpoint_url'          => array(
+				'huggingface_endpoint_url'           => array(
 					'type'        => 'url',
 					'label'       => __( 'Hugging Face Endpoint URL', 'wp-mcp-ai' ),
 					'description' => __( 'URL for the Hugging Face Inference API. Use the default for the public API, or provide a custom endpoint URL for Inference Endpoints or private deployments. The plugin automatically appends the correct path (/chat/completions or /models).', 'wp-mcp-ai' ),
@@ -522,7 +522,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					 */
 					'default'     => apply_filters( 'wp_mcp_ai_default_huggingface_endpoint_url', 'https://router.huggingface.co/v1' ),
 				),
-				'huggingface_model'                 => array(
+				'huggingface_model'                  => array(
 					'type'        => 'text',
 					'label'       => __( 'Hugging Face Model', 'wp-mcp-ai' ),
 					'description' => __( 'The model identifier to use with Hugging Face. Examples: "meta-llama/Llama-3.3-70B-Instruct", "mistralai/Mistral-7B-Instruct-v0.3", "microsoft/Phi-3-mini-4k-instruct". Must be a chat/instruction model with a chat_template defined.', 'wp-mcp-ai' ),
@@ -530,14 +530,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Hugging Face Dataset Viewer Settings.
-				'enable_huggingface_datasets'       => array(
+				'enable_huggingface_datasets'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable HuggingFace Dataset Viewer', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable tools for querying HuggingFace datasets', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, AI assistants can query 100,000+ machine learning datasets from HuggingFace Hub without downloading them. Useful for dataset discovery, preview, search, and filtering for few-shot learning.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'huggingface_datasets_api_token'    => array(
+				'huggingface_datasets_api_token'     => array(
 					'type'         => 'password',
 					'label'        => __( 'HuggingFace API Token (Optional)', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -548,7 +548,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder'  => 'hf_...',
 					'autocomplete' => 'new-password',
 				),
-				'huggingface_datasets_cache_ttl'    => array(
+				'huggingface_datasets_cache_ttl'     => array(
 					'type'        => 'number',
 					'label'       => __( 'Cache TTL (seconds)', 'wp-mcp-ai' ),
 					'description' => __( 'How long to cache dataset API responses. Longer values reduce API calls but may show stale data. Range: 60-86400 seconds (1 minute to 24 hours).', 'wp-mcp-ai' ),
@@ -568,7 +568,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Google Maps Settings.
-				'google_maps_api_key'               => array(
+				'google_maps_api_key'                => array(
 					'type'         => 'password',
 					'label'        => __( 'Google Maps API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -589,43 +589,43 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		protected function get_subtab_groups() {
 			return array(
-				'priority'    => array(
+				'priority'             => array(
 					'id'     => 'priority',
 					'label'  => __( 'Priority Order', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-sort',
 					'fields' => array( 'provider_priority_list' ),
 				),
-				'openai'      => array(
+				'openai'               => array(
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
 					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model' ),
 				),
-				'anthropic'   => array(
+				'anthropic'            => array(
 					'id'     => 'anthropic',
 					'label'  => __( 'Anthropic', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
 					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model' ),
 				),
-				'gemini'      => array(
+				'gemini'               => array(
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-generic',
 					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration' ),
 				),
-				'ollama'      => array(
+				'ollama'               => array(
 					'id'     => 'ollama',
 					'label'  => __( 'Ollama (Local)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-desktop',
 					'fields' => array( 'enable_ollama', 'ollama_endpoint_url', 'ollama_model', 'ollama_network_interface' ),
 				),
-				'lm_studio'   => array(
+				'lm_studio'            => array(
 					'id'     => 'lm_studio',
 					'label'  => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-desktop',
 					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
 				),
-				'huggingface' => array(
+				'huggingface'          => array(
 					'id'     => 'huggingface',
 					'label'  => __( 'Hugging Face', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-cloud',
@@ -637,7 +637,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'icon'   => 'dashicons-database',
 					'fields' => array( 'enable_huggingface_datasets', 'huggingface_datasets_api_token', 'huggingface_datasets_cache_ttl', 'huggingface_datasets_default_limit' ),
 				),
-				'google_maps' => array(
+				'google_maps'          => array(
 					'id'     => 'google_maps',
 					'label'  => __( 'Google Maps', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-location',
@@ -768,7 +768,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Merge saved value with defaults to ensure all providers are included.
 			// Existing users may have old lists without 'huggingface'.
 			$value = is_array( $saved_value ) && ! empty( $saved_value ) ? $saved_value : $default;
-			
+
 			// Append any missing providers from defaults to the end.
 			foreach ( $default as $provider ) {
 				if ( ! in_array( $provider, $value, true ) ) {
@@ -777,12 +777,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			}
 
 			$provider_labels = array(
-				'openai'       => __( 'OpenAI', 'wp-mcp-ai' ),
-				'anthropic'    => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'gemini'       => __( 'Gemini', 'wp-mcp-ai' ),
-				'huggingface'  => __( 'Hugging Face', 'wp-mcp-ai' ),
-				'ollama'       => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio'    => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'      => __( 'OpenAI', 'wp-mcp-ai' ),
+				'anthropic'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'gemini'      => __( 'Gemini', 'wp-mcp-ai' ),
+				'huggingface' => __( 'Hugging Face', 'wp-mcp-ai' ),
+				'ollama'      => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio'   => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 			?>
 			<tr>

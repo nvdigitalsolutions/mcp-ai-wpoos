@@ -102,19 +102,19 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 			'unsubscribed'  => 0,
 		);
 
-		$stats['total'] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
-		$stats['confirmed'] = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'C' ) );
+		$stats['total']         = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+		$stats['confirmed']     = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'C' ) );
 		$stats['not_confirmed'] = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'S' ) );
-		$stats['unsubscribed'] = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'U' ) );
+		$stats['unsubscribed']  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'U' ) );
 
 		// Get subscribers per list if requested.
 		$include_lists = isset( $arguments['include_lists'] ) ? (bool) $arguments['include_lists'] : true;
-		$list_stats = array();
+		$list_stats    = array();
 
 		if ( $include_lists ) {
 			for ( $i = 1; $i <= 40; $i++ ) {
 				$list_field = 'list_' . $i;
-				$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$list_field} = 1 AND status = 'C'" );
+				$count      = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$list_field} = 1 AND status = 'C'" );
 				if ( $count > 0 ) {
 					$list_stats[ $i ] = $count;
 				}
@@ -122,16 +122,16 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 		}
 
 		$result = array(
-			'total_subscribers'    => $stats['total'],
-			'confirmed'            => $stats['confirmed'],
-			'not_confirmed'        => $stats['not_confirmed'],
-			'unsubscribed'         => $stats['unsubscribed'],
-			'active_subscribers'   => $stats['confirmed'],
+			'total_subscribers'  => $stats['total'],
+			'confirmed'          => $stats['confirmed'],
+			'not_confirmed'      => $stats['not_confirmed'],
+			'unsubscribed'       => $stats['unsubscribed'],
+			'active_subscribers' => $stats['confirmed'],
 		);
 
 		if ( $include_lists && ! empty( $list_stats ) ) {
 			$result['subscribers_by_list'] = $list_stats;
-			$result['active_lists_count'] = count( $list_stats );
+			$result['active_lists_count']  = count( $list_stats );
 		}
 
 		return $result;

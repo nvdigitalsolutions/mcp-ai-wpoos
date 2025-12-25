@@ -41,7 +41,7 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'input'            => array(
+				'input'           => array(
 					'description' => __( 'Text or array of texts to embed. Maximum 8191 tokens for text-embedding-3-small/large.', 'wp-mcp-ai' ),
 					'oneOf'       => array(
 						array(
@@ -55,29 +55,29 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 						),
 					),
 				),
-				'model'            => array(
+				'model'           => array(
 					'type'        => 'string',
 					'description' => __( 'Embedding model to use.', 'wp-mcp-ai' ),
 					'enum'        => array( 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002' ),
 					'default'     => 'text-embedding-3-small',
 				),
-				'encoding_format'  => array(
+				'encoding_format' => array(
 					'type'        => 'string',
 					'enum'        => array( 'float', 'base64' ),
 					'description' => __( 'Encoding format for embeddings.', 'wp-mcp-ai' ),
 					'default'     => 'float',
 				),
-				'dimensions'       => array(
+				'dimensions'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of dimensions for text-embedding-3-* models. Smaller dimensions are faster and cheaper.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'store_in_meta'    => array(
+				'store_in_meta'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Save embeddings to post metadata for later retrieval.', 'wp-mcp-ai' ),
 					'default'     => false,
 				),
-				'post_id'          => array(
+				'post_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Post ID to attach embeddings to (required if store_in_meta is true).', 'wp-mcp-ai' ),
 					'minimum'     => 1,
@@ -189,23 +189,23 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Format the response.
-		$embeddings       = isset( $result['data'] ) ? $result['data'] : array();
-		$model            = isset( $result['model'] ) ? $result['model'] : '';
-		$usage            = isset( $result['usage'] ) ? $result['usage'] : array();
-		$prompt_tokens    = isset( $usage['prompt_tokens'] ) ? $usage['prompt_tokens'] : 0;
-		$total_tokens     = isset( $usage['total_tokens'] ) ? $usage['total_tokens'] : 0;
+		$embeddings    = isset( $result['data'] ) ? $result['data'] : array();
+		$model         = isset( $result['model'] ) ? $result['model'] : '';
+		$usage         = isset( $result['usage'] ) ? $result['usage'] : array();
+		$prompt_tokens = isset( $usage['prompt_tokens'] ) ? $usage['prompt_tokens'] : 0;
+		$total_tokens  = isset( $usage['total_tokens'] ) ? $usage['total_tokens'] : 0;
 
 		return array(
-			'success'     => true,
-			'embeddings'  => $embeddings,
-			'model'       => $model,
-			'usage'       => array(
+			'success'    => true,
+			'embeddings' => $embeddings,
+			'model'      => $model,
+			'usage'      => array(
 				'prompt_tokens' => $prompt_tokens,
 				'total_tokens'  => $total_tokens,
 			),
-			'stored'      => $store_in_meta && $post_id,
-			'post_id'     => $post_id,
-			'summary'     => sprintf(
+			'stored'     => $store_in_meta && $post_id,
+			'post_id'    => $post_id,
+			'summary'    => sprintf(
 				/* translators: 1: number of embeddings, 2: model name */
 				__( 'Created %1$d embeddings using model %2$s.', 'wp-mcp-ai' ),
 				count( $embeddings ),

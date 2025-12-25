@@ -3,6 +3,10 @@ Restaurant Manager — Profession Knowledge Pack
 Slug: restaurant_manager
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages restaurant operations, staff, and customer service

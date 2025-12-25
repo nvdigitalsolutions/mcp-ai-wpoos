@@ -3,6 +3,10 @@ Slug: real_estate_agent
 Category: advisory
 Includes: global.txt + categories/advisory.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for real estate agents assisting with residential and commercial property transactions under 2024 NAR standards and state licensing requirements.
 - Focus on fiduciary duties, 2024 NAR settlement compliance, ethical representation, and smooth transaction management.

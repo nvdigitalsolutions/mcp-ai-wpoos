@@ -119,20 +119,20 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Format the response.
 		$response = array(
-			'success'         => true,
-			'batch_id'        => isset( $result['id'] ) ? $result['id'] : '',
-			'status'          => isset( $result['status'] ) ? $result['status'] : '',
-			'endpoint'        => isset( $result['endpoint'] ) ? $result['endpoint'] : '',
-			'created_at'      => isset( $result['created_at'] ) ? gmdate( 'Y-m-d H:i:s', $result['created_at'] ) : '',
-			'completed_at'    => isset( $result['completed_at'] ) && null !== $result['completed_at'] ? gmdate( 'Y-m-d H:i:s', $result['completed_at'] ) : null,
-			'failed_at'       => isset( $result['failed_at'] ) && null !== $result['failed_at'] ? gmdate( 'Y-m-d H:i:s', $result['failed_at'] ) : null,
-			'expired_at'      => isset( $result['expired_at'] ) && null !== $result['expired_at'] ? gmdate( 'Y-m-d H:i:s', $result['expired_at'] ) : null,
-			'output_file_id'  => isset( $result['output_file_id'] ) ? $result['output_file_id'] : null,
-			'error_file_id'   => isset( $result['error_file_id'] ) ? $result['error_file_id'] : null,
-			'request_counts'  => isset( $result['request_counts'] ) ? $result['request_counts'] : array(),
-			'metadata'        => isset( $result['metadata'] ) ? $result['metadata'] : array(),
-			'summary'         => $this->generate_summary( $result ),
-			'raw_result'      => $result,
+			'success'        => true,
+			'batch_id'       => isset( $result['id'] ) ? $result['id'] : '',
+			'status'         => isset( $result['status'] ) ? $result['status'] : '',
+			'endpoint'       => isset( $result['endpoint'] ) ? $result['endpoint'] : '',
+			'created_at'     => isset( $result['created_at'] ) ? gmdate( 'Y-m-d H:i:s', $result['created_at'] ) : '',
+			'completed_at'   => isset( $result['completed_at'] ) && null !== $result['completed_at'] ? gmdate( 'Y-m-d H:i:s', $result['completed_at'] ) : null,
+			'failed_at'      => isset( $result['failed_at'] ) && null !== $result['failed_at'] ? gmdate( 'Y-m-d H:i:s', $result['failed_at'] ) : null,
+			'expired_at'     => isset( $result['expired_at'] ) && null !== $result['expired_at'] ? gmdate( 'Y-m-d H:i:s', $result['expired_at'] ) : null,
+			'output_file_id' => isset( $result['output_file_id'] ) ? $result['output_file_id'] : null,
+			'error_file_id'  => isset( $result['error_file_id'] ) ? $result['error_file_id'] : null,
+			'request_counts' => isset( $result['request_counts'] ) ? $result['request_counts'] : array(),
+			'metadata'       => isset( $result['metadata'] ) ? $result['metadata'] : array(),
+			'summary'        => $this->generate_summary( $result ),
+			'raw_result'     => $result,
 		);
 
 		return $response;
@@ -167,8 +167,8 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 					$total     = isset( $result['request_counts']['total'] ) ? $result['request_counts']['total'] : 0;
 					$completed = isset( $result['request_counts']['completed'] ) ? $result['request_counts']['completed'] : 0;
 					if ( $total > 0 ) {
-						$progress   = round( ( $completed / $total ) * 100 );
-						$summary   .= "\n" . sprintf(
+						$progress = round( ( $completed / $total ) * 100 );
+						$summary .= "\n" . sprintf(
 							/* translators: 1: completed count, 2: total count, 3: percentage */
 							__( 'Progress: %1$d of %2$d requests completed (%3$d%%)', 'wp-mcp-ai' ),
 							$completed,
@@ -190,8 +190,8 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 					$summary .= "\n" . __( 'Download the output file to retrieve your results.', 'wp-mcp-ai' );
 				}
 				if ( isset( $result['request_counts'] ) && is_array( $result['request_counts'] ) ) {
-					$total  = isset( $result['request_counts']['total'] ) ? $result['request_counts']['total'] : 0;
-					$failed = isset( $result['request_counts']['failed'] ) ? $result['request_counts']['failed'] : 0;
+					$total    = isset( $result['request_counts']['total'] ) ? $result['request_counts']['total'] : 0;
+					$failed   = isset( $result['request_counts']['failed'] ) ? $result['request_counts']['failed'] : 0;
 					$summary .= "\n" . sprintf(
 						/* translators: 1: completed count, 2: failed count */
 						__( 'Successfully completed: %1$d requests, Failed: %2$d requests', 'wp-mcp-ai' ),

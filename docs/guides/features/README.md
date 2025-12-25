@@ -15,9 +15,9 @@ This directory contains comprehensive how-to guides for WP oOS features.
   - 1,139 lines of comprehensive documentation
 
 **Related Documentation:**
-- [Quick Start Guide](../../HUGGINGFACE_DATASETS_QUICK_START.md)
+- [Quick Start Guide](../../features/ai-providers/huggingface/HUGGINGFACE_DATASETS_QUICK_START.md)
 - [Code Examples](../../examples/huggingface-datasets-code-examples.md)
-- [Dataset Catalog](../../HUGGINGFACE_TOP_DATASETS.md)
+- [Dataset Catalog](../../features/ai-providers/huggingface/HUGGINGFACE_TOP_DATASETS.md)
 
 ## Adding New Guides
 

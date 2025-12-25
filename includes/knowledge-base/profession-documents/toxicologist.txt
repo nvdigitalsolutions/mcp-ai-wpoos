@@ -3,6 +3,10 @@ Toxicologist — Profession Knowledge Pack
 Slug: toxicologist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies adverse effects of chemicals and substances on living organisms.

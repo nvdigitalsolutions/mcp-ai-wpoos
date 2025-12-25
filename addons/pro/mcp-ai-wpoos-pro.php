@@ -1,6 +1,6 @@
 <?php
 /**
- * Open Operator System (WP oOS) - Pro Add-on Entry Point
+ * NV Digital Open Operator System (oOS) - Pro Add-on Entry Point
  *
  * This file serves as the entry point for the Pro add-on when built as a
  * standalone plugin for distribution. In the repository, it does NOT have a
@@ -281,15 +281,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( ! empty( $settings['enable_quiz_system'] ) ) {
 			$quiz_tools = array(
-				'WP_MCP_AI_Tool_Create_Quiz'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-quiz.php',
-				'WP_MCP_AI_Tool_Get_Quiz'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz.php',
-				'WP_MCP_AI_Tool_List_Quizzes'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-quizzes.php',
-				'WP_MCP_AI_Tool_Submit_Quiz_Answer'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-quiz-answer.php',
-				'WP_MCP_AI_Tool_Grade_Quiz'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-grade-quiz.php',
-				'WP_MCP_AI_Tool_Get_Quiz_Submissions'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-submissions.php',
-				'WP_MCP_AI_Tool_Get_Quiz_Results'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
+				'WP_MCP_AI_Tool_Create_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-quiz.php',
+				'WP_MCP_AI_Tool_Get_Quiz'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz.php',
+				'WP_MCP_AI_Tool_List_Quizzes'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-quizzes.php',
+				'WP_MCP_AI_Tool_Submit_Quiz_Answer'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-quiz-answer.php',
+				'WP_MCP_AI_Tool_Grade_Quiz'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-grade-quiz.php',
+				'WP_MCP_AI_Tool_Get_Quiz_Submissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-submissions.php',
+				'WP_MCP_AI_Tool_Get_Quiz_Results'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
 			);
-			$pro_tools = array_merge( $pro_tools, $quiz_tools );
+			$pro_tools  = array_merge( $pro_tools, $quiz_tools );
 		}
 
 		/**

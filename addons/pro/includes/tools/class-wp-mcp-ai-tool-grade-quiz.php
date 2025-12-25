@@ -41,12 +41,12 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'submission_id' => array(
+				'submission_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'The ID of the submission to grade.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'grades'        => array(
+				'grades'           => array(
 					'type'        => 'array',
 					'description' => __( 'Array of grades for each question.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -94,9 +94,9 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to grade quizzes.', 'wp-mcp-ai' ) );
 		}
 
-		$submission_id     = isset( $arguments['submission_id'] ) ? absint( $arguments['submission_id'] ) : 0;
-		$grades            = isset( $arguments['grades'] ) && is_array( $arguments['grades'] ) ? $arguments['grades'] : array();
-		$overall_feedback  = isset( $arguments['overall_feedback'] ) ? wp_kses_post( $arguments['overall_feedback'] ) : '';
+		$submission_id    = isset( $arguments['submission_id'] ) ? absint( $arguments['submission_id'] ) : 0;
+		$grades           = isset( $arguments['grades'] ) && is_array( $arguments['grades'] ) ? $arguments['grades'] : array();
+		$overall_feedback = isset( $arguments['overall_feedback'] ) ? wp_kses_post( $arguments['overall_feedback'] ) : '';
 
 		if ( ! $submission_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_submission_id', __( 'Submission ID is required.', 'wp-mcp-ai' ) );
@@ -159,8 +159,8 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				);
 			}
 
-			$question      = $questions[ $question_index ];
-			$max_points    = isset( $question['points'] ) ? absint( $question['points'] ) : 1;
+			$question   = $questions[ $question_index ];
+			$max_points = isset( $question['points'] ) ? absint( $question['points'] ) : 1;
 
 			// Validate points earned don't exceed max points for question.
 			if ( $points > $max_points ) {
@@ -190,7 +190,7 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				$grade['feedback'] = wp_kses_post( $grade_data['feedback'] );
 			}
 
-			$earned_points      += $points;
+			$earned_points     += $points;
 			$sanitized_grades[] = $grade;
 		}
 

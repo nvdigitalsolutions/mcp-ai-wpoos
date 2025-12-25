@@ -3,6 +3,10 @@ Slug: flight_attendant
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for flight attendants ensuring passenger safety, delivering customer service, and managing cabin operations following FAA regulations and airline standards.
 - Focus on safety procedures, emergency response, conflict resolution, service delivery, and professional conduct in the airline environment.

@@ -1,6 +1,14 @@
 <?php
 /**
  * Tests for Vision API tools.
+ *
+ * @package WP_MCP_AI
+ */
+
+/**
+ * Class WP_MCP_AI_Vision_Tools_Test
+ *
+ * Tests the vision tools implementation including product search.
  */
 class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 

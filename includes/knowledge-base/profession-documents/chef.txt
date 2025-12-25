@@ -3,6 +3,10 @@ Chef — Profession Knowledge Pack
 Slug: chef
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Prepares food and manages kitchen operations

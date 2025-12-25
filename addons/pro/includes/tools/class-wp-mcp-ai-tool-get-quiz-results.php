@@ -104,8 +104,8 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 		$overall_feedback = get_post_meta( $submission_id, '_mcp_ai_submission_overall_feedback', true );
 
 		// Get quiz data.
-		$questions    = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
-		$total_points = get_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', true );
+		$questions     = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
+		$total_points  = get_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', true );
 		$passing_score = get_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', true );
 
 		if ( ! is_array( $answers ) ) {
@@ -175,7 +175,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 
 		// Add time tracking information.
-		$started_at = get_post_meta( $submission_id, '_mcp_ai_submission_started_at', true );
+		$started_at      = get_post_meta( $submission_id, '_mcp_ai_submission_started_at', true );
 		$completion_time = get_post_meta( $submission_id, '_mcp_ai_submission_completion_time', true );
 		$quiz_time_limit = get_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', true );
 

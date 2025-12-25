@@ -3,6 +3,10 @@ Slug: judge
 Category: legal
 Includes: global.txt + categories/legal.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file provides guidance for understanding judicial decision-making, legal reasoning, and court procedures.
 - This playbook DOES NOT enable providing legal advice or making judicial decisions - those require proper authority.

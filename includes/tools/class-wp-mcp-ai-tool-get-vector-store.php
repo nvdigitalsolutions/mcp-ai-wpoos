@@ -81,15 +81,15 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'success' => true,
 			'data'    => array(
-				'id'                => isset( $result['id'] ) ? $result['id'] : null,
-				'name'              => isset( $result['name'] ) ? $result['name'] : null,
-				'status'            => isset( $result['status'] ) ? $result['status'] : null,
-				'file_counts'       => isset( $result['file_counts'] ) ? $result['file_counts'] : array(),
-				'created_at'        => isset( $result['created_at'] ) ? $result['created_at'] : null,
-				'last_active_at'    => isset( $result['last_active_at'] ) ? $result['last_active_at'] : null,
-				'expires_after'     => isset( $result['expires_after'] ) ? $result['expires_after'] : null,
-				'expires_at'        => isset( $result['expires_at'] ) ? $result['expires_at'] : null,
-				'metadata'          => isset( $result['metadata'] ) ? $result['metadata'] : array(),
+				'id'             => isset( $result['id'] ) ? $result['id'] : null,
+				'name'           => isset( $result['name'] ) ? $result['name'] : null,
+				'status'         => isset( $result['status'] ) ? $result['status'] : null,
+				'file_counts'    => isset( $result['file_counts'] ) ? $result['file_counts'] : array(),
+				'created_at'     => isset( $result['created_at'] ) ? $result['created_at'] : null,
+				'last_active_at' => isset( $result['last_active_at'] ) ? $result['last_active_at'] : null,
+				'expires_after'  => isset( $result['expires_after'] ) ? $result['expires_after'] : null,
+				'expires_at'     => isset( $result['expires_at'] ) ? $result['expires_at'] : null,
+				'metadata'       => isset( $result['metadata'] ) ? $result['metadata'] : array(),
 			),
 		);
 	}

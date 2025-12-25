@@ -3,6 +3,10 @@ Applied Statistician — Profession Knowledge Pack
 Slug: applied-statistician
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Applies statistical methods to collect and analyze data (applied and cross-domain).

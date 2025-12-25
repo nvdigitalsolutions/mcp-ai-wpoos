@@ -3,6 +3,10 @@ Probation Officer — Profession Knowledge Pack
 Slug: probation_officer
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Supervises offenders on probation or parole

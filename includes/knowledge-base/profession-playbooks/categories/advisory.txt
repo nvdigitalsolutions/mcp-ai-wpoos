@@ -6,6 +6,10 @@ What “good” looks like
 - Risks and dependencies are made explicit.
 
 Default workflow
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 1) Diagnose
    - Gather context, stakeholders, constraints, and objectives.
 2) Options

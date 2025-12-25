@@ -45,68 +45,68 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Search' ) ) {
 			return 'huggingface_dataset_search';
 		}
 
-	/**
-	 * Get tool name.
-	 *
-	 * @return string
-	 */
-	public function get_name() {
-		return __( 'HuggingFace Dataset Search', 'wp-mcp-ai' );
-	}
+		/**
+		 * Get tool name.
+		 *
+		 * @return string
+		 */
+		public function get_name() {
+			return __( 'HuggingFace Dataset Search', 'wp-mcp-ai' );
+		}
 
-	/**
-	 * Get tool description.
-	 *
-	 * @return string
-	 */
-	public function get_description() {
-		return __( 'Full-text search within a HuggingFace dataset split', 'wp-mcp-ai' );
-	}
+		/**
+		 * Get tool description.
+		 *
+		 * @return string
+		 */
+		public function get_description() {
+			return __( 'Full-text search within a HuggingFace dataset split', 'wp-mcp-ai' );
+		}
 
-	/**
-	 * Get tool parameters schema.
-	 *
-	 * @return array
-	 */
-	public function get_parameters_schema() {
-		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'dataset' => array(
-					'type'        => 'string',
-					'description' => 'Dataset name (e.g., "squad", "imdb")',
+		/**
+		 * Get tool parameters schema.
+		 *
+		 * @return array
+		 */
+		public function get_parameters_schema() {
+			return array(
+				'type'                 => 'object',
+				'properties'           => array(
+					'dataset' => array(
+						'type'        => 'string',
+						'description' => 'Dataset name (e.g., "squad", "imdb")',
+					),
+					'config'  => array(
+						'type'        => 'string',
+						'description' => 'Configuration name (default: "default")',
+						'default'     => 'default',
+					),
+					'split'   => array(
+						'type'        => 'string',
+						'description' => 'Split name (e.g., "train", "test")',
+					),
+					'query'   => array(
+						'type'        => 'string',
+						'description' => 'Search text to find in dataset rows',
+					),
+					'offset'  => array(
+						'type'        => 'integer',
+						'description' => 'Starting row for pagination (0-based)',
+						'default'     => 0,
+						'minimum'     => 0,
+					),
+					'limit'   => array(
+						'type'        => 'integer',
+						'description' => 'Number of results to return (max 100)',
+						'default'     => 10,
+						'minimum'     => 1,
+						'maximum'     => 100,
+					),
 				),
-				'config'  => array(
-					'type'        => 'string',
-					'description' => 'Configuration name (default: "default")',
-					'default'     => 'default',
-				),
-				'split'   => array(
-					'type'        => 'string',
-					'description' => 'Split name (e.g., "train", "test")',
-				),
-				'query'   => array(
-					'type'        => 'string',
-					'description' => 'Search text to find in dataset rows',
-				),
-				'offset'  => array(
-					'type'        => 'integer',
-					'description' => 'Starting row for pagination (0-based)',
-					'default'     => 0,
-					'minimum'     => 0,
-				),
-				'limit'   => array(
-					'type'        => 'integer',
-					'description' => 'Number of results to return (max 100)',
-					'default'     => 10,
-					'minimum'     => 1,
-					'maximum'     => 100,
-				),
-			),
-			'required'   => array( 'dataset', 'split', 'query' ),
-			'additionalProperties' => false,
-		);
-	}
+				'required'             => array( 'dataset', 'split', 'query' ),
+				'additionalProperties' => false,
+			);
+		}
 
 		/**
 		 * Get tool definition for MCP.
@@ -167,21 +167,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Search' ) ) {
 			return apply_filters( 'wp_mcp_ai_tool_huggingface_datasets_capability', 'read' );
 		}
 
-	/**
-	 * Get capability flags for this tool.
-	 *
-	 * @return array<string> Array of capability flag strings.
-	 */
-	public function get_capability_flags() {
-		return array(
-			'external-api',        // Makes external API calls to HuggingFace.
-			'network-dependent',   // Requires internet connectivity.
-			'read-only',           // Only reads data, doesn't modify WordPress state.
-			'cacheable',           // Results can be cached.
-			'paginated',           // Supports pagination.
-			'large-response',      // May return large datasets.
-		);
-	}
+		/**
+		 * Get capability flags for this tool.
+		 *
+		 * @return array<string> Array of capability flag strings.
+		 */
+		public function get_capability_flags() {
+			return array(
+				'external-api',        // Makes external API calls to HuggingFace.
+				'network-dependent',   // Requires internet connectivity.
+				'read-only',           // Only reads data, doesn't modify WordPress state.
+				'cacheable',           // Results can be cached.
+				'paginated',           // Supports pagination.
+				'large-response',      // May return large datasets.
+			);
+		}
 
 		/**
 		 * Execute the tool.

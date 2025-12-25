@@ -23,11 +23,11 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	 * @var array
 	 */
 	const MAX_FILE_SIZES = array(
-		'assistants'   => 536870912, // 512 MB.
-		'fine-tune'    => 1073741824, // 1 GB.
-		'batch'        => 104857600, // 100 MB.
-		'vision'       => 20971520, // 20 MB.
-		'whisper'      => 26214400, // 25 MB.
+		'assistants' => 536870912, // 512 MB.
+		'fine-tune'  => 1073741824, // 1 GB.
+		'batch'      => 104857600, // 100 MB.
+		'vision'     => 20971520, // 20 MB.
+		'whisper'    => 26214400, // 25 MB.
 	);
 
 	/**
@@ -36,11 +36,11 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	 * @var array
 	 */
 	const ALLOWED_FILE_TYPES = array(
-		'assistants'   => array( 'pdf', 'txt', 'md', 'json', 'csv', 'docx', 'xlsx', 'pptx' ),
-		'fine-tune'    => array( 'jsonl' ),
-		'batch'        => array( 'jsonl' ),
-		'vision'       => array( 'jpg', 'jpeg', 'png', 'gif', 'webp' ),
-		'whisper'      => array( 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm', 'flac' ),
+		'assistants' => array( 'pdf', 'txt', 'md', 'json', 'csv', 'docx', 'xlsx', 'pptx' ),
+		'fine-tune'  => array( 'jsonl' ),
+		'batch'      => array( 'jsonl' ),
+		'vision'     => array( 'jpg', 'jpeg', 'png', 'gif', 'webp' ),
+		'whisper'    => array( 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm', 'flac' ),
 	);
 
 	/**
@@ -103,9 +103,9 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		$file_id = absint( $arguments['file_id'] );
+		$file_id   = absint( $arguments['file_id'] );
 		$file_path = get_attached_file( $file_id );
-		
+
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
 			return array(
 				'success' => false,
@@ -154,17 +154,17 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 		$file_type = wp_check_filetype( $file_path );
 		$file_ext  = $file_type['ext'];
 		$mime_type = $file_type['type'];
-		
-		$max_size          = self::MAX_FILE_SIZES[ $purpose ];
-		$allowed_types     = self::ALLOWED_FILE_TYPES[ $purpose ];
-		
-		$warnings          = array();
-		$recommendations   = array();
-		$suitable          = true;
-		
+
+		$max_size      = self::MAX_FILE_SIZES[ $purpose ];
+		$allowed_types = self::ALLOWED_FILE_TYPES[ $purpose ];
+
+		$warnings        = array();
+		$recommendations = array();
+		$suitable        = true;
+
 		// Check file size.
 		if ( $file_size > $max_size ) {
-			$suitable = false;
+			$suitable   = false;
 			$warnings[] = sprintf(
 				/* translators: 1: file size, 2: max size, 3: purpose */
 				__( 'File size (%1$s) exceeds maximum allowed for %3$s purpose (%2$s).', 'wp-mcp-ai' ),
@@ -175,10 +175,10 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 		} elseif ( $file_size > ( $max_size * 0.9 ) ) {
 			$recommendations[] = __( 'File size is close to the maximum. Consider compressing if possible.', 'wp-mcp-ai' );
 		}
-		
+
 		// Check file type.
 		if ( ! in_array( $file_ext, $allowed_types, true ) ) {
-			$suitable = false;
+			$suitable   = false;
 			$warnings[] = sprintf(
 				/* translators: 1: file extension, 2: purpose, 3: allowed types */
 				__( 'File type "%1$s" is not supported for %2$s purpose. Allowed types: %3$s.', 'wp-mcp-ai' ),
@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 				implode( ', ', $allowed_types )
 			);
 		}
-		
+
 		// Content-specific checks.
 		if ( $check_content && $suitable ) {
 			if ( 'vision' === $purpose && in_array( $file_ext, array( 'jpg', 'jpeg', 'png', 'gif', 'webp' ), true ) ) {
@@ -198,7 +198,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 				$this->check_text_properties( $file_path, $file_ext, $warnings, $recommendations );
 			}
 		}
-		
+
 		// General recommendations.
 		if ( $suitable ) {
 			if ( empty( $warnings ) ) {
@@ -234,19 +234,19 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function check_image_properties( $file_path, &$warnings, &$recommendations ) {
 		$image_info = getimagesize( $file_path );
-		
+
 		if ( ! $image_info ) {
 			$warnings[] = __( 'Unable to read image properties.', 'wp-mcp-ai' );
 			return;
 		}
-		
+
 		list( $width, $height ) = $image_info;
-		
+
 		// OpenAI vision prefers images not too large.
 		if ( $width > 4096 || $height > 4096 ) {
 			$recommendations[] = __( 'Image dimensions are very large. Consider resizing for faster processing.', 'wp-mcp-ai' );
 		}
-		
+
 		// Check if image is too small.
 		if ( $width < 100 || $height < 100 ) {
 			$warnings[] = __( 'Image is very small. May not provide good results for vision tasks.', 'wp-mcp-ai' );
@@ -263,10 +263,10 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	private function check_audio_properties( $file_path, &$warnings, &$recommendations ) {
 		// Basic audio file checks (could be enhanced with actual audio library).
 		$file_size = filesize( $file_path );
-		
+
 		// Whisper works best with clear audio.
 		$recommendations[] = __( 'For best transcription results, ensure audio has minimal background noise.', 'wp-mcp-ai' );
-		
+
 		// Warn about very short files.
 		if ( $file_size < 10240 ) { // Less than 10KB.
 			$warnings[] = __( 'Audio file seems very short. May not contain useful content.', 'wp-mcp-ai' );
@@ -284,18 +284,18 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	private function check_text_properties( $file_path, $file_ext, &$warnings, &$recommendations ) {
 		if ( in_array( $file_ext, array( 'txt', 'md', 'json', 'jsonl', 'csv' ), true ) ) {
 			$file_size = filesize( $file_path );
-			
+
 			// Check if file is empty.
 			if ( $file_size < 10 ) {
 				$warnings[] = __( 'File appears to be empty or nearly empty.', 'wp-mcp-ai' );
 				return;
 			}
-			
+
 			// For JSONL, check format.
 			if ( 'jsonl' === $file_ext ) {
 				$this->check_jsonl_format( $file_path, $warnings, $recommendations );
 			}
-			
+
 			$recommendations[] = __( 'Text-based files should use UTF-8 encoding for best results.', 'wp-mcp-ai' );
 		}
 	}
@@ -313,25 +313,25 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 			$warnings[] = __( 'Unable to read JSONL file.', 'wp-mcp-ai' );
 			return;
 		}
-		
+
 		$line_count = 0;
 		$valid_json = 0;
-		
+
 		while ( ! feof( $handle ) && $line_count < 10 ) { // Check first 10 lines.
 			$line = fgets( $handle );
 			if ( empty( trim( $line ) ) ) {
 				continue;
 			}
-			
-			$line_count++;
+
+			++$line_count;
 			$decoded = json_decode( $line, true );
 			if ( null !== $decoded ) {
-				$valid_json++;
+				++$valid_json;
 			}
 		}
-		
+
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
-		
+
 		if ( $line_count > 0 && $valid_json === 0 ) {
 			$warnings[] = __( 'JSONL file does not appear to contain valid JSON lines.', 'wp-mcp-ai' );
 		} elseif ( $valid_json < $line_count ) {

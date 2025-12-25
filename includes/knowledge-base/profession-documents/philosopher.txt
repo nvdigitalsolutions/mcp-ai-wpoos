@@ -3,6 +3,10 @@ Philosopher — Profession Knowledge Pack
 Slug: philosopher
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Examines fundamental questions about existence, knowledge, and ethics

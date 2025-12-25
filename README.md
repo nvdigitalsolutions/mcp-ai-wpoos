@@ -1,4 +1,4 @@
-# Open Operator System (WP oOS)
+# NV Digital Open Operator System (oOS)
 
 [![PHPUnit](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml)
 [![JavaScript Tests](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml)
@@ -2399,7 +2399,7 @@ Create issues at: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 We welcome contributions! Please see:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- **[MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md) ⭐ START HERE** - Complete consolidation of ALL fixes, summaries, and code reviews (98/100 score)
+- **[MASTER_CONSOLIDATION_2025.md](docs/implementation-history/2025/summaries/MASTER_CONSOLIDATION_2025.md) ⭐ START HERE** - Complete consolidation of ALL fixes, summaries, and code reviews (98/100 score)
 - [CONSOLIDATION_MAP.md](docs/implementation-history/2025/summaries/CONSOLIDATION_MAP.md) - Detailed map showing what was consolidated from where
 - [CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md) - Code quality standards with historical reviews
 - [ACTION_ITEMS.md](docs/implementation-history/2025/summaries/ACTION_ITEMS.md) - Current development priorities
@@ -2408,7 +2408,7 @@ We welcome contributions! Please see:
 
 Comprehensive documentation is available:
 
-- **[MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md) ⭐ PRIMARY REFERENCE** - Single source of truth for all 2025 work
+- **[MASTER_CONSOLIDATION_2025.md](docs/implementation-history/2025/summaries/MASTER_CONSOLIDATION_2025.md) ⭐ PRIMARY REFERENCE** - Single source of truth for all 2025 work
 - **[CONSOLIDATION_MAP.md](docs/implementation-history/2025/summaries/CONSOLIDATION_MAP.md)** - Navigation guide and source document mapping
 - **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation index (535+ files)
 - **[CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md)** - Master code review (98/100)

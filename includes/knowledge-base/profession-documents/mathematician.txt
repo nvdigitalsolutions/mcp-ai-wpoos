@@ -3,6 +3,10 @@ Mathematician — Profession Knowledge Pack
 Slug: mathematician
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Develops and applies mathematical theories and techniques.

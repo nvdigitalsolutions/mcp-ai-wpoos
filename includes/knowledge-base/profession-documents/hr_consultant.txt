@@ -3,6 +3,10 @@ HR Consultant — Profession Knowledge Pack
 Slug: hr_consultant
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Human resources and workforce management expert.

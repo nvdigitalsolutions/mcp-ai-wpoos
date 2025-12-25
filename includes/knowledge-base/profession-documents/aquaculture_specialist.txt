@@ -3,6 +3,10 @@ Aquaculture Specialist — Profession Knowledge Pack
 Slug: aquaculture_specialist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages cultivation of aquatic organisms.

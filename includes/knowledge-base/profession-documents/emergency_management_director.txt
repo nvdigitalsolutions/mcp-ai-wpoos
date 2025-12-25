@@ -3,6 +3,10 @@ Emergency Management Director — Profession Knowledge Pack
 Slug: emergency_management_director
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Plans and directs emergency response and disaster management.

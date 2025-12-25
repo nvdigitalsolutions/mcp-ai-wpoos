@@ -85,11 +85,10 @@ class WP_MCP_AI_Tool_List_OpenAI_Files implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
 		}
-// Build arguments for the OpenAI client.
+		// Build arguments for the OpenAI client.
 		$api_args = array();
 
 		if ( isset( $arguments['purpose'] ) && '' !== $arguments['purpose'] ) {
@@ -97,8 +96,8 @@ class WP_MCP_AI_Tool_List_OpenAI_Files implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		if ( isset( $arguments['limit'] ) && '' !== $arguments['limit'] ) {
-			$limit              = absint( $arguments['limit'] );
-			$api_args['limit']  = max( 1, min( 100, $limit ) );
+			$limit             = absint( $arguments['limit'] );
+			$api_args['limit'] = max( 1, min( 100, $limit ) );
 		}
 
 		if ( isset( $arguments['order'] ) && '' !== $arguments['order'] ) {

@@ -3,6 +3,10 @@ Nurse Practitioner — Profession Knowledge Pack
 Slug: nurse_practitioner
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Advanced practice registered nurse who provides primary and specialty healthcare services

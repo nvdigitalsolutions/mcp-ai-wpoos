@@ -3,6 +3,10 @@ Occupational Therapist — Profession Knowledge Pack
 Slug: occupational_therapist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Helps people develop or recover skills for daily living and working

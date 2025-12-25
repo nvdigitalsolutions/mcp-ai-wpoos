@@ -3,6 +3,10 @@ Structural Drafter — Profession Knowledge Pack
 Slug: structural_drafter
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Produces structural drawings from engineer's calculations including steel detailing, concrete reinforcement, and foundation plans

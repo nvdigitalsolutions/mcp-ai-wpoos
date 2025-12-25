@@ -3,6 +3,10 @@ Electrical Engineer — Profession Knowledge Pack
 Slug: electrical_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs and develops electrical systems and equipment

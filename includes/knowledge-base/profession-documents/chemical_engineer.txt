@@ -3,6 +3,10 @@ Chemical Engineer — Profession Knowledge Pack
 Slug: chemical_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs processes for chemical manufacturing and production

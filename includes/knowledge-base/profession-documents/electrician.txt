@@ -3,6 +3,10 @@ Electrician — Profession Knowledge Pack
 Slug: electrician
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Installs, maintains, and repairs electrical systems

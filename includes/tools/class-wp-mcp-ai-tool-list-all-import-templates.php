@@ -120,27 +120,27 @@ class WP_MCP_AI_Tool_List_All_Import_Templates implements WP_MCP_AI_Tool_Interfa
 
 		foreach ( $imports as $import ) {
 			$import_meta = get_post_meta( $import->ID );
-			
+
 			$results[] = array(
-				'id'              => $import->ID,
-				'name'            => $import->post_title,
-				'status'          => $import->post_status,
-				'created_at'      => $import->post_date,
-				'modified_at'     => $import->post_modified,
-				'import_type'     => isset( $import_meta['custom_type'][0] ) ? $import_meta['custom_type'][0] : '',
-				'scheduled'       => isset( $import_meta['is_scheduled'][0] ) ? (bool) $import_meta['is_scheduled'][0] : false,
-				'processing'      => isset( $import_meta['processing'][0] ) ? (bool) $import_meta['processing'][0] : false,
+				'id'          => $import->ID,
+				'name'        => $import->post_title,
+				'status'      => $import->post_status,
+				'created_at'  => $import->post_date,
+				'modified_at' => $import->post_modified,
+				'import_type' => isset( $import_meta['custom_type'][0] ) ? $import_meta['custom_type'][0] : '',
+				'scheduled'   => isset( $import_meta['is_scheduled'][0] ) ? (bool) $import_meta['is_scheduled'][0] : false,
+				'processing'  => isset( $import_meta['processing'][0] ) ? (bool) $import_meta['processing'][0] : false,
 			);
 		}
 
 		return array(
-			'summary'   => sprintf(
+			'summary' => sprintf(
 				/* translators: %d: number of import templates */
 				__( 'Found %d import template(s)', 'wp-mcp-ai' ),
 				count( $results )
 			),
-			'imports'   => $results,
-			'count'     => count( $results ),
+			'imports' => $results,
+			'count'   => count( $results ),
 		);
 	}
 

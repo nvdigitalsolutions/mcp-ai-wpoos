@@ -59,27 +59,27 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'email'      => array(
+				'email'       => array(
 					'type'        => 'string',
 					'description' => __( 'Email address of the subscriber.', 'wp-mcp-ai' ),
 					'format'      => 'email',
 				),
-				'name'       => array(
+				'name'        => array(
 					'type'        => 'string',
 					'description' => __( 'Optional name of the subscriber.', 'wp-mcp-ai' ),
 				),
-				'surname'    => array(
+				'surname'     => array(
 					'type'        => 'string',
 					'description' => __( 'Optional surname/last name of the subscriber.', 'wp-mcp-ai' ),
 				),
-				'lists'      => array(
+				'lists'       => array(
 					'type'        => 'array',
 					'description' => __( 'Optional array of list IDs to subscribe to.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'integer',
 					),
 				),
-				'status'     => array(
+				'status'      => array(
 					'type'        => 'string',
 					'description' => __( 'Subscription status: confirmed, not_confirmed, or unsubscribed. Default: confirmed.', 'wp-mcp-ai' ),
 					'enum'        => array( 'confirmed', 'not_confirmed', 'unsubscribed' ),
@@ -137,9 +137,9 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 		$name    = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : '';
 		$surname = isset( $arguments['surname'] ) ? sanitize_text_field( $arguments['surname'] ) : '';
 		$status  = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'confirmed';
-		
+
 		// Map status to Newsletter plugin status codes.
-		$status_map = array(
+		$status_map  = array(
 			'confirmed'     => 'C',
 			'not_confirmed' => 'S',
 			'unsubscribed'  => 'U',
@@ -147,11 +147,11 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 		$status_code = isset( $status_map[ $status ] ) ? $status_map[ $status ] : 'C';
 
 		$subscriber_data = array(
-			'email'  => $email,
-			'name'   => $name,
+			'email'   => $email,
+			'name'    => $name,
 			'surname' => $surname,
-			'status' => $status_code,
-			'token'  => $this->generate_token(),
+			'status'  => $status_code,
+			'token'   => $this->generate_token(),
 		);
 
 		// Handle lists.
@@ -167,7 +167,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 		if ( $existing ) {
 			// Update existing subscriber.
 			$subscriber_data['id'] = $existing->id;
-			$result = $wpdb->update(
+			$result                = $wpdb->update(
 				$table,
 				$subscriber_data,
 				array( 'id' => $existing->id ),
@@ -190,7 +190,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 		} else {
 			// Insert new subscriber.
 			$subscriber_data['created'] = current_time( 'mysql' );
-			
+
 			$result = $wpdb->insert(
 				$table,
 				$subscriber_data

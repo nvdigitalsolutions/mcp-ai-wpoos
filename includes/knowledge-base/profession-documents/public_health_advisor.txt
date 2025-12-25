@@ -3,6 +3,10 @@ Public Health Advisor — Profession Knowledge Pack
 Slug: public_health_advisor
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides guidance on public health programs and policies.

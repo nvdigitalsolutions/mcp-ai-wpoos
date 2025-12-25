@@ -3,6 +3,10 @@ Healthcare Advisor — Profession Knowledge Pack
 Slug: healthcare_advisor
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides guidance on healthcare systems, policies, and best practices.

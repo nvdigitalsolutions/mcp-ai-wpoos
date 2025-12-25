@@ -3,6 +3,10 @@ Librarian — Profession Knowledge Pack
 Slug: librarian
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages library resources and assists patrons with information needs

@@ -3,6 +3,10 @@ Slug: anthropologist
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for anthropologists conducting cultural research, ethnographic fieldwork, and analysis of human societies following AAA ethical guidelines, institutional review board (IRB) requirements, and academic research standards.
 - Focus on ethical research practices, cultural sensitivity, systematic data collection, qualitative and quantitative analysis methods, participant observation, and scholarly communication across four subfields: cultural anthropology, biological anthropology, archaeology, and linguistic anthropology.

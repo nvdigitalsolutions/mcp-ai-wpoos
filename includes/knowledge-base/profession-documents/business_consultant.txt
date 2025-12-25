@@ -3,6 +3,10 @@ Business Consultant — Profession Knowledge Pack
 Slug: business_consultant
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Expert in business strategy, operations, and growth

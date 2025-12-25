@@ -3,6 +3,10 @@ Marine Biologist — Profession Knowledge Pack
 Slug: marine_biologist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies marine organisms and their ecosystems.

@@ -3,6 +3,10 @@ Interpreter/Translator — Profession Knowledge Pack
 Slug: interpreter_translator
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Converts communication between languages

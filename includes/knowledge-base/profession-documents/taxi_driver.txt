@@ -3,6 +3,10 @@ Taxi/Rideshare Driver — Profession Knowledge Pack
 Slug: taxi_driver
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides passenger transportation services

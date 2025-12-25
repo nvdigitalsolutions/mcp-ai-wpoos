@@ -3,6 +3,10 @@ Animator — Profession Knowledge Pack
 Slug: animator
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Creates animated content for film, games, and media

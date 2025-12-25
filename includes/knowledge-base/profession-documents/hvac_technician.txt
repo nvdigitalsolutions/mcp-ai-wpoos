@@ -3,6 +3,10 @@ HVAC Technician — Profession Knowledge Pack
 Slug: hvac_technician
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Installs, maintains, and repairs heating, ventilation, and air conditioning systems

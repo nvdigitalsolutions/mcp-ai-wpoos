@@ -3,6 +3,10 @@ Biomedical Engineer — Profession Knowledge Pack
 Slug: biomedical_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Applies engineering principles to medicine and healthcare

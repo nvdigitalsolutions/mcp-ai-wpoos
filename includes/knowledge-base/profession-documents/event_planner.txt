@@ -3,6 +3,10 @@ Event Planner — Profession Knowledge Pack
 Slug: event_planner
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Plans and coordinates events and special occasions

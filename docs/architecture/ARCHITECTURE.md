@@ -3,7 +3,7 @@
 **Last Updated:** December 2025
 **Version:** 1.0.0
 
-This document provides a high-level architectural overview of the Open Operator System (WP oOS) plugin. For detailed technical documentation, see the [docs/](docs/) directory.
+This document provides a high-level architectural overview of the Open Operator System (WP oOS) plugin. For detailed technical documentation, see the main [docs](../) directory.
 
 ## Table of Contents
 
@@ -182,7 +182,7 @@ if ( is_wp_error( $result ) ) {
 - Registry-state-based tool scheduling
 - Capability-based access control enforcement
 
-See [docs/ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) for detailed analysis.
+See [orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md](orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) for detailed analysis.
 
 ### 6. Admin Interface (`includes/admin/`)
 
@@ -371,7 +371,7 @@ add_filter( 'wp_mcp_ai_authenticate_request', function( $user_id, $request ) {
 - `wp_mcp_ai_model_config` - Filter model configuration
 - `wp_mcp_ai_tool_list` - Filter available tools
 
-See [docs/DYNAMIC-CONFIGURATION-FILTERS.md](docs/guides/developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md) for complete list.
+See [../guides/developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md](../guides/developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md) for complete list.
 
 ## Security Architecture
 
@@ -415,7 +415,7 @@ echo '<a href="' . esc_url( $link ) . '">';
 - `WP_MCP_AI_Root_Security_Key` - Emergency shutdown
 - Comprehensive audit logging
 
-See [SECURITY.md](SECURITY.md) for complete security documentation.
+See [../../SECURITY.md](../../SECURITY.md) for complete security documentation.
 
 ## Performance Considerations
 
@@ -446,7 +446,7 @@ wp_cache_set( $key, $value, 'wp_mcp_ai' );
 - Lazy loading (load tools on demand)
 - SSE streaming (reduce perceived latency)
 
-See [docs/PERFORMANCE-OPTIMIZATION.md](docs/features/performance/PERFORMANCE-OPTIMIZATION.md) for details.
+See [../features/performance/PERFORMANCE-OPTIMIZATION.md](../features/performance/PERFORMANCE-OPTIMIZATION.md) for details.
 
 ## Testing Architecture
 
@@ -471,7 +471,7 @@ tests/
 - **WordPress Test Suite** - WordPress-specific testing environment
 - **Code Coverage** - Xdebug coverage reporting
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for testing guidelines.
+See [../../CONTRIBUTING.md](../../CONTRIBUTING.md) for testing guidelines.
 
 ## Directory Structure
 
@@ -499,12 +499,12 @@ mcp-ai-wpoos/
 
 ## Further Reading
 
-- **[QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - Fast reference guide
-- **[DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)** - Complete documentation map
-- **[CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md)** - Code quality assessment
-- **[ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)** - Detailed orchestration layer analysis
-- **[tool-reference.md](docs/reference/tools/tool-reference.md)** - Complete tool catalog
-- **[rest-api.md](docs/reference/api/rest-api.md)** - REST API reference
+- **[QUICK_REFERENCE.md](../QUICK_REFERENCE.md)** - Fast reference guide
+- **[DOCUMENTATION_INDEX.md](../DOCUMENTATION_INDEX.md)** - Complete documentation map
+- **[CODE-REVIEW-MASTER.md](../guides/developer/best-practices/CODE-REVIEW-MASTER.md)** - Code quality assessment
+- **[ORCHESTRATION-LAYER-ARCHITECTURE.md](orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)** - Detailed orchestration layer analysis
+- **[tool-reference.md](../reference/tools/tool-reference.md)** - Complete tool catalog
+- **[rest-api.md](../reference/api/rest-api.md)** - REST API reference
 
 ## Version History
 

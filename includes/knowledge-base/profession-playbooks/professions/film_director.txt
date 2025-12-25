@@ -3,6 +3,10 @@ Slug: film_director
 Category: creative
 Includes: global.txt + categories/creative.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Provide actionable guidance for film direction following DGA/industry standards.
 - Focus on visual storytelling, crew leadership, creative vision, and production collaboration.

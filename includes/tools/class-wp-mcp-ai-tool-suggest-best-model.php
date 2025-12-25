@@ -62,12 +62,12 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'task_type'          => array(
+				'task_type'         => array(
 					'type'        => 'string',
 					'enum'        => array( 'chat', 'embeddings', 'images', 'audio-transcription', 'audio-tts', 'moderation' ),
 					'description' => __( 'Type of task to perform.', 'wp-mcp-ai' ),
 				),
-				'requirements'       => array(
+				'requirements'      => array(
 					'type'        => 'array',
 					'items'       => array(
 						'type' => 'string',
@@ -76,17 +76,17 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Array of requirements (speed, quality, cost, vision, function_calling).', 'wp-mcp-ai' ),
 					'default'     => array( 'quality' ),
 				),
-				'context_length'     => array(
+				'context_length'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Required context length in tokens.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'multimodal'         => array(
+				'multimodal'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Requires vision or audio capabilities.', 'wp-mcp-ai' ),
 					'default'     => false,
 				),
-				'budget_preference'  => array(
+				'budget_preference' => array(
 					'type'        => 'string',
 					'enum'        => array( 'low', 'medium', 'high' ),
 					'description' => __( 'Budget preference level.', 'wp-mcp-ai' ),
@@ -116,11 +116,10 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
-		
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
 		}
-// Validate task_type.
+		// Validate task_type.
 		if ( ! isset( $arguments['task_type'] ) || empty( $arguments['task_type'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_task_type',
@@ -206,7 +205,7 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 		// Score candidates based on requirements and budget.
 		$scored_candidates = array();
 		foreach ( $candidates as $model_id => $model_info ) {
-			$score = $this->calculate_model_score( $model_info, $requirements, $budget_preference );
+			$score                          = $this->calculate_model_score( $model_info, $requirements, $budget_preference );
 			$scored_candidates[ $model_id ] = array(
 				'info'  => $model_info,
 				'score' => $score,
@@ -232,19 +231,19 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 			if ( $i > 0 ) { // Skip the first one (it's the recommended model).
 				$alternatives[] = $model_id;
 			}
-			$i++;
+			++$i;
 		}
 
 		// Generate reasoning.
 		$reasoning = $this->generate_reasoning( $top_model, $task_type, $requirements, $budget_preference );
 
 		return array(
-			'model'           => $top_model_id,
-			'reasoning'       => $reasoning,
-			'alternatives'    => array_slice( $alternatives, 0, 3 ),
-			'estimated_cost'  => $top_model['cost_per_1k_tokens'],
-			'context_window'  => $top_model['context_window'],
-			'capabilities'    => $top_model['capabilities'],
+			'model'          => $top_model_id,
+			'reasoning'      => $reasoning,
+			'alternatives'   => array_slice( $alternatives, 0, 3 ),
+			'estimated_cost' => $top_model['cost_per_1k_tokens'],
+			'context_window' => $top_model['context_window'],
+			'capabilities'   => $top_model['capabilities'],
 		);
 	}
 
@@ -341,121 +340,121 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function get_model_database() {
 		return array(
-			'gpt-4o'                    => array(
-				'task_types'        => array( 'chat' ),
-				'context_window'    => 128000,
-				'capabilities'      => array( 'chat', 'function_calling', 'vision' ),
-				'speed'             => 9,
-				'quality'           => 10,
-				'tier'              => 3,
+			'gpt-4o'                 => array(
+				'task_types'         => array( 'chat' ),
+				'context_window'     => 128000,
+				'capabilities'       => array( 'chat', 'function_calling', 'vision' ),
+				'speed'              => 9,
+				'quality'            => 10,
+				'tier'               => 3,
 				'cost_per_1k_tokens' => 0.0025,
 			),
-			'gpt-4o-mini'               => array(
-				'task_types'        => array( 'chat' ),
-				'context_window'    => 128000,
-				'capabilities'      => array( 'chat', 'function_calling', 'vision' ),
-				'speed'             => 10,
-				'quality'           => 8,
-				'tier'              => 2,
+			'gpt-4o-mini'            => array(
+				'task_types'         => array( 'chat' ),
+				'context_window'     => 128000,
+				'capabilities'       => array( 'chat', 'function_calling', 'vision' ),
+				'speed'              => 10,
+				'quality'            => 8,
+				'tier'               => 2,
 				'cost_per_1k_tokens' => 0.00015,
 			),
-			'gpt-4-turbo'               => array(
-				'task_types'        => array( 'chat' ),
-				'context_window'    => 128000,
-				'capabilities'      => array( 'chat', 'function_calling', 'vision' ),
-				'speed'             => 8,
-				'quality'           => 10,
-				'tier'              => 3,
+			'gpt-4-turbo'            => array(
+				'task_types'         => array( 'chat' ),
+				'context_window'     => 128000,
+				'capabilities'       => array( 'chat', 'function_calling', 'vision' ),
+				'speed'              => 8,
+				'quality'            => 10,
+				'tier'               => 3,
 				'cost_per_1k_tokens' => 0.01,
 			),
-			'gpt-3.5-turbo'             => array(
-				'task_types'        => array( 'chat' ),
-				'context_window'    => 16385,
-				'capabilities'      => array( 'chat', 'function_calling' ),
-				'speed'             => 10,
-				'quality'           => 7,
-				'tier'              => 1,
+			'gpt-3.5-turbo'          => array(
+				'task_types'         => array( 'chat' ),
+				'context_window'     => 16385,
+				'capabilities'       => array( 'chat', 'function_calling' ),
+				'speed'              => 10,
+				'quality'            => 7,
+				'tier'               => 1,
 				'cost_per_1k_tokens' => 0.0005,
 			),
-			'text-embedding-3-large'    => array(
-				'task_types'        => array( 'embeddings' ),
-				'context_window'    => 8191,
-				'capabilities'      => array( 'embeddings' ),
-				'speed'             => 9,
-				'quality'           => 10,
-				'tier'              => 2,
+			'text-embedding-3-large' => array(
+				'task_types'         => array( 'embeddings' ),
+				'context_window'     => 8191,
+				'capabilities'       => array( 'embeddings' ),
+				'speed'              => 9,
+				'quality'            => 10,
+				'tier'               => 2,
 				'cost_per_1k_tokens' => 0.00013,
 			),
-			'text-embedding-3-small'    => array(
-				'task_types'        => array( 'embeddings' ),
-				'context_window'    => 8191,
-				'capabilities'      => array( 'embeddings' ),
-				'speed'             => 10,
-				'quality'           => 9,
-				'tier'              => 1,
+			'text-embedding-3-small' => array(
+				'task_types'         => array( 'embeddings' ),
+				'context_window'     => 8191,
+				'capabilities'       => array( 'embeddings' ),
+				'speed'              => 10,
+				'quality'            => 9,
+				'tier'               => 1,
 				'cost_per_1k_tokens' => 0.00002,
 			),
-			'text-embedding-ada-002'    => array(
-				'task_types'        => array( 'embeddings' ),
-				'context_window'    => 8191,
-				'capabilities'      => array( 'embeddings' ),
-				'speed'             => 9,
-				'quality'           => 8,
-				'tier'              => 1,
+			'text-embedding-ada-002' => array(
+				'task_types'         => array( 'embeddings' ),
+				'context_window'     => 8191,
+				'capabilities'       => array( 'embeddings' ),
+				'speed'              => 9,
+				'quality'            => 8,
+				'tier'               => 1,
 				'cost_per_1k_tokens' => 0.0001,
 			),
-			'dall-e-3'                  => array(
-				'task_types'        => array( 'images' ),
-				'context_window'    => 4000,
-				'capabilities'      => array( 'images' ),
-				'speed'             => 6,
-				'quality'           => 10,
-				'tier'              => 2,
+			'dall-e-3'               => array(
+				'task_types'         => array( 'images' ),
+				'context_window'     => 4000,
+				'capabilities'       => array( 'images' ),
+				'speed'              => 6,
+				'quality'            => 10,
+				'tier'               => 2,
 				'cost_per_1k_tokens' => 0.04,
 			),
-			'dall-e-2'                  => array(
-				'task_types'        => array( 'images' ),
-				'context_window'    => 1000,
-				'capabilities'      => array( 'images' ),
-				'speed'             => 7,
-				'quality'           => 7,
-				'tier'              => 1,
+			'dall-e-2'               => array(
+				'task_types'         => array( 'images' ),
+				'context_window'     => 1000,
+				'capabilities'       => array( 'images' ),
+				'speed'              => 7,
+				'quality'            => 7,
+				'tier'               => 1,
 				'cost_per_1k_tokens' => 0.02,
 			),
-			'whisper-1'                 => array(
-				'task_types'        => array( 'audio-transcription' ),
-				'context_window'    => 0,
-				'capabilities'      => array( 'audio' ),
-				'speed'             => 8,
-				'quality'           => 9,
-				'tier'              => 1,
+			'whisper-1'              => array(
+				'task_types'         => array( 'audio-transcription' ),
+				'context_window'     => 0,
+				'capabilities'       => array( 'audio' ),
+				'speed'              => 8,
+				'quality'            => 9,
+				'tier'               => 1,
 				'cost_per_1k_tokens' => 0.006,
 			),
-			'tts-1'                     => array(
-				'task_types'        => array( 'audio-tts' ),
-				'context_window'    => 4096,
-				'capabilities'      => array( 'audio' ),
-				'speed'             => 9,
-				'quality'           => 8,
-				'tier'              => 1,
+			'tts-1'                  => array(
+				'task_types'         => array( 'audio-tts' ),
+				'context_window'     => 4096,
+				'capabilities'       => array( 'audio' ),
+				'speed'              => 9,
+				'quality'            => 8,
+				'tier'               => 1,
 				'cost_per_1k_tokens' => 0.015,
 			),
-			'tts-1-hd'                  => array(
-				'task_types'        => array( 'audio-tts' ),
-				'context_window'    => 4096,
-				'capabilities'      => array( 'audio' ),
-				'speed'             => 7,
-				'quality'           => 10,
-				'tier'              => 2,
+			'tts-1-hd'               => array(
+				'task_types'         => array( 'audio-tts' ),
+				'context_window'     => 4096,
+				'capabilities'       => array( 'audio' ),
+				'speed'              => 7,
+				'quality'            => 10,
+				'tier'               => 2,
 				'cost_per_1k_tokens' => 0.03,
 			),
-			'text-moderation-latest'    => array(
-				'task_types'        => array( 'moderation' ),
-				'context_window'    => 32768,
-				'capabilities'      => array( 'moderation' ),
-				'speed'             => 10,
-				'quality'           => 9,
-				'tier'              => 1,
+			'text-moderation-latest' => array(
+				'task_types'         => array( 'moderation' ),
+				'context_window'     => 32768,
+				'capabilities'       => array( 'moderation' ),
+				'speed'              => 10,
+				'quality'            => 9,
+				'tier'               => 1,
 				'cost_per_1k_tokens' => 0.0,
 			),
 		);

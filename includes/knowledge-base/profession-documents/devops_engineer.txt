@@ -3,6 +3,10 @@ DevOps Engineer — Profession Knowledge Pack
 Slug: devops_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Bridges development and operations through automation and collaboration

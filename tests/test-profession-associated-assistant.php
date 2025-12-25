@@ -284,9 +284,9 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		update_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, $this->assistant_id );
 
 		// Create REST instance to access protected method.
-		$rest = new WP_MCP_AI_REST();
+		$rest       = new WP_MCP_AI_REST();
 		$reflection = new ReflectionClass( $rest );
-		$method = $reflection->getMethod( 'resolve_assistant_id' );
+		$method     = $reflection->getMethod( 'resolve_assistant_id' );
 		$method->setAccessible( true );
 
 		// Test with profession_ prefix.
@@ -311,9 +311,9 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		// Create a default assistant and set it in settings.
 		$default_assistant_id = wp_insert_post(
 			array(
-				'post_type'    => 'mcp_ai_assistant',
-				'post_title'   => 'Default Assistant',
-				'post_status'  => 'publish',
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Default Assistant',
+				'post_status' => 'publish',
 			)
 		);
 
@@ -323,9 +323,9 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		}
 
 		// Create REST instance to access protected method.
-		$rest = new WP_MCP_AI_REST();
+		$rest       = new WP_MCP_AI_REST();
 		$reflection = new ReflectionClass( $rest );
-		$method = $reflection->getMethod( 'resolve_assistant_id' );
+		$method     = $reflection->getMethod( 'resolve_assistant_id' );
 		$method->setAccessible( true );
 
 		// Test with profession_ prefix (no associated assistant set).
@@ -356,15 +356,15 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 		update_post_meta( $this->profession_id, '_wp_mcp_ai_profession_default_tools', array( 'search_posts', 'create_post' ) );
 
 		// Create REST instance to access protected method.
-		$rest = new WP_MCP_AI_REST();
+		$rest       = new WP_MCP_AI_REST();
 		$reflection = new ReflectionClass( $rest );
-		$method = $reflection->getMethod( 'load_profession_configuration' );
+		$method     = $reflection->getMethod( 'load_profession_configuration' );
 		$method->setAccessible( true );
 
 		// Test with base assistant config.
 		$base_config = array(
 			'system_prompt' => 'Base assistant prompt',
-			'tools' => array( 'default_tool' ),
+			'tools'         => array( 'default_tool' ),
 		);
 
 		$merged_config = $method->invoke( $rest, $this->profession_id, $base_config );

@@ -3,6 +3,10 @@ Logistics Coordinator — Profession Knowledge Pack
 Slug: logistics_coordinator
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages transportation and logistics operations

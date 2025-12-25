@@ -3,6 +3,10 @@ Legal Advisor — Profession Knowledge Pack
 Slug: legal_advisor
 Category: legal
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides legal information and compliance guidance.

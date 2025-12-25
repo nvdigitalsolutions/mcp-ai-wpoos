@@ -15,7 +15,7 @@ class Test_Profession_Dataset_Preservation extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		parent::tearDown();
-		
+
 		// Clean up any test professions.
 		$posts = get_posts(
 			array(
@@ -24,7 +24,7 @@ class Test_Profession_Dataset_Preservation extends WP_UnitTestCase {
 				'post_status'    => 'any',
 			)
 		);
-		
+
 		foreach ( $posts as $post ) {
 			wp_delete_post( $post->ID, true );
 		}
@@ -215,7 +215,7 @@ class Test_Profession_Dataset_Preservation extends WP_UnitTestCase {
 
 		// Create professions and assign datasets.
 		foreach ( $professions as $profession ) {
-			$post_id                              = $repository->save( $profession['data'] );
+			$post_id                                       = $repository->save( $profession['data'] );
 			$profession_ids[ $profession['data']['slug'] ] = $post_id;
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, $profession['datasets'] );
 		}

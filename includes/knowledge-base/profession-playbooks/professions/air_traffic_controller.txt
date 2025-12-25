@@ -3,6 +3,10 @@ Slug: air_traffic_controller
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for air traffic controllers managing safe and efficient aircraft operations within controlled airspace following FAA regulations and ICAO standards.
 - Focus on safety-critical communications, separation standards, traffic flow management, emergency response, and maintaining situational awareness in high-stress, high-consequence environments.

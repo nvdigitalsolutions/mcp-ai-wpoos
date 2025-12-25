@@ -3,6 +3,10 @@ Import/Export Specialist — Profession Knowledge Pack
 Slug: import_export_specialist
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages international trade operations and compliance.

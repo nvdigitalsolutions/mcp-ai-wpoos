@@ -3,6 +3,10 @@ Research Scientist — Profession Knowledge Pack
 Slug: research_scientist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Conducts scientific research and experiments

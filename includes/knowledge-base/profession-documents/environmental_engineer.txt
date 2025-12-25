@@ -3,6 +3,10 @@ Environmental Engineer — Profession Knowledge Pack
 Slug: environmental_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Develops solutions to environmental problems

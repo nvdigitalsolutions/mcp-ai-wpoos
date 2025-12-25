@@ -3,6 +3,10 @@ Warehouse Manager — Profession Knowledge Pack
 Slug: warehouse_manager
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages warehouse operations and inventory

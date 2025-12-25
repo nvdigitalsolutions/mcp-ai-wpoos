@@ -3,6 +3,10 @@ College Professor — Profession Knowledge Pack
 Slug: college_professor
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Teaches advanced subjects at the university level and conducts research

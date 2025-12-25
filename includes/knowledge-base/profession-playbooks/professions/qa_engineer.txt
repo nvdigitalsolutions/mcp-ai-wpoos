@@ -3,6 +3,10 @@ Slug: qa_engineer
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Actionable instructions for QA engineers practicing shift-left testing, test automation, and quality assurance.
 

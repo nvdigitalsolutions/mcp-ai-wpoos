@@ -3,6 +3,10 @@ Film Editor — Profession Knowledge Pack
 Slug: film_editor
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Assembles and refines filmed footage into final product.

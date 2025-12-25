@@ -3,6 +3,10 @@ Slug: police_officer
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for law enforcement officers conducting patrol operations, investigations, arrests, traffic enforcement, and community engagement following constitutional principles, de-escalation strategies, and 21st-century policing standards.
 - Focus on sanctity of life, procedural justice, de-escalation, community trust, and constitutional policing.

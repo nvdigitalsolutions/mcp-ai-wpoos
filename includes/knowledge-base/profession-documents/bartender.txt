@@ -3,6 +3,10 @@ Bartender — Profession Knowledge Pack
 Slug: bartender
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Prepares and serves beverages in bars and restaurants

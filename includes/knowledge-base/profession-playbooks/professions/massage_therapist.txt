@@ -3,6 +3,10 @@ Slug: massage_therapist
 Category: healthcare
 Includes: global.txt + categories/healthcare.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Provide actionable guidance for therapeutic massage practice following AMTA/NCBTMB standards.
 - Focus on client safety, professional boundaries, evidence-based techniques, and ethical practice.
