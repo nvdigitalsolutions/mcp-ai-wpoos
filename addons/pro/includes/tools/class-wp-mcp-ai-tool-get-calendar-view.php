@@ -41,14 +41,14 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'start_date' => array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'start_date'    => array(
 					'type'        => 'string',
 					'description' => __( 'Start date for calendar view (YYYY-MM-DD) (required)', 'wp-mcp-ai' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'end_date'   => array(
+				'end_date'      => array(
 					'type'        => 'string',
 					'description' => __( 'End date for calendar view (YYYY-MM-DD) (required)', 'wp-mcp-ai' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
@@ -129,8 +129,8 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$project_id    = isset( $arguments['project_id'] ) ? absint( $arguments['project_id'] ) : 0;
 		$user_id       = isset( $arguments['user_id'] ) ? absint( $arguments['user_id'] ) : 0;
-		$include_types = isset( $arguments['include_types'] ) && is_array( $arguments['include_types'] ) 
-			? $arguments['include_types'] 
+		$include_types = isset( $arguments['include_types'] ) && is_array( $arguments['include_types'] )
+			? $arguments['include_types']
 			: array( 'projects', 'tasks', 'events' );
 		$group_by_date = isset( $arguments['group_by_date'] ) ? (bool) $arguments['group_by_date'] : true;
 
@@ -152,9 +152,12 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		// Sort by date.
-		usort( $calendar_items, function( $a, $b ) {
-			return strcmp( $a['date'], $b['date'] );
-		} );
+		usort(
+			$calendar_items,
+			function ( $a, $b ) {
+				return strcmp( $a['date'], $b['date'] );
+			}
+		);
 
 		$result = array(
 			'success'    => true,
@@ -230,9 +233,9 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$id = get_the_ID();
+				$id            = get_the_ID();
 				$project_start = get_post_meta( $id, '_project_start_date', true );
-				
+
 				$items[] = array(
 					'type'       => 'project',
 					'id'         => $id,

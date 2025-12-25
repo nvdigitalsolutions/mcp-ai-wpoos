@@ -160,7 +160,7 @@ class WP_MCP_AI_Huggingface_Datasets_Client_Tests extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'get_dataset_name_suggestions' );
 		$method->setAccessible( true );
 
-		$suggestions_underscore = $method->invoke( $this->client, 'super_glue' );
+		$suggestions_underscore    = $method->invoke( $this->client, 'super_glue' );
 		$suggestions_no_underscore = $method->invoke( $this->client, 'superglue' );
 
 		$this->assertIsArray( $suggestions_underscore );

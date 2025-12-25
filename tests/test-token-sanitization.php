@@ -1,11 +1,18 @@
 <?php
 /**
  * Tests for token sanitization across external messaging tools.
+ *
+ * @package WP_MCP_AI
  */
 
 require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php';
 require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-telegram-message.php';
 
+/**
+ * Class WP_MCP_AI_Token_Sanitization_Test
+ *
+ * Tests sanitization of tokens used by external messaging services.
+ */
 class WP_MCP_AI_Token_Sanitization_Test extends WP_UnitTestCase {
 	/**
 	 * Ensure the WhatsApp access token retains base64 characters after sanitization.

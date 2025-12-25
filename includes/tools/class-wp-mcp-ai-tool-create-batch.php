@@ -49,22 +49,22 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'input_file_id'      => array(
+				'input_file_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'The ID of the uploaded input file containing batch requests in JSONL format. Each line must be a valid JSON object with custom_id, method, url, and body fields.', 'wp-mcp-ai' ),
 				),
-				'endpoint'           => array(
+				'endpoint'          => array(
 					'type'        => 'string',
 					'enum'        => array( '/v1/chat/completions', '/v1/embeddings', '/v1/moderations' ),
 					'description' => __( 'The OpenAI API endpoint to use for the batch.', 'wp-mcp-ai' ),
 				),
-				'completion_window'  => array(
+				'completion_window' => array(
 					'type'        => 'string',
 					'enum'        => array( '24h' ),
 					'description' => __( 'Time frame for batch completion. Currently only "24h" is supported.', 'wp-mcp-ai' ),
 					'default'     => '24h',
 				),
-				'metadata'           => array(
+				'metadata'          => array(
 					'type'        => 'object',
 					'description' => __( 'Custom metadata as key-value pairs (up to 16 pairs).', 'wp-mcp-ai' ),
 				),

@@ -249,32 +249,32 @@ class WP_MCP_AI_JetEngine_Submissions_CCT {
 			'rest_post_access'    => 'read',
 			'rest_delete_access'  => 'edit_posts',
 			'admin_columns'       => array(
-				'_ID'          => array(
+				'_ID'         => array(
 					'enabled'     => true,
 					'prefix'      => '#',
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'quiz_id'      => array(
+				'quiz_id'     => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'student_id'   => array(
+				'student_id'  => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'status'       => array(
+				'status'      => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'percentage'   => array(
+				'percentage'  => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'cct_created'  => array(
+				'cct_created' => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),

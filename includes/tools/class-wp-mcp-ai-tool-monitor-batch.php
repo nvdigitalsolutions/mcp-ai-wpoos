@@ -59,26 +59,26 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'batch_id'           => array(
+				'batch_id'       => array(
 					'type'        => 'string',
 					'description' => __( 'The ID of the batch job to monitor.', 'wp-mcp-ai' ),
 				),
-				'check_interval'     => array(
+				'check_interval' => array(
 					'type'        => 'string',
 					'enum'        => array( 'hourly', 'twicedaily', 'daily' ),
 					'description' => __( 'How often to check batch status.', 'wp-mcp-ai' ),
 					'default'     => 'hourly',
 				),
-				'callback_hook'      => array(
+				'callback_hook'  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional WordPress action hook to trigger when batch completes. Receives batch_id and result as parameters.', 'wp-mcp-ai' ),
 				),
-				'auto_download'      => array(
+				'auto_download'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Automatically download results when batch completes.', 'wp-mcp-ai' ),
 					'default'     => false,
 				),
-				'metadata'           => array(
+				'metadata'       => array(
 					'type'        => 'object',
 					'description' => __( 'Custom metadata to associate with this monitoring job.', 'wp-mcp-ai' ),
 				),
@@ -168,23 +168,23 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$check_interval = 'hourly';
 		}
 
-		$callback_hook  = isset( $arguments['callback_hook'] ) ? sanitize_text_field( $arguments['callback_hook'] ) : '';
-		$auto_download  = isset( $arguments['auto_download'] ) ? (bool) $arguments['auto_download'] : false;
-		$metadata       = isset( $arguments['metadata'] ) && is_array( $arguments['metadata'] ) ? $arguments['metadata'] : array();
+		$callback_hook = isset( $arguments['callback_hook'] ) ? sanitize_text_field( $arguments['callback_hook'] ) : '';
+		$auto_download = isset( $arguments['auto_download'] ) ? (bool) $arguments['auto_download'] : false;
+		$metadata      = isset( $arguments['metadata'] ) && is_array( $arguments['metadata'] ) ? $arguments['metadata'] : array();
 
 		// Add user info to metadata.
 		$metadata['user_id']    = $user_id;
 		$metadata['created_at'] = time();
 
 		// Store monitoring configuration.
-		$monitored_batches = get_option( self::MONITORED_BATCHES_OPTION, array() );
+		$monitored_batches              = get_option( self::MONITORED_BATCHES_OPTION, array() );
 		$monitored_batches[ $batch_id ] = array(
-			'batch_id'        => $batch_id,
-			'check_interval'  => $check_interval,
-			'callback_hook'   => $callback_hook,
-			'auto_download'   => $auto_download,
-			'metadata'        => $metadata,
-			'added_at'        => time(),
+			'batch_id'       => $batch_id,
+			'check_interval' => $check_interval,
+			'callback_hook'  => $callback_hook,
+			'auto_download'  => $auto_download,
+			'metadata'       => $metadata,
+			'added_at'       => time(),
 		);
 		update_option( self::MONITORED_BATCHES_OPTION, $monitored_batches );
 
@@ -195,14 +195,14 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Return success with monitoring details.
 		return array(
-			'success'         => true,
-			'batch_id'        => $batch_id,
-			'monitoring'      => true,
-			'check_interval'  => $check_interval,
-			'current_status'  => $batch['status'],
-			'callback_hook'   => $callback_hook ? $callback_hook : 'none',
-			'auto_download'   => $auto_download,
-			'summary'         => $this->generate_summary( $batch_id, $check_interval, $callback_hook ),
+			'success'        => true,
+			'batch_id'       => $batch_id,
+			'monitoring'     => true,
+			'check_interval' => $check_interval,
+			'current_status' => $batch['status'],
+			'callback_hook'  => $callback_hook ? $callback_hook : 'none',
+			'auto_download'  => $auto_download,
+			'summary'        => $this->generate_summary( $batch_id, $check_interval, $callback_hook ),
 		);
 	}
 

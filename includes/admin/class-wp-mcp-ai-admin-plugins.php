@@ -102,7 +102,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 			$jetengine_active   = class_exists( 'Jet_Engine' );
 			$woocommerce_active = class_exists( 'WooCommerce' );
 			$elementor_active   = did_action( 'elementor/loaded' );
-		$newsletter_active  = class_exists( 'Newsletter' ) || class_exists( 'NewsletterSubscription' );
+			$newsletter_active  = class_exists( 'Newsletter' ) || class_exists( 'NewsletterSubscription' );
 			?>
 			<div class="wrap">
 				<h1><?php esc_html_e( 'Plugins Integration', 'wp-mcp-ai' ); ?></h1>

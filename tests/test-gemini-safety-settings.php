@@ -17,8 +17,8 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'gemini_api_key'   => 'test_key',
-				'gemini_model'     => 'gemini-1.5-flash',
+				'gemini_api_key' => 'test_key',
+				'gemini_model'   => 'gemini-1.5-flash',
 			)
 		);
 
@@ -72,8 +72,8 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'gemini_api_key'   => 'test_key',
-				'gemini_model'     => 'gemini-1.5-flash',
+				'gemini_api_key' => 'test_key',
+				'gemini_model'   => 'gemini-1.5-flash',
 			)
 		);
 
@@ -145,8 +145,8 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'gemini_api_key'   => 'test_key',
-				'gemini_model'     => 'gemini-1.5-flash',
+				'gemini_api_key' => 'test_key',
+				'gemini_model'   => 'gemini-1.5-flash',
 			)
 		);
 
@@ -191,10 +191,10 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 			$messages,
 			array(
 				'safety_settings' => array(
-					'HARM_CATEGORY_HARASSMENT'         => 'BLOCK_NONE',
-					'HARM_CATEGORY_HATE_SPEECH'        => 'BLOCK_ONLY_HIGH',
-					'HARM_CATEGORY_SEXUALLY_EXPLICIT'  => 'BLOCK_MEDIUM_AND_ABOVE',
-					'HARM_CATEGORY_DANGEROUS_CONTENT'  => 'BLOCK_LOW_AND_ABOVE',
+					'HARM_CATEGORY_HARASSMENT'        => 'BLOCK_NONE',
+					'HARM_CATEGORY_HATE_SPEECH'       => 'BLOCK_ONLY_HIGH',
+					'HARM_CATEGORY_SEXUALLY_EXPLICIT' => 'BLOCK_MEDIUM_AND_ABOVE',
+					'HARM_CATEGORY_DANGEROUS_CONTENT' => 'BLOCK_LOW_AND_ABOVE',
 				),
 			)
 		);
@@ -211,8 +211,8 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'gemini_api_key'   => 'test_key',
-				'gemini_model'     => 'gemini-1.5-flash',
+				'gemini_api_key' => 'test_key',
+				'gemini_model'   => 'gemini-1.5-flash',
 			)
 		);
 
@@ -257,9 +257,9 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 			$messages,
 			array(
 				'safety_settings' => array(
-					'HARM_CATEGORY_HARASSMENT'   => 'BLOCK_MEDIUM_AND_ABOVE',
-					'INVALID_CATEGORY'           => 'BLOCK_NONE',
-					'ANOTHER_INVALID'            => 'BLOCK_ONLY_HIGH',
+					'HARM_CATEGORY_HARASSMENT' => 'BLOCK_MEDIUM_AND_ABOVE',
+					'INVALID_CATEGORY'         => 'BLOCK_NONE',
+					'ANOTHER_INVALID'          => 'BLOCK_ONLY_HIGH',
 				),
 			)
 		);
@@ -278,8 +278,8 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'gemini_api_key'   => 'test_key',
-				'gemini_model'     => 'gemini-1.5-flash',
+				'gemini_api_key' => 'test_key',
+				'gemini_model'   => 'gemini-1.5-flash',
 			)
 		);
 
@@ -324,8 +324,8 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 			$messages,
 			array(
 				'safety_settings' => array(
-					'HARM_CATEGORY_HARASSMENT'   => 'INVALID_THRESHOLD',
-					'HARM_CATEGORY_HATE_SPEECH'  => 'BLOCK_NONE',
+					'HARM_CATEGORY_HARASSMENT'  => 'INVALID_THRESHOLD',
+					'HARM_CATEGORY_HATE_SPEECH' => 'BLOCK_NONE',
 				),
 			)
 		);
@@ -344,8 +344,8 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'gemini_api_key'   => 'test_key',
-				'gemini_model'     => 'gemini-1.5-flash',
+				'gemini_api_key' => 'test_key',
+				'gemini_model'   => 'gemini-1.5-flash',
 			)
 		);
 
@@ -414,8 +414,8 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'gemini_api_key'   => 'test_key',
-				'gemini_model'     => 'gemini-1.5-flash',
+				'gemini_api_key' => 'test_key',
+				'gemini_model'   => 'gemini-1.5-flash',
 			)
 		);
 
@@ -435,7 +435,7 @@ class Test_Gemini_Safety_Settings extends WP_UnitTestCase {
 					$payload_sent = json_decode( $args['body'], true );
 					return array(
 						'response' => array( 'code' => 200 ),
-						'body'     => "data: " . wp_json_encode(
+						'body'     => 'data: ' . wp_json_encode(
 							array(
 								'candidates' => array(
 									array(

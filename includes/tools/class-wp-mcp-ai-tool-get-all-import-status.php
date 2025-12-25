@@ -114,14 +114,14 @@ class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Get import status metadata.
-		$processing     = get_post_meta( $import_id, 'processing', true );
-		$imported       = get_post_meta( $import_id, 'imported', true );
-		$created        = get_post_meta( $import_id, 'created', true );
-		$updated        = get_post_meta( $import_id, 'updated', true );
-		$skipped        = get_post_meta( $import_id, 'skipped', true );
-		$deleted        = get_post_meta( $import_id, 'deleted', true );
-		$last_activity  = get_post_meta( $import_id, 'registered_on', true );
-		$iteration      = get_post_meta( $import_id, 'iteration', true );
+		$processing    = get_post_meta( $import_id, 'processing', true );
+		$imported      = get_post_meta( $import_id, 'imported', true );
+		$created       = get_post_meta( $import_id, 'created', true );
+		$updated       = get_post_meta( $import_id, 'updated', true );
+		$skipped       = get_post_meta( $import_id, 'skipped', true );
+		$deleted       = get_post_meta( $import_id, 'deleted', true );
+		$last_activity = get_post_meta( $import_id, 'registered_on', true );
+		$iteration     = get_post_meta( $import_id, 'iteration', true );
 
 		// Determine status.
 		$status = 'idle';
@@ -137,11 +137,11 @@ class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, 
 			'status'        => $status,
 			'processing'    => (bool) $processing,
 			'stats'         => array(
-				'imported'      => absint( $imported ),
-				'created'       => absint( $created ),
-				'updated'       => absint( $updated ),
-				'skipped'       => absint( $skipped ),
-				'deleted'       => absint( $deleted ),
+				'imported' => absint( $imported ),
+				'created'  => absint( $created ),
+				'updated'  => absint( $updated ),
+				'skipped'  => absint( $skipped ),
+				'deleted'  => absint( $deleted ),
 			),
 			'iteration'     => absint( $iteration ),
 			'last_activity' => $last_activity ? gmdate( DATE_W3C, strtotime( $last_activity ) ) : '',

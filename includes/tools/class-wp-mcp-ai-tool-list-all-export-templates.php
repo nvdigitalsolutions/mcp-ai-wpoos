@@ -120,26 +120,26 @@ class WP_MCP_AI_Tool_List_All_Export_Templates implements WP_MCP_AI_Tool_Interfa
 
 		foreach ( $exports as $export ) {
 			$export_meta = get_post_meta( $export->ID );
-			
+
 			$results[] = array(
-				'id'              => $export->ID,
-				'name'            => $export->post_title,
-				'status'          => $export->post_status,
-				'created_at'      => $export->post_date,
-				'modified_at'     => $export->post_modified,
-				'export_type'     => isset( $export_meta['export_post_type'][0] ) ? $export_meta['export_post_type'][0] : '',
-				'scheduled'       => isset( $export_meta['scheduled'][0] ) ? (bool) $export_meta['scheduled'][0] : false,
+				'id'          => $export->ID,
+				'name'        => $export->post_title,
+				'status'      => $export->post_status,
+				'created_at'  => $export->post_date,
+				'modified_at' => $export->post_modified,
+				'export_type' => isset( $export_meta['export_post_type'][0] ) ? $export_meta['export_post_type'][0] : '',
+				'scheduled'   => isset( $export_meta['scheduled'][0] ) ? (bool) $export_meta['scheduled'][0] : false,
 			);
 		}
 
 		return array(
-			'summary'   => sprintf(
+			'summary' => sprintf(
 				/* translators: %d: number of export templates */
 				__( 'Found %d export template(s)', 'wp-mcp-ai' ),
 				count( $results )
 			),
-			'exports'   => $results,
-			'count'     => count( $results ),
+			'exports' => $results,
+			'count'   => count( $results ),
 		);
 	}
 

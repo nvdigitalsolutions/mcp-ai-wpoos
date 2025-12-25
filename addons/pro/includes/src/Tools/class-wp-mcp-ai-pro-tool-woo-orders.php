@@ -81,46 +81,46 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'   => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'The action to perform: get, list, search.', 'wp-mcp-ai-pro' ),
 					'enum'        => array( 'get', 'list', 'search' ),
 					'default'     => 'list',
 				),
-				'order_id' => array(
+				'order_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Order ID for get action.', 'wp-mcp-ai-pro' ),
 				),
-				'per_page' => array(
+				'per_page'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of orders to return. Default: 10. Max: 100.', 'wp-mcp-ai-pro' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
-				'page'     => array(
+				'page'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
 					'default'     => 1,
 				),
-				'status'   => array(
+				'status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by order status.', 'wp-mcp-ai-pro' ),
 					'enum'        => array( 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed' ),
 				),
-				'customer' => array(
+				'customer'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by customer ID.', 'wp-mcp-ai-pro' ),
 				),
-				'new_status'   => array(
+				'new_status'    => array(
 					'type'        => 'string',
 					'description' => __( 'New status for update_status action.', 'wp-mcp-ai-pro' ),
 					'enum'        => array( 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed' ),
 				),
-				'note'         => array(
+				'note'          => array(
 					'type'        => 'string',
 					'description' => __( 'Note content for add_note action.', 'wp-mcp-ai-pro' ),
 				),
-				'note_type'    => array(
+				'note_type'     => array(
 					'type'        => 'string',
 					'description' => __( 'Note type: customer (visible to customer) or private (internal only).', 'wp-mcp-ai-pro' ),
 					'enum'        => array( 'customer', 'private' ),
@@ -531,10 +531,10 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Create the refund.
 		$refund = wc_create_refund(
 			array(
-				'order_id'   => $order->get_id(),
-				'amount'     => $refund_amount,
-				'reason'     => $refund_reason,
-				'line_items' => $line_items,
+				'order_id'      => $order->get_id(),
+				'amount'        => $refund_amount,
+				'reason'        => $refund_reason,
+				'line_items'    => $line_items,
 				'restock_items' => $restock_items,
 			)
 		);

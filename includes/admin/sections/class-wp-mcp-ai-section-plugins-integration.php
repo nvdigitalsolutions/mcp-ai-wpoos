@@ -73,7 +73,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 			$jetengine_active   = class_exists( 'Jet_Engine' );
 			$woocommerce_active = class_exists( 'WooCommerce' );
 			$elementor_active   = did_action( 'elementor/loaded' );
-$newsletter_active  = class_exists( 'Newsletter' ) || class_exists( 'NewsletterSubscription' );
+			$newsletter_active  = class_exists( 'Newsletter' ) || class_exists( 'NewsletterSubscription' );
 
 			$fields = array();
 
@@ -169,33 +169,33 @@ $newsletter_active  = class_exists( 'Newsletter' ) || class_exists( 'NewsletterS
 				);
 			}
 
-		// Newsletter Section.
-		$fields['newsletter_header'] = array(
-			'type'    => 'html',
-			'content' => $this->get_section_header( 'Newsletter', 'dashicons-email', $newsletter_active ),
-		);
-
-		if ( ! $newsletter_active ) {
-			$fields['newsletter_inactive'] = array(
+			// Newsletter Section.
+			$fields['newsletter_header'] = array(
 				'type'    => 'html',
-				'content' => $this->get_inactive_notice( 'Newsletter' ),
-			);
-		}
-
-		if ( $newsletter_active ) {
-			$fields['enable_newsletter_tools'] = array(
-				'type'           => 'checkbox',
-				'label'          => __( 'Enable Newsletter AI Tools', 'wp-mcp-ai' ),
-				'checkbox_label' => __( 'Enable Newsletter AI tools', 'wp-mcp-ai' ),
-				'description'    => __( 'Activate Newsletter-specific tools for managing subscribers, campaigns, and email statistics.', 'wp-mcp-ai' ),
-				'default'        => true,
+				'content' => $this->get_section_header( 'Newsletter', 'dashicons-email', $newsletter_active ),
 			);
 
-			$fields['newsletter_tools'] = array(
-				'type'    => 'html',
-				'content' => $this->get_newsletter_tools_list(),
-			);
-		}
+			if ( ! $newsletter_active ) {
+				$fields['newsletter_inactive'] = array(
+					'type'    => 'html',
+					'content' => $this->get_inactive_notice( 'Newsletter' ),
+				);
+			}
+
+			if ( $newsletter_active ) {
+				$fields['enable_newsletter_tools'] = array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Newsletter AI Tools', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable Newsletter AI tools', 'wp-mcp-ai' ),
+					'description'    => __( 'Activate Newsletter-specific tools for managing subscribers, campaigns, and email statistics.', 'wp-mcp-ai' ),
+					'default'        => true,
+				);
+
+				$fields['newsletter_tools'] = array(
+					'type'    => 'html',
+					'content' => $this->get_newsletter_tools_list(),
+				);
+			}
 
 			return $fields;
 		}

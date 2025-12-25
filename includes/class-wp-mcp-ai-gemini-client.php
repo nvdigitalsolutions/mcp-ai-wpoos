@@ -14,12 +14,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 	 * Provides a wrapper around Gemini's generateContent endpoint.
 	 */
 	class WP_MCP_AI_Gemini_Client {
-		const API_ENDPOINT             = 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent';
-		const API_STREAM_ENDPOINT      = 'https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent';
-		const API_LIST_MODELS          = 'https://generativelanguage.googleapis.com/v1beta/models';
-		const API_COUNT_TOKENS         = 'https://generativelanguage.googleapis.com/v1beta/models/%s:countTokens';
-		const API_EMBED_CONTENT        = 'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent';
-		const API_BATCH_EMBED_CONTENT  = 'https://generativelanguage.googleapis.com/v1beta/models/%s:batchEmbedContent';
+		const API_ENDPOINT            = 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent';
+		const API_STREAM_ENDPOINT     = 'https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent';
+		const API_LIST_MODELS         = 'https://generativelanguage.googleapis.com/v1beta/models';
+		const API_COUNT_TOKENS        = 'https://generativelanguage.googleapis.com/v1beta/models/%s:countTokens';
+		const API_EMBED_CONTENT       = 'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent';
+		const API_BATCH_EMBED_CONTENT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:batchEmbedContent';
 
 		/**
 		 * Retrieve the configured API key.

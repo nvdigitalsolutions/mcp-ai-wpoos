@@ -163,7 +163,7 @@ class Test_Huggingface_Tools_Recommendations extends WP_UnitTestCase {
 	 * Test that all HuggingFace tools are in dataset_operations tools list.
 	 */
 	public function test_all_huggingface_tools_in_category_tools_list() {
-		$categories = WP_MCP_AI_Tool_Recommendations::get_tool_categories();
+		$categories        = WP_MCP_AI_Tool_Recommendations::get_tool_categories();
 		$dataset_ops_tools = $categories['dataset_operations']['tools'];
 
 		foreach ( $this->huggingface_tool_slugs as $slug ) {

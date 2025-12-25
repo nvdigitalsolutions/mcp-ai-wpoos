@@ -55,7 +55,7 @@ class WP_MCP_AI_Tool_Recommendations {
 	 */
 	protected static $tool_categories = array(
 		// High resource tools - complex operations, large outputs.
-		'high_resource'     => array(
+		'high_resource'      => array(
 			'multiplier'      => 2.0,
 			'preferred_model' => 'gpt-4o',
 			'description'     => 'Complex operations requiring extensive processing and large outputs',
@@ -73,7 +73,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Medium resource tools - moderate complexity.
-		'medium_resource'   => array(
+		'medium_resource'    => array(
 			'multiplier'      => 1.5,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'Moderate complexity operations with medium-sized outputs',
@@ -98,7 +98,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Low resource tools - simple operations.
-		'low_resource'      => array(
+		'low_resource'       => array(
 			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'Simple operations with minimal token requirements',
@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Image/Media generation tools - specialized models.
-		'image_generation'  => array(
+		'image_generation'   => array(
 			'multiplier'      => 1.5,
 			'preferred_model' => 'default', // Let assistant handle model selection.
 			'description'     => 'Image and media generation operations',
@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Audio/Speech tools.
-		'audio_processing'  => array(
+		'audio_processing'   => array(
 			'multiplier'      => 1.5,
 			'preferred_model' => 'default',
 			'description'     => 'Audio processing and speech operations',
@@ -144,7 +144,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Content creation tools - need good quality models.
-		'content_creation'  => array(
+		'content_creation'   => array(
 			'multiplier'      => 1.5,
 			'preferred_model' => 'gpt-4o',
 			'description'     => 'Content creation and management operations',
@@ -162,7 +162,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// API/External tools - variable complexity.
-		'api_operations'    => array(
+		'api_operations'     => array(
 			'multiplier'      => 1.2,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'External API calls and integrations',
@@ -181,7 +181,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Messaging/Communication tools.
-		'messaging'         => array(
+		'messaging'          => array(
 			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'Messaging and notification operations',
@@ -193,7 +193,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Security/Auth tools - lightweight but critical.
-		'security_auth'     => array(
+		'security_auth'      => array(
 			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'Security and authentication operations',
@@ -204,7 +204,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Cache/Performance tools - minimal token usage.
-		'cache_performance' => array(
+		'cache_performance'  => array(
 			'multiplier'      => 0.8,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'Cache management and performance operations',
@@ -216,7 +216,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Scheduling/Automation tools.
-		'scheduling'        => array(
+		'scheduling'         => array(
 			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'Scheduling and automation operations',

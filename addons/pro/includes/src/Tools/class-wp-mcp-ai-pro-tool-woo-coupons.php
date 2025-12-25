@@ -394,10 +394,10 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$coupon->delete( true );
 
 		return array(
-			'success'    => true,
-			'coupon_id'  => $coupon_id,
-			'code'       => $coupon_code,
-			'message'    => __( 'Coupon deleted successfully.', 'wp-mcp-ai-pro' ),
+			'success'   => true,
+			'coupon_id' => $coupon_id,
+			'code'      => $coupon_code,
+			'message'   => __( 'Coupon deleted successfully.', 'wp-mcp-ai-pro' ),
 		);
 	}
 
@@ -422,7 +422,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 
 		if ( isset( $arguments['exclude_sale_items'] ) ) {
-			$coupon->set_exclude_sale_items( (bool) $arguments['exclude_sale_items'] ) ;
+			$coupon->set_exclude_sale_items( (bool) $arguments['exclude_sale_items'] );
 		}
 
 		if ( isset( $arguments['minimum_amount'] ) ) {
@@ -470,24 +470,24 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	protected function format_coupon( $coupon ) {
 		return array(
-			'id'                      => $coupon->get_id(),
-			'code'                    => $coupon->get_code(),
-			'amount'                  => $coupon->get_amount(),
-			'discount_type'           => $coupon->get_discount_type(),
-			'individual_use'          => $coupon->get_individual_use(),
-			'product_ids'             => $coupon->get_product_ids(),
-			'excluded_product_ids'    => $coupon->get_excluded_product_ids(),
-			'usage_limit'             => $coupon->get_usage_limit(),
-			'usage_limit_per_user'    => $coupon->get_usage_limit_per_user(),
-			'limit_usage_to_x_items'  => $coupon->get_limit_usage_to_x_items(),
-			'usage_count'             => $coupon->get_usage_count(),
-			'expiry_date'             => $coupon->get_date_expires() ? $coupon->get_date_expires()->format( 'c' ) : null,
-			'free_shipping'           => $coupon->get_free_shipping(),
-			'exclude_sale_items'      => $coupon->get_exclude_sale_items(),
-			'minimum_amount'          => $coupon->get_minimum_amount(),
-			'maximum_amount'          => $coupon->get_maximum_amount(),
-			'date_created'            => $coupon->get_date_created() ? $coupon->get_date_created()->format( 'c' ) : null,
-			'date_modified'           => $coupon->get_date_modified() ? $coupon->get_date_modified()->format( 'c' ) : null,
+			'id'                     => $coupon->get_id(),
+			'code'                   => $coupon->get_code(),
+			'amount'                 => $coupon->get_amount(),
+			'discount_type'          => $coupon->get_discount_type(),
+			'individual_use'         => $coupon->get_individual_use(),
+			'product_ids'            => $coupon->get_product_ids(),
+			'excluded_product_ids'   => $coupon->get_excluded_product_ids(),
+			'usage_limit'            => $coupon->get_usage_limit(),
+			'usage_limit_per_user'   => $coupon->get_usage_limit_per_user(),
+			'limit_usage_to_x_items' => $coupon->get_limit_usage_to_x_items(),
+			'usage_count'            => $coupon->get_usage_count(),
+			'expiry_date'            => $coupon->get_date_expires() ? $coupon->get_date_expires()->format( 'c' ) : null,
+			'free_shipping'          => $coupon->get_free_shipping(),
+			'exclude_sale_items'     => $coupon->get_exclude_sale_items(),
+			'minimum_amount'         => $coupon->get_minimum_amount(),
+			'maximum_amount'         => $coupon->get_maximum_amount(),
+			'date_created'           => $coupon->get_date_created() ? $coupon->get_date_created()->format( 'c' ) : null,
+			'date_modified'          => $coupon->get_date_modified() ? $coupon->get_date_modified()->format( 'c' ) : null,
 		);
 	}
 }
