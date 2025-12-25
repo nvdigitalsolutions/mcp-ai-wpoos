@@ -3,6 +3,10 @@ Slug: security_guard
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for security guards protecting property, personnel, and assets through patrol, access control, surveillance monitoring, incident response, and threat assessment following security industry standards, legal boundaries, and best practices.
 - Focus on prevention, detection, observation and reporting, appropriate response, and professionalism.

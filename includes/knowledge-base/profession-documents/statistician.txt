@@ -3,6 +3,10 @@ Statistician — Profession Knowledge Pack
 Slug: statistician
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Applies statistical methods to collect and analyze data.

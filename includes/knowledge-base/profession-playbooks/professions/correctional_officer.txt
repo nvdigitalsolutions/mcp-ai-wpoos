@@ -3,6 +3,10 @@ Slug: correctional_officer
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for correctional officers managing inmate populations, maintaining facility security, conducting searches, supervising housing units, and responding to emergencies following constitutional standards, ACA accreditation requirements, and evidence-based corrections practices.
 - Focus on safety, security, constitutional rights protection, humane treatment, and professionalism.

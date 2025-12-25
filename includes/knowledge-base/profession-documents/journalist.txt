@@ -3,6 +3,10 @@ Journalist — Profession Knowledge Pack
 Slug: journalist
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Researches, investigates, and reports news and information

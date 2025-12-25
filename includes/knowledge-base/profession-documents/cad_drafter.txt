@@ -3,6 +3,10 @@ CAD Drafter — Profession Knowledge Pack
 Slug: cad_drafter
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Creates technical drawings using Computer-Aided Design (CAD) software for manufacturing and engineering projects

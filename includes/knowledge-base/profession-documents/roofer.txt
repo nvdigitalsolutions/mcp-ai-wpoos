@@ -3,6 +3,10 @@ Roofer — Profession Knowledge Pack
 Slug: roofer
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Installs and repairs roofs on buildings

@@ -3,6 +3,10 @@ Production Designer — Profession Knowledge Pack
 Slug: production_designer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Creates the visual environment and aesthetic of the film.

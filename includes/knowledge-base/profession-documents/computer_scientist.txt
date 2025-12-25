@@ -3,6 +3,10 @@ Computer Scientist — Profession Knowledge Pack
 Slug: computer_scientist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies computation, algorithms, and information systems.

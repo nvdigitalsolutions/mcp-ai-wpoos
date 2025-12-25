@@ -3,6 +3,10 @@ Supply Chain Manager — Profession Knowledge Pack
 Slug: supply_chain_manager
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages procurement, logistics, and supply chain operations

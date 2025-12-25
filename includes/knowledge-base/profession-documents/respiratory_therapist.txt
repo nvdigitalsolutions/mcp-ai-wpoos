@@ -3,6 +3,10 @@ Respiratory Therapist — Profession Knowledge Pack
 Slug: respiratory_therapist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides care for patients with breathing and cardiopulmonary disorders

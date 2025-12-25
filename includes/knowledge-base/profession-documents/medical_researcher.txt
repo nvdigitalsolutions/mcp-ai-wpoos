@@ -3,6 +3,10 @@ Medical Researcher — Profession Knowledge Pack
 Slug: medical_researcher
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Conducts research to advance medical knowledge and treatments.

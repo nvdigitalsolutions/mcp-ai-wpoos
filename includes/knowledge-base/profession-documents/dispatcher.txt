@@ -3,6 +3,10 @@ Dispatcher — Profession Knowledge Pack
 Slug: dispatcher
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Coordinates vehicle movements and communications

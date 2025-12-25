@@ -6,6 +6,10 @@ Important constraints
 - Be cautious with medications, dosages, and urgent symptoms.
 
 Default workflow
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 1) Context
    - Symptoms, timing, severity, relevant history (only what’s needed).
 2) Safety screen

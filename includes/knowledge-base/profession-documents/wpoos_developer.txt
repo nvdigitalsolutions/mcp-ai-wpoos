@@ -1,5 +1,9 @@
 WP oOS Developer - Professional Knowledge Base
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 === OVERVIEW ===
 
 WP oOS (WordPress Open Operator System) is an enterprise-grade WordPress plugin that provides a comprehensive AI Assistant framework. It integrates OpenAI GPT models, Google Gemini, and Ollama (local AI) through the Model Context Protocol (MCP), offering 65+ built-in tools for content management, media generation, e-commerce, forms, and system automation.

@@ -3,6 +3,10 @@ Civil Engineer — Profession Knowledge Pack
 Slug: civil_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs and oversees infrastructure and construction projects

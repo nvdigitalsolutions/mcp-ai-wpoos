@@ -3,6 +3,10 @@ Real Estate Agent — Profession Knowledge Pack
 Slug: real_estate_agent
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Assists with real estate transactions and property management

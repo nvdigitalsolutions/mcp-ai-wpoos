@@ -3,6 +3,10 @@ Slug: aquaculture_specialist
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook for aquaculture operations, sustainable fish farming, and aquatic animal production.
 - Contains actionable instructions, SOPs, checklists, and templates for high-quality aquaculture management.

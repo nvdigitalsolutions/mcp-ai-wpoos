@@ -3,6 +3,10 @@ Slug: crisis_communications_manager
 Category: advisory
 Includes: global.txt + categories/advisory.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
   and templates for high-quality crisis communications, reputation management, and crisis response.

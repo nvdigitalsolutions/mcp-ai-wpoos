@@ -3,6 +3,10 @@ Mason — Profession Knowledge Pack
 Slug: mason
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Builds structures with brick, block, stone, and concrete

@@ -3,6 +3,10 @@ Film Producer — Profession Knowledge Pack
 Slug: film_producer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages all aspects of film production from development to distribution.

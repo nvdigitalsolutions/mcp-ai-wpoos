@@ -3,6 +3,10 @@ Slug: truck_driver
 Category: transportation
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook for commercial truck drivers (CDL Class A/B), containing actionable  
   instructions, SOPs, checklists, and templates for safe freight transportation, HOS compliance, and ELD usage.

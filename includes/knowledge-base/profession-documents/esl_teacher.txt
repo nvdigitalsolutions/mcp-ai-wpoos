@@ -3,6 +3,10 @@ ESL Teacher — Profession Knowledge Pack
 Slug: esl_teacher
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Teaches English as a Second Language to non-native speakers

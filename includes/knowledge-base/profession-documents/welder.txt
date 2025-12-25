@@ -3,6 +3,10 @@ Welder — Profession Knowledge Pack
 Slug: welder
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Joins metal parts using various welding techniques

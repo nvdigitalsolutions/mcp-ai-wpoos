@@ -3,6 +3,10 @@ Screenwriter — Profession Knowledge Pack
 Slug: screenwriter
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Writes scripts and screenplays for film and television.

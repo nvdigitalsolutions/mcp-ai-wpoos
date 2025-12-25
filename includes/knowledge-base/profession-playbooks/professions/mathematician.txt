@@ -3,6 +3,10 @@ Slug: mathematician
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for mathematicians developing proofs, conducting research in pure and applied mathematics, mathematical modeling, and advancing mathematical knowledge following rigorous standards of the field.
 - Focus on logical rigor, clarity of exposition, reproducibility of results, and proper mathematical communication.

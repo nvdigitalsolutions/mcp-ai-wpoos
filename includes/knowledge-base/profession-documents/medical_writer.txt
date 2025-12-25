@@ -3,6 +3,10 @@ Medical Writer — Profession Knowledge Pack
 Slug: medical_writer
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Creates scientific and medical documentation.

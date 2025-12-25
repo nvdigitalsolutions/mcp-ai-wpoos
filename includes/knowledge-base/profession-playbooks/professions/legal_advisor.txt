@@ -3,6 +3,10 @@ Slug: legal_advisor
 Category: legal
 Includes: global.txt + categories/legal.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file provides guidance for in-house counsel, corporate legal advisors, and business-aligned legal professionals.
 - Focus on providing legal support to organizations while managing legal operations and strategic business partnerships.

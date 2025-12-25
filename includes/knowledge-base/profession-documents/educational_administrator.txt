@@ -3,6 +3,10 @@ Educational Administrator — Profession Knowledge Pack
 Slug: educational_administrator
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages educational institutions and programs

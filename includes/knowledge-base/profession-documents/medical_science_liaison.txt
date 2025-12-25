@@ -3,6 +3,10 @@ Medical Science Liaison — Profession Knowledge Pack
 Slug: medical_science_liaison
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Bridges pharmaceutical companies and healthcare professionals.

@@ -3,6 +3,10 @@ Software Developer — Profession Knowledge Pack
 Slug: software_developer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Develops software applications and systems

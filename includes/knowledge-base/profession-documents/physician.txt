@@ -3,6 +3,10 @@ Physician — Profession Knowledge Pack
 Slug: physician
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Licensed medical doctor who diagnoses and treats illnesses and injuries

@@ -3,6 +3,10 @@ Personal Trainer — Profession Knowledge Pack
 Slug: personal_trainer
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides fitness training and exercise guidance

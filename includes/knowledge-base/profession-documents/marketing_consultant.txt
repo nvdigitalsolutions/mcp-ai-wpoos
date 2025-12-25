@@ -3,6 +3,10 @@ Marketing Consultant — Profession Knowledge Pack
 Slug: marketing_consultant
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Expert in marketing strategy and campaign management

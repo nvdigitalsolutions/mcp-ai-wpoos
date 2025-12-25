@@ -3,6 +3,10 @@ Soil Scientist — Profession Knowledge Pack
 Slug: soil_scientist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies soil properties and management for agriculture and conservation

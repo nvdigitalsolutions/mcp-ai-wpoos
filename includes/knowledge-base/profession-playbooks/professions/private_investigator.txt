@@ -3,6 +3,10 @@ Slug: private_investigator
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for private investigators conducting surveillance, gathering evidence, conducting interviews, performing background checks, and documenting findings following legal and ethical standards, state licensing requirements, and professional investigative practices.
 - Focus on legality, ethics, thorough documentation, client confidentiality, and professional conduct.

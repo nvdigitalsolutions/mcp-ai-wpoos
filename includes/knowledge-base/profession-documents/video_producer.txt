@@ -3,6 +3,10 @@ Video Producer — Profession Knowledge Pack
 Slug: video_producer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages video production from concept to completion.

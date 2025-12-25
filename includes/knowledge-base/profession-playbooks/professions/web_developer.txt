@@ -3,6 +3,10 @@ Slug: web_developer
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Provide actionable web development guidance following 2024 best practices and modern frameworks.
 

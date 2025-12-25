@@ -3,6 +3,10 @@ Meteorologist — Profession Knowledge Pack
 Slug: meteorologist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies weather patterns and atmospheric conditions

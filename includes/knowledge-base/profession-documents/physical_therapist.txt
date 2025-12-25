@@ -3,6 +3,10 @@ Physical Therapist — Profession Knowledge Pack
 Slug: physical_therapist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Helps patients recover movement and manage pain through therapeutic interventions

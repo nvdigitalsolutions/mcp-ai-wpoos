@@ -3,6 +3,10 @@ Special Education Teacher — Profession Knowledge Pack
 Slug: special_education_teacher
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides specialized instruction for students with disabilities

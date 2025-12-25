@@ -3,6 +3,10 @@ IT Consultant — Profession Knowledge Pack
 Slug: it_consultant
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Information technology and systems expert.

@@ -3,6 +3,10 @@ Slug: marketing_consultant
 Category: advisory
 Includes: global.txt + categories/advisory.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Provide actionable marketing guidance based on 2024 industry best practices and trends.
 

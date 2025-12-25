@@ -3,6 +3,10 @@ Geologist — Profession Knowledge Pack
 Slug: geologist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies Earth's structure, materials, and processes

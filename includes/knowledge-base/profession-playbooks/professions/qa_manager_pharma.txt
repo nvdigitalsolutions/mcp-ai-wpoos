@@ -3,6 +3,10 @@ Slug: qa_manager_pharma
 Category: healthcare
 Includes: global.txt + categories/healthcare.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Provide actionable guidance for pharmaceutical quality assurance management following FDA/ICH/GMP standards.
 - Focus on regulatory compliance, quality systems, risk management, and continuous improvement.

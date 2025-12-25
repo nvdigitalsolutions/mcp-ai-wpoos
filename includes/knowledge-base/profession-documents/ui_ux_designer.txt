@@ -3,6 +3,10 @@ UI/UX Designer — Profession Knowledge Pack
 Slug: ui_ux_designer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs user experiences and interfaces for digital products

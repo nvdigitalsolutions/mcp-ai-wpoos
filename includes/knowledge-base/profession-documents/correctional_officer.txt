@@ -3,6 +3,10 @@ Correctional Officer — Profession Knowledge Pack
 Slug: correctional_officer
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Supervises inmates in correctional facilities

@@ -3,6 +3,10 @@ Public Relations Specialist — Profession Knowledge Pack
 Slug: pr_specialist
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages public image and media relations for organizations or individuals

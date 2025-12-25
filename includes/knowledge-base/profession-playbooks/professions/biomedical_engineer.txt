@@ -3,6 +3,10 @@ Slug: biomedical_engineer
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for biomedical engineers designing medical devices, diagnostic systems, and therapeutic equipment following FDA regulations (21 CFR Part 820), ISO 13485:2016 quality management, and IEC 60601 electrical safety standards.
 - Focus on design controls, risk management (ISO 14971:2019), biocompatibility testing (ISO 10993), regulatory compliance, verification and validation testing, and safe, effective medical device development.

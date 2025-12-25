@@ -3,6 +3,10 @@ Slug: pr_specialist
 Category: creative
 Includes: global.txt + categories/creative.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for public relations specialists managing media relations, reputation, crisis communication, and strategic PR campaigns following 2024 PRSA standards and ethical practices.
 - Focus on earned media, relationship building, transparent communication, and measurable PR outcomes.

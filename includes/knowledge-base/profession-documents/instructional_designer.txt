@@ -3,6 +3,10 @@ Instructional Designer — Profession Knowledge Pack
 Slug: instructional_designer
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs effective learning experiences and educational technology

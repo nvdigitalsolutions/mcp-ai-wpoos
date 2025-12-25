@@ -3,6 +3,10 @@ Slug: actor
 Category: creative
 Includes: global.txt + categories/creative.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for actors developing performances across film, television, theater, voiceover, and commercial work, following industry-standard techniques and professional practices.
 - Focus on authentic character work, audition excellence, career sustainability, and professional conduct throughout all phases of an acting career.

@@ -3,6 +3,10 @@ Ship Captain — Profession Knowledge Pack
 Slug: ship_captain
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Commands ships and manages maritime operations

@@ -3,6 +3,10 @@ Slug: landscape_architect
 Category: creative
 Includes: global.txt + categories/creative.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides comprehensive guidance for landscape architecture, site design, planting design, and outdoor space development.
 - Covers residential, commercial, institutional, and public space projects.
