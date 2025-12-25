@@ -15,7 +15,7 @@ After files and documentation were reorganized in the repository, many internal 
 ## Solution Approach
 
 1. **Created Automated Link Checker**
-   - Python script (`check_markdown_links.py`) to scan all markdown files
+   - Python script (`bin/check_markdown_links.py`) to scan all markdown files
    - Identifies broken internal links and reports their locations
    - Skips external links and anchor-only links
    - Provides detailed report with line numbers and expected paths
@@ -132,7 +132,7 @@ All comprehensive documentation properly organized in `docs/` with logical struc
 ## Tools Created
 
 ### 1. Link Checker Script
-**File:** `check_markdown_links.py`
+**File:** `bin/check_markdown_links.py`
 
 **Features:**
 - Scans all markdown files in repository
@@ -145,7 +145,7 @@ All comprehensive documentation properly organized in `docs/` with logical struc
 
 **Usage:**
 ```bash
-python3 check_markdown_links.py
+python3 bin/check_markdown_links.py
 ```
 
 **Output:**
@@ -170,7 +170,7 @@ Broken links: 0
 ```
 
 ### 2. Batch Fix Script
-**File:** `fix_links.py`
+**File:** `bin/fix_links.py`
 
 **Features:**
 - Python script for batch link updates
@@ -192,7 +192,7 @@ When moving documentation files:
 1. Update the file location
 2. Search for references to the old path: `grep -r "old/path/file.md" docs/`
 3. Update all references to new path
-4. Run link checker to verify: `python3 check_markdown_links.py`
+4. Run link checker to verify: `python3 bin/check_markdown_links.py`
 5. Commit all changes together
 
 ### CI/CD Integration (Future)
@@ -209,7 +209,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Check Links
-        run: python3 check_markdown_links.py
+        run: python3 bin/check_markdown_links.py
 ```
 
 ## Lessons Learned

@@ -10,6 +10,10 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
+# Get repository root (parent of the bin directory where this script lives)
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+
 # ANSI colors
 RED = '\033[0;31m'
 GREEN = '\033[0;32m'
@@ -54,8 +58,7 @@ def resolve_link_path(source_file, link_path):
     # Handle absolute paths from repo root
     if link_path_no_anchor.startswith('/'):
         # Absolute from repo root
-        repo_root = Path('/home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos')
-        resolved = repo_root / link_path_no_anchor.lstrip('/')
+        resolved = REPO_ROOT / link_path_no_anchor.lstrip('/')
     else:
         # Relative path
         resolved = source_dir / link_path_no_anchor
@@ -126,7 +129,6 @@ def check_markdown_file(file_path):
 
 def main():
     """Main function to scan all markdown files"""
-    repo_root = Path('/home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos')
     
     print("=" * 50)
     print("WP oOS Documentation Link Checker")
@@ -136,7 +138,7 @@ def main():
     # Find all markdown files
     markdown_files = []
     for pattern in ['*.md', '**/*.md']:
-        markdown_files.extend(repo_root.glob(pattern))
+        markdown_files.extend(REPO_ROOT.glob(pattern))
     
     # Exclude node_modules and vendor
     markdown_files = [
@@ -178,7 +180,7 @@ def main():
         
         for file, details in sorted(by_file.items()):
             # Show relative path from repo
-            rel_file = os.path.relpath(file, repo_root)
+            rel_file = os.path.relpath(file, REPO_ROOT)
             print(f"\n{RED}✗ {rel_file}{NC}")
             for d in details:
                 print(f"  Line {d['line']}: [{d['link_text']}]({d['link_path']})")
