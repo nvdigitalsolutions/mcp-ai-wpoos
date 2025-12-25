@@ -1,6 +1,6 @@
 {
     "name": "mcp-ai-wpoos/mcp-ai-wpoos",
-    "description": "WordPress plugin integrating MCP tools with AI workflows.",
+    "description": "NV Digital Open Operator System (oOS) - WordPress plugin integrating MCP tools with AI workflows.",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
     "require": {
