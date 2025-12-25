@@ -3,6 +3,10 @@ Cybersecurity Specialist — Profession Knowledge Pack
 Slug: cybersecurity_specialist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Protects systems and data from cyber threats

@@ -3,6 +3,10 @@ Network Administrator — Profession Knowledge Pack
 Slug: network_administrator
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages and maintains computer networks

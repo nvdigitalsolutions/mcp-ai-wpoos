@@ -3,6 +3,10 @@ Construction Estimator — Profession Knowledge Pack
 Slug: construction_estimator
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Prepares cost estimates for construction projects through quantity takeoff, pricing, and bid analysis

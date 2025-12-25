@@ -3,6 +3,10 @@ Drug Safety Specialist — Profession Knowledge Pack
 Slug: drug_safety_specialist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Monitors and evaluates drug safety and adverse events.

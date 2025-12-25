@@ -3,6 +3,10 @@ Landscaper — Profession Knowledge Pack
 Slug: landscaper
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs, installs, and maintains outdoor landscapes

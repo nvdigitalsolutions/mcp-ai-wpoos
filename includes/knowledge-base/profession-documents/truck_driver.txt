@@ -3,6 +3,10 @@ Truck Driver — Profession Knowledge Pack
 Slug: truck_driver
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Operates commercial trucks for freight transport

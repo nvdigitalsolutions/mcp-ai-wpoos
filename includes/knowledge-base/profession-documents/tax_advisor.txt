@@ -3,6 +3,10 @@ Tax Advisor — Profession Knowledge Pack
 Slug: tax_advisor
 Category: financial
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides expert guidance on tax compliance, planning, and optimization.

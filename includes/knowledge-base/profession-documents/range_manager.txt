@@ -3,6 +3,10 @@ Range Manager — Profession Knowledge Pack
 Slug: range_manager
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages rangelands for livestock grazing and wildlife

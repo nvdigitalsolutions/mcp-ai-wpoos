@@ -3,6 +3,10 @@ Veterinarian — Profession Knowledge Pack
 Slug: veterinarian
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides animal health care and medical treatment.

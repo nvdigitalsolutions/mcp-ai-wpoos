@@ -3,6 +3,10 @@ Slug: automotive_mechanic
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
   and templates for high-quality automotive diagnostic and repair guidance.

@@ -3,6 +3,10 @@ Slug: hazard_mitigation_specialist
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook for Hazard Mitigation Specialists who identify risks, develop mitigation strategies, and implement projects to reduce vulnerability to natural and human-caused hazards.
 - Focus on risk assessment, mitigation planning, grant management, project development, cost-benefit analysis, and community resilience building.

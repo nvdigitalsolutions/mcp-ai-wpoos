@@ -3,6 +3,10 @@ Firefighter — Profession Knowledge Pack
 Slug: firefighter
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Responds to fires and emergency situations to protect life and property

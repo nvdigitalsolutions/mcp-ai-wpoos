@@ -3,6 +3,10 @@ Forester — Profession Knowledge Pack
 Slug: forester
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages forest resources and timber production

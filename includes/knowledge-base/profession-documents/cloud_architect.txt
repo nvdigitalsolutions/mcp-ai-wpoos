@@ -3,6 +3,10 @@ Cloud Architect — Profession Knowledge Pack
 Slug: cloud_architect
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs and implements cloud computing solutions

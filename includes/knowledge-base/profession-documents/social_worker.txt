@@ -3,6 +3,10 @@ Social Worker — Profession Knowledge Pack
 Slug: social_worker
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Helps individuals, families, and communities address challenges

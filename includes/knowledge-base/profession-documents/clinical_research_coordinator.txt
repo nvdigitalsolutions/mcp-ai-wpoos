@@ -3,6 +3,10 @@ Clinical Research Coordinator — Profession Knowledge Pack
 Slug: clinical_research_coordinator
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages and coordinates clinical trials and research studies.

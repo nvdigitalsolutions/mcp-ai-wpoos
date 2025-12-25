@@ -3,6 +3,10 @@ Slug: entrepreneur
 Category: advisory
 Includes: global.txt + categories/advisory.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for entrepreneurs building and scaling new businesses following Lean Startup methodology and 2024-2025 best practices.
 - Focus on validated learning, rapid iteration, customer development, and sustainable business growth.

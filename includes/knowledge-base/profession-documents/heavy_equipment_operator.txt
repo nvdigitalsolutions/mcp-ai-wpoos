@@ -3,6 +3,10 @@ Heavy Equipment Operator — Profession Knowledge Pack
 Slug: heavy_equipment_operator
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Operates heavy machinery for construction and excavation

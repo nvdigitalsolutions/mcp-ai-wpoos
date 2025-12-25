@@ -1,5 +1,9 @@
 WP MCP AI — Global Profession Playbook (Base Knowledge)
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Purpose
 - This folder contains authorable playbooks that act as “Base Knowledge” for each Profession template.
 - These files are meant to be edited over time. Updating the text files should be enough to improve behavior

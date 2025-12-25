@@ -3,6 +3,10 @@ Graphic Designer — Profession Knowledge Pack
 Slug: graphic_designer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs visual communications for print and digital media

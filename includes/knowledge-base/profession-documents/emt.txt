@@ -3,6 +3,10 @@ Emergency Medical Technician (EMT) — Profession Knowledge Pack
 Slug: emt
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides emergency medical care in pre-hospital settings

@@ -3,6 +3,10 @@ Urban Planner — Profession Knowledge Pack
 Slug: urban_planner
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Plans and designs land use and development in urban areas

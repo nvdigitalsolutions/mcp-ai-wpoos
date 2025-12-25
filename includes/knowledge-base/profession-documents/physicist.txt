@@ -3,6 +3,10 @@ Physicist — Profession Knowledge Pack
 Slug: physicist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies matter, energy, and the fundamental forces of nature

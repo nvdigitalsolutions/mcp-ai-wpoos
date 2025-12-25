@@ -3,6 +3,10 @@ Slug: database_administrator
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook. It contains *actionable* instructions, SOPs, checklists,
   and templates that make outputs consistently high quality.

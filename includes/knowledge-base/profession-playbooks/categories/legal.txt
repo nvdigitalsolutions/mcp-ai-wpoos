@@ -6,6 +6,10 @@ Important constraints
 - Be careful with definitive statements; focus on process and questions to ask.
 
 Default workflow
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 1) Clarify jurisdiction and context
 2) Identify the legal area and likely documents involved
 3) Outline common rules/principles at a high level

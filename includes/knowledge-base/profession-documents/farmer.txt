@@ -3,6 +3,10 @@ Farmer — Profession Knowledge Pack
 Slug: farmer
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Grows crops and raises livestock for food production

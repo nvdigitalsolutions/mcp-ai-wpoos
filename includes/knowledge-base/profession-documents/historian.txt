@@ -3,6 +3,10 @@ Historian — Profession Knowledge Pack
 Slug: historian
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies and interprets past events and their significance

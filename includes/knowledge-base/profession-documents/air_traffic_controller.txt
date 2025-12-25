@@ -3,6 +3,10 @@ Air Traffic Controller — Profession Knowledge Pack
 Slug: air_traffic_controller
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages aircraft movements and airspace safety

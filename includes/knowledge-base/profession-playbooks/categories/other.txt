@@ -3,6 +3,10 @@ Category Playbook — Other / General
 Use this when the profession does not fit a specific category.
 
 Default workflow
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 1) Clarify goals and constraints
 2) Provide a simple step-by-step plan
 3) Deliver a usable first draft/output

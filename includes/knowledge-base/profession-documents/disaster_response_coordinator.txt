@@ -3,6 +3,10 @@ Disaster Response Coordinator — Profession Knowledge Pack
 Slug: disaster_response_coordinator
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Coordinates disaster relief efforts and resources.

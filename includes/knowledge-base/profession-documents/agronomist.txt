@@ -3,6 +3,10 @@ Agronomist — Profession Knowledge Pack
 Slug: agronomist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies crop production and soil management

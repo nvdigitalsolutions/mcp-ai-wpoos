@@ -3,6 +3,10 @@ Radiologic Technologist — Profession Knowledge Pack
 Slug: radiologic_technologist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Performs diagnostic imaging examinations

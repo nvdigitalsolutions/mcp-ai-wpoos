@@ -3,6 +3,10 @@ High School Teacher — Profession Knowledge Pack
 Slug: high_school_teacher
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Teaches specialized subjects to students in grades 9-12

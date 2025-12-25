@@ -3,6 +3,10 @@ Accountant — Profession Knowledge Pack
 Slug: accountant
 Category: financial
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Expert in accounting principles, financial reporting, and bookkeeping

@@ -3,6 +3,10 @@ Profession Playbooks (Authorable Base Knowledge)
 This folder is intended to be edited by humans. The plugin can assemble a profession’s Base Knowledge
 from three layers:
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 1) global.txt
 2) categories/<category>.txt
 3) professions/<slug>.txt

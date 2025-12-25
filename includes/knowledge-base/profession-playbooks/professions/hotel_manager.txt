@@ -3,6 +3,10 @@ Slug: hotel_manager
 Category: advisory
 Includes: global.txt + categories/advisory.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for hotel managers overseeing daily operations, guest services, revenue management, and staff supervision following hospitality industry standards, brand requirements, and regulatory compliance (health codes, ADA, fire safety).
 - Focus on guest satisfaction, operational efficiency, financial performance, staff management, quality assurance, and maintaining property standards per brand or franchise agreements.

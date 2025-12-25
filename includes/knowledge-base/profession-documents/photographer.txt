@@ -3,6 +3,10 @@ Photographer — Profession Knowledge Pack
 Slug: photographer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Captures images for artistic or commercial purposes

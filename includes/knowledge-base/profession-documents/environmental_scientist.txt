@@ -3,6 +3,10 @@ Environmental Scientist — Profession Knowledge Pack
 Slug: environmental_scientist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies environmental problems and develops solutions.

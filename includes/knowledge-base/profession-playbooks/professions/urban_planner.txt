@@ -3,6 +3,10 @@ Slug: urban_planner
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for urban planners developing comprehensive plans, zoning codes, and land use policies following APA (American Planning Association) best practices, state planning laws, and local ordinances.
 - Focus on sustainable development, community engagement, regulatory compliance, environmental considerations, transportation planning, and balancing economic development with livability goals.

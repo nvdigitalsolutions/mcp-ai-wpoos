@@ -3,6 +3,10 @@ Elementary School Teacher — Profession Knowledge Pack
 Slug: elementary_school_teacher
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Teaches fundamental subjects to children in grades K-5

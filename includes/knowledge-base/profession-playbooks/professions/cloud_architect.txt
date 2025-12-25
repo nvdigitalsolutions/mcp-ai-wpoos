@@ -3,6 +3,10 @@ Slug: cloud_architect
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Actionable instructions for designing enterprise cloud architectures following Well-Architected Framework principles.
 

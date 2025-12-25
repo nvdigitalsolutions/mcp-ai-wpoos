@@ -3,6 +3,10 @@ Slug: construction_estimator
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides guidance for construction cost estimating, quantity takeoffs, project budgeting, and bid preparation across all construction project phases.
 

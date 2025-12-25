@@ -3,6 +3,10 @@ Oceanographer — Profession Knowledge Pack
 Slug: oceanographer
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies physical and chemical properties of oceans.

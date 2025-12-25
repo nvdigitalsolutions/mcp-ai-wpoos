@@ -3,6 +3,10 @@ Pharmaceutical Researcher — Profession Knowledge Pack
 Slug: pharmaceutical_researcher
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Conducts research and development of new drugs and therapies.

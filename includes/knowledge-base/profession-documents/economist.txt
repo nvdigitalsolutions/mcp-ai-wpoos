@@ -3,6 +3,10 @@ Economist — Profession Knowledge Pack
 Slug: economist
 Category: financial
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Analyzes economic systems, markets, and policies

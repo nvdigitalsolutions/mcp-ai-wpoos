@@ -3,6 +3,10 @@ Hazard Mitigation Specialist — Profession Knowledge Pack
 Slug: hazard_mitigation_specialist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Identifies and reduces risks from natural and man-made hazards.

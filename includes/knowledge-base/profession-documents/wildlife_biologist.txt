@@ -3,6 +3,10 @@ Wildlife Biologist — Profession Knowledge Pack
 Slug: wildlife_biologist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies wild animal populations and their habitats

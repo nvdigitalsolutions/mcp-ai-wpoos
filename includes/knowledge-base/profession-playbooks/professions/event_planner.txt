@@ -3,6 +3,10 @@ Slug: event_planner
 Category: advisory
 Includes: global.txt + categories/advisory.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for event planning across corporate, social, and virtual/hybrid events following industry-standard frameworks and best practices (2024-2025).
 - Focus on strategic planning, stakeholder management, logistics coordination, and successful event execution.

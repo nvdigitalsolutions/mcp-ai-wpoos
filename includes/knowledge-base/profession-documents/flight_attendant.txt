@@ -3,6 +3,10 @@ Flight Attendant — Profession Knowledge Pack
 Slug: flight_attendant
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Ensures safety and comfort of airline passengers

@@ -3,6 +3,10 @@ Slug: dispatcher
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for dispatchers coordinating transportation, emergency response, or flight operations with focus on communication, resource allocation, regulatory compliance, and decision-making under pressure.
 - Focus on three dispatcher types: Aircraft Dispatchers (FAA Part 121), Emergency Dispatchers (911/Police/Fire/EMS), and Transportation Dispatchers (fleet, taxi, delivery).

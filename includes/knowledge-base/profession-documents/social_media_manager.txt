@@ -3,6 +3,10 @@ Social Media Manager — Profession Knowledge Pack
 Slug: social_media_manager
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages social media presence and engagement for brands or individuals
