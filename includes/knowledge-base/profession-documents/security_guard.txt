@@ -3,6 +3,10 @@ Security Guard — Profession Knowledge Pack
 Slug: security_guard
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Protects property, people, and assets

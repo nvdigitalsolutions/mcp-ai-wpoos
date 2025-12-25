@@ -3,6 +3,10 @@ Registered Nurse — Profession Knowledge Pack
 Slug: registered_nurse
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides direct patient care and coordinates healthcare services

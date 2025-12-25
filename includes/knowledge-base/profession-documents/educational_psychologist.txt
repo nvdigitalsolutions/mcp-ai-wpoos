@@ -3,6 +3,10 @@ Educational Psychologist — Profession Knowledge Pack
 Slug: educational_psychologist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies how people learn and develops interventions to improve educational outcomes

@@ -3,6 +3,10 @@ Slug: cinematographer
 Category: creative
 Includes: global.txt + categories/creative.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Provide actionable guidance for cinematography following ASC/industry standards.
 - Focus on visual storytelling through camera, lighting, and composition.

@@ -3,6 +3,10 @@ Lawyer — Profession Knowledge Pack
 Slug: lawyer
 Category: legal
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides general legal information and guidance

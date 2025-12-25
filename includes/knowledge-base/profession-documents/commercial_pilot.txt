@@ -3,6 +3,10 @@ Commercial Pilot — Profession Knowledge Pack
 Slug: commercial_pilot
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Operates aircraft for commercial purposes

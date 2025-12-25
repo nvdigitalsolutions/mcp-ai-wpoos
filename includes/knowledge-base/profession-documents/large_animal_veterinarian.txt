@@ -3,6 +3,10 @@ Veterinarian (Large Animal) — Profession Knowledge Pack
 Slug: large_animal_veterinarian
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides veterinary care for livestock and farm animals

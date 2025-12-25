@@ -3,6 +3,10 @@ Carpenter — Profession Knowledge Pack
 Slug: carpenter
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Constructs, installs, and repairs structures and fixtures made of wood and other materials

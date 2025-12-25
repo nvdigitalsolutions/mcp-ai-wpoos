@@ -3,6 +3,10 @@ Epidemiologist — Profession Knowledge Pack
 Slug: epidemiologist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies patterns and causes of diseases in populations.

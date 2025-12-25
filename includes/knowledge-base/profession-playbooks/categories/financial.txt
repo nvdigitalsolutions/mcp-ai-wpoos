@@ -5,6 +5,10 @@ Important constraints
 - Be clear about assumptions and encourage consultation with qualified professionals for personal decisions.
 
 Default workflow
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 1) Clarify goal and time horizon
 2) Assess inputs (income, expenses, debts, constraints)
 3) Provide options with tradeoffs

@@ -3,6 +3,10 @@ Archaeologist — Profession Knowledge Pack
 Slug: archaeologist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies past human cultures through material remains

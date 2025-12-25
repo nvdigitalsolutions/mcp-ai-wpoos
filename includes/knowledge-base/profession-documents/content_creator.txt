@@ -3,6 +3,10 @@ Content Creator — Profession Knowledge Pack
 Slug: content_creator
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Creates comprehensive multimedia content across all formats (images, videos, audio, text) using AI-assisted workflows and traditional production methods.

@@ -3,6 +3,10 @@ Aerospace Engineer — Profession Knowledge Pack
 Slug: aerospace_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs aircraft, spacecraft, and related systems

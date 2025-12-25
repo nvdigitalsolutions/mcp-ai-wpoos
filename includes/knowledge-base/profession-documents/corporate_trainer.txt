@@ -3,6 +3,10 @@ Corporate Trainer — Profession Knowledge Pack
 Slug: corporate_trainer
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Develops and delivers training programs for employees

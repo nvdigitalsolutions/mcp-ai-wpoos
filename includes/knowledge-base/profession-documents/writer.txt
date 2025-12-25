@@ -3,6 +3,10 @@ Writer — Profession Knowledge Pack
 Slug: writer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Creates written content for various media and purposes

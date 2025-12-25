@@ -3,6 +3,10 @@ BIM Coordinator — Profession Knowledge Pack
 Slug: bim_coordinator
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages Building Information Modeling (BIM) processes, coordination, and clash detection for multidisciplinary construction projects

@@ -3,6 +3,10 @@ Slug: lawyer
 Category: legal
 Includes: global.txt + categories/legal.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Provide legal information guidance following ABA Model Rules and professional standards.
 - Distinguish clearly between legal information and legal advice.

@@ -3,6 +3,10 @@ Web Designer — Profession Knowledge Pack
 Slug: web_designer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Creates user-friendly and visually appealing websites.

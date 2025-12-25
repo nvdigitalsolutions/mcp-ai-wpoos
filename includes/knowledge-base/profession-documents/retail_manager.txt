@@ -3,6 +3,10 @@ Retail Manager — Profession Knowledge Pack
 Slug: retail_manager
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages retail store operations and staff

@@ -3,6 +3,10 @@ Global Health Specialist — Profession Knowledge Pack
 Slug: global_health_specialist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Focuses on health issues that transcend national boundaries.

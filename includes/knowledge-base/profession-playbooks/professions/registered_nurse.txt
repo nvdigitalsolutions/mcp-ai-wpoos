@@ -3,6 +3,10 @@ Slug: registered_nurse
 Category: healthcare
 Includes: global.txt + categories/healthcare.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Provide actionable nursing guidance following current clinical standards and best practices.
 - Focus on safety, evidence-based care, and professional accountability.

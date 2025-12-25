@@ -3,6 +3,10 @@ Slug: web_designer
 Category: creative
 Includes: global.txt + categories/creative.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook containing actionable instructions, SOPs, checklists,
   and templates for high-quality web design work, covering visual design, HTML/CSS, responsive layouts, and UX.

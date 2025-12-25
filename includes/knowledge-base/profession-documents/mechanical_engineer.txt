@@ -3,6 +3,10 @@ Mechanical Engineer — Profession Knowledge Pack
 Slug: mechanical_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs and develops mechanical systems and devices

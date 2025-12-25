@@ -3,6 +3,10 @@ Quality Assurance Manager (Pharma) — Profession Knowledge Pack
 Slug: qa_manager_pharma
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Ensures pharmaceutical quality standards and compliance.

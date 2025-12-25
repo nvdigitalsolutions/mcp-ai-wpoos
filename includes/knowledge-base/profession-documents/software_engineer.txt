@@ -3,6 +3,10 @@ Software Engineer — Profession Knowledge Pack
 Slug: software_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs, develops, and maintains software applications

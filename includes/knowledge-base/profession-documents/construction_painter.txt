@@ -3,6 +3,10 @@ Painter (Construction) — Profession Knowledge Pack
 Slug: construction_painter
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Applies paint, stain, and coatings to buildings and structures

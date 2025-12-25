@@ -3,6 +3,10 @@ Massage Therapist — Profession Knowledge Pack
 Slug: massage_therapist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides therapeutic massage and bodywork

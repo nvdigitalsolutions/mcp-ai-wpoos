@@ -3,6 +3,10 @@ Slug: probation_officer
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for probation officers supervising offenders in the community, conducting assessments, developing case plans, monitoring compliance, and facilitating rehabilitation following evidence-based practices, constitutional standards, and restorative justice principles.
 - Focus on public safety, offender accountability, behavior change, risk reduction, and successful reintegration.

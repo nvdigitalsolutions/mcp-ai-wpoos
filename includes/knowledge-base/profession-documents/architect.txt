@@ -3,6 +3,10 @@ Architect — Profession Knowledge Pack
 Slug: architect
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs buildings and structures with focus on aesthetics and functionality.

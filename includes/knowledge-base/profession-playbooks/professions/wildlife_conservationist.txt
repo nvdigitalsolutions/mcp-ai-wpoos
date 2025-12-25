@@ -3,6 +3,10 @@ Slug: wildlife_conservationist
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Profession-specific playbook for wildlife conservation, protected area management, and species recovery.
 - Contains instructions for conservation planning, stakeholder engagement, and program implementation.

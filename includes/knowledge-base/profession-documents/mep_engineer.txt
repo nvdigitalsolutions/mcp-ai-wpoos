@@ -3,6 +3,10 @@ MEP Engineer — Profession Knowledge Pack
 Slug: mep_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs mechanical, electrical, and plumbing systems for buildings including HVAC, electrical distribution, plumbing, and fire protection

@@ -3,6 +3,10 @@ Tour Guide — Profession Knowledge Pack
 Slug: tour_guide
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Leads tours and provides information to visitors

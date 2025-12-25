@@ -3,6 +3,10 @@ IT Support Specialist — Profession Knowledge Pack
 Slug: it_support_specialist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides technical support and troubleshooting for users

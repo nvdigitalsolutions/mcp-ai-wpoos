@@ -3,6 +3,10 @@ Game Designer — Profession Knowledge Pack
 Slug: game_designer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs gameplay mechanics, systems, and player experiences for video games

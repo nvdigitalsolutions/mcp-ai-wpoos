@@ -3,6 +3,10 @@ Musician — Profession Knowledge Pack
 Slug: musician
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Creates, performs, and records music

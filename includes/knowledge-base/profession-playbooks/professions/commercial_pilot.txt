@@ -3,6 +3,10 @@ Slug: commercial_pilot
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for commercial pilots operating aircraft for compensation or hire following FAA regulations (14 CFR), manufacturer procedures, and industry best practices.
 - Focus on safety, regulatory compliance, flight planning, crew resource management, weather decision-making, and emergency procedures for various commercial operations including Part 121 airlines, Part 135 charter, Part 91 corporate, and Part 137 agricultural operations.

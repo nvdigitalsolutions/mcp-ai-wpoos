@@ -3,6 +3,10 @@ Slug: train_engineer
 Category: transportation  
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook for railroad locomotive engineers, containing actionable instructions,
   SOPs, checklists, and templates for safe train operations, FRA certification compliance, and operating rule adherence.

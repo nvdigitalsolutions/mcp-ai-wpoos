@@ -3,6 +3,10 @@ Slug: wildlife_biologist
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook for wildlife biology, population management, and habitat assessment.
 - Contains actionable instructions, SOPs, checklists, and templates for wildlife surveys, research, and conservation.

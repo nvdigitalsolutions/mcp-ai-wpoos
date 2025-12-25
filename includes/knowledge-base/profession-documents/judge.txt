@@ -3,6 +3,10 @@ Judge — Profession Knowledge Pack
 Slug: judge
 Category: legal
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Presides over legal proceedings and renders judicial decisions
