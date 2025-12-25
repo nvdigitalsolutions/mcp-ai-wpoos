@@ -98,8 +98,8 @@ The 527 remaining broken links are in archived/historical documentation under `d
 
 ### Tools Used
 
-1. **Python Script (`check_links.py`)** - Scanned all markdown files for broken links
-2. **Python Script (`fix_links.py`)** - Systematically fixed broken links using path mappings
+1. **Python Script (`bin/check_links.py`)** - Scanned all markdown files for broken links
+2. **Python Script (`bin/fix_links.py`)** - Systematically fixed broken links using path mappings
 3. **Path Mapping Database** - Comprehensive mapping of old paths to new paths
 
 ### Approach
