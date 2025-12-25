@@ -1288,8 +1288,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function register_settings_page() {
 			add_options_page(
-				__( 'WP oOS', 'wp-mcp-ai' ),
-				__( 'WP oOS', 'wp-mcp-ai' ),
+				__( 'NV oOS', 'wp-mcp-ai' ),
+				__( 'NV oOS', 'wp-mcp-ai' ),
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_settings_page' )
@@ -2697,7 +2697,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 			?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'WP oOS Settings', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'NV oOS Settings', 'wp-mcp-ai' ); ?></h1>
 			<?php settings_errors( self::OPTION_NAME ); ?>
 
 			<!-- Dashboard Overview -->
@@ -3214,7 +3214,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 			<div class="notice notice-warning is-dismissible">
 				<p>
-					<strong><?php esc_html_e( 'WP oOS Plugin Updated', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'NV oOS Plugin Updated', 'wp-mcp-ai' ); ?></strong>
 				</p>
 				<p>
 					<?php

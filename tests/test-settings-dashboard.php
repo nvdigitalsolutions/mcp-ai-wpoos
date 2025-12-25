@@ -276,7 +276,7 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 			}
 		}
 
-		$this->assertTrue( $menu_registered, 'WP oOS menu should be registered as a top-level menu item' );
+		$this->assertTrue( $menu_registered, 'NV oOS menu should be registered as a top-level menu item' );
 	}
 
 	/**
@@ -293,7 +293,7 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		do_action( 'admin_menu' );
 
 		// Check that the submenu is registered under wp-mcp-ai-dashboard.
-		$this->assertArrayHasKey( 'wp-mcp-ai-dashboard', $submenu, 'WP oOS should have submenu items' );
+		$this->assertArrayHasKey( 'wp-mcp-ai-dashboard', $submenu, 'NV oOS should have submenu items' );
 
 		// Find the General Settings submenu item.
 		$general_settings_found = false;

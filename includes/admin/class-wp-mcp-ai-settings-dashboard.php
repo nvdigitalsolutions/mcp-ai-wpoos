@@ -83,8 +83,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 */
 		public function register_menu() {
 			add_menu_page(
-				__( 'WP oOS Settings', 'wp-mcp-ai' ),
-				__( 'WP oOS', 'wp-mcp-ai' ),
+				__( 'NV oOS Settings', 'wp-mcp-ai' ),
+				__( 'NV oOS', 'wp-mcp-ai' ),
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' ),
