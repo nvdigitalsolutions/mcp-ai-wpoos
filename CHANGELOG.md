@@ -1,4 +1,14 @@
-# WP oOS – Changelog
+# oOS – Changelog
+
+## [Unreleased]
+
+### Changed
+- **Plugin Rename**: Updated plugin name from "Open Operator System (WP oOS)" to "NV Digital Open Operator System (oOS)"
+  - Updated all plugin headers in main files and core/pro versions
+  - Updated README.md, readme.txt, and all documentation references
+  - Updated build scripts to generate correct plugin names
+  - No breaking changes: text domains, function prefixes, and slugs remain unchanged
+  - This is purely a branding update with no functionality changes
 
 ## [1.1.0] - 2025-12-24
 
