@@ -1,0 +1,87 @@
+name: Project Automation
+
+on:
+  issues:
+    types: [opened, labeled, assigned, closed, reopened]
+  pull_request:
+    types: [opened, ready_for_review, closed, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  auto-assign-project:
+    name: Auto-assign to Project
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    
+    steps:
+      - name: Add issue to Roadmap project
+        uses: actions/add-to-project@v0.5.0
+        with:
+          # Replace PROJECT_URL with actual project URL once created
+          # Example: https://github.com/orgs/nvdigitalsolutions/projects/1
+          project-url: https://github.com/orgs/nvdigitalsolutions/projects/YOUR_PROJECT_NUMBER
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          labeled: priority:high,priority:critical
+          
+      - name: Add issue to Sprint Board
+        uses: actions/add-to-project@v0.5.0
+        if: contains(github.event.issue.labels.*.name, 'status:in-progress')
+        with:
+          project-url: https://github.com/orgs/nvdigitalsolutions/projects/YOUR_SPRINT_PROJECT_NUMBER
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  move-cards:
+    name: Move Project Cards
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'issues' && github.event.action == 'labeled') ||
+      (github.event_name == 'issues' && github.event.action == 'closed') ||
+      (github.event_name == 'pull_request' && github.event.action == 'ready_for_review')
+    
+    steps:
+      - name: Move to In Progress
+        if: contains(github.event.issue.labels.*.name, 'status:in-progress') || contains(github.event.pull_request.labels.*.name, 'status:in-progress')
+        run: |
+          echo "Move card to In Progress column"
+          # GitHub Projects v2 automation will handle this
+          
+      - name: Move to Review
+        if: github.event_name == 'pull_request' && github.event.action == 'ready_for_review'
+        run: |
+          echo "Move card to Review column"
+          # GitHub Projects v2 automation will handle this
+          
+      - name: Move to Done
+        if: (github.event_name == 'issues' && github.event.action == 'closed') || (github.event_name == 'pull_request' && github.event.action == 'closed')
+        run: |
+          echo "Move card to Done column"
+          # GitHub Projects v2 automation will handle this
+
+  add-needs-triage:
+    name: Add Needs Triage Label
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    
+    steps:
+      - name: Add status:needs-triage label
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Only add if no status label exists
+            const statusLabels = context.payload.issue.labels.filter(
+              label => label.name.startsWith('status:')
+            );
+            
+            if (statusLabels.length === 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                labels: ['status:needs-triage']
+              });
+            }

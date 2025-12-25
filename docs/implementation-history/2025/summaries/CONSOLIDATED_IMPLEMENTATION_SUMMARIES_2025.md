@@ -73,7 +73,7 @@
 
 ---
 
-### Gemini API Phase 1 Enhancements (December 21, 2024)
+### Gemini API Phase 1 Enhancements (December 21, 2025)
 **File:** [`PHASE_1_IMPLEMENTATION_SUMMARY.md`](./PHASE_1_IMPLEMENTATION_SUMMARY.md)
 
 **Summary:** Implemented Phase 1 "Quick Wins" from Gemini Integration Gap Analysis.
@@ -111,7 +111,7 @@
 
 ## API Enhancements
 
-### OpenAI GPT-Image-1.5 Support (December 20, 2024)
+### OpenAI GPT-Image-1.5 Support (December 20, 2025)
 **Features:**
 - 4× faster generation speed
 - 20% cost reduction across all quality tiers

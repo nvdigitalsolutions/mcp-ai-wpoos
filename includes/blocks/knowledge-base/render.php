@@ -37,7 +37,8 @@ $type_names = array_map(
 );
 
 // Get wrapper attributes - handle both block and non-block contexts.
-if ( function_exists( 'get_block_wrapper_attributes' ) ) {
+// Check if we're in a proper block rendering context (has $block object).
+if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
 			'class'              => 'wp-block-wp-mcp-ai-knowledge-base',
@@ -50,7 +51,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) ) {
 		)
 	);
 } else {
-	// Non-block context fallback.
+	// Non-block context fallback (e.g., direct include in admin pages).
 	$wrapper_attributes = sprintf(
 		'class="%s" data-block-id="%s" data-allowed-types="%s" data-max-files="%s" data-max-size="%s" data-nonce="%s" data-upload-url="%s"',
 		esc_attr( 'wp-block-wp-mcp-ai-knowledge-base' ),

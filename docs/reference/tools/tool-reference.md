@@ -1,8 +1,8 @@
 # Built-in tool reference
 
-**Status:** ✅ VERIFIED - December 20, 2025  
-**Tool Count:** 123 unique tools (117 base + 6 Pro addon)  
-**Last Updated:** December 20, 2025
+**Status:** ✅ VERIFIED - December 24, 2025  
+**Tool Count:** 144 unique tools (118 base + 26 Pro addon)  
+**Last Updated:** December 24, 2025
 
 WP oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 
@@ -81,7 +81,7 @@ The tool validates Simple JWT Login configuration (plugin active, authentication
 - **Search Attachments** (`search_attachments`) scans the Media Library with optional keyword or MIME filters and returns download URLs for files that pass `WP_MCP_AI_Message_Attachments::user_can_access_attachment()`, keeping private knowledge assets hidden from unauthorised requests.【F:includes/tools/class-wp-mcp-ai-tool-search-attachments.php†L15-L207】【F:includes/class-wp-mcp-ai-message-attachments.php†L480-L575】
 - **Create or Update Post** (`save_post`) creates new posts or updates existing entries with capability-aware validation, Gutenberg block normalisation, slug overrides, and edit links so assistants can collaborate on publishing workflows safely.【F:includes/tools/class-wp-mcp-ai-tool-save-post.php†L15-L268】
 - **Create WooCommerce Product Draft** (`create_woo_product`) builds draft WooCommerce products from merchandising data, applying brand metadata, pricing, descriptions, and optional sideloaded imagery before saving the product for further editing.【F:includes/tools/class-wp-mcp-ai-tool-create-woo-product.php†L15-L258】
-- **Get Rank Math SEO Overview** (`get_rankmath_seo`) inspects Rank Math SEO settings for a post, returning focus keywords, SEO scores, robots directives, schema configuration, and accessibility helpers when the Rank Math plugin is active.【F:includes/tools/class-wp-mcp-ai-tool-get-rankmath-seo.php†L15-L220】
+- **Get Rank Math SEO Overview** (`get_rankmath_seo`) inspects Rank Math SEO settings for a post, returning focus keywords, SEO scores, robots directives, schema configuration, and accessibility helpers when the Rank Math plugin is active. **Pro Enhancement**: When Rank Math Pro is installed, automatically includes Content AI suggestions, Analytics data (impressions, clicks, CTR, position, top keywords), Link Counter (internal/external links), Image SEO scores, enhanced Video Schema, Local SEO data, and advanced Schema Templates. The tool detects Pro availability and enriches the response with `pro_features` object containing all Pro-specific data without requiring any configuration changes.【F:includes/tools/class-wp-mcp-ai-tool-get-rankmath-seo.php†L15-L489】
 
 ## Media generation and transcription
 

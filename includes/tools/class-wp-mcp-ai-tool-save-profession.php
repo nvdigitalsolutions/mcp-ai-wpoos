@@ -123,7 +123,11 @@ class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP
 			return new WP_Error( 'forbidden', __( 'You do not have permission to manage professions.', 'wp-mcp-ai' ) );
 		}
 
-		// Validate required fields.
+		
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+// Validate required fields.
 		if ( empty( $arguments['title'] ) || empty( $arguments['slug'] ) ) {
 			return new WP_Error( 'missing_required', __( 'Title and slug are required.', 'wp-mcp-ai' ) );
 		}

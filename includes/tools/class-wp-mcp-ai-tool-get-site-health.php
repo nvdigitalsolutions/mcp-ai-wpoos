@@ -254,7 +254,12 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 				}
 
 				$url      = 'https://api.wordpress.org/core/serve-happy/1.0/';
-				$response = wp_remote_get( $url );
+				$response = wp_remote_get(
+					$url,
+					array(
+						'timeout' => 10,
+					)
+				);
 
 				if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
 					// Return a basic response structure if the API call fails.

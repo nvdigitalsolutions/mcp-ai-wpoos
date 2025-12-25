@@ -629,7 +629,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'huggingface',
 					'label'  => __( 'Hugging Face', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'enable_huggingface', 'huggingface_api_key', 'huggingface_endpoint_url', 'huggingface_model', 'enable_huggingface_datasets', 'huggingface_datasets_api_token', 'huggingface_datasets_cache_ttl', 'huggingface_datasets_default_limit' ),
+					'fields' => array( 'enable_huggingface', 'huggingface_api_key', 'huggingface_endpoint_url', 'huggingface_model' ),
+				),
+				'huggingface_datasets' => array(
+					'id'     => 'huggingface_datasets',
+					'label'  => __( 'HF Datasets', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-database',
+					'fields' => array( 'enable_huggingface_datasets', 'huggingface_datasets_api_token', 'huggingface_datasets_cache_ttl', 'huggingface_datasets_default_limit' ),
 				),
 				'google_maps' => array(
 					'id'     => 'google_maps',

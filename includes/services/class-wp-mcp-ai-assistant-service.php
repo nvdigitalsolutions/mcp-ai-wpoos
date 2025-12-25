@@ -262,4 +262,38 @@ class WP_MCP_AI_Assistant_Service {
 
 		return true;
 	}
+
+	/**
+	 * Set preferred datasets for an assistant.
+	 *
+	 * @param int   $assistant_id Assistant ID.
+	 * @param array $datasets     Array of dataset configurations.
+	 * @return bool True on success, false on failure.
+	 */
+	public function set_preferred_datasets( $assistant_id, $datasets ) {
+		if ( ! $assistant_id ) {
+			return false;
+		}
+
+		// Validate assistant exists.
+		$assistant = $this->validate_assistant_access( $assistant_id );
+		if ( is_wp_error( $assistant ) ) {
+			return false;
+		}
+
+		// Validate and sanitize datasets.
+		if ( ! is_array( $datasets ) ) {
+			$datasets = array();
+		}
+
+		// Use the sanitize function from the CPT class.
+		if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) && method_exists( 'WP_MCP_AI_Assistant_CPT', 'sanitize_preferred_datasets_meta' ) ) {
+			$datasets = WP_MCP_AI_Assistant_CPT::sanitize_preferred_datasets_meta( $datasets );
+		}
+
+		// Update the meta.
+		$result = update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PREFERRED_DATASETS, $datasets );
+
+		return false !== $result;
+	}
 }

@@ -450,6 +450,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
+// Quiz CPT is now loaded by the Pro addon.
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-enhanced-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
@@ -495,6 +496,9 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
+// Load project management initialization moved to Pro addon.
+// require_once WP_MCP_AI_PATH . 'includes/project-management-init.php';
+
 // Load validated tools (Symfony Phase 2 - requires PHP 8.0+).
 require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';
 
@@ -527,6 +531,8 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-assistants-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-ai-peers-cct.php';
+	// JetEngine Quiz CCT is now loaded by the Pro addon.
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-submissions-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-rate-limits-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php';
 	// Performance monitor CCT is now loaded via services-init.php.
@@ -598,6 +604,9 @@ if ( is_admin() ) {
 
 	// Load add assistant page (submenu of AI Assistants CPT - renamed to Create Assistant).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-assistant-page.php';
+
+	// Load HuggingFace Datasets admin page (submenu of WP oOS Dashboard).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-datasets-admin-page.php';
 	WP_MCP_AI_Add_Assistant_Page::init();
 
 	// Load build assistant page (submenu of AI Assistants CPT).

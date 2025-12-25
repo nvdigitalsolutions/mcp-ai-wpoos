@@ -2,7 +2,7 @@
 name: Bug Report
 about: Report a bug or issue with WP oOS
 title: '[BUG] '
-labels: bug
+labels: 'type:bug,status:needs-triage'
 assignees: ''
 ---
 

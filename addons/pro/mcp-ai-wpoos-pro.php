@@ -151,6 +151,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			wp_mcp_ai_pro_load_admin_sections();
 		}
 
+		// Load quiz system support files if enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings['enable_quiz_system'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-quiz-cpt.php';
+			// Load JetEngine quiz CCT if JetEngine is active.
+			if ( function_exists( 'jet_engine' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-quizzes-cct.php';
+			}
+		}
+		// Load Project Management CPT registration (Pro feature).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/project-management-init.php';
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 
@@ -196,9 +208,25 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Remove_Background'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-background.php',
 			'WP_MCP_AI_Tool_Generate_Jukebox_Music'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php',
 			'WP_MCP_AI_Tool_Check_Jukebox_Status'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php',
+			// Project Management tools (Pro feature).
+			'WP_MCP_AI_Tool_Create_Project'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-project.php',
+			'WP_MCP_AI_Tool_Update_Project'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-project.php',
+			'WP_MCP_AI_Tool_Delete_Project'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-project.php',
+			'WP_MCP_AI_Tool_List_Projects'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-projects.php',
+			'WP_MCP_AI_Tool_Create_Task'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-task.php',
+			'WP_MCP_AI_Tool_Update_Task'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-task.php',
+			'WP_MCP_AI_Tool_Delete_Task'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-task.php',
+			'WP_MCP_AI_Tool_List_Tasks'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-tasks.php',
+			'WP_MCP_AI_Tool_Create_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-event.php',
+			'WP_MCP_AI_Tool_Update_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-event.php',
+			'WP_MCP_AI_Tool_Delete_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-event.php',
+			'WP_MCP_AI_Tool_List_Events'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-events.php',
+			'WP_MCP_AI_Tool_Get_Calendar_View'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-calendar-view.php',
 			// WooCommerce tools.
 			'WP_MCP_AI_Pro_Tool_Woo_Products'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
 			'WP_MCP_AI_Pro_Tool_Woo_Orders'               => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
+			'WP_MCP_AI_Pro_Tool_Woo_Customers'            => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-customers.php',
+			'WP_MCP_AI_Pro_Tool_Woo_Coupons'              => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-coupons.php',
 			// JetEngine tools.
 			'WP_MCP_AI_Pro_Tool_JetEngine'                => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
 			// Elementor tools.
@@ -242,7 +270,27 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-install-and-activate-plugin.php',
 			'WP_MCP_AI_Pro_Tool_Install_And_Activate_Theme' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-install-and-activate-theme.php',
 			'WP_MCP_AI_Pro_Tool_Update_Option'            => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-update-option.php',
+			// WP All Import/Export Pro tools.
+			'WP_MCP_AI_Pro_Tool_Schedule_All_Export'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-schedule-all-export.php',
+			'WP_MCP_AI_Pro_Tool_Delete_All_Export'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-all-export.php',
+			'WP_MCP_AI_Pro_Tool_Schedule_All_Import'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-schedule-all-import.php',
+			'WP_MCP_AI_Pro_Tool_Delete_All_Import'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-all-import.php',
 		);
+
+		// Add quiz tools if enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings['enable_quiz_system'] ) ) {
+			$quiz_tools = array(
+				'WP_MCP_AI_Tool_Create_Quiz'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-quiz.php',
+				'WP_MCP_AI_Tool_Get_Quiz'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz.php',
+				'WP_MCP_AI_Tool_List_Quizzes'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-quizzes.php',
+				'WP_MCP_AI_Tool_Submit_Quiz_Answer'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-quiz-answer.php',
+				'WP_MCP_AI_Tool_Grade_Quiz'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-grade-quiz.php',
+				'WP_MCP_AI_Tool_Get_Quiz_Submissions'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-submissions.php',
+				'WP_MCP_AI_Tool_Get_Quiz_Results'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $quiz_tools );
+		}
 
 		/**
 		 * Filter the list of Pro tools to register.
@@ -431,6 +479,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// WooCommerce tools - Require WooCommerce plugin.
 			'woo_products'                    => 'wordpress-plugins',
 			'woo_orders'                      => 'wordpress-plugins',
+			'woo_customers'                   => 'wordpress-plugins',
+			'woo_coupons'                     => 'wordpress-plugins',
 			// JetEngine tools - Require JetEngine plugin.
 			'jetengine'                       => 'wordpress-plugins',
 			// Elementor tools - Require Elementor plugin.
@@ -462,6 +512,35 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'install_and_activate_theme'      => 'wordpress-core',
 			'update_option'                   => 'wordpress-core',
 		);
+
+		// Add quiz tool mappings if enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings['enable_quiz_system'] ) ) {
+			$pro_tools['create_quiz']          = 'wordpress-core';
+			$pro_tools['get_quiz']             = 'wordpress-core';
+			$pro_tools['list_quizzes']         = 'wordpress-core';
+			$pro_tools['submit_quiz_answer']   = 'wordpress-core';
+			$pro_tools['grade_quiz']           = 'wordpress-core';
+			$pro_tools['get_quiz_submissions'] = 'wordpress-core';
+			$pro_tools['get_quiz_results']     = 'wordpress-core';
+		}
+
+		// Add project management tool mappings if enabled.
+		if ( ! empty( $settings['enable_project_management'] ) ) {
+			$pro_tools['create_project']    = 'wordpress-core';
+			$pro_tools['update_project']    = 'wordpress-core';
+			$pro_tools['delete_project']    = 'wordpress-core';
+			$pro_tools['list_projects']     = 'wordpress-core';
+			$pro_tools['create_task']       = 'wordpress-core';
+			$pro_tools['update_task']       = 'wordpress-core';
+			$pro_tools['delete_task']       = 'wordpress-core';
+			$pro_tools['list_tasks']        = 'wordpress-core';
+			$pro_tools['create_event']      = 'wordpress-core';
+			$pro_tools['update_event']      = 'wordpress-core';
+			$pro_tools['delete_event']      = 'wordpress-core';
+			$pro_tools['list_events']       = 'wordpress-core';
+			$pro_tools['get_calendar_view'] = 'wordpress-core';
+		}
 
 		/**
 		 * Filter the Pro tool group assignments.
@@ -497,6 +576,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_categories' ) ) {
 		if ( isset( $categories['medium_resource'] ) ) {
 			$categories['medium_resource']['tools'][] = 'woo_products';
 			$categories['medium_resource']['tools'][] = 'woo_orders';
+			$categories['medium_resource']['tools'][] = 'woo_customers';
+			$categories['medium_resource']['tools'][] = 'woo_coupons';
 			$categories['medium_resource']['tools'][] = 'jetengine';
 			$categories['medium_resource']['tools'][] = 'elementor';
 		}

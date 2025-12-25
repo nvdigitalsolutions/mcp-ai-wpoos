@@ -416,6 +416,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'save_profession'                => 'wordpress-core',
 				'get_profession_stats'           => 'wordpress-core',
 
+				// Project Management - Pro feature tools for managing projects, tasks, and events.
+				'create_project'                 => 'project-management',
+				'update_project'                 => 'project-management',
+				'delete_project'                 => 'project-management',
+				'list_projects'                  => 'project-management',
+				'create_task'                    => 'project-management',
+				'update_task'                    => 'project-management',
+				'delete_task'                    => 'project-management',
+				'list_tasks'                     => 'project-management',
+				'create_event'                   => 'project-management',
+				'update_event'                   => 'project-management',
+				'delete_event'                   => 'project-management',
+				'list_events'                    => 'project-management',
+				'get_calendar_view'              => 'project-management',
+
 				// WordPress Plugins - Tools requiring specific WordPress plugins.
 				'get_elementor_templates'        => 'wordpress-plugins',
 				'get_woo_recent_orders'          => 'wordpress-plugins',
@@ -429,6 +444,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'get_rankmath_seo'               => 'wordpress-plugins',
 				'create_wpcode_snippet'          => 'wordpress-plugins',
 				'generate_simple_jwt_token'      => 'wordpress-plugins',
+				'newsletter_add_subscriber'      => 'wordpress-plugins',
+				'newsletter_get_subscribers'     => 'wordpress-plugins',
+				'newsletter_unsubscribe'         => 'wordpress-plugins',
+				'newsletter_get_subscriber_stats' => 'wordpress-plugins',
+				'newsletter_create_email'        => 'wordpress-plugins',
+				'newsletter_get_emails'          => 'wordpress-plugins',
 
 				// External Tools - Tools requiring external APIs or credentials.
 				'generate_openai_image'          => 'external-tools',
@@ -486,7 +507,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'github_repository_operations'   => 'external-tools',
 				'manage_github_codespace'        => 'external-tools',
 				'generic_rest'                   => 'external-tools',
+				// HuggingFace Datasets API tools.
+				'huggingface_dataset_search'     => 'external-tools',
+				'huggingface_dataset_get_info'   => 'external-tools',
+				'huggingface_dataset_get_size'   => 'external-tools',
+				'huggingface_dataset_get_rows'   => 'external-tools',
+				'huggingface_dataset_preview_rows' => 'external-tools',
+				'huggingface_dataset_list_splits' => 'external-tools',
+				'huggingface_dataset_get_statistics' => 'external-tools',
+				'huggingface_dataset_get_parquet' => 'external-tools',
+				'huggingface_dataset_is_valid'   => 'external-tools',
+				'huggingface_dataset_filter'     => 'external-tools',
+				'huggingface_recommended_datasets' => 'external-tools',
 			);
+
+			// Quiz tool mappings are now handled by the Pro addon.
 
 			/**
 			 * Filter the tool grouping map used throughout the admin UI.
@@ -506,10 +541,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$this->init();
 
 			$default_labels = array(
-				'wordpress-core'    => __( 'WordPress Core', 'wp-mcp-ai' ),
-				'wordpress-plugins' => __( 'WordPress Plugins', 'wp-mcp-ai' ),
-				'external-tools'    => __( 'External Tools', 'wp-mcp-ai' ),
-				'other'             => __( 'Other tools', 'wp-mcp-ai' ),
+				'wordpress-core'      => __( 'WordPress Core', 'wp-mcp-ai' ),
+				'wordpress-plugins'   => __( 'WordPress Plugins', 'wp-mcp-ai' ),
+				'project-management'  => __( 'Project Management', 'wp-mcp-ai' ),
+				'external-tools'      => __( 'External Tools', 'wp-mcp-ai' ),
+				'other'               => __( 'Other tools', 'wp-mcp-ai' ),
 			);
 
 			/**
@@ -860,6 +896,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Crop_Image'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crop-image.php',
 				'WP_MCP_AI_Tool_Rotate_Image'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-rotate-image.php',
 				'WP_MCP_AI_Tool_Convert_Image_Format'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-convert-image-format.php',
+				// HuggingFace Datasets API tools.
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Search' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-search.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Info' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-info.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Size' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-size.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-rows.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Preview_Rows' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-preview-rows.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-list-splits.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-statistics.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Parquet' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-parquet.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-is-valid.php',
+				'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-filter.php',
+				'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-recommended-datasets.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
@@ -878,6 +926,20 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Simple_JWT_Token' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php',
 				'WP_MCP_AI_Tool_Vision_Product_Search'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-product-search.php',
 				'WP_MCP_AI_Tool_Vision_Object_Localization' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php',
+				// Newsletter plugin tools.
+				'WP_MCP_AI_Tool_Newsletter_Add_Subscriber' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-add-subscriber.php',
+				'WP_MCP_AI_Tool_Newsletter_Get_Subscribers' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-get-subscribers.php',
+				'WP_MCP_AI_Tool_Newsletter_Unsubscribe'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-unsubscribe.php',
+				'WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-get-subscriber-stats.php',
+				'WP_MCP_AI_Tool_Newsletter_Create_Email'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-create-email.php',
+				'WP_MCP_AI_Tool_Newsletter_Get_Emails'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-newsletter-get-emails.php',
+				// WP All Import/Export plugin tools.
+				'WP_MCP_AI_Tool_List_All_Export_Templates' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-all-export-templates.php',
+				'WP_MCP_AI_Tool_Trigger_All_Export'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-trigger-all-export.php',
+				'WP_MCP_AI_Tool_List_All_Import_Templates' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-all-import-templates.php',
+				'WP_MCP_AI_Tool_Trigger_All_Import'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-trigger-all-import.php',
+				'WP_MCP_AI_Tool_Get_All_Import_Status'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-all-import-status.php',
+				// Project Management tools moved to Pro addon.
 			);
 
 			// Combine tools based on version mode.
@@ -890,6 +952,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			 * @param bool  $is_base_version Whether base version mode is enabled.
 			 */
 			$default_tools = apply_filters( 'wp_mcp_ai_default_tools', $default_tools, $is_base_version );
+
+			// Quiz tools are now loaded by the Pro addon.
 
 			foreach ( $default_tools as $class => $file ) {
 				if ( file_exists( $file ) ) {

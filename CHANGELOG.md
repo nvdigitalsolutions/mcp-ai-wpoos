@@ -1,10 +1,42 @@
 # WP oOS – Changelog
 
+## [1.1.0] - 2025-12-24
+
+### Changed
+- **Documentation Reorganization**: Completed comprehensive documentation restructuring (PR #2400)
+  - Reorganized 40 files from root and docs/ directories into logical categories
+  - Created clear category structure: archive/, features/, guides/, reference/, troubleshooting/
+  - Maintained zero information loss during reorganization
+  - Added `DOCUMENTATION_REORGANIZATION_SUMMARY.md` tracking document
+  - Clean root directory maintained (6 essential MD files only)
+  - Well-organized subdirectories with clear navigation via `docs/DOCUMENTATION_INDEX.md`
+- **Tool Count Clarification**: Updated documentation to accurately reflect tool counts
+  - 95 unique base tools (119 tool files including 24 validated variants)
+  - 64 Pro tools (34 in src/Tools/ + 30 in tools/)
+  - Total: 159 unique tools across base and Pro
+  - Added clear note about validated variants being counted separately
+- **Version Consistency**: Updated all documentation files to reflect current version 1.1.0
+  - Updated `README.md`, `docs/README.md`, `docs/DOCUMENTATION_INDEX.md`
+  - Ensured consistency across all version references
+
+### Added
+- **Code Review Documentation**: Added comprehensive code review for December 22-24, 2025
+  - Complete analysis of recent changes and code quality
+  - Security review (10/10 score - no vulnerabilities found)
+  - Documentation quality assessment (9/10 score)
+  - Architecture review and recommendations
+  - See `docs/implementation-history/2025/code-reviews/CODE_REVIEW_2025-12-24.md`
+
+### Fixed
+- Version number inconsistencies across documentation files (1.0.0 → 1.1.0)
+- Tool count discrepancies in README.md and other docs
+- Last updated dates in documentation index files (now December 24, 2025)
+
 ## [Unreleased]
 
 ### Added
 
-#### Gemini Geospatial API Integration (December 22, 2024)
+#### Gemini Geospatial API Integration (December 22, 2025)
 - **AI-Powered Location Queries**: Integrated Gemini Geospatial API for contextual, location-based queries with Google Maps grounding
   - **New Client Method**: Added `create_geospatial_query()` to `WP_MCP_AI_Gemini_Client`
     - Natural language queries about places, directions, and local information
@@ -86,7 +118,7 @@
   - **Cost Savings Potential**: Context caching can reduce costs by 68% for cached tokens
   - See [GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md](docs/features/ai-providers/gemini/GEMINI_INTEGRATION_EXECUTIVE_SUMMARY.md)
 
-#### OpenAI GPT-Image-1.5 Model Support (December 20, 2024)
+#### OpenAI GPT-Image-1.5 Model Support (December 20, 2025)
 - **OpenAI GPT-Image-1.5 Image Generation**: Added support for the latest GPT-Image-1.5 model
   - **4× Faster**: Generation speed significantly improved compared to GPT-Image-1
   - **20% Cost Reduction**: New pricing structure with lower costs across all quality tiers
