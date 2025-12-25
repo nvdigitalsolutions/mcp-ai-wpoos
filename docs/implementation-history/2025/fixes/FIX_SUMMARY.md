@@ -128,11 +128,11 @@ WHERE p.post_type = 'mcp_ai_profession'
    - Added 3 comprehensive tests
    - Validates all edge cases
 
-3. **DATASET_RESYNC_FIX.md**
+3. **[DATASET_RESYNC_FIX.md](DATASET_RESYNC_FIX.md)**
    - Detailed documentation
    - Troubleshooting guide
 
-4. **DATASET_RESYNC_FLOW.txt**
+4. **[DATASET_RESYNC_FLOW.txt](DATASET_RESYNC_FLOW.txt)**
    - Visual flow diagrams
    - Before/after comparison
 
