@@ -1,4 +1,4 @@
-=== Open Operator System (WP oOS) ===
+=== NV Digital Open Operator System (oOS) ===
 Contributors: nvdigitalsolutions
 Donate link: https://nvdigitalsolutions.com/wpoos
 Tags: ai, chatbot, openai, assistant, automation
@@ -13,7 +13,7 @@ AI Assistant framework for WordPress supporting OpenAI, Gemini, Anthropic, and O
 
 == Description ==
 
-**Open Operator System (WP oOS)** is a comprehensive AI Assistant framework that transforms your WordPress site into an intelligent automation platform. Create custom AI assistants that can search content, generate media, manage operations, and interact with users through a modern chat interface.
+**NV Digital Open Operator System (oOS)** is a comprehensive AI Assistant framework that transforms your WordPress site into an intelligent automation platform. Create custom AI assistants that can search content, generate media, manage operations, and interact with users through a modern chat interface.
 
 The plugin works standalone with vanilla WordPress and can be extended with optional third-party plugin integrations (JetEngine, WooCommerce, Elementor) to unlock additional capabilities.
 
@@ -23,9 +23,9 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 * Ollama (self-hosted, no external data transmission)
 
 
-= Why WP oOS? =
+= Why oOS? =
 
-Unlike simple chatbot plugins, WP oOS is a complete **AI orchestration system** designed for modern WordPress sites:
+Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** designed for modern WordPress sites:
 
 * **Comprehensive Tool Library** - Content management, media generation, research, site operations
 * **Optional Integrations** - Enhanced features with WooCommerce, JetEngine, Elementor when installed

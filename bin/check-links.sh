@@ -4,7 +4,9 @@
 # Finds all markdown links and verifies if the referenced files exist
 #
 
-REPO_ROOT="/home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos"
+# Get the repository root (go up one level from bin/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$REPO_ROOT" || exit 1
 
 echo "==================================="

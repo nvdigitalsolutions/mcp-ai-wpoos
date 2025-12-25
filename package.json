@@ -1,7 +1,7 @@
 {
 	"name": "mcp-ai-wpoos",
 	"version": "1.1.0",
-	"description": "WordPress plugin integrating MCP tools with AI workflows",
+	"description": "NV Digital Open Operator System (oOS) - WordPress plugin integrating MCP tools with AI workflows",
 	"private": true,
 	"scripts": {
 		"lint:js": "eslint assets/js/**/*.js",
