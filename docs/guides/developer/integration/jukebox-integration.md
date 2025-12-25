@@ -369,7 +369,7 @@ All Jukebox operations are logged via `WP_MCP_AI_Logger`:
 - [Jukebox GitHub Repository](https://github.com/openai/jukebox)
 - [Jukebox Paper](https://arxiv.org/abs/2005.00341)
 - [WP oOS Tool Reference](../../../reference/tools/tool-reference.md)
-- [WP oOS Architecture](../../../../ARCHITECTURE.md)
+- [WP oOS Architecture](../../../architecture/ARCHITECTURE.md)
 
 ## Future Enhancements
 

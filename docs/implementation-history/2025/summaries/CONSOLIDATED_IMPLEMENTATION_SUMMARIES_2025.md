@@ -142,7 +142,7 @@
 ---
 
 ### Symfony Process Component Integration (December 9, 2025)
-**File:** [`docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md`](../../../SYMFONY_PHASE2B_PROCESS_INTEGRATION.md)
+**File:** [`docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md`](../implementations/symfony-phases/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md)
 
 **Summary:** Migrated all Pro addon exec-based tools to Symfony Process component.
 
@@ -266,7 +266,7 @@
 
 ### Essential Root Documents
 - [README.md](../../../../README.md) - Main plugin documentation
-- [ARCHITECTURE.md](../../../../ARCHITECTURE.md) - System architecture overview
+- [ARCHITECTURE.md](../../../architecture/ARCHITECTURE.md) - System architecture overview
 - [BUILD.md](../../../../BUILD.md) - Build and development instructions
 - [CHANGELOG.md](../../../../CHANGELOG.md) - Version history
 - [CONTRIBUTING.md](../../../../CONTRIBUTING.md) - Contribution guidelines

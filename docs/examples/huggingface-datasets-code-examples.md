@@ -1258,8 +1258,8 @@ This document provides complete, working code examples for:
 
 For more information, see:
 - [Complete How-To Guide](../guides/features/HUGGINGFACE_DATASETS_HOW_TO.md)
-- [Quick Start Guide](../HUGGINGFACE_DATASETS_QUICK_START.md)
-- [Dataset Catalog](../HUGGINGFACE_TOP_DATASETS.md)
+- [Quick Start Guide](../features/ai-providers/huggingface/HUGGINGFACE_DATASETS_QUICK_START.md)
+- [Dataset Catalog](../features/ai-providers/huggingface/HUGGINGFACE_TOP_DATASETS.md)
 
 ---
 
