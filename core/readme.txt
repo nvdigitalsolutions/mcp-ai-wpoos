@@ -1,4 +1,4 @@
-=== Open Operator System Core (WP oOS) ===
+=== NV Digital Open Operator System Core (oOS) ===
 Contributors: nvdigitalsolutions
 Tags: mcp, ai, assistant, tools, wordpress
 Requires at least: 6.0
@@ -12,7 +12,7 @@ Core MCP (Model Context Protocol) server framework for WordPress. Provides a sta
 
 == Description ==
 
-Open Operator System Core (WP oOS) is an open-source MCP server implementation for WordPress. It provides a stable foundation for AI assistant integrations, allowing WordPress to act as an MCP server that exposes tools for AI models to interact with.
+NV Digital Open Operator System Core (oOS) is an open-source MCP server implementation for WordPress. It provides a stable foundation for AI assistant integrations, allowing WordPress to act as an MCP server that exposes tools for AI models to interact with.
 
 = Key Features =
 

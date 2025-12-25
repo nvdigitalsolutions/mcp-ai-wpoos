@@ -1,6 +1,6 @@
 <?php
 /**
- * Open Operator System (WP oOS) - Pro Add-on Entry Point
+ * NV Digital Open Operator System (oOS) - Pro Add-on Entry Point
  *
  * This file serves as the entry point for the Pro add-on when built as a
  * standalone plugin for distribution. In the repository, it does NOT have a

@@ -1,6 +1,6 @@
 <?php
 /**
- * Open Operator System (WP oOS) - Base Version Entry Point
+ * NV Digital Open Operator System (oOS) - Base Version Entry Point
  *
  * This file serves as the entry point for the standalone base version
  * when built for WordPress.org. In the repository, it does NOT have a
