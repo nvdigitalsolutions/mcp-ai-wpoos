@@ -76,7 +76,7 @@
 ---
 
 ### [PHASE_1_IMPLEMENTATION_SUMMARY.md](summaries/PHASE_1_IMPLEMENTATION_SUMMARY.md)
-**Date:** December 21, 2024  
+**Date:** December 21, 2025  
 **Status:** ✅ Complete
 
 **Implementation:** Gemini API Phase 1 "Quick Wins"
@@ -209,7 +209,7 @@
 
 ### Root Documentation
 - [README.md](../../../README.md) - Main plugin documentation with latest updates
-- [ARCHITECTURE.md](../../../ARCHITECTURE.md) - System architecture
+- [ARCHITECTURE.md](../../architecture/ARCHITECTURE.md) - System architecture
 - [BUILD.md](../../../BUILD.md) - Build and development
 - [CHANGELOG.md](../../../CHANGELOG.md) - Complete version history
 - [CONTRIBUTING.md](../../../CONTRIBUTING.md) - Contribution guidelines

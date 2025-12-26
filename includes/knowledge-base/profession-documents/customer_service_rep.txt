@@ -3,6 +3,10 @@ Customer Service Representative — Profession Knowledge Pack
 Slug: customer_service_rep
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides support and assistance to customers

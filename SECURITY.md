@@ -11,7 +11,7 @@ We release patches for security vulnerabilities for the following versions:
 
 ## Reporting a Vulnerability
 
-We take the security of WP oOS seriously. If you believe you have found a security vulnerability, please report it to us as described below.
+We take the security of oOS seriously. If you believe you have found a security vulnerability, please report it to us as described below.
 
 ### Please Do Not
 

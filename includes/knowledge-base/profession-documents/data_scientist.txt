@@ -3,6 +3,10 @@ Data Scientist — Profession Knowledge Pack
 Slug: data_scientist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Analyzes complex data to extract insights and drive decisions

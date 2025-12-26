@@ -6,6 +6,10 @@ What “good” looks like
 - Iterations are guided by specific feedback.
 
 Default workflow
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 1) Brief
    - Audience, goal, message, tone, constraints, references.
 2) Concepts

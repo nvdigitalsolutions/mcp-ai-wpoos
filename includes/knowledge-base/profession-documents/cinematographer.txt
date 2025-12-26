@@ -3,6 +3,10 @@ Cinematographer — Profession Knowledge Pack
 Slug: cinematographer
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Director of Photography - manages visual aspects of filming.

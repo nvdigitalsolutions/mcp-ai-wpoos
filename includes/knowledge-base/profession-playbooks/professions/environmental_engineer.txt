@@ -3,6 +3,10 @@ Slug: environmental_engineer
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for environmental engineers designing environmental protection systems, remediation projects, and sustainability solutions following EPA regulations, state environmental laws, and engineering best practices.
 - Focus on environmental compliance, pollution control, site remediation, water/wastewater treatment, air quality management, waste management, and sustainable design practices.

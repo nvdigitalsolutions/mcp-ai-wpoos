@@ -93,6 +93,9 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetEngine REST API details.', 'wp-mcp-ai' ) );
 		}
 
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
 		$routes = $this->get_routes();
 
 		if ( ! empty( $arguments['route'] ) ) {

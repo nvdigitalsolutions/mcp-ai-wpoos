@@ -3,6 +3,10 @@ School Counselor — Profession Knowledge Pack
 Slug: school_counselor
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides academic, career, and social-emotional support to students

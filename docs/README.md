@@ -71,7 +71,7 @@ Historical reference (244 documents from 2024-2025)
 
 - **[Documentation Index](DOCUMENTATION_INDEX.md)** - Complete navigation
 - **[Quick Reference](QUICK_REFERENCE.md)** - Fast lookup
-- **[Master Consolidation 2025](MASTER_CONSOLIDATION_2025.md)** - 2025 single source of truth
+- **[Master Consolidation 2025](implementation-history/2025/summaries/MASTER_CONSOLIDATION_2025.md)** - 2025 single source of truth
 - **[Best Practices](guides/developer/best-practices/BEST_PRACTICES.md)** - Coding standards
 
 ---
@@ -80,9 +80,9 @@ Historical reference (244 documents from 2024-2025)
 
 - **Total Files:** 551+ markdown documents
 - **Categories:** 9 main categories + archive
-- **Tools Documented:** 133 (95 base + 38 pro)
+- **Tools Documented:** 159 (95 base + 64 pro)
 - **Quality Score:** 9.5/10
-- **Last Reorganized:** December 21, 2025
+- **Last Reorganized:** December 24, 2025
 
 ---
 
@@ -95,6 +95,6 @@ Historical reference (244 documents from 2024-2025)
 
 ---
 
-**Plugin Version:** 1.0.0  
+**Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05  
 **WordPress:** 6.0+ | **PHP:** 7.4+

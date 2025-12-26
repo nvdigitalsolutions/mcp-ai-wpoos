@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Open Operator System Core (WP oOS)
+ * Plugin Name: NV Digital Open Operator System Core (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: Core MCP (Model Context Protocol) server framework for WordPress. Provides a stable API for AI tool integration.
  * Version: 1.0.0

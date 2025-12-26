@@ -2,7 +2,7 @@
 name: Documentation Issue
 about: Report missing, incorrect, or unclear documentation
 title: '[DOCS] '
-labels: documentation
+labels: 'type:documentation,area:docs,status:needs-triage'
 assignees: ''
 ---
 

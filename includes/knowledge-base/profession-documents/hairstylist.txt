@@ -3,6 +3,10 @@ Hairstylist — Profession Knowledge Pack
 Slug: hairstylist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Provides hair cutting, styling, and coloring services

@@ -1590,19 +1590,31 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-base-knowledge-seeder.php';
 			}
 
+			if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+			}
+
+			// Preserve preferred datasets before any updates/deletions.
+			$preserved_datasets = array();
+			$existing_posts     = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_profession',
+					'posts_per_page' => -1,
+					'post_status'    => 'any',
+				)
+			);
+
+			foreach ( $existing_posts as $post ) {
+				$datasets = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
+				if ( ! empty( $datasets ) && is_array( $datasets ) ) {
+					$preserved_datasets[ $post->post_name ] = $datasets;
+				}
+			}
+
 			// If replace action, delete all existing professions.
 			if ( 'replace' === $action ) {
-				$existing_professions = get_posts(
-					array(
-						'post_type'      => 'mcp_ai_profession',
-						'posts_per_page' => -1,
-						'post_status'    => 'any',
-						'fields'         => 'ids',
-					)
-				);
-
-				foreach ( $existing_professions as $post_id ) {
-					wp_delete_post( $post_id, true );
+				foreach ( $existing_posts as $post ) {
+					wp_delete_post( $post->ID, true );
 				}
 			}
 
@@ -1633,6 +1645,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$errors     = array();
 
 			foreach ( $professions as $profession_data ) {
+				// Restore preserved datasets if they exist for this profession slug.
+				$slug = sanitize_title( $profession_data['slug'] );
+				if ( isset( $preserved_datasets[ $slug ] ) ) {
+					$profession_data['preferred_datasets'] = $preserved_datasets[ $slug ];
+				}
+
 				// Check if profession already exists by slug.
 				$existing = null;
 				if ( 'update' === $action && ! empty( $profession_data['slug'] ) ) {
@@ -1640,7 +1658,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				}
 
 				if ( $existing ) {
-					// Update existing profession.
+					// Update existing profession - preserve datasets if not already in profession_data.
+					if ( ! isset( $profession_data['preferred_datasets'] ) ) {
+						$existing_datasets = get_post_meta( $existing->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
+						if ( ! empty( $existing_datasets ) && is_array( $existing_datasets ) ) {
+							$profession_data['preferred_datasets'] = $existing_datasets;
+						}
+					}
 					$profession_data['id'] = $existing->ID;
 					$result                = $repository->save( $profession_data );
 					if ( ! is_wp_error( $result ) ) {
@@ -1743,9 +1767,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Check if professions are seeded - teams need professions to exist first.
-			$profession_count = wp_count_posts( 'mcp_ai_profession' );
+			$profession_count      = wp_count_posts( 'mcp_ai_profession' );
 			$published_professions = isset( $profession_count->publish ) ? $profession_count->publish : 0;
-			
+
 			if ( $published_professions < 10 ) {
 				wp_send_json_error(
 					array(
@@ -1815,7 +1839,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					$result          = $repository->save( $team_data );
 					if ( ! is_wp_error( $result ) ) {
 						++$updated;
-						
+
 						// Check if team has members.
 						$member_ids = get_post_meta( $result, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
 						if ( empty( $member_ids ) && ! empty( $team_data['members'] ) ) {
@@ -1833,7 +1857,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					$result = $repository->save( $team_data );
 					if ( ! is_wp_error( $result ) ) {
 						++$saved;
-						
+
 						// Check if team has members.
 						$member_ids = get_post_meta( $result, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
 						if ( empty( $member_ids ) && ! empty( $team_data['members'] ) ) {
@@ -1869,7 +1893,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					count( $errors )
 				);
 			}
-			
+
 			if ( ! empty( $warnings ) ) {
 				$message .= ' ' . sprintf(
 				/* translators: %d: Number of warnings */

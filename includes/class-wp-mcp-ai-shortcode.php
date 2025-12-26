@@ -456,7 +456,7 @@ class WP_MCP_AI_Shortcode {
 			if ( $is_profession_test ) {
 				$profession_id = absint( str_replace( 'profession_', '', $assistant_id ) );
 				$profession    = get_post( $profession_id );
-				
+
 				if ( ! $profession || 'mcp_ai_profession' !== $profession->post_type ) {
 					WP_MCP_AI_Logger::log_error(
 						'Shortcode attempted to render unavailable profession',
@@ -470,7 +470,7 @@ class WP_MCP_AI_Shortcode {
 					);
 					return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested profession is not available.', 'wp-mcp-ai' ) . '</div>';
 				}
-				
+
 				// For permissions check, use the profession's associated assistant or default assistant.
 				$permissions_assistant_id = get_post_meta( $profession_id, '_wp_mcp_ai_profession_associated_assistant', true );
 				$permissions_assistant_id = absint( $permissions_assistant_id );
@@ -489,13 +489,13 @@ class WP_MCP_AI_Shortcode {
 					WP_MCP_AI_Logger::log_error(
 						'Shortcode attempted to render unavailable assistant',
 						array(
-							'assistant_id'           => $assistant_id,
+							'assistant_id'             => $assistant_id,
 							'permissions_assistant_id' => isset( $permissions_assistant_id ) ? $permissions_assistant_id : null,
-							'is_profession_test'     => $is_profession_test,
-							'assistant_exists'       => (bool) $assistant,
-							'post_type'              => $assistant ? $assistant->post_type : null,
-							'post_status'            => $assistant ? $assistant->post_status : null,
-							'attributes'             => $atts,
+							'is_profession_test'       => $is_profession_test,
+							'assistant_exists'         => (bool) $assistant,
+							'post_type'                => $assistant ? $assistant->post_type : null,
+							'post_status'              => $assistant ? $assistant->post_status : null,
+							'attributes'               => $atts,
 						)
 					);
 					return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested assistant is not available.', 'wp-mcp-ai' ) . '</div>';
@@ -521,13 +521,16 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			if ( $capability && 'public' !== $capability && ! current_user_can( $capability ) ) {
+				$current_user      = wp_get_current_user();
+				$user_capabilities = ( $current_user && isset( $current_user->allcaps ) ) ? $current_user->allcaps : array();
+
 				WP_MCP_AI_Logger::log_warning(
 					'Shortcode access denied due to insufficient capability',
 					array(
 						'assistant_id'        => $assistant_id,
 						'required_capability' => $capability,
 						'user_id'             => get_current_user_id(),
-						'user_capabilities'   => wp_get_current_user()->allcaps ?? array(),
+						'user_capabilities'   => $user_capabilities,
 					)
 				);
 				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';

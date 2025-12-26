@@ -3,6 +3,10 @@ Paralegal — Profession Knowledge Pack
 Slug: paralegal
 Category: legal
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Assists attorneys with legal research, documentation, and case management

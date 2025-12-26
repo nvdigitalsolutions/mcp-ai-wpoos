@@ -48,11 +48,11 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'query'         => array(
+				'query'        => array(
 					'type'        => 'string',
 					'description' => __( 'Search query text to find semantically similar content.', 'wp-mcp-ai' ),
 				),
-				'post_types'    => array(
+				'post_types'   => array(
 					'type'        => 'array',
 					'items'       => array(
 						'type' => 'string',
@@ -60,21 +60,21 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 					'description' => __( 'Array of post types to search. Defaults to ["post", "page"].', 'wp-mcp-ai' ),
 					'default'     => array( 'post', 'page' ),
 				),
-				'limit'         => array(
+				'limit'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return.', 'wp-mcp-ai' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'threshold'     => array(
+				'threshold'    => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum similarity score threshold (0-1). Higher values return more similar results.', 'wp-mcp-ai' ),
 					'default'     => 0.7,
 					'minimum'     => 0,
 					'maximum'     => 1,
 				),
-				'include_meta'  => array(
+				'include_meta' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include post metadata in results.', 'wp-mcp-ai' ),
 					'default'     => false,
@@ -103,6 +103,9 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
 		// Validate query.
 		if ( ! isset( $arguments['query'] ) || empty( $arguments['query'] ) ) {
 			return new WP_Error(
@@ -111,10 +114,10 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		$query       = sanitize_text_field( $arguments['query'] );
-		$post_types  = isset( $arguments['post_types'] ) && is_array( $arguments['post_types'] ) ? array_map( 'sanitize_text_field', $arguments['post_types'] ) : array( 'post', 'page' );
-		$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
-		$threshold   = isset( $arguments['threshold'] ) ? floatval( $arguments['threshold'] ) : 0.7;
+		$query        = sanitize_text_field( $arguments['query'] );
+		$post_types   = isset( $arguments['post_types'] ) && is_array( $arguments['post_types'] ) ? array_map( 'sanitize_text_field', $arguments['post_types'] ) : array( 'post', 'page' );
+		$limit        = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
+		$threshold    = isset( $arguments['threshold'] ) ? floatval( $arguments['threshold'] ) : 0.7;
 		$include_meta = isset( $arguments['include_meta'] ) ? (bool) $arguments['include_meta'] : false;
 
 		// Ensure limit is within bounds.
@@ -197,9 +200,9 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 
 				if ( $include_meta ) {
 					$result['meta'] = array(
-						'author'         => get_the_author(),
-						'date'           => get_the_date( 'Y-m-d H:i:s' ),
-						'modified'       => get_the_modified_date( 'Y-m-d H:i:s' ),
+						'author'          => get_the_author(),
+						'date'            => get_the_date( 'Y-m-d H:i:s' ),
+						'modified'        => get_the_modified_date( 'Y-m-d H:i:s' ),
 						'embedding_model' => isset( $stored_embeddings['model'] ) ? $stored_embeddings['model'] : '',
 					);
 				}
@@ -249,9 +252,9 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			return 0.0;
 		}
 
-		$dot_product  = 0.0;
-		$magnitude_a  = 0.0;
-		$magnitude_b  = 0.0;
+		$dot_product = 0.0;
+		$magnitude_a = 0.0;
+		$magnitude_b = 0.0;
 
 		for ( $i = 0; $i < count( $vector_a ); $i++ ) {
 			$dot_product += $vector_a[ $i ] * $vector_b[ $i ];

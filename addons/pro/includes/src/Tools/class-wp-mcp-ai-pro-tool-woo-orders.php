@@ -69,7 +69,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query WooCommerce orders. View order details, statuses, customer information, and order items.', 'wp-mcp-ai-pro' );
+		return __( 'Comprehensive WooCommerce order management. View order details, statuses, customer information, order items, update statuses, add notes, and process refunds.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -81,35 +81,63 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'   => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'The action to perform: get, list, search.', 'wp-mcp-ai-pro' ),
 					'enum'        => array( 'get', 'list', 'search' ),
 					'default'     => 'list',
 				),
-				'order_id' => array(
+				'order_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Order ID for get action.', 'wp-mcp-ai-pro' ),
 				),
-				'per_page' => array(
+				'per_page'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of orders to return. Default: 10. Max: 100.', 'wp-mcp-ai-pro' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
-				'page'     => array(
+				'page'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
 					'default'     => 1,
 				),
-				'status'   => array(
+				'status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by order status.', 'wp-mcp-ai-pro' ),
 					'enum'        => array( 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed' ),
 				),
-				'customer' => array(
+				'customer'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by customer ID.', 'wp-mcp-ai-pro' ),
+				),
+				'new_status'    => array(
+					'type'        => 'string',
+					'description' => __( 'New status for update_status action.', 'wp-mcp-ai-pro' ),
+					'enum'        => array( 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed' ),
+				),
+				'note'          => array(
+					'type'        => 'string',
+					'description' => __( 'Note content for add_note action.', 'wp-mcp-ai-pro' ),
+				),
+				'note_type'     => array(
+					'type'        => 'string',
+					'description' => __( 'Note type: customer (visible to customer) or private (internal only).', 'wp-mcp-ai-pro' ),
+					'enum'        => array( 'customer', 'private' ),
+					'default'     => 'private',
+				),
+				'refund_amount' => array(
+					'type'        => 'number',
+					'description' => __( 'Amount to refund (for refund action).', 'wp-mcp-ai-pro' ),
+				),
+				'refund_reason' => array(
+					'type'        => 'string',
+					'description' => __( 'Reason for refund.', 'wp-mcp-ai-pro' ),
+				),
+				'restock_items' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to restock items when refunding.', 'wp-mcp-ai-pro' ),
+					'default'     => true,
 				),
 			),
 			'required'   => array(),
@@ -124,7 +152,8 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	public function get_capability_flags() {
 		return array(
 			'pro',              // Pro tier tool.
-			'read-only',        // Only read operations.
+			'read-only',        // list/get/search operations.
+			'write',            // update_status/add_note/refund operations.
 			'requires-plugin',  // Requires WooCommerce.
 			'local-only',       // No external API calls.
 			'pii-data',         // May contain customer data.
@@ -165,6 +194,12 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				return $this->list_orders( $arguments );
 			case 'search':
 				return $this->search_orders( $arguments );
+			case 'update_status':
+				return $this->update_order_status( $arguments, $context );
+			case 'add_note':
+				return $this->add_order_note( $arguments, $context );
+			case 'refund':
+				return $this->refund_order( $arguments, $context );
 			default:
 				return new WP_Error(
 					'invalid_action',
@@ -293,5 +328,234 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Update order status.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	protected function update_order_status( $arguments, $context ) {
+		if ( empty( $arguments['order_id'] ) ) {
+			return new WP_Error(
+				'missing_order_id',
+				__( 'Order ID is required for update_status action.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		if ( empty( $arguments['new_status'] ) ) {
+			return new WP_Error(
+				'missing_new_status',
+				__( 'New status is required for update_status action.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! user_can( $user_id, 'edit_shop_orders' ) ) {
+			return new WP_Error(
+				'permission_denied',
+				__( 'You do not have permission to update orders.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$order = wc_get_order( absint( $arguments['order_id'] ) );
+
+		if ( ! $order ) {
+			return new WP_Error(
+				'order_not_found',
+				__( 'Order not found.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$old_status = $order->get_status();
+		$new_status = sanitize_key( $arguments['new_status'] );
+
+		// Remove 'wc-' prefix if provided.
+		$new_status = str_replace( 'wc-', '', $new_status );
+
+		// Update the order status.
+		$order->update_status( $new_status, '', true );
+
+		return array(
+			'success'    => true,
+			'order_id'   => $order->get_id(),
+			'old_status' => $old_status,
+			'new_status' => $order->get_status(),
+			'message'    => sprintf(
+				/* translators: 1: order ID, 2: old status, 3: new status */
+				__( 'Order #%1$d status updated from %2$s to %3$s.', 'wp-mcp-ai-pro' ),
+				$order->get_id(),
+				$old_status,
+				$order->get_status()
+			),
+		);
+	}
+
+	/**
+	 * Add a note to an order.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	protected function add_order_note( $arguments, $context ) {
+		if ( empty( $arguments['order_id'] ) ) {
+			return new WP_Error(
+				'missing_order_id',
+				__( 'Order ID is required for add_note action.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		if ( empty( $arguments['note'] ) ) {
+			return new WP_Error(
+				'missing_note',
+				__( 'Note content is required for add_note action.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! user_can( $user_id, 'edit_shop_orders' ) ) {
+			return new WP_Error(
+				'permission_denied',
+				__( 'You do not have permission to add order notes.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$order = wc_get_order( absint( $arguments['order_id'] ) );
+
+		if ( ! $order ) {
+			return new WP_Error(
+				'order_not_found',
+				__( 'Order not found.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$note_type   = isset( $arguments['note_type'] ) ? sanitize_key( $arguments['note_type'] ) : 'private';
+		$is_customer = ( 'customer' === $note_type ) ? 1 : 0;
+
+		// Add the note.
+		$note_id = $order->add_order_note(
+			wp_kses_post( $arguments['note'] ),
+			$is_customer,
+			false
+		);
+
+		if ( ! $note_id ) {
+			return new WP_Error(
+				'note_failed',
+				__( 'Failed to add order note.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		return array(
+			'success'  => true,
+			'order_id' => $order->get_id(),
+			'note_id'  => $note_id,
+			'type'     => $note_type,
+			'message'  => __( 'Order note added successfully.', 'wp-mcp-ai-pro' ),
+		);
+	}
+
+	/**
+	 * Process a refund for an order.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error
+	 */
+	protected function refund_order( $arguments, $context ) {
+		if ( empty( $arguments['order_id'] ) ) {
+			return new WP_Error(
+				'missing_order_id',
+				__( 'Order ID is required for refund action.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		if ( ! user_can( $user_id, 'edit_shop_orders' ) ) {
+			return new WP_Error(
+				'permission_denied',
+				__( 'You do not have permission to refund orders.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$order = wc_get_order( absint( $arguments['order_id'] ) );
+
+		if ( ! $order ) {
+			return new WP_Error(
+				'order_not_found',
+				__( 'Order not found.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Get refund amount (default to full order total).
+		$refund_amount = isset( $arguments['refund_amount'] ) ? floatval( $arguments['refund_amount'] ) : $order->get_total();
+
+		// Validate refund amount.
+		if ( $refund_amount <= 0 ) {
+			return new WP_Error(
+				'invalid_refund_amount',
+				__( 'Refund amount must be greater than zero.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		if ( $refund_amount > $order->get_total() ) {
+			return new WP_Error(
+				'invalid_refund_amount',
+				__( 'Refund amount cannot exceed order total.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Get refund reason.
+		$refund_reason = isset( $arguments['refund_reason'] ) ? sanitize_text_field( $arguments['refund_reason'] ) : '';
+
+		// Restock items flag.
+		$restock_items = isset( $arguments['restock_items'] ) ? (bool) $arguments['restock_items'] : true;
+
+		// Prepare line items for refund (refund all items proportionally).
+		$line_items = array();
+
+		foreach ( $order->get_items() as $item_id => $item ) {
+			$line_items[ $item_id ] = array(
+				'qty'          => $item->get_quantity(),
+				'refund_total' => $item->get_total() * ( $refund_amount / $order->get_total() ),
+				'refund_tax'   => array_sum( $item->get_taxes()['total'] ) * ( $refund_amount / $order->get_total() ),
+			);
+		}
+
+		// Create the refund.
+		$refund = wc_create_refund(
+			array(
+				'order_id'      => $order->get_id(),
+				'amount'        => $refund_amount,
+				'reason'        => $refund_reason,
+				'line_items'    => $line_items,
+				'restock_items' => $restock_items,
+			)
+		);
+
+		if ( is_wp_error( $refund ) ) {
+			return $refund;
+		}
+
+		return array(
+			'success'       => true,
+			'order_id'      => $order->get_id(),
+			'refund_id'     => $refund->get_id(),
+			'refund_amount' => $refund_amount,
+			'reason'        => $refund_reason,
+			'restocked'     => $restock_items,
+			'message'       => sprintf(
+				/* translators: 1: refund amount, 2: order ID */
+				__( 'Refund of %1$s created for order #%2$d.', 'wp-mcp-ai-pro' ),
+				wc_price( $refund_amount ),
+				$order->get_id()
+			),
+		);
 	}
 }

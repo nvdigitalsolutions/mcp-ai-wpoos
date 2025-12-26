@@ -3,6 +3,10 @@ Slug: medical_researcher
 Category: healthcare
 Includes: global.txt + categories/healthcare.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file provides guidance for biomedical research, clinical trials, translational medicine, and scientific investigation.
 - Focus on rigorous scientific methodology, research ethics, and regulatory compliance.

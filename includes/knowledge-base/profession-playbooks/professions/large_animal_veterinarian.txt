@@ -3,6 +3,10 @@ Slug: large_animal_veterinarian
 Category: healthcare
 Includes: global.txt + categories/healthcare.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Provide actionable guidance for large animal veterinary practice following AVMA/AAEP standards.
 - Focus on food safety, herd health, biosecurity, and farm animal welfare.

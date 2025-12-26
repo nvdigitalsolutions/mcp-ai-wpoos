@@ -3,6 +3,10 @@ Web Developer — Profession Knowledge Pack
 Slug: web_developer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Develops websites and web applications

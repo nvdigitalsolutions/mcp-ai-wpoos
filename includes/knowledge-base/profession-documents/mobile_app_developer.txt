@@ -3,6 +3,10 @@ Mobile App Developer — Profession Knowledge Pack
 Slug: mobile_app_developer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Develops applications for mobile devices

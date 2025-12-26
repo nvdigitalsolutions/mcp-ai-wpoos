@@ -3,6 +3,10 @@ Database Administrator — Profession Knowledge Pack
 Slug: database_administrator
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Manages and maintains databases and data systems

@@ -3,6 +3,10 @@ Wildlife Conservationist — Profession Knowledge Pack
 Slug: wildlife_conservationist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Works to protect wildlife and their habitats.

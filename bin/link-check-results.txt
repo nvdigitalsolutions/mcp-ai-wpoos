@@ -1,0 +1,192 @@
+==================================================
+WP oOS Documentation Link Checker
+==================================================
+
+Scanning 665 markdown files for links...
+
+==================================================
+Summary:
+==================================================
+Total markdown files scanned: 665
+Total markdown links checked: 1366
+External links (skipped): 304
+Anchor-only links (skipped): 346
+[0;32mValid links: 1304[0m
+[0;31mBroken links: 62[0m
+
+==================================================
+Broken Links Details:
+==================================================
+
+[0;31m✗ CHANGELOG.md[0m
+  Line 58: [Gemini Geospatial Documentation](docs/GEMINI_GEOSPATIAL.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/GEMINI_GEOSPATIAL.md
+  Line 58: [Gemini Geospatial Documentation](docs/GEMINI_GEOSPATIAL.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/GEMINI_GEOSPATIAL.md
+
+[0;31m✗ README.md[0m
+  Line 2402: [MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/MASTER_CONSOLIDATION_2025.md
+  Line 2411: [MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/MASTER_CONSOLIDATION_2025.md
+  Line 2402: [MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/MASTER_CONSOLIDATION_2025.md
+  Line 2411: [MASTER_CONSOLIDATION_2025.md](docs/MASTER_CONSOLIDATION_2025.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/MASTER_CONSOLIDATION_2025.md
+
+[0;31m✗ docs/DOCUMENTATION_INDEX.md[0m
+  Line 52: [MASTER_CONSOLIDATION_2025.md](MASTER_CONSOLIDATION_2025.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/MASTER_CONSOLIDATION_2025.md
+  Line 198: [HUGGINGFACE_DATASETS_QUICK_START.md](HUGGINGFACE_DATASETS_QUICK_START.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/HUGGINGFACE_DATASETS_QUICK_START.md
+  Line 206: [HUGGINGFACE_TOP_DATASETS.md](HUGGINGFACE_TOP_DATASETS.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/HUGGINGFACE_TOP_DATASETS.md
+  Line 238: [HUGGINGFACE_SETUP.md](HUGGINGFACE_SETUP.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/HUGGINGFACE_SETUP.md
+
+[0;31m✗ docs/PM_REVIEW_IMPLEMENTATION_SUMMARY.md[0m
+  Line 18: [PROJECT_MANAGEMENT_GAP_ANALYSIS.md](docs/PROJECT_MANAGEMENT_GAP_ANALYSIS.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/docs/PROJECT_MANAGEMENT_GAP_ANALYSIS.md
+  Line 25: [ROADMAP.md](docs/ROADMAP.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/docs/ROADMAP.md
+  Line 34: [MILESTONE_STRATEGY.md](docs/MILESTONE_STRATEGY.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/docs/MILESTONE_STRATEGY.md
+  Line 42: [LABEL_STRATEGY.md](docs/LABEL_STRATEGY.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/docs/LABEL_STRATEGY.md
+  Line 50: [RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/docs/RELEASE_PROCESS.md
+
+[0;31m✗ docs/README.md[0m
+  Line 74: [Master Consolidation 2025](MASTER_CONSOLIDATION_2025.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/MASTER_CONSOLIDATION_2025.md
+
+[0;31m✗ docs/RELEASE_PROCESS.md[0m
+  Line 327: [What's New Guide](link)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/link
+  Line 328: [Upgrade Guide](link)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/link
+  Line 329: [Full Changelog](link)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/link
+
+[0;31m✗ docs/architecture/ARCHITECTURE.md[0m
+  Line 6: [docs/](docs/)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/docs
+  Line 185: [docs/ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md
+  Line 374: [docs/DYNAMIC-CONFIGURATION-FILTERS.md](docs/guides/developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/docs/guides/developer/architecture/DYNAMIC-CONFIGURATION-FILTERS.md
+  Line 418: [SECURITY.md](SECURITY.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/SECURITY.md
+  Line 449: [docs/PERFORMANCE-OPTIMIZATION.md](docs/features/performance/PERFORMANCE-OPTIMIZATION.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/docs/features/performance/PERFORMANCE-OPTIMIZATION.md
+  Line 474: [CONTRIBUTING.md](CONTRIBUTING.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/CONTRIBUTING.md
+  Line 502: [QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/docs/QUICK_REFERENCE.md
+  Line 503: [DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/docs/DOCUMENTATION_INDEX.md
+  Line 504: [CODE-REVIEW-MASTER.md](docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md
+  Line 505: [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md
+  Line 506: [tool-reference.md](docs/reference/tools/tool-reference.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/docs/reference/tools/tool-reference.md
+  Line 507: [rest-api.md](docs/reference/api/rest-api.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/architecture/docs/reference/api/rest-api.md
+
+[0;31m✗ docs/examples/huggingface-datasets-code-examples.md[0m
+  Line 1261: [Quick Start Guide](../HUGGINGFACE_DATASETS_QUICK_START.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/HUGGINGFACE_DATASETS_QUICK_START.md
+  Line 1262: [Dataset Catalog](../HUGGINGFACE_TOP_DATASETS.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/HUGGINGFACE_TOP_DATASETS.md
+
+[0;31m✗ docs/features/ai-providers/gemini/GEMINI_INTEGRATION_ANALYSIS_INDEX.md[0m
+  Line 213: [`ARCHITECTURE.md`](../../../../ARCHITECTURE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/ARCHITECTURE.md
+
+[0;31m✗ docs/features/ai-providers/huggingface/HUGGINGFACE_README.md[0m
+  Line 232: [Architecture Documentation](./ARCHITECTURE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/features/ai-providers/huggingface/ARCHITECTURE.md
+  Line 233: [Tool Development Guide](./guides/tool-development.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/features/ai-providers/huggingface/guides/tool-development.md
+  Line 234: [Testing Guide](./guides/testing.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/features/ai-providers/huggingface/guides/testing.md
+  Line 235: [Contributing Guidelines](../CONTRIBUTING.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/features/ai-providers/CONTRIBUTING.md
+
+[0;31m✗ docs/features/integrations/WP_ALL_IMPORT_EXPORT_INTEGRATION.md[0m
+  Line 377: [Tool Registry](../../includes/class-wp-mcp-ai-tool-registry.php)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/includes/class-wp-mcp-ai-tool-registry.php
+  Line 378: [Pro Addon Registration](../../addons/pro/mcp-ai-wpoos-pro.php)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/addons/pro/mcp-ai-wpoos-pro.php
+
+[0;31m✗ docs/guides/admin/DATASET_ASSIGNMENT_GUIDE.md[0m
+  Line 312: [HuggingFace Datasets Quick Start](HUGGINGFACE_DATASETS_QUICK_START.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/guides/admin/HUGGINGFACE_DATASETS_QUICK_START.md
+  Line 313: [HuggingFace Top Datasets](HUGGINGFACE_TOP_DATASETS.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/guides/admin/HUGGINGFACE_TOP_DATASETS.md
+  Line 314: [Tool Reference](tool-reference.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/guides/admin/tool-reference.md
+  Line 315: [Assistant Configuration](assistant-configuration.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/guides/admin/assistant-configuration.md
+
+[0;31m✗ docs/guides/developer/best-practices/CODE-REVIEW-MASTER.md[0m
+  Line 7: [MASTER_CONSOLIDATION_2025.md](../../../MASTER_CONSOLIDATION_2025.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/MASTER_CONSOLIDATION_2025.md
+  Line 15: [MASTER_CONSOLIDATION_2025.md](../../../MASTER_CONSOLIDATION_2025.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/MASTER_CONSOLIDATION_2025.md
+  Line 59: [MASTER_CONSOLIDATION_2025.md](../../../MASTER_CONSOLIDATION_2025.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/MASTER_CONSOLIDATION_2025.md
+
+[0;31m✗ docs/guides/developer/integration/jukebox-integration.md[0m
+  Line 372: [WP oOS Architecture](../../../../ARCHITECTURE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/ARCHITECTURE.md
+
+[0;31m✗ docs/guides/features/README.md[0m
+  Line 18: [Quick Start Guide](../../HUGGINGFACE_DATASETS_QUICK_START.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/HUGGINGFACE_DATASETS_QUICK_START.md
+  Line 20: [Dataset Catalog](../../HUGGINGFACE_TOP_DATASETS.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/HUGGINGFACE_TOP_DATASETS.md
+
+[0;31m✗ docs/implementation-history/2025/INDEX.md[0m
+  Line 212: [ARCHITECTURE.md](../../../ARCHITECTURE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/ARCHITECTURE.md
+
+[0;31m✗ docs/implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2025-12-24.md[0m
+  Line 262: [CHANGELOG v1.1.0](../../../CHANGELOG.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/CHANGELOG.md
+  Line 264: [Documentation Index](../../DOCUMENTATION_INDEX.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/implementation-history/DOCUMENTATION_INDEX.md
+
+[0;31m✗ docs/implementation-history/2025/fixes/tool-review-2024-12.md[0m
+  Line 437: [Tool Reference Documentation](../../reference/tools/tool-reference.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/implementation-history/reference/tools/tool-reference.md
+  Line 438: [Tool Capability Flags Interface](../../interfaces/interface-wp-mcp-ai-tool.php)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/implementation-history/interfaces/interface-wp-mcp-ai-tool.php
+
+[0;31m✗ docs/implementation-history/2025/implementations/integrations/SYMFONY_AI_INTEGRATION_ANALYSIS.md[0m
+  Line 929: [Current Architecture](../../../../../ARCHITECTURE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/ARCHITECTURE.md
+
+[0;31m✗ docs/implementation-history/2025/implementations/integrations/SYMFONY_UTILITIES_RECOMMENDATIONS.md[0m
+  Line 1044: [Architecture Guide](../../../../../ARCHITECTURE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/ARCHITECTURE.md
+
+[0;31m✗ docs/implementation-history/2025/summaries/CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md[0m
+  Line 145: [`docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md`](../../../SYMFONY_PHASE2B_PROCESS_INTEGRATION.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/SYMFONY_PHASE2B_PROCESS_INTEGRATION.md
+  Line 269: [ARCHITECTURE.md](../../../../ARCHITECTURE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/ARCHITECTURE.md
+
+[0;31m✗ docs/implementation-history/README.md[0m
+  Line 54: [Master Consolidation 2025](../MASTER_CONSOLIDATION_2025.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/MASTER_CONSOLIDATION_2025.md
+
+[0;31m✗ docs/profession-dataset-assignments.md[0m
+  Line 227: [WP oOS Tool Reference](tool-reference.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/docs/tool-reference.md
+
+[0;31m✗ docs/visual-guides/misc/QUICK_REFERENCE_DEC_2025.md[0m
+  Line 263: [ARCHITECTURE.md](../../../ARCHITECTURE.md)
+    Expected file: /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos/ARCHITECTURE.md
+

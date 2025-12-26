@@ -204,13 +204,13 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		// Run sync first time.
 		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( false );
 
-		$memory_files       = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$memory_files          = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
 		$initial_attachment_id = end( $memory_files );
-		$initial_hash       = get_post_meta( $initial_attachment_id, '_wp_mcp_ai_playbook_hash', true );
+		$initial_hash          = get_post_meta( $initial_attachment_id, '_wp_mcp_ai_playbook_hash', true );
 
 		// Get initial file content.
-		$initial_file_path    = get_attached_file( $initial_attachment_id );
-		$initial_content      = file_get_contents( $initial_file_path );
+		$initial_file_path = get_attached_file( $initial_attachment_id );
+		$initial_content   = file_get_contents( $initial_file_path );
 
 		// Modify profession to trigger content change (change title).
 		wp_update_post(
@@ -224,7 +224,7 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
 
 		// Get new attachment ID from memory files.
-		$new_memory_files = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$new_memory_files  = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
 		$new_attachment_id = end( $new_memory_files );
 
 		// Check that a new attachment was created.
@@ -494,7 +494,7 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		}
 
 		// Create 2 test professions with duplicates.
-		$repository = new WP_MCP_AI_Profession_Repository();
+		$repository     = new WP_MCP_AI_Profession_Repository();
 		$profession_ids = array();
 
 		for ( $p = 0; $p < 2; $p++ ) {
@@ -505,7 +505,7 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 				'category'    => 'technical',
 			);
 
-			$post_id = $repository->save( $profession_data );
+			$post_id          = $repository->save( $profession_data );
 			$profession_ids[] = $post_id;
 
 			// Create 2 duplicate attachments for each profession.
@@ -673,7 +673,7 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		// Sync again to create a new attachment and orphan the old one.
 		WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
 
-		$new_memory_files    = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$new_memory_files     = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
 		$second_attachment_id = end( $new_memory_files );
 
 		// Verify a new attachment was created.

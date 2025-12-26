@@ -536,6 +536,16 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
+		// Validate video URL before download.
+		$video_url = esc_url_raw( $video_url, array( 'https' ) );
+		if ( ! $video_url || ! wp_http_validate_url( $video_url ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_sora_invalid_video_url',
+				__( 'Invalid video URL received from API.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
 		// Download the completed video.
 		$video_response = wp_remote_get(
 			$video_url,

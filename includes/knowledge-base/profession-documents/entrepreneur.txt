@@ -3,6 +3,10 @@ Entrepreneur — Profession Knowledge Pack
 Slug: entrepreneur
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Starts and grows businesses through innovation and risk-taking

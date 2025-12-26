@@ -211,7 +211,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Get original image title for variations.
-		$original_title = get_the_title( $original_id );
+		$original_title  = get_the_title( $original_id );
 		$variation_title = $original_title ? sprintf( __( '%s - Variation', 'wp-mcp-ai' ), $original_title ) : __( 'Image Variation', 'wp-mcp-ai' );
 
 		// Create attachment.

@@ -3,6 +3,10 @@ Landscape Architect — Profession Knowledge Pack
 Slug: landscape_architect
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs outdoor spaces integrating site analysis, planting design, grading, drainage, and sustainable landscape practices

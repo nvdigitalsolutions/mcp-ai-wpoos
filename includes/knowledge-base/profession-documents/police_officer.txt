@@ -3,6 +3,10 @@ Police Officer — Profession Knowledge Pack
 Slug: police_officer
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Enforces laws and maintains public safety

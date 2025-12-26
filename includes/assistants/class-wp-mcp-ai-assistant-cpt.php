@@ -36,6 +36,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
 		const META_REQUIRED_CAPABILITY     = 'mcp_ai_required_capability';
 		const META_PRIMARY_ROLES           = '_wp_mcp_ai_primary_roles';
+		const META_PREFERRED_DATASETS      = '_wp_mcp_ai_preferred_datasets';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -73,6 +74,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$this->metaboxes['primary-roles']  = new WP_MCP_AI_Metabox_Primary_Roles( $this );
 			$this->metaboxes['base-knowledge'] = new WP_MCP_AI_Metabox_Base_Knowledge( $this );
 			$this->metaboxes['mesh-routing']   = new WP_MCP_AI_Metabox_Mesh_Routing( $this );
+			$this->metaboxes['datasets']       = new WP_MCP_AI_Metabox_Datasets( $this );
 
 			add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
@@ -106,222 +108,222 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		protected function get_tool_presets() {
 			$presets = array(
 
-			'ai_ml'               => array(
-				'name'        => __( 'AI/ML', 'wp-mcp-ai' ),
-				'description' => __( 'AI model management, embeddings, batches, and ML operations', 'wp-mcp-ai' ),
-				'tools'       => array(
-					'list_available_models',
-					'suggest_best_model',
-					'get_model_information',
-					'count_tokens',
-					'create_text_embeddings',
-					'batch_embed_content',
-					'semantic_content_search',
-					'create_batch',
-					'list_batches',
-					'get_batch_status',
-					'monitor_batch',
-					'create_vector_store',
-					'list_vector_stores',
-					'get_vector_store',
-					'manage_vector_store_files',
-					'openai_usage_analytics',
-					'open_openai_usage',
-					'open_openai_logs',
-					'moderate_content',
-					'analyze_comment_content',
+				'ai_ml'               => array(
+					'name'        => __( 'AI/ML', 'wp-mcp-ai' ),
+					'description' => __( 'AI model management, embeddings, batches, and ML operations', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'list_available_models',
+						'suggest_best_model',
+						'get_model_information',
+						'count_tokens',
+						'create_text_embeddings',
+						'batch_embed_content',
+						'semantic_content_search',
+						'create_batch',
+						'list_batches',
+						'get_batch_status',
+						'monitor_batch',
+						'create_vector_store',
+						'list_vector_stores',
+						'get_vector_store',
+						'manage_vector_store_files',
+						'openai_usage_analytics',
+						'open_openai_usage',
+						'open_openai_logs',
+						'moderate_content',
+						'analyze_comment_content',
+					),
 				),
-			),
-			'media'               => array(
-				'name'        => __( 'Media', 'wp-mcp-ai' ),
-				'description' => __( 'Image, video, and audio generation, editing, and processing tools', 'wp-mcp-ai' ),
-				'tools'       => array(
-					'generate_openai_image',
-					'generate_gemini_image',
-					'edit_gemini_image',
-					'edit_openai_image',
-					'create_image_variation',
-					'resize_image',
-					'crop_image',
-					'rotate_image',
-					'convert_image_format',
-					'remove_background',
-					'generate_image_alt_text',
-					'generate_image_caption',
-					'vision_object_localization',
-					'vision_product_search',
-					'generate_veo_video',
-					'generate_sora_video',
-					'check_video_status',
-					'analyze_video',
-					'extract_video_frames',
-					'get_video_metadata',
-					'generate_video_caption',
-					'generate_music',
-					'generate_jukebox_music',
-					'check_jukebox_status',
-					'generate_openai_speech',
-					'transcribe_openai_audio',
+				'media'               => array(
+					'name'        => __( 'Media', 'wp-mcp-ai' ),
+					'description' => __( 'Image, video, and audio generation, editing, and processing tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'generate_openai_image',
+						'generate_gemini_image',
+						'edit_gemini_image',
+						'edit_openai_image',
+						'create_image_variation',
+						'resize_image',
+						'crop_image',
+						'rotate_image',
+						'convert_image_format',
+						'remove_background',
+						'generate_image_alt_text',
+						'generate_image_caption',
+						'vision_object_localization',
+						'vision_product_search',
+						'generate_veo_video',
+						'generate_sora_video',
+						'check_video_status',
+						'analyze_video',
+						'extract_video_frames',
+						'get_video_metadata',
+						'generate_video_caption',
+						'generate_music',
+						'generate_jukebox_music',
+						'check_jukebox_status',
+						'generate_openai_speech',
+						'transcribe_openai_audio',
+					),
 				),
-			),
-			'content_writing'     => array(
-				'name'        => __( 'Content Writing', 'wp-mcp-ai' ),
-				'description' => __( 'Tools for creating and managing content, posts, and pages', 'wp-mcp-ai' ),
-				'tools'       => array(
-					'search_content',
-					'search_attachments',
-					'get_recent_posts',
-					'save_post',
-					'create_post',
-					'get_rankmath_seo',
-					'generate_openai_image',
-					'generate_gemini_image',
-					'web_search',
-					'semantic_content_search',
-					'moderate_content',
-					'analyze_comment_content',
-					'generate_image_caption',
-					'generate_image_alt_text',
-					'submit_document_prompt',
+				'content_writing'     => array(
+					'name'        => __( 'Content Writing', 'wp-mcp-ai' ),
+					'description' => __( 'Tools for creating and managing content, posts, and pages', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'search_content',
+						'search_attachments',
+						'get_recent_posts',
+						'save_post',
+						'create_post',
+						'get_rankmath_seo',
+						'generate_openai_image',
+						'generate_gemini_image',
+						'web_search',
+						'semantic_content_search',
+						'moderate_content',
+						'analyze_comment_content',
+						'generate_image_caption',
+						'generate_image_alt_text',
+						'submit_document_prompt',
+					),
 				),
-			),
-			'ecommerce'           => array(
-				'name'        => __( 'E-commerce Support', 'wp-mcp-ai' ),
-				'description' => __( 'WooCommerce and product management tools', 'wp-mcp-ai' ),
-				'tools'       => array(
-					'get_woo_recent_orders',
-					'get_woo_products',
-					'create_woo_product',
-					'send_group_email',
-					'send_mailjet_email',
-					'woo_orders',
-					'woo_products',
-					'product_actualization',
-					'scrape_product',
-					'lookup_product_price',
-					'crawl4ai_price_lookup',
-					'vision_product_search',
-					'get_import_duty',
+				'ecommerce'           => array(
+					'name'        => __( 'E-commerce Support', 'wp-mcp-ai' ),
+					'description' => __( 'WooCommerce and product management tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_woo_recent_orders',
+						'get_woo_products',
+						'create_woo_product',
+						'send_group_email',
+						'send_mailjet_email',
+						'woo_orders',
+						'woo_products',
+						'product_actualization',
+						'scrape_product',
+						'lookup_product_price',
+						'crawl4ai_price_lookup',
+						'vision_product_search',
+						'get_import_duty',
+					),
 				),
-			),
-			'site_management'     => array(
-				'name'        => __( 'Site Management', 'wp-mcp-ai' ),
-				'description' => __( 'WordPress core management and monitoring tools', 'wp-mcp-ai' ),
-				'tools'       => array(
-					'get_site_summary',
-					'get_system_logs',
-					'get_update_status',
-					'get_site_health',
-					'get_environment_status',
-					'check_site_security',
-					'purge_cache',
-					'purge_cloudflare_cache',
-					'purge_varnish_cache',
-					'create_cron_job',
-					'list_cron_jobs',
-					'get_cron_job',
-					'delete_cron_job',
-					'install_and_activate_plugin',
-					'install_and_activate_theme',
-					'update_option',
-					'site_creator',
+				'site_management'     => array(
+					'name'        => __( 'Site Management', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress core management and monitoring tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_site_summary',
+						'get_system_logs',
+						'get_update_status',
+						'get_site_health',
+						'get_environment_status',
+						'check_site_security',
+						'purge_cache',
+						'purge_cloudflare_cache',
+						'purge_varnish_cache',
+						'create_cron_job',
+						'list_cron_jobs',
+						'get_cron_job',
+						'delete_cron_job',
+						'install_and_activate_plugin',
+						'install_and_activate_theme',
+						'update_option',
+						'site_creator',
+					),
 				),
-			),
-			'seo_marketing'       => array(
-				'name'        => __( 'SEO & Marketing', 'wp-mcp-ai' ),
-				'description' => __( 'SEO analysis and social media management tools', 'wp-mcp-ai' ),
-				'tools'       => array(
-					'get_rankmath_seo',
-					'web_search',
-					'post_facebook_instagram',
-					'post_linkedin_update',
-					'get_facebook_instagram_insights',
-					'google_analytics_report',
-					'create_google_calendar_event',
-					'post_tiktok_video',
-					'get_tiktok_insights',
-					'get_linkedin_insights',
-					'post_google_business_update',
-					'get_google_business_insights',
-					'send_telegram_message',
-					'send_whatsapp_message',
-					'schedule_notify_sms',
-					'search_gmail',
+				'seo_marketing'       => array(
+					'name'        => __( 'SEO & Marketing', 'wp-mcp-ai' ),
+					'description' => __( 'SEO analysis and social media management tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_rankmath_seo',
+						'web_search',
+						'post_facebook_instagram',
+						'post_linkedin_update',
+						'get_facebook_instagram_insights',
+						'google_analytics_report',
+						'create_google_calendar_event',
+						'post_tiktok_video',
+						'get_tiktok_insights',
+						'get_linkedin_insights',
+						'post_google_business_update',
+						'get_google_business_insights',
+						'send_telegram_message',
+						'send_whatsapp_message',
+						'schedule_notify_sms',
+						'search_gmail',
+					),
 				),
-			),
-			'development'         => array(
-				'name'        => __( 'Development', 'wp-mcp-ai' ),
-				'description' => __( 'Code snippets, CLI, and technical development tools', 'wp-mcp-ai' ),
-				'tools'       => array(
-					'create_wpcode_snippet',
-					'check_wp_cli',
-					'get_system_logs',
-					'count_tokens',
-					'probe_chat',
-					'query_remote_site',
-					'github_repository_operations',
-					'list_github_repositories',
-					'manage_github_codespace',
-					'probe_remote_mcp',
-					'query_mesh_intelligent',
-					'run_openai_external_action',
-					'generic_rest',
-					'get_user_info',
+				'development'         => array(
+					'name'        => __( 'Development', 'wp-mcp-ai' ),
+					'description' => __( 'Code snippets, CLI, and technical development tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'create_wpcode_snippet',
+						'check_wp_cli',
+						'get_system_logs',
+						'count_tokens',
+						'probe_chat',
+						'query_remote_site',
+						'github_repository_operations',
+						'list_github_repositories',
+						'manage_github_codespace',
+						'probe_remote_mcp',
+						'query_mesh_intelligent',
+						'run_openai_external_action',
+						'generic_rest',
+						'get_user_info',
+					),
 				),
-			),
-			'data_analytics'      => array(
-				'name'        => __( 'Data & Analytics', 'wp-mcp-ai' ),
-				'description' => __( 'Data collection, reporting, and analytics tools', 'wp-mcp-ai' ),
-				'tools'       => array(
-					'get_jetengine_items',
-					'list_jetengine_rest_routes',
-					'invoke_jetengine_route',
-					'get_jetformbuilder_forms',
-					'get_jetformbuilder_submissions',
-					'google_analytics_report',
-					'quickbooks_report',
-					'jetengine',
-					'list_openai_files',
-					'get_openai_file_details',
-					'analyze_file_suitability',
-					'list_professions',
-					'get_profession',
-					'get_profession_stats',
-					'save_profession',
-					'create_chart',
+				'data_analytics'      => array(
+					'name'        => __( 'Data & Analytics', 'wp-mcp-ai' ),
+					'description' => __( 'Data collection, reporting, and analytics tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_jetengine_items',
+						'list_jetengine_rest_routes',
+						'invoke_jetengine_route',
+						'get_jetformbuilder_forms',
+						'get_jetformbuilder_submissions',
+						'google_analytics_report',
+						'quickbooks_report',
+						'jetengine',
+						'list_openai_files',
+						'get_openai_file_details',
+						'analyze_file_suitability',
+						'list_professions',
+						'get_profession',
+						'get_profession_stats',
+						'save_profession',
+						'create_chart',
+					),
 				),
-			),
-			'design_professional' => array(
-				'name'        => __( 'Design Professional', 'wp-mcp-ai' ),
-				'description' => __( 'CAD, rendering, 3D modeling, branding, and visual design tools', 'wp-mcp-ai' ),
-				'tools'       => array(
-					'generate_openai_image',
-					'generate_gemini_image',
-					'edit_gemini_image',
-					'edit_openai_image',
-					'generate_veo_video',
-					'check_video_status',
-					'resize_image',
-					'crop_image',
-					'rotate_image',
-					'convert_image_format',
-					'create_chart',
-					'generate_music',
-					'analyze_video',
-					'extract_video_frames',
-					'get_video_metadata',
-					'vision_object_localization',
-					'vision_product_search',
-					'generate_image_alt_text',
-					'generate_image_caption',
-					'remove_background',
-					'create_image_variation',
-					'get_elementor_templates',
-					'import_elementor_template_kit',
-					'elementor',
+				'design_professional' => array(
+					'name'        => __( 'Design Professional', 'wp-mcp-ai' ),
+					'description' => __( 'CAD, rendering, 3D modeling, branding, and visual design tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'generate_openai_image',
+						'generate_gemini_image',
+						'edit_gemini_image',
+						'edit_openai_image',
+						'generate_veo_video',
+						'check_video_status',
+						'resize_image',
+						'crop_image',
+						'rotate_image',
+						'convert_image_format',
+						'create_chart',
+						'generate_music',
+						'analyze_video',
+						'extract_video_frames',
+						'get_video_metadata',
+						'vision_object_localization',
+						'vision_product_search',
+						'generate_image_alt_text',
+						'generate_image_caption',
+						'remove_background',
+						'create_image_variation',
+						'get_elementor_templates',
+						'import_elementor_template_kit',
+						'elementor',
+					),
 				),
-			),
-		);
+			);
 
 			/**
 			 * Filter the tool selection presets.
@@ -1360,6 +1362,40 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					'auth_callback'     => $auth_callback,
 				)
 			);
+
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_PREFERRED_DATASETS,
+				array(
+					'type'              => 'array',
+					'single'            => true,
+					'show_in_rest'      => array(
+						'schema' => array(
+							'type'  => 'array',
+							'items' => array(
+								'type'                 => 'object',
+								'properties'           => array(
+									'dataset'  => array(
+										'type' => 'string',
+									),
+									'name'     => array(
+										'type' => 'string',
+									),
+									'category' => array(
+										'type' => 'string',
+									),
+									'priority' => array(
+										'type' => 'string',
+									),
+								),
+								'additionalProperties' => false,
+							),
+						),
+					),
+					'sanitize_callback' => array( __CLASS__, 'sanitize_preferred_datasets_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
 		}
 
 		/**
@@ -1611,6 +1647,48 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Sanitize preferred datasets meta.
+		 *
+		 * @param array|mixed $datasets Datasets to sanitize.
+		 * @return array Sanitized datasets array.
+		 */
+		public static function sanitize_preferred_datasets_meta( $datasets ) {
+			if ( ! is_array( $datasets ) ) {
+				return array();
+			}
+
+			$sanitized = array();
+			foreach ( $datasets as $dataset ) {
+				if ( ! is_array( $dataset ) ) {
+					continue;
+				}
+
+				// Sanitize dataset fields.
+				$item = array();
+				if ( isset( $dataset['dataset'] ) ) {
+					$item['dataset'] = sanitize_text_field( $dataset['dataset'] );
+				}
+				if ( isset( $dataset['name'] ) ) {
+					$item['name'] = sanitize_text_field( $dataset['name'] );
+				}
+				if ( isset( $dataset['category'] ) ) {
+					$item['category'] = sanitize_text_field( $dataset['category'] );
+				}
+				if ( isset( $dataset['priority'] ) ) {
+					$item['priority'] = sanitize_text_field( $dataset['priority'] );
+				}
+
+				// Only add if dataset field (required) is present.
+				if ( ! empty( $item['dataset'] ) ) {
+					$sanitized[] = $item;
+				}
+			}
+
+			// Limit to 10 datasets maximum to prevent bloat.
+			return array_slice( $sanitized, 0, 10 );
+		}
+
+		/**
 		 * Register meta boxes for the assistant CPT.
 		 */
 		public function register_meta_boxes() {
@@ -1696,8 +1774,21 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				);
 			}
 
-			// Only show mesh routing meta box if mesh is enabled.
+			// Only show datasets metabox if HuggingFace Datasets integration is enabled.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( ! empty( $settings['enable_huggingface_datasets'] ) && isset( $this->metaboxes['datasets'] ) ) {
+				$metabox = $this->metaboxes['datasets'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
+
+			// Only show mesh routing meta box if mesh is enabled.
 			if ( ! empty( $settings['enable_mesh'] ) && isset( $this->metaboxes['mesh-routing'] ) ) {
 				$metabox = $this->metaboxes['mesh-routing'];
 				add_meta_box(
@@ -3832,6 +3923,29 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 			}
 
+			// Handle preferred datasets meta.
+			if ( isset( $_POST['wp_mcp_ai_datasets_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_datasets_meta_nonce'] ) ), 'wp_mcp_ai_datasets_meta' ) ) {
+				$preferred_datasets = array();
+				if ( isset( $_POST['wp_mcp_ai_preferred_datasets'] ) && is_array( $_POST['wp_mcp_ai_preferred_datasets'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_text_field() and sanitize_preferred_datasets_meta().
+					$raw_datasets = wp_unslash( $_POST['wp_mcp_ai_preferred_datasets'] );
+					// Each checkbox value is a JSON-encoded dataset object.
+					foreach ( $raw_datasets as $dataset_json ) {
+						$dataset = json_decode( sanitize_text_field( $dataset_json ), true );
+						if ( is_array( $dataset ) ) {
+							$preferred_datasets[] = $dataset;
+						}
+					}
+					$preferred_datasets = self::sanitize_preferred_datasets_meta( $preferred_datasets );
+				}
+
+				if ( empty( $preferred_datasets ) ) {
+					delete_post_meta( $post_id, self::META_PREFERRED_DATASETS );
+				} else {
+					update_post_meta( $post_id, self::META_PREFERRED_DATASETS, $preferred_datasets );
+				}
+			}
+
 			// Handle defaults meta.
 			if ( isset( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) ), 'wp_mcp_ai_defaults_meta' ) ) {
 				$provider = isset( $_POST['wp_mcp_ai_provider'] )
@@ -4149,6 +4263,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'external_action_identifier' => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
 				'external_action_type'       => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
 				'required_capability'        => get_post_meta( $assistant_id, self::META_REQUIRED_CAPABILITY, true ),
+				'preferred_datasets'         => get_post_meta( $assistant_id, self::META_PREFERRED_DATASETS, true ),
 			);
 
 			if ( ! is_array( $config['tools'] ) ) {
@@ -4243,6 +4358,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$config['required_capability'] = '';
 			} else {
 				$config['required_capability'] = self::sanitize_required_capability_meta( $config['required_capability'] );
+			}
+
+			if ( ! is_array( $config['preferred_datasets'] ) ) {
+				$config['preferred_datasets'] = array();
+			} else {
+				$config['preferred_datasets'] = self::sanitize_preferred_datasets_meta( $config['preferred_datasets'] );
 			}
 
 			return $config;

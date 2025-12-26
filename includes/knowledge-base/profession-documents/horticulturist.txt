@@ -3,6 +3,10 @@ Horticulturist — Profession Knowledge Pack
 Slug: horticulturist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Cultivates fruits, vegetables, flowers, and ornamental plants

@@ -3,6 +3,10 @@ Fisheries Biologist — Profession Knowledge Pack
 Slug: fisheries_biologist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies and manages fish populations and aquatic ecosystems

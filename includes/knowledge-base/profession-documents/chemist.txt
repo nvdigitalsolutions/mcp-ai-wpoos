@@ -3,6 +3,10 @@ Chemist — Profession Knowledge Pack
 Slug: chemist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies the composition, structure, and properties of matter

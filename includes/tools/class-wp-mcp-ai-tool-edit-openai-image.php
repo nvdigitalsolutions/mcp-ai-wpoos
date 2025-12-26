@@ -199,10 +199,10 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 	 * Save an edited image as a WordPress attachment.
 	 *
-	 * @param array   $image_data Image data from OpenAI API.
-	 * @param int     $original_id Original image attachment ID.
-	 * @param string  $prompt Edit prompt.
-	 * @param int     $index Image index.
+	 * @param array  $image_data Image data from OpenAI API.
+	 * @param int    $original_id Original image attachment ID.
+	 * @param string $prompt Edit prompt.
+	 * @param int    $index Image index.
 	 * @return array|WP_Error
 	 */
 	private function save_edited_image( $image_data, $original_id, $prompt, $index = 0 ) {

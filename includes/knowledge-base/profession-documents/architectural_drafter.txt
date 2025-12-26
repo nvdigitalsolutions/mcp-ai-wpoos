@@ -3,6 +3,10 @@ Architectural Drafter — Profession Knowledge Pack
 Slug: architectural_drafter
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Prepares architectural construction documents including floor plans, elevations, sections, and details for building projects

@@ -1,0 +1,105 @@
+# Configuration for actions/labeler v5
+# Automatically labels PRs based on changed files
+# Format: https://github.com/actions/labeler#common-examples
+
+# Area labels based on file paths
+
+'area:core':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'mcp-ai-wpoos.php'
+      - 'includes/class-wp-mcp-ai-*.php'
+      - 'includes/class-*.php'
+
+'area:pro':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'addons/pro/**/*'
+      - 'mcp-ai-wpoos-base.php'
+
+'area:tools':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'includes/tools/**/*'
+      - 'addons/pro/includes/tools/**/*'
+
+'area:admin-ui':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'includes/admin/**/*'
+      - 'includes/admin/sections/**/*'
+
+'area:frontend':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'assets/js/chat*.js'
+      - 'assets/css/**/*'
+      - 'includes/elementor/**/*'
+
+'area:api':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'includes/class-wp-mcp-ai-rest.php'
+      - 'includes/rest/**/*'
+      - 'includes/class-wp-mcp-ai-sse-*.php'
+
+'area:testing':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'tests/**/*'
+      - 'phpunit.xml*'
+      - '.github/workflows/phpunit.yml'
+      - '.github/workflows/javascript-tests.yml'
+
+'area:ci-cd':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflows/**/*'
+      - '.github/actions/**/*'
+
+'area:docs':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'docs/**/*'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'CHANGELOG.md'
+      - '**/*.md'
+
+'area:integrations':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'includes/integrations/**/*'
+      - 'includes/jetengine/**/*'
+      - 'includes/woocommerce/**/*'
+
+'area:security':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'includes/class-wp-mcp-ai-nefarious-*.php'
+      - 'includes/security/**/*'
+      - 'SECURITY.md'
+
+'area:performance':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'includes/class-wp-mcp-ai-performance-*.php'
+      - 'includes/performance/**/*'
+
+# Type labels
+
+'type:documentation':
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**/*'
+
+# Dependencies
+
+'dependencies':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'composer.json'
+      - 'composer.lock'
+      - 'package.json'
+      - 'package-lock.json'

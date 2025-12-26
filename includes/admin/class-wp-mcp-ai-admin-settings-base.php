@@ -290,6 +290,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'cloudways_api_key'                    => '',
 				'cloudways_server_id'                  => '',
 				'cloudways_app_id'                     => '',
+				// Hugging Face Provider settings.
+				'enable_huggingface'                   => false,
+				'huggingface_api_key'                  => '',
+				'huggingface_endpoint_url'             => 'https://router.huggingface.co/v1',
+				'huggingface_model'                    => '',
+				// Hugging Face Datasets settings.
+				'enable_huggingface_datasets'          => true,
+				'huggingface_datasets_api_token'       => '',
+				'huggingface_datasets_cache_ttl'       => 3600,
+				'huggingface_datasets_default_limit'   => 10,
 				// RabbitMQ settings (Cloudways integration).
 				'rabbitmq_enabled'                     => false,
 				'rabbitmq_host'                        => 'localhost',

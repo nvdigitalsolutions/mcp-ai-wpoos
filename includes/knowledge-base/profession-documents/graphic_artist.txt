@@ -3,6 +3,10 @@ Graphic Artist — Profession Knowledge Pack
 Slug: graphic_artist
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Creates visual art and designs for various media.

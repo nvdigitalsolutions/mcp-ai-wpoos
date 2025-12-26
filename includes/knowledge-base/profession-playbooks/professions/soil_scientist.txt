@@ -3,6 +3,10 @@ Slug: soil_scientist
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook for soil science, pedology, and land resource assessment.
 - Contains actionable instructions, SOPs, checklists, and templates for soil surveys, analysis, and land use planning.

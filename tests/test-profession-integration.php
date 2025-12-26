@@ -283,7 +283,7 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 		$this->assertEquals( $associated_assistant_id, $result, 'Should return associated assistant ID' );
 
 		// Test that profession data is appended to assistant's base knowledge.
-		$load_method      = $reflection->getMethod( 'load_profession_configuration' );
+		$load_method = $reflection->getMethod( 'load_profession_configuration' );
 		$load_method->setAccessible( true );
 
 		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $associated_assistant_id );

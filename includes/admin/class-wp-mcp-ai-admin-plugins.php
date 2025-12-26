@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 	/**
-	 * Manages the Plugins integration admin page (JetEngine, WooCommerce, Elementor).
+	 * Manages the Plugins integration admin page (JetEngine, WooCommerce, Elementor, Newsletter).
 	 */
 	class WP_MCP_AI_Admin_Plugins_Integration {
 		const PAGE_SLUG = 'wp-mcp-ai-plugins';
@@ -67,6 +67,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 			// Elementor settings.
 			$settings['enable_elementor_widgets'] = isset( $_POST['enable_elementor_widgets'] ) ? true : false;
 
+			// Newsletter settings.
+			$settings['enable_newsletter_tools'] = isset( $_POST['enable_newsletter_tools'] ) ? true : false;
+
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 			// Redirect back to the page with success message.
@@ -93,11 +96,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 			$enable_jetengine_tools   = isset( $settings['enable_jetengine_tools'] ) ? $settings['enable_jetengine_tools'] : false;
 			$enable_woocommerce_tools = isset( $settings['enable_woocommerce_tools'] ) ? $settings['enable_woocommerce_tools'] : false;
 			$enable_elementor_widgets = isset( $settings['enable_elementor_widgets'] ) ? $settings['enable_elementor_widgets'] : false;
+			$enable_newsletter_tools  = isset( $settings['enable_newsletter_tools'] ) ? $settings['enable_newsletter_tools'] : false;
 
 			// Check if plugins are active.
 			$jetengine_active   = class_exists( 'Jet_Engine' );
 			$woocommerce_active = class_exists( 'WooCommerce' );
 			$elementor_active   = did_action( 'elementor/loaded' );
+			$newsletter_active  = class_exists( 'Newsletter' ) || class_exists( 'NewsletterSubscription' );
 			?>
 			<div class="wrap">
 				<h1><?php esc_html_e( 'Plugins Integration', 'wp-mcp-ai' ); ?></h1>
@@ -108,7 +113,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 					</div>
 				<?php endif; ?>
 
-				<p><?php esc_html_e( 'Configure WordPress plugin integrations including JetEngine, WooCommerce, and Elementor.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'Configure WordPress plugin integrations including JetEngine, WooCommerce, Elementor, and Newsletter.', 'wp-mcp-ai' ); ?></p>
 
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<input type="hidden" name="action" value="wp_mcp_ai_save_plugins_settings" />
@@ -229,6 +234,41 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 									<?php esc_html_e( 'Enable AI-powered Elementor widgets', 'wp-mcp-ai' ); ?>
 								</label>
 								<p class="description"><?php esc_html_e( 'Adds AI chat widgets and other AI-powered elements to Elementor.', 'wp-mcp-ai' ); ?></p>
+							</td>
+						</tr>
+
+						<!-- Newsletter Section -->
+						<tr>
+							<td colspan="2">
+								<h2 style="margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px;">
+									<span class="dashicons dashicons-email"></span>
+									<?php esc_html_e( 'Newsletter', 'wp-mcp-ai' ); ?>
+									<?php if ( ! $newsletter_active ) : ?>
+										<span class="dashicons dashicons-warning" style="color: #d63638;" title="<?php esc_attr_e( 'Newsletter plugin is not active', 'wp-mcp-ai' ); ?>"></span>
+									<?php endif; ?>
+								</h2>
+								<hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
+							</td>
+						</tr>
+						<?php if ( ! $newsletter_active ) : ?>
+							<tr>
+								<td colspan="2">
+									<div class="notice notice-warning inline">
+										<p><?php esc_html_e( 'Newsletter plugin is not active. Please install and activate Newsletter to use these features.', 'wp-mcp-ai' ); ?></p>
+									</div>
+								</td>
+							</tr>
+						<?php endif; ?>
+						<tr>
+							<th scope="row">
+								<?php esc_html_e( 'Enable Newsletter Tools', 'wp-mcp-ai' ); ?>
+							</th>
+							<td>
+								<label>
+									<input type="checkbox" name="enable_newsletter_tools" value="1" <?php checked( $enable_newsletter_tools ); ?> <?php disabled( ! $newsletter_active ); ?> />
+									<?php esc_html_e( 'Enable Newsletter-specific tools', 'wp-mcp-ai' ); ?>
+								</label>
+								<p class="description"><?php esc_html_e( 'Provides AI tools for managing newsletter subscribers, campaigns, and statistics. Includes 6 tools: add subscriber, get subscribers, unsubscribe, get stats, create email, and get emails.', 'wp-mcp-ai' ); ?></p>
 							</td>
 						</tr>
 					</table>

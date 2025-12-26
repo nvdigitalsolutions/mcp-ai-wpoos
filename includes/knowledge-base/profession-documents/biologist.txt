@@ -3,6 +3,10 @@ Biologist — Profession Knowledge Pack
 Slug: biologist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies living organisms and their interactions

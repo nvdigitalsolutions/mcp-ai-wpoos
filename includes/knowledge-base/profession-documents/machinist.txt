@@ -3,6 +3,10 @@ Machinist — Profession Knowledge Pack
 Slug: machinist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Operates machine tools to produce precision metal parts

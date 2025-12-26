@@ -3,6 +3,10 @@ Train Engineer — Profession Knowledge Pack
 Slug: train_engineer
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Operates locomotives and trains

@@ -6,6 +6,10 @@ What “good” looks like
 - The work includes documentation and handoff notes.
 
 Default workflow
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 1) Clarify requirements
    - Inputs/outputs, acceptance criteria, constraints, environment, dependencies.
 2) Design

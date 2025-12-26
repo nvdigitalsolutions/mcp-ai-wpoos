@@ -293,7 +293,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 				delete_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id' );
 			}
 
-			$removed_count++;
+			++$removed_count;
 		}
 
 		// Ensure the kept attachment is in memory files.
@@ -372,9 +372,9 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			$attachment_id = absint( $attachment->ID );
 
 			// Double-check: Verify this is a system-created playbook.
-			$hash             = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
-			$profession_id    = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
-			$attachment_path  = get_attached_file( $attachment_id );
+			$hash            = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_hash', true );
+			$profession_id   = get_post_meta( $attachment_id, '_wp_mcp_ai_playbook_profession_id', true );
+			$attachment_path = get_attached_file( $attachment_id );
 
 			// Safety checks: Only delete if:
 			// 1. Has playbook hash (system-created)
@@ -396,7 +396,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			$deleted = wp_delete_attachment( $attachment_id, true );
 
 			if ( $deleted ) {
-				$deleted_count++;
+				++$deleted_count;
 				$deleted_ids[] = $attachment_id;
 			} else {
 				$skipped_ids[] = $attachment_id;
@@ -603,11 +603,11 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		$professions_processed = 0;
 
 		foreach ( $professions as $profession ) {
-			$removed = self::remove_duplicate_playbooks( $profession->ID );
+			$removed        = self::remove_duplicate_playbooks( $profession->ID );
 			$total_removed += $removed;
 
 			if ( $removed > 0 ) {
-				$professions_processed++;
+				++$professions_processed;
 			}
 		}
 

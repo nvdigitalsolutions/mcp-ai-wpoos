@@ -3,6 +3,10 @@ Slug: agricultural_engineer
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for agricultural engineers designing irrigation systems, drainage solutions, farm structures, and precision agriculture technologies following ASABE standards and sustainable engineering practices.
 - Focus on water management efficiency, soil conservation, equipment safety, environmental sustainability, and economic viability for agricultural operations.

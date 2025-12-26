@@ -3,6 +3,10 @@ Slug: emergency_management_director
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This file is the profession-specific playbook for Emergency Management Directors who plan, direct, and coordinate emergency preparedness, disaster response, and recovery programs at municipal, county, state, or organizational levels.
 - Focus on strategic leadership, policy development, multi-agency coordination, regulatory compliance, and building resilient emergency management programs.

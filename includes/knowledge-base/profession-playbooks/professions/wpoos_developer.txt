@@ -3,6 +3,10 @@ Slug: wpoos_developer
 Category: technical
 Includes: global.txt + categories/technical.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - Provide expert guidance on WP oOS (WordPress Open Operator System) plugin development, integration, and usage.
 - Cover WordPress development, assistant creation, tool usage, REST API integration, and content creation workflows.

@@ -3,6 +3,10 @@ Customs Broker — Profession Knowledge Pack
 Slug: customs_broker
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Expert in customs regulations, import/export procedures, and international trade.

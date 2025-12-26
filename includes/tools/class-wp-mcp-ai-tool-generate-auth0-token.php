@@ -99,6 +99,10 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
+		if ( is_multisite() && ! is_user_member_of_blog( $acting_user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+
 		// Validate required parameters.
 		$auth0_domain  = isset( $arguments['auth0_domain'] ) ? trim( sanitize_text_field( $arguments['auth0_domain'] ) ) : '';
 		$client_id     = isset( $arguments['client_id'] ) ? trim( sanitize_text_field( $arguments['client_id'] ) ) : '';
@@ -117,6 +121,16 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $audience ) ) {
 			// Default to Management API audience.
 			$audience = 'https://' . $auth0_domain . '/api/v2/';
+		}
+
+		// Validate audience URL.
+		$audience = esc_url_raw( $audience, array( 'https' ) );
+		if ( ! $audience || ! wp_http_validate_url( $audience ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_auth0_invalid_audience',
+				__( 'Invalid Auth0 audience URL.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
 		}
 
 		// Request token from Auth0.
@@ -148,7 +162,18 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 	 * @return array|WP_Error Token response or error.
 	 */
 	protected function request_auth0_token( $domain, $client_id, $client_secret, $audience ) {
-		$url  = 'https://' . $domain . '/oauth/token';
+		$url = 'https://' . $domain . '/oauth/token';
+
+		// Validate the constructed URL.
+		$url = esc_url_raw( $url, array( 'https' ) );
+		if ( ! $url || ! wp_http_validate_url( $url ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_auth0_invalid_url',
+				__( 'Invalid Auth0 domain provided.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
 		$body = wp_json_encode(
 			array(
 				'grant_type'    => 'client_credentials',

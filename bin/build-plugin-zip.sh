@@ -2,7 +2,7 @@
 #
 # Build Plugin ZIP
 #
-# Creates production-ready ZIP files of the WP oOS plugin.
+# Creates production-ready ZIP files of the oOS plugin.
 # Supports building base, pro, core-only, or combined (base + pro) versions.
 #
 # Usage:
@@ -113,7 +113,7 @@ if [ -z "$VERSION" ]; then
 fi
 
 echo "=========================================="
-echo "Building WP oOS Plugin ZIP v${VERSION}"
+echo "Building oOS Plugin ZIP v${VERSION}"
 echo "=========================================="
 echo ""
 echo "Build targets:"
@@ -324,7 +324,7 @@ if [ "$BUILD_BASE" = true ]; then
         sed -i '1,/\*\//c\
 <?php\
 /**\
- * Plugin Name: Open Operator System (WP oOS)\
+ * Plugin Name: NV Digital Open Operator System (oOS)\
  * Plugin URI: https://nvdigitalsolutions.com/wpoos\
  * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Works standalone with optional third-party plugin integrations.\
  * Version: '"${VERSION}"'\
@@ -383,9 +383,9 @@ if [ "$BUILD_PRO" = true ]; then
             sed -i '1,/\*\//c\
 <?php\
 /**\
- * Plugin Name: Open Operator System Pro (WP oOS Pro)\
+ * Plugin Name: NV Digital Open Operator System Pro (oOS Pro)\
  * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai\
- * Description: Professional add-on for Open Operator System (WP oOS). Adds WooCommerce, JetEngine, advanced permissions, and more. Patent Pending (Application #19/410,504).\
+ * Description: Professional add-on for NV Digital Open Operator System (oOS). Adds WooCommerce, JetEngine, advanced permissions, and more. Patent Pending (Application #19/410,504).\
  * Version: '"${VERSION}"'\
  * Requires at least: 6.0\
  * Requires PHP: 7.4\

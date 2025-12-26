@@ -310,6 +310,12 @@ class WP_MCP_AI_Profession_Repository {
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, array_values( $sanitized_tools ) );
 		}
 
+		// Preferred datasets.
+		if ( isset( $data['preferred_datasets'] ) && is_array( $data['preferred_datasets'] ) ) {
+			$sanitized_datasets = WP_MCP_AI_Profession_CPT::sanitize_preferred_datasets( $data['preferred_datasets'] );
+			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, $sanitized_datasets );
+		}
+
 		if ( isset( $data['supported_mime_types'] ) && is_array( $data['supported_mime_types'] ) ) {
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES, array_map( 'sanitize_text_field', $data['supported_mime_types'] ) );
 		}

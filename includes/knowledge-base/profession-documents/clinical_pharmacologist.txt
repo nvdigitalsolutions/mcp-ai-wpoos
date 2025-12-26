@@ -3,6 +3,10 @@ Clinical Pharmacologist — Profession Knowledge Pack
 Slug: clinical_pharmacologist
 Category: healthcare
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies how drugs interact with biological systems in clinical settings.

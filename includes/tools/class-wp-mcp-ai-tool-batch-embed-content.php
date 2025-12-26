@@ -116,6 +116,10 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+
 		// Get parameters.
 		$post_ids        = isset( $arguments['post_ids'] ) && is_array( $arguments['post_ids'] ) ? array_map( 'absint', $arguments['post_ids'] ) : array();
 		$post_types      = isset( $arguments['post_types'] ) && is_array( $arguments['post_types'] ) ? array_map( 'sanitize_text_field', $arguments['post_types'] ) : array( 'post', 'page' );
@@ -142,7 +146,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 		);
 
 		if ( ! empty( $post_ids ) ) {
-			$query_args['post__in'] = $post_ids;
+			$query_args['post__in']  = $post_ids;
 			$query_args['post_type'] = 'any';
 		} else {
 			$query_args['post_type'] = $post_types;
@@ -215,11 +219,11 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 		while ( $posts_query->have_posts() ) {
 			$posts_query->the_post();
 			$post_id = get_the_ID();
-			$processed++;
+			++$processed;
 
 			// Check if user can edit this post.
 			if ( ! user_can( $user_id, 'edit_post', $post_id ) ) {
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 
@@ -234,7 +238,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 			$text_to_embed = mb_substr( $text_to_embed, 0, self::MAX_TEXT_LENGTH );
 
 			if ( empty( $text_to_embed ) ) {
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 
@@ -285,7 +289,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 							);
 
 							update_post_meta( $post_id, '_wp_mcp_ai_embeddings', $embeddings_data );
-							$embedded++;
+							++$embedded;
 						}
 					}
 				}
@@ -358,11 +362,11 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 		while ( $posts_query->have_posts() ) {
 			$posts_query->the_post();
 			$post_id = get_the_ID();
-			$processed++;
+			++$processed;
 
 			// Check if user can edit this post.
 			if ( ! user_can( $user_id, 'edit_post', $post_id ) ) {
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 
@@ -377,7 +381,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 			$text_to_embed = mb_substr( $text_to_embed, 0, self::MAX_TEXT_LENGTH );
 
 			if ( empty( $text_to_embed ) ) {
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 
@@ -390,7 +394,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 			);
 
 			if ( is_wp_error( $embedding_result ) ) {
-				$errors++;
+				++$errors;
 				continue;
 			}
 
@@ -412,7 +416,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 				$total_tokens += $embedding_result['usage']['total_tokens'];
 			}
 
-			$embedded++;
+			++$embedded;
 		}
 
 		wp_reset_postdata();

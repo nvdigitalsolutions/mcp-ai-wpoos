@@ -98,6 +98,10 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'wp-mcp-ai' ) );
 		}
 
+		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
+
 		$format = isset( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : '';
 		if ( '' === $format ) {
 			return new WP_Error( 'wp_mcp_ai_missing_format', __( 'Target format must be specified.', 'wp-mcp-ai' ), array( 'status' => 400 ) );

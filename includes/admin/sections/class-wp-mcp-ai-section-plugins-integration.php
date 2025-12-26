@@ -52,7 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure WordPress plugin integrations including JetEngine, WooCommerce, and Elementor.', 'wp-mcp-ai' );
+			return __( 'Configure WordPress plugin integrations including JetEngine, WooCommerce, Elementor, and Newsletter.', 'wp-mcp-ai' );
 		}
 
 		/**
@@ -73,6 +73,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 			$jetengine_active   = class_exists( 'Jet_Engine' );
 			$woocommerce_active = class_exists( 'WooCommerce' );
 			$elementor_active   = did_action( 'elementor/loaded' );
+			$newsletter_active  = class_exists( 'Newsletter' ) || class_exists( 'NewsletterSubscription' );
 
 			$fields = array();
 
@@ -165,6 +166,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 				$fields['elementor_widgets'] = array(
 					'type'    => 'html',
 					'content' => $this->get_elementor_widgets_list(),
+				);
+			}
+
+			// Newsletter Section.
+			$fields['newsletter_header'] = array(
+				'type'    => 'html',
+				'content' => $this->get_section_header( 'Newsletter', 'dashicons-email', $newsletter_active ),
+			);
+
+			if ( ! $newsletter_active ) {
+				$fields['newsletter_inactive'] = array(
+					'type'    => 'html',
+					'content' => $this->get_inactive_notice( 'Newsletter' ),
+				);
+			}
+
+			if ( $newsletter_active ) {
+				$fields['enable_newsletter_tools'] = array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Newsletter AI Tools', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable Newsletter AI tools', 'wp-mcp-ai' ),
+					'description'    => __( 'Activate Newsletter-specific tools for managing subscribers, campaigns, and email statistics.', 'wp-mcp-ai' ),
+					'default'        => true,
+				);
+
+				$fields['newsletter_tools'] = array(
+					'type'    => 'html',
+					'content' => $this->get_newsletter_tools_list(),
 				);
 			}
 
@@ -264,6 +293,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 				<ul style="margin: 5px 0; padding-left: 20px;">
 					<li><strong>' . esc_html__( 'AI Chat Widget', 'wp-mcp-ai' ) . '</strong> - ' . esc_html__( 'Embeddable AI chat interface for Elementor pages', 'wp-mcp-ai' ) . '</li>
 					<li><strong>' . esc_html__( 'AI Assistant Selector', 'wp-mcp-ai' ) . '</strong> - ' . esc_html__( 'Widget to choose and interact with different AI assistants', 'wp-mcp-ai' ) . '</li>
+				</ul>
+			</div>';
+		}
+
+		/**
+		 * Get Newsletter tools list HTML.
+		 *
+		 * @return string
+		 */
+		private function get_newsletter_tools_list() {
+			return '<div style="margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+				<p style="margin: 0 0 5px 0; font-weight: 600;">' . esc_html__( 'Available Newsletter Tools:', 'wp-mcp-ai' ) . '</p>
+				<ul style="margin: 5px 0; padding-left: 20px;">
+					<li><code>newsletter_add_subscriber</code> - ' . esc_html__( 'Add or update newsletter subscribers', 'wp-mcp-ai' ) . '</li>
+					<li><code>newsletter_get_subscribers</code> - ' . esc_html__( 'Retrieve and filter subscriber lists', 'wp-mcp-ai' ) . '</li>
+					<li><code>newsletter_unsubscribe</code> - ' . esc_html__( 'Unsubscribe or remove subscribers', 'wp-mcp-ai' ) . '</li>
+					<li><code>newsletter_get_subscriber_stats</code> - ' . esc_html__( 'Get subscriber statistics and metrics', 'wp-mcp-ai' ) . '</li>
+					<li><code>newsletter_create_email</code> - ' . esc_html__( 'Create new email campaigns', 'wp-mcp-ai' ) . '</li>
+					<li><code>newsletter_get_emails</code> - ' . esc_html__( 'Retrieve email campaign information', 'wp-mcp-ai' ) . '</li>
 				</ul>
 			</div>';
 		}

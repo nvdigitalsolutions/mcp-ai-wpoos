@@ -98,4 +98,36 @@ Each tool must implement `WP_MCP_AI_Tool_Interface` (`includes/tools/class-wp-mc
 4. Submit a pull request that explains the motivation for the change and any testing details.
 5. Respond to review feedback – we appreciate collaborative iteration!
 
+## Project Management
+
+### GitHub Labels
+
+We use a comprehensive label system to organize issues and PRs. See [LABEL_STRATEGY.md](docs/LABEL_STRATEGY.md) for the complete taxonomy.
+
+**Key label categories:**
+- **Type:** `type:bug`, `type:feature`, `type:enhancement`, `type:documentation`
+- **Priority:** `priority:critical`, `priority:high`, `priority:medium`, `priority:low`
+- **Area:** `area:core`, `area:pro`, `area:tools`, `area:admin-ui`, `area:frontend`, `area:api`
+- **Status:** `status:needs-triage`, `status:in-progress`, `status:review-needed`
+
+Labels are applied automatically via GitHub Actions for common patterns.
+
+### Milestones
+
+All issues are assigned to milestones for release planning:
+- **v1.0.x** - Patch releases (bug fixes, security)
+- **v1.x.0** - Minor releases (new features)
+- **vX.0.0** - Major releases (breaking changes)
+- **Backlog** - Approved but not scheduled
+
+See [MILESTONE_STRATEGY.md](docs/MILESTONE_STRATEGY.md) for details.
+
+### Roadmap
+
+Check [ROADMAP.md](docs/ROADMAP.md) for planned features and release dates. Vote on features by adding 👍 reactions to issues.
+
+### Release Process
+
+Maintainers follow [RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for all releases.
+
 Thank you for helping improve WP oOS. 🚀

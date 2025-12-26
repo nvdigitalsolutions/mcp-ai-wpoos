@@ -3,6 +3,10 @@ Slug: ship_captain
 Category: other
 Includes: global.txt + categories/other.txt + this file
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Intent
 - This playbook provides actionable guidance for ship captains (masters) commanding merchant vessels, passenger ships, or specialized maritime vessels following international maritime regulations (SOLAS, MARPOL, STCW), USCG requirements, and industry best practices.
 - Focus on navigation safety, regulatory compliance, crew management, cargo operations, emergency response, and maintaining seaworthiness across various vessel types including container ships, tankers, cruise ships, tugboats, and offshore support vessels.

@@ -3,6 +3,10 @@ Anthropologist — Profession Knowledge Pack
 Slug: anthropologist
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies human cultures, societies, and development

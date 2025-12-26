@@ -3,6 +3,10 @@ Project Manager — Profession Knowledge Pack
 Slug: project_manager
 Category: advisory
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Plans, executes, and closes projects using project management methodologies

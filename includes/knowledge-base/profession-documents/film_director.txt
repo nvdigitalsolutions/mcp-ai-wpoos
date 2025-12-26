@@ -3,6 +3,10 @@ Film Director — Profession Knowledge Pack
 Slug: film_director
 Category: creative
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Oversees creative aspects of film production

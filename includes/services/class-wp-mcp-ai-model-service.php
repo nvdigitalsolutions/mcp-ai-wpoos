@@ -135,11 +135,11 @@ class WP_MCP_AI_Model_Service {
 		$models['gpt-5.1-2025-11-13'] = 'GPT-5.1 (Nov 2025)';
 
 		// GPT-5 series (Aug 2025).
-		$models['gpt-5']              = 'GPT-5';
-		$models['gpt-5-2025-08-07']   = 'GPT-5 (Aug 2025)';
-		$models['gpt-5-mini']         = 'GPT-5 Mini';
-		$models['gpt-5-nano']         = 'GPT-5 Nano';
-		$models['gpt-5-pro']          = 'GPT-5 Pro';
+		$models['gpt-5']            = 'GPT-5';
+		$models['gpt-5-2025-08-07'] = 'GPT-5 (Aug 2025)';
+		$models['gpt-5-mini']       = 'GPT-5 Mini';
+		$models['gpt-5-nano']       = 'GPT-5 Nano';
+		$models['gpt-5-pro']        = 'GPT-5 Pro';
 
 		// GPT-5 Codex variants (coding-optimized, text-only).
 		if ( ! $requires_vision && ! $requires_multimodal ) {

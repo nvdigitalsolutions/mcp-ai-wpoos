@@ -1288,8 +1288,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function register_settings_page() {
 			add_options_page(
-				__( 'WP oOS', 'wp-mcp-ai' ),
-				__( 'WP oOS', 'wp-mcp-ai' ),
+				__( 'NV oOS', 'wp-mcp-ai' ),
+				__( 'NV oOS', 'wp-mcp-ai' ),
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_settings_page' )
@@ -2697,7 +2697,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 			?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'WP oOS Settings', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'NV oOS Settings', 'wp-mcp-ai' ); ?></h1>
 			<?php settings_errors( self::OPTION_NAME ); ?>
 
 			<!-- Dashboard Overview -->
@@ -3214,7 +3214,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 			<div class="notice notice-warning is-dismissible">
 				<p>
-					<strong><?php esc_html_e( 'WP oOS Plugin Updated', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'NV oOS Plugin Updated', 'wp-mcp-ai' ); ?></strong>
 				</p>
 				<p>
 					<?php
@@ -4187,16 +4187,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * Render the provider priority list field.
 		 */
 		public function render_provider_priority_list_field() {
-			$settings      = self::get_settings();
-			$saved_list    = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
+			$settings     = self::get_settings();
+			$saved_list   = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
 				: array();
-			$default_list  = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+			$default_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
 
 			// Merge saved value with defaults to ensure all providers are included.
 			// Existing users may have old lists without 'huggingface'.
 			$priority_list = ! empty( $saved_list ) ? $saved_list : $default_list;
-			
+
 			// Append any missing providers from defaults to the end.
 			foreach ( $default_list as $provider ) {
 				if ( ! in_array( $provider, $priority_list, true ) ) {
@@ -4205,12 +4205,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$provider_labels = array(
-				'openai'       => __( 'OpenAI', 'wp-mcp-ai' ),
-				'anthropic'    => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'gemini'       => __( 'Gemini', 'wp-mcp-ai' ),
-				'huggingface'  => __( 'Hugging Face', 'wp-mcp-ai' ),
-				'ollama'       => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio'    => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'      => __( 'OpenAI', 'wp-mcp-ai' ),
+				'anthropic'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'gemini'      => __( 'Gemini', 'wp-mcp-ai' ),
+				'huggingface' => __( 'Hugging Face', 'wp-mcp-ai' ),
+				'ollama'      => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio'   => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 			?>
 		<div id="wp-mcp-ai-provider-priority-list" class="wp-mcp-ai-sortable-list">

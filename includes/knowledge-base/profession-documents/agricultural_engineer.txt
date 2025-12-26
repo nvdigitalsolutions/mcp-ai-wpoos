@@ -3,6 +3,10 @@ Agricultural Engineer — Profession Knowledge Pack
 Slug: agricultural_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Designs equipment and systems for agricultural production

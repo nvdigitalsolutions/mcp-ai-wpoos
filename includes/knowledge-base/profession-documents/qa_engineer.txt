@@ -3,6 +3,10 @@ Quality Assurance Engineer — Profession Knowledge Pack
 Slug: qa_engineer
 Category: technical
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Tests software to ensure quality and reliability

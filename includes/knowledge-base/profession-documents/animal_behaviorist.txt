@@ -3,6 +3,10 @@ Animal Behaviorist — Profession Knowledge Pack
 Slug: animal_behaviorist
 Category: other
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Studies and modifies animal behavior.

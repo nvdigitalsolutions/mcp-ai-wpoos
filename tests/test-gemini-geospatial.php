@@ -70,12 +70,12 @@ class WP_MCP_AI_Gemini_Geospatial_Test extends WP_UnitTestCase {
 					array(
 						'candidates'    => array(
 							array(
-								'content'                     => array(
+								'content'      => array(
 									'parts' => array(
 										array( 'text' => 'Here are some great coffee shops near Central Park: Blue Bottle Coffee, Starbucks Reserve...' ),
 									),
 								),
-								'finishReason'                => 'STOP',
+								'finishReason' => 'STOP',
 								'googleMapsWidgetContextToken' => 'test-context-token-123',
 							),
 						),

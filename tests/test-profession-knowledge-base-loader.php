@@ -163,35 +163,35 @@ class Test_Profession_Knowledge_Base_Loader extends WP_UnitTestCase {
 		$professions = $loader->load_all();
 
 		foreach ( $professions as $profession ) {
-			$category           = $profession['category'];
-			$supported_mimes    = $profession['supported_mime_types'];
+			$category        = $profession['category'];
+			$supported_mimes = $profession['supported_mime_types'];
 
 			// All professions should have supported_mime_types.
 			$this->assertIsArray( $supported_mimes, "Profession {$profession['slug']} should have supported_mime_types array" );
 			$this->assertNotEmpty( $supported_mimes, "Profession {$profession['slug']} should have at least one MIME type" );
 
 			// All professions should support text/plain.
-			$this->assertContains( 'text/plain', $supported_mimes, "All professions should support text/plain" );
+			$this->assertContains( 'text/plain', $supported_mimes, 'All professions should support text/plain' );
 
 			// Check category-specific MIME types.
 			switch ( $category ) {
 				case 'creative':
-					$this->assertContains( 'image/jpeg', $supported_mimes, "Creative professions should support JPEG images" );
-					$this->assertContains( 'image/png', $supported_mimes, "Creative professions should support PNG images" );
+					$this->assertContains( 'image/jpeg', $supported_mimes, 'Creative professions should support JPEG images' );
+					$this->assertContains( 'image/png', $supported_mimes, 'Creative professions should support PNG images' );
 					break;
 				case 'financial':
 				case 'legal':
 				case 'advisory':
-					$this->assertContains( 'application/pdf', $supported_mimes, "Financial/legal/advisory professions should support PDF" );
-					$this->assertContains( 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', $supported_mimes, "Financial/legal/advisory professions should support DOCX" );
+					$this->assertContains( 'application/pdf', $supported_mimes, 'Financial/legal/advisory professions should support PDF' );
+					$this->assertContains( 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', $supported_mimes, 'Financial/legal/advisory professions should support DOCX' );
 					break;
 				case 'technical':
-					$this->assertContains( 'application/pdf', $supported_mimes, "Technical professions should support PDF" );
-					$this->assertContains( 'text/csv', $supported_mimes, "Technical professions should support CSV" );
+					$this->assertContains( 'application/pdf', $supported_mimes, 'Technical professions should support PDF' );
+					$this->assertContains( 'text/csv', $supported_mimes, 'Technical professions should support CSV' );
 					break;
 				case 'healthcare':
-					$this->assertContains( 'application/pdf', $supported_mimes, "Healthcare professions should support PDF" );
-					$this->assertContains( 'image/jpeg', $supported_mimes, "Healthcare professions should support JPEG images" );
+					$this->assertContains( 'application/pdf', $supported_mimes, 'Healthcare professions should support PDF' );
+					$this->assertContains( 'image/jpeg', $supported_mimes, 'Healthcare professions should support JPEG images' );
 					break;
 			}
 		}

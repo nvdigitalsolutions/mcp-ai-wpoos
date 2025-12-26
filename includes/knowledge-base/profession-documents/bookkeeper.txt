@@ -3,6 +3,10 @@ Bookkeeper — Profession Knowledge Pack
 Slug: bookkeeper
 Category: financial
 
+
+Author: NV Digital Solutions
+Website: https://nvdigitalsolutions.com
+
 Overview
 --------
 Maintains accurate financial records and manages day-to-day accounting tasks.

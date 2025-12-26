@@ -313,6 +313,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Allows this instance to be discovered by and connect to other WP oOS instances.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
+				'enable_quiz_system'                   => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Quiz System', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable quiz creation and assessment tools (Pro Version only)', 'wp-mcp-ai' ),
+					'description'    => __( 'Enables the quiz/assessment system for tutors. Provides 7 tools for creating quizzes, managing submissions, and grading. Includes automatic JetEngine CCT synchronization when available. Requires edit_posts capability to create quizzes. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 
 				// Media fields.
 				'enable_ai_media_library'              => array(
@@ -382,6 +389,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'checkbox_label' => __( 'Hold comments for manual review when AI confidence is below threshold', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, comments that AI analyzes with low confidence will be held for moderation instead of being published or marked as spam.', 'wp-mcp-ai' ),
 					'default'        => true,
+				),
+
+				// Project Management fields.
+				'enable_project_management'            => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Project Management', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable AI-powered project, task, and event management (Pro Version only)', 'wp-mcp-ai' ),
+					'description'    => __( 'Enables AI-powered project, task, and event management. Provides 13 tools for creating, updating, listing, and deleting projects, tasks, and events. Includes automatic JetEngine CCT synchronization when available. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
+					'default'        => false,
 				),
 			);
 
@@ -483,7 +499,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management' ),
 				),
 				'media'          => array(
 					'id'     => 'media',
