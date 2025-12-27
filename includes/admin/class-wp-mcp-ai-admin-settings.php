@@ -4556,12 +4556,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					// GPT-5.1 series (Nov 2025).
 					'gpt-5.1'                 => __( 'GPT-5.1', 'wp-mcp-ai' ),
 					'gpt-5.1-2025-11-13'      => __( 'GPT-5.1 (Nov 2025)', 'wp-mcp-ai' ),
+					'gpt-5.1-instant'         => __( 'GPT-5.1 Instant (Fast)', 'wp-mcp-ai' ),
+					'gpt-5.1-thinking'        => __( 'GPT-5.1 Thinking (Deep Reasoning)', 'wp-mcp-ai' ),
+					'gpt-5.1-codex-max'       => __( 'GPT-5.1 Codex Max (Advanced Coding)', 'wp-mcp-ai' ),
+					'gpt-5.1-codex-mini'      => __( 'GPT-5.1 Codex Mini', 'wp-mcp-ai' ),
 					// GPT-5 series (Aug 2025).
 					'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
 					'gpt-5-2025-08-07'        => __( 'GPT-5 (Aug 2025)', 'wp-mcp-ai' ),
 					'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
 					'gpt-5-nano'              => __( 'GPT-5 Nano', 'wp-mcp-ai' ),
 					'gpt-5-pro'               => __( 'GPT-5 Pro', 'wp-mcp-ai' ),
+					'gpt-5-codex'             => __( 'GPT-5 Codex (Coding)', 'wp-mcp-ai' ),
+					'gpt-5-codex-mini'        => __( 'GPT-5 Codex Mini', 'wp-mcp-ai' ),
 					// Future placeholder models.
 					'gpt-4.5-preview'         => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
 					'gpt-4.5-turbo'           => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
@@ -4714,6 +4720,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				// Future flagship models.
 				'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
 				'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
+				'gpt-5-nano'              => __( 'GPT-5 Nano', 'wp-mcp-ai' ),
+				'gpt-5-pro'               => __( 'GPT-5 Pro', 'wp-mcp-ai' ),
+				'gpt-5-codex'             => __( 'GPT-5 Codex (Coding)', 'wp-mcp-ai' ),
+				'gpt-5-codex-mini'        => __( 'GPT-5 Codex Mini', 'wp-mcp-ai' ),
 				'gpt-4.5-preview'         => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
 				'gpt-4.5-turbo'           => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
 				// Reasoning models (o-series).
@@ -4837,6 +4847,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$special_cases = array(
 				'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
 				'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
+				'gpt-5-nano'              => __( 'GPT-5 Nano', 'wp-mcp-ai' ),
+				'gpt-5-pro'               => __( 'GPT-5 Pro', 'wp-mcp-ai' ),
+				'gpt-5-codex'             => __( 'GPT-5 Codex (Coding)', 'wp-mcp-ai' ),
+				'gpt-5-codex-mini'        => __( 'GPT-5 Codex Mini', 'wp-mcp-ai' ),
 				'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
 				'gpt-4o-mini'             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
 				'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
@@ -4901,12 +4915,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					// GPT-5.1 series (Nov 2025).
 					'gpt-5.1'                 => __( 'GPT-5.1', 'wp-mcp-ai' ),
 					'gpt-5.1-2025-11-13'      => __( 'GPT-5.1 (Nov 2025)', 'wp-mcp-ai' ),
+					'gpt-5.1-instant'         => __( 'GPT-5.1 Instant (Fast)', 'wp-mcp-ai' ),
+					'gpt-5.1-thinking'        => __( 'GPT-5.1 Thinking (Deep Reasoning)', 'wp-mcp-ai' ),
+					'gpt-5.1-codex-max'       => __( 'GPT-5.1 Codex Max (Advanced Coding)', 'wp-mcp-ai' ),
+					'gpt-5.1-codex-mini'      => __( 'GPT-5.1 Codex Mini', 'wp-mcp-ai' ),
 					// GPT-5 series (Aug 2025).
 					'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
 					'gpt-5-2025-08-07'        => __( 'GPT-5 (Aug 2025)', 'wp-mcp-ai' ),
 					'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
 					'gpt-5-nano'              => __( 'GPT-5 Nano', 'wp-mcp-ai' ),
 					'gpt-5-pro'               => __( 'GPT-5 Pro', 'wp-mcp-ai' ),
+					'gpt-5-codex'             => __( 'GPT-5 Codex (Coding)', 'wp-mcp-ai' ),
+					'gpt-5-codex-mini'        => __( 'GPT-5 Codex Mini', 'wp-mcp-ai' ),
 					// Future placeholder models.
 					'gpt-4.5-preview'         => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
 					'gpt-4.5-turbo'           => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
