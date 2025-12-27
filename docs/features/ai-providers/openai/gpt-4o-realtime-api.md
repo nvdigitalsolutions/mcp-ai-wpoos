@@ -1,47 +1,83 @@
-# GPT-4o Realtime API - December 2024 Updates
+# GPT-4o Realtime API - December 2024 & 2025 Updates
 
 ## Overview
 
-OpenAI released major updates to the GPT-4o Realtime API in December 2024, bringing significant improvements in pricing, features, and capabilities. The WP oOS plugin now supports these new models and pricing structures.
+OpenAI released major updates to the GPT-4o Realtime API in December 2024 and continues with 2025 snapshots, bringing significant improvements in pricing, features, and capabilities. The WP oOS plugin now supports all realtime model families including the new GPT Realtime Mini.
 
-## New Models
+## Model Families
 
-### GPT-4o Realtime Preview (December 2024)
-- **Model ID**: `gpt-4o-realtime-preview-2024-12-17`
-- **Key Features**:
-  - 60% cheaper than previous versions
-  - WebRTC support for low-latency voice conversations
-  - Improved voice quality
-  - Extended session length (up to 30 minutes)
-  - Enhanced interruption handling
-  - Sub-second latency (~300-500ms)
+### 1. GPT-4o Realtime Preview (December 2024 - June 2025)
 
-### GPT-4o Mini Realtime Preview (December 2024)
-- **Model ID**: `gpt-4o-mini-realtime-preview-2024-12-17`
-- **Key Features**:
-  - 10x cheaper than standard realtime models
-  - Cost-effective for large-scale deployments
-  - Surprisingly good voice quality
-  - Same technical capabilities as standard model
+Available snapshots:
+- `gpt-4o-realtime-preview` (generic alias)
+- `gpt-4o-realtime-preview-2024-12-17` (Dec 2024)
+- `gpt-4o-realtime-preview-2025-01-06` (Jan 2025)
+- `gpt-4o-realtime-preview-2025-06-03` (Jun 2025 - latest)
 
-### GPT-4o Audio Preview (December 2024)
-- **Model ID**: `gpt-4o-audio-preview-2024-12-17`
-- **Key Features**:
-  - Enhanced audio processing capabilities
-  - Better text/audio input handling
-  - Improved transcription accuracy
+**Key Features**:
+- 60% cheaper than previous versions
+- WebRTC support for low-latency voice conversations
+- Improved voice quality
+- Extended session length (up to 30 minutes)
+- Enhanced interruption handling
+- Sub-second latency (~300-500ms)
+- 128,000 token context window
+
+### 2. GPT-4o Mini Realtime Preview (December 2024)
+
+Available snapshots:
+- `gpt-4o-mini-realtime-preview` (generic alias)
+- `gpt-4o-mini-realtime-preview-2024-12-17` (Dec 2024)
+
+**Key Features**:
+- 10x cheaper than standard realtime models
+- Cost-effective for large-scale deployments
+- Surprisingly good voice quality
+- Same technical capabilities as standard model
+- 128,000 token context window
+
+### 3. GPT-4o Audio Preview (December 2024)
+
+Available snapshots:
+- `gpt-4o-audio-preview` (generic alias)
+- `gpt-4o-audio-preview-2024-12-17` (Dec 2024)
+
+**Key Features**:
+- Enhanced audio processing capabilities
+- Better text/audio input handling
+- Improved transcription accuracy
+- 128,000 token context window
+
+### 4. GPT Realtime Mini (December 2025 - NEW)
+
+Available snapshots:
+- `gpt-realtime-mini` (generic alias)
+- `gpt-realtime-mini-2025-12-15` (Dec 2025)
+
+**Key Features**:
+- New naming convention (no "4o" prefix)
+- 32,000 token context window (optimized for real-time)
+- Dramatically cheaper cached input ($0.30 vs $2.00)
+- Same pricing as 4o-mini-realtime for non-cached
+- Improved instruction following (+18.6%)
+- Enhanced tool calling (+12.9%)
 
 ## Pricing
 
-### Standard Realtime Models
+### Standard Realtime Models (gpt-4o-realtime-preview)
 - **Audio Input**: $100 per 1M tokens
 - **Audio Output**: $200 per 1M tokens
 - **Cached Audio Input**: $20 per 1M tokens (5x cheaper)
 
-### Mini Realtime Models
+### Mini Realtime Models (gpt-4o-mini-realtime-preview)
 - **Audio Input**: $10 per 1M tokens (10x cheaper)
 - **Audio Output**: $20 per 1M tokens (10x cheaper)
 - **Cached Audio Input**: $2 per 1M tokens
+
+### GPT Realtime Mini (gpt-realtime-mini)
+- **Audio Input**: $10 per 1M tokens
+- **Audio Output**: $20 per 1M tokens
+- **Cached Audio Input**: $0.30 per 1M tokens (66x cheaper than standard!)
 
 > **Note**: Audio tokens are different from text tokens. Approximately 1 minute of audio = ~1,500 tokens.
 
@@ -128,16 +164,25 @@ For many use cases, the mini models provide excellent quality at 10x lower cost:
 - High-volume applications
 - Testing and development
 
+**New in 2025**: `gpt-realtime-mini` offers the same input/output pricing as `gpt-4o-mini-realtime-preview` but with 85% cheaper cached input ($0.30 vs $2.00), making it ideal for applications with repeated prompts.
+
 ### 2. Leverage Prompt Caching
-Repeated system prompts and contexts benefit from 5x cheaper cached input pricing:
+Repeated system prompts and contexts benefit from dramatically cheaper cached input pricing:
+- **Standard models**: 5x cheaper ($20 vs $100)
+- **Mini models**: 5x cheaper ($2 vs $10)
+- **Realtime Mini**: 33x cheaper ($0.30 vs $10) ⭐ Best for caching
+
+Use cases for caching:
 - Define stable system instructions
 - Reuse conversation context
 - Cache frequently accessed data
+- Long-running conversations with consistent prompts
 
 ### 3. Choose the Right Model
-- **Standard Realtime**: Premium voice quality, complex interactions
-- **Mini Realtime**: High volume, simpler conversations
-- **Audio Preview**: Transcription and audio analysis
+- **gpt-4o-realtime-preview-2025-06-03**: Latest snapshot, premium voice quality, complex interactions
+- **gpt-4o-mini-realtime-preview-2024-12-17**: High volume, simpler conversations, 10x cheaper
+- **gpt-realtime-mini-2025-12-15**: Best for cached prompts, 32K context, improved instruction following
+- **gpt-4o-audio-preview-2024-12-17**: Transcription and audio analysis
 
 ### 4. Monitor Token Usage
 Track audio token consumption using WP oOS's built-in analytics:
@@ -149,22 +194,25 @@ Track audio token consumption using WP oOS's built-in analytics:
 
 ### From Previous Realtime Models
 
-If you're using `gpt-4o-realtime-preview` (without date), consider upgrading to the December 2024 version:
+If you're using older realtime models, consider upgrading to the latest snapshots:
 
-**Benefits**:
-- 60% cost reduction
+**Benefits of 2025 models**:
+- 60% cost reduction (vs pre-December 2024)
 - Better voice quality
-- More features
-- Longer sessions
+- More features (WebRTC, longer sessions)
+- Improved instruction following
+- Enhanced tool calling
 
-**Changes Needed**:
-Simply update your model configuration:
+**Recommended Upgrades**:
 ```php
-// Old
-'model' => 'gpt-4o-realtime-preview'
+// From generic to latest standard model
+'model' => 'gpt-4o-realtime-preview-2025-06-03'  // June 2025 - latest
 
-// New
-'model' => 'gpt-4o-realtime-preview-2024-12-17'
+// For cost optimization with caching
+'model' => 'gpt-realtime-mini-2025-12-15'  // 85% cheaper cached input
+
+// For high-volume, non-cached
+'model' => 'gpt-4o-mini-realtime-preview-2024-12-17'  // 10x cheaper
 ```
 
 ### Cost Impact Analysis
@@ -172,16 +220,29 @@ Simply update your model configuration:
 Example monthly cost for 1,000 hours of audio:
 - 1,000 hours = 60,000 minutes
 - ~60,000 minutes × 1,500 tokens/min = 90M tokens
+- Assume 30% of input is cached (typical for conversational agents)
 
-**Previous pricing** (estimated):
+**Previous pricing** (pre-December 2024, estimated):
 - Input: 90M × $0.25/1M = $22,500
 - Output: 90M × $0.50/1M = $45,000
 - **Total**: ~$67,500
 
-**December 2024 pricing**:
+**December 2024 standard pricing** (gpt-4o-realtime-preview-2024-12-17):
 - Input: 90M × $0.10/1M = $9,000
 - Output: 90M × $0.20/1M = $18,000
 - **Total**: $27,000 (60% savings)
+
+**December 2024 mini pricing** (gpt-4o-mini-realtime-preview-2024-12-17):
+- Input: 90M × $0.01/1M = $900
+- Output: 90M × $0.02/1M = $1,800
+- **Total**: $2,700 (96% savings)
+
+**December 2025 realtime mini with caching** (gpt-realtime-mini-2025-12-15):
+- Fresh input (70%): 63M × $0.01/1M = $630
+- Cached input (30%): 27M × $0.0003/1M = $8.10
+- Output: 90M × $0.02/1M = $1,800
+- **Total**: $2,438 (96.4% savings)
+
 
 **Mini model pricing**:
 - Input: 90M × $0.01/1M = $900
@@ -235,13 +296,29 @@ Until native WebRTC support is added, you can:
 
 ## Version History
 
+### December 2025 - New Model Family
+- Added `gpt-realtime-mini` family (new naming convention)
+- Added `gpt-realtime-mini-2025-12-15` snapshot
+- 32K context window (optimized for real-time)
+- Dramatically cheaper cached input ($0.30 per 1M tokens)
+- Improved instruction following (+18.6%)
+- Enhanced tool calling (+12.9%)
+
+### 2025 Snapshots - Continuous Improvements
+- Added `gpt-4o-realtime-preview-2025-01-06` (January 2025)
+- Added `gpt-4o-realtime-preview-2025-06-03` (June 2025 - latest)
+- Ongoing voice quality improvements
+- Enhanced feature support
+- Performance optimizations
+
 ### December 2024 - Major Update
 - Added `gpt-4o-realtime-preview-2024-12-17`
 - Added `gpt-4o-mini-realtime-preview-2024-12-17`
 - Added `gpt-4o-audio-preview-2024-12-17`
-- Updated pricing (60% reduction)
+- Updated pricing (60% reduction vs previous)
 - Documented WebRTC support
 - Enhanced model configurations
+- Extended session length (30 minutes)
 
 ### Support
 For questions or issues related to GPT-4o Realtime API:
