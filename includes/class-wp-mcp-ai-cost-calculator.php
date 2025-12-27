@@ -64,35 +64,49 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.50,
 				'output' => 1.50,
 			),
-			// o-series reasoning models (November 2025).
+			// o-series reasoning models (December 2025 - updated pricing).
 			'o3'            => array(
-				'input'  => 15.00,
-				'output' => 60.00,
+				'input'        => 2.00, // $2 per 1M tokens.
+				'output'       => 8.00, // $8 per 1M tokens.
+				'cached_input' => 0.50, // $0.50 per 1M tokens.
+			),
+			'o3-pro'        => array(
+				'input'  => 20.00, // $20 per 1M tokens.
+				'output' => 80.00, // $80 per 1M tokens.
 			),
 			'o3-mini'       => array(
-				'input'  => 3.00,
-				'output' => 12.00,
+				'input'        => 1.10, // $1.10 per 1M tokens.
+				'output'       => 4.40, // $4.40 per 1M tokens.
+				'cached_input' => 0.55, // $0.55 per 1M tokens.
 			),
 			'o4-mini'       => array(
 				'input'  => 2.00,
 				'output' => 8.00,
 			),
-			// Deprecated o1 series (fallback to o3).
+			// o1 series (legacy reasoning models, still active).
 			'o1'            => array(
-				'input'  => 15.00,
-				'output' => 60.00,
+				'input'        => 15.00, // $15 per 1M tokens.
+				'output'       => 60.00, // $60 per 1M tokens.
+				'cached_input' => 7.50,  // $7.50 per 1M tokens.
+			),
+			'o1-pro'        => array(
+				'input'  => 150.00, // $150 per 1M tokens.
+				'output' => 600.00, // $600 per 1M tokens.
 			),
 			'o1-2024-12-17' => array(
-				'input'  => 15.00,
-				'output' => 60.00,
+				'input'        => 15.00,
+				'output'       => 60.00,
+				'cached_input' => 7.50,
 			),
 			'o1-preview'    => array(
-				'input'  => 15.00,
-				'output' => 60.00,
+				'input'        => 15.00,
+				'output'       => 60.00,
+				'cached_input' => 7.50,
 			),
 			'o1-mini'       => array(
-				'input'  => 3.00,
-				'output' => 12.00,
+				'input'        => 1.10, // $1.10 per 1M tokens (updated from $3).
+				'output'       => 4.40, // $4.40 per 1M tokens (updated from $12).
+				'cached_input' => 0.55, // $0.55 per 1M tokens.
 			),
 			// GPT-4o Realtime models (audio/speech).
 			// December 2024 update: 60% cheaper pricing, WebRTC support.
