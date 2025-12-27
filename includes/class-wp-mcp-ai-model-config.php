@@ -596,6 +596,30 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.100, // Audio input: $100 per 1M tokens.
 				'status'         => 'active',
 			),
+			'gpt-4o-realtime-preview-2025-01-06'           => array(
+				'name'           => 'GPT-4o Realtime Preview (Jan 2025)',
+				'provider'       => 'openai',
+				'tpm'            => 20000,
+				'rpm'            => 100,
+				'tpd'            => 1000000,
+				'rpd'            => 5000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4o-realtime-preview',
+				'cost_per_1k'    => 0.100, // Audio input: $100 per 1M tokens.
+				'status'         => 'active',
+			),
+			'gpt-4o-realtime-preview-2025-06-03'           => array(
+				'name'           => 'GPT-4o Realtime Preview (Jun 2025)',
+				'provider'       => 'openai',
+				'tpm'            => 20000,
+				'rpm'            => 100,
+				'tpd'            => 1000000,
+				'rpd'            => 5000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4o-realtime-preview',
+				'cost_per_1k'    => 0.100, // Audio input: $100 per 1M tokens.
+				'status'         => 'active',
+			),
 			'gpt-4o-mini-realtime-preview'                 => array(
 				'name'           => 'GPT-4o Mini Realtime Preview',
 				'provider'       => 'openai',
@@ -642,6 +666,31 @@ class WP_MCP_AI_Model_Config {
 				'context_window' => 128000,
 				'fallback_model' => 'gpt-4o-audio-preview',
 				'cost_per_1k'    => 0.100, // Audio input.
+				'status'         => 'active',
+			),
+			// GPT Realtime Mini (December 2025 - new naming convention).
+			'gpt-realtime-mini'                            => array(
+				'name'           => 'GPT Realtime Mini',
+				'provider'       => 'openai',
+				'tpm'            => 40000,
+				'rpm'            => 200,
+				'tpd'            => 2000000,
+				'rpd'            => 10000,
+				'context_window' => 32000, // 32K context window.
+				'fallback_model' => 'gpt-4o-mini',
+				'cost_per_1k'    => 0.010, // Audio input: $10 per 1M tokens.
+				'status'         => 'active',
+			),
+			'gpt-realtime-mini-2025-12-15'                 => array(
+				'name'           => 'GPT Realtime Mini (Dec 2025)',
+				'provider'       => 'openai',
+				'tpm'            => 40000,
+				'rpm'            => 200,
+				'tpd'            => 2000000,
+				'rpd'            => 10000,
+				'context_window' => 32000, // 32K context window.
+				'fallback_model' => 'gpt-realtime-mini',
+				'cost_per_1k'    => 0.010, // Audio input: $10 per 1M tokens.
 				'status'         => 'active',
 			),
 			// Legacy models (text-only).

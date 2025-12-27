@@ -4578,8 +4578,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
 'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
 'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview-2025-01-06'      => __( 'GPT-4o Realtime Preview (Jan 2025)', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview-2025-06-03'      => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'wp-mcp-ai' ),
 'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
 'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
+					'gpt-realtime-mini'                            => __( 'GPT Realtime Mini', 'wp-mcp-ai' ),
+					'gpt-realtime-mini-2025-12-15'                 => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'wp-mcp-ai' ),
 					// Legacy GPT-4 series.
 					'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
 					'gpt-4.1-mini'            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
@@ -4721,8 +4725,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
 'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
 'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview-2025-01-06'      => __( 'GPT-4o Realtime Preview (Jan 2025)', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview-2025-06-03'      => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'wp-mcp-ai' ),
 'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
 'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
+					'gpt-realtime-mini'                            => __( 'GPT Realtime Mini', 'wp-mcp-ai' ),
+					'gpt-realtime-mini-2025-12-15'                 => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'wp-mcp-ai' ),
 				// Legacy GPT-4 series.
 				'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
 				'gpt-4.1-mini'            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
@@ -4839,8 +4847,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'gpt-4o-realtime-preview' => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
 					'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
 					'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview-2025-01-06'      => __( 'GPT-4o Realtime Preview (Jan 2025)', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview-2025-06-03'      => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'wp-mcp-ai' ),
 					'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
 					'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
+					'gpt-realtime-mini'                            => __( 'GPT Realtime Mini', 'wp-mcp-ai' ),
+					'gpt-realtime-mini-2025-12-15'                 => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'wp-mcp-ai' ),
 			);
 
 			if ( isset( $special_cases[ $model_name ] ) ) {
@@ -4903,8 +4915,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
 'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
 'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview-2025-01-06'      => __( 'GPT-4o Realtime Preview (Jan 2025)', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview-2025-06-03'      => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'wp-mcp-ai' ),
 'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
 'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
+					'gpt-realtime-mini'                            => __( 'GPT Realtime Mini', 'wp-mcp-ai' ),
+					'gpt-realtime-mini-2025-12-15'                 => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'wp-mcp-ai' ),
 					// Legacy GPT-4 series.
 					'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
 					'gpt-4.1-mini'            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),

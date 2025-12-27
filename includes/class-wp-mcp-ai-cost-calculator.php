@@ -106,6 +106,16 @@ class WP_MCP_AI_Cost_Calculator {
 				'output'       => 200.00, // Audio output: $200 per 1M tokens.
 				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
 			),
+			'gpt-4o-realtime-preview-2025-01-06'      => array(
+				'input'        => 100.00, // Audio input: $100 per 1M tokens.
+				'output'       => 200.00, // Audio output: $200 per 1M tokens.
+				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
+			),
+			'gpt-4o-realtime-preview-2025-06-03'      => array(
+				'input'        => 100.00, // Audio input: $100 per 1M tokens.
+				'output'       => 200.00, // Audio output: $200 per 1M tokens.
+				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
+			),
 			'gpt-4o-mini-realtime-preview'            => array(
 				'input'        => 10.00, // Audio input: ~$10 per 1M tokens (10x cheaper).
 				'output'       => 20.00, // Audio output: ~$20 per 1M tokens.
@@ -125,6 +135,17 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'        => 100.00, // Audio input: $100 per 1M tokens.
 				'output'       => 200.00, // Audio output: $200 per 1M tokens.
 				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
+			),
+			// GPT Realtime Mini (December 2025 - new naming convention).
+			'gpt-realtime-mini'                       => array(
+				'input'        => 10.00, // Audio input: $10 per 1M tokens.
+				'output'       => 20.00, // Audio output: $20 per 1M tokens.
+				'cached_input' => 0.30,  // Cached audio input: $0.30 per 1M tokens.
+			),
+			'gpt-realtime-mini-2025-12-15'            => array(
+				'input'        => 10.00, // Audio input: $10 per 1M tokens.
+				'output'       => 20.00, // Audio output: $20 per 1M tokens.
+				'cached_input' => 0.30,  // Cached audio input: $0.30 per 1M tokens.
 			),
 			// Sora video generation models.
 			// Pricing is per second of generated video.
