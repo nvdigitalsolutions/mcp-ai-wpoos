@@ -571,6 +571,79 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.005,
 				'status'         => 'active',
 			),
+			// GPT-4o Realtime models (audio/speech).
+			'gpt-4o-realtime-preview'                      => array(
+				'name'           => 'GPT-4o Realtime Preview',
+				'provider'       => 'openai',
+				'tpm'            => 20000,
+				'rpm'            => 100,
+				'tpd'            => 1000000,
+				'rpd'            => 5000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4o',
+				'cost_per_1k'    => 0.100, // Audio input.
+				'status'         => 'active',
+			),
+			'gpt-4o-realtime-preview-2024-12-17'           => array(
+				'name'           => 'GPT-4o Realtime Preview (Dec 2024)',
+				'provider'       => 'openai',
+				'tpm'            => 20000,
+				'rpm'            => 100,
+				'tpd'            => 1000000,
+				'rpd'            => 5000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4o-realtime-preview',
+				'cost_per_1k'    => 0.100, // Audio input: $100 per 1M tokens.
+				'status'         => 'active',
+			),
+			'gpt-4o-mini-realtime-preview'                 => array(
+				'name'           => 'GPT-4o Mini Realtime Preview',
+				'provider'       => 'openai',
+				'tpm'            => 40000,
+				'rpm'            => 200,
+				'tpd'            => 2000000,
+				'rpd'            => 10000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4o-mini',
+				'cost_per_1k'    => 0.010, // Audio input (10x cheaper).
+				'status'         => 'active',
+			),
+			'gpt-4o-mini-realtime-preview-2024-12-17'      => array(
+				'name'           => 'GPT-4o Mini Realtime Preview (Dec 2024)',
+				'provider'       => 'openai',
+				'tpm'            => 40000,
+				'rpm'            => 200,
+				'tpd'            => 2000000,
+				'rpd'            => 10000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4o-mini-realtime-preview',
+				'cost_per_1k'    => 0.010, // Audio input: ~$10 per 1M tokens (10x cheaper).
+				'status'         => 'active',
+			),
+			'gpt-4o-audio-preview'                         => array(
+				'name'           => 'GPT-4o Audio Preview',
+				'provider'       => 'openai',
+				'tpm'            => 20000,
+				'rpm'            => 100,
+				'tpd'            => 1000000,
+				'rpd'            => 5000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4o',
+				'cost_per_1k'    => 0.100, // Audio input.
+				'status'         => 'active',
+			),
+			'gpt-4o-audio-preview-2024-12-17'              => array(
+				'name'           => 'GPT-4o Audio Preview (Dec 2024)',
+				'provider'       => 'openai',
+				'tpm'            => 20000,
+				'rpm'            => 100,
+				'tpd'            => 1000000,
+				'rpd'            => 5000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4o-audio-preview',
+				'cost_per_1k'    => 0.100, // Audio input.
+				'status'         => 'active',
+			),
 			// Legacy models (text-only).
 			'gpt-4-turbo'                                  => array(
 				'name'           => 'GPT-4 Turbo (Legacy)',

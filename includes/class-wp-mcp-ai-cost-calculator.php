@@ -94,6 +94,38 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 3.00,
 				'output' => 12.00,
 			),
+			// GPT-4o Realtime models (audio/speech).
+			// December 2024 update: 60% cheaper pricing, WebRTC support.
+			'gpt-4o-realtime-preview'                 => array(
+				'input'        => 100.00, // Audio input: $100 per 1M tokens.
+				'output'       => 200.00, // Audio output: $200 per 1M tokens.
+				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
+			),
+			'gpt-4o-realtime-preview-2024-12-17'      => array(
+				'input'        => 100.00, // Audio input: $100 per 1M tokens.
+				'output'       => 200.00, // Audio output: $200 per 1M tokens.
+				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
+			),
+			'gpt-4o-mini-realtime-preview'            => array(
+				'input'        => 10.00, // Audio input: ~$10 per 1M tokens (10x cheaper).
+				'output'       => 20.00, // Audio output: ~$20 per 1M tokens.
+				'cached_input' => 2.00,  // Cached audio input: ~$2 per 1M tokens.
+			),
+			'gpt-4o-mini-realtime-preview-2024-12-17' => array(
+				'input'        => 10.00, // Audio input: ~$10 per 1M tokens (10x cheaper).
+				'output'       => 20.00, // Audio output: ~$20 per 1M tokens.
+				'cached_input' => 2.00,  // Cached audio input: ~$2 per 1M tokens.
+			),
+			'gpt-4o-audio-preview'                    => array(
+				'input'        => 100.00, // Audio input: $100 per 1M tokens.
+				'output'       => 200.00, // Audio output: $200 per 1M tokens.
+				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
+			),
+			'gpt-4o-audio-preview-2024-12-17'         => array(
+				'input'        => 100.00, // Audio input: $100 per 1M tokens.
+				'output'       => 200.00, // Audio output: $200 per 1M tokens.
+				'cached_input' => 20.00,  // Cached audio input: $20 per 1M tokens.
+			),
 			// Sora video generation models.
 			// Pricing is per second of generated video.
 			'sora-2'        => array(

@@ -4573,13 +4573,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'o4-mini'                 => __( 'o4 Mini', 'wp-mcp-ai' ),
 					// GPT-4o series (current flagship).
 					'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
-					'gpt-4o-mini'                             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
-'gpt-4o-audio-preview'                    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
-'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
-'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
-'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
-'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
-'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
+					'gpt-4o-mini'             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
+					'gpt-4o-audio-preview'    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview' => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
 					// Legacy GPT-4 series.
 					'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
 					'gpt-4.1-mini'            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
@@ -4716,13 +4712,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'o4-mini'                 => __( 'o4 Mini', 'wp-mcp-ai' ),
 				// GPT-4o series.
 				'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
-				'gpt-4o-mini'                             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
-'gpt-4o-audio-preview'                    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
-'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
-'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
-'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
-'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
-'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
+				'gpt-4o-mini'             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
+				'gpt-4o-audio-preview'    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
+				'gpt-4o-realtime-preview' => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
 				// Legacy GPT-4 series.
 				'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
 				'gpt-4.1-mini'            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
@@ -4835,12 +4827,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'o1-mini'                 => __( 'O1 Mini', 'wp-mcp-ai' ),
 				'o4-mini'                 => __( 'O4 Mini', 'wp-mcp-ai' ),
 				'gpt-4o-audio-preview'    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
-					'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
 				'gpt-4o-realtime-preview' => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
-					'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
-					'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
-					'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
 			);
 
 			if ( isset( $special_cases[ $model_name ] ) ) {
@@ -4898,13 +4885,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'o4-mini'                 => __( 'o4 Mini', 'wp-mcp-ai' ),
 					// GPT-4o series (current flagship).
 					'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
-					'gpt-4o-mini'                             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
-'gpt-4o-audio-preview'                    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
-'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
-'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
-'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
-'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
-'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
+					'gpt-4o-mini'             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
+					'gpt-4o-audio-preview'    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview' => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
 					// Legacy GPT-4 series.
 					'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
 					'gpt-4.1-mini'            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
