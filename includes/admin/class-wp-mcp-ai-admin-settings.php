@@ -1058,7 +1058,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public static function get_default_model() {
 			$settings = self::get_settings();
-			return isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4.1-mini';
+			return isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o-mini';
 		}
 
 		/**

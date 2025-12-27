@@ -102,7 +102,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Default Model', 'wp-mcp-ai' ); ?></th>
-								<td><code><?php echo esc_html( isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4.1-mini' ); ?></code></td>
+								<td><code><?php echo esc_html( isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o-mini' ); ?></code></td>
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Request Timeout', 'wp-mcp-ai' ); ?></th>
@@ -653,7 +653,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						'message' => __( 'OpenAI connection successful!', 'wp-mcp-ai' ),
 						'details' => array(
 							__( 'Models Available', 'wp-mcp-ai' ) => $model_count,
-							__( 'Default Model', 'wp-mcp-ai' ) => isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4.1-mini',
+							__( 'Default Model', 'wp-mcp-ai' ) => isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o-mini',
 						),
 					)
 				);
