@@ -201,6 +201,37 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'description' => __( 'Email address to notify when async creation completes. Uses current user email if not specified.', 'wp-mcp-ai' ),
 					'format'      => 'email',
 				),
+				// Enhanced parameters for comprehensive assistant creation.
+				'featured_image_id' => array(
+					'type'        => 'integer',
+					'description' => __( 'Attachment ID to set as the featured image/avatar for the assistant.', 'wp-mcp-ai' ),
+					'minimum'     => 1,
+				),
+				'categories'        => array(
+					'type'        => 'array',
+					'description' => __( 'Array of assistant category IDs or names. Categories will be auto-created if they don\'t exist (requires custom taxonomy support).', 'wp-mcp-ai' ),
+					'items'       => array(
+						'anyOf' => array(
+							array( 'type' => 'integer', 'minimum' => 1 ),
+							array( 'type' => 'string' ),
+						),
+					),
+				),
+				'tags'              => array(
+					'type'        => 'array',
+					'description' => __( 'Array of assistant tag IDs or names. Tags will be auto-created if they don\'t exist (requires custom taxonomy support).', 'wp-mcp-ai' ),
+					'items'       => array(
+						'anyOf' => array(
+							array( 'type' => 'integer', 'minimum' => 1 ),
+							array( 'type' => 'string' ),
+						),
+					),
+				),
+				'meta_input'        => array(
+					'type'        => 'object',
+					'description' => __( 'Array of custom field key-value pairs to set as assistant meta.', 'wp-mcp-ai' ),
+					'additionalProperties' => true,
+				),
 			),
 			'required'             => array( 'title' ),
 			'additionalProperties' => false,
@@ -523,6 +554,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! empty( $all_document_ids ) ) {
 			update_post_meta( $assistant_id, '_wp_mcp_ai_memory_files', array_unique( $all_document_ids ) );
 		}
+
+		// Handle enhanced metadata.
+		$this->handle_assistant_metadata( $assistant_id, $arguments );
 
 		$assistant = get_post( $assistant_id );
 
@@ -2202,5 +2236,97 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return array_values( array_unique( $valid_ids ) );
+	}
+
+	/**
+	 * Handles assistant metadata operations after assistant creation.
+	 *
+	 * @param int   $assistant_id The assistant post ID.
+	 * @param array $arguments    Tool arguments.
+	 */
+	protected function handle_assistant_metadata( $assistant_id, $arguments ) {
+		// Handle featured image.
+		if ( isset( $arguments['featured_image_id'] ) ) {
+			$thumbnail_id = absint( $arguments['featured_image_id'] );
+			if ( $thumbnail_id > 0 && wp_attachment_is_image( $thumbnail_id ) ) {
+				set_post_thumbnail( $assistant_id, $thumbnail_id );
+			}
+		}
+
+		// Handle categories (only if custom taxonomy is registered for assistants).
+		if ( isset( $arguments['categories'] ) && is_array( $arguments['categories'] ) ) {
+			$taxonomy = 'mcp_ai_assistant_category'; // Common taxonomy name for assistant categories.
+			if ( taxonomy_exists( $taxonomy ) ) {
+				$category_ids = $this->resolve_taxonomy_terms( $arguments['categories'], $taxonomy );
+				if ( ! empty( $category_ids ) ) {
+					wp_set_object_terms( $assistant_id, $category_ids, $taxonomy );
+				}
+			}
+		}
+
+		// Handle tags (only if custom taxonomy is registered for assistants).
+		if ( isset( $arguments['tags'] ) && is_array( $arguments['tags'] ) ) {
+			$taxonomy = 'mcp_ai_assistant_tag'; // Common taxonomy name for assistant tags.
+			if ( taxonomy_exists( $taxonomy ) ) {
+				$tag_ids = $this->resolve_taxonomy_terms( $arguments['tags'], $taxonomy );
+				if ( ! empty( $tag_ids ) ) {
+					wp_set_object_terms( $assistant_id, $tag_ids, $taxonomy );
+				}
+			}
+		}
+
+		// Handle custom meta fields.
+		if ( isset( $arguments['meta_input'] ) && is_array( $arguments['meta_input'] ) ) {
+			foreach ( $arguments['meta_input'] as $key => $value ) {
+				$sanitized_key = sanitize_key( $key );
+
+				// Skip protected meta keys.
+				if ( is_protected_meta( $sanitized_key, 'post' ) ) {
+					continue;
+				}
+
+				// Recursively sanitize arrays.
+				if ( is_array( $value ) ) {
+					$sanitized_value = array_map( 'sanitize_text_field', $value );
+				} else {
+					$sanitized_value = sanitize_text_field( $value );
+				}
+
+				update_post_meta( $assistant_id, $sanitized_key, $sanitized_value );
+			}
+		}
+	}
+
+	/**
+	 * Resolves taxonomy terms from IDs or names.
+	 *
+	 * @param array  $terms    Array of term IDs or names.
+	 * @param string $taxonomy Taxonomy name.
+	 * @return array Array of term IDs.
+	 */
+	protected function resolve_taxonomy_terms( $terms, $taxonomy ) {
+		$term_ids = array();
+
+		foreach ( $terms as $term ) {
+			if ( is_numeric( $term ) ) {
+				$term_id = absint( $term );
+				if ( term_exists( $term_id, $taxonomy ) ) {
+					$term_ids[] = $term_id;
+				}
+			} else {
+				// Try to find or create term by name.
+				$term_obj = term_exists( $term, $taxonomy );
+				if ( ! $term_obj ) {
+					// Create the term if it doesn't exist.
+					$term_obj = wp_insert_term( sanitize_text_field( $term ), $taxonomy );
+				}
+
+				if ( ! is_wp_error( $term_obj ) && isset( $term_obj['term_id'] ) ) {
+					$term_ids[] = $term_obj['term_id'];
+				}
+			}
+		}
+
+		return array_unique( $term_ids );
 	}
 }

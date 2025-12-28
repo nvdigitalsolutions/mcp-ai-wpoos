@@ -255,4 +255,200 @@ class Test_WP_MCP_AI_Tool_Create_Post extends WP_UnitTestCase {
 		$post = get_post( $result['ID'] );
 		$this->assertStringContainsString( '<!-- wp:paragraph -->', $post->post_content );
 	}
+
+	/**
+	 * Test creating post with featured image.
+	 */
+	public function test_create_with_featured_image() {
+		// Create a test attachment.
+		$attachment_id = $this->factory->attachment->create_upload_object(
+			dirname( __DIR__ ) . '/assets/images/icon-256x256.png'
+		);
+
+		$arguments = array(
+			'title'             => 'Test Post with Featured Image',
+			'content'           => 'Test content',
+			'featured_image_id' => $attachment_id,
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( $attachment_id, get_post_thumbnail_id( $result['ID'] ) );
+	}
+
+	/**
+	 * Test creating post with categories.
+	 */
+	public function test_create_with_categories() {
+		$cat1 = $this->factory->category->create( array( 'name' => 'Test Category 1' ) );
+		$cat2 = $this->factory->category->create( array( 'name' => 'Test Category 2' ) );
+
+		$arguments = array(
+			'title'      => 'Test Post with Categories',
+			'content'    => 'Test content',
+			'categories' => array( $cat1, 'Test Category 3' ), // Mix of ID and name.
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertIsArray( $result );
+
+		$post_categories = wp_get_post_categories( $result['ID'] );
+		$this->assertContains( $cat1, $post_categories );
+		$this->assertCount( 2, $post_categories ); // Should have created the third category.
+	}
+
+	/**
+	 * Test creating post with tags.
+	 */
+	public function test_create_with_tags() {
+		$arguments = array(
+			'title'   => 'Test Post with Tags',
+			'content' => 'Test content',
+			'tags'    => array( 'tag1', 'tag2', 'tag3' ),
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertIsArray( $result );
+
+		$post_tags = wp_get_post_tags( $result['ID'], array( 'fields' => 'names' ) );
+		$this->assertContains( 'tag1', $post_tags );
+		$this->assertContains( 'tag2', $post_tags );
+		$this->assertContains( 'tag3', $post_tags );
+	}
+
+	/**
+	 * Test creating page with page template.
+	 */
+	public function test_create_page_with_template() {
+		$arguments = array(
+			'title'         => 'Test Page',
+			'content'       => 'Test page content',
+			'post_type'     => 'page',
+			'page_template' => 'default',
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( 'page', $result['post_type'] );
+		$this->assertEquals( 'default', get_post_meta( $result['ID'], '_wp_page_template', true ) );
+	}
+
+	/**
+	 * Test creating hierarchical post with parent.
+	 */
+	public function test_create_with_parent() {
+		// Create parent page.
+		$parent_id = $this->factory->post->create(
+			array(
+				'post_type' => 'page',
+				'post_title' => 'Parent Page',
+			)
+		);
+
+		$arguments = array(
+			'title'       => 'Child Page',
+			'content'     => 'Test content',
+			'post_type'   => 'page',
+			'post_parent' => $parent_id,
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertIsArray( $result );
+
+		$post = get_post( $result['ID'] );
+		$this->assertEquals( $parent_id, $post->post_parent );
+	}
+
+	/**
+	 * Test creating post with custom meta fields.
+	 */
+	public function test_create_with_meta_input() {
+		$arguments = array(
+			'title'      => 'Test Post with Meta',
+			'content'    => 'Test content',
+			'meta_input' => array(
+				'custom_field_1' => 'value1',
+				'custom_field_2' => 'value2',
+			),
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertIsArray( $result );
+		$this->assertEquals( 'value1', get_post_meta( $result['ID'], 'custom_field_1', true ) );
+		$this->assertEquals( 'value2', get_post_meta( $result['ID'], 'custom_field_2', true ) );
+	}
+
+	/**
+	 * Test creating post with comment and ping status.
+	 */
+	public function test_create_with_comment_ping_status() {
+		$arguments = array(
+			'title'          => 'Test Post',
+			'content'        => 'Test content',
+			'comment_status' => 'closed',
+			'ping_status'    => 'closed',
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertIsArray( $result );
+
+		$post = get_post( $result['ID'] );
+		$this->assertEquals( 'closed', $post->comment_status );
+		$this->assertEquals( 'closed', $post->ping_status );
+	}
+
+	/**
+	 * Test creating post with menu order.
+	 */
+	public function test_create_with_menu_order() {
+		$arguments = array(
+			'title'      => 'Test Post',
+			'content'    => 'Test content',
+			'post_type'  => 'page',
+			'menu_order' => 5,
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertIsArray( $result );
+
+		$post = get_post( $result['ID'] );
+		$this->assertEquals( 5, $post->menu_order );
+	}
+
+	/**
+	 * Test creating post with excerpt and slug.
+	 */
+	public function test_create_with_excerpt_and_slug() {
+		$arguments = array(
+			'title'   => 'Test Post',
+			'content' => 'Test content',
+			'excerpt' => 'This is a test excerpt',
+			'slug'    => 'custom-test-slug',
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertIsArray( $result );
+
+		$post = get_post( $result['ID'] );
+		$this->assertEquals( 'This is a test excerpt', $post->post_excerpt );
+		$this->assertEquals( 'custom-test-slug', $post->post_name );
+	}
 }

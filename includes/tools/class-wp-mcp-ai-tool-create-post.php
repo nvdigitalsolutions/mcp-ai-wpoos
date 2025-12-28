@@ -44,29 +44,106 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'     => array(
+				'title'              => array(
 					'type'        => 'string',
 					'description' => __( 'Title of the post.', 'wp-mcp-ai' ),
 				),
-				'content'   => array(
+				'content'            => array(
 					'type'        => 'string',
 					'description' => __( 'Main content for the post.', 'wp-mcp-ai' ),
 				),
-				'post_type' => array(
+				'post_type'          => array(
 					'type'        => 'string',
 					'description' => __( 'The post type to create.', 'wp-mcp-ai' ),
 					'default'     => 'post',
 				),
-				'status'    => array(
+				'status'             => array(
 					'type'        => 'string',
 					'description' => __( 'The status to assign to the post (publish, draft, pending, or private).', 'wp-mcp-ai' ),
 					'default'     => 'draft',
 					'enum'        => array( 'publish', 'draft', 'pending', 'private' ),
 				),
-				'user_id'   => array(
+				'user_id'            => array(
 					'type'        => 'integer',
 					'description' => __( 'The user ID to set as the post author. Defaults to current user.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
+				),
+				'excerpt'            => array(
+					'type'        => 'string',
+					'description' => __( 'Optional excerpt for the post.', 'wp-mcp-ai' ),
+				),
+				'slug'               => array(
+					'type'        => 'string',
+					'description' => __( 'Optional slug to use for the post permalink.', 'wp-mcp-ai' ),
+				),
+				'featured_image_id'  => array(
+					'type'        => 'integer',
+					'description' => __( 'Attachment ID to set as the featured image.', 'wp-mcp-ai' ),
+					'minimum'     => 1,
+				),
+				'categories'         => array(
+					'type'        => 'array',
+					'description' => __( 'Array of category IDs or names to assign to the post.', 'wp-mcp-ai' ),
+					'items'       => array(
+						'anyOf' => array(
+							array( 'type' => 'integer', 'minimum' => 1 ),
+							array( 'type' => 'string' ),
+						),
+					),
+				),
+				'tags'               => array(
+					'type'        => 'array',
+					'description' => __( 'Array of tag IDs or names to assign to the post.', 'wp-mcp-ai' ),
+					'items'       => array(
+						'anyOf' => array(
+							array( 'type' => 'integer', 'minimum' => 1 ),
+							array( 'type' => 'string' ),
+						),
+					),
+				),
+				'page_template'      => array(
+					'type'        => 'string',
+					'description' => __( 'Page template filename (e.g., "template-full-width.php"). Only applies to pages and custom post types that support page templates.', 'wp-mcp-ai' ),
+				),
+				'post_parent'        => array(
+					'type'        => 'integer',
+					'description' => __( 'ID of the parent post for hierarchical post types (e.g., pages).', 'wp-mcp-ai' ),
+					'minimum'     => 0,
+				),
+				'menu_order'         => array(
+					'type'        => 'integer',
+					'description' => __( 'Menu order for sorting hierarchical post types.', 'wp-mcp-ai' ),
+					'minimum'     => 0,
+				),
+				'comment_status'     => array(
+					'type'        => 'string',
+					'description' => __( 'Whether to allow comments (open or closed).', 'wp-mcp-ai' ),
+					'enum'        => array( 'open', 'closed' ),
+				),
+				'ping_status'        => array(
+					'type'        => 'string',
+					'description' => __( 'Whether to allow pingbacks and trackbacks (open or closed).', 'wp-mcp-ai' ),
+					'enum'        => array( 'open', 'closed' ),
+				),
+				'meta_input'         => array(
+					'type'        => 'object',
+					'description' => __( 'Array of custom field key-value pairs to set as post meta.', 'wp-mcp-ai' ),
+					'additionalProperties' => true,
+				),
+				'elementor_data'     => array(
+					'type'        => 'object',
+					'description' => __( 'Elementor page builder data (requires Elementor plugin).', 'wp-mcp-ai' ),
+					'properties'  => array(
+						'template_type' => array(
+							'type'        => 'string',
+							'description' => __( 'Elementor template type (page, header, footer, section, etc).', 'wp-mcp-ai' ),
+						),
+						'edit_mode'     => array(
+							'type'        => 'string',
+							'description' => __( 'Elementor editor mode (builder or default).', 'wp-mcp-ai' ),
+							'enum'        => array( 'builder', 'default' ),
+						),
+					),
 				),
 			),
 			'required'             => array( 'title', 'content' ),
@@ -155,6 +232,42 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$valid_statuses           = array( 'publish', 'draft', 'pending', 'private' );
 		$post_data['post_status'] = in_array( $status, $valid_statuses, true ) ? $status : 'draft';
 
+		// Add optional fields to post data.
+		if ( isset( $arguments['excerpt'] ) ) {
+			$post_data['post_excerpt'] = wp_kses_post( $arguments['excerpt'] );
+		}
+
+		if ( isset( $arguments['slug'] ) ) {
+			$post_data['post_name'] = sanitize_title( $arguments['slug'] );
+		}
+
+		if ( isset( $arguments['post_parent'] ) ) {
+			$parent_id = absint( $arguments['post_parent'] );
+			if ( $parent_id > 0 ) {
+				$parent_post = get_post( $parent_id );
+				if ( $parent_post && $parent_post->post_type === $post_type ) {
+					$post_data['post_parent'] = $parent_id;
+				}
+			}
+		}
+
+		if ( isset( $arguments['menu_order'] ) ) {
+			$post_data['menu_order'] = absint( $arguments['menu_order'] );
+		}
+
+		if ( isset( $arguments['comment_status'] ) && in_array( $arguments['comment_status'], array( 'open', 'closed' ), true ) ) {
+			$post_data['comment_status'] = $arguments['comment_status'];
+		}
+
+		if ( isset( $arguments['ping_status'] ) && in_array( $arguments['ping_status'], array( 'open', 'closed' ), true ) ) {
+			$post_data['ping_status'] = $arguments['ping_status'];
+		}
+
+		// Add meta_input for custom fields.
+		if ( isset( $arguments['meta_input'] ) && is_array( $arguments['meta_input'] ) ) {
+			$post_data['meta_input'] = $this->sanitize_meta_input( $arguments['meta_input'] );
+		}
+
 		// Create the post.
 		$result = wp_insert_post( wp_slash( $post_data ), true );
 
@@ -165,6 +278,14 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$created_post = get_post( $result );
 		if ( ! $created_post ) {
 			return new WP_Error( 'wp_mcp_ai_unknown_error', __( 'The post was created but could not be retrieved.', 'wp-mcp-ai' ) );
+		}
+
+		// Handle post-creation operations.
+		$post_meta_result = $this->handle_post_metadata( $created_post->ID, $arguments, $post_type );
+		if ( is_wp_error( $post_meta_result ) ) {
+			// Delete the post if metadata handling fails critically.
+			wp_delete_post( $created_post->ID, true );
+			return $post_meta_result;
 		}
 
 		$response = array(
@@ -276,6 +397,149 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		return implode( "\n\n", $blocks );
+	}
+
+	/**
+	 * Sanitizes meta_input array to ensure safe values.
+	 *
+	 * @param array $meta_input Raw meta input array.
+	 * @return array Sanitized meta input array.
+	 */
+	private function sanitize_meta_input( $meta_input ) {
+		$sanitized = array();
+
+		foreach ( $meta_input as $key => $value ) {
+			$sanitized_key = sanitize_key( $key );
+
+			// Skip protected meta keys.
+			if ( is_protected_meta( $sanitized_key, 'post' ) ) {
+				continue;
+			}
+
+			// Recursively sanitize arrays.
+			if ( is_array( $value ) ) {
+				$sanitized[ $sanitized_key ] = array_map( 'sanitize_text_field', $value );
+			} else {
+				$sanitized[ $sanitized_key ] = sanitize_text_field( $value );
+			}
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Handles post metadata operations after post creation.
+	 *
+	 * @param int    $post_id   The post ID.
+	 * @param array  $arguments Tool arguments.
+	 * @param string $post_type Post type.
+	 * @return true|WP_Error True on success, WP_Error on failure.
+	 */
+	private function handle_post_metadata( $post_id, $arguments, $post_type ) {
+		// Handle featured image.
+		if ( isset( $arguments['featured_image_id'] ) ) {
+			$thumbnail_id = absint( $arguments['featured_image_id'] );
+			if ( $thumbnail_id > 0 && wp_attachment_is_image( $thumbnail_id ) ) {
+				set_post_thumbnail( $post_id, $thumbnail_id );
+			}
+		}
+
+		// Handle categories (only for post types that support 'category' taxonomy).
+		if ( isset( $arguments['categories'] ) && is_array( $arguments['categories'] ) ) {
+			if ( is_object_in_taxonomy( $post_type, 'category' ) ) {
+				$category_ids = $this->resolve_taxonomy_terms( $arguments['categories'], 'category' );
+				if ( ! empty( $category_ids ) ) {
+					wp_set_post_categories( $post_id, $category_ids );
+				}
+			}
+		}
+
+		// Handle tags (only for post types that support 'post_tag' taxonomy).
+		if ( isset( $arguments['tags'] ) && is_array( $arguments['tags'] ) ) {
+			if ( is_object_in_taxonomy( $post_type, 'post_tag' ) ) {
+				$tag_ids = $this->resolve_taxonomy_terms( $arguments['tags'], 'post_tag' );
+				if ( ! empty( $tag_ids ) ) {
+					wp_set_post_tags( $post_id, $tag_ids );
+				}
+			}
+		}
+
+		// Handle page template.
+		if ( isset( $arguments['page_template'] ) && '' !== $arguments['page_template'] ) {
+			$template = sanitize_text_field( $arguments['page_template'] );
+			// Validate template exists.
+			$page_templates = wp_get_theme()->get_page_templates( null, $post_type );
+			if ( isset( $page_templates[ $template ] ) || 'default' === $template ) {
+				update_post_meta( $post_id, '_wp_page_template', $template );
+			}
+		}
+
+		// Handle Elementor data.
+		if ( isset( $arguments['elementor_data'] ) && is_array( $arguments['elementor_data'] ) ) {
+			$this->handle_elementor_metadata( $post_id, $arguments['elementor_data'] );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Resolves taxonomy terms from IDs or names.
+	 *
+	 * @param array  $terms    Array of term IDs or names.
+	 * @param string $taxonomy Taxonomy name.
+	 * @return array Array of term IDs.
+	 */
+	private function resolve_taxonomy_terms( $terms, $taxonomy ) {
+		$term_ids = array();
+
+		foreach ( $terms as $term ) {
+			if ( is_numeric( $term ) ) {
+				$term_id = absint( $term );
+				if ( term_exists( $term_id, $taxonomy ) ) {
+					$term_ids[] = $term_id;
+				}
+			} else {
+				// Try to find or create term by name.
+				$term_obj = term_exists( $term, $taxonomy );
+				if ( ! $term_obj ) {
+					// Create the term if it doesn't exist.
+					$term_obj = wp_insert_term( sanitize_text_field( $term ), $taxonomy );
+				}
+
+				if ( ! is_wp_error( $term_obj ) && isset( $term_obj['term_id'] ) ) {
+					$term_ids[] = $term_obj['term_id'];
+				}
+			}
+		}
+
+		return array_unique( $term_ids );
+	}
+
+	/**
+	 * Handles Elementor-specific metadata.
+	 *
+	 * @param int   $post_id        The post ID.
+	 * @param array $elementor_data Elementor data array.
+	 */
+	private function handle_elementor_metadata( $post_id, $elementor_data ) {
+		// Check if Elementor is active.
+		if ( ! ( defined( 'ELEMENTOR_VERSION' ) || class_exists( '\\Elementor\\Plugin', false ) ) ) {
+			return;
+		}
+
+		// Set template type.
+		if ( isset( $elementor_data['template_type'] ) ) {
+			$template_type = sanitize_key( $elementor_data['template_type'] );
+			update_post_meta( $post_id, '_elementor_template_type', $template_type );
+		}
+
+		// Set edit mode.
+		if ( isset( $elementor_data['edit_mode'] ) ) {
+			$edit_mode = sanitize_key( $elementor_data['edit_mode'] );
+			if ( 'builder' === $edit_mode ) {
+				update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
+			}
+		}
 	}
 
 	/**
