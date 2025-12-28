@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WP oOS Chat Templates Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        .template-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .template-header {
+            margin-bottom: 1rem;
+        }
+        .template-header h2 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        .template-header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .template-code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+        .template-preview {
+            border: 2px dashed #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #fafbfc;
+            min-height: 200px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        .badge-classic {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .badge-speech {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        .badge-compact {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        .features {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .features h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        .features ul {
+            list-style-position: inside;
+            color: #555;
+        }
+        .features li {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        .note strong {
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WP oOS Chat Templates</h1>
+        <p class="subtitle">Visual Reference for Available Chat Interface Layouts</p>
+        
+        <div class="grid">
+            <!-- Classic Template -->
+            <div class="template-card">
+                <div class="template-header">
+                    <h2>Classic Template</h2>
+                    <span class="badge badge-classic">Default</span>
+                    <p>Standard chat interface with balanced spacing and clean design.</p>
+                </div>
+                
+                <div class="template-code">
+[mcp_ai_chat assistant="123" template="classic"]<br>
+<!-- Or omit template to use default --><br>
+[mcp_ai_chat assistant="123"]
+                </div>
+                
+                <div class="template-preview">
+                    <strong>Use Cases:</strong>
+                    <ul>
+                        <li>General-purpose chat widgets</li>
+                        <li>Customer support interfaces</li>
+                        <li>Landing page assistants</li>
+                        <li>Full-featured chat experiences</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Speech Bubbles Template -->
+            <div class="template-card">
+                <div class="template-header">
+                    <h2>Speech Bubbles Template</h2>
+                    <span class="badge badge-speech">New</span>
+                    <p>Comic-book style with distinctive speech tails.</p>
+                </div>
+                
+                <div class="template-code">
+[mcp_ai_chat assistant="123" template="speech-bubbles"]
+                </div>
+                
+                <div class="template-preview">
+                    <strong>Use Cases:</strong>
+                    <ul>
+                        <li>Creative or playful brands</li>
+                        <li>Educational chatbots</li>
+                        <li>Entertainment interfaces</li>
+                        <li>Conversational emphasis</li>
+                    </ul>
+                    <div class="note">
+                        <strong>Design Note:</strong> User messages have tails pointing right, assistant messages point left.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Compact Template -->
+            <div class="template-card">
+                <div class="template-header">
+                    <h2>Compact Template</h2>
+                    <span class="badge badge-compact">New</span>
+                    <p>Minimalist layout with reduced spacing for tight spaces.</p>
+                </div>
+                
+                <div class="template-code">
+[mcp_ai_chat assistant="123" template="compact"]
+                </div>
+                
+                <div class="template-preview">
+                    <strong>Use Cases:</strong>
+                    <ul>
+                        <li>Sidebar widgets</li>
+                        <li>Mobile interfaces</li>
+                        <li>Dashboard integrations</li>
+                        <li>Quick Q&A surfaces</li>
+                    </ul>
+                    <div class="note">
+                        <strong>Space Savings:</strong> ~40% smaller than classic (480px vs 720px width, reduced padding)
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Features Section -->
+        <div class="features">
+            <h2>Template Features & Specifications</h2>
+            
+            <h3>Classic Template</h3>
+            <ul>
+                <li>Max width: 720px</li>
+                <li>Padding: 20px</li>
+                <li>Message height: 360px max</li>
+                <li>Border radius: 20px</li>
+                <li>Full feature support</li>
+            </ul>
+            
+            <h3>Speech Bubbles Template</h3>
+            <ul>
+                <li>Based on Classic template dimensions</li>
+                <li>CSS pseudo-elements (::after) for tails</li>
+                <li>User bubbles: tail on bottom-right</li>
+                <li>Assistant bubbles: tail on bottom-left</li>
+                <li>Tool/system messages: no tails</li>
+                <li>Enhanced shadow for 3D effect</li>
+            </ul>
+            
+            <h3>Compact Template</h3>
+            <ul>
+                <li>Max width: 480px (33% smaller)</li>
+                <li>Padding: 12px (40% smaller)</li>
+                <li>Message height: 240px max (33% smaller)</li>
+                <li>Font size: 0.875rem (14px)</li>
+                <li>Buttons: 32px (vs 40px in classic)</li>
+                <li>Avatars hidden by default</li>
+            </ul>
+            
+            <h3>Implementation Details</h3>
+            <ul>
+                <li><strong>CSS-Driven:</strong> No JavaScript changes required</li>
+                <li><strong>Data Attribute:</strong> <code>data-template="[template-name]"</code></li>
+                <li><strong>CSS Class:</strong> <code>.wp-mcp-ai-chat--template-[template-name]</code></li>
+                <li><strong>Browser Support:</strong> All modern browsers (Chrome, Firefox, Safari, Edge)</li>
+                <li><strong>Accessibility:</strong> All ARIA attributes maintained</li>
+                <li><strong>Performance:</strong> No additional HTTP requests</li>
+            </ul>
+            
+            <h3>Block Editor</h3>
+            <ul>
+                <li>Select chat block in editor</li>
+                <li>Find "Template" dropdown in block settings</li>
+                <li>Choose: Classic, Speech Bubbles, or Compact</li>
+                <li>Preview updates automatically</li>
+            </ul>
+            
+            <div class="note" style="margin-top: 2rem;">
+                <strong>Documentation:</strong> For complete details including customization options, CSS variables, 
+                and developer notes, see <code>docs/guides/user/chat/chat-templates.md</code>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
