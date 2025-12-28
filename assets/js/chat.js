@@ -10893,6 +10893,11 @@
             payload.session_key = state.config.sessionKey;
         }
 
+        // Include professional prompt if provided (for professional selector usage).
+        if (state.config.professionalPrompt) {
+            payload.professional_prompt = state.config.professionalPrompt;
+        }
+
         function finalize() {
             state.busy = false;
             disableForm(state, false);
