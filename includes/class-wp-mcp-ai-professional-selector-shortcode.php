@@ -433,8 +433,9 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
 
 		// Get the shortcode attributes from the request.
-		// Use wp_strip_all_tags to remove any HTML while preserving quotes needed for shortcode attributes.
-		$shortcode_atts = isset( $_POST['shortcode_atts'] ) ? wp_strip_all_tags( wp_unslash( $_POST['shortcode_atts'] ) ) : '';
+		// The attributes are pre-constructed in JavaScript with controlled values,
+		// so we just need to remove any potential HTML/JS injection attempts.
+		$shortcode_atts = isset( $_POST['shortcode_atts'] ) ? sanitize_text_field( wp_unslash( $_POST['shortcode_atts'] ) ) : '';
 
 		if ( empty( $shortcode_atts ) ) {
 			wp_send_json_error(
