@@ -1,0 +1,231 @@
+/**
+ * Professional Selector Styles
+ *
+ * @package WP_MCP_AI
+ */
+
+.wp-mcp-ai-professional-selector {
+	max-width: 800px;
+	margin: 2rem auto;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.wp-mcp-ai-professional-selector__form-container {
+	background: #ffffff;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	padding: 2rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.wp-mcp-ai-professional-selector__title {
+	margin-top: 0;
+	margin-bottom: 1.5rem;
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: #1f2937;
+}
+
+.wp-mcp-ai-professional-selector__form {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.wp-mcp-ai-professional-selector__field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.wp-mcp-ai-professional-selector__field label {
+	font-weight: 500;
+	color: #374151;
+	font-size: 0.875rem;
+}
+
+.wp-mcp-ai-professional-selector__field .required {
+	color: #dc2626;
+	margin-left: 0.25rem;
+}
+
+.wp-mcp-ai-professional-selector__select,
+.wp-mcp-ai-professional-selector__input {
+	width: 100%;
+	padding: 0.625rem;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	font-size: 1rem;
+	background-color: #ffffff;
+	transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.wp-mcp-ai-professional-selector__select:focus,
+.wp-mcp-ai-professional-selector__input:focus {
+	outline: none;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.wp-mcp-ai-professional-selector__select:disabled {
+	background-color: #f3f4f6;
+	color: #9ca3af;
+	cursor: not-allowed;
+}
+
+.wp-mcp-ai-professional-selector__loading {
+	display: inline-block;
+	margin-left: 0.5rem;
+}
+
+.wp-mcp-ai-professional-selector__loading .spinner {
+	float: none;
+	margin: 0;
+	width: 20px;
+	height: 20px;
+}
+
+.wp-mcp-ai-professional-selector__actions {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 0.5rem;
+}
+
+.wp-mcp-ai-professional-selector__button {
+	padding: 0.75rem 1.5rem;
+	background: linear-gradient(135deg, #3b5bff 0%, #7c5cff 100%);
+	color: #ffffff;
+	border: none;
+	border-radius: 6px;
+	font-size: 1rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	box-shadow: 0 4px 6px rgba(59, 91, 255, 0.25);
+}
+
+.wp-mcp-ai-professional-selector__button:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 6px 12px rgba(59, 91, 255, 0.35);
+}
+
+.wp-mcp-ai-professional-selector__button:active {
+	transform: translateY(0);
+	box-shadow: 0 2px 4px rgba(59, 91, 255, 0.3);
+}
+
+.wp-mcp-ai-professional-selector__button:disabled {
+	background: #d1d5db;
+	color: #9ca3af;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: none;
+}
+
+.wp-mcp-ai-professional-selector__error {
+	padding: 0.75rem;
+	background-color: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 6px;
+	color: #991b1b;
+	font-size: 0.875rem;
+}
+
+.wp-mcp-ai-professional-selector__chat-container {
+	background: #ffffff;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	padding: 1.5rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.wp-mcp-ai-professional-selector__chat-info {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding-bottom: 1rem;
+	margin-bottom: 1.5rem;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.wp-mcp-ai-professional-selector__selected-config {
+	font-size: 0.875rem;
+	color: #6b7280;
+}
+
+.wp-mcp-ai-professional-selector__selected-config strong {
+	color: #374151;
+	margin-right: 0.5rem;
+}
+
+.wp-mcp-ai-professional-selector__change-button {
+	padding: 0.5rem 1rem;
+	background-color: #f3f4f6;
+	color: #374151;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	font-size: 0.875rem;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+}
+
+.wp-mcp-ai-professional-selector__change-button:hover {
+	background-color: #e5e7eb;
+}
+
+.wp-mcp-ai-professional-selector__chat-wrapper {
+	min-height: 400px;
+}
+
+.wp-mcp-ai-professional-selector__field .description {
+	margin-top: 0.25rem;
+	font-size: 0.75rem;
+	color: #6b7280;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.wp-mcp-ai-professional-selector {
+		margin: 1rem;
+	}
+
+	.wp-mcp-ai-professional-selector__form-container,
+	.wp-mcp-ai-professional-selector__chat-container {
+		padding: 1.5rem;
+	}
+
+	.wp-mcp-ai-professional-selector__title {
+		font-size: 1.25rem;
+	}
+
+	.wp-mcp-ai-professional-selector__chat-info {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+}
+
+/* Loading spinner styles */
+.wp-mcp-ai-professional-selector .spinner {
+	background: url("../../wp-admin/images/spinner.gif") no-repeat;
+	background-size: 20px 20px;
+	display: inline-block;
+	opacity: 0.7;
+	filter: alpha(opacity=70);
+	width: 20px;
+	height: 20px;
+	margin: 0;
+	vertical-align: middle;
+}
+
+@media print,
+	(-webkit-min-device-pixel-ratio: 1.25),
+	(min-resolution: 120dpi) {
+	.wp-mcp-ai-professional-selector .spinner {
+		background-image: url("../../wp-admin/images/spinner-2x.gif");
+	}
+}
+
+.wp-mcp-ai-professional-selector .spinner.is-active {
+	display: inline-block;
+}

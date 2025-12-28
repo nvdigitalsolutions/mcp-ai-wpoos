@@ -1,0 +1,61 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wp-mcp-ai/professional-selector",
+	"version": "1.0.0",
+	"title": "Professional Selector Chat",
+	"category": "wp-mcp-ai",
+	"icon": "businessperson",
+	"description": "Allow users to select a professional, provider, and model before starting a chat.",
+	"keywords": [ "ai", "chat", "professional", "selector", "provider", "model", "mcp" ],
+	"textdomain": "wp-mcp-ai",
+	"attributes": {
+		"defaultProfessional": {
+			"type": "string",
+			"default": ""
+		},
+		"defaultProvider": {
+			"type": "string",
+			"default": ""
+		},
+		"defaultModel": {
+			"type": "string",
+			"default": ""
+		},
+		"showTemperature": {
+			"type": "boolean",
+			"default": false
+		},
+		"allowGuests": {
+			"type": "boolean",
+			"default": false
+		},
+		"saveTranscript": {
+			"type": "boolean",
+			"default": true
+		},
+		"enableStreaming": {
+			"type": "boolean",
+			"default": true
+		},
+		"allowSensitiveTools": {
+			"type": "boolean",
+			"default": false
+		},
+		"template": {
+			"type": "string",
+			"default": "classic",
+			"enum": [ "classic", "speech-bubbles", "compact", "sidebar" ]
+		}
+	},
+	"supports": {
+		"align": [ "wide", "full" ],
+		"anchor": true,
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}

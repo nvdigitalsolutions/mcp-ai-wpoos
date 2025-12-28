@@ -65,6 +65,7 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 		// Register blocks with block.json if they exist.
 		$block_types = array(
 			'chat',
+			'professional-selector',
 			'assistant-selector',
 			'tools-grid',
 			'knowledge-base',
