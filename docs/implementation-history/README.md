@@ -23,6 +23,12 @@ Implementation summaries organized by project:
 - **[Integrations](2025/implementations/integrations/)** - Third-party integrations
 - **[Tools](2025/implementations/tools/)** - Tool implementations
 
+### [Enhancements](2025/enhancements/)
+Tool enhancement documentation:
+- **[WordPress Core Tools Enhancement Analysis](2025/enhancements/wordpress-core-tools-enhancement-analysis.md)** - Analysis of tools needing robustness enhancements
+- **[WordPress Core Tools Enhancement Summary](2025/enhancements/wordpress-core-tools-enhancement-summary.md)** - Summary of content creation tool enhancements
+- **[WordPress Core Tools Implementation Status](2025/enhancements/wordpress-core-tools-implementation-status.md)** - Complete implementation status for tool enhancements
+
 ### [Fixes](2025/fixes/)
 Bug fixes and patches:
 - **[Attachments](2025/fixes/attachments/)** - Attachment-related fixes
