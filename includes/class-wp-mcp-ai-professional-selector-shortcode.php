@@ -42,7 +42,8 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		add_action( 'wp_ajax_wp_mcp_ai_get_professional_config', array( $this, 'handle_get_professional_config' ) );
 		add_action( 'wp_ajax_nopriv_wp_mcp_ai_get_professional_config', array( $this, 'handle_get_professional_config' ) );
 		
-		// Add nopriv hook for model selector (frontend access).
+		// Add hooks for model selector (both logged-in and frontend access).
+		add_action( 'wp_ajax_wp_mcp_ai_get_models_for_provider', array( $this, 'handle_get_models_for_provider' ) );
 		add_action( 'wp_ajax_nopriv_wp_mcp_ai_get_models_for_provider', array( $this, 'handle_get_models_for_provider' ) );
 	}
 
