@@ -45,6 +45,10 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		// Add hooks for model selector (both logged-in and frontend access).
 		add_action( 'wp_ajax_wp_mcp_ai_get_models_for_provider', array( $this, 'handle_get_models_for_provider' ) );
 		add_action( 'wp_ajax_nopriv_wp_mcp_ai_get_models_for_provider', array( $this, 'handle_get_models_for_provider' ) );
+		
+		// Add hooks for rendering professional chat shortcode.
+		add_action( 'wp_ajax_wp_mcp_ai_render_professional_chat', array( $this, 'handle_render_professional_chat' ) );
+		add_action( 'wp_ajax_nopriv_wp_mcp_ai_render_professional_chat', array( $this, 'handle_render_professional_chat' ) );
 	}
 
 	/**
@@ -415,6 +419,49 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		wp_send_json_success(
 			array(
 				'models' => $models,
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler to render the professional chat shortcode.
+	 *
+	 * This handler processes the [mcp_ai_chat] shortcode with the selected
+	 * professional configuration and returns the rendered HTML.
+	 */
+	public function handle_render_professional_chat() {
+		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
+
+		// Get the shortcode attributes from the request.
+		$shortcode_atts = isset( $_POST['shortcode_atts'] ) ? sanitize_text_field( wp_unslash( $_POST['shortcode_atts'] ) ) : '';
+
+		if ( empty( $shortcode_atts ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Invalid shortcode attributes.', 'wp-mcp-ai' ),
+				)
+			);
+			return;
+		}
+
+		// Build the complete shortcode string.
+		$shortcode = '[mcp_ai_chat ' . $shortcode_atts . ']';
+
+		// Process the shortcode to get rendered HTML.
+		$html = do_shortcode( $shortcode );
+
+		if ( empty( $html ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Failed to render chat interface.', 'wp-mcp-ai' ),
+				)
+			);
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'html' => $html,
 			)
 		);
 	}
