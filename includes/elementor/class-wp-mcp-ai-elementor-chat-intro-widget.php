@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Chat Intro', 'mcp-ai-wpoos' );
+		return __( 'NV oOS Chat Intro', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -68,10 +68,10 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
+				'label'       => __( 'Title', 'wp-mcp-ai' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Welcome to NV oOS Chat', 'mcp-ai-wpoos' ),
-				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
+				'default'     => __( 'Welcome to NV oOS Chat', 'wp-mcp-ai' ),
+				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
 				'label_block' => true,
 			)
 		);

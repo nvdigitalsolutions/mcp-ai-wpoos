@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget extends \Elementor\Wid
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Provider Quick Links', 'mcp-ai-wpoos' );
+		return __( 'NV oOS Provider Quick Links', 'wp-mcp-ai' );
 	}
 
 	/**

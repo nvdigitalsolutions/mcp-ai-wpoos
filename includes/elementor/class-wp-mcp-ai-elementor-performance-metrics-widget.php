@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Performance Metrics', 'mcp-ai-wpoos' );
+		return __( 'NV oOS Performance Metrics', 'wp-mcp-ai' );
 	}
 
 	/**

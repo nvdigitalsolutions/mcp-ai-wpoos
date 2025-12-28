@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS System Health Status', 'mcp-ai-wpoos' );
+		return __( 'NV oOS System Health Status', 'wp-mcp-ai' );
 	}
 
 	/**

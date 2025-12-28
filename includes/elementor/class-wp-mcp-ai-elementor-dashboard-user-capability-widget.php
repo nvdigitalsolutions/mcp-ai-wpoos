@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS User Capability Snapshot', 'mcp-ai-wpoos' );
+		return __( 'NV oOS User Capability Snapshot', 'wp-mcp-ai' );
 	}
 
 	/**

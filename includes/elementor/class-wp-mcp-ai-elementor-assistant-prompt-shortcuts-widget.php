@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Assistant Prompt Shortcuts', 'mcp-ai-wpoos' );
+		return __( 'NV oOS Assistant Prompt Shortcuts', 'wp-mcp-ai' );
 	}
 
 	/**

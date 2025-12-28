@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Tool Matrix', 'mcp-ai-wpoos' );
+		return __( 'NV oOS Tool Matrix', 'wp-mcp-ai' );
 	}
 
 	/**
