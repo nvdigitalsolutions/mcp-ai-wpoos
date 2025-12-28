@@ -361,6 +361,22 @@
 				success: function(response) {
 					if (response.success && response.data.html) {
 						$chatWrapper.html(response.data.html);
+						
+						// Initialize the chat configuration object if the config was returned.
+						if (response.data.config) {
+							// Extract the instance ID from the HTML
+							const $chatContainer = $chatWrapper.find('[data-wp-mcp-ai-chat]');
+							if ($chatContainer.length) {
+								const instanceId = $chatContainer.attr('id');
+								if (instanceId) {
+									// Initialize the global config object if needed
+									window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};
+									// Store the configuration
+									window.wpMcpAiChatInstances[instanceId] = response.data.config;
+								}
+							}
+						}
+						
 						// Initialize event handlers for the dynamically inserted chat interface
 						ProfessionalSelector.initializeChatInterface();
 					} else {

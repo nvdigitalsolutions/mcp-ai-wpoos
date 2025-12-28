@@ -502,7 +502,8 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	 * AJAX handler to render the professional chat shortcode.
 	 *
 	 * This handler processes the [mcp_ai_chat] shortcode with the selected
-	 * professional configuration and returns the rendered HTML.
+	 * professional configuration and returns the rendered HTML along with
+	 * the JavaScript configuration object needed for initialization.
 	 */
 	public function handle_render_professional_chat() {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
@@ -524,6 +525,9 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		// Build the complete shortcode string.
 		$shortcode = '[mcp_ai_chat ' . $shortcode_atts . ']';
 
+		// Clear any existing configs to avoid pollution.
+		$GLOBALS['wp_mcp_ai_chat_configs'] = array();
+
 		// Process the shortcode to get rendered HTML.
 		$html = do_shortcode( $shortcode );
 
@@ -537,9 +541,23 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 			return;
 		}
 
+		// Extract the configuration that was stored during shortcode rendering.
+		$configs = isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ? $GLOBALS['wp_mcp_ai_chat_configs'] : array();
+		$config  = ! empty( $configs ) ? reset( $configs ) : null;
+
+		if ( ! $config ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Failed to extract chat configuration.', 'wp-mcp-ai' ),
+				)
+			);
+			return;
+		}
+
 		wp_send_json_success(
 			array(
-				'html' => $html,
+				'html'   => $html,
+				'config' => $config,
 			)
 		);
 	}

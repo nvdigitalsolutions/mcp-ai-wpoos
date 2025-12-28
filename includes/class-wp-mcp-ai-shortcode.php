@@ -651,6 +651,12 @@ class WP_MCP_AI_Shortcode {
 				$config['guestToken'] = $guest_token;
 			}
 
+			// Store config in a global for AJAX access (used by professional selector).
+			if ( ! isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ) {
+				$GLOBALS['wp_mcp_ai_chat_configs'] = array();
+			}
+			$GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] = $config;
+
 			$inline_config  = 'window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};';
 			$inline_config .= 'window.wpMcpAiChatInstances[' . wp_json_encode( $instance_id ) . '] = ' . wp_json_encode( $config ) . ';';
 			wp_add_inline_script( self::SCRIPT_HANDLE, $inline_config, 'before' );
