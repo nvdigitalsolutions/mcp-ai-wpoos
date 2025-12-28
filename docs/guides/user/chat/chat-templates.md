@@ -75,6 +75,7 @@ A ChatGPT-inspired layout with conversation history displayed in a persistent si
 **Characteristics:**
 - Two-column grid layout (260px sidebar + flexible chat area)
 - Persistent conversation history sidebar on the left
+- **Available tools list** displayed in the sidebar showing all tools enabled for the assistant
 - Chat interface on the right with full height
 - Sidebar shows list of previous conversations
 - No toggle needed - history is always visible
@@ -93,6 +94,7 @@ A ChatGPT-inspired layout with conversation history displayed in a persistent si
 - Grid layout: `grid-template-columns: 260px 1fr`
 - Sidebar background: `#f7f7f8` (light) / `#1f1f1f` (dark)
 - History toggle button hidden (sidebar always visible)
+- Tools list automatically populated from assistant configuration
 - Responsive: Stacks vertically on screens < 768px
 - Sidebar becomes scrollable horizontal panel on mobile
 

@@ -14,22 +14,23 @@
 │  │ │ + New Chat    │ │  │                                        │ ││
 │  │ └───────────────┘ │  │  ┌──────────────────┐                 │ ││
 │  │                   │  │  │  User Message    │                 │ ││
-│  │ ◉ Current Chat    │  │  └──────────────────┘                 │ ││
-│  │   Today, 10:30am  │  │                                        │ ││
-│  │                   │  │          ┌──────────────────┐          │ ││
-│  │ ○ Previous Chat   │  │          │ Assistant Reply  │          │ ││
-│  │   Yesterday       │  │          └──────────────────┘          │ ││
+│  │ AVAILABLE TOOLS   │  │  └──────────────────┘                 │ ││
+│  │ ───────────────   │  │                                        │ ││
+│  │ ✦ search_posts    │  │          ┌──────────────────┐          │ ││
+│  │ ✦ create_post     │  │          │ Assistant Reply  │          │ ││
+│  │ ✦ update_post     │  │          └──────────────────┘          │ ││
+│  │ ✦ list_users      │  │                                        │ ││
+│  │                   │  │  ┌──────────────────┐                 │ ││
+│  │ ◉ Current Chat    │  │  │  User Message    │                 │ ││
+│  │   Today, 10:30am  │  │  └──────────────────┘                 │ ││
 │  │                   │  │                                        │ ││
-│  │ ○ Another Chat    │  │  ┌──────────────────┐                 │ ││
-│  │   2 days ago      │  │  │  User Message    │                 │ ││
-│  │                   │  │  └──────────────────┘                 │ ││
-│  │ ○ Old Chat        │  │                                        │ ││
-│  │   Last week       │  │          ┌──────────────────┐          │ ││
-│  │                   │  │          │ Assistant Reply  │          │ ││
+│  │ ○ Previous Chat   │  │          ┌──────────────────┐          │ ││
+│  │   Yesterday       │  │          │ Assistant Reply  │          │ ││
 │  │                   │  │          └──────────────────┘          │ ││
-│  │ [Load More...]    │  │                                        │ ││
+│  │ ○ Another Chat    │  │                                        │ ││
+│  │   2 days ago      │  │                                        │ ││
 │  │                   │  └──────────────────────────────────────┘ ││
-│  │                   │                                             ││
+│  │ [Load More...]    │                                             ││
 │  │                   │  ┌──────────────────────────────────────┐ ││
 │  │                   │  │ Type your message here...            │ ││
 │  │                   │  └──────────────────────────────────────┘ ││
@@ -48,12 +49,20 @@
 - **Total max width**: 1200px
 - **Minimum height**: 600px for optimal experience
 - **Sidebar**: Fixed 260px width, scrollable conversation list
+- **Tools list**: Displays all available tools for the assistant
 - **Chat area**: Flexible width, full-height messages + input at bottom
 
 ### Sidebar Panel (Left)
 - **Background**: Light gray (#f7f7f8) or dark (#1f1f1f)
 - **"Conversations" header**: Always visible at top
 - **New Chat button**: Full-width, prominent at top of list
+- **Available Tools section**: 
+  - Header: "AVAILABLE TOOLS"
+  - Lists all tools enabled for the assistant
+  - Each tool shown with icon and formatted name
+  - Tool names auto-formatted (e.g., "search_posts" → "Search Posts")
+  - Styled with subtle background and border
+  - Hover effects for better UX
 - **Conversation list**: 
   - Scrollable history of previous chats
   - Each item shows preview and timestamp
