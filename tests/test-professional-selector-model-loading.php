@@ -325,4 +325,106 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			);
 		}
 	}
+
+	/**
+	 * Test that the render professional chat AJAX hook is registered for logged-in users.
+	 */
+	public function test_render_chat_ajax_hook_registered_for_logged_in_users() {
+		$this->assertTrue(
+			has_action( 'wp_ajax_wp_mcp_ai_render_professional_chat' ) !== false,
+			'wp_ajax_wp_mcp_ai_render_professional_chat should be registered for logged-in users'
+		);
+	}
+
+	/**
+	 * Test that the render professional chat AJAX hook is registered for guests.
+	 */
+	public function test_render_chat_ajax_hook_registered_for_guests() {
+		$this->assertTrue(
+			has_action( 'wp_ajax_nopriv_wp_mcp_ai_render_professional_chat' ) !== false,
+			'wp_ajax_nopriv_wp_mcp_ai_render_professional_chat should be registered for guests'
+		);
+	}
+
+	/**
+	 * Test that the render chat handler rejects requests with invalid nonce.
+	 */
+	public function test_render_chat_rejects_invalid_nonce() {
+		wp_set_current_user( $this->user_id );
+
+		$_POST['nonce']          = 'invalid_nonce';
+		$_POST['shortcode_atts'] = 'assistant="profession_123"';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		$this->assertFalse( $response['success'], 'Request with invalid nonce should fail' );
+	}
+
+	/**
+	 * Test that the render chat handler rejects requests without shortcode attributes.
+	 */
+	public function test_render_chat_rejects_missing_shortcode_atts() {
+		wp_set_current_user( $this->user_id );
+
+		$_POST['nonce'] = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
+		// Intentionally omit shortcode_atts parameter.
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		$this->assertFalse( $response['success'], 'Request without shortcode_atts should fail' );
+		$this->assertArrayHasKey( 'data', $response );
+		$this->assertArrayHasKey( 'message', $response['data'] );
+		$this->assertStringContainsStringIgnoringCase(
+			'shortcode',
+			$response['data']['message'],
+			'Error message should mention invalid/missing shortcode attributes'
+		);
+	}
+
+	/**
+	 * Test that guests can access the render chat endpoint with valid nonce.
+	 */
+	public function test_guest_can_render_chat_with_valid_nonce() {
+		// Ensure no user is logged in.
+		wp_set_current_user( 0 );
+
+		$_POST['nonce']          = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
+		$_POST['shortcode_atts'] = 'assistant="profession_123" allow_guests="true"';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		// The response should be an array with success key.
+		$this->assertIsArray( $response, 'Response should be a valid JSON array' );
+		$this->assertArrayHasKey( 'success', $response, 'Response should have success key' );
+
+		// If it failed, it should NOT be due to nonce or permission issues.
+		if ( ! $response['success'] ) {
+			$this->assertArrayHasKey( 'data', $response );
+			$this->assertArrayHasKey( 'message', $response['data'] );
+			// Ensure error is NOT related to authentication or permission.
+			$this->assertStringNotContainsStringIgnoringCase(
+				'nonce',
+				$response['data']['message'],
+				'Error should not be related to nonce verification'
+			);
+		}
+	}
 }
