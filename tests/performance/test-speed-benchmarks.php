@@ -1,6 +1,6 @@
 <?php
 /**
- * Speed Benchmarks for WP oOS Performance Monitor.
+ * Speed Benchmarks for NV oOS Performance Monitor.
  *
  * Tests baseline performance metrics including:
  * - API endpoint latency (p50, p95, p99)

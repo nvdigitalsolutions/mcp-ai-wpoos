@@ -1,6 +1,6 @@
 <?php
 /**
- * Gutenberg blocks integration for WP oOS Performance Monitoring.
+ * Gutenberg blocks integration for NV oOS Performance Monitoring.
  *
  * Registers performance monitoring blocks for use in the block editor.
  *

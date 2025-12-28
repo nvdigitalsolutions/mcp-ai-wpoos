@@ -1,6 +1,6 @@
 <?php
 /**
- * Rate Limiting and Backoff Security Tests for WP oOS
+ * Rate Limiting and Backoff Security Tests for NV oOS
  *
  * Tests to verify that rate limiting returns 429 status codes on burst requests,
  * backoff logs are generated, and audit entries are created.

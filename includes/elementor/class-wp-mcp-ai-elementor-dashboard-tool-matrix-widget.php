@@ -1,6 +1,6 @@
 <?php
 /**
- * Elementor widget for displaying a matrix of available WP oOS tools.
+ * Elementor widget for displaying a matrix of available NV oOS tools.
  *
  * @package WP_MCP_AI
  */
@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS Tool Matrix', 'wp-mcp-ai' );
+		return __( 'NV oOS Tool Matrix', 'wp-mcp-ai' );
 	}
 
 	/**

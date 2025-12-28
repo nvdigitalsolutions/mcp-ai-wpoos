@@ -201,7 +201,7 @@ class WP_MCP_AI_Federation_WellKnown {
 		if ( empty( $public_keys ) ) {
 			return array(
 				'keys'    => array(),
-				'message' => 'No public keys configured. Configure federation keys in WP oOS settings.',
+				'message' => 'No public keys configured. Configure federation keys in NV oOS settings.',
 			);
 		}
 

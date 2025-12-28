@@ -133,7 +133,7 @@ class WP_MCP_AI_Shortcode {
 		wp_register_script(
 			self::SCRIPT_HANDLE,
 			$script_path,
-			array(), // No dependencies - all services are bundled together
+			array(), // No dependencies - all services are bundled together.
 			$script_version,
 			true
 		);
@@ -416,10 +416,12 @@ class WP_MCP_AI_Shortcode {
 			$atts = shortcode_atts(
 				array(
 					'assistant'             => '',
+					'profession'            => '',
 					'allow_guests'          => 'false',
 					'save_transcript'       => 'true',
 					'enable_streaming'      => 'true',
 					'allow_sensitive_tools' => 'false',
+					'template'              => 'classic',
 				),
 				$atts,
 				$tag
@@ -430,6 +432,13 @@ class WP_MCP_AI_Shortcode {
 			$save_transcript       = wp_validate_boolean( $atts['save_transcript'] );
 			$enable_streaming      = wp_validate_boolean( $atts['enable_streaming'] );
 			$allow_sensitive_tools = wp_validate_boolean( $atts['allow_sensitive_tools'] );
+			$template              = sanitize_key( $atts['template'] );
+
+			// Validate template value - default to 'classic' if invalid.
+			$allowed_templates = array( 'classic', 'speech-bubbles', 'compact', 'sidebar' );
+			if ( ! in_array( $template, $allowed_templates, true ) ) {
+				$template = 'classic';
+			}
 
 			// Fetch settings once for use throughout this method.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -574,6 +583,32 @@ class WP_MCP_AI_Shortcode {
 				}
 			}
 
+			// Get assistant tools for sidebar template display.
+			$assistant_tools = array();
+			if ( 'sidebar' === $template && ! $is_profession_test && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				$config_for_tools = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( absint( $assistant_id ) );
+				if ( ! empty( $config_for_tools['tools'] ) && is_array( $config_for_tools['tools'] ) ) {
+					$assistant_tools = array_values( array_filter( array_map( 'sanitize_key', $config_for_tools['tools'] ) ) );
+				}
+			}
+
+			// Handle profession attribute to build professional role prompt.
+			$professional_prompt = '';
+			$profession_data     = null;
+			if ( ! empty( $atts['profession'] ) ) {
+				$profession_id = absint( $atts['profession'] );
+				if ( $profession_id > 0 ) {
+					$profession_post = get_post( $profession_id );
+					if ( $profession_post && 'mcp_ai_profession' === $profession_post->post_type ) {
+						$profession_data = $profession_post;
+						// Build profession prompt similar to build_prompt_from_primary_roles.
+						if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) && method_exists( 'WP_MCP_AI_Assistant_CPT', 'build_prompt_from_primary_roles' ) ) {
+							$professional_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
+						}
+					}
+				}
+			}
+
 			$config = array(
 				'id'                    => $instance_id,
 				'assistantId'           => $assistant_id, // This preserves "profession_XXX" format for profession tests.
@@ -634,14 +669,37 @@ class WP_MCP_AI_Shortcode {
 				$config['guestToken'] = $guest_token;
 			}
 
+			// Add professional role prompt if provided via profession attribute.
+			if ( ! empty( $professional_prompt ) ) {
+				$config['professionalPrompt'] = $professional_prompt;
+			}
+
+			// Include profession info for display purposes.
+			if ( $profession_data ) {
+				$config['professionId']   = $profession_data->ID;
+				$config['professionName'] = $profession_data->post_title;
+			}
+
+			// Store config in a global for AJAX access (used by professional selector).
+			if ( ! isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ) {
+				$GLOBALS['wp_mcp_ai_chat_configs'] = array();
+			}
+			$GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] = $config;
+
 			$inline_config  = 'window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};';
 			$inline_config .= 'window.wpMcpAiChatInstances[' . wp_json_encode( $instance_id ) . '] = ' . wp_json_encode( $config ) . ';';
 			wp_add_inline_script( self::SCRIPT_HANDLE, $inline_config, 'before' );
 
 			ob_start();
 			$messages_id = $instance_id . '-messages';
+
+			// Build container classes based on template.
+			$container_classes = array( 'wp-mcp-ai-chat' );
+			if ( 'classic' !== $template ) {
+				$container_classes[] = 'wp-mcp-ai-chat--template-' . $template;
+			}
 			?>
-		<div class="wp-mcp-ai-chat" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat>
+		<div class="<?php echo esc_attr( implode( ' ', $container_classes ) ); ?>" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat data-template="<?php echo esc_attr( $template ); ?>">
 			<?php
 			if ( $is_elementor_editor ) {
 				echo $this->render_editor_notice(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -649,7 +707,15 @@ class WP_MCP_AI_Shortcode {
 			?>
 			<div class="wp-mcp-ai-chat__assistant">
 				<label class="wp-mcp-ai-chat__label" for="<?php echo esc_attr( $textarea_id ); ?>">
-					<?php echo esc_html( get_the_title( $assistant_id ) ); ?>
+					<?php
+					// For profession tests, display the profession title.
+					// For regular assistants, display the assistant title.
+					if ( $is_profession_test && isset( $profession ) && $profession ) {
+						echo esc_html( get_the_title( $profession->ID ) );
+					} else {
+						echo esc_html( get_the_title( $assistant_id ) );
+					}
+					?>
 				</label>
 				<?php if ( $assistant_content ) : ?>
 					<div class="wp-mcp-ai-chat__assistant-content">
@@ -787,6 +853,23 @@ class WP_MCP_AI_Shortcode {
 					</button>
 				</div>
 				<div class="wp-mcp-ai-chat__history-status" role="status" aria-live="polite" hidden></div>
+				<?php if ( 'sidebar' === $template && ! empty( $assistant_tools ) ) : ?>
+					<div class="wp-mcp-ai-chat__tools-list">
+						<h3 class="wp-mcp-ai-chat__tools-list-header"><?php esc_html_e( 'Available Tools', 'wp-mcp-ai' ); ?></h3>
+						<ul class="wp-mcp-ai-chat__tools-items">
+							<?php foreach ( $assistant_tools as $tool_slug ) : ?>
+								<li class="wp-mcp-ai-chat__tools-item">
+									<span class="wp-mcp-ai-chat__tools-item-icon">
+										<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+											<path d="M10 2a1 1 0 011 1v4.586l3.707-3.707a1 1 0 111.414 1.414L12.414 9H17a1 1 0 110 2h-4.586l3.707 3.707a1 1 0 01-1.414 1.414L11 12.414V17a1 1 0 11-2 0v-4.586l-3.707 3.707a1 1 0 01-1.414-1.414L7.586 11H3a1 1 0 110-2h4.586L3.879 5.293a1 1 0 011.414-1.414L9 7.586V3a1 1 0 011-1z"/>
+										</svg>
+									</span>
+									<span class="wp-mcp-ai-chat__tools-item-name"><?php echo esc_html( str_replace( '_', ' ', $tool_slug ) ); ?></span>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+					</div>
+				<?php endif; ?>
 				<ul class="wp-mcp-ai-chat__history-list" role="list"></ul>
 				<button type="button" class="wp-mcp-ai-chat__history-load-more" hidden>
 					<?php esc_html_e( 'Load More', 'wp-mcp-ai' ); ?>

@@ -121,7 +121,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );.
 
 		// Initialize the dashboard controller.
-		// This creates the top-level "WP oOS" menu item.
+		// This creates the top-level "NV oOS" menu item.
 		// Store the instance globally for potential access by other code.
 		$GLOBALS['wp_mcp_ai_settings_dashboard'] = $container->get( 'admin.settings_dashboard' );
 
@@ -156,7 +156,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 				?>
 				<div class="notice notice-error">
 					<p>
-						<strong>WP oOS Settings Dashboard Error:</strong>
+						<strong>NV oOS Settings Dashboard Error:</strong>
 						<?php echo esc_html( $e->getMessage() ); ?>
 					</p>
 					<p>

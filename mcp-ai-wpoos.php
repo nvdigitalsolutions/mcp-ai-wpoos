@@ -481,6 +481,7 @@ require_once WP_MCP_AI_PATH . 'includes/job-notifier-init.php';
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-professional-selector-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 
 // Load Pro addon early so it can register tool hooks before tool registry initializes.
@@ -497,7 +498,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
 // Load project management initialization moved to Pro addon.
-// require_once WP_MCP_AI_PATH . 'includes/project-management-init.php';
+// require_once WP_MCP_AI_PATH . 'includes/project-management-init.php';.
 
 // Load validated tools (Symfony Phase 2 - requires PHP 8.0+).
 require_once WP_MCP_AI_PATH . 'includes/validators/validated-tools-init.php';
@@ -898,16 +899,10 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				WP_MCP_AI_Enhanced_Token_Tracking::init();
 			}
 
-			if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
-				// Check if Elementor widgets are enabled in settings.
-				// Defaults to true for backward compatibility.
-				$settings        = get_option( 'wp_mcp_ai_settings', array() );
-				$widgets_enabled = isset( $settings['enable_elementor_widgets'] ) ? (bool) $settings['enable_elementor_widgets'] : true;
-
-				if ( $widgets_enabled ) {
-					WP_MCP_AI_Elementor_Integration::maybe_init();
-				}
-			}
+			// Initialize Elementor integration on 'init' to avoid early translation loading.
+			// WordPress 6.7.0+ requires translations to be loaded at init or later.
+			// This prevents "_load_textdomain_just_in_time was called incorrectly" warnings.
+			add_action( 'init', array( $this, 'init_elementor_integration' ) );
 
 			// Initialize Gutenberg blocks for AI Assistant Builder.
 			if ( class_exists( 'WP_MCP_AI_Assistant_Builder_Blocks' ) ) {
@@ -1012,6 +1007,30 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// Reset the tracked level.
 			$this->elementor_buffer_level = null;
+		}
+
+		/**
+		 * Initialize Elementor integration on 'init' hook.
+		 *
+		 * This method is called on the 'init' action to ensure translations are loaded
+		 * at the correct time according to WordPress 6.7+ requirements.
+		 * This prevents "_load_textdomain_just_in_time was called incorrectly" warnings.
+		 *
+		 * @since 1.1.0
+		 */
+		public function init_elementor_integration() {
+			if ( ! class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
+				return;
+			}
+
+			// Check if Elementor widgets are enabled in settings.
+			// Defaults to true for backward compatibility.
+			$settings        = get_option( 'wp_mcp_ai_settings', array() );
+			$widgets_enabled = isset( $settings['enable_elementor_widgets'] ) ? (bool) $settings['enable_elementor_widgets'] : true;
+
+			if ( $widgets_enabled ) {
+				WP_MCP_AI_Elementor_Integration::maybe_init();
+			}
 		}
 
 		/**

@@ -483,7 +483,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			} else {
 				?>
 				<div class="notice notice-info inline">
-					<p><?php esc_html_e( 'Performance monitoring features require WP oOS Pro addon.', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'Performance monitoring features require NV oOS Pro addon.', 'wp-mcp-ai' ); ?></p>
 				</div>
 				<?php
 			}

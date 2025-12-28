@@ -48,7 +48,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
-			__( 'WP oOS Cron Manager', 'wp-mcp-ai' ),
+			__( 'NV oOS Cron Manager', 'wp-mcp-ai' ),
 			__( 'Cron Manager', 'wp-mcp-ai' ),
 			'manage_options',
 			self::PAGE_SLUG,
@@ -176,11 +176,11 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		$stats = $this->get_statistics( $jobs );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'WP oOS Cron Manager', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'NV oOS Cron Manager', 'wp-mcp-ai' ); ?></h1>
 
 			<div class="wp-mcp-ai-cron-manager__intro">
 				<p><strong><?php esc_html_e( 'About Cron Manager', 'wp-mcp-ai' ); ?></strong></p>
-				<p><?php esc_html_e( 'The Cron Manager displays and manages scheduled tasks created through WP oOS AI Assistant tools. Cron events allow the assistant to schedule automated tasks to run at specific times or on recurring schedules.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'The Cron Manager displays and manages scheduled tasks created through NV oOS AI Assistant tools. Cron events allow the assistant to schedule automated tasks to run at specific times or on recurring schedules.', 'wp-mcp-ai' ); ?></p>
 				<p>
 				<?php
 					/* translators: %s: retention period in hours */

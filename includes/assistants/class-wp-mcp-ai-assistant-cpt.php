@@ -175,6 +175,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'get_recent_posts',
 						'save_post',
 						'create_post',
+						'create_term',
+						'update_term',
 						'get_rankmath_seo',
 						'generate_openai_image',
 						'generate_gemini_image',

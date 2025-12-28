@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS Performance Recommendations', 'wp-mcp-ai' );
+		return __( 'NV oOS Performance Recommendations', 'wp-mcp-ai' );
 	}
 
 	/**

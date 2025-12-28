@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS System Health Status', 'wp-mcp-ai' );
+		return __( 'NV oOS System Health Status', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -241,7 +241,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 			$failed  = isset( $trends['status_distribution']['failed'] ) ? $trends['status_distribution']['failed'] : 0;
 			$total   = $passed + $warning + $failed;
 
-			if ( $total === 0 ) {
+			if ( 0 === $total ) {
 				$component_health[ $key ] = array(
 					'name'   => $name,
 					'status' => 'unknown',
@@ -271,6 +271,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 			$component_health[ $key ] = array(
 				'name'      => $name,
 				'status'    => $status,
+				/* translators: %d: Number of tests */
 				'last_test' => sprintf( __( '%d tests', 'wp-mcp-ai' ), $total ),
 			);
 		}
@@ -279,9 +280,9 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 		$health_score = $component_count > 0 ? round( $total_score / $component_count ) : 0;
 
 		// Determine overall status.
-		if ( $health_score >= 80 && $critical_issues === 0 ) {
+		if ( $health_score >= 80 && 0 === $critical_issues ) {
 			$overall_status = 'good';
-		} elseif ( $health_score >= 60 || $critical_issues === 0 ) {
+		} elseif ( $health_score >= 60 || 0 === $critical_issues ) {
 			$overall_status = 'warning';
 		} else {
 			$overall_status = 'critical';

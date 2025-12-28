@@ -1,5 +1,5 @@
 /**
- * Storage Service for WP oOS Chat
+ * Storage Service for NV oOS Chat
  * 
  * Handles localStorage management, conversation persistence, and quota monitoring.
  * This is a self-contained service that can be used independently.

@@ -1,6 +1,6 @@
 <?php
 /**
- * Gutenberg blocks for WP oOS Assistant Builder.
+ * Gutenberg blocks for NV oOS Assistant Builder.
  *
  * Registers chat and assistant builder blocks for use in the block editor.
  * These are dynamic blocks that use PHP render callbacks since they need
@@ -65,6 +65,7 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 		// Register blocks with block.json if they exist.
 		$block_types = array(
 			'chat',
+			'professional-selector',
 			'assistant-selector',
 			'tools-grid',
 			'knowledge-base',
@@ -94,7 +95,7 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 			array(
 				array(
 					'slug'  => 'wp-mcp-ai',
-					'title' => __( 'WP oOS - AI Assistant', 'wp-mcp-ai' ),
+					'title' => __( 'NV oOS - AI Assistant', 'wp-mcp-ai' ),
 					'icon'  => 'admin-generic',
 				),
 			),
@@ -324,8 +325,8 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 
 			$grouped[ $group_id ]['tools'][] = array(
 				'slug'        => $slug,
-				'name'        => $tool->get_name() ?: $slug,
-				'description' => $tool->get_description() ?: '',
+				'name'        => $tool->get_name() ? $tool->get_name() : $slug,
+				'description' => $tool->get_description() ? $tool->get_description() : '',
 			);
 		}
 

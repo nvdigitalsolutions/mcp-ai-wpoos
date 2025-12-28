@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Selector Fix Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .demo-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #0073aa;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #0073aa;
+            margin-top: 30px;
+        }
+        .problem-section {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .solution-section {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .highlight {
+            background-color: #ffffcc;
+            font-weight: bold;
+        }
+        .flow-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .flow-step {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            position: relative;
+        }
+        .flow-step:after {
+            content: '↓';
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: #0073aa;
+        }
+        .flow-step:last-child:after {
+            display: none;
+        }
+        .step-number {
+            background: #0073aa;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .before, .after {
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .before {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+        }
+        .after {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+        }
+        .icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🔧 Professional Selector Chat Form Fix</h1>
+        
+        <div class="problem-section">
+            <h2><span class="icon">⚠️</span>The Problem</h2>
+            <p>When users submitted a chat message in the professional selector widget, the page would refresh instead of handling the submission via JavaScript.</p>
+            
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <span class="step-number">1</span>
+                    User selects professional, provider, and model
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">2</span>
+                    Clicks "Start Chat" button
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">3</span>
+                    JavaScript loads chat interface via AJAX
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">4</span>
+                    Chat HTML is inserted into the page dynamically
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">5</span>
+                    <strong style="color: #dc3545;">❌ Problem: Chat form has no event handlers</strong>
+                </div>
+                <div class="flow-step">
+                    <span class="step-number">6</span>
+                    <strong style="color: #dc3545;">❌ User submits message → Page refreshes</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="solution-section">
+            <h2><span class="icon">✅</span>The Solution</h2>
+            <p>We exposed a public init API in chat.js and called it after dynamically inserting chat HTML.</p>
+            
+            <h3>Code Changes</h3>
+            
+            <h4>1. chat.js - Expose Public Init API</h4>
+            <div class="code-block">
+<pre>// Before: No public API
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWithCronStatus);
+} else {
+    initWithCronStatus();
+}
+
+// After: <span class="highlight">Added public API for dynamic initialization</span>
+<span class="highlight">if (!window.wpMcpAiChatInit) {
+    window.wpMcpAiChatInit = {
+        /**
+         * Initialize or reinitialize chat instances.
+         * Call this after dynamically inserting chat HTML into the page.
+         */
+        init: initWithCronStatus
+    };
+}</span>
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWithCronStatus);
+} else {
+    initWithCronStatus();
+}</pre>
+            </div>
+
+            <h4>2. professional-selector.js - Call Init After Inserting HTML</h4>
+            <div class="code-block">
+<pre>// Before: Just inserted HTML without initialization
+success: function(response) {
+    if (response.success && response.data.html) {
+        $chatWrapper.html(response.data.html);
+        ProfessionalSelector.showChatContainer($container);
+    }
+}
+
+// After: <span class="highlight">Added initialization call</span>
+success: function(response) {
+    if (response.success && response.data.html) {
+        $chatWrapper.html(response.data.html);
+        ProfessionalSelector.showChatContainer($container);
+        <span class="highlight">// Initialize the dynamically inserted chat interface
+        ProfessionalSelector.initializeChatInterface();</span>
+    }
+}
+
+// New method added to ProfessionalSelector:
+<span class="highlight">initializeChatInterface: function() {
+    // Check if the chat init API is available
+    if (typeof window.wpMcpAiChatInit !== 'undefined' && window.wpMcpAiChatInit.init) {
+        // Call the chat initialization function
+        window.wpMcpAiChatInit.init();
+    } else if (window.console && console.warn) {
+        console.warn('[Professional Selector] Chat initialization API not available.');
+    }
+}</span></pre>
+            </div>
+        </div>
+
+        <h2>How It Works Now</h2>
+        <div class="comparison">
+            <div class="before">
+                <h3>❌ Before (Broken)</h3>
+                <ol>
+                    <li>Chat HTML inserted dynamically</li>
+                    <li>No event handlers attached</li>
+                    <li>Form submit → Page refresh</li>
+                    <li>Chat doesn't work</li>
+                </ol>
+            </div>
+            <div class="after">
+                <h3>✅ After (Fixed)</h3>
+                <ol>
+                    <li>Chat HTML inserted dynamically</li>
+                    <li><strong>Init API called automatically</strong></li>
+                    <li>Event handlers attached</li>
+                    <li>Form submit → preventDefault()</li>
+                    <li>Chat works correctly!</li>
+                </ol>
+            </div>
+        </div>
+
+        <h2>Benefits</h2>
+        <ul>
+            <li>✅ <strong>Works for all implementations</strong>: Shortcode, Elementor widget, and Gutenberg block</li>
+            <li>✅ <strong>No breaking changes</strong>: Existing chat instances continue to work</li>
+            <li>✅ <strong>Reusable API</strong>: Other plugins/themes can use the init API for dynamic chat insertion</li>
+            <li>✅ <strong>Future-proof</strong>: Handles re-initialization safely with `data-wp-mcp-ai-initialized` check</li>
+        </ul>
+
+        <h2>Testing</h2>
+        <p>To test this fix:</p>
+        <ol>
+            <li>Add the professional selector shortcode to a page: <code>[mcp_ai_professional_selector]</code></li>
+            <li>Or use the Elementor widget or Gutenberg block</li>
+            <li>Select a professional, provider, and model</li>
+            <li>Click "Start Chat"</li>
+            <li>Type a message and click "Send"</li>
+            <li>✅ The page should NOT refresh</li>
+            <li>✅ The message should be sent to the AI assistant</li>
+            <li>✅ The response should appear in the chat interface</li>
+        </ol>
+
+        <h2>Technical Details</h2>
+        <div class="code-block">
+<pre>// The init() function checks for already-initialized containers
+function init() {
+    const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
+    Array.prototype.forEach.call(containers, function (container) {
+        // <span class="highlight">Skip if already initialized</span>
+        if (container.hasAttribute('data-wp-mcp-ai-initialized')) {
+            return;
+        }
+        // ... attach event handlers ...
+        form.addEventListener('submit', function (event) {
+            handleSubmit(event, state);
+        });
+        // ... mark as initialized ...
+        container.setAttribute('data-wp-mcp-ai-initialized', 'true');
+    });
+}</pre>
+        </div>
+
+        <p>This means calling <code>init()</code> multiple times is safe - it will only initialize containers that haven't been initialized yet.</p>
+    </div>
+</body>
+</html>
