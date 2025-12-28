@@ -2941,7 +2941,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			echo '</div>';
-			echo '</details>'; // Close the collapsible section opened in render_chat_colors_section_description
+			echo '</details>'; // Close the collapsible section opened in render_chat_colors_section_description.
 		}
 
 		/**
@@ -4867,7 +4867,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'gpt-4o-audio-preview'                    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
 				'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
 				'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
-				'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
 				'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
 				'gpt-4o-realtime-preview-2025-01-06'      => __( 'GPT-4o Realtime Preview (Jan 2025)', 'wp-mcp-ai' ),
 				'gpt-4o-realtime-preview-2025-06-03'      => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'wp-mcp-ai' ),

@@ -261,7 +261,7 @@ class WP_MCP_AI_Optimization_Comparison_Test extends WP_UnitTestCase {
 			// Add messages.
 			for ( $j = 0; $j < 20; $j++ ) {
 				$transcript_data['messages'][] = array(
-					'role'      => $j % 2 === 0 ? 'user' : 'assistant',
+					'role'      => 0 === $j % 2 ? 'user' : 'assistant',
 					'content'   => 'Message ' . $j,
 					'timestamp' => time(),
 				);

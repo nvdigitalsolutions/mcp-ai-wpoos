@@ -299,6 +299,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 						<?php
 						$sections = WP_MCP_AI_Settings_Registry::get_sections();
 						?>
+						<!-- translators: %d: Number of registered sections -->
 						<p><?php printf( esc_html__( 'Total sections registered: %d', 'wp-mcp-ai' ), count( $sections ) ); ?></p>
 						<?php if ( ! empty( $sections ) ) : ?>
 							<table class="widefat striped">

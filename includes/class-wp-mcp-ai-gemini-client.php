@@ -2442,7 +2442,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				foreach ( $sanitized as $prop_name => $prop_schema ) {
 					if ( is_array( $prop_schema ) && ! isset( $prop_schema['type'] ) ) {
 						// Determine the appropriate type based on schema structure.
-						$inferred_type = 'string'; // Default fallback
+						$inferred_type = 'string'; // Default fallback.
 						$reason        = 'default';
 
 						if ( isset( $prop_schema['items'] ) ) {
@@ -2470,7 +2470,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 			} elseif ( 'items' === $parent_key && is_array( $sanitized ) && ! isset( $sanitized['type'] ) ) {
 				// Handle the items schema itself when it's missing a type.
-				$inferred_type = 'string'; // Default fallback
+				$inferred_type = 'string'; // Default fallback.
 				$reason        = 'default';
 
 				if ( isset( $sanitized['items'] ) ) {

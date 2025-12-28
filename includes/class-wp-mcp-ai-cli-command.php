@@ -1185,7 +1185,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				// if ( $max_jobs > 0 && $jobs_processed >= $max_jobs ) {
 				// break;
 				// }
-				// }
+				// }.
 
 				WP_CLI::success( sprintf( 'Worker stopped. Processed %d jobs.', $jobs_processed ) );
 			}
