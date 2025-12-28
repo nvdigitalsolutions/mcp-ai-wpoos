@@ -138,6 +138,31 @@ class WP_MCP_AI_Shortcode {
 			true
 		);
 
+		// Register model selector script for frontend use (for provider/model selectors in widgets).
+		$model_selector_relative = 'assets/js/admin-model-selector.js';
+		$model_selector_path     = WP_MCP_AI_URL . $model_selector_relative;
+		$model_selector_version  = $this->get_asset_version( $model_selector_relative );
+
+		wp_register_script(
+			'wp-mcp-ai-model-selector',
+			$model_selector_path,
+			array( 'jquery' ),
+			$model_selector_version,
+			true
+		);
+
+		// Localize model selector for frontend AJAX requests.
+		wp_localize_script(
+			'wp-mcp-ai-model-selector',
+			'wpMcpAiModelSelector',
+			array(
+				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+				'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
+				'selectModelText' => __( '— Select Model —', 'wp-mcp-ai' ),
+				'errorMessage'    => __( 'Failed to load models. Please try again.', 'wp-mcp-ai' ),
+			)
+		);
+
 		// Skip localization in Elementor editor to prevent JavaScript conflicts.
 		if ( $is_elementor_editor ) {
 			// Provide minimal localization for Elementor editor to support voice chat and file uploads.

@@ -2384,11 +2384,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Verify nonce for security.
 			check_ajax_referer( 'wp-mcp-ai-model-selector', 'nonce' );
 
-			// Check user capabilities.
-			if ( ! current_user_can( 'edit_posts' ) ) {
+			// Allow access for logged-in users who can read (for frontend widgets/shortcodes).
+			// This allows the model selector to work in Elementor widgets and frontend shortcodes.
+			if ( ! is_user_logged_in() || ! current_user_can( 'read' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ),
+						'message' => __( 'You must be logged in to access this feature.', 'wp-mcp-ai' ),
 					)
 				);
 				return;

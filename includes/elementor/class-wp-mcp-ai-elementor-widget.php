@@ -60,7 +60,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 	 * @return array List of script handles this widget depends on.
 	 */
 	public function get_script_depends() {
-		return array( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
+		return array( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'wp-mcp-ai-model-selector' );
 	}
 
 	/**
