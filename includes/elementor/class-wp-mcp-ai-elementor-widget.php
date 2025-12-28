@@ -147,6 +147,23 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'template',
+			array(
+				'label'       => __( 'Chat Template', 'wp-mcp-ai' ),
+				'type'        => \Elementor\Controls_Manager::SELECT,
+				'options'     => array(
+					'classic'        => __( 'Classic', 'wp-mcp-ai' ),
+					'speech-bubbles' => __( 'Speech Bubbles', 'wp-mcp-ai' ),
+					'compact'        => __( 'Compact', 'wp-mcp-ai' ),
+					'sidebar'        => __( 'Sidebar', 'wp-mcp-ai' ),
+				),
+				'default'     => 'classic',
+				'label_block' => true,
+				'description' => __( 'Select the visual template for the chat interface.', 'wp-mcp-ai' ),
+			)
+		);
+
 		$this->end_controls_section();
 
 		$this->start_controls_section(
@@ -1145,6 +1162,11 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$allow_sensitive_tools = ! empty( $settings['allow_sensitive_tools'] ) && 'true' === $settings['allow_sensitive_tools'];
 		if ( $allow_sensitive_tools ) {
 			$attributes['allow_sensitive_tools'] = 'true';
+		}
+
+		$template = isset( $settings['template'] ) ? sanitize_key( $settings['template'] ) : 'classic';
+		if ( 'classic' !== $template ) {
+			$attributes['template'] = $template;
 		}
 
 		$shortcode = '[' . WP_MCP_AI_Shortcode::SHORTCODE;
