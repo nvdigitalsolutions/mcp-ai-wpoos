@@ -420,6 +420,7 @@ class WP_MCP_AI_Shortcode {
 					'save_transcript'       => 'true',
 					'enable_streaming'      => 'true',
 					'allow_sensitive_tools' => 'false',
+					'template'              => 'classic',
 				),
 				$atts,
 				$tag
@@ -430,6 +431,13 @@ class WP_MCP_AI_Shortcode {
 			$save_transcript       = wp_validate_boolean( $atts['save_transcript'] );
 			$enable_streaming      = wp_validate_boolean( $atts['enable_streaming'] );
 			$allow_sensitive_tools = wp_validate_boolean( $atts['allow_sensitive_tools'] );
+			$template              = sanitize_key( $atts['template'] );
+
+			// Validate template value - default to 'classic' if invalid.
+			$allowed_templates = array( 'classic', 'speech-bubbles', 'compact' );
+			if ( ! in_array( $template, $allowed_templates, true ) ) {
+				$template = 'classic';
+			}
 
 			// Fetch settings once for use throughout this method.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -640,8 +648,14 @@ class WP_MCP_AI_Shortcode {
 
 			ob_start();
 			$messages_id = $instance_id . '-messages';
+			
+			// Build container classes based on template.
+			$container_classes = array( 'wp-mcp-ai-chat' );
+			if ( 'classic' !== $template ) {
+				$container_classes[] = 'wp-mcp-ai-chat--template-' . $template;
+			}
 			?>
-		<div class="wp-mcp-ai-chat" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat>
+		<div class="<?php echo esc_attr( implode( ' ', $container_classes ) ); ?>" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat data-template="<?php echo esc_attr( $template ); ?>">
 			<?php
 			if ( $is_elementor_editor ) {
 				echo $this->render_editor_notice(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
