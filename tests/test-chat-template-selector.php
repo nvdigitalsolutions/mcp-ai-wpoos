@@ -162,6 +162,7 @@ class WP_MCP_AI_Chat_Template_Selector_Test extends WP_UnitTestCase {
 			$method->invoke( $widget );
 		} catch ( Exception $e ) {
 			// Some methods may throw exceptions in test environment.
+			unset( $e );
 		}
 		ob_end_clean();
 

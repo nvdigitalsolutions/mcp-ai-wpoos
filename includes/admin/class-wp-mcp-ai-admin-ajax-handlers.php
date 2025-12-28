@@ -1978,18 +1978,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 						__( 'Found %d Gemini tool records, all correctly attributed to Gemini provider. No migration needed.', 'wp-mcp-ai' ),
 						$results['correctly_attributed']
 					);
-				} else {
-					// Some records need migration.
-					if ( $results['total_needing_migration'] > $limit ) {
-						// More records than batch limit - warn user.
-						$message = sprintf(
-						/* translators: 1: Total records needing migration, 2: Batch size that will be processed, 3: Total Gemini records, 4: Already correct records */
-							__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). This migration will process the first %3$d records. %4$d records are already correctly attributed to Gemini. You may need to run the migration multiple times to update all records.', 'wp-mcp-ai' ),
-							$results['total_needing_migration'],
-							$results['total_gemini_records'],
-							$limit,
-							$results['correctly_attributed']
-						);
+				} elseif ( $results['total_needing_migration'] > $limit ) {
+					// More records than batch limit - warn user.
+					$message = sprintf(
+					/* translators: 1: Total records needing migration, 2: Batch size that will be processed, 3: Total Gemini records, 4: Already correct records */
+						__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). This migration will process the first %3$d records. %4$d records are already correctly attributed to Gemini. You may need to run the migration multiple times to update all records.', 'wp-mcp-ai' ),
+						$results['total_needing_migration'],
+						$results['total_gemini_records'],
+						$limit,
+						$results['correctly_attributed']
+					);
 					} else {
 						$message = sprintf(
 						/* translators: 1: Number of records that would be updated, 2: Total Gemini records, 3: Already correct records */
@@ -2357,8 +2355,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				}
 			}
 
-			/* translators: %d: number of deleted playbook attachments */
 			$message = sprintf(
+				/* translators: %d: number of deleted playbook attachments */
 				_n(
 					'Successfully deleted %d orphaned playbook attachment from media library.',
 					'Successfully deleted %d orphaned playbook attachments from media library.',

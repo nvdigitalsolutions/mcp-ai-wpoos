@@ -145,6 +145,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'wp_mcp_ai_get_models_for_provider' );
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected - AJAX will call wp_die().
+			unset( $e );
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -185,6 +186,8 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'wp_mcp_ai_get_models_for_provider' );
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
+			unset( $e );
+			unset( $e );
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -206,6 +209,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'wp_mcp_ai_get_models_for_provider' );
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
+			unset( $e );
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -245,6 +249,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'wp_mcp_ai_get_models_for_provider' );
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
+			unset( $e );
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -273,6 +278,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'wp_mcp_ai_get_models_for_provider' );
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
+			unset( $e );
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -305,6 +311,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'wp_mcp_ai_get_models_for_provider' );
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
+			unset( $e );
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -359,6 +366,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
+			unset( $e );
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -379,6 +387,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
+			unset( $e );
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -407,6 +416,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
+			unset( $e );
 		}
 
 		$response = json_decode( $this->_last_response, true );
@@ -453,6 +463,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
 		} catch ( WPAjaxDieContinueException $e ) {
 			// Expected.
+			unset( $e );
 		}
 
 		$response = json_decode( $this->_last_response, true );
