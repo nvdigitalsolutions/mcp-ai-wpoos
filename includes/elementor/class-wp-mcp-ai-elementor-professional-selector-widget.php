@@ -88,6 +88,18 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 		);
 
 		$this->add_control(
+			'assistant',
+			array(
+				'label'       => __( 'Assistant', 'wp-mcp-ai' ),
+				'type'        => \Elementor\Controls_Manager::SELECT,
+				'options'     => $this->get_assistant_options(),
+				'default'     => '',
+				'label_block' => true,
+				'description' => __( 'Select the assistant that will be used for the chat. Leave empty to use the default assistant.', 'wp-mcp-ai' ),
+			)
+		);
+
+		$this->add_control(
 			'default_professional',
 			array(
 				'label'       => __( 'Default Professional', 'wp-mcp-ai' ),
@@ -217,6 +229,50 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 	}
 
 	/**
+	 * Retrieve the available assistants as select options.
+	 *
+	 * @return array
+	 */
+	protected function get_assistant_options() {
+		$options = array( '' => __( 'Default Assistant', 'wp-mcp-ai' ) );
+
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return $options;
+		}
+
+		if ( ! post_type_exists( WP_MCP_AI_Assistant_CPT::POST_TYPE ) ) {
+			return $options;
+		}
+
+		$assistants = get_posts(
+			array(
+				'post_type'              => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'            => 'publish',
+				'numberposts'            => -1,
+				'orderby'                => 'title',
+				'order'                  => 'ASC',
+				'suppress_filters'       => true,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_term_cache' => false,
+			)
+		);
+
+		if ( ! is_array( $assistants ) || empty( $assistants ) ) {
+			return $options;
+		}
+
+		foreach ( $assistants as $assistant_id ) {
+			$title = get_the_title( $assistant_id );
+			if ( $title && ! is_wp_error( $title ) ) {
+				$options[ (string) $assistant_id ] = $title;
+			}
+		}
+
+		return $options;
+	}
+
+	/**
 	 * Retrieve the available professionals as select options.
 	 *
 	 * @return array
@@ -295,6 +351,10 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 		$settings = $this->get_settings_for_display();
 
 		$attributes = array();
+
+		if ( ! empty( $settings['assistant'] ) ) {
+			$attributes['assistant'] = sanitize_text_field( $settings['assistant'] );
+		}
 
 		if ( ! empty( $settings['default_professional'] ) ) {
 			$attributes['default_professional'] = sanitize_text_field( $settings['default_professional'] );

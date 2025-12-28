@@ -1,7 +1,7 @@
 /**
  * Professional Selector Frontend JavaScript
  *
- * Handles the professional selection UI and dynamic model loading.
+ * Handles the professional selection UI with modal chat interface and dynamic model loading.
  *
  * @package WP_MCP_AI
  */
@@ -37,20 +37,21 @@
 		 */
 		initInstance: function($container, config) {
 			const $form = $container.find('[data-selector-form]');
-			const $chatContainer = $container.find('[data-chat-container]');
+			const $modal = $container.find('[data-modal]');
+			const $modalClose = $container.find('[data-modal-close]');
+			const $modalBackdrop = $container.find('[data-modal-backdrop]');
+			const $assistantSelect = $container.find('[data-assistant-select]');
 			const $providerSelect = $container.find('[data-provider-select]');
 			const $modelSelect = $container.find('[data-model-select]');
 			const $modelLoading = $container.find('[data-model-loading]');
 			const $professionalSelect = $container.find('[data-professional-select]');
 			const $errorMessage = $container.find('[data-error-message]');
-			const $startButton = $container.find('[data-start-button]');
-			const $changeButton = $container.find('[data-change-button]');
-			const $configDisplay = $container.find('[data-config-display]');
 			const $temperatureInput = $container.find('[data-temperature-input]');
 
 			// Store instance data.
 			$container.data('selector-config', config);
 			$container.data('selector-state', {
+				assistant: null,
 				professional: null,
 				provider: null,
 				model: null,
@@ -81,9 +82,23 @@
 				ProfessionalSelector.handleStartChat($container);
 			});
 
-			// Handle change button.
-			$changeButton.on('click', function() {
-				ProfessionalSelector.showSelectionForm($container);
+			// Handle modal close button.
+			$modalClose.on('click', function() {
+				ProfessionalSelector.closeModal($container);
+			});
+
+			// Handle modal backdrop click.
+			$modal.on('click', function(e) {
+				if (e.target === $modal[0] || e.target === $modalBackdrop[0]) {
+					ProfessionalSelector.closeModal($container);
+				}
+			});
+
+			// Handle escape key to close modal.
+			$(document).on('keydown', function(e) {
+				if (e.key === 'Escape' && $modal.is(':visible')) {
+					ProfessionalSelector.closeModal($container);
+				}
 			});
 		},
 
@@ -186,24 +201,28 @@
 		 * @param {jQuery} $container Container element.
 		 */
 		handleStartChat: function($container) {
+			const $assistantSelect = $container.find('[data-assistant-select]');
 			const $professionalSelect = $container.find('[data-professional-select]');
 			const $providerSelect = $container.find('[data-provider-select]');
 			const $modelSelect = $container.find('[data-model-select]');
 			const $temperatureInput = $container.find('[data-temperature-input]');
 
+			const assistant = $assistantSelect.val();
 			const professional = $professionalSelect.val();
 			const provider = $providerSelect.val();
 			const model = $modelSelect.val();
 			const temperature = $temperatureInput.length ? $temperatureInput.val() : null;
 
 			// Validate required fields.
-			if (!professional || !provider || !model) {
+			if (!assistant || !professional || !provider || !model) {
 				ProfessionalSelector.showError($container, wpMcpAiProfessionalSelector.strings.selectRequired);
 				return;
 			}
 
 			// Store selection state.
 			const state = {
+				assistant: assistant,
+				assistantName: $assistantSelect.find('option:selected').text(),
 				professional: professional,
 				professionalName: $professionalSelect.find('option:selected').text(),
 				provider: provider,
@@ -216,30 +235,87 @@
 			// Hide error message.
 			ProfessionalSelector.hideError($container);
 
+			// Open modal and create chat interface.
+			ProfessionalSelector.openModal($container, state);
+		},
+
+		/**
+		 * Open the modal with the chat interface.
+		 *
+		 * @param {jQuery} $container Container element.
+		 * @param {Object} state      Selection state.
+		 */
+		openModal: function($container, state) {
+			const config = $container.data('selector-config');
+			const $modal = $container.find('[data-modal]');
+			const $modalTitle = $container.find('[data-modal-title]');
+			const $modalConfig = $container.find('[data-modal-config]');
+			const $modalChat = $container.find('[data-modal-chat]');
+
+			// Update modal title.
+			$modalTitle.text('Chat: ' + state.professionalName);
+
+			// Build configuration display text.
+			let configText = '<p><strong>Configuration:</strong></p>';
+			configText += '<ul>';
+			configText += '<li><strong>Assistant:</strong> ' + ProfessionalSelector.escapeHtml(state.assistantName) + '</li>';
+			configText += '<li><strong>Professional:</strong> ' + ProfessionalSelector.escapeHtml(state.professionalName) + '</li>';
+			configText += '<li><strong>Provider:</strong> ' + ProfessionalSelector.escapeHtml(state.providerName) + '</li>';
+			configText += '<li><strong>Model:</strong> ' + ProfessionalSelector.escapeHtml(state.model) + '</li>';
+			if (state.temperature) {
+				configText += '<li><strong>Temperature:</strong> ' + ProfessionalSelector.escapeHtml(state.temperature) + '</li>';
+			}
+			configText += '</ul>';
+			$modalConfig.html(configText);
+
 			// Create and render chat interface.
-			ProfessionalSelector.createChatInterface($container, state);
+			ProfessionalSelector.createChatInterface($container, state, $modalChat);
+
+			// Show modal.
+			$modal.show();
+			$('body').addClass('wp-mcp-ai-professional-selector-modal-open');
+		},
+
+		/**
+		 * Close the modal.
+		 *
+		 * @param {jQuery} $container Container element.
+		 */
+		closeModal: function($container) {
+			const $modal = $container.find('[data-modal]');
+			const $modalChat = $container.find('[data-modal-chat]');
+
+			$modal.hide();
+			$('body').removeClass('wp-mcp-ai-professional-selector-modal-open');
+			
+			// Clear chat container.
+			$modalChat.empty();
+		},
+
+		/**
+		 * Escape HTML to prevent XSS.
+		 *
+		 * @param {string} text Text to escape.
+		 * @return {string} Escaped text.
+		 */
+		escapeHtml: function(text) {
+			const div = document.createElement('div');
+			div.textContent = text;
+			return div.innerHTML;
 		},
 
 		/**
 		 * Create the chat interface.
 		 *
-		 * @param {jQuery} $container Container element.
-		 * @param {Object} state      Selection state.
+		 * @param {jQuery} $container   Container element.
+		 * @param {Object} state        Selection state.
+		 * @param {jQuery} $chatWrapper Chat wrapper element.
 		 */
-		createChatInterface: function($container, state) {
+		createChatInterface: function($container, state, $chatWrapper) {
 			const config = $container.data('selector-config');
-			const $chatWrapper = $container.find('[data-chat-wrapper]');
-			const $configDisplay = $container.find('[data-config-display]');
-
-			// Build configuration display text.
-			let configText = state.professionalName + ' • ' + state.providerName + ' • ' + state.model;
-			if (state.temperature) {
-				configText += ' • Temperature: ' + state.temperature;
-			}
-			$configDisplay.text(configText);
 
 			// Build shortcode attributes.
-			let shortcodeAtts = 'assistant="profession_' + state.professional + '"';
+			let shortcodeAtts = 'assistant="' + state.assistant + '" profession="' + state.professional + '"';
 			
 			if (config.allowGuests) {
 				shortcodeAtts += ' allow_guests="true"';
@@ -261,11 +337,7 @@
 				shortcodeAtts += ' template="' + config.template + '"';
 			}
 
-			// Note: We use profession_XXX format which is already supported by the existing shortcode.
-			// The provider, model, and temperature will be passed via the profession's metadata.
-			
-			// We need to temporarily update the profession's metadata for this session.
-			// This is done via a filter hook in the REST API handler.
+			// Store provider, model, and temperature overrides in window for the session
 			window.wpMcpAiProfessionalOverrides = window.wpMcpAiProfessionalOverrides || {};
 			window.wpMcpAiProfessionalOverrides[state.professional] = {
 				provider: state.provider,
@@ -289,44 +361,20 @@
 				success: function(response) {
 					if (response.success && response.data.html) {
 						$chatWrapper.html(response.data.html);
-						ProfessionalSelector.showChatContainer($container);
-						// Initialize event handlers for the dynamically inserted chat interface to prevent form submission page refreshes
+						// Initialize event handlers for the dynamically inserted chat interface
 						ProfessionalSelector.initializeChatInterface();
 					} else {
-						// Fallback: Use the shortcode directly (may not work perfectly).
+						// Fallback: Use the shortcode directly
 						const shortcode = '[mcp_ai_chat ' + shortcodeAtts + ']';
 						$chatWrapper.html('<div class="wp-mcp-ai-professional-selector__chat-placeholder">' + shortcode + '</div>');
-						ProfessionalSelector.showChatContainer($container);
 					}
 				},
 				error: function() {
-					// Fallback: Use the shortcode directly.
+					// Fallback: Use the shortcode directly
 					const shortcode = '[mcp_ai_chat ' + shortcodeAtts + ']';
 					$chatWrapper.html('<div class="wp-mcp-ai-professional-selector__chat-placeholder">' + shortcode + '</div>');
-					ProfessionalSelector.showChatContainer($container);
 				}
 			});
-		},
-
-		/**
-		 * Show the chat container and hide the selection form.
-		 *
-		 * @param {jQuery} $container Container element.
-		 */
-		showChatContainer: function($container) {
-			$container.find('[data-selector-form]').attr('hidden', '');
-			$container.find('[data-chat-container]').removeAttr('hidden');
-		},
-
-		/**
-		 * Show the selection form and hide the chat container.
-		 *
-		 * @param {jQuery} $container Container element.
-		 */
-		showSelectionForm: function($container) {
-			$container.find('[data-chat-container]').attr('hidden', '');
-			$container.find('[data-selector-form]').removeAttr('hidden');
-			$container.find('[data-chat-wrapper]').empty();
 		},
 
 		/**
