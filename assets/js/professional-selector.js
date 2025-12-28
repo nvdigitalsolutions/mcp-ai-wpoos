@@ -363,18 +363,29 @@
 						$chatWrapper.html(response.data.html);
 						
 						// Initialize the chat configuration object if the config was returned.
-						if (response.data.config) {
+						if (response.data.config && typeof response.data.config === 'object') {
 							// Extract the instance ID from the HTML
 							const $chatContainer = $chatWrapper.find('[data-wp-mcp-ai-chat]');
 							if ($chatContainer.length) {
 								const instanceId = $chatContainer.attr('id');
-								if (instanceId) {
-									// Initialize the global config object if needed
-									window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};
-									// Store the configuration
-									window.wpMcpAiChatInstances[instanceId] = response.data.config;
+								if (instanceId && instanceId.trim() !== '') {
+									// Validate that config has required properties
+									if (response.data.config.id && response.data.config.assistantId) {
+										// Initialize the global config object if needed
+										window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};
+										// Store the configuration
+										window.wpMcpAiChatInstances[instanceId] = response.data.config;
+									} else if (window.console && console.warn) {
+										console.warn('[Professional Selector] Config missing required properties:', response.data.config);
+									}
+								} else if (window.console && console.warn) {
+									console.warn('[Professional Selector] Could not extract instance ID from chat container');
 								}
+							} else if (window.console && console.warn) {
+								console.warn('[Professional Selector] Chat container not found in rendered HTML');
 							}
+						} else if (window.console && console.warn) {
+							console.warn('[Professional Selector] No valid config returned in response');
 						}
 						
 						// Initialize event handlers for the dynamically inserted chat interface
