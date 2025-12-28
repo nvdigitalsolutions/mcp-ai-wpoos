@@ -346,6 +346,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					),
 				),
 			),
+			'professional_prompt' => array(
+				'description'       => __( 'Optional professional role prompt to prepend to the system prompt. Used when a professional is dynamically selected via professional selector.', 'wp-mcp-ai' ),
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'sanitize_textarea_field',
+			),
 		);
 	}
 

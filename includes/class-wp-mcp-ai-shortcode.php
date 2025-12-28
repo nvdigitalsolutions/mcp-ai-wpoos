@@ -416,6 +416,7 @@ class WP_MCP_AI_Shortcode {
 			$atts = shortcode_atts(
 				array(
 					'assistant'             => '',
+					'profession'            => '',
 					'allow_guests'          => 'false',
 					'save_transcript'       => 'true',
 					'enable_streaming'      => 'true',
@@ -591,6 +592,23 @@ class WP_MCP_AI_Shortcode {
 				}
 			}
 
+			// Handle profession attribute to build professional role prompt.
+			$professional_prompt = '';
+			$profession_data     = null;
+			if ( ! empty( $atts['profession'] ) ) {
+				$profession_id = absint( $atts['profession'] );
+				if ( $profession_id > 0 ) {
+					$profession_post = get_post( $profession_id );
+					if ( $profession_post && 'mcp_ai_profession' === $profession_post->post_type ) {
+						$profession_data = $profession_post;
+						// Build profession prompt similar to build_prompt_from_primary_roles.
+						if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) && method_exists( 'WP_MCP_AI_Assistant_CPT', 'build_prompt_from_primary_roles' ) ) {
+							$professional_prompt = WP_MCP_AI_Assistant_CPT::build_prompt_from_primary_roles( array( $profession_id ) );
+						}
+					}
+				}
+			}
+
 			$config = array(
 				'id'                    => $instance_id,
 				'assistantId'           => $assistant_id, // This preserves "profession_XXX" format for profession tests.
@@ -649,6 +667,17 @@ class WP_MCP_AI_Shortcode {
 
 			if ( $guest_token ) {
 				$config['guestToken'] = $guest_token;
+			}
+
+			// Add professional role prompt if provided via profession attribute.
+			if ( ! empty( $professional_prompt ) ) {
+				$config['professionalPrompt'] = $professional_prompt;
+			}
+
+			// Include profession info for display purposes.
+			if ( $profession_data ) {
+				$config['professionId']   = $profession_data->ID;
+				$config['professionName'] = $profession_data->post_title;
 			}
 
 			// Store config in a global for AJAX access (used by professional selector).

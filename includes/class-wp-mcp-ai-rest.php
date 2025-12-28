@@ -2292,6 +2292,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
 			}
 
+			// If a professional_prompt is provided (from professional selector), prepend it to system prompt.
+			$professional_prompt = $request->get_param( 'professional_prompt' );
+			if ( ! empty( $professional_prompt ) && is_string( $professional_prompt ) ) {
+				$professional_prompt = sanitize_textarea_field( $professional_prompt );
+				if ( ! empty( $assistant_config['system_prompt'] ) ) {
+					// Prepend professional prompt to existing system prompt.
+					$assistant_config['system_prompt'] = $professional_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $assistant_config['system_prompt'];
+				} else {
+					// Use professional prompt as the system prompt.
+					$assistant_config['system_prompt'] = $professional_prompt;
+				}
+			}
+
 			$options = $this->validator->sanitize_options( $request->get_param( 'options' ), $assistant_config );
 
 			$limit_context = $this->build_chat_limit_context( $assistant_id, $options );
