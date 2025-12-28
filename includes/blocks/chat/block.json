@@ -41,7 +41,7 @@
 		"template": {
 			"type": "string",
 			"default": "classic",
-			"enum": [ "classic", "speech-bubbles", "compact" ]
+			"enum": [ "classic", "speech-bubbles", "compact", "sidebar" ]
 		}
 	},
 	"supports": {

@@ -434,7 +434,7 @@ class WP_MCP_AI_Shortcode {
 			$template              = sanitize_key( $atts['template'] );
 
 			// Validate template value - default to 'classic' if invalid.
-			$allowed_templates = array( 'classic', 'speech-bubbles', 'compact' );
+			$allowed_templates = array( 'classic', 'speech-bubbles', 'compact', 'sidebar' );
 			if ( ! in_array( $template, $allowed_templates, true ) ) {
 				$template = 'classic';
 			}

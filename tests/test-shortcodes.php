@@ -505,6 +505,11 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'data-template="compact"', $markup, 'Template data attribute should be present.' );
 		$this->assertStringContainsString( 'wp-mcp-ai-chat--template-compact', $markup, 'Template CSS class should be present.' );
 
+		// Test sidebar template.
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="sidebar"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="sidebar"', $markup, 'Template data attribute should be present.' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat--template-sidebar', $markup, 'Template CSS class should be present.' );
+
 		// Test classic template (default).
 		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="classic"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
 		$this->assertStringContainsString( 'data-template="classic"', $markup, 'Template data attribute should be present for classic.' );

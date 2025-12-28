@@ -2338,4 +2338,164 @@
     height: 16px;
 }
 
+/**
+ * Sidebar Template
+ * ChatGPT-style layout with conversation history sidebar on the left.
+ * Features a two-column layout with persistent sidebar navigation.
+ */
+.wp-mcp-ai-chat--template-sidebar {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 0;
+    max-width: 1200px;
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 600px;
+}
+
+/* Sidebar on the left */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history {
+    margin: 0;
+    padding: 1rem;
+    border-top: none;
+    border-right: 1px solid var(--wp-mcp-ai-color-container-border, #e5e5e5);
+    background: var(--wp-mcp-ai-color-sidebar-background, #f7f7f8);
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+    display: flex !important; /* Override hidden state */
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Main chat area on the right */
+.wp-mcp-ai-chat--template-sidebar > div:not(.wp-mcp-ai-chat__history) {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Assistant header in sidebar layout */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__assistant {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--wp-mcp-ai-color-container-border, #e5e5e5);
+}
+
+/* Messages container in sidebar layout */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__messages {
+    flex: 1;
+    max-height: none;
+    margin-bottom: 1rem;
+    overflow-y: auto;
+}
+
+/* Form at bottom of chat area */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__form {
+    margin-top: auto;
+}
+
+/* Hide the history toggle button in sidebar template */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-toggle,
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__transcript-controls {
+    display: none;
+}
+
+/* Hide controls that are redundant in sidebar */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__control-buttons {
+    justify-content: flex-end;
+}
+
+/* Sidebar header styling */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--wp-mcp-ai-color-container-border, rgba(0, 0, 0, 0.1));
+    justify-content: space-between;
+}
+
+/* Sidebar title (add via JS or can be static) */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-header::before {
+    content: 'Conversations';
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--wp-mcp-ai-color-text-secondary, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Sidebar list items */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-item {
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-item:hover {
+    background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.08));
+    border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.2));
+}
+
+/* Active/selected conversation */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-item--active {
+    background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.12));
+    border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.35));
+}
+
+/* Sidebar session buttons */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-session {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* New chat button in sidebar */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__new-chat {
+    width: 100%;
+    height: auto;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__new-chat-icon {
+    width: 18px;
+    height: 18px;
+}
+
+/* Responsive: Stack on small screens */
+@media (max-width: 768px) {
+    .wp-mcp-ai-chat--template-sidebar {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+    }
+    
+    .wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history {
+        border-right: none;
+        border-bottom: 1px solid var(--wp-mcp-ai-color-container-border, #e5e5e5);
+        max-height: 200px;
+        min-height: 150px;
+    }
+}
+
+/* Dark mode support for sidebar */
+@media (prefers-color-scheme: dark) {
+    .wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history {
+        background: var(--wp-mcp-ai-color-sidebar-background-dark, #1f1f1f);
+        border-right-color: var(--wp-mcp-ai-color-container-border-dark, #333);
+    }
+    
+    .wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-header::before {
+        color: var(--wp-mcp-ai-color-text-secondary-dark, #9ca3af);
+    }
+}
+
 

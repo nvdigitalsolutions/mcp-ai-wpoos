@@ -68,6 +68,34 @@ A minimalist layout with reduced margins, smaller fonts, and optimized spacing. 
 - Max width: 480px (vs 720px in classic)
 - Message max-height: 240px (vs 360px in classic)
 
+### 4. Sidebar
+
+A ChatGPT-inspired layout with conversation history displayed in a persistent sidebar on the left. This template provides a two-column interface similar to modern AI chat applications.
+
+**Characteristics:**
+- Two-column grid layout (260px sidebar + flexible chat area)
+- Persistent conversation history sidebar on the left
+- Chat interface on the right with full height
+- Sidebar shows list of previous conversations
+- No toggle needed - history is always visible
+- Maximum width: 1200px to accommodate both panels
+- Minimum height: 600px for optimal experience
+
+**Use Cases:**
+- Full-page chat applications
+- AI assistant dashboards
+- Multi-conversation management
+- Professional/enterprise chat interfaces
+- Learning management systems
+- Customer support portals with conversation tracking
+
+**Technical Notes:**
+- Grid layout: `grid-template-columns: 260px 1fr`
+- Sidebar background: `#f7f7f8` (light) / `#1f1f1f` (dark)
+- History toggle button hidden (sidebar always visible)
+- Responsive: Stacks vertically on screens < 768px
+- Sidebar becomes scrollable horizontal panel on mobile
+
 ## Usage
 
 ### Block Editor
@@ -76,7 +104,7 @@ When using the WP oOS Chat block in the WordPress block editor:
 
 1. Select the Chat block
 2. In the block settings sidebar, locate the "Template" dropdown
-3. Choose from: Classic, Speech Bubbles, or Compact
+3. Choose from: Classic, Speech Bubbles, Compact, or Sidebar
 4. The preview will update to show the selected template
 
 ### Shortcode
@@ -92,12 +120,16 @@ When using the `[mcp_ai_chat]` shortcode:
 ```
 
 ```
+[mcp_ai_chat assistant="123" template="sidebar"]
+```
+
+```
 [mcp_ai_chat assistant="123"] <!-- Defaults to "classic" -->
 ```
 
 **Shortcode Parameters:**
 - `template` (string, optional): Template name
-  - Allowed values: `classic`, `speech-bubbles`, `compact`
+  - Allowed values: `classic`, `speech-bubbles`, `compact`, `sidebar`
   - Default: `classic`
   - Invalid values will fallback to `classic`
 

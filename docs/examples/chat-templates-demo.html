@@ -206,6 +206,32 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Sidebar Template -->
+            <div class="template-card">
+                <div class="template-header">
+                    <h2>Sidebar Template</h2>
+                    <span class="badge badge-compact">New</span>
+                    <p>ChatGPT-style layout with persistent conversation history sidebar.</p>
+                </div>
+                
+                <div class="template-code">
+[mcp_ai_chat assistant="123" template="sidebar"]
+                </div>
+                
+                <div class="template-preview">
+                    <strong>Use Cases:</strong>
+                    <ul>
+                        <li>Full-page chat applications</li>
+                        <li>AI assistant dashboards</li>
+                        <li>Multi-conversation management</li>
+                        <li>Enterprise chat interfaces</li>
+                    </ul>
+                    <div class="note">
+                        <strong>Layout:</strong> Two-column grid with 260px sidebar on left showing conversation history, chat area on right.
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- Features Section -->
@@ -241,6 +267,17 @@
                 <li>Avatars hidden by default</li>
             </ul>
             
+            <h3>Sidebar Template</h3>
+            <ul>
+                <li>Max width: 1200px (two-column layout)</li>
+                <li>Grid: 260px sidebar + flexible chat area</li>
+                <li>Min height: 600px for optimal UX</li>
+                <li>Persistent conversation history on left</li>
+                <li>ChatGPT-inspired design</li>
+                <li>Responsive: Stacks vertically on mobile (&lt;768px)</li>
+                <li>History sidebar always visible (no toggle)</li>
+            </ul>
+            
             <h3>Implementation Details</h3>
             <ul>
                 <li><strong>CSS-Driven:</strong> No JavaScript changes required</li>
@@ -255,7 +292,7 @@
             <ul>
                 <li>Select chat block in editor</li>
                 <li>Find "Template" dropdown in block settings</li>
-                <li>Choose: Classic, Speech Bubbles, or Compact</li>
+                <li>Choose: Classic, Speech Bubbles, Compact, or Sidebar</li>
                 <li>Preview updates automatically</li>
             </ul>
             
