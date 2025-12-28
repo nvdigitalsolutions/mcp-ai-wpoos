@@ -24,86 +24,86 @@ class WP_MCP_AI_Cost_Calculator {
 	 */
 	const PRICING = array(
 		'openai'    => array(
-			'gpt-5'         => array(
+			'gpt-5'                                   => array(
 				'input'  => 10.00,
 				'output' => 30.00,
 			),
-			'gpt-5-mini'    => array(
+			'gpt-5-mini'                              => array(
 				'input'  => 2.00,
 				'output' => 6.00,
 			),
-			'gpt-4.1'       => array(
+			'gpt-4.1'                                 => array(
 				'input'  => 1.00,
 				'output' => 4.00,
 			),
-			'gpt-4.1-mini'  => array(
+			'gpt-4.1-mini'                            => array(
 				'input'  => 0.40,
 				'output' => 1.60,
 			),
-			'gpt-4.1-nano'  => array(
+			'gpt-4.1-nano'                            => array(
 				'input'  => 0.20,
 				'output' => 0.80,
 			),
-			'gpt-4o'        => array(
+			'gpt-4o'                                  => array(
 				'input'  => 2.50,
 				'output' => 10.00,
 			),
-			'gpt-4o-mini'   => array(
+			'gpt-4o-mini'                             => array(
 				'input'  => 0.15,
 				'output' => 0.60,
 			),
-			'gpt-4-turbo'   => array(
+			'gpt-4-turbo'                             => array(
 				'input'  => 10.00,
 				'output' => 30.00,
 			),
-			'gpt-4'         => array(
+			'gpt-4'                                   => array(
 				'input'  => 30.00,
 				'output' => 60.00,
 			),
-			'gpt-3.5-turbo' => array(
+			'gpt-3.5-turbo'                           => array(
 				'input'  => 0.50,
 				'output' => 1.50,
 			),
 			// o-series reasoning models (December 2025 - updated pricing).
-			'o3'            => array(
+			'o3'                                      => array(
 				'input'        => 2.00, // $2 per 1M tokens.
 				'output'       => 8.00, // $8 per 1M tokens.
 				'cached_input' => 0.50, // $0.50 per 1M tokens.
 			),
-			'o3-pro'        => array(
+			'o3-pro'                                  => array(
 				'input'  => 20.00, // $20 per 1M tokens.
 				'output' => 80.00, // $80 per 1M tokens.
 			),
-			'o3-mini'       => array(
+			'o3-mini'                                 => array(
 				'input'        => 1.10, // $1.10 per 1M tokens.
 				'output'       => 4.40, // $4.40 per 1M tokens.
 				'cached_input' => 0.55, // $0.55 per 1M tokens.
 			),
-			'o4-mini'       => array(
+			'o4-mini'                                 => array(
 				'input'  => 2.00,
 				'output' => 8.00,
 			),
 			// o1 series (legacy reasoning models, still active).
-			'o1'            => array(
+			'o1'                                      => array(
 				'input'        => 15.00, // $15 per 1M tokens.
 				'output'       => 60.00, // $60 per 1M tokens.
 				'cached_input' => 7.50,  // $7.50 per 1M tokens.
 			),
-			'o1-pro'        => array(
+			'o1-pro'                                  => array(
 				'input'  => 150.00, // $150 per 1M tokens.
 				'output' => 600.00, // $600 per 1M tokens.
 			),
-			'o1-2024-12-17' => array(
+			'o1-2024-12-17'                           => array(
 				'input'        => 15.00,
 				'output'       => 60.00,
 				'cached_input' => 7.50,
 			),
-			'o1-preview'    => array(
+			'o1-preview'                              => array(
 				'input'        => 15.00,
 				'output'       => 60.00,
 				'cached_input' => 7.50,
 			),
-			'o1-mini'       => array(
+			'o1-mini'                                 => array(
 				'input'        => 1.10, // $1.10 per 1M tokens (updated from $3).
 				'output'       => 4.40, // $4.40 per 1M tokens (updated from $12).
 				'cached_input' => 0.55, // $0.55 per 1M tokens.
@@ -163,10 +163,10 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 			// Sora video generation models.
 			// Pricing is per second of generated video.
-			'sora-2'        => array(
+			'sora-2'                                  => array(
 				'per_second' => 0.10, // $0.10 per second of generated video (estimated).
 			),
-			'sora-2-pro'    => array(
+			'sora-2-pro'                              => array(
 				'per_second' => 0.20, // $0.20 per second of generated video (estimated).
 			),
 		),

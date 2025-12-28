@@ -692,7 +692,7 @@ class WP_MCP_AI_Shortcode {
 
 			ob_start();
 			$messages_id = $instance_id . '-messages';
-			
+
 			// Build container classes based on template.
 			$container_classes = array( 'wp-mcp-ai-chat' );
 			if ( 'classic' !== $template ) {

@@ -335,7 +335,7 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 		$options = array( '' => __( 'No Default', 'wp-mcp-ai' ) );
 
 		foreach ( $providers as $provider ) {
-			$provider                = sanitize_key( $provider );
+			$provider             = sanitize_key( $provider );
 			$options[ $provider ] = isset( $labels[ $provider ] )
 				? $labels[ $provider ]
 				: ucfirst( str_replace( '_', ' ', $provider ) );

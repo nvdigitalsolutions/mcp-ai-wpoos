@@ -263,13 +263,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 */
 	private function get_chat_endpoint_args() {
 		return array(
-			'assistant_id' => array(
+			'assistant_id'        => array(
 				'description'       => __( 'ID of the assistant to use for this chat. Can be an integer assistant ID or a string like "profession_123" for profession testing. Defaults to the site default assistant.', 'wp-mcp-ai' ),
 				'type'              => array( 'integer', 'string' ),
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
-			'messages'     => array(
+			'messages'            => array(
 				'description'       => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
 				'type'              => 'array',
 				'required'          => true,
@@ -297,7 +297,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					),
 				),
 			),
-			'attachments'  => array(
+			'attachments'         => array(
 				'description'       => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
 				'type'              => 'array',
 				'required'          => false,
@@ -315,7 +315,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					),
 				),
 			),
-			'options'      => array(
+			'options'             => array(
 				'description' => __( 'Optional request options to override assistant defaults.', 'wp-mcp-ai' ),
 				'type'        => 'object',
 				'required'    => false,

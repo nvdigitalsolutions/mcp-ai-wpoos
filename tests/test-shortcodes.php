@@ -511,8 +511,8 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'wp-mcp-ai-chat__label', $markup, 'Chat label class should be present.' );
 
 		// Parse the HTML to verify the title is in the correct location.
-		$xpath     = $this->get_dom_xpath( $markup );
-		$labels    = $xpath->query( '//label[contains(@class, "wp-mcp-ai-chat__label")]' );
+		$xpath  = $this->get_dom_xpath( $markup );
+		$labels = $xpath->query( '//label[contains(@class, "wp-mcp-ai-chat__label")]' );
 		$this->assertGreaterThan( 0, $labels->length, 'Should find the chat label element.' );
 
 		if ( $labels->length > 0 ) {
@@ -587,4 +587,3 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'data-template="classic"', $markup, 'Template should default to classic when not specified.' );
 	}
 }
-

@@ -334,13 +334,13 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 		$assistants = get_posts(
 			array(
-				'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-				'post_status'    => 'publish',
-				'numberposts'    => -1,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-				'fields'         => 'ids',
-				'no_found_rows'  => true,
+				'post_type'     => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'   => 'publish',
+				'numberposts'   => -1,
+				'orderby'       => 'title',
+				'order'         => 'ASC',
+				'fields'        => 'ids',
+				'no_found_rows' => true,
 			)
 		);
 
@@ -371,13 +371,13 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 		$professionals = get_posts(
 			array(
-				'post_type'      => 'mcp_ai_profession',
-				'post_status'    => 'publish',
-				'numberposts'    => -1,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-				'fields'         => 'ids',
-				'no_found_rows'  => true,
+				'post_type'     => 'mcp_ai_profession',
+				'post_status'   => 'publish',
+				'numberposts'   => -1,
+				'orderby'       => 'title',
+				'order'         => 'ASC',
+				'fields'        => 'ids',
+				'no_found_rows' => true,
 			)
 		);
 
@@ -418,9 +418,9 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 		$options = array();
 		foreach ( $providers as $provider ) {
-			$provider = sanitize_key( $provider );
-			$options[ $provider ] = isset( $labels[ $provider ] ) 
-				? $labels[ $provider ] 
+			$provider             = sanitize_key( $provider );
+			$options[ $provider ] = isset( $labels[ $provider ] )
+				? $labels[ $provider ]
 				: ucfirst( str_replace( '_', ' ', $provider ) );
 		}
 
