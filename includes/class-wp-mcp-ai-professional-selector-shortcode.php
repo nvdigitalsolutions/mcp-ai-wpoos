@@ -86,13 +86,14 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp-mcp-ai-professional-selector' ),
 				'strings' => array(
+					'selectAssistant'    => __( '— Select Assistant —', 'wp-mcp-ai' ),
 					'selectProfessional' => __( '— Select Professional —', 'wp-mcp-ai' ),
 					'selectProvider'     => __( '— Select Provider —', 'wp-mcp-ai' ),
 					'selectModel'        => __( '— Select Model —', 'wp-mcp-ai' ),
 					'loading'            => __( 'Loading...', 'wp-mcp-ai' ),
 					'errorLoading'       => __( 'Failed to load configuration. Please try again.', 'wp-mcp-ai' ),
 					'startChat'          => __( 'Start Chat', 'wp-mcp-ai' ),
-					'selectRequired'     => __( 'Please select a professional, provider, and model.', 'wp-mcp-ai' ),
+					'selectRequired'     => __( 'Please select an assistant, professional, provider, and model.', 'wp-mcp-ai' ),
 				),
 			)
 		);
@@ -109,15 +110,16 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	public function render_shortcode( $atts, $content = '', $tag = '' ) {
 		$atts = shortcode_atts(
 			array(
-				'default_professional' => '',
-				'default_provider'     => '',
-				'default_model'        => '',
-				'show_temperature'     => 'false',
-				'allow_guests'         => 'false',
-				'save_transcript'      => 'true',
-				'enable_streaming'     => 'true',
+				'assistant'             => '',
+				'default_professional'  => '',
+				'default_provider'      => '',
+				'default_model'         => '',
+				'show_temperature'      => 'false',
+				'allow_guests'          => 'false',
+				'save_transcript'       => 'true',
+				'enable_streaming'      => 'true',
 				'allow_sensitive_tools' => 'false',
-				'template'             => 'classic',
+				'template'              => 'classic',
 			),
 			$atts,
 			$tag
@@ -128,9 +130,11 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 		$instance_id = wp_unique_id( 'wp-mcp-ai-prof-selector-' );
 
+		$assistants    = $this->get_available_assistants();
 		$professionals = $this->get_available_professionals();
 		$providers     = $this->get_available_providers();
 
+		$assistant            = sanitize_text_field( $atts['assistant'] );
 		$default_professional = sanitize_text_field( $atts['default_professional'] );
 		$default_provider     = sanitize_key( $atts['default_provider'] );
 		$default_model        = sanitize_text_field( $atts['default_model'] );
@@ -145,6 +149,30 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 				</h3>
 
 				<form class="wp-mcp-ai-professional-selector__form">
+					<div class="wp-mcp-ai-professional-selector__field">
+						<label for="<?php echo esc_attr( $instance_id ); ?>-assistant">
+							<?php esc_html_e( 'Assistant', 'wp-mcp-ai' ); ?>
+							<span class="required">*</span>
+						</label>
+						<select 
+							id="<?php echo esc_attr( $instance_id ); ?>-assistant" 
+							name="assistant" 
+							class="wp-mcp-ai-professional-selector__select"
+							required
+							data-assistant-select
+						>
+							<option value=""><?php esc_html_e( '— Select Assistant —', 'wp-mcp-ai' ); ?></option>
+							<?php foreach ( $assistants as $assistant_id => $assistant_title ) : ?>
+								<option 
+									value="<?php echo esc_attr( $assistant_id ); ?>"
+									<?php selected( $assistant, $assistant_id ); ?>
+								>
+									<?php echo esc_html( $assistant_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+
 					<div class="wp-mcp-ai-professional-selector__field">
 						<label for="<?php echo esc_attr( $instance_id ); ?>-professional">
 							<?php esc_html_e( 'Professional', 'wp-mcp-ai' ); ?>
@@ -250,17 +278,23 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 				</form>
 			</div>
 
-			<div class="wp-mcp-ai-professional-selector__chat-container" data-chat-container hidden>
-				<div class="wp-mcp-ai-professional-selector__chat-info" data-chat-info>
-					<div class="wp-mcp-ai-professional-selector__selected-config">
-						<strong><?php esc_html_e( 'Configuration:', 'wp-mcp-ai' ); ?></strong>
-						<span data-config-display></span>
+			<!-- Modal container for chat interface -->
+			<div class="wp-mcp-ai-professional-selector-modal" id="<?php echo esc_attr( $instance_id ); ?>-modal" style="display: none;" data-modal>
+				<div class="wp-mcp-ai-professional-selector-modal__backdrop" data-modal-backdrop></div>
+				<div class="wp-mcp-ai-professional-selector-modal__panel">
+					<div class="wp-mcp-ai-professional-selector-modal__header">
+						<h2 class="wp-mcp-ai-professional-selector-modal__title" data-modal-title">
+							<?php esc_html_e( 'Professional Chat', 'wp-mcp-ai' ); ?>
+						</h2>
+						<button type="button" class="wp-mcp-ai-professional-selector-modal__close" data-modal-close aria-label="<?php echo esc_attr__( 'Close', 'wp-mcp-ai' ); ?>">
+							<span class="dashicons dashicons-no-alt"></span>
+						</button>
 					</div>
-					<button type="button" class="wp-mcp-ai-professional-selector__change-button" data-change-button>
-						<?php esc_html_e( 'Change Selection', 'wp-mcp-ai' ); ?>
-					</button>
+					<div class="wp-mcp-ai-professional-selector-modal__body">
+						<div class="wp-mcp-ai-professional-selector-modal__config" data-modal-config></div>
+						<div class="wp-mcp-ai-professional-selector-modal__chat" data-modal-chat></div>
+					</div>
 				</div>
-				<div class="wp-mcp-ai-professional-selector__chat-wrapper" data-chat-wrapper></div>
 			</div>
 		</div>
 
@@ -282,6 +316,47 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		<?php
 
 		return ob_get_clean();
+	}
+
+	/**
+	 * Get available assistants for selection.
+	 *
+	 * @return array Array of assistant ID => title.
+	 */
+	protected function get_available_assistants() {
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return array();
+		}
+
+		if ( ! post_type_exists( WP_MCP_AI_Assistant_CPT::POST_TYPE ) ) {
+			return array();
+		}
+
+		$assistants = get_posts(
+			array(
+				'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'    => 'publish',
+				'numberposts'    => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+			)
+		);
+
+		if ( empty( $assistants ) ) {
+			return array();
+		}
+
+		$options = array();
+		foreach ( $assistants as $assistant_id ) {
+			$title = get_the_title( $assistant_id );
+			if ( $title ) {
+				$options[ $assistant_id ] = $title;
+			}
+		}
+
+		return $options;
 	}
 
 	/**
