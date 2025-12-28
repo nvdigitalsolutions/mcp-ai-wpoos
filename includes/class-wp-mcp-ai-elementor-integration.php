@@ -69,6 +69,7 @@ class WP_MCP_AI_Elementor_Integration {
 
 		$widget_files = array(
 			'class-wp-mcp-ai-elementor-widget.php',
+			'class-wp-mcp-ai-elementor-professional-selector-widget.php',
 			'class-wp-mcp-ai-elementor-assistant-defaults-widget.php',
 			'class-wp-mcp-ai-elementor-assistant-base-knowledge-widget.php',
 			'class-wp-mcp-ai-elementor-assistant-prompt-shortcuts-widget.php',
@@ -101,6 +102,7 @@ class WP_MCP_AI_Elementor_Integration {
 
 		$widget_classes = array(
 			'WP_MCP_AI_Elementor_Widget',
+			'WP_MCP_AI_Elementor_Professional_Selector_Widget',
 			'WP_MCP_AI_Elementor_Assistant_Defaults_Widget',
 			'WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget',
 			'WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget',

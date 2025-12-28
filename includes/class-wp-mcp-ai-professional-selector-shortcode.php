@@ -41,6 +41,9 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		add_shortcode( self::SHORTCODE, array( $this, 'render_shortcode' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_professional_config', array( $this, 'handle_get_professional_config' ) );
 		add_action( 'wp_ajax_nopriv_wp_mcp_ai_get_professional_config', array( $this, 'handle_get_professional_config' ) );
+		
+		// Add nopriv hook for model selector (frontend access).
+		add_action( 'wp_ajax_nopriv_wp_mcp_ai_get_models_for_provider', array( $this, 'handle_get_models_for_provider' ) );
 	}
 
 	/**
@@ -369,6 +372,50 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		);
 
 		wp_send_json_success( array( 'defaults' => $defaults ) );
+	}
+
+	/**
+	 * AJAX handler to get models for a provider (nopriv version for frontend).
+	 */
+	public function handle_get_models_for_provider() {
+		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
+
+		$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : '';
+
+		if ( empty( $provider ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Provider parameter is required.', 'wp-mcp-ai' ),
+				)
+			);
+			return;
+		}
+
+		// Get models using the model service.
+		$models = array();
+		if ( class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+			$model_service = new WP_MCP_AI_Model_Service();
+			$models        = $model_service->get_models_for_provider( $provider );
+		}
+
+		if ( empty( $models ) ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: provider name */
+						__( 'No models available for provider: %s', 'wp-mcp-ai' ),
+						$provider
+					),
+				)
+			);
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'models' => $models,
+			)
+		);
 	}
 
 	/**
