@@ -502,7 +502,8 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	 * AJAX handler to render the professional chat shortcode.
 	 *
 	 * This handler processes the [mcp_ai_chat] shortcode with the selected
-	 * professional configuration and returns the rendered HTML.
+	 * professional configuration and returns the rendered HTML along with
+	 * the JavaScript configuration object needed for initialization.
 	 */
 	public function handle_render_professional_chat() {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
@@ -524,6 +525,14 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		// Build the complete shortcode string.
 		$shortcode = '[mcp_ai_chat ' . $shortcode_atts . ']';
 
+		// Initialize configs array to avoid pollution from previous requests.
+		if ( ! isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ) {
+			$GLOBALS['wp_mcp_ai_chat_configs'] = array();
+		}
+
+		// Store the count before rendering to identify new configs.
+		$config_count_before = count( $GLOBALS['wp_mcp_ai_chat_configs'] );
+
 		// Process the shortcode to get rendered HTML.
 		$html = do_shortcode( $shortcode );
 
@@ -537,9 +546,31 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 			return;
 		}
 
+		// Extract the configuration that was stored during shortcode rendering.
+		// We take the last added config as it's from our shortcode execution.
+		$configs = isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ? $GLOBALS['wp_mcp_ai_chat_configs'] : array();
+		$config  = null;
+
+		// Get configs added during this render (after our count).
+		$new_configs = array_slice( $configs, $config_count_before );
+		if ( ! empty( $new_configs ) ) {
+			// Take the first new config (should only be one from our shortcode).
+			$config = reset( $new_configs );
+		}
+
+		if ( ! $config ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Failed to extract chat configuration.', 'wp-mcp-ai' ),
+				)
+			);
+			return;
+		}
+
 		wp_send_json_success(
 			array(
-				'html' => $html,
+				'html'   => $html,
+				'config' => $config,
 			)
 		);
 	}

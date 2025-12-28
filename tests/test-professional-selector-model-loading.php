@@ -427,4 +427,55 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			);
 		}
 	}
+
+	/**
+	 * Test that render chat handler returns both HTML and config on success.
+	 *
+	 * This test verifies the fix for the "Assistant configuration was not found" error
+	 * when loading chat in the professional selector modal.
+	 */
+	public function test_render_chat_returns_config_with_html() {
+		wp_set_current_user( $this->user_id );
+
+		// Create a test assistant for the shortcode.
+		$assistant_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_status' => 'publish',
+				'post_title'  => 'Test Assistant',
+			)
+		);
+
+		$_POST['nonce']          = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
+		$_POST['shortcode_atts'] = 'assistant="' . $assistant_id . '"';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_render_professional_chat' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		// The response should be successful.
+		$this->assertTrue( $response['success'], 'Render chat should succeed with valid assistant' );
+
+		// Verify response contains both html and config.
+		$this->assertArrayHasKey( 'data', $response, 'Response should have data key' );
+		$this->assertArrayHasKey( 'html', $response['data'], 'Response data should contain html' );
+		$this->assertArrayHasKey( 'config', $response['data'], 'Response data should contain config for modal initialization' );
+
+		// Verify the config is a valid array with required keys.
+		$config = $response['data']['config'];
+		$this->assertIsArray( $config, 'Config should be an array' );
+		$this->assertArrayHasKey( 'id', $config, 'Config should have instance id' );
+		$this->assertArrayHasKey( 'assistantId', $config, 'Config should have assistantId' );
+		$this->assertArrayHasKey( 'restUrl', $config, 'Config should have restUrl' );
+		$this->assertArrayHasKey( 'messagesEndpoint', $config, 'Config should have messagesEndpoint' );
+
+		// Verify the HTML contains the chat interface.
+		$html = $response['data']['html'];
+		$this->assertStringContainsString( 'wp-mcp-ai-chat', $html, 'HTML should contain chat container' );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $html, 'HTML should contain chat data attribute' );
+	}
 }
