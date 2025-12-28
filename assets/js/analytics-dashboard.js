@@ -1,7 +1,7 @@
 /**
  * Analytics Dashboard JavaScript
  *
- * Handles interactions and chart updates for the WP oOS Analytics Dashboard.
+ * Handles interactions and chart updates for the NV oOS Analytics Dashboard.
  *
  * @package WP_MCP_AI
  */

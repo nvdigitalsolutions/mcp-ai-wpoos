@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS Usage & Timer', 'wp-mcp-ai' );
+		return __( 'NV oOS Usage & Timer', 'mcp-ai-wpoos' );
 	}
 
 	/**

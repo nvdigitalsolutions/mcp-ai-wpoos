@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS Activity Feed', 'wp-mcp-ai' );
+		return __( 'NV oOS Activity Feed', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -159,7 +159,7 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) || ! WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
-			echo '<p class="wp-mcp-ai-activity-feed__notice">' . esc_html__( 'Enable logging in the WP oOS settings to populate the activity feed.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-activity-feed__notice">' . esc_html__( 'Enable logging in the NV oOS settings to populate the activity feed.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}

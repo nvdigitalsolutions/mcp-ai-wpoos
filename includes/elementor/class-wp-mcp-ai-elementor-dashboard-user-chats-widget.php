@@ -52,7 +52,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS User Chat History', 'wp-mcp-ai' );
+		return __( 'NV oOS User Chat History', 'mcp-ai-wpoos' );
 	}
 
 	/**

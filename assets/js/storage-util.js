@@ -38,7 +38,7 @@
 				// Get the worker script URL from the global config
 				const workerUrl = window.wpMcpAiChat && window.wpMcpAiChat.storageWorkerUrl;
 				if (!workerUrl) {
-					console.warn('WP oOS: Storage worker URL not configured');
+					console.warn('NV oOS: Storage worker URL not configured');
 					return;
 				}
 
@@ -46,7 +46,7 @@
 				this.worker.addEventListener('message', this.handleWorkerMessage.bind(this));
 				this.worker.addEventListener('error', this.handleWorkerError.bind(this));
 			} catch (error) {
-				console.error('WP oOS: Failed to initialize storage worker:', error);
+				console.error('NV oOS: Failed to initialize storage worker:', error);
 				this.workerSupported = false;
 			}
 		},
@@ -75,7 +75,7 @@
 		 * Handle worker error.
 		 */
 		handleWorkerError: function(error) {
-			console.error('WP oOS: Storage worker error:', error);
+			console.error('NV oOS: Storage worker error:', error);
 			
 			// Reject all pending operations
 			Object.keys(this.pendingOperations).forEach(function(id) {
@@ -129,7 +129,7 @@
 			// Use Web Worker for large data
 			return this.postToWorker('parse', jsonString).catch(function(error) {
 				// Fallback to synchronous if worker fails
-				console.warn('WP oOS: Worker parse failed, using fallback:', error);
+				console.warn('NV oOS: Worker parse failed, using fallback:', error);
 				return JSON.parse(jsonString);
 			});
 		},
@@ -160,7 +160,7 @@
 			// Use Web Worker for large data
 			return this.postToWorker('stringify', obj).catch(function(error) {
 				// Fallback to synchronous if worker fails
-				console.warn('WP oOS: Worker stringify failed, using fallback:', error);
+				console.warn('NV oOS: Worker stringify failed, using fallback:', error);
 				return JSON.stringify(obj);
 			});
 		},

@@ -1,5 +1,5 @@
 /**
- * Gutenberg blocks for WP oOS Performance Monitoring.
+ * Gutenberg blocks for NV oOS Performance Monitoring.
  *
  * Registers performance monitoring blocks in the block editor.
  */

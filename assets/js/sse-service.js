@@ -129,7 +129,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 						} else if (response.status >= 400 && response.status < 500 && response.status !== 429) {
 							// Client-side errors (4xx) are usually non-retriable
 							if (window.wpMcpAiDebug && window.console && console.error) {
-								console.error('[WP oOS SSE] Client error (' + response.status + ')');
+								console.error('[NV oOS SSE] Client error (' + response.status + ')');
 							}
 							// Throw to stop reconnection
 							const errorText = await response.text();
@@ -137,7 +137,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 						} else {
 							// Server errors (5xx) or network issues are retriable
 							if (window.wpMcpAiDebug && window.console && console.error) {
-								console.error('[WP oOS SSE] Server error (' + response.status + ')');
+								console.error('[NV oOS SSE] Server error (' + response.status + ')');
 							}
 							throw new Error('Server error (' + response.status + ')');
 						}
@@ -176,7 +176,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 							}
 						} catch (parseError) {
 							if (window.console && console.error) {
-								console.error('[WP oOS SSE] Failed to parse message:', parseError);
+								console.error('[NV oOS SSE] Failed to parse message:', parseError);
 							}
 						}
 					},
@@ -188,7 +188,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					onclose: () => {
 						// Connection closed normally
 						if (window.wpMcpAiDebug && window.console && console.log) {
-							console.log('[WP oOS SSE] Connection closed by server');
+							console.log('[NV oOS SSE] Connection closed by server');
 						}
 					},
 
@@ -198,7 +198,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 					 */
 					onerror: (err) => {
 						if (window.wpMcpAiDebug && window.console && console.error) {
-							console.error('[WP oOS SSE] Connection error:', err);
+							console.error('[NV oOS SSE] Connection error:', err);
 						}
 
 						// Call user's error handler if provided
@@ -251,7 +251,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 			} catch (error) {
 				if (window.console && console.error) {
-					console.error('[WP oOS SSE] Failed to create connection:', error);
+					console.error('[NV oOS SSE] Failed to create connection:', error);
 				}
 
 				if (options.onError && typeof options.onError === 'function') {

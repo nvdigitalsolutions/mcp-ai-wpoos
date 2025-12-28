@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS Performance Test Runner', 'wp-mcp-ai' );
+		return __( 'NV oOS Performance Test Runner', 'mcp-ai-wpoos' );
 	}
 
 	/**

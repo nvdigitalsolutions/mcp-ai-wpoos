@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS User File List', 'wp-mcp-ai' );
+		return __( 'NV oOS User File List', 'mcp-ai-wpoos' );
 	}
 
 	/**
