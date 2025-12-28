@@ -1,6 +1,6 @@
 <?php
 /**
- * Break-Glass Emergency Shutdown Security Tests for WP oOS
+ * Break-Glass Emergency Shutdown Security Tests for NV oOS
  *
  * Tests to verify that emergency shutdown with Root Security Key
  * blocks re-enablement and creates proper log trail.

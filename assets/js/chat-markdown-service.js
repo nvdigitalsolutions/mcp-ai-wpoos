@@ -1,5 +1,5 @@
 /**
- * Markdown Rendering Service for WP oOS Chat (Optimized)
+ * Markdown Rendering Service for NV oOS Chat (Optimized)
  * 
  * Uses industry-standard libraries for markdown parsing:
  * - marked: CommonMark-compliant markdown parser
@@ -29,7 +29,7 @@ import DOMPurify from 'dompurify';
 		sanitize: false,     // We use DOMPurify for sanitization instead
 	});
 
-	// Configure custom renderer for code blocks to add WP oOS classes
+	// Configure custom renderer for code blocks to add NV oOS classes
 	const renderer = new marked.Renderer();
 	
 	// Override code block rendering to add our CSS class

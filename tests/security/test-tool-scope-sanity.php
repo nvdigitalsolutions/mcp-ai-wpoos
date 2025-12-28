@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool Scope Sanity Security Tests for WP oOS
+ * Tool Scope Sanity Security Tests for NV oOS
  *
  * Tests to ensure least-privilege for Gmail/Calendar tools and verify
  * OAuth scopes are appropriate and capability checks are enforced.

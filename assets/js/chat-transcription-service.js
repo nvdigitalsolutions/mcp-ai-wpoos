@@ -1,7 +1,7 @@
 /**
  * Chat Transcription Service
  *
- * Handles audio recording and transcription for the WP oOS chat interface.
+ * Handles audio recording and transcription for the NV oOS chat interface.
  * This includes:
  * - Audio recording with MediaRecorder API
  * - Recording state management

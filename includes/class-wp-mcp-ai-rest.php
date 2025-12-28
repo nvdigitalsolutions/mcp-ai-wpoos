@@ -1245,7 +1245,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$response_data['implementation'] = array(
-				'name'    => 'WP oOS',
+				'name'    => 'NV oOS',
 				'version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
 			);
 

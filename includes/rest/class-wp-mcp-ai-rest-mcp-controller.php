@@ -683,7 +683,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	protected function return_discovery_info( WP_REST_Request $request ) {
 		// Return MCP endpoint discovery information.
 		$response_data = array(
-			'name'            => 'WP oOS MCP Server',
+			'name'            => 'NV oOS MCP Server',
 			'version'         => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
 			'protocolVersion' => '2024-11-05',
 			'capabilities'    => array(

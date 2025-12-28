@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Settings Renderer for WP oOS.
+ * Admin Settings Renderer for NV oOS.
  *
  * Handles UI rendering logic for the settings page.
  *
