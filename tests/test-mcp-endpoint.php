@@ -239,7 +239,7 @@ class WP_MCP_AI_MCP_Endpoint_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'capabilities', $result );
 		$this->assertArrayHasKey( 'serverInfo', $result );
 		$this->assertArrayHasKey( 'instructions', $result );
-		$this->assertSame( 'WP oOS', $result['serverInfo']['name'] );
+		$this->assertSame( 'NV oOS', $result['serverInfo']['name'] );
 		$this->assertNotEmpty( $result['instructions'], 'Instructions should not be empty' );
 	}
 

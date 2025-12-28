@@ -1,6 +1,6 @@
 <?php
 /**
- * Stress Tests for WP oOS Performance Monitor.
+ * Stress Tests for NV oOS Performance Monitor.
  *
  * Tests plugin performance under heavy load conditions including:
  * - Concurrent API requests

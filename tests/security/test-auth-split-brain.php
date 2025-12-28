@@ -1,6 +1,6 @@
 <?php
 /**
- * Auth Split-Brain Security Tests for WP oOS
+ * Auth Split-Brain Security Tests for NV oOS
  *
  * Tests to verify that the /mcp endpoint enforces bearer-only authentication
  * for remote MCP access, while nonce-only authentication should fail.
