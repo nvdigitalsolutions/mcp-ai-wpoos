@@ -484,6 +484,44 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that profession title is correctly displayed in the chat label.
+	 *
+	 * This verifies that when a profession test (profession_XXX format) is used,
+	 * the profession's title is displayed in the chat interface, not an empty string.
+	 */
+	public function test_profession_title_displayed_in_chat_label() {
+		// Create a test profession with a specific title.
+		$profession_title = 'Test Anthropologist';
+		$profession_id    = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_status' => 'publish',
+				'post_title'  => $profession_title,
+			)
+		);
+
+		// Render the shortcode with profession_XXX format.
+		$profession_identifier = 'profession_' . $profession_id;
+		$markup                = do_shortcode( sprintf( '[%s assistant="%s"]', WP_MCP_AI_Shortcode::SHORTCODE, $profession_identifier ) );
+
+		// Verify the markup contains the profession title.
+		$this->assertStringContainsString( $profession_title, $markup, 'Profession title should be displayed in the chat interface.' );
+
+		// Verify the title is in the label element.
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__label', $markup, 'Chat label class should be present.' );
+
+		// Parse the HTML to verify the title is in the correct location.
+		$xpath     = $this->get_dom_xpath( $markup );
+		$labels    = $xpath->query( '//label[contains(@class, "wp-mcp-ai-chat__label")]' );
+		$this->assertGreaterThan( 0, $labels->length, 'Should find the chat label element.' );
+
+		if ( $labels->length > 0 ) {
+			$label_text = trim( $labels->item( 0 )->textContent );
+			$this->assertSame( $profession_title, $label_text, 'Label should contain the profession title.' );
+		}
+	}
+
+	/**
 	 * Test that the template attribute is rendered as a data attribute and CSS class.
 	 */
 	public function test_chat_shortcode_renders_template_attribute() {
