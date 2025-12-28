@@ -326,19 +326,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 					// Check if there's an empty_status configuration.
 					$status['message']      = $definition['empty_status']['message'];
 					$status['status_class'] = $definition['empty_status']['status'];
+				} else {
+					$missing_keys = $this->get_missing_connector_keys( $definition, $settings );
+					if ( ! empty( $missing_keys ) ) {
+						$status['message'] = $this->format_connector_missing_message(
+							$missing_keys,
+							$definition['fields'],
+							isset( $definition['inactive_message'] ) ? $definition['inactive_message'] : ''
+						);
 					} else {
-						$missing_keys = $this->get_missing_connector_keys( $definition, $settings );
-						if ( ! empty( $missing_keys ) ) {
-							$status['message'] = $this->format_connector_missing_message(
-								$missing_keys,
-								$definition['fields'],
-								isset( $definition['inactive_message'] ) ? $definition['inactive_message'] : ''
-							);
-						} else {
-							$status['message'] = __( 'Not configured', 'wp-mcp-ai' );
-						}
-						$status['status_class'] = 'inactive';
+						$status['message'] = __( 'Not configured', 'wp-mcp-ai' );
 					}
+					$status['status_class'] = 'inactive';
 				}
 
 				$statuses[ $connector_id ] = $status;
@@ -423,7 +422,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 			}
 
 			return sprintf(
-				/* translators: %s: list of missing fields */
+			/* translators: %s: list of missing fields */
 				__( 'Missing required fields: %s', 'wp-mcp-ai' ),
 				implode( ', ', $missing_labels )
 			);

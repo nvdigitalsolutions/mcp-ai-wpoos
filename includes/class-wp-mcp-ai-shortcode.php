@@ -133,7 +133,7 @@ class WP_MCP_AI_Shortcode {
 		wp_register_script(
 			self::SCRIPT_HANDLE,
 			$script_path,
-			array(), // No dependencies - all services are bundled together
+			array(), // No dependencies - all services are bundled together.
 			$script_version,
 			true
 		);

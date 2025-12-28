@@ -1988,15 +1988,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 						$limit,
 						$results['correctly_attributed']
 					);
-					} else {
-						$message = sprintf(
-						/* translators: 1: Number of records that would be updated, 2: Total Gemini records, 3: Already correct records */
-							__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). %3$d records are already correctly attributed to Gemini.', 'wp-mcp-ai' ),
-							$results['total_needing_migration'],
-							$results['total_gemini_records'],
-							$results['correctly_attributed']
-						);
-					}
+				} else {
+					$message = sprintf(
+					/* translators: 1: Number of records that would be updated, 2: Total Gemini records, 3: Already correct records */
+						__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). %3$d records are already correctly attributed to Gemini.', 'wp-mcp-ai' ),
+						$results['total_needing_migration'],
+						$results['total_gemini_records'],
+						$results['correctly_attributed']
+					);
 				}
 			} elseif ( 0 === $results['records_updated'] ) {
 				if ( 0 === $results['total_gemini_records'] ) {
