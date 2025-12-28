@@ -2382,8 +2382,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 */
 		public function handle_get_models_for_provider() {
 			// Verify nonce for security.
-			check_ajax_referer( 'wp-mcp-ai-model-selector', 'nonce' );
+			// Accept nonce from either admin model selector or professional selector widget.
+			$nonce_actions = array( 'wp-mcp-ai-model-selector', 'wp-mcp-ai-professional-selector' );
+			$nonce_valid   = false;
 
+			foreach ( $nonce_actions as $nonce_action ) {
+				if ( check_ajax_referer( $nonce_action, 'nonce', false ) ) {
+					$nonce_valid = true;
+					break;
+				}
+			}
+
+			if ( ! $nonce_valid ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
 			// Check user capabilities.
 			if ( ! current_user_can( 'edit_posts' ) ) {
 				wp_send_json_error(
