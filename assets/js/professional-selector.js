@@ -290,7 +290,7 @@
 					if (response.success && response.data.html) {
 						$chatWrapper.html(response.data.html);
 						ProfessionalSelector.showChatContainer($container);
-						// Initialize the dynamically inserted chat interface
+						// Initialize event handlers for the dynamically inserted chat interface to prevent form submission page refreshes
 						ProfessionalSelector.initializeChatInterface();
 					} else {
 						// Fallback: Use the shortcode directly (may not work perfectly).

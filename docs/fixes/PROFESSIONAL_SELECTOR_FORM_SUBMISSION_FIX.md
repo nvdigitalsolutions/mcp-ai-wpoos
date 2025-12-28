@@ -54,7 +54,7 @@ if (!window.wpMcpAiChatInit) {
 ```
 
 **Why This Works:**
-- The `init()` function already checks for `data-wp-mcp-ai-initialized` attribute
+- The `init()` function already checks for `data-wp-mcp-ai-initialized` attribute (the safeguard mechanism that prevents duplicate initialization)
 - Safe to call multiple times - only initializes new/uninitialized containers
 - Non-invasive - doesn't break existing functionality
 
