@@ -5,6 +5,9 @@
  * @package WP_MCP_AI\Tests
  */
 
+/**
+ * Test class for shortcode functionality.
+ */
 class Test_Shortcodes extends WP_UnitTestCase {
 	/**
 	 * Administrator user ID used for capability checks.
@@ -13,6 +16,9 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	 */
 	protected $admin_id;
 
+	/**
+	 * Set up test environment before each test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -30,6 +36,9 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		do_action( 'init' );
 	}
 
+	/**
+	 * Clean up test environment after each test.
+	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 		parent::tearDown();
