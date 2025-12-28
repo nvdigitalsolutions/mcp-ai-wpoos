@@ -15,6 +15,7 @@ $save_transcript       = isset( $attributes['saveTranscript'] ) ? $attributes['s
 $enable_streaming      = isset( $attributes['enableStreaming'] ) ? $attributes['enableStreaming'] : true;
 $allow_sensitive_tools = ! empty( $attributes['allowSensitiveTools'] );
 $show_build_button     = ! empty( $attributes['showBuildButton'] );
+$template              = isset( $attributes['template'] ) ? sanitize_key( $attributes['template'] ) : 'classic';
 
 // Build shortcode attributes.
 $shortcode_atts = array();
@@ -37,6 +38,10 @@ if ( $enable_streaming ) {
 
 if ( $allow_sensitive_tools ) {
 	$shortcode_atts[] = 'allow_sensitive_tools="true"';
+}
+
+if ( $template && 'classic' !== $template ) {
+	$shortcode_atts[] = 'template="' . esc_attr( $template ) . '"';
 }
 
 $shortcode = '[mcp_ai_chat ' . implode( ' ', $shortcode_atts ) . ']';

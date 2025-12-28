@@ -2143,3 +2143,436 @@
     }
 }
 
+/* ========================================================================
+   Template Variations
+   ======================================================================== */
+
+/**
+ * Speech Bubbles Template
+ * Classic comic-book style speech bubbles with tails pointing to speakers.
+ * This template emphasizes the conversational nature of the chat interface.
+ */
+.wp-mcp-ai-chat--template-speech-bubbles .wp-mcp-ai-chat__message {
+    position: relative;
+    border-radius: 18px;
+    box-shadow: 0 2px 8px var(--wp-mcp-ai-color-bubble-neutral-shadow, rgba(15, 23, 42, 0.08));
+}
+
+/* User message bubbles - tail on right side */
+.wp-mcp-ai-chat--template-speech-bubbles .wp-mcp-ai-chat__bubble--user {
+    background: var(--wp-mcp-ai-color-bubble-user-background, #3b82f6);
+    color: var(--wp-mcp-ai-color-bubble-user-text, #ffffff);
+    border-color: var(--wp-mcp-ai-color-bubble-user-border, rgba(37, 99, 235, 0.4));
+    border-bottom-right-radius: 4px;
+}
+
+/* Speech bubble tail for user messages */
+.wp-mcp-ai-chat--template-speech-bubbles .wp-mcp-ai-chat__bubble--user::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: -8px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 20px 10px;
+    border-color: transparent transparent var(--wp-mcp-ai-color-bubble-user-background, #3b82f6) transparent;
+}
+
+/* Assistant message bubbles - tail on left side */
+.wp-mcp-ai-chat--template-speech-bubbles .wp-mcp-ai-chat__bubble--assistant {
+    background: var(--wp-mcp-ai-color-bubble-assistant-background, #f5f5f5);
+    color: var(--wp-mcp-ai-color-bubble-assistant-text, #111827);
+    border-color: var(--wp-mcp-ai-color-bubble-assistant-border, rgba(148, 163, 184, 0.4));
+    border-bottom-left-radius: 4px;
+}
+
+/* Speech bubble tail for assistant messages */
+.wp-mcp-ai-chat--template-speech-bubbles .wp-mcp-ai-chat__bubble--assistant::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -8px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 10px 20px 0;
+    border-color: transparent var(--wp-mcp-ai-color-bubble-assistant-background, #f5f5f5) transparent transparent;
+}
+
+/* Tool and system messages - no tail */
+.wp-mcp-ai-chat--template-speech-bubbles .wp-mcp-ai-chat__bubble--tool,
+.wp-mcp-ai-chat--template-speech-bubbles .wp-mcp-ai-chat__bubble--system {
+    border-radius: 12px;
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+/**
+ * Compact Template
+ * Minimalist layout with reduced spacing and smaller fonts.
+ * Ideal for embedding in constrained spaces or sidebars.
+ */
+.wp-mcp-ai-chat--template-compact {
+    padding: 12px;
+    border-radius: 8px;
+    max-width: 480px;
+}
+
+/* Reduced spacing in messages container */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__messages {
+    min-height: 80px;
+    max-height: 240px;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Compact message styling */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__message {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border-radius: 12px;
+    max-width: 85%;
+}
+
+/* Smaller assistant header */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__assistant {
+    margin-bottom: 0.75rem;
+}
+
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__label {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+/* Compact form controls */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__input {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    min-height: 60px;
+}
+
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__actions {
+    gap: 0.375rem;
+}
+
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__submit,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__attach,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__build {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* Compact control buttons */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__controls {
+    margin-top: 0.75rem;
+    gap: 0.5rem;
+}
+
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__history-toggle,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__new-chat,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__export,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__save {
+    width: 32px;
+    height: 32px;
+}
+
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__history-toggle-icon,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__new-chat-icon,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__export-icon,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__save-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Hide avatars in compact mode if present */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__avatar {
+    display: none;
+}
+
+/* Compact transcript controls */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__transcript-toggle {
+    width: 28px;
+    height: 28px;
+}
+
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__transcript-toggle-icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* Compact status and metadata */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__status,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__quota-monitor {
+    font-size: 0.8rem;
+}
+
+/* Compact tool shortcuts */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__tool-shortcut {
+    padding: 0.25rem 0.65rem;
+    font-size: 0.8rem;
+}
+
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__tool-shortcuts-toggle {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Compact attachments */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__attachments {
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Reduce voice chat and transcribe button sizes */
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__voice-chat,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__transcribe {
+    width: 32px;
+    height: 32px;
+}
+
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__voice-chat-icon,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__transcribe-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/**
+ * Sidebar Template
+ * ChatGPT-style layout with conversation history sidebar on the left.
+ * Features a two-column layout with persistent sidebar navigation.
+ */
+.wp-mcp-ai-chat--template-sidebar {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 0;
+    max-width: 1200px;
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 600px;
+}
+
+/* Sidebar on the left */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history {
+    margin: 0;
+    padding: 1rem;
+    border-top: none;
+    border-right: 1px solid var(--wp-mcp-ai-color-container-border, #e5e5e5);
+    background: var(--wp-mcp-ai-color-sidebar-background, #f7f7f8);
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+    display: flex !important; /* Override hidden state */
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Main chat area on the right */
+.wp-mcp-ai-chat--template-sidebar > div:not(.wp-mcp-ai-chat__history) {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Assistant header in sidebar layout */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__assistant {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--wp-mcp-ai-color-container-border, #e5e5e5);
+}
+
+/* Messages container in sidebar layout */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__messages {
+    flex: 1;
+    max-height: none;
+    margin-bottom: 1rem;
+    overflow-y: auto;
+}
+
+/* Form at bottom of chat area */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__form {
+    margin-top: auto;
+}
+
+/* Hide the history toggle button in sidebar template */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-toggle,
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__transcript-controls {
+    display: none;
+}
+
+/* Hide controls that are redundant in sidebar */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__control-buttons {
+    justify-content: flex-end;
+}
+
+/* Sidebar header styling */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--wp-mcp-ai-color-container-border, rgba(0, 0, 0, 0.1));
+    justify-content: space-between;
+}
+
+/* Sidebar title (add via JS or can be static) */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-header::before {
+    content: 'Conversations';
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--wp-mcp-ai-color-text-secondary, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Tools list in sidebar */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-list {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--wp-mcp-ai-color-container-border, rgba(0, 0, 0, 0.1));
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-list-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--wp-mcp-ai-color-text-secondary, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.75rem 0;
+    padding: 0;
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    background: var(--wp-mcp-ai-color-shortcut-background, rgba(148, 163, 184, 0.08));
+    border: 1px solid var(--wp-mcp-ai-color-shortcut-border, rgba(148, 163, 184, 0.2));
+    transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-item:hover {
+    background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.08));
+    border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.25));
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-item-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-item-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: var(--wp-mcp-ai-color-shortcut-text, #6b7280);
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-item-name {
+    font-size: 0.8rem;
+    color: var(--wp-mcp-ai-color-text, #374151);
+    font-weight: 500;
+    text-transform: capitalize;
+    line-height: 1.2;
+}
+
+/* Sidebar list items */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-item {
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-item:hover {
+    background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.08));
+    border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.2));
+}
+
+/* Active/selected conversation */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-item--active {
+    background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.12));
+    border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.35));
+}
+
+/* Sidebar session buttons */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-session {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* New chat button in sidebar */
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__new-chat {
+    width: 100%;
+    height: auto;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__new-chat-icon {
+    width: 18px;
+    height: 18px;
+}
+
+/* Responsive: Stack on small screens */
+@media (max-width: 768px) {
+    .wp-mcp-ai-chat--template-sidebar {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+    }
+    
+    .wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history {
+        border-right: none;
+        border-bottom: 1px solid var(--wp-mcp-ai-color-container-border, #e5e5e5);
+        max-height: 200px;
+        min-height: 150px;
+    }
+}
+
+/* Dark mode support for sidebar */
+@media (prefers-color-scheme: dark) {
+    .wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history {
+        background: var(--wp-mcp-ai-color-sidebar-background-dark, #1f1f1f);
+        border-right-color: var(--wp-mcp-ai-color-container-border-dark, #333);
+    }
+    
+    .wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__history-header::before {
+        color: var(--wp-mcp-ai-color-text-secondary-dark, #9ca3af);
+    }
+    
+    .wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-list-header {
+        color: var(--wp-mcp-ai-color-text-secondary-dark, #9ca3af);
+    }
+    
+    .wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-item-name {
+        color: var(--wp-mcp-ai-color-text-dark, #d1d5db);
+    }
+    
+    .wp-mcp-ai-chat--template-sidebar .wp-mcp-ai-chat__tools-item-icon svg {
+        fill: var(--wp-mcp-ai-color-shortcut-text-dark, #9ca3af);
+    }
+}
+
+
