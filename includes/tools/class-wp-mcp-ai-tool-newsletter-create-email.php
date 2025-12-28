@@ -59,37 +59,72 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'subject' => array(
+				'subject'           => array(
 					'type'        => 'string',
 					'description' => __( 'Email subject line.', 'wp-mcp-ai' ),
 				),
-				'message' => array(
+				'message'           => array(
 					'type'        => 'string',
 					'description' => __( 'Email HTML content/body.', 'wp-mcp-ai' ),
 				),
-				'type'    => array(
+				'type'              => array(
 					'type'        => 'string',
 					'description' => __( 'Email type: message (standard newsletter) or followup (automated). Default: message.', 'wp-mcp-ai' ),
 					'enum'        => array( 'message', 'followup' ),
 					'default'     => 'message',
 				),
-				'status'  => array(
+				'status'            => array(
 					'type'        => 'string',
 					'description' => __( 'Email status: new (draft), sending, sent, paused. Default: new.', 'wp-mcp-ai' ),
 					'enum'        => array( 'new', 'sending', 'sent', 'paused' ),
 					'default'     => 'new',
 				),
-				'track'   => array(
+				'track'             => array(
 					'type'        => 'boolean',
 					'description' => __( 'Enable click and open tracking. Default: true.', 'wp-mcp-ai' ),
 					'default'     => true,
 				),
-				'lists'   => array(
+				'lists'             => array(
 					'type'        => 'array',
 					'description' => __( 'Target list IDs (1-40). Empty means all confirmed subscribers.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'integer',
 					),
+				),
+				// Enhanced parameters for comprehensive newsletter creation.
+				'preheader'         => array(
+					'type'        => 'string',
+					'description' => __( 'Preheader text (preview text shown in email clients).', 'wp-mcp-ai' ),
+					'maxLength'   => 150,
+				),
+				'sender_name'       => array(
+					'type'        => 'string',
+					'description' => __( 'Sender name to display in email from field.', 'wp-mcp-ai' ),
+				),
+				'sender_email'      => array(
+					'type'        => 'string',
+					'description' => __( 'Sender email address.', 'wp-mcp-ai' ),
+					'format'      => 'email',
+				),
+				'send_time'         => array(
+					'type'        => 'string',
+					'description' => __( 'Schedule send time in ISO 8601 format (e.g., "2024-12-31T10:00:00"). Leave empty to send immediately.', 'wp-mcp-ai' ),
+					'format'      => 'date-time',
+				),
+				'featured_image_id' => array(
+					'type'        => 'integer',
+					'description' => __( 'Attachment ID for the email featured image/banner.', 'wp-mcp-ai' ),
+					'minimum'     => 1,
+				),
+				'tags'              => array(
+					'type'        => 'array',
+					'description' => __( 'Array of tag names for email organization (custom meta).', 'wp-mcp-ai' ),
+					'items'       => array( 'type' => 'string' ),
+				),
+				'meta_input'        => array(
+					'type'        => 'object',
+					'description' => __( 'Array of custom field key-value pairs for email metadata.', 'wp-mcp-ai' ),
+					'additionalProperties' => true,
 				),
 			),
 			'required'             => array( 'subject', 'message' ),
@@ -147,6 +182,27 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 			'updated' => current_time( 'mysql' ),
 		);
 
+		// Handle enhanced parameters.
+		if ( isset( $arguments['preheader'] ) && '' !== $arguments['preheader'] ) {
+			$email_data['preheader'] = sanitize_text_field( $arguments['preheader'] );
+		}
+
+		if ( isset( $arguments['sender_name'] ) && '' !== $arguments['sender_name'] ) {
+			$email_data['sender_name'] = sanitize_text_field( $arguments['sender_name'] );
+		}
+
+		if ( isset( $arguments['sender_email'] ) && '' !== $arguments['sender_email'] ) {
+			$email_data['sender_email'] = sanitize_email( $arguments['sender_email'] );
+		}
+
+		// Handle scheduled send time.
+		if ( isset( $arguments['send_time'] ) && '' !== $arguments['send_time'] ) {
+			$send_timestamp = strtotime( $arguments['send_time'] );
+			if ( $send_timestamp && $send_timestamp > current_time( 'timestamp' ) ) {
+				$email_data['send_on'] = gmdate( 'Y-m-d H:i:s', $send_timestamp );
+			}
+		}
+
 		// Handle list targeting.
 		if ( ! empty( $arguments['lists'] ) && is_array( $arguments['lists'] ) ) {
 			$preferences = array();
@@ -172,6 +228,9 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 
 		$email_id = $wpdb->insert_id;
 
+		// Handle enhanced metadata.
+		$this->handle_email_metadata( $email_id, $arguments );
+
 		// Trigger action for other plugins/automations.
 		do_action( 'wp_mcp_ai_newsletter_email_created', $email_id, $email_data, $arguments, $context );
 
@@ -184,6 +243,44 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 			'message'  => __( 'Newsletter email created successfully.', 'wp-mcp-ai' ),
 			'edit_url' => admin_url( 'admin.php?page=newsletter_emails_edit&id=' . $email_id ),
 		);
+	}
+
+	/**
+	 * Handles newsletter email metadata.
+	 *
+	 * @param int   $email_id  The email ID.
+	 * @param array $arguments Tool arguments.
+	 */
+	protected function handle_email_metadata( $email_id, $arguments ) {
+		// Handle featured image (stored as custom meta).
+		if ( isset( $arguments['featured_image_id'] ) ) {
+			$thumbnail_id = absint( $arguments['featured_image_id'] );
+			if ( $thumbnail_id > 0 && wp_attachment_is_image( $thumbnail_id ) ) {
+				update_option( 'wp_mcp_ai_newsletter_email_' . $email_id . '_featured_image', $thumbnail_id );
+			}
+		}
+
+		// Handle tags (stored as custom meta).
+		if ( isset( $arguments['tags'] ) && is_array( $arguments['tags'] ) ) {
+			$sanitized_tags = array_map( 'sanitize_text_field', $arguments['tags'] );
+			update_option( 'wp_mcp_ai_newsletter_email_' . $email_id . '_tags', $sanitized_tags );
+		}
+
+		// Handle custom meta fields.
+		if ( isset( $arguments['meta_input'] ) && is_array( $arguments['meta_input'] ) ) {
+			foreach ( $arguments['meta_input'] as $key => $value ) {
+				$sanitized_key = sanitize_key( $key );
+
+				// Recursively sanitize arrays.
+				if ( is_array( $value ) ) {
+					$sanitized_value = array_map( 'sanitize_text_field', $value );
+				} else {
+					$sanitized_value = sanitize_text_field( $value );
+				}
+
+				update_option( 'wp_mcp_ai_newsletter_email_' . $email_id . '_' . $sanitized_key, $sanitized_value );
+			}
+		}
 	}
 
 	/**
