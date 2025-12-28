@@ -44,6 +44,7 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 		'wp_ajax_wp_mcp_ai_refresh_chart',
 		'wp_ajax_wp_mcp_ai_toggle_tool',
 		'wp_ajax_wp_mcp_ai_get_models_for_provider',
+		'wp_ajax_nopriv_wp_mcp_ai_get_models_for_provider', // Frontend support for model selector.
 		'wp_ajax_wp_mcp_ai_regenerate_playbook',
 		'wp_ajax_wp_mcp_ai_sync_all_playbooks',
 		'wp_ajax_wp_mcp_ai_test_mcp_endpoint',
