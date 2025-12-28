@@ -1,6 +1,6 @@
 <?php
 /**
- * Optimization Comparison Tests for WP oOS Performance Monitor.
+ * Optimization Comparison Tests for NV oOS Performance Monitor.
  *
  * A/B testing for optimization features including:
  * - Cache enabled vs disabled comparison

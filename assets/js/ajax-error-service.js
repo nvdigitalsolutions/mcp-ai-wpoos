@@ -1,5 +1,5 @@
 /**
- * AJAX Error Service for WP oOS
+ * AJAX Error Service for NV oOS
  *
  * Provides centralized error handling for all AJAX requests with:
  * - Proper handling of timeout, abort, and network errors
@@ -270,7 +270,7 @@
 		 */
 		logError: function(error, context) {
 			if (window.console && console.error) {
-				console.error('[WP oOS AJAX Error]', {
+				console.error('[NV oOS AJAX Error]', {
 					error: error,
 					context: context,
 					timestamp: new Date().toISOString()

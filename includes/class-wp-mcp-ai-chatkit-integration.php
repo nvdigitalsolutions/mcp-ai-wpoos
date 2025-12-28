@@ -1,6 +1,6 @@
 <?php
 /**
- * ChatKit integration bootstrap for WP oOS.
+ * ChatKit integration bootstrap for NV oOS.
  *
  * @package WP_MCP_AI
  */
@@ -111,7 +111,7 @@ class WP_MCP_AI_ChatKit_Integration {
 		}
 
 		/**
-		 * Fires when the WP oOS ChatKit integration registers via an action.
+		 * Fires when the NV oOS ChatKit integration registers via an action.
 		 *
 		 * This mirrors the behaviour of ChatKit's manager objects so that tests or
 		 * other integrations can react consistently when a manager is not present.
@@ -151,8 +151,8 @@ class WP_MCP_AI_ChatKit_Integration {
 
 		$definition = array(
 			'id'             => self::ADDON_ID,
-			'name'           => __( 'WP oOS', 'wp-mcp-ai' ),
-			'description'    => __( 'Connect ChatKit workflows to WP oOS assistants.', 'wp-mcp-ai' ),
+			'name'           => __( 'NV oOS', 'wp-mcp-ai' ),
+			'description'    => __( 'Connect ChatKit workflows to NV oOS assistants.', 'wp-mcp-ai' ),
 			'version'        => WP_MCP_AI_VERSION,
 			'icon'           => WP_MCP_AI_URL . 'assets/images/ai-icon.svg',
 			'rest_namespace' => $rest_namespace,
@@ -179,7 +179,7 @@ class WP_MCP_AI_ChatKit_Integration {
 				'shortcode'        => array(
 					'type'        => 'shortcode',
 					'label'       => __( 'Shortcode chat surface', 'wp-mcp-ai' ),
-					'description' => __( 'Embed the WP oOS chat UI anywhere shortcodes render using [wp_mcp_ai_chat].', 'wp-mcp-ai' ),
+					'description' => __( 'Embed the NV oOS chat UI anywhere shortcodes render using [wp_mcp_ai_chat].', 'wp-mcp-ai' ),
 					'tag'         => 'wp_mcp_ai_chat',
 					'attributes'  => array(
 						'assistant'       => array(
@@ -207,7 +207,7 @@ class WP_MCP_AI_ChatKit_Integration {
 				'elementor_widget' => array(
 					'type'        => 'elementor_widget',
 					'label'       => __( 'Elementor chat widget', 'wp-mcp-ai' ),
-					'description' => __( 'Drop the WP oOS Chat widget into Elementor layouts to mirror the shortcode behaviour.', 'wp-mcp-ai' ),
+					'description' => __( 'Drop the NV oOS Chat widget into Elementor layouts to mirror the shortcode behaviour.', 'wp-mcp-ai' ),
 					'widget'      => 'wp_mcp_ai_chat',
 					'attributes'  => array(
 						'assistant'       => array(

@@ -1,6 +1,6 @@
 <?php
 /**
- * Security Tests for WP oOS Performance Monitor.
+ * Security Tests for NV oOS Performance Monitor.
  *
  * Tests security vulnerabilities including:
  * - SQL injection protection

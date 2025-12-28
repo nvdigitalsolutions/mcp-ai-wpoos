@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS Assistant Base Knowledge', 'wp-mcp-ai' );
+		return __( 'NV oOS Assistant Base Knowledge', 'wp-mcp-ai' );
 	}
 
 	/**

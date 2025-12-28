@@ -1,5 +1,5 @@
 /**
- * Audio Service for WP oOS Chat
+ * Audio Service for NV oOS Chat
  * 
  * Handles speech synthesis (text-to-speech), audio transcription (speech-to-text),
  * and voice chat functionality with browser MediaRecorder API support.

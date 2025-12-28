@@ -1,4 +1,4 @@
-WP oOS Developer - Professional Knowledge Base
+NV oOS Developer - Professional Knowledge Base
 
 
 Author: NV Digital Solutions
@@ -6,7 +6,7 @@ Website: https://nvdigitalsolutions.com
 
 === OVERVIEW ===
 
-WP oOS (WordPress Open Operator System) is an enterprise-grade WordPress plugin that provides a comprehensive AI Assistant framework. It integrates OpenAI GPT models, Google Gemini, and Ollama (local AI) through the Model Context Protocol (MCP), offering 65+ built-in tools for content management, media generation, e-commerce, forms, and system automation.
+NV oOS (WordPress Open Operator System) is an enterprise-grade WordPress plugin that provides a comprehensive AI Assistant framework. It integrates OpenAI GPT models, Google Gemini, and Ollama (local AI) through the Model Context Protocol (MCP), offering 65+ built-in tools for content management, media generation, e-commerce, forms, and system automation.
 
 === ARCHITECTURE ===
 
@@ -43,7 +43,7 @@ OpenAI Integration:
 - Video Generation: Sora (5-60 seconds, 480p-1080p, 24/30/60fps)
 - Speech: TTS with 6 voices (alloy, echo, fable, onyx, nova, shimmer)
 - Transcription: Whisper model for audio transcription/translation
-- Configuration: Settings → WP oOS → OpenAI API Settings
+- Configuration: Settings → NV oOS → OpenAI API Settings
 
 Google Gemini Integration:
 - Models: Gemini 1.5 Pro, Gemini 2.0 Flash, Gemini 2.0 Experimental
@@ -51,13 +51,13 @@ Google Gemini Integration:
 - Video Generation: Veo 2.0, Veo 3.1 (1920x1080, 5-8 seconds)
 - Music Generation: Lyria model for instrumental audio
 - Long Context: Gemini 1.5 Pro supports up to 1M tokens
-- Configuration: Settings → WP oOS → Gemini API Settings
+- Configuration: Settings → NV oOS → Gemini API Settings
 
 Ollama Integration:
 - Local AI deployment for privacy and offline use
 - Supports llama3, mistral, codellama, and other open models
 - No external API costs or rate limits
-- Configuration: Settings → WP oOS → Ollama Settings
+- Configuration: Settings → NV oOS → Ollama Settings
 
 === TOOL CATEGORIES ===
 
@@ -153,12 +153,12 @@ GET /wp-json/mcp-ai/v1/sse
    Header: Authorization: Bearer cred_xxxxx.SECRET
    Usage: Headless apps, external integrations
    Format: credential_slug.SECRET_KEY
-   Generation: Settings → WP oOS → Authentication → Create Credential
+   Generation: Settings → NV oOS → Authentication → Create Credential
    
 3. Auth0 Token (Enterprise):
    Header: Authorization: Bearer <Auth0-JWT>
    Usage: Enterprise SSO integrations
-   Configuration: Settings → WP oOS → Auth0 Settings
+   Configuration: Settings → NV oOS → Auth0 Settings
    
 4. Guest Token (Public Chat):
    Header: X-WP-MCP-AI-Guest: temporary_token
@@ -352,16 +352,16 @@ Linting:
 - PHP Compatibility: composer run lint:compat (PHP 7.4-8.3)
 
 Debugging Tools:
-- Enable logging: Settings → WP oOS → Enable Logging
+- Enable logging: Settings → NV oOS → Enable Logging
 - Check errors: wp option get wp_mcp_ai_recent_errors --format=json
 - Check activity: wp option get wp_mcp_ai_recent_activity --format=json
 - PHP error log: tail -f /path/to/php-error.log | grep "WP_MCP_AI"
 - WP_DEBUG: define('WP_DEBUG', true) in wp-config.php
 
 Admin Test Pages:
-- Test Assistant: Settings → WP oOS → Test Assistant
-- Test Profession: Settings → WP oOS → Test Profession
-- Test Team: Settings → WP oOS → Test Team
+- Test Assistant: Settings → NV oOS → Test Assistant
+- Test Profession: Settings → NV oOS → Test Profession
+- Test Team: Settings → NV oOS → Test Team
 
 Browser DevTools:
 - Network tab: Monitor SSE streaming
@@ -511,7 +511,7 @@ Development:
 
 === VERSION INFORMATION ===
 
-WP oOS Versions:
+NV oOS Versions:
 - Base Version: 35 core tools, no third-party dependencies
 - Full Version: 65+ tools including integrations
 - Pro Addon: Video processing tools (FFmpeg required)
@@ -531,7 +531,7 @@ Optional Plugin Dependencies:
 
 === CHANGELOG ===
 
-2024-12-19: Created comprehensive WP oOS Developer knowledge base
+2024-12-19: Created comprehensive NV oOS Developer knowledge base
 - Complete architecture overview and component descriptions
 - All 65+ tools documented with categories and use cases
 - Multi-provider AI integration details (OpenAI, Gemini, Ollama)

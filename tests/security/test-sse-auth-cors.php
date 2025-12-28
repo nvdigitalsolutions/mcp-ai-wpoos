@@ -1,6 +1,6 @@
 <?php
 /**
- * SSE Authentication and CORS Security Tests for WP oOS
+ * SSE Authentication and CORS Security Tests for NV oOS
  *
  * Tests to verify that the /sse endpoint requires authentication
  * and respects CORS/origin headers properly.

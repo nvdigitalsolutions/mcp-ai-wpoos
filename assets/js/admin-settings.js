@@ -25,9 +25,9 @@ window.wpMcpAiSaveExpandedState = function() {
     function log(message, data) {
         if (DEBUG && console && console.log) {
             if (data !== undefined) {
-                console.log('[WP oOS] ' + message, data);
+                console.log('[NV oOS] ' + message, data);
             } else {
-                console.log('[WP oOS] ' + message);
+                console.log('[NV oOS] ' + message);
             }
         }
     }
@@ -633,14 +633,14 @@ window.wpMcpAiSaveExpandedState = function() {
     }
 
     $(function () {
-        log('DOM ready, initializing WP oOS admin handlers...');
+        log('DOM ready, initializing NV oOS admin handlers...');
         
         // Initialize accordion first - it doesn't require wpMcpAiAdmin
         initAccordion();
         
         // Check if wpMcpAiAdmin is defined for AJAX features
         if (typeof wpMcpAiAdmin === 'undefined') {
-            console.warn('[WP oOS] WARNING: wpMcpAiAdmin is not defined! AJAX features will not be available, but accordion should work.');
+            console.warn('[NV oOS] WARNING: wpMcpAiAdmin is not defined! AJAX features will not be available, but accordion should work.');
             log('All admin handlers initialized (accordion only - no AJAX)');
             return;
         }

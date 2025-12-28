@@ -23,7 +23,7 @@
 
     if (missingGlobalConfigKeys.length && window.console && console.warn) {
         console.warn(
-            '[WP oOS] Chat configuration missing expected PHP-localized values. Check shortcode setup and plugin settings.',
+            '[NV oOS] Chat configuration missing expected PHP-localized values. Check shortcode setup and plugin settings.',
             missingGlobalConfigKeys
         );
     }
@@ -157,7 +157,7 @@
      * Follows null-safe patterns to prevent secondary errors during error reporting.
      */
     const streamingLogger = (function() {
-        const LOG_PREFIX = '[WP oOS]';
+        const LOG_PREFIX = '[NV oOS]';
         
         /**
          * Safely get error type from an error object.
@@ -973,7 +973,7 @@
                 
                 // Log save attempt
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Saving conversation to localStorage:', {
+                    console.log('[NV oOS] Saving conversation to localStorage:', {
                         assistant_id: assistantId,
                         session_key: state.config.sessionKey || '',
                         message_count: (state.conversation || []).length,
@@ -985,7 +985,7 @@
                 
                 // Log successful save
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Conversation saved successfully to localStorage');
+                    console.log('[NV oOS] Conversation saved successfully to localStorage');
                 }
                 
                 return { success: true };
@@ -1012,20 +1012,20 @@
                             
                             // Log retry attempt
                             if (window.console && console.log) {
-                                console.log('[WP oOS] Retrying localStorage save after cleanup (cleaned ' + cleaned + ' entries)');
+                                console.log('[NV oOS] Retrying localStorage save after cleanup (cleaned ' + cleaned + ' entries)');
                             }
                             
                             window.localStorage.setItem(storageKey, JSON.stringify(data));
                             
                             // Log successful retry
                             if (window.console && console.log) {
-                                console.log('[WP oOS] Conversation saved successfully to localStorage after cleanup');
+                                console.log('[NV oOS] Conversation saved successfully to localStorage after cleanup');
                             }
                             
                             return { success: true, cleaned: cleaned };
                         } catch (retryError) {
                             if (window.console && console.warn) {
-                                console.warn('[WP oOS] Failed to save conversation to localStorage even after cleanup:', retryError);
+                                console.warn('[NV oOS] Failed to save conversation to localStorage even after cleanup:', retryError);
                             }
                             return { success: false, error: 'localStorage quota exceeded', cleaned: cleaned };
                         }
@@ -1036,7 +1036,7 @@
                 
                 // Other errors - log but don't interrupt user experience
                 if (window.console && console.warn) {
-                    console.warn('[WP oOS] Error saving conversation to localStorage:', error);
+                    console.warn('[NV oOS] Error saving conversation to localStorage:', error);
                 }
                 
                 return { success: false, error: error.message || 'localStorage error' };
@@ -1157,7 +1157,7 @@
             
             // Log load attempt
             if (window.console && console.log) {
-                console.log('[WP oOS] Loading conversation from localStorage:', {
+                console.log('[NV oOS] Loading conversation from localStorage:', {
                     assistant_id: state.config.assistantId,
                     storage_key: storageKey
                 });
@@ -1168,7 +1168,7 @@
             if (!stored) {
                 // Log when no data found
                 if (window.console && console.log) {
-                    console.log('[WP oOS] No conversation found in localStorage');
+                    console.log('[NV oOS] No conversation found in localStorage');
                 }
                 return null;
             }
@@ -1177,7 +1177,7 @@
 
             if (!data || typeof data !== 'object') {
                 if (window.console && console.warn) {
-                    console.warn('[WP oOS] Invalid conversation data in localStorage');
+                    console.warn('[NV oOS] Invalid conversation data in localStorage');
                 }
                 return null;
             }
@@ -1186,7 +1186,7 @@
             const age = Date.now() - (data.timestamp || 0);
             if (age > STORAGE_EXPIRY_MS) {
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Conversation expired in localStorage (age: ' + Math.floor(age / 1000 / 60) + ' minutes)');
+                    console.log('[NV oOS] Conversation expired in localStorage (age: ' + Math.floor(age / 1000 / 60) + ' minutes)');
                 }
                 window.localStorage.removeItem(storageKey);
                 return null;
@@ -1195,14 +1195,14 @@
             // Verify it's for the same assistant
             if (data.assistantId !== state.config.assistantId) {
                 if (window.console && console.warn) {
-                    console.warn('[WP oOS] Assistant ID mismatch in localStorage data');
+                    console.warn('[NV oOS] Assistant ID mismatch in localStorage data');
                 }
                 return null;
             }
 
             // Log successful load
             if (window.console && console.log) {
-                console.log('[WP oOS] Conversation loaded successfully from localStorage:', {
+                console.log('[NV oOS] Conversation loaded successfully from localStorage:', {
                     session_key: data.sessionKey || '',
                     message_count: Array.isArray(data.conversation) ? data.conversation.length : 0,
                     age_minutes: Math.floor(age / 1000 / 60)
@@ -1217,7 +1217,7 @@
         } catch (error) {
             // Log parse errors
             if (window.console && console.warn) {
-                console.warn('[WP oOS] Error loading conversation from localStorage:', error);
+                console.warn('[NV oOS] Error loading conversation from localStorage:', error);
             }
             // Return null if parsing fails
             return null;
@@ -1248,7 +1248,7 @@
             
             // Log delete attempt
             if (window.console && console.log) {
-                console.log('[WP oOS] Clearing conversation from localStorage:', {
+                console.log('[NV oOS] Clearing conversation from localStorage:', {
                     assistant_id: state.config.assistantId,
                     session_key: state.config.sessionKey || '',
                     storage_key: storageKey
@@ -1259,12 +1259,12 @@
             
             // Log successful delete
             if (window.console && console.log) {
-                console.log('[WP oOS] Conversation cleared successfully from localStorage');
+                console.log('[NV oOS] Conversation cleared successfully from localStorage');
             }
         } catch (error) {
             // Log error
             if (window.console && console.warn) {
-                console.warn('[WP oOS] Error clearing conversation from localStorage:', error);
+                console.warn('[NV oOS] Error clearing conversation from localStorage:', error);
             }
         }
     }
@@ -1704,7 +1704,7 @@
         // Handle invalid input
         if (!message || typeof message !== 'object') {
             if (window.console && console.warn) {
-                console.warn('[WP oOS] stripMessageDisplayMetadata: Invalid message object', message);
+                console.warn('[NV oOS] stripMessageDisplayMetadata: Invalid message object', message);
             }
             return null;
         }
@@ -1712,7 +1712,7 @@
         // Validate required field 'role' is present
         if (!message.role) {
             if (window.console && console.warn) {
-                console.warn('[WP oOS] stripMessageDisplayMetadata: Message missing required "role" field', message);
+                console.warn('[NV oOS] stripMessageDisplayMetadata: Message missing required "role" field', message);
             }
             return null;
         }
@@ -1816,7 +1816,7 @@
         function attemptSave(attempt) {
             // Log save attempt
             if (!silent && window.console && console.log) {
-                console.log('[WP oOS] Saving conversation to CCT:', {
+                console.log('[NV oOS] Saving conversation to CCT:', {
                     session_key: payload.session_key,
                     assistant_id: payload.assistant_id,
                     message_count: payload.messages.length,
@@ -1876,7 +1876,7 @@
 
                             // Log successful save
                             if (!silent && window.console && console.log) {
-                                console.log('[WP oOS] Conversation saved successfully to CCT');
+                                console.log('[NV oOS] Conversation saved successfully to CCT');
                             }
 
                             return { success: true, attempt: attempt + 1 };
@@ -2606,7 +2606,7 @@
                 
                 // Log deletion for verification
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Message deleted:', {
+                    console.log('[NV oOS] Message deleted:', {
                         role: role,
                         deletedIndex: indexToRemove,
                         conversationLength: state.conversation ? state.conversation.length : 0
@@ -2655,7 +2655,7 @@
             window.localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(saved));
         } catch (error) {
             if (window.console && console.warn) {
-                console.warn('[WP oOS] Failed to save message marker:', error);
+                console.warn('[NV oOS] Failed to save message marker:', error);
             }
         }
     }
@@ -2789,7 +2789,7 @@
                     updateSaveButtonState(button, 'saved');
 
                     if (window.console && console.log) {
-                        console.log('[WP oOS] Message saved:', {
+                        console.log('[NV oOS] Message saved:', {
                             messageKey: messageKey,
                             messageIndex: messageIndex
                         });
@@ -2800,7 +2800,7 @@
                     button.disabled = false;
 
                     if (window.console && console.warn) {
-                        console.warn('[WP oOS] Failed to save message:', error);
+                        console.warn('[NV oOS] Failed to save message:', error);
                     }
                 });
         });
@@ -4296,7 +4296,7 @@
                 // Add tooltip with detailed info
                 monitorEl.setAttribute('title', 
                     'Total localStorage: ' + quota.formattedUsed + ' / ' + quota.formattedTotal + '\n' +
-                    'WP oOS chats: ' + quota.formattedWpMcpAiUsed + '\n' +
+                    'NV oOS chats: ' + quota.formattedWpMcpAiUsed + '\n' +
                     'Status: ' + statusText
                 );
             });
@@ -4552,7 +4552,7 @@
     function performConversationClear(state) {
         // Log clear operation
         if (window.console && console.log) {
-            console.log('[WP oOS] Clearing conversation:', {
+            console.log('[NV oOS] Clearing conversation:', {
                 session_key: state.config && state.config.sessionKey,
                 message_count: state.conversation ? state.conversation.length : 0
             });
@@ -4975,7 +4975,7 @@
 
         // Log delete request
         if (window.console && console.log) {
-            console.log('[WP oOS] Deleting conversation:', {
+            console.log('[NV oOS] Deleting conversation:', {
                 session_key: sessionKey
             });
         }
@@ -5004,7 +5004,7 @@
             .then(function () {
                 // Log successful delete
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Conversation deleted successfully:', {
+                    console.log('[NV oOS] Conversation deleted successfully:', {
                         session_key: sessionKey
                     });
                 }
@@ -5229,7 +5229,7 @@
 
         // Log fetch history sessions request
         if (window.console && console.log) {
-            console.log('[WP oOS] Loading conversation history:', {
+            console.log('[NV oOS] Loading conversation history:', {
                 user_id: userId,
                 assistant_id: assistantId,
                 per_page: perPage,
@@ -5299,7 +5299,7 @@
 
         // Log load session request with full details
         if (window.console && console.log) {
-            console.log('[WP oOS] Loading conversation details:', {
+            console.log('[NV oOS] Loading conversation details:', {
                 session_key: sessionKey,
                 url: url,
                 user_id: userId,
@@ -5310,7 +5310,7 @@
         return httpGet(url, buildHistoryHeaders(state), { state: state }).then(function (response) {
             // Log response status for debugging
             if (window.console && console.log) {
-                console.log('[WP oOS] Conversation details response:', {
+                console.log('[NV oOS] Conversation details response:', {
                     status: response.status,
                     ok: response.ok,
                     session_key: sessionKey
@@ -5321,14 +5321,14 @@
                 .json()
                 .catch(function (jsonError) {
                     if (window.console && console.error) {
-                        console.error('[WP oOS] Failed to parse conversation details JSON:', jsonError);
+                        console.error('[NV oOS] Failed to parse conversation details JSON:', jsonError);
                     }
                     return null;
                 })
                 .then(function (data) {
                     // Log parsed data for debugging
                     if (window.console && console.log) {
-                        console.log('[WP oOS] Conversation details data:', {
+                        console.log('[NV oOS] Conversation details data:', {
                             has_session: !!(data && data.session),
                             has_message: !!(data && data.message),
                             session_key: sessionKey
@@ -5345,7 +5345,7 @@
                     if (data && data.session) {
                         // Log successful retrieval
                         if (window.console && console.log) {
-                            console.log('[WP oOS] Conversation details loaded successfully:', {
+                            console.log('[NV oOS] Conversation details loaded successfully:', {
                                 session_key: sessionKey,
                                 message_count: data.session.messages ? data.session.messages.length : 0
                             });
@@ -5364,7 +5364,7 @@
         }).catch(function (error) {
             // Log error for debugging (handles both network-level and application-level errors)
             if (window.console && console.error) {
-                console.error('[WP oOS] Error fetching conversation details:', error);
+                console.error('[NV oOS] Error fetching conversation details:', error);
             }
             // Re-throw the error to propagate it to the caller
             // Errors from the response handler above already have user-friendly messages
@@ -5410,14 +5410,14 @@
     function loadHistorySessionIntoChat(state, session, activeItem) {
         if (!state || !state.messagesEl) {
             if (window.console && console.error) {
-                console.error('[WP oOS] Cannot load history session: missing state or messagesEl');
+                console.error('[NV oOS] Cannot load history session: missing state or messagesEl');
             }
             return;
         }
 
         if (!session || typeof session !== 'object') {
             if (window.console && console.error) {
-                console.error('[WP oOS] Cannot load history session: invalid session data', session);
+                console.error('[NV oOS] Cannot load history session: invalid session data', session);
             }
             setActiveHistorySession(state, '', activeItem);
             setStatus(state.container, getString('historySessionError', 'Unable to load this conversation. Please try again.'));
@@ -5434,7 +5434,7 @@
         const sessionKey = sanitizeSessionKey(session.session_key ? String(session.session_key) : '');
         
         if (window.console && console.log) {
-            console.log('[WP oOS] Loading conversation into chat:', {
+            console.log('[NV oOS] Loading conversation into chat:', {
                 session_key: sessionKey,
                 message_count: session.messages ? session.messages.length : 0,
                 assistant_id: session.assistant_id
@@ -5536,7 +5536,7 @@
         saveConversationToStorage(state);
 
         if (window.console && console.log) {
-            console.log('[WP oOS] Conversation loaded successfully into chat:', {
+            console.log('[NV oOS] Conversation loaded successfully into chat:', {
                 session_key: sessionKey,
                 loaded_message_count: state.conversation.length
             });
@@ -5566,7 +5566,7 @@
         fetchHistorySessionDetails(state, sessionKey)
             .then(function (data) {
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Successfully fetched conversation details, loading into chat:', {
+                    console.log('[NV oOS] Successfully fetched conversation details, loading into chat:', {
                         session_key: sessionKey,
                         has_data: !!data
                     });
@@ -5580,7 +5580,7 @@
             })
             .catch(function (error) {
                 if (window.console && console.error) {
-                    console.error('[WP oOS] Failed to load conversation details:', {
+                    console.error('[NV oOS] Failed to load conversation details:', {
                         session_key: sessionKey,
                         error: error.message || error
                     });
@@ -5830,7 +5830,7 @@
 
         // Debug: Log normalized upload response
         if (window.console && console.log) {
-            console.log('[WP oOS] normaliseUploadResponse - created record:', {
+            console.log('[NV oOS] normaliseUploadResponse - created record:', {
                 id: record.id,
                 fileId: record.fileId,
                 name: record.name,
@@ -5896,7 +5896,7 @@
             const metaText = buildAttachmentMeta(attachment);
             // Debug: Log attachment data and generated metadata
             if (window.console && console.log) {
-                console.log('[WP oOS] renderPendingAttachments - attachment data:', {
+                console.log('[NV oOS] renderPendingAttachments - attachment data:', {
                     id: attachment.id,
                     fileId: attachment.fileId,
                     name: attachment.name,
@@ -6007,7 +6007,7 @@
 
         // Debug: Log display attachment creation
         if (window.console && console.log) {
-            console.log('[WP oOS] buildDisplayAttachment - creating display attachment:', {
+            console.log('[NV oOS] buildDisplayAttachment - creating display attachment:', {
                 attachment_id: attachment.id,
                 attachment_fileId: attachment.fileId,
                 record_id: record.id,
@@ -6054,7 +6054,7 @@
     function createSegmentFromAttachment(attachment) {
         if (!attachment) {
             if (window.console && console.warn) {
-                console.warn('[WP oOS] createSegmentFromAttachment: No attachment provided');
+                console.warn('[NV oOS] createSegmentFromAttachment: No attachment provided');
             }
             return null;
         }
@@ -6070,7 +6070,7 @@
 
         if (!id) {
             if (window.console && console.warn) {
-                console.warn('[WP oOS] createSegmentFromAttachment: No valid ID found in attachment:', {
+                console.warn('[NV oOS] createSegmentFromAttachment: No valid ID found in attachment:', {
                     has_id: !!attachment.id,
                     has_fileId: !!attachment.fileId,
                     fileId: attachment.fileId,
@@ -6872,7 +6872,7 @@
         
         // Debug: Log attachment ID resolution
         if (window.console && console.log) {
-            console.log('[WP oOS] buildAttachmentMeta - ID resolution:', {
+            console.log('[NV oOS] buildAttachmentMeta - ID resolution:', {
                 record_id: record.id,
                 record_id_type: typeof record.id,
                 record_attachment_id: record.attachment_id,
@@ -7420,7 +7420,7 @@
      * Extract environment status summary from get_environment_status tool result.
      * 
      * Formats the environment information into a readable string.
-     * Example: "Environment: WordPress 6.4, PHP 8.1, WP oOS v1.0.0, 3 assistants, 2 warnings"
+     * Example: "Environment: WordPress 6.4, PHP 8.1, NV oOS v1.0.0, 3 assistants, 2 warnings"
      * 
      * @param {Object} result - Tool result object with environment and plugin properties
      * @return {string|null} Formatted summary text or null if structure is invalid
@@ -7446,7 +7446,7 @@
 
         // Add plugin version
         if (typeof plugin.version === 'string' && plugin.version.trim()) {
-            parts.push('WP oOS ' + plugin.version);
+            parts.push('NV oOS ' + plugin.version);
         }
 
         // Add assistant count
@@ -7822,7 +7822,7 @@
     function startAsyncToolPolling(state, parsedContent, toolName, toolCallId) {
         if (!parsedContent || !parsedContent.job_id) {
             if (window.console && console.warn) {
-                console.warn('[WP oOS] startAsyncToolPolling called without valid job_id:', {
+                console.warn('[NV oOS] startAsyncToolPolling called without valid job_id:', {
                     hasContent: !!parsedContent,
                     jobId: parsedContent ? parsedContent.job_id : undefined,
                     toolName: toolName
@@ -7834,7 +7834,7 @@
         // Log async job initiation for observability
         // This helps debug long-running operations like video generation (60-180 seconds)
         if (window.console && console.log) {
-            console.log('[WP oOS] Starting async tool polling:', {
+            console.log('[NV oOS] Starting async tool polling:', {
                 jobId: parsedContent.job_id,
                 toolName: toolName,
                 toolCallId: toolCallId || '(not provided)',
@@ -7875,7 +7875,7 @@
         // Without it, the conversation would have mismatched tool_call_ids causing API errors
         waitForAsyncToolResult(state, parsedContent.job_id, toolName, toolCallId).catch(function (error) {
             if (window.console && console.error) {
-                console.error('[WP oOS] Async tool polling failed:', error);
+                console.error('[NV oOS] Async tool polling failed:', error);
             }
         });
     }
@@ -8880,7 +8880,7 @@
                             // The veo service will update the parent job when it completes via complete_parent_job().
                             // This ensures we get the final result on the original job ID.
                             if (window.console && console.log) {
-                                console.log('[WP oOS] Job delegated to:', payload.delegated_to);
+                                console.log('[NV oOS] Job delegated to:', payload.delegated_to);
                             }
                             // Use the message from the delegated job if available (includes veo job ID)
                             // otherwise fall back to generic message
@@ -8923,7 +8923,7 @@
                     }
                 },
                 onError: function (error) {
-                    console.error('[WP oOS] SSE connection error:', error);
+                    console.error('[NV oOS] SSE connection error:', error);
                     // Fall back to polling
                     cleanup();
                     waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry, toolCallId).then(resolve).catch(reject);
@@ -9085,7 +9085,7 @@
                             // Continue polling the PARENT job (not the delegated veo job).
                             // The veo service will update the parent job when it completes via complete_parent_job().
                             if (window.console && console.log) {
-                                console.log('[WP oOS] Job delegated to:', payload.delegated_to);
+                                console.log('[NV oOS] Job delegated to:', payload.delegated_to);
                             }
                             // Use the message from the delegated job if available (includes veo job ID)
                             // otherwise fall back to generic message
@@ -9322,7 +9322,7 @@
             fallbackTimer = setTimeout(function () {
                 if (!resolved) {
                     if (window.console && console.log) {
-                        console.log('[WP oOS] Event bus fallback: switching to direct polling for job', jobId);
+                        console.log('[NV oOS] Event bus fallback: switching to direct polling for job', jobId);
                     }
                     // Clean up event bus listeners but keep timeout
                     if (completedHandler) {
@@ -9420,7 +9420,7 @@
         }
 
         if (window.console && console.log) {
-            console.log('[WP oOS] Attempting timeout recovery for job:', jobId);
+            console.log('[NV oOS] Attempting timeout recovery for job:', jobId);
         }
 
         return httpGet(url, buildJsonHeaders(state), { state: state }).then(function (response) {
@@ -9440,7 +9440,7 @@
             // If job is now completed, return the result
             if (status === 'completed' && payload.result) {
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Timeout recovery successful - job completed:', jobId);
+                    console.log('[NV oOS] Timeout recovery successful - job completed:', jobId);
                 }
                 return payload.result;
             }
@@ -9449,7 +9449,7 @@
             return null;
         }).catch(function (error) {
             if (window.console && console.warn) {
-                console.warn('[WP oOS] Timeout recovery check failed:', error);
+                console.warn('[NV oOS] Timeout recovery check failed:', error);
             }
             return null;
         });
@@ -9582,7 +9582,7 @@
                 } catch (e) {
                     // Log serialization error for debugging
                     if (window.console && console.warn) {
-                        console.warn('[WP oOS] Failed to serialize tool result:', {
+                        console.warn('[NV oOS] Failed to serialize tool result:', {
                             tool_name: toolName,
                             error: e.message || 'Unknown serialization error'
                         });
@@ -9648,7 +9648,7 @@
 
             // Log for debugging
             if (window.console && console.log) {
-                console.log('[WP oOS] Added async tool result to conversation:', {
+                console.log('[NV oOS] Added async tool result to conversation:', {
                     tool_name: toolName,
                     tool_call_id: finalToolCallId,
                     passed_tool_call_id: toolCallId || '(not provided)',
@@ -9722,7 +9722,7 @@
 
         if (!targetElement) {
             if (console && console.warn) {
-                console.warn('[WP oOS] Could not find target chat widget');
+                console.warn('[NV oOS] Could not find target chat widget');
             }
             return false;
         }
@@ -9731,7 +9731,7 @@
         const state = targetElement.__wpMcpAiChatState;
         if (!state) {
             if (console && console.warn) {
-                console.warn('[WP oOS] Target element is not a chat widget');
+                console.warn('[NV oOS] Target element is not a chat widget');
             }
             return false;
         }
@@ -10677,7 +10677,7 @@
 
         // Log send button click
         if (window.console && console.log) {
-            console.log('[WP oOS] User clicked send:', {
+            console.log('[NV oOS] User clicked send:', {
                 message_length: trimmedMessage.length,
                 has_attachments: hasAttachments,
                 attachment_count: pending.length,
@@ -10704,7 +10704,7 @@
                 segments.push(segment);
                 // Debug logging for attachment segments
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Created segment from attachment:', {
+                    console.log('[NV oOS] Created segment from attachment:', {
                         attachment_id: attachment.id,
                         fileId: attachment.fileId,
                         segment_type: segment.type,
@@ -10716,7 +10716,7 @@
             } else {
                 // Warning if segment creation failed
                 if (window.console && console.warn) {
-                    console.warn('[WP oOS] Failed to create segment from attachment:', attachment);
+                    console.warn('[NV oOS] Failed to create segment from attachment:', attachment);
                 }
             }
 
@@ -10745,7 +10745,7 @@
 
         // Debug logging for payload content
         if (window.console && console.log) {
-            console.log('[WP oOS] Created payloadContent:', {
+            console.log('[NV oOS] Created payloadContent:', {
                 is_array: Array.isArray(payloadContent),
                 segment_count: Array.isArray(payloadContent) ? payloadContent.length : 0,
                 segments: Array.isArray(payloadContent) ? payloadContent : null
@@ -10880,7 +10880,7 @@
 
         // Debug logging to trace attachment segments
         if (window.console && console.log) {
-            console.log('[WP oOS] Sending messages to API:', JSON.stringify(cleanMessages, null, 2));
+            console.log('[NV oOS] Sending messages to API:', JSON.stringify(cleanMessages, null, 2));
         }
 
         const payload = {
@@ -10976,7 +10976,7 @@
                 scrollBatcher.scrollToBottom(state.messagesEl);
                 
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Created streaming message element');
+                    console.log('[NV oOS] Created streaming message element');
                 }
             }
             return streamingMessageElement;
@@ -11013,7 +11013,7 @@
             
             // ALWAYS log streaming updates for debugging (even when DEBUG_MODE is off)
             if (window.console && console.log) {
-                console.log('[WP oOS] updateStreamingMessage called:', {
+                console.log('[NV oOS] updateStreamingMessage called:', {
                     contentLength: safeContent.length,
                     contentSample: safeContent.substring(0, 50) + (safeContent.length > 50 ? '...' : ''),
                     elementExists: !!streamingMessageElement,
@@ -11039,7 +11039,7 @@
                 
                 // VERIFY the content was actually set
                 if (window.console && console.log) {
-                    console.log('[WP oOS] After setting innerHTML:', {
+                    console.log('[NV oOS] After setting innerHTML:', {
                         elementTextContent: streamingMessageElement.textContent,
                         elementInnerHTML: streamingMessageElement.innerHTML,
                         elementOuterHTML: streamingMessageElement.outerHTML.substring(0, 200)
@@ -11049,7 +11049,7 @@
                 // Concern 3: Auto-scroll to keep content visible
                 scrollBatcher.scrollToBottom(state.messagesEl);
             } else if (window.console && console.warn) {
-                console.warn('[WP oOS] Streaming message element not found after creation attempt');
+                console.warn('[NV oOS] Streaming message element not found after creation attempt');
             }
 
             // Concern 2: Update status area (delegated to separate function)
@@ -11127,7 +11127,7 @@
                         streamResult.finalData.data.choices[0].message.content = streamResult.content;
                         
                         if (DEBUG_MODE && window.console && console.log) {
-                            console.log('[WP oOS] Injected streamed content into finalData:', {
+                            console.log('[NV oOS] Injected streamed content into finalData:', {
                                 contentLength: streamResult.content.length,
                                 contentSample: streamResult.content.substring(0, 100)
                             });
@@ -11348,7 +11348,7 @@
                         
                         if (DEBUG_MODE) {
                             if (window.console && console.log) {
-                                console.log('[WP oOS] SSE event:', {
+                                console.log('[NV oOS] SSE event:', {
                                     eventType: eventType || '(none)',
                                     hasData: !!data
                                 });
@@ -11379,7 +11379,7 @@
                                 const hasFinalChoices = !!(data.data && data.data.choices);
                                 const hasToolResults = !!(data.tool_results && Array.isArray(data.tool_results) && data.tool_results.length > 0);
                                 
-                                console.log('[WP oOS] SSE message event received:', {
+                                console.log('[NV oOS] SSE message event received:', {
                                     isFinalMessage: isFinalMessage,
                                     hasChoices: isFinalMessage ? hasFinalChoices : hasStreamingChoices,
                                     hasDelta: !!(data.choices && data.choices[0] && data.choices[0].delta),
@@ -11407,7 +11407,7 @@
                                     if (delta.content) {
                                         contentChunk = delta.content;
                                         if (window.console && console.log) {
-                                            console.log('[WP oOS] Content chunk extracted:', contentChunk.substring(0, 50));
+                                            console.log('[NV oOS] Content chunk extracted:', contentChunk.substring(0, 50));
                                         }
                                     }
                                     // OpenAI o1 models may have reasoning_content (if exposed in future)
@@ -11636,7 +11636,7 @@
                                 
                                 if (DEBUG_MODE) {
                                     if (window.console && console.log) {
-                                        console.log('[WP oOS] Content chunk:', {
+                                        console.log('[NV oOS] Content chunk:', {
                                             chunkLength: contentChunk.length,
                                             totalLength: fullContent.length
                                         });
@@ -11676,7 +11676,7 @@
             var hasContent = typeof fullContent === 'string' && fullContent.length > 0;
             if (capturedFinalData || hasContent) {
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Stream read error after final data received, treating as successful completion:', {
+                    console.log('[NV oOS] Stream read error after final data received, treating as successful completion:', {
                         hasFinalData: !!capturedFinalData,
                         contentLength: hasContent ? fullContent.length : 0,
                         errorType: streamError ? streamError.name || streamError.constructor.name : 'unknown'
@@ -11887,7 +11887,7 @@
                 waitForAsyncToolResult(state, result.job_id, toolName, toolCallId).catch(function (error) {
                     // Error is already displayed by waitForAsyncToolResult
                     if (window.console && console.error) {
-                        console.error('[WP oOS] Async tool polling failed:', error);
+                        console.error('[NV oOS] Async tool polling failed:', error);
                     }
                 });
                 return;
@@ -11919,7 +11919,7 @@
                 
                 // Log the processing status for debugging
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Tool returned processing status (sync pending):', {
+                    console.log('[NV oOS] Tool returned processing status (sync pending):', {
                         tool_name: toolName,
                         status: result.status,
                         message: result.message,
@@ -12003,7 +12003,7 @@
                     } catch (e) {
                         // Log serialization error for debugging
                         if (window.console && console.warn) {
-                            console.warn('[WP oOS] Failed to serialize tool result:', {
+                            console.warn('[NV oOS] Failed to serialize tool result:', {
                                 tool_name: toolName,
                                 error: e.message || 'Unknown serialization error'
                             });
@@ -12047,7 +12047,7 @@
 
                 // Log for debugging
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Added SSE tool result to conversation:', {
+                    console.log('[NV oOS] Added SSE tool result to conversation:', {
                         tool_name: toolName,
                         tool_call_id: finalToolCallId,
                         conversation_length: state.conversation.length
@@ -12186,7 +12186,7 @@
 
         if (!message && !hasToolResults) {
             if (DEBUG_MODE && window.console && console.error) {
-                console.error('[WP oOS] handleChatResponse: No message or tool_results found in response');
+                console.error('[NV oOS] handleChatResponse: No message or tool_results found in response');
             }
             setStatus(state.container, getString('error', 'Something went wrong.'));
             return Promise.resolve();
@@ -12699,7 +12699,7 @@
                     
                     // Log for debugging
                     if (window.console && console.log) {
-                        console.log('[WP oOS] Added agentic assistant message to conversation:', {
+                        console.log('[NV oOS] Added agentic assistant message to conversation:', {
                             has_content: !!agenticMessage.content,
                             tool_calls_count: agenticMessage.tool_calls ? agenticMessage.tool_calls.length : 0,
                             conversation_length: state.conversation.length
@@ -12986,7 +12986,7 @@
                     if (isAsyncPendingToolResult(parsedContent)) {
                         // Log for debugging
                         if (window.console && console.log) {
-                            console.log('[WP oOS] Skipping pending async tool result in conversation (will be added on completion):', {
+                            console.log('[NV oOS] Skipping pending async tool result in conversation (will be added on completion):', {
                                 tool_name: toolResult.name,
                                 job_id: parsedContent && parsedContent.job_id
                             });
@@ -13025,7 +13025,7 @@
                 // Case 1: Match tool results with tool calls in the current message
                 // Log tool call matching for debugging sync/async tool execution
                 if (window.console && console.log) {
-                    console.log('[WP oOS] Processing tool_calls with matching tool_results:', {
+                    console.log('[NV oOS] Processing tool_calls with matching tool_results:', {
                         toolCallsCount: message.tool_calls.length,
                         toolResultsCount: data.tool_results.length,
                         toolCallIds: message.tool_calls.map(function(tc) { return tc.id; }),
@@ -13037,7 +13037,7 @@
                     const toolCallId = toolCall.id || '';
                     if (!toolCallId) {
                         if (window.console && console.warn) {
-                            console.warn('[WP oOS] Tool call missing ID, skipping:', toolCall);
+                            console.warn('[NV oOS] Tool call missing ID, skipping:', toolCall);
                         }
                         return;
                     }
@@ -13050,7 +13050,7 @@
 
                     if (!matchingResult || !matchingResult.content) {
                         if (window.console && console.warn) {
-                            console.warn('[WP oOS] No matching tool result found for tool_call_id:', toolCallId);
+                            console.warn('[NV oOS] No matching tool result found for tool_call_id:', toolCallId);
                         }
                         return;
                     }
@@ -13075,7 +13075,7 @@
                     
                     // Log tool result type for debugging both sync and async flows
                     if (window.console && console.log) {
-                        console.log('[WP oOS] Tool result:', {
+                        console.log('[NV oOS] Tool result:', {
                             toolName: toolName,
                             toolCallId: toolCallId,
                             executionType: isAsync ? 'async (pending)' : 'sync (completed)',
@@ -13089,7 +13089,7 @@
                         // Async tool: Start polling for result (SSE-first with REST fallback)
                         // The job will complete in the background via WP Cron
                         if (window.console && console.log) {
-                            console.log('[WP oOS] Starting async polling for background job:', {
+                            console.log('[NV oOS] Starting async polling for background job:', {
                                 toolName: toolName,
                                 jobId: parsedContent.job_id,
                                 toolCallId: toolCallId
@@ -13166,7 +13166,7 @@
                     // This path is taken when the LLM's final message doesn't include tool_calls
                     // but the backend has tool_results from earlier agentic iterations
                     if (window.console && console.log) {
-                        console.log('[WP oOS] Agentic loop tool result:', {
+                        console.log('[NV oOS] Agentic loop tool result:', {
                             toolName: toolName,
                             executionType: isAsync ? 'async (pending)' : 'sync (completed)',
                             asyncFlag: parsedContent && parsedContent.async,
@@ -13179,7 +13179,7 @@
                         // Background-only tools (e.g., Veo video) must run async even in agentic loops
                         // Start polling for result via SSE or REST
                         if (window.console && console.log) {
-                            console.log('[WP oOS] Starting async polling (agentic loop background-only tool):', {
+                            console.log('[NV oOS] Starting async polling (agentic loop background-only tool):', {
                                 toolName: toolName,
                                 jobId: parsedContent.job_id,
                                 toolCallId: toolResult.tool_call_id
@@ -13312,9 +13312,9 @@
             // Tools are now executed server-side automatically in the agentic loop.
             // The frontend just displays the response which includes tool results.
             if (window.console && console.log) {
-                console.log('[WP oOS] Server executed tools:', message.tool_calls);
+                console.log('[NV oOS] Server executed tools:', message.tool_calls);
                 if (data && data.tool_results) {
-                    console.log('[WP oOS] Tool results:', data.tool_results);
+                    console.log('[NV oOS] Tool results:', data.tool_results);
                 }
             }
         }

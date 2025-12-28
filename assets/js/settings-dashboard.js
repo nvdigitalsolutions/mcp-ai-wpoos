@@ -1,5 +1,5 @@
 /**
- * WP oOS Settings Dashboard JavaScript
+ * NV oOS Settings Dashboard JavaScript
  *
  * Handles tab switching, AJAX operations, and UI interactions.
  */
@@ -468,26 +468,26 @@
 			}
 			
 			// Log form submission details to console.
-			console.log('[WP oOS Settings] Form submission initiated');
-			console.log('[WP oOS Settings] Active tab:', activeTab);
-			console.log('[WP oOS Settings] Fields being submitted:', fieldCount);
-			console.log('[WP oOS Settings] Field names:', Object.keys(settingsData).join(', '));
-			console.log('[WP oOS Settings] Form action:', $form.attr('action'));
+			console.log('[NV oOS Settings] Form submission initiated');
+			console.log('[NV oOS Settings] Active tab:', activeTab);
+			console.log('[NV oOS Settings] Fields being submitted:', fieldCount);
+			console.log('[NV oOS Settings] Field names:', Object.keys(settingsData).join(', '));
+			console.log('[NV oOS Settings] Form action:', $form.attr('action'));
 			
 			// Check for potential issues.
 			if (fieldCount === 0) {
-				console.warn('[WP oOS Settings] WARNING: No settings fields found in form data!');
+				console.warn('[NV oOS Settings] WARNING: No settings fields found in form data!');
 			}
 			
 			if (!activeTab) {
-				console.warn('[WP oOS Settings] WARNING: No active_tab value found!');
+				console.warn('[NV oOS Settings] WARNING: No active_tab value found!');
 			}
 
 			// Add loading state.
 			$submit.prop('disabled', true);
 			$form.addClass('loading');
 			
-			console.log('[WP oOS Settings] Form is now submitting...');
+			console.log('[NV oOS Settings] Form is now submitting...');
 
 			// Original text will be restored on page reload after redirect.
 			// Note: This is a standard POST submission, not AJAX.

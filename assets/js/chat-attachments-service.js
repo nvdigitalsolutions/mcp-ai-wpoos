@@ -1,7 +1,7 @@
 /**
  * Chat Attachments Service
  *
- * Handles file attachment operations for the WP oOS chat interface.
+ * Handles file attachment operations for the NV oOS chat interface.
  * This includes:
  * - File uploads and validation
  * - Attachment rendering and display

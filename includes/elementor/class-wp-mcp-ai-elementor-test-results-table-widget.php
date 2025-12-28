@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS Test Results Table', 'wp-mcp-ai' );
+		return __( 'NV oOS Test Results Table', 'wp-mcp-ai' );
 	}
 
 	/**
