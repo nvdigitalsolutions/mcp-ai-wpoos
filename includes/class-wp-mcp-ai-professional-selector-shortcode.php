@@ -41,11 +41,11 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		add_shortcode( self::SHORTCODE, array( $this, 'render_shortcode' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_professional_config', array( $this, 'handle_get_professional_config' ) );
 		add_action( 'wp_ajax_nopriv_wp_mcp_ai_get_professional_config', array( $this, 'handle_get_professional_config' ) );
-		
+
 		// Add hooks for model selector (both logged-in and frontend access).
 		add_action( 'wp_ajax_wp_mcp_ai_get_models_for_provider', array( $this, 'handle_get_models_for_provider' ) );
 		add_action( 'wp_ajax_nopriv_wp_mcp_ai_get_models_for_provider', array( $this, 'handle_get_models_for_provider' ) );
-		
+
 		// Add hooks for rendering professional chat shortcode.
 		add_action( 'wp_ajax_wp_mcp_ai_render_professional_chat', array( $this, 'handle_render_professional_chat' ) );
 		add_action( 'wp_ajax_nopriv_wp_mcp_ai_render_professional_chat', array( $this, 'handle_render_professional_chat' ) );
@@ -433,7 +433,8 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
 
 		// Get the shortcode attributes from the request.
-		$shortcode_atts = isset( $_POST['shortcode_atts'] ) ? sanitize_text_field( wp_unslash( $_POST['shortcode_atts'] ) ) : '';
+		// Use wp_kses_post to allow shortcode-safe content while stripping potentially harmful HTML/JS.
+		$shortcode_atts = isset( $_POST['shortcode_atts'] ) ? wp_kses_post( wp_unslash( $_POST['shortcode_atts'] ) ) : '';
 
 		if ( empty( $shortcode_atts ) ) {
 			wp_send_json_error(
@@ -450,7 +451,8 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		// Process the shortcode to get rendered HTML.
 		$html = do_shortcode( $shortcode );
 
-		if ( empty( $html ) ) {
+		// Check if the shortcode was actually processed (do_shortcode returns the original string if no handler found).
+		if ( empty( $html ) || $html === $shortcode ) {
 			wp_send_json_error(
 				array(
 					'message' => __( 'Failed to render chat interface.', 'wp-mcp-ai' ),
