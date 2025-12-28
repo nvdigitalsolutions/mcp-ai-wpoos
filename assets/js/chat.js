@@ -10898,6 +10898,20 @@
             payload.professional_prompt = state.config.professionalPrompt;
         }
 
+        // Include provider/model/temperature overrides if provided (for professional selector usage).
+        if (state.config.provider || state.config.model || state.config.temperature) {
+            payload.options = payload.options || {};
+            if (state.config.provider) {
+                payload.options.provider = state.config.provider;
+            }
+            if (state.config.model) {
+                payload.options.model = state.config.model;
+            }
+            if (state.config.temperature !== undefined && state.config.temperature !== null) {
+                payload.options.temperature = parseFloat(state.config.temperature);
+            }
+        }
+
         function finalize() {
             state.busy = false;
             disableForm(state, false);

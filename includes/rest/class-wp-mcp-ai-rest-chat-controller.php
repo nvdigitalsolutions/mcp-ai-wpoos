@@ -320,6 +320,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'type'        => 'object',
 				'required'    => false,
 				'properties'  => array(
+					'provider'        => array(
+						'type' => 'string',
+					),
 					'model'           => array(
 						'type' => 'string',
 					),

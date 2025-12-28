@@ -373,6 +373,14 @@
 									if (response.data.config.id && response.data.config.assistantId) {
 										// Initialize the global config object if needed
 										window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};
+										
+										// Inject provider/model/temperature from professional selector into config
+										response.data.config.provider = state.provider;
+										response.data.config.model = state.model;
+										if (state.temperature) {
+											response.data.config.temperature = state.temperature;
+										}
+										
 										// Store the configuration
 										window.wpMcpAiChatInstances[instanceId] = response.data.config;
 									} else if (window.console && console.warn) {
