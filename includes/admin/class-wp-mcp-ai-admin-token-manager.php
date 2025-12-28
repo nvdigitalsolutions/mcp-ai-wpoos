@@ -50,7 +50,7 @@ class WP_MCP_AI_Admin_Token_Manager {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
-			__( 'WP oOS Token Manager', 'wp-mcp-ai' ),
+			__( 'NV oOS Token Manager', 'wp-mcp-ai' ),
 			__( 'Token Manager', 'wp-mcp-ai' ),
 			'manage_options',
 			self::PAGE_SLUG,

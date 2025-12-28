@@ -40,7 +40,7 @@ The Professional Selector widget allows users to select a professional, AI provi
 
 ### 2. Elementor Widget
 
-The **WP oOS Professional Selector** widget is available in the Elementor editor under the "General" category.
+The **NV oOS Professional Selector** widget is available in the Elementor editor under the "General" category.
 
 **Widget Controls:**
 
@@ -150,7 +150,7 @@ const state = jQuery('[data-wp-mcp-ai-professional-selector]').data('selector-st
 
 - WordPress 6.0+
 - PHP 7.4+
-- WP oOS plugin active
+- NV oOS plugin active
 - At least one published Professional (mcp_ai_profession CPT)
 - Configured AI providers in plugin settings
 

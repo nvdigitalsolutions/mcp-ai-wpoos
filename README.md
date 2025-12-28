@@ -87,7 +87,7 @@
 
 ## 🧩 Overview
 
-**WP oOS** is a modular AI framework for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face and Ollama (Local).
+**NV oOS** is a modular AI framework for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face and Ollama (Local).
 It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
 The plugin works standalone with **95 unique base tools** and optionally extends through the **Pro addon**, which adds **64 Pro tools** including advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **159 built-in tools**.
@@ -96,7 +96,7 @@ The plugin works standalone with **95 unique base tools** and optionally extends
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
-**WP oOS** is specifically designed to help **small to medium-sized businesses** fast-track their outdated, stale, or insecure company websites to modern technology standards—**without the need to add yet another wrapper around API calls**. Instead, we're trying to **peel back decades of API wrappers with the help of AI**, providing:
+**NV oOS** is specifically designed to help **small to medium-sized businesses** fast-track their outdated, stale, or insecure company websites to modern technology standards—**without the need to add yet another wrapper around API calls**. Instead, we're trying to **peel back decades of API wrappers with the help of AI**, providing:
 
 - **Direct AI Integration** - No middleware required. Connect directly to OpenAI, Gemini, and Ollama without custom development
 - **Security-First Architecture** - Built-in protection against nefarious usage with active monitoring and prevention systems
@@ -106,7 +106,7 @@ The plugin works standalone with **95 unique base tools** and optionally extends
 
 ### 🛡️ Active Security Monitoring
 
-**WP oOS actively prevents and monitors against nefarious behavior**. The plugin includes:
+**NV oOS actively prevents and monitors against nefarious behavior**. The plugin includes:
 
 - **Nefarious Usage Monitor** - Real-time detection of suspicious patterns and automatic emergency shutdown capabilities【F:includes/class-wp-mcp-ai-nefarious-usage-monitor.php†L1-L676】
 - **Root Security Key** - Optional emergency authentication layer to prevent unauthorized reactivation after security incidents【F:docs/root-security-key.md†L1-L511】
@@ -119,11 +119,11 @@ The plugin works standalone with **95 unique base tools** and optionally extends
 
 ## Patent Pending
 
-**WP oOS is the subject of a pending patent application** for its novel **System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting**.
+**NV oOS is the subject of a pending patent application** for its novel **System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting**.
 
 **Application Number:** 19/410,504
 
-The patent covers WP oOS's innovative approach to implementing sophisticated AI orchestration in WordPress's request-based PHP architecture—a platform not designed for real-time streaming, asynchronous operations, or persistent state management. This technical achievement enables enterprise-grade AI capabilities on WordPress by recreating event-driven behavior within PHP's synchronous execution model.
+The patent covers NV oOS's innovative approach to implementing sophisticated AI orchestration in WordPress's request-based PHP architecture—a platform not designed for real-time streaming, asynchronous operations, or persistent state management. This technical achievement enables enterprise-grade AI capabilities on WordPress by recreating event-driven behavior within PHP's synchronous execution model.
 
 **Key Innovations Covered:**
 - Dynamic resource budget allocation during streaming operations
@@ -132,13 +132,13 @@ The patent covers WP oOS's innovative approach to implementing sophisticated AI 
 - Metrics-driven budget adjustment for real-time optimization
 - Persistent-behavior illusion in request-based architectures
 
-The orchestration layer makes WP oOS unique in the WordPress ecosystem by solving fundamental architectural limitations that prevent traditional WordPress plugins from supporting advanced AI features. See the [System Architecture](#-system-architecture) section below for technical details on how these innovations work together.
+The orchestration layer makes NV oOS unique in the WordPress ecosystem by solving fundamental architectural limitations that prevent traditional WordPress plugins from supporting advanced AI features. See the [System Architecture](#-system-architecture) section below for technical details on how these innovations work together.
 
 ## 🏗 System Architecture
 
-WP oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
+NV oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
-> **📖 For a detailed explanation of how WP oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
+> **📖 For a detailed explanation of how NV oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
 
 ### Why This Architecture Is Novel: Overcoming PHP's Limitations
 
@@ -153,9 +153,9 @@ WP oOS implements a comprehensive orchestration layer for managing AI operations
 - No persistent memory between requests
 - No native event loop or async coordination
 
-**WP oOS solves this** by implementing an orchestration layer that creates a "persistent-behavior illusion" — effectively **recreating Node.js's event loop behavior within WordPress's synchronous, request-based architecture**. This architectural compensation is the system's core technical innovation:
+**NV oOS solves this** by implementing an orchestration layer that creates a "persistent-behavior illusion" — effectively **recreating Node.js's event loop behavior within WordPress's synchronous, request-based architecture**. This architectural compensation is the system's core technical innovation:
 
-| PHP Limitation | WP oOS Solution |
+| PHP Limitation | NV oOS Solution |
 |----------------|-----------------|
 | No persistent state | Registry & policy engine maintain state via database/cache |
 | No event loop | Cron Manager extends orchestration across time-shifted operations |
@@ -163,7 +163,7 @@ WP oOS implements a comprehensive orchestration layer for managing AI operations
 | Request-based lifecycle | SSE controller implements streaming within request boundaries |
 | No background workers | WordPress cron system simulates async job processing |
 
-This makes WP oOS patent-worthy as a **technical workaround** — it achieves sophisticated AI orchestration in an environment specifically not designed for such patterns. See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) for the complete technical analysis.
+This makes NV oOS patent-worthy as a **technical workaround** — it achieves sophisticated AI orchestration in an environment specifically not designed for such patterns. See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) for the complete technical analysis.
 
 ### Computer-Implemented Resource Management
 
@@ -190,7 +190,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 
 ### Symfony Process Integration (December 2025)
 
-WP oOS Pro addon integrates the Symfony Process component for secure external command execution. This modern framework replaces direct `exec()` calls in 6 Pro tools and 2 supporting services, providing:
+NV oOS Pro addon integrates the Symfony Process component for secure external command execution. This modern framework replaces direct `exec()` calls in 6 Pro tools and 2 supporting services, providing:
 
 - **Enhanced Security**: Proper argument escaping and command validation
 - **Timeout Management**: Configurable timeouts with graceful handling
@@ -335,7 +335,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### Model defaults
 
-Global settings capture the default provider, model, and timeout used when assistants are created, ensuring every conversation inherits stable generation behaviour until explicitly overridden. These defaults ship with sensible values for OpenAI and Gemini out of the box and can be tailored from the WP oOS settings screen.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L77】
+Global settings capture the default provider, model, and timeout used when assistants are created, ensuring every conversation inherits stable generation behaviour until explicitly overridden. These defaults ship with sensible values for OpenAI and Gemini out of the box and can be tailored from the NV oOS settings screen.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L77】
 
 ### Base knowledge
 
@@ -464,7 +464,7 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | Get Site Summary | `get_site_summary` | Provides high-level site metadata, content counts, and admin contact details for context-aware assistants.【F:includes/tools/class-wp-mcp-ai-tool-get-site-summary.php†L12-L66】|
 | Get MCP Environment Status | `get_environment_status` | Summarises WordPress versions, MCP defaults, assistant counts, and dependency warnings for incident response.【F:includes/tools/class-wp-mcp-ai-tool-get-environment-status.php†L12-L178】|
 | Get Site Health Status | `get_site_health` | Runs WordPress Site Health diagnostics and returns grouped pass/warn/fail tests with remediation guidance.【F:includes/tools/class-wp-mcp-ai-tool-get-site-health.php†L12-L255】|
-| Get System Logs | `get_system_logs` | Aggregates WP oOS logs, WordPress/PHP error logs, and plugin log files to aid in debugging workflows.【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L12-L352】|
+| Get System Logs | `get_system_logs` | Aggregates NV oOS logs, WordPress/PHP error logs, and plugin log files to aid in debugging workflows.【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L12-L352】|
 | Get Update Status | `get_update_status` | Reports pending core, plugin, and theme updates with version and download metadata for maintenance planning.【F:includes/tools/class-wp-mcp-ai-tool-get-update-status.php†L12-L182】|
 | **Testing & Validation** | | |
 | Probe Assistant Chat | `probe_chat` | Issues a chat probe against a published assistant to confirm sanitisation, configuration, and REST handling without consuming model tokens.【F:includes/tools/class-wp-mcp-ai-tool-probe-chat.php†L12-L178】|
@@ -516,7 +516,7 @@ Need per-tool prerequisites or capability callouts? Consult [`docs/tool-referenc
 
 ## 🗨️ Front-end chat surfaces
 
-WP oOS ships multiple ways to embed assistants on the front end:
+NV oOS ships multiple ways to embed assistants on the front end:
 
 - **Classic chat shortcode** – `[mcp_ai_chat]` renders the bundled interface with attachment uploads, tool invocation feedback, and optional guest access via `allow_guests="true"`. When guest mode is enabled, the shortcode provisions a temporary token and injects it into the JavaScript bootstrap so visitors without WordPress accounts can continue chatting while still respecting capability checks and attachment safety limits.【F:includes/class-wp-mcp-ai-shortcode.php†L132-L258】【F:includes/class-wp-mcp-ai-shortcode.php†L188-L226】
 - **Elementor widgets** – Drop the chat UI anywhere Elementor is active, pair it with intro/FAQ blocks, and surface dashboard telemetry without custom code. The chat widget mirrors the shortcode controls (including `allow_guests`), and companion widgets expose onboarding content, usage timers, provider quick links, and activity feeds for operational views.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L79-L138】【F:includes/class-wp-mcp-ai-elementor-integration.php†L48-L98】【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L140】【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L226】【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L167】
@@ -534,13 +534,13 @@ The chat interface automatically persists conversation history to the browser's 
 
 #### Server-Side Chat Transcript Storage (Requires JetEngine)
 
-⚠️ **Third-Party Plugin Required:** [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) (not included with WP oOS)
+⚠️ **Third-Party Plugin Required:** [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) (not included with NV oOS)
 
 Without JetEngine, chat conversations are **only stored in browser localStorage** (client-side, 24-hour retention). To enable permanent server-side chat transcript archiving:
 
 1. Install and activate the [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) plugin (third-party, paid plugin from Crocoblock)
 2. Enable the **Custom Content Types** module in JetEngine settings
-3. WP oOS will automatically provision the `ai_chat_transcripts` CCT for permanent storage
+3. NV oOS will automatically provision the `ai_chat_transcripts` CCT for permanent storage
 
 **What you get with JetEngine:**
 - ✅ Permanent server-side chat transcript storage
@@ -609,7 +609,7 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 
 #### Final Steps
 
-1. Activate **Open Operator System Complete (WP oOS)** from WordPress admin
+1. Activate **Open Operator System Complete (NV oOS)** from WordPress admin
 2. You now have the **complete version** with all 159 tools (95 base + 64 Pro)
 
 **What you get from the repository clone:**
@@ -625,8 +625,8 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 
 ### Standard Installation
 1. Upload `mcp-ai-wpoos.zip` to `/wp-content/plugins/`
-2. Activate **WP oOS** from the WordPress admin
-3. Go to **Settings → WP oOS**
+2. Activate **NV oOS** from the WordPress admin
+3. Go to **Settings → NV oOS**
 4. Enter your OpenAI API key
 5. Create a new “AI Assistant” in **AI Assistants**
 6. Add `[mcp_ai_chat assistant="123"]` to a page or post
@@ -635,11 +635,11 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 
 ⚠️ **Third-Party Plugin (Not Included):** [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) is a paid plugin from Crocoblock
 
-**JetEngine is completely optional** - WP oOS works perfectly without it. However, if you want server-side chat transcript storage:
+**JetEngine is completely optional** - NV oOS works perfectly without it. However, if you want server-side chat transcript storage:
 
 1. Purchase and install [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) separately
 2. Enable the **Custom Content Types** module in JetEngine settings
-3. WP oOS will automatically provision the `ai_chat_transcripts` CCT for permanent chat storage
+3. NV oOS will automatically provision the `ai_chat_transcripts` CCT for permanent chat storage
 
 **What works WITHOUT JetEngine:**
 - ✅ All core AI assistant features
@@ -657,7 +657,7 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 
 ## 🔌 What You Lose Without Third-Party Plugins
 
-WP oOS works perfectly with vanilla WordPress, but certain features require third-party plugins (sold separately). Here's exactly what you lose without each plugin:
+NV oOS works perfectly with vanilla WordPress, but certain features require third-party plugins (sold separately). Here's exactly what you lose without each plugin:
 
 ### Without JetEngine (Crocoblock - Paid Plugin)
 
@@ -780,7 +780,7 @@ WP oOS works perfectly with vanilla WordPress, but certain features require thir
 
 ### Base Version (Default)
 
-**WP oOS runs in Base Version mode by default**, providing 95 essential tools that work with vanilla WordPress without requiring any third-party plugins:
+**NV oOS runs in Base Version mode by default**, providing 95 essential tools that work with vanilla WordPress without requiring any third-party plugins:
 
 **Base Version includes 95 essential tools that work with vanilla WordPress:**
 - Content management (search, save posts, attachments)
@@ -835,7 +835,7 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 
 ## 📚 Documentation
 
-WP oOS includes comprehensive documentation covering all aspects of the plugin. **Documentation was reorganized in November 2025** - 95+ historical documents moved to `docs/archive/` for better navigation.
+NV oOS includes comprehensive documentation covering all aspects of the plugin. **Documentation was reorganized in November 2025** - 95+ historical documents moved to `docs/archive/` for better navigation.
 
 ### Quick Links
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
@@ -885,27 +885,27 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin. 
 
 Complete these after installation to unlock every integration point:
 
-- [ ] **Add your OpenAI API key** in **Settings → WP oOS → OpenAI API Key** so API calls are authorised.
-- [ ] **Add your Gemini API key** in **Settings → WP oOS → Gemini API Key** if you plan to route assistants through Gemini.
-- [ ] **Confirm or override the default model** via **Settings → WP oOS → Default Model** (`gpt-4.1` ships as the default).
-- [ ] **Set a default Gemini model** under **Settings → WP oOS → Default Gemini Model** when Gemini is enabled.
-- [ ] **Choose the default provider** from **Settings → WP oOS → Default Provider** so new assistants know whether to use OpenAI or Gemini by default.
-- [ ] **Adjust the request timeout** under **Settings → WP oOS → Request Timeout** (minimum 5 s, default 30 s) to match your hosting environment.
-- [ ] **Select a default assistant** with **Settings → WP oOS → Default Assistant** so REST and shortcode requests have a fallback.
-- [ ] **Decide on logging** with **Settings → WP oOS → Enable Logging** when you need verbose diagnostics.
-- [ ] **Monitor token usage** in **Settings → WP oOS → Token Usage Statistics** to track API consumption across users, providers, and models for billing and budget management.
-- [ ] **Choose your uninstall behaviour** via **Settings → WP oOS → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
-- [ ] **Configure Crawl4AI access** in **Settings → WP oOS → Tools** when you want the Crawl4AI tool to be available to assistants.
-- [ ] **Review attachment MIME overrides** in **Settings → WP oOS → Attachments** before enabling file uploads for end users.
-- [ ] **Review Send Group Email permissions** in **Settings → WP oOS → Tools** to choose the capability and recipient cap for the group email automation.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L348-L359】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L938-L953】
-- [ ] **Connect QuickBooks Online** under **Settings → WP oOS → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
-- [ ] **Configure Mailjet credentials** in **Settings → WP oOS → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
-- [ ] **Enable Federation & Discovery** (Optional) in **Settings → WP oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
+- [ ] **Add your OpenAI API key** in **Settings → NV oOS → OpenAI API Key** so API calls are authorised.
+- [ ] **Add your Gemini API key** in **Settings → NV oOS → Gemini API Key** if you plan to route assistants through Gemini.
+- [ ] **Confirm or override the default model** via **Settings → NV oOS → Default Model** (`gpt-4.1` ships as the default).
+- [ ] **Set a default Gemini model** under **Settings → NV oOS → Default Gemini Model** when Gemini is enabled.
+- [ ] **Choose the default provider** from **Settings → NV oOS → Default Provider** so new assistants know whether to use OpenAI or Gemini by default.
+- [ ] **Adjust the request timeout** under **Settings → NV oOS → Request Timeout** (minimum 5 s, default 30 s) to match your hosting environment.
+- [ ] **Select a default assistant** with **Settings → NV oOS → Default Assistant** so REST and shortcode requests have a fallback.
+- [ ] **Decide on logging** with **Settings → NV oOS → Enable Logging** when you need verbose diagnostics.
+- [ ] **Monitor token usage** in **Settings → NV oOS → Token Usage Statistics** to track API consumption across users, providers, and models for billing and budget management.
+- [ ] **Choose your uninstall behaviour** via **Settings → NV oOS → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
+- [ ] **Configure Crawl4AI access** in **Settings → NV oOS → Tools** when you want the Crawl4AI tool to be available to assistants.
+- [ ] **Review attachment MIME overrides** in **Settings → NV oOS → Attachments** before enabling file uploads for end users.
+- [ ] **Review Send Group Email permissions** in **Settings → NV oOS → Tools** to choose the capability and recipient cap for the group email automation.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L348-L359】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L938-L953】
+- [ ] **Connect QuickBooks Online** under **Settings → NV oOS → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
+- [ ] **Configure Mailjet credentials** in **Settings → NV oOS → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
+- [ ] **Enable Federation & Discovery** (Optional) in **Settings → NV oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/root-security-key.md†L1-L511】
 
 ## 🧠 Language Model Providers (OpenAI, Gemini, Ollama & LM Studio)
 
-A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, a local Ollama instance, or LM Studio while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → WP oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, a local Ollama instance, or LM Studio while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
 
 ### LM Studio Support
 
@@ -919,7 +919,7 @@ A dedicated router transparently forwards chat completions to the active provide
 
 ### Provider Priority List & Automatic Fallback
 
-The plugin includes an intelligent provider priority system that automatically tries alternative providers when the primary one fails or is unavailable. In **Settings → WP oOS**, you can:
+The plugin includes an intelligent provider priority system that automatically tries alternative providers when the primary one fails or is unavailable. In **Settings → NV oOS**, you can:
 
 - **Drag and drop** providers to set your preferred order
 - **Automatic fallback** - if the first provider fails, the system tries the next one
@@ -939,7 +939,7 @@ The Ollama provider enables privacy-focused, cost-free AI processing by connecti
 To configure Ollama:
 1. Install [Ollama](https://ollama.ai) on your server or local machine
 2. Pull a model (e.g., `ollama pull llama2`)
-3. Navigate to **Settings → WP oOS → Ollama Configuration**
+3. Navigate to **Settings → NV oOS → Ollama Configuration**
 4. Enter your Ollama endpoint URL (default: `http://localhost:11434`)
 5. Click "Test Connection" to verify connectivity
 6. Click "Fetch Models" to see available models
@@ -973,13 +973,13 @@ The plugin ships with presets for OpenAI’s current Responses, Reasoning, Audio
 | Text-to-speech | `gpt-4o-mini-tts` | Up to ~4,096 input tokens per request | Generates natural-sounding speech in multiple voices; longer scripts should be chunked into multiple calls. |
 | Speech-to-text | `gpt-4o-mini-transcribe` | Optimised for recordings ≤ 90 minutes | Handles multilingual transcription and translation; large files are automatically chunked client-side before upload. |
 
-OpenAI regularly revises token policies and media limits, so review the [model specification dashboard](https://platform.openai.com/docs/models) before rolling out new assistants or increasing attachment budgets. Updating your defaults in **Settings → WP oOS** keeps every assistant aligned with the latest provider guidance.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L105】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L2298-L2398】
+OpenAI regularly revises token policies and media limits, so review the [model specification dashboard](https://platform.openai.com/docs/models) before rolling out new assistants or increasing attachment budgets. Updating your defaults in **Settings → NV oOS** keeps every assistant aligned with the latest provider guidance.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L105】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L2298-L2398】
 
 ## 🧱 ChatKit Integration
 
-The [ChatKit](https://github.com/nvdigitalsolutions/chatkit) module now ships with the core WP oOS plugin, so no separate add-on installation is required. Once enabled it self-registers through ChatKit’s filter and action APIs as soon as both plugins load, exposing the `mcp-ai/v1` REST namespace while advertising chat, tool invocation, attachment download, and guest token support without any manual bootstrapping. Return `false` from the `wp_mcp_ai_chatkit_is_available` filter if you need to disable the automatic registration for bespoke environments.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L30-L204】【F:includes/class-wp-mcp-ai-rest.php†L16-L2104】
+The [ChatKit](https://github.com/nvdigitalsolutions/chatkit) module now ships with the core NV oOS plugin, so no separate add-on installation is required. Once enabled it self-registers through ChatKit’s filter and action APIs as soon as both plugins load, exposing the `mcp-ai/v1` REST namespace while advertising chat, tool invocation, attachment download, and guest token support without any manual bootstrapping. Return `false` from the `wp_mcp_ai_chatkit_is_available` filter if you need to disable the automatic registration for bespoke environments.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L30-L204】【F:includes/class-wp-mcp-ai-rest.php†L16-L2104】
 
-From the ChatKit dashboard configure the **WP oOS** integration and supply at least one assistant ID so ChatKit knows which conversation to join. Optional fields let you override the system prompt or preload tool shortcut payloads for operators; capability checks inherit the `wp_mcp_ai_chat_capability` filter, so you can align ChatKit access with the same policies used for shortcodes or REST calls.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L182-L210】【F:mcp-ai-wpoos.php†L25-L72】
+From the ChatKit dashboard configure the **NV oOS** integration and supply at least one assistant ID so ChatKit knows which conversation to join. Optional fields let you override the system prompt or preload tool shortcut payloads for operators; capability checks inherit the `wp_mcp_ai_chat_capability` filter, so you can align ChatKit access with the same policies used for shortcodes or REST calls.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L182-L210】【F:mcp-ai-wpoos.php†L25-L72】
 
 Consult [`docs/chatkit-integration.md`](docs/guides/developer/integration/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
 
@@ -987,13 +987,13 @@ Consult [`docs/chatkit-integration.md`](docs/guides/developer/integration/chatki
 
 Administrators with `manage_options` capabilities can run the **Run Crawl4AI Job** tool without any external service: when no Crawl4AI endpoint is configured the plugin performs the crawl directly on the WordPress server using the built-in HTTP client, extracts headings and text as Markdown, and records the raw HTML and response metadata for the assistant.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L32-L745】 Errors for individual URLs are captured in the response metadata so partial crawls still return useful context. When a remote Crawl4AI endpoint is configured the request now returns immediately with a task token while WP-Cron powered background polling captures the final payload and makes it available to the assistant UI once the crawl finishes.【F:includes/crawler/class-wp-mcp-ai-crawler.php†L1-L214】【F:assets/js/chat.js†L1-L2200】
 
-Configure remote endpoints or API keys under **Settings → WP oOS → Tools** to tailor how the Crawl4AI integration runs across environments.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】
+Configure remote endpoints or API keys under **Settings → NV oOS → Tools** to tailor how the Crawl4AI integration runs across environments.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】
 
 Supplying a Crawl4AI base URL (and optional API key) switches the tool back to proxying crawl jobs to the remote Crawl4AI REST API, preserving backwards compatibility with existing deployments.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L206-L339】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】 Local environments can still feed a custom endpoint to the integration through the `WP_MCP_AI_CRAWL4AI_BASE_URL` or `CRAWL4AI_BASE_URL` environment variable when you want to test against a dedicated Crawl4AI service.【F:mcp-ai-wpoos.php†L54-L96】
 
 ## 📡 Job Notification System
 
-WP oOS includes a general-purpose infrastructure for real-time notifications on async WordPress jobs, providing SSE streaming and webhook support for external integrations.【F:docs/job-notification-system.md†L1-L100】
+NV oOS includes a general-purpose infrastructure for real-time notifications on async WordPress jobs, providing SSE streaming and webhook support for external integrations.【F:docs/job-notification-system.md†L1-L100】
 
 ### Architecture
 
@@ -1049,17 +1049,17 @@ WP_MCP_AI_Job_Notifier::register_webhook(
 Sites running Elementor automatically register a suite of MCP blocks so you can assemble onboarding pages, operational dashboards, and standalone chat layouts without writing markup.【F:includes/class-wp-mcp-ai-elementor-integration.php†L12-L98】 The integration only boots when Elementor is present, so non-Elementor installs avoid any overhead.【F:includes/class-wp-mcp-ai-elementor-integration.php†L29-L46】
 
 ### Chat surfaces and companion blocks
-- **WP oOS Chat** – Renders the assistant interface with the same controls exposed by the `[mcp_ai_chat]` shortcode, including the `allow_guests` toggle for minting temporary visitor tokens.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L138】
-- **WP oOS Chat Intro** – Adds a configurable hero block above the conversation with headings, talking points, and an optional call-to-action button to guide visitors before they engage the model.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L190】
-- **WP oOS Chat FAQ** – Surfaces a repeater-driven FAQ list alongside the chat so product teams can document policies and best practices in context.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-faq-widget.php†L47-L150】
-- **WP oOS Usage & Timer** – Combines a focus timer with per-user token totals, gracefully handling logged-out visitors, disabled tracking, and empty usage histories.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L340】
+- **NV oOS Chat** – Renders the assistant interface with the same controls exposed by the `[mcp_ai_chat]` shortcode, including the `allow_guests` toggle for minting temporary visitor tokens.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L138】
+- **NV oOS Chat Intro** – Adds a configurable hero block above the conversation with headings, talking points, and an optional call-to-action button to guide visitors before they engage the model.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L190】
+- **NV oOS Chat FAQ** – Surfaces a repeater-driven FAQ list alongside the chat so product teams can document policies and best practices in context.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-faq-widget.php†L47-L150】
+- **NV oOS Usage & Timer** – Combines a focus timer with per-user token totals, gracefully handling logged-out visitors, disabled tracking, and empty usage histories.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L340】
 
 ### Operations dashboards
-- **WP oOS Tool Matrix** – Pulls the tool registry, groups integrations by focus area, and highlights the required capability for each assistant tool so administrators can plan enablement safely. The Send Group Email row now mirrors the capability and recipient limit configured in the MCP settings so editorial policies stay front-of-mind.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php†L48-L440】
-- **WP oOS User Capability Snapshot** – Summarises the signed-in operator’s profile, common capabilities, JetEngine access, and multisite memberships to support governance reviews. It also surfaces the configured Send Group Email capability and limit so administrators immediately know whether the current user can trigger bulk mail jobs.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L48-L392】
-- **WP oOS Theme Preview** – Renders a mock conversation using the saved chat color tokens and optionally displays a legend of every branding token for quick QA during rollouts.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php†L48-L198】
-- **WP oOS Provider Quick Links** – Reuses the OpenAI usage/log tools to populate external billing and telemetry shortcuts that open in new tabs for rapid debugging.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php†L48-L166】
-- **WP oOS Activity Feed** – Streams the latest MCP log entries (tool runs, chat interactions, and optional provider requests), collapsing raw context into expandable JSON blocks for deeper analysis.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L210】
+- **NV oOS Tool Matrix** – Pulls the tool registry, groups integrations by focus area, and highlights the required capability for each assistant tool so administrators can plan enablement safely. The Send Group Email row now mirrors the capability and recipient limit configured in the MCP settings so editorial policies stay front-of-mind.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php†L48-L440】
+- **NV oOS User Capability Snapshot** – Summarises the signed-in operator’s profile, common capabilities, JetEngine access, and multisite memberships to support governance reviews. It also surfaces the configured Send Group Email capability and limit so administrators immediately know whether the current user can trigger bulk mail jobs.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L48-L392】
+- **NV oOS Theme Preview** – Renders a mock conversation using the saved chat color tokens and optionally displays a legend of every branding token for quick QA during rollouts.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php†L48-L198】
+- **NV oOS Provider Quick Links** – Reuses the OpenAI usage/log tools to populate external billing and telemetry shortcuts that open in new tabs for rapid debugging.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php†L48-L166】
+- **NV oOS Activity Feed** – Streams the latest MCP log entries (tool runs, chat interactions, and optional provider requests), collapsing raw context into expandable JSON blocks for deeper analysis.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L210】
 
 ## 🧮 Usage Tracking
 
@@ -1067,7 +1067,7 @@ The plugin records aggregate token usage per user, provider, and model whenever 
 
 ### Token Usage Management Dashboard
 
-Administrators with `manage_options` capability can view comprehensive token usage statistics in **Settings → WP oOS**:
+Administrators with `manage_options` capability can view comprehensive token usage statistics in **Settings → NV oOS**:
 
 **Global Statistics (All Users):**
 - Total requests across all users
@@ -1102,7 +1102,7 @@ Administrators can override the default image and file MIME allowlists used by t
 
 ## ⚡ Message Bundling
 
-WP oOS implements client-side message bundling to optimize API usage and reduce server load. When enabled, messages sent within an 800ms window are automatically grouped into a single API request, reducing costs and improving performance for users who send multiple messages in quick succession.【F:docs/message-bundling-feature.md†L1-L80】
+NV oOS implements client-side message bundling to optimize API usage and reduce server load. When enabled, messages sent within an 800ms window are automatically grouped into a single API request, reducing costs and improving performance for users who send multiple messages in quick succession.【F:docs/message-bundling-feature.md†L1-L80】
 
 ### How It Works
 
@@ -1135,7 +1135,7 @@ window.wpMcpAiChatDebugMode = true;
 
 ## 🎯 Agentic Loop Token Management
 
-WP oOS includes intelligent handling for tools that return large responses, preventing token overflow errors during agentic loops (where the AI automatically calls multiple tools).【F:docs/high-token-tool-handling.md†L1-L80】
+NV oOS includes intelligent handling for tools that return large responses, preventing token overflow errors during agentic loops (where the AI automatically calls multiple tools).【F:docs/high-token-tool-handling.md†L1-L80】
 
 ### The Problem
 
@@ -1162,7 +1162,7 @@ Tools like `run_crawl4ai_job` can return 100,000+ tokens of content. In agentic 
 
 ### Configuration
 
-Automatic model switching is enabled by default. Configure fallback model under **Settings → WP oOS**:
+Automatic model switching is enabled by default. Configure fallback model under **Settings → NV oOS**:
 
 ```php
 // Default fallback model
@@ -1173,7 +1173,7 @@ Automatic model switching is enabled by default. Configure fallback model under 
 
 ## 🔄 Chat Performance Optimizations
 
-WP oOS includes several performance optimizations to enhance the chat experience:
+NV oOS includes several performance optimizations to enhance the chat experience:
 
 - **Message bundling** - Reduces API calls by grouping rapid user inputs
 - **Token budget management** - Prevents API limit overruns with safety margins【F:docs/tpm-limit-validation.md†L1-L50】
@@ -1185,7 +1185,7 @@ WP oOS includes several performance optimizations to enhance the chat experience
 
 ## 🌐 Mesh Compute Routing
 
-WP oOS includes **intelligent mesh compute routing** that automatically distributes AI workload across multiple sites OR multiple providers using AI-powered decision-making. This feature works in two modes:
+NV oOS includes **intelligent mesh compute routing** that automatically distributes AI workload across multiple sites OR multiple providers using AI-powered decision-making. This feature works in two modes:
 
 1. **Multi-Site Mesh**: Distribute load across multiple WordPress installations
 2. **Single-Site Multi-Provider**: Balance load across OpenAI, Gemini, and Ollama on one site
@@ -1219,7 +1219,7 @@ Both modes use the same AI-powered routing engine to optimize for cost, performa
 
 ## 🔗 Federation & Discovery System
 
-WP oOS includes a **decentralized AI capability network** that allows WordPress sites to publish their capabilities and discover peer sites. Think of it as "npm for AI tools" — sites can advertise what they offer and find complementary capabilities from trusted peers.
+NV oOS includes a **decentralized AI capability network** that allows WordPress sites to publish their capabilities and discover peer sites. Think of it as "npm for AI tools" — sites can advertise what they offer and find complementary capabilities from trusted peers.
 
 ### Overview
 
@@ -1232,7 +1232,7 @@ The Federation & Discovery system provides three deployment modes:
 ### Quick Start
 
 **Enable Federation (Publisher Mode):**
-1. Navigate to **Settings → WP oOS → Federation & Discovery**
+1. Navigate to **Settings → NV oOS → Federation & Discovery**
 2. Check **Enable federation**
 3. Configure regions (e.g., `us, eu, ap`) and data tags (e.g., `no_pii, gdpr_ok`)
 4. Your capabilities are now published at `https://yoursite.com/.well-known/ai-peer`
@@ -1303,26 +1303,26 @@ The 2025-10-31 internal review confirms the hardening of the group email automat
 
 ## 🔒 MCP Server Authentication
 
-Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → WP oOS**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/reference/api/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/getting-started/installation-setup/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
+Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → NV oOS**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/reference/api/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/getting-started/installation-setup/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
 
-### Using WP oOS as an MCP server
+### Using NV oOS as an MCP server
 
-1. **Install the plugin and create assistants.** Each WordPress instance that activates WP oOS exposes an MCP-ready assistant directory backed by the `ai_assistant` custom post type, so every published assistant becomes available to remote clients once credentials are issued.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L460-L620】
-2. **Configure the REST and connector settings.** Populate the Auth0, model provider, and optional integration credentials under **Settings → WP oOS** so the REST controller can advertise the correct namespace URLs and enforce bearer tokens per your tenant, scope, and provider defaults.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L118】
+1. **Install the plugin and create assistants.** Each WordPress instance that activates NV oOS exposes an MCP-ready assistant directory backed by the `ai_assistant` custom post type, so every published assistant becomes available to remote clients once credentials are issued.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L460-L620】
+2. **Configure the REST and connector settings.** Populate the Auth0, model provider, and optional integration credentials under **Settings → NV oOS** so the REST controller can advertise the correct namespace URLs and enforce bearer tokens per your tenant, scope, and provider defaults.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L118】
 3. **Expose the MCP directory endpoints.** The REST layer publishes `/assistants`, `/chat`, `/tools`, and an SSE-compatible `/sse` handshake inside the `wp-json/mcp-ai/v1` namespace, automatically scoping responses to the authenticated assistant or returning every assistant the caller may read.【F:includes/class-wp-mcp-ai-rest.php†L234-L703】 Hand-held clients can subscribe to the streaming directory event or call the JSON routes directly using the base URLs returned in the directory payload.【F:includes/class-wp-mcp-ai-rest.php†L653-L703】
 4. **Register any additional tools.** Extend the server’s capabilities by hooking into `wp_mcp_ai_register_tools` and loading custom tool classes; registered slugs flow through the assistant directory and tool execution endpoint without extra wiring.【F:includes/class-wp-mcp-ai-tool-registry.php†L75-L195】
 5. **Verify the deployment before sharing credentials.** Run `wp mcp-ai remote https://example.com/wp-json/mcp-ai/v1 --token=YOUR_TOKEN` from any WP-CLI environment to confirm authentication, assistant scope, and chat probes succeed before you hand tokens to operators or client teams.【F:includes/class-wp-mcp-ai-cli-command.php†L137-L220】
 
 ### Operating multiple MCP deployments
 
-Provision a separate WordPress site (or network site) for each MCP server you need, activate WP oOS, and repeat the configuration steps above with environment-specific Auth0 audiences, scopes, and provider keys. Because the assistant directory response includes the resolved REST base and namespace metadata, MCP clients can be pointed at different deployments simply by swapping the base URL and the bearer credential minted for that site’s assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L48-L118】【F:includes/class-wp-mcp-ai-rest.php†L653-L703】
+Provision a separate WordPress site (or network site) for each MCP server you need, activate NV oOS, and repeat the configuration steps above with environment-specific Auth0 audiences, scopes, and provider keys. Because the assistant directory response includes the resolved REST base and namespace metadata, MCP clients can be pointed at different deployments simply by swapping the base URL and the bearer credential minted for that site’s assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L48-L118】【F:includes/class-wp-mcp-ai-rest.php†L653-L703】
 
 Sites that enable the Simple JWT Login integration can now reuse those bearer tokens alongside Auth0 credentials. The plugin validates tokens with Simple JWT Login’s native services, falls back to manual JWT decoding when the dependency cannot resolve a user, and automatically scopes REST requests to the assistant encoded in the token so cross-assistant hops are blocked with actionable errors.【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L47-L214】【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L240-L378】【F:includes/class-wp-mcp-ai-rest.php†L2769-L2808】
 
 
 ## 🌐 Connecting Remote MCP Clients
 
-WP oOS works seamlessly with popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors. Each client connects to your WordPress site via the MCP REST API at `/wp-json/mcp-ai/v1` and can access assistants, execute tools, and interact with your WordPress data remotely.
+NV oOS works seamlessly with popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors. Each client connects to your WordPress site via the MCP REST API at `/wp-json/mcp-ai/v1` and can access assistants, execute tools, and interact with your WordPress data remotely.
 
 **SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#-sse-streaming-support) section for details.
 
@@ -1404,7 +1404,7 @@ See the complete [LM Studio setup guide](docs/getting-started/installation-setup
 ⚠️ **Note:** ChatGPT connectors currently require Auth0 authentication. Assistant-issued credentials are not yet supported by OpenAI's ChatGPT platform.
 
 To connect via ChatGPT:
-1. Configure Auth0 in **Settings → WP oOS**
+1. Configure Auth0 in **Settings → NV oOS**
 2. Generate an Auth0 access token with the configured audience
 3. Add the MCP server in ChatGPT's connector settings
 
@@ -1442,7 +1442,7 @@ For comprehensive setup guides, troubleshooting, and advanced configurations, se
 
 ## 🎫 Token Management UI
 
-**WP oOS 1.0.0 introduces a centralized Token Manager** for managing all external agent access tokens across your assistants. Access it via **WP oOS → Token Manager** in the admin menu.
+**NV oOS 1.0.0 introduces a centralized Token Manager** for managing all external agent access tokens across your assistants. Access it via **NV oOS → Token Manager** in the admin menu.
 
 ### Features
 
@@ -1491,7 +1491,7 @@ codex chat --assistant 123 "Hello world"
 ### Access Requirements
 
 - **Capability:** `manage_options` (administrators only)
-- **Menu Location:** WP oOS → Token Manager
+- **Menu Location:** NV oOS → Token Manager
 - **REST API:** `/wp-json/mcp-ai/v1/token-manager/*`
 
 For complete documentation, see [Token Management Guide](docs/features/performance/token-management.md).
@@ -1499,7 +1499,7 @@ For complete documentation, see [Token Management Guide](docs/features/performan
 ---
 
 ## 🤖 ChatGPT Connector
-OpenAI’s ChatGPT connector beta currently authenticates exclusively through Auth0. Because WP oOS issues its own assistant-scoped bearer credentials, you can connect LM Studio, Claude Desktop, and other MCP-aware clients today, while ChatGPT support will require either Auth0 bridging or native bearer support from OpenAI. We’ll update this section as soon as ChatGPT adds compatibility with first-party tokens.【F:docs/mcp-server-authentication.md†L22-L46】
+OpenAI’s ChatGPT connector beta currently authenticates exclusively through Auth0. Because NV oOS issues its own assistant-scoped bearer credentials, you can connect LM Studio, Claude Desktop, and other MCP-aware clients today, while ChatGPT support will require either Auth0 bridging or native bearer support from OpenAI. We’ll update this section as soon as ChatGPT adds compatibility with first-party tokens.【F:docs/mcp-server-authentication.md†L22-L46】
 
 ## 🛰 REST API Endpoints
 
@@ -1514,7 +1514,7 @@ See [docs/rest-api.md](docs/reference/api/rest-api.md) for payload examples, att
 
 ## 🌊 SSE Streaming Support
 
-WP oOS includes comprehensive Server-Sent Events (SSE) support for real-time streaming responses, enabling faster perceived response times and better user experience.
+NV oOS includes comprehensive Server-Sent Events (SSE) support for real-time streaming responses, enabling faster perceived response times and better user experience.
 
 ### What is SSE?
 
@@ -1575,7 +1575,7 @@ eventSource.addEventListener('complete', (e) => {
 
 By default, SSE uses the standard GET method. For clients with SSE bugs (like LM Studio), enable POST support:
 
-1. Go to **Settings → WP oOS → Assistant Settings**
+1. Go to **Settings → NV oOS → Assistant Settings**
 2. Enable **"Enable POST Method on SSE Endpoint"**
 3. Save settings
 
@@ -1644,7 +1644,7 @@ For complete SSE implementation details, configuration options, and troubleshoot
 
 ## 📝 MCP JSON-RPC 2.0 Endpoint
 
-WP oOS implements a dedicated `/mcp` endpoint that follows the **Model Context Protocol specification version 2024-11-05** using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.【F:docs/mcp-endpoint.md†L1-L80】
+NV oOS implements a dedicated `/mcp` endpoint that follows the **Model Context Protocol specification version 2024-11-05** using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.【F:docs/mcp-endpoint.md†L1-L80】
 
 **MCP Version:** 2024-11-05  
 **Compliance:** OAuth 2.1, Streamable HTTP transport, Progress notifications
@@ -1747,7 +1747,7 @@ If an API or shortcode request omits the `assistant` parameter, the plugin autom
 
 ## 📊 Assistant Storage: CPT vs CCT
 
-WP oOS uses a **Custom Post Type (CPT)** as the primary storage for AI assistants, with automatic synchronization to a **JetEngine Custom Content Type (CCT)** when JetEngine is available.
+NV oOS uses a **Custom Post Type (CPT)** as the primary storage for AI assistants, with automatic synchronization to a **JetEngine Custom Content Type (CCT)** when JetEngine is available.
 
 ### Storage Architecture
 
@@ -1801,7 +1801,7 @@ Developers can extend or replace these prompts with filters such as `wp_mcp_ai_a
 
 ## 👔 Professional & Team Layers
 
-WP oOS includes an enterprise-grade **template system** for rapid assistant deployment through **Professions** and **Teams**. Instead of manually configuring each assistant from scratch, administrators can:
+NV oOS includes an enterprise-grade **template system** for rapid assistant deployment through **Professions** and **Teams**. Instead of manually configuring each assistant from scratch, administrators can:
 
 1. **Select from 182 pre-built professional templates** spanning 12 industry categories
 2. **Create custom profession templates** with reusable configurations
@@ -1988,7 +1988,7 @@ The script performs the following steps:
 - Installs the [SQLite Database Integration](https://wordpress.org/plugins/sqlite-database-integration/) plugin so WordPress can run without a MySQL server.
 - Symlinks this repository into the new install's `wp-content/plugins/mcp-ai-wpoos` directory.
 - Installs Composer development dependencies (when available) and provisions the WordPress test suite so `composer run test` works immediately.
-- Runs `wp core install`, activates the **WP oOS** plugin, enables pretty permalinks, and sets a default site tagline.
+- Runs `wp core install`, activates the **NV oOS** plugin, enables pretty permalinks, and sets a default site tagline.
 - Boots a development server on port `8000` via `wp server` and logs output to `.codex-wordpress/wp-server.log`.
 
 Default credentials:
@@ -2043,7 +2043,7 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 
 ### Manual smoke tests
 - Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
-- For logging-centric debugging, enable logging in the WP oOS settings and reference the retrieval commands in [🪵 Logging](#-logging).
+- For logging-centric debugging, enable logging in the NV oOS settings and reference the retrieval commands in [🪵 Logging](#-logging).
 
 ---
 
@@ -2061,7 +2061,7 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 
 ### Requirements
 - The assistant post must be **published** and, by default, the current user must have the `edit_posts` capability (matching the REST permission check). Add `allow_guests="true"` to the shortcode when you want anonymous visitors to participate in the chat.
-- An OpenAI API key and default model must be configured in **Settings → WP oOS**.
+- An OpenAI API key and default model must be configured in **Settings → NV oOS**.
 
 ### Tips
 - Omit the `assistant` attribute to fall back to the default assistant configured in the settings screen.
@@ -2070,7 +2070,7 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 - REST interactions rely on the `[wp_rest]` nonce, so caching plugins should avoid caching pages for logged-in editors running the chat.
 
 ### Elementor widget
-- Elementor sites automatically gain an **WP oOS Chat** widget that mirrors the shortcode controls, including the optional assistant selector and the guest access toggle.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L109】
+- Elementor sites automatically gain an **NV oOS Chat** widget that mirrors the shortcode controls, including the optional assistant selector and the guest access toggle.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L109】
 - Leaving the assistant control blank falls back to the default assistant configured in the plugin settings, and enabling **Allow Guests** injects the same temporary tokens used by the shortcode flow.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L45-L110】【F:includes/class-wp-mcp-ai-shortcode.php†L132-L224】
 - The Elementor chat widget can surface everything saved on the assistant post—model defaults, knowledge files, prompt shortcuts, and assigned tools—so you can build documentation and dashboards without copying values manually.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L95-L845】
 
@@ -2120,7 +2120,7 @@ REST requests that include attachments automatically gain access to the bundled 
 Assistant memory files configured on the post (`memory_files`) are also promoted to structured `text` segments on the
 system channel, retaining the existing chunking/truncation safeguards.
 
-Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → WP oOS → Attachments**, and the same values are used by shortcode-driven chat surfaces (including the Elementor widget) when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】 When JSON Lines support is enabled in the allowlist the plugin also registers `.jsonl` and `.ndjson` extensions with WordPress so uploads succeed without additional filters.【F:mcp-ai-wpoos.php†L236-L272】
+Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → NV oOS → Attachments**, and the same values are used by shortcode-driven chat surfaces (including the Elementor widget) when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】 When JSON Lines support is enabled in the allowlist the plugin also registers `.jsonl` and `.ndjson` extensions with WordPress so uploads succeed without additional filters.【F:mcp-ai-wpoos.php†L236-L272】
 
 Assistants can also query existing knowledge files with the **Search Attachments** tool, which reuses `WP_MCP_AI_Message_Attachments::user_can_access_attachment()` so only publicly accessible or user-owned media is returned alongside download URLs and file metadata for the model to reuse.【F:includes/tools/class-wp-mcp-ai-tool-search-attachments.php†L15-L207】【F:includes/class-wp-mcp-ai-message-attachments.php†L480-L575】
 
@@ -2154,7 +2154,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 
 ## 🪵 Logging
 
-- Enable or disable logging from **Settings → WP oOS → Enable Logging**.
+- Enable or disable logging from **Settings → NV oOS → Enable Logging**.
 - When logging is enabled the plugin records:
   - Chat requests and responses processed by the REST API.
   - Tool executions (including permission denials).
@@ -2197,7 +2197,7 @@ Each filter receives the full data set so you can extend or replace the output w
 
 ## 🔌 Optional Tools & Dependencies
 
-**WP oOS works perfectly with vanilla WordPress** - you don't need any third-party plugins for core functionality.
+**NV oOS works perfectly with vanilla WordPress** - you don't need any third-party plugins for core functionality.
 
 However, certain features require third-party plugins (sold separately). The plugin automatically detects which plugins are active and enables the corresponding tools:
 
@@ -2263,11 +2263,11 @@ Use the following hooks to extend the plugin:
 
 ## 🧰 WP-CLI Commands
 
-Manage the WP oOS environment from the command line when WP-CLI is available.
+Manage the NV oOS environment from the command line when WP-CLI is available.
 
 | Command | Description |
 | --- | --- |
-| `wp mcp-ai status` | Summarises WordPress core details, PHP version, and WP oOS supported plugin coverage. |
+| `wp mcp-ai status` | Summarises WordPress core details, PHP version, and NV oOS supported plugin coverage. |
 | `wp mcp-ai remote <base>` | Probes a remote MCP REST namespace (such as `https://example.com/wp-json/mcp-ai/v1`) by loading the assistant directory and issuing a lightweight `POST /chat` probe, reporting connectivity, assistant counts, and token scope metadata. |
 | `wp mcp-ai plugins list` | Lists optional dependencies (WooCommerce, JetEngine, etc.) with install and activation state. |
 | `wp mcp-ai plugins activate <slug>` | Activates a supported plugin; pass `--network` on multisite installations. |
@@ -2305,7 +2305,7 @@ Start with the comprehensive documentation before seeking additional support:
 When encountering problems, please:
 
 - [ ] Check the [troubleshooting guide](docs/getting-started/installation-setup/deployment-troubleshooting.md)
-- [ ] Enable logging in Settings → WP oOS to capture detailed errors
+- [ ] Enable logging in Settings → NV oOS to capture detailed errors
 - [ ] Review the [common issues section](#-common-issues) below
 - [ ] Search [existing GitHub issues](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
 - [ ] Test with a default assistant to isolate configuration issues
@@ -2364,7 +2364,7 @@ npm install && composer install --no-dev --optimize-autoloader
    ```
 
 #### Chat Not Working
-1. Verify OpenAI API key is configured in Settings → WP oOS
+1. Verify OpenAI API key is configured in Settings → NV oOS
 2. Ensure assistant is published
 3. Check user has `edit_posts` capability or add `allow_guests="true"` to shortcode
 4. Enable logging and check browser console for errors

@@ -28,7 +28,7 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS Professional Selector', 'wp-mcp-ai' );
+		return __( 'NV oOS Professional Selector', 'wp-mcp-ai' );
 	}
 
 	/**
