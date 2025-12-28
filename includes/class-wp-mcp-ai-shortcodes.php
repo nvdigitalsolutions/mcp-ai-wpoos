@@ -22,10 +22,22 @@ if ( ! class_exists( 'WP_MCP_AI_Shortcodes' ) ) {
 		protected $chat_shortcode;
 
 		/**
+		 * Professional selector shortcode handler.
+		 *
+		 * @var WP_MCP_AI_Professional_Selector_Shortcode
+		 */
+		protected $professional_selector_shortcode;
+
+		/**
 		 * Boot the shortcode handlers.
 		 */
 		public function __construct() {
 			$this->chat_shortcode = new WP_MCP_AI_Shortcode();
+
+			// Initialize professional selector shortcode.
+			if ( class_exists( 'WP_MCP_AI_Professional_Selector_Shortcode' ) ) {
+				$this->professional_selector_shortcode = new WP_MCP_AI_Professional_Selector_Shortcode();
+			}
 
 			// Maintain backwards compatibility with the historic globals.
 			$GLOBALS['wp_mcp_ai_shortcode'] = $this->chat_shortcode;
@@ -38,6 +50,15 @@ if ( ! class_exists( 'WP_MCP_AI_Shortcodes' ) ) {
 		 */
 		public function get_chat_shortcode() {
 			return $this->chat_shortcode;
+		}
+
+		/**
+		 * Retrieve the professional selector shortcode handler.
+		 *
+		 * @return WP_MCP_AI_Professional_Selector_Shortcode|null
+		 */
+		public function get_professional_selector_shortcode() {
+			return $this->professional_selector_shortcode;
 		}
 	}
 }
