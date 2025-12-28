@@ -15557,6 +15557,17 @@
         }, 500);
     }
 
+    // Expose public API for dynamic initialization (e.g., when chat is inserted via AJAX)
+    if (!window.wpMcpAiChatInit) {
+        window.wpMcpAiChatInit = {
+            /**
+             * Initialize or reinitialize chat instances.
+             * Call this after dynamically inserting chat HTML into the page.
+             */
+            init: initWithCronStatus
+        };
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initWithCronStatus);
     } else {
