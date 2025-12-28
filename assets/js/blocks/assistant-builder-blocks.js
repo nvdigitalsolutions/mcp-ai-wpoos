@@ -64,7 +64,8 @@
 			enableStreaming: { type: 'boolean', default: true },
 			allowSensitiveTools: { type: 'boolean', default: false },
 			showBuildButton: { type: 'boolean', default: false },
-			placeholder: { type: 'string', default: '' }
+			placeholder: { type: 'string', default: '' },
+			template: { type: 'string', default: 'classic' }
 		},
 		supports: {
 			align: [ 'wide', 'full' ],
@@ -126,6 +127,19 @@
 							checked: attributes.showBuildButton,
 							onChange: function ( val ) {
 								setAttributes( { showBuildButton: val } );
+							}
+						} ),
+						el( SelectControl, {
+							label: __( 'Chat Template', 'wp-mcp-ai' ),
+							value: attributes.template || 'classic',
+							options: [
+								{ label: __( 'Classic', 'wp-mcp-ai' ), value: 'classic' },
+								{ label: __( 'Speech Bubbles', 'wp-mcp-ai' ), value: 'speech-bubbles' },
+								{ label: __( 'Compact', 'wp-mcp-ai' ), value: 'compact' },
+								{ label: __( 'Sidebar', 'wp-mcp-ai' ), value: 'sidebar' }
+							],
+							onChange: function ( val ) {
+								setAttributes( { template: val } );
 							}
 						} ),
 						el( TextControl, {
