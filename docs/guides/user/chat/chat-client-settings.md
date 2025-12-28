@@ -4,12 +4,15 @@
 
 The Chat Client Settings page provides comprehensive configuration options for the frontend chat interface. This settings section is located under **WP oOS → General Settings → Chat Client**.
 
+For information about chat interface templates (visual layouts), see [Chat Templates](./chat-templates.md).
+
 ## Features
 
 ### 1. Appearance Tab
 
 Configure the visual aspects of your chat interface:
 
+- **Chat Template**: Choose the visual layout (Classic, Speech Bubbles, or Compact) - see [Chat Templates](./chat-templates.md)
 - **Chat Theme**: Choose between Light, Dark, or Auto (system preference)
 - **Primary Color**: Set the main brand color for UI elements (HEX format)
 - **User Message Bubble Color**: Customize user message background color
@@ -18,7 +21,7 @@ Configure the visual aspects of your chat interface:
 - **Font Size**: Set base font size for messages (10-24px)
 - **Show Timestamps**: Display message timestamps
 - **Show Avatars**: Display user and assistant avatars
-- **Compact Mode**: Reduce spacing for a condensed view
+- **Compact Mode**: Reduce spacing for a condensed view (Note: The Compact template provides a more comprehensive compact experience)
 
 ### 2. Behavior Tab
 

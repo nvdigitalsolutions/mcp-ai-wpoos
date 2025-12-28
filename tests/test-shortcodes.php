@@ -482,4 +482,66 @@ class Test_Shortcodes extends WP_UnitTestCase {
 
 		$this->assertSame( 0, $resolved, 'resolve_assistant_id should return 0 for non-existent profession.' );
 	}
+
+	/**
+	 * Test that the template attribute is rendered as a data attribute and CSS class.
+	 */
+	public function test_chat_shortcode_renders_template_attribute() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Template Test Assistant',
+			)
+		);
+
+		// Test speech-bubbles template.
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="speech-bubbles"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="speech-bubbles"', $markup, 'Template data attribute should be present.' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat--template-speech-bubbles', $markup, 'Template CSS class should be present.' );
+
+		// Test compact template.
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="compact"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="compact"', $markup, 'Template data attribute should be present.' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat--template-compact', $markup, 'Template CSS class should be present.' );
+
+		// Test classic template (default).
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="classic"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="classic"', $markup, 'Template data attribute should be present for classic.' );
+		$this->assertStringNotContainsString( 'wp-mcp-ai-chat--template-classic', $markup, 'Classic template should not have modifier class.' );
+	}
+
+	/**
+	 * Test that invalid template values fallback to classic.
+	 */
+	public function test_chat_shortcode_invalid_template_falls_back_to_classic() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Invalid Template Assistant',
+			)
+		);
+
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="invalid-template"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="classic"', $markup, 'Invalid template should fallback to classic.' );
+		$this->assertStringNotContainsString( 'invalid-template', $markup, 'Invalid template name should not appear in output.' );
+	}
+
+	/**
+	 * Test that template defaults to classic when not specified.
+	 */
+	public function test_chat_shortcode_template_defaults_to_classic() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Default Template Assistant',
+			)
+		);
+
+		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="classic"', $markup, 'Template should default to classic when not specified.' );
+	}
 }
+
