@@ -987,7 +987,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param string                        $job_id          Job identifier.
 		 * @param WP_MCP_AI_Cron_Status_Service $service         Cron status service instance.
 		 * @param int                           $user_id         User ID for permission checks.
-		 * @return WP_REST_Response Response with SSE streaming configured.
+		 * @return void Streams SSE updates and exits.
 		 */
 		protected function stream_job_status_updates( $initial_details, $job_id, $service, $user_id ) {
 			// Send SSE headers and initialize streaming.
@@ -2838,7 +2838,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request             REST request instance.
 		 * @param int             $user_id             Current user ID.
 		 * @param int             $max_iterations      Maximum agentic loop iterations.
-		 * @return WP_REST_Response|WP_Error
+		 * @return void Streams SSE updates and exits.
 		 */
 		protected function handle_chat_request_with_streaming( $assistant_id, $messages, $options, $assistant_config, $transcript_context, $request, $user_id, $max_iterations ) {
 			// Set up SSE headers.
@@ -3425,7 +3425,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				do_action( 'wp_mcp_ai_cost_calculated', $cost_data, $assistant_id, $user_id, $response, $request );
 			}
 
-			// Include the session key in the response so the client can save it
+			// Include the session key in the response so the client can save it.
 			if ( $recorded_session_key ) {
 				$payload['sessionKey'] = $recorded_session_key;
 			}
