@@ -672,7 +672,15 @@ class WP_MCP_AI_Shortcode {
 			?>
 			<div class="wp-mcp-ai-chat__assistant">
 				<label class="wp-mcp-ai-chat__label" for="<?php echo esc_attr( $textarea_id ); ?>">
-					<?php echo esc_html( get_the_title( $assistant_id ) ); ?>
+					<?php
+					// For profession tests, display the profession title.
+					// For regular assistants, display the assistant title.
+					if ( $is_profession_test && isset( $profession ) && $profession ) {
+						echo esc_html( get_the_title( $profession->ID ) );
+					} else {
+						echo esc_html( get_the_title( $assistant_id ) );
+					}
+					?>
 				</label>
 				<?php if ( $assistant_content ) : ?>
 					<div class="wp-mcp-ai-chat__assistant-content">
