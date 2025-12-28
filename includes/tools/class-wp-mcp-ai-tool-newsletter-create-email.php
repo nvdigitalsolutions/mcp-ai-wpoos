@@ -122,8 +122,8 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 					'items'       => array( 'type' => 'string' ),
 				),
 				'meta_input'        => array(
-					'type'        => 'object',
-					'description' => __( 'Array of custom field key-value pairs for email metadata.', 'wp-mcp-ai' ),
+					'type'                 => 'object',
+					'description'          => __( 'Array of custom field key-value pairs for email metadata.', 'wp-mcp-ai' ),
 					'additionalProperties' => true,
 				),
 			),

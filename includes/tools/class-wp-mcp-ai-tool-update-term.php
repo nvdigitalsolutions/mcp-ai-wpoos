@@ -72,8 +72,8 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'minimum'     => 0,
 				),
 				'meta_input'  => array(
-					'type'        => 'object',
-					'description' => __( 'Array of term meta key-value pairs to update or add.', 'wp-mcp-ai' ),
+					'type'                 => 'object',
+					'description'          => __( 'Array of term meta key-value pairs to update or add.', 'wp-mcp-ai' ),
 					'additionalProperties' => true,
 				),
 			),

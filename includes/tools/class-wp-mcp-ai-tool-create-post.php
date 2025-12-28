@@ -44,93 +44,99 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'              => array(
+				'title'             => array(
 					'type'        => 'string',
 					'description' => __( 'Title of the post.', 'wp-mcp-ai' ),
 				),
-				'content'            => array(
+				'content'           => array(
 					'type'        => 'string',
 					'description' => __( 'Main content for the post.', 'wp-mcp-ai' ),
 				),
-				'post_type'          => array(
+				'post_type'         => array(
 					'type'        => 'string',
 					'description' => __( 'The post type to create.', 'wp-mcp-ai' ),
 					'default'     => 'post',
 				),
-				'status'             => array(
+				'status'            => array(
 					'type'        => 'string',
 					'description' => __( 'The status to assign to the post (publish, draft, pending, or private).', 'wp-mcp-ai' ),
 					'default'     => 'draft',
 					'enum'        => array( 'publish', 'draft', 'pending', 'private' ),
 				),
-				'user_id'            => array(
+				'user_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'The user ID to set as the post author. Defaults to current user.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'excerpt'            => array(
+				'excerpt'           => array(
 					'type'        => 'string',
 					'description' => __( 'Optional excerpt for the post.', 'wp-mcp-ai' ),
 				),
-				'slug'               => array(
+				'slug'              => array(
 					'type'        => 'string',
 					'description' => __( 'Optional slug to use for the post permalink.', 'wp-mcp-ai' ),
 				),
-				'featured_image_id'  => array(
+				'featured_image_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Attachment ID to set as the featured image.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'categories'         => array(
+				'categories'        => array(
 					'type'        => 'array',
 					'description' => __( 'Array of category IDs or names to assign to the post.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'anyOf' => array(
-							array( 'type' => 'integer', 'minimum' => 1 ),
+							array(
+								'type'    => 'integer',
+								'minimum' => 1,
+							),
 							array( 'type' => 'string' ),
 						),
 					),
 				),
-				'tags'               => array(
+				'tags'              => array(
 					'type'        => 'array',
 					'description' => __( 'Array of tag IDs or names to assign to the post.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'anyOf' => array(
-							array( 'type' => 'integer', 'minimum' => 1 ),
+							array(
+								'type'    => 'integer',
+								'minimum' => 1,
+							),
 							array( 'type' => 'string' ),
 						),
 					),
 				),
-				'page_template'      => array(
+				'page_template'     => array(
 					'type'        => 'string',
 					'description' => __( 'Page template filename (e.g., "template-full-width.php"). Only applies to pages and custom post types that support page templates.', 'wp-mcp-ai' ),
 				),
-				'post_parent'        => array(
+				'post_parent'       => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the parent post for hierarchical post types (e.g., pages).', 'wp-mcp-ai' ),
 					'minimum'     => 0,
 				),
-				'menu_order'         => array(
+				'menu_order'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Menu order for sorting hierarchical post types.', 'wp-mcp-ai' ),
 					'minimum'     => 0,
 				),
-				'comment_status'     => array(
+				'comment_status'    => array(
 					'type'        => 'string',
 					'description' => __( 'Whether to allow comments (open or closed).', 'wp-mcp-ai' ),
 					'enum'        => array( 'open', 'closed' ),
 				),
-				'ping_status'        => array(
+				'ping_status'       => array(
 					'type'        => 'string',
 					'description' => __( 'Whether to allow pingbacks and trackbacks (open or closed).', 'wp-mcp-ai' ),
 					'enum'        => array( 'open', 'closed' ),
 				),
-				'meta_input'         => array(
-					'type'        => 'object',
-					'description' => __( 'Array of custom field key-value pairs to set as post meta.', 'wp-mcp-ai' ),
+				'meta_input'        => array(
+					'type'                 => 'object',
+					'description'          => __( 'Array of custom field key-value pairs to set as post meta.', 'wp-mcp-ai' ),
 					'additionalProperties' => true,
 				),
-				'elementor_data'     => array(
+				'elementor_data'    => array(
 					'type'        => 'object',
 					'description' => __( 'Elementor page builder data (requires Elementor plugin).', 'wp-mcp-ai' ),
 					'properties'  => array(

@@ -75,23 +75,23 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'          => array(
+				'title'             => array(
 					'type'        => 'string',
 					'description' => __( 'The name/title for the AI assistant (e.g., "Jamaica Tax Assistant", "Sri Lanka Customs Broker - Perfumes").', 'wp-mcp-ai' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'description'    => array(
+				'description'       => array(
 					'type'        => 'string',
 					'description' => __( 'Free-form description of what the assistant should do, its purpose, expertise, and target audience. Used in Prompt mode when professions/regions are not specified.', 'wp-mcp-ai' ),
 					'maxLength'   => 5000,
 				),
-				'system_prompt'  => array(
+				'system_prompt'     => array(
 					'type'        => 'string',
 					'description' => __( 'Custom system prompt/instructions for the assistant. If not provided, will be auto-generated based on professions/regions or description.', 'wp-mcp-ai' ),
 					'maxLength'   => 32000,
 				),
-				'professions'    => array(
+				'professions'       => array(
 					'type'        => 'array',
 					'description' => __( 'Select up to 3 professions/specializations for this assistant. Optional if description is provided.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'maxItems'    => 3,
 					'uniqueItems' => true,
 				),
-				'regions'        => array(
+				'regions'           => array(
 					'type'        => 'array',
 					'description' => __( 'Select up to 2 countries/regions where this assistant will operate. Optional if description is provided.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -152,12 +152,12 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'maxItems'    => 2,
 					'uniqueItems' => true,
 				),
-				'industry_focus' => array(
+				'industry_focus'    => array(
 					'type'        => 'string',
 					'description' => __( 'Optional specific industry or product focus (e.g., "perfumes", "technology", "restaurants", "retail").', 'wp-mcp-ai' ),
 					'maxLength'   => 200,
 				),
-				'attachment_ids' => array(
+				'attachment_ids'    => array(
 					'type'        => 'array',
 					'description' => __( 'Array of WordPress media attachment IDs to include in the assistant\'s knowledge base.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -165,25 +165,25 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					),
 					'maxItems'    => self::MAX_DOCUMENTS,
 				),
-				'provider'       => array(
+				'provider'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional AI provider (openai, gemini, ollama, anthropic, lm_studio). Defaults to openai.', 'wp-mcp-ai' ),
 					'enum'        => array( 'openai', 'gemini', 'ollama', 'anthropic', 'lm_studio' ),
 					'default'     => 'openai',
 				),
-				'model'          => array(
+				'model'             => array(
 					'type'        => 'string',
 					'description' => __( 'Optional model name (e.g., "gpt-4", "gpt-4-turbo", "gemini-pro"). Defaults to gpt-4.', 'wp-mcp-ai' ),
 					'maxLength'   => 100,
 				),
-				'temperature'    => array(
+				'temperature'       => array(
 					'type'        => 'number',
 					'description' => __( 'Optional temperature setting (0-2). Lower is more deterministic. Defaults to 0.7.', 'wp-mcp-ai' ),
 					'minimum'     => 0,
 					'maximum'     => 2,
 					'default'     => 0.7,
 				),
-				'tools'          => array(
+				'tools'             => array(
 					'type'        => 'array',
 					'description' => __( 'Optional array of tool slugs to enable for this assistant. If not provided, appropriate tools will be selected automatically.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -191,12 +191,12 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					),
 					'maxItems'    => 100,
 				),
-				'async'          => array(
+				'async'             => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, schedules assistant creation via cron and returns immediately. Recommended for complex assistants.', 'wp-mcp-ai' ),
 					'default'     => false,
 				),
-				'notify_email'   => array(
+				'notify_email'      => array(
 					'type'        => 'string',
 					'description' => __( 'Email address to notify when async creation completes. Uses current user email if not specified.', 'wp-mcp-ai' ),
 					'format'      => 'email',
@@ -212,7 +212,10 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'description' => __( 'Array of assistant category IDs or names. Categories will be auto-created if they don\'t exist (requires custom taxonomy support).', 'wp-mcp-ai' ),
 					'items'       => array(
 						'anyOf' => array(
-							array( 'type' => 'integer', 'minimum' => 1 ),
+							array(
+								'type'    => 'integer',
+								'minimum' => 1,
+							),
 							array( 'type' => 'string' ),
 						),
 					),
@@ -222,14 +225,17 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'description' => __( 'Array of assistant tag IDs or names. Tags will be auto-created if they don\'t exist (requires custom taxonomy support).', 'wp-mcp-ai' ),
 					'items'       => array(
 						'anyOf' => array(
-							array( 'type' => 'integer', 'minimum' => 1 ),
+							array(
+								'type'    => 'integer',
+								'minimum' => 1,
+							),
 							array( 'type' => 'string' ),
 						),
 					),
 				),
 				'meta_input'        => array(
-					'type'        => 'object',
-					'description' => __( 'Array of custom field key-value pairs to set as assistant meta.', 'wp-mcp-ai' ),
+					'type'                 => 'object',
+					'description'          => __( 'Array of custom field key-value pairs to set as assistant meta.', 'wp-mcp-ai' ),
 					'additionalProperties' => true,
 				),
 			),

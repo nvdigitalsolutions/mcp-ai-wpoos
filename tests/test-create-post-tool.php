@@ -348,7 +348,7 @@ class Test_WP_MCP_AI_Tool_Create_Post extends WP_UnitTestCase {
 		// Create parent page.
 		$parent_id = $this->factory->post->create(
 			array(
-				'post_type' => 'page',
+				'post_type'  => 'page',
 				'post_title' => 'Parent Page',
 			)
 		);

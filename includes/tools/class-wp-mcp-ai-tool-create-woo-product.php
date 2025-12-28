@@ -110,7 +110,10 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Array of product category IDs or names to assign. Categories will be auto-created if they don\'t exist.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'anyOf' => array(
-							array( 'type' => 'integer', 'minimum' => 1 ),
+							array(
+								'type'    => 'integer',
+								'minimum' => 1,
+							),
 							array( 'type' => 'string' ),
 						),
 					),
@@ -120,7 +123,10 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Array of product tag IDs or names to assign. Tags will be auto-created if they don\'t exist.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'anyOf' => array(
-							array( 'type' => 'integer', 'minimum' => 1 ),
+							array(
+								'type'    => 'integer',
+								'minimum' => 1,
+							),
 							array( 'type' => 'string' ),
 						),
 					),
@@ -201,8 +207,8 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 					),
 				),
 				'meta_input'            => array(
-					'type'        => 'object',
-					'description' => __( 'Array of custom field key-value pairs to set as product meta.', 'wp-mcp-ai' ),
+					'type'                 => 'object',
+					'description'          => __( 'Array of custom field key-value pairs to set as product meta.', 'wp-mcp-ai' ),
 					'additionalProperties' => true,
 				),
 			),

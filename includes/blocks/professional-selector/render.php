@@ -9,15 +9,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$default_professional     = isset( $attributes['defaultProfessional'] ) ? sanitize_text_field( $attributes['defaultProfessional'] ) : '';
-$default_provider         = isset( $attributes['defaultProvider'] ) ? sanitize_key( $attributes['defaultProvider'] ) : '';
-$default_model            = isset( $attributes['defaultModel'] ) ? sanitize_text_field( $attributes['defaultModel'] ) : '';
-$show_temperature         = ! empty( $attributes['showTemperature'] );
-$allow_guests             = ! empty( $attributes['allowGuests'] );
-$save_transcript          = isset( $attributes['saveTranscript'] ) ? $attributes['saveTranscript'] : true;
-$enable_streaming         = isset( $attributes['enableStreaming'] ) ? $attributes['enableStreaming'] : true;
-$allow_sensitive_tools    = ! empty( $attributes['allowSensitiveTools'] );
-$template                 = isset( $attributes['template'] ) ? sanitize_key( $attributes['template'] ) : 'classic';
+$default_professional  = isset( $attributes['defaultProfessional'] ) ? sanitize_text_field( $attributes['defaultProfessional'] ) : '';
+$default_provider      = isset( $attributes['defaultProvider'] ) ? sanitize_key( $attributes['defaultProvider'] ) : '';
+$default_model         = isset( $attributes['defaultModel'] ) ? sanitize_text_field( $attributes['defaultModel'] ) : '';
+$show_temperature      = ! empty( $attributes['showTemperature'] );
+$allow_guests          = ! empty( $attributes['allowGuests'] );
+$save_transcript       = isset( $attributes['saveTranscript'] ) ? $attributes['saveTranscript'] : true;
+$enable_streaming      = isset( $attributes['enableStreaming'] ) ? $attributes['enableStreaming'] : true;
+$allow_sensitive_tools = ! empty( $attributes['allowSensitiveTools'] );
+$template              = isset( $attributes['template'] ) ? sanitize_key( $attributes['template'] ) : 'classic';
 
 // Build shortcode attributes.
 $shortcode_atts = array();
