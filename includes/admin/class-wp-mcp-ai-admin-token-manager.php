@@ -274,7 +274,7 @@ class WP_MCP_AI_Admin_Token_Manager {
 		$stats       = $this->get_statistics( $credentials );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'WP oOS Token Manager', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'NV oOS Token Manager', 'wp-mcp-ai' ); ?></h1>
 
 			<div class="wp-mcp-ai-token-manager__intro">
 				<p><strong><?php esc_html_e( 'About Token Manager', 'wp-mcp-ai' ); ?></strong></p>

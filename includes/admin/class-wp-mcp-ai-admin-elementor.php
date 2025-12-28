@@ -60,12 +60,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 		}
 
 		/**
-		 * Register the integration page under the WP oOS menu.
+		 * Register the integration page under the NV oOS menu.
 		 */
 		public function register_page() {
 			$this->page_hook = add_submenu_page(
 				'wp-mcp-ai-dashboard',
-				__( 'Elementor Integration - WP oOS', 'wp-mcp-ai' ),
+				__( 'Elementor Integration - NV oOS', 'wp-mcp-ai' ),
 				__( 'Elementor', 'wp-mcp-ai' ),
 				'manage_options',
 				self::PAGE_SLUG,
@@ -129,7 +129,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 										<?php esc_html_e( 'Activate AI Chat widget for Elementor page builder', 'wp-mcp-ai' ); ?>
 									</label>
 									<p class="description">
-										<?php esc_html_e( 'Enables the WP oOS Chat widget with real-time SSE streaming support in Elementor.', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Enables the NV oOS Chat widget with real-time SSE streaming support in Elementor.', 'wp-mcp-ai' ); ?>
 									</p>
 								</td>
 							</tr>
@@ -138,7 +138,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 						<h2><?php esc_html_e( 'Available Elementor Widgets', 'wp-mcp-ai' ); ?></h2>
 						<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
 							<div style="background: #fff; border: 1px solid #dcdcde; padding: 1.5rem; border-radius: 4px;">
-								<h3 style="margin-top: 0;"><?php esc_html_e( 'WP oOS Chat', 'wp-mcp-ai' ); ?></h3>
+								<h3 style="margin-top: 0;"><?php esc_html_e( 'NV oOS Chat', 'wp-mcp-ai' ); ?></h3>
 								<p><?php esc_html_e( 'Interactive AI chat interface with streaming responses', 'wp-mcp-ai' ); ?></p>
 								<ul style="margin-left: 1.5rem;">
 									<li><?php esc_html_e( 'Real-time SSE streaming', 'wp-mcp-ai' ); ?></li>
@@ -225,7 +225,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 						<h3 style="margin-top: 0;"><?php esc_html_e( 'Using Widgets in Elementor', 'wp-mcp-ai' ); ?></h3>
 						<ol>
 							<li><?php esc_html_e( 'Edit a page with Elementor', 'wp-mcp-ai' ); ?></li>
-							<li><?php esc_html_e( 'Search for "WP oOS" in the widget panel', 'wp-mcp-ai' ); ?></li>
+							<li><?php esc_html_e( 'Search for "NV oOS" in the widget panel', 'wp-mcp-ai' ); ?></li>
 							<li><?php esc_html_e( 'Drag the desired widget to your page', 'wp-mcp-ai' ); ?></li>
 							<li><?php esc_html_e( 'Configure widget settings in the left panel', 'wp-mcp-ai' ); ?></li>
 							<li><?php esc_html_e( 'Publish or update your page', 'wp-mcp-ai' ); ?></li>
