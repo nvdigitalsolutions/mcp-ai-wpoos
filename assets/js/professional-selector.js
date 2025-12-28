@@ -290,6 +290,8 @@
 					if (response.success && response.data.html) {
 						$chatWrapper.html(response.data.html);
 						ProfessionalSelector.showChatContainer($container);
+						// Initialize the dynamically inserted chat interface
+						ProfessionalSelector.initializeChatInterface();
 					} else {
 						// Fallback: Use the shortcode directly (may not work perfectly).
 						const shortcode = '[mcp_ai_chat ' + shortcodeAtts + ']';
@@ -346,6 +348,22 @@
 		hideError: function($container) {
 			const $errorMessage = $container.find('[data-error-message]');
 			$errorMessage.attr('hidden', '').text('');
+		},
+
+		/**
+		 * Initialize the dynamically inserted chat interface.
+		 *
+		 * This calls the chat.js initialization function to attach event handlers
+		 * to the dynamically inserted chat HTML.
+		 */
+		initializeChatInterface: function() {
+			// Check if the chat init API is available
+			if (typeof window.wpMcpAiChatInit !== 'undefined' && window.wpMcpAiChatInit.init) {
+				// Call the chat initialization function
+				window.wpMcpAiChatInit.init();
+			} else if (window.console && console.warn) {
+				console.warn('[Professional Selector] Chat initialization API not available. Chat may not function correctly.');
+			}
 		}
 	};
 
