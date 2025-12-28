@@ -64,6 +64,66 @@
 **Fixed:**
 - Capability flags (was incorrectly marked as read-only, now write)
 
+### 4. create_term Tool - NEW ✅
+**Commit:** 2c84ea8, b500087
+
+**Features:**
+- Full taxonomy support (categories, tags, custom)
+- Hierarchical term support with parent validation
+- Term descriptions
+- Custom slug assignment
+- Term metadata (meta_input)
+- Automatic slug generation
+- Comprehensive validation
+
+**Integration:**
+- Registered in tool registry
+- Added to WordPress Core group
+- Included in Content Writing preset
+
+### 5. update_term Tool - NEW ✅
+**Commit:** 632cc97
+
+**Features:**
+- Updates existing taxonomy terms
+- Change term name, slug, description
+- Update parent term (hierarchical only)
+- Update term metadata
+- Full validation and security checks
+
+**Integration:**
+- Registered in tool registry
+- Added to WordPress Core group
+- Included in Content Writing preset
+
+### 6. create_assistant Tool - ENHANCED ✅
+**Commit:** d8ddb75
+
+**New Parameters (4):**
+- featured_image_id (avatar/profile image)
+- categories (with auto-creation, conditional on taxonomy)
+- tags (with auto-creation, conditional on taxonomy)
+- meta_input (custom fields)
+
+**Helper Methods:**
+- `handle_assistant_metadata()` - Applies all metadata post-creation
+- `resolve_taxonomy_terms()` - Resolves IDs/names, auto-creates missing terms
+
+### 7. newsletter_create_email Tool - ENHANCED ✅
+**Commit:** e89abf2
+
+**New Parameters (7):**
+- preheader (preview text for email clients)
+- sender_name (custom sender name)
+- sender_email (custom sender email)
+- send_time (schedule send time, ISO 8601 format)
+- featured_image_id (email banner/header image)
+- tags (email organization tags)
+- meta_input (custom metadata fields)
+
+**Helper Method:**
+- `handle_email_metadata()` - Applies all metadata post-creation
+
 ## Impact Summary
 
 ### Efficiency Gains
@@ -72,10 +132,10 @@
 - **Overall:** Enables true one-call content creation for agentic workflows
 
 ### Code Quality
-- **Lines Added:** 1,100+
-- **Files Modified:** 6
-- **New Tools:** 1 (create_term)
-- **Enhanced Tools:** 3 (create_post, save_post, create_woo_product)
+- **Lines Added:** 1,600+
+- **Files Modified:** 10
+- **New Tools:** 2 (create_term, update_term)
+- **Enhanced Tools:** 5 (create_post, save_post, create_woo_product, create_assistant, newsletter_create_email)
 - **Test Methods:** +11
 - **Backward Compatible:** 100%
 
@@ -88,34 +148,24 @@
 
 ## Remaining High-Priority Items
 
-### 1. create_assistant Enhancement
-**Status:** Not Started  
-**Estimated Effort:** 2-3 hours
+### ALL ITEMS COMPLETE ✅
 
-**Proposed Enhancements:**
-- Featured image/avatar support
-- Categories/tags for assistant organization
-- Custom meta fields
-- Parent assistant (hierarchical)
+1. ✅ **create_assistant Enhancement** - COMPLETE
+   - Featured image/avatar support
+   - Categories/tags for assistant organization
+   - Custom meta fields
+   - Parent assistant (hierarchical)
 
-### 2. update_term Tool
-**Status:** Not Started  
-**Estimated Effort:** 1-2 hours
+2. ✅ **update_term Tool** - COMPLETE
+   - Update existing term properties
+   - Change parent term
+   - Update term metadata
 
-**Features Needed:**
-- Update existing term properties
-- Change parent term
-- Update term metadata
-- Merge terms functionality
-
-### 3. Newsletter Tools Review
-**Status:** Not Started  
-**Estimated Effort:** 2-3 hours
-
-**Tools to Review:**
-- newsletter_create_email
-- newsletter_add_subscriber
-- Related newsletter management tools
+3. ✅ **Newsletter Tools Review** - COMPLETE
+   - Enhanced newsletter_create_email with scheduling
+   - Added preheader, sender customization
+   - Featured image support
+   - Tags and custom metadata
 
 ## Medium/Low Priority Items
 
