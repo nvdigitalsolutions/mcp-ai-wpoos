@@ -56,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_anthropic_api_key' => __( 'Add an Anthropic API key in the WP oOS settings.', 'wp-mcp-ai' ),
+							'configure_anthropic_api_key' => __( 'Add an Anthropic API key in the NV oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -71,7 +71,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_anthropic_model' => __( 'Choose an Anthropic model in the WP oOS settings.', 'wp-mcp-ai' ),
+							'configure_anthropic_model' => __( 'Choose an Anthropic model in the NV oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);

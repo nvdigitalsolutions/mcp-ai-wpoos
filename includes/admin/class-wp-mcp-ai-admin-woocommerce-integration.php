@@ -66,12 +66,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_WooCommerce_Integration' ) ) {
 		}
 
 		/**
-		 * Register the integration page under the WP oOS menu.
+		 * Register the integration page under the NV oOS menu.
 		 */
 		public function register_page() {
 			$this->page_hook = add_submenu_page(
 				'wp-mcp-ai-dashboard',
-				__( 'WooCommerce Integration - WP oOS', 'wp-mcp-ai' ),
+				__( 'WooCommerce Integration - NV oOS', 'wp-mcp-ai' ),
 				__( 'WooCommerce', 'wp-mcp-ai' ),
 				'manage_options',
 				self::PAGE_SLUG,

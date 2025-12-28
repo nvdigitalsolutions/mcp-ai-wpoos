@@ -43,7 +43,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			self::$page_hook = add_submenu_page(
 				'tools.php',
 				__( 'MCP Server Diagnostic', 'wp-mcp-ai' ),
-				__( 'WP oOS MCP Test', 'wp-mcp-ai' ),
+				__( 'NV oOS MCP Test', 'wp-mcp-ai' ),
 				'manage_options',
 				'wp-mcp-ai-mcp-diagnostic',
 				array( __CLASS__, 'render_page' )
@@ -129,7 +129,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							</tr>
 							<tr>
 								<td><strong><?php esc_html_e( 'Server Name', 'wp-mcp-ai' ); ?></strong></td>
-								<td><code>WP oOS</code></td>
+								<td><code>NV oOS</code></td>
 							</tr>
 							<tr>
 								<td><strong><?php esc_html_e( 'Server Version', 'wp-mcp-ai' ); ?></strong></td>

@@ -1,6 +1,6 @@
 <?php
 /**
- * WP oOS Settings Dashboard Diagnostic Page
+ * NV oOS Settings Dashboard Diagnostic Page
  *
  * Temporary admin page to diagnose why the settings dashboard isn't loading.
  * This creates a simple diagnostic page under Tools menu.
@@ -32,8 +32,8 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 		public static function register_page() {
 			add_submenu_page(
 				'tools.php',
-				__( 'WP oOS Dashboard Diagnostic', 'wp-mcp-ai' ),
-				__( 'WP oOS Diagnostic', 'wp-mcp-ai' ),
+				__( 'NV oOS Dashboard Diagnostic', 'wp-mcp-ai' ),
+				__( 'NV oOS Diagnostic', 'wp-mcp-ai' ),
 				'manage_options',
 				'wp-mcp-ai-diagnostic',
 				array( __CLASS__, 'render_page' )
@@ -46,7 +46,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 		public static function render_page() {
 			?>
 			<div class="wrap">
-				<h1><?php esc_html_e( 'WP oOS Settings Dashboard Diagnostic', 'wp-mcp-ai' ); ?></h1>
+				<h1><?php esc_html_e( 'NV oOS Settings Dashboard Diagnostic', 'wp-mcp-ai' ); ?></h1>
 				<?php
 				// Determine which settings system is in use by checking the admin menu.
 				// This must be done early as it's referenced throughout the diagnostic.
@@ -275,7 +275,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 						</thead>
 						<tbody>
 							<tr>
-								<td><?php esc_html_e( 'Settings Dashboard (Top-level WP oOS)', 'wp-mcp-ai' ); ?></td>
+								<td><?php esc_html_e( 'Settings Dashboard (Top-level NV oOS)', 'wp-mcp-ai' ); ?></td>
 								<td><?php echo wp_kses_post( $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not Found</span>' ); ?></td>
 								<td>Yes (Required)</td>
 							</tr>
@@ -285,7 +285,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 								<td>No (Deprecated)</td>
 							</tr>
 							<tr>
-								<td><?php esc_html_e( 'Auth0 Setup (Under WP oOS)', 'wp-mcp-ai' ); ?></td>
+								<td><?php esc_html_e( 'Auth0 Setup (Under NV oOS)', 'wp-mcp-ai' ); ?></td>
 								<td><?php echo wp_kses_post( $found_auth0 ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not Found</span>' ); ?></td>
 								<td>Yes</td>
 							</tr>
@@ -329,7 +329,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 					<h2><?php esc_html_e( '7. Diagnosis', 'wp-mcp-ai' ); ?></h2>
 					<div style="padding: 15px; background: #f0f0f1; border-left: 4px solid #2271b1;">
 						<p><strong><?php esc_html_e( 'Mode: New Dashboard', 'wp-mcp-ai' ); ?></strong></p>
-						<p><?php esc_html_e( 'Expected behavior: Top-level menu "WP oOS" with Auth0 submenu', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'Expected behavior: Top-level menu "NV oOS" with Auth0 submenu', 'wp-mcp-ai' ); ?></p>
 						<p><strong><?php esc_html_e( 'Dashboard:', 'wp-mcp-ai' ); ?></strong> <?php echo $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>'; ?></p>
 						<p><strong><?php esc_html_e( 'Auth0 Setup:', 'wp-mcp-ai' ); ?></strong> <?php echo $found_auth0 ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>'; ?></p>
 						

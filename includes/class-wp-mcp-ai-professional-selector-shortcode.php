@@ -1,6 +1,6 @@
 <?php
 /**
- * Professional Selector Shortcode for WP oOS.
+ * Professional Selector Shortcode for NV oOS.
  *
  * Renders a frontend interface for users to select a professional, provider,
  * and model before chatting with an AI assistant.
