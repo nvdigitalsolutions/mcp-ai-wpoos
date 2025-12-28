@@ -104,6 +104,113 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 					'minItems'    => 2,
 					'maxItems'    => 10,
 				),
+				// Enhanced parameters for comprehensive product creation.
+				'categories'            => array(
+					'type'        => 'array',
+					'description' => __( 'Array of product category IDs or names to assign. Categories will be auto-created if they don\'t exist.', 'wp-mcp-ai' ),
+					'items'       => array(
+						'anyOf' => array(
+							array(
+								'type'    => 'integer',
+								'minimum' => 1,
+							),
+							array( 'type' => 'string' ),
+						),
+					),
+				),
+				'tags'                  => array(
+					'type'        => 'array',
+					'description' => __( 'Array of product tag IDs or names to assign. Tags will be auto-created if they don\'t exist.', 'wp-mcp-ai' ),
+					'items'       => array(
+						'anyOf' => array(
+							array(
+								'type'    => 'integer',
+								'minimum' => 1,
+							),
+							array( 'type' => 'string' ),
+						),
+					),
+				),
+				'sale_price'            => array(
+					'type'        => array( 'string', 'number' ),
+					'description' => __( 'Sale price for the product (must be lower than regular price).', 'wp-mcp-ai' ),
+				),
+				'manage_stock'          => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to enable stock management for this product.', 'wp-mcp-ai' ),
+					'default'     => false,
+				),
+				'stock_quantity'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Stock quantity (requires manage_stock to be true).', 'wp-mcp-ai' ),
+					'minimum'     => 0,
+				),
+				'stock_status'          => array(
+					'type'        => 'string',
+					'description' => __( 'Stock status: instock, outofstock, or onbackorder.', 'wp-mcp-ai' ),
+					'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
+					'default'     => 'instock',
+				),
+				'weight'                => array(
+					'type'        => array( 'string', 'number' ),
+					'description' => __( 'Product weight for shipping calculations.', 'wp-mcp-ai' ),
+				),
+				'length'                => array(
+					'type'        => array( 'string', 'number' ),
+					'description' => __( 'Product length for shipping calculations.', 'wp-mcp-ai' ),
+				),
+				'width'                 => array(
+					'type'        => array( 'string', 'number' ),
+					'description' => __( 'Product width for shipping calculations.', 'wp-mcp-ai' ),
+				),
+				'height'                => array(
+					'type'        => array( 'string', 'number' ),
+					'description' => __( 'Product height for shipping calculations.', 'wp-mcp-ai' ),
+				),
+				'virtual'               => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether this is a virtual product (no shipping).', 'wp-mcp-ai' ),
+					'default'     => false,
+				),
+				'downloadable'          => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether this is a downloadable product.', 'wp-mcp-ai' ),
+					'default'     => false,
+				),
+				'reviews_allowed'       => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to allow customer reviews.', 'wp-mcp-ai' ),
+					'default'     => true,
+				),
+				'attributes'            => array(
+					'type'        => 'array',
+					'description' => __( 'Product attributes (e.g., size, color).', 'wp-mcp-ai' ),
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'name'    => array(
+								'type'        => 'string',
+								'description' => __( 'Attribute name (e.g., "Size", "Color").', 'wp-mcp-ai' ),
+							),
+							'options' => array(
+								'type'        => 'array',
+								'description' => __( 'Array of attribute values.', 'wp-mcp-ai' ),
+								'items'       => array( 'type' => 'string' ),
+							),
+							'visible' => array(
+								'type'        => 'boolean',
+								'description' => __( 'Whether attribute is visible on product page.', 'wp-mcp-ai' ),
+								'default'     => true,
+							),
+						),
+						'required'   => array( 'name', 'options' ),
+					),
+				),
+				'meta_input'            => array(
+					'type'                 => 'object',
+					'description'          => __( 'Array of custom field key-value pairs to set as product meta.', 'wp-mcp-ai' ),
+					'additionalProperties' => true,
+				),
 			),
 			'required'             => array( 'reference' ),
 			'additionalProperties' => false,
@@ -183,6 +290,58 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			$product->set_price( $local_price );
 		}
 
+		// Handle sale price.
+		if ( isset( $arguments['sale_price'] ) ) {
+			$sale_price = $this->normalise_price( $arguments['sale_price'] );
+			if ( '' !== $sale_price && 'simple' === $product_type ) {
+				$product->set_sale_price( $sale_price );
+				$product->set_price( $sale_price );
+			}
+		}
+
+		// Handle stock management.
+		if ( isset( $arguments['manage_stock'] ) && $arguments['manage_stock'] ) {
+			$product->set_manage_stock( true );
+			if ( isset( $arguments['stock_quantity'] ) ) {
+				$product->set_stock_quantity( absint( $arguments['stock_quantity'] ) );
+			}
+		}
+
+		// Handle stock status.
+		if ( isset( $arguments['stock_status'] ) ) {
+			$stock_status = sanitize_key( $arguments['stock_status'] );
+			if ( in_array( $stock_status, array( 'instock', 'outofstock', 'onbackorder' ), true ) ) {
+				$product->set_stock_status( $stock_status );
+			}
+		}
+
+		// Handle shipping dimensions.
+		if ( isset( $arguments['weight'] ) && '' !== $arguments['weight'] ) {
+			$product->set_weight( $this->sanitize_dimension( $arguments['weight'] ) );
+		}
+		if ( isset( $arguments['length'] ) && '' !== $arguments['length'] ) {
+			$product->set_length( $this->sanitize_dimension( $arguments['length'] ) );
+		}
+		if ( isset( $arguments['width'] ) && '' !== $arguments['width'] ) {
+			$product->set_width( $this->sanitize_dimension( $arguments['width'] ) );
+		}
+		if ( isset( $arguments['height'] ) && '' !== $arguments['height'] ) {
+			$product->set_height( $this->sanitize_dimension( $arguments['height'] ) );
+		}
+
+		// Handle virtual and downloadable flags.
+		if ( isset( $arguments['virtual'] ) && $arguments['virtual'] ) {
+			$product->set_virtual( true );
+		}
+		if ( isset( $arguments['downloadable'] ) && $arguments['downloadable'] ) {
+			$product->set_downloadable( true );
+		}
+
+		// Handle reviews.
+		if ( isset( $arguments['reviews_allowed'] ) ) {
+			$product->set_reviews_allowed( (bool) $arguments['reviews_allowed'] );
+		}
+
 		$product_id = $product->save();
 
 		if ( ! $product_id ) {
@@ -224,6 +383,32 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 
 		if ( ! empty( $attachments ) ) {
 			$saved_product = wc_get_product( $product_id );
+		}
+
+		// Handle product categories.
+		if ( isset( $arguments['categories'] ) && is_array( $arguments['categories'] ) ) {
+			$category_ids = $this->resolve_product_terms( $arguments['categories'], 'product_cat' );
+			if ( ! empty( $category_ids ) ) {
+				wp_set_object_terms( $product_id, $category_ids, 'product_cat' );
+			}
+		}
+
+		// Handle product tags.
+		if ( isset( $arguments['tags'] ) && is_array( $arguments['tags'] ) ) {
+			$tag_ids = $this->resolve_product_terms( $arguments['tags'], 'product_tag' );
+			if ( ! empty( $tag_ids ) ) {
+				wp_set_object_terms( $product_id, $tag_ids, 'product_tag' );
+			}
+		}
+
+		// Handle product attributes.
+		if ( isset( $arguments['attributes'] ) && is_array( $arguments['attributes'] ) ) {
+			$this->set_product_attributes( $product_id, $arguments['attributes'] );
+		}
+
+		// Handle custom meta fields.
+		if ( isset( $arguments['meta_input'] ) && is_array( $arguments['meta_input'] ) ) {
+			$this->add_product_meta( $product_id, $arguments['meta_input'] );
 		}
 
 		$response = array(
@@ -667,13 +852,122 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * Resolves product taxonomy terms from IDs or names.
+	 *
+	 * @param array  $terms    Array of term IDs or names.
+	 * @param string $taxonomy Taxonomy name (product_cat or product_tag).
+	 * @return array Array of term IDs.
+	 */
+	protected function resolve_product_terms( $terms, $taxonomy ) {
+		$term_ids = array();
+
+		foreach ( $terms as $term ) {
+			if ( is_numeric( $term ) ) {
+				$term_id = absint( $term );
+				if ( term_exists( $term_id, $taxonomy ) ) {
+					$term_ids[] = $term_id;
+				}
+			} else {
+				// Try to find or create term by name.
+				$term_obj = term_exists( $term, $taxonomy );
+				if ( ! $term_obj ) {
+					// Create the term if it doesn't exist.
+					$term_obj = wp_insert_term( sanitize_text_field( $term ), $taxonomy );
+				}
+
+				if ( ! is_wp_error( $term_obj ) && isset( $term_obj['term_id'] ) ) {
+					$term_ids[] = $term_obj['term_id'];
+				}
+			}
+		}
+
+		return array_unique( $term_ids );
+	}
+
+	/**
+	 * Sets product attributes.
+	 *
+	 * @param int   $product_id Product ID.
+	 * @param array $attributes Array of attribute definitions.
+	 */
+	protected function set_product_attributes( $product_id, $attributes ) {
+		$product = wc_get_product( $product_id );
+		if ( ! $product ) {
+			return;
+		}
+
+		$product_attributes = array();
+		$position           = 0;
+
+		foreach ( $attributes as $attribute_data ) {
+			if ( empty( $attribute_data['name'] ) || empty( $attribute_data['options'] ) ) {
+				continue;
+			}
+
+			$attribute_name = wc_sanitize_taxonomy_name( $attribute_data['name'] );
+			$attribute      = new WC_Product_Attribute();
+
+			$attribute->set_name( $attribute_name );
+			$attribute->set_options( array_map( 'sanitize_text_field', $attribute_data['options'] ) );
+			$attribute->set_position( $position++ );
+			$attribute->set_visible( isset( $attribute_data['visible'] ) ? (bool) $attribute_data['visible'] : true );
+			$attribute->set_variation( false );
+
+			$product_attributes[] = $attribute;
+		}
+
+		if ( ! empty( $product_attributes ) ) {
+			$product->set_attributes( $product_attributes );
+			$product->save();
+		}
+	}
+
+	/**
+	 * Adds custom product meta.
+	 *
+	 * @param int   $product_id Product ID.
+	 * @param array $meta_input Array of meta key-value pairs.
+	 */
+	protected function add_product_meta( $product_id, $meta_input ) {
+		foreach ( $meta_input as $key => $value ) {
+			$sanitized_key = sanitize_key( $key );
+
+			// Skip protected meta keys.
+			if ( is_protected_meta( $sanitized_key, 'post' ) ) {
+				continue;
+			}
+
+			// Recursively sanitize arrays.
+			if ( is_array( $value ) ) {
+				$sanitized_value = array_map( 'sanitize_text_field', $value );
+			} else {
+				$sanitized_value = sanitize_text_field( $value );
+			}
+
+			update_post_meta( $product_id, $sanitized_key, $sanitized_value );
+		}
+	}
+
+	/**
+	 * Sanitizes dimension values.
+	 *
+	 * @param mixed $dimension Raw dimension value.
+	 * @return string Sanitized dimension.
+	 */
+	protected function sanitize_dimension( $dimension ) {
+		return wc_format_decimal( $dimension );
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
-			'requires-capability',  // Requires user capabilities.
+			'write',                // Creates products.
+			'local-only',           // No external API calls (except image sideloading).
+			'requires-capability',  // Requires product creation capabilities.
+			'state-changing',       // Modifies database state.
+			'reversible',           // Can be undone by deleting the product.
 		);
 	}
 }

@@ -196,7 +196,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 				$status = $security_key->get_status();
 				?>
 				<div class="notice notice-error is-dismissible">
-					<h3><?php esc_html_e( 'WP oOS Root Security Key Required', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'NV oOS Root Security Key Required', 'wp-mcp-ai' ); ?></h3>
 					<p><strong><?php esc_html_e( 'Plugin initialization has been blocked. A root security key is required to unlock the plugin.', 'wp-mcp-ai' ); ?></strong></p>
 					
 					<?php if ( ! empty( $status['reason'] ) ) : ?>

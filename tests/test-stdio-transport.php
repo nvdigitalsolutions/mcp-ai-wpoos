@@ -7,9 +7,7 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_STDIO_Transport_Test extends WP_UnitTestCase {
-
 	/**
 	 * Administrator user ID used for authenticated requests.
 	 *
@@ -128,7 +126,7 @@ class WP_MCP_AI_STDIO_Transport_Test extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'name', $result['serverInfo'] );
 		$this->assertArrayHasKey( 'version', $result['serverInfo'] );
-		$this->assertSame( 'WP oOS', $result['serverInfo']['name'] );
+		$this->assertSame( 'NV oOS', $result['serverInfo']['name'] );
 	}
 
 	/**

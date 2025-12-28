@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings Dashboard Controller for WP oOS
+ * Settings Dashboard Controller for NV oOS
  *
  * Manages the modern tabbed settings interface.
  *
@@ -533,7 +533,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		}
 
 		/**
-		 * Hide the WordPress admin footer text on the WP oOS settings dashboard.
+		 * Hide the WordPress admin footer text on the NV oOS settings dashboard.
 		 *
 		 * @param string $footer_text The default footer text.
 		 * @return string Empty string on settings dashboard, original text elsewhere.
@@ -547,7 +547,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		}
 
 		/**
-		 * Hide the WordPress version footer text on the WP oOS settings dashboard.
+		 * Hide the WordPress version footer text on the NV oOS settings dashboard.
 		 *
 		 * @param string $footer_text The default version footer text.
 		 * @return string Empty string on settings dashboard, original text elsewhere.
@@ -561,7 +561,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		}
 
 		/**
-		 * Check if the current admin page is the WP oOS settings dashboard.
+		 * Check if the current admin page is the NV oOS settings dashboard.
 		 *
 		 * @return bool True if on settings dashboard, false otherwise.
 		 */

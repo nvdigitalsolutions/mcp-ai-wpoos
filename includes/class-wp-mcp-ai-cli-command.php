@@ -1,6 +1,6 @@
 <?php
 /**
- * WP-CLI commands for the WP oOS plugin.
+ * WP-CLI commands for the NV oOS plugin.
  *
  * @package WP_MCP_AI
  */
@@ -24,13 +24,13 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 					'name'        => __( 'WooCommerce', 'wp-mcp-ai' ),
 					'slug'        => 'woocommerce',
 					'plugin_file' => 'woocommerce/woocommerce.php',
-					'description' => __( 'Enables WooCommerce aware WP oOS tools.', 'wp-mcp-ai' ),
+					'description' => __( 'Enables WooCommerce aware NV oOS tools.', 'wp-mcp-ai' ),
 				),
 				'jet-engine'  => array(
 					'name'        => __( 'JetEngine', 'wp-mcp-ai' ),
 					'slug'        => 'jet-engine',
 					'plugin_file' => 'jet-engine/jet-engine.php',
-					'description' => __( 'Unlocks JetEngine powered WP oOS tools.', 'wp-mcp-ai' ),
+					'description' => __( 'Unlocks JetEngine powered NV oOS tools.', 'wp-mcp-ai' ),
 				),
 			);
 
@@ -47,11 +47,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 	if ( ! class_exists( 'WP_MCP_AI_CLI_Command' ) ) {
 		/**
-		 * Root WP-CLI command for WP oOS.
+		 * Root WP-CLI command for NV oOS.
 		 */
 		class WP_MCP_AI_CLI_Command extends WP_CLI_Command {
 			/**
-			 * Display a summary of the WordPress and WP oOS environment.
+			 * Display a summary of the WordPress and NV oOS environment.
 			 *
 			 * ## OPTIONS
 			 *
@@ -66,7 +66,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 *
 			 * ## EXAMPLES
 			 *
-			 *     # Show the current WP oOS environment status.
+			 *     # Show the current NV oOS environment status.
 			 *     $ wp mcp-ai status
 			 *
 			 * @since 1.0.0
@@ -120,7 +120,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 					),
 					array(
 						'context' => 'plugin',
-						'label'   => 'WP oOS Version',
+						'label'   => 'NV oOS Version',
 						'value'   => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
 					),
 					array(
@@ -225,7 +225,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			}
 
 			/**
-			 * Probe a remote WP oOS instance.
+			 * Probe a remote NV oOS instance.
 			 *
 			 * ## OPTIONS
 			 *
@@ -393,7 +393,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 	if ( ! class_exists( 'WP_MCP_AI_CLI_Plugins_Command' ) ) {
 		/**
-		 * Manage supported WP oOS plugin dependencies.
+		 * Manage supported NV oOS plugin dependencies.
 		 */
 		class WP_MCP_AI_CLI_Plugins_Command extends WP_CLI_Command {
 			/**
@@ -917,7 +917,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				if ( 'healthy' === $health['status'] ) {
 					WP_CLI::success( 'RabbitMQ connection is healthy.' );
 				} elseif ( 'disabled' === $health['status'] ) {
-					WP_CLI::warning( 'RabbitMQ integration is disabled. Enable it in Settings → WP oOS → RabbitMQ.' );
+					WP_CLI::warning( 'RabbitMQ integration is disabled. Enable it in Settings → NV oOS → RabbitMQ.' );
 				} else {
 					WP_CLI::error( 'RabbitMQ connection failed. Check your configuration.' );
 				}
@@ -964,7 +964,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			/**
 			 * Set up RabbitMQ exchanges and queues.
 			 *
-			 * Creates the required exchanges and queues for WP oOS tool execution.
+			 * Creates the required exchanges and queues for NV oOS tool execution.
 			 *
 			 * ## EXAMPLES
 			 *
@@ -1185,7 +1185,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				// if ( $max_jobs > 0 && $jobs_processed >= $max_jobs ) {
 				// break;
 				// }
-				// }
+				// }.
 
 				WP_CLI::success( sprintf( 'Worker stopped. Processed %d jobs.', $jobs_processed ) );
 			}
@@ -1274,11 +1274,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				// Write startup message to stderr (not stdout, which is for JSON-RPC).
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				fwrite( STDERR, "[WP oOS] STDIO transport starting...\n" );
+				fwrite( STDERR, "[NV oOS] STDIO transport starting...\n" );
 
 				if ( $assistant_id > 0 ) {
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					fwrite( STDERR, "[WP oOS] Scoped to assistant ID: {$assistant_id}\n" );
+					fwrite( STDERR, "[NV oOS] Scoped to assistant ID: {$assistant_id}\n" );
 				}
 
 				// Create and run the transport.
@@ -1288,7 +1288,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				if ( function_exists( 'pcntl_signal' ) ) {
 					$shutdown_handler = function () use ( $transport ) {
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						fwrite( STDERR, "\n[WP oOS] Shutting down...\n" );
+						fwrite( STDERR, "\n[NV oOS] Shutting down...\n" );
 						$transport->stop();
 					};
 
@@ -1299,7 +1299,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				$transport->run();
 
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				fwrite( STDERR, "[WP oOS] STDIO transport stopped.\n" );
+				fwrite( STDERR, "[NV oOS] STDIO transport stopped.\n" );
 			}
 		}
 	}

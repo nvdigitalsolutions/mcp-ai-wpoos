@@ -5,6 +5,9 @@
  * @package WP_MCP_AI\Tests
  */
 
+/**
+ * Test class for shortcode functionality.
+ */
 class Test_Shortcodes extends WP_UnitTestCase {
 	/**
 	 * Administrator user ID used for capability checks.
@@ -13,6 +16,9 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	 */
 	protected $admin_id;
 
+	/**
+	 * Set up test environment before each test.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -30,6 +36,9 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		do_action( 'init' );
 	}
 
+	/**
+	 * Clean up test environment after each test.
+	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 		parent::tearDown();
@@ -481,5 +490,109 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$resolved           = WP_MCP_AI_Shortcode::resolve_assistant_id( $invalid_identifier );
 
 		$this->assertSame( 0, $resolved, 'resolve_assistant_id should return 0 for non-existent profession.' );
+	}
+
+	/**
+	 * Test that profession title is correctly displayed in the chat label.
+	 *
+	 * This verifies that when a profession test (profession_XXX format) is used,
+	 * the profession's title is displayed in the chat interface, not an empty string.
+	 */
+	public function test_profession_title_displayed_in_chat_label() {
+		// Create a test profession with a specific title.
+		$profession_title = 'Test Anthropologist';
+		$profession_id    = self::factory()->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_status' => 'publish',
+				'post_title'  => $profession_title,
+			)
+		);
+
+		// Render the shortcode with profession_XXX format.
+		$profession_identifier = 'profession_' . $profession_id;
+		$markup                = do_shortcode( sprintf( '[%s assistant="%s"]', WP_MCP_AI_Shortcode::SHORTCODE, $profession_identifier ) );
+
+		// Verify the markup contains the profession title.
+		$this->assertStringContainsString( $profession_title, $markup, 'Profession title should be displayed in the chat interface.' );
+
+		// Verify the title is in the label element.
+		$this->assertStringContainsString( 'wp-mcp-ai-chat__label', $markup, 'Chat label class should be present.' );
+
+		// Parse the HTML to verify the title is in the correct location.
+		$xpath  = $this->get_dom_xpath( $markup );
+		$labels = $xpath->query( '//label[contains(@class, "wp-mcp-ai-chat__label")]' );
+		$this->assertGreaterThan( 0, $labels->length, 'Should find the chat label element.' );
+
+		if ( $labels->length > 0 ) {
+			$label_text = trim( $labels->item( 0 )->textContent );
+			$this->assertSame( $profession_title, $label_text, 'Label should contain the profession title.' );
+		}
+	}
+
+	/**
+	 * Test that the template attribute is rendered as a data attribute and CSS class.
+	 */
+	public function test_chat_shortcode_renders_template_attribute() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Template Test Assistant',
+			)
+		);
+
+		// Test speech-bubbles template.
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="speech-bubbles"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="speech-bubbles"', $markup, 'Template data attribute should be present.' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat--template-speech-bubbles', $markup, 'Template CSS class should be present.' );
+
+		// Test compact template.
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="compact"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="compact"', $markup, 'Template data attribute should be present.' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat--template-compact', $markup, 'Template CSS class should be present.' );
+
+		// Test sidebar template.
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="sidebar"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="sidebar"', $markup, 'Template data attribute should be present.' );
+		$this->assertStringContainsString( 'wp-mcp-ai-chat--template-sidebar', $markup, 'Template CSS class should be present.' );
+
+		// Test classic template (default).
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="classic"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="classic"', $markup, 'Template data attribute should be present for classic.' );
+		$this->assertStringNotContainsString( 'wp-mcp-ai-chat--template-classic', $markup, 'Classic template should not have modifier class.' );
+	}
+
+	/**
+	 * Test that invalid template values fallback to classic.
+	 */
+	public function test_chat_shortcode_invalid_template_falls_back_to_classic() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Invalid Template Assistant',
+			)
+		);
+
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" template="invalid-template"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="classic"', $markup, 'Invalid template should fallback to classic.' );
+		$this->assertStringNotContainsString( 'invalid-template', $markup, 'Invalid template name should not appear in output.' );
+	}
+
+	/**
+	 * Test that template defaults to classic when not specified.
+	 */
+	public function test_chat_shortcode_template_defaults_to_classic() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Default Template Assistant',
+			)
+		);
+
+		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-template="classic"', $markup, 'Template should default to classic when not specified.' );
 	}
 }

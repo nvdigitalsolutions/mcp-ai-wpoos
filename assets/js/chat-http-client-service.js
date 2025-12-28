@@ -1,5 +1,5 @@
 /**
- * HTTP Client Service for WP oOS Chat
+ * HTTP Client Service for NV oOS Chat
  * 
  * Provides a robust HTTP client with automatic retry logic using ky.
  * This replaces raw fetch calls with a more resilient implementation.

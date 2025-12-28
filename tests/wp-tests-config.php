@@ -59,7 +59,7 @@ if ( ! defined( 'WP_TESTS_EMAIL' ) ) {
 }
 
 if ( ! defined( 'WP_TESTS_TITLE' ) ) {
-	define( 'WP_TESTS_TITLE', 'WP oOS Test Suite' );
+	define( 'WP_TESTS_TITLE', 'NV oOS Test Suite' );
 }
 
 if ( ! defined( 'WP_PHP_BINARY' ) ) {

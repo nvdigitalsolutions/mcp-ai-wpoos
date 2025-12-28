@@ -1,5 +1,5 @@
 /**
- * Clipboard Service for WP oOS Chat
+ * Clipboard Service for NV oOS Chat
  * 
  * Handles copy-to-clipboard functionality with fallback support for older browsers.
  * This is a self-contained service that can be used independently.

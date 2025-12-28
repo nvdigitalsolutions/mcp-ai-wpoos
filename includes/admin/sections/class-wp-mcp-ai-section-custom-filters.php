@@ -77,7 +77,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				'filter_default_light_model'            => array(
 					'type'        => 'text',
 					'label'       => __( 'Default Light Model', 'wp-mcp-ai' ),
-					'description' => __( 'Default AI model for simple tasks. Overrides the wp_mcp_ai_default_light_model filter. Default: gpt-4.1-mini', 'wp-mcp-ai' ),
+					'description' => __( 'Default AI model for simple tasks. Overrides the wp_mcp_ai_default_light_model filter. Default: gpt-4o-mini', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => 'gpt-4.1-mini',
 				),

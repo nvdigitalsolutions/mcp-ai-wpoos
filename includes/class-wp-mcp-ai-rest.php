@@ -987,7 +987,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param string                        $job_id          Job identifier.
 		 * @param WP_MCP_AI_Cron_Status_Service $service         Cron status service instance.
 		 * @param int                           $user_id         User ID for permission checks.
-		 * @return WP_REST_Response Response with SSE streaming configured.
+		 * @return void Streams SSE updates and exits.
 		 */
 		protected function stream_job_status_updates( $initial_details, $job_id, $service, $user_id ) {
 			// Send SSE headers and initialize streaming.
@@ -1245,7 +1245,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$response_data['implementation'] = array(
-				'name'    => 'WP oOS',
+				'name'    => 'NV oOS',
 				'version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
 			);
 
@@ -2292,6 +2292,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
 			}
 
+			// If a professional_prompt is provided (from professional selector), prepend it to system prompt.
+			$professional_prompt = $request->get_param( 'professional_prompt' );
+			if ( ! empty( $professional_prompt ) && is_string( $professional_prompt ) ) {
+				$professional_prompt = sanitize_textarea_field( $professional_prompt );
+				if ( ! empty( $assistant_config['system_prompt'] ) ) {
+					// Prepend professional prompt to existing system prompt.
+					$assistant_config['system_prompt'] = $professional_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $assistant_config['system_prompt'];
+				} else {
+					// Use professional prompt as the system prompt.
+					$assistant_config['system_prompt'] = $professional_prompt;
+				}
+			}
+
 			$options = $this->validator->sanitize_options( $request->get_param( 'options' ), $assistant_config );
 
 			$limit_context = $this->build_chat_limit_context( $assistant_id, $options );
@@ -2731,7 +2744,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				do_action( 'wp_mcp_ai_cost_calculated', $cost_data, $assistant_id, $user_id, $response, $request );
 			}
 
-			// Include the session key in the response so the client can save it
+			// Include the session key in the response so the client can save it.
 			if ( $recorded_session_key ) {
 				$payload['sessionKey'] = $recorded_session_key;
 			}
@@ -2825,7 +2838,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request             REST request instance.
 		 * @param int             $user_id             Current user ID.
 		 * @param int             $max_iterations      Maximum agentic loop iterations.
-		 * @return WP_REST_Response|WP_Error
+		 * @return void Streams SSE updates and exits.
 		 */
 		protected function handle_chat_request_with_streaming( $assistant_id, $messages, $options, $assistant_config, $transcript_context, $request, $user_id, $max_iterations ) {
 			// Set up SSE headers.
@@ -3256,27 +3269,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Extract thinking/reasoning text from the response if present.
 			// Supports multiple providers:
-			// - Gemini 2.0 Flash Thinking mode: message['thinking']
-			// - OpenAI reasoning models (future): message['reasoning_content'] or message['reasoning']
+			// - Gemini 2.0 Flash Thinking mode: message['thinking'].
+			// - OpenAI reasoning models (future): message['reasoning_content'] or message['reasoning'].
 			$thinking_text            = '';
-			$thinking_provider_format = 'gemini'; // Default to Gemini format
+			$thinking_provider_format = 'gemini'; // Default to Gemini format.
 
-			// Validate response structure before accessing nested keys
+			// Validate response structure before accessing nested keys.
 			if ( ! empty( $response['choices'] ) && is_array( $response['choices'] ) && isset( $response['choices'][0]['message'] ) ) {
 				$message = $response['choices'][0]['message'];
 
-				// Check for Gemini thinking text
+				// Check for Gemini thinking text.
 				if ( ! empty( $message['thinking'] ) ) {
 					$thinking_text            = $message['thinking'];
 					$thinking_provider_format = 'gemini';
-				}
-				// Check for OpenAI reasoning_content (future-ready)
-				elseif ( ! empty( $message['reasoning_content'] ) ) {
+				} elseif ( ! empty( $message['reasoning_content'] ) ) {
+					// Check for OpenAI reasoning_content (future-ready).
 					$thinking_text            = $message['reasoning_content'];
 					$thinking_provider_format = 'openai';
-				}
-				// Check for OpenAI reasoning (alternative field)
-				elseif ( ! empty( $message['reasoning'] ) ) {
+				} elseif ( ! empty( $message['reasoning'] ) ) {
+					// Check for OpenAI reasoning (alternative field).
 					$thinking_text            = $message['reasoning'];
 					$thinking_provider_format = 'openai';
 				}
@@ -3414,7 +3425,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				do_action( 'wp_mcp_ai_cost_calculated', $cost_data, $assistant_id, $user_id, $response, $request );
 			}
 
-			// Include the session key in the response so the client can save it
+			// Include the session key in the response so the client can save it.
 			if ( $recorded_session_key ) {
 				$payload['sessionKey'] = $recorded_session_key;
 			}
@@ -7332,17 +7343,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$content = $message['content'];
 
-			// Content must be an array to contain image segments
+			// Content must be an array to contain image segments.
 			if ( ! is_array( $content ) ) {
 				return false;
 			}
 
-			// Check if content is a sequential array of segments
+			// Check if content is a sequential array of segments.
 			if ( ! $this->is_sequential_array( $content ) ) {
 				return false;
 			}
 
-			// Look for image_url or image_file type segments
+			// Look for image_url or image_file type segments.
 			foreach ( $content as $segment ) {
 				if ( ! is_array( $segment ) || ! isset( $segment['type'] ) ) {
 					continue;
@@ -7419,14 +7430,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				$content = $this->prepare_message_text( $message );
 
-				// Check if message has image content (even if text content is empty)
+				// Check if message has image content (even if text content is empty).
 				$has_image_content = $this->message_has_image_content( $message );
 
 				// Skip messages with empty content, except:
 				// - tool role messages (required for tool responses)
 				// - system role messages (can be empty for context)
 				// - assistant role messages with tool_calls (required for agentic flow)
-				// - messages with image content (required to preserve images in chat)
+				// - messages with image content (required to preserve images in chat).
 				$has_tool_calls = 'assistant' === $role && isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) && ! empty( $message['tool_calls'] );
 
 				if ( '' === $content && 'tool' !== $role && 'system' !== $role && ! $has_tool_calls && ! $has_image_content ) {
@@ -7447,7 +7458,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 
 				// If message has image content, preserve the original content structure
-				// instead of the extracted text (which would be empty for image-only messages)
+				// instead of the extracted text (which would be empty for image-only messages).
 				if ( $has_image_content && isset( $message['content'] ) ) {
 					$message_entry['content'] = $message['content'];
 				}
@@ -7543,7 +7554,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						);
 
 						// If message has image content, preserve the original content structure
-						// instead of the extracted text (which would be empty for image-only messages)
+						// instead of the extracted text (which would be empty for image-only messages).
 						if ( $has_image_content && isset( $choice['message']['content'] ) ) {
 							$message_entry['content'] = $choice['message']['content'];
 						}
@@ -8344,7 +8355,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$original_time_limit = ini_get( 'max_execution_time' );
 					$tool_timeout        = apply_filters( 'wp_mcp_ai_agentic_tool_timeout', 60, $tool_slug );
 
-					// Only set if we can (some hosting environments don't allow this)
+					// Only set if we can (some hosting environments don't allow this).
 					if ( function_exists( 'set_time_limit' ) && 0 !== (int) $original_time_limit ) {
 						@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 					}
@@ -8371,7 +8382,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					if ( ! empty( $context['agentic_loop'] ) ) {
 						// For pending statuses, return an informational message that guides the LLM
 						// to use alternative sources rather than treating it as a hard failure.
-						// This prevents the LLM from telling users "the search isn't working."
+						// This prevents the LLM from telling users "the search isn't working.".
 						if ( $is_pending ) {
 							// Load chat service class to access the constant.
 							if ( ! class_exists( 'WP_MCP_AI_Chat_Service' ) ) {

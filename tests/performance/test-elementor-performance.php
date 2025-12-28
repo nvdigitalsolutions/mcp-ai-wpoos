@@ -1,6 +1,6 @@
 <?php
 /**
- * Elementor Integration Performance Tests for WP oOS Performance Monitor.
+ * Elementor Integration Performance Tests for NV oOS Performance Monitor.
  *
  * Tests Elementor widget performance including:
  * - Widget registration benchmarks

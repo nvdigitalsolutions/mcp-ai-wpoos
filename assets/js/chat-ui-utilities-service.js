@@ -1,5 +1,5 @@
 /**
- * UI Utilities Service for WP oOS Chat
+ * UI Utilities Service for NV oOS Chat
  * 
  * Handles UI utility functions including formatting, status management, and DOM batching.
  * This is a self-contained service that can be used independently.
@@ -719,7 +719,7 @@
 			if (lowerHTML.indexOf(dangerousPatterns[i]) !== -1) {
 				if (window.console && console.error) {
 					console.error(
-						'[WP oOS] setButtonIcon: Potentially unsafe icon HTML detected and blocked.',
+						'[NV oOS] setButtonIcon: Potentially unsafe icon HTML detected and blocked.',
 						{ pattern: dangerousPatterns[i], button: button }
 					);
 				}

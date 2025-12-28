@@ -1,6 +1,6 @@
 <?php
 /**
- * Elementor widget for rendering the WP oOS chat shortcode.
+ * Elementor widget for rendering the NV oOS chat shortcode.
  *
  * @package WP_MCP_AI
  */
@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'WP oOS Chat', 'wp-mcp-ai' );
+		return __( 'NV oOS Chat', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -144,6 +144,23 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 				'return_value' => 'true',
 				'default'      => 'false',
 				'description'  => __( 'Allow the assistant to use sensitive tools that may modify site content or settings. Only enable if you trust the assistant configuration.', 'wp-mcp-ai' ),
+			)
+		);
+
+		$this->add_control(
+			'template',
+			array(
+				'label'       => __( 'Chat Template', 'wp-mcp-ai' ),
+				'type'        => \Elementor\Controls_Manager::SELECT,
+				'options'     => array(
+					'classic'        => __( 'Classic', 'wp-mcp-ai' ),
+					'speech-bubbles' => __( 'Speech Bubbles', 'wp-mcp-ai' ),
+					'compact'        => __( 'Compact', 'wp-mcp-ai' ),
+					'sidebar'        => __( 'Sidebar', 'wp-mcp-ai' ),
+				),
+				'default'     => 'classic',
+				'label_block' => true,
+				'description' => __( 'Select the visual template for the chat interface.', 'wp-mcp-ai' ),
 			)
 		);
 
@@ -1147,6 +1164,11 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$attributes['allow_sensitive_tools'] = 'true';
 		}
 
+		$template = isset( $settings['template'] ) ? sanitize_key( $settings['template'] ) : 'classic';
+		if ( 'classic' !== $template ) {
+			$attributes['template'] = $template;
+		}
+
 		$shortcode = '[' . WP_MCP_AI_Shortcode::SHORTCODE;
 
 		foreach ( $attributes as $key => $value ) {
@@ -1193,13 +1215,13 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		if ( '' !== $url ) {
 			return sprintf(
 				/* translators: 1: Opening anchor tag, 2: closing anchor tag. */
-				__( 'Global chat colors are managed under %1$sSettings → WP oOS → Theme%2$s. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' ),
+				__( 'Global chat colors are managed under %1$sSettings → NV oOS → Theme%2$s. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' ),
 				'<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">',
 				'</a>'
 			);
 		}
 
-		return __( 'Global chat colors are managed under Settings → WP oOS → Theme. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' );
+		return __( 'Global chat colors are managed under Settings → NV oOS → Theme. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' );
 	}
 
 	/**

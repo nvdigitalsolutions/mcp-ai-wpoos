@@ -7,9 +7,7 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_MCP_Endpoint_Test extends WP_UnitTestCase {
-
 	/**
 	 * Administrator user ID used for authenticated requests.
 	 *
@@ -38,6 +36,9 @@ class WP_MCP_AI_MCP_Endpoint_Test extends WP_UnitTestCase {
 	 */
 	protected $rest_controller;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -70,6 +71,9 @@ class WP_MCP_AI_MCP_Endpoint_Test extends WP_UnitTestCase {
 		$this->bootstrap_rest_controller();
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 		wp_set_current_user( 0 );
@@ -239,7 +243,7 @@ class WP_MCP_AI_MCP_Endpoint_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'capabilities', $result );
 		$this->assertArrayHasKey( 'serverInfo', $result );
 		$this->assertArrayHasKey( 'instructions', $result );
-		$this->assertSame( 'WP oOS', $result['serverInfo']['name'] );
+		$this->assertSame( 'NV oOS', $result['serverInfo']['name'] );
 		$this->assertNotEmpty( $result['instructions'], 'Instructions should not be empty' );
 	}
 
