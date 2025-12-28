@@ -1,6 +1,8 @@
 <?php
 /**
  * Tests for the save_post assistant tool.
+ *
+ * @package WP_MCP_AI
  */
 class WP_MCP_AI_Tool_Save_Post_Test extends WP_UnitTestCase {
 

@@ -7,9 +7,7 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_STDIO_Transport_Test extends WP_UnitTestCase {
-
 	/**
 	 * Administrator user ID used for authenticated requests.
 	 *

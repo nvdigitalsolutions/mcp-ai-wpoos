@@ -696,7 +696,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				'id'      => $id,
 				'error'   => $error,
 			),
-			$code === -32700 ? 400 : ( $code === -32601 ? 404 : 500 )
+			- 32700 === $code ? 400 : ( -32601 === $code ? 404 : 500 )
 		);
 		$response->header( 'Content-Type', 'application/json; charset=utf-8' );
 		$this->add_cors_headers( $response );
