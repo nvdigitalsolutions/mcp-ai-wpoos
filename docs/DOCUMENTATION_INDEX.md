@@ -575,6 +575,13 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 |----------|-------------|----------|
 | [OPENAI-STABILIZATION.md](features/ai-providers/openai/OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
 | [TRANSCRIPT_RECONSTRUCTION_FIX.md](implementation-history/2025/fixes/chat/TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |
+| [GET_OPEN_METEO_FIX.md](fixes/GET_OPEN_METEO_FIX.md) | Weather forecast chart iframe rendering fix | Developers |
+| [BEFORE_AFTER_COMPARISON.md](fixes/BEFORE_AFTER_COMPARISON.md) | Visual comparison of get_open_meteo_forecast chart rendering fix | Developers |
+| [CHART_BUBBLE_WIDTH_FIX.md](fixes/CHART_BUBBLE_WIDTH_FIX.md) | CSS fix for chart bubble width display | Developers |
+| [CHART_WIDTH_FIX_SUMMARY.md](fixes/CHART_WIDTH_FIX_SUMMARY.md) | Summary of chart width-related fixes | Developers |
+| [CHART_FIX_TESTING.md](fixes/CHART_FIX_TESTING.md) | Comprehensive testing guide for chart fixes | Developers/QA |
+| [IMPLEMENTATION_SUMMARY_GET_OPEN_METEO.md](implementation-summaries/IMPLEMENTATION_SUMMARY_GET_OPEN_METEO.md) | Implementation summary for weather forecast fix | Developers |
+| [PR_SUMMARY_GET_OPEN_METEO.md](implementation-history/2025/PR_SUMMARY_GET_OPEN_METEO.md) | PR summary for weather forecast iframe rendering fix | Developers |
 
 ---
 
