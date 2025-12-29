@@ -225,7 +225,7 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 			'top_tools'      => array(),
 		);
 
-		// Try to get activity logs from WP oOS logger.
+		// Try to get activity logs from NV oOS logger.
 		$logs = get_option( 'wp_mcp_ai_recent_activity', array() );
 
 		if ( ! is_array( $logs ) ) {

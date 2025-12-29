@@ -1,6 +1,6 @@
 <?php
 /**
- * Auth0 GitHub identity bridge for WP oOS.
+ * Auth0 GitHub identity bridge for NV oOS.
  *
  * @package WP_MCP_AI
  */

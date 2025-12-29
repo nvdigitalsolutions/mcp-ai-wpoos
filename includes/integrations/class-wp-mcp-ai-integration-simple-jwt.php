@@ -1,6 +1,6 @@
 <?php
 /**
- * Simple JWT Login integration for WP oOS.
+ * Simple JWT Login integration for NV oOS.
  *
  * @package WP_MCP_AI
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 
 	/**
-	 * Bridges Simple JWT Login bearer tokens into WP oOS authentication.
+	 * Bridges Simple JWT Login bearer tokens into NV oOS authentication.
 	 */
 	class WP_MCP_AI_Integration_Simple_JWT {
 		const PLUGIN_BASENAME = 'simple-jwt-login/simple-jwt-login.php';
@@ -331,7 +331,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 		}
 
 		/**
-		 * Build the authentication context passed to WP oOS.
+		 * Build the authentication context passed to NV oOS.
 		 *
 		 * @param array        $payload Decoded JWT payload.
 		 * @param WP_User|null $user    WordPress user resolved from the payload.
