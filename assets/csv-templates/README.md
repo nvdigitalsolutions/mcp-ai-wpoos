@@ -245,6 +245,44 @@ Template for importing WordPress comments.
 
 ---
 
+### 10. **jetengine-cct-template.csv**
+Template for importing JetEngine Custom Content Types (CCT).
+
+**Key Fields:**
+- `item_id` - Leave empty for new items, or specify ID to update
+- `cct_slug` - CCT slug (e.g., "ai_chat_transcripts", "custom_cct_events")
+- `status` - publish, draft, pending, private
+- `item_title` - Title/name of the CCT item
+- `field_1` through `field_8` - Custom fields defined in your CCT
+- `author_id` - User ID who created the item
+- `date_created` - Creation date (YYYY-MM-DD HH:MM:SS)
+- Custom meta fields
+
+**Important Notes:**
+- Field names depend on your specific CCT configuration in JetEngine
+- Fields 1-8 are placeholders; replace with your actual field slugs
+- Each CCT can have different field structures
+- Consult your JetEngine CCT configuration for exact field names
+
+**Common CCT Examples:**
+- `ai_chat_transcripts` - AI conversation records
+- Custom events, bookings, team members
+- Testimonials, locations, courses
+- Properties, portfolios, case studies
+
+**Use Cases:**
+- Import JetEngine custom data structures
+- Migrate CCT content between sites
+- Bulk create CCT items
+- Restore JetEngine data backups
+
+**Requirements:**
+- JetEngine plugin must be installed and active
+- CCT must be configured in JetEngine before import
+- Field slugs must match your CCT configuration exactly
+
+---
+
 ## 🚀 How to Use These Templates
 
 ### Step 1: Choose Your Import Plugin
