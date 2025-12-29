@@ -258,6 +258,15 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			? $arguments['options']
 			: array();
 
+		// Ensure Chart.js respects explicit canvas dimensions and doesn't auto-resize.
+		// This prevents the canvas from being resized to 3x3 pixels during iframe initialization.
+		if ( ! isset( $options['responsive'] ) ) {
+			$options['responsive'] = false;
+		}
+		if ( ! isset( $options['maintainAspectRatio'] ) ) {
+			$options['maintainAspectRatio'] = false;
+		}
+
 		// Add title to options if provided.
 		if ( ! empty( $arguments['title'] ) ) {
 			$title = sanitize_text_field( $arguments['title'] );

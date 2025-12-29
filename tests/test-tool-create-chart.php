@@ -413,4 +413,108 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 		$this->assertEquals( '2023', $config['data']['datasets'][0]['label'] );
 		$this->assertEquals( '2024', $config['data']['datasets'][1]['label'] );
 	}
+
+	/**
+	 * Test that Chart.js options include responsive: false to prevent 3x3 pixel canvas issue.
+	 */
+	public function test_chart_responsive_options() {
+		$arguments = array(
+			'type' => 'bar',
+			'data' => array(
+				'labels'   => array( 'A', 'B' ),
+				'datasets' => array(
+					array(
+						'data' => array( 1, 2 ),
+					),
+				),
+			),
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertNotWPError( $result );
+		$config = $result['chart_config'];
+
+		// Verify responsive options are set to false to prevent canvas from being resized to 3x3 pixels.
+		$this->assertArrayHasKey( 'options', $config );
+		$this->assertArrayHasKey( 'responsive', $config['options'] );
+		$this->assertFalse( $config['options']['responsive'], 'responsive should be false to maintain explicit canvas dimensions' );
+		$this->assertArrayHasKey( 'maintainAspectRatio', $config['options'] );
+		$this->assertFalse( $config['options']['maintainAspectRatio'], 'maintainAspectRatio should be false to maintain explicit canvas dimensions' );
+	}
+
+	/**
+	 * Test that custom options don't override responsive settings unless explicitly provided.
+	 */
+	public function test_chart_custom_options_preserve_responsive_defaults() {
+		$arguments = array(
+			'type'    => 'bar',
+			'data'    => array(
+				'labels'   => array( 'A', 'B' ),
+				'datasets' => array(
+					array(
+						'data' => array( 1, 2 ),
+					),
+				),
+			),
+			'options' => array(
+				'plugins' => array(
+					'legend' => array(
+						'display' => false,
+					),
+				),
+			),
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertNotWPError( $result );
+		$config = $result['chart_config'];
+
+		// Verify responsive options are still set even with custom options.
+		$this->assertArrayHasKey( 'responsive', $config['options'] );
+		$this->assertFalse( $config['options']['responsive'] );
+		$this->assertArrayHasKey( 'maintainAspectRatio', $config['options'] );
+		$this->assertFalse( $config['options']['maintainAspectRatio'] );
+
+		// Verify custom options are preserved.
+		$this->assertArrayHasKey( 'plugins', $config['options'] );
+		$this->assertArrayHasKey( 'legend', $config['options']['plugins'] );
+		$this->assertFalse( $config['options']['plugins']['legend']['display'] );
+	}
+
+	/**
+	 * Test that explicit responsive options from user are respected.
+	 */
+	public function test_chart_explicit_responsive_options_respected() {
+		$arguments = array(
+			'type'    => 'bar',
+			'data'    => array(
+				'labels'   => array( 'A', 'B' ),
+				'datasets' => array(
+					array(
+						'data' => array( 1, 2 ),
+					),
+				),
+			),
+			'options' => array(
+				'responsive'          => true,
+				'maintainAspectRatio' => true,
+			),
+		);
+
+		$context = array( 'user_id' => $this->user_id );
+		$result  = $this->tool->execute( $arguments, $context );
+
+		$this->assertNotWPError( $result );
+		$config = $result['chart_config'];
+
+		// Verify user's explicit responsive options are preserved.
+		$this->assertArrayHasKey( 'responsive', $config['options'] );
+		$this->assertTrue( $config['options']['responsive'] );
+		$this->assertArrayHasKey( 'maintainAspectRatio', $config['options'] );
+		$this->assertTrue( $config['options']['maintainAspectRatio'] );
+	}
 }
