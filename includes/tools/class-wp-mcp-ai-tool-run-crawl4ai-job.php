@@ -76,7 +76,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		 * from environment variables) when the admin setting is left blank.
 		 *
 		 * @param string $base_url Base URL configured in the settings.
-		 * @param array  $settings Entire NV oOS settings array.
+		 * @param array  $settings Entire WP oOS settings array.
 		 * @param array  $context  Execution context provided to the tool.
 		 */
 		$base_url = apply_filters( 'wp_mcp_ai_crawl4ai_base_url', $base_url, $settings, $context );

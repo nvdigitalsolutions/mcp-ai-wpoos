@@ -32,12 +32,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 		}
 
 		/**
-		 * Register the integration page under the NV oOS menu.
+		 * Register the integration page under the WP oOS menu.
 		 */
 		public function register_page() {
 			$this->page_hook = add_submenu_page(
 				'wp-mcp-ai-dashboard',
-				__( 'External Tools - NV oOS', 'wp-mcp-ai' ),
+				__( 'External Tools - WP oOS', 'wp-mcp-ai' ),
 				__( 'External Tools', 'wp-mcp-ai' ),
 				'manage_options',
 				self::PAGE_SLUG,

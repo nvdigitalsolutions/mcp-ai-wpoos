@@ -291,7 +291,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);

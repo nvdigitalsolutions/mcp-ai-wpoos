@@ -2,7 +2,7 @@
 /**
  * Validator Service
  *
- * Provides Symfony Validator integration for NV oOS.
+ * Provides Symfony Validator integration for WP oOS.
  *
  * @package WP_MCP_AI
  */

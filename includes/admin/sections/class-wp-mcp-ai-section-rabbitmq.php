@@ -1,6 +1,6 @@
 <?php
 /**
- * RabbitMQ Settings Section for NV oOS.
+ * RabbitMQ Settings Section for WP oOS.
  *
  * Provides admin UI for configuring RabbitMQ integration settings
  * when deployed on Cloudways with RabbitMQ enabled.

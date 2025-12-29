@@ -1,6 +1,6 @@
 <?php
 /**
- * REST API controller for NV oOS.
+ * REST API controller for WP oOS.
  *
  * @package WP_MCP_AI
  */
@@ -1620,7 +1620,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $settings['rest_enable_assistant_list'] ) ) {
 				return new WP_Error(
 					'rest_assistant_list_disabled',
-					__( 'Listing assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication → REST API Capabilities.', 'wp-mcp-ai' ),
+					__( 'Listing assistants via REST API is currently disabled. Enable it in Settings → WP oOS → Authentication → REST API Capabilities.', 'wp-mcp-ai' ),
 					array(
 						'status' => 403,
 					)
@@ -1652,7 +1652,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $settings['rest_enable_assistant_create'] ) ) {
 				return new WP_Error(
 					'rest_assistant_create_disabled',
-					__( 'Creating assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication.', 'wp-mcp-ai' ),
+					__( 'Creating assistants via REST API is currently disabled. Enable it in Settings → WP oOS → Authentication.', 'wp-mcp-ai' ),
 					array(
 						'status' => 403,
 					)
@@ -1684,7 +1684,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $settings['rest_enable_assistant_delete'] ) ) {
 				return new WP_Error(
 					'rest_assistant_delete_disabled',
-					__( 'Deleting assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication.', 'wp-mcp-ai' ),
+					__( 'Deleting assistants via REST API is currently disabled. Enable it in Settings → WP oOS → Authentication.', 'wp-mcp-ai' ),
 					array(
 						'status' => 403,
 					)

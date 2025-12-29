@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Crawl4AI Monitor for NV oOS.
+ * Admin Crawl4AI Monitor for WP oOS.
  *
  * This class provides a server-side UI for monitoring Crawl4AI jobs,
  * browser pools, and job history. It follows WordPress conventions
@@ -35,7 +35,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 	}
 
 	/**
-	 * Register the Crawl4AI monitor page under the NV oOS menu.
+	 * Register the Crawl4AI monitor page under the WP oOS menu.
 	 */
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
@@ -157,7 +157,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 			<div class="wp-mcp-ai-crawl4ai-monitor__intro">
 				<p><strong><?php esc_html_e( 'About Crawl4AI Monitor', 'wp-mcp-ai' ); ?></strong></p>
 				<p><?php esc_html_e( 'The Crawl4AI Monitor displays web crawling jobs, browser pool status, and job history for the Crawl4AI integration. Crawl4AI allows AI assistants to scrape and extract data from websites using browser automation.', 'wp-mcp-ai' ); ?></p>
-				<p><?php esc_html_e( 'Configure Crawl4AI settings in NV oOS → Integrations → External Tools to connect to your Crawl4AI server.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'Configure Crawl4AI settings in WP oOS → Integrations → External Tools to connect to your Crawl4AI server.', 'wp-mcp-ai' ); ?></p>
 			</div>
 
 			<?php
@@ -175,7 +175,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 						<?php
 						printf(
 							/* translators: %s: URL to settings page */
-							wp_kses_post( __( 'Crawl4AI is not configured. Please configure it in <a href="%s">NV oOS → Integrations → External Tools</a>.', 'wp-mcp-ai' ) ),
+							wp_kses_post( __( 'Crawl4AI is not configured. Please configure it in <a href="%s">WP oOS → Integrations → External Tools</a>.', 'wp-mcp-ai' ) ),
 							esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=integrations' ) )
 						);
 						?>

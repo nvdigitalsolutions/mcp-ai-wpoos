@@ -1,6 +1,6 @@
 <?php
 /**
- * OAuth Manager for NV oOS
+ * OAuth Manager for WP oOS
  *
  * Handles OAuth flows for third-party service integrations (Gmail, Google Analytics, etc.).
  *

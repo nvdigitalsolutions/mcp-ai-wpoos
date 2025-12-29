@@ -1,6 +1,6 @@
 <?php
 /**
- * Base REST API controller for NV oOS.
+ * Base REST API controller for WP oOS.
  *
  * Provides common functionality for all REST controllers including error handling,
  * response formatting, authentication, and request validation.
@@ -260,6 +260,6 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 		}
 
 		$prefix = $context ? "[{$context}] " : '';
-		error_log( "[NV oOS REST] {$prefix}{$message}" );
+		error_log( "[WP oOS REST] {$prefix}{$message}" );
 	}
 }

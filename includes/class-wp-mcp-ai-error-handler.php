@@ -1,6 +1,6 @@
 <?php
 /**
- * Centralized error handler for NV oOS.
+ * Centralized error handler for WP oOS.
  *
  * Provides consistent error handling across the plugin with user-friendly
  * messages and recovery suggestions.

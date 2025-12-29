@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Register the NV oOS integration with ChatKit when available.
+ * Register the WP oOS integration with ChatKit when available.
  */
 class WP_MCP_AI_ChatKit_Integration {
 

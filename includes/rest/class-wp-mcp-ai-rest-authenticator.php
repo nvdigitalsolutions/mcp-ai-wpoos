@@ -362,11 +362,11 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( empty( $domain ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_not_configured',
-				__( 'Auth0 authentication is not configured. Set the Auth0 domain in the NV oOS settings screen.', 'wp-mcp-ai' ),
+				__( 'Auth0 authentication is not configured. Set the Auth0 domain in the WP oOS settings screen.', 'wp-mcp-ai' ),
 				array(
 					'status'  => 500,
 					'actions' => array(
-						'configure_auth0_domain' => __( 'In WordPress, visit Settings → NV oOS and provide the Auth0 domain.', 'wp-mcp-ai' ),
+						'configure_auth0_domain' => __( 'In WordPress, visit Settings → WP oOS and provide the Auth0 domain.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -579,7 +579,7 @@ class WP_MCP_AI_REST_Authenticator {
 			'wp_mcp_ai_insufficient_permissions',
 			sprintf(
 				/* translators: %s: WordPress capability name */
-				__( 'The authenticated user cannot access the NV oOS API. Grant the account the "%s" capability or switch to another user.', 'wp-mcp-ai' ),
+				__( 'The authenticated user cannot access the WP oOS API. Grant the account the "%s" capability or switch to another user.', 'wp-mcp-ai' ),
 				$capability
 			),
 			array(

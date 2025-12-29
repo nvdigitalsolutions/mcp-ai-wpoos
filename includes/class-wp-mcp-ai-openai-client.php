@@ -109,7 +109,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -269,7 +269,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -384,7 +384,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -522,7 +522,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -643,7 +643,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -757,7 +757,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -851,7 +851,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -966,7 +966,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -1112,7 +1112,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -1385,7 +1385,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -1962,7 +1962,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -2124,7 +2124,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -2261,7 +2261,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -2420,7 +2420,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -2666,7 +2666,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -4420,7 +4420,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -4523,7 +4523,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -4603,7 +4603,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -4671,7 +4671,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -4741,7 +4741,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -4828,7 +4828,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -4918,7 +4918,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -5010,7 +5010,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -5169,7 +5169,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -5278,7 +5278,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -5401,7 +5401,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);

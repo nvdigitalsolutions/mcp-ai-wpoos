@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Token Manager for NV oOS.
+ * Admin Token Manager for WP oOS.
  *
  * This class provides a centralized UI for managing credentials/tokens across all assistants.
  * It follows industry standards for token management (similar to GitHub, Stripe, Auth0) including:
@@ -45,7 +45,7 @@ class WP_MCP_AI_Admin_Token_Manager {
 	}
 
 	/**
-	 * Register the token manager page under the NV oOS menu.
+	 * Register the token manager page under the WP oOS menu.
 	 */
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
