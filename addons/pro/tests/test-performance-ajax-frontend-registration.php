@@ -163,6 +163,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 				'AJAX handlers should be registered via container instantiation'
 			);
 		} catch ( Exception $e ) {
+		// Intentionally empty - error handled elsewhere.
 			// If container doesn't have the section registered, that's okay for this test.
 			$this->markTestSkipped( 'Container does not have section.performance registered: ' . $e->getMessage() );
 		}

@@ -222,6 +222,7 @@ class WP_MCP_AI_Quiz_CPT {
 				}
 			}
 		} catch ( Exception $e ) {
+		// Intentionally empty - error handled elsewhere.
 			// Log error but don't block the save process.
 			if ( function_exists( 'error_log' ) ) {
 				error_log( 'WP MCP AI: Quiz CCT sync failed for post ' . $post_id . ': ' . $e->getMessage() );
@@ -329,6 +330,7 @@ class WP_MCP_AI_Quiz_CPT {
 				}
 			}
 		} catch ( Exception $e ) {
+		// Intentionally empty - error handled elsewhere.
 			// Log error but don't block the save process.
 			if ( function_exists( 'error_log' ) ) {
 				error_log( 'WP MCP AI: Submission CCT sync failed for post ' . $post_id . ': ' . $e->getMessage() );

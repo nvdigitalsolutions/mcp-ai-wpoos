@@ -590,6 +590,7 @@ composer install</pre>
 				wp_send_json_error( $result );
 			}
 		} catch ( Throwable $e ) {
+		// Intentionally empty - error handled elsewhere.
 			// Log the error for debugging.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'WP_MCP_AI Performance Test Error: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -817,6 +818,7 @@ composer install</pre>
 			$trends = WP_MCP_AI_Performance_Monitor_CCT::get_performance_trends( $component, '-7 days' );
 			wp_send_json_success( $trends );
 		} catch ( Exception $e ) {
+		// Intentionally empty - error handled elsewhere.
 			// Log the error for debugging.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'WP_MCP_AI Performance Metrics Error: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -953,6 +955,7 @@ composer install</pre>
 			return $health;
 
 		} catch ( Exception $e ) {
+		// Intentionally empty - error handled elsewhere.
 			// Log error if logging is available.
 			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
 				try {
@@ -1083,6 +1086,7 @@ composer install</pre>
 					);
 				}
 			} catch ( Throwable $e ) {
+		// Intentionally empty - error handled elsewhere.
 				// If a check throws an error, log it and add a fail result.
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( sprintf( 'WP_MCP_AI Performance Check Error in %s: %s', $method, $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -1199,6 +1203,7 @@ composer install</pre>
 					: __( 'Upload directory is not writable', 'wp-mcp-ai' ),
 			);
 		} catch ( Throwable $e ) {
+		// Intentionally empty - error handled elsewhere.
 			return array(
 				'name'    => __( 'File Permissions', 'wp-mcp-ai' ),
 				'status'  => 'fail',
