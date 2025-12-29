@@ -1,6 +1,6 @@
-# CSV Template to WP oOS Tool Mapping
+# CSV Template to NV oOS Tool Mapping
 
-This document maps the CSV import templates to corresponding WP oOS plugin tools that can be used for programmatic data manipulation.
+This document maps the CSV import templates to corresponding NV oOS plugin tools that can be used for programmatic data manipulation.
 
 ## Template to Tool Mapping
 
@@ -8,7 +8,7 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 **CSV Template**: `posts-template.csv`
 
-**Related WP oOS Tools**:
+**Related NV oOS Tools**:
 - `create_post` - Create new WordPress posts
 - `save_post` - Update existing posts
 - `get_recent_posts` - Retrieve recent posts
@@ -27,7 +27,7 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 **CSV Template**: `pages-template.csv`
 
-**Related WP oOS Tools**:
+**Related NV oOS Tools**:
 - `create_post` (with `post_type: 'page'`)
 - `save_post` - Update existing pages
 - `get_recent_posts` (filtered by post_type)
@@ -43,7 +43,7 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 **CSV Template**: `custom-post-types-template.csv`
 
-**Related WP oOS Tools**:
+**Related NV oOS Tools**:
 - `create_post` (with custom `post_type`)
 - `save_post` - Update CPT entries
 - `get_recent_posts` - Retrieve CPT items
@@ -77,7 +77,7 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 **CSV Template**: `terms-taxonomy-template.csv`
 
-**Related WP oOS Tools**:
+**Related NV oOS Tools**:
 - `create_term` - Create taxonomy terms
 - `update_term` - Update existing terms
 
@@ -104,11 +104,11 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 **CSV Template**: `users-template.csv`
 
-**Related WP oOS Tools**:
+**Related NV oOS Tools**:
 - `get_user_info` - Retrieve user information
 - `get_user_info_validated` - Get user info with validation
 
-**Note**: WP oOS doesn't include user creation tools for security reasons. Use dedicated WordPress user import plugins.
+**Note**: NV oOS doesn't include user creation tools for security reasons. Use dedicated WordPress user import plugins.
 
 **Workflow**:
 1. Import users via dedicated user import plugin
@@ -121,7 +121,7 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 **CSV Template**: `woocommerce-products-template.csv`
 
-**Related WP oOS Tools**:
+**Related NV oOS Tools**:
 - `create_woo_product` - Create WooCommerce products
 - `create_woo_product_validated` - Create with validation
 - `get_woo_products` - Retrieve products
@@ -153,7 +153,7 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 **CSV Template**: `woocommerce-orders-template.csv`
 
-**Related WP oOS Tools**:
+**Related NV oOS Tools**:
 - `get_woo_recent_orders` - Retrieve recent orders
 
 **Note**: Order creation is typically handled by WooCommerce checkout process, not manual import. CSV template is primarily for migration/backup purposes.
@@ -169,7 +169,7 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 **CSV Template**: `media-attachments-template.csv`
 
-**Related WP oOS Tools**:
+**Related NV oOS Tools**:
 - `upload_to_media_library` - Upload files to media library
 - `sideload_image` - Download and import images from URLs
 - Various tools that accept image URLs
@@ -185,8 +185,8 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 **CSV Template**: `comments-template.csv`
 
-**Related WP oOS Tools**:
-- Currently no direct comment tools in WP oOS
+**Related NV oOS Tools**:
+- Currently no direct comment tools in NV oOS
 
 **Workflow**:
 1. Import comments via CSV using WordPress import plugins
@@ -199,7 +199,7 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 **CSV Template**: `jetengine-cct-template.csv`
 
-**Related WP oOS Tools**:
+**Related NV oOS Tools**:
 - `get_jetengine_items` - Retrieve JetEngine CCT items
 - `list_jetengine_routes` - List available JetEngine REST routes
 - `invoke_jetengine_route` - Call JetEngine REST endpoints
@@ -226,7 +226,7 @@ This document maps the CSV import templates to corresponding WP oOS plugin tools
 
 ### WP All Import Tools
 
-**Related WP oOS Tools**:
+**Related NV oOS Tools**:
 - `trigger_all_import` - Trigger import execution
 - `list_all_import_templates` - List configured imports
 - `get_all_import_status` - Check import status
@@ -384,7 +384,7 @@ Arguments: { "route": "/custom_events", "method": "POST", "data": {...} }
 
 ### 1. Import First, Validate Second
 - Import bulk data via CSV
-- Use WP oOS tools to verify and validate
+- Use NV oOS tools to verify and validate
 - AI assistant reviews data quality
 
 ### 2. Programmatic Updates
@@ -443,7 +443,7 @@ Arguments: { "route": "/custom_events", "method": "POST", "data": {...} }
 
 ## Additional Resources
 
-- **WP oOS Tool Reference**: See `/docs/tool-reference.md`
+- **NV oOS Tool Reference**: See `/docs/tool-reference.md`
 - **REST API Documentation**: See `/docs/rest-api.md`
 - **CSV Templates**: See `README.md` in this directory
 

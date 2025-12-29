@@ -179,7 +179,7 @@ name,taxonomy,parent
 
 ---
 
-## Integration with WP oOS Tools
+## Integration with NV oOS Tools
 
 The plugin includes tools that can work with these templates:
 
@@ -200,7 +200,7 @@ The plugin includes tools that can work with these templates:
 ## Support Resources
 
 - **Main Documentation**: `README.md` in this directory
-- **WP oOS Documentation**: `/docs` directory
+- **NV oOS Documentation**: `/docs` directory
 - **Import Plugin Docs**: Check individual plugin documentation
 - **WordPress Codex**: https://codex.wordpress.org/Importing_Content
 

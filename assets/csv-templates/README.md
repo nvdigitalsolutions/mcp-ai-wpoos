@@ -1,4 +1,4 @@
-# CSV Import Templates for WP oOS
+# CSV Import Templates for NV oOS
 
 This directory contains CSV template files for importing various types of WordPress content into your site. These templates are designed to work with popular WordPress import plugins like **WP All Import**, **WP Ultimate CSV Importer**, and other CSV import tools.
 
@@ -422,7 +422,7 @@ title,content,...,custom_field_name,another_custom_field
 - [WooCommerce Customer / Order / Coupon Export](https://woocommerce.com/products/export-customer-order-coupon/) - Premium
 
 ### Built-in Tools
-The WP oOS plugin includes tools that work with these templates:
+The NV oOS plugin includes tools that work with these templates:
 - `trigger_all_import` - Trigger WP All Import programmatically
 - `list_all_import_templates` - List configured import templates
 - `get_all_import_status` - Check import status
@@ -448,7 +448,7 @@ Found an issue or have a suggestion for these templates?
 
 ## 📄 License
 
-These CSV templates are part of the WP oOS (Open Operator System) plugin.
+These CSV templates are part of the NV oOS (Open Operator System) plugin.
 Licensed under GPLv3 or later.
 
 ---

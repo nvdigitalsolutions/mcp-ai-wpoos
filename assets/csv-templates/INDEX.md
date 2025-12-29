@@ -9,7 +9,7 @@ This directory contains **10 general CSV import templates** plus **9 assistant-s
 csv-templates/
 ├── README.md                    # Main documentation
 ├── QUICK-REFERENCE.md          # Quick lookup guide
-├── TOOL-MAPPING.md             # WP oOS tool integration
+├── TOOL-MAPPING.md             # NV oOS tool integration
 ├── INDEX.md                    # This file
 ├── [10 general CSV templates]
 └── by-assistant-type/          # Assistant-specific templates
@@ -99,7 +99,7 @@ These templates are optimized for specific assistant types and their available t
    - Best practices
    
 3. **TOOL-MAPPING.md** (454 lines)
-   - Maps CSV templates to WP oOS tools
+   - Maps CSV templates to NV oOS tools
    - Workflow examples
    - Integration patterns
    - AI-enhanced workflows
@@ -137,14 +137,14 @@ These templates are optimized for specific assistant types and their available t
 
 ### For Developers
 1. Review **TOOL-MAPPING.md** for programmatic access
-2. Understand WP oOS tool integration
+2. Understand NV oOS tool integration
 3. Implement AI-enhanced workflows
 
 ### For Bulk Imports
 1. Download appropriate template(s)
 2. Prepare your data using the template structure
 3. Use WP All Import or similar plugin
-4. Verify with WP oOS tools
+4. Verify with NV oOS tools
 
 ---
 
@@ -178,7 +178,7 @@ These templates are optimized for specific assistant types and their available t
 
 ---
 
-## 🔗 Related WP oOS Tools
+## 🔗 Related NV oOS Tools
 
 ### Import Management
 - `trigger_all_import` - Execute imports programmatically
@@ -220,13 +220,13 @@ These templates are optimized for specific assistant types and their available t
 4. Run import on staging site first
 
 ### Phase 3: Validation
-1. Use WP oOS tools to verify imports
+1. Use NV oOS tools to verify imports
 2. Check data integrity
 3. Test functionality
 4. Review with AI assistant if needed
 
 ### Phase 4: Enhancement (Optional)
-1. Use WP oOS AI tools to enhance content
+1. Use NV oOS AI tools to enhance content
 2. Generate additional metadata
 3. Optimize for SEO
 4. Enrich product descriptions
@@ -337,7 +337,7 @@ These templates are optimized for specific assistant types and their available t
 ✅ Best practices
 
 ### Integration
-✅ WP oOS tool mappings
+✅ NV oOS tool mappings
 ✅ Workflow examples
 ✅ AI enhancement patterns
 ✅ Security guidelines
@@ -353,7 +353,7 @@ These templates are optimized for specific assistant types and their available t
 - TOOL-MAPPING.md - Integration guide
 
 ### In plugin docs
-- `/docs/tool-reference.md` - All WP oOS tools
+- `/docs/tool-reference.md` - All NV oOS tools
 - `/docs/rest-api.md` - REST API reference
 - `/docs/QUICK_REFERENCE.md` - Plugin quick start
 
@@ -388,7 +388,7 @@ Improvements welcome! Consider contributing:
 
 ## 📄 License
 
-Part of WP oOS (Open Operator System)  
+Part of NV oOS (Open Operator System)  
 Licensed under GPLv3 or later
 
 ---
@@ -404,4 +404,4 @@ Licensed under GPLv3 or later
 **Created**: 2024-01-20  
 **Version**: 1.0.0  
 **Maintained by**: NV Digital Solutions  
-**Plugin**: WP oOS (Open Operator System)
+**Plugin**: NV oOS (Open Operator System)

@@ -214,9 +214,9 @@ Check which tools your assistant has access to:
 
 ---
 
-## 🔗 Relationship to WP oOS Tools
+## 🔗 Relationship to NV oOS Tools
 
-Each template is designed to work with specific WP oOS tools:
+Each template is designed to work with specific NV oOS tools:
 
 | Template | Primary Tools | Import Method |
 |----------|--------------|---------------|
@@ -357,7 +357,7 @@ When adding new assistant-specific templates:
 2. Create template with relevant fields only
 3. Include 3-5 example rows with realistic data
 4. Document in this README
-5. Link to corresponding WP oOS tools
+5. Link to corresponding NV oOS tools
 
 ---
 
