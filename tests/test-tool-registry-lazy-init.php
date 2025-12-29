@@ -13,18 +13,38 @@
  * Mock pro tool for testing dynamic registration.
  */
 class WP_MCP_AI_Mock_Pro_Tool implements WP_MCP_AI_Tool_Interface {
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string Tool slug.
+	 */
 	public function get_slug() {
 		return 'mock_pro_tool';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string Tool name.
+	 */
 	public function get_name() {
 		return 'Mock Pro Tool';
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string Tool description.
+	 */
 	public function get_description() {
 		return 'A mock pro tool registered via action hook';
 	}
 
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array Parameters schema.
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -32,6 +52,13 @@ class WP_MCP_AI_Mock_Pro_Tool implements WP_MCP_AI_Tool_Interface {
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context Execution context.
+	 * @return array|WP_Error Tool result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		return array( 'result' => 'pro_tool_executed' );
 	}

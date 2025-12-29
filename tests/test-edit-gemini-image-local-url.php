@@ -294,14 +294,41 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 
 			// Create a test subclass to access protected method.
 			$test_class = new class() extends WP_MCP_AI_Tool_Image_Base {
+				/**
+				 * Get the tool slug.
+				 *
+				 * @return string Tool slug.
+				 */
 				public function get_slug() {
 					return 'test'; }
+				/**
+				 * Get the tool name.
+				 *
+				 * @return string Tool name.
+				 */
 				public function get_name() {
 					return 'Test'; }
+				/**
+				 * Get the tool description.
+				 *
+				 * @return string Tool description.
+				 */
 				public function get_description() {
 					return 'Test'; }
+				/**
+				 * Get the parameters schema.
+				 *
+				 * @return array Parameters schema.
+				 */
 				public function get_parameters_schema() {
 					return array(); }
+				/**
+				 * Execute the tool.
+				 *
+				 * @param array $arguments Tool arguments.
+				 * @param array $context Execution context.
+				 * @return array|WP_Error Tool result.
+				 */
 				public function execute( array $arguments = array(), array $context = array() ) {
 					return array(); }
 
@@ -348,14 +375,41 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 
 		// Create a test subclass.
 		$test_class = new class() extends WP_MCP_AI_Tool_Image_Base {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test'; }
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test'; }
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Test'; }
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(); }
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(); }
 
@@ -498,14 +552,41 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 
 			// Create a test subclass to access protected method.
 			$test_class = new class() extends WP_MCP_AI_Tool_Image_Base {
+				/**
+				 * Get the tool slug.
+				 *
+				 * @return string Tool slug.
+				 */
 				public function get_slug() {
 					return 'test'; }
+				/**
+				 * Get the tool name.
+				 *
+				 * @return string Tool name.
+				 */
 				public function get_name() {
 					return 'Test'; }
+				/**
+				 * Get the tool description.
+				 *
+				 * @return string Tool description.
+				 */
 				public function get_description() {
 					return 'Test'; }
+				/**
+				 * Get the parameters schema.
+				 *
+				 * @return array Parameters schema.
+				 */
 				public function get_parameters_schema() {
 					return array(); }
+				/**
+				 * Execute the tool.
+				 *
+				 * @param array $arguments Tool arguments.
+				 * @param array $context Execution context.
+				 * @return array|WP_Error Tool result.
+				 */
 				public function execute( array $arguments = array(), array $context = array() ) {
 					return array(); }
 
