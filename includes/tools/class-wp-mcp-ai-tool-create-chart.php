@@ -460,6 +460,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chart</title>
+    <script src="{$chartjs_url}"></script>
     <style>
         body {
             margin: 0;
@@ -477,7 +478,6 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
         }
         canvas {
             max-width: 100%;
-            height: auto !important;
         }
     </style>
 </head>
@@ -485,13 +485,24 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
     <div class="chart-container">
         <canvas id="{$chart_id}" width="{$width}" height="{$height}"></canvas>
     </div>
-    <script src="{$chartjs_url}"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const ctx = document.getElementById('{$chart_id}').getContext('2d');
-            const chartConfig = {$config_json};
-            new Chart(ctx, chartConfig);
-        });
+        (function() {
+            function initChart() {
+                if (typeof Chart === 'undefined') {
+                    setTimeout(initChart, 50);
+                    return;
+                }
+                const ctx = document.getElementById('{$chart_id}').getContext('2d');
+                const chartConfig = {$config_json};
+                new Chart(ctx, chartConfig);
+            }
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initChart);
+            } else {
+                initChart();
+            }
+        })();
     </script>
 </body>
 </html>
