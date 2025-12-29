@@ -1,0 +1,61 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Exclude files from git archive and exports (reduces download size)
+# These files are not needed in production deployments
+
+# Development and testing files
+/tests export-ignore
+/.github export-ignore
+/.codex export-ignore
+/.devcontainer export-ignore
+/.vscode export-ignore
+/bin export-ignore
+/docs export-ignore
+
+# Configuration files
+/.editorconfig export-ignore
+/.eslintignore export-ignore
+/.eslintrc.json export-ignore
+/.nvmrc export-ignore
+/.distignore export-ignore
+/.git-branch-info export-ignore
+/phpunit.xml.dist export-ignore
+/babel.config.js export-ignore
+/jest.config.js export-ignore
+/esbuild.config.js export-ignore
+/docker-compose.yml export-ignore
+/composer.json export-ignore
+/composer.lock export-ignore
+/package.json export-ignore
+/package-lock.json export-ignore
+/patches export-ignore
+/patches.lock.json export-ignore
+
+# Documentation files
+/BUILD.md export-ignore
+/CONTRIBUTING.md export-ignore
+/SECURITY.md export-ignore
+/CODEOWNERS export-ignore
+
+# Vendor package development files
+vendor/**/.git* export-ignore
+vendor/**/.php* export-ignore
+vendor/**/.editorconfig export-ignore
+vendor/**/phpunit.xml* export-ignore
+vendor/**/phpstan* export-ignore
+vendor/**/psalm* export-ignore
+vendor/**/tests export-ignore
+vendor/**/test export-ignore
+vendor/**/Tests export-ignore
+vendor/**/Test export-ignore
+vendor/**/docs export-ignore
+vendor/**/doc export-ignore
+vendor/**/examples export-ignore
+vendor/**/example export-ignore
+vendor/**/*.md export-ignore
+vendor/**/LICENSE* export-ignore
+vendor/**/CHANGELOG* export-ignore
+vendor/**/CONTRIBUTING* export-ignore
+vendor/**/UPGRADING* export-ignore
+vendor/**/.github export-ignore

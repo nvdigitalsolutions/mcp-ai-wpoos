@@ -45,6 +45,25 @@ composer.phar
 #!/vendor/composer/installed.php
 #!/vendor/composer/installed.json
 
+# Exclude vendor development and test files (even from whitelisted packages)
+/vendor/**/.git*
+/vendor/**/.php-cs-fixer*
+/vendor/**/.editorconfig
+/vendor/**/phpunit.xml*
+/vendor/**/phpstan*
+/vendor/**/psalm*
+/vendor/**/tests/
+/vendor/**/test/
+/vendor/**/Tests/
+/vendor/**/Test/
+/vendor/**/docs/
+/vendor/**/doc/
+/vendor/**/examples/
+/vendor/**/example/
+/vendor/**/.github/
+/vendor/**/CONTRIBUTING*
+/vendor/**/UPGRADING*
+
 # Minified assets (generated during build)
 *.min.css
 *.min.js
