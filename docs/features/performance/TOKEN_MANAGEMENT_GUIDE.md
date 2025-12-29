@@ -9,7 +9,7 @@
 
 ## Overview
 
-The WP oOS Token Management system provides intelligent, tiered token limits with usage tracking, forecasting, and automated alerts. This guide shows you how to manage user token limits, monitor usage, and optimize costs.
+The NV oOS Token Management system provides intelligent, tiered token limits with usage tracking, forecasting, and automated alerts. This guide shows you how to manage user token limits, monitor usage, and optimize costs.
 
 ### What You'll Learn
 
@@ -24,7 +24,7 @@ The WP oOS Token Management system provides intelligent, tiered token limits wit
 
 ## Token Tiers Explained
 
-WP oOS uses a three-tier system to manage token usage:
+NV oOS uses a three-tier system to manage token usage:
 
 | Tier | Daily Limit | Typical Users | Use Case |
 |------|-------------|---------------|----------|
@@ -52,7 +52,7 @@ You can override these defaults for individual users.
 
 ### Via Settings Dashboard
 
-1. Navigate to **WordPress Admin → Settings → WP oOS**
+1. Navigate to **WordPress Admin → Settings → NV oOS**
 2. Click the **Token Manager** tab in the settings interface
 3. You'll see four sub-tabs:
    - **Overview** - Dashboard with charts and statistics
@@ -62,7 +62,7 @@ You can override these defaults for individual users.
 
 ### Via Menu (if enabled)
 
-Alternatively, look for **WP oOS → Token Manager** in the admin menu.
+Alternatively, look for **NV oOS → Token Manager** in the admin menu.
 
 ---
 
@@ -212,7 +212,7 @@ Restrict expensive tools to paid tiers:
 
 ## Usage Forecasting & Alerts
 
-WP oOS predicts when users will hit limits and sends proactive alerts.
+NV oOS predicts when users will hit limits and sends proactive alerts.
 
 ### Viewing Forecasts
 
@@ -237,7 +237,7 @@ Click any forecast to see detailed projection:
 
 **Enable Alerts:**
 
-1. Go to **Settings → WP oOS → Advanced**
+1. Go to **Settings → NV oOS → Advanced**
 2. Find **"Token Usage Alerts"** section
 3. Toggle **"Enable Email Alerts"** ON
 4. Configure thresholds:
@@ -317,7 +317,7 @@ For WordPress Multisite networks:
 
 ### Viewing Network-Wide Usage
 
-1. **Network Admin → Settings → WP oOS → Token Manager**
+1. **Network Admin → Settings → NV oOS → Token Manager**
 2. **Per Site** tab shows all subsites
 3. Table columns:
    - Site Name & URL

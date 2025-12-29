@@ -9,7 +9,7 @@
 
 ## Overview
 
-The WP oOS Settings Dashboard is a modern, tabbed interface for managing all plugin configurations. This guide walks you through each tab and shows you how to configure the 27 new settings exposed in recent updates.
+The NV oOS Settings Dashboard is a modern, tabbed interface for managing all plugin configurations. This guide walks you through each tab and shows you how to configure the 27 new settings exposed in recent updates.
 
 ### What You'll Learn
 
@@ -29,7 +29,7 @@ The WP oOS Settings Dashboard is a modern, tabbed interface for managing all plu
 ### Via WordPress Admin
 
 1. Log in to WordPress admin panel
-2. Navigate to **Settings → WP oOS**
+2. Navigate to **Settings → NV oOS**
 3. The Settings Dashboard loads with the **Overview** tab active
 
 ### Direct URL
@@ -48,7 +48,7 @@ You must have the `manage_options` capability (typically Administrator role).
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  WP oOS Settings Dashboard              [Save All]  │
+│  NV oOS Settings Dashboard              [Save All]  │
 ├──────┬──────────────────────────────────────────────┤
 │ Tabs │ Tab Content Area                             │
 │  ↓   │                                              │
@@ -76,7 +76,7 @@ You must have the `manage_options` capability (typically Administrator role).
 
 ## Tab 1: Overview
 
-The Overview tab provides a high-level dashboard of your WP oOS installation.
+The Overview tab provides a high-level dashboard of your NV oOS installation.
 
 ### Quick Stats
 
@@ -684,7 +684,7 @@ Click **Save All** (top right) to force-save all tabs.
 
 ### Scenario 1: Setting Up for First Time
 
-**Goal:** Configure essentials to start using WP oOS
+**Goal:** Configure essentials to start using NV oOS
 
 **Steps:**
 1. **General Tab:**
@@ -823,7 +823,7 @@ Click **Save All** (top right) to force-save all tabs.
 ### Import Settings Failed
 
 **Requirements:**
-- JSON file from WP oOS export
+- JSON file from NV oOS export
 - Same or newer plugin version
 - Valid JSON format
 
