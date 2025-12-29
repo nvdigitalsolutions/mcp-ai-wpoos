@@ -183,7 +183,7 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 			),
 		);
 
-		// Instead of full integration test, verify the hook is called
+		// Instead of full integration test, verify the hook is called.
 		// by checking that the code path exists and would fire the hook.
 		// For a true integration test, we'd need to mock the Gemini API.
 

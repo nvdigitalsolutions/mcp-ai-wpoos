@@ -57,11 +57,11 @@ class Test_OAuth_Circular_Dependency extends WP_UnitTestCase {
 	public function test_settings_base_sanitize_works() {
 		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
 
-		// Test with empty array
+		// Test with empty array.
 		$result = $settings_base->sanitize_settings( array() );
 		$this->assertIsArray( $result );
 
-		// Test with some settings
+		// Test with some settings.
 		$test_settings = array(
 			'openai_api_key' => '  test_key  ',
 			'enable_logging' => '1',
@@ -70,10 +70,10 @@ class Test_OAuth_Circular_Dependency extends WP_UnitTestCase {
 		$result = $settings_base->sanitize_settings( $test_settings );
 		$this->assertIsArray( $result );
 
-		// Verify the API key is sanitized (whitespace removed)
+		// Verify the API key is sanitized (whitespace removed).
 		$this->assertEquals( 'test_key', $result['openai_api_key'] );
 
-		// Verify boolean is converted properly
+		// Verify boolean is converted properly.
 		$this->assertTrue( $result['enable_logging'] );
 	}
 }

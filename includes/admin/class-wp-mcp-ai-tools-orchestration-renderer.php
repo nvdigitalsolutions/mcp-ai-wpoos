@@ -157,7 +157,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						<?php
 						// Defensive programming: validate each tool implements the required interface
 						// since get_tools() returns a numeric array (not associative with slugs as keys).
-						// This ensures we can safely call get_slug() and prevents numeric indices
+						// This ensures we can safely call get_slug() and prevents numeric indices.
 						// from being used as tool slugs (which caused data-tool-slug="10" bug).
 						foreach ( $all_tools as $tool ) :
 							?>

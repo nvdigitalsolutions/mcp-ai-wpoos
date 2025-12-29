@@ -188,7 +188,7 @@ class WP_MCP_AI_Orchestration_Settings_Enforcement_Test extends WP_UnitTestCase 
 	 * Test that orchestration features work for all providers.
 	 */
 	public function test_orchestration_works_for_all_providers() {
-		// This is a documentation test - verifies the concept that orchestration
+		// This is a documentation test - verifies the concept that orchestration.
 		// is provider-agnostic by checking that Resource Manager is used by all clients.
 
 		// All provider clients should use Resource Manager for limits.

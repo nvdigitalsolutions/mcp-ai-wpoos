@@ -131,7 +131,7 @@ class Test_Performance_AJAX_Frontend_Registration extends WP_UnitTestCase {
 		);
 
 		// Note: We can't easily test the actual capability check without
-		// triggering the AJAX handler, but we verify the methods exist
+		// triggering the AJAX handler, but we verify the methods exist.
 		// and the class is properly instantiated.
 	}
 

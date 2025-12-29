@@ -172,12 +172,12 @@ class WP_MCP_AI_Chat_Client_Agentic_Workflow_Test extends WP_UnitTestCase {
 		$result = $method->invoke(
 			$rest,
 			$tool_call,
-			1, // assistant_id
+			1, // assistant_id.
 			$assistant_config,
 			$admin_id,
 			$request,
-			0, // iteration
-			5  // max_iterations
+			0, // iteration.
+			5  // max_iterations.
 		);
 
 		// Verify the tool executed successfully despite the extra parameter.

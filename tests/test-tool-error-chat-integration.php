@@ -60,10 +60,10 @@ class Test_Tool_Error_Chat_Integration extends WP_UnitTestCase {
 			$tool_call,
 			$assistant_id,
 			$assistant_config,
-			0, // user_id
-			null, // request
-			0, // iteration
-			5 // max_iterations
+			0, // user_id.
+			null, // request.
+			0, // iteration.
+			5 // max_iterations.
 		);
 
 		// The result should be a WP_Error (not normalized yet by execute_tool_call_internal).

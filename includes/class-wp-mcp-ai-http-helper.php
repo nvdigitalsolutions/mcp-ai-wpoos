@@ -304,7 +304,7 @@ class WP_MCP_AI_HTTP_Helper {
 		$endpoint_host = $parsed_url['host'];
 
 		// Check if interface is a private IP but endpoint is localhost/127.0.0.1.
-		// This indicates the user wants to reach a server on the private network,
+		// This indicates the user wants to reach a server on the private network,.
 		// but put the IP in the wrong field.
 		if ( filter_var( $interface, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
 			if ( self::is_private_ipv4_address( $interface ) ) {

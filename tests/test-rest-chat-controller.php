@@ -197,7 +197,7 @@ class Test_REST_Chat_Controller extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 
 		// Since we're delegating, calling the handler should not throw errors.
-		// We can't test the full flow without proper authentication, but we can verify
+		// We can't test the full flow without proper authentication, but we can verify.
 		// the method is callable and returns something.
 		$this->assertTrue( is_callable( array( $this->controller, 'handle_chat_request' ) ) );
 	}

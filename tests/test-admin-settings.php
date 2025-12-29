@@ -876,7 +876,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		// Without clearing the cache, get_settings() would return the cached values.
 		// But we need to verify that in the test connection handlers, the cache IS cleared.
-		// Since we can't directly test private static properties from here,
+		// Since we can't directly test private static properties from here,.
 		// we'll use reflection to access and verify the cache state.
 
 		$reflection     = new ReflectionClass( 'WP_MCP_AI_Admin_Settings' );

@@ -13,7 +13,7 @@ class WP_MCP_AI_Image_URL_Persistence_Test extends WP_UnitTestCase {
 	public function test_prepare_input_attachment_segment_handles_image_url() {
 		$attachments_helper = new WP_MCP_AI_Message_Attachments();
 
-		// Test with image_url segment type
+		// Test with image_url segment type.
 		$segment = array(
 			'type'      => 'image_url',
 			'image_url' => array(
@@ -43,7 +43,7 @@ class WP_MCP_AI_Image_URL_Persistence_Test extends WP_UnitTestCase {
 	public function test_prepare_input_attachment_segment_handles_image_url_string() {
 		$attachments_helper = new WP_MCP_AI_Message_Attachments();
 
-		// Test with image_url as a string
+		// Test with image_url as a string.
 		$segment = array(
 			'type'      => 'image_url',
 			'image_url' => 'https://example.com/image.jpg',
@@ -63,7 +63,7 @@ class WP_MCP_AI_Image_URL_Persistence_Test extends WP_UnitTestCase {
 	public function test_prepare_input_attachment_segment_handles_image_file() {
 		$attachments_helper = new WP_MCP_AI_Message_Attachments();
 
-		// Test with image_file segment type (with URL)
+		// Test with image_file segment type (with URL).
 		$segment = array(
 			'type' => 'image_file',
 			'url'  => 'https://example.com/image.jpg',
@@ -83,7 +83,7 @@ class WP_MCP_AI_Image_URL_Persistence_Test extends WP_UnitTestCase {
 	public function test_prepare_input_attachment_segment_returns_error_for_invalid_segment() {
 		$attachments_helper = new WP_MCP_AI_Message_Attachments();
 
-		// Test with invalid segment (no type, no text)
+		// Test with invalid segment (no type, no text).
 		$segment = array(
 			'foo' => 'bar',
 		);
@@ -100,7 +100,7 @@ class WP_MCP_AI_Image_URL_Persistence_Test extends WP_UnitTestCase {
 	public function test_prepare_input_image_segment_handles_image_url_object() {
 		$attachments_helper = new WP_MCP_AI_Message_Attachments();
 
-		// Test with image_url as object
+		// Test with image_url as object.
 		$segment = array(
 			'image_url' => array(
 				'url'    => 'https://example.com/image.jpg',
@@ -125,7 +125,7 @@ class WP_MCP_AI_Image_URL_Persistence_Test extends WP_UnitTestCase {
 	public function test_prepare_input_image_segment_sanitizes_invalid_url() {
 		$attachments_helper = new WP_MCP_AI_Message_Attachments();
 
-		// Test with invalid URL
+		// Test with invalid URL.
 		$segment = array(
 			'image_url' => array(
 				'url' => 'javascript:alert(1)',
@@ -166,11 +166,11 @@ class WP_MCP_AI_Image_URL_Persistence_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertCount( 2, $result );
 
-		// First segment should be text
+		// First segment should be text.
 		$this->assertEquals( 'text', $result[0]['type'] );
 		$this->assertEquals( 'Here is an image:', $result[0]['text'] );
 
-		// Second segment should be sanitized image
+		// Second segment should be sanitized image.
 		$this->assertEquals( 'input_image', $result[1]['type'] );
 		$this->assertArrayHasKey( 'image_url', $result[1] );
 		$this->assertEquals( 'https://example.com/test.jpg', $result[1]['image_url']['url'] );

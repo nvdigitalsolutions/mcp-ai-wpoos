@@ -31,10 +31,10 @@ class Test_Veo_Job_Completion_Order extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Reset completion order tracking
+		// Reset completion order tracking.
 		$this->completion_order = array();
 
-		// Hook into job completion to track order
+		// Hook into job completion to track order.
 		add_action( 'wp_mcp_ai_job_completed', array( $this, 'track_job_completion' ), 10, 3 );
 	}
 
@@ -42,7 +42,7 @@ class Test_Veo_Job_Completion_Order extends WP_UnitTestCase {
 	 * Teardown test environment
 	 */
 	public function tearDown(): void {
-		// Remove hook
+		// Remove hook.
 		remove_action( 'wp_mcp_ai_job_completed', array( $this, 'track_job_completion' ), 10 );
 
 		parent::tearDown();
@@ -68,39 +68,39 @@ class Test_Veo_Job_Completion_Order extends WP_UnitTestCase {
 	 */
 	public function test_veo_job_completes_before_parent_job() {
 		// This test verifies the fix for the issue where both jobs completed simultaneously.
-		// We can't easily test the actual async veo generation process, but we can verify
+		// We can't easily test the actual async veo generation process, but we can verify.
 		// that the complete_parent_job method is called AFTER the veo job completion hook.
 
 		// The key assertion is that in poll_video_async():
 		// 1. do_action('wp_mcp_ai_job_completed', veo_job_id, ...) is called first
 		// 2. complete_parent_job() is called second
 		//
-		// Since we can't run the full async process in a unit test, we'll verify the
+		// Since we can't run the full async process in a unit test, we'll verify the.
 		// code structure is correct by checking the file content.
 
 		$file_path    = WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
 		$file_content = file_get_contents( $file_path );
 
-		// Verify that complete_parent_job appears AFTER wp_mcp_ai_job_completed in poll_video_async
-		// Find the poll_video_async method
+		// Verify that complete_parent_job appears AFTER wp_mcp_ai_job_completed in poll_video_async.
+		// Find the poll_video_async method.
 		$method_start = strpos( $file_content, 'public function poll_video_async(' );
 		$this->assertNotFalse( $method_start, 'poll_video_async method should exist' );
 
-		// Find the next method (to limit search scope)
+		// Find the next method (to limit search scope).
 		$next_method    = strpos( $file_content, 'protected function schedule_next_poll(', $method_start );
 		$method_content = substr( $file_content, $method_start, $next_method - $method_start );
 
-		// Find positions of key statements in the method
-		// Use flexible pattern that ignores indentation (whitespace variations)
+		// Find positions of key statements in the method.
+		// Use flexible pattern that ignores indentation (whitespace variations).
 		$veo_completion_pos = strpos( $method_content, "'wp_mcp_ai_job_completed'," );
 		$job_id_param_pos   = strpos( $method_content, '$job_id,', $veo_completion_pos );
 
-		// Verify this is the correct do_action by checking $job_id appears shortly after the hook name
+		// Verify this is the correct do_action by checking $job_id appears shortly after the hook name.
 		$is_veo_hook = ( $job_id_param_pos !== false && ( $job_id_param_pos - $veo_completion_pos ) < 100 );
 
 		$parent_completion_pos = strpos( $method_content, '$this->complete_parent_job( $metadata[\'parent_job_id\']' );
 
-		// Assert both statements exist
+		// Assert both statements exist.
 		$this->assertNotFalse( $veo_completion_pos, 'Veo job completion hook should exist in poll_video_async' );
 		$this->assertTrue( $is_veo_hook, 'Veo job completion hook should have $job_id parameter' );
 		$this->assertNotFalse( $parent_completion_pos, 'Parent job completion call should exist in poll_video_async' );
@@ -120,21 +120,21 @@ class Test_Veo_Job_Completion_Order extends WP_UnitTestCase {
 		$file_path    = WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
 		$file_content = file_get_contents( $file_path );
 
-		// Verify the critical order comment is present
+		// Verify the critical order comment is present.
 		$this->assertStringContainsString(
 			'CRITICAL ORDER: Fire veo job completion hook FIRST before parent job completion',
 			$file_content,
 			'Comment explaining the critical order should be present'
 		);
 
-		// Verify the important comment is present
+		// Verify the important comment is present.
 		$this->assertStringContainsString(
 			'IMPORTANT: Complete parent async job AFTER veo job hooks are fired',
 			$file_content,
 			'Comment explaining parent job completion order should be present'
 		);
 
-		// Verify explanation about race conditions is present
+		// Verify explanation about race conditions is present.
 		$this->assertStringContainsString(
 			'preventing race conditions where both jobs complete',
 			$file_content,
@@ -155,8 +155,8 @@ class Test_Veo_Job_Completion_Order extends WP_UnitTestCase {
 		$file_path    = WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
 		$file_content = file_get_contents( $file_path );
 
-		// Verify poll_video_async contains the veo job completion
-		// Use flexible pattern that works regardless of indentation
+		// Verify poll_video_async contains the veo job completion.
+		// Use flexible pattern that works regardless of indentation.
 		$this->assertStringContainsString(
 			"'wp_mcp_ai_job_completed',",
 			$file_content,
@@ -169,14 +169,14 @@ class Test_Veo_Job_Completion_Order extends WP_UnitTestCase {
 			'Veo job completion hook should have $job_id parameter'
 		);
 
-		// Verify complete_parent_job is called
+		// Verify complete_parent_job is called.
 		$this->assertStringContainsString(
 			'$this->complete_parent_job( $metadata[\'parent_job_id\'], $metadata[\'result\'] );',
 			$file_content,
 			'Parent job completion should be called'
 		);
 
-		// Verify complete_parent_job method fires its own hook
+		// Verify complete_parent_job method fires its own hook.
 		$this->assertStringContainsString(
 			"'wp_mcp_ai_job_completed',",
 			$file_content,

@@ -42,7 +42,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
 		$extract_method->setAccessible( true );
 
-		// Test with basic user message
+		// Test with basic user message.
 		$row = array(
 			'request_payload' => wp_json_encode(
 				array(
@@ -76,7 +76,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$extract_method = new ReflectionMethod( $rest_controller, 'extract_response_messages' );
 		$extract_method->setAccessible( true );
 
-		// Test with assistant message
+		// Test with assistant message.
 		$row = array(
 			'response_payload' => wp_json_encode(
 				array(
@@ -112,7 +112,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$extract_method = new ReflectionMethod( $rest_controller, 'extract_response_messages' );
 		$extract_method->setAccessible( true );
 
-		// Test with assistant message that has tool_calls but empty content
+		// Test with assistant message that has tool_calls but empty content.
 		$row = array(
 			'response_payload' => wp_json_encode(
 				array(
@@ -140,10 +140,10 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 
 		$messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
 
-		// Should include only the assistant message with tool_calls preserved
+		// Should include only the assistant message with tool_calls preserved.
 		$this->assertCount( 1, $messages, 'Should extract only the assistant message, not create fake tool messages' );
 		$this->assertSame( 'assistant', $messages[0]['role'] );
-		// Tool calls should be preserved in the assistant message
+		// Tool calls should be preserved in the assistant message.
 		$this->assertArrayHasKey( 'tool_calls', $messages[0], 'Assistant message should preserve tool_calls array' );
 		$this->assertIsArray( $messages[0]['tool_calls'] );
 		$this->assertCount( 1, $messages[0]['tool_calls'] );
@@ -164,7 +164,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$extract_method = new ReflectionMethod( $rest_controller, 'extract_response_messages' );
 		$extract_method->setAccessible( true );
 
-		// Test with assistant message that has tool_calls and empty string content
+		// Test with assistant message that has tool_calls and empty string content.
 		$row = array(
 			'response_payload' => wp_json_encode(
 				array(
@@ -192,10 +192,10 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 
 		$messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
 
-		// The assistant message should be included with tool_calls preserved
+		// The assistant message should be included with tool_calls preserved.
 		$this->assertCount( 1, $messages, 'Should extract only the assistant message' );
 
-		// Verify assistant message has tool_calls
+		// Verify assistant message has tool_calls.
 		$this->assertSame( 'assistant', $messages[0]['role'] );
 		$this->assertArrayHasKey( 'tool_calls', $messages[0], 'Assistant message should preserve tool_calls array' );
 		$this->assertIsArray( $messages[0]['tool_calls'] );
@@ -216,7 +216,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
 		$extract_method->setAccessible( true );
 
-		// Test with empty request_payload
+		// Test with empty request_payload.
 		$row = array(
 			'request_payload' => '',
 		);
@@ -240,7 +240,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$extract_method = new ReflectionMethod( $rest_controller, 'extract_response_messages' );
 		$extract_method->setAccessible( true );
 
-		// Test with empty response_payload
+		// Test with empty response_payload.
 		$row = array(
 			'response_payload' => '',
 		);
@@ -264,7 +264,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$extract_method = new ReflectionMethod( $rest_controller, 'extract_response_messages' );
 		$extract_method->setAccessible( true );
 
-		// Test with malformed JSON
+		// Test with malformed JSON.
 		$row = array(
 			'response_payload' => '{invalid json',
 		);
@@ -288,7 +288,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
 		$extract_method->setAccessible( true );
 
-		// Test with tool message that has tool_call_id
+		// Test with tool message that has tool_call_id.
 		$row = array(
 			'request_payload' => wp_json_encode(
 				array(
@@ -327,7 +327,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
 		$extract_method->setAccessible( true );
 
-		// Test with assistant message that has tool_calls
+		// Test with assistant message that has tool_calls.
 		$row = array(
 			'request_payload' => wp_json_encode(
 				array(
@@ -429,7 +429,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 			array( &$conversation, $new_messages, '2024-01-01 00:00:00', '2024-01-01 00:00:00' )
 		);
 
-		// Should only add the second message since the first already exists
+		// Should only add the second message since the first already exists.
 		$this->assertCount( 2, $conversation );
 		$this->assertSame( 'user', $conversation[0]['role'] );
 		$this->assertSame( 'assistant', $conversation[1]['role'] );

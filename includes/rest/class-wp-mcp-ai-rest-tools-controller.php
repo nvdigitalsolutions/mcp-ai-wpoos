@@ -485,7 +485,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 
 		// Auto-enable utility tools that provide essential chat client functionality.
-		// These tools (speech synthesis, audio transcription) are always available
+		// These tools (speech synthesis, audio transcription) are always available.
 		// to ensure chat client features work without requiring explicit configuration.
 		if ( class_exists( 'WP_MCP_AI_REST' ) && defined( 'WP_MCP_AI_REST::AUTO_ENABLED_UTILITY_TOOLS' ) ) {
 			$utility_tools = WP_MCP_AI_REST::AUTO_ENABLED_UTILITY_TOOLS;

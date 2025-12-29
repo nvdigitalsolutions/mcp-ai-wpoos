@@ -60,14 +60,14 @@ class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {
 		$this->assertSame( 'completed', $result['status'] );
 		$this->assertSame( 'sync-task-123', $result['task_id'] );
 
-		// Verify the job is in the cache
+		// Verify the job is in the cache.
 		$cached = WP_MCP_AI_Crawl4AI_Local_API::retrieve_task_result( 'sync-task-123' );
 		$this->assertIsArray( $cached );
 		$this->assertSame( 'completed', $cached['status'] );
 		$this->assertArrayHasKey( 'tracking', $cached['metadata'] );
 		$this->assertArrayHasKey( 'registered_at', $cached['metadata']['tracking'] );
 
-		// Verify job was registered with the manager
+		// Verify job was registered with the manager.
 		$job_status = WP_MCP_AI_Crawler::get_job_status( 'sync-task-123' );
 		$this->assertIsArray( $job_status );
 		$this->assertSame( 'sync-task-123', $job_status['task_id'] );
@@ -78,7 +78,7 @@ class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {
 	 * Test that local fallback jobs are tracked by the manager.
 	 */
 	public function test_local_fallback_jobs_are_tracked() {
-		// Remove the base URL to force local crawl
+		// Remove the base URL to force local crawl.
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		unset( $settings['crawl4ai_base_url'] );
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
@@ -103,14 +103,14 @@ class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {
 
 		$task_id = $result['task_id'];
 
-		// Verify the job is in the cache
+		// Verify the job is in the cache.
 		$cached = WP_MCP_AI_Crawl4AI_Local_API::retrieve_task_result( $task_id );
 		$this->assertIsArray( $cached );
 		$this->assertSame( 'completed', $cached['status'] );
 		$this->assertArrayHasKey( 'tracking', $cached['metadata'] );
 		$this->assertArrayHasKey( 'registered_at', $cached['metadata']['tracking'] );
 
-		// Verify job was registered with the manager
+		// Verify job was registered with the manager.
 		$job_status = WP_MCP_AI_Crawler::get_job_status( $task_id );
 		$this->assertIsArray( $job_status );
 		$this->assertSame( $task_id, $job_status['task_id'] );
@@ -142,7 +142,7 @@ class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {
 		$this->assertSame( 'pending', $result['status'] );
 		$this->assertSame( 'async-task-456', $result['task_id'] );
 
-		// Verify job was registered with the manager for polling
+		// Verify job was registered with the manager for polling.
 		$job_status = WP_MCP_AI_Crawler::get_job_status( 'async-task-456' );
 		$this->assertIsArray( $job_status );
 		$this->assertSame( 'async-task-456', $job_status['task_id'] );
@@ -155,7 +155,7 @@ class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {
 	public function test_completed_jobs_skip_polling() {
 		$task_id = 'completed-task-789';
 
-		// Register a completed job
+		// Register a completed job.
 		$registered = WP_MCP_AI_Crawler::register_completed_job(
 			$task_id,
 			array(
@@ -180,15 +180,15 @@ class WP_MCP_AI_Crawler_All_Jobs_Tracked_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( $registered );
 
-		// Verify the job is tracked
+		// Verify the job is tracked.
 		$job_status = WP_MCP_AI_Crawler::get_job_status( $task_id );
 		$this->assertIsArray( $job_status );
 		$this->assertSame( 'completed', $job_status['status'] );
 
-		// Attempt to poll the job - should exit early without errors
+		// Attempt to poll the job - should exit early without errors.
 		WP_MCP_AI_Crawler::handle_poll_event( $task_id );
 
-		// Job should still exist (not deleted by polling)
+		// Job should still exist (not deleted by polling).
 		$job_status_after = WP_MCP_AI_Crawler::get_job_status( $task_id );
 		$this->assertIsArray( $job_status_after );
 		$this->assertSame( 'completed', $job_status_after['status'] );

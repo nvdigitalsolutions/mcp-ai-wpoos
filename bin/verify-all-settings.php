@@ -19,7 +19,7 @@ $settings_used = array(
 	'provider_priority_list',
 );
 
-// Define mock functions
+// Define mock functions.
 function __( $text, $domain = 'default' ) {
 	return $text; }
 function sanitize_text_field( $str ) {

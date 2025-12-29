@@ -263,9 +263,9 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 		return true;
 	}
 
-	// ========================================================================
-	// Abstract methods to be implemented by provider-specific subclasses
-	// ========================================================================
+	// ========================================================================.
+	// Abstract methods to be implemented by provider-specific subclasses.
+	// ========================================================================.
 
 	/**
 	 * Get API credentials for the provider
@@ -376,9 +376,9 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 	 */
 	abstract protected function is_processing_failed( $state );
 
-	// ========================================================================
-	// Common helper methods (with default implementations)
-	// ========================================================================
+	// ========================================================================.
+	// Common helper methods (with default implementations).
+	// ========================================================================.
 
 	/**
 	 * Validate upload inputs
@@ -504,9 +504,9 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 		);
 	}
 
-	// ========================================================================
-	// Logging methods
-	// ========================================================================
+	// ========================================================================.
+	// Logging methods.
+	// ========================================================================.
 
 	/**
 	 * Log upload start

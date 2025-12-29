@@ -111,7 +111,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 		$this->assertIsString( $result );
 		$this->assertStringContainsString( 'First image created successfully', $result );
 		$this->assertStringContainsString( 'Second image created successfully', $result );
-		// Verify results are joined with double newlines
+		// Verify results are joined with double newlines.
 		$this->assertStringContainsString( "\n\n", $result );
 	}
 
@@ -127,7 +127,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 					array(
 						'status' => 'success',
 						'url'    => 'https://example.com/image.png',
-						// No 'text' field
+						// No 'text' field.
 					)
 				),
 				'tool_call_id' => 'call_123',
@@ -184,7 +184,7 @@ class WP_MCP_AI_Test_SSE_Tool_Result_Text_Extraction extends WP_UnitTestCase {
 
 		$result = $this->extract_text( $tool_result_messages );
 
-		// Should treat it as plain string and return it
+		// Should treat it as plain string and return it.
 		$this->assertSame( '{invalid json', $result );
 	}
 

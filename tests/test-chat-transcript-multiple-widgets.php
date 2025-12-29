@@ -42,7 +42,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
 
-		// Create first assistant (Widget A)
+		// Create first assistant (Widget A).
 		$this->assistant_id_1 = wp_insert_post(
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -54,7 +54,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id_1, 'wp_mcp_ai_model', 'gpt-4' );
 		update_post_meta( $this->assistant_id_1, 'wp_mcp_ai_provider', 'openai' );
 
-		// Create second assistant (Widget B)
+		// Create second assistant (Widget B).
 		$this->assistant_id_2 = wp_insert_post(
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -82,16 +82,16 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 	 * to Assistant A (the target widget's assistant).
 	 */
 	public function test_transcript_save_uses_provided_assistant_id() {
-		// Simulate Widget A (assistant_id_1) saving a transcript
-		// Even if the session originally came from Assistant B (assistant_id_2)
+		// Simulate Widget A (assistant_id_1) saving a transcript.
+		// Even if the session originally came from Assistant B (assistant_id_2).
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'Content-Type', 'application/json' );
 
 		// The client-side code (chat.js) will send originalAssistantId
-		// which is Widget A's assistant_id, not the loaded session's assistant_id
+		// which is Widget A's assistant_id, not the loaded session's assistant_id.
 		$request->set_body_params(
 			array(
-				'assistant_id' => $this->assistant_id_1, // Widget A's assistant (originalAssistantId)
+				'assistant_id' => $this->assistant_id_1, // Widget A's assistant (originalAssistantId).
 				'session_key'  => 'test-session-from-widget-b',
 				'messages'     => array(
 					array(
@@ -118,7 +118,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 	 * Test that retrieving a session returns the correct assistant_id.
 	 */
 	public function test_session_retrieval_includes_assistant_id() {
-		// First, save a transcript for assistant 1
+		// First, save a transcript for assistant 1.
 		$session_key = 'test-session-' . time();
 
 		$save_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
@@ -139,7 +139,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 		$save_response = rest_do_request( $save_request );
 		$this->assertEquals( 200, $save_response->get_status() );
 
-		// Now retrieve it
+		// Now retrieve it.
 		$get_request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/' . $session_key );
 		$get_request->set_query_params(
 			array(
@@ -165,7 +165,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 		$session_key_1 = 'shared-session-' . time();
 		$session_key_2 = 'shared-session-' . time();
 
-		// Save to assistant 1
+		// Save to assistant 1.
 		$request_1 = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request_1->set_header( 'Content-Type', 'application/json' );
 		$request_1->set_body_params(
@@ -181,7 +181,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Save to assistant 2
+		// Save to assistant 2.
 		$request_2 = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request_2->set_header( 'Content-Type', 'application/json' );
 		$request_2->set_body_params(

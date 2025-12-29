@@ -203,9 +203,9 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		?>
 		<script>
 		(function($) {
-			// Helper function to escape HTML and prevent XSS
+			// Helper function to escape HTML and prevent XSS.
 			function escapeHtml(text) {
-				// Handle null, undefined, and objects
+				// Handle null, undefined, and objects.
 				if (text === null || text === undefined) return '';
 				if (typeof text === 'object') return '';
 				
@@ -250,21 +250,21 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 									);
 								}
 							} else {
-								// Handle both string and object error responses
+								// Handle both string and object error responses.
 								var errorMessage = '<?php echo esc_js( __( 'Unknown error', 'wp-mcp-ai' ) ); ?>';
 								if (response.data) {
 									if (typeof response.data === 'object') {
-										// Extract message from object
+										// Extract message from object.
 										errorMessage = response.data.message || errorMessage;
 										
-										// Build detailed error HTML with proper escaping
+										// Build detailed error HTML with proper escaping.
 										var errorHtml = '<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(errorMessage) + '</p>';
 										
-										// Add additional details if available
+										// Add additional details if available.
 										if (response.data.details) {
 											errorHtml += '<p class="wp-mcp-ai-error-details">' + escapeHtml(response.data.details) + '</p>';
 										}
-										// Add test output if available (contains the actual failure details)
+										// Add test output if available (contains the actual failure details).
 										if (response.data.output) {
 											var outputLabel = '<?php echo esc_js( __( 'Test Output (Click to expand)', 'wp-mcp-ai' ) ); ?>';
 											errorHtml += '<details class="wp-mcp-ai-test-output">' +
@@ -281,7 +281,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 										
 										statusDiv.html(errorHtml);
 									} else {
-										// Handle string error
+										// Handle string error.
 										statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(response.data) + '</p>');
 									}
 								} else {

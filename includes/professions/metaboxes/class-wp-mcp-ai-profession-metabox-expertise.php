@@ -123,14 +123,14 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 										$settings          = get_option( 'wp_mcp_ai_settings', array() );
 										$recommended_count = isset( $settings['profession_default_tool_count'] ) ? absint( $settings['profession_default_tool_count'] ) : 10;
 
-										// Determine color based on count
-										$count_color = '#666'; // Default gray
+										// Determine color based on count.
+										$count_color = '#666'; // Default gray.
 										if ( $current_count > $recommended_count + 5 ) {
-											$count_color = '#d63638'; // Red - too many
+											$count_color = '#d63638'; // Red - too many.
 										} elseif ( $current_count >= $recommended_count - 2 && $current_count <= $recommended_count + 2 ) {
-											$count_color = '#00a32a'; // Green - optimal
+											$count_color = '#00a32a'; // Green - optimal.
 										} elseif ( $current_count < 3 ) {
-											$count_color = '#d63638'; // Red - too few
+											$count_color = '#d63638'; // Red - too few.
 										}
 										?>
 										<strong style="color: <?php echo esc_attr( $count_color ); ?>;" id="tools-count-number"><?php echo esc_html( $current_count ); ?></strong> 
@@ -235,7 +235,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
-			// Expertise area management
+			// Expertise area management.
 			$('#add-profession-expertise').on('click', function() {
 				var expertiseHtml = '<div class="profession-expertise-item" style="margin-bottom: 10px;">' +
 					'<input type="text" name="profession_expertise[]" value="" class="large-text" />' +
@@ -248,20 +248,20 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 				$(this).closest('.profession-expertise-item').remove();
 			});
 
-			// Tools management functionality
+			// Tools management functionality.
 			var searchDebounceTimer = null;
 			var $toolsList = $('#profession-default-tools-list');
 			var $noResultsMsg = $('#no-tools-found');
 			var $searchInput = $('#profession-tools-search');
 			var $selectedCount = $('#tools-selected-count');
 
-			// Update selected count
+			// Update selected count.
 			function updateSelectedCount() {
 				var count = $('.profession-tool-checkbox:checked').length;
 				$selectedCount.html('<strong>' + count + '</strong> <?php echo esc_js( __( 'selected', 'wp-mcp-ai' ) ); ?>');
 			}
 
-			// Filter tools based on search term
+			// Filter tools based on search term.
 			function filterTools() {
 				var searchTerm = $searchInput.val().toLowerCase().trim();
 				var $toolItems = $('.profession-tool-item');
@@ -284,7 +284,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 					}
 				});
 
-				// Toggle no results message
+				// Toggle no results message.
 				if (visibleCount === 0 && searchTerm !== '') {
 					$toolsList.hide();
 					$noResultsMsg.show();
@@ -294,38 +294,38 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 				}
 			}
 
-			// Search input handler with debounce
+			// Search input handler with debounce.
 			$searchInput.on('input', function() {
 				clearTimeout(searchDebounceTimer);
 				searchDebounceTimer = setTimeout(filterTools, 300);
 			});
 
-			// Clear search button
+			// Clear search button.
 			$('#clear-tools-search').on('click', function() {
 				$searchInput.val('');
 				filterTools();
 				$searchInput.focus();
 			});
 
-			// Toggle all visible tools (used by Select All and Deselect All)
+			// Toggle all visible tools (used by Select All and Deselect All).
 			function toggleAllVisibleTools(checked) {
 				$('.profession-tool-item:visible .profession-tool-checkbox').prop('checked', checked);
 				updateSelectedCount();
 			}
 
-			// Select all visible tools
+			// Select all visible tools.
 			$('#select-all-tools').on('click', function() {
 				toggleAllVisibleTools(true);
 			});
 
-			// Deselect all visible tools
+			// Deselect all visible tools.
 			$('#deselect-all-tools').on('click', function() {
 				toggleAllVisibleTools(false);
 			});
 
-			// Reset to initial state
+			// Reset to initial state.
 			$('#reset-tools').on('click', function() {
-				// Use native confirm as it's consistent with WordPress admin UX patterns
+				// Use native confirm as it's consistent with WordPress admin UX patterns.
 				if (!confirm('<?php echo esc_js( __( 'Are you sure you want to reset the tools selection to the initial state?', 'wp-mcp-ai' ) ); ?>')) {
 					return;
 				}
@@ -339,12 +339,12 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 				updateSelectedCount();
 			});
 
-			// Update count when checkboxes change
+			// Update count when checkboxes change.
 			$(document).on('change', '.profession-tool-checkbox', function() {
 				updateSelectedCount();
 			});
 
-			// Initialize count on page load
+			// Initialize count on page load.
 			updateSelectedCount();
 		});
 		</script>

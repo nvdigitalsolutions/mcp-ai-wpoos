@@ -412,7 +412,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				// Also include direct URL for agentic workflows that need it.
 				$prepared['url'] = $url;
 
-				// Preserve attachment_id if present for agentic workflows
+				// Preserve attachment_id if present for agentic workflows.
 				if ( ! empty( $segment['attachment_id'] ) ) {
 					$prepared['attachment_id'] = absint( $segment['attachment_id'] );
 				}
@@ -470,13 +470,13 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				// Add file metadata for agentic workflow (following OpenAI image tool pattern).
 				if ( isset( $resolved['attachment_id'] ) && $resolved['attachment_id'] > 0 ) {
 					$attachment_id = absint( $resolved['attachment_id'] );
-					// Preserve attachment_id for agentic workflows
+					// Preserve attachment_id for agentic workflows.
 					$prepared['attachment_id'] = $attachment_id;
 					$image_url                 = wp_get_attachment_url( $attachment_id );
 					if ( ! empty( $image_url ) ) {
 						$prepared['url'] = esc_url_raw( $image_url );
-						// Add image_url structure for agentic workflows (same as OpenAI image tool)
-						// This allows vision models to "see" the image in the agentic loop
+						// Add image_url structure for agentic workflows (same as OpenAI image tool).
+						// This allows vision models to "see" the image in the agentic loop.
 						$prepared['image_url'] = array( 'url' => esc_url_raw( $image_url ) );
 					}
 				}
@@ -624,7 +624,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 					$prepared['bytes'] = absint( $segment['bytes'] );
 				}
 
-				// Preserve attachment_id if present for agentic workflows
+				// Preserve attachment_id if present for agentic workflows.
 				if ( ! empty( $segment['attachment_id'] ) ) {
 					$prepared['attachment_id'] = absint( $segment['attachment_id'] );
 				}
@@ -668,7 +668,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				// Add file metadata for agentic workflow (following OpenAI file tool pattern).
 				if ( isset( $resolved['attachment_id'] ) && $resolved['attachment_id'] > 0 ) {
 					$attachment_id = absint( $resolved['attachment_id'] );
-					// Preserve attachment_id for agentic workflows
+					// Preserve attachment_id for agentic workflows.
 					$segment_payload['attachment_id'] = $attachment_id;
 					$file_url                         = wp_get_attachment_url( $attachment_id );
 					if ( ! empty( $file_url ) ) {

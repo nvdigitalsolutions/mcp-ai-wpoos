@@ -71,7 +71,7 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 			}
 
 			public function execute( array $arguments = array(), array $context = array() ) {
-				// Simulate veo service's queue_async_polling return value
+				// Simulate veo service's queue_async_polling return value.
 				// which includes the veo job ID in the message.
 				return array(
 					'async'   => true,

@@ -184,7 +184,7 @@ class WP_MCP_AI_Media_Integration_Test extends WP_UnitTestCase {
 		// Clear existing logs.
 		delete_option( 'wp_mcp_ai_recent_activity' );
 
-		// Trigger a log by calling a private method through reflection
+		// Trigger a log by calling a private method through reflection.
 		// (Note: In a real scenario, you'd test this through the public API).
 		$reflection = new ReflectionClass( $this->media_integration );
 		$method     = $reflection->getMethod( 'log_activity' );

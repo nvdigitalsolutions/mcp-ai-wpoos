@@ -218,7 +218,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 								.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'Playbook regenerated successfully!', 'wp-mcp-ai' ) ); ?>);
 							$message.show();
 							
-							// Reload the page after a short delay to show updated info
+							// Reload the page after a short delay to show updated info.
 							setTimeout(function() {
 								location.reload();
 							}, 1500);

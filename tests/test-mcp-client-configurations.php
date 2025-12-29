@@ -36,7 +36,7 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
 
-		// Create a test assistant
+		// Create a test assistant.
 		$this->assistant_id = wp_insert_post(
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -45,12 +45,12 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 			)
 		);
 
-		// Set as default assistant
+		// Set as default assistant.
 		$settings                      = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['default_assistant'] = $this->assistant_id;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
-		// Generate a test credential
+		// Generate a test credential.
 		if ( class_exists( 'WP_MCP_AI_Credentials' ) ) {
 			$credential = WP_MCP_AI_Credentials::issue_credential( $this->assistant_id, 'Test MCP Client' );
 			if ( $credential && isset( $credential['token'] ) ) {
@@ -116,7 +116,7 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 			'Should return SSE content type when Accept header is set'
 		);
 
-		// Verify CORS headers
+		// Verify CORS headers.
 		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
 		$this->assertSame( 'Authorization, Content-Type, X-WP-Nonce', $headers['Access-Control-Allow-Headers'] ?? '' );
 	}
@@ -137,7 +137,7 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// LM Studio calls /sse endpoint directly without Accept header
+		// LM Studio calls /sse endpoint directly without Accept header.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/sse' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		// Note: No Accept header - LM Studio doesn't send it
@@ -154,7 +154,7 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 			'/sse endpoint should force SSE content type even without Accept header'
 		);
 
-		// Verify the response contains directory data
+		// Verify the response contains directory data.
 		$this->assertNotEmpty( $headers, '/sse endpoint should set proper headers' );
 	}
 
@@ -175,17 +175,17 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// MCP client tries to call /chat as if it were the directory
+		// MCP client tries to call /chat as if it were the directory.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_get_server()->dispatch( $request );
 
-		// The /chat endpoint only accepts POST, not GET
+		// The /chat endpoint only accepts POST, not GET.
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertNotEquals( 200, $response->get_status(), '/chat should not respond to GET requests' );
 
-		// Should return 404 or method not allowed
+		// Should return 404 or method not allowed.
 		$this->assertContains(
 			$response->get_status(),
 			array( 404, 405 ),
@@ -217,7 +217,7 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'tools', $data['rest'], 'Directory should include tools URL' );
 		$this->assertArrayHasKey( 'sse', $data['rest'], 'Directory should include sse URL' );
 
-		// Verify the URLs are properly formed
+		// Verify the URLs are properly formed.
 		$this->assertStringContainsString( '/chat', $data['rest']['chat'] );
 		$this->assertStringContainsString( '/tools', $data['rest']['tools'] );
 		$this->assertStringContainsString( '/sse', $data['rest']['sse'] );
@@ -231,7 +231,7 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		// Mock the send_message method to return a test response
+		// Mock the send_message method to return a test response.
 		$mock_client->method( 'send_message' )
 			->willReturn(
 				array(
@@ -248,7 +248,7 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// Proper POST request to /chat
+		// Proper POST request to /chat.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Content-Type', 'application/json' );
@@ -320,13 +320,13 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Assert that we've documented both configurations
+		// Assert that we've documented both configurations.
 		$this->assertIsArray( $correct_config );
 		$this->assertIsArray( $incorrect_config );
 		$this->assertArrayHasKey( 'config', $correct_config );
 		$this->assertArrayHasKey( 'config', $incorrect_config );
 
-		// This test always passes - it's for documentation purposes
+		// This test always passes - it's for documentation purposes.
 		$this->assertTrue( true, 'Configuration documentation test' );
 	}
 }

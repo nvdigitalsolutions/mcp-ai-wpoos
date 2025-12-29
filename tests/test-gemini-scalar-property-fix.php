@@ -75,9 +75,9 @@ class WP_MCP_AI_Gemini_Scalar_Property_Fix_Test extends WP_UnitTestCase {
 
 		// Tool with malformed properties where values are scalars instead of schema objects.
 		// This simulates a bug where a tool definition incorrectly uses:
-		// 'properties' => array( 'field1' => 'string' )
+		// 'properties' => array( 'field1' => 'string' ).
 		// instead of:
-		// 'properties' => array( 'field1' => array('type' => 'string') )
+		// 'properties' => array( 'field1' => array('type' => 'string') ).
 		$tools = array(
 			array(
 				'type'     => 'function',

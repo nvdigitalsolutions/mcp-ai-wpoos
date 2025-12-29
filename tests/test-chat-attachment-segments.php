@@ -11,13 +11,13 @@ class Test_Chat_Attachment_Segments extends WP_UnitTestCase {
 	 * Test that attachment segments are properly created and processed.
 	 */
 	public function test_attachment_segment_processing() {
-		// Create a test image attachment
+		// Create a test image attachment.
 		$filename      = DIR_TESTDATA . '/images/test-image.jpg';
 		$attachment_id = $this->factory->attachment->create_upload_object( $filename );
 
 		$this->assertGreaterThan( 0, $attachment_id, 'Attachment should be created' );
 
-		// Create a message with an attachment segment
+		// Create a message with an attachment segment.
 		$message = array(
 			'role'    => 'user',
 			'content' => array(
@@ -32,7 +32,7 @@ class Test_Chat_Attachment_Segments extends WP_UnitTestCase {
 			),
 		);
 
-		// Process the message through the REST validator
+		// Process the message through the REST validator.
 		if ( ! class_exists( 'WP_MCP_AI_REST_Validator' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 		}
@@ -47,7 +47,7 @@ class Test_Chat_Attachment_Segments extends WP_UnitTestCase {
 		$this->assertEquals( 'user', $sanitized_message['role'], 'Role should be user' );
 		$this->assertIsArray( $sanitized_message['content'], 'Content should be an array' );
 
-		// Find the attachment segment
+		// Find the attachment segment.
 		$attachment_segment = null;
 		foreach ( $sanitized_message['content'] as $segment ) {
 			if ( isset( $segment['type'] ) && 'input_image' === $segment['type'] ) {
@@ -73,7 +73,7 @@ class Test_Chat_Attachment_Segments extends WP_UnitTestCase {
 				),
 				array(
 					'type' => 'input_image',
-					// Missing attachment_id
+					// Missing attachment_id.
 				),
 			),
 		);
@@ -85,7 +85,7 @@ class Test_Chat_Attachment_Segments extends WP_UnitTestCase {
 		$validator = new WP_MCP_AI_REST_Validator();
 		$result    = $validator->sanitize_messages( array( $message ) );
 
-		// Should return WP_Error because attachment segment is invalid
+		// Should return WP_Error because attachment segment is invalid.
 		$this->assertInstanceOf( 'WP_Error', $result, 'Should return WP_Error for invalid attachment segment' );
 	}
 }
