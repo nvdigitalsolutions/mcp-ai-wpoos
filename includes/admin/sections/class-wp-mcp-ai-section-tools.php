@@ -310,7 +310,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable federated discovery', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows this instance to be discovered by and connect to other WP oOS instances.', 'wp-mcp-ai' ),
+					'description'    => __( 'Allows this instance to be discovered by and connect to other NV oOS instances.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
 				'enable_quiz_system'                   => array(

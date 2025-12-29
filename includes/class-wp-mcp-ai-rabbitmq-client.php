@@ -1,6 +1,6 @@
 <?php
 /**
- * RabbitMQ Client for WP oOS.
+ * RabbitMQ Client for NV oOS.
  *
  * Provides message queue integration for agentic workflows and tool management
  * when deployed on Cloudways with RabbitMQ enabled.

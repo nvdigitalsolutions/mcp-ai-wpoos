@@ -47,7 +47,7 @@ class GetSystemLogsArguments {
 	public $activity_types = array();
 
 	/**
-	 * Maximum number of WP oOS error entries to return.
+	 * Maximum number of NV oOS error entries to return.
 	 *
 	 * @var int
 	 */

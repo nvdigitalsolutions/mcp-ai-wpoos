@@ -43,7 +43,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	}
 
 	/**
-	 * Register the cron manager page under the WP oOS menu.
+	 * Register the cron manager page under the NV oOS menu.
 	 */
 	public function register_page() {
 		$this->page_hook = add_submenu_page(

@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$message = trim( $message );
 
 		if ( '' === $message ) {
-			$message = __( 'Diagnostics probe issued from the WP oOS troubleshooting tool.', 'wp-mcp-ai' );
+			$message = __( 'Diagnostics probe issued from the NV oOS troubleshooting tool.', 'wp-mcp-ai' );
 		}
 
 		$controller = isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ? $GLOBALS['wp_mcp_ai_rest_controller'] : null;
@@ -220,7 +220,7 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( '' === $provider ) {
 			$warnings[] = __( 'No language model provider is configured for this assistant.', 'wp-mcp-ai' );
 		} elseif ( 'openai' === $provider && empty( $settings['openai_api_key'] ) ) {
-			$warnings[] = __( 'OpenAI is selected but the site is missing an API key in the WP oOS settings.', 'wp-mcp-ai' );
+			$warnings[] = __( 'OpenAI is selected but the site is missing an API key in the NV oOS settings.', 'wp-mcp-ai' );
 		} elseif ( 'gemini' === $provider && empty( $settings['gemini_api_key'] ) ) {
 			$warnings[] = __( 'Gemini is selected but the site is missing a Gemini API key.', 'wp-mcp-ai' );
 		}

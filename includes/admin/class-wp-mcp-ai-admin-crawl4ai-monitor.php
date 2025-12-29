@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Crawl4AI Monitor for WP oOS.
+ * Admin Crawl4AI Monitor for NV oOS.
  *
  * This class provides a server-side UI for monitoring Crawl4AI jobs,
  * browser pools, and job history. It follows WordPress conventions
@@ -175,7 +175,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 						<?php
 						printf(
 							/* translators: %s: URL to settings page */
-							wp_kses_post( __( 'Crawl4AI is not configured. Please configure it in <a href="%s">WP oOS → Integrations → External Tools</a>.', 'wp-mcp-ai' ) ),
+							wp_kses_post( __( 'Crawl4AI is not configured. Please configure it in <a href="%s">NV oOS → Integrations → External Tools</a>.', 'wp-mcp-ai' ) ),
 							esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=integrations' ) )
 						);
 						?>

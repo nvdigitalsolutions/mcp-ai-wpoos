@@ -17,7 +17,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		/**
 		 * Prefix that is added to every log line for easier filtering.
 		 */
-		const PREFIX = '[WP oOS]';
+		const PREFIX = '[NV oOS]';
 
 		/**
 		 * Log severity levels.
