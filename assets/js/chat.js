@@ -1346,8 +1346,8 @@
         // Extract chart HTML for visualization persistence (Chart.js tools)
         if (displayPayload && displayPayload.chartHtml) {
             metadata.chartHtml = displayPayload.chartHtml;
-            metadata.chartWidth = displayPayload.chartWidth || 800;
-            metadata.chartHeight = displayPayload.chartHeight || 400;
+            metadata.chartWidth = displayPayload.chartWidth || 600;
+            metadata.chartHeight = displayPayload.chartHeight || 350;
             hasMetadata = true;
         }
 
@@ -6918,8 +6918,8 @@
         // Extract chart metadata for display
         const chartType = result.chart_type || 'chart';
         const chartTitle = result.chart_title || '';
-        const width = result.width || 800;
-        const height = result.height || 400;
+        const width = result.width || 600;
+        const height = result.height || 350;
 
         // Debug logging
         if (window.console && console.log) {
@@ -10448,8 +10448,8 @@
                         // Preserve chart data if present
                         if (normalized.chartHtml) {
                             toolPayload.chartHtml = normalized.chartHtml;
-                            toolPayload.chartWidth = normalized.chartWidth || 800;
-                            toolPayload.chartHeight = normalized.chartHeight || 400;
+                            toolPayload.chartWidth = normalized.chartWidth || 600;
+                            toolPayload.chartHeight = normalized.chartHeight || 350;
                         }
                     } else {
                         // Fallback: extract text only
@@ -10511,8 +10511,8 @@
                     // Preserve chart HTML for Chart.js visualizations
                     if (display.chartHtml) {
                         displayPayload.chartHtml = display.chartHtml;
-                        displayPayload.chartWidth = display.chartWidth || 800;
-                        displayPayload.chartHeight = display.chartHeight || 400;
+                        displayPayload.chartWidth = display.chartWidth || 600;
+                        displayPayload.chartHeight = display.chartHeight || 350;
                     }
                 } else {
                     // Fallback: build display payload from content
@@ -10617,8 +10617,8 @@
                     // Preserve chart HTML for Chart.js visualizations
                     if (display.chartHtml) {
                         assistantPayload.chartHtml = display.chartHtml;
-                        assistantPayload.chartWidth = display.chartWidth || 800;
-                        assistantPayload.chartHeight = display.chartHeight || 400;
+                        assistantPayload.chartWidth = display.chartWidth || 600;
+                        assistantPayload.chartHeight = display.chartHeight || 350;
                     }
                     
                     // Preserve tool_calls in display for rendering context
@@ -12040,8 +12040,8 @@
             // Include chart data if available (from Chart.js visualization tools)
             if (normalized && normalized.chartHtml) {
                 displayPayload.chartHtml = normalized.chartHtml;
-                displayPayload.chartWidth = normalized.chartWidth || 800;
-                displayPayload.chartHeight = normalized.chartHeight || 400;
+                displayPayload.chartWidth = normalized.chartWidth || 600;
+                displayPayload.chartHeight = normalized.chartHeight || 350;
             }
             
             // Display the tool result with attachments if available
@@ -12845,8 +12845,8 @@
                 return;
             }
             assistantDisplay.chartHtml = normalized.chartHtml;
-            assistantDisplay.chartWidth = normalized.chartWidth || 800;
-            assistantDisplay.chartHeight = normalized.chartHeight || 400;
+            assistantDisplay.chartWidth = normalized.chartWidth || 600;
+            assistantDisplay.chartHeight = normalized.chartHeight || 350;
             assistantDisplay.chartType = normalized.chartType || 'chart';
             assistantDisplay.chartTitle = normalized.chartTitle || '';
         }
@@ -12872,8 +12872,8 @@
             // Preserve chart data if present
             if (normalized.chartHtml) {
                 toolDisplay.chartHtml = normalized.chartHtml;
-                toolDisplay.chartWidth = normalized.chartWidth || 800;
-                toolDisplay.chartHeight = normalized.chartHeight || 400;
+                toolDisplay.chartWidth = normalized.chartWidth || 600;
+                toolDisplay.chartHeight = normalized.chartHeight || 350;
             }
             
             return toolDisplay;
@@ -13992,8 +13992,8 @@
         // Check for chart HTML content (from Chart.js visualization tools)
         const chartHtml = payload && typeof payload.chartHtml === 'string' ? payload.chartHtml : '';
         const hasChartHtml = chartHtml.trim() !== '';
-        const chartWidth = payload && payload.chartWidth ? payload.chartWidth : 800;
-        const chartHeight = payload && payload.chartHeight ? payload.chartHeight : 400;
+        const chartWidth = payload && payload.chartWidth ? payload.chartWidth : 600;
+        const chartHeight = payload && payload.chartHeight ? payload.chartHeight : 350;
         
         // Check for bubble type hints from payload
         const bubbleType = payload && payload.bubbleType ? payload.bubbleType : null;
@@ -14356,8 +14356,8 @@
         iframe.setAttribute('title', getString('chartVisualization', 'Chart Visualization'));
         
         // Calculate aspect ratio with guard against division by zero
-        const safeWidth = width > 0 ? width : 800;
-        const safeHeight = height > 0 ? height : 400;
+        const safeWidth = width > 0 ? width : 600;
+        const safeHeight = height > 0 ? height : 350;
         const aspectRatio = safeHeight / safeWidth;
         
         // Create wrapper for responsive aspect ratio sizing

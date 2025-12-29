@@ -247,8 +247,9 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// Get chart dimensions.
-		$width  = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : 800;
-		$height = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : 400;
+		// Default to 600x350 to fit better in chat interface (typical chat width ~720px).
+		$width  = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : 600;
+		$height = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : 350;
 
 		$width  = max( 100, min( 2000, $width ) );
 		$height = max( 100, min( 2000, $height ) );
@@ -257,6 +258,15 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$options = isset( $arguments['options'] ) && is_array( $arguments['options'] )
 			? $arguments['options']
 			: array();
+
+		// Ensure Chart.js respects explicit canvas dimensions and doesn't auto-resize.
+		// This prevents the canvas from being resized to 3x3 pixels during iframe initialization.
+		if ( ! isset( $options['responsive'] ) ) {
+			$options['responsive'] = false;
+		}
+		if ( ! isset( $options['maintainAspectRatio'] ) ) {
+			$options['maintainAspectRatio'] = false;
+		}
 
 		// Add title to options if provided.
 		if ( ! empty( $arguments['title'] ) ) {
