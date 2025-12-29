@@ -2,9 +2,24 @@
 
 ## 📁 Directory Contents
 
-This directory contains **10 CSV import templates** with **60+ example rows** and **comprehensive documentation** to facilitate data import into WordPress and WooCommerce.
+This directory contains **10 general CSV import templates** plus **9 assistant-specific templates** with **80+ example rows** and **comprehensive documentation** to facilitate data import into WordPress and WooCommerce.
 
-### 📄 CSV Template Files (10)
+### 📂 Directory Structure
+```
+csv-templates/
+├── README.md                    # Main documentation
+├── QUICK-REFERENCE.md          # Quick lookup guide
+├── TOOL-MAPPING.md             # WP oOS tool integration
+├── INDEX.md                    # This file
+├── [10 general CSV templates]
+└── by-assistant-type/          # Assistant-specific templates
+    ├── README.md               # Assistant template guide
+    └── [9 specialized templates]
+```
+
+### 📄 General CSV Template Files (10)
+
+**Location**: `./` (this directory)
 
 1. **posts-template.csv** (3 rows, 17 fields)
    - WordPress blog posts and articles
@@ -36,7 +51,40 @@ This directory contains **10 CSV import templates** with **60+ example rows** an
 10. **jetengine-cct-template.csv** (9 rows, 18 fields)
     - JetEngine Custom Content Types
 
-### 📚 Documentation Files (3)
+### 📄 Assistant-Specific CSV Template Files (9)
+
+**Location**: `./by-assistant-type/`
+
+These templates are optimized for specific assistant types and their available tools:
+
+1. **content-writing-posts.csv** (3 rows, 15 fields)
+   - SEO-optimized posts for Content Writing assistants
+   
+2. **ecommerce-products.csv** (4 rows, 24 fields)
+   - E-commerce products with rich descriptions
+   
+3. **ecommerce-orders.csv** (3 rows, 16 fields)
+   - Order data for E-commerce assistants
+   
+4. **analytics-metrics.csv** (3 rows, 13 fields)
+   - Analytics data for Data & Analytics assistants
+   
+5. **media-assets.csv** (4 rows, 13 fields)
+   - Media files with extended metadata
+   
+6. **site-management-cron.csv** (4 rows, 9 fields)
+   - Cron job configuration
+   
+7. **seo-page-analysis.csv** (3 rows, 15 fields)
+   - SEO audit and analysis data
+   
+8. **development-code-snippets.csv** (4 rows, 9 fields)
+   - Code snippets for Development assistants
+   
+9. **marketing-social-posts.csv** (4 rows, 10 fields)
+   - Social media posts for Marketing assistants
+
+### 📚 Documentation Files (4)
 
 1. **README.md** (458 lines)
    - Complete documentation for all templates
@@ -59,9 +107,28 @@ This directory contains **10 CSV import templates** with **60+ example rows** an
 4. **INDEX.md** (this file)
    - Directory overview and navigation
 
+5. **by-assistant-type/README.md** (310 lines)
+   - Assistant-specific template documentation
+   - Tool mapping by assistant type
+   - Optimization guidelines
+
 ---
 
 ## 🚀 Quick Start
+
+### Choosing Between General and Assistant-Specific Templates
+
+**Use General Templates When:**
+- Setting up a new site with comprehensive data
+- You need maximum field coverage
+- Working with multiple assistant types
+- Importing historical/legacy data
+
+**Use Assistant-Specific Templates When:**
+- You know your assistant's tool preset
+- You want optimized, streamlined fields
+- Doing ongoing, specialized imports
+- Working with a specific workflow (content, e-commerce, etc.)
 
 ### For Beginners
 1. Start with **QUICK-REFERENCE.md** for an overview
@@ -83,12 +150,14 @@ This directory contains **10 CSV import templates** with **60+ example rows** an
 
 ## 📊 Statistics
 
-- **Total Files**: 13 (10 CSV + 3 MD)
-- **Total Lines**: 1,191
-- **Documentation**: 1,131 lines
-- **Example Data Rows**: 60+
-- **Total Fields**: 220+ across all templates
-- **Directory Size**: ~80 KB
+- **Total Files**: 24 (19 CSV + 5 MD)
+- **General Templates**: 10
+- **Assistant-Specific Templates**: 9
+- **Total Lines**: ~2,700+
+- **Documentation**: ~2,500 lines
+- **Example Data Rows**: 80+
+- **Total Fields**: 300+ across all templates
+- **Directory Size**: ~110 KB
 
 ---
 
