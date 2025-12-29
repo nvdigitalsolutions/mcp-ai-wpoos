@@ -88,6 +88,9 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
 		$this->jet_engine->api = new class( $endpoint ) {
 			protected $endpoint;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $endpoint ) {
 				$this->endpoint = $endpoint;
 			}

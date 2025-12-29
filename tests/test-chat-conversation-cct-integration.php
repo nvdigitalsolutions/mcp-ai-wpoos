@@ -134,6 +134,9 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 			$test_instance            = $this;
 			$this->transcript_handler = new class( $test_instance ) {
 				private $test_instance;
+				/**
+				 * Constructor.
+				 */
 				public function __construct( $test_instance ) {
 					$this->test_instance = $test_instance;
 				}

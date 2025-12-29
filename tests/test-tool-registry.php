@@ -12,6 +12,9 @@ class WP_MCP_AI_Mock_Tool implements WP_MCP_AI_Tool_Interface {
 	protected $slug;
 	protected $name;
 
+	/**
+	 * Constructor.
+	 */
 	public function __construct( $slug = 'mock_tool', $name = 'Mock Tool' ) {
 		$this->slug = $slug;
 		$this->name = $name;

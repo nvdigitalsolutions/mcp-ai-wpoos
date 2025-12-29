@@ -151,6 +151,9 @@ class Test_Async_Executor_Cron_Visibility extends WP_UnitTestCase {
 		return new class( $slug ) implements WP_MCP_AI_Tool_Interface {
 			private $slug;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $slug ) {
 				$this->slug = $slug;
 			}

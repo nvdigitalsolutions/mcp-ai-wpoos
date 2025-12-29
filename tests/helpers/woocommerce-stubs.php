@@ -10,6 +10,9 @@ if ( ! class_exists( 'WC_Order' ) ) {
 	class WC_Order {
 		protected $data = array();
 
+		/**
+		 * Constructor.
+		 */
 		public function __construct( array $data ) {
 			$defaults   = array(
 				'id'            => 0,
@@ -67,6 +70,9 @@ if ( ! class_exists( 'WC_Product' ) ) {
 	class WC_Product {
 		protected $data = array();
 
+		/**
+		 * Constructor.
+		 */
 		public function __construct( array $data ) {
 			$defaults = array(
 				'id'             => 0,

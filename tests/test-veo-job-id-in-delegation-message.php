@@ -41,6 +41,9 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 		$mock_tool  = new class( $veo_job_id ) implements WP_MCP_AI_Tool_Interface {
 			private $veo_job_id;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $veo_job_id ) {
 				$this->veo_job_id = $veo_job_id;
 			}
@@ -168,6 +171,9 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 		$mock_tool  = new class( $veo_job_id ) implements WP_MCP_AI_Tool_Interface {
 			private $veo_job_id;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $veo_job_id ) {
 				$this->veo_job_id = $veo_job_id;
 			}

@@ -109,6 +109,9 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		// Create mock tool registry.
 		$registry = new class( $mock_tool ) {
 			protected $tool;
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}
@@ -375,6 +378,9 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		// Create mock registry.
 		$registry = new class( $mock_tool ) {
 			protected $tool;
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}

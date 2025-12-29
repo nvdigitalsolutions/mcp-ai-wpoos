@@ -39,6 +39,9 @@ namespace SimpleJWTLogin\Modules {
 			public static $request_key_header    = 'Authorization';
 			public static $jwt_decrypt_algorithm = 'HS256';
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( WordPressData $wordpress_data ) {
 			}
 
@@ -55,6 +58,9 @@ namespace SimpleJWTLogin\Modules {
 
 namespace SimpleJWTLogin\Helpers {
 	class ServerHelper {
+		/**
+		 * Constructor.
+		 */
 		public function __construct( array $server ) {
 		}
 	}

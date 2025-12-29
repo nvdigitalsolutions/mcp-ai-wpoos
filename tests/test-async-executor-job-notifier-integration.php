@@ -146,6 +146,9 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		// Create mock tool registry.
 		$registry = new class( $mock_tool ) {
 			protected $tool;
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}
@@ -252,6 +255,9 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		// Create mock tool registry.
 		$registry = new class( $mock_tool ) {
 			protected $tool;
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}
@@ -353,6 +359,9 @@ class Test_Async_Executor_Job_Notifier_Integration extends WP_UnitTestCase {
 		// Create mock tool registry.
 		$registry = new class( $mock_tool ) {
 			protected $tool;
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}

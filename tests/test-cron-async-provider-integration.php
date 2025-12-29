@@ -394,6 +394,9 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		return new class( $flags ) implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 			private $flags;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $flags ) {
 				$this->flags = $flags;
 			}
@@ -532,6 +535,9 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		return new class( $provider ) implements WP_MCP_AI_Tool_Interface {
 			private $provider;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $provider ) {
 				$this->provider = $provider;
 			}
