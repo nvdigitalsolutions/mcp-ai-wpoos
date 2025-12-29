@@ -1,4 +1,10 @@
 <?php
+/**
+ * Openai Image Tool
+ *
+ * @package WP_MCP_AI
+ */
+
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php';
 /**
  * Tests for the OpenAI image generation tool.
