@@ -625,6 +625,31 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 - Only the main plugin file (`mcp-ai-wpoos.php`) has a plugin header in the repository
 - The build script adds headers to the other files when creating standalone distributions
 
+#### ⚠️ Important: Vendor File Management for Contributors
+
+**If you're contributing to this repository, please note:**
+
+The repository tracks only **production** vendor files to keep clone sizes small (~50MB instead of ~170MB). When you run `composer install` for development/testing, additional dev dependencies (tests, CI configs, documentation) will be installed in your local `vendor/` directory.
+
+**These dev files should NOT be committed.** The `.gitignore` is configured to exclude:
+- `vendor/**/tests/` - Test directories
+- `vendor/**/.github/` - CI workflow configs
+- `vendor/**/phpunit.xml*` - PHPUnit configs
+- `vendor/**/phpstan*` - Static analysis configs
+- `vendor/**/docs/` - Documentation directories
+- Other dev-only files
+
+**Before committing vendor changes:**
+```bash
+# Check what vendor files are staged
+git status | grep vendor/
+
+# If you see test/ or .github/ files, they should NOT be committed
+# The .gitignore will automatically exclude them
+```
+
+The release workflow uses `composer install --no-dev` to build production-ready packages with only the necessary files.
+
 ### Standard Installation
 1. Upload `mcp-ai-wpoos.zip` to `/wp-content/plugins/`
 2. Activate **NV oOS** from the WordPress admin
