@@ -67,6 +67,28 @@ Added comprehensive debug logging to diagnose the "empty chart initially" issue:
 - Checks for chartConfig presence in HTML
 - Logs HTML length and preview
 
+### 3. Fixed Chart Bubble Width (✓ Complete)
+**File**: `assets/css/chat.css` (lines 2106-2113, 2143-2147, 2332-2337)
+
+**Problem**: Chart bubbles were constrained by the default message max-width (80%) making charts appear cramped and difficult to read, especially on larger screens.
+
+**Fix**: Updated CSS to make chart bubbles full width with a minimum of 600px (or 100% on smaller screens).
+
+```css
+.wp-mcp-ai-chat__bubble--chart {
+    max-width: 100%;
+    min-width: min(600px, 100%);  /* Ensures at least 600px or full container width */
+    width: 100%;                  /* Forces full width */
+    padding: 0.75rem;
+    background: var(--wp-mcp-ai-color-chart-bubble-background, #f8faff);
+    border: 1px solid var(--wp-mcp-ai-color-chart-bubble-border, rgba(59, 130, 246, 0.2));
+}
+```
+
+Also applied the fix to:
+- Mobile responsive styles (full width on screens < 600px)
+- Compact template override (to ensure full width even in compact mode)
+
 ## How to Test
 
 ### Test 1: Chart Creation (Real-time)
@@ -118,6 +140,36 @@ Test that canvas has correct dimensions (not 3x3):
 **After Fix:**
 ```html
 <canvas id="chart-XXX" width="600" height="350" style="display: block; box-sizing: border-box; height: 350px; width: 600px;"></canvas>
+```
+
+### Test 5: Chart Bubble Width (New)
+Test that chart bubbles display at full width:
+1. Create any chart in the chat interface
+2. Open browser DevTools (F12) and inspect the chart bubble element
+3. Look for element with classes `.wp-mcp-ai-chat__bubble--chart` and `data-bubble-type="chart"`
+4. Verify:
+   - On screens > 600px wide: Bubble should be full width of chat container (minimum 600px)
+   - On screens < 600px wide: Bubble should be 100% width
+   - In compact template: Bubble should still be full width (not constrained to 85%)
+   - Check computed styles: `width: 100%` and `min-width` should show appropriate value
+
+**Before Fix:**
+- Chart bubbles were constrained to 80% max-width (default template) or 85% (compact template)
+- Charts appeared cramped on larger screens
+
+**After Fix:**
+- Chart bubbles are full width with 600px minimum
+- Charts have more space to display data clearly
+- Responsive on mobile devices
+
+**To test different screen sizes:**
+```javascript
+// In browser console, resize chat container
+document.querySelector('.wp-mcp-ai-chat').style.width = '800px';  // Desktop simulation
+// Create a chart and verify it's at least 600px wide
+
+document.querySelector('.wp-mcp-ai-chat').style.width = '400px';  // Mobile simulation
+// Create a chart and verify it's 100% width (400px)
 ```
 
 ## Expected Debug Output
