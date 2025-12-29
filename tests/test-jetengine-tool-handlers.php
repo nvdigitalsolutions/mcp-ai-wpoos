@@ -46,6 +46,9 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
 	 */
 	protected $jet_engine;
 
+	/**
+	 * Set up test environment.
+	 */
 	protected function setUp(): void {
 		parent::setUp();
 
@@ -63,6 +66,9 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
 		$this->register_mock_routes();
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	protected function tearDown(): void {
 		self::$routes_registered = false;
 		global $wp_mcp_ai_mock_jet_engine;

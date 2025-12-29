@@ -51,9 +51,12 @@ class Test_Veo_Job_Completion_Order extends WP_UnitTestCase {
 	/**
 	 * Track job completion hook calls
 	 *
-	 * @param string $job_id Job ID
-	 * @param array  $result Job result
-	 * @param array  $metadata Job metadata
+	 * @param string $job_id Job ID.
+
+	 * @param array  $result Job result.
+
+	 * @param array  $metadata Job metadata.
+
 	 */
 	public function track_job_completion( $job_id, $result, $metadata ) {
 		$this->completion_order[] = array(

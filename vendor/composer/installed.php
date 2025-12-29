@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-codesniffer-errors-yet-again',
         'version' => 'dev-copilot/fix-codesniffer-errors-yet-again',
-        'reference' => '645b1f0cb7871f8f07734a940902b94f4511b33d',
+        'reference' => '5e5125d841e890dd5ad4d99b12982030cacb319e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-codesniffer-errors-yet-again',
             'version' => 'dev-copilot/fix-codesniffer-errors-yet-again',
-            'reference' => '645b1f0cb7871f8f07734a940902b94f4511b33d',
+            'reference' => '5e5125d841e890dd5ad4d99b12982030cacb319e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

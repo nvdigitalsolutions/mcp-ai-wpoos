@@ -142,6 +142,9 @@ namespace {
 		 */
 		protected $simulate_plugin_active = false;
 
+		/**
+		 * Set up test environment.
+		 */
 		protected function setUp(): void {
 			parent::setUp();
 
@@ -170,6 +173,9 @@ namespace {
 			$this->integration = WP_MCP_AI_Simple_JWT_Login_Integration::init();
 		}
 
+		/**
+		 * Tear down test environment.
+		 */
 		protected function tearDown(): void {
 			remove_filter( 'pre_option_active_plugins', array( $this, 'filter_active_plugins' ), 10 );
 			$this->simulate_plugin_active = false;
