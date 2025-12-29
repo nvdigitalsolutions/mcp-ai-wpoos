@@ -1,6 +1,6 @@
 <?php
 /**
- * Simple logging utility for NV oOS.
+ * Simple logging utility for WP oOS.
  *
  * @package WP_MCP_AI
  */
@@ -17,7 +17,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		/**
 		 * Prefix that is added to every log line for easier filtering.
 		 */
-		const PREFIX = '[NV oOS]';
+		const PREFIX = '[WP oOS]';
 
 		/**
 		 * Log severity levels.

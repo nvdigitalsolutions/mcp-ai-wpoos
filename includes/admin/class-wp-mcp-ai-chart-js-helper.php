@@ -71,7 +71,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 			return;
 		}
 
-		// Only load on NV oOS settings pages.
+		// Only load on WP oOS settings pages.
 		if ( false === strpos( $hook, 'wp-mcp-ai' ) ) {
 			return;
 		}

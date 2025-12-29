@@ -2,7 +2,7 @@
 /**
  * REST API Request Validator
  *
- * Handles validation and sanitization of REST API requests for NV oOS plugin.
+ * Handles validation and sanitization of REST API requests for WP oOS plugin.
  * This class is part of the refactoring effort to separate concerns from the
  * monolithic REST controller class.
  *

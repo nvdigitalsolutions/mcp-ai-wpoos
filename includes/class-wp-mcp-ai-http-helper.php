@@ -1,6 +1,6 @@
 <?php
 /**
- * HTTP Helper for NV oOS
+ * HTTP Helper for WP oOS
  *
  * Provides utilities for making HTTP requests with proper handling of
  * loopback addresses and SSL verification.

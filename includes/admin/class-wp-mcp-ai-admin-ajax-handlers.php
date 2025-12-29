@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin AJAX Handlers for NV oOS.
+ * Admin AJAX Handlers for WP oOS.
  *
  * Handles all AJAX requests for the admin settings page.
  *

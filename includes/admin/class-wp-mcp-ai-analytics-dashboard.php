@@ -1,6 +1,6 @@
 <?php
 /**
- * Analytics Dashboard for NV oOS Token Manager
+ * Analytics Dashboard for WP oOS Token Manager
  *
  * Provides WordPress dashboard widgets for token usage analytics.
  *

@@ -256,7 +256,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_huggingface_api_key' => __( 'Add a Hugging Face API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_huggingface_api_key' => __( 'Add a Hugging Face API key in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -271,7 +271,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_huggingface_endpoint' => __( 'Add a Hugging Face endpoint URL in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_huggingface_endpoint' => __( 'Add a Hugging Face endpoint URL in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -286,7 +286,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_huggingface_model' => __( 'Choose a Hugging Face model in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_huggingface_model' => __( 'Choose a Hugging Face model in the WP oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);

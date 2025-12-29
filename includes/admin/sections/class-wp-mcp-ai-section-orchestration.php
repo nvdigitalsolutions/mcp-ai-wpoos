@@ -345,7 +345,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			$content  = '<div class="wp-mcp-ai-orchestration-intro">';
 			$content .= '<h3>' . esc_html__( 'About the Orchestration Layer', 'wp-mcp-ai' ) . '</h3>';
-			$content .= '<p>' . esc_html__( 'The NV oOS Dynamic AI Orchestration Layer extends standard SSE and MCP implementations with sophisticated resource management, security enforcement, and predictive optimization. This overcomes PHP\'s architectural limitations to provide Node.js-level orchestration capabilities within WordPress.', 'wp-mcp-ai' ) . '</p>';
+			$content .= '<p>' . esc_html__( 'The WP oOS Dynamic AI Orchestration Layer extends standard SSE and MCP implementations with sophisticated resource management, security enforcement, and predictive optimization. This overcomes PHP\'s architectural limitations to provide Node.js-level orchestration capabilities within WordPress.', 'wp-mcp-ai' ) . '</p>';
 
 			$content .= '<h4>' . esc_html__( 'Key Features:', 'wp-mcp-ai' ) . '</h4>';
 			$content .= '<ul>';
@@ -1063,7 +1063,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			?>
 			<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
 				<p style="margin: 0 0 10px 0; font-size: 14px;">
-					<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Get WP oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
 				</p>
 				<p style="margin: 0 0 10px 0;">
 					<?php
@@ -1077,7 +1077,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				</p>
 				<p style="margin: 0;">
 					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
-						<?php esc_html_e( 'Get NV oOS Pro', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Get WP oOS Pro', 'wp-mcp-ai' ); ?>
 					</a>
 					<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
 						<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>

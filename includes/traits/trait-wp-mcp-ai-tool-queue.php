@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool Queue Trait for NV oOS.
+ * Tool Queue Trait for WP oOS.
  *
  * Provides default queue configuration behavior for tools.
  *

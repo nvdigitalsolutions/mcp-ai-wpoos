@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings Registry System for NV oOS
+ * Settings Registry System for WP oOS
  *
  * Central registry for all plugin settings, organized by tabs and sections.
  *

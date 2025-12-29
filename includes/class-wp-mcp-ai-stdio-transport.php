@@ -589,7 +589,7 @@ class WP_MCP_AI_STDIO_Transport {
 	protected function log_debug( $message ) {
 		if ( defined( 'WP_MCP_AI_DEBUG' ) && WP_MCP_AI_DEBUG ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			fwrite( STDERR, '[NV oOS STDIO] ' . $message . "\n" );
+			fwrite( STDERR, '[WP oOS STDIO] ' . $message . "\n" );
 		}
 	}
 

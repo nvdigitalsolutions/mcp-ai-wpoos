@@ -133,7 +133,7 @@ class WP_MCP_AI_Model_Pricing_Checker {
 		?>
 		<div class="notice notice-warning is-dismissible wp-mcp-ai-price-notice">
 			<p>
-				<strong><?php esc_html_e( 'NV oOS: AI Model Pricing Updates Detected', 'wp-mcp-ai' ); ?></strong>
+				<strong><?php esc_html_e( 'WP oOS: AI Model Pricing Updates Detected', 'wp-mcp-ai' ); ?></strong>
 			</p>
 			<p>
 				<?php

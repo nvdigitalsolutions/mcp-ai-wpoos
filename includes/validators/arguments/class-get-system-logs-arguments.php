@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class GetSystemLogsArguments {
 
 	/**
-	 * Maximum number of NV oOS activity entries to return.
+	 * Maximum number of WP oOS activity entries to return.
 	 *
 	 * @var int
 	 */
@@ -34,7 +34,7 @@ class GetSystemLogsArguments {
 	public $activity_limit = 10;
 
 	/**
-	 * Optional list of NV oOS activity types to include.
+	 * Optional list of WP oOS activity types to include.
 	 *
 	 * @var array
 	 */
@@ -47,7 +47,7 @@ class GetSystemLogsArguments {
 	public $activity_types = array();
 
 	/**
-	 * Maximum number of NV oOS error entries to return.
+	 * Maximum number of WP oOS error entries to return.
 	 *
 	 * @var int
 	 */

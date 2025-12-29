@@ -1,6 +1,6 @@
 <?php
 /**
- * Nefarious Usage Monitor for NV oOS.
+ * Nefarious Usage Monitor for WP oOS.
  *
  * Detects suspicious usage patterns and automatically disables tools to protect the site.
  *
@@ -566,7 +566,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 
 			$subject = sprintf(
 				/* translators: %s: Site name */
-				__( '[%s] NV oOS Emergency Shutdown Activated', 'wp-mcp-ai' ),
+				__( '[%s] WP oOS Emergency Shutdown Activated', 'wp-mcp-ai' ),
 				$site_name
 			);
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Auth0 1-Click Setup Wizard for NV oOS.
+ * Auth0 1-Click Setup Wizard for WP oOS.
  *
  * @package WP_MCP_AI
  */

@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin settings for NV oOS.
+ * Admin settings for WP oOS.
  *
  * @package WP_MCP_AI
  */
@@ -3270,7 +3270,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_mesh_section_description() {
 			?>
-		<p><?php esc_html_e( 'Configure mesh networking to enable communication between different WordPress sites running NV oOS. This allows AI assistants to query and share knowledge across a distributed network.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Configure mesh networking to enable communication between different WordPress sites running WP oOS. This allows AI assistants to query and share knowledge across a distributed network.', 'wp-mcp-ai' ); ?></p>
 			<?php
 		}
 
@@ -3986,7 +3986,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_mailjet_from_name_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_name]" value="<?php echo esc_attr( $settings['mailjet_from_name'] ); ?>" class="regular-text" placeholder="NV oOS" />
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_name]" value="<?php echo esc_attr( $settings['mailjet_from_name'] ); ?>" class="regular-text" placeholder="WP oOS" />
 		<p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'wp-mcp-ai' ); ?></p>
 			<?php
 		}
