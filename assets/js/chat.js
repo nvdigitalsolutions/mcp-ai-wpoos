@@ -6901,11 +6901,17 @@
      */
     function normaliseChartResult(result) {
         if (!result || typeof result !== 'object') {
+            if (window.console && console.warn) {
+                console.warn('[NV oOS] normaliseChartResult: Invalid result object');
+            }
             return null;
         }
 
         const html = result.html || '';
         if (!html.trim()) {
+            if (window.console && console.warn) {
+                console.warn('[NV oOS] normaliseChartResult: Empty HTML', result);
+            }
             return null;
         }
 
@@ -6914,6 +6920,18 @@
         const chartTitle = result.chart_title || '';
         const width = result.width || 800;
         const height = result.height || 400;
+
+        // Debug logging
+        if (window.console && console.log) {
+            console.log('[NV oOS] Normalized chart result:', {
+                chartType: chartType,
+                chartTitle: chartTitle,
+                width: width,
+                height: height,
+                htmlLength: html.length,
+                htmlPreview: html.substring(0, 150) + '...'
+            });
+        }
 
         // Build text description
         let text = '';
@@ -14313,6 +14331,19 @@
      * @return {HTMLElement} Chart block container element
      */
     function createChartBlockElement(html, width, height) {
+        // Debug logging for chart HTML
+        if (window.console && console.log) {
+            console.log('[NV oOS] Creating chart block element:', {
+                htmlLength: html ? html.length : 0,
+                hasHtml: !!html && html.trim().length > 0,
+                htmlPreview: html ? html.substring(0, 200) + '...' : 'NO HTML',
+                width: width,
+                height: height,
+                hasChartJsScript: html ? html.indexOf('chart.js') > -1 : false,
+                hasChartConfig: html ? html.indexOf('chartConfig') > -1 : false
+            });
+        }
+        
         const container = document.createElement('div');
         container.className = 'wp-mcp-ai-chat__chart-block';
         
