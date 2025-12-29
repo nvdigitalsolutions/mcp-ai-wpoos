@@ -216,7 +216,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 > **For complete implementation details, see [Consolidated Implementation Summaries 2025](docs/implementation-history/2025/summaries/CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md)**
 
-### 📅 Weekly Summary (Dec 16 - 23, 2025)
+### 📅 Weekly Summary (Dec 16-23, 2025)
 - **PR #2364:** Profession model architecture improvements - Major re-architecture for proper knowledge layering
 - **2 Commits Reviewed:** 300+ files changed, ~100,000 lines added
 - **6 New AI Integrations:** Gemini Geospatial, OpenAI Batch API, Moderation API, GPT-5.2, GPT-Image-1.5, Symfony Process
