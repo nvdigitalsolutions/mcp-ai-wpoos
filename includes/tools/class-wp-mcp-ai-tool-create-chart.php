@@ -477,7 +477,6 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
         }
         canvas {
             max-width: 100%;
-            height: auto !important;
         }
     </style>
 </head>
