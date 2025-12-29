@@ -297,6 +297,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				'html'          => $html,
 				'chart_config'  => $chart_config,
 				'saved_as_file' => true,
+				'output_format' => 'chart', // Enables chart embedding in chat client via iframe rendering.
 			);
 		}
 
@@ -307,6 +308,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'width'         => $width,
 			'height'        => $height,
 			'saved_as_file' => false,
+			'output_format' => 'chart', // Enables chart embedding in chat client via iframe rendering.
 		);
 	}
 
