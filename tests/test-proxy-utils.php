@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for proxy utils tests.
+ *
  * @group proxy
  */
 class WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {

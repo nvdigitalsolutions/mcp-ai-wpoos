@@ -9,6 +9,8 @@
  */
 
 /**
+ * Test class for test huggingface tools recommendations.
+ *
  * @group tool-recommendations
  * @group huggingface
  */

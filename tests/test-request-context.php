@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for request context tests.
+ *
  * @group request-context
  */
 class WP_MCP_AI_Request_Context_Tests extends WP_UnitTestCase {

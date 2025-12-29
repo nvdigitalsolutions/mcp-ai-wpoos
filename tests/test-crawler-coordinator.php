@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for crawler coordinator.
+ *
  * @group crawler
  */
 class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {

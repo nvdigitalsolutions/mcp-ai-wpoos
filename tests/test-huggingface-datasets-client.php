@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for huggingface datasets client tests.
+ *
  * @group huggingface-datasets-client
  */
 class WP_MCP_AI_Huggingface_Datasets_Client_Tests extends WP_UnitTestCase {

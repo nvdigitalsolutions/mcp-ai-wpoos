@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for credentials tests.
+ *
  * @group credentials
  * @group security
  */

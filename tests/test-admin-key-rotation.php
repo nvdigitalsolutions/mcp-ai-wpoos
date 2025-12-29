@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for admin key rotation tests.
+ *
  * @group encryption
  * @group admin
  * @group key-rotation

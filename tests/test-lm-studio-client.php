@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for lm studio client tests.
+ *
  * @group lm-studio-client
  */
 class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
