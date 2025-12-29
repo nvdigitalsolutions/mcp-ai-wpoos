@@ -477,22 +477,49 @@ class Test_Assistant_Prompt_Shortcuts extends WP_UnitTestCase {
 }
 
 class WP_MCP_AI_Test_Prompt_Shortcut_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string Tool slug.
+	 */
 	public function get_slug() {
 		return 'test_prompt_shortcut_tool';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string Tool name.
+	 */
 	public function get_name() {
 		return 'Test Prompt Shortcut Tool';
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string Tool description.
+	 */
 	public function get_description() {
 		return 'Stub tool for exercising prompt shortcut logic.';
 	}
 
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array Parameters schema.
+	 */
 	public function get_parameters_schema() {
 		return array();
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context Execution context.
+	 * @return array|WP_Error Tool result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		return array();
 	}
