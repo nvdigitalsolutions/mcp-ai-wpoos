@@ -1,6 +1,6 @@
 <?php
 /**
- * Error Tracking Service for WP oOS.
+ * Error Tracking Service for NV oOS.
  *
  * Centralized service for tracking, logging, and analyzing errors across the plugin.
  * Provides real-time error monitoring, rate calculation, and integration with
