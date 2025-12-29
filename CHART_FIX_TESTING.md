@@ -2,7 +2,30 @@
 
 ## Changes Made
 
-### 1. Fixed Tool Message Restoration (✓ Complete)
+### 1. Fixed 3x3 Pixel Canvas Issue (✓ Complete)
+**File**: `includes/tools/class-wp-mcp-ai-tool-create-chart.php` (line ~261-268)
+
+**Problem**: Charts were displaying with canvas dimensions of 3x3 pixels instead of the intended dimensions (e.g., 800x400). This was caused by Chart.js's responsive mode resizing the canvas when the parent container has no explicit dimensions during iframe initialization.
+
+**Fix**: Set Chart.js options `responsive: false` and `maintainAspectRatio: false` as defaults to preserve the explicit width/height attributes on the canvas element. Users can still override these by explicitly providing responsive options.
+
+```php
+// Ensure Chart.js respects explicit canvas dimensions and doesn't auto-resize.
+// This prevents the canvas from being resized to 3x3 pixels during iframe initialization.
+if ( ! isset( $options['responsive'] ) ) {
+    $options['responsive'] = false;
+}
+if ( ! isset( $options['maintainAspectRatio'] ) ) {
+    $options['maintainAspectRatio'] = false;
+}
+```
+
+**Tests Added**: Three new tests in `tests/test-tool-create-chart.php`:
+- `test_chart_responsive_options()` - Verifies responsive options are set to false by default
+- `test_chart_custom_options_preserve_responsive_defaults()` - Ensures custom options don't override responsive defaults
+- `test_chart_explicit_responsive_options_respected()` - Verifies user can override with explicit responsive options
+
+### 2. Fixed Tool Message Restoration (✓ Complete)
 **File**: `assets/js/chat.js` (line ~10420)
 
 **Problem**: When restoring tool messages from conversation history (localStorage/CCT), the fallback path only extracted text fields and didn't normalize tool results to extract chart HTML.
@@ -76,6 +99,27 @@ Test with various chart types to ensure fix works universally:
 - "create a line chart of temperature over time"  
 - "create a doughnut chart of browser market share"
 
+### Test 4: Canvas Dimensions (New)
+Test that canvas has correct dimensions (not 3x3):
+1. Create any chart in the chat interface
+2. Open browser DevTools (F12) and inspect the iframe
+3. Look for the `<canvas>` element inside the iframe
+4. Verify:
+   - Canvas `width` attribute should be 800 (or custom width)
+   - Canvas `height` attribute should be 400 (or custom height)
+   - Canvas should NOT be `width="3" height="3"`
+   - Inline style should show proper pixel dimensions: `width: 800px; height: 400px;` (or custom)
+
+**Before Fix:**
+```html
+<canvas id="chart-XXX" width="3" height="3" style="display: block; box-sizing: border-box; height: 3px; width: 3px;"></canvas>
+```
+
+**After Fix:**
+```html
+<canvas id="chart-XXX" width="800" height="400" style="display: block; box-sizing: border-box; height: 400px; width: 800px;"></canvas>
+```
+
 ## Expected Debug Output
 
 ### Normal (Working) Output
@@ -101,6 +145,7 @@ Test with various chart types to ensure fix works universally:
 ```
 
 ### Problem Indicators
+- **Canvas is 3x3 pixels** → Chart.js responsive mode is resizing (FIXED in this PR)
 - `htmlLength: 0` or very small → HTML not being passed
 - `hasHtml: false` → HTML is empty/null
 - `hasChartJsScript: false` → Chart.js CDN not in HTML
@@ -109,16 +154,23 @@ Test with various chart types to ensure fix works universally:
 
 ## What to Look For
 
-1. **Empty Chart Initially**: 
+1. **Canvas Dimensions (3x3 Issue)**: 
+   - Inspect the canvas element in iframe DevTools
+   - Should have `width="800" height="400"` (or custom dimensions)
+   - Should NOT have `width="3" height="3"`
+   - Chart.js config should have `responsive: false` and `maintainAspectRatio: false`
+
+2. **Empty Chart Initially**: 
    - Check if `htmlLength` is 0 or very small initially
    - Check if HTML arrives incomplete and updates later
 
-2. **Chart HTML Structure**:
+3. **Chart HTML Structure**:
    - Should contain `<!DOCTYPE html>` at start
    - Should contain Chart.js CDN: `<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>`
    - Should contain chart data: `const chartConfig = { "type": "pie", "data": { ... }}`
+   - Should contain `"responsive": false` and `"maintainAspectRatio": false` in chartConfig options
 
-3. **Iframe Rendering**:
+4. **Iframe Rendering**:
    - Inspect the iframe element in browser DevTools
    - Check if `srcdoc` attribute contains complete HTML
    - Check if iframe console shows Chart.js errors
