@@ -136,7 +136,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 			$content  = '<div style="margin: 1rem 0;">';
 			$content .= '<h4>' . esc_html__( 'Available Elementor Widgets', 'wp-mcp-ai' ) . '</h4>';
 			$content .= '<ul style="margin-left: 1.5rem;">';
-			$content .= '<li><strong>WP oOS Chat</strong> - ' . esc_html__( 'Interactive AI chat interface with streaming responses', 'wp-mcp-ai' ) . '</li>';
+			$content .= '<li><strong>NV oOS Chat</strong> - ' . esc_html__( 'Interactive AI chat interface with streaming responses', 'wp-mcp-ai' ) . '</li>';
 			$content .= '<li><strong>Assistant Selector</strong> - ' . esc_html__( 'Dropdown to switch between available assistants', 'wp-mcp-ai' ) . '</li>';
 			$content .= '<li><strong>Chat History</strong> - ' . esc_html__( 'Display conversation history with filtering options', 'wp-mcp-ai' ) . '</li>';
 			$content .= '</ul>';

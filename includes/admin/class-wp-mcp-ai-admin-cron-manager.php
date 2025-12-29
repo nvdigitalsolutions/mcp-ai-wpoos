@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin cron manager for WP oOS.
+ * Admin cron manager for NV oOS.
  *
  * This class provides a server-side UI for managing cron jobs. It does not use
  * AJAX for delete operations or data refresh - instead it follows WordPress
@@ -21,7 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 }
 
 /**
- * Renders the management UI for cron events scheduled via WP oOS.
+ * Renders the management UI for cron events scheduled via NV oOS.
  */
 class WP_MCP_AI_Admin_Cron_Manager {
 	const PAGE_SLUG = 'wp-mcp-ai-cron-manager';
@@ -281,7 +281,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			<?php if ( empty( $jobs ) ) : ?>
 				<div class="wp-mcp-ai-cron-manager__empty">
 					<h3><?php esc_html_e( 'No Scheduled Events', 'wp-mcp-ai' ); ?></h3>
-					<p><?php esc_html_e( 'No cron events have been scheduled through WP oOS yet. The AI Assistant can create scheduled tasks using the following tools:', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'No cron events have been scheduled through NV oOS yet. The AI Assistant can create scheduled tasks using the following tools:', 'wp-mcp-ai' ); ?></p>
 					<ul>
 						<li><strong>create_cron_job</strong> - <?php esc_html_e( 'Schedule a new one-time or recurring task', 'wp-mcp-ai' ); ?></li>
 						<li><strong>list_cron_jobs</strong> - <?php esc_html_e( 'View all scheduled tasks', 'wp-mcp-ai' ); ?></li>

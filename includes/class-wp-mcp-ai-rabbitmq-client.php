@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * RabbitMQ Client class.
  *
  * Handles connection management, message publishing, and queue operations
- * for RabbitMQ integration with WP oOS agentic workflows.
+ * for RabbitMQ integration with NV oOS agentic workflows.
  */
 class WP_MCP_AI_RabbitMQ_Client {
 

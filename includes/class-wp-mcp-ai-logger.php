@@ -1,6 +1,6 @@
 <?php
 /**
- * Simple logging utility for WP oOS.
+ * Simple logging utility for NV oOS.
  *
  * @package WP_MCP_AI
  */

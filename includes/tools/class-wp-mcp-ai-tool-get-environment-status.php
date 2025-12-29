@@ -239,7 +239,7 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( ! empty( $assistants['default_assistant_id'] ) && empty( $assistants['default_assistant'] ) ) {
-			$warnings[] = __( 'The configured default assistant could not be loaded. Update the default assistant in Settings → WP oOS.', 'wp-mcp-ai' );
+			$warnings[] = __( 'The configured default assistant could not be loaded. Update the default assistant in Settings → NV oOS.', 'wp-mcp-ai' );
 		}
 
 		foreach ( $supported_plugins as $plugin_status ) {

@@ -1,6 +1,6 @@
 <?php
 /**
- * WP oOS Provider Connectivity Diagnostic Page
+ * NV oOS Provider Connectivity Diagnostic Page
  *
  * Test connectivity and configuration for all AI providers:
  * OpenAI, Google Gemini, Ollama (local AI), and LM Studio.
@@ -47,7 +47,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			self::$page_hook = add_submenu_page(
 				'tools.php',
 				__( 'Provider Connectivity Diagnostic', 'wp-mcp-ai' ),
-				__( 'WP oOS Provider Test', 'wp-mcp-ai' ),
+				__( 'NV oOS Provider Test', 'wp-mcp-ai' ),
 				'manage_options',
 				'wp-mcp-ai-provider-diagnostic',
 				array( __CLASS__, 'render_page' )

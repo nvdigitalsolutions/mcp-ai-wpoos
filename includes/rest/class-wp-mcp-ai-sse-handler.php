@@ -1,6 +1,6 @@
 <?php
 /**
- * Server-Sent Events (SSE) Handler for WP oOS Plugin
+ * Server-Sent Events (SSE) Handler for NV oOS Plugin
  *
  * Handles SSE streaming operations for real-time communication with MCP clients.
  * Extracted from WP_MCP_AI_REST class as part of Milestone 3 refactoring.

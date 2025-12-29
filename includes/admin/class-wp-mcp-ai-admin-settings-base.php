@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin Settings Base for WP oOS.
+ * Admin Settings Base for NV oOS.
  *
  * Handles core settings registration and management.
  *

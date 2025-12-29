@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin settings for WP oOS.
+ * Admin settings for NV oOS.
  *
  * @package WP_MCP_AI
  */
@@ -3270,7 +3270,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_mesh_section_description() {
 			?>
-		<p><?php esc_html_e( 'Configure mesh networking to enable communication between different WordPress sites running WP oOS. This allows AI assistants to query and share knowledge across a distributed network.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Configure mesh networking to enable communication between different WordPress sites running NV oOS. This allows AI assistants to query and share knowledge across a distributed network.', 'wp-mcp-ai' ); ?></p>
 			<?php
 		}
 

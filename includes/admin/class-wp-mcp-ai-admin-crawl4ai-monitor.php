@@ -35,7 +35,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 	}
 
 	/**
-	 * Register the Crawl4AI monitor page under the WP oOS menu.
+	 * Register the Crawl4AI monitor page under the NV oOS menu.
 	 */
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
@@ -157,7 +157,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 			<div class="wp-mcp-ai-crawl4ai-monitor__intro">
 				<p><strong><?php esc_html_e( 'About Crawl4AI Monitor', 'wp-mcp-ai' ); ?></strong></p>
 				<p><?php esc_html_e( 'The Crawl4AI Monitor displays web crawling jobs, browser pool status, and job history for the Crawl4AI integration. Crawl4AI allows AI assistants to scrape and extract data from websites using browser automation.', 'wp-mcp-ai' ); ?></p>
-				<p><?php esc_html_e( 'Configure Crawl4AI settings in WP oOS → Integrations → External Tools to connect to your Crawl4AI server.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'Configure Crawl4AI settings in NV oOS → Integrations → External Tools to connect to your Crawl4AI server.', 'wp-mcp-ai' ); ?></p>
 			</div>
 
 			<?php

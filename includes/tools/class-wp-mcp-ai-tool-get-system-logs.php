@@ -43,14 +43,14 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'properties'           => array(
 				'activity_limit'         => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of WP oOS activity entries to return.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of NV oOS activity entries to return.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 10,
 				),
 				'activity_types'         => array(
 					'type'        => 'array',
-					'description' => __( 'Optional list of WP oOS activity types to include (tool_execution, openai_request, etc.).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional list of NV oOS activity types to include (tool_execution, openai_request, etc.).', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 					),
@@ -240,7 +240,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$logs['recent_errors']   = WP_MCP_AI_Logger::get_recent_error_messages( $args['error_limit'] );
 			$logs['recent_activity'] = WP_MCP_AI_Logger::get_recent_activity_entries( $args['activity_limit'], $args['activity_types'] );
 		} else {
-			$logs['message'] = __( 'WP oOS logging is disabled. Enable logging in the WP oOS settings to capture entries.', 'wp-mcp-ai' );
+			$logs['message'] = __( 'NV oOS logging is disabled. Enable logging in the NV oOS settings to capture entries.', 'wp-mcp-ai' );
 		}
 
 		return $logs;

@@ -101,7 +101,7 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$controller = isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ? $GLOBALS['wp_mcp_ai_rest_controller'] : null;
 
 		if ( ! $controller instanceof WP_MCP_AI_REST ) {
-			return new WP_Error( 'wp_mcp_ai_rest_unavailable', __( 'The WP oOS REST controller is not available for probing.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_rest_unavailable', __( 'The NV oOS REST controller is not available for probing.', 'wp-mcp-ai' ) );
 		}
 
 		$request = new WP_REST_Request( 'POST', '/' . WP_MCP_AI_REST::REST_NAMESPACE . '/chat' );
