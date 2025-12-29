@@ -24,6 +24,9 @@ class WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
 	 */
 	protected $transcript_handler;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -46,6 +49,9 @@ class WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
 		do_action( 'init' );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 		wp_set_current_user( 0 );

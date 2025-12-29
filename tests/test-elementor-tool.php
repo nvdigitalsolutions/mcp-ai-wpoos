@@ -43,6 +43,9 @@ class WP_MCP_AI_Elementor_Tool_Execution_Test extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 

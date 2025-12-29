@@ -37,6 +37,9 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 	 */
 	protected $mock_client;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -86,6 +89,9 @@ class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 		};
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
 		remove_filter( 'wp_mcp_ai_client', array( $this, 'provide_mock_client' ), 10 );

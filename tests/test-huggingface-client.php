@@ -17,6 +17,9 @@ class WP_MCP_AI_Huggingface_Client_Tests extends WP_UnitTestCase {
 	 */
 	protected $client;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -26,6 +29,9 @@ class WP_MCP_AI_Huggingface_Client_Tests extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 		parent::tearDown();

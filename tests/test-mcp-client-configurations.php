@@ -30,6 +30,9 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 	 */
 	protected $bearer_token;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -59,6 +62,9 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 		wp_set_current_user( 0 );

@@ -7,6 +7,9 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-cron-j
  * Tests for the cron manager utilities.
  */
 class WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -14,6 +17,9 @@ class WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		_set_cron_array( array() );
 		delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );

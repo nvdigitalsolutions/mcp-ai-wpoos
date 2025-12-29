@@ -57,6 +57,9 @@ class WP_MCP_AI_Tool_Registry_Lazy_Init_Tests extends WP_UnitTestCase {
 	 */
 	protected $pro_tools_registered = false;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -75,6 +78,9 @@ class WP_MCP_AI_Tool_Registry_Lazy_Init_Tests extends WP_UnitTestCase {
 		$this->pro_tools_registered = false;
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		// Remove our test action.
 		remove_action( 'wp_mcp_ai_register_tools', array( $this, 'register_pro_tool' ), 20 );

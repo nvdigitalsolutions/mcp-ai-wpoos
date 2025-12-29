@@ -116,6 +116,9 @@ class WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
 	 */
 	protected $registry;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -150,6 +153,9 @@ class WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_assistant_config', $config );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		// Unregister test tools to prevent interference with other tests.
 		$this->registry->unregister_tool( 'broken_schema_tool' );

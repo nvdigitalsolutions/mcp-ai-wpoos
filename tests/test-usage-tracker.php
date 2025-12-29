@@ -3,12 +3,18 @@
  * Tests for the usage tracker utilities.
  */
 class WP_MCP_AI_Usage_Tracker_Test extends WP_UnitTestCase {
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 

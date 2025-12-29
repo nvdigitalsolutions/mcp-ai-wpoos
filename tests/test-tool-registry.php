@@ -53,6 +53,9 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 	 */
 	protected $original_instance;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -64,6 +67,9 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 		$property->setValue( null, null );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		// Restore original instance.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Registry' );

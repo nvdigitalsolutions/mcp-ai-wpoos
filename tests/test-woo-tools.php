@@ -53,6 +53,9 @@ class WP_MCP_AI_Woo_Tool_Execution_Test extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		wp_set_current_user( 0 );

@@ -10,6 +10,9 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 	 */
 	protected $admin_id;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -24,6 +27,9 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		do_action( 'init' );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 		parent::tearDown();

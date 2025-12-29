@@ -19,6 +19,9 @@ class Test_Assistant_Prompt_Shortcuts extends WP_UnitTestCase {
 	 */
 	protected $registry;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -36,6 +39,9 @@ class Test_Assistant_Prompt_Shortcuts extends WP_UnitTestCase {
 		$this->registry->register_tool( $this->stub_tool );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		if ( $this->registry instanceof WP_MCP_AI_Tool_Registry ) {
 			$this->registry->unregister_tool( $this->stub_tool->get_slug() );

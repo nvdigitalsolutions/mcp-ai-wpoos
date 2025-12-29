@@ -16,11 +16,17 @@ class WP_MCP_AI_Request_Context_Tests extends WP_UnitTestCase {
 	 */
 	protected $server_backup = array();
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		$this->server_backup = $_SERVER;
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		$_SERVER = $this->server_backup;
 		parent::tearDown();
