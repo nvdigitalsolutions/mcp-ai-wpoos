@@ -2105,6 +2105,8 @@
 /* Chart bubble modifier */
 .wp-mcp-ai-chat__bubble--chart {
     max-width: 100%;
+    min-width: 600px;
+    width: 100%;
     padding: 0.75rem;
     background: var(--wp-mcp-ai-color-chart-bubble-background, #f8faff);
     border: 1px solid var(--wp-mcp-ai-color-chart-bubble-border, rgba(59, 130, 246, 0.2));
@@ -2140,6 +2142,8 @@
     
     .wp-mcp-ai-chat__bubble--chart {
         padding: 0.5rem;
+        min-width: 0;
+        width: 100%;
     }
 }
 
