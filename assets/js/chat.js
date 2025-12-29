@@ -10415,26 +10415,45 @@
                         // Not JSON, use as-is
                     }
                     
-                    // Build display payload from parsed content
-                    // Try to extract displayable text from various tool result formats
-                    let displayText = '';
-                    if (typeof parsedContent === 'object' && parsedContent !== null) {
-                        // Common patterns for tool result text
-                        displayText = parsedContent.text || 
-                                     parsedContent.message || 
-                                     parsedContent.result || 
-                                     parsedContent.summary ||
-                                     (typeof parsedContent.content === 'string' ? parsedContent.content : '');
+                    // Normalize the tool result to extract all displayable content including charts
+                    // This ensures chart HTML and attachments are properly extracted
+                    const toolName = message.name || '';
+                    const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
+                    
+                    if (normalized) {
+                        // Use normalized data which includes text, attachments, and chart HTML
+                        toolPayload = {
+                            text: normalized.text || '',
+                            attachments: normalized.attachments || []
+                        };
                         
-                        // If still no text, try to stringify key fields
-                        if (!displayText && Object.keys(parsedContent).length > 0) {
-                            displayText = JSON.stringify(parsedContent, null, 2);
+                        // Preserve chart data if present
+                        if (normalized.chartHtml) {
+                            toolPayload.chartHtml = normalized.chartHtml;
+                            toolPayload.chartWidth = normalized.chartWidth || 800;
+                            toolPayload.chartHeight = normalized.chartHeight || 400;
                         }
                     } else {
-                        displayText = String(parsedContent);
+                        // Fallback: extract text only
+                        let displayText = '';
+                        if (typeof parsedContent === 'object' && parsedContent !== null) {
+                            // Common patterns for tool result text
+                            displayText = parsedContent.text || 
+                                         parsedContent.message || 
+                                         parsedContent.result || 
+                                         parsedContent.summary ||
+                                         (typeof parsedContent.content === 'string' ? parsedContent.content : '');
+                            
+                            // If still no text, try to stringify key fields
+                            if (!displayText && Object.keys(parsedContent).length > 0) {
+                                displayText = JSON.stringify(parsedContent, null, 2);
+                            }
+                        } else {
+                            displayText = String(parsedContent);
+                        }
+                        
+                        toolPayload = { text: displayText };
                     }
-                    
-                    toolPayload = { text: displayText };
                 } else {
                     // Fallback for empty content
                     toolPayload = { text: '[Tool result]' };
