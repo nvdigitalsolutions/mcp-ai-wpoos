@@ -1,0 +1,9 @@
+name,slug,taxonomy,description,parent,meta_key_1,meta_value_1,meta_key_2,meta_value_2
+"Web Development","web-development","category","Articles about web development technologies and best practices",0,"term_color","#3498db","term_icon","fa-code"
+"Mobile Apps","mobile-apps","category","Content related to mobile application development","web-development","term_color","#2ecc71","term_icon","fa-mobile"
+"Design","design","category","Design-related articles and resources",0,"term_color","#e74c3c","term_icon","fa-palette"
+"WordPress","wordpress","post_tag","WordPress tutorials and tips",0,"tag_featured","yes","tag_priority","high"
+"React","react","post_tag","React.js framework articles",0,"tag_featured","no","external_link","https://react.dev"
+"Tech News","tech-news","custom_taxonomy","Latest technology news and updates",0,"show_on_homepage","yes","display_order","1"
+"Product Categories","product-categories","product_cat","Main product category",0,"display_type","grid","thumbnail_id","0"
+"Electronics","electronics","product_cat","Electronic products and gadgets","product-categories","display_type","list","thumbnail_id","0"
