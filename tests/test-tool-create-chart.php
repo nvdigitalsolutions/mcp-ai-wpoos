@@ -98,6 +98,8 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 		$this->assertEquals( 'bar', $result['chart_type'] );
 		$this->assertArrayHasKey( 'html', $result );
 		$this->assertArrayHasKey( 'chart_config', $result );
+		$this->assertArrayHasKey( 'output_format', $result );
+		$this->assertEquals( 'chart', $result['output_format'] );
 		$this->assertStringContainsString( 'Chart.js', $result['html'] );
 		$this->assertStringContainsString( 'Monthly Sales', $result['html'] );
 		$this->assertFalse( $result['saved_as_file'] );
@@ -126,6 +128,8 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$this->assertEquals( 'pie', $result['chart_type'] );
 		$this->assertArrayHasKey( 'html', $result );
+		$this->assertArrayHasKey( 'output_format', $result );
+		$this->assertEquals( 'chart', $result['output_format'] );
 	}
 
 	/**
@@ -152,6 +156,8 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $result );
 		$this->assertEquals( 'line', $result['chart_type'] );
+		$this->assertArrayHasKey( 'output_format', $result );
+		$this->assertEquals( 'chart', $result['output_format'] );
 	}
 
 	/**
@@ -286,6 +292,8 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'attachment_id', $result );
 		$this->assertGreaterThan( 0, $result['attachment_id'] );
 		$this->assertArrayHasKey( 'url', $result );
+		$this->assertArrayHasKey( 'output_format', $result );
+		$this->assertEquals( 'chart', $result['output_format'] );
 		$this->assertStringContainsString( 'test-chart', $result['file_name'] );
 		$this->assertStringContainsString( '.html', $result['file_name'] );
 
