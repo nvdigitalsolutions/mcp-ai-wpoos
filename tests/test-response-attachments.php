@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for response attachments tests.
+ *
  * @group response-attachments
  */
 class WP_MCP_AI_Response_Attachments_Tests extends WP_UnitTestCase {

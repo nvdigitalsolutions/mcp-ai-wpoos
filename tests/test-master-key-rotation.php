@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for master key rotation tests.
+ *
  * @group encryption
  * @group security
  * @group key-rotation

@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for tool create chart tests.
+ *
  * @group tools
  * @group create-chart
  */

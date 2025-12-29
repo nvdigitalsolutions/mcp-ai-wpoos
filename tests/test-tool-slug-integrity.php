@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for tool slug integrity tests.
+ *
  * @group tool-registry
  * @group tool-integrity
  */
