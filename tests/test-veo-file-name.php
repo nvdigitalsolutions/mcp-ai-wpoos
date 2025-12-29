@@ -7,7 +7,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class Test_Veo_File_Name extends WP_UnitTestCase {
 
 	/**

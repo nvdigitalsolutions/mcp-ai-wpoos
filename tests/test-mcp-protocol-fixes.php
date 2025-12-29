@@ -9,7 +9,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 
 	/**

@@ -8,7 +8,6 @@
  * @package WP_MCP_AI
  * @subpackage Tests
  */
-
 class WP_MCP_AI_Chat_Session_Key_Response_Test extends WP_UnitTestCase {
 	/**
 	 * Administrator user ID for authenticated requests.

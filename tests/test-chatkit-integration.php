@@ -4,7 +4,6 @@
  *
  * @package WP_MCP_AI\Tests
  */
-
 class Test_ChatKit_Integration extends WP_UnitTestCase {
 
 	public function setUp(): void {

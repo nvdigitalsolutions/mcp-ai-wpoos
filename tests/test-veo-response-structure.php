@@ -6,7 +6,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class Test_Veo_Response_Structure extends WP_UnitTestCase {
 
 	/**

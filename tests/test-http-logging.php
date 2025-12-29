@@ -2,7 +2,6 @@
 /**
  * Tests for HTTP connection logging.
  */
-
 class WP_MCP_AI_HTTP_Logging_Tests extends WP_UnitTestCase {
 
 	/**

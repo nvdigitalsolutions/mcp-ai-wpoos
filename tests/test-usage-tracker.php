@@ -2,7 +2,6 @@
 /**
  * Tests for the usage tracker utilities.
  */
-
 class WP_MCP_AI_Usage_Tracker_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();

@@ -2,7 +2,6 @@
 /**
  * Tests for the WordPress.com/Gravatar bridge integration.
  */
-
 class WP_MCP_AI_WordPress_Gravatar_Integration_Test extends WP_UnitTestCase {
 	protected function setUp(): void {
 		parent::setUp();

@@ -4,7 +4,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 	/**
 	 * Administrator user ID for authenticated requests.

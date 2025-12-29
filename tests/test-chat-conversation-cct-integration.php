@@ -9,7 +9,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 
 	/**

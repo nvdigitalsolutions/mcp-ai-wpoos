@@ -4,7 +4,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_Image_URL_Persistence_Test extends WP_UnitTestCase {
 
 	/**

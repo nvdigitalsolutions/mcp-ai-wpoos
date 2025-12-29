@@ -7,7 +7,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_Provider_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 	/**

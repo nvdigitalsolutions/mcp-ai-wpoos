@@ -8,7 +8,6 @@
  * @package WP_MCP_AI
  * @subpackage Tests
  */
-
 trait WP_MCP_AI_REST_Test_Helper {
 
 	/**

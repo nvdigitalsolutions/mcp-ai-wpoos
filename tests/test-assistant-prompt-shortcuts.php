@@ -4,7 +4,6 @@
  *
  * @package WP_MCP_AI\Tests
  */
-
 class Test_Assistant_Prompt_Shortcuts extends WP_UnitTestCase {
 	/**
 	 * Registered stub tool instance.

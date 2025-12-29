@@ -8,7 +8,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_SSE_Disabled_Fallback_Test extends WP_Test_REST_TestCase {
 	/**
 	 * Ensure REST routes are registered before each test.

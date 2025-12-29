@@ -2,7 +2,6 @@
 /**
  * Tests covering JetFormBuilder REST dispatch via the MCP integration layer.
  */
-
 class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 
 	/**

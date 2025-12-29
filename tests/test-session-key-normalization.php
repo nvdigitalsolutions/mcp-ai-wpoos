@@ -8,7 +8,6 @@
  * @package WP_MCP_AI
  * @subpackage Tests
  */
-
 class WP_MCP_AI_Session_Key_Normalization_Test extends WP_UnitTestCase {
 	/**
 	 * Administrator user ID for authenticated requests.

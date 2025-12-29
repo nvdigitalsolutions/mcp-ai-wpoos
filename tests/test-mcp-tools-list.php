@@ -7,7 +7,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 
 	/**

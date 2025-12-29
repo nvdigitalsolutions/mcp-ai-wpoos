@@ -4,7 +4,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class Test_Chat_Attachment_Segments extends WP_UnitTestCase {
 
 	/**

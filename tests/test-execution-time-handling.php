@@ -7,7 +7,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_Execution_Time_Test extends WP_UnitTestCase {
 
 	/**
