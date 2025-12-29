@@ -1,0 +1,6 @@
+post_id,comment_author,comment_author_email,comment_author_url,comment_content,comment_date,comment_approved,comment_parent,comment_agent,comment_type,comment_author_ip,meta_key_1,meta_value_1
+"123","John Doe","john@example.com","https://johndoe.com","Great article! Very informative and helpful. I learned a lot from this post.","2024-01-15 10:30:00","1","0","Mozilla/5.0","","192.168.1.1","rating","5"
+"123","Jane Smith","jane@example.com","","Thanks for sharing this valuable information.","2024-01-15 14:20:00","1","1","Mozilla/5.0","","192.168.1.2","helpful","yes"
+"456","Bob Johnson","bob@example.com","https://bobjohnson.com","This needs more explanation on the third point.","2024-01-16 09:15:00","0","0","Mozilla/5.0","","192.168.1.3","flagged","no"
+"123","Admin","admin@example.com","https://example.com","Thank you for your feedback!","2024-01-16 10:00:00","1","1","Mozilla/5.0","","192.168.1.4","author_reply","yes"
+"789","Guest User","guest@example.com","","Interesting perspective on this topic.","2024-01-17 11:30:00","1","0","Mozilla/5.0","","192.168.1.5","verified_purchase","no"

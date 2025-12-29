@@ -1,0 +1,5 @@
+username,email,first_name,last_name,role,password,display_name,nickname,description,website,meta_key_1,meta_value_1,meta_key_2,meta_value_2
+"johndoe","john.doe@example.com","John","Doe","editor","SecurePassword123!","John Doe","JD","Senior content editor with 5 years experience","https://johndoe.com","phone","+1234567890","department","Editorial"
+"janesmith","jane.smith@example.com","Jane","Smith","author","AnotherSecurePass456!","Jane Smith","Jane","Marketing specialist and content creator","https://janesmith.com","phone","+0987654321","social_twitter","@janesmith"
+"admin2","admin@example.com","Admin","User","administrator","AdminPassword789!","Site Admin","Admin","Site administrator account","","admin_level","super","notification_email","admin@example.com"
+"contributor1","contributor@example.com","Guest","Contributor","contributor","ContribPass111!","Guest Contributor","GC","Guest contributor for special articles","","contributor_since","2024-01-01","specialty","Technology"
