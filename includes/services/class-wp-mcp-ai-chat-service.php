@@ -235,7 +235,7 @@ class WP_MCP_AI_Chat_Service {
 						)
 					);
 					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-					error_log( sprintf( '[WP oOS Agentic Loop] Completed after %d iterations - %s', $iteration, $exit_reason ) );
+					error_log( sprintf( '[NV oOS Agentic Loop] Completed after %d iterations - %s', $iteration, $exit_reason ) );
 				}
 				break; // Final response ready.
 			}
@@ -263,7 +263,7 @@ class WP_MCP_AI_Chat_Service {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log(
 					sprintf(
-						'[WP oOS Agentic Loop] Iteration %d/%d - Executing %d tool(s): %s',
+						'[NV oOS Agentic Loop] Iteration %d/%d - Executing %d tool(s): %s',
 						$iteration + 1,
 						$max_iterations,
 						count( $tool_calls ),
@@ -302,7 +302,7 @@ class WP_MCP_AI_Chat_Service {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log(
 					sprintf(
-						'[WP oOS Agentic Loop] Iteration %d - Tool execution completed in %sms (%d results)',
+						'[NV oOS Agentic Loop] Iteration %d - Tool execution completed in %sms (%d results)',
 						$iteration + 1,
 						round( $iteration_duration * 1000, 2 ),
 						count( $tool_results )
@@ -359,7 +359,7 @@ class WP_MCP_AI_Chat_Service {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log(
 					sprintf(
-						'[WP oOS Agentic Loop] Iteration %d - Sending follow-up request with %d messages',
+						'[NV oOS Agentic Loop] Iteration %d - Sending follow-up request with %d messages',
 						$iteration,
 						count( $messages )
 					)

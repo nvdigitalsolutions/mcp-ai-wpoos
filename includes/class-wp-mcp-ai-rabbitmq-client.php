@@ -1,6 +1,6 @@
 <?php
 /**
- * RabbitMQ Client for WP oOS.
+ * RabbitMQ Client for NV oOS.
  *
  * Provides message queue integration for agentic workflows and tool management
  * when deployed on Cloudways with RabbitMQ enabled.
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * RabbitMQ Client class.
  *
  * Handles connection management, message publishing, and queue operations
- * for RabbitMQ integration with WP oOS agentic workflows.
+ * for RabbitMQ integration with NV oOS agentic workflows.
  */
 class WP_MCP_AI_RabbitMQ_Client {
 

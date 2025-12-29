@@ -1,6 +1,6 @@
 <?php
 /**
- * REST API Analytics Manager for WP oOS.
+ * REST API Analytics Manager for NV oOS.
  *
  * Provides REST endpoints for analytics data including trends, patterns,
  * comparisons, and anomaly detection.

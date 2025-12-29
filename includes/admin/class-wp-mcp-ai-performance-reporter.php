@@ -1,6 +1,6 @@
 <?php
 /**
- * Performance Reporter for WP oOS.
+ * Performance Reporter for NV oOS.
  *
  * @deprecated Use WP_MCP_AI_Performance_Reporting_Service instead.
  * @see WP_MCP_AI_Performance_Reporting_Service

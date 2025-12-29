@@ -81,7 +81,7 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $settings['enable_mesh'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mesh_disabled',
-				__( 'Mesh networking is not enabled. Please enable it in Settings → WP oOS → Mesh Network.', 'wp-mcp-ai' )
+				__( 'Mesh networking is not enabled. Please enable it in Settings → NV oOS → Mesh Network.', 'wp-mcp-ai' )
 			);
 		}
 

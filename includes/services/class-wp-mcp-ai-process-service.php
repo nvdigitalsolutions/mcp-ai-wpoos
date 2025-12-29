@@ -2,7 +2,7 @@
 /**
  * Process Service
  *
- * Provides Symfony Process integration for WP oOS.
+ * Provides Symfony Process integration for NV oOS.
  * Wraps external command execution with better error handling, timeout management, and security.
  *
  * @package WP_MCP_AI

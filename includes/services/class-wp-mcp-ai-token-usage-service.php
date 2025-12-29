@@ -1,6 +1,6 @@
 <?php
 /**
- * Token Usage Service for WP oOS.
+ * Token Usage Service for NV oOS.
  *
  * Provides centralized token usage management and statistics extracted from the admin layer:
  * - User token usage tracking and totals
