@@ -97,7 +97,7 @@ class WP_MCP_AI_Performance_Security_Fix_Test extends WP_UnitTestCase {
 			// This should trigger wp_send_json_error with permission denied.
 			do_action( 'wp_ajax_nopriv_wp_mcp_ai_get_performance_metrics' );
 		} catch ( Exception $e ) {
-		// Intentionally empty - error handled elsewhere.
+			// Intentionally empty - error handled elsewhere.
 			// wp_send_json_error calls wp_die which might throw.
 		}
 		$output = ob_get_clean();

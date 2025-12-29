@@ -173,7 +173,7 @@ class Test_Performance_Section_AJAX extends WP_UnitTestCase {
 		try {
 			$this->_handleAjax( 'wp_mcp_ai_run_performance_test' );
 		} catch ( WPAjaxDieContinueException $e ) {
-		// Intentionally empty - error handled elsewhere.
+			// Intentionally empty - error handled elsewhere.
 			// Expected - check the response.
 		}
 
