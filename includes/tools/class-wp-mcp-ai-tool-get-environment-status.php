@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool returning a diagnostic snapshot of the WP oOS environment.
+ * Tool returning a diagnostic snapshot of the NV oOS environment.
  *
  * @package WP_MCP_AI
  */
@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns WordPress, PHP, and WP oOS configuration details to accelerate troubleshooting on live sites.', 'wp-mcp-ai' );
+		return __( 'Returns WordPress, PHP, and NV oOS configuration details to accelerate troubleshooting on live sites.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -51,7 +51,7 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'title'       => __( 'Check WP oOS environment health', 'wp-mcp-ai' ),
+				'title'       => __( 'Check NV oOS environment health', 'wp-mcp-ai' ),
 				'description' => __( 'Summarise WordPress versions, assistant defaults, and connector warnings for the current site.', 'wp-mcp-ai' ),
 				'arguments'   => new stdClass(),
 			),
@@ -169,13 +169,13 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 				'name'        => __( 'WooCommerce', 'wp-mcp-ai' ),
 				'slug'        => 'woocommerce',
 				'plugin_file' => 'woocommerce/woocommerce.php',
-				'description' => __( 'Enables WooCommerce aware WP oOS tools.', 'wp-mcp-ai' ),
+				'description' => __( 'Enables WooCommerce aware NV oOS tools.', 'wp-mcp-ai' ),
 			),
 			'jet-engine'  => array(
 				'name'        => __( 'JetEngine', 'wp-mcp-ai' ),
 				'slug'        => 'jet-engine',
 				'plugin_file' => 'jet-engine/jet-engine.php',
-				'description' => __( 'Unlocks JetEngine powered WP oOS tools.', 'wp-mcp-ai' ),
+				'description' => __( 'Unlocks JetEngine powered NV oOS tools.', 'wp-mcp-ai' ),
 			),
 		);
 
@@ -239,7 +239,7 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( ! empty( $assistants['default_assistant_id'] ) && empty( $assistants['default_assistant'] ) ) {
-			$warnings[] = __( 'The configured default assistant could not be loaded. Update the default assistant in Settings → WP oOS.', 'wp-mcp-ai' );
+			$warnings[] = __( 'The configured default assistant could not be loaded. Update the default assistant in Settings → NV oOS.', 'wp-mcp-ai' );
 		}
 
 		foreach ( $supported_plugins as $plugin_status ) {
@@ -247,7 +247,7 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 				$plugin_name = isset( $plugin_status['name'] ) ? $plugin_status['name'] : $plugin_status['slug'];
 
 				/* translators: %s: Supported plugin name. */
-				$warnings[] = sprintf( __( '%s is not installed. Install it to unlock the related WP oOS tools.', 'wp-mcp-ai' ), $plugin_name );
+				$warnings[] = sprintf( __( '%s is not installed. Install it to unlock the related NV oOS tools.', 'wp-mcp-ai' ), $plugin_name );
 			}
 		}
 

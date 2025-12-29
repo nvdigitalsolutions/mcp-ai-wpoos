@@ -126,7 +126,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_cloudflare_api_token' => __( 'Add a Cloudflare API token in the WP oOS settings.', 'wp-mcp-ai' ),
+						'configure_cloudflare_api_token' => __( 'Add a Cloudflare API token in the NV oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -139,7 +139,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_cloudflare_zone_id' => __( 'Add the Cloudflare zone ID in the WP oOS settings.', 'wp-mcp-ai' ),
+						'configure_cloudflare_zone_id' => __( 'Add the Cloudflare zone ID in the NV oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);

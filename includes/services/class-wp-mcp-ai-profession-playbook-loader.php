@@ -214,7 +214,7 @@ class WP_MCP_AI_Profession_Playbook_Loader {
 		}
 
 		// Add footer.
-		$sections[] = "\nThis playbook is assembled from authorable text files in the WP oOS plugin.\n";
+		$sections[] = "\nThis playbook is assembled from authorable text files in the NV oOS plugin.\n";
 		$sections[] = "To update this content, edit the relevant txt files in includes/knowledge-base/profession-playbooks/\n";
 
 		// Concatenate all sections.

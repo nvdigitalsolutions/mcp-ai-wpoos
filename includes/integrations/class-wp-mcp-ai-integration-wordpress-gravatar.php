@@ -1,6 +1,6 @@
 <?php
 /**
- * WordPress.com/Gravatar identity bridge for WP oOS.
+ * WordPress.com/Gravatar identity bridge for NV oOS.
  *
  * @package WP_MCP_AI
  */
