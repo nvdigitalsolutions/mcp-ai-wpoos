@@ -247,8 +247,9 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// Get chart dimensions.
-		$width  = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : 800;
-		$height = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : 400;
+		// Default to 600x350 to fit better in chat interface (typical chat width ~720px).
+		$width  = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : 600;
+		$height = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : 350;
 
 		$width  = max( 100, min( 2000, $width ) );
 		$height = max( 100, min( 2000, $height ) );

@@ -5,7 +5,7 @@
 ### 1. Fixed 3x3 Pixel Canvas Issue (✓ Complete)
 **File**: `includes/tools/class-wp-mcp-ai-tool-create-chart.php` (line ~261-268)
 
-**Problem**: Charts were displaying with canvas dimensions of 3x3 pixels instead of the intended dimensions (e.g., 800x400). This was caused by Chart.js's responsive mode resizing the canvas when the parent container has no explicit dimensions during iframe initialization.
+**Problem**: Charts were displaying with canvas dimensions of 3x3 pixels instead of the intended dimensions (e.g., 600x350). This was caused by Chart.js's responsive mode resizing the canvas when the parent container has no explicit dimensions during iframe initialization.
 
 **Fix**: Set Chart.js options `responsive: false` and `maintainAspectRatio: false` as defaults to preserve the explicit width/height attributes on the canvas element. Users can still override these by explicitly providing responsive options.
 
@@ -108,7 +108,7 @@ Test that canvas has correct dimensions (not 3x3):
    - Canvas `width` attribute should be 800 (or custom width)
    - Canvas `height` attribute should be 400 (or custom height)
    - Canvas should NOT be `width="3" height="3"`
-   - Inline style should show proper pixel dimensions: `width: 800px; height: 400px;` (or custom)
+   - Inline style should show proper pixel dimensions: `width: 600px; height: 350px;` (or custom)
 
 **Before Fix:**
 ```html
@@ -117,7 +117,7 @@ Test that canvas has correct dimensions (not 3x3):
 
 **After Fix:**
 ```html
-<canvas id="chart-XXX" width="800" height="400" style="display: block; box-sizing: border-box; height: 400px; width: 800px;"></canvas>
+<canvas id="chart-XXX" width="600" height="350" style="display: block; box-sizing: border-box; height: 350px; width: 600px;"></canvas>
 ```
 
 ## Expected Debug Output
@@ -156,7 +156,7 @@ Test that canvas has correct dimensions (not 3x3):
 
 1. **Canvas Dimensions (3x3 Issue)**: 
    - Inspect the canvas element in iframe DevTools
-   - Should have `width="800" height="400"` (or custom dimensions)
+   - Should have `width="600" height="350"` (or custom dimensions)
    - Should NOT have `width="3" height="3"`
    - Chart.js config should have `responsive: false` and `maintainAspectRatio: false`
 
