@@ -294,14 +294,41 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 
 			// Create a test subclass to access protected method.
 			$test_class = new class() extends WP_MCP_AI_Tool_Image_Base {
+				/**
+				 * Get the tool slug.
+				 *
+				 * @return string Tool slug.
+				 */
 				public function get_slug() {
 					return 'test'; }
+				/**
+				 * Get the tool name.
+				 *
+				 * @return string Tool name.
+				 */
 				public function get_name() {
 					return 'Test'; }
+				/**
+				 * Get the tool description.
+				 *
+				 * @return string Tool description.
+				 */
 				public function get_description() {
 					return 'Test'; }
+				/**
+				 * Get the parameters schema.
+				 *
+				 * @return array Parameters schema.
+				 */
 				public function get_parameters_schema() {
 					return array(); }
+				/**
+				 * Execute the tool.
+				 *
+				 * @param array $arguments Tool arguments.
+				 * @param array $context Execution context.
+				 * @return array|WP_Error Tool result.
+				 */
 				public function execute( array $arguments = array(), array $context = array() ) {
 					return array(); }
 
@@ -342,20 +369,47 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 	 * This ensures the fix doesn't break the existing behavior for external URLs.
 	 */
 	public function test_external_url_files_marked_as_temp() {
-		// We can't easily test actual HTTP downloads in unit tests,
+		// We can't easily test actual HTTP downloads in unit tests,.
 		// but we can verify that base64 data creates temp files.
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
 
 		// Create a test subclass.
 		$test_class = new class() extends WP_MCP_AI_Tool_Image_Base {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test'; }
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test'; }
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Test'; }
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(); }
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(); }
 
@@ -498,14 +552,41 @@ class Test_Edit_Gemini_Image_Local_URL extends WP_UnitTestCase {
 
 			// Create a test subclass to access protected method.
 			$test_class = new class() extends WP_MCP_AI_Tool_Image_Base {
+				/**
+				 * Get the tool slug.
+				 *
+				 * @return string Tool slug.
+				 */
 				public function get_slug() {
 					return 'test'; }
+				/**
+				 * Get the tool name.
+				 *
+				 * @return string Tool name.
+				 */
 				public function get_name() {
 					return 'Test'; }
+				/**
+				 * Get the tool description.
+				 *
+				 * @return string Tool description.
+				 */
 				public function get_description() {
 					return 'Test'; }
+				/**
+				 * Get the parameters schema.
+				 *
+				 * @return array Parameters schema.
+				 */
 				public function get_parameters_schema() {
 					return array(); }
+				/**
+				 * Execute the tool.
+				 *
+				 * @param array $arguments Tool arguments.
+				 * @param array $context Execution context.
+				 * @return array|WP_Error Tool result.
+				 */
 				public function execute( array $arguments = array(), array $context = array() ) {
 					return array(); }
 

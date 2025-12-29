@@ -7,7 +7,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class Test_Gemini_Image_Pattern_Consistency extends WP_UnitTestCase {
 	/**
 	 * Test that both tools use the same default model.

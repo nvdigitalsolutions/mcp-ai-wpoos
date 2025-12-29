@@ -36,7 +36,7 @@ interface WP_MCP_AI_Tool_Async_Metadata_Interface {
 	 * array(
 	 *     'expected_url'      => 'https://example.com/wp-content/uploads/2025/11/veo-video-abc123.mp4',
 	 *     'expected_filename' => 'veo-video-abc123.mp4',
-	 *     'estimated_time'    => 300, // seconds
+	 *     'estimated_time'    => 300, // seconds.
 	 * )
 	 *
 	 * @param string $job_id    The async job identifier.

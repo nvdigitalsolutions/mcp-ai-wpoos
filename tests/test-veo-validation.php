@@ -84,7 +84,7 @@ class WP_MCP_AI_Veo_Validation_Test extends WP_UnitTestCase {
 	 * Note: This only tests parameter validation, not actual API calls.
 	 */
 	public function test_720p_accepts_various_durations() {
-		// We can't test the full flow without an API key, but we can verify
+		// We can't test the full flow without an API key, but we can verify.
 		// that valid 720p parameters pass the initial validation step.
 		$valid_params = array(
 			array(

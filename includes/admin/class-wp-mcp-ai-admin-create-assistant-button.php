@@ -42,7 +42,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		</style>
 		<script type="text/javascript">
 			jQuery(document).ready(function($) {
-				// Add link button after the page title that navigates to the Build Assistant page
+				// Add link button after the page title that navigates to the Build Assistant page.
 				var button = '<a href="<?php echo esc_url( $build_assistant_url ); ?>" class="page-title-action wp-mcp-ai-create-assistant-btn"><?php echo esc_js( __( 'Build AI Assistant', 'wp-mcp-ai' ) ); ?></a>';
 				$('.wrap h1.wp-heading-inline').after(button);
 			});

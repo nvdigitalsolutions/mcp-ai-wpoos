@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for tool slug integrity tests.
+ *
  * @group tool-registry
  * @group tool-integrity
  */
@@ -32,8 +34,8 @@ class WP_MCP_AI_Tool_Slug_Integrity_Tests extends WP_UnitTestCase {
 			$class_name = get_class( $tool );
 			$slug       = $tool->get_slug();
 
-			// Convert class name to expected slug
-			// WP_MCP_AI_Tool_Send_Group_Email -> send_group_email
+			// Convert class name to expected slug.
+			// WP_MCP_AI_Tool_Send_Group_Email -> send_group_email.
 			$expected_slug = $this->class_name_to_slug( $class_name );
 
 			if ( $slug !== $expected_slug ) {

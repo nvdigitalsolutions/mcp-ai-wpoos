@@ -695,7 +695,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$model            = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : 'unknown-model';
 
 			// Build a minimal response payload for the recorder.
-			// Since this is just saving a conversation without a new response,
+			// Since this is just saving a conversation without a new response,.
 			// we create a synthetic response payload.
 			$response = array(
 				'model'   => $model,
@@ -1024,9 +1024,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// for security reasons (safe mode, disable_functions in php.ini).
 			// Silencing errors because set_time_limit may trigger:
 			// - Warning when disabled in php.ini (disable_functions)
-			// - Warning when safe mode is enabled
-			// - Warning when running as Apache module with certain configurations
-			// These warnings are expected and can be safely ignored as we're providing
+			// - Warning when safe mode is enabled.
+			// - Warning when running as Apache module with certain configurations.
+			// These warnings are expected and can be safely ignored as we're providing.
 			// a best-effort timeout extension for SSE streaming.
 			if ( function_exists( 'set_time_limit' ) ) {
 				@set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
@@ -1039,10 +1039,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Trigger WordPress cron to ensure async jobs continue processing.
 				// WordPress cron only runs on page loads by default. When a client
-				// is waiting on an SSE connection, no new page loads occur, so cron
+				// is waiting on an SSE connection, no new page loads occur, so cron.
 				// jobs (including veo video polling) may not run. Calling spawn_cron()
 				// ensures any scheduled cron events execute, allowing the job to progress.
-				// We call this periodically (every heartbeat interval) to balance
+				// We call this periodically (every heartbeat interval) to balance.
 				// responsiveness with avoiding excessive cron triggers.
 				// Note: spawn_cron() is non-blocking and returns quickly; failures
 				// are silently ignored to prevent disrupting the SSE polling loop.
@@ -1936,7 +1936,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
-			// This enables the diagnostic page to test MCP endpoint connectivity without requiring
+			// This enables the diagnostic page to test MCP endpoint connectivity without requiring.
 			// bearer tokens for internal REST API calls made via rest_do_request().
 			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
 				// Verify this is an internal request (not from external source).
@@ -2803,7 +2803,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return absint( $assistant_config['max_agentic_iterations'] );
 			}
 
-			// If admin setting was applied by custom filters applicator (priority 5),
+			// If admin setting was applied by custom filters applicator (priority 5),.
 			// it will be in $default_max. Only use chat client default if $default_max
 			// is still the base default (5 for /chat endpoint).
 			// This allows admin setting to override the chat client default.
@@ -2993,7 +2993,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Check if this is an async pending result (background-only tools like video generation).
 					// When a tool returns {async: true, status: 'pending'}, we need to exit the agentic loop
 					// after processing this iteration. The frontend will handle polling for the async result.
-					// Continuing to call the LLM with a pending status would cause issues since the LLM
+					// Continuing to call the LLM with a pending status would cause issues since the LLM.
 					// doesn't understand async job states and might try to call the same tool again.
 					if ( is_array( $tool_result ) && ! empty( $tool_result['async'] ) && 'pending' === ( $tool_result['status'] ?? '' ) ) {
 						$has_async_pending_result = true;
@@ -4550,7 +4550,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				// No valid associated assistant - return 0 to allow profession-only testing.
-				// The profession will be treated as a temporary primary role, using the same
+				// The profession will be treated as a temporary primary role, using the same.
 				// logic that assistants use when they have primary roles assigned.
 				return 0;
 			}
@@ -6690,8 +6690,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				// Filter out response messages that are already present in the conversation.
-				// This prevents duplicates when transcripts are manually saved via the chat client,
-				// where all messages (including assistant responses) are stored in request_payload,
+				// This prevents duplicates when transcripts are manually saved via the chat client,.
+				// where all messages (including assistant responses) are stored in request_payload,.
 				// and assistant messages are also constructed into response_payload.
 				$filtered_response_messages = $this->filter_duplicate_messages( $messages, $response_messages );
 
@@ -7434,9 +7434,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$has_image_content = $this->message_has_image_content( $message );
 
 				// Skip messages with empty content, except:
-				// - tool role messages (required for tool responses)
-				// - system role messages (can be empty for context)
-				// - assistant role messages with tool_calls (required for agentic flow)
+				// - tool role messages (required for tool responses).
+				// - system role messages (can be empty for context).
+				// - assistant role messages with tool_calls (required for agentic flow).
 				// - messages with image content (required to preserve images in chat).
 				$has_tool_calls = 'assistant' === $role && isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) && ! empty( $message['tool_calls'] );
 
@@ -7457,7 +7457,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'content' => $content,
 				);
 
-				// If message has image content, preserve the original content structure
+				// If message has image content, preserve the original content structure.
 				// instead of the extracted text (which would be empty for image-only messages).
 				if ( $has_image_content && isset( $message['content'] ) ) {
 					$message_entry['content'] = $message['content'];
@@ -7553,7 +7553,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'content' => $content,
 						);
 
-						// If message has image content, preserve the original content structure
+						// If message has image content, preserve the original content structure.
 						// instead of the extracted text (which would be empty for image-only messages).
 						if ( $has_image_content && isset( $choice['message']['content'] ) ) {
 							$message_entry['content'] = $choice['message']['content'];
@@ -8150,7 +8150,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Extract tool_call_id if available (from OpenAI/Gemini tool calls).
-			// This is critical for async tools to preserve the original tool_call_id
+			// This is critical for async tools to preserve the original tool_call_id.
 			// in their completion responses instead of generating a new one.
 			$tool_call_id = isset( $tool_call['id'] ) ? sanitize_text_field( $tool_call['id'] ) : '';
 
@@ -8167,7 +8167,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 
 			// Add tool_call_id to context if available.
-			// This ensures async jobs can preserve the original tool_call_id for proper
+			// This ensures async jobs can preserve the original tool_call_id for proper.
 			// correlation with the LLM's tool call requests.
 			if ( '' !== $tool_call_id ) {
 				$context['tool_call_id'] = $tool_call_id;
@@ -8192,7 +8192,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Filter arguments to only include parameters defined in the tool's schema.
-			// This prevents "Invalid parameter(s)" errors when AI providers include extra
+			// This prevents "Invalid parameter(s)" errors when AI providers include extra.
 			// parameters like 'messages' that aren't in the tool's schema.
 			$arguments = $this->filter_tool_arguments_by_schema( $tool, $arguments );
 
@@ -8202,9 +8202,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$should_async = $orchestrator->should_execute_async( $tool, $arguments, $context );
 
 			// CRITICAL: Force synchronous execution in agentic loop for most tools.
-			// Async tools must complete before the loop continues to ensure the LLM
+			// Async tools must complete before the loop continues to ensure the LLM.
 			// receives actual results, not pending status. Without this, the agentic
-			// loop would continue with pending tool results, and the final LLM response
+			// loop would continue with pending tool results, and the final LLM response.
 			// would not include the actual tool output (e.g., generated image links).
 			//
 			// EXCEPTION: Some tools (like video generation) take so long (60-120s) that
@@ -8321,7 +8321,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 
 					// Check if tool provides pre-execution metadata for async responses.
-					// This allows tools like video generation to provide expected_url and expected_filename
+					// This allows tools like video generation to provide expected_url and expected_filename.
 					// so the UI can display a placeholder before the actual result is ready.
 					if ( $tool instanceof WP_MCP_AI_Tool_Async_Metadata_Interface ) {
 						$async_metadata = $tool->get_async_pending_metadata( $job_id, $arguments, $context );
@@ -8348,7 +8348,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Execute tool synchronously (either not async-capable or async queueing failed).
 			// Orchestration Layer: Wrap in try-catch to handle budget enforcement and timeouts.
 			try {
-				// Set execution time limit for synchronous tool execution in agentic loop
+				// Set execution time limit for synchronous tool execution in agentic loop.
 				// to prevent PHP timeout. Default WordPress limit is 30s, we allow up to 60s
 				// for tools that might take longer (like image generation).
 				if ( ! empty( $context['agentic_loop'] ) ) {
@@ -8376,11 +8376,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$error_code = $result->get_error_code();
 					$is_pending = $is_pending || 'wp_mcp_ai_search_pending' === $error_code;
 
-					// In agentic loop, if sync execution failed and tool supports async,
-					// provide helpful error message instead of returning WP_Error object
+					// In agentic loop, if sync execution failed and tool supports async,.
+					// provide helpful error message instead of returning WP_Error object.
 					// which would break the conversation flow.
 					if ( ! empty( $context['agentic_loop'] ) ) {
-						// For pending statuses, return an informational message that guides the LLM
+						// For pending statuses, return an informational message that guides the LLM.
 						// to use alternative sources rather than treating it as a hard failure.
 						// This prevents the LLM from telling users "the search isn't working.".
 						if ( $is_pending ) {
@@ -8427,7 +8427,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
-				// In agentic loop, provide a graceful error message that the LLM can understand
+				// In agentic loop, provide a graceful error message that the LLM can understand.
 				// and potentially work around, rather than breaking the conversation flow.
 				if ( ! empty( $context['agentic_loop'] ) ) {
 					return sprintf(
@@ -8812,7 +8812,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				// For other objects, use get_object_vars() to avoid exposing private/protected properties.
-				// This provides only public properties and avoids mangled property names like '\0ClassName\0propertyName'
+				// This provides only public properties and avoids mangled property names like '\0ClassName\0propertyName'.
 				// that can occur when casting objects with private/protected properties to arrays.
 				// For stdClass and simple objects, this works well. For complex objects with magic methods
 				// or ArrayAccess, they should be handled in specific cases above.

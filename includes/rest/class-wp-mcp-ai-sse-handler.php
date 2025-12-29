@@ -132,7 +132,7 @@ class WP_MCP_AI_SSE_Handler {
 		echo 'data: ' . $json_data . "\n\n";
 
 		// Force flush to send data immediately.
-		// ob_flush() must be called before flush() to ensure PHP output buffers
+		// ob_flush() must be called before flush() to ensure PHP output buffers.
 		// are flushed to the system buffer, which flush() then sends to the client.
 		if ( ob_get_level() > 0 && function_exists( 'ob_flush' ) ) {
 			ob_flush();
@@ -153,7 +153,7 @@ class WP_MCP_AI_SSE_Handler {
 		echo "data: [DONE]\n\n";
 
 		// Force flush to send data immediately.
-		// ob_flush() must be called before flush() to ensure PHP output buffers
+		// ob_flush() must be called before flush() to ensure PHP output buffers.
 		// are flushed to the system buffer, which flush() then sends to the client.
 		if ( ob_get_level() > 0 && function_exists( 'ob_flush' ) ) {
 			ob_flush();
@@ -209,7 +209,7 @@ class WP_MCP_AI_SSE_Handler {
 		}
 
 		// Always return false if not explicitly requested.
-		// Do NOT check Accept header - LM Studio and other MCP clients
+		// Do NOT check Accept header - LM Studio and other MCP clients.
 		// send "Accept: text/event-stream" but expect JSON responses.
 		return false;
 	}

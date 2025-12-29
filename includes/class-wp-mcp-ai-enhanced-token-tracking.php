@@ -419,7 +419,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 
 		// Define tool patterns that indicate specific providers.
 		// IMPORTANT: Only include tools that EXPLICITLY use Gemini (have "gemini" in tool name).
-		// Tools like analyze_comment_content can use either OpenAI or Gemini based on settings,
+		// Tools like analyze_comment_content can use either OpenAI or Gemini based on settings,.
 		// so we should NOT migrate them as they might legitimately use OpenAI.
 		$provider_patterns = array(
 			'gemini' => array(

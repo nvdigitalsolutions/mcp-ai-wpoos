@@ -6,10 +6,15 @@
  */
 
 /**
+ * Test class for crawler coordinator.
+ *
  * @group crawler
  */
 class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -18,6 +23,9 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'wp_mcp_ai_crawl4ai_job_%'" );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		// Clear all cron events.
 		$timestamp = wp_next_scheduled( WP_MCP_AI_Crawler::CRON_HOOK, array( 'test_task_123' ) );

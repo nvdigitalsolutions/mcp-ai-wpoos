@@ -17,7 +17,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * Maximum size for base knowledge documents (in bytes).
 	 * OpenAI has a 512MB limit per file, but we'll use 10MB as a safe default.
 	 */
-	const MAX_DOCUMENT_SIZE = 10485760; // 10MB
+	const MAX_DOCUMENT_SIZE = 10485760; // 10MB.
 
 	/**
 	 * Maximum number of documents per assistant.

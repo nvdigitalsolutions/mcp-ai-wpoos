@@ -406,7 +406,7 @@ class Test_Veo_Job_Notifier_Integration extends WP_UnitTestCase {
 		do_action(
 			'wp_mcp_ai_job_progress',
 			$job_id,
-			20.0, // 20% progress
+			20.0, // 20% progress.
 			array(
 				'tool'         => 'generate_veo_video',
 				'status'       => 'polling',

@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for master key rotation tests.
+ *
  * @group encryption
  * @group security
  * @group key-rotation
@@ -19,6 +21,9 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 	 */
 	protected $test_posts = array();
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -29,6 +34,9 @@ class WP_MCP_AI_Master_Key_Rotation_Tests extends WP_UnitTestCase {
 		$this->test_posts = array();
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		// Clean up test posts.
 		foreach ( $this->test_posts as $post_id ) {

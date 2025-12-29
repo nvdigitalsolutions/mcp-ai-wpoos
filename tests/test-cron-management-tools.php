@@ -1,4 +1,10 @@
 <?php
+/**
+ * Cron Management Tools
+ *
+ * @package WP_MCP_AI
+ */
+
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-cron-job.php';
@@ -76,7 +82,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 		$hook2    = 'wp_mcp_ai_test_job_2';
 		$future   = time() + HOUR_IN_SECONDS;
 
-		// Create two jobs
+		// Create two jobs.
 		$create_tool = new WP_MCP_AI_Tool_Create_Cron_Job();
 		$create_tool->execute(
 			array(
@@ -95,7 +101,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 			array( 'user_id' => $admin_id )
 		);
 
-		// List jobs
+		// List jobs.
 		$list_tool = new WP_MCP_AI_Tool_List_Cron_Jobs();
 		$result    = $list_tool->execute(
 			array(),
@@ -106,7 +112,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 		$this->assertSame( 2, $result['count'] );
 		$this->assertCount( 2, $result['jobs'] );
 
-		// Check that jobs have required fields
+		// Check that jobs have required fields.
 		foreach ( $result['jobs'] as $job ) {
 			$this->assertArrayHasKey( 'job_id', $job );
 			$this->assertArrayHasKey( 'hook', $job );
@@ -117,7 +123,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'next_run_formatted', $job );
 		}
 
-		// Verify hooks
+		// Verify hooks.
 		$hooks = array_column( $result['jobs'], 'hook' );
 		$this->assertContains( $hook1, $hooks );
 		$this->assertContains( $hook2, $hooks );
@@ -180,7 +186,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 		$args     = array( 'key' => 'value' );
 		$future   = time() + HOUR_IN_SECONDS;
 
-		// Create a job
+		// Create a job.
 		$create_tool = new WP_MCP_AI_Tool_Create_Cron_Job();
 		$created     = $create_tool->execute(
 			array(
@@ -194,12 +200,12 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $created );
 
-		// Get the job ID from the cron manager
+		// Get the job ID from the cron manager.
 		$jobs   = WP_MCP_AI_Cron_Manager::get_jobs();
 		$job    = array_shift( $jobs );
 		$job_id = $job['job_id'];
 
-		// Get job details
+		// Get job details.
 		$get_tool = new WP_MCP_AI_Tool_Get_Cron_Job();
 		$result   = $get_tool->execute(
 			array( 'job_id' => $job_id ),
@@ -275,7 +281,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 		$hook     = 'wp_mcp_ai_deletable_job';
 		$future   = time() + HOUR_IN_SECONDS;
 
-		// Create a job
+		// Create a job.
 		$create_tool = new WP_MCP_AI_Tool_Create_Cron_Job();
 		$created     = $create_tool->execute(
 			array(
@@ -287,17 +293,17 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $created );
 
-		// Verify job exists
+		// Verify job exists.
 		$jobs_before = WP_MCP_AI_Cron_Manager::get_jobs();
 		$this->assertCount( 1, $jobs_before );
 		$job    = array_shift( $jobs_before );
 		$job_id = $job['job_id'];
 
-		// Verify it's scheduled in WP-Cron
+		// Verify it's scheduled in WP-Cron.
 		$scheduled = wp_next_scheduled( $hook, array() );
 		$this->assertNotFalse( $scheduled );
 
-		// Delete the job
+		// Delete the job.
 		$delete_tool = new WP_MCP_AI_Tool_Delete_Cron_Job();
 		$result      = $delete_tool->execute(
 			array( 'job_id' => $job_id ),
@@ -308,11 +314,11 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 		$this->assertSame( $job_id, $result['job_id'] );
 		$this->assertSame( $hook, $result['hook'] );
 
-		// Verify job is removed from manager
+		// Verify job is removed from manager.
 		$jobs_after = WP_MCP_AI_Cron_Manager::get_jobs();
 		$this->assertEmpty( $jobs_after );
 
-		// Verify it's unscheduled from WP-Cron
+		// Verify it's unscheduled from WP-Cron.
 		$scheduled_after = wp_next_scheduled( $hook, array() );
 		$this->assertFalse( $scheduled_after );
 	}
@@ -396,7 +402,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 		$hook     = 'wp_mcp_ai_creator_test';
 		$future   = time() + HOUR_IN_SECONDS;
 
-		// Create a job
+		// Create a job.
 		$create_tool = new WP_MCP_AI_Tool_Create_Cron_Job();
 		$create_tool->execute(
 			array(
@@ -406,7 +412,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 			array( 'user_id' => $admin_id )
 		);
 
-		// List jobs
+		// List jobs.
 		$list_tool = new WP_MCP_AI_Tool_List_Cron_Jobs();
 		$result    = $list_tool->execute(
 			array(),
@@ -426,7 +432,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 		$hook     = 'wp_mcp_ai_recurring_delete';
 		$future   = time() + HOUR_IN_SECONDS;
 
-		// Create a recurring job
+		// Create a recurring job.
 		$create_tool = new WP_MCP_AI_Tool_Create_Cron_Job();
 		$create_tool->execute(
 			array(
@@ -437,16 +443,16 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 			array( 'user_id' => $admin_id )
 		);
 
-		// Verify it's scheduled
+		// Verify it's scheduled.
 		$scheduled = wp_next_scheduled( $hook, array() );
 		$this->assertNotFalse( $scheduled );
 
-		// Get job ID
+		// Get job ID.
 		$jobs   = WP_MCP_AI_Cron_Manager::get_jobs();
 		$job    = array_shift( $jobs );
 		$job_id = $job['job_id'];
 
-		// Delete the job
+		// Delete the job.
 		$delete_tool = new WP_MCP_AI_Tool_Delete_Cron_Job();
 		$result      = $delete_tool->execute(
 			array( 'job_id' => $job_id ),
@@ -455,7 +461,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 
 		$this->assertNotWPError( $result );
 
-		// Verify it's completely removed from WP-Cron
+		// Verify it's completely removed from WP-Cron.
 		$scheduled_after = wp_next_scheduled( $hook, array() );
 		$this->assertFalse( $scheduled_after );
 	}
@@ -473,14 +479,14 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $schema );
 		$this->assertArrayHasKey( 'properties', $schema );
 
-		// Encode the schema to JSON
+		// Encode the schema to JSON.
 		$json = wp_json_encode( $schema );
 
-		// Verify properties is encoded as {} not []
+		// Verify properties is encoded as {} not [].
 		$this->assertStringContainsString( '"properties":{}', $json );
 		$this->assertStringNotContainsString( '"properties":[]', $json );
 
-		// Also verify when decoded and re-encoded it stays as object
+		// Also verify when decoded and re-encoded it stays as object.
 		$decoded   = json_decode( $json );
 		$reencoded = wp_json_encode( $decoded );
 		$this->assertStringContainsString( '"properties":{}', $reencoded );

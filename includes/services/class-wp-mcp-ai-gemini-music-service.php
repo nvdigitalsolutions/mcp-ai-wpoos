@@ -33,7 +33,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 	/**
 	 * Maximum duration in seconds.
 	 */
-	const MAX_DURATION = 300; // 5 minutes
+	const MAX_DURATION = 300; // 5 minutes.
 
 	/**
 	 * Default BPM (beats per minute).

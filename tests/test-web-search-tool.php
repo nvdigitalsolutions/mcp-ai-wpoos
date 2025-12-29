@@ -1,4 +1,10 @@
 <?php
+/**
+ * Web Search Tool
+ *
+ * @package WP_MCP_AI
+ */
+
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.php';
 
 /**
@@ -668,17 +674,17 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 
 		remove_filter( 'pre_http_request', $http_stub, 10 );
 
-		// Should receive WP_Error with pending status immediately
+		// Should receive WP_Error with pending status immediately.
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_search_pending', $result->get_error_code() );
 
-		// Should make only 1 request (no retries)
+		// Should make only 1 request (no retries).
 		$this->assertSame( 1, $request_count, 'Should make only 1 HTTP request without retries' );
 
-		// Should return quickly (< 15 seconds for network request + processing)
+		// Should return quickly (< 15 seconds for network request + processing).
 		$this->assertLessThan( 15.0, $elapsed_time, 'Should return immediately without blocking retries' );
 
-		// Verify retry_after is passed through for orchestration layer
+		// Verify retry_after is passed through for orchestration layer.
 		$data = $result->get_error_data();
 		$this->assertIsArray( $data );
 		$this->assertSame( '5', $data['retry_after'] );
@@ -700,7 +706,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		$http_stub = static function ( $preempt, $args, $url ) use ( &$request_count ) {
 			++$request_count;
 
-			// Return success immediately
+			// Return success immediately.
 			return array(
 				'response' => array(
 					'code' => 200,
@@ -730,16 +736,16 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 
 		remove_filter( 'pre_http_request', $http_stub, 10 );
 
-		// Should succeed with results
+		// Should succeed with results.
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'results', $result );
 		$this->assertArrayHasKey( 'query', $result );
 		$this->assertSame( 'test successful search', $result['query'] );
 
-		// Should have made exactly 1 request
+		// Should have made exactly 1 request.
 		$this->assertSame( 1, $request_count, 'Should make only 1 HTTP request' );
 
-		// Should return quickly (< 15 seconds for network request + processing)
+		// Should return quickly (< 15 seconds for network request + processing).
 		$this->assertLessThan( 15.0, $elapsed_time, 'Should return immediately on successful response' );
 	}
 

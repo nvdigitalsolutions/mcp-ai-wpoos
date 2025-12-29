@@ -8,7 +8,6 @@
  * @package WP_MCP_AI
  * @subpackage Tests
  */
-
 class Test_REST_Teams_Controller extends WP_UnitTestCase {
 
 	use WP_MCP_AI_REST_Test_Helper;

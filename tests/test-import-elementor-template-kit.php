@@ -172,7 +172,7 @@ class WP_MCP_AI_Import_Elementor_Template_Kit_Test extends WP_UnitTestCase {
 			array( 'user_id' => $subscriber_id )
 		);
 
-		// The error will be elementor_missing (checked first) in test environment,
+		// The error will be elementor_missing (checked first) in test environment,.
 		// but in production with Elementor, it would be forbidden for subscribers.
 		$this->assertInstanceOf( 'WP_Error', $result );
 	}

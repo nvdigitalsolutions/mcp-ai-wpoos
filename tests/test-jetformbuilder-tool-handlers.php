@@ -2,7 +2,6 @@
 /**
  * Tests covering JetFormBuilder REST dispatch via the MCP integration layer.
  */
-
 class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 
 	/**
@@ -19,6 +18,9 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 	 */
 	protected $user_id;
 
+	/**
+	 * Set up test environment.
+	 */
 	protected function setUp(): void {
 		parent::setUp();
 
@@ -30,6 +32,9 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
 		$this->register_mock_routes();
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	protected function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_jetformbuilder_is_available', '__return_true' );
 		self::$routes_registered = false;

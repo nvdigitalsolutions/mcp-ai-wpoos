@@ -1,4 +1,10 @@
 <?php
+/**
+ * Generate Simple Jwt Token Tool
+ *
+ * @package WP_MCP_AI
+ */
+
 namespace SimpleJWTLogin\Modules\Settings {
 	if ( ! class_exists( __NAMESPACE__ . '\\AuthenticationSettings' ) ) {
 		class AuthenticationSettings {
@@ -90,6 +96,9 @@ namespace {
 	use SimpleJWTLogin\Services\AuthenticateService;
 
 	class WP_MCP_AI_Generate_Simple_JWT_Token_Tool_Test extends WP_UnitTestCase {
+		/**
+		 * Set up test environment.
+		 */
 		protected function setUp(): void {
 			parent::setUp();
 
@@ -107,6 +116,9 @@ namespace {
 			remove_all_actions( 'wp_mcp_ai_simple_jwt_login_tool_token_generated' );
 		}
 
+		/**
+		 * Tear down test environment.
+		 */
 		protected function tearDown(): void {
 			wp_set_current_user( 0 );
 

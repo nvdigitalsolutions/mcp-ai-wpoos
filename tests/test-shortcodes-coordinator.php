@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for shortcodes coordinator tests.
+ *
  * @group shortcodes-coordinator
  */
 class WP_MCP_AI_Shortcodes_Coordinator_Tests extends WP_UnitTestCase {

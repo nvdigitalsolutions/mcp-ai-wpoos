@@ -10,22 +10,49 @@
  * Mock tool with broken schema for testing error handling.
  */
 class WP_MCP_AI_Mock_Broken_Schema_Tool implements WP_MCP_AI_Tool_Interface {
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string Tool slug.
+	 */
 	public function get_slug() {
 		return 'broken_schema_tool';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string Tool name.
+	 */
 	public function get_name() {
 		return 'Broken Schema Tool';
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string Tool description.
+	 */
 	public function get_description() {
 		return 'A test tool that throws an exception when get_parameters_schema() is called';
 	}
 
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array Parameters schema.
+	 */
 	public function get_parameters_schema() {
 		throw new Exception( 'Simulated schema generation error' );
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context Execution context.
+	 * @return array|WP_Error Tool result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		return array( 'success' => true );
 	}
@@ -35,23 +62,50 @@ class WP_MCP_AI_Mock_Broken_Schema_Tool implements WP_MCP_AI_Tool_Interface {
  * Mock tool that returns invalid schema (not an array).
  */
 class WP_MCP_AI_Mock_Invalid_Schema_Tool implements WP_MCP_AI_Tool_Interface {
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string Tool slug.
+	 */
 	public function get_slug() {
 		return 'invalid_schema_tool';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string Tool name.
+	 */
 	public function get_name() {
 		return 'Invalid Schema Tool';
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string Tool description.
+	 */
 	public function get_description() {
 		return 'A test tool that returns an invalid schema';
 	}
 
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array Parameters schema.
+	 */
 	public function get_parameters_schema() {
 		// Return a string instead of an array - invalid.
 		return 'this should be an array';
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context Execution context.
+	 * @return array|WP_Error Tool result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		return array( 'success' => true );
 	}
@@ -61,18 +115,38 @@ class WP_MCP_AI_Mock_Invalid_Schema_Tool implements WP_MCP_AI_Tool_Interface {
  * Mock tool that works correctly.
  */
 class WP_MCP_AI_Mock_Working_Tool implements WP_MCP_AI_Tool_Interface {
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string Tool slug.
+	 */
 	public function get_slug() {
 		return 'working_tool';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string Tool name.
+	 */
 	public function get_name() {
 		return 'Working Tool';
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string Tool description.
+	 */
 	public function get_description() {
 		return 'A test tool that works correctly';
 	}
 
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array Parameters schema.
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -85,6 +159,13 @@ class WP_MCP_AI_Mock_Working_Tool implements WP_MCP_AI_Tool_Interface {
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context Execution context.
+	 * @return array|WP_Error Tool result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		return array( 'success' => true );
 	}
@@ -116,6 +197,9 @@ class WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
 	 */
 	protected $registry;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -150,6 +234,9 @@ class WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_assistant_config', $config );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		// Unregister test tools to prevent interference with other tests.
 		$this->registry->unregister_tool( 'broken_schema_tool' );

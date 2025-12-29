@@ -375,14 +375,14 @@ class WP_MCP_AI_Gemini_Schema_Type_Inference_Test extends WP_UnitTestCase {
 										),
 										'value'  => array(
 											'description' => 'Filter value - no type',
-											// No type, items, or properties - should default to string
+											// No type, items, or properties - should default to string.
 										),
 										'values' => array(
 											'description' => 'Multiple values',
 											'items'       => array(
 												'type' => 'string',
 											),
-											// Has items but no type - should infer array
+											// Has items but no type - should infer array.
 										),
 									),
 								),

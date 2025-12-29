@@ -218,7 +218,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Fire action hook for non-agentic contexts (e.g., standalone tool API calls).
-		// In agentic loop contexts, the result is already handled by the orchestration layer
+		// In agentic loop contexts, the result is already handled by the orchestration layer.
 		// which sends it as a tool_result SSE event and adds it to the conversation.
 		// Firing this action in agentic contexts would cause duplicate/conflicting events.
 		$is_agentic_loop = ! empty( $context[ self::CONTEXT_AGENTIC_LOOP ] );
@@ -373,7 +373,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		// Note: retry_after is kept as string to match HTTP header format and test expectations.
 		$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
 
-		// Build an informative message that maintains backward compatibility with tests
+		// Build an informative message that maintains backward compatibility with tests.
 		$message = __(
 			'The web search service is temporarily processing your request. Please try alternative information sources or retry in a few moments.',
 			'wp-mcp-ai'
@@ -439,7 +439,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		if ( is_wp_error( $response ) ) {
-			// If it's a pending response, return it as-is for orchestration layer
+			// If it's a pending response, return it as-is for orchestration layer.
 			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code() ) {
 				return $response;
 			}
@@ -602,7 +602,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		if ( is_wp_error( $response ) ) {
-			// If it's a pending response, return it as-is for orchestration layer
+			// If it's a pending response, return it as-is for orchestration layer.
 			if ( 'wp_mcp_ai_search_pending' === $response->get_error_code() ) {
 				return $response;
 			}
@@ -859,7 +859,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'network-dependent',    // Requires internet connectivity.
 			'non-deterministic',    // Results may vary over time.
 			// Note: 'may-timeout' and 'async' flags are intentionally NOT included.
-			// This tool executes a single synchronous HTTP request with a 10-second timeout
+			// This tool executes a single synchronous HTTP request with a 10-second timeout.
 			// and completes quickly in normal conditions. When external search APIs return
 			// HTTP 202 (pending), the error is returned to the caller for handling.
 		);
@@ -923,7 +923,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Generate descriptive text for the LLM.
-		// This is created here rather than in the base result to prevent
+		// This is created here rather than in the base result to prevent.
 		// it from being extracted during SSE streaming fallback text extraction.
 		$text = $this->generate_result_text( $result );
 		if ( '' !== $text ) {
@@ -931,7 +931,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Include a condensed version of results (just titles and URLs, no snippets).
-		// This gives the LLM enough context to reference specific results if needed
+		// This gives the LLM enough context to reference specific results if needed.
 		// while dramatically reducing token usage.
 		if ( ! empty( $result['results'] ) && is_array( $result['results'] ) ) {
 			$condensed_results = array();
@@ -1029,7 +1029,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Remove invalid UTF-8 sequences from the source string.
-		// The iconv IGNORE flag skips any bytes that are not valid in the source encoding (UTF-8),
+		// The iconv IGNORE flag skips any bytes that are not valid in the source encoding (UTF-8),.
 		// effectively removing malformed UTF-8 sequences while preserving valid characters.
 		$sanitized = iconv( 'UTF-8', 'UTF-8//IGNORE', $string );
 

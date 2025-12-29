@@ -41,22 +41,45 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 		$mock_tool  = new class( $veo_job_id ) implements WP_MCP_AI_Tool_Interface {
 			private $veo_job_id;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $veo_job_id ) {
 				$this->veo_job_id = $veo_job_id;
 			}
 
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'generate_veo_video';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Generate Video with Veo';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Generates videos using Veo';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -70,8 +93,15 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
-				// Simulate veo service's queue_async_polling return value
+				// Simulate veo service's queue_async_polling return value.
 				// which includes the veo job ID in the message.
 				return array(
 					'async'   => true,
@@ -141,22 +171,45 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 		$mock_tool  = new class( $veo_job_id ) implements WP_MCP_AI_Tool_Interface {
 			private $veo_job_id;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $veo_job_id ) {
 				$this->veo_job_id = $veo_job_id;
 			}
 
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'generate_veo_video';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Generate Video with Veo';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Generates videos using Veo';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -164,6 +217,13 @@ class Test_Veo_Job_ID_In_Delegation_Message extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'async'   => true,

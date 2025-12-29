@@ -348,7 +348,7 @@ class Test_Chat_Transcript_Latency_Fix extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'latency_ms', $record );
 		$this->assertGreaterThan( 190, $record['latency_ms'], 'Latency should include both API calls (at least 190ms)' );
 
-		// This is the key assertion - without the fix, latency would only be ~100ms
+		// This is the key assertion - without the fix, latency would only be ~100ms.
 		// (just the first API call). With the fix, it should include both calls.
 		$this->assertGreaterThan( 150, $record['latency_ms'], 'Latency must reflect agentic loop completion, not just first API call' );
 	}

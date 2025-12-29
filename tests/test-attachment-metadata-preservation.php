@@ -7,7 +7,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_Attachment_Metadata_Preservation_Test extends WP_UnitTestCase {
 
 	/**

@@ -6,7 +6,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class Test_Veo_Response_Structure extends WP_UnitTestCase {
 
 	/**
@@ -25,7 +24,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
 		$this->service = new WP_MCP_AI_Gemini_Video_Generation_Service();
 
-		// Set up mock API key
+		// Set up mock API key.
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
@@ -41,7 +40,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 	 * response.generateVideoResponse.generatedSamples[0].video.uri
 	 */
 	public function test_process_completed_video_new_structure() {
-		// Mock the completed operation response with new structure
+		// Mock the completed operation response with new structure.
 		$result = array(
 			'done'     => true,
 			'response' => array(
@@ -64,7 +63,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 			'resolution'   => '720p',
 		);
 
-		// Mock the download function
+		// Mock the download function.
 		add_filter(
 			'pre_http_request',
 			function ( $preempt, $args, $url ) {
@@ -86,7 +85,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 
 		$processed = $method->invoke( $this->service, $result, $args );
 
-		// Verify the result
+		// Verify the result.
 		$this->assertNotWPError( $processed, 'Processing should succeed with new structure' );
 		$this->assertArrayHasKey( 'video_data', $processed );
 		$this->assertEquals( 'mock-video-data-new-structure', $processed['video_data'] );
@@ -104,7 +103,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 	 * response.predictions[0].videoUri
 	 */
 	public function test_process_completed_video_old_structure() {
-		// Mock the completed operation response with old structure
+		// Mock the completed operation response with old structure.
 		$result = array(
 			'done'     => true,
 			'response' => array(
@@ -123,7 +122,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 			'resolution'   => '720p',
 		);
 
-		// Mock the download function
+		// Mock the download function.
 		add_filter(
 			'pre_http_request',
 			function ( $preempt, $args, $url ) {
@@ -145,7 +144,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 
 		$processed = $method->invoke( $this->service, $result, $args );
 
-		// Verify the result
+		// Verify the result.
 		$this->assertNotWPError( $processed, 'Processing should succeed with old structure' );
 		$this->assertArrayHasKey( 'video_data', $processed );
 		$this->assertEquals( 'mock-video-data-old-structure', $processed['video_data'] );
@@ -162,7 +161,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 	 * Should return WP_Error when no video URI is found.
 	 */
 	public function test_process_completed_video_missing_uri() {
-		// Mock response with no video URI
+		// Mock response with no video URI.
 		$result = array(
 			'done'     => true,
 			'response' => array(
@@ -182,7 +181,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 
 		$processed = $method->invoke( $this->service, $result, $args );
 
-		// Verify error is returned
+		// Verify error is returned.
 		$this->assertWPError( $processed, 'Should return error when video URI is missing' );
 		$this->assertEquals( 'wp_mcp_ai_no_video_uri', $processed->get_error_code() );
 		$this->assertEquals( 'No video URI in completion response.', $processed->get_error_message() );
@@ -195,7 +194,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 	 * but could during a transition period), we use the new structure.
 	 */
 	public function test_process_completed_video_both_structures_prefer_new() {
-		// Mock response with both structures
+		// Mock response with both structures.
 		$result = array(
 			'done'     => true,
 			'response' => array(
@@ -220,7 +219,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 			'prompt' => 'Test video prompt',
 		);
 
-		// Mock the download function
+		// Mock the download function.
 		add_filter(
 			'pre_http_request',
 			function ( $preempt, $args, $url ) {
@@ -242,7 +241,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 
 		$processed = $method->invoke( $this->service, $result, $args );
 
-		// Verify the new structure URI is used
+		// Verify the new structure URI is used.
 		$this->assertNotWPError( $processed );
 		$this->assertEquals( 'https://example.com/video-new.mp4', $processed['video_uri'] );
 		$this->assertEquals( 'mock-video-data-new', $processed['video_data'] );
@@ -252,7 +251,7 @@ class Test_Veo_Response_Structure extends WP_UnitTestCase {
 	 * Clean up test environment.
 	 */
 	public function tearDown(): void {
-		// Remove filters
+		// Remove filters.
 		remove_all_filters( 'pre_http_request' );
 		parent::tearDown();
 	}

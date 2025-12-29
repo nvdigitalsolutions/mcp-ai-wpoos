@@ -218,7 +218,7 @@ class WP_MCP_AI_Chat_Service {
 			$finish_reason = $this->extract_finish_reason_from_response( $response );
 
 			// Exit loop if no tool calls or if model indicates completion.
-			// finish_reason of 'stop' means the model has completed its response,
+			// finish_reason of 'stop' means the model has completed its response,.
 			// even if tool_calls are present in the message (for context/history).
 			if ( empty( $tool_calls ) || 'stop' === $finish_reason ) {
 				if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
@@ -323,7 +323,7 @@ class WP_MCP_AI_Chat_Service {
 				$messages[]       = $sanitized_result;
 			}
 
-			// Extract any images from tool results and add them as a user message
+			// Extract any images from tool results and add them as a user message.
 			// so vision models can "see" them in subsequent agentic loop iterations.
 			$image_message = $this->extract_images_from_tool_results( $tool_results );
 			if ( $image_message ) {
@@ -382,7 +382,7 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		// Add the final assistant response to the conversation messages.
-		// This is critical for transcript persistence - without this, the assistant's response
+		// This is critical for transcript persistence - without this, the assistant's response.
 		// to tool results is lost when saving to local storage or CCT.
 		if ( isset( $response['choices'][0]['message'] ) && is_array( $response['choices'][0]['message'] ) ) {
 			$final_message = $response['choices'][0]['message'];
@@ -425,7 +425,7 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		// Add intermediate assistant messages with tool_calls to response for conversation state preservation.
-		// This ensures the frontend can reconstruct the full conversation history including which tools
+		// This ensures the frontend can reconstruct the full conversation history including which tools.
 		// were called and when, which is essential for agentic flow continuity and transcript storage.
 		if ( ! empty( $agentic_tool_messages ) ) {
 			$response['agentic_tool_messages'] = $agentic_tool_messages;
@@ -529,7 +529,7 @@ class WP_MCP_AI_Chat_Service {
 			);
 
 			// If tool returned async result, wait for completion in agentic loop.
-			// This prevents the LLM from seeing "pending" status and ensures it gets
+			// This prevents the LLM from seeing "pending" status and ensures it gets.
 			// the actual tool result (e.g., video URL) for proper response generation.
 			if ( $this->is_async_tool_result( $tool_result ) ) {
 				$tool_result = $this->wait_for_async_tool_completion( $tool_result['job_id'], $tool_name );
@@ -538,16 +538,16 @@ class WP_MCP_AI_Chat_Service {
 			// Format result.
 			if ( is_wp_error( $tool_result ) ) {
 				// Check if this is a pending/temporary error (e.g., HTTP 202 from web search).
-				// These should be handled differently - the LLM should know to use alternative sources
+				// These should be handled differently - the LLM should know to use alternative sources.
 				// rather than treating it as a hard failure.
 				$error_data = $tool_result->get_error_data();
 				$is_pending = is_array( $error_data ) && ! empty( $error_data['is_pending'] ) && true === $error_data['is_pending'];
 
 				if ( $is_pending ) {
 					// Convert pending error to an informational result for the LLM.
-					// This allows the LLM to gracefully handle temporary unavailability
+					// This allows the LLM to gracefully handle temporary unavailability.
 					// by using alternative information sources or general knowledge.
-					// Status is "processing" to accurately represent pending state while
+					// Status is "processing" to accurately represent pending state while.
 					// preventing LLM from reporting this as a tool failure.
 					$result_content = wp_json_encode(
 						array(
@@ -760,7 +760,7 @@ class WP_MCP_AI_Chat_Service {
 				);
 
 				// Apply tool's sanitize_for_llm to ensure result is properly formatted for agentic loop.
-				// This is critical for tools like generate_veo_video which add display structures (video_url)
+				// This is critical for tools like generate_veo_video which add display structures (video_url).
 				// and need to strip large base64 data before sending to the LLM.
 				$result = $this->apply_tool_sanitization( $result, $tool_name );
 

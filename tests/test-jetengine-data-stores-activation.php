@@ -11,6 +11,9 @@ if ( ! class_exists( 'Jet_Engine_Modules' ) ) {
 		private $active_modules = array();
 		private $modules        = array();
 
+		/**
+		 * Constructor.
+		 */
 		public function __construct() {
 			// Mock data stores module.
 			$this->modules['data-stores'] = new stdClass();
@@ -43,6 +46,9 @@ if ( ! class_exists( 'Jet_Engine' ) ) {
 	class Jet_Engine {
 		public $modules;
 
+		/**
+		 * Constructor.
+		 */
 		public function __construct() {
 			$this->modules = new Jet_Engine_Modules();
 		}

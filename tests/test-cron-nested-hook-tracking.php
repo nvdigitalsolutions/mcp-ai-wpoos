@@ -221,7 +221,7 @@ class WP_MCP_AI_Cron_Nested_Hook_Tracking_Test extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// The initial call already scheduled a poll, so this should update the existing record.
-		// Since the job_id is based on hook + args, and args contain the same task_id,
+		// Since the job_id is based on hook + args, and args contain the same task_id,.
 		// it should update the existing record rather than create a new one.
 		$method->invoke( null, $task_id, $job );
 

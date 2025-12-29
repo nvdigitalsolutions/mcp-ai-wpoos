@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for tool create chart tests.
+ *
  * @group tools
  * @group create-chart
  */
@@ -25,6 +27,9 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 	 */
 	protected $user_id;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 

@@ -215,6 +215,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Export implements WP_MCP_AI_Tool_Interface
 				$export_record->execute();
 			}
 		} catch ( Exception $e ) {
+			// Intentionally empty - error handled elsewhere.
 			error_log( 'WP MCP AI: Scheduled export failed - ' . $e->getMessage() );
 		}
 	}

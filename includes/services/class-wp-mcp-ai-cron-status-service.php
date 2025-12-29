@@ -90,7 +90,7 @@ class WP_MCP_AI_Cron_Status_Service {
 		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
 
 		// When filtering by assistant_id, only include assistant-specific jobs (async and video).
-		// Regular cron jobs from WP_MCP_AI_Cron_Manager don't have assistant_id association,
+		// Regular cron jobs from WP_MCP_AI_Cron_Manager don't have assistant_id association,.
 		// so they should only be shown when no assistant filter is applied (e.g., admin dashboard).
 		if ( null !== $assistant_id ) {
 			// Multi-widget isolation: only show jobs for this specific assistant.
@@ -556,7 +556,7 @@ class WP_MCP_AI_Cron_Status_Service {
 		$video_jobs = $this->get_video_generation_jobs( $user_id, $assistant_id );
 
 		// When filtering by assistant_id, only include assistant-specific jobs (async and video).
-		// Regular cron jobs from WP_MCP_AI_Cron_Manager don't have assistant_id association,
+		// Regular cron jobs from WP_MCP_AI_Cron_Manager don't have assistant_id association,.
 		// so they should only be shown when no assistant filter is applied (e.g., admin dashboard).
 		if ( null !== $assistant_id ) {
 			// Multi-widget isolation: only show jobs for this specific assistant.
@@ -667,7 +667,7 @@ class WP_MCP_AI_Cron_Status_Service {
 					}
 
 					// Sanitize the result before creating tool_results.
-					// This is critical for tools like generate_veo_video that rely on
+					// This is critical for tools like generate_veo_video that rely on.
 					// sanitize_for_llm() to add display structures (video_url, image_url, etc.).
 					// Without this, notifier-driven completions would have unsanitized payloads.
 					if ( isset( $result['tool_slug'] ) && ! empty( $result['tool_slug'] ) ) {
@@ -682,7 +682,7 @@ class WP_MCP_AI_Cron_Status_Service {
 						$tool_name = sanitize_text_field( $result['tool_slug'] );
 
 						// Use the original tool_call_id from context if available (stored during async queueing).
-						// This ensures the async result has the same tool_call_id that the LLM provided
+						// This ensures the async result has the same tool_call_id that the LLM provided.
 						// in the original tool call, allowing proper correlation in the chat client.
 						// If not available, generate a fallback tool_call_id for traceability.
 						$tool_call_id = '';
@@ -741,7 +741,7 @@ class WP_MCP_AI_Cron_Status_Service {
 				$result['status'] = 'failed';
 
 				// Merge error from notifier if available.
-				// Job Notifier stores errors as associative arrays (PHP) with 'message' and 'code' fields,
+				// Job Notifier stores errors as associative arrays (PHP) with 'message' and 'code' fields,.
 				// which become objects when sent to JavaScript. The chat client expects a simple string
 				// in the 'error' field. Extract the message string for 'error' and keep the full
 				// structure in 'error_data' for backward compatibility.
@@ -804,7 +804,7 @@ class WP_MCP_AI_Cron_Status_Service {
 		$user_id = absint( $user_id );
 
 		// Note: user_id can be 0 for guest users authenticated with guest tokens.
-		// The REST endpoint (handle_cron_job_details_request) already resolves the user_id
+		// The REST endpoint (handle_cron_job_details_request) already resolves the user_id.
 		// from auth context or get_current_user_id(), so we don't need to re-resolve it here.
 		// Allowing user_id = 0 enables guest users to view their own async jobs.
 
@@ -824,7 +824,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			}
 
 			// Check permissions - video jobs store user_id in args or context.
-			// When a job reuses parent ID (async_xxx), the context field from async executor
+			// When a job reuses parent ID (async_xxx), the context field from async executor.
 			// contains the user_id. Otherwise, the args field contains the user_id.
 			$job_user_id = 0;
 			if ( isset( $result['args']['user_id'] ) ) {
@@ -876,7 +876,7 @@ class WP_MCP_AI_Cron_Status_Service {
 
 			// Apply tool's sanitize_for_llm() to format result for chat client.
 			// This is critical for tools like generate_veo_video which add video_url structure.
-			// The sanitization is normally applied during sync execution but not when
+			// The sanitization is normally applied during sync execution but not when.
 			// results are retrieved from async storage.
 			$tool_slug = isset( $result['tool_slug'] ) ? $result['tool_slug'] : '';
 			if ( ! empty( $tool_slug ) ) {
@@ -886,9 +886,9 @@ class WP_MCP_AI_Cron_Status_Service {
 			// Merge Job Notifier status (completion/failure/progress).
 			$result = $this->merge_notifier_status( $result, $job_id );
 
-			// If the job is still showing as "delegated" after merging notifier status,
+			// If the job is still showing as "delegated" after merging notifier status,.
 			// check if the delegated job has completed or failed and propagate its status.
-			// This handles the case where the delegated job finished but the parent job
+			// This handles the case where the delegated job finished but the parent job.
 			// transient wasn't updated (e.g., due to timing issues or errors).
 			// Note: This only checks veo_ jobs (which don't delegate further),
 			// preventing infinite recursion.
@@ -1021,7 +1021,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			}
 
 			// For other objects, use get_object_vars() to avoid exposing private/protected properties.
-			// This provides only public properties and avoids mangled property names like '\0ClassName\0propertyName'
+			// This provides only public properties and avoids mangled property names like '\0ClassName\0propertyName'.
 			// that can occur when casting objects with private/protected properties to arrays.
 			// For stdClass and simple objects, this works well. For complex objects with magic methods
 			// or ArrayAccess, they should be handled in specific cases above.
@@ -1062,7 +1062,7 @@ class WP_MCP_AI_Cron_Status_Service {
 
 		// Only check veo_ jobs to prevent potential recursion.
 		// Veo jobs complete directly and don't delegate to other jobs.
-		// This is a critical safeguard - if delegation chains are extended
+		// This is a critical safeguard - if delegation chains are extended.
 		// in the future, explicit recursion depth limits should be added.
 		if ( 0 !== strpos( $delegated_job_id, 'veo_' ) ) {
 			return $result;

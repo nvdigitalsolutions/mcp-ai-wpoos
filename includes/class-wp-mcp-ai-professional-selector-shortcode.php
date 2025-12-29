@@ -509,7 +509,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		check_ajax_referer( 'wp-mcp-ai-professional-selector', 'nonce' );
 
 		// Get the shortcode attributes from the request.
-		// The attributes are pre-constructed in JavaScript with controlled values,
+		// The attributes are pre-constructed in JavaScript with controlled values,.
 		// so we just need to remove any potential HTML/JS injection attempts.
 		$shortcode_atts = isset( $_POST['shortcode_atts'] ) ? sanitize_text_field( wp_unslash( $_POST['shortcode_atts'] ) ) : '';
 

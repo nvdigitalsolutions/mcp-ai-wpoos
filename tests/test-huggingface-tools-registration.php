@@ -9,6 +9,8 @@
  */
 
 /**
+ * Test class for huggingface tools registration tests.
+ *
  * @group tool-registry
  * @group huggingface
  */

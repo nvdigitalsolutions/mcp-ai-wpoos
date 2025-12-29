@@ -19,7 +19,7 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
 
 		// Set max_execution_time to known value.
-		ini_set( 'max_execution_time', '30' );
+		set_time_limit( 30 );
 
 		$detector = new WP_MCP_AI_Timeout_Detection_Service();
 
@@ -42,7 +42,7 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 	public function test_custom_safety_buffer() {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
 
-		ini_set( 'max_execution_time', '60' );
+		set_time_limit( 60 );
 
 		// Use 15 second safety buffer instead of default 10.
 		$detector = new WP_MCP_AI_Timeout_Detection_Service( 15 );
@@ -58,7 +58,7 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
 
 		// Set very short max_execution_time.
-		ini_set( 'max_execution_time', '5' );
+		set_time_limit( 5 );
 
 		// With default 10 second buffer, threshold would be 5 - 10 = -5.
 		// Should enforce minimum of 5 seconds.
@@ -74,7 +74,7 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
 
 		// Set very short timeout for testing.
-		ini_set( 'max_execution_time', '2' );
+		set_time_limit( 2 );
 
 		$detector = new WP_MCP_AI_Timeout_Detection_Service( 1 ); // 1 second buffer.
 
@@ -99,7 +99,7 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 	public function test_metadata_generation() {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
 
-		ini_set( 'max_execution_time', '30' );
+		set_time_limit( 30 );
 		$detector = new WP_MCP_AI_Timeout_Detection_Service();
 
 		$metadata = $detector->get_metadata();
@@ -188,7 +188,7 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 		$detector = WP_MCP_AI_Timeout_Detection_Service::create_if_applicable( $flags, 15 );
 
 		$this->assertInstanceOf( 'WP_MCP_AI_Timeout_Detection_Service', $detector );
-		ini_set( 'max_execution_time', '60' );
+		set_time_limit( 60 );
 		$detector2 = WP_MCP_AI_Timeout_Detection_Service::create_if_applicable( $flags, 15 );
 		$this->assertEquals( 45, $detector2->get_timeout_threshold(), 'Should use custom buffer' );
 	}
@@ -221,7 +221,7 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
 
 		// Set max_execution_time to 0 (unlimited).
-		ini_set( 'max_execution_time', '0' );
+		set_time_limit( 0 );
 
 		$detector = new WP_MCP_AI_Timeout_Detection_Service();
 

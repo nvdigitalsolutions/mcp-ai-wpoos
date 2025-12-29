@@ -85,7 +85,7 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
-		// Intentionally NOT setting user_id parameter
+		// Intentionally NOT setting user_id parameter.
 		$request->set_param( 'per_page', 20 );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -143,7 +143,7 @@ class Test_Chat_Transcripts_User_ID_Param extends WP_UnitTestCase {
 
 		$this->assertSame( 200, $response->get_status(), 'User should be able to query their own transcripts with user_id parameter' );
 
-		// Now try querying as user2 with user1's ID - should fail permission check
+		// Now try querying as user2 with user1's ID - should fail permission check.
 		// unless they're an admin.
 		wp_set_current_user( $user2_id );
 

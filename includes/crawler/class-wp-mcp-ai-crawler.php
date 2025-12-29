@@ -107,7 +107,7 @@ class WP_MCP_AI_Crawler {
 			return false;
 		}
 
-		// base_url is optional for local jobs
+		// base_url is optional for local jobs.
 		$base_url = isset( $job_args['base_url'] ) ? esc_url_raw( (string) $job_args['base_url'] ) : '';
 
 		$job = array(
@@ -118,23 +118,23 @@ class WP_MCP_AI_Crawler {
 			'updated_at'   => time(),
 			'arguments'    => isset( $job_args['arguments'] ) && is_array( $job_args['arguments'] ) ? $job_args['arguments'] : array(),
 			'context'      => isset( $job_args['context'] ) && is_array( $job_args['context'] ) ? $job_args['context'] : array(),
-			'skip_polling' => true, // Flag to indicate no polling needed
+			'skip_polling' => true, // Flag to indicate no polling needed.
 		);
 
 		if ( isset( $job_args['raw_response'] ) ) {
 			$job['raw_response'] = $job_args['raw_response'];
 		}
 
-		// Save job metadata for tracking
+		// Save job metadata for tracking.
 		self::save_job( $job );
 
-		// Cache the result if provided
+		// Cache the result if provided.
 		if ( isset( $job_args['result'] ) && is_array( $job_args['result'] ) ) {
 			$result            = $job_args['result'];
 			$result['task_id'] = $task_id;
 
-			// Store when this job was registered for tracking purposes
-			// This is kept separate from crawl metadata to avoid confusion
+			// Store when this job was registered for tracking purposes.
+			// This is kept separate from crawl metadata to avoid confusion.
 			if ( ! isset( $result['metadata'] ) || ! is_array( $result['metadata'] ) ) {
 				$result['metadata'] = array();
 			}
@@ -199,7 +199,7 @@ class WP_MCP_AI_Crawler {
 			return;
 		}
 
-		// Skip polling for jobs marked as completed
+		// Skip polling for jobs marked as completed.
 		if ( ! empty( $job['skip_polling'] ) ) {
 			return;
 		}
@@ -434,7 +434,7 @@ class WP_MCP_AI_Crawler {
 			}
 
 			// Trigger WordPress cron to ensure continued polling.
-			// This is necessary because WordPress cron only runs on page loads,
+			// This is necessary because WordPress cron only runs on page loads,.
 			// and during crawl job polling, there may be no user activity.
 			spawn_cron();
 		}

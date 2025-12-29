@@ -9,6 +9,8 @@
  */
 
 /**
+ * Test class for test huggingface tools interface compliance.
+ *
  * @group tool-registry
  * @group huggingface
  * @group interface-compliance

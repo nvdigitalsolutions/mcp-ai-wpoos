@@ -76,6 +76,9 @@ class WP_MCP_AI_Elementor_Output_Buffering_Test extends WP_UnitTestCase {
 		$widget_class = new class() {
 			use WP_MCP_AI_Elementor_Text_Formatting;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct() {
 				// Constructor logic.
 			}

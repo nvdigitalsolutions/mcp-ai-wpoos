@@ -1148,22 +1148,49 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
  * Simple tool implementation for testing tool execution.
  */
 class WP_MCP_AI_Dummy_Tool implements WP_MCP_AI_Tool_Interface {
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string Tool slug.
+	 */
 	public function get_slug() {
 		return 'wp_mcp_ai_dummy_tool';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string Tool name.
+	 */
 	public function get_name() {
 		return 'Dummy Tool';
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string Tool description.
+	 */
 	public function get_description() {
 		return 'Test tool.';
 	}
 
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array Parameters schema.
+	 */
 	public function get_parameters_schema() {
 		return array();
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context Execution context.
+	 * @return array|WP_Error Tool result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		return array( 'success' => true );
 	}

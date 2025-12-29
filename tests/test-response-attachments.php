@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for response attachments tests.
+ *
  * @group response-attachments
  */
 class WP_MCP_AI_Response_Attachments_Tests extends WP_UnitTestCase {
@@ -195,8 +197,8 @@ class WP_MCP_AI_Response_Attachments_Tests extends WP_UnitTestCase {
 				$count = 0;
 				foreach ( $callbacks[10] as $callback ) {
 					if ( isset( $callback['function'] ) && is_array( $callback['function'] ) ) {
-						if ( $callback['function'][0] === 'WP_MCP_AI_Response_Attachments' &&
-							$callback['function'][1] === 'handle_chat_response' ) {
+						if ( 'WP_MCP_AI_Response_Attachments' === $callback['function'][0] &&
+							'handle_chat_response' === $callback['function'][1] ) {
 							++$count;
 						}
 					}

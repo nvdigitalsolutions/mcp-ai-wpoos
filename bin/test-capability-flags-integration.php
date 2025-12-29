@@ -14,7 +14,7 @@ if ( ! getenv( 'WP_TESTS_DIR' ) ) {
 }
 
 // Set up basic constants.
-// Script is now in bin/ directory, so plugin root is parent directory
+// Script is now in bin/ directory, so plugin root is parent directory.
 $plugin_root = dirname( __DIR__ );
 if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', $plugin_root . '/' );

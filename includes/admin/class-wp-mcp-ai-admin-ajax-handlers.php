@@ -133,7 +133,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Local network connections may have higher latency than localhost.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-			// Use ignore_execution_time=true for external HTTP requests to local AI providers
+			// Use ignore_execution_time=true for external HTTP requests to local AI providers.
 			// since these don't consume PHP execution time while waiting.
 			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			$timeout = max( 30, $timeout );
@@ -191,7 +191,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Local network connections may have higher latency than localhost.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-			// Use ignore_execution_time=true for external HTTP requests to local AI providers
+			// Use ignore_execution_time=true for external HTTP requests to local AI providers.
 			// since these don't consume PHP execution time while waiting.
 			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			$timeout = max( 30, $timeout );
@@ -249,7 +249,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Local network connections may have higher latency than localhost.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-			// Use ignore_execution_time=true for external HTTP requests to local AI providers
+			// Use ignore_execution_time=true for external HTTP requests to local AI providers.
 			// since these don't consume PHP execution time while waiting.
 			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			$timeout = max( 30, $timeout );
@@ -307,7 +307,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Local network connections may have higher latency than localhost.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-			// Use ignore_execution_time=true for external HTTP requests to local AI providers
+			// Use ignore_execution_time=true for external HTTP requests to local AI providers.
 			// since these don't consume PHP execution time while waiting.
 			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			$timeout = max( 30, $timeout );

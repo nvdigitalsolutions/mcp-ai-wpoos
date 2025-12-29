@@ -216,7 +216,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 			array(),
 			array( 'save_transcript' => false ),
 			$this->user_id,
-			5 // max iterations
+			5 // max iterations.
 		);
 
 		$this->assertEquals( 3, $iteration_count, 'Should have 3 iterations' );
@@ -240,7 +240,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 				function ( $messages ) use ( &$iteration_count ) {
 					++$iteration_count;
 
-					// Always request a tool to hit the limit
+					// Always request a tool to hit the limit.
 					return $this->create_response_with_tool_call( 'get_current_time' );
 				}
 			);
@@ -266,7 +266,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 			$max_iterations
 		);
 
-		// Should stop at max_iterations even though tool keeps being called
+		// Should stop at max_iterations even though tool keeps being called.
 		$this->assertEquals( $max_iterations, $iteration_count, 'Should stop at max iterations' );
 	}
 
@@ -296,7 +296,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 					}
 
 					// Second call: Return response with finish_reason='stop'
-					// This should exit the loop even though we could request more tools
+					// This should exit the loop even though we could request more tools.
 					return array(
 						'id'      => 'test-response-stop',
 						'choices' => array(
@@ -329,10 +329,10 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 			array(),
 			array( 'save_transcript' => false ),
 			$this->user_id,
-			10 // High max_iterations to ensure finish_reason stops the loop, not iteration limit
+			10 // High max_iterations to ensure finish_reason stops the loop, not iteration limit.
 		);
 
-		// Should complete after 2 iterations (initial + tool result) due to finish_reason='stop'
+		// Should complete after 2 iterations (initial + tool result) due to finish_reason='stop'.
 		$this->assertEquals( 2, $iteration_count, 'Should exit loop on finish_reason=stop' );
 		$this->assertArrayHasKey( 'choices', $response );
 		$this->assertStringContainsString( '10:30 AM', $response['choices'][0]['message']['content'] );
@@ -342,7 +342,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 	 * Test tool execution error handling.
 	 */
 	public function test_tool_execution_error_handling() {
-		// Register a test tool that will fail
+		// Register a test tool that will fail.
 		$failing_tool = $this->create_failing_tool();
 		$this->registry->register_tool( $failing_tool );
 
@@ -369,7 +369,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 		$this->assertArrayHasKey( 'tool_results', $response );
 		$tool_result = $response['tool_results'][0];
 
-		// Verify error is captured in tool result
+		// Verify error is captured in tool result.
 		$content = json_decode( $tool_result['content'], true );
 		$this->assertArrayHasKey( 'error', $content );
 	}
@@ -401,13 +401,13 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 		$this->assertArrayHasKey( 'tool_results', $response );
 		$tool_result = $response['tool_results'][0];
 
-		// Verify required fields
+		// Verify required fields.
 		$this->assertArrayHasKey( 'role', $tool_result );
 		$this->assertEquals( 'tool', $tool_result['role'] );
 		$this->assertArrayHasKey( 'tool_call_id', $tool_result );
 		$this->assertArrayHasKey( 'content', $tool_result );
 
-		// Content should be JSON encoded
+		// Content should be JSON encoded.
 		$content = json_decode( $tool_result['content'], true );
 		$this->assertIsArray( $content );
 	}
@@ -436,25 +436,25 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 			$this->user_id
 		);
 
-		// Verify complete response structure
+		// Verify complete response structure.
 		$this->assertIsArray( $response );
 		$this->assertArrayHasKey( 'id', $response );
 		$this->assertArrayHasKey( 'choices', $response );
 		$this->assertArrayHasKey( 'tool_results', $response );
 
-		// Verify assistant message is in choices
+		// Verify assistant message is in choices.
 		$this->assertNotEmpty( $response['choices'] );
 		$this->assertArrayHasKey( 'message', $response['choices'][0] );
 		$this->assertEquals( 'assistant', $response['choices'][0]['message']['role'] );
 
-		// Verify tool results are properly formatted
+		// Verify tool results are properly formatted.
 		$this->assertNotEmpty( $response['tool_results'] );
 		foreach ( $response['tool_results'] as $tool_result ) {
 			$this->assertEquals( 'tool', $tool_result['role'] );
 			$this->assertArrayHasKey( 'tool_call_id', $tool_result );
 			$this->assertArrayHasKey( 'content', $tool_result );
 
-			// Verify content is valid JSON
+			// Verify content is valid JSON.
 			$decoded = json_decode( $tool_result['content'], true );
 			$this->assertNotNull( $decoded, 'Tool result content should be valid JSON' );
 		}
@@ -486,7 +486,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 				function ( $messages ) use ( &$iteration_count ) {
 					++$iteration_count;
 
-					// Always request a tool to hit the limit
+					// Always request a tool to hit the limit.
 					return $this->create_response_with_tool_call( 'get_current_time' );
 				}
 			);
@@ -502,7 +502,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 		);
 
 		// Note: Chat service doesn't use the filter directly, but REST endpoint does
-		// This test verifies the filter mechanism exists
+		// This test verifies the filter mechanism exists.
 		$this->assertTrue( has_filter( 'wp_mcp_ai_max_agentic_iterations' ) );
 	}
 
@@ -543,7 +543,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 						return $this->create_response_with_tool_call( 'get_current_time' );
 					}
 
-					// Verify message order on second call
+					// Verify message order on second call.
 					$this->assertCount( 3, $messages, 'Should have user, assistant, and tool messages' );
 					$this->assertEquals( 'user', $messages[0]['role'] );
 					$this->assertEquals( 'assistant', $messages[1]['role'] );
@@ -783,18 +783,38 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 	 */
 	protected function create_failing_tool() {
 		return new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'failing_test_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Failing Test Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'A tool that always fails';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -802,6 +822,13 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return new WP_Error( 'tool_failed', 'This tool always fails.' );
 			}

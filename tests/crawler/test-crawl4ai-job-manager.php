@@ -2,7 +2,6 @@
 /**
  * Tests for the Crawl4AI background job manager.
  */
-
 class WP_MCP_AI_Crawler_Job_Manager_Test extends WP_UnitTestCase {
 	/**
 	 * Stubbed HTTP responses for polling.
@@ -11,6 +10,9 @@ class WP_MCP_AI_Crawler_Job_Manager_Test extends WP_UnitTestCase {
 	 */
 	protected $http_responses = array();
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -25,6 +27,9 @@ class WP_MCP_AI_Crawler_Job_Manager_Test extends WP_UnitTestCase {
 		add_filter( 'pre_http_request', array( $this, 'mock_http_request' ), 10, 3 );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		remove_filter( 'pre_http_request', array( $this, 'mock_http_request' ), 10 );
 		parent::tearDown();

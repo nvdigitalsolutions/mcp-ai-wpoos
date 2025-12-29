@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for credentials tests.
+ *
  * @group credentials
  * @group security
  */
@@ -25,6 +27,9 @@ class WP_MCP_AI_Credentials_Tests extends WP_UnitTestCase {
 	 */
 	protected $user_id;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -49,6 +54,9 @@ class WP_MCP_AI_Credentials_Tests extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		// Clean up.
 		wp_delete_post( $this->assistant_id, true );

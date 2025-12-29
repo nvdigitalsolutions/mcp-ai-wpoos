@@ -167,7 +167,7 @@ class WP_MCP_AI_Job_Notifier {
 	 */
 	public static function handle_job_completed( $job_id, $result = array(), $metadata = array() ) {
 		// Normalize result to ensure JSON serializability.
-		// This recursively converts any WP_Error objects to serializable arrays,
+		// This recursively converts any WP_Error objects to serializable arrays,.
 		// preventing JSON encoding failures when the status is retrieved.
 		$result = self::normalize_data_recursive( $result );
 

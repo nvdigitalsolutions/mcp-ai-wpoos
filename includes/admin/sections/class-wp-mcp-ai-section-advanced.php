@@ -658,15 +658,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						var $message = $('#wp-mcp-ai-reseed-message');
 						var originalText = $button.html();
 
-						// Disable both buttons
+						// Disable both buttons.
 						$('#wp-mcp-ai-reseed-update-btn, #wp-mcp-ai-reseed-replace-btn')
 							.prop('disabled', true)
 							.addClass('disabled');
 
-						// Update button text
+						// Update button text.
 						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
 
-						// Hide any previous messages
+						// Hide any previous messages.
 						$message.hide().removeClass('notice-success notice-error notice-warning');
 
 						$.ajax({
@@ -685,7 +685,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 										.find('p').html(response.data.message);
 									$message.show();
 
-									// Reload stats after a short delay
+									// Reload stats after a short delay.
 									setTimeout(function() {
 										location.reload();
 									}, 2000);
@@ -705,7 +705,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message.show();
 							},
 							complete: function() {
-								// Re-enable buttons and restore text
+								// Re-enable buttons and restore text.
 								$('#wp-mcp-ai-reseed-update-btn, #wp-mcp-ai-reseed-replace-btn')
 									.prop('disabled', false)
 									.removeClass('disabled');
@@ -822,15 +822,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						var $message = $('#wp-mcp-ai-reseed-teams-message');
 						var originalText = $button.html();
 
-						// Disable both buttons
+						// Disable both buttons.
 						$('#wp-mcp-ai-reseed-teams-update-btn, #wp-mcp-ai-reseed-teams-replace-btn')
 							.prop('disabled', true)
 							.addClass('disabled');
 
-						// Update button text
+						// Update button text.
 						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
 
-						// Hide any previous messages
+						// Hide any previous messages.
 						$message.hide().removeClass('notice-success notice-error notice-warning');
 
 						$.ajax({
@@ -849,7 +849,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 										.find('p').html(response.data.message);
 									$message.show();
 
-									// Reload stats after a short delay
+									// Reload stats after a short delay.
 									setTimeout(function() {
 										location.reload();
 									}, 2000);
@@ -869,7 +869,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message.show();
 							},
 							complete: function() {
-								// Re-enable buttons and restore text
+								// Re-enable buttons and restore text.
 								$('#wp-mcp-ai-reseed-teams-update-btn, #wp-mcp-ai-reseed-teams-replace-btn')
 									.prop('disabled', false)
 									.removeClass('disabled');
@@ -959,15 +959,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						var $message = $('#wp-mcp-ai-migrate-gemini-message');
 						var originalText = $button.html();
 
-						// Disable both buttons
+						// Disable both buttons.
 						$('#wp-mcp-ai-migrate-gemini-preview-btn, #wp-mcp-ai-migrate-gemini-run-btn')
 							.prop('disabled', true)
 							.addClass('disabled');
 
-						// Update button text
+						// Update button text.
 						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
 
-						// Hide any previous messages
+						// Hide any previous messages.
 						$message.hide().removeClass('notice-success notice-error notice-warning notice-info');
 
 						$.ajax({
@@ -993,7 +993,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 										.find('p').html(response.data.message);
 									$message.show();
 
-									// If actual migration was successful, offer to reload
+									// If actual migration was successful, offer to reload.
 									if (!response.data.dry_run && response.data.records_updated > 0) {
 										setTimeout(function() {
 											if (confirm(<?php echo wp_json_encode( __( 'Migration completed successfully! Would you like to reload the page to see updated statistics?', 'wp-mcp-ai' ) ); ?>)) {
@@ -1017,7 +1017,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message.show();
 							},
 							complete: function() {
-								// Re-enable buttons and restore text
+								// Re-enable buttons and restore text.
 								$('#wp-mcp-ai-migrate-gemini-preview-btn, #wp-mcp-ai-migrate-gemini-run-btn')
 									.prop('disabled', false)
 									.removeClass('disabled');
@@ -1039,22 +1039,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					});
 				});
 
-				// Sync playbooks handlers
+				// Sync playbooks handlers.
 				jQuery(document).ready(function($) {
 					function syncPlaybooks(force) {
 						var $button = force ? $('#wp-mcp-ai-sync-playbooks-force-btn') : $('#wp-mcp-ai-sync-playbooks-btn');
 						var $message = $('#wp-mcp-ai-playbook-sync-message');
 						var originalText = $button.html();
 
-						// Disable both buttons
+						// Disable both buttons.
 						$('#wp-mcp-ai-sync-playbooks-btn, #wp-mcp-ai-sync-playbooks-force-btn')
 							.prop('disabled', true)
 							.addClass('disabled');
 
-						// Update button text
+						// Update button text.
 						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
 
-						// Hide any previous messages
+						// Hide any previous messages.
 						$message.hide().removeClass('notice-success notice-error notice-warning');
 
 						$.ajax({
@@ -1073,7 +1073,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 										.find('p').html(response.data.message);
 									$message.show();
 
-									// Reload after a short delay
+									// Reload after a short delay.
 									setTimeout(function() {
 										location.reload();
 									}, 2000);
@@ -1093,7 +1093,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message.show();
 							},
 							complete: function() {
-								// Re-enable buttons and restore text
+								// Re-enable buttons and restore text.
 								$('#wp-mcp-ai-sync-playbooks-btn, #wp-mcp-ai-sync-playbooks-force-btn')
 									.prop('disabled', false)
 									.removeClass('disabled');
@@ -1126,15 +1126,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						var $message = $('#wp-mcp-ai-playbook-sync-message');
 						var originalText = $button.html();
 
-						// Disable all playbook buttons
+						// Disable all playbook buttons.
 						$('#wp-mcp-ai-sync-playbooks-btn, #wp-mcp-ai-sync-playbooks-force-btn, #wp-mcp-ai-delete-old-playbooks-btn')
 							.prop('disabled', true)
 							.addClass('disabled');
 
-						// Update button text
+						// Update button text.
 						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Deleting...', 'wp-mcp-ai' ) ); ?>');
 
-						// Hide any previous messages
+						// Hide any previous messages.
 						$message.hide().removeClass('notice-success notice-error notice-warning');
 
 						$.ajax({
@@ -1152,7 +1152,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 										.find('p').html(response.data.message);
 									$message.show();
 
-									// Reload after a short delay
+									// Reload after a short delay.
 									setTimeout(function() {
 										location.reload();
 									}, 2000);
@@ -1172,7 +1172,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message.show();
 							},
 							complete: function() {
-								// Re-enable buttons and restore text
+								// Re-enable buttons and restore text.
 								$('#wp-mcp-ai-sync-playbooks-btn, #wp-mcp-ai-sync-playbooks-force-btn, #wp-mcp-ai-delete-old-playbooks-btn')
 									.prop('disabled', false)
 									.removeClass('disabled');
