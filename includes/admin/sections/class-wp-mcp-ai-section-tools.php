@@ -1555,6 +1555,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 													<?php esc_html_e( 'Pro', 'wp-mcp-ai' ); ?>
 												</span>
 											<?php endif; ?>
+											<?php
+											$status_label = $this->get_tool_status_label( $slug );
+											if ( $status_label ) :
+												$label_config = $this->get_status_label_config( $status_label );
+												?>
+												<span class="wp-mcp-ai-tool-status-label <?php echo esc_attr( $label_config['class'] ); ?>" style="display: inline-block; margin-left: 8px; padding: 2px 6px; background: <?php echo esc_attr( $label_config['color'] ); ?>; color: white; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+													<?php echo esc_html( $label_config['text'] ); ?>
+												</span>
+											<?php endif; ?>
 										</td>
 										<td>
 											<code style="font-size: 11px;"><?php echo esc_html( $slug ); ?></code>
@@ -1654,6 +1663,129 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			// Convert slug to title case.
 			$name = str_replace( '_', ' ', $slug );
 			return ucwords( $name );
+		}
+
+		/**
+		 * Load tool status labels from tool-status.txt file.
+		 *
+		 * @return array Associative array of tool slug => status label.
+		 */
+		private function load_tool_status_labels() {
+			static $status_labels = null;
+
+			// Use static cache to avoid reading file multiple times.
+			if ( null !== $status_labels ) {
+				return $status_labels;
+			}
+
+			$status_labels = array();
+			$status_file   = WP_MCP_AI_PATH . 'tool-status.txt';
+
+			// Check if file exists.
+			if ( ! file_exists( $status_file ) ) {
+				return $status_labels;
+			}
+
+			// Read file content.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read for configuration.
+			$content = file_get_contents( $status_file );
+			if ( false === $content ) {
+				return $status_labels;
+			}
+
+			// Parse file line by line.
+			$lines = explode( "\n", $content );
+			foreach ( $lines as $line ) {
+				// Trim whitespace.
+				$line = trim( $line );
+
+				// Skip empty lines and comments.
+				if ( empty( $line ) || '#' === substr( $line, 0, 1 ) ) {
+					continue;
+				}
+
+				// Parse line format: tool_slug = status_label.
+				$parts = explode( '=', $line, 2 );
+				if ( 2 !== count( $parts ) ) {
+					continue;
+				}
+
+				$tool_slug    = trim( $parts[0] );
+				$status_label = trim( $parts[1] );
+
+				// Validate status label (only allow alphanumeric, hyphens, underscores).
+				if ( ! preg_match( '/^[a-zA-Z0-9_-]+$/', $status_label ) ) {
+					continue;
+				}
+
+				$status_labels[ $tool_slug ] = $status_label;
+			}
+
+			return $status_labels;
+		}
+
+		/**
+		 * Get status label for a tool.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return string|null Status label or null if not set.
+		 */
+		private function get_tool_status_label( $slug ) {
+			$status_labels = $this->load_tool_status_labels();
+			return isset( $status_labels[ $slug ] ) ? $status_labels[ $slug ] : null;
+		}
+
+		/**
+		 * Get CSS class and display text for a status label.
+		 *
+		 * @param string $status Status label.
+		 * @return array Array with 'class', 'text', and 'color' keys.
+		 */
+		private function get_status_label_config( $status ) {
+			$configs = array(
+				'stable'       => array(
+					'class' => 'wp-mcp-ai-status-stable',
+					'text'  => __( 'Stable', 'wp-mcp-ai' ),
+					'color' => '#46b450',
+				),
+				'dev'          => array(
+					'class' => 'wp-mcp-ai-status-dev',
+					'text'  => __( 'Dev', 'wp-mcp-ai' ),
+					'color' => '#f0ad4e',
+				),
+				'beta'         => array(
+					'class' => 'wp-mcp-ai-status-beta',
+					'text'  => __( 'Beta', 'wp-mcp-ai' ),
+					'color' => '#5bc0de',
+				),
+				'bug'          => array(
+					'class' => 'wp-mcp-ai-status-bug',
+					'text'  => __( 'Bug', 'wp-mcp-ai' ),
+					'color' => '#dc3545',
+				),
+				'deprecated'   => array(
+					'class' => 'wp-mcp-ai-status-deprecated',
+					'text'  => __( 'Deprecated', 'wp-mcp-ai' ),
+					'color' => '#6c757d',
+				),
+				'experimental' => array(
+					'class' => 'wp-mcp-ai-status-experimental',
+					'text'  => __( 'Experimental', 'wp-mcp-ai' ),
+					'color' => '#9b59b6',
+				),
+			);
+
+			// Return config if exists, otherwise return default config.
+			if ( isset( $configs[ $status ] ) ) {
+				return $configs[ $status ];
+			}
+
+			// Default config for unknown status labels.
+			return array(
+				'class' => 'wp-mcp-ai-status-default',
+				'text'  => ucfirst( $status ),
+				'color' => '#999',
+			);
 		}
 
 		/**

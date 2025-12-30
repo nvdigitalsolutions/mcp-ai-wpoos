@@ -1,0 +1,23 @@
+# Tool Status Labels
+#
+# This file defines status labels for tools displayed in the Tools Manager.
+# Format: tool_slug = status_label
+#
+# Available status labels:
+# - stable: Production-ready, fully tested
+# - dev: In development, may have issues
+# - beta: Testing phase, mostly stable
+# - bug: Known issues, use with caution
+# - deprecated: Will be removed in future versions
+# - experimental: New feature, may change
+#
+# Lines starting with # are comments and will be ignored.
+# Empty lines are ignored.
+
+# Example entries (active for testing):
+create_post = stable
+update_post = stable
+web_search = beta
+generate_openai_image_validated = experimental
+get_system_logs = dev
+batch_embed_content = beta
