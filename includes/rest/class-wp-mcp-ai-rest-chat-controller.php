@@ -1261,7 +1261,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * Build a helpful error message based on diagnostic information.
 	 *
-	 * @deprecated Use build_transcript_save_warning_message() instead.
+	 * @deprecated 1.6.0 Use build_transcript_save_warning_message() instead. Will be removed in 2.0.0.
 	 * @param array $diagnostic_info Diagnostic information from get_transcript_save_diagnostic_info().
 	 * @return string Error message with guidance.
 	 */

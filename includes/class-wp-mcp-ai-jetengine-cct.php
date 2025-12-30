@@ -73,8 +73,9 @@ class WP_MCP_AI_JetEngine_CCT {
 				if ( method_exists( $module->manager->data->db, 'query_raw' ) ) {
 					try {
 						$module->manager->data->db->query_raw( 'post_types' );
-					} catch ( Throwable $e ) {
+					} catch ( Exception $e ) {
 						// Log error but continue - handler will still be null.
+						// We catch Exception (not Throwable) to avoid masking fatal errors.
 						WP_MCP_AI_Logger::log_event(
 							'error',
 							'JetEngine CCT: Failed to reload content types',
