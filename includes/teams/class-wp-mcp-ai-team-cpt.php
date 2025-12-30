@@ -373,9 +373,14 @@ class WP_MCP_AI_Team_CPT {
 
 		// Load model service if available.
 		$models = array();
-		if ( ! empty( $default_provider ) && class_exists( 'WP_MCP_AI_Model_Service' ) ) {
-			$model_service = new WP_MCP_AI_Model_Service();
-			$models        = $model_service->get_models_for_provider( $default_provider );
+		if ( ! empty( $default_provider ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-model-service.php';
+			}
+			if ( class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+				$model_service = new WP_MCP_AI_Model_Service();
+				$models        = $model_service->get_models_for_provider( $default_provider );
+			}
 		}
 
 		?>
