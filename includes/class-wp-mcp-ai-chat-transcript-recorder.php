@@ -307,9 +307,13 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 
 		// Check if transcript repository reports table exists.
 		if ( function_exists( 'wp_mcp_ai_get_transcript_repository' ) ) {
-			$repository              = wp_mcp_ai_get_transcript_repository();
-			$info['table_name']      = $repository->get_table_name();
-			$info['table_exists']    = $repository->table_exists();
+			$repository = wp_mcp_ai_get_transcript_repository();
+			if ( $repository && is_object( $repository ) ) {
+				$info['table_name']   = method_exists( $repository, 'get_table_name' ) ? $repository->get_table_name() : 'unknown';
+				$info['table_exists'] = method_exists( $repository, 'table_exists' ) ? $repository->table_exists() : false;
+			} else {
+				$info['transcript_repository_available'] = false;
+			}
 		} else {
 			$info['transcript_repository_available'] = false;
 		}

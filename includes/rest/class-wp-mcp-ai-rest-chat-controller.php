@@ -1298,7 +1298,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return __( 'JetEngine Data Stores module is not active. Enable it in JetEngine → Settings → Modules to enable transcript storage.', 'wp-mcp-ai' );
 		}
 
-		if ( ! empty( $diagnostic_info['table_exists'] ) === false && ! empty( $diagnostic_info['table_name'] ) ) {
+		if ( empty( $diagnostic_info['table_exists'] ) && ! empty( $diagnostic_info['table_name'] ) ) {
 			/* translators: %s: Database table name */
 			return sprintf(
 				__( 'Transcript database table (%s) does not exist. Try deactivating and reactivating the plugin to recreate it.', 'wp-mcp-ai' ),

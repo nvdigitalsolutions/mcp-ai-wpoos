@@ -67,9 +67,23 @@ class WP_MCP_AI_JetEngine_CCT {
 
 		if ( ! $instance ) {
 			// Content type not loaded in manager yet. Force a reload.
+			// The query_raw('post_types') method triggers JetEngine's CCT manager
+			// to reload content types from the database into memory.
 			if ( ! empty( $module->manager->data ) && ! empty( $module->manager->data->db ) ) {
 				if ( method_exists( $module->manager->data->db, 'query_raw' ) ) {
-					$module->manager->data->db->query_raw( 'post_types' );
+					try {
+						$module->manager->data->db->query_raw( 'post_types' );
+					} catch ( Throwable $e ) {
+						// Log error but continue - handler will still be null.
+						WP_MCP_AI_Logger::log_event(
+							'error',
+							'JetEngine CCT: Failed to reload content types',
+							array(
+								'exception' => $e->getMessage(),
+								'slug'      => self::SLUG,
+							)
+						);
+					}
 				}
 			}
 
