@@ -89,7 +89,7 @@ if ( $has_analytics ) {
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
 			if (typeof Chart !== 'undefined') {
-				// Hourly Pattern Chart
+				// Hourly Pattern Chart.
 				var hourlyCtx = document.getElementById('wp-mcp-ai-hourly-pattern-chart');
 				if (hourlyCtx) {
 					var hourlyPattern = <?php echo wp_json_encode( array_values( $pattern_data['hourly_pattern'] ) ); ?>;
@@ -146,7 +146,7 @@ if ( $has_analytics ) {
 					});
 				}
 
-				// Daily Pattern Chart
+				// Daily Pattern Chart.
 				var dailyCtx = document.getElementById('wp-mcp-ai-daily-pattern-chart');
 				if (dailyCtx) {
 					var dailyPattern = <?php echo wp_json_encode( array_values( $pattern_data['daily_pattern'] ) ); ?>;

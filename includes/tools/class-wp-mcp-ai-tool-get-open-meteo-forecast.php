@@ -452,6 +452,10 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 		// Generate HTML.
 		$html = $this->generate_chart_html( $chart_config, $chart_width, $chart_height );
 
+		// Return chart output without raw data to prevent response truncation.
+		// The weather data is already embedded in the HTML chart visualization.
+		// Including the raw 'data' field causes the orchestration layer to truncate
+		// the response, converting it to a JSON string which prevents inline iframe rendering.
 		return array(
 			'output_format' => 'chart',
 			'chart_type'    => $chart_type,
@@ -460,7 +464,6 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 			'chart_config'  => $chart_config,
 			'width'         => $chart_width,
 			'height'        => $chart_height,
-			'data'          => $payload,
 		);
 	}
 

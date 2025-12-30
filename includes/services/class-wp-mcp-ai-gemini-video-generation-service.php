@@ -598,7 +598,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Note: 'personGeneration' parameter is not supported by Veo 3.1 API - removed to prevent API errors.
 
 		// Stage 3: Final validation as a safety check.
-		// This ensures duration is always within model-specific valid range as a final safeguard
+		// This ensures duration is always within model-specific valid range as a final safeguard.
 		// before sending to the API. This prevents "durationSeconds is out of bound" API errors.
 		// IMPORTANT: Use model-specific minimum (Veo 2 requires 5s minimum, Veo 3.1 requires 4s minimum).
 		if ( ! is_int( $parameters['durationSeconds'] ) || $parameters['durationSeconds'] < $min_duration || $parameters['durationSeconds'] > self::MAX_DURATION ) {
@@ -1063,13 +1063,13 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		$model = isset( $operation['model_used'] ) ? $operation['model_used'] : self::VEO_MODEL;
 
 		// Pre-generate the expected filename for file-based polling.
-		// This allows us to detect completion by checking for file creation
+		// This allows us to detect completion by checking for file creation.
 		// in addition to polling the Gemini API operation endpoint.
 		// Use sanitize_file_name() for consistency with save_video_to_media().
 		$expected_filename = 'veo-video-' . sanitize_file_name( $job_id ) . '.mp4';
 
 		// Generate expected URL for the video file.
-		// This allows the chat client to display a placeholder video element
+		// This allows the chat client to display a placeholder video element.
 		// that will become active when the video generation completes.
 		$upload_dir   = wp_upload_dir();
 		$expected_url = '';
@@ -1103,7 +1103,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		);
 
 		// When reusing parent job ID, merge with existing async executor metadata.
-		// This preserves critical fields like 'tool_slug', 'context', and 'arguments'
+		// This preserves critical fields like 'tool_slug', 'context', and 'arguments'.
 		// that the cron-status service needs for permission checks and result sanitization.
 		if ( $use_parent_job ) {
 			$existing_metadata = get_transient( $transient_prefix . $job_id );
@@ -1245,7 +1245,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Multisite support: Switch to the correct blog context if running in multisite.
-		// This ensures that file paths, attachment lookups, and other blog-specific operations
+		// This ensures that file paths, attachment lookups, and other blog-specific operations.
 		// work correctly when the async polling runs via WP-Cron.
 		$switched_blog = false;
 		if ( is_multisite() && isset( $metadata['blog_id'] ) ) {
@@ -1667,7 +1667,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Trigger WordPress cron to ensure continued polling.
-		// This is necessary because WordPress cron only runs on page loads,
+		// This is necessary because WordPress cron only runs on page loads,.
 		// and during video generation polling, there may be no user activity.
 		spawn_cron();
 	}
@@ -1708,7 +1708,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				);
 
 				// Fire job completed hook to update notification cache.
-				// This ensures the chat client can receive the completion notification
+				// This ensures the chat client can receive the completion notification.
 				// even when the original transient has expired.
 				do_action(
 					'wp_mcp_ai_job_completed',
@@ -1820,7 +1820,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Include context for permission checking when job reuses parent ID.
-		// When use_parent_job is true, the metadata includes the async executor's context
+		// When use_parent_job is true, the metadata includes the async executor's context.
 		// field which contains user_id, assistant_id, etc. This is needed for permission
 		// checks in the cron-status service.
 		if ( isset( $metadata['context'] ) ) {
@@ -2135,7 +2135,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		);
 
 		// Fire tool execution hook for token tracking.
-		// This ensures the parent async job's token usage is tracked when
+		// This ensures the parent async job's token usage is tracked when.
 		// veo completes it, enabling proper orchestration and agentic loop completion.
 		// Extract tool_slug, arguments, and context from parent metadata.
 		$tool_slug = isset( $parent_metadata['tool_slug'] ) ? $parent_metadata['tool_slug'] : 'generate_veo_video';
@@ -2178,7 +2178,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		if ( ! $query->have_posts() ) {
 			// Fallback: Search by filename pattern if job_id metadata search failed.
-			// This handles cases where the video was uploaded by a separate process
+			// This handles cases where the video was uploaded by a separate process.
 			// (e.g., webhook, external service) without the job_id metadata.
 			// Extract the unique ID portion from the expected filename for flexible matching.
 			// Expected: veo-video-veo_XXXXX.mp4, but file might be veo-video-XXXXX.mp4
@@ -2190,8 +2190,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 
 			// Extract the unique ID portion, handling both formats:
-			// - veo_69264137e396a4_03027627 (from job_id)
-			// - 69264137e396a4_03027627 (from external upload)
+			// - veo_69264137e396a4_03027627 (from job_id).
+			// - 69264137e396a4_03027627 (from external upload).
 			$filename_id = $matches[1]; // e.g., "veo_69264137e396a4_03027627"
 			$unique_id   = str_replace( 'veo_', '', $filename_id ); // e.g., "69264137e396a4_03027627"
 

@@ -2,8 +2,10 @@
 /**
  * Tests for the Auth0 GitHub bridge integration.
  */
-
 class WP_MCP_AI_Auth0_Github_Integration_Test extends WP_UnitTestCase {
+	/**
+	 * Set up test environment.
+	 */
 	protected function setUp(): void {
 		parent::setUp();
 
@@ -12,6 +14,9 @@ class WP_MCP_AI_Auth0_Github_Integration_Test extends WP_UnitTestCase {
 		WP_MCP_AI_Integration_Auth0_Github::init();
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	protected function tearDown(): void {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 		WP_MCP_AI_Integration_Auth0_Github::reset_cache();

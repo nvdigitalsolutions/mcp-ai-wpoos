@@ -234,7 +234,7 @@ class Test_Chart_Data_Formatting extends WP_UnitTestCase {
 		$diff      = strtotime( $today ) - strtotime( $last_date );
 
 		$this->assertLessThanOrEqual(
-			86400, // 1 day in seconds
+			86400, // 1 day in seconds.
 			$diff,
 			'Last date should be today or yesterday'
 		);

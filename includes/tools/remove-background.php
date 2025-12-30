@@ -67,7 +67,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	}
 
 	// Security: Verify the file is within the WordPress uploads directory.
-	// This prevents arbitrary file exfiltration by ensuring only files in the
+	// This prevents arbitrary file exfiltration by ensuring only files in the.
 	// uploads directory can be sent to the remove.bg API.
 	$upload_dir = wp_upload_dir();
 	if ( isset( $upload_dir['error'] ) && false !== $upload_dir['error'] ) {

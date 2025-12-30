@@ -50,21 +50,48 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 
 		// Create a mock tool.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_veo_tool';
 			}
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test Veo Tool';
 			}
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Test tool for veo token tracking';
 			}
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
 					'properties' => array(),
 				);
 			}
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'success'       => true,
@@ -82,6 +109,9 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		// Create mock tool registry.
 		$registry = new class( $mock_tool ) {
 			protected $tool;
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}
@@ -183,7 +213,7 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 			),
 		);
 
-		// Instead of full integration test, verify the hook is called
+		// Instead of full integration test, verify the hook is called.
 		// by checking that the code path exists and would fire the hook.
 		// For a true integration test, we'd need to mock the Gemini API.
 
@@ -295,21 +325,48 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 
 		// Create a mock tool.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_dual_hook_tool';
 			}
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test Dual Hook Tool';
 			}
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Test tool for dual hook verification';
 			}
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
 					'properties' => array(),
 				);
 			}
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array( 'success' => true );
 			}
@@ -321,6 +378,9 @@ class Test_Veo_Async_Token_Tracking extends WP_UnitTestCase {
 		// Create mock registry.
 		$registry = new class( $mock_tool ) {
 			protected $tool;
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $tool ) {
 				$this->tool = $tool;
 			}

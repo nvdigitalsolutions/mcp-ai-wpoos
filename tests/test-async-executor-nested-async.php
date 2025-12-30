@@ -27,18 +27,38 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 
 		// Create a mock tool that returns a nested async response.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_nested_async_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test Nested Async Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Test tool that returns nested async response';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -46,6 +66,13 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				// Simulate a tool that falls back to async (like veo video generation on timeout).
 				return array(
@@ -113,18 +140,38 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 
 		// Create a mock tool that returns a normal result.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_normal_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test Normal Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Test tool that returns normal result';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -132,6 +179,13 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				// Return a normal result (not async).
 				return array(
@@ -199,18 +253,38 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 
 		// Create a mock tool that returns nested async.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_hook_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test Hook Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Test tool for hook verification';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -218,6 +292,13 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'async'   => true,
@@ -273,18 +354,38 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 		// 2. It will merge its own metadata (like operation_name) into the transient
 		// 3. It will return the same job_id as the parent (unified flow)
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_unified_flow_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test Unified Flow Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Test tool that simulates veo unified job flow';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -292,6 +393,13 @@ class Test_Async_Executor_Nested_Async extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				// Get the parent job ID from context (passed by async executor).
 				$parent_job_id = isset( $context['parent_job_id'] ) ? $context['parent_job_id'] : '';

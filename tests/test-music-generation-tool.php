@@ -1,4 +1,10 @@
 <?php
+/**
+ * Music Generation Tool
+ *
+ * @package WP_MCP_AI
+ */
+
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-music.php';
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-music-service.php';
 

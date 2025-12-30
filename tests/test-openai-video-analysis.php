@@ -129,7 +129,7 @@ class Test_OpenAI_Video_Analysis extends WP_UnitTestCase {
 		// Mock FFmpeg as unavailable by using a mock extractor.
 		$result = $method->invoke( $this->service, '', null, 'Test prompt', 'gpt-4o' );
 
-		// Since we can't easily mock the extractor inside the method,
+		// Since we can't easily mock the extractor inside the method,.
 		// we'll check if the result structure is correct.
 		// The actual FFmpeg check will depend on system state.
 		$this->assertTrue(
@@ -214,7 +214,7 @@ class Test_OpenAI_Video_Analysis extends WP_UnitTestCase {
 		$result = $method->invoke(
 			$this->service,
 			'',
-			999999, // Non-existent attachment ID
+			999999, // Non-existent attachment ID.
 			'Test prompt',
 			'gpt-4o'
 		);
@@ -231,7 +231,7 @@ class Test_OpenAI_Video_Analysis extends WP_UnitTestCase {
 		}
 
 		// We'll check that gpt-4o is used as the default.
-		// Since we can't easily test the actual API call without mocking OpenAI client,
+		// Since we can't easily test the actual API call without mocking OpenAI client,.
 		// we'll verify the service structure accepts model parameter.
 		$result = $this->service->analyze_video(
 			array(
@@ -241,7 +241,7 @@ class Test_OpenAI_Video_Analysis extends WP_UnitTestCase {
 			)
 		);
 
-		// Without API credentials, this will fail with an error, but we can check
+		// Without API credentials, this will fail with an error, but we can check.
 		// that it's trying to process (not a structural error).
 		$this->assertTrue(
 			is_array( $result ) || is_wp_error( $result ),

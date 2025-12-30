@@ -1553,7 +1553,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( $has_results || 'completed' === $filtered['status'] ) {
-			// Register the completed job with the manager for tracking
+			// Register the completed job with the manager for tracking.
 			WP_MCP_AI_Crawler::register_completed_job(
 				$filtered['task_id'],
 				array(
@@ -1598,7 +1598,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			'async'    => true,
 			'status'   => $filtered['status'],
 			'task_id'  => $filtered['task_id'],
-			'job_id'   => $filtered['task_id'], // Alias for consistency with other async tools
+			'job_id'   => $filtered['task_id'], // Alias for consistency with other async tools.
 			'message'  => __( 'Crawl job queued for background processing. Results will appear when ready.', 'wp-mcp-ai' ),
 			'results'  => array(),
 			'metadata' => $metadata,
@@ -1719,7 +1719,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$metadata = apply_filters( 'wp_mcp_ai_crawl4ai_local_metadata', $metadata, $payload, $context, $settings );
 
-		// Generate a task ID for local jobs to enable tracking
+		// Generate a task ID for local jobs to enable tracking.
 		$task_id = $this->generate_task_id();
 
 		$response = array(
@@ -1733,11 +1733,11 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			),
 		);
 
-		// Register the completed local job with the manager for tracking
+		// Register the completed local job with the manager for tracking.
 		WP_MCP_AI_Crawler::register_completed_job(
 			$task_id,
 			array(
-				'base_url'  => '', // Empty for local jobs
+				'base_url'  => '', // Empty for local jobs.
 				'arguments' => $arguments,
 				'context'   => $context,
 				'status'    => 'completed',
@@ -1822,7 +1822,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string
 	 */
 	protected function generate_task_id() {
-		// Generate a unique ID with timestamp and random component for better uniqueness
+		// Generate a unique ID with timestamp and random component for better uniqueness.
 		$timestamp = time();
 		$random    = wp_generate_password( 8, false, false );
 
@@ -1930,7 +1930,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Remove invalid UTF-8 sequences from the source string.
-		// The iconv IGNORE flag skips any bytes that are not valid in the source encoding (UTF-8),
+		// The iconv IGNORE flag skips any bytes that are not valid in the source encoding (UTF-8),.
 		// effectively removing malformed UTF-8 sequences while preserving valid characters.
 		$sanitized = iconv( 'UTF-8', 'UTF-8//IGNORE', $string );
 

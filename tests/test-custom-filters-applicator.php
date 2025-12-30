@@ -6,7 +6,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_Custom_Filters_Applicator_Test extends WP_UnitTestCase {
 
 	/**

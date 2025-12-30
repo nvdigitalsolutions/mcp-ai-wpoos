@@ -151,7 +151,7 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Should use Chat Completions API (returns false) to enable tool calling
+		// Should use Chat Completions API (returns false) to enable tool calling.
 		$this->assertFalse( $client->public_should_use_responses_api( $messages, $options ) );
 	}
 
@@ -190,7 +190,7 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Should use Chat Completions API (returns false) to enable tool calling with multiple images
+		// Should use Chat Completions API (returns false) to enable tool calling with multiple images.
 		$this->assertFalse( $client->public_should_use_responses_api( $messages, $options ) );
 	}
 
@@ -225,7 +225,7 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Should use Responses API (returns true) when there are non-image documents
+		// Should use Responses API (returns true) when there are non-image documents.
 		$this->assertTrue( $client->public_should_use_responses_api( $messages, $options ) );
 	}
 
@@ -256,7 +256,7 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Should use Responses API (returns true) for PDFs
+		// Should use Responses API (returns true) for PDFs.
 		$this->assertTrue( $client->public_should_use_responses_api( $messages, $options ) );
 	}
 
@@ -266,7 +266,7 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 	public function test_convert_image_files_to_image_url() {
 		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
 
-		// Create a test attachment
+		// Create a test attachment.
 		$attachment_id = $this->factory()->attachment->create_upload_object(
 			DIR_TESTDATA . '/images/canola.jpg'
 		);
@@ -340,11 +340,11 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $converted[0]['content'] );
 		$this->assertCount( 2, $converted[0]['content'] );
 
-		// Text segment should be unchanged
+		// Text segment should be unchanged.
 		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
 		$this->assertSame( 'Hello', $converted[0]['content'][0]['text'] );
 
-		// Input file segment should be unchanged
+		// Input file segment should be unchanged.
 		$this->assertSame( 'input_file', $converted[0]['content'][1]['type'] );
 		$this->assertSame( 'file-pdf-123', $converted[0]['content'][1]['file_id'] );
 	}
@@ -478,7 +478,7 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 					),
 					array(
 						'type' => 'input_image',
-						// Missing file_id
+						// Missing file_id.
 					),
 					array(
 						'type' => 'text',
@@ -496,14 +496,14 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $converted );
 		$this->assertSame( 'user', $converted[0]['role'] );
 		$this->assertIsArray( $converted[0]['content'] );
-		// Should have 2 segments (the two text segments), input_image was removed
+		// Should have 2 segments (the two text segments), input_image was removed.
 		$this->assertCount( 2, $converted[0]['content'] );
 
-		// First text segment
+		// First text segment.
 		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
 		$this->assertSame( 'Hello', $converted[0]['content'][0]['text'] );
 
-		// Second text segment
+		// Second text segment.
 		$this->assertSame( 'text', $converted[0]['content'][1]['type'] );
 		$this->assertSame( 'World', $converted[0]['content'][1]['text'] );
 	}
@@ -534,12 +534,12 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Attachment lookup has the file_id but no attachment_id
+		// Attachment lookup has the file_id but no attachment_id.
 		$attachment_lookup = array(
 			'file-nonexistent' => array(
 				'id'        => 'file-nonexistent',
 				'mime_type' => 'image/jpeg',
-				// Missing attachment_id, so conversion will fail
+				// Missing attachment_id, so conversion will fail.
 			),
 		);
 
@@ -549,14 +549,14 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $converted );
 		$this->assertSame( 'user', $converted[0]['role'] );
 		$this->assertIsArray( $converted[0]['content'] );
-		// Should have 2 segments (the two text segments), input_image was removed
+		// Should have 2 segments (the two text segments), input_image was removed.
 		$this->assertCount( 2, $converted[0]['content'] );
 
-		// First text segment
+		// First text segment.
 		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
 		$this->assertSame( 'Before image', $converted[0]['content'][0]['text'] );
 
-		// Second text segment
+		// Second text segment.
 		$this->assertSame( 'text', $converted[0]['content'][1]['type'] );
 		$this->assertSame( 'After image', $converted[0]['content'][1]['text'] );
 	}
@@ -583,7 +583,7 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Attachment lookup has an invalid attachment_id (9999999 doesn't exist)
+		// Attachment lookup has an invalid attachment_id (9999999 doesn't exist).
 		$attachment_lookup = array(
 			'file-invalid-attachment' => array(
 				'id'            => 'file-invalid-attachment',
@@ -598,10 +598,10 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $converted );
 		$this->assertSame( 'user', $converted[0]['role'] );
 		$this->assertIsArray( $converted[0]['content'] );
-		// Should have 1 segment (the text segment), input_image was removed
+		// Should have 1 segment (the text segment), input_image was removed.
 		$this->assertCount( 1, $converted[0]['content'] );
 
-		// Text segment should remain
+		// Text segment should remain.
 		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
 		$this->assertSame( 'Testing', $converted[0]['content'][0]['text'] );
 	}
@@ -637,7 +637,7 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Empty attachment lookup - simulates using Chat Completions API without current attachments
+		// Empty attachment lookup - simulates using Chat Completions API without current attachments.
 		$attachment_lookup = array();
 
 		$converted = $client->public_convert_image_files_to_image_url( $messages, $attachment_lookup );
@@ -645,14 +645,14 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $converted );
 		$this->assertCount( 2, $converted );
 
-		// First message should have input_image removed
+		// First message should have input_image removed.
 		$this->assertSame( 'user', $converted[0]['role'] );
 		$this->assertIsArray( $converted[0]['content'] );
-		$this->assertCount( 1, $converted[0]['content'] ); // Only text remains
+		$this->assertCount( 1, $converted[0]['content'] ); // Only text remains.
 		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
 		$this->assertSame( 'Previous message', $converted[0]['content'][0]['text'] );
 
-		// Second message should be unchanged
+		// Second message should be unchanged.
 		$this->assertSame( 'user', $converted[1]['role'] );
 		$this->assertIsArray( $converted[1]['content'] );
 		$this->assertCount( 1, $converted[1]['content'] );
@@ -687,7 +687,7 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 			),
 		);
 
-		// Empty attachment lookup - image cannot be converted
+		// Empty attachment lookup - image cannot be converted.
 		$attachment_lookup = array();
 
 		$converted = $client->public_convert_image_files_to_image_url( $messages, $attachment_lookup );
@@ -695,14 +695,14 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $converted );
 		$this->assertCount( 2, $converted );
 
-		// First message should have fallback text instead of empty content
+		// First message should have fallback text instead of empty content.
 		$this->assertSame( 'user', $converted[0]['role'] );
 		$this->assertIsArray( $converted[0]['content'] );
 		$this->assertCount( 1, $converted[0]['content'] );
 		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
 		$this->assertSame( '[Image could not be loaded]', $converted[0]['content'][0]['text'] );
 
-		// Second message should be unchanged
+		// Second message should be unchanged.
 		$this->assertSame( 'user', $converted[1]['role'] );
 		$this->assertIsArray( $converted[1]['content'] );
 		$this->assertCount( 1, $converted[1]['content'] );

@@ -133,18 +133,38 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
 			public $received_context = null;
 
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'mock_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Mock Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Mock tool for testing';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -152,6 +172,13 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				// Store the context for verification.
 				$this->received_context = $context;
@@ -159,8 +186,8 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 			}
 		};
 
-		// We can't fully test without setting up the registry,
-		// but we verified the code structure above which is sufficient
+		// We can't fully test without setting up the registry,.
+		// but we verified the code structure above which is sufficient.
 		// to prove the fix is in place.
 		$this->assertNotNull( $mock_tool, 'Mock tool should be created' );
 	}
@@ -209,18 +236,38 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 	public function test_backward_compatibility_with_old_tools() {
 		// Create a mock "old" tool that doesn't know about in_async_executor.
 		$old_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'old_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Old Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Old tool that ignores in_async_executor';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -228,6 +275,13 @@ class Test_Async_Executor_Context_Flag extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				// Old tool ignores the in_async_executor flag.
 				// It should still work fine.

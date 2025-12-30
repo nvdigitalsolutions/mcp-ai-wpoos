@@ -166,7 +166,7 @@ class WP_MCP_AI_Chat_Template_Selector_Test extends WP_UnitTestCase {
 		}
 		ob_end_clean();
 
-		// We can't easily test the control registration without full Elementor setup,
+		// We can't easily test the control registration without full Elementor setup,.
 		// but we can verify the method exists and doesn't throw errors.
 		$this->assertTrue(
 			method_exists( $widget, 'register_controls' ),

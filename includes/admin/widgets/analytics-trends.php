@@ -96,7 +96,7 @@ if ( $has_analytics ) {
 					var dailyUsage = <?php echo wp_json_encode( $trend_data['daily_usage'] ); ?>;
 					var trendInfo = <?php echo wp_json_encode( $trend_data['trend'] ); ?>;
 					
-					// Prepare data points for chart
+					// Prepare data points for chart.
 					var labels = [];
 					var dataPoints = [];
 					var trendLine = [];

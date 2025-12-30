@@ -96,7 +96,7 @@ class WP_MCP_AI_Settings_Lazy_Loading_Test extends WP_UnitTestCase {
 			if ( is_array( $autoloader ) ) {
 				continue;
 			}
-			// Our autoloader is a closure, so we can't directly verify it,
+			// Our autoloader is a closure, so we can't directly verify it,.
 			// but we can verify that closures are registered.
 			if ( $autoloader instanceof Closure ) {
 				$has_section_autoloader = true;

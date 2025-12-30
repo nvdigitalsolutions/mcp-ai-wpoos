@@ -245,7 +245,7 @@ class WP_MCP_AI_Optimization_Comparison_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Performance Monitor CCT class not available.' );
 		}
 
-		// This test simulates the server-side impact of localStorage
+		// This test simulates the server-side impact of localStorage.
 		// (e.g., data serialization/deserialization).
 
 		$iterations   = 50;

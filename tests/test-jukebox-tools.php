@@ -247,7 +247,7 @@ class WP_MCP_AI_Jukebox_Tools_Test extends WP_UnitTestCase {
 	 * Test check Jukebox status includes available models when installed.
 	 */
 	public function test_check_jukebox_status_includes_models_when_installed() {
-		// We can't fully test this without actually installing Jukebox,
+		// We can't fully test this without actually installing Jukebox,.
 		// but we can verify the structure when it's installed.
 		$service = new WP_MCP_AI_Jukebox_Service();
 		$status  = $service->check_installation();

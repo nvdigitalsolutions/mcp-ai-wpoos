@@ -1,0 +1,4 @@
+cct_slug,item_title,field_conversion_rate,field_bounce_rate,field_page_views,field_unique_visitors,field_avg_session_duration,field_date,field_source,field_device_type,field_top_page,status,author_id
+"analytics_metrics","Website Traffic January 2024","3.45","42.5","15000","8500","00:03:45","2024-01-31","organic,direct,social,referral","desktop:60%|mobile:35%|tablet:5%","/blog/seo-guide","publish","1"
+"analytics_metrics","Campaign Performance Q1 2024","5.2","38.9","25000","12000","00:04:20","2024-03-31","email:40%|social:35%|paid:25%","desktop:55%|mobile:40%|tablet:5%","/products/premium-plan","publish","1"
+"analytics_metrics","Product Page Analytics","8.5","25.3","10000","6500","00:05:15","2024-02-15","organic:70%|direct:20%|referral:10%","desktop:50%|mobile:45%|tablet:5%","/products/wireless-headphones","publish","1"

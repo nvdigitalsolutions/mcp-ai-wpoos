@@ -481,7 +481,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	protected function should_use_async( $arguments, $context = array() ) {
 		// CRITICAL: If already running in async executor context, do NOT use tool-level async.
-		// This prevents double-async execution where orchestrator queues the tool async,
+		// This prevents double-async execution where orchestrator queues the tool async,.
 		// then the tool itself queues another async job. This causes the client to get
 		// a nested async response it doesn't know how to handle.
 		if ( isset( $context['in_async_executor'] ) && $context['in_async_executor'] ) {
@@ -496,7 +496,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		// Default to async for better reliability.
 		// Video generation typically takes 60-120 seconds which often exceeds HTTP timeouts.
 		// NOTE: We no longer check agentic_loop here because the REST API orchestrator
-		// will handle async execution properly via the async executor when the tool
+		// will handle async execution properly via the async executor when the tool.
 		// is marked as 'background-only', which is the correct pattern for long-running tools.
 		return true;
 	}

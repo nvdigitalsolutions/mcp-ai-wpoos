@@ -2,7 +2,6 @@
 /**
  * Tests for the Elementor templates tool.
  */
-
 class WP_MCP_AI_Elementor_Tool_Availability_Test extends WP_UnitTestCase {
 	/**
 	 * Ensure the tool reports missing dependencies when Elementor is inactive.
@@ -44,6 +43,9 @@ class WP_MCP_AI_Elementor_Tool_Execution_Test extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 

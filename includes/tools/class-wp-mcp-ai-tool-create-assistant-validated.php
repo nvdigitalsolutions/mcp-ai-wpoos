@@ -83,7 +83,7 @@ class WP_MCP_AI_Tool_Create_Assistant_Validated extends WP_MCP_AI_Validated_Tool
 	 * @return array|WP_Error Tool results or error.
 	 */
 	protected function execute_validated( $validated_args, $context ) {
-		// Convert validated arguments object back to array format
+		// Convert validated arguments object back to array format.
 		// for the original tool's execute method.
 		$arguments = array(
 			'title' => $validated_args->title,

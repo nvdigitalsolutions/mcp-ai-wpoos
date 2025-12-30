@@ -42,7 +42,7 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 
 		// Temporarily set max_execution_time to a very low value to trigger timeout.
 		$original_max_execution_time = ini_get( 'max_execution_time' );
-		ini_set( 'max_execution_time', '1' ); // 1 second.
+		set_time_limit( 1 ); // 1 second.
 
 		// Execute poll_for_completion - should fall back to async immediately.
 		$result = $method->invoke( $service, $operation, $args );
@@ -88,7 +88,7 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 
 		// Temporarily set max_execution_time to a very low value.
 		$original_max_execution_time = ini_get( 'max_execution_time' );
-		ini_set( 'max_execution_time', '1' ); // 1 second.
+		set_time_limit( 1 ); // 1 second.
 
 		// Execute poll_for_completion - should return error instead of falling back to async.
 		$result = $method->invoke( $service, $operation, $args );
@@ -112,7 +112,7 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-video-generation-service.php';
 
 		// Test with normal max_execution_time (30 seconds).
-		ini_set( 'max_execution_time', '30' );
+		set_time_limit( 30 );
 		$max_execution_time = ini_get( 'max_execution_time' );
 		$this->assertEquals( 30, (int) $max_execution_time );
 
@@ -121,7 +121,7 @@ class Test_Veo_Timeout_Async_Fallback extends WP_UnitTestCase {
 		$this->assertEquals( $expected_threshold, $max_execution_time - 10 );
 
 		// Test with very short max_execution_time (5 seconds).
-		ini_set( 'max_execution_time', '5' );
+		set_time_limit( 5 );
 		$max_execution_time = ini_get( 'max_execution_time' );
 		$this->assertEquals( 5, (int) $max_execution_time );
 
