@@ -1,0 +1,18 @@
+/**
+ * Remote Sites Admin Styles
+ *
+ * @package WP_MCP_AI_Pro
+ */
+
+.wp-mcp-ai-remote-sites .form-table th {
+	padding: 20px 10px 20px 0;
+	width: 200px;
+}
+
+.wp-mcp-ai-remote-sites .required {
+	color: #d63638;
+}
+
+.wp-mcp-ai-remote-sites .notice {
+	margin: 20px 0;
+}

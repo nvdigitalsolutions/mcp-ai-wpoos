@@ -149,6 +149,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Performance section is only loaded in admin context.
 		if ( is_admin() ) {
 			wp_mcp_ai_pro_load_admin_sections();
+
+			// Load Remote Sites admin interface.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php';
 		}
 
 		// Load quiz system support files if enabled.
@@ -201,6 +204,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 	function wp_mcp_ai_pro_register_tools( $registry ) {
 		// Load Pro tool files.
 		$pro_tools = array(
+			// Remote WordPress/WooCommerce Connection tool.
+			'WP_MCP_AI_Tool_Remote_WP_Connection'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-wp-connection.php',
 			// Exec service tools (video, audio, CLI).
 			'WP_MCP_AI_Tool_Check_WP_CLI'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
 			'WP_MCP_AI_Tool_Extract_Video_Frames'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-extract-video-frames.php',
