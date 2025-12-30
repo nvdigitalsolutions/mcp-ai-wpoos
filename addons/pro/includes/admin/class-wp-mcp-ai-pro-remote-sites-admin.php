@@ -30,13 +30,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	}
 
 	/**
-	 * Add admin menu page.
+	 * Add admin menu page under main NV oOS menu.
 	 *
 	 * @since 1.0.0
 	 */
 	public function add_admin_menu() {
 		add_submenu_page(
-			'edit.php?post_type=mcp_ai_assistant',
+			'wp-mcp-ai-dashboard',
 			__( 'Remote Site Connections', 'wp-mcp-ai-pro' ),
 			__( 'Remote Sites', 'wp-mcp-ai-pro' ),
 			'manage_options',
@@ -53,7 +53,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_admin_scripts( $hook ) {
-		if ( 'mcp_ai_assistant_page_wp-mcp-ai-remote-sites' !== $hook ) {
+		if ( 'nv-oos_page_wp-mcp-ai-remote-sites' !== $hook ) {
 			return;
 		}
 
@@ -90,7 +90,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$connection_id = sanitize_key( $_GET['connection_id'] );
 			WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
 
-			wp_safe_redirect( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites&deleted=1' ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&deleted=1' ) );
 			exit;
 		}
 
@@ -103,7 +103,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$connection_id = sanitize_key( $_GET['connection_id'] );
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
 
-			$redirect_url = admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites&connection_id=' . $connection_id );
+			$redirect_url = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&connection_id=' . $connection_id );
 
 			if ( is_wp_error( $result ) ) {
 				$redirect_url = add_query_arg( 'test_error', urlencode( $result->get_error_message() ), $redirect_url );
@@ -136,9 +136,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
 			if ( is_wp_error( $result ) ) {
-				wp_safe_redirect( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites&error=' . urlencode( $result->get_error_message() ) ) );
+				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . urlencode( $result->get_error_message() ) ) );
 			} else {
-				wp_safe_redirect( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites&saved=1' ) );
+				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&saved=1' ) );
 			}
 			exit;
 		}
@@ -211,7 +211,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	protected function render_connections_list( $connections ) {
 		?>
 		<p>
-			<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites&add=1' ) ); ?>" class="button button-primary">
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&add=1' ) ); ?>" class="button button-primary">
 				<?php esc_html_e( 'Add New Connection', 'wp-mcp-ai-pro' ); ?>
 			</a>
 		</p>
@@ -245,13 +245,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<?php endif; ?>
 							</td>
 							<td>
-								<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites&edit=' . $connection['id'] ) ); ?>">
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection['id'] ) ); ?>">
 									<?php esc_html_e( 'Edit', 'wp-mcp-ai-pro' ); ?>
 								</a> |
-								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites&action=test&connection_id=' . $connection['id'] ), 'test_connection_' . $connection['id'] ) ); ?>">
+								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=test&connection_id=' . $connection['id'] ), 'test_connection_' . $connection['id'] ) ); ?>">
 									<?php esc_html_e( 'Test', 'wp-mcp-ai-pro' ); ?>
 								</a> |
-								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites&action=delete&connection_id=' . $connection['id'] ), 'delete_connection_' . $connection['id'] ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'wp-mcp-ai-pro' ); ?>');" style="color: #b32d2e;">
+								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=delete&connection_id=' . $connection['id'] ), 'delete_connection_' . $connection['id'] ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'wp-mcp-ai-pro' ); ?>');" style="color: #b32d2e;">
 									<?php esc_html_e( 'Delete', 'wp-mcp-ai-pro' ); ?>
 								</a>
 							</td>
@@ -370,7 +370,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 			<p class="submit">
 				<input type="submit" name="wp_mcp_ai_pro_save_connection" class="button button-primary" value="<?php echo $is_edit ? esc_attr__( 'Update Connection', 'wp-mcp-ai-pro' ) : esc_attr__( 'Add Connection', 'wp-mcp-ai-pro' ); ?>">
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>" class="button">
 					<?php esc_html_e( 'Cancel', 'wp-mcp-ai-pro' ); ?>
 				</a>
 			</p>

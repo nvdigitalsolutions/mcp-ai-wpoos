@@ -5,7 +5,7 @@ This feature allows AI assistants to access data from external WordPress and Woo
 ## Quick Start
 
 1. **Add a Connection**
-   - Go to Assistants → Remote Sites
+   - Go to NV oOS → Remote Sites
    - Click "Add New Connection"
    - Fill in site URL and authentication details
    - Test the connection

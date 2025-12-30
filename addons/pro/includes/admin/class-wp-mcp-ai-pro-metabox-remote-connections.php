@@ -74,7 +74,7 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 			?>
 			<p><?php esc_html_e( 'No remote site connections configured.', 'wp-mcp-ai-pro' ); ?></p>
 			<p>
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites' ) ); ?>">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>">
 					<?php esc_html_e( 'Add Remote Site Connection', 'wp-mcp-ai-pro' ); ?>
 				</a>
 			</p>
@@ -110,7 +110,7 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 		</div>
 
 		<p style="margin-top: 10px;">
-			<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-remote-sites' ) ); ?>" style="font-size: 11px;">
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>" style="font-size: 11px;">
 				<?php esc_html_e( 'Manage Remote Site Connections', 'wp-mcp-ai-pro' ); ?>
 			</a>
 		</p>

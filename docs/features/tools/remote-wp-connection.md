@@ -17,7 +17,7 @@ The Remote WordPress/WooCommerce Connection Tool enables AI assistants to access
 
 ### Adding a Remote Site Connection
 
-1. Navigate to **Assistants → Remote Sites** in the WordPress admin
+1. Navigate to **NV oOS → Remote Sites** in the WordPress admin
 2. Click **Add New Connection**
 3. Fill in the connection details:
    - **Connection Name**: A friendly identifier (e.g., "Production Store")
