@@ -18,9 +18,17 @@
 # to prevent usage until issues are resolved.
 
 # Example entries (active for testing):
+save_post = stable
 create_post = stable
 update_post = stable
+update_term = stable
 web_search = beta
 generate_openai_image_validated = experimental
 get_system_logs = dev
 batch_embed_content = beta
+probe_chat = experimental
+probe_remote_mcp = experimental
+create_cron_job = experimental
+list_cron_jobs = experimental
+delete_cron_job = experimental
+send_group_email = experimental
