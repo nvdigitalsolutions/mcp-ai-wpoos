@@ -513,6 +513,39 @@ Each tool inherits the assistant context and authenticated user from the REST la
 
 Need per-tool prerequisites or capability callouts? Consult [`docs/tool-reference.md`](docs/reference/tools/tool-reference.md) for a detailed matrix of every bundled integration.
 
+### Tool Status Labels
+
+The Tools Manager page displays status labels beside tool names to indicate their development stage and stability:
+
+| Status | Display Label | Description | Auto-Disable |
+| --- | --- | --- | --- |
+| **stable** | STA | Production-ready, fully tested tools safe for all environments | No |
+| **beta** | BET | Testing phase, mostly stable but may have minor issues | No |
+| **dev** | DEV | In active development, may have bugs or incomplete features | No |
+| **experimental** | EXP | New features that may change significantly | No |
+| **bug** | BUG | Known issues exist, use with caution | **Yes** |
+| **deprecated** | DEP | Will be removed in future versions | No |
+
+Status labels are displayed as **3-letter abbreviations** (e.g., "STA" for stable, "BET" for beta) to keep the UI compact.
+
+**Important:** Tools marked with the `bug` status are **automatically disabled** when the plugin loads. This prevents problematic tools from being used until issues are resolved. Administrators can manually re-enable them from the Tools Manager if needed for testing.
+
+Status labels are managed via the [`tool-status.txt`](tool-status.txt) file in the repository root. To assign a status label to a tool:
+
+1. Open `tool-status.txt` in a text editor
+2. Add a line in the format: `tool_slug = status_label`
+3. Save the file - changes appear immediately in the Tools Manager
+
+Example:
+```
+create_post = stable
+web_search = beta
+generate_openai_image_validated = experimental
+problematic_tool = bug
+```
+
+This file-based approach allows quick status updates without code changes, making it easy for maintainers to reflect tool maturity as development progresses. The automatic disabling of buggy tools provides an additional safety layer to prevent issues in production environments.
+
 
 ---
 
