@@ -128,6 +128,9 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 
 		// Load model service if available.
 		$models = array();
+		if ( ! class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-model-service.php';
+		}
 		if ( class_exists( 'WP_MCP_AI_Model_Service' ) ) {
 			$model_service = new WP_MCP_AI_Model_Service();
 			$models        = $model_service->get_models_for_provider( $provider );
