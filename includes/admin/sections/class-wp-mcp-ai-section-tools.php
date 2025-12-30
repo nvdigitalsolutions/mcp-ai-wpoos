@@ -1745,32 +1745,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$configs = array(
 				'stable'       => array(
 					'class' => 'wp-mcp-ai-status-stable',
-					'text'  => __( 'Stable', 'wp-mcp-ai' ),
+					'text'  => __( 'STA', 'wp-mcp-ai' ),
 					'color' => '#46b450',
 				),
 				'dev'          => array(
 					'class' => 'wp-mcp-ai-status-dev',
-					'text'  => __( 'Dev', 'wp-mcp-ai' ),
+					'text'  => __( 'DEV', 'wp-mcp-ai' ),
 					'color' => '#f0ad4e',
 				),
 				'beta'         => array(
 					'class' => 'wp-mcp-ai-status-beta',
-					'text'  => __( 'Beta', 'wp-mcp-ai' ),
+					'text'  => __( 'BET', 'wp-mcp-ai' ),
 					'color' => '#5bc0de',
 				),
 				'bug'          => array(
 					'class' => 'wp-mcp-ai-status-bug',
-					'text'  => __( 'Bug', 'wp-mcp-ai' ),
+					'text'  => __( 'BUG', 'wp-mcp-ai' ),
 					'color' => '#dc3545',
 				),
 				'deprecated'   => array(
 					'class' => 'wp-mcp-ai-status-deprecated',
-					'text'  => __( 'Deprecated', 'wp-mcp-ai' ),
+					'text'  => __( 'DEP', 'wp-mcp-ai' ),
 					'color' => '#6c757d',
 				),
 				'experimental' => array(
 					'class' => 'wp-mcp-ai-status-experimental',
-					'text'  => __( 'Experimental', 'wp-mcp-ai' ),
+					'text'  => __( 'EXP', 'wp-mcp-ai' ),
 					'color' => '#9b59b6',
 				),
 			);
@@ -1780,10 +1780,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				return $configs[ $status ];
 			}
 
-			// Default config for unknown status labels.
+			// Default config for unknown status labels (first 3 chars, uppercase).
 			return array(
 				'class' => 'wp-mcp-ai-status-default',
-				'text'  => ucfirst( $status ),
+				'text'  => strtoupper( substr( $status, 0, 3 ) ),
 				'color' => '#999',
 			);
 		}

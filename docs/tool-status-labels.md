@@ -4,18 +4,20 @@
 
 The Tool Status Labels feature provides a simple, file-based system for managing and displaying the development status of tools in the WP oOS Tools Manager. This allows maintainers to quickly communicate tool maturity without requiring code changes or database updates.
 
+Status labels are displayed as **3-letter abbreviations** for a compact UI (e.g., "STA" for stable, "BET" for beta).
+
 ## Features
 
 ### Status Types
 
-| Status | Description | Color | Auto-Disable |
-|--------|-------------|-------|--------------|
-| `stable` | Production-ready, fully tested | Green (#46b450) | No |
-| `beta` | Testing phase, mostly stable | Blue (#5bc0de) | No |
-| `dev` | In active development | Orange (#f0ad4e) | No |
-| `experimental` | New features that may change | Purple (#9b59b6) | No |
-| `bug` | Known issues exist | Red (#dc3545) | **Yes** |
-| `deprecated` | Will be removed in future | Gray (#6c757d) | No |
+| Status | Display | Description | Color | Auto-Disable |
+|--------|---------|-------------|-------|--------------|
+| `stable` | **STA** | Production-ready, fully tested | Green (#46b450) | No |
+| `beta` | **BET** | Testing phase, mostly stable | Blue (#5bc0de) | No |
+| `dev` | **DEV** | In active development | Orange (#f0ad4e) | No |
+| `experimental` | **EXP** | New features that may change | Purple (#9b59b6) | No |
+| `bug` | **BUG** | Known issues exist | Red (#dc3545) | **Yes** |
+| `deprecated` | **DEP** | Will be removed in future | Gray (#6c757d) | No |
 
 ### Automatic Bug Tool Disabling
 

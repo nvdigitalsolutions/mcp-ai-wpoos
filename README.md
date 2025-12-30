@@ -517,14 +517,16 @@ Need per-tool prerequisites or capability callouts? Consult [`docs/tool-referenc
 
 The Tools Manager page displays status labels beside tool names to indicate their development stage and stability:
 
-| Status | Description | Auto-Disable |
-| --- | --- | --- |
-| **Stable** | Production-ready, fully tested tools safe for all environments | No |
-| **Beta** | Testing phase, mostly stable but may have minor issues | No |
-| **Dev** | In active development, may have bugs or incomplete features | No |
-| **Experimental** | New features that may change significantly | No |
-| **Bug** | Known issues exist, use with caution | **Yes** |
-| **Deprecated** | Will be removed in future versions | No |
+| Status | Display Label | Description | Auto-Disable |
+| --- | --- | --- | --- |
+| **stable** | STA | Production-ready, fully tested tools safe for all environments | No |
+| **beta** | BET | Testing phase, mostly stable but may have minor issues | No |
+| **dev** | DEV | In active development, may have bugs or incomplete features | No |
+| **experimental** | EXP | New features that may change significantly | No |
+| **bug** | BUG | Known issues exist, use with caution | **Yes** |
+| **deprecated** | DEP | Will be removed in future versions | No |
+
+Status labels are displayed as **3-letter abbreviations** (e.g., "STA" for stable, "BET" for beta) to keep the UI compact.
 
 **Important:** Tools marked with the `bug` status are **automatically disabled** when the plugin loads. This prevents problematic tools from being used until issues are resolved. Administrators can manually re-enable them from the Tools Manager if needed for testing.
 
