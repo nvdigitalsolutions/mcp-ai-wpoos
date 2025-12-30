@@ -517,14 +517,16 @@ Need per-tool prerequisites or capability callouts? Consult [`docs/tool-referenc
 
 The Tools Manager page displays status labels beside tool names to indicate their development stage and stability:
 
-| Status | Description |
-| --- | --- |
-| **Stable** | Production-ready, fully tested tools safe for all environments |
-| **Beta** | Testing phase, mostly stable but may have minor issues |
-| **Dev** | In active development, may have bugs or incomplete features |
-| **Experimental** | New features that may change significantly |
-| **Bug** | Known issues exist, use with caution |
-| **Deprecated** | Will be removed in future versions |
+| Status | Description | Auto-Disable |
+| --- | --- | --- |
+| **Stable** | Production-ready, fully tested tools safe for all environments | No |
+| **Beta** | Testing phase, mostly stable but may have minor issues | No |
+| **Dev** | In active development, may have bugs or incomplete features | No |
+| **Experimental** | New features that may change significantly | No |
+| **Bug** | Known issues exist, use with caution | **Yes** |
+| **Deprecated** | Will be removed in future versions | No |
+
+**Important:** Tools marked with the `bug` status are **automatically disabled** when the plugin loads. This prevents problematic tools from being used until issues are resolved. Administrators can manually re-enable them from the Tools Manager if needed for testing.
 
 Status labels are managed via the [`tool-status.txt`](tool-status.txt) file in the repository root. To assign a status label to a tool:
 
@@ -537,9 +539,10 @@ Example:
 create_post = stable
 web_search = beta
 generate_openai_image_validated = experimental
+problematic_tool = bug
 ```
 
-This file-based approach allows quick status updates without code changes, making it easy for maintainers to reflect tool maturity as development progresses.
+This file-based approach allows quick status updates without code changes, making it easy for maintainers to reflect tool maturity as development progresses. The automatic disabling of buggy tools provides an additional safety layer to prevent issues in production environments.
 
 
 ---

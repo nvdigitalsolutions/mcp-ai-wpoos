@@ -7,12 +7,15 @@
 # - stable: Production-ready, fully tested
 # - dev: In development, may have issues
 # - beta: Testing phase, mostly stable
-# - bug: Known issues, use with caution
+# - bug: Known issues, use with caution (automatically disabled)
 # - deprecated: Will be removed in future versions
 # - experimental: New feature, may change
 #
 # Lines starting with # are comments and will be ignored.
 # Empty lines are ignored.
+#
+# NOTE: Tools marked with "bug" status are automatically disabled
+# to prevent usage until issues are resolved.
 
 # Example entries (active for testing):
 create_post = stable
