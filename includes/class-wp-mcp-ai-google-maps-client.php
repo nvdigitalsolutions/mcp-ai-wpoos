@@ -50,7 +50,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the WP oOS settings.', 'wp-mcp-ai' ),
+							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -172,7 +172,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the WP oOS settings.', 'wp-mcp-ai' ),
+							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -270,7 +270,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the WP oOS settings.', 'wp-mcp-ai' ),
+							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -369,7 +369,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the WP oOS settings.', 'wp-mcp-ai' ),
+							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);

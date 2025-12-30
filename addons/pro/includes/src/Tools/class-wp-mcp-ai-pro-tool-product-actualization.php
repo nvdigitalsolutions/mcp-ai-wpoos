@@ -499,6 +499,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 					$image->destroy();
 					return $alpha !== Imagick::ALPHACHANNEL_UNDEFINED;
 				} catch ( Exception $e ) {
+					// Intentionally empty - error handled elsewhere.
 					// Fall through to GD check.
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -788,6 +789,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			return $output_path;
 
 		} catch ( Exception $e ) {
+			// Intentionally empty - error handled elsewhere.
 			return new WP_Error(
 				'wp_mcp_ai_composite_failed',
 				sprintf(

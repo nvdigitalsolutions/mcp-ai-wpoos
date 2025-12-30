@@ -2,7 +2,6 @@
 /**
  * Tests for chat error logging helpers in the REST controller.
  */
-
 class WP_MCP_AI_REST_Chat_Error_Logging_Test extends WP_UnitTestCase {
 	/**
 	 * REST controller instance.

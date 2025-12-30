@@ -1,6 +1,6 @@
 <?php
 /**
- * WP oOS MCP Server Diagnostic Page
+ * NV oOS MCP Server Diagnostic Page
  *
  * Comprehensive diagnostic page for testing and verifying MCP (Model Context Protocol) functionality.
  * Tests endpoints, protocol compliance, authentication, tools, and server capabilities.

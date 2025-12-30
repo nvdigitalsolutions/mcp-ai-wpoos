@@ -2,7 +2,6 @@
 /**
  * Tests for HTTP connection logging.
  */
-
 class WP_MCP_AI_HTTP_Logging_Tests extends WP_UnitTestCase {
 
 	/**
@@ -12,6 +11,9 @@ class WP_MCP_AI_HTTP_Logging_Tests extends WP_UnitTestCase {
 	 */
 	private $captured_entries = array();
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -24,6 +26,9 @@ class WP_MCP_AI_HTTP_Logging_Tests extends WP_UnitTestCase {
 		add_filter( 'wp_mcp_ai_log_entry', array( $this, 'capture_log_entry' ), 10, 4 );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_log_entry', array( $this, 'capture_log_entry' ), 10 );
 

@@ -126,7 +126,7 @@ class Test_Capability_Flags_Filter extends WP_UnitTestCase {
 	 * This simulates the actual use case in WP_MCP_AI_Model_Config_Renderer.
 	 */
 	public function test_model_config_fallback_slug_with_filter() {
-		$source_model_id = 'gpt-4o'; // A multimodal model
+		$source_model_id = 'gpt-4o'; // A multimodal model.
 		$temp_tool_slug  = 'model_config_fallback_' . sanitize_key( $source_model_id );
 
 		// Simulate the renderer's filter usage.
@@ -265,7 +265,7 @@ class Test_Capability_Flags_Filter extends WP_UnitTestCase {
 			'wp_mcp_ai_tool_capability_flags',
 			function ( $flags, $tool_slug ) use ( $temp_tool_slug ) {
 				if ( $tool_slug === $temp_tool_slug ) {
-					return array(); // No special requirements
+					return array(); // No special requirements.
 				}
 				return $flags;
 			},

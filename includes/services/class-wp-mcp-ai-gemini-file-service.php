@@ -584,7 +584,7 @@ class WP_MCP_AI_Gemini_File_Service {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						'configure_gemini_api_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);

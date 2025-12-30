@@ -1,6 +1,6 @@
 <?php
 /**
- * Token Manager Settings Section for WP oOS
+ * Token Manager Settings Section for NV oOS
  *
  * Provides comprehensive token usage management and monitoring.
  *
@@ -1404,7 +1404,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			?>
 			<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
 				<p style="margin: 0 0 10px 0; font-size: 14px;">
-					<strong><?php esc_html_e( 'Get WP oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
 				</p>
 				<p style="margin: 0 0 10px 0;">
 					<?php
@@ -1418,7 +1418,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				</p>
 				<p style="margin: 0;">
 					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
-						<?php esc_html_e( 'Get WP oOS Pro', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Get NV oOS Pro', 'wp-mcp-ai' ); ?>
 					</a>
 					<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
 						<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>

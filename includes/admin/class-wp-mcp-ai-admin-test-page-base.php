@@ -151,7 +151,7 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 		wp_enqueue_script(
 			'wp-mcp-ai-chat',
 			$script_path,
-			array(), // No dependencies - all services are bundled together
+			array(), // No dependencies - all services are bundled together.
 			$script_version,
 			true
 		);

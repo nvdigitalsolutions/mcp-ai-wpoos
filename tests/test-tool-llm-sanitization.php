@@ -162,18 +162,45 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 
 		// Make the mock also implement the sanitizer interface.
 		$mock_tool_with_sanitizer = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_tool';
 			}
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test Tool';
 			}
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Test';
 			}
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array();
 			}
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'test'        => 'data',

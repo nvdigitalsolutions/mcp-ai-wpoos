@@ -269,7 +269,7 @@ class WP_MCP_AI_Jukebox_Service {
 				'--metadata_file=' . $metadata_file,
 			),
 			array(
-				'timeout' => 3600, // 1 hour timeout for music generation
+				'timeout' => 3600, // 1 hour timeout for music generation.
 				'cwd'     => $jukebox_path,
 			)
 		);

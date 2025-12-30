@@ -56,7 +56,7 @@ class WP_MCP_AI_Tool_Get_System_Logs_Validated extends WP_MCP_AI_Validated_Tool 
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns recent log entries from WordPress, WP oOS, and plugin log files for diagnostics using Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Returns recent log entries from WordPress, NV oOS, and plugin log files for diagnostics using Symfony Validator for argument validation.', 'wp-mcp-ai' );
 	}
 
 	/**

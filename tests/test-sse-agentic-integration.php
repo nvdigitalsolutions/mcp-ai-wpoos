@@ -572,18 +572,38 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 	 */
 	protected function create_failing_tool() {
 		return new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'failing_test_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Failing Test Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'A tool that always fails';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -591,6 +611,13 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return new WP_Error( 'tool_failed', 'This tool always fails.' );
 			}
@@ -604,18 +631,38 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 	 */
 	protected function create_mock_image_tool() {
 		return new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'generate_test_image';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Generate Test Image';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Generate a test image';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -623,6 +670,13 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'url'           => 'https://example.com/test-image.png',

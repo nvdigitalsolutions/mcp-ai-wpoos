@@ -238,6 +238,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 				);
 			}
 		} catch ( Exception $e ) {
+			// Intentionally empty - error handled elsewhere.
 			error_log( 'WP MCP AI: Scheduled import failed - ' . $e->getMessage() );
 		}
 	}

@@ -1,6 +1,6 @@
 <?php
 /**
- * Performance Reporting Service for WP oOS.
+ * Performance Reporting Service for NV oOS.
  *
  * Provides performance reporting and analysis capabilities extracted from the admin layer:
  * - Historical trend analysis

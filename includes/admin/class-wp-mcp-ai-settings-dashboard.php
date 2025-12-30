@@ -198,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( $enable_logging ) {
 				error_log(
 					sprintf(
-						'[WP oOS Settings] Save attempt - Tab: %s, Posted fields: %d, Posted keys: %s',
+						'[NV oOS Settings] Save attempt - Tab: %s, Posted fields: %d, Posted keys: %s',
 						$active_tab,
 						count( $posted_settings ),
 						implode( ', ', array_keys( $posted_settings ) )
@@ -213,7 +213,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( $enable_logging ) {
 				error_log(
 					sprintf(
-						'[WP oOS Settings] After sanitization - Sanitized fields: %d, Sanitized keys: %s',
+						'[NV oOS Settings] After sanitization - Sanitized fields: %d, Sanitized keys: %s',
 						count( $sanitized_new ),
 						implode( ', ', array_keys( $sanitized_new ) )
 					)
@@ -221,7 +221,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Merge with existing settings to avoid wiping unrelated fields.
-			// This is critical for display-only sections (like Overview) that have no editable fields,
+			// This is critical for display-only sections (like Overview) that have no editable fields,.
 			// and for preserving settings from other tabs.
 			$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$merged_settings   = array_merge( $existing_settings, $sanitized_new );
@@ -232,7 +232,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( $enable_logging ) {
 				error_log(
 					sprintf(
-						'[WP oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d',
+						'[NV oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d',
 						$update_result ? 'SUCCESS' : 'UNCHANGED',
 						count( $existing_settings ),
 						count( $merged_settings )

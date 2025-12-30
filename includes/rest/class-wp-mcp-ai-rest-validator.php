@@ -2,7 +2,7 @@
 /**
  * REST API Request Validator
  *
- * Handles validation and sanitization of REST API requests for WP oOS plugin.
+ * Handles validation and sanitization of REST API requests for NV oOS plugin.
  * This class is part of the refactoring effort to separate concerns from the
  * monolithic REST controller class.
  *
@@ -668,8 +668,8 @@ class WP_MCP_AI_REST_Validator {
 			$options['enable_web_search'] = (bool) $options['enable_web_search'];
 		}
 
-		// Remove 'stream' parameter if present - it's only used by SSE handler to determine
-		// response format (SSE vs JSON), not for AI provider clients which manage their own
+		// Remove 'stream' parameter if present - it's only used by SSE handler to determine.
+		// response format (SSE vs JSON), not for AI provider clients which manage their own.
 		// streaming behavior. This prevents the frontend's stream flag from being passed to
 		// providers like LM Studio which explicitly disable streaming to prevent chunked responses.
 		if ( isset( $options['stream'] ) ) {

@@ -228,7 +228,7 @@ class Test_Veo_Parent_Job_Completion extends WP_UnitTestCase {
 		// Should not throw error.
 		$method->invoke( $service, 'nonexistent_parent_job', $result );
 
-		// Verify it logged the event (check logs if needed, but we mainly
+		// Verify it logged the event (check logs if needed, but we mainly.
 		// want to verify it doesn't crash).
 		$this->assertTrue( true, 'Should handle missing parent job gracefully' );
 	}

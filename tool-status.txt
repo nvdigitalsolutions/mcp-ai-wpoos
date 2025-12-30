@@ -1,0 +1,80 @@
+# Tool Status Labels
+#
+# This file defines status labels for tools displayed in the Tools Manager.
+# Format: tool_slug = status_label
+#
+# Available status labels:
+# - stable: Production-ready, fully tested
+# - dev: In development, may have issues
+# - beta: Testing phase, mostly stable
+# - bug: Known issues, use with caution (automatically disabled)
+# - deprecated: Will be removed in future versions
+# - experimental: New feature, may change
+#
+# Lines starting with # are comments and will be ignored.
+# Empty lines are ignored.
+#
+# NOTE: Tools marked with "bug" status are automatically disabled
+# to prevent usage until issues are resolved.
+
+# Example entries (active for testing):
+save_post = stable
+create_post = stable
+update_post = stable
+create_term = stable
+update_term = stable
+web_search = beta
+generate_openai_image_validated = experimental
+get_system_logs = dev
+batch_embed_content = beta
+probe_chat = bug
+probe_remote_mcp = bug
+create_cron_job = dev
+list_cron_jobs = dev
+delete_cron_job = dev
+send_group_email = dev
+analyze_video = dev
+save_profession = experimental
+extract_video_frames = dev
+create_project = dev
+update_project = dev
+delete_project = dev
+create_quiz = dev
+get_quiz = dev
+list_quizzes = dev
+submit_quiz_answer = dev
+grade_quiz = dev
+get_quiz_submissions = dev
+get_quiz_results = dev
+create_vector_store = dev
+list_vector_stores = dev
+get_vector_store = dev
+manage_vector_store_files = dev
+analyze_file_suitability = dev
+run_openai_external_action = dev
+moderate_content = experimental
+check_video_status = experimental
+scrape_product = dev
+vision_product_search = dev
+vision_object_localization = dev
+generate_jukebox_music = dev
+check_jukebox_status = dev
+product_actualization = dev
+lookup_product_price = dev
+post_facebook_instagram = dev
+post_tiktok_video = dev
+post_linkedin_update = dev
+post_google_business_update = dev
+get_facebook_instagram_insights = dev
+get_tiktok_insights = dev
+get_linkedin_insights = dev
+get_google_business_insights = dev
+send_whatsapp_message = dev
+send_telegram_message = dev
+search_gmail = dev
+send_mailjet_email = dev
+create_google_calendar_event = dev
+google_analytics_report = dev
+quickbooks_report = experimental
+get_import_duty = bug
+generic_rest = experimental

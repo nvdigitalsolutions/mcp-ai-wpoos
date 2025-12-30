@@ -9,7 +9,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 
 	/**
@@ -40,6 +39,9 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 	 */
 	protected $reflection;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -67,6 +69,9 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 		$this->reflection = new ReflectionClass( $this->rest_controller );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 		wp_set_current_user( 0 );

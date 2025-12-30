@@ -11,6 +11,9 @@ class WP_MCP_AI_REST_Authentication_Test extends WP_UnitTestCase {
 	 */
 	protected $rest_controller;
 
+	/**
+	 * Set up test environment.
+	 */
 	protected function setUp(): void {
 		parent::setUp();
 
@@ -28,6 +31,9 @@ class WP_MCP_AI_REST_Authentication_Test extends WP_UnitTestCase {
 		$this->rest_controller = new WP_MCP_AI_REST( $registry, $mock_client );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	protected function tearDown(): void {
 		if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
 			remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );

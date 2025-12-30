@@ -7,7 +7,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_Assistant_Metabox_Crash_Fix_Test extends WP_UnitTestCase {
 
 	/**

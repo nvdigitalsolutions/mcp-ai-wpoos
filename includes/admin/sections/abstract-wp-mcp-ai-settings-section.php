@@ -126,12 +126,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$subtab_field_name = 'subtab_' . $this->get_id();
 			$submitted_subtab  = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
 
-			// Only consider this a form submit if the submitted subtab matches the active subtab
+			// Only consider this a form submit if the submitted subtab matches the active subtab.
 			// AND the submitted subtab actually exists in this section's subtab groups.
 			// This prevents cross-subtab data clearing when saving one subtab shouldn't affect others.
 			$is_form_submit = ( $submitted_subtab === $active_subtab ) && isset( $subtab_groups[ $submitted_subtab ] );
 
-			// If this is not the subtab being submitted, return empty array to avoid
+			// If this is not the subtab being submitted, return empty array to avoid.
 			// processing fields from inactive subtabs and preserve their existing values.
 			if ( ! $is_form_submit ) {
 				return array();

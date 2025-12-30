@@ -104,15 +104,15 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$status = $response->get_status();
 
 		// The response should be either:
-		// - 404 if the transcript doesn't exist (when JetEngine is available)
-		// - 200 with null session if transcript storage is unavailable (when JetEngine is not active)
+		// - 404 if the transcript doesn't exist (when JetEngine is available).
+		// - 200 with null session if transcript storage is unavailable (when JetEngine is not active).
 		$this->assertContains(
 			$status,
 			array( 200, 404 ),
 			'Should return 404 for missing transcript or 200 if storage unavailable'
 		);
 
-		// If 200, verify it has the expected structure for unavailable storage
+		// If 200, verify it has the expected structure for unavailable storage.
 		if ( 200 === $status ) {
 			$data = $response->get_data();
 			$this->assertIsArray( $data, 'Data should be an array' );
@@ -127,7 +127,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 	public function test_empty_session_key_returns_error() {
 		wp_set_current_user( $this->user_id );
 
-		// Try with empty session key - WordPress will likely not match the route,
+		// Try with empty session key - WordPress will likely not match the route,.
 		// but let's test with a slash which should match but be empty.
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts/ ' );
 		$request->set_param( 'user_id', $this->user_id );
@@ -181,7 +181,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 
 		$status = $response->get_status();
 
-		// Should return 404 for non-existent transcript or 200 if storage unavailable
+		// Should return 404 for non-existent transcript or 200 if storage unavailable.
 		$this->assertContains(
 			$status,
 			array( 200, 404 ),
@@ -207,7 +207,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 
 		$status = $response->get_status();
 
-		// Should return 404 for non-existent transcript or 200 if storage unavailable
+		// Should return 404 for non-existent transcript or 200 if storage unavailable.
 		$this->assertContains(
 			$status,
 			array( 200, 404 ),

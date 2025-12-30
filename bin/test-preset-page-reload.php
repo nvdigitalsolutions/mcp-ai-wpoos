@@ -134,7 +134,7 @@ class WP_MCP_AI_Resource_Manager {
 	}
 
 	public function get_memory_limit() {
-		return 512 * 1024 * 1024; // 512MB - Medium tier
+		return 512 * 1024 * 1024; // 512MB - Medium tier.
 	}
 }
 
@@ -149,7 +149,7 @@ require_once ABSPATH . 'includes/services/class-wp-mcp-ai-orchestration-preset-s
 echo "Preset Page Reload Scenario Test\n";
 echo "=================================\n\n";
 
-// Simulate initial page load - no settings yet
+// Simulate initial page load - no settings yet.
 delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
 echo "Step 1: Initial page load (no preset saved yet)...\n";
@@ -171,7 +171,7 @@ if ( $result !== true ) {
 	exit( 1 );
 }
 
-// Verify it was saved to database
+// Verify it was saved to database.
 $saved_options = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 $saved_preset  = isset( $saved_options['orchestration_preset'] ) ? $saved_options['orchestration_preset'] : 'NOT SET';
 echo "  Saved to database: orchestration_preset = $saved_preset\n";

@@ -1,6 +1,6 @@
 <?php
 /**
- * Queue Manager for WP oOS.
+ * Queue Manager for NV oOS.
  *
  * Provides queue-based tool execution management integrating with RabbitMQ
  * for enhanced agentic workflow processing.

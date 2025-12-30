@@ -400,7 +400,7 @@ if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
 
 				$actions = array(
 					'check_service_running'   => __( 'Ensure the service is running and accepting connections.', 'wp-mcp-ai' ),
-					'verify_endpoint_url'     => __( 'Verify the endpoint URL and port number are correct in Settings → WP oOS.', 'wp-mcp-ai' ),
+					'verify_endpoint_url'     => __( 'Verify the endpoint URL and port number are correct in Settings → NV oOS.', 'wp-mcp-ai' ),
 					'check_firewall'          => __( 'Check that no firewall is blocking connections to the service.', 'wp-mcp-ai' ),
 					'check_service_listening' => __( 'Confirm the service is listening on the correct interface (0.0.0.0 or the specific IP).', 'wp-mcp-ai' ),
 				);
@@ -422,7 +422,7 @@ if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
 				$message = self::build_timeout_message( $service_label );
 
 				$actions = array(
-					'configure_request_timeout' => __( 'Increase the request timeout under Settings → WP oOS.', 'wp-mcp-ai' ),
+					'configure_request_timeout' => __( 'Increase the request timeout under Settings → NV oOS.', 'wp-mcp-ai' ),
 					'check_server_connectivity' => __( 'Confirm your server can reach the remote service without firewall or network blocks.', 'wp-mcp-ai' ),
 				);
 

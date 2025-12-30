@@ -7,7 +7,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class Test_Veo_Local_URL extends WP_UnitTestCase {
 
 	/**

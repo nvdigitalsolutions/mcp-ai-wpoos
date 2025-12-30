@@ -1,0 +1,461 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  schedule:
+    # Run security checks weekly on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run Composer audit
+        id: composer-audit
+        run: |
+          set +e
+          composer audit --format=json > composer-audit.json 2>&1
+          AUDIT_EXIT_CODE=$?
+          set -e
+          
+          if [ -f composer-audit.json ] && [ -s composer-audit.json ]; then
+            echo "Composer audit completed"
+            cat composer-audit.json
+            
+            # Parse vulnerabilities count
+            VULNS=$(jq '.advisories | length' composer-audit.json 2>/dev/null || echo "0")
+            echo "vulnerabilities=$VULNS" >> $GITHUB_OUTPUT
+            
+            if [ "$VULNS" -gt 0 ]; then
+              echo "::warning::Found $VULNS dependency vulnerabilities"
+            else
+              echo "✅ No dependency vulnerabilities found"
+            fi
+          else
+            echo "vulnerabilities=0" >> $GITHUB_OUTPUT
+            echo "✅ No dependency vulnerabilities found"
+          fi
+        continue-on-error: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        id: npm-audit
+        run: |
+          set +e
+          npm audit --json > npm-audit.json 2>&1
+          NPM_EXIT_CODE=$?
+          set -e
+          
+          if [ -f npm-audit.json ] && [ -s npm-audit.json ]; then
+            echo "npm audit completed"
+            cat npm-audit.json
+            
+            # Parse vulnerabilities count
+            HIGH=$(jq '.metadata.vulnerabilities.high // 0' npm-audit.json 2>/dev/null || echo "0")
+            CRITICAL=$(jq '.metadata.vulnerabilities.critical // 0' npm-audit.json 2>/dev/null || echo "0")
+            TOTAL=$(($HIGH + $CRITICAL))
+            
+            echo "high_vulnerabilities=$HIGH" >> $GITHUB_OUTPUT
+            echo "critical_vulnerabilities=$CRITICAL" >> $GITHUB_OUTPUT
+            
+            if [ "$TOTAL" -gt 0 ]; then
+              echo "::warning::Found $TOTAL high/critical npm vulnerabilities"
+            else
+              echo "✅ No high/critical npm vulnerabilities found"
+            fi
+          else
+            echo "high_vulnerabilities=0" >> $GITHUB_OUTPUT
+            echo "critical_vulnerabilities=0" >> $GITHUB_OUTPUT
+            echo "✅ No high/critical npm vulnerabilities found"
+          fi
+        continue-on-error: true
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-results
+          path: |
+            composer-audit.json
+            npm-audit.json
+          retention-days: 30
+
+  php-security-scan:
+    name: PHP Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install PHPStan with security rules
+        run: |
+          composer require --dev phpstan/phpstan phpstan/phpstan-wordpress --no-interaction
+        continue-on-error: true
+
+      - name: Create PHPStan configuration
+        run: |
+          cat > phpstan.neon << 'EOF'
+          parameters:
+            level: 1
+            paths:
+              - includes
+              - addons
+            excludePaths:
+              - vendor
+              - tests
+              - node_modules
+            bootstrapFiles:
+              - mcp-ai-wpoos.php
+            ignoreErrors:
+              - '#Access to an undefined property#'
+              - '#Call to an undefined method#'
+          EOF
+
+      - name: Run PHPStan security analysis
+        id: phpstan
+        run: |
+          set +e
+          vendor/bin/phpstan analyse --error-format=json --no-progress > phpstan-results.json 2>&1
+          PHPSTAN_EXIT_CODE=$?
+          set -e
+          
+          if [ -f phpstan-results.json ]; then
+            echo "PHPStan analysis completed"
+            cat phpstan-results.json
+            
+            # Count errors
+            ERRORS=$(jq '.totals.file_errors // 0' phpstan-results.json 2>/dev/null || echo "0")
+            echo "errors=$ERRORS" >> $GITHUB_OUTPUT
+            
+            if [ "$ERRORS" -gt 0 ]; then
+              echo "::warning::PHPStan found $ERRORS potential issues"
+            else
+              echo "✅ PHPStan analysis clean"
+            fi
+          else
+            echo "errors=0" >> $GITHUB_OUTPUT
+            echo "✅ PHPStan analysis clean"
+          fi
+        continue-on-error: true
+
+      - name: Upload PHPStan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phpstan-results
+          path: phpstan-results.json
+          retention-days: 30
+
+  wordpress-security:
+    name: WordPress Security Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for hardcoded secrets
+        id: secrets-scan
+        run: |
+          echo "Scanning for potential hardcoded secrets..."
+          
+          # Patterns to search for
+          PATTERNS=(
+            "api[_-]?key.*=.*['\"][a-zA-Z0-9]{20,}['\"]"
+            "apikey.*=.*['\"][a-zA-Z0-9]{20,}['\"]"
+            "api[_-]?secret.*=.*['\"][a-zA-Z0-9]{20,}['\"]"
+            "password.*=.*['\"][^'\"]{8,}['\"]"
+            "token.*=.*['\"][a-zA-Z0-9]{20,}['\"]"
+            "secret.*=.*['\"][a-zA-Z0-9]{20,}['\"]"
+          )
+          
+          FOUND=0
+          for pattern in "${PATTERNS[@]}"; do
+            if grep -rniE "$pattern" \
+              --include="*.php" \
+              --exclude-dir=vendor \
+              --exclude-dir=node_modules \
+              --exclude-dir=tests \
+              --exclude-dir=.git \
+              . 2>/dev/null; then
+              FOUND=1
+              echo "::warning::Potential hardcoded secret found matching pattern: $pattern"
+            fi
+          done
+          
+          echo "secrets_found=$FOUND" >> $GITHUB_OUTPUT
+          
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✅ No hardcoded secrets detected"
+          fi
+
+      - name: Check for SQL injection risks
+        id: sql-injection
+        run: |
+          echo "Scanning for potential SQL injection vulnerabilities..."
+          
+          # Look for direct SQL queries without prepare()
+          FOUND=0
+          
+          # Check for $wpdb->query without prepare
+          if grep -rn '\$wpdb->query\s*(' \
+            --include="*.php" \
+            --exclude-dir=vendor \
+            --exclude-dir=node_modules \
+            --exclude-dir=tests \
+            . | grep -v 'prepare' | grep -v '^\s*//' | grep -v '^\s*\*' ; then
+            FOUND=1
+            echo "::warning::Potential SQL injection risk: direct \$wpdb->query() without prepare()"
+          fi
+          
+          echo "sql_risks_found=$FOUND" >> $GITHUB_OUTPUT
+          
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✅ No obvious SQL injection risks detected"
+          fi
+
+      - name: Check for XSS vulnerabilities
+        id: xss-check
+        run: |
+          echo "Scanning for potential XSS vulnerabilities..."
+          
+          FOUND=0
+          
+          # Check for echo without escaping
+          if grep -rn 'echo\s\+\$_\(GET\|POST\|REQUEST\|SERVER\)\[' \
+            --include="*.php" \
+            --exclude-dir=vendor \
+            --exclude-dir=node_modules \
+            --exclude-dir=tests \
+            . 2>/dev/null; then
+            FOUND=1
+            echo "::warning::Potential XSS risk: direct echo of superglobal"
+          fi
+          
+          # Check for print without escaping
+          if grep -rn 'print\s\+\$_\(GET\|POST\|REQUEST\|SERVER\)\[' \
+            --include="*.php" \
+            --exclude-dir=vendor \
+            --exclude-dir=node_modules \
+            --exclude-dir=tests \
+            . 2>/dev/null; then
+            FOUND=1
+            echo "::warning::Potential XSS risk: direct print of superglobal"
+          fi
+          
+          echo "xss_risks_found=$FOUND" >> $GITHUB_OUTPUT
+          
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✅ No obvious XSS risks detected"
+          fi
+
+      - name: Check for proper nonce verification
+        id: nonce-check
+        run: |
+          echo "Checking for proper nonce usage..."
+          
+          # Look for AJAX handlers without nonce checks
+          FILES_CHECKED=0
+          FILES_WITHOUT_NONCE=0
+          
+          # Find PHP files with wp_ajax_ actions
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              FILES_CHECKED=$((FILES_CHECKED + 1))
+              
+              # Check if file has nonce verification
+              if ! grep -q 'wp_verify_nonce\|check_ajax_referer' "$file"; then
+                FILES_WITHOUT_NONCE=$((FILES_WITHOUT_NONCE + 1))
+                echo "::warning::File $file registers AJAX action but may lack nonce verification"
+              fi
+            fi
+          done < <(grep -rl "add_action.*wp_ajax_" \
+            --include="*.php" \
+            --exclude-dir=vendor \
+            --exclude-dir=node_modules \
+            --exclude-dir=tests \
+            . 2>/dev/null || true)
+          
+          echo "ajax_files_checked=$FILES_CHECKED" >> $GITHUB_OUTPUT
+          echo "ajax_files_without_nonce=$FILES_WITHOUT_NONCE" >> $GITHUB_OUTPUT
+          
+          if [ "$FILES_WITHOUT_NONCE" -eq 0 ] && [ "$FILES_CHECKED" -gt 0 ]; then
+            echo "✅ All AJAX handlers appear to use nonce verification"
+          elif [ "$FILES_CHECKED" -eq 0 ]; then
+            echo "ℹ️ No AJAX handlers found"
+          else
+            echo "⚠️ Found $FILES_WITHOUT_NONCE AJAX handlers without obvious nonce checks"
+          fi
+
+      - name: Check file permissions and includes
+        id: file-security
+        run: |
+          echo "Checking file security..."
+          
+          FOUND=0
+          
+          # Check for dangerous file operations
+          if grep -rn 'eval\s*(' \
+            --include="*.php" \
+            --exclude-dir=vendor \
+            --exclude-dir=node_modules \
+            --exclude-dir=tests \
+            . 2>/dev/null | grep -v '^\s*//' | grep -v '^\s*\*'; then
+            FOUND=1
+            echo "::warning::Usage of eval() detected - potential security risk"
+          fi
+          
+          # Check for system/exec without proper sanitization context
+          if grep -rn '\(system\|exec\|shell_exec\|passthru\)\s*(' \
+            --include="*.php" \
+            --exclude-dir=vendor \
+            --exclude-dir=node_modules \
+            --exclude-dir=tests \
+            --exclude-dir=addons/pro \
+            . 2>/dev/null | grep -v '^\s*//' | grep -v '^\s*\*'; then
+            echo "::notice::System command execution found - verify proper sanitization"
+          fi
+          
+          echo "dangerous_functions_found=$FOUND" >> $GITHUB_OUTPUT
+          
+          if [ "$FOUND" -eq 0 ]; then
+            echo "✅ No dangerous function usage detected"
+          fi
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, php-security-scan, wordpress-security]
+    if: always()
+    
+    steps:
+      - name: Generate security summary
+        run: |
+          echo "# Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          # Dependency scan results
+          COMPOSER_VULNS="${{ needs.dependency-scan.outputs.vulnerabilities || '0' }}"
+          if [ "$COMPOSER_VULNS" -eq 0 ]; then
+            echo "| Composer Dependencies | ✅ No vulnerabilities |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Composer Dependencies | ⚠️ $COMPOSER_VULNS vulnerabilities |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          NPM_VULNS=$((${{ needs.dependency-scan.outputs.high_vulnerabilities || 0 }} + ${{ needs.dependency-scan.outputs.critical_vulnerabilities || 0 }}))
+          if [ "$NPM_VULNS" -eq 0 ]; then
+            echo "| npm Dependencies | ✅ No high/critical vulnerabilities |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| npm Dependencies | ⚠️ $NPM_VULNS high/critical vulnerabilities |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # PHP security analysis
+          PHPSTAN_ERRORS="${{ needs.php-security-scan.outputs.errors || '0' }}"
+          if [ "$PHPSTAN_ERRORS" -eq 0 ]; then
+            echo "| PHP Static Analysis | ✅ No issues |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| PHP Static Analysis | ⚠️ $PHPSTAN_ERRORS issues |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # WordPress security
+          SECRETS="${{ needs.wordpress-security.outputs.secrets_found || '0' }}"
+          if [ "$SECRETS" -eq 0 ]; then
+            echo "| Hardcoded Secrets | ✅ None found |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Hardcoded Secrets | ⚠️ Potential secrets found |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          SQL_RISKS="${{ needs.wordpress-security.outputs.sql_risks_found || '0' }}"
+          if [ "$SQL_RISKS" -eq 0 ]; then
+            echo "| SQL Injection Risks | ✅ None detected |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| SQL Injection Risks | ⚠️ Potential risks found |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          XSS_RISKS="${{ needs.wordpress-security.outputs.xss_risks_found || '0' }}"
+          if [ "$XSS_RISKS" -eq 0 ]; then
+            echo "| XSS Vulnerabilities | ✅ None detected |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| XSS Vulnerabilities | ⚠️ Potential risks found |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Overall Status" >> $GITHUB_STEP_SUMMARY
+          
+          # Calculate overall score
+          TOTAL_ISSUES=$(($COMPOSER_VULNS + $NPM_VULNS + $PHPSTAN_ERRORS + $SECRETS + $SQL_RISKS + $XSS_RISKS))
+          
+          if [ "$TOTAL_ISSUES" -eq 0 ]; then
+            echo "✅ **All security checks passed!**" >> $GITHUB_STEP_SUMMARY
+            echo "status=passing" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ **Found $TOTAL_ISSUES potential security issues**" >> $GITHUB_STEP_SUMMARY
+            echo "status=warning" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Scan completed at $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create security badge
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-badge-data
+          path: /dev/null
+          retention-days: 1

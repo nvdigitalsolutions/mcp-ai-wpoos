@@ -247,8 +247,9 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// Get chart dimensions.
-		$width  = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : 800;
-		$height = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : 400;
+		// Default to 600x350 to fit better in chat interface (typical chat width ~720px).
+		$width  = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : 600;
+		$height = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : 350;
 
 		$width  = max( 100, min( 2000, $width ) );
 		$height = max( 100, min( 2000, $height ) );
@@ -257,6 +258,15 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$options = isset( $arguments['options'] ) && is_array( $arguments['options'] )
 			? $arguments['options']
 			: array();
+
+		// Ensure Chart.js respects explicit canvas dimensions and doesn't auto-resize.
+		// This prevents the canvas from being resized to 3x3 pixels during iframe initialization.
+		if ( ! isset( $options['responsive'] ) ) {
+			$options['responsive'] = false;
+		}
+		if ( ! isset( $options['maintainAspectRatio'] ) ) {
+			$options['maintainAspectRatio'] = false;
+		}
 
 		// Add title to options if provided.
 		if ( ! empty( $arguments['title'] ) ) {
@@ -297,6 +307,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				'html'          => $html,
 				'chart_config'  => $chart_config,
 				'saved_as_file' => true,
+				'output_format' => 'chart', // Enables chart embedding in chat client via iframe rendering.
 			);
 		}
 
@@ -307,6 +318,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'width'         => $width,
 			'height'        => $height,
 			'saved_as_file' => false,
+			'output_format' => 'chart', // Enables chart embedding in chat client via iframe rendering.
 		);
 	}
 
@@ -458,6 +470,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chart</title>
+    <script src="{$chartjs_url}"></script>
     <style>
         body {
             margin: 0;
@@ -475,7 +488,6 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
         }
         canvas {
             max-width: 100%;
-            height: auto !important;
         }
     </style>
 </head>
@@ -483,13 +495,24 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
     <div class="chart-container">
         <canvas id="{$chart_id}" width="{$width}" height="{$height}"></canvas>
     </div>
-    <script src="{$chartjs_url}"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const ctx = document.getElementById('{$chart_id}').getContext('2d');
-            const chartConfig = {$config_json};
-            new Chart(ctx, chartConfig);
-        });
+        (function() {
+            function initChart() {
+                if (typeof Chart === 'undefined') {
+                    setTimeout(initChart, 50);
+                    return;
+                }
+                const ctx = document.getElementById('{$chart_id}').getContext('2d');
+                const chartConfig = {$config_json};
+                new Chart(ctx, chartConfig);
+            }
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initChart);
+            } else {
+                initChart();
+            }
+        })();
     </script>
 </body>
 </html>

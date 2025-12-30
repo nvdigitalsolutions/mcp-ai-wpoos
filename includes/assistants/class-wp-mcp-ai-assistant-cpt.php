@@ -206,6 +206,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'crawl4ai_price_lookup',
 						'vision_product_search',
 						'get_import_duty',
+						'remote_wp_connection',
 					),
 				),
 				'site_management'     => array(
@@ -229,6 +230,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'install_and_activate_theme',
 						'update_option',
 						'site_creator',
+						'remote_wp_connection',
 					),
 				),
 				'seo_marketing'       => array(
@@ -271,6 +273,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'run_openai_external_action',
 						'generic_rest',
 						'get_user_info',
+						'remote_wp_connection',
 					),
 				),
 				'data_analytics'      => array(
@@ -3674,7 +3677,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			// Delete the CCT item.
-			// We don't check the return value because the item might already be deleted,
+			// We don't check the return value because the item might already be deleted,.
 			// and we want to clean up the meta link regardless.
 			$handler->delete_item( absint( $cct_item_id ) );
 

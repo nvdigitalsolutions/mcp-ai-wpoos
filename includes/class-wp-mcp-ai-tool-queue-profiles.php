@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool Queue Profiles for WP oOS.
+ * Tool Queue Profiles for NV oOS.
  *
  * Configuration profiles for common tool queue behaviors.
  *

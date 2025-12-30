@@ -351,7 +351,7 @@ class Test_Elementor_Performance_Test_Runner_Error_Handling extends WP_UnitTestC
 		}
 
 		// Verify that the AJAX handler is shared across all test types.
-		// The JavaScript uses a generic event handler that reads data-test-type,
+		// The JavaScript uses a generic event handler that reads data-test-type,.
 		// so the output field handling applies to ALL test types.
 		$this->assertStringContainsString(
 			'var testType = button.data(\'test-type\');',

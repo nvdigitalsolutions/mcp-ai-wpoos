@@ -45,18 +45,38 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 	public function test_pending_error_converted_to_informational_result() {
 		// Create a mock tool that returns a pending error (like web search with HTTP 202).
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'mock_pending_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Mock Pending Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'A tool that returns pending status for testing';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -65,6 +85,13 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				// Return a pending error like web search does with HTTP 202.
 				return new WP_Error(
@@ -149,18 +176,38 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 	public function test_regular_error_still_sent_as_error() {
 		// Create a mock tool that returns a regular error.
 		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'mock_error_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Mock Error Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'A tool that returns a regular error for testing';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -169,6 +216,13 @@ class WP_MCP_AI_Chat_Service_Pending_Errors_Test extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				// Return a regular error (not pending).
 				return new WP_Error(

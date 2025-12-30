@@ -1,12 +1,14 @@
-# NV Digital Open Operator System (WP oOS)
+# NV Digital Open Operator System (NV oOS)
 
 [![PHPUnit](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml)
 [![JavaScript Tests](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml)
 [![PHP Linting](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml)
+[![Security Checks](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/security.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/security.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-purple)](https://www.php.net/)
 [![Patent Pending](https://img.shields.io/badge/Patent-Pending-orange.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos#patent-pending)
+[![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
 **Version:** 1.1.0  
 **Release Date:** 2025-12-25  
@@ -14,7 +16,8 @@
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
 **Requires:** WordPress 6.0+, PHP 7.4+  
-**Patent Status:** Patent Pending (Application #19/410,504)
+**Patent Status:** Patent Pending (Application #19/410,504)  
+**Documentation:** [Grade A (95/100)](docs/DOCUMENTATION_REVIEW_SUMMARY.md) - 659 files, 100% feature coverage
 
 ## 📑 Table of Contents
 
@@ -509,6 +512,39 @@ Jobs are automatically pruned when they complete (single-run) or are manually re
 Each tool inherits the assistant context and authenticated user from the REST layer, making it easy to layer custom permissions or extend behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】
 
 Need per-tool prerequisites or capability callouts? Consult [`docs/tool-reference.md`](docs/reference/tools/tool-reference.md) for a detailed matrix of every bundled integration.
+
+### Tool Status Labels
+
+The Tools Manager page displays status labels beside tool names to indicate their development stage and stability:
+
+| Status | Display Label | Description | Auto-Disable |
+| --- | --- | --- | --- |
+| **stable** | STA | Production-ready, fully tested tools safe for all environments | No |
+| **beta** | BET | Testing phase, mostly stable but may have minor issues | No |
+| **dev** | DEV | In active development, may have bugs or incomplete features | No |
+| **experimental** | EXP | New features that may change significantly | No |
+| **bug** | BUG | Known issues exist, use with caution | **Yes** |
+| **deprecated** | DEP | Will be removed in future versions | No |
+
+Status labels are displayed as **3-letter abbreviations** (e.g., "STA" for stable, "BET" for beta) to keep the UI compact.
+
+**Important:** Tools marked with the `bug` status are **automatically disabled** when the plugin loads. This prevents problematic tools from being used until issues are resolved. Administrators can manually re-enable them from the Tools Manager if needed for testing.
+
+Status labels are managed via the [`tool-status.txt`](tool-status.txt) file in the repository root. To assign a status label to a tool:
+
+1. Open `tool-status.txt` in a text editor
+2. Add a line in the format: `tool_slug = status_label`
+3. Save the file - changes appear immediately in the Tools Manager
+
+Example:
+```
+create_post = stable
+web_search = beta
+generate_openai_image_validated = experimental
+problematic_tool = bug
+```
+
+This file-based approach allows quick status updates without code changes, making it easy for maintainers to reflect tool maturity as development progresses. The automatic disabling of buggy tools provides an additional safety layer to prevent issues in production environments.
 
 
 ---

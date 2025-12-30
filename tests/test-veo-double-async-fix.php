@@ -59,8 +59,8 @@ class Test_Veo_Double_Async_Fix extends WP_UnitTestCase {
 	public function test_execute_passes_context_to_should_use_async() {
 		$tool = new WP_MCP_AI_Tool_Generate_Veo_Video();
 
-		// We can't fully test execute without mocking the video service,
-		// but we can verify that the context is being passed to should_use_async
+		// We can't fully test execute without mocking the video service,.
+		// but we can verify that the context is being passed to should_use_async.
 		// by checking the method signature accepts context parameter.
 		$reflection = new ReflectionClass( $tool );
 		$method     = $reflection->getMethod( 'should_use_async' );
@@ -114,7 +114,7 @@ class Test_Veo_Double_Async_Fix extends WP_UnitTestCase {
 			'assistant_id'      => 123,
 		);
 
-		// Even though the tool would normally default to async=true,
+		// Even though the tool would normally default to async=true,.
 		// it should return false when in async executor context.
 		$result = $method->invoke( $tool, array(), $context );
 		$this->assertFalse(

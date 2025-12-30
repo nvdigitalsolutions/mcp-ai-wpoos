@@ -1,0 +1,5 @@
+title,content,status,slug,author_id,parent_page,page_template,menu_order,comment_status,meta_key_1,meta_value_1,meta_key_2,meta_value_2
+"About Us","<h2>Welcome to Our Company</h2><p>This is the about us page content with HTML formatting.</p>","publish","about-us",1,0,"page-templates/full-width.php",1,"closed","_wp_page_template","default","sidebar_position","right"
+"Contact","<p>Contact information and form goes here.</p>","publish","contact",1,0,"default",2,"closed","show_contact_form","yes","form_id","123"
+"Services","<h2>Our Services</h2><p>List of services we provide.</p>","publish","services",1,0,"page-templates/service-template.php",3,"open","enable_sidebar","no","","",
+"Privacy Policy","<p>Privacy policy content here.</p>","publish","privacy-policy",1,0,"default",99,"closed","legal_page","yes","last_reviewed","2024-01-01"

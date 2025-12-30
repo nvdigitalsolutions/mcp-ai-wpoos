@@ -40,7 +40,7 @@ class WP_MCP_AI_Chat_Service_Tool_Result_Sanitization_Test extends WP_UnitTestCa
 					'text'          => 'Successfully generated image "Test Image" (ID: 123).',
 					'content'       => array(
 						'encoding'  => 'base64',
-						'data'      => str_repeat( 'A', 10000 ), // Large base64 string
+						'data'      => str_repeat( 'A', 10000 ), // Large base64 string.
 						'mime_type' => 'image/png',
 						'data_url'  => 'data:image/png;base64,' . str_repeat( 'A', 10000 ),
 					),

@@ -30,7 +30,7 @@ class Test_Create_Assistant_Double_Async_Fix extends WP_UnitTestCase {
 	public function test_execute_respects_executor_context() {
 		$tool = new WP_MCP_AI_Tool_Create_Assistant();
 
-		// We need to use reflection to test the private logic since we can't
+		// We need to use reflection to test the private logic since we can't.
 		// actually create an assistant without proper setup.
 		$reflection = new ReflectionClass( $tool );
 

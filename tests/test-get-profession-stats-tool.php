@@ -132,7 +132,7 @@ class WP_MCP_AI_Get_Profession_Stats_Tool_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'success', $result );
 
-		// Anonymous users have no capabilities, so permission check should pass
+		// Anonymous users have no capabilities, so permission check should pass.
 		// (the check only fails if user_id is set AND user lacks capability).
 		if ( function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
 			$this->assertTrue( $result['success'], 'Anonymous users can view stats (no user_id restriction)' );

@@ -214,7 +214,7 @@ class Test_Cron_Spawn_Triggers extends WP_UnitTestCase {
 	private function mock_spawn_cron() {
 		// In a real test environment, we would use function mocking here.
 		// For this test, we'll verify the code exists in the implementation.
-		// The actual spawn_cron() call verification happens in the test itself
+		// The actual spawn_cron() call verification happens in the test itself.
 		// by inspecting the code or using integration tests.
 
 		// Set the tracking variable to true if spawn_cron exists.

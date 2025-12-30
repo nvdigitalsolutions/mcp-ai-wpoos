@@ -1926,7 +1926,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 				"- Upgrading to a higher tier\n" .
 				"- Spreading usage throughout the day\n\n" .
 				"Thank you,\n" .
-				'WP oOS Team',
+				'NV oOS Team',
 				'wp-mcp-ai'
 			),
 			$user->display_name,

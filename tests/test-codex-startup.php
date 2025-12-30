@@ -2,7 +2,6 @@
 /**
  * Test suite for the Codex startup provisioning script.
  */
-
 class Test_Codex_Startup extends WP_UnitTestCase {
 		/**
 		 * Ensure the startup script installs Composer dependencies when missing.

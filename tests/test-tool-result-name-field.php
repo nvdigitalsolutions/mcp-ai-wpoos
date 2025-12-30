@@ -7,7 +7,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_Tool_Result_Name_Field_Test extends WP_UnitTestCase {
 
 	/**

@@ -147,19 +147,19 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 			// Format: 1. GET /search-posts/
 			$lines[] = ( $index + 1 ) . '. ' . $methods . ' ' . $path;
 
-			// Add description if available
+			// Add description if available.
 			if ( $description ) {
 				$lines[] = '   ' . $description;
 			}
 
-			// Add additional requirements if available
+			// Add additional requirements if available.
 			if ( isset( $route['additional_requirements'] ) && is_array( $route['additional_requirements'] ) ) {
 				foreach ( $route['additional_requirements'] as $req ) {
 					$lines[] = '   • ' . $req;
 				}
 			}
 
-			// Add spacing between routes (except for the last one)
+			// Add spacing between routes (except for the last one).
 			if ( $index < count( $routes ) - 1 ) {
 				$lines[] = '';
 			}

@@ -71,11 +71,12 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that save endpoint returns error when recorder fails.
+	 * Test that save endpoint returns success with warning when recorder fails.
 	 *
 	 * This simulates the case where JetEngine is not available or not properly configured.
+	 * The endpoint should return success (transcripts stored in browser) with a warning.
 	 */
-	public function test_save_returns_error_when_recorder_fails() {
+	public function test_save_returns_success_with_warning_when_recorder_fails() {
 		// Install a filter that returns null handler (simulates JetEngine not available).
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'return_null_handler' ), 10 );
 
@@ -107,20 +108,25 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 
 		$save_response = rest_get_server()->dispatch( $save_request );
 
-		// Verify that save returns an error.
-		$this->assertEquals( 500, $save_response->get_status(), 'Save should fail with 500 error' );
+		// Verify that save returns success (200) with warning.
+		$this->assertEquals( 200, $save_response->get_status(), 'Save should succeed with 200 status' );
 
 		$save_data = $save_response->get_data();
-		$this->assertArrayHasKey( 'code', $save_data, 'Error response should have code' );
-		$this->assertEquals( 'wp_mcp_ai_transcript_save_failed', $save_data['code'], 'Error code should indicate save failure' );
-		$this->assertArrayHasKey( 'message', $save_data, 'Error response should have message' );
-		$this->assertStringContainsString( 'JetEngine', $save_data['message'], 'Error message should mention JetEngine' );
+		$this->assertArrayHasKey( 'success', $save_data, 'Response should have success flag' );
+		$this->assertTrue( $save_data['success'], 'Success flag should be true' );
+		$this->assertArrayHasKey( 'saved_to_database', $save_data, 'Response should indicate database save status' );
+		$this->assertFalse( $save_data['saved_to_database'], 'Should not be saved to database' );
+		$this->assertArrayHasKey( 'saved_to_browser', $save_data, 'Response should indicate browser save status' );
+		$this->assertTrue( $save_data['saved_to_browser'], 'Should be saved to browser' );
+		$this->assertArrayHasKey( 'warning', $save_data, 'Response should have warning message' );
+		$this->assertStringContainsString( 'JetEngine', $save_data['warning'], 'Warning should mention JetEngine' );
+		$this->assertArrayHasKey( 'persistence_details', $save_data, 'Response should have diagnostic details' );
 	}
 
 	/**
-	 * Test that the error message is helpful for diagnosing the issue.
+	 * Test that the warning message is helpful for diagnosing the issue.
 	 */
-	public function test_error_message_is_helpful() {
+	public function test_warning_message_is_helpful() {
 		// Install a filter that returns null handler.
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'return_null_handler' ), 10 );
 
@@ -149,18 +155,22 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 		$save_response = rest_get_server()->dispatch( $save_request );
 		$save_data     = $save_response->get_data();
 
-		// Verify error message provides actionable information.
+		// Verify warning message provides actionable information.
+		$warning = $save_data['warning'];
+		$this->assertStringContainsString( 'Permanent transcript storage', $warning, 'Warning should indicate permanent storage issue' );
+		$this->assertStringContainsString( 'JetEngine', $warning, 'Warning should mention JetEngine' );
+		
+		// Verify main message indicates browser-only storage.
 		$message = $save_data['message'];
-		$this->assertStringContainsString( 'Failed to save transcript', $message, 'Error should indicate failure' );
-		$this->assertStringContainsString( 'JetEngine Custom Content Types', $message, 'Error should mention JetEngine CCT' );
-		$this->assertStringContainsString( 'properly configured', $message, 'Error should mention configuration' );
+		$this->assertStringContainsString( 'browser only', $message, 'Message should indicate browser-only storage' );
+		$this->assertStringContainsString( 'Permanent storage unavailable', $message, 'Message should indicate unavailable persistence' );
 	}
 
 	/**
-	 * Test that success and failure responses have different structures.
+	 * Test that success with database vs browser-only responses have different structures.
 	 */
-	public function test_success_vs_failure_response_structure() {
-		// First, test failure case (no handler).
+	public function test_database_vs_browser_only_response_structure() {
+		// First, test browser-only case (no handler).
 		add_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'return_null_handler' ), 10 );
 
 		$session_key = 'test-session-' . wp_generate_uuid4();
@@ -171,9 +181,9 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 			),
 		);
 
-		$failure_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
-		$failure_request->set_header( 'Content-Type', 'application/json' );
-		$failure_request->set_body(
+		$browser_only_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$browser_only_request->set_header( 'Content-Type', 'application/json' );
+		$browser_only_request->set_body(
 			wp_json_encode(
 				array(
 					'assistant_id' => $this->assistant_id,
@@ -183,15 +193,20 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 			)
 		);
 
-		$failure_response = rest_get_server()->dispatch( $failure_request );
-		$failure_data     = $failure_response->get_data();
+		$browser_only_response = rest_get_server()->dispatch( $browser_only_request );
+		$browser_only_data     = $browser_only_response->get_data();
 
-		// Verify failure structure.
-		$this->assertArrayHasKey( 'code', $failure_data, 'Failure should have error code' );
-		$this->assertArrayHasKey( 'message', $failure_data, 'Failure should have error message' );
-		$this->assertArrayNotHasKey( 'success', $failure_data, 'Failure should not have success flag' );
+		// Verify browser-only structure.
+		$this->assertArrayHasKey( 'success', $browser_only_data, 'Browser-only should have success flag' );
+		$this->assertTrue( $browser_only_data['success'], 'Success flag should be true' );
+		$this->assertArrayHasKey( 'saved_to_database', $browser_only_data, 'Should indicate database status' );
+		$this->assertFalse( $browser_only_data['saved_to_database'], 'Should not be saved to database' );
+		$this->assertArrayHasKey( 'saved_to_browser', $browser_only_data, 'Should indicate browser status' );
+		$this->assertTrue( $browser_only_data['saved_to_browser'], 'Should be saved to browser' );
+		$this->assertArrayHasKey( 'warning', $browser_only_data, 'Should have warning message' );
+		$this->assertArrayHasKey( 'persistence_details', $browser_only_data, 'Should have diagnostic details' );
 
-		// Now test success case with a mock handler.
+		// Now test database success case with a mock handler.
 		remove_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'return_null_handler' ), 10 );
 
 		add_filter(
@@ -206,9 +221,9 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 			10
 		);
 
-		$success_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
-		$success_request->set_header( 'Content-Type', 'application/json' );
-		$success_request->set_body(
+		$database_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
+		$database_request->set_header( 'Content-Type', 'application/json' );
+		$database_request->set_body(
 			wp_json_encode(
 				array(
 					'assistant_id' => $this->assistant_id,
@@ -218,14 +233,15 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 			)
 		);
 
-		$success_response = rest_get_server()->dispatch( $success_request );
-		$success_data     = $success_response->get_data();
+		$database_response = rest_get_server()->dispatch( $database_request );
+		$database_data     = $database_response->get_data();
 
-		// Verify success structure.
-		$this->assertArrayHasKey( 'success', $success_data, 'Success should have success flag' );
-		$this->assertTrue( $success_data['success'], 'Success flag should be true' );
-		$this->assertArrayHasKey( 'session_key', $success_data, 'Success should have session_key' );
-		$this->assertArrayHasKey( 'message', $success_data, 'Success should have message' );
-		$this->assertArrayNotHasKey( 'code', $success_data, 'Success should not have error code' );
+		// Verify database success structure.
+		$this->assertArrayHasKey( 'success', $database_data, 'Success should have success flag' );
+		$this->assertTrue( $database_data['success'], 'Success flag should be true' );
+		$this->assertArrayHasKey( 'session_key', $database_data, 'Success should have session_key' );
+		$this->assertArrayHasKey( 'message', $database_data, 'Success should have message' );
+		$this->assertArrayNotHasKey( 'warning', $database_data, 'Database success should not have warning' );
+		$this->assertArrayNotHasKey( 'saved_to_database', $database_data, 'Standard success doesn\'t include save flags' );
 	}
 }

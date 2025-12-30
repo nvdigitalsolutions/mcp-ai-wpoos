@@ -1,6 +1,6 @@
 <?php
 /**
- * Analytics Engine for WP oOS Token Manager.
+ * Analytics Engine for NV oOS Token Manager.
  *
  * Provides advanced statistical analysis, trend detection, and pattern recognition
  * for token usage data.

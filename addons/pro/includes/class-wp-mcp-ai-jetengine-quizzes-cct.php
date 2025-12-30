@@ -25,7 +25,7 @@ class WP_MCP_AI_JetEngine_Quizzes_CCT {
 	 * Hook into JetEngine to provision the quizzes content type.
 	 */
 	public static function bootstrap() {
-		// Run after JetEngine initialises the Custom Content Types module but before
+		// Run after JetEngine initialises the Custom Content Types module but before.
 		// the manager registers existing instances (priority 10).
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 0 );
 

@@ -4,7 +4,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class WP_MCP_AI_File_Attachment_Flow_Test extends WP_UnitTestCase {
 
 	/**

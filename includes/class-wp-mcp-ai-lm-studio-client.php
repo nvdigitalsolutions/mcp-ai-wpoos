@@ -233,7 +233,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the WP oOS settings.', 'wp-mcp-ai' ),
+							'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the NV oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -248,7 +248,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_lm_studio_model' => __( 'Choose an LM Studio model in the WP oOS settings.', 'wp-mcp-ai' ),
+							'configure_lm_studio_model' => __( 'Choose an LM Studio model in the NV oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -513,7 +513,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				}
 
 				// When tools are NOT provided, convert tool messages to user messages for backward compatibility.
-				// This handles cases where conversation history contains tool responses but the current
+				// This handles cases where conversation history contains tool responses but the current.
 				// request doesn't include the tools option (e.g., replaying saved conversations).
 				if ( ! $has_tools && 'tool' === $role ) {
 					$tool_name = isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : 'tool';
@@ -582,7 +582,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 
-			// Use ignore_execution_time=true for local AI providers since these are external
+			// Use ignore_execution_time=true for local AI providers since these are external.
 			// HTTP requests that don't consume PHP execution time while waiting.
 			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 
@@ -653,7 +653,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the WP oOS settings.', 'wp-mcp-ai' ),
+							'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the NV oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);
@@ -668,7 +668,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_lm_studio_model' => __( 'Choose an LM Studio model in the WP oOS settings.', 'wp-mcp-ai' ),
+							'configure_lm_studio_model' => __( 'Choose an LM Studio model in the NV oOS settings.', 'wp-mcp-ai' ),
 						),
 					)
 				);

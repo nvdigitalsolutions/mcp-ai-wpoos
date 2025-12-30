@@ -100,7 +100,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 						const group = $('#tool_group').val();
 						const url = new URL(window.location.href);
 						
-						// Update URL parameters
+						// Update URL parameters.
 						url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
 						
 						<?php if ( ! empty( $args['tab'] ) ) : ?>
@@ -127,11 +127,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 							url.searchParams.delete('tool_group');
 						}
 						
-						// Navigate to filtered URL
+						// Navigate to filtered URL.
 						window.location.href = url.toString();
 					});
 					
-					// Allow Enter key to trigger filter
+					// Allow Enter key to trigger filter.
 					$('#tool_search, #tool_group').on('keypress', function(e) {
 						if (e.which === 13) {
 							e.preventDefault();

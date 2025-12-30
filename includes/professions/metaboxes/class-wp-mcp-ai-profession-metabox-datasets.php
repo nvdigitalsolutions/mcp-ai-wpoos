@@ -69,7 +69,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 				printf(
 					/* translators: %s: URL to settings page */
 					esc_html__( 'HuggingFace Datasets integration is not enabled. Please enable it in %s.', 'wp-mcp-ai' ),
-					'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings' ) ) . '">' . esc_html__( 'WP oOS Settings', 'wp-mcp-ai' ) . '</a>'
+					'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings' ) ) . '">' . esc_html__( 'NV oOS Settings', 'wp-mcp-ai' ) . '</a>'
 				);
 				?>
 			</p>

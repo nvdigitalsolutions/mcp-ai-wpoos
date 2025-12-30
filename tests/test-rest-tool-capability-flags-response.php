@@ -172,18 +172,38 @@ class WP_MCP_AI_REST_Tool_Capability_Flags_Response_Test extends WP_UnitTestCase
 	public function test_tool_without_capability_flags_returns_empty_array() {
 		// Register a test tool without capability flags.
 		$test_tool = new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_tool_no_flags';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test Tool Without Flags';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'A test tool that does not implement capability flags interface';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -191,6 +211,13 @@ class WP_MCP_AI_REST_Tool_Capability_Flags_Response_Test extends WP_UnitTestCase
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array( 'success' => true );
 			}

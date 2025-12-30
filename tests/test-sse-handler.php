@@ -175,7 +175,7 @@ class Test_SSE_Handler extends WP_UnitTestCase {
 	public function test_lm_studio_scenario_accept_header_without_stream_param() {
 		$request = new WP_REST_Request();
 		$request->set_header( 'accept', 'text/event-stream' );
-		// No stream parameter
+		// No stream parameter.
 
 		$result = $this->handler->request_wants_event_stream( $request );
 

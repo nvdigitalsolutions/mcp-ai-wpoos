@@ -98,7 +98,7 @@ class Test_REST_API_Context_Fix extends WP_UnitTestCase {
 		// They should manage their own cache headers.
 		$headers = $response->get_headers();
 
-		// The fix should skip our endpoints, so we shouldn't see the specific
+		// The fix should skip our endpoints, so we shouldn't see the specific.
 		// no-cache headers added by the fix (they have their own cache control).
 		// This is a negative test - just verify the response is successful.
 		$this->assertEquals( 200, $response->get_status() );
@@ -429,13 +429,13 @@ class Test_REST_API_Context_Fix extends WP_UnitTestCase {
 		$this->assertEquals( 200, $response->get_status() );
 
 		// Check that aggressive no-cache headers are NOT present.
-		// The endpoint may have some cache control, but not the aggressive
+		// The endpoint may have some cache control, but not the aggressive.
 		// no-store/no-cache/must-revalidate that we add for explicit context.
 		$headers = $response->get_headers();
 		if ( isset( $headers['Cache-Control'] ) ) {
 			// If Cache-Control exists, it should not have our aggressive no-cache markers.
 			$cache_control = $headers['Cache-Control'];
-			// The fix should NOT apply aggressive caching, so we check for the absence
+			// The fix should NOT apply aggressive caching, so we check for the absence.
 			// of the specific combination we set (no-store AND no-cache AND must-revalidate).
 			$has_aggressive_no_cache = (
 				strpos( $cache_control, 'no-store' ) !== false &&

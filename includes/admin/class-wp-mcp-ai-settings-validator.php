@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings Validator for WP oOS
+ * Settings Validator for NV oOS
  *
  * Provides validation utilities for settings fields.
  *

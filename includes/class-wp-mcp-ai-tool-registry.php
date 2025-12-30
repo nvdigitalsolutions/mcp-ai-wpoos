@@ -95,6 +95,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			 * @param WP_MCP_AI_Tool_Registry $registry Registry instance.
 			 */
 			do_action( 'wp_mcp_ai_register_tools', $this );
+
+			// Auto-disable tools marked with "bug" status.
+			$this->auto_disable_bug_tools();
 		}
 
 		/**
@@ -994,6 +997,87 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		public function get_disabled_tools() {
 			$disabled = get_option( 'wp_mcp_ai_disabled_tools', array() );
 			return is_array( $disabled ) ? $disabled : array();
+		}
+
+		/**
+		 * Automatically disable tools marked with "bug" status.
+		 *
+		 * Reads the tool-status.txt file and disables any tools with "bug" status
+		 * to prevent them from being used until the bugs are resolved.
+		 */
+		protected function auto_disable_bug_tools() {
+			$status_labels = $this->load_tool_status_labels();
+
+			foreach ( $status_labels as $tool_slug => $status ) {
+				if ( 'bug' === $status ) {
+					// Check if the tool is registered.
+					if ( isset( $this->tools[ $tool_slug ] ) ) {
+						// Disable the tool if it's currently enabled.
+						if ( $this->is_tool_enabled( $tool_slug ) ) {
+							$this->disable_tool( $tool_slug );
+						}
+					}
+				}
+			}
+		}
+
+		/**
+		 * Load tool status labels from tool-status.txt file.
+		 *
+		 * @return array Associative array of tool slug => status label.
+		 */
+		protected function load_tool_status_labels() {
+			static $status_labels = null;
+
+			// Use static cache to avoid reading file multiple times.
+			if ( null !== $status_labels ) {
+				return $status_labels;
+			}
+
+			$status_labels = array();
+			$status_file   = WP_MCP_AI_PATH . 'tool-status.txt';
+
+			// Check if file exists.
+			if ( ! file_exists( $status_file ) ) {
+				return $status_labels;
+			}
+
+			// Read file content.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file read for configuration.
+			$content = file_get_contents( $status_file );
+			if ( false === $content ) {
+				return $status_labels;
+			}
+
+			// Parse file line by line.
+			$lines = explode( "\n", $content );
+			foreach ( $lines as $line ) {
+				// Trim whitespace.
+				$line = trim( $line );
+
+				// Skip empty lines and comments.
+				if ( empty( $line ) || '#' === substr( $line, 0, 1 ) ) {
+					continue;
+				}
+
+				// Parse line format: tool_slug = status_label.
+				$parts = explode( '=', $line, 2 );
+				if ( 2 !== count( $parts ) ) {
+					continue;
+				}
+
+				$tool_slug    = trim( $parts[0] );
+				$status_label = trim( $parts[1] );
+
+				// Validate status label (only allow alphanumeric, hyphens, underscores).
+				if ( ! preg_match( '/^[a-zA-Z0-9_-]+$/', $status_label ) ) {
+					continue;
+				}
+
+				$status_labels[ $tool_slug ] = $status_label;
+			}
+
+			return $status_labels;
 		}
 
 		/**

@@ -390,7 +390,9 @@ class Test_Open_Meteo_Forecast_Tool extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'crossorigin="anonymous"', $result['html'] );
 		$this->assertArrayHasKey( 'chart_config', $result );
 		$this->assertIsArray( $result['chart_config'] );
-		$this->assertArrayHasKey( 'data', $result );
+		// Note: 'data' field is intentionally omitted from chart output to prevent
+		// response truncation by orchestration layer which would convert the result
+		// to a JSON string and prevent inline iframe rendering in the chat UI.
 	}
 
 	/**

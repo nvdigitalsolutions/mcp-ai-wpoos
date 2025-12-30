@@ -1,4 +1,10 @@
 <?php
+/**
+ * Mailjet Tool
+ *
+ * @package WP_MCP_AI
+ */
+
 
 require_once WP_MCP_AI_PATH . 'addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-mailjet-email.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';

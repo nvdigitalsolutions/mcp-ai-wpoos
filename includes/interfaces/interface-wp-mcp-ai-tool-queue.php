@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool Queue Interface for WP oOS.
+ * Tool Queue Interface for NV oOS.
  *
  * Defines the interface for tools that specify their queue execution preferences.
  * Tools implementing this interface can declare their priority, timeout, and

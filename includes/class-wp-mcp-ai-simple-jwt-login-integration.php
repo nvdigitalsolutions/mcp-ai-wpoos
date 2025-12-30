@@ -1,6 +1,6 @@
 <?php
 /**
- * Simple JWT Login integration helpers for WP oOS.
+ * Simple JWT Login integration helpers for NV oOS.
  *
  * @package WP_MCP_AI
  */
