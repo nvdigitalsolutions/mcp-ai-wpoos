@@ -55,7 +55,27 @@ class WP_MCP_AI_JetEngine_CCT {
 			return null;
 		}
 
+		// Ensure CCT is registered before trying to get handler.
+		// In some environments (base + pro plugin), the init hook may have fired
+		// but the CCT manager hasn't loaded content types into memory yet.
+		if ( ! self::cct_exists( $module ) ) {
+			// Try to register it now if it doesn't exist.
+			self::maybe_register_cct();
+		}
+
 		$instance = $module->manager->get_content_types( self::SLUG );
+
+		if ( ! $instance ) {
+			// Content type not loaded in manager yet. Force a reload.
+			if ( ! empty( $module->manager->data ) && ! empty( $module->manager->data->db ) ) {
+				if ( method_exists( $module->manager->data->db, 'query_raw' ) ) {
+					$module->manager->data->db->query_raw( 'post_types' );
+				}
+			}
+
+			// Try again after reload.
+			$instance = $module->manager->get_content_types( self::SLUG );
+		}
 
 		if ( ! $instance ) {
 			return null;

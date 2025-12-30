@@ -225,6 +225,20 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 			return $handler;
 		}
 
+		// Check if running in base version mode (no JetEngine integration).
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			WP_MCP_AI_Logger::log_event(
+				'info',
+				'Chat Transcript Recorder: Persistence unavailable in base version mode',
+				array(
+					'assistant_id' => $assistant_id,
+					'session_key'  => isset( $context['session_key'] ) ? $context['session_key'] : 'none',
+					'info'         => 'Transcript persistence requires full version with JetEngine integration',
+				)
+			);
+			return null;
+		}
+
 		if ( class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
 			$handler = WP_MCP_AI_JetEngine_CCT::get_item_handler();
 
@@ -232,12 +246,13 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 			if ( ! $handler ) {
 				$diagnostic_info = self::get_jetengine_diagnostic_info();
 				WP_MCP_AI_Logger::log_event(
-					'error',
+					'warning',
 					'Chat Transcript Recorder: JetEngine handler not available',
 					array_merge(
 						array(
 							'assistant_id' => $assistant_id,
 							'session_key'  => isset( $context['session_key'] ) ? $context['session_key'] : 'none',
+							'impact'       => 'Transcripts will be stored in browser only (24h)',
 						),
 						$diagnostic_info
 					)
@@ -249,13 +264,14 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 
 		// Log that JetEngine CCT class is not available.
 		WP_MCP_AI_Logger::log_event(
-			'error',
+			'warning',
 			'Chat Transcript Recorder: WP_MCP_AI_JetEngine_CCT class not found',
 			array(
 				'assistant_id'         => $assistant_id,
 				'session_key'          => isset( $context['session_key'] ) ? $context['session_key'] : 'none',
 				'jetengine_active'     => function_exists( 'jet_engine' ),
 				'jetengine_class_path' => defined( 'WP_MCP_AI_PATH' ) ? WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php' : 'undefined',
+				'impact'               => 'Transcripts will be stored in browser only (24h)',
 			)
 		);
 

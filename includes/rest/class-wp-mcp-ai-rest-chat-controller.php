@@ -790,8 +790,8 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			$diagnostic_info = $this->get_transcript_save_diagnostic_info();
 
 			WP_MCP_AI_Logger::log_event(
-				'error',
-				'handle_chat_transcript_save: Failed to save transcript',
+				'warning',
+				'handle_chat_transcript_save: Transcript not saved to database - persistence unavailable',
 				array_merge(
 					array(
 						'session_key'   => $session_key,
@@ -799,18 +799,27 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 						'user_id'       => $user_id,
 						'message_count' => count( $clean_messages ),
 						'reason'        => 'Recorder returned null',
+						'impact'        => 'Transcript stored in browser only (24h)',
 					),
 					$diagnostic_info
 				)
 			);
 
-			// Construct helpful error message based on diagnostic info.
-			$error_message = $this->build_transcript_save_error_message( $diagnostic_info );
+			// Return success with warning instead of error.
+			// Transcripts are still stored in localStorage (24h) so chat functionality works.
+			// Just inform the user that permanent storage is unavailable.
+			$warning_message = $this->build_transcript_save_warning_message( $diagnostic_info );
 
-			return new WP_Error(
-				'wp_mcp_ai_transcript_save_failed',
-				$error_message,
-				array( 'status' => 500 )
+			return rest_ensure_response(
+				array(
+					'success'             => true,
+					'session_key'         => $session_key,
+					'saved_to_database'   => false,
+					'saved_to_browser'    => true,
+					'warning'             => $warning_message,
+					'message'             => __( 'Transcript saved to browser only. Permanent storage unavailable.', 'wp-mcp-ai' ),
+					'persistence_details' => $diagnostic_info,
+				)
 			);
 		}
 
@@ -1252,34 +1261,51 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * Build a helpful error message based on diagnostic information.
 	 *
+	 * @deprecated Use build_transcript_save_warning_message() instead.
 	 * @param array $diagnostic_info Diagnostic information from get_transcript_save_diagnostic_info().
 	 * @return string Error message with guidance.
 	 */
 	private function build_transcript_save_error_message( array $diagnostic_info ) {
-		// Start with generic message.
-		$message = __( 'Failed to save transcript.', 'wp-mcp-ai' );
+		return $this->build_transcript_save_warning_message( $diagnostic_info );
+	}
+
+	/**
+	 * Build a helpful warning message about transcript persistence unavailability.
+	 *
+	 * @param array $diagnostic_info Diagnostic information from get_transcript_save_diagnostic_info().
+	 * @return string Warning message with guidance.
+	 */
+	private function build_transcript_save_warning_message( array $diagnostic_info ) {
+		// Check if base version mode is active.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			return __( 'Transcript persistence requires the full version with JetEngine integration. Currently running in base version mode.', 'wp-mcp-ai' );
+		}
 
 		// Add specific guidance based on diagnostics.
 		if ( empty( $diagnostic_info['jetengine_active'] ) ) {
-			/* translators: %s: Link to JetEngine plugin */
-			$message .= ' ' . sprintf(
-				__( 'JetEngine plugin is not active. Please install and activate %s to enable transcript storage.', 'wp-mcp-ai' ),
-				'<a href="https://crocoblock.com/plugins/jetengine/" target="_blank" rel="noopener">JetEngine</a>'
+			return sprintf(
+				/* translators: %s: Link to JetEngine plugin */
+				__( 'Permanent transcript storage requires JetEngine plugin. Install and activate %s to enable database persistence.', 'wp-mcp-ai' ),
+				'JetEngine (https://crocoblock.com/plugins/jetengine/)'
 			);
-		} elseif ( ! empty( $diagnostic_info['jetengine_active'] ) && empty( $diagnostic_info['cct_module_active'] ) ) {
-			$message .= ' ' . __( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine settings.', 'wp-mcp-ai' );
-		} elseif ( ! empty( $diagnostic_info['jetengine_active'] ) && empty( $diagnostic_info['data_stores_module_active'] ) ) {
-			$message .= ' ' . __( 'JetEngine Data Stores module is not active. Please enable it in JetEngine settings.', 'wp-mcp-ai' );
-		} elseif ( ! empty( $diagnostic_info['table_exists'] ) === false && ! empty( $diagnostic_info['table_name'] ) ) {
+		}
+
+		if ( ! empty( $diagnostic_info['jetengine_active'] ) && empty( $diagnostic_info['cct_module_active'] ) ) {
+			return __( 'JetEngine Custom Content Types module is not active. Enable it in JetEngine → Settings → Modules to enable transcript storage.', 'wp-mcp-ai' );
+		}
+
+		if ( ! empty( $diagnostic_info['jetengine_active'] ) && empty( $diagnostic_info['data_stores_module_active'] ) ) {
+			return __( 'JetEngine Data Stores module is not active. Enable it in JetEngine → Settings → Modules to enable transcript storage.', 'wp-mcp-ai' );
+		}
+
+		if ( ! empty( $diagnostic_info['table_exists'] ) === false && ! empty( $diagnostic_info['table_name'] ) ) {
 			/* translators: %s: Database table name */
-			$message .= ' ' . sprintf(
+			return sprintf(
 				__( 'Transcript database table (%s) does not exist. Try deactivating and reactivating the plugin to recreate it.', 'wp-mcp-ai' ),
 				esc_html( $diagnostic_info['table_name'] )
 			);
-		} else {
-			$message .= ' ' . __( 'Please ensure JetEngine Custom Content Types is properly configured. Check the error logs for more details.', 'wp-mcp-ai' );
 		}
 
-		return $message;
+		return __( 'Transcript persistence is unavailable. Transcripts will be stored in browser only (24 hours). Check the error logs for more details.', 'wp-mcp-ai' );
 	}
 }
