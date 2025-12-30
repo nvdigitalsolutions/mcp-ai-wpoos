@@ -226,10 +226,79 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		}
 
 		if ( class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
-			return WP_MCP_AI_JetEngine_CCT::get_item_handler();
+			$handler = WP_MCP_AI_JetEngine_CCT::get_item_handler();
+
+			// Log diagnostic information if handler is not available.
+			if ( ! $handler ) {
+				$diagnostic_info = self::get_jetengine_diagnostic_info();
+				WP_MCP_AI_Logger::log_event(
+					'error',
+					'Chat Transcript Recorder: JetEngine handler not available',
+					array_merge(
+						array(
+							'assistant_id' => $assistant_id,
+							'session_key'  => isset( $context['session_key'] ) ? $context['session_key'] : 'none',
+						),
+						$diagnostic_info
+					)
+				);
+			}
+
+			return $handler;
 		}
 
+		// Log that JetEngine CCT class is not available.
+		WP_MCP_AI_Logger::log_event(
+			'error',
+			'Chat Transcript Recorder: WP_MCP_AI_JetEngine_CCT class not found',
+			array(
+				'assistant_id'         => $assistant_id,
+				'session_key'          => isset( $context['session_key'] ) ? $context['session_key'] : 'none',
+				'jetengine_active'     => function_exists( 'jet_engine' ),
+				'jetengine_class_path' => defined( 'WP_MCP_AI_PATH' ) ? WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php' : 'undefined',
+			)
+		);
+
 		return null;
+	}
+
+	/**
+	 * Get diagnostic information about JetEngine availability.
+	 *
+	 * @return array Diagnostic information.
+	 */
+	protected static function get_jetengine_diagnostic_info() {
+		$info = array(
+			'jetengine_function_exists' => function_exists( 'jet_engine' ),
+			'jetengine_class_exists'    => class_exists( 'WP_MCP_AI_JetEngine_CCT' ),
+		);
+
+		if ( function_exists( 'jet_engine' ) ) {
+			$engine = jet_engine();
+			$info['jetengine_object']        = is_object( $engine );
+			$info['jetengine_has_modules']   = is_object( $engine ) && property_exists( $engine, 'modules' );
+
+			if ( is_object( $engine ) && property_exists( $engine, 'modules' ) && is_object( $engine->modules ) ) {
+				$info['cct_module_active'] = method_exists( $engine->modules, 'is_module_active' )
+					? $engine->modules->is_module_active( 'custom-content-types' )
+					: 'cannot_check';
+
+				$info['data_stores_module_active'] = method_exists( $engine->modules, 'is_module_active' )
+					? $engine->modules->is_module_active( 'data-stores' )
+					: 'cannot_check';
+			}
+		}
+
+		// Check if transcript repository reports table exists.
+		if ( function_exists( 'wp_mcp_ai_get_transcript_repository' ) ) {
+			$repository              = wp_mcp_ai_get_transcript_repository();
+			$info['table_name']      = $repository->get_table_name();
+			$info['table_exists']    = $repository->table_exists();
+		} else {
+			$info['transcript_repository_available'] = false;
+		}
+
+		return $info;
 	}
 
 	/**

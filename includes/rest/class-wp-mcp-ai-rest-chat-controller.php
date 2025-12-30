@@ -786,21 +786,30 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Check if recording failed.
 		if ( null === $recorded_session_key ) {
+			// Get diagnostic information for troubleshooting.
+			$diagnostic_info = $this->get_transcript_save_diagnostic_info();
+
 			WP_MCP_AI_Logger::log_event(
 				'error',
 				'handle_chat_transcript_save: Failed to save transcript',
-				array(
-					'session_key'   => $session_key,
-					'assistant_id'  => $assistant_id,
-					'user_id'       => $user_id,
-					'message_count' => count( $clean_messages ),
-					'reason'        => 'Recorder returned null',
+				array_merge(
+					array(
+						'session_key'   => $session_key,
+						'assistant_id'  => $assistant_id,
+						'user_id'       => $user_id,
+						'message_count' => count( $clean_messages ),
+						'reason'        => 'Recorder returned null',
+					),
+					$diagnostic_info
 				)
 			);
 
+			// Construct helpful error message based on diagnostic info.
+			$error_message = $this->build_transcript_save_error_message( $diagnostic_info );
+
 			return new WP_Error(
 				'wp_mcp_ai_transcript_save_failed',
-				__( 'Failed to save transcript. Please ensure JetEngine Custom Content Types is active and properly configured.', 'wp-mcp-ai' ),
+				$error_message,
 				array( 'status' => 500 )
 			);
 		}
@@ -1202,5 +1211,75 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Get diagnostic information about transcript save failures.
+	 *
+	 * @return array Diagnostic information.
+	 */
+	private function get_transcript_save_diagnostic_info() {
+		$info = array();
+
+		// Check JetEngine availability.
+		$info['jetengine_active'] = function_exists( 'jet_engine' );
+
+		if ( function_exists( 'jet_engine' ) ) {
+			$engine = jet_engine();
+			if ( is_object( $engine ) && property_exists( $engine, 'modules' ) && is_object( $engine->modules ) ) {
+				if ( method_exists( $engine->modules, 'is_module_active' ) ) {
+					$info['cct_module_active']         = $engine->modules->is_module_active( 'custom-content-types' );
+					$info['data_stores_module_active'] = $engine->modules->is_module_active( 'data-stores' );
+				}
+			}
+		}
+
+		// Check CCT class availability.
+		$info['jetengine_cct_class_exists'] = class_exists( 'WP_MCP_AI_JetEngine_CCT' );
+
+		// Check transcript repository and table.
+		if ( $this->main_controller && method_exists( $this->main_controller, 'get_transcript_repository' ) ) {
+			$repository = $this->main_controller->get_transcript_repository();
+			if ( $repository ) {
+				$info['table_name']   = $repository->get_table_name();
+				$info['table_exists'] = $repository->table_exists();
+			}
+		}
+
+		return $info;
+	}
+
+	/**
+	 * Build a helpful error message based on diagnostic information.
+	 *
+	 * @param array $diagnostic_info Diagnostic information from get_transcript_save_diagnostic_info().
+	 * @return string Error message with guidance.
+	 */
+	private function build_transcript_save_error_message( array $diagnostic_info ) {
+		// Start with generic message.
+		$message = __( 'Failed to save transcript.', 'wp-mcp-ai' );
+
+		// Add specific guidance based on diagnostics.
+		if ( empty( $diagnostic_info['jetengine_active'] ) ) {
+			/* translators: %s: Link to JetEngine plugin */
+			$message .= ' ' . sprintf(
+				__( 'JetEngine plugin is not active. Please install and activate %s to enable transcript storage.', 'wp-mcp-ai' ),
+				'<a href="https://crocoblock.com/plugins/jetengine/" target="_blank" rel="noopener">JetEngine</a>'
+			);
+		} elseif ( ! empty( $diagnostic_info['jetengine_active'] ) && empty( $diagnostic_info['cct_module_active'] ) ) {
+			$message .= ' ' . __( 'JetEngine Custom Content Types module is not active. Please enable it in JetEngine settings.', 'wp-mcp-ai' );
+		} elseif ( ! empty( $diagnostic_info['jetengine_active'] ) && empty( $diagnostic_info['data_stores_module_active'] ) ) {
+			$message .= ' ' . __( 'JetEngine Data Stores module is not active. Please enable it in JetEngine settings.', 'wp-mcp-ai' );
+		} elseif ( ! empty( $diagnostic_info['table_exists'] ) === false && ! empty( $diagnostic_info['table_name'] ) ) {
+			/* translators: %s: Database table name */
+			$message .= ' ' . sprintf(
+				__( 'Transcript database table (%s) does not exist. Try deactivating and reactivating the plugin to recreate it.', 'wp-mcp-ai' ),
+				esc_html( $diagnostic_info['table_name'] )
+			);
+		} else {
+			$message .= ' ' . __( 'Please ensure JetEngine Custom Content Types is properly configured. Check the error logs for more details.', 'wp-mcp-ai' );
+		}
+
+		return $message;
 	}
 }
