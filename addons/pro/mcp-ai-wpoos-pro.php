@@ -152,6 +152,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 			// Load Remote Sites admin interface.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php';
+
+			// Load Remote Connections metabox for assistants.
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-remote-connections.php';
 		}
 
 		// Load quiz system support files if enabled.
@@ -470,6 +473,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 	function wp_mcp_ai_pro_tool_group_map( $group_map ) {
 		// Pro tools and their group assignments.
 		$pro_tools = array(
+			// Remote WordPress/WooCommerce Connection - Requires external API access.
+			'remote_wp_connection'            => 'external-tools',
 			// Exec service tools (video, audio, CLI) - Pro features.
 			'check_wp_cli'                    => 'wordpress-core',
 			'extract_video_frames'            => 'wordpress-core',
