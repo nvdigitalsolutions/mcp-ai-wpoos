@@ -394,22 +394,45 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		return new class( $flags ) implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 			private $flags;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $flags ) {
 				$this->flags = $flags;
 			}
 
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_tool_' . md5( wp_json_encode( $this->flags ) );
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Test tool';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -417,6 +440,13 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array( 'success' => true );
 			}
@@ -434,18 +464,38 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 	 */
 	private function create_mock_executable_tool() {
 		return new class() implements WP_MCP_AI_Tool_Interface {
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_executable_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test Executable Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Tool for testing execution';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -458,6 +508,13 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'success' => true,
@@ -478,22 +535,45 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 		return new class( $provider ) implements WP_MCP_AI_Tool_Interface {
 			private $provider;
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( $provider ) {
 				$this->provider = $provider;
 			}
 
+			/**
+			 * Get the tool slug.
+			 *
+			 * @return string Tool slug.
+			 */
 			public function get_slug() {
 				return 'test_' . $this->provider . '_tool';
 			}
 
+			/**
+			 * Get the tool name.
+			 *
+			 * @return string Tool name.
+			 */
 			public function get_name() {
 				return 'Test ' . ucfirst( $this->provider ) . ' Tool';
 			}
 
+			/**
+			 * Get the tool description.
+			 *
+			 * @return string Tool description.
+			 */
 			public function get_description() {
 				return 'Provider-specific test tool';
 			}
 
+			/**
+			 * Get the parameters schema.
+			 *
+			 * @return array Parameters schema.
+			 */
 			public function get_parameters_schema() {
 				return array(
 					'type'       => 'object',
@@ -501,6 +581,13 @@ class Test_Cron_Async_Provider_Integration extends WP_UnitTestCase {
 				);
 			}
 
+			/**
+			 * Execute the tool.
+			 *
+			 * @param array $arguments Tool arguments.
+			 * @param array $context Execution context.
+			 * @return array|WP_Error Tool result.
+			 */
 			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'success'  => true,

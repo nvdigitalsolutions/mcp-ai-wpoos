@@ -177,7 +177,7 @@ class Test_Async_Veo_Tool_Call_ID_Display extends WP_UnitTestCase {
 		// Get job details.
 		$job_details = $this->service->get_job_details( $job_id, $this->user_id );
 
-		// The chat client JavaScript (displayAsyncToolResult) should be able to extract
+		// The chat client JavaScript (displayAsyncToolResult) should be able to extract.
 		// tool_call_id from result.tool_results[0].tool_call_id.
 		// Verify the structure is correct for extraction.
 		$this->assertArrayHasKey( 'tool_results', $job_details, 'tool_results should exist' );

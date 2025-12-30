@@ -12,23 +12,46 @@ class WP_MCP_AI_Mock_Tool implements WP_MCP_AI_Tool_Interface {
 	protected $slug;
 	protected $name;
 
+	/**
+	 * Constructor.
+	 */
 	public function __construct( $slug = 'mock_tool', $name = 'Mock Tool' ) {
 		$this->slug = $slug;
 		$this->name = $name;
 	}
 
+	/**
+	 * Get the tool slug.
+	 *
+	 * @return string Tool slug.
+	 */
 	public function get_slug() {
 		return $this->slug;
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @return string Tool name.
+	 */
 	public function get_name() {
 		return $this->name;
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @return string Tool description.
+	 */
 	public function get_description() {
 		return 'A mock tool for testing';
 	}
 
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @return array Parameters schema.
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
@@ -36,6 +59,13 @@ class WP_MCP_AI_Mock_Tool implements WP_MCP_AI_Tool_Interface {
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context Execution context.
+	 * @return array|WP_Error Tool result.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		return array( 'result' => 'success' );
 	}
@@ -53,6 +83,9 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 	 */
 	protected $original_instance;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -64,6 +97,9 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 		$property->setValue( null, null );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		// Restore original instance.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Tool_Registry' );

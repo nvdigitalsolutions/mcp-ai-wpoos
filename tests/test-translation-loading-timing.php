@@ -111,7 +111,7 @@ class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 		do_action( 'plugins_loaded' );
 
 		// At this point, admin_notices should not have translation-using handlers.
-		// We can't easily test this directly, but we can verify the registration
+		// We can't easily test this directly, but we can verify the registration.
 		// functions are hooked to init.
 		$this->assertTrue(
 			has_action( 'init', 'wp_mcp_ai_register_plugin_action_links' ) ||

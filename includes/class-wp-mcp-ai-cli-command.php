@@ -1164,27 +1164,27 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				);
 
 				// Example worker loop (pseudo-code):
-				// while ( true ) {
+				// while ( true ) {.
 				// $message = $queue->get();
 				// if ( ! $message ) {
 				// usleep( 100000 ); // 100ms.
 				// continue;
-				// }
+				// }.
 				//
 				// $payload = json_decode( $message->getBody(), true );
 				// $tool = $registry->get_tool( $payload['tool_name'] );
 				//
-				// if ( $tool ) {
+				// if ( $tool ) {.
 				// $result = $tool->execute( $payload['arguments'], $payload['context'] );
 				// $client->store_job_result( $payload['job_id'], $result );
-				// }
+				// }.
 				//
 				// $queue->ack( $message->getDeliveryTag() );
 				// $jobs_processed++;
 				//
-				// if ( $max_jobs > 0 && $jobs_processed >= $max_jobs ) {
+				// if ( $max_jobs > 0 && $jobs_processed >= $max_jobs ) {.
 				// break;
-				// }
+				// }.
 				// }.
 
 				WP_CLI::success( sprintf( 'Worker stopped. Processed %d jobs.', $jobs_processed ) );

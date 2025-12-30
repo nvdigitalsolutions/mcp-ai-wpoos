@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test class for admin key rotation tests.
+ *
  * @group encryption
  * @group admin
  * @group key-rotation
@@ -26,6 +28,9 @@ class WP_MCP_AI_Admin_Key_Rotation_Tests extends WP_UnitTestCase {
 	 */
 	protected $editor_user_id;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -43,6 +48,9 @@ class WP_MCP_AI_Admin_Key_Rotation_Tests extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Encryption::MASTER_KEY_OPTION );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Encryption::MASTER_KEY_OPTION );
 		delete_transient( 'wp_mcp_ai_key_rotation_success' );

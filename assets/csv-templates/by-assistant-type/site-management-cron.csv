@@ -1,0 +1,5 @@
+cron_job_name,hook_name,schedule,next_run,status,action_type,callback_function,arguments,description
+"Daily Backup","wp_mcp_ai_daily_backup","daily","2024-01-16 02:00:00","active","system","run_daily_backup","","Automated daily database and files backup"
+"Weekly Report Generation","wp_mcp_ai_weekly_report","weekly","2024-01-21 23:00:00","active","reporting","generate_analytics_report","{\"report_type\":\"weekly\",\"recipients\":[\"admin@example.com\"]}","Generate and email weekly analytics report"
+"Cache Purge","wp_mcp_ai_cache_purge","hourly","2024-01-15 14:00:00","active","performance","purge_site_cache","","Clear site cache every hour"
+"Security Scan","wp_mcp_ai_security_scan","twicedaily","2024-01-15 20:00:00","active","security","run_security_scan","{\"scan_type\":\"full\",\"notify\":true}","Run comprehensive security scan twice daily"

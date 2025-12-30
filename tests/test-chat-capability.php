@@ -4,6 +4,9 @@
  */
 class WP_MCP_AI_Chat_Capability_Test extends WP_UnitTestCase {
 
+	/**
+	 * Tear down test environment.
+	 */
 	protected function tearDown(): void {
 		remove_all_filters( 'wp_mcp_ai_chat_capability' );
 		parent::tearDown();

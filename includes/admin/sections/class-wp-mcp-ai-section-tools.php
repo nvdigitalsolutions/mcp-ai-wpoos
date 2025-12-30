@@ -577,7 +577,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				return;
 			}
 
-			// The 'connections' subtab is handled by the Integrations section itself,
+			// The 'connections' subtab is handled by the Integrations section itself,.
 			// which will render when the subtab is active. No special rendering needed here.
 
 			// Render fields for the active sub-tab.
@@ -1443,7 +1443,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							const group = $('#tool_group').val();
 							const url = new URL(window.location.href);
 							
-							// Update URL parameters
+							// Update URL parameters.
 							url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
 							url.searchParams.set('tab', 'tools');
 							url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
@@ -1460,11 +1460,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								url.searchParams.delete('tool_group');
 							}
 							
-							// Navigate to filtered URL
+							// Navigate to filtered URL.
 							window.location.href = url.toString();
 						});
 						
-						// Allow Enter key to trigger filter
+						// Allow Enter key to trigger filter.
 						$('#tool_search, #tool_group').on('keypress', function(e) {
 							if (e.which === 13) {
 								e.preventDefault();

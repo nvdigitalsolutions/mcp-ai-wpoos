@@ -25,7 +25,7 @@ class WP_MCP_AI_JetEngine_AI_Peers_CCT {
 	 * Hook into JetEngine to provision the ai_peers content type.
 	 */
 	public static function bootstrap() {
-		// Run after JetEngine initialises the Custom Content Types module but before
+		// Run after JetEngine initialises the Custom Content Types module but before.
 		// the manager registers existing instances (priority 10).
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 0 );
 
@@ -152,7 +152,7 @@ class WP_MCP_AI_JetEngine_AI_Peers_CCT {
 		$data->after_item_update( $item, true );
 
 		// Refresh JetEngine's internal cache of custom post types.
-		// The 'post_types' query forces JetEngine to reload the CCT definitions,
+		// The 'post_types' query forces JetEngine to reload the CCT definitions,.
 		// ensuring the newly registered CCT is immediately available.
 		if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
 			$data->db->query_raw( 'post_types' );

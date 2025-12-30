@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Fixed
+- **Chart Tool Display**: Fixed 3x3 pixel canvas issue in `create_chart` tool
+  - Chart.js responsive mode was causing canvas to shrink to 3x3 pixels during iframe initialization
+  - Added `responsive: false` and `maintainAspectRatio: false` as default Chart.js options
+  - Reduced default chart dimensions from 800x400 to 600x350 to better fit chat interface (typical chat width ~720px)
+  - Users can still override these defaults by explicitly providing responsive options or custom dimensions
+  - Added comprehensive tests to verify the fix
+  - Updated `CHART_FIX_TESTING.md` with testing guide for the 3x3 pixel issue
+  - See `includes/tools/class-wp-mcp-ai-tool-create-chart.php` (lines 250-252, 261-268)
+
 ### Changed
 - **Plugin Rename**: Updated plugin name from "Open Operator System (WP oOS)" to "NV Digital Open Operator System (oOS)"
   - Updated all plugin headers in main files and core/pro versions

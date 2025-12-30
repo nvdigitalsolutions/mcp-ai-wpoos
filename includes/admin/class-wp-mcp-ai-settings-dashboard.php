@@ -221,7 +221,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Merge with existing settings to avoid wiping unrelated fields.
-			// This is critical for display-only sections (like Overview) that have no editable fields,
+			// This is critical for display-only sections (like Overview) that have no editable fields,.
 			// and for preserving settings from other tabs.
 			$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$merged_settings   = array_merge( $existing_settings, $sanitized_new );

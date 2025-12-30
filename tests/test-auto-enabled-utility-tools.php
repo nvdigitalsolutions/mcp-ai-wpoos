@@ -32,6 +32,9 @@ class WP_MCP_AI_Auto_Enabled_Utility_Tools_Test extends WP_UnitTestCase {
 	 */
 	protected $registry;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -59,6 +62,9 @@ class WP_MCP_AI_Auto_Enabled_Utility_Tools_Test extends WP_UnitTestCase {
 		update_post_meta( $this->assistant_id, 'wp_mcp_ai_assistant_config', $config );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 		wp_set_current_user( 0 );

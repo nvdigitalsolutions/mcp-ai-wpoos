@@ -4,15 +4,20 @@
  *
  * @package WP_MCP_AI\Tests
  */
-
 class Test_ChatKit_Integration extends WP_UnitTestCase {
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
 		WP_MCP_AI_ChatKit_Integration::reset_state_for_testing();
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		remove_filter( 'wp_mcp_ai_chatkit_is_available', '__return_true' );
 		remove_filter( 'wp_mcp_ai_chatkit_is_available', '__return_false' );

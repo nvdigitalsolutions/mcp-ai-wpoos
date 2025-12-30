@@ -84,7 +84,7 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 		</style>
 		<script type="text/javascript">
 			jQuery(document).ready(function($) {
-				// Add button after the Create AI Assistant button
+				// Add button after the Create AI Assistant button.
 				var button = '<button type="button" class="page-title-action wp-mcp-ai-create-team-btn" id="wp-mcp-ai-open-create-team-modal"><?php echo esc_js( __( 'Create AI Team', 'wp-mcp-ai' ) ); ?></button>';
 				$('#wp-mcp-ai-open-create-modal').after(button);
 			});

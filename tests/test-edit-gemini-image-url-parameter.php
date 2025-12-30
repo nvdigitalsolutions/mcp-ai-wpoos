@@ -26,7 +26,7 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'properties', $schema, 'Schema should have properties' );
 		$this->assertArrayHasKey( 'url', $schema['properties'], 'Schema should include url parameter' );
 
-		// Verify url parameter has proper structure
+		// Verify url parameter has proper structure.
 		$url_param = $schema['properties']['url'];
 		$this->assertArrayHasKey( 'type', $url_param, 'URL parameter should have type' );
 		$this->assertEquals( 'string', $url_param['type'], 'URL parameter should be string type' );
@@ -46,7 +46,7 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'file_id', $schema['properties'], 'Schema should include file_id parameter' );
 
-		// Verify file_id parameter has proper structure
+		// Verify file_id parameter has proper structure.
 		$file_id_param = $schema['properties']['file_id'];
 		$this->assertArrayHasKey( 'type', $file_id_param, 'file_id parameter should have type' );
 		$this->assertEquals( 'string', $file_id_param['type'], 'file_id parameter should be string type' );
@@ -122,7 +122,7 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 
 		$url_description = $schema['properties']['url']['description'];
 
-		// Check that the description provides context about when to use this parameter
+		// Check that the description provides context about when to use this parameter.
 		$this->assertStringContainsString( 'URL', $url_description, 'Description should mention URL' );
 		$this->assertStringContainsString( 'image', strtolower( $url_description ), 'Description should mention image' );
 	}
@@ -139,7 +139,7 @@ class Test_Edit_Gemini_Image_URL_Parameter extends WP_UnitTestCase {
 
 		$this->assertNotEmpty( $shortcuts, 'Tool should have shortcut tasks' );
 
-		// Check if at least one shortcut mentions URL parameter
+		// Check if at least one shortcut mentions URL parameter.
 		$mentions_url = false;
 		foreach ( $shortcuts as $shortcut ) {
 			if ( isset( $shortcut['payload'] ) && stripos( $shortcut['payload'], 'url' ) !== false ) {

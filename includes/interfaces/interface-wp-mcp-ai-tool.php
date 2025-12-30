@@ -197,13 +197,13 @@ interface WP_MCP_AI_Tool_Rules_Interface {
 	 * Example rule structure:
 	 * array(
 	 *     'model_requirements' => array(
-	 *         'providers' => array( 'openai', 'anthropic' ),  // Allowed providers
-	 *         'models' => array( 'gpt-4', 'claude-3-opus' ),  // Specific models
-	 *         'min_context_window' => 8000,                   // Minimum context
-	 *         'capabilities' => array( 'vision', 'tools' ),   // Required capabilities
+	 *         'providers' => array( 'openai', 'anthropic' ),  // Allowed providers.
+	 *         'models' => array( 'gpt-4', 'claude-3-opus' ),  // Specific models.
+	 *         'min_context_window' => 8000,                   // Minimum context.
+	 *         'capabilities' => array( 'vision', 'tools' ),   // Required capabilities.
 	 *     ),
 	 *     'parameter_constraints' => array(
-	 *         'max_items' => 100,              // Maximum items to process
+	 *         'max_items' => 100,              // Maximum items to process.
 	 *         'required_fields' => array( 'prompt', 'model' ),
 	 *         'optional_fields' => array( 'temperature', 'max_tokens' ),
 	 *     ),
@@ -213,12 +213,12 @@ interface WP_MCP_AI_Tool_Rules_Interface {
 	 *         'concurrent_requests' => 5,
 	 *     ),
 	 *     'timeout_constraints' => array(
-	 *         'max_execution_time' => 120,     // seconds
+	 *         'max_execution_time' => 120,     // seconds.
 	 *         'recommended_timeout' => 60,
 	 *         'must_use_background' => true,
 	 *     ),
 	 *     'response_constraints' => array(
-	 *         'max_size' => 5242880,           // 5MB
+	 *         'max_size' => 5242880,           // 5MB.
 	 *         'supports_streaming' => true,
 	 *         'supports_pagination' => true,
 	 *         'default_page_size' => 20,
@@ -231,7 +231,7 @@ interface WP_MCP_AI_Tool_Rules_Interface {
 	 *     'orchestration_hints' => array(
 	 *         'can_run_parallel' => false,     // Can multiple instances run concurrently?
 	 *         'requires_lock' => true,         // Needs exclusive execution lock?
-	 *         'cache_ttl' => 300,              // Cache time-to-live in seconds
+	 *         'cache_ttl' => 300,              // Cache time-to-live in seconds.
 	 *         'retry_strategy' => 'exponential_backoff',
 	 *         'max_retries' => 3,
 	 *     ),

@@ -83,6 +83,9 @@ class WP_MCP_AI_All_Import_Export_Tool_Availability_Test extends WP_UnitTestCase
  * Permission tests for All Import/Export tools.
  */
 class WP_MCP_AI_All_Import_Export_Tool_Permission_Test extends WP_UnitTestCase {
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 		wp_set_current_user( 0 );

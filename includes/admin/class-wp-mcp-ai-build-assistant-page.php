@@ -143,7 +143,7 @@ class WP_MCP_AI_Build_Assistant_Page {
 		wp_enqueue_script(
 			'wp-mcp-ai-chat',
 			WP_MCP_AI_URL . 'assets/js/chat-bundle.min.js',
-			array(), // No dependencies - all services are bundled together
+			array(), // No dependencies - all services are bundled together.
 			$this->get_asset_version( 'assets/js/chat-bundle.min.js' ),
 			true
 		);

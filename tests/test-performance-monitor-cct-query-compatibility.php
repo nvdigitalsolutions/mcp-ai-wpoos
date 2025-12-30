@@ -45,7 +45,7 @@ class WP_MCP_AI_Performance_Monitor_CCT_Query_Compatibility_Test extends WP_Unit
 	 * Test query_items returns empty array when JetEngine is not available.
 	 */
 	public function test_query_items_returns_empty_array_without_jetengine() {
-		// Since JetEngine is not available in test environment,
+		// Since JetEngine is not available in test environment,.
 		// query_items should return an empty array.
 		$result = WP_MCP_AI_Performance_Monitor_CCT::query_items( array() );
 

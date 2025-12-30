@@ -109,7 +109,7 @@ class WP_MCP_AI_Transcription_Settings_Test extends WP_UnitTestCase {
 	 */
 	public function test_transcribe_tool_uses_admin_settings() {
 		// This test verifies that the tool uses admin settings as defaults.
-		// We can't fully test the tool execution without setting up WordPress media,
+		// We can't fully test the tool execution without setting up WordPress media,.
 		// but we can verify the settings retrieval logic.
 
 		// Set custom transcription settings.

@@ -4,7 +4,7 @@
  * Test that cron_job_retention_period is in defaults and persists correctly.
  */
 
-// Mock WordPress functions
+// Mock WordPress functions.
 $mock_options = array();
 
 function get_option( $option, $default = false ) {
@@ -42,10 +42,10 @@ function apply_filters( $hook_name, $value ) {
 	return $value;
 }
 
-// Define constants
+// Define constants.
 define( 'ABSPATH', dirname( __DIR__ ) . '/' );
 
-// Load class
+// Load class.
 require_once ABSPATH . 'includes/admin/class-wp-mcp-ai-admin-settings-base.php';
 
 echo "Test: cron_job_retention_period Setting\n";
@@ -74,20 +74,20 @@ echo "✓ Test 1 passed\n\n";
 // Test 2: Test persistence through sanitize
 echo "Test 2: Setting persists through sanitize_settings...\n";
 
-// Set initial value
+// Set initial value.
 update_option(
 	'wp_mcp_ai_settings',
 	array(
-		'cron_job_retention_period' => '168',  // 1 week
+		'cron_job_retention_period' => '168',  // 1 week.
 		'default_model'             => 'gpt-4o',
 	)
 );
 
-// Simulate form submission from different tab (without cron setting)
+// Simulate form submission from different tab (without cron setting).
 $settings_base = new WP_MCP_AI_Admin_Settings_Base();
 $partial_form  = array(
-	'default_model' => 'gpt-4o-mini',  // Changed
-// cron_job_retention_period NOT included
+	'default_model' => 'gpt-4o-mini',  // Changed.
+// cron_job_retention_period NOT included.
 );
 
 $sanitized = $settings_base->sanitize_settings( $partial_form );

@@ -88,7 +88,7 @@ class Test_Auth0_Setup_Menu_Registration extends WP_UnitTestCase {
 		// The hook should be: wp-mcp-ai-dashboard_page_wp-mcp-ai-auth0-setup.
 		$expected_hook = 'wp-mcp-ai-dashboard_page_wp-mcp-ai-auth0-setup';
 
-		// We can't directly test the hook without loading the actual admin page,
+		// We can't directly test the hook without loading the actual admin page,.
 		// but we can verify it's constructed correctly by checking the class constant.
 		$this->assertEquals( 'wp-mcp-ai-auth0-setup', WP_MCP_AI_Auth0_Setup::PAGE_SLUG );
 	}

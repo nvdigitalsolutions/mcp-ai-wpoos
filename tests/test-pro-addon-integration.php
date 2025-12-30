@@ -136,9 +136,9 @@ class WP_MCP_AI_Pro_Addon_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'No plugins_loaded hooks found' );
 		}
 
-		// The tool registry should initialize at priority 20 or later
+		// The tool registry should initialize at priority 20 or later.
 		// to allow addons at priority 15 to hook in first.
-		// This is a comment/documentation test since we can't easily verify
+		// This is a comment/documentation test since we can't easily verify.
 		// the exact priority without inspecting the closure.
 		$this->assertTrue(
 			true,

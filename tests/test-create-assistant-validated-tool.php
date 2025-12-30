@@ -121,7 +121,7 @@ class Test_WP_MCP_AI_Tool_Create_Assistant_Validated extends WP_UnitTestCase {
 		$result  = $this->tool->execute( $arguments, $context );
 
 		// The tool should return either an array (success) or WP_Error.
-		// Since we don't have all the assistant infrastructure set up,
+		// Since we don't have all the assistant infrastructure set up,.
 		// we just verify it's not a validation error.
 		if ( is_wp_error( $result ) ) {
 			// If it's an error, it should NOT be a validation error.

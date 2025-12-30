@@ -8,7 +8,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class Test_Veo_Filename_Consistency extends WP_UnitTestCase {
 
 	/**

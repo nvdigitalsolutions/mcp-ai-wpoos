@@ -8,7 +8,6 @@
  * @package WP_MCP_AI
  * @subpackage Tests
  */
-
 class WP_MCP_AI_Session_Key_Normalization_Test extends WP_UnitTestCase {
 	/**
 	 * Administrator user ID for authenticated requests.
@@ -24,6 +23,9 @@ class WP_MCP_AI_Session_Key_Normalization_Test extends WP_UnitTestCase {
 	 */
 	protected $validator;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -42,6 +44,9 @@ class WP_MCP_AI_Session_Key_Normalization_Test extends WP_UnitTestCase {
 		do_action( 'init' );
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		wp_set_current_user( 0 );
 		parent::tearDown();

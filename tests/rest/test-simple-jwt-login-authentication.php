@@ -1,4 +1,10 @@
 <?php
+/**
+ * Simple Jwt Login Authentication
+ *
+ * @package WP_MCP_AI
+ */
+
 namespace SimpleJWTLogin\Modules {
 	if ( ! class_exists( __NAMESPACE__ . '\\WordPressData' ) ) {
 		class WordPressData {
@@ -33,6 +39,9 @@ namespace SimpleJWTLogin\Modules {
 			public static $request_key_header    = 'Authorization';
 			public static $jwt_decrypt_algorithm = 'HS256';
 
+			/**
+			 * Constructor.
+			 */
 			public function __construct( WordPressData $wordpress_data ) {
 			}
 
@@ -49,6 +58,9 @@ namespace SimpleJWTLogin\Modules {
 
 namespace SimpleJWTLogin\Helpers {
 	class ServerHelper {
+		/**
+		 * Constructor.
+		 */
 		public function __construct( array $server ) {
 		}
 	}
@@ -130,6 +142,9 @@ namespace {
 		 */
 		protected $simulate_plugin_active = false;
 
+		/**
+		 * Set up test environment.
+		 */
 		protected function setUp(): void {
 			parent::setUp();
 
@@ -158,6 +173,9 @@ namespace {
 			$this->integration = WP_MCP_AI_Simple_JWT_Login_Integration::init();
 		}
 
+		/**
+		 * Tear down test environment.
+		 */
 		protected function tearDown(): void {
 			remove_filter( 'pre_option_active_plugins', array( $this, 'filter_active_plugins' ), 10 );
 			$this->simulate_plugin_active = false;

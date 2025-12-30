@@ -691,6 +691,7 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 		try {
 			$datetime = new DateTime( $value );
 		} catch ( Exception $exception ) {
+			// Intentionally empty - error handled elsewhere.
 			return new WP_Error(
 				'wp_mcp_ai_invalid_time',
 				__( 'Unable to parse the supplied date/time value.', 'wp-mcp-ai' ),
@@ -705,6 +706,7 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_
 			try {
 				$datetime->setTimezone( new DateTimeZone( $timezone ) );
 			} catch ( Exception $exception ) {
+				// Intentionally empty - error handled elsewhere.
 				return new WP_Error(
 					'wp_mcp_ai_invalid_timezone',
 					__( 'The provided timezone is not valid.', 'wp-mcp-ai' ),

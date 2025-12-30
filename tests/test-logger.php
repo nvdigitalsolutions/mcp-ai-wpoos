@@ -11,6 +11,9 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
 	 */
 	protected $original_error_log;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -18,6 +21,9 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
 		WP_MCP_AI_Logger::reset_log_file_cache();
 	}
 
+	/**
+	 * Tear down test environment.
+	 */
 	public function tearDown(): void {
 		if ( false !== $this->original_error_log && null !== $this->original_error_log ) {
 			ini_set( 'error_log', (string) $this->original_error_log );
