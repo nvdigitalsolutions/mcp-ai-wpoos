@@ -76,5 +76,5 @@ send_mailjet_email = dev
 create_google_calendar_event = dev
 google_analytics_report = dev
 quickbooks_report = experimental
-get_import_duty = dev
+get_import_duty = bug
 generic_rest = experimental
