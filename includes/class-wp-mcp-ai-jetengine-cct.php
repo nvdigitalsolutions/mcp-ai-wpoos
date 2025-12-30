@@ -55,7 +55,42 @@ class WP_MCP_AI_JetEngine_CCT {
 			return null;
 		}
 
+		// Ensure CCT is registered before trying to get handler.
+		// In some environments (base + pro plugin), the init hook may have fired
+		// but the CCT manager hasn't loaded content types into memory yet.
+		if ( ! self::cct_exists( $module ) ) {
+			// Try to register it now if it doesn't exist.
+			self::maybe_register_cct();
+		}
+
 		$instance = $module->manager->get_content_types( self::SLUG );
+
+		if ( ! $instance ) {
+			// Content type not loaded in manager yet. Force a reload.
+			// The query_raw('post_types') method triggers JetEngine's CCT manager
+			// to reload content types from the database into memory.
+			if ( ! empty( $module->manager->data ) && ! empty( $module->manager->data->db ) ) {
+				if ( method_exists( $module->manager->data->db, 'query_raw' ) ) {
+					try {
+						$module->manager->data->db->query_raw( 'post_types' );
+					} catch ( Exception $e ) {
+						// Log error but continue - handler will still be null.
+						// We catch Exception (not Throwable) to avoid masking fatal errors.
+						WP_MCP_AI_Logger::log_event(
+							'error',
+							'JetEngine CCT: Failed to reload content types',
+							array(
+								'exception' => $e->getMessage(),
+								'slug'      => self::SLUG,
+							)
+						);
+					}
+				}
+			}
+
+			// Try again after reload.
+			$instance = $module->manager->get_content_types( self::SLUG );
+		}
 
 		if ( ! $instance ) {
 			return null;
