@@ -283,6 +283,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Delete_All_Export'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-all-export.php',
 			'WP_MCP_AI_Pro_Tool_Schedule_All_Import'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-schedule-all-import.php',
 			'WP_MCP_AI_Pro_Tool_Delete_All_Import'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-all-import.php',
+			// Architectural Drawing Suite (AI-enhanced).
+			'WP_MCP_AI_Tool_Generate_Architectural_Drawing' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-architectural-drawing.php',
 		);
 
 		// Add quiz tools if enabled.
