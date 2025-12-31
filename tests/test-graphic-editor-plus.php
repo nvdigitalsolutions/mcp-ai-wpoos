@@ -117,7 +117,7 @@ class WP_MCP_AI_Graphic_Editor_Plus_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $flags );
 		$this->assertContains( 'requires-capability', $flags );
 		$this->assertContains( 'write', $flags );
-		$this->assertContains( 'local-only', $flags );
+		$this->assertContains( 'mixed-mode', $flags );
 		$this->assertContains( 'pro-tool', $flags );
 	}
 
@@ -308,9 +308,10 @@ class WP_MCP_AI_Graphic_Editor_Plus_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test expand scene operation with valid parameters.
+	 * Test expand scene operation returns not-implemented error.
+	 * This feature is reserved for future implementation.
 	 */
-	public function test_execute_expand_scene_success() {
+	public function test_execute_expand_scene_not_implemented() {
 		$tool   = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
 		$result = $tool->execute(
 			array(
@@ -323,89 +324,14 @@ class WP_MCP_AI_Graphic_Editor_Plus_Test extends WP_UnitTestCase {
 			array( 'user_id' => $this->user_id )
 		);
 
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'attachment_id', $result );
-		$this->assertArrayHasKey( 'url', $result );
-		$this->assertArrayHasKey( 'operation', $result );
-		$this->assertSame( 'expand_scene', $result['operation'] );
-		$this->assertArrayHasKey( 'original_width', $result );
-		$this->assertArrayHasKey( 'original_height', $result );
-		$this->assertArrayHasKey( 'new_width', $result );
-		$this->assertArrayHasKey( 'new_height', $result );
-		$this->assertArrayHasKey( 'expand_direction', $result );
-		$this->assertSame( 'all', $result['expand_direction'] );
-		$this->assertArrayHasKey( 'expand_pixels', $result );
-		$this->assertSame( 50, $result['expand_pixels'] );
-		$this->assertArrayHasKey( 'text', $result );
-
-		// Verify dimensions increased.
-		$this->assertGreaterThan( $result['original_width'], $result['new_width'] );
-		$this->assertGreaterThan( $result['original_height'], $result['new_height'] );
-
-		// Clean up created attachment.
-		if ( isset( $result['attachment_id'] ) ) {
-			wp_delete_attachment( $result['attachment_id'], true );
-		}
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_not_implemented', $result->get_error_code() );
 	}
 
 	/**
-	 * Test expand scene with different directions.
+	 * Test position calculation for different positions.
 	 */
-	public function test_execute_expand_scene_directions() {
-		$directions = array( 'top', 'bottom', 'left', 'right', 'horizontal', 'vertical' );
-
-		foreach ( $directions as $direction ) {
-			$tool   = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
-			$result = $tool->execute(
-				array(
-					'operation'        => 'expand_scene',
-					'attachment_id'    => $this->test_image_id,
-					'expand_direction' => $direction,
-					'expand_pixels'    => 30,
-				),
-				array( 'user_id' => $this->user_id )
-			);
-
-			$this->assertIsArray( $result, "Failed for direction: {$direction}" );
-			$this->assertArrayHasKey( 'expand_direction', $result );
-			$this->assertSame( $direction, $result['expand_direction'] );
-
-			// Clean up created attachment.
-			if ( isset( $result['attachment_id'] ) ) {
-				wp_delete_attachment( $result['attachment_id'], true );
-			}
-		}
-	}
-
-	/**
-	 * Test expand scene with hex color background.
-	 */
-	public function test_execute_expand_scene_with_color() {
-		$tool   = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
-		$result = $tool->execute(
-			array(
-				'operation'        => 'expand_scene',
-				'attachment_id'    => $this->test_image_id,
-				'expand_direction' => 'all',
-				'expand_pixels'    => 40,
-				'background_color' => '#FF0000',
-			),
-			array( 'user_id' => $this->user_id )
-		);
-
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'attachment_id', $result );
-
-		// Clean up created attachment.
-		if ( isset( $result['attachment_id'] ) ) {
-			wp_delete_attachment( $result['attachment_id'], true );
-		}
-	}
-
-	/**
-	 * Test logo position calculation for different positions.
-	 */
-	public function test_calculate_logo_position() {
+	public function test_calculate_position() {
 		$tool        = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
 		$image_size  = array(
 			'width'  => 1000,
@@ -417,7 +343,7 @@ class WP_MCP_AI_Graphic_Editor_Plus_Test extends WP_UnitTestCase {
 		);
 		$margin      = 20;
 		$reflection  = new ReflectionClass( $tool );
-		$method      = $reflection->getMethod( 'calculate_logo_position' );
+		$method      = $reflection->getMethod( 'calculate_position' );
 		$method->setAccessible( true );
 
 		// Test bottom-left.
@@ -501,6 +427,197 @@ class WP_MCP_AI_Graphic_Editor_Plus_Test extends WP_UnitTestCase {
 		// Test invalid hex.
 		$color = $method->invoke( $tool, 'ZZZZZZ' );
 		$this->assertWPError( $color );
+	}
+
+	/**
+	 * Test AI operations require prompt parameter.
+	 */
+	public function test_ai_operations_require_prompt() {
+		$ai_operations = array( 'ai_enhance', 'ai_style', 'ai_background', 'ai_retouch' );
+
+		foreach ( $ai_operations as $operation ) {
+			$tool   = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
+			$result = $tool->execute(
+				array(
+					'operation'     => $operation,
+					'attachment_id' => $this->test_image_id,
+				),
+				array( 'user_id' => $this->user_id )
+			);
+
+			$this->assertWPError( $result, "Operation {$operation} should require prompt" );
+			$this->assertSame( 'wp_mcp_ai_missing_prompt', $result->get_error_code() );
+		}
+	}
+
+	/**
+	 * Test AI enhance operation with mocked Gemini response.
+	 */
+	public function test_execute_ai_enhance_with_mock() {
+		// Set up Gemini API key.
+		$settings                   = array();
+		$settings['gemini_api_key'] = 'test-api-key';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwsB9YwH0e0AAAAASUVORK5CYII=';
+
+		// Mock HTTP response.
+		$http_stub = function ( $preempt, $args, $url ) use ( $png_base64 ) {
+			// Only intercept Gemini API calls.
+			if ( false === strpos( $url, 'generativelanguage.googleapis.com' ) ) {
+				return $preempt;
+			}
+
+			$payload = array(
+				'candidates' => array(
+					array(
+						'content' => array(
+							'parts' => array(
+								array(
+									'inlineData' => array(
+										'data'     => $png_base64,
+										'mimeType' => 'image/png',
+									),
+								),
+							),
+						),
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$tool   = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
+		$result = $tool->execute(
+			array(
+				'operation'     => 'ai_enhance',
+				'attachment_id' => $this->test_image_id,
+				'prompt'        => 'enhance brightness and contrast',
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'attachment_id', $result );
+		$this->assertArrayHasKey( 'operation', $result );
+		$this->assertSame( 'ai_enhance', $result['operation'] );
+		$this->assertArrayHasKey( 'prompt', $result );
+		$this->assertArrayHasKey( 'text', $result );
+
+		// Clean up.
+		if ( isset( $result['attachment_id'] ) ) {
+			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
+
+	/**
+	 * Test AI style operation with mocked Gemini response.
+	 */
+	public function test_execute_ai_style_with_mock() {
+		// Set up Gemini API key.
+		$settings                   = array();
+		$settings['gemini_api_key'] = 'test-api-key';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwsB9YwH0e0AAAAASUVORK5CYII=';
+
+		// Mock HTTP response.
+		$http_stub = function ( $preempt, $args, $url ) use ( $png_base64 ) {
+			if ( false === strpos( $url, 'generativelanguage.googleapis.com' ) ) {
+				return $preempt;
+			}
+
+			$payload = array(
+				'candidates' => array(
+					array(
+						'content' => array(
+							'parts' => array(
+								array(
+									'inlineData' => array(
+										'data'     => $png_base64,
+										'mimeType' => 'image/png',
+									),
+								),
+							),
+						),
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$tool   = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
+		$result = $tool->execute(
+			array(
+				'operation'     => 'ai_style',
+				'attachment_id' => $this->test_image_id,
+				'prompt'        => 'convert to watercolor painting',
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'operation', $result );
+		$this->assertSame( 'ai_style', $result['operation'] );
+
+		// Clean up.
+		if ( isset( $result['attachment_id'] ) ) {
+			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
+
+	/**
+	 * Test AI background operation requires prompt.
+	 */
+	public function test_execute_ai_background_requires_prompt() {
+		$tool   = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
+		$result = $tool->execute(
+			array(
+				'operation'     => 'ai_background',
+				'attachment_id' => $this->test_image_id,
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_missing_prompt', $result->get_error_code() );
+	}
+
+	/**
+	 * Test AI retouch operation requires prompt.
+	 */
+	public function test_execute_ai_retouch_requires_prompt() {
+		$tool   = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
+		$result = $tool->execute(
+			array(
+				'operation'     => 'ai_retouch',
+				'attachment_id' => $this->test_image_id,
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_missing_prompt', $result->get_error_code() );
 	}
 
 	/**
