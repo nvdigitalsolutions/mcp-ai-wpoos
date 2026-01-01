@@ -3132,6 +3132,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
+				// Log after sending thinking status to track agentic loop progress.
+				WP_MCP_AI_Logger::log_event(
+					'sse_streaming_after_tools',
+					'Sent thinking status after tool execution, preparing for next LLM call',
+					array(
+						'iteration'         => $iteration,
+						'assistant_id'      => $assistant_id,
+						'tool_count'        => count( $tool_result_messages ),
+						'has_async_pending' => $has_async_pending_result,
+					)
+				);
+
 				// Validate token budget before next iteration.
 				$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
 				$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
@@ -3201,6 +3213,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					array(
 						'type'    => 'generating',
 						'message' => __( 'Generating response…', 'wp-mcp-ai' ),
+					)
+				);
+
+				// Log before second LLM call to track the flow.
+				WP_MCP_AI_Logger::log_event(
+					'sse_streaming_before_llm_call',
+					'About to call LLM again with tool results',
+					array(
+						'iteration'    => $iteration,
+						'assistant_id' => $assistant_id,
+						'message_count' => count( $messages ),
 					)
 				);
 
@@ -3430,8 +3453,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$payload['sessionKey'] = $recorded_session_key;
 			}
 
+			// ALWAYS include tool_results in payload if they exist.
+			// This ensures the chat client receives tool execution results even when
+			// the LLM response is empty or doesn't include commentary.
+			// Critical for tools like vectorize_image where the tool result contains
+			// the primary information (SVG URL, attachment ID, success message).
 			if ( ! empty( $tool_result_messages ) ) {
 				$payload['tool_results'] = $tool_result_messages;
+
+				// Log final message payload for debugging tool result delivery.
+				WP_MCP_AI_Logger::log_event(
+					'sse_final_message_with_tools',
+					'Sending final SSE message event with tool results',
+					array(
+						'assistant_id'      => $assistant_id,
+						'tool_result_count' => count( $tool_result_messages ),
+						'has_response_data' => ! empty( $response ),
+						'has_text_content'  => ! empty( $response['choices'][0]['message']['content'] ) || ! empty( $response['content'] ),
+					)
+				);
 			}
 
 			$this->send_sse_event( 'message', $payload );
