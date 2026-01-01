@@ -4,11 +4,14 @@
 
 The **Generate Architectural Drawing** tool is a Pro AI-enhanced feature that uses artificial intelligence to create advanced architectural vector drawings including floor plans, elevations, sections, and construction details. It's similar to the Graphic Editor Suite but specifically designed for architectural drafting professionals.
 
+**NEW:** Now includes AI-powered raster-to-vector (SVG) conversion using @neplex/vectorizer for true scalable vector graphics output.
+
 ## Tool Information
 
 - **Slug**: `generate_architectural_drawing`
-- **Category**: Pro Tools - Architectural Drawing Suite
+- **Category**: Pro Tools - Architectural Drawing Suite  
 - **API**: OpenAI DALL-E, Google Gemini Imagen
+- **SVG Conversion**: @neplex/vectorizer (Node.js)
 - **Capability Flags**: `pro`, `write`, `external-api`, `requires-api-key`, `requires-capability`, `rate-limited`, `costs-money`
 
 ## Features
@@ -37,7 +40,7 @@ The **Generate Architectural Drawing** tool is a Pro AI-enhanced feature that us
 
 ## Usage Examples
 
-### Example 1: Generate a Floor Plan
+### Example 1: Generate a Floor Plan (PNG + SVG)
 
 ```json
 {
@@ -50,7 +53,8 @@ The **Generate Architectural Drawing** tool is a Pro AI-enhanced feature that us
     "length": "40 feet"
   },
   "annotations": true,
-  "scale": "1/4\"=1'-0\""
+  "scale": "1/4\"=1'-0\"",
+  "output_format": "both"
 }
 ```
 
@@ -76,6 +80,19 @@ The **Generate Architectural Drawing** tool is a Pro AI-enhanced feature that us
 - **WordPress Capability**: `upload_files`
 - **API Key**: OpenAI API key or Google Gemini API key
 - **Pro License**: Requires Pro addon activation
+- **Node.js** (for SVG conversion): v14+ installed on server
+- **npm Packages**: `@neplex/vectorizer` installed
+
+## SVG Conversion
+
+The tool now supports AI-powered raster-to-vector conversion using @neplex/vectorizer:
+
+- **Output Formats**: `png` (default), `svg`, or `both`
+- **Automatic Optimization**: Settings adjusted per drawing type
+- **Fast Performance**: 4-5x faster than alternatives
+- **High Quality**: Preserves architectural detail
+
+See [SVG Vectorization Documentation](./svg-vectorization.md) for details.
 
 ## Best Practices
 
