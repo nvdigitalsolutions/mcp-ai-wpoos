@@ -7959,6 +7959,154 @@
     }
 
     /**
+     * Normalise get_system_logs tool result for display.
+     * Formats nested log data (wp_mcp_ai, wordpress, plugin_logs) into readable sections.
+     * 
+     * @param {Object} result - Result object with summary and nested log data
+     * @return {Object|null} Normalized result with formatted text, or null if empty
+     */
+    function normaliseSystemLogsResult(result) {
+        if (!result || typeof result !== 'object') {
+            return null;
+        }
+
+        const lines = [];
+
+        // Add summary at the top
+        if (typeof result.summary === 'string' && result.summary.trim()) {
+            lines.push(result.summary.trim());
+            lines.push('');
+        }
+
+        // Format NV oOS logs section
+        if (result.wp_mcp_ai && typeof result.wp_mcp_ai === 'object') {
+            const mcpLogs = result.wp_mcp_ai;
+            
+            lines.push('## NV oOS Logs');
+            
+            if (mcpLogs.logging_enabled === false) {
+                lines.push(mcpLogs.message || 'Logging is disabled.');
+            } else {
+                // Recent errors
+                if (Array.isArray(mcpLogs.recent_errors) && mcpLogs.recent_errors.length > 0) {
+                    lines.push('');
+                    lines.push('**Recent Errors:**');
+                    mcpLogs.recent_errors.forEach(function(error, index) {
+                        if (typeof error === 'string') {
+                            lines.push((index + 1) + '. ' + error);
+                        } else if (error && typeof error === 'object') {
+                            const errorMsg = error.message || error.error || JSON.stringify(error);
+                            lines.push((index + 1) + '. ' + errorMsg);
+                        }
+                    });
+                } else {
+                    lines.push('');
+                    lines.push('No recent errors.');
+                }
+
+                // Recent activity
+                if (Array.isArray(mcpLogs.recent_activity) && mcpLogs.recent_activity.length > 0) {
+                    lines.push('');
+                    lines.push('**Recent Activity:**');
+                    mcpLogs.recent_activity.forEach(function(activity, index) {
+                        if (typeof activity === 'string') {
+                            lines.push((index + 1) + '. ' + activity);
+                        } else if (activity && typeof activity === 'object') {
+                            const activityMsg = activity.message || activity.type || JSON.stringify(activity);
+                            lines.push((index + 1) + '. ' + activityMsg);
+                        }
+                    });
+                } else {
+                    lines.push('');
+                    lines.push('No recent activity.');
+                }
+            }
+            
+            lines.push('');
+        }
+
+        // Format WordPress debug log section
+        if (result.wordpress && typeof result.wordpress === 'object') {
+            const wpLogs = result.wordpress;
+            
+            lines.push('## WordPress Logs');
+            
+            if (wpLogs.debug_log && typeof wpLogs.debug_log === 'object') {
+                const debugLog = wpLogs.debug_log;
+                
+                if (debugLog.enabled === false || debugLog.available === false) {
+                    lines.push(debugLog.message || 'Debug log not available.');
+                } else if (Array.isArray(debugLog.entries) && debugLog.entries.length > 0) {
+                    lines.push('');
+                    lines.push('**Debug Log (last ' + debugLog.entries.length + ' lines):**');
+                    debugLog.entries.forEach(function(entry) {
+                        if (typeof entry === 'string' && entry.trim()) {
+                            lines.push(entry);
+                        }
+                    });
+                } else {
+                    lines.push('Debug log is empty.');
+                }
+            } else {
+                lines.push('No WordPress logs available.');
+            }
+            
+            lines.push('');
+        }
+
+        // Format plugin logs section
+        if (result.plugin_logs && typeof result.plugin_logs === 'object') {
+            const pluginLogs = result.plugin_logs;
+            
+            lines.push('## Plugin Logs');
+            
+            if (typeof pluginLogs.message === 'string' && pluginLogs.message.trim()) {
+                lines.push(pluginLogs.message.trim());
+            } else if (Array.isArray(pluginLogs.files) && pluginLogs.files.length > 0) {
+                lines.push('');
+                lines.push('Found ' + pluginLogs.files.length + ' plugin log file(s):');
+                lines.push('');
+                
+                pluginLogs.files.forEach(function(logFile, index) {
+                    if (!logFile || typeof logFile !== 'object') {
+                        return;
+                    }
+                    
+                    lines.push('**' + (index + 1) + '. ' + (logFile.path || 'Unknown file') + '**');
+                    
+                    if (Array.isArray(logFile.entries) && logFile.entries.length > 0) {
+                        logFile.entries.forEach(function(entry) {
+                            if (typeof entry === 'string' && entry.trim()) {
+                                lines.push('   ' + entry);
+                            }
+                        });
+                    } else if (typeof logFile.error === 'string') {
+                        lines.push('   Error: ' + logFile.error);
+                    } else {
+                        lines.push('   (empty)');
+                    }
+                    
+                    if (index < pluginLogs.files.length - 1) {
+                        lines.push('');
+                    }
+                });
+            } else {
+                lines.push('No plugin logs found.');
+            }
+        }
+
+        // If no content was added, return null
+        if (lines.length === 0) {
+            return null;
+        }
+
+        return {
+            text: lines.join('\n'),
+            attachments: []
+        };
+    }
+
+    /**
      * Normalise array tool results for display (e.g., from search_attachments).
      * Converts an array of attachment objects into a formatted display with downloadable links.
      * 
@@ -8114,6 +8262,12 @@
         // This tool returns an object with a 'routes' array that needs formatting
         if (toolName === 'list_jetengine_rest_routes') {
             return normaliseJetEngineRoutesResult(result);
+        }
+
+        // Special handling for get_system_logs tool
+        // This tool returns an object with nested log data (wp_mcp_ai, wordpress, plugin_logs) that needs formatting
+        if (toolName === 'get_system_logs') {
+            return normaliseSystemLogsResult(result);
         }
 
         const nestedImage = result && result.image && typeof result.image === 'object' ? result.image : null;
