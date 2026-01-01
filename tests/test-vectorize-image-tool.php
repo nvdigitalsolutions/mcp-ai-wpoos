@@ -173,4 +173,52 @@ class Test_Vectorize_Image_Tool extends WP_UnitTestCase {
 		$perms = fileperms( $script_path );
 		$this->assertTrue( ( $perms & 0x0040 ) !== 0, 'Script should be executable' );
 	}
+
+	/**
+	 * Test save_to_temp_file returns correct path with extension.
+	 */
+	public function test_save_to_temp_file_returns_correct_path() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'vectorize_image' );
+
+		// Create a simple 1x1 PNG image.
+		$png_data = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' );
+
+		// Create a temporary file with the PNG data.
+		$temp_input = wp_tempnam( 'test-png-' );
+		file_put_contents( $temp_input, $png_data );
+
+		// Load the image with WordPress image editor.
+		$image_editor = wp_get_image_editor( $temp_input );
+
+		// Clean up input file.
+		wp_delete_file( $temp_input );
+
+		if ( is_wp_error( $image_editor ) ) {
+			$this->markTestSkipped( 'Image editor not available: ' . $image_editor->get_error_message() );
+		}
+
+		// Use reflection to test the save_to_temp_file method.
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'save_to_temp_file' );
+		$method->setAccessible( true );
+
+		$saved_path = $method->invoke( $tool, $image_editor );
+
+		// Should not be a WP_Error.
+		$this->assertNotInstanceOf( 'WP_Error', $saved_path );
+		$this->assertIsString( $saved_path );
+
+		// The saved file should exist.
+		$this->assertFileExists( $saved_path, 'Saved file should exist' );
+
+		// The saved file should be readable.
+		$this->assertFileIsReadable( $saved_path, 'Saved file should be readable' );
+
+		// The saved file should have content.
+		$this->assertGreaterThan( 0, filesize( $saved_path ), 'Saved file should not be empty' );
+
+		// Clean up.
+		wp_delete_file( $saved_path );
+	}
 }
