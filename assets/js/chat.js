@@ -12028,10 +12028,7 @@
 
             // Use different prefix for errors vs success
             const prefix = isError ? '⚠️ ' : '✓ ';
-            // ALWAYS show tool results as system messages for better visibility
-            // This ensures users see feedback about tool execution (e.g., "Successfully vectorized image")
-            // Previously, success results used 'tool' type which may not be prominently displayed
-            const messageType = 'system';
+            const messageType = isError ? 'system' : 'tool';
             
             // Update status indicator with tool result
             setStatus(state.container, {
@@ -12058,9 +12055,7 @@
             
             // Add tool result to conversation state for persistence
             // This ensures tool results are saved to localStorage and CCT
-            // Tool results are now shown as system messages but still need to be persisted
-            // for conversation history and API compatibility
-            if (state.conversation && Array.isArray(state.conversation)) {
+            if (messageType === 'tool' && state.conversation && Array.isArray(state.conversation)) {
                 // Build the tool message for conversation history
                 // Content should be the raw result for API compatibility
                 let contentForApi = '';
