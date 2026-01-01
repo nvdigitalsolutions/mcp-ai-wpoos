@@ -340,12 +340,28 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 		}
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
+		
+		// Get attachment URL and ensure it's valid.
+		$attachment_url = wp_get_attachment_url( $attachment_id );
+		if ( false === $attachment_url ) {
+			WP_MCP_AI_Logger::log_error(
+				'vectorize_attachment_url_failed',
+				'Failed to generate URL for vectorized SVG attachment',
+				array(
+					'attachment_id' => $attachment_id,
+					'file_path'     => $file_path,
+				)
+			);
+			// Use a fallback URL if possible, otherwise return an error.
+			$upload_dir     = wp_upload_dir();
+			$attachment_url = str_replace( $upload_dir['basedir'], $upload_dir['baseurl'], $file_path );
+		}
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
 			'file'          => $file_path,
 			'file_name'     => wp_basename( $file_path ),
-			'url'           => wp_get_attachment_url( $attachment_id ),
+			'url'           => $attachment_url,
 			'bytes'         => $bytes ? (int) $bytes : 0,
 			'title'         => get_the_title( $attachment_id ),
 		);
