@@ -739,21 +739,19 @@ class WP_MCP_AI_REST_Validator {
 	/**
 	 * Sanitize tool result for display to end users.
 	 *
-	 * Removes sensitive data and formats output appropriately.
-	 * If the tool implements WP_MCP_AI_Tool_LLM_Sanitizer_Interface, its sanitize_for_llm
-	 * method will be called to strip large base64 content before display.
+	 * Removes sensitive data and formats output appropriately for the chat client.
+	 * Unlike sanitize_tool_result_for_llm(), this method preserves all display-related
+	 * data (images, metadata, etc.) that the chat UI needs to properly render results.
 	 *
 	 * @param mixed                         $result        The tool result to sanitize.
 	 * @param string                        $tool_name     The name of the tool.
-	 * @param WP_MCP_AI_Tool_Interface|null $tool_instance Optional tool instance for interface-based sanitization.
+	 * @param WP_MCP_AI_Tool_Interface|null $tool_instance Optional tool instance (unused but kept for compatibility).
 	 * @return mixed Sanitized result.
 	 */
 	public function sanitize_tool_result_for_display( $result, $tool_name, $tool_instance = null ) {
-		// If tool implements custom sanitization interface, use it first to strip base64 content.
-		// This prevents large binary data from being sent to the chat client.
-		if ( $tool_instance && $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
-			$result = $tool_instance->sanitize_for_llm( $result );
-		}
+		// Do NOT call sanitize_for_llm() here - that method strips data needed for display.
+		// The LLM sanitization is only for reducing token usage when sending to AI models,
+		// not for preparing data for the chat client UI.
 
 		// Allow filtering of tool results before display.
 		$result = apply_filters( 'wp_mcp_ai_sanitize_tool_result_display', $result, $tool_name );
