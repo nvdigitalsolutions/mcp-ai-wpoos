@@ -339,6 +339,16 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'wp-mcp-ai' ), array( 'error' => $attachment_id ) );
 		}
 
+		// Generate attachment metadata to ensure proper processing and URL availability.
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+
+		$metadata = wp_generate_attachment_metadata( $attachment_id, $file_path );
+		if ( is_array( $metadata ) && ! empty( $metadata ) ) {
+			wp_update_attachment_metadata( $attachment_id, $metadata );
+		}
+
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
 
 		return array(
