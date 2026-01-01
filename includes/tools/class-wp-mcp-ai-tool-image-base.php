@@ -1032,7 +1032,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
-		
+
 		// Get attachment URL.
 		$attachment_url = wp_get_attachment_url( $attachment_id );
 		if ( false === $attachment_url ) {
