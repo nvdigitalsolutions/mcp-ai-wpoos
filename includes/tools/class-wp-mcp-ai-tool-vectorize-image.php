@@ -10,13 +10,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-image-base.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 
 /**
  * Convert raster images to SVG vector format using @neplex/vectorizer.
  */
-class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base {
+class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 
 	/**
@@ -219,7 +220,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base {
 		}
 
 		// Build response.
-		return array(
+		$response = array(
 			'attachment_id'  => $storage['attachment_id'],
 			'url'            => $storage['url'],
 			'file_name'      => $storage['file_name'],
@@ -239,6 +240,17 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base {
 				$storage['file_name']
 			),
 		);
+
+		// Add image_url structure for agentic workflow and chat client display.
+		// This allows the chat client to display the vectorized SVG and enables
+		// vision models to "see" the generated image in subsequent iterations.
+		if ( ! empty( $storage['url'] ) ) {
+			$response['image_url'] = array(
+				'url' => $storage['url'],
+			);
+		}
+
+		return $response;
 	}
 
 	/**
@@ -348,5 +360,54 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base {
 		if ( ! empty( $file_path ) && file_exists( $file_path ) ) {
 			wp_delete_file( $file_path );
 		}
+	}
+
+	/**
+	 * Sanitize vectorized image result for LLM consumption.
+	 *
+	 * SVG vectorization returns metadata about the conversion process that's useful
+	 * for the chat client but not needed by the LLM. This method strips unnecessary
+	 * data while preserving essential information and adds the image_url structure
+	 * for agentic loops with vision models.
+	 *
+	 * @param mixed $result Tool execution result.
+	 * @return mixed Sanitized result with only metadata and image_url for vision.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Keep only essential metadata for LLM reasoning.
+		$keep_fields = array(
+			'attachment_id',
+			'url',
+			'file_name',
+			'mime_type',
+			'bytes',
+			'title',
+			'source_format',
+			'source_size',
+			'svg_size',
+			'size_ratio',
+			'text',  // Descriptive message about the vectorization.
+		);
+
+		$sanitized = array();
+		foreach ( $keep_fields as $key ) {
+			if ( isset( $result[ $key ] ) ) {
+				$sanitized[ $key ] = $result[ $key ];
+			}
+		}
+
+		// Add image_url structure for the agentic loop.
+		// This allows vision models to "see" the vectorized SVG in subsequent iterations.
+		if ( isset( $result['url'] ) && '' !== $result['url'] ) {
+			$sanitized['image_url'] = array(
+				'url' => $result['url'],
+			);
+		}
+
+		return ! empty( $sanitized ) ? $sanitized : $result;
 	}
 }
