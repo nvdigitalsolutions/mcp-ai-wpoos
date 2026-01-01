@@ -1,0 +1,176 @@
+<?php
+/**
+ * Test vectorize_image tool.
+ *
+ * @package WP_MCP_AI
+ */
+
+/**
+ * Test vectorize_image tool registration and basic functionality.
+ */
+class Test_Vectorize_Image_Tool extends WP_UnitTestCase {
+
+	/**
+	 * Test that vectorize_image tool is registered.
+	 */
+	public function test_vectorize_image_tool_registered() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+		$tool = $registry->get_tool( 'vectorize_image' );
+		$this->assertNotNull( $tool, 'Vectorize image tool should be registered' );
+		$this->assertInstanceOf( 'WP_MCP_AI_Tool_Interface', $tool );
+	}
+
+	/**
+	 * Test tool metadata.
+	 */
+	public function test_tool_metadata() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'vectorize_image' );
+
+		$this->assertEquals( 'vectorize_image', $tool->get_slug() );
+		$this->assertEquals( 'Vectorize Image', $tool->get_name() );
+		$this->assertNotEmpty( $tool->get_description() );
+		$this->assertStringContainsString( 'SVG', $tool->get_description() );
+	}
+
+	/**
+	 * Test parameter schema.
+	 */
+	public function test_parameter_schema() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'vectorize_image' );
+		$schema   = $tool->get_parameters_schema();
+
+		$this->assertIsArray( $schema );
+		$this->assertEquals( 'object', $schema['type'] );
+		$this->assertArrayHasKey( 'properties', $schema );
+
+		// Test vectorization-specific parameters.
+		$this->assertArrayHasKey( 'color_mode', $schema['properties'] );
+		$this->assertArrayHasKey( 'color_precision', $schema['properties'] );
+		$this->assertArrayHasKey( 'filter_speckle', $schema['properties'] );
+		$this->assertArrayHasKey( 'mode', $schema['properties'] );
+		$this->assertArrayHasKey( 'hierarchical', $schema['properties'] );
+
+		// Test source parameters inherited from Image_Base.
+		$this->assertArrayHasKey( 'attachment_id', $schema['properties'] );
+		$this->assertArrayHasKey( 'url', $schema['properties'] );
+	}
+
+	/**
+	 * Test capability flags.
+	 */
+	public function test_capability_flags() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'vectorize_image' );
+
+		$this->assertInstanceOf( 'WP_MCP_AI_Tool_Capability_Flags_Interface', $tool );
+
+		$flags = $tool->get_capability_flags();
+		$this->assertIsArray( $flags );
+		$this->assertContains( 'requires-capability', $flags );
+		$this->assertContains( 'write', $flags );
+		$this->assertContains( 'local-only', $flags );
+		$this->assertContains( 'requires-nodejs', $flags );
+	}
+
+	/**
+	 * Test execution without authentication returns error.
+	 */
+	public function test_execution_without_authentication() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'vectorize_image' );
+
+		$result = $tool->execute( array(), array() );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+	}
+
+	/**
+	 * Test execution without required permissions returns error.
+	 */
+	public function test_execution_without_permissions() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'vectorize_image' );
+
+		$result = $tool->execute(
+			array(),
+			array( 'user_id' => $user_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+	}
+
+	/**
+	 * Test Node.js subprocess trait methods.
+	 */
+	public function test_nodejs_subprocess_trait() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'vectorize_image' );
+
+		// Use reflection to access protected methods for testing.
+		$reflection = new ReflectionClass( $tool );
+
+		// Test is_nodejs_available method.
+		$is_available_method = $reflection->getMethod( 'is_nodejs_available' );
+		$is_available_method->setAccessible( true );
+		$is_available = $is_available_method->invoke( $tool );
+
+		// Node.js availability depends on the environment.
+		$this->assertIsBool( $is_available );
+
+		// Test get_nodejs_executable method.
+		$get_executable_method = $reflection->getMethod( 'get_nodejs_executable' );
+		$get_executable_method->setAccessible( true );
+		$executable = $get_executable_method->invoke( $tool );
+
+		// Should be a path or WP_Error.
+		$this->assertTrue( is_string( $executable ) || is_wp_error( $executable ) );
+	}
+
+	/**
+	 * Test SVG MIME type support in image base.
+	 */
+	public function test_svg_mime_type_support() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool     = $registry->get_tool( 'vectorize_image' );
+
+		// Use reflection to access protected method.
+		$reflection   = new ReflectionClass( $tool );
+		$method       = $reflection->getMethod( 'get_allowed_mime_types' );
+		$method->setAccessible( true );
+		$allowed_mimes = $method->invoke( $tool );
+
+		$this->assertArrayHasKey( 'image/svg+xml', $allowed_mimes );
+		$this->assertEquals( 'svg', $allowed_mimes['image/svg+xml'] );
+	}
+
+	/**
+	 * Test tool grouping is correct.
+	 */
+	public function test_tool_grouping() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$grouping = $registry->get_tool_grouping();
+
+		$this->assertArrayHasKey( 'vectorize_image', $grouping );
+		$this->assertEquals( 'wordpress-core', $grouping['vectorize_image'] );
+	}
+
+	/**
+	 * Test vectorization script exists.
+	 */
+	public function test_vectorization_script_exists() {
+		$script_path = WP_MCP_AI_PATH . 'bin/vectorize-image.js';
+		$this->assertFileExists( $script_path );
+		$this->assertFileIsReadable( $script_path );
+
+		// Check if file is executable.
+		$perms = fileperms( $script_path );
+		$this->assertTrue( ( $perms & 0x0040 ) !== 0, 'Script should be executable' );
+	}
+}
