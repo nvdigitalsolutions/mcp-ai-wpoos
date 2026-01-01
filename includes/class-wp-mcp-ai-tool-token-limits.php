@@ -1672,7 +1672,30 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 		// For array results, try to preserve structure.
 		if ( is_array( $result ) ) {
-			// If result has common fields, try intelligent truncation.
+			// Preserve critical display fields that chat client needs for attachments and media.
+			// These fields MUST remain intact for the UI to display images, videos, files, etc.
+			$preserve_fields = array(
+				'url',           // Primary URL for downloads/display.
+				'download_url',  // Alternative download URL.
+				'image_url',     // Image URL structure (for vectorize_image, generate_openai_image, etc.).
+				'video_url',     // Video URL structure (for generate_veo_video).
+				'audio_url',     // Audio URL structure.
+				'file',          // File path/URL.
+				'file_name',     // File name for display.
+				'fileName',      // Alternative file name field.
+				'title',         // Display title.
+				'attachment_id', // WordPress attachment ID.
+				'mime_type',     // MIME type.
+				'mimeType',      // Alternative MIME type field.
+				'bytes',         // File size.
+				'text',          // Summary text (keep for context).
+				'message',       // Status message.
+				'status',        // Status code.
+				'job_id',        // Async job ID.
+				'async',         // Async flag.
+			);
+
+			// If result has common large text fields, try intelligent truncation.
 			if ( isset( $result['markdown'] ) && is_string( $result['markdown'] ) ) {
 				// Markdown field is often the largest - truncate it.
 				$result['markdown'] = self::truncate_result( $result['markdown'], (int) ( $max_tokens * 0.7 ) );
@@ -1691,9 +1714,21 @@ class WP_MCP_AI_Tool_Token_Limits {
 			// Check if truncation was enough.
 			$result_tokens = self::estimate_tokens( $result );
 			if ( $result_tokens > $max_tokens ) {
-				// Still too large - convert to summary.
-				$json = wp_json_encode( $result );
-				return self::truncate_result( $json, $max_tokens );
+				// Still too large - preserve critical fields and convert rest to summary.
+				// CRITICAL: Do NOT convert the entire result to a JSON string as this breaks
+				// the chat client's ability to extract image_url, video_url, and other structured data.
+				$preserved = array();
+				foreach ( $preserve_fields as $field ) {
+					if ( isset( $result[ $field ] ) ) {
+						$preserved[ $field ] = $result[ $field ];
+					}
+				}
+
+				// Add truncation marker so users know data was reduced.
+				$preserved['_truncated'] = true;
+				$preserved['_truncation_note'] = 'Result was truncated by orchestration layer to fit within budget constraints. Some fields may be missing.';
+
+				return $preserved;
 			}
 
 			return $result;
