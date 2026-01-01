@@ -30,11 +30,12 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	protected function get_allowed_mime_types() {
 		return array(
-			'image/jpeg' => 'jpg',
-			'image/jpg'  => 'jpg',
-			'image/png'  => 'png',
-			'image/webp' => 'webp',
-			'image/gif'  => 'gif',
+			'image/jpeg'    => 'jpg',
+			'image/jpg'     => 'jpg',
+			'image/png'     => 'png',
+			'image/webp'    => 'webp',
+			'image/gif'     => 'gif',
+			'image/svg+xml' => 'svg',
 		);
 	}
 
