@@ -541,4 +541,78 @@ class Test_REST_Validator extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'file_id', $content[1], 'input_file segment should have file_id after processing' );
 		$this->assertArrayNotHasKey( 'attachment_id', $content[1], 'attachment_id should be resolved to file_id' );
 	}
+
+	/**
+	 * Test sanitize_tool_result_for_display preserves all fields.
+	 *
+	 * This test ensures that sanitize_tool_result_for_display does NOT call
+	 * sanitize_for_llm and preserves all fields needed by the chat client.
+	 */
+	public function test_sanitize_tool_result_for_display_preserves_all_fields() {
+		$tool_result = array(
+			'url'            => 'https://example.com/image.svg',
+			'file_name'      => 'vectorized-image.svg',
+			'mime_type'      => 'image/svg+xml',
+			'bytes'          => 12345,
+			'title'          => 'Test Image',
+			'source_format'  => 'image/png',
+			'source_size'    => 54321,
+			'svg_size'       => 12345,
+			'size_ratio'     => '4.4',
+			'text'           => 'Successfully vectorized image to SVG format.',
+			'image_url'      => array(
+				'url' => 'https://example.com/image.svg',
+			),
+			'extra_metadata' => 'should be preserved',
+		);
+
+		$result = $this->validator->sanitize_tool_result_for_display( $tool_result, 'vectorize_image', null );
+
+		// All fields should be preserved for display.
+		$this->assertArrayHasKey( 'url', $result );
+		$this->assertArrayHasKey( 'file_name', $result );
+		$this->assertArrayHasKey( 'mime_type', $result );
+		$this->assertArrayHasKey( 'bytes', $result );
+		$this->assertArrayHasKey( 'title', $result );
+		$this->assertArrayHasKey( 'source_format', $result );
+		$this->assertArrayHasKey( 'source_size', $result );
+		$this->assertArrayHasKey( 'svg_size', $result );
+		$this->assertArrayHasKey( 'size_ratio', $result );
+		$this->assertArrayHasKey( 'text', $result );
+		$this->assertArrayHasKey( 'image_url', $result );
+		$this->assertArrayHasKey( 'extra_metadata', $result );
+
+		// Verify values are unchanged.
+		$this->assertEquals( 'https://example.com/image.svg', $result['url'] );
+		$this->assertEquals( 'vectorized-image.svg', $result['file_name'] );
+		$this->assertEquals( 'should be preserved', $result['extra_metadata'] );
+	}
+
+	/**
+	 * Test sanitize_tool_result_for_display applies filters.
+	 *
+	 * Ensures that the generic and tool-specific filters are applied.
+	 */
+	public function test_sanitize_tool_result_for_display_applies_filters() {
+		$tool_result = array(
+			'url'  => 'https://example.com/file.txt',
+			'text' => 'Original text',
+		);
+
+		// Add a filter that modifies the result.
+		add_filter(
+			'wp_mcp_ai_sanitize_tool_result_display_test_tool',
+			function ( $result ) {
+				$result['text'] = 'Modified by filter';
+				return $result;
+			}
+		);
+
+		$result = $this->validator->sanitize_tool_result_for_display( $tool_result, 'test_tool', null );
+
+		$this->assertEquals( 'Modified by filter', $result['text'] );
+
+		// Clean up filter.
+		remove_all_filters( 'wp_mcp_ai_sanitize_tool_result_display_test_tool' );
+	}
 }
