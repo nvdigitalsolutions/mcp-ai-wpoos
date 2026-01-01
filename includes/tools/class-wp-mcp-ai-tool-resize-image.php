@@ -198,7 +198,7 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 			'height' => $height,
 		);
 
-		$result = array(
+		$result_data = array(
 			'attachment_id'   => $storage['attachment_id'],
 			'url'             => $storage['url'],
 			'file_name'       => $storage['file_name'],
@@ -222,15 +222,15 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 
 		// Add vectorization metadata if SVG output was used.
 		if ( 'svg' === $output_format && isset( $storage['vectorized'] ) ) {
-			$result['vectorized']  = true;
-			$result['svg_size']    = isset( $storage['svg_size'] ) ? $storage['svg_size'] : $storage['bytes'];
-			$result['source_size'] = isset( $storage['source_size'] ) ? $storage['source_size'] : 0;
-			$result['duration_ms'] = isset( $storage['duration_ms'] ) ? $storage['duration_ms'] : 0;
+			$result_data['vectorized']  = true;
+			$result_data['svg_size']    = isset( $storage['svg_size'] ) ? $storage['svg_size'] : $storage['bytes'];
+			$result_data['source_size'] = isset( $storage['source_size'] ) ? $storage['source_size'] : 0;
+			$result_data['duration_ms'] = isset( $storage['duration_ms'] ) ? $storage['duration_ms'] : 0;
 		}
 
 		// Add image_url structure for agentic workflow and chat client display.
 		if ( ! empty( $storage['url'] ) ) {
-			$result['image_url'] = array(
+			$result_data['image_url'] = array(
 				'url' => $storage['url'],
 			);
 		}
@@ -242,10 +242,10 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 		/**
 		 * Filter the resize image result.
 		 *
-		 * @param array $result    Result array.
-		 * @param array $arguments Tool arguments.
-		 * @param array $context   Execution context.
+		 * @param array $result_data Result array.
+		 * @param array $arguments   Tool arguments.
+		 * @param array $context     Execution context.
 		 */
-		return apply_filters( 'wp_mcp_ai_resize_image_result', $result, $arguments, $context );
+		return apply_filters( 'wp_mcp_ai_resize_image_result', $result_data, $arguments, $context );
 	}
 }

@@ -968,10 +968,10 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Add vectorization metadata to storage result.
-		$storage['vectorized']   = true;
-		$storage['svg_size']     = isset( $vectorize_result['output_size'] ) ? $vectorize_result['output_size'] : $storage['bytes'];
-		$storage['source_size']  = isset( $vectorize_result['input_size'] ) ? $vectorize_result['input_size'] : 0;
-		$storage['duration_ms']  = isset( $vectorize_result['duration_ms'] ) ? $vectorize_result['duration_ms'] : 0;
+		$storage['vectorized']  = true;
+		$storage['svg_size']    = isset( $vectorize_result['output_size'] ) ? $vectorize_result['output_size'] : $storage['bytes'];
+		$storage['source_size'] = isset( $vectorize_result['input_size'] ) ? $vectorize_result['input_size'] : 0;
+		$storage['duration_ms'] = isset( $vectorize_result['duration_ms'] ) ? $vectorize_result['duration_ms'] : 0;
 
 		return $storage;
 	}
