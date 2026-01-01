@@ -12,11 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-tool-svg-vectorizer.php';
 
 /**
  * Provides a tool for editing images via OpenAI's DALL-E API.
  */
 class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_SVG_Vectorizer;
 
 	/**
 	 * {@inheritdoc}
@@ -82,6 +84,12 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 					'description' => __( 'Format for the response.', 'wp-mcp-ai' ),
 					'enum'        => array( 'url', 'b64_json' ),
 					'default'     => 'b64_json',
+				),
+				'output_format'   => array(
+					'type'        => 'string',
+					'description' => __( 'Output format: png (raster only), svg (vector only), or both (PNG + SVG). Requires Node.js for SVG conversion.', 'wp-mcp-ai' ),
+					'enum'        => array( 'png', 'svg', 'both' ),
+					'default'     => 'png',
 				),
 			),
 			'required'   => array( 'image_id', 'prompt' ),
@@ -174,6 +182,24 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			foreach ( $result['data'] as $index => $image_data ) {
 				$saved = $this->save_edited_image( $image_data, $image_id, $prompt, $index );
 				if ( ! is_wp_error( $saved ) ) {
+					// Add SVG conversion if requested.
+					$output_format = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'png';
+					if ( in_array( $output_format, array( 'svg', 'both' ), true ) && isset( $image_data['b64_json'] ) ) {
+						$svg_result = $this->vectorize_to_svg( $image_data['b64_json'] );
+						if ( ! is_wp_error( $svg_result ) ) {
+							$svg_attachment_id = $this->save_svg_attachment(
+								$svg_result['svg_data'],
+								basename( $saved['file'], '.png' ) . '-vector',
+								__( 'Edited Image', 'wp-mcp-ai' ),
+								0
+							);
+							if ( ! is_wp_error( $svg_attachment_id ) ) {
+								$saved['svg_attachment_id'] = $svg_attachment_id;
+								$saved['svg_url']           = wp_get_attachment_url( $svg_attachment_id );
+								$saved['svg_size']          = $svg_result['svg_size'];
+							}
+						}
+					}
 					$saved_images[] = $saved;
 				}
 			}

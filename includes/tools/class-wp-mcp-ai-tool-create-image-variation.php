@@ -12,11 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-tool-svg-vectorizer.php';
 
 /**
  * Provides a tool for creating image variations via OpenAI's DALL-E API.
  */
 class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_SVG_Vectorizer;
 
 	/**
 	 * {@inheritdoc}
@@ -74,6 +76,12 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 					'description' => __( 'Format for the response.', 'wp-mcp-ai' ),
 					'enum'        => array( 'url', 'b64_json' ),
 					'default'     => 'b64_json',
+				),
+				'output_format'   => array(
+					'type'        => 'string',
+					'description' => __( 'Output format: png (raster only), svg (vector only), or both (PNG + SVG). Requires Node.js for SVG conversion.', 'wp-mcp-ai' ),
+					'enum'        => array( 'png', 'svg', 'both' ),
+					'default'     => 'png',
 				),
 			),
 			'required'   => array( 'image_id' ),
