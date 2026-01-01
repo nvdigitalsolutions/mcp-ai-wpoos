@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/update-vendor-files-in-repo',
         'version' => 'dev-copilot/update-vendor-files-in-repo',
-        'reference' => '736e2fad3f77fa63419c9a541969b7298369c0b9',
+        'reference' => '66737ce423be4c3dc7297242025cbf818262f8ac',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/update-vendor-files-in-repo',
             'version' => 'dev-copilot/update-vendor-files-in-repo',
-            'reference' => '736e2fad3f77fa63419c9a541969b7298369c0b9',
+            'reference' => '66737ce423be4c3dc7297242025cbf818262f8ac',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
