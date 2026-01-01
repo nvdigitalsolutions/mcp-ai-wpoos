@@ -8305,6 +8305,12 @@
             url = result.download_url.trim();
         } else if (typeof result.downloadUrl === 'string' && result.downloadUrl.trim()) {
             url = result.downloadUrl.trim();
+        } else if (typeof result.video_url === 'string' && result.video_url.trim()) {
+            // Handle video_url as direct string
+            url = result.video_url.trim();
+        } else if (typeof result.image_url === 'string' && result.image_url.trim()) {
+            // Handle image_url as direct string
+            url = result.image_url.trim();
         } else if (nestedVideo) {
             // Handle video_url structure from generate_veo_video
             if (typeof nestedVideo.url === 'string' && nestedVideo.url.trim()) {
