@@ -409,6 +409,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'crop_image'                         => 'wordpress-core',
 				'rotate_image'                       => 'wordpress-core',
 				'convert_image_format'               => 'wordpress-core',
+				'graphic_editor_plus'                => 'wordpress-plugins',
 
 				// Data Visualization.
 				'create_chart'                       => 'wordpress-core',
@@ -947,6 +948,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_List_All_Import_Templates' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-all-import-templates.php',
 				'WP_MCP_AI_Tool_Trigger_All_Import'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-trigger-all-import.php',
 				'WP_MCP_AI_Tool_Get_All_Import_Status'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-all-import-status.php',
+				// Advanced graphic editing tool (Pro).
+				'WP_MCP_AI_Tool_Graphic_Editor_Plus'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-graphic-editor-plus.php',
 				// Project Management tools moved to Pro addon.
 			);
 
