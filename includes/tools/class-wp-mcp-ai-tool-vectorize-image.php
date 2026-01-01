@@ -266,7 +266,6 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base {
 		// Verify the file was actually saved.
 		if ( ! file_exists( $saved_path ) ) {
 			$this->cleanup_temp_file( $temp_file );
-			$this->cleanup_temp_file( $saved_path );
 			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to save temporary file.', 'wp-mcp-ai' ) );
 		}
 
