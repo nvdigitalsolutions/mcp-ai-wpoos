@@ -83,11 +83,24 @@ async function main() {
 		process.exit(1);
 	}
 
-	// Try to import @neplex/vectorizer
+	// Try to import @neplex/vectorizer from vendor directory
+	// Falls back to node_modules if vendor is not available (development)
 	let vectorize;
+	let vectorizerPath;
+	const vendorPath = path.join(__dirname, '..', 'assets', 'js', 'vendor', 'neplex-vectorizer', 'vectorizer');
+	
 	try {
-		const vectorizer = require('@neplex/vectorizer');
-		vectorize = vectorizer.vectorize;
+		// Try vendor directory first (production)
+		if (fs.existsSync(path.join(vendorPath, 'index.js'))) {
+			const vectorizer = require(vendorPath);
+			vectorize = vectorizer.vectorize;
+			vectorizerPath = vendorPath;
+		} else {
+			// Fallback to node_modules (development)
+			const vectorizer = require('@neplex/vectorizer');
+			vectorize = vectorizer.vectorize;
+			vectorizerPath = '@neplex/vectorizer';
+		}
 	} catch (error) {
 		console.error(JSON.stringify({
 			success: false,
@@ -110,8 +123,11 @@ async function main() {
 		process.exit(2);
 	}
 
-	// Import enums from vectorizer
-	const { ColorMode, Hierarchical, PathSimplifyMode } = require('@neplex/vectorizer');
+	// Import enums from vectorizer (use same path as loaded above)
+	const vectorizerModule = vectorizerPath.startsWith('@neplex') 
+		? require('@neplex/vectorizer')
+		: require(vectorizerPath);
+	const { ColorMode, Hierarchical, PathSimplifyMode } = vectorizerModule;
 	
 	// Prepare vectorization options with defaults
 	const vectorizeOptions = {
