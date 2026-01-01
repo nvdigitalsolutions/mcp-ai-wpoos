@@ -12,10 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-tool-svg-vectorizer.php';
+
 /**
  * Generates AI-enhanced architectural drawings and vector graphics.
  */
 class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
+	use WP_MCP_AI_Tool_SVG_Vectorizer;
 
 	const DEFAULT_MODEL    = 'gpt-image-1.5';
 	const DEFAULT_SIZE     = '1792x1024'; // Wide format suitable for architectural drawings.
