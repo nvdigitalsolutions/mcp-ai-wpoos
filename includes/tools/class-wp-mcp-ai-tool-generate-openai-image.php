@@ -14,11 +14,13 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-tool-svg-vectorizer.php';
 
 /**
  * Provides a tool for generating images via OpenAI and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
+	use WP_MCP_AI_Tool_SVG_Vectorizer;
 	const DEFAULT_MODEL           = 'gpt-image-1.5';
 	const DEFAULT_SIZE            = '1024x1024';
 	const DEFAULT_QUALITY         = 'medium'; // Default for gpt-image-1/1.5. DALL-E uses 'standard'.
@@ -96,6 +98,12 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 				'file_name'       => array(
 					'type'        => 'string',
 					'description' => __( 'Optional base file name for the saved image attachment.', 'wp-mcp-ai' ),
+				),
+				'output_format'   => array(
+					'type'        => 'string',
+					'description' => __( 'Output format: png (raster only), svg (vector only), or both (PNG + SVG). Requires Node.js for SVG conversion.', 'wp-mcp-ai' ),
+					'enum'        => array( 'png', 'svg', 'both' ),
+					'default'     => 'png',
 				),
 				'timeout'         => array(
 					'type'        => 'integer',
@@ -358,6 +366,46 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 					'provider'     => 'openai',
 					'model'        => $image['model'],
 				);
+			}
+		}
+
+		// Convert to SVG if requested.
+		$output_format = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'png';
+		if ( in_array( $output_format, array( 'svg', 'both' ), true ) && ! empty( $image['b64_json'] ) ) {
+			$svg_result = $this->vectorize_to_svg( $image['b64_json'] );
+			
+			if ( ! is_wp_error( $svg_result ) ) {
+				// Save SVG as attachment.
+				$svg_file_name = $file_name ? $file_name . '-vector' : '';
+				$svg_attachment_id = $this->save_svg_attachment(
+					$svg_result['svg_data'],
+					$svg_file_name,
+					sprintf(
+						/* translators: %s: shortened prompt */
+						__( 'AI Generated Image: %s', 'wp-mcp-ai' ),
+						substr( $prompt, 0, 50 )
+					),
+					$user_id
+				);
+				
+				if ( ! is_wp_error( $svg_attachment_id ) ) {
+					$result['svg_generated']    = true;
+					$result['svg_attachment_id'] = $svg_attachment_id;
+					$result['svg_url']          = wp_get_attachment_url( $svg_attachment_id );
+					$result['svg_size']         = $svg_result['svg_size'];
+					
+					// Update text message for LLM.
+					$result['text'] .= ' ' . sprintf(
+						/* translators: %d: SVG attachment ID */
+						__( 'SVG vector version also created (ID: %d).', 'wp-mcp-ai' ),
+						$svg_attachment_id
+					);
+				} else {
+					$result['svg_error'] = $svg_attachment_id->get_error_message();
+				}
+			} else {
+				// Include error but don't fail the request.
+				$result['svg_error'] = $svg_result->get_error_message();
 			}
 		}
 
