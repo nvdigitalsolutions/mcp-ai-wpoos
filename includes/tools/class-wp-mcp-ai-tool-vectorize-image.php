@@ -259,7 +259,17 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base {
 			return $result;
 		}
 
-		return $temp_file;
+		// WordPress's image editor may append an extension to the filename.
+		// Use the actual saved path from the result array.
+		$saved_path = isset( $result['path'] ) ? $result['path'] : $temp_file;
+
+		// Verify the file was actually saved.
+		if ( ! file_exists( $saved_path ) ) {
+			$this->cleanup_temp_file( $temp_file );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to save temporary file.', 'wp-mcp-ai' ) );
+		}
+
+		return $saved_path;
 	}
 
 	/**
