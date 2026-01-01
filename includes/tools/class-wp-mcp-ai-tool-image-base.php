@@ -78,6 +78,10 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		$target_url_normalized = strtok( $target_url, '?' );
 		$target_url_normalized = strtok( $target_url_normalized, '#' );
 
+		// Collect all image attachments found in messages as fallback.
+		// Stored in reverse order (most recent first).
+		$found_images = array();
+
 		// Search through messages for matching image attachment.
 		foreach ( $context['messages'] as $message ) {
 			// Only check user messages (where attachments originate).
@@ -141,10 +145,77 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 					// Found the match, no need to continue searching.
 					return $arguments;
 				}
+
+				// Store this image as a potential fallback.
+				// We store images in order found (which typically means most recent first in the messages array).
+				$found_images[] = array(
+					'url'           => $segment_url,
+					'url_normalized' => $segment_url_normalized,
+					'attachment_id' => isset( $segment['attachment_id'] ) ? absint( $segment['attachment_id'] ) : 0,
+					'file_name'     => isset( $segment['file_name'] ) ? sanitize_text_field( $segment['file_name'] ) : '',
+					'mime_type'     => isset( $segment['mime_type'] ) ? sanitize_text_field( $segment['mime_type'] ) : '',
+					'bytes'         => isset( $segment['bytes'] ) ? absint( $segment['bytes'] ) : 0,
+				);
 			}
 		}
 
-		// No matching attachment found, return arguments as-is.
+		// No exact match found.
+		// If we found any images in messages and the provided URL domain doesn't match any of them,
+		// it's likely a hallucinated/incorrect URL. Use the most recent image instead.
+		if ( ! empty( $found_images ) ) {
+			// Check if the target URL domain matches any found image domains.
+			$target_domain = $this->extract_domain_from_url( $target_url );
+			$found_matching_domain = false;
+
+			foreach ( $found_images as $image ) {
+				$image_domain = $this->extract_domain_from_url( $image['url'] );
+				if ( $target_domain === $image_domain ) {
+					$found_matching_domain = true;
+					break;
+				}
+			}
+
+			// If the target URL domain doesn't match any images from messages,
+			// it's likely incorrect. Use the most recent (first) image instead.
+			if ( ! $found_matching_domain ) {
+				$fallback_image = $found_images[0];
+
+				// Replace URL with the correct one from messages.
+				if ( ! empty( $arguments['url'] ) ) {
+					$arguments['url'] = $fallback_image['url'];
+				}
+				if ( ! empty( $arguments['image_url'] ) ) {
+					$arguments['image_url'] = $fallback_image['url'];
+				}
+
+				// Add metadata from the fallback image.
+				if ( $fallback_image['attachment_id'] > 0 ) {
+					$arguments['attachment_id'] = $fallback_image['attachment_id'];
+				}
+				if ( '' !== $fallback_image['file_name'] ) {
+					$arguments['file_name'] = $fallback_image['file_name'];
+				}
+				if ( '' !== $fallback_image['mime_type'] ) {
+					$arguments['source_mime_type'] = $fallback_image['mime_type'];
+				}
+				if ( $fallback_image['bytes'] > 0 ) {
+					$arguments['bytes'] = $fallback_image['bytes'];
+				}
+
+				// Log the URL correction for debugging.
+				if ( function_exists( 'wp_mcp_ai_log_activity' ) ) {
+					wp_mcp_ai_log_activity(
+						'image_url_corrected',
+						sprintf(
+							'Corrected incorrect image URL from %s to %s',
+							$target_url,
+							$fallback_image['url']
+						)
+					);
+				}
+			}
+		}
+
 		return $arguments;
 	}
 
@@ -486,6 +557,28 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		return 0;
 	}
 
+	/**
+	 * Extract domain from URL for comparison.
+	 *
+	 * @param string $url URL to extract domain from.
+	 * @return string Domain (e.g., 'example.com') or empty string on failure.
+	 */
+	protected function extract_domain_from_url( $url ) {
+		if ( '' === $url ) {
+			return '';
+		}
+
+		$parsed = wp_parse_url( $url );
+		if ( ! isset( $parsed['host'] ) ) {
+			return '';
+		}
+
+		// Return the host without www prefix for better matching.
+		$host = strtolower( $parsed['host'] );
+		$host = preg_replace( '/^www\./i', '', $host );
+
+		return $host;
+	}
 
 	/**
 	 * Save image editor contents as WordPress attachment.
