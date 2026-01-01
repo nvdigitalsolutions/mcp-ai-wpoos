@@ -8117,6 +8117,8 @@
         }
 
         const nestedImage = result && result.image && typeof result.image === 'object' ? result.image : null;
+        // Check for image_url structure (used by vectorize_image and other tools for agentic workflow compatibility)
+        const nestedImageUrl = result && result.image_url && typeof result.image_url === 'object' ? result.image_url : null;
         // Check for video_url structure (similar to image_url for generate_veo_video)
         const nestedVideo = result && result.video_url && typeof result.video_url === 'object' ? result.video_url : null;
 
@@ -8131,6 +8133,11 @@
             // Handle video_url structure from generate_veo_video
             if (typeof nestedVideo.url === 'string' && nestedVideo.url.trim()) {
                 url = nestedVideo.url.trim();
+            }
+        } else if (nestedImageUrl) {
+            // Handle image_url structure from vectorize_image and other image tools
+            if (typeof nestedImageUrl.url === 'string' && nestedImageUrl.url.trim()) {
+                url = nestedImageUrl.url.trim();
             }
         } else if (nestedImage) {
             if (typeof nestedImage.url === 'string' && nestedImage.url.trim()) {
@@ -8159,6 +8166,14 @@
             label = result.file_name.trim();
         } else if (typeof result.fileName === 'string' && result.fileName.trim()) {
             label = result.fileName.trim();
+        } else if (nestedImageUrl) {
+            if (typeof nestedImageUrl.title === 'string' && nestedImageUrl.title.trim()) {
+                label = nestedImageUrl.title.trim();
+            } else if (typeof nestedImageUrl.file_name === 'string' && nestedImageUrl.file_name.trim()) {
+                label = nestedImageUrl.file_name.trim();
+            } else if (typeof nestedImageUrl.fileName === 'string' && nestedImageUrl.fileName.trim()) {
+                label = nestedImageUrl.fileName.trim();
+            }
         } else if (nestedImage) {
             if (typeof nestedImage.title === 'string' && nestedImage.title.trim()) {
                 label = nestedImage.title.trim();
@@ -8176,15 +8191,21 @@
             attachment_id: result.attachment_id || null,
         };
 
-        if (metaRecord.bytes === null && nestedImage && typeof nestedImage.bytes === 'number') {
+        if (metaRecord.bytes === null && nestedImageUrl && typeof nestedImageUrl.bytes === 'number') {
+            metaRecord.bytes = nestedImageUrl.bytes;
+        } else if (metaRecord.bytes === null && nestedImage && typeof nestedImage.bytes === 'number') {
             metaRecord.bytes = nestedImage.bytes;
         }
 
-        if (!metaRecord.mime_type && nestedImage) {
+        if (!metaRecord.mime_type && nestedImageUrl) {
+            metaRecord.mime_type = nestedImageUrl.mime_type || nestedImageUrl.mimeType || '';
+        } else if (!metaRecord.mime_type && nestedImage) {
             metaRecord.mime_type = nestedImage.mime_type || nestedImage.mimeType || '';
         }
 
-        if (!metaRecord.attachment_id && nestedImage) {
+        if (!metaRecord.attachment_id && nestedImageUrl) {
+            metaRecord.attachment_id = nestedImageUrl.attachment_id || null;
+        } else if (!metaRecord.attachment_id && nestedImage) {
             metaRecord.attachment_id = nestedImage.attachment_id || null;
         }
 
@@ -8279,6 +8300,12 @@
             downloadName = result.file_name.trim();
         } else if (typeof result.fileName === 'string' && result.fileName.trim()) {
             downloadName = result.fileName.trim();
+        } else if (nestedImageUrl) {
+            if (typeof nestedImageUrl.file_name === 'string' && nestedImageUrl.file_name.trim()) {
+                downloadName = nestedImageUrl.file_name.trim();
+            } else if (typeof nestedImageUrl.fileName === 'string' && nestedImageUrl.fileName.trim()) {
+                downloadName = nestedImageUrl.fileName.trim();
+            }
         } else if (nestedImage) {
             if (typeof nestedImage.file_name === 'string' && nestedImage.file_name.trim()) {
                 downloadName = nestedImage.file_name.trim();
