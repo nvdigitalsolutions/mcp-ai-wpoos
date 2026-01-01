@@ -50,6 +50,10 @@ This installs:
 - `eslint` - JavaScript linting tool
 - `@wordpress/eslint-plugin` - WordPress coding standards for JavaScript
 
+**Production Dependencies** (automatically copied to vendor after install):
+- `chart.js` → `assets/js/vendor/chart.min.js` - Analytics charts
+- `@neplex/vectorizer` → `assets/js/vendor/neplex-vectorizer/` - Image vectorization (for `vectorize_image` tool)
+
 ### PHP Dependencies
 
 #### Production Dependencies
