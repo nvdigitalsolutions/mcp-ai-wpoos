@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-vendor-files-in-repo',
-        'version' => 'dev-copilot/update-vendor-files-in-repo',
-        'reference' => '66737ce423be4c3dc7297242025cbf818262f8ac',
+        'pretty_version' => 'dev-copilot/fix-image-download-error',
+        'version' => 'dev-copilot/fix-image-download-error',
+        'reference' => '6b86576aace4471590818e379611c70971e3c840',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-vendor-files-in-repo',
-            'version' => 'dev-copilot/update-vendor-files-in-repo',
-            'reference' => '66737ce423be4c3dc7297242025cbf818262f8ac',
+            'pretty_version' => 'dev-copilot/fix-image-download-error',
+            'version' => 'dev-copilot/fix-image-download-error',
+            'reference' => '6b86576aace4471590818e379611c70971e3c840',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
