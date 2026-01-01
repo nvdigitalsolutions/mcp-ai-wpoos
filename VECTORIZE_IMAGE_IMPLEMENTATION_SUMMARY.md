@@ -56,13 +56,23 @@ January 1, 2026
 **File:** `package.json`
 - Added `@neplex/vectorizer` as a dependency
 - Version: 0.0.5
+- **Deployment**: Copied to `assets/js/vendor/neplex-vectorizer/` via postinstall script
+- **Pattern**: Same as Chart.js vendor integration (self-contained, no npm required in production)
 
-### 2. Image Base Class
+### 2. Vendor Directory
+**Directory:** `assets/js/vendor/neplex-vectorizer/`
+- Contains @neplex/vectorizer main package and platform-specific native binaries
+- Automatically populated during `npm install` via postinstall script
+- Tracked in git (unlike node_modules)
+- Included in plugin ZIP builds
+- Enables plugin to work without npm on production servers
+
+### 3. Image Base Class
 **File:** `includes/tools/class-wp-mcp-ai-tool-image-base.php`
 - Added `image/svg+xml` MIME type to allowed types
 - Maps to 'svg' file extension
 
-### 3. Tool Registry
+### 4. Tool Registry
 **File:** `includes/class-wp-mcp-ai-tool-registry.php`
 - Registered `WP_MCP_AI_Tool_Vectorize_Image` in base tools list
 - Added to 'wordpress-core' tool grouping
@@ -154,16 +164,32 @@ Returns `WP_Error` with one of these codes:
 ## System Requirements
 
 ### Server Requirements
-- **Node.js**: Version 14.0.0 or higher
+- **Node.js**: Version 14.0.0 or higher (required at runtime for vectorization)
+- **npm**: Not required in production (vectorizer is pre-installed in vendor directory)
 - **PHP**: 7.4 or higher
 - **WordPress**: 6.0 or higher
+- **Platform**: Linux, macOS, Windows, FreeBSD, or Android (with supported architecture)
 
 ### PHP Extensions
 - Standard WordPress requirements
 - No additional PHP extensions needed
 
 ### npm Dependencies
-- `@neplex/vectorizer@^0.0.5`
+- `@neplex/vectorizer@^0.0.5` (installed to vendor directory, no npm needed in production)
+
+### Vendor Directory Structure
+```
+assets/js/vendor/neplex-vectorizer/
+├── vectorizer/                    # Main package (~292KB)
+│   ├── index.js                  # Platform detection & loading
+│   ├── index.d.ts                # TypeScript definitions
+│   ├── package.json              # Package metadata
+│   ├── LICENSE                   # MIT license
+│   └── node_modules/commander/   # CLI dependency
+├── vectorizer-linux-x64-gnu/      # Linux x64 glibc (~2.3MB)
+└── vectorizer-linux-x64-musl/     # Linux x64 musl (~2.3MB)
+    # Additional platform binaries installed as needed
+```
 
 ## Usage Examples
 
@@ -273,6 +299,71 @@ $result = $tool->execute(
    ```bash
    node bin/vectorize-image.js test.png test.svg '{"colorMode":"binary"}'
    ```
+
+3. Verify vendor directory installation:
+   ```bash
+   npm install
+   # Check files were copied
+   ls -la assets/js/vendor/neplex-vectorizer/
+   ```
+
+4. Test from build directory:
+   ```bash
+   ./bin/build-plugin-zip.sh --base --version test
+   cd build/mcp-ai-wpoos-base
+   node bin/vectorize-image.js test.png test.svg '{}'
+   ```
+
+## Vendor Directory Pattern
+
+### Why Use Vendor Directory?
+
+Following the same pattern as Chart.js integration:
+
+**Benefits:**
+1. **Self-contained** - Plugin works immediately after installation
+2. **No npm in production** - WordPress servers don't need npm installed
+3. **Version control** - Vendor files tracked in git (node_modules is not)
+4. **Build inclusion** - assets/ directory automatically included in plugin ZIPs
+5. **Consistency** - Matches existing Chart.js vendor pattern
+6. **WordPress.org ready** - No external dependencies required
+
+### Implementation Details
+
+**Installation Flow:**
+1. Developer runs `npm install`
+2. Postinstall script copies `node_modules/@neplex/vectorizer*` to `assets/js/vendor/neplex-vectorizer/`
+3. Vendor directory is committed to git
+4. Build script includes vendor directory in plugin ZIP
+5. Plugin works on any WordPress server with Node.js (no npm needed)
+
+**Loading Logic** (`bin/vectorize-image.js`):
+```javascript
+// Try vendor directory first (production)
+const vendorPath = path.join(__dirname, '..', 'assets', 'js', 'vendor', 'neplex-vectorizer', 'vectorizer');
+if (fs.existsSync(path.join(vendorPath, 'index.js'))) {
+    vectorizer = require(vendorPath);
+} else {
+    // Fallback to node_modules (development)
+    vectorizer = require('@neplex/vectorizer');
+}
+```
+
+**Package.json Scripts:**
+```json
+{
+  "postinstall": "npm run install:chartjs && npm run install:vectorizer",
+  "install:vectorizer": "rm -rf assets/js/vendor/neplex-vectorizer && mkdir -p assets/js/vendor/neplex-vectorizer && cp -r node_modules/@neplex/vectorizer* assets/js/vendor/neplex-vectorizer/"
+}
+```
+
+### Size Considerations
+
+- Main package: ~292KB
+- Native binaries: ~2.3MB each (only relevant platforms installed)
+- Total in repo: ~4.8MB (Linux x64 binaries)
+- Plugin ZIP size: +4.8MB
+- Trade-off: Larger ZIP but self-contained and production-ready
 
 ## Future Enhancements
 
