@@ -254,7 +254,14 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			$attachment_id = 0;
 		}
 		if ( ! isset( $image_url ) ) {
-			$image_url = isset( $arguments['image_url'] ) ? esc_url_raw( $arguments['image_url'] ) : '';
+			// Check both 'url' (preferred) and 'image_url' (legacy) parameters.
+			if ( ! empty( $arguments['url'] ) ) {
+				$image_url = esc_url_raw( $arguments['url'] );
+			} elseif ( ! empty( $arguments['image_url'] ) ) {
+				$image_url = esc_url_raw( $arguments['image_url'] );
+			} else {
+				$image_url = '';
+			}
 		}
 		$image_data = isset( $arguments['image_data'] ) ? $arguments['image_data'] : '';
 

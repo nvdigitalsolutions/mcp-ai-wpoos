@@ -8258,6 +8258,27 @@
             if (formatValue) {
                 metaParts.push(formatValue.toUpperCase());
             }
+        } else if (toolName === 'vectorize_image') {
+            // SVG vectorization metadata
+            metaParts.push('SVG');
+            
+            // Show source format if available
+            if (typeof result.source_format === 'string' && result.source_format.trim()) {
+                const sourceFormat = result.source_format.trim();
+                // Extract clean format name (e.g., "image/png" -> "PNG")
+                const formatMatch = sourceFormat.match(/image\/(\w+)/i);
+                if (formatMatch && formatMatch[1]) {
+                    metaParts.push('from ' + formatMatch[1].toUpperCase());
+                }
+            }
+            
+            // Show size ratio (compression achieved)
+            if (typeof result.size_ratio === 'string' && result.size_ratio.trim()) {
+                const ratio = result.size_ratio.trim();
+                metaParts.push(ratio + 'x smaller');
+            } else if (typeof result.size_ratio === 'number') {
+                metaParts.push(result.size_ratio.toFixed(1) + 'x smaller');
+            }
         } else if (toolName === SPEECH_TOOL_NAME) {
             if (typeof result.duration_formatted === 'string' && result.duration_formatted.trim()) {
                 metaParts.push(result.duration_formatted.trim());
