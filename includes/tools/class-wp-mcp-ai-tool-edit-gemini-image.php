@@ -15,12 +15,14 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-tool-svg-vectorizer.php';
 
 /**
  * Provides a tool for editing images via Gemini Nano Banana and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_Tool_SVG_Vectorizer;
 
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
@@ -109,6 +111,12 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'file_name'        => array(
 					'type'        => 'string',
 					'description' => __( 'Optional base file name for the saved image attachment.', 'wp-mcp-ai' ),
+				),
+				'output_format'    => array(
+					'type'        => 'string',
+					'description' => __( 'Output format: png (raster only), svg (vector only), or both (PNG + SVG). Requires Node.js for SVG conversion.', 'wp-mcp-ai' ),
+					'enum'        => array( 'png', 'svg', 'both' ),
+					'default'     => 'png',
 				),
 				'timeout'          => array(
 					'type'        => 'integer',
@@ -274,6 +282,39 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		// Include usage metadata if available for accurate cost tracking.
 		if ( isset( $image['usage'] ) && is_array( $image['usage'] ) ) {
 			$result['usage'] = $image['usage'];
+		}
+
+		// Convert to SVG if requested.
+		$output_format = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'png';
+		if ( in_array( $output_format, array( 'svg', 'both' ), true ) && ! empty( $image['b64_json'] ) ) {
+			$svg_result = $this->vectorize_to_svg( $image['b64_json'] );
+			
+			if ( ! is_wp_error( $svg_result ) ) {
+				// Save SVG as attachment.
+				$svg_file_name = $file_name ? $file_name . '-vector' : '';
+				$svg_attachment_id = $this->save_svg_attachment(
+					$svg_result['svg_data'],
+					$svg_file_name,
+					sprintf(
+						/* translators: %s: shortened prompt */
+						__( 'Edited Image: %s', 'wp-mcp-ai' ),
+						substr( $prompt, 0, 50 )
+					),
+					$user_id
+				);
+				
+				if ( ! is_wp_error( $svg_attachment_id ) ) {
+					$result['svg_generated']    = true;
+					$result['svg_attachment_id'] = $svg_attachment_id;
+					$result['svg_url']          = wp_get_attachment_url( $svg_attachment_id );
+					$result['svg_size']         = $svg_result['svg_size'];
+				} else {
+					$result['svg_error'] = $svg_attachment_id->get_error_message();
+				}
+			} else {
+				// Include error but don't fail the request.
+				$result['svg_error'] = $svg_result->get_error_message();
+			}
 		}
 
 		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included

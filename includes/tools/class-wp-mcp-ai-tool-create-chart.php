@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-tool-svg-vectorizer.php';
 
 /**
  * Creates charts using Chart.js and returns HTML/JavaScript or saves as attachment.
@@ -20,8 +21,11 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  * - Data Layer: Handles chart data structure and validation
  * - Rendering Layer: Generates Chart.js configuration and HTML
  * - Storage Layer: Optionally saves chart as HTML file attachment
+ *
+ * Note: SVG export capability planned for future release (requires browser rendering).
  */
 class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
+	use WP_MCP_AI_Tool_SVG_Vectorizer;
 
 	const CHARTJS_VERSION = '4.4.0';
 	const CHARTJS_CDN_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
