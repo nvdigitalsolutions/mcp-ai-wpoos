@@ -412,6 +412,32 @@ if (fs.existsSync(path.join(vendorPath, 'index.js'))) {
 **Solution:**
 Ensure user has `upload_files` capability
 
+### Module Loading Error (Cloned Repos)
+**Error:** `Cannot find module '@neplex/vectorizer-linux-x64-gnu'`
+
+**Cause:**
+This occurs when the plugin is cloned without running `npm install`, or when the postinstall script didn't complete successfully. The native `.node` binary files need to be copied from platform-specific subdirectories into the main vectorizer directory where the module loader expects them.
+
+**Solutions:**
+1. Run the fix script (fastest for cloned repos):
+   ```bash
+   ./bin/fix-vectorizer-vendor.sh
+   ```
+
+2. Or reinstall with npm (requires node_modules):
+   ```bash
+   npm install
+   ```
+
+**Technical Details:**
+- The `@neplex/vectorizer` package uses platform-specific native binaries (`.node` files)
+- The main `vectorizer/index.js` first checks for local `.node` files
+- If not found locally, it tries to require from npm packages like `@neplex/vectorizer-linux-x64-gnu`
+- In production (cloned repo without node_modules), the npm package fallback fails
+- The fix script copies `.node` files from `vectorizer-linux-x64-gnu/` to `vectorizer/` directory
+
+See `assets/js/vendor/neplex-vectorizer/README.md` for complete details.
+
 ## Documentation Updates Needed
 
 ### 1. Tool Reference (docs/reference/tools/tool-reference.md)

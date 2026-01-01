@@ -522,6 +522,27 @@ See [RELEASE_CHECKLIST.md](docs/troubleshooting/deployment/RELEASE_CHECKLIST.md)
 
 ## Troubleshooting
 
+### Vectorizer Module Error
+
+If you see the error:
+```
+Cannot find module '@neplex/vectorizer-linux-x64-gnu'
+```
+
+This occurs when the plugin is cloned without running `npm install`, or when the postinstall script didn't complete properly. The native `.node` files need to be in the main vectorizer directory.
+
+**Fix:**
+```bash
+./bin/fix-vectorizer-vendor.sh
+```
+
+Or reinstall:
+```bash
+npm install
+```
+
+See `assets/js/vendor/neplex-vectorizer/README.md` for details.
+
 ### Build Fails
 
 If build command fails:
