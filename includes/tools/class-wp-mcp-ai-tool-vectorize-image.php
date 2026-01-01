@@ -213,7 +213,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base {
 		$this->cleanup_temp_file( $temp_output );
 
 		// Save as WordPress attachment.
-		$storage = $this->save_as_attachment( $svg_data, $arguments, $user_id );
+		$storage = $this->save_svg_as_attachment( $svg_data, $arguments, $user_id );
 		if ( is_wp_error( $storage ) ) {
 			return $storage;
 		}
@@ -270,7 +270,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base {
 	 * @param int    $user_id   User ID.
 	 * @return array|WP_Error Attachment data or WP_Error on failure.
 	 */
-	protected function save_as_attachment( $svg_data, array $arguments, $user_id ) {
+	protected function save_svg_as_attachment( $svg_data, array $arguments, $user_id ) {
 		// Generate file name.
 		$base_name = isset( $arguments['file_name'] ) ? sanitize_file_name( $arguments['file_name'] ) : 'vectorized-image';
 		if ( empty( $base_name ) ) {
