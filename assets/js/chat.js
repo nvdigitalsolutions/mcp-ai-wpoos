@@ -8379,6 +8379,8 @@
             text = getString('speechToolSuccess', 'Speech audio saved to the Media Library.');
         } else if (toolName === 'generate_veo_video') {
             text = getString('veoVideoToolSuccess', 'Video generated successfully and saved to the Media Library.');
+        } else if (toolName === 'vectorize_image') {
+            text = getString('vectorizeImageToolSuccess', 'Image vectorized to SVG and saved to the Media Library.');
         }
 
         // Extract usage and cost data for token cost display (Phase 7 Week 5-6)
