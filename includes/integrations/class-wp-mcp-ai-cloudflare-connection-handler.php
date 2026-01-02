@@ -317,7 +317,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 		 * Redirect back to the settings page.
 		 */
 		protected function redirect_to_settings_page() {
-			$redirect_url = admin_url( 'admin.php?page=wp-mcp-ai-settings&tab=integrations' );
+			$redirect_url = admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=connections&connection=cloudflare' );
 
 			/**
 			 * Filter the Cloudflare connection redirect URL.
