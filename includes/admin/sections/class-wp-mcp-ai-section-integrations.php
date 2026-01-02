@@ -302,6 +302,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'description' => __( 'Your Meta Business Account ID (for WhatsApp Business API).', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
+				'meta_connected_user_name'          => array(
+					'type'        => 'hidden',
+					'label'       => '',
+					'description' => '',
+				),
+				'meta_connected_user_id'            => array(
+					'type'        => 'hidden',
+					'label'       => '',
+					'description' => '',
+				),
 
 				// TikTok.
 				'tiktok_access_token'               => array(
@@ -392,7 +402,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'meta',
 					'label'  => __( 'Meta', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-share',
-					'fields' => array( 'meta_access_token', 'meta_app_id', 'meta_app_secret', 'meta_business_account_id' ),
+					'fields' => array( 'meta_access_token', 'meta_app_id', 'meta_app_secret', 'meta_business_account_id', 'meta_connected_user_name', 'meta_connected_user_id' ),
 				),
 				'tiktok'           => array(
 					'id'     => 'tiktok',
@@ -542,7 +552,105 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Meta footer content.
 		 */
 		private function render_meta_footer() {
+			$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+			$meta_connected   = ! empty( $settings['meta_access_token'] );
+			$meta_user_name   = isset( $settings['meta_connected_user_name'] ) ? $settings['meta_connected_user_name'] : '';
+			$has_credentials  = ! empty( $settings['meta_app_id'] ) && ! empty( $settings['meta_app_secret'] );
+			$oauth_connect_url = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_meta_oauth_start' ),
+				'wp_mcp_ai_meta_oauth_start'
+			);
 			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Meta Connection', 'wp-mcp-ai' ); ?></th>
+				<td>
+					<?php if ( $meta_connected ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'Connected to Meta', 'wp-mcp-ai' ); ?></strong>
+								<?php if ( $meta_user_name ) : ?>
+									<?php
+									printf(
+										/* translators: %s: Meta user name */
+										esc_html__( 'as %s', 'wp-mcp-ai' ),
+										'<code>' . esc_html( $meta_user_name ) . '</code>'
+									);
+									?>
+								<?php endif; ?>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
+								<?php esc_html_e( 'Reconnect Meta Account', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Your Meta account is connected. You can now use Meta integration tools to manage Facebook Pages, Instagram posts, and WhatsApp Business messaging.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php elseif ( $has_credentials ) : ?>
+						<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #856404;">
+								<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+								<strong><?php esc_html_e( 'Meta Not Connected', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button button-primary">
+								<?php esc_html_e( 'Connect Meta Account', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Click the button above to authorize WP MCP AI to access your Meta account. You will be redirected to Facebook to grant permissions.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Required Permissions:', 'wp-mcp-ai' ); ?></strong>
+						</p>
+						<ul style="list-style: disc; margin-left: 20px;">
+							<?php
+							// Get scopes from OAuth handler constant.
+							$scopes             = WP_MCP_AI_Meta_OAuth_Handler::META_OAUTH_SCOPES;
+							$scope_descriptions = array(
+								'pages_manage_posts'              => __( 'Manage Facebook Page posts', 'wp-mcp-ai' ),
+								'instagram_basic'                 => __( 'Access Instagram account information', 'wp-mcp-ai' ),
+								'instagram_content_publish'       => __( 'Publish Instagram content', 'wp-mcp-ai' ),
+								'whatsapp_business_management'    => __( 'Manage WhatsApp Business account', 'wp-mcp-ai' ),
+								'whatsapp_business_messaging'     => __( 'Send WhatsApp Business messages', 'wp-mcp-ai' ),
+							);
+							foreach ( explode( ',', $scopes ) as $scope ) {
+								$scope       = trim( $scope );
+								$description = isset( $scope_descriptions[ $scope ] ) ? $scope_descriptions[ $scope ] : $scope;
+								echo '<li>' . esc_html( $description ) . '</li>';
+							}
+							?>
+						</ul>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #721c24;">
+								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+								<strong><?php esc_html_e( 'Meta App Credentials Required', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php esc_html_e( 'Enter your Meta App ID and App Secret in the fields above, then save settings. After that, you can connect your Meta account using the button that will appear here.', 'wp-mcp-ai' ); ?>
+						</p>
+					<?php endif; ?>
+				</td>
+			</tr>
 			<tr>
 				<th scope="row"></th>
 				<td>
