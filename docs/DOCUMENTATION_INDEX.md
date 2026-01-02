@@ -377,8 +377,9 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 ### For New Users
 1. [README.md](../README.md) - Start here for overview and installation
 2. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
-3. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
-4. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
+3. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
+4. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
+5. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
 
 ### For Developers
 1. **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
@@ -394,10 +395,11 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 ### For System Administrators
 1. [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md) - Troubleshooting guide
 2. [mcp-server-authentication.md](reference/api/mcp-server-authentication.md) - Authentication setup
-3. [tools-manager.md](guides/admin/tools/tools-manager.md) - Tools Manager admin interface guide
-4. [rate-limit-protection.md](features/performance/rate-limit-protection.md) - Rate limiting configuration
-5. [multisite-support.md](getting-started/installation-setup/multisite-support.md) - Multisite considerations
-6. [mesh-compute-pooling.md](features/federation/mesh-compute-pooling.md) - Distributed compute pooling across sites
+3. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
+4. [tools-manager.md](guides/admin/tools/tools-manager.md) - Tools Manager admin interface guide
+5. [rate-limit-protection.md](features/performance/rate-limit-protection.md) - Rate limiting configuration
+6. [multisite-support.md](getting-started/installation-setup/multisite-support.md) - Multisite considerations
+7. [mesh-compute-pooling.md](features/federation/mesh-compute-pooling.md) - Distributed compute pooling across sites
 
 ### Historical Documentation
 - **[Archive Directory](archive/README.md)** - 95+ historical documents organized by category
@@ -463,6 +465,8 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) | Google OAuth 2.0 setup for Gmail integration | Admins/Users |
+| [oauth-settings-architecture.md](architecture/integrations/oauth-settings-architecture.md) | OAuth settings architecture and hybrid system design | Developers |
 | [chatkit-integration.md](guides/developer/integration/chatkit-integration.md) | ChatKit module integration | Developers |
 | [elementor-widgets.md](architecture/integrations/elementor-widgets.md) | Elementor widget documentation | Users/Devs |
 | [jet-engine-rest-routes.md](reference/api/jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
@@ -575,6 +579,7 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [gmail-oauth-fix-summary.md](fixes/gmail-oauth-fix-summary.md) | Gmail OAuth integration fix (400 Bad Request) | Developers/Admins |
 | [OPENAI-STABILIZATION.md](features/ai-providers/openai/OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
 | [TRANSCRIPT_RECONSTRUCTION_FIX.md](implementation-history/2025/fixes/chat/TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |
 | [GET_OPEN_METEO_FIX.md](fixes/GET_OPEN_METEO_FIX.md) | Weather forecast chart iframe rendering fix | Developers |

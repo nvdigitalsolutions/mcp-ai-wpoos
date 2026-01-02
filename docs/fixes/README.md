@@ -108,6 +108,40 @@ Fixed multiple issues with the `remote_wp_connection` tool that prevented proper
 
 ---
 
+## Gmail OAuth Integration Fix
+
+**Issue Date**: December 2024  
+**Status**: ✅ Fixed  
+**Severity**: High (OAuth connections completely broken)
+
+### Quick Links
+- [Gmail OAuth Fix Summary](gmail-oauth-fix-summary.md) - Complete fix documentation
+- [Google OAuth Setup Guide](../getting-started/installation-setup/google-oauth-setup.md) - Setup instructions
+- [OAuth Settings Architecture](../architecture/integrations/oauth-settings-architecture.md) - Technical architecture
+
+### Summary
+Fixed a critical issue where the Gmail OAuth "Connect" button returned a 400 Bad Request error. The problem was that the `WP_MCP_AI_Admin_Settings` class was never being instantiated during plugin initialization, so WordPress action hooks for OAuth flows were never registered.
+
+### Solution
+1. Added `admin.settings` service registration to the DI container
+2. Initialized the service during plugin bootstrap to ensure OAuth hooks are registered
+3. Created comprehensive setup guide for Google Cloud Console configuration
+
+### Files Changed
+1. `includes/class-wp-mcp-ai-container.php` - Added admin.settings service registration
+2. `mcp-ai-wpoos.php` - Initialize admin.settings on plugin load
+3. Documentation files (setup guide, architecture, fix summary)
+
+### Impact
+- ✅ Gmail OAuth connection flow now works
+- ✅ Meta (Facebook, Instagram, WhatsApp) OAuth now works
+- ✅ QuickBooks OAuth now works
+- ✅ Mailjet OAuth now works
+- ✅ All OAuth integrations fixed with single change
+- ✅ Backward compatible with no breaking changes
+
+---
+
 ## Vectorizer Tool Fixes
 
 **Issue Date**: January 2026  
