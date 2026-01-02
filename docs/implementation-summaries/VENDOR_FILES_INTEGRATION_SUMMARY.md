@@ -162,7 +162,7 @@ rsync -av --quiet . "build/${SLUG}/" \
 3. **bin/build-plugin-zip.sh** - Include bin/vectorize-image.js
 4. **assets/js/vendor/neplex-vectorizer/** - 28 vendor files (new)
 5. **BUILD.md** - Documented production dependencies
-6. **VECTORIZE_IMAGE_IMPLEMENTATION_SUMMARY.md** - Updated with vendor pattern
+6. **VECTORIZE_IMAGE_IMPLEMENTATION_SUMMARY.md** - Updated with vendor pattern (now in docs/implementation-summaries/)
 
 ## Installation for Developers
 

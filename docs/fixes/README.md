@@ -73,6 +73,78 @@ Added one line of code to register the `wp_ajax` hook, routing logged-in users t
 
 ---
 
+## Remote Connection Tool Fixes
+
+**Issue Date**: January 2026  
+**Status**: ✅ Fixed  
+**Severity**: High (Remote WordPress/WooCommerce connections broken)
+
+### Quick Links
+- [Remote Connection Fix Summary](REMOTE_CONNECTION_FIX_SUMMARY.md) - Edit/delete connection ID case sensitivity fix
+- [Remote Connection Filter Fix](REMOTE_CONNECTION_FILTER_FIX.md) - Tool filtering by assistant's enabled connections
+- [Remote Connection Schema Fix](REMOTE_CONNECTION_SCHEMA_FIX.md) - OpenAI function calling compatibility
+- [Remote Connection Workflow Fix](REMOTE_CONNECTION_WORKFLOW_FIX.md) - AI workflow guidance improvements
+
+### Summary
+Fixed multiple issues with the `remote_wp_connection` tool that prevented proper editing, deleting, and usage of remote site connections:
+
+1. **Edit/Delete broken**: Connection IDs were case-sensitive but `sanitize_key()` lowercased them, causing lookup failures
+2. **Filter not working**: Tool showed ALL connections instead of only those enabled for the specific assistant
+3. **OpenAI incompatibility**: Tool schema used `oneOf` which OpenAI doesn't support at root level
+4. **Workflow confusion**: AI wasn't including `connection_id` parameter even when user intent was clear
+
+### Solution
+1. Normalize connection IDs to lowercase during generation and storage (preventing case mismatches)
+2. Filter connections by assistant's `_wp_mcp_ai_pro_remote_connections` post meta
+3. Remove `oneOf` from root schema, make `connection_id` always present in schema but contextually required
+4. Enhanced descriptions and self-healing error messages that include available connections list
+
+### Impact
+- ✅ Remote connections can now be edited and deleted
+- ✅ Assistants only see their enabled connections
+- ✅ Works with OpenAI, Gemini, and Ollama providers
+- ✅ Better AI understanding of required workflow
+- ✅ Improved error messages guide users to resolution
+
+---
+
+## Vectorizer Tool Fixes
+
+**Issue Date**: January 2026  
+**Status**: ✅ Fixed  
+**Severity**: Critical (Tool completely broken in production)
+
+### Quick Links
+- [Vectorizer Fix Summary](VECTORIZER_FIX_SUMMARY.md) - Production deployment fix for missing native modules
+- [Vectorize Image Fix Test Plan](VECTORIZE_IMAGE_FIX_TEST_PLAN.md) - SSE streaming response fix
+
+### Summary
+Fixed critical issues with the `vectorize_image` tool:
+
+1. **Production failure**: Tool failed on cloned repos without `node_modules` because `@neplex/vectorizer` native modules weren't available
+2. **SSE streaming**: Tool responses weren't being returned to chat client in Server-Sent Events mode
+
+### Solution
+1. Vendor the `@neplex/vectorizer` package into `assets/js/vendor/neplex-vectorizer/` following Chart.js pattern
+2. Copy native `.node` files to vendor directory via postinstall script
+3. Add exception handling and data normalization for SSE streaming
+4. Implement fallback URL generation for SVG attachments
+
+### Files Changed
+- `bin/copy-vectorizer-to-vendor.sh` - Vendor copy script
+- `assets/js/vendor/neplex-vectorizer/` - Vendored package with native modules
+- `includes/tools/class-wp-mcp-ai-tool-vectorize-image.php` - Load from vendor, add error handling
+- `package.json` - Postinstall script hook
+- Various SSE and error handling improvements
+
+### Impact
+- ✅ Tool works in production without requiring `npm install`
+- ✅ Native modules properly loaded from vendor directory
+- ✅ SSE streaming responses work correctly
+- ✅ Better error messages and debugging
+
+---
+
 ## Documentation Format
 
 Each fix in this directory should include:
@@ -98,4 +170,4 @@ When documenting new fixes:
 
 ---
 
-*Last Updated: December 29, 2024*
+*Last Updated: January 2, 2026*
