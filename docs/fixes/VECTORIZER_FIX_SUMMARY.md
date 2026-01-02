@@ -47,7 +47,7 @@ The `@neplex/vectorizer` npm package uses a **platform-specific native module ar
    - `BUILD.md` - Added troubleshooting section
    - `assets/js/vendor/INSTALL.md` - Added vectorizer installation instructions
    - `assets/js/vendor/neplex-vectorizer/README.md` - Added detailed troubleshooting
-   - `VECTORIZE_IMAGE_IMPLEMENTATION_SUMMARY.md` - Added module loading error section
+   - `../implementation-summaries/VECTORIZE_IMAGE_IMPLEMENTATION_SUMMARY.md` - Added module loading error section
 
 ### How It Works Now
 
@@ -72,7 +72,7 @@ npm install
 - `BUILD.md` - Added vectorizer troubleshooting section
 - `assets/js/vendor/INSTALL.md` - Added vectorizer installation and troubleshooting
 - `assets/js/vendor/neplex-vectorizer/README.md` - Added detailed error explanation and fix
-- `VECTORIZE_IMAGE_IMPLEMENTATION_SUMMARY.md` - Added module loading error documentation
+- `../implementation-summaries/VECTORIZE_IMAGE_IMPLEMENTATION_SUMMARY.md` - Added module loading error documentation
 
 ### New Files
 - `bin/fix-vectorizer-vendor.sh` - Standalone fix script for cloned repos (executable)
@@ -184,7 +184,7 @@ assets/js/vendor/neplex-vectorizer/
 - **Related documentation:**
   - `BUILD.md` - Build and troubleshooting guide
   - `assets/js/vendor/neplex-vectorizer/README.md` - Vectorizer-specific documentation
-  - `VECTORIZE_IMAGE_IMPLEMENTATION_SUMMARY.md` - Original implementation details
+  - `../implementation-summaries/VECTORIZE_IMAGE_IMPLEMENTATION_SUMMARY.md` - Original implementation details
   - `bin/fix-vectorizer-vendor.sh` - Fix script source code
 
 ## Future Considerations
