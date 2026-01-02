@@ -137,7 +137,7 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 			return;
 		}
 
-		if ( ! wp_verify_nonce( $_POST['wp_mcp_ai_pro_remote_connections_nonce'], 'wp_mcp_ai_pro_remote_connections' ) ) {
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_pro_remote_connections_nonce'] ) ), 'wp_mcp_ai_pro_remote_connections' ) ) {
 			return;
 		}
 
@@ -155,9 +155,7 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 		$enabled_connections = array();
 
 		if ( isset( $_POST['wp_mcp_ai_pro_remote_connections'] ) && is_array( $_POST['wp_mcp_ai_pro_remote_connections'] ) ) {
-			foreach ( $_POST['wp_mcp_ai_pro_remote_connections'] as $connection_id ) {
-				$enabled_connections[] = sanitize_key( $connection_id );
-			}
+			$enabled_connections = array_map( 'sanitize_key', wp_unslash( $_POST['wp_mcp_ai_pro_remote_connections'] ) );
 		}
 
 		update_post_meta( $post_id, self::META_KEY, $enabled_connections );
