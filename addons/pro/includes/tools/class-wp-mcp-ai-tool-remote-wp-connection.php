@@ -145,7 +145,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		// Handle listing connections (no connection_id needed).
 		if ( 'list_connections' === $action ) {
-			return $this->list_connections();
+			return $this->list_connections( $context );
 		}
 
 		// Get connection.
@@ -230,14 +230,38 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param array $context Execution context including assistant_id.
 	 * @return array Connections list.
 	 */
-	protected function list_connections() {
+	protected function list_connections( $context = array() ) {
 		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+		// Get assistant ID from context to filter connections.
+		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+
+		// Get enabled connections for this assistant.
+		$enabled_connections = array();
+		if ( $assistant_id ) {
+			$enabled_connections = get_post_meta( $assistant_id, '_wp_mcp_ai_pro_remote_connections', true );
+			if ( ! is_array( $enabled_connections ) ) {
+				$enabled_connections = array();
+			}
+		}
 
 		$result = array();
 
 		foreach ( $connections as $connection ) {
+			// Skip if not enabled globally.
+			if ( empty( $connection['enabled'] ) ) {
+				continue;
+			}
+
+			// If assistant context is provided and connections are configured,
+			// only include connections enabled for this assistant.
+			if ( $assistant_id && ! empty( $enabled_connections ) && ! in_array( $connection['id'], $enabled_connections, true ) ) {
+				continue;
+			}
+
 			$result[] = array(
 				'id'              => $connection['id'],
 				'name'            => $connection['name'],
