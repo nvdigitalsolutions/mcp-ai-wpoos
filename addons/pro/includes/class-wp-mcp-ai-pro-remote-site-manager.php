@@ -628,7 +628,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return string Cache key.
 	 */
 	protected static function get_request_cache_key( $connection_id, $endpoint ) {
-		return 'remote_request_' . md5( $connection_id . '_' . $endpoint );
+		return 'remote_request_' . wp_hash( $connection_id . '_' . $endpoint );
 	}
 
 	/**
@@ -642,6 +642,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return int Number of cache entries cleared.
 	 */
 	public static function invalidate_connection_cache( $connection_id ) {
-		return WP_MCP_AI_Cache_Helper::delete_pattern( 'remote_request_' . md5( $connection_id . '_' ) . '%' );
+		// Use wp_hash for consistent hashing with cache key generation.
+		$hash_prefix = wp_hash( $connection_id . '_' );
+		return WP_MCP_AI_Cache_Helper::delete_pattern( 'remote_request_' . substr( $hash_prefix, 0, 8 ) . '%' );
 	}
 }

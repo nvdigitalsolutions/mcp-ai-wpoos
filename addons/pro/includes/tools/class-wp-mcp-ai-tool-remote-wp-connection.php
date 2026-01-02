@@ -827,6 +827,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
 	 */
 	protected function check_rate_limit( $user_id ) {
+		$user_id        = absint( $user_id );
 		$transient_key  = 'wp_mcp_ai_pro_remote_wp_' . $user_id;
 		$current_count  = get_transient( $transient_key );
 		$max_per_minute = 30; // Allow up to 30 remote requests per minute per user.
