@@ -285,7 +285,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
 		$start_time    = microtime( true );
 		
-		$url = self::build_api_url( $connection['url'], $endpoint );
+		$url = self::build_api_url( $connection['url'], $endpoint, $connection );
 
 		if ( is_wp_error( $url ) ) {
 			self::record_health_metric( $connection_id, false, 0 );
@@ -446,14 +446,22 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $base_url Base site URL.
-	 * @param string $endpoint API endpoint.
+	 * @param string $base_url  Base site URL.
+	 * @param string $endpoint  API endpoint.
+	 * @param array  $connection Optional connection data for context.
 	 * @return string|WP_Error Full URL or error.
 	 */
-	protected static function build_api_url( $base_url, $endpoint ) {
+	protected static function build_api_url( $base_url, $endpoint, $connection = array() ) {
 		$base_url = untrailingslashit( $base_url );
 		$endpoint = ltrim( $endpoint, '/' );
 
+		// For generic REST APIs, just append the endpoint directly.
+		if ( ! empty( $connection['connection_type'] ) && 'generic' === $connection['connection_type'] ) {
+			$api_url = $base_url . '/' . $endpoint;
+			return $api_url;
+		}
+
+		// For WordPress/WooCommerce endpoints, use /wp-json/ prefix.
 		// Determine if this is a WooCommerce endpoint.
 		if ( 0 === strpos( $endpoint, 'wc/' ) ) {
 			$api_url = $base_url . '/wp-json/' . $endpoint;

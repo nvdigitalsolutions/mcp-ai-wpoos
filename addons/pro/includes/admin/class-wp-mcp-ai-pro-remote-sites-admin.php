@@ -129,6 +129,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'id'              => isset( $_POST['connection_id'] ) ? sanitize_key( $_POST['connection_id'] ) : '',
 				'name'            => isset( $_POST['name'] ) ? sanitize_text_field( $_POST['name'] ) : '',
 				'url'             => isset( $_POST['url'] ) ? esc_url_raw( $_POST['url'] ) : '',
+				'connection_type' => isset( $_POST['connection_type'] ) ? sanitize_key( $_POST['connection_type'] ) : 'wordpress',
 				'auth_type'       => isset( $_POST['auth_type'] ) ? sanitize_key( $_POST['auth_type'] ) : 'none',
 				'username'        => isset( $_POST['username'] ) ? sanitize_text_field( $_POST['username'] ) : '',
 				'password'        => isset( $_POST['password'] ) ? $_POST['password'] : '',
@@ -138,6 +139,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'has_woocommerce' => ! empty( $_POST['has_woocommerce'] ),
 				'enabled'         => ! empty( $_POST['enabled'] ),
 				'cache_ttl'       => isset( $_POST['cache_ttl'] ) ? max( 0, min( 3600, absint( $_POST['cache_ttl'] ) ) ) : 300,
+				'test_endpoint'   => isset( $_POST['test_endpoint'] ) ? sanitize_text_field( $_POST['test_endpoint'] ) : '',
 			);
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -248,9 +250,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<thead>
 					<tr>
 						<th><?php esc_html_e( 'Name', 'wp-mcp-ai-pro' ); ?></th>
+						<th><?php esc_html_e( 'Type', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'URL', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'Auth Type', 'wp-mcp-ai-pro' ); ?></th>
-						<th><?php esc_html_e( 'WooCommerce', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'Health', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'Status', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'Actions', 'wp-mcp-ai-pro' ); ?></th>
@@ -266,9 +268,21 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						?>
 						<tr>
 							<td><strong><?php echo esc_html( $connection['name'] ); ?></strong></td>
+							<td>
+								<?php
+								$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
+								$type_label = 'wordpress' === $connection_type ? __( 'WordPress', 'wp-mcp-ai-pro' ) : __( 'Generic REST API', 'wp-mcp-ai-pro' );
+								$type_badge_color = 'wordpress' === $connection_type ? '#2271b1' : '#50575e';
+								?>
+								<span style="display: inline-block; padding: 2px 8px; background: <?php echo esc_attr( $type_badge_color ); ?>; color: white; border-radius: 3px; font-size: 11px;">
+									<?php echo esc_html( $type_label ); ?>
+								</span>
+								<?php if ( 'wordpress' === $connection_type && ! empty( $connection['has_woocommerce'] ) ) : ?>
+									<span style="display: inline-block; padding: 2px 8px; background: #96588a; color: white; border-radius: 3px; font-size: 11px; margin-left: 4px;">WC</span>
+								<?php endif; ?>
+							</td>
 							<td><?php echo esc_html( $connection['url'] ); ?></td>
 							<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $connection['auth_type'] ) ) ); ?></td>
-							<td><?php echo ! empty( $connection['has_woocommerce'] ) ? '✓' : '—'; ?></td>
 							<td>
 								<?php
 								$status_colors = array(
@@ -453,7 +467,29 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="url" name="url" id="url" class="regular-text" value="<?php echo $is_edit ? esc_attr( $connection['url'] ) : ''; ?>" placeholder="https://example.com" required>
-						<p class="description"><?php esc_html_e( 'The full URL of the remote WordPress site (including https://).', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'The full URL of the remote site (including https://).', 'wp-mcp-ai-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr>
+					<th scope="row">
+						<label for="connection_type"><?php esc_html_e( 'Connection Type', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php
+						$connection_type = $is_edit && isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
+						?>
+						<select name="connection_type" id="connection_type" class="regular-text" required>
+							<option value="wordpress" <?php selected( $connection_type, 'wordpress' ); ?>>
+								<?php esc_html_e( 'WordPress / WooCommerce', 'wp-mcp-ai-pro' ); ?>
+							</option>
+							<option value="generic" <?php selected( $connection_type, 'generic' ); ?>>
+								<?php esc_html_e( 'Generic REST API', 'wp-mcp-ai-pro' ); ?>
+							</option>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Select "WordPress / WooCommerce" for WordPress sites, or "Generic REST API" for any other REST API (Stripe, GitHub, custom APIs, etc.).', 'wp-mcp-ai-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 
@@ -529,7 +565,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
-				<tr>
+				<tr class="wordpress-only-field">
 					<th scope="row"><?php esc_html_e( 'WooCommerce', 'wp-mcp-ai-pro' ); ?></th>
 					<td>
 						<label>
@@ -537,6 +573,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php esc_html_e( 'This site has WooCommerce installed', 'wp-mcp-ai-pro' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'Enable to access WooCommerce products, orders, and other data.', 'wp-mcp-ai-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="generic-only-field" style="display:none;">
+					<th scope="row">
+						<label for="test_endpoint"><?php esc_html_e( 'Test Endpoint', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="test_endpoint" id="test_endpoint" class="regular-text" value="<?php echo $is_edit && isset( $connection['test_endpoint'] ) ? esc_attr( $connection['test_endpoint'] ) : '/'; ?>" placeholder="/">
+						<p class="description">
+							<?php esc_html_e( 'API endpoint to use for connection testing (e.g., /api/health or /). Default: /', 'wp-mcp-ai-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 
@@ -596,10 +644,33 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 		}
 
+		function toggleConnectionTypeFields(connectionType) {
+			var wordpressFields = document.querySelectorAll('.wordpress-only-field');
+			var genericFields = document.querySelectorAll('.generic-only-field');
+
+			// Show/hide WordPress-specific fields
+			wordpressFields.forEach(function(field) {
+				field.style.display = connectionType === 'wordpress' ? 'table-row' : 'none';
+			});
+
+			// Show/hide Generic REST API fields
+			genericFields.forEach(function(field) {
+				field.style.display = connectionType === 'generic' ? 'table-row' : 'none';
+			});
+		}
+
 		// Initialize on page load
 		document.addEventListener('DOMContentLoaded', function() {
 			var authType = document.getElementById('auth_type').value;
+			var connectionType = document.getElementById('connection_type').value;
+			
 			toggleAuthFields(authType);
+			toggleConnectionTypeFields(connectionType);
+			
+			// Add event listener for connection type changes
+			document.getElementById('connection_type').addEventListener('change', function() {
+				toggleConnectionTypeFields(this.value);
+			});
 		});
 		</script>
 		<?php
