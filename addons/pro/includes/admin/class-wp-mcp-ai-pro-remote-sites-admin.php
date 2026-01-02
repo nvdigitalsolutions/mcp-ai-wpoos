@@ -137,7 +137,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'consumer_secret' => isset( $_POST['consumer_secret'] ) ? $_POST['consumer_secret'] : '',
 				'has_woocommerce' => ! empty( $_POST['has_woocommerce'] ),
 				'enabled'         => ! empty( $_POST['enabled'] ),
-				'cache_ttl'       => isset( $_POST['cache_ttl'] ) ? absint( $_POST['cache_ttl'] ) : 300,
+				'cache_ttl'       => isset( $_POST['cache_ttl'] ) ? max( 0, min( 3600, absint( $_POST['cache_ttl'] ) ) ) : 300,
 			);
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );

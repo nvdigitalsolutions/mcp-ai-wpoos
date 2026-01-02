@@ -338,8 +338,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$in_progress = get_transient( $dedup_key );
 		
 		if ( false !== $in_progress ) {
-			// Wait briefly and check cache again (another request may have completed).
-			sleep( 1 );
+			// Another request is in progress - wait briefly and check cache.
+			usleep( 100000 ); // Wait 0.1 seconds.
 			if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 				$cache_key     = self::get_request_cache_key( $connection_id, $endpoint );
 				$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
@@ -347,6 +347,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					return $cached_result;
 				}
 			}
+			// If no cached result yet, proceed with request (acceptable race condition).
 		}
 		
 		// Mark this request as in progress.
@@ -414,6 +415,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			// Use per-connection cache TTL if set, otherwise default to 5 minutes.
 			$cache_ttl = isset( $connection['cache_ttl'] ) ? absint( $connection['cache_ttl'] ) : 5 * MINUTE_IN_SECONDS;
+			
+			// Validate cache_ttl is within acceptable range (0-3600 seconds).
+			if ( $cache_ttl > 3600 ) {
+				$cache_ttl = 3600; // Cap at 1 hour.
+			}
 			
 			// Skip caching if TTL is 0 (disabled for this connection).
 			if ( $cache_ttl > 0 ) {
@@ -734,8 +740,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return $response;
 			}
 
-			// Wait before retrying (exponential backoff).
-			sleep( $retry_delay );
+			// Wait before retrying (exponential backoff with shorter delays).
+			// Use microseconds for non-blocking behavior in web context.
+			usleep( $retry_delay * 100000 ); // 0.1s, 0.2s, 0.4s
 			$retry_delay *= 2; // Double the delay for next retry.
 		}
 
