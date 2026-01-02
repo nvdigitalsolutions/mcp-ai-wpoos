@@ -113,26 +113,6 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			),
 			'required'             => array( 'action' ),
 			'additionalProperties' => false,
-			// Add oneOf constraint to make connection_id required when action is not list_connections
-			'oneOf'                => array(
-				array(
-					'properties' => array(
-						'action' => array(
-							'const' => 'list_connections',
-						),
-					),
-				),
-				array(
-					'required' => array( 'action', 'connection_id' ),
-					'properties' => array(
-						'action' => array(
-							'not' => array(
-								'const' => 'list_connections',
-							),
-						),
-					),
-				),
-			),
 		);
 	}
 
@@ -162,6 +142,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'list_connections';
+
+		// Check rate limiting (except for list_connections which is lightweight).
+		if ( 'list_connections' !== $action ) {
+			$rate_limit_check = $this->check_rate_limit( $user_id );
+			if ( is_wp_error( $rate_limit_check ) ) {
+				return $rate_limit_check;
+			}
+		}
 
 		// Handle listing connections (no connection_id needed).
 		if ( 'list_connections' === $action ) {
@@ -333,7 +321,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		return array(
+		$response = array(
 			'summary'     => sprintf(
 				/* translators: %d: number of connections */
 				__( 'Found %d remote site connection(s)', 'wp-mcp-ai-pro' ),
@@ -342,6 +330,18 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'connections' => $result,
 			'count'       => count( $result ),
 		);
+
+		/**
+		 * Filter the list_connections response.
+		 *
+		 * Allows modification of connection list before returning to AI.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $response Connection list response.
+		 * @param array $context  Execution context.
+		 */
+		return apply_filters( 'wp_mcp_ai_pro_remote_connections_list', $response, $context );
 	}
 
 	/**
@@ -817,6 +817,54 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
+	 * Check rate limiting for remote site requests.
+	 *
+	 * Prevents abuse and reduces load on remote sites.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int $user_id User ID.
+	 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
+	 */
+	protected function check_rate_limit( $user_id ) {
+		$user_id        = absint( $user_id );
+		$transient_key  = 'wp_mcp_ai_pro_remote_wp_' . $user_id;
+		$current_count  = get_transient( $transient_key );
+		$max_per_minute = 30; // Allow up to 30 remote requests per minute per user.
+
+		/**
+		 * Filter the maximum remote site requests allowed per minute per user.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int $max_per_minute Maximum requests per minute (default: 30).
+		 * @param int $user_id        User ID.
+		 */
+		$max_per_minute = apply_filters( 'wp_mcp_ai_pro_remote_wp_rate_limit', $max_per_minute, $user_id );
+
+		if ( false === $current_count ) {
+			// First request, start counting.
+			set_transient( $transient_key, 1, MINUTE_IN_SECONDS );
+			return true;
+		}
+
+		if ( $current_count >= $max_per_minute ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_rate_limit_exceeded',
+				sprintf(
+					/* translators: %d: maximum requests allowed per minute */
+					__( 'Remote site request rate limit exceeded. Maximum %d requests per minute allowed.', 'wp-mcp-ai-pro' ),
+					$max_per_minute
+				)
+			);
+		}
+
+		// Increment counter.
+		set_transient( $transient_key, $current_count + 1, MINUTE_IN_SECONDS );
+		return true;
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
@@ -825,6 +873,13 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'read-only',            // Only reads data, does not modify state.
 			'external-api',         // Makes external API calls.
 			'requires-capability',  // Requires 'edit_posts' capability.
+			'cacheable',            // Results can be cached.
+			'network-dependent',    // Requires internet connectivity.
+			'may-timeout',          // External API calls may timeout.
+			'large-response',       // May return large data sets.
+			'paginated',            // Supports pagination.
+			'rate-limited',         // Subject to rate limiting (30 requests/min/user).
+			'supports-compression', // Supports gzip/deflate compression.
 		);
 	}
 }

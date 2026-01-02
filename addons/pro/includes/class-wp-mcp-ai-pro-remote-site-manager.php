@@ -282,9 +282,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array|WP_Error Response data or error.
 	 */
 	public static function make_request( $connection, $endpoint, $method = 'GET', $body = array() ) {
-		$url = self::build_api_url( $connection['url'], $endpoint );
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+		$start_time    = microtime( true );
+		
+		$url = self::build_api_url( $connection['url'], $endpoint, $connection );
 
 		if ( is_wp_error( $url ) ) {
+			self::record_health_metric( $connection_id, false, 0 );
 			return $url;
 		}
 
@@ -310,15 +314,55 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'timeout' => 30,
 			'headers' => self::get_auth_headers( $connection ),
 		);
+		
+		// Add compression support for large responses.
+		$args['headers']['Accept-Encoding'] = 'gzip, deflate';
 
 		if ( ! empty( $body ) && in_array( $args['method'], array( 'POST', 'PUT', 'PATCH' ), true ) ) {
 			$args['body'] = wp_json_encode( $body );
 			$args['headers']['Content-Type'] = 'application/json';
 		}
 
-		$response = wp_remote_request( $url, $args );
+		// Check cache for GET requests only (read-only operations).
+		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			$cache_key     = self::get_request_cache_key( $connection_id, $endpoint );
+			$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
+
+			if ( false !== $cached_result && is_array( $cached_result ) ) {
+				return $cached_result;
+			}
+		}
+		
+		// Request deduplication - check if this exact request is already in progress.
+		$dedup_key = self::get_dedup_key( $connection_id, $endpoint, $method, $body );
+		$in_progress = get_transient( $dedup_key );
+		
+		if ( false !== $in_progress ) {
+			// Another request is in progress - wait briefly and check cache.
+			usleep( 100000 ); // Wait 0.1 seconds.
+			if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+				$cache_key     = self::get_request_cache_key( $connection_id, $endpoint );
+				$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
+				if ( false !== $cached_result && is_array( $cached_result ) ) {
+					return $cached_result;
+				}
+			}
+			// If no cached result yet, proceed with request (acceptable race condition).
+		}
+		
+		// Mark this request as in progress.
+		set_transient( $dedup_key, true, 30 );
+
+		// Perform request with retry logic.
+		$response = self::make_request_with_retry( $url, $args );
+		
+		// Clear deduplication lock.
+		delete_transient( $dedup_key );
 
 		if ( is_wp_error( $response ) ) {
+			$duration = microtime( true ) - $start_time;
+			self::record_health_metric( $connection_id, false, $duration );
+			
 			return new WP_Error(
 				'wp_mcp_ai_pro_request_failed',
 				sprintf(
@@ -333,6 +377,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$body = wp_remote_retrieve_body( $response );
 
 		if ( $status_code >= 400 ) {
+			$duration = microtime( true ) - $start_time;
+			self::record_health_metric( $connection_id, false, $duration );
+			
 			$error_message = sprintf(
 				/* translators: %d: HTTP status code */
 				__( 'HTTP error %d', 'wp-mcp-ai-pro' ),
@@ -351,10 +398,44 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$decoded = json_decode( $body, true );
 
 		if ( null === $decoded ) {
+			$duration = microtime( true ) - $start_time;
+			self::record_health_metric( $connection_id, false, $duration );
+			
 			return new WP_Error(
 				'wp_mcp_ai_pro_json_error',
 				__( 'Invalid JSON response from remote site.', 'wp-mcp-ai-pro' )
 			);
+		}
+		
+		// Record successful request for health monitoring.
+		$duration = microtime( true ) - $start_time;
+		self::record_health_metric( $connection_id, true, $duration );
+
+		// Cache successful GET requests.
+		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			// Use per-connection cache TTL if set, otherwise default to 5 minutes.
+			$cache_ttl = isset( $connection['cache_ttl'] ) ? absint( $connection['cache_ttl'] ) : 5 * MINUTE_IN_SECONDS;
+			
+			// Validate cache_ttl is within acceptable range (0-3600 seconds).
+			if ( $cache_ttl > 3600 ) {
+				$cache_ttl = 3600; // Cap at 1 hour.
+			}
+			
+			// Skip caching if TTL is 0 (disabled for this connection).
+			if ( $cache_ttl > 0 ) {
+				/**
+				 * Filter the cache TTL for remote site requests.
+				 *
+				 * @param int    $cache_ttl     Cache time-to-live in seconds (default: connection setting or 300).
+				 * @param string $connection_id Connection ID.
+				 * @param string $endpoint      API endpoint.
+				 * @param array  $connection    Full connection data.
+				 */
+				$cache_ttl = apply_filters( 'wp_mcp_ai_pro_remote_request_cache_ttl', $cache_ttl, $connection_id, $endpoint, $connection );
+
+				$cache_key = self::get_request_cache_key( $connection_id, $endpoint );
+				WP_MCP_AI_Cache_Helper::set( $cache_key, $decoded, $cache_ttl );
+			}
 		}
 
 		return $decoded;
@@ -365,14 +446,22 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $base_url Base site URL.
-	 * @param string $endpoint API endpoint.
+	 * @param string $base_url  Base site URL.
+	 * @param string $endpoint  API endpoint.
+	 * @param array  $connection Optional connection data for context.
 	 * @return string|WP_Error Full URL or error.
 	 */
-	protected static function build_api_url( $base_url, $endpoint ) {
+	protected static function build_api_url( $base_url, $endpoint, $connection = array() ) {
 		$base_url = untrailingslashit( $base_url );
 		$endpoint = ltrim( $endpoint, '/' );
 
+		// For generic REST APIs, just append the endpoint directly.
+		if ( ! empty( $connection['connection_type'] ) && 'generic' === $connection['connection_type'] ) {
+			$api_url = $base_url . '/' . $endpoint;
+			return $api_url;
+		}
+
+		// For WordPress/WooCommerce endpoints, use /wp-json/ prefix.
 		// Determine if this is a WooCommerce endpoint.
 		if ( 0 === strpos( $endpoint, 'wc/' ) ) {
 			$api_url = $base_url . '/wp-json/' . $endpoint;
@@ -589,5 +678,194 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $decrypted;
+	}
+
+	/**
+	 * Generate cache key for remote site requests.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $endpoint      API endpoint with query parameters.
+	 * @return string Cache key.
+	 */
+	protected static function get_request_cache_key( $connection_id, $endpoint ) {
+		return 'remote_request_' . wp_hash( $connection_id . '_' . $endpoint );
+	}
+
+	/**
+	 * Invalidate cache for a specific connection.
+	 *
+	 * Useful when connection settings change or when fresh data is needed.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return int Number of cache entries cleared.
+	 */
+	public static function invalidate_connection_cache( $connection_id ) {
+		// Use wp_hash for consistent hashing with cache key generation.
+		$hash_prefix = wp_hash( $connection_id . '_' );
+		return WP_MCP_AI_Cache_Helper::delete_pattern( 'remote_request_' . substr( $hash_prefix, 0, 8 ) . '%' );
+	}
+
+	/**
+	 * Make HTTP request with retry logic and exponential backoff.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $url  Request URL.
+	 * @param array  $args Request arguments.
+	 * @return array|WP_Error HTTP response or error.
+	 */
+	protected static function make_request_with_retry( $url, $args ) {
+		$max_retries = 3;
+		$retry_delay = 1; // Start with 1 second.
+
+		/**
+		 * Filter the maximum number of retry attempts for remote requests.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int $max_retries Maximum retry attempts (default: 3).
+		 */
+		$max_retries = apply_filters( 'wp_mcp_ai_pro_remote_request_max_retries', $max_retries );
+
+		for ( $attempt = 1; $attempt <= $max_retries; $attempt++ ) {
+			$response = wp_remote_request( $url, $args );
+
+			// Success - return response.
+			if ( ! is_wp_error( $response ) ) {
+				$status_code = wp_remote_retrieve_response_code( $response );
+				// Retry on 5xx errors (server errors) but not 4xx (client errors).
+				if ( $status_code < 500 ) {
+					return $response;
+				}
+			}
+
+			// If this was the last attempt, return the error.
+			if ( $attempt >= $max_retries ) {
+				return $response;
+			}
+
+			// Wait before retrying (exponential backoff with shorter delays).
+			// Use microseconds for non-blocking behavior in web context.
+			usleep( $retry_delay * 100000 ); // 0.1s, 0.2s, 0.4s
+			$retry_delay *= 2; // Double the delay for next retry.
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Generate deduplication key for requests.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $endpoint      API endpoint.
+	 * @param string $method        HTTP method.
+	 * @param array  $body          Request body.
+	 * @return string Deduplication key.
+	 */
+	protected static function get_dedup_key( $connection_id, $endpoint, $method, $body ) {
+		$key_parts = array( $connection_id, $endpoint, $method );
+		if ( ! empty( $body ) ) {
+			$key_parts[] = wp_json_encode( $body );
+		}
+		return 'remote_dedup_' . wp_hash( implode( '|', $key_parts ) );
+	}
+
+	/**
+	 * Record health metric for connection monitoring.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param bool   $success       Whether request was successful.
+	 * @param float  $duration      Request duration in seconds.
+	 * @return void
+	 */
+	protected static function record_health_metric( $connection_id, $success, $duration ) {
+		if ( empty( $connection_id ) ) {
+			return;
+		}
+
+		$health_key = 'remote_health_' . sanitize_key( $connection_id );
+		$health_data = get_transient( $health_key );
+
+		if ( false === $health_data ) {
+			$health_data = array(
+				'success_count' => 0,
+				'failure_count' => 0,
+				'total_duration' => 0,
+				'request_count' => 0,
+				'last_success' => 0,
+				'last_failure' => 0,
+			);
+		}
+
+		$health_data['request_count']++;
+		$health_data['total_duration'] += $duration;
+
+		if ( $success ) {
+			$health_data['success_count']++;
+			$health_data['last_success'] = time();
+		} else {
+			$health_data['failure_count']++;
+			$health_data['last_failure'] = time();
+		}
+
+		// Store for 1 hour.
+		set_transient( $health_key, $health_data, HOUR_IN_SECONDS );
+	}
+
+	/**
+	 * Get health metrics for a connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return array Health metrics.
+	 */
+	public static function get_health_metrics( $connection_id ) {
+		$health_key = 'remote_health_' . sanitize_key( $connection_id );
+		$health_data = get_transient( $health_key );
+
+		if ( false === $health_data ) {
+			return array(
+				'success_count' => 0,
+				'failure_count' => 0,
+				'success_rate' => 100,
+				'avg_duration' => 0,
+				'request_count' => 0,
+				'last_success' => null,
+				'last_failure' => null,
+				'status' => 'unknown',
+			);
+		}
+
+		$total_requests = $health_data['request_count'];
+		$success_rate = $total_requests > 0 ? ( $health_data['success_count'] / $total_requests ) * 100 : 100;
+		$avg_duration = $total_requests > 0 ? $health_data['total_duration'] / $total_requests : 0;
+
+		// Determine status.
+		$status = 'healthy';
+		if ( $success_rate < 50 ) {
+			$status = 'unhealthy';
+		} elseif ( $success_rate < 80 ) {
+			$status = 'degraded';
+		}
+
+		return array(
+			'success_count' => $health_data['success_count'],
+			'failure_count' => $health_data['failure_count'],
+			'success_rate' => round( $success_rate, 2 ),
+			'avg_duration' => round( $avg_duration, 3 ),
+			'request_count' => $total_requests,
+			'last_success' => $health_data['last_success'] > 0 ? $health_data['last_success'] : null,
+			'last_failure' => $health_data['last_failure'] > 0 ? $health_data['last_failure'] : null,
+			'status' => $status,
+		);
 	}
 }
