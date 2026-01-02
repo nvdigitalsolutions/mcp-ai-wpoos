@@ -14,11 +14,13 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 
 /**
  * Provides a tool for generating images via OpenAI and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
+	use WP_MCP_AI_NodeJS_Subprocess;
 	const DEFAULT_MODEL           = 'gpt-image-1.5';
 	const DEFAULT_SIZE            = '1024x1024';
 	const DEFAULT_QUALITY         = 'medium'; // Default for gpt-image-1/1.5. DALL-E uses 'standard'.
@@ -92,6 +94,12 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 					'description' => __( 'Image format for the generated file. OpenAI currently only returns PNG images.', 'wp-mcp-ai' ),
 					'enum'        => array( self::DEFAULT_FORMAT ),
 					'default'     => self::DEFAULT_FORMAT,
+				),
+				'output_format'   => array(
+					'type'        => 'string',
+					'description' => __( 'Output format for the generated image. Use "svg" to vectorize the raster output. Default is raster format.', 'wp-mcp-ai' ),
+					'enum'        => array( 'default', 'svg' ),
+					'default'     => 'default',
 				),
 				'file_name'       => array(
 					'type'        => 'string',
@@ -298,6 +306,29 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		if ( is_wp_error( $storage ) ) {
 			return $storage;
+		}
+
+		// Check if SVG output is requested.
+		$output_format = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'default';
+
+		if ( 'svg' === $output_format ) {
+			// Convert the generated raster image to SVG.
+			$svg_storage = $this->convert_to_svg( $storage, $arguments );
+
+			if ( is_wp_error( $svg_storage ) ) {
+				// If SVG conversion fails, return the original raster image.
+				WP_MCP_AI_Logger::log_error(
+					'openai_svg_conversion_failed',
+					'Failed to convert OpenAI-generated image to SVG',
+					array(
+						'error'         => $svg_storage->get_error_message(),
+						'attachment_id' => $storage['attachment_id'],
+					)
+				);
+			} else {
+				// Replace storage with SVG version.
+				$storage = $svg_storage;
+			}
 		}
 
 		// Build descriptive text message for the LLM and chat UI.
@@ -857,9 +888,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'provider',
 			'prompt',
 			'revised_prompt',
-			'text',  // Descriptive message about the generated image.
-			'usage', // Token usage data for UI display.
-			'cost',  // Cost data for UI display.
+			'text',          // Descriptive message about the generated image.
+			'usage',         // Token usage data for UI display.
+			'cost',          // Cost data for UI display.
+			'vectorized',    // SVG metadata if present.
+			'svg_size',
+			'source_size',
+			'duration_ms',
 		);
 
 		$sanitized = array();
@@ -1093,5 +1128,172 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		// Unknown model, return 0.
 		return 0.0;
+	}
+
+	/**
+	 * Convert a raster image to SVG format using vectorization.
+	 *
+	 * @param array $storage    Stored raster image data.
+	 * @param array $arguments  Tool arguments.
+	 * @return array|WP_Error SVG storage data or error.
+	 */
+	protected function convert_to_svg( array $storage, array $arguments ) {
+		// Check if Node.js is available.
+		if ( ! $this->is_nodejs_available() ) {
+			return new WP_Error(
+				'wp_mcp_ai_nodejs_required',
+				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'wp-mcp-ai' )
+			);
+		}
+
+		$file_path = isset( $storage['file'] ) ? $storage['file'] : '';
+
+		if ( '' === $file_path || ! file_exists( $file_path ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_file_not_found',
+				__( 'Generated image file not found for SVG conversion.', 'wp-mcp-ai' )
+			);
+		}
+
+		// Prepare SVG output file.
+		$temp_output = wp_tempnam( 'openai-svg-' );
+		if ( ! $temp_output ) {
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary SVG output file.', 'wp-mcp-ai' ) );
+		}
+
+		// Add .svg extension.
+		$temp_output_svg = $temp_output . '.svg';
+		rename( $temp_output, $temp_output_svg );
+		$temp_output = $temp_output_svg;
+
+		// Prepare vectorization options.
+		$vectorization_options = array(
+			'colorMode'      => 'color',
+			'colorPrecision' => isset( $arguments['color_precision'] ) ? absint( $arguments['color_precision'] ) : 6,
+			'filterSpeckle'  => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
+			'mode'           => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
+			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
+		);
+
+		// Execute vectorization script.
+		$script_path = WP_MCP_AI_PATH . 'bin/vectorize-image.js';
+		$script_args = array(
+			$file_path,
+			$temp_output,
+			wp_json_encode( $vectorization_options ),
+		);
+
+		$vectorize_result = $this->execute_nodejs_script(
+			$script_path,
+			$script_args,
+			array(
+				'timeout'    => 60,
+				'parse_json' => true,
+			)
+		);
+
+		if ( is_wp_error( $vectorize_result ) ) {
+			wp_delete_file( $temp_output );
+			return $vectorize_result;
+		}
+
+		if ( ! isset( $vectorize_result['success'] ) || ! $vectorize_result['success'] ) {
+			wp_delete_file( $temp_output );
+			return new WP_Error(
+				'wp_mcp_ai_vectorization_failed',
+				isset( $vectorize_result['error'] ) ? $vectorize_result['error'] : __( 'SVG vectorization failed.', 'wp-mcp-ai' )
+			);
+		}
+
+		// Read SVG file.
+		$svg_data = file_get_contents( $temp_output );
+		if ( false === $svg_data || '' === $svg_data ) {
+			wp_delete_file( $temp_output );
+			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'wp-mcp-ai' ) );
+		}
+
+		// Cleanup temporary output file.
+		wp_delete_file( $temp_output );
+
+		// Save as WordPress attachment.
+		$svg_storage = $this->save_svg_as_attachment( $svg_data, $arguments );
+		if ( is_wp_error( $svg_storage ) ) {
+			return $svg_storage;
+		}
+
+		// Add vectorization metadata.
+		$svg_storage['vectorized']  = true;
+		$svg_storage['svg_size']    = isset( $vectorize_result['output_size'] ) ? $vectorize_result['output_size'] : $svg_storage['bytes'];
+		$svg_storage['source_size'] = isset( $vectorize_result['input_size'] ) ? $vectorize_result['input_size'] : $storage['bytes'];
+		$svg_storage['duration_ms'] = isset( $vectorize_result['duration_ms'] ) ? $vectorize_result['duration_ms'] : 0;
+
+		return $svg_storage;
+	}
+
+	/**
+	 * Save SVG data as WordPress attachment.
+	 *
+	 * @param string $svg_data  SVG file content.
+	 * @param array  $arguments Tool arguments for naming.
+	 * @return array|WP_Error Attachment data or error.
+	 */
+	protected function save_svg_as_attachment( $svg_data, array $arguments ) {
+		// Generate file name.
+		$base_name = isset( $arguments['file_name'] ) ? sanitize_file_name( $arguments['file_name'] ) : 'openai-image';
+		if ( empty( $base_name ) ) {
+			$base_name = 'openai-image';
+		}
+
+		// Remove extension if present.
+		$base_name = preg_replace( '/\.(png|jpg|jpeg|gif|webp)$/i', '', $base_name );
+		$file_name = $base_name . '-svg-' . gmdate( 'Ymd-His' ) . '.svg';
+
+		// Upload SVG file.
+		if ( ! function_exists( 'wp_upload_bits' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$upload = wp_upload_bits( $file_name, null, $svg_data );
+
+		if ( ! empty( $upload['error'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'wp-mcp-ai' ), array( 'error' => $upload['error'] ) );
+		}
+
+		$file_path = isset( $upload['file'] ) ? $upload['file'] : '';
+
+		if ( '' === $file_path || ! file_exists( $file_path ) ) {
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to write SVG file to disk.', 'wp-mcp-ai' ) );
+		}
+
+		// Create attachment.
+		$attachment = array(
+			'post_mime_type' => 'image/svg+xml',
+			'post_title'     => sanitize_text_field( __( 'OpenAI SVG Image', 'wp-mcp-ai' ) ),
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
+
+		$attachment_id = wp_insert_attachment( $attachment, $file_path );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_delete_file( $file_path );
+			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'wp-mcp-ai' ), array( 'error' => $attachment_id ) );
+		}
+
+		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
+
+		// Get attachment URL using utility class.
+		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
+
+		return array(
+			'attachment_id' => (int) $attachment_id,
+			'file'          => $file_path,
+			'file_name'     => wp_basename( $file_path ),
+			'url'           => $local_url,
+			'download_url'  => $local_url,
+			'mime_type'     => 'image/svg+xml',
+			'bytes'         => $bytes ? (int) $bytes : 0,
+			'title'         => get_the_title( $attachment_id ),
+		);
 	}
 }

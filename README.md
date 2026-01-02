@@ -880,6 +880,8 @@ NV oOS includes comprehensive documentation covering all aspects of the plugin. 
 - **[Testing & Quality Report](docs/guides/developer/testing/TESTING_AND_QUALITY_REPORT.md)** - Comprehensive test results and code quality analysis
 
 ### For New Users
+- **[Use Cases & Quickstart Guides](docs/getting-started/USE_CASES_AND_QUICKSTARTS.md) ⭐ NEW** - Comprehensive guide covering 7 major use cases with step-by-step quickstarts
+- [5-Minute Quick Start](docs/getting-started/QUICK_START_5_MINUTES.md) - Get started immediately: from zero to first chat
 - [Setup Checklist](docs/getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step installation and configuration
 - [Remote Client Quickstart](docs/getting-started/quick-starts/remote-client-quickstart.md) - Connect Claude Desktop, LM Studio, or other MCP clients
 - [Best Practices](docs/guides/developer/best-practices/BEST_PRACTICES.md) - Recommended usage patterns and optimization tips

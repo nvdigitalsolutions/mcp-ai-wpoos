@@ -4,6 +4,17 @@ Quick start guides and installation documentation for Open Operator System (WP o
 
 ## 📂 Contents
 
+### Use Cases & Quickstart Guides
+- **[Use Cases & Quickstart Guides](USE_CASES_AND_QUICKSTARTS.md) ⭐ NEW** - Comprehensive guide covering:
+  - Content Creation & Management
+  - E-Commerce Automation
+  - Media Generation & Processing
+  - Business Operations
+  - Research & Data Analysis
+  - Developer & Technical Integration
+  - Education & Knowledge Management
+- [5-Minute Quick Start](QUICK_START_5_MINUTES.md) - From zero to first chat in 5 minutes
+
 ### Installation & Setup
 - [Plugin Setup Checklist](installation-setup/mcp-ai-plugin-setup-checklist.md) - Complete setup guide
 - [Deployment Troubleshooting](installation-setup/deployment-troubleshooting.md) - Common deployment issues

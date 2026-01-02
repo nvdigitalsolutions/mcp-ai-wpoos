@@ -69,7 +69,8 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 						'description' => __( 'Whether to crop the image to exact dimensions. Only applies when both width and height are specified.', 'wp-mcp-ai' ),
 						'default'     => false,
 					),
-				)
+				),
+				$this->get_output_format_parameter_schema()
 			),
 			'required'             => array(),
 			'additionalProperties' => false,
@@ -172,8 +173,16 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 			return $result;
 		}
 
-		// Save as new attachment.
-		$storage = $this->save_as_attachment( $image_editor, $arguments, $user_id, 'resized' );
+		// Check if SVG output is requested.
+		$output_format = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'default';
+
+		if ( 'svg' === $output_format ) {
+			// Convert the resized image to SVG.
+			$storage = $this->convert_to_svg( $image_editor, $arguments, $user_id );
+		} else {
+			// Save as new raster attachment.
+			$storage = $this->save_as_attachment( $image_editor, $arguments, $user_id, 'resized' );
+		}
 
 		// Clean up temp file if exists.
 		if ( isset( $image_editor->temp_file ) ) {
@@ -189,7 +198,7 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 			'height' => $height,
 		);
 
-		$result = array(
+		$result_data = array(
 			'attachment_id'   => $storage['attachment_id'],
 			'url'             => $storage['url'],
 			'file_name'       => $storage['file_name'],
@@ -201,13 +210,30 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 			'new_width'       => $new_size['width'],
 			'new_height'      => $new_size['height'],
 			'operation'       => 'resize',
+			'output_format'   => $output_format,
 			'text'            => sprintf(
-				/* translators: 1: original dimensions, 2: new dimensions */
-				__( 'Successfully resized image from %1$s to %2$s.', 'wp-mcp-ai' ),
+				/* translators: 1: original dimensions, 2: new dimensions, 3: output format */
+				__( 'Successfully resized image from %1$s to %2$s%3$s.', 'wp-mcp-ai' ),
 				$original_size['width'] . 'x' . $original_size['height'],
-				$new_size['width'] . 'x' . $new_size['height']
+				$new_size['width'] . 'x' . $new_size['height'],
+				'svg' === $output_format ? ' and converted to SVG' : ''
 			),
 		);
+
+		// Add vectorization metadata if SVG output was used.
+		if ( 'svg' === $output_format && isset( $storage['vectorized'] ) ) {
+			$result_data['vectorized']  = true;
+			$result_data['svg_size']    = isset( $storage['svg_size'] ) ? $storage['svg_size'] : $storage['bytes'];
+			$result_data['source_size'] = isset( $storage['source_size'] ) ? $storage['source_size'] : 0;
+			$result_data['duration_ms'] = isset( $storage['duration_ms'] ) ? $storage['duration_ms'] : 0;
+		}
+
+		// Add image_url structure for agentic workflow and chat client display.
+		if ( ! empty( $storage['url'] ) ) {
+			$result_data['image_url'] = array(
+				'url' => $storage['url'],
+			);
+		}
 
 		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included
 		// in the default response to prevent bloating tool results sent to chat clients and LLMs.
@@ -216,10 +242,10 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 		/**
 		 * Filter the resize image result.
 		 *
-		 * @param array $result    Result array.
-		 * @param array $arguments Tool arguments.
-		 * @param array $context   Execution context.
+		 * @param array $result_data Result array.
+		 * @param array $arguments   Tool arguments.
+		 * @param array $context     Execution context.
 		 */
-		return apply_filters( 'wp_mcp_ai_resize_image_result', $result, $arguments, $context );
+		return apply_filters( 'wp_mcp_ai_resize_image_result', $result_data, $arguments, $context );
 	}
 }

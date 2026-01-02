@@ -50,6 +50,10 @@ This installs:
 - `eslint` - JavaScript linting tool
 - `@wordpress/eslint-plugin` - WordPress coding standards for JavaScript
 
+**Production Dependencies** (automatically copied to vendor after install):
+- `chart.js` → `assets/js/vendor/chart.min.js` - Analytics charts
+- `@neplex/vectorizer` → `assets/js/vendor/neplex-vectorizer/` - Image vectorization (for `vectorize_image` tool)
+
 ### PHP Dependencies
 
 #### Production Dependencies
@@ -517,6 +521,27 @@ The GitHub Actions workflow will automatically build and publish the ZIP files t
 See [RELEASE_CHECKLIST.md](docs/troubleshooting/deployment/RELEASE_CHECKLIST.md) for complete release instructions.
 
 ## Troubleshooting
+
+### Vectorizer Module Error
+
+If you see the error:
+```
+Cannot find module '@neplex/vectorizer-linux-x64-gnu'
+```
+
+This occurs when the plugin is cloned without running `npm install`, or when the postinstall script didn't complete properly. The native `.node` files need to be in the main vectorizer directory.
+
+**Fix:**
+```bash
+./bin/fix-vectorizer-vendor.sh
+```
+
+Or reinstall:
+```bash
+npm install
+```
+
+See `assets/js/vendor/neplex-vectorizer/README.md` for details.
 
 ### Build Fails
 

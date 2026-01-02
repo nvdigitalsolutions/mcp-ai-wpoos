@@ -216,18 +216,22 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$connection_data = array(
 			'name'      => 'Test Site',
 			'url'       => 'https://example.com',
-			'auth_type' => 'none',
+			'auth_type' => 'application_password',
+			'username'  => 'testuser',
+			'password'  => 'original_password',
 			'enabled'   => true,
 		);
 
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
-		// Update it.
+		// Update it without providing password (should keep existing).
 		$updated_data = array(
 			'id'        => $connection_id,
 			'name'      => 'Updated Test Site',
 			'url'       => 'https://updated-example.com',
-			'auth_type' => 'none',
+			'auth_type' => 'application_password',
+			'username'  => 'testuser',
+			// Note: password intentionally omitted to test that existing password is preserved.
 			'enabled'   => false,
 		);
 
@@ -239,6 +243,8 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$this->assertEquals( 'Updated Test Site', $connection['name'] );
 		$this->assertEquals( 'https://updated-example.com/', $connection['url'] );
 		$this->assertFalse( $connection['enabled'] );
+		// Password should still be encrypted and present.
+		$this->assertNotEmpty( $connection['password'] );
 	}
 
 	/**
@@ -279,5 +285,91 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		// Test WooCommerce REST API URL.
 		$wc_url = $method->invokeArgs( null, array( 'https://example.com', 'wc/v3/products' ) );
 		$this->assertEquals( 'https://example.com/wp-json/wc/v3/products', $wc_url );
+	}
+
+	/**
+	 * Test saving connection with WooCommerce authentication.
+	 */
+	public function test_save_connection_with_woocommerce_auth() {
+		$connection_data = array(
+			'name'            => 'Test WooCommerce Site',
+			'url'             => 'https://example.com',
+			'auth_type'       => 'woocommerce',
+			'consumer_key'    => 'ck_1234567890abcdef',
+			'consumer_secret' => 'cs_1234567890abcdef',
+			'has_woocommerce' => true,
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertNotWPError( $result );
+		
+		// Verify connection was saved.
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
+		$this->assertIsArray( $connection );
+		$this->assertEquals( 'Test WooCommerce Site', $connection['name'] );
+		$this->assertEquals( 'woocommerce', $connection['auth_type'] );
+		$this->assertTrue( $connection['has_woocommerce'] );
+		
+		// Verify consumer key and secret are encrypted.
+		$this->assertNotEquals( 'ck_1234567890abcdef', $connection['consumer_key'] );
+		$this->assertNotEquals( 'cs_1234567890abcdef', $connection['consumer_secret'] );
+	}
+
+	/**
+	 * Test validation of missing WooCommerce credentials.
+	 */
+	public function test_validation_missing_woocommerce_credentials() {
+		$connection_data = array(
+			'name'         => 'Test Site',
+			'url'          => 'https://example.com',
+			'auth_type'    => 'woocommerce',
+			'consumer_key' => 'ck_1234567890abcdef',
+			// Missing consumer_secret.
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_pro_missing_wc_keys', $result->get_error_code() );
+	}
+
+	/**
+	 * Test updating connection with WooCommerce auth keeps existing credentials.
+	 */
+	public function test_update_woocommerce_connection_preserves_credentials() {
+		// Create a connection with WooCommerce auth.
+		$connection_data = array(
+			'name'            => 'Test WooCommerce Site',
+			'url'             => 'https://example.com',
+			'auth_type'       => 'woocommerce',
+			'consumer_key'    => 'ck_original_key',
+			'consumer_secret' => 'cs_original_secret',
+			'has_woocommerce' => true,
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		// Update without providing credentials.
+		$updated_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Updated WooCommerce Site',
+			'url'             => 'https://updated-example.com',
+			'auth_type'       => 'woocommerce',
+			// Note: consumer_key and consumer_secret intentionally omitted.
+			'has_woocommerce' => true,
+			'enabled'         => false,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $updated_data );
+		$this->assertEquals( $connection_id, $result );
+
+		// Verify credentials are still present.
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertEquals( 'Updated WooCommerce Site', $connection['name'] );
+		$this->assertNotEmpty( $connection['consumer_key'] );
+		$this->assertNotEmpty( $connection['consumer_secret'] );
 	}
 }

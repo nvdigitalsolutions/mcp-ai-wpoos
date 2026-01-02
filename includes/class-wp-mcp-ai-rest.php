@@ -2916,7 +2916,53 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 
 			$transcript_context['request_started_at']    = microtime( true );
-			$response                                    = $this->client->create_chat_completion( $messages, $options );
+			
+			// Wrap LLM call in try-catch to handle any uncaught exceptions
+			// and ensure SSE stream completes properly even on fatal errors.
+			try {
+				$response = $this->client->create_chat_completion( $messages, $options );
+			} catch ( Exception $e ) {
+				WP_MCP_AI_Logger::log_error(
+					'sse_llm_exception',
+					'Exception during LLM call in streaming mode',
+					array(
+						'exception' => $e->getMessage(),
+						'trace'     => $e->getTraceAsString(),
+					)
+				);
+				$this->send_sse_event(
+					'error',
+					array(
+						'code'    => 'llm_exception',
+						'message' => sprintf(
+							/* translators: %s: exception message */
+							__( 'An error occurred while processing your request: %s', 'wp-mcp-ai' ),
+							$e->getMessage()
+						),
+					)
+				);
+				$this->send_sse_done();
+				exit;
+			} catch ( Error $e ) {
+				WP_MCP_AI_Logger::log_error(
+					'sse_llm_fatal_error',
+					'Fatal error during LLM call in streaming mode',
+					array(
+						'error' => $e->getMessage(),
+						'trace' => $e->getTraceAsString(),
+					)
+				);
+				$this->send_sse_event(
+					'error',
+					array(
+						'code'    => 'llm_fatal_error',
+						'message' => __( 'A fatal error occurred while processing your request.', 'wp-mcp-ai' ),
+					)
+				);
+				$this->send_sse_done();
+				exit;
+			}
+			
 			$transcript_context['response_completed_at'] = microtime( true );
 
 			if ( ! is_wp_error( $response ) ) {
@@ -2985,7 +3031,48 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 
-					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations, $transcript_context );
+					// Wrap tool execution in try-catch to handle any uncaught exceptions
+					// and ensure SSE stream continues even if tool execution fails.
+					try {
+						$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations, $transcript_context );
+					} catch ( Exception $e ) {
+						WP_MCP_AI_Logger::log_error(
+							'sse_tool_exception',
+							'Exception during tool execution in streaming mode',
+							array(
+								'tool_name' => $tool_name,
+								'exception' => $e->getMessage(),
+								'trace'     => $e->getTraceAsString(),
+							)
+						);
+						$tool_result = new WP_Error(
+							'tool_exception',
+							sprintf(
+								/* translators: 1: tool name, 2: exception message */
+								__( 'Tool %1$s failed with exception: %2$s', 'wp-mcp-ai' ),
+								$tool_name,
+								$e->getMessage()
+							)
+						);
+					} catch ( Error $e ) {
+						WP_MCP_AI_Logger::log_error(
+							'sse_tool_fatal_error',
+							'Fatal error during tool execution in streaming mode',
+							array(
+								'tool_name' => $tool_name,
+								'error'     => $e->getMessage(),
+								'trace'     => $e->getTraceAsString(),
+							)
+						);
+						$tool_result = new WP_Error(
+							'tool_fatal_error',
+							sprintf(
+								/* translators: %s: tool name */
+								__( 'Tool %s failed with a fatal error.', 'wp-mcp-ai' ),
+								$tool_name
+							)
+						);
+					}
 
 					// Convert WP_Error to serializable format to prevent JSON encoding failures.
 					$tool_result = $this->normalize_tool_result( $tool_result );
@@ -3132,6 +3219,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
+				// Log after sending thinking status to track agentic loop progress.
+				WP_MCP_AI_Logger::log_event(
+					'sse_streaming_after_tools',
+					'Sent thinking status after tool execution, preparing for next LLM call',
+					array(
+						'iteration'         => $iteration,
+						'assistant_id'      => $assistant_id,
+						'tool_count'        => count( $tool_result_messages ),
+						'has_async_pending' => $has_async_pending_result,
+					)
+				);
+
 				// Validate token budget before next iteration.
 				$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
 				$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
@@ -3201,6 +3300,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					array(
 						'type'    => 'generating',
 						'message' => __( 'Generating response…', 'wp-mcp-ai' ),
+					)
+				);
+
+				// Log before second LLM call to track the flow.
+				WP_MCP_AI_Logger::log_event(
+					'sse_streaming_before_llm_call',
+					'About to call LLM again with tool results',
+					array(
+						'iteration'    => $iteration,
+						'assistant_id' => $assistant_id,
+						'message_count' => count( $messages ),
 					)
 				);
 
@@ -3430,9 +3540,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$payload['sessionKey'] = $recorded_session_key;
 			}
 
+			// ALWAYS include tool_results in payload if they exist.
+			// This ensures the chat client receives tool execution results even when
+			// the LLM response is empty or doesn't include commentary.
+			// Critical for tools like vectorize_image where the tool result contains
+			// the primary information (SVG URL, attachment ID, success message).
 			if ( ! empty( $tool_result_messages ) ) {
 				$payload['tool_results'] = $tool_result_messages;
+
+				// Log final message payload for debugging tool result delivery.
+				WP_MCP_AI_Logger::log_event(
+					'sse_final_message_with_tools',
+					'Sending final SSE message event with tool results',
+					array(
+						'assistant_id'      => $assistant_id,
+						'tool_result_count' => count( $tool_result_messages ),
+						'has_response_data' => ! empty( $response ),
+						'has_text_content'  => ! empty( $response['choices'][0]['message']['content'] ) || ! empty( $response['content'] ),
+					)
+				);
 			}
+
+			// Normalize payload to ensure all data is JSON-serializable.
+			// This prevents SSE stream failures due to non-serializable objects (WP_Error, WP_Post, etc.)
+			// that might be nested in tool results or response data.
+			$payload = $this->normalize_data_recursive( $payload );
 
 			$this->send_sse_event( 'message', $payload );
 			$this->send_sse_done();

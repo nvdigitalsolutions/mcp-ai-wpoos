@@ -409,6 +409,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'crop_image'                         => 'wordpress-core',
 				'rotate_image'                       => 'wordpress-core',
 				'convert_image_format'               => 'wordpress-core',
+				'vectorize_image'                    => 'wordpress-core',
+				'graphic_editor_plus'                => 'wordpress-plugins',
 
 				// Data Visualization.
 				'create_chart'                       => 'wordpress-core',
@@ -904,6 +906,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Crop_Image'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crop-image.php',
 				'WP_MCP_AI_Tool_Rotate_Image'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-rotate-image.php',
 				'WP_MCP_AI_Tool_Convert_Image_Format'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-convert-image-format.php',
+				'WP_MCP_AI_Tool_Vectorize_Image'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vectorize-image.php',
 				// HuggingFace Datasets API tools.
 				'WP_MCP_AI_Tool_Huggingface_Dataset_Search' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-search.php',
 				'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Info' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-get-info.php',
@@ -947,6 +950,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_List_All_Import_Templates' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-all-import-templates.php',
 				'WP_MCP_AI_Tool_Trigger_All_Import'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-trigger-all-import.php',
 				'WP_MCP_AI_Tool_Get_All_Import_Status'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-all-import-status.php',
+				// Advanced graphic editing tool (Pro).
+				'WP_MCP_AI_Tool_Graphic_Editor_Plus'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-graphic-editor-plus.php',
 				// Project Management tools moved to Pro addon.
 			);
 
