@@ -49,3 +49,31 @@ add_action(
 		add_action( 'admin_post_wp_mcp_ai_cloudflare_disconnect', array( $handler, 'handle_cloudflare_disconnect' ) );
 	}
 );
+
+// Display admin notices for Cloudflare connection actions.
+add_action(
+	'admin_notices',
+	function() {
+		$notice = get_transient( 'wp_mcp_ai_cloudflare_connection_notice' );
+
+		if ( ! $notice || ! is_array( $notice ) ) {
+			return;
+		}
+
+		delete_transient( 'wp_mcp_ai_cloudflare_connection_notice' );
+
+		$type    = isset( $notice['type'] ) ? sanitize_key( $notice['type'] ) : 'info';
+		$message = isset( $notice['message'] ) ? $notice['message'] : '';
+
+		if ( empty( $message ) ) {
+			return;
+		}
+
+		$class = 'notice notice-' . $type . ' is-dismissible';
+		printf(
+			'<div class="%s"><p>%s</p></div>',
+			esc_attr( $class ),
+			wp_kses_post( $message )
+		);
+	}
+);

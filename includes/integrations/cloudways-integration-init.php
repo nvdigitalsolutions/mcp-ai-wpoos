@@ -49,3 +49,31 @@ add_action(
 		add_action( 'admin_post_wp_mcp_ai_cloudways_disconnect', array( $handler, 'handle_cloudways_disconnect' ) );
 	}
 );
+
+// Display admin notices for Cloudways OAuth actions.
+add_action(
+	'admin_notices',
+	function() {
+		$notice = get_transient( 'wp_mcp_ai_cloudways_oauth_notice' );
+
+		if ( ! $notice || ! is_array( $notice ) ) {
+			return;
+		}
+
+		delete_transient( 'wp_mcp_ai_cloudways_oauth_notice' );
+
+		$type    = isset( $notice['type'] ) ? sanitize_key( $notice['type'] ) : 'info';
+		$message = isset( $notice['message'] ) ? $notice['message'] : '';
+
+		if ( empty( $message ) ) {
+			return;
+		}
+
+		$class = 'notice notice-' . $type . ' is-dismissible';
+		printf(
+			'<div class="%s"><p>%s</p></div>',
+			esc_attr( $class ),
+			wp_kses_post( $message )
+		);
+	}
+);
