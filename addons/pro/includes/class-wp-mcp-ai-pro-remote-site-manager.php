@@ -32,7 +32,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * @var array<string>
 	 */
-	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'none' );
+	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'none' );
 
 	/**
 	 * Get all configured remote site connections.
@@ -79,19 +79,57 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return string|WP_Error Connection ID on success, WP_Error on failure.
 	 */
 	public static function save_connection( $connection_data ) {
-		$validation = self::validate_connection_data( $connection_data );
-
-		if ( is_wp_error( $validation ) ) {
-			return $validation;
-		}
-
 		$connections = self::get_all_connections();
 
 		// Generate or use existing connection ID.
+		$is_update = false;
 		if ( empty( $connection_data['id'] ) ) {
 			$connection_id = self::generate_connection_id();
 		} else {
 			$connection_id = sanitize_key( $connection_data['id'] );
+			$is_update = isset( $connections[ $connection_id ] );
+		}
+
+		// If updating and password/token fields are empty, preserve existing values.
+		if ( $is_update ) {
+			$existing_connection = $connections[ $connection_id ];
+			
+			// Preserve existing password if not provided.
+			if ( empty( $connection_data['password'] ) && ! empty( $existing_connection['password'] ) ) {
+				$connection_data['password'] = $existing_connection['password'];
+				// Mark as already encrypted.
+				$connection_data['_password_encrypted'] = true;
+			}
+			
+			// Preserve existing token if not provided.
+			if ( empty( $connection_data['token'] ) && ! empty( $existing_connection['token'] ) ) {
+				$connection_data['token'] = $existing_connection['token'];
+				// Mark as already encrypted.
+				$connection_data['_token_encrypted'] = true;
+			}
+
+			// Preserve existing consumer_key if not provided.
+			if ( empty( $connection_data['consumer_key'] ) && ! empty( $existing_connection['consumer_key'] ) ) {
+				$connection_data['consumer_key'] = $existing_connection['consumer_key'];
+				$connection_data['_consumer_key_encrypted'] = true;
+			}
+
+			// Preserve existing consumer_secret if not provided.
+			if ( empty( $connection_data['consumer_secret'] ) && ! empty( $existing_connection['consumer_secret'] ) ) {
+				$connection_data['consumer_secret'] = $existing_connection['consumer_secret'];
+				$connection_data['_consumer_secret_encrypted'] = true;
+			}
+
+			// Preserve created timestamp.
+			if ( ! isset( $connection_data['created'] ) && ! empty( $existing_connection['created'] ) ) {
+				$connection_data['created'] = $existing_connection['created'];
+			}
+		}
+
+		$validation = self::validate_connection_data( $connection_data );
+
+		if ( is_wp_error( $validation ) ) {
+			return $validation;
 		}
 
 		// Prepare connection data.
@@ -103,19 +141,29 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'username'        => isset( $connection_data['username'] ) ? sanitize_text_field( $connection_data['username'] ) : '',
 			'password'        => isset( $connection_data['password'] ) ? $connection_data['password'] : '',
 			'token'           => isset( $connection_data['token'] ) ? $connection_data['token'] : '',
+			'consumer_key'    => isset( $connection_data['consumer_key'] ) ? $connection_data['consumer_key'] : '',
+			'consumer_secret' => isset( $connection_data['consumer_secret'] ) ? $connection_data['consumer_secret'] : '',
 			'has_woocommerce' => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'         => ! empty( $connection_data['enabled'] ),
 			'created'         => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
 			'updated'         => current_time( 'mysql' ),
 		);
 
-		// Encrypt sensitive data.
-		if ( ! empty( $connection['password'] ) ) {
+		// Encrypt sensitive data (only if not already encrypted).
+		if ( ! empty( $connection['password'] ) && empty( $connection_data['_password_encrypted'] ) ) {
 			$connection['password'] = self::encrypt_value( $connection['password'] );
 		}
 
-		if ( ! empty( $connection['token'] ) ) {
+		if ( ! empty( $connection['token'] ) && empty( $connection_data['_token_encrypted'] ) ) {
 			$connection['token'] = self::encrypt_value( $connection['token'] );
+		}
+
+		if ( ! empty( $connection['consumer_key'] ) && empty( $connection_data['_consumer_key_encrypted'] ) ) {
+			$connection['consumer_key'] = self::encrypt_value( $connection['consumer_key'] );
+		}
+
+		if ( ! empty( $connection['consumer_secret'] ) && empty( $connection_data['_consumer_secret_encrypted'] ) ) {
+			$connection['consumer_secret'] = self::encrypt_value( $connection['consumer_secret'] );
 		}
 
 		$connections[ $connection_id ] = $connection;
@@ -223,6 +271,23 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( is_wp_error( $url ) ) {
 			return $url;
+		}
+
+		// For WooCommerce authentication, add consumer key/secret to URL.
+		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
+		if ( 'woocommerce' === $auth_type ) {
+			$consumer_key = isset( $connection['consumer_key'] ) ? self::decrypt_value( $connection['consumer_key'] ) : '';
+			$consumer_secret = isset( $connection['consumer_secret'] ) ? self::decrypt_value( $connection['consumer_secret'] ) : '';
+
+			if ( ! empty( $consumer_key ) && ! empty( $consumer_secret ) ) {
+				$url = add_query_arg(
+					array(
+						'consumer_key'    => $consumer_key,
+						'consumer_secret' => $consumer_secret,
+					),
+					$url
+				);
+			}
 		}
 
 		$args = array(
@@ -394,6 +459,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				'wp_mcp_ai_pro_missing_token',
 				__( 'JWT token is required for JWT authentication.', 'wp-mcp-ai-pro' )
 			);
+		}
+
+		if ( 'woocommerce' === $auth_type ) {
+			if ( empty( $connection['consumer_key'] ) || empty( $connection['consumer_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_wc_keys',
+					__( 'Consumer key and consumer secret are required for WooCommerce authentication.', 'wp-mcp-ai-pro' )
+				);
+			}
 		}
 
 		return true;
