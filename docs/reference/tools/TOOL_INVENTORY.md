@@ -1,8 +1,8 @@
 # Tool Inventory - Complete List
 
 **Status:** ✅ VERIFIED  
-**Date:** December 24, 2025  
-**Total Tools:** 144 unique tools (118 base + 26 Pro)
+**Date:** January 2, 2026  
+**Total Tools:** 193 unique tools (127 base + 66 Pro)
 
 ---
 
@@ -10,32 +10,32 @@
 
 | Category | Count |
 |----------|-------|
-| **Total Tool Files** | 171 |
-| **Base Tool Classes** | 118 |
+| **Total Tool Files** | 217 |
+| **Base Tool Classes** | 127 |
 | **Validated Tool Variants** | 24 |
-| **Pro Tool Classes** | 26 |
-| **Helper/Trait Files** | 3 |
-| **Unique Tools (Base + Pro)** | 144 |
+| **Base Tool Files Total** | 151 |
+| **Pro Tool Classes** | 66 |
+| **Unique Tools (Base + Pro)** | 193 |
 
 ---
 
 ## File Breakdown
 
 ### Base Tools Directory: `includes/tools/`
-- **Total files**: 145
-- **Tool class files**: 141
-  - **Original tools**: 118
-  - **Validated variants**: 24 (overlapping with original)
-- **Non-tool files**: 3
-  - `class-wp-mcp-ai-tool-image-base.php` (base class)
-  - `tools-init.php` (registration)
-  - `trait-wp-mcp-ai-tool-restrict-from-chat-client.php` (trait)
-- **Helper files**: 1
-  - `remove-background.php` (utility function, not a tool)
+- **Total files**: 151
+- **Tool class files**: 151
+  - **Original tools**: 127
+  - **Validated variants**: 24 (additional files with enhanced validation)
+- **Non-tool files included in count**: 0
+  - `tools-init.php` (not counted)
+  - `trait-wp-mcp-ai-tool-restrict-from-chat-client.php` (not counted)
+  - `remove-background.php` (utility function, not counted)
 
-### Pro Tools Directory: `addons/pro/includes/tools/`
-- **Total files**: 26
-- **Tool class files**: 26
+### Pro Tools Directory: `addons/pro/includes/`
+- **Total files**: 66
+- **Located in**:
+  - `src/Tools/`: 34 tool files
+  - `tools/`: 32 tool files
 - All Pro tools are unique (no base equivalents)
 
 ---
