@@ -101,17 +101,54 @@ The fix includes:
 - Validation logic unchanged (still in execute() method)
 - All improvements from PR #2524 preserved (descriptions, error messages)
 
+## Provider Compatibility
+
+This fix has been verified to work with **all supported providers**:
+
+### ✅ OpenAI
+- **Issue**: Does NOT support `oneOf`/`anyOf`/`allOf` at root level
+- **Fix Impact**: Removes the problematic constraint → **Fully Compatible**
+- **Validation**: Required (throws error with oneOf at root)
+
+### ✅ Google Gemini  
+- **Behavior**: HAS built-in sanitizer (`sanitize_parameters_for_gemini()`)
+- **Handles**: `oneOf`/`anyOf`/`allOf` at ANY level (lines 2357-2389 in gemini-client.php)
+- **Process**: Extracts first option from composition keywords
+- **Fix Impact**: Still works correctly (less sanitization needed) → **Fully Compatible**
+- **Validation**: Optional (sanitizer handles it)
+
+### ✅ Ollama
+- **Behavior**: Does NOT use function calling schemas
+- **Process**: Handles tool messages as text-based responses
+- **Fix Impact**: No effect (doesn't process schemas) → **Fully Compatible**
+- **Validation**: N/A (no schema processing)
+
+## Key Insight
+
+The `oneOf` constraint at root level was:
+- ❌ **Blocking** for OpenAI (hard error)
+- ⚠️ **Unnecessary** for Gemini (sanitizer handles it anyway)  
+- 🔄 **Irrelevant** for Ollama (doesn't use schemas)
+
+By removing it, we:
+- ✅ Fix OpenAI compatibility (primary goal)
+- ✅ Maintain Gemini compatibility (sanitizer still works)
+- ✅ Maintain Ollama compatibility (no change needed)
+- ✅ Simplify schema (less complexity)
+
 ## Deployment
 
 This fix can be deployed immediately:
 1. No configuration changes needed
 2. No database changes required
-3. Works with both OpenAI and other providers
+3. **Works with ALL providers** (OpenAI, Gemini, Ollama)
 4. Existing assistants continue working without modification
+5. No performance impact
 
 ---
 
 **Fixed:** January 2, 2026  
 **Related PR:** #2524 (original workflow improvement)  
 **Issue:** OpenAI function schema validation error  
-**Solution:** Remove root-level `oneOf` constraint
+**Solution:** Remove root-level `oneOf` constraint  
+**Compatibility:** ✅ OpenAI | ✅ Gemini | ✅ Ollama
