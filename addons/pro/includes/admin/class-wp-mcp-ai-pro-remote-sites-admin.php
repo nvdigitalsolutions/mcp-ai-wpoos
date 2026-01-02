@@ -243,7 +243,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $connections as $connection ) : ?>
+					<?php foreach ( $connections as $connection_key => $connection ) : ?>
+						<?php
+						// Use the array key as the connection ID (most reliable).
+						// Fall back to $connection['id'] if key is numeric (shouldn't happen, but defensive).
+						$connection_id = is_string( $connection_key ) ? $connection_key : ( isset( $connection['id'] ) ? $connection['id'] : '' );
+						?>
 						<tr>
 							<td><strong><?php echo esc_html( $connection['name'] ); ?></strong></td>
 							<td><?php echo esc_html( $connection['url'] ); ?></td>
@@ -257,13 +262,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<?php endif; ?>
 							</td>
 							<td>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection['id'] ) ); ?>">
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id ) ); ?>">
 									<?php esc_html_e( 'Edit', 'wp-mcp-ai-pro' ); ?>
 								</a> |
-								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=test&connection_id=' . $connection['id'] ), 'test_connection_' . $connection['id'] ) ); ?>">
+								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=test&connection_id=' . $connection_id ), 'test_connection_' . $connection_id ) ); ?>">
 									<?php esc_html_e( 'Test', 'wp-mcp-ai-pro' ); ?>
 								</a> |
-								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=delete&connection_id=' . $connection['id'] ), 'delete_connection_' . $connection['id'] ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'wp-mcp-ai-pro' ); ?>');" style="color: #b32d2e;">
+								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=delete&connection_id=' . $connection_id ), 'delete_connection_' . $connection_id ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'wp-mcp-ai-pro' ); ?>');" style="color: #b32d2e;">
 									<?php esc_html_e( 'Delete', 'wp-mcp-ai-pro' ); ?>
 								</a>
 							</td>
