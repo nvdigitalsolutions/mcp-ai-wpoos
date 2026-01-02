@@ -547,6 +547,7 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-media.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php';
 }
 
 // Load assistant builder blocks for all versions (base and full).
