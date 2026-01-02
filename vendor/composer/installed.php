@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-model-selection-issue',
-        'version' => 'dev-copilot/fix-model-selection-issue',
-        'reference' => '279513e38083b3bea0b4bc937adc3de930c77edc',
+        'pretty_version' => 'dev-copilot/run-composer-no-dev-yet-again',
+        'version' => 'dev-copilot/run-composer-no-dev-yet-again',
+        'reference' => '5ab825e8dbe5288390f57d301964992ca414ebdc',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-model-selection-issue',
-            'version' => 'dev-copilot/fix-model-selection-issue',
-            'reference' => '279513e38083b3bea0b4bc937adc3de930c77edc',
+            'pretty_version' => 'dev-copilot/run-composer-no-dev-yet-again',
+            'version' => 'dev-copilot/run-composer-no-dev-yet-again',
+            'reference' => '5ab825e8dbe5288390f57d301964992ca414ebdc',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

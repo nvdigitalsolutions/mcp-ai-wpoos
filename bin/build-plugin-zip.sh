@@ -173,6 +173,9 @@ if [ "$BUILD_BASE" = true ]; then
     # Copy full plugin files EXCEPT pro addons
     # This creates a fully functional standalone plugin
     rsync -av --quiet . "build/${BASE_SLUG}/" \
+        --include 'bin/' \
+        --include 'bin/vectorize-image.js' \
+        --exclude 'bin/*' \
         --exclude '.git' \
         --exclude '.git-branch-info' \
         --exclude '.github' \
@@ -182,7 +185,6 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.vscode' \
         --exclude 'node_modules' \
         --exclude 'tests' \
-        --exclude 'bin' \
         --exclude 'coverage' \
         --exclude 'build' \
         --exclude 'svn-*' \
@@ -474,6 +476,9 @@ if [ "$BUILD_COMBINED" = true ]; then
     # Copy all plugin files (includes both base and pro)
     # Exclude mcp-ai-wpoos-base.php to prevent duplicate plugin detection in WordPress
     rsync -av --quiet . "build/${COMBINED_SLUG}/" \
+        --include 'bin/' \
+        --include 'bin/vectorize-image.js' \
+        --exclude 'bin/*' \
         --exclude '.git' \
         --exclude '.git-branch-info' \
         --exclude '.github' \
@@ -483,7 +488,6 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '.vscode' \
         --exclude 'node_modules' \
         --exclude 'tests' \
-        --exclude 'bin' \
         --exclude 'coverage' \
         --exclude 'build' \
         --exclude 'svn-*' \

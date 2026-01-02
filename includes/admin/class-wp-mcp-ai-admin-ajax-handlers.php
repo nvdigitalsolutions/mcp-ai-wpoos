@@ -55,6 +55,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_lm_studio_connection' => 'handle_test_lm_studio_connection',
 				'wp_ajax_wp_mcp_ai_fetch_lm_studio_models' => 'handle_fetch_lm_studio_models',
 				'wp_ajax_wp_mcp_ai_fetch_cloudways_data'   => 'handle_fetch_cloudways_data',
+				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
 				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
@@ -575,6 +576,136 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				array(
 					'message'   => __( 'Successfully connected to Cloudflare!', 'wp-mcp-ai' ),
 					'zone_info' => $zone_info,
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to test Cloudways connection.
+		 */
+		public function handle_test_cloudways_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			$email   = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+			if ( empty( $email ) || empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide both email and API key.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get timeout from settings.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, $timeout );
+
+			// Step 1: Exchange email + API key for OAuth access token.
+			$oauth_url      = 'https://api.cloudways.com/api/v1/oauth/access_token';
+			$oauth_response = wp_remote_post(
+				$oauth_url,
+				array(
+					'body'    => wp_json_encode(
+						array(
+							'email'   => $email,
+							'api_key' => $api_key,
+						)
+					),
+					'headers' => array(
+						'Content-Type' => 'application/json',
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $oauth_response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'wp-mcp-ai' ),
+							$oauth_response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$oauth_code = wp_remote_retrieve_response_code( $oauth_response );
+			$oauth_body = wp_remote_retrieve_body( $oauth_response );
+			$oauth_data = json_decode( $oauth_body, true );
+
+			if ( 200 !== $oauth_code ) {
+				$error_message = __( 'Invalid credentials.', 'wp-mcp-ai' );
+				if ( ! empty( $oauth_data['message'] ) ) {
+					$error_message = sanitize_text_field( $oauth_data['message'] );
+				}
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			if ( empty( $oauth_data['access_token'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Failed to obtain access token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			$access_token = $oauth_data['access_token'];
+
+			// Step 2: Verify the token by fetching account servers.
+			$servers_url      = 'https://api.cloudways.com/api/v1/server';
+			$servers_response = wp_remote_get(
+				$servers_url,
+				array(
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $access_token,
+						'Accept'        => 'application/json',
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $servers_response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Token obtained but failed to verify account: %s', 'wp-mcp-ai' ),
+							$servers_response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$servers_code = wp_remote_retrieve_response_code( $servers_response );
+			$servers_body = wp_remote_retrieve_body( $servers_response );
+			$servers_data = json_decode( $servers_body, true );
+
+			if ( 200 !== $servers_code ) {
+				wp_send_json_error( array( 'message' => __( 'Token obtained but failed to verify account access.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Prepare account information.
+			$server_count = 0;
+			if ( ! empty( $servers_data['servers'] ) && is_array( $servers_data['servers'] ) ) {
+				$server_count = count( $servers_data['servers'] );
+			}
+
+			$account_info = array(
+				'server_count' => $server_count,
+				'email'        => $email,
+			);
+
+			wp_send_json_success(
+				array(
+					'message'      => __( 'Successfully connected to Cloudways!', 'wp-mcp-ai' ),
+					'account_info' => $account_info,
 				)
 			);
 		}

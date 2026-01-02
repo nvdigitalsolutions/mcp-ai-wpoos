@@ -32,7 +32,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * @var array<string>
 	 */
-	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'none' );
+	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'none' );
 
 	/**
 	 * Get all configured remote site connections.
@@ -47,6 +47,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( ! is_array( $connections ) ) {
 			return array();
 		}
+
+		// Migrate connection IDs to lowercase if needed.
+		$connections = self::migrate_connection_ids( $connections );
 
 		return $connections;
 	}
@@ -79,19 +82,57 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return string|WP_Error Connection ID on success, WP_Error on failure.
 	 */
 	public static function save_connection( $connection_data ) {
-		$validation = self::validate_connection_data( $connection_data );
-
-		if ( is_wp_error( $validation ) ) {
-			return $validation;
-		}
-
 		$connections = self::get_all_connections();
 
 		// Generate or use existing connection ID.
+		$is_update = false;
 		if ( empty( $connection_data['id'] ) ) {
 			$connection_id = self::generate_connection_id();
 		} else {
 			$connection_id = sanitize_key( $connection_data['id'] );
+			$is_update = isset( $connections[ $connection_id ] );
+		}
+
+		// If updating and password/token fields are empty, preserve existing values.
+		if ( $is_update ) {
+			$existing_connection = $connections[ $connection_id ];
+			
+			// Preserve existing password if not provided.
+			if ( empty( $connection_data['password'] ) && ! empty( $existing_connection['password'] ) ) {
+				$connection_data['password'] = $existing_connection['password'];
+				// Mark as already encrypted.
+				$connection_data['_password_encrypted'] = true;
+			}
+			
+			// Preserve existing token if not provided.
+			if ( empty( $connection_data['token'] ) && ! empty( $existing_connection['token'] ) ) {
+				$connection_data['token'] = $existing_connection['token'];
+				// Mark as already encrypted.
+				$connection_data['_token_encrypted'] = true;
+			}
+
+			// Preserve existing consumer_key if not provided.
+			if ( empty( $connection_data['consumer_key'] ) && ! empty( $existing_connection['consumer_key'] ) ) {
+				$connection_data['consumer_key'] = $existing_connection['consumer_key'];
+				$connection_data['_consumer_key_encrypted'] = true;
+			}
+
+			// Preserve existing consumer_secret if not provided.
+			if ( empty( $connection_data['consumer_secret'] ) && ! empty( $existing_connection['consumer_secret'] ) ) {
+				$connection_data['consumer_secret'] = $existing_connection['consumer_secret'];
+				$connection_data['_consumer_secret_encrypted'] = true;
+			}
+
+			// Preserve created timestamp.
+			if ( ! isset( $connection_data['created'] ) && ! empty( $existing_connection['created'] ) ) {
+				$connection_data['created'] = $existing_connection['created'];
+			}
+		}
+
+		$validation = self::validate_connection_data( $connection_data );
+
+		if ( is_wp_error( $validation ) ) {
+			return $validation;
 		}
 
 		// Prepare connection data.
@@ -103,24 +144,46 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'username'        => isset( $connection_data['username'] ) ? sanitize_text_field( $connection_data['username'] ) : '',
 			'password'        => isset( $connection_data['password'] ) ? $connection_data['password'] : '',
 			'token'           => isset( $connection_data['token'] ) ? $connection_data['token'] : '',
+			'consumer_key'    => isset( $connection_data['consumer_key'] ) ? $connection_data['consumer_key'] : '',
+			'consumer_secret' => isset( $connection_data['consumer_secret'] ) ? $connection_data['consumer_secret'] : '',
 			'has_woocommerce' => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'         => ! empty( $connection_data['enabled'] ),
 			'created'         => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
 			'updated'         => current_time( 'mysql' ),
 		);
 
-		// Encrypt sensitive data.
-		if ( ! empty( $connection['password'] ) ) {
+		// Encrypt sensitive data (only if not already encrypted).
+		if ( ! empty( $connection['password'] ) && empty( $connection_data['_password_encrypted'] ) ) {
 			$connection['password'] = self::encrypt_value( $connection['password'] );
 		}
 
-		if ( ! empty( $connection['token'] ) ) {
+		if ( ! empty( $connection['token'] ) && empty( $connection_data['_token_encrypted'] ) ) {
 			$connection['token'] = self::encrypt_value( $connection['token'] );
+		}
+
+		if ( ! empty( $connection['consumer_key'] ) && empty( $connection_data['_consumer_key_encrypted'] ) ) {
+			$connection['consumer_key'] = self::encrypt_value( $connection['consumer_key'] );
+		}
+
+		if ( ! empty( $connection['consumer_secret'] ) && empty( $connection_data['_consumer_secret_encrypted'] ) ) {
+			$connection['consumer_secret'] = self::encrypt_value( $connection['consumer_secret'] );
 		}
 
 		$connections[ $connection_id ] = $connection;
 
-		update_option( self::OPTION_NAME, $connections );
+		$updated = update_option( self::OPTION_NAME, $connections );
+
+		if ( false === $updated && ! isset( $connections[ $connection_id ] ) ) {
+			// update_option returns false if the value is the same, which shouldn't happen here
+			// but also returns false on actual failure. Check if it was actually saved.
+			$saved_connections = get_option( self::OPTION_NAME, array() );
+			if ( ! isset( $saved_connections[ $connection_id ] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_save_failed',
+					__( 'Failed to save connection. Please try again.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
 
 		return $connection_id;
 	}
@@ -219,10 +282,31 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array|WP_Error Response data or error.
 	 */
 	public static function make_request( $connection, $endpoint, $method = 'GET', $body = array() ) {
-		$url = self::build_api_url( $connection['url'], $endpoint );
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
+		$start_time    = microtime( true );
+		
+		$url = self::build_api_url( $connection['url'], $endpoint, $connection );
 
 		if ( is_wp_error( $url ) ) {
+			self::record_health_metric( $connection_id, false, 0 );
 			return $url;
+		}
+
+		// For WooCommerce authentication, add consumer key/secret to URL.
+		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
+		if ( 'woocommerce' === $auth_type ) {
+			$consumer_key = isset( $connection['consumer_key'] ) ? self::decrypt_value( $connection['consumer_key'] ) : '';
+			$consumer_secret = isset( $connection['consumer_secret'] ) ? self::decrypt_value( $connection['consumer_secret'] ) : '';
+
+			if ( ! empty( $consumer_key ) && ! empty( $consumer_secret ) ) {
+				$url = add_query_arg(
+					array(
+						'consumer_key'    => $consumer_key,
+						'consumer_secret' => $consumer_secret,
+					),
+					$url
+				);
+			}
 		}
 
 		$args = array(
@@ -230,15 +314,55 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'timeout' => 30,
 			'headers' => self::get_auth_headers( $connection ),
 		);
+		
+		// Add compression support for large responses.
+		$args['headers']['Accept-Encoding'] = 'gzip, deflate';
 
 		if ( ! empty( $body ) && in_array( $args['method'], array( 'POST', 'PUT', 'PATCH' ), true ) ) {
 			$args['body'] = wp_json_encode( $body );
 			$args['headers']['Content-Type'] = 'application/json';
 		}
 
-		$response = wp_remote_request( $url, $args );
+		// Check cache for GET requests only (read-only operations).
+		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			$cache_key     = self::get_request_cache_key( $connection_id, $endpoint );
+			$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
+
+			if ( false !== $cached_result && is_array( $cached_result ) ) {
+				return $cached_result;
+			}
+		}
+		
+		// Request deduplication - check if this exact request is already in progress.
+		$dedup_key = self::get_dedup_key( $connection_id, $endpoint, $method, $body );
+		$in_progress = get_transient( $dedup_key );
+		
+		if ( false !== $in_progress ) {
+			// Another request is in progress - wait briefly and check cache.
+			usleep( 100000 ); // Wait 0.1 seconds.
+			if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+				$cache_key     = self::get_request_cache_key( $connection_id, $endpoint );
+				$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
+				if ( false !== $cached_result && is_array( $cached_result ) ) {
+					return $cached_result;
+				}
+			}
+			// If no cached result yet, proceed with request (acceptable race condition).
+		}
+		
+		// Mark this request as in progress.
+		set_transient( $dedup_key, true, 30 );
+
+		// Perform request with retry logic.
+		$response = self::make_request_with_retry( $url, $args );
+		
+		// Clear deduplication lock.
+		delete_transient( $dedup_key );
 
 		if ( is_wp_error( $response ) ) {
+			$duration = microtime( true ) - $start_time;
+			self::record_health_metric( $connection_id, false, $duration );
+			
 			return new WP_Error(
 				'wp_mcp_ai_pro_request_failed',
 				sprintf(
@@ -253,6 +377,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$body = wp_remote_retrieve_body( $response );
 
 		if ( $status_code >= 400 ) {
+			$duration = microtime( true ) - $start_time;
+			self::record_health_metric( $connection_id, false, $duration );
+			
 			$error_message = sprintf(
 				/* translators: %d: HTTP status code */
 				__( 'HTTP error %d', 'wp-mcp-ai-pro' ),
@@ -271,10 +398,44 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$decoded = json_decode( $body, true );
 
 		if ( null === $decoded ) {
+			$duration = microtime( true ) - $start_time;
+			self::record_health_metric( $connection_id, false, $duration );
+			
 			return new WP_Error(
 				'wp_mcp_ai_pro_json_error',
 				__( 'Invalid JSON response from remote site.', 'wp-mcp-ai-pro' )
 			);
+		}
+		
+		// Record successful request for health monitoring.
+		$duration = microtime( true ) - $start_time;
+		self::record_health_metric( $connection_id, true, $duration );
+
+		// Cache successful GET requests.
+		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			// Use per-connection cache TTL if set, otherwise default to 5 minutes.
+			$cache_ttl = isset( $connection['cache_ttl'] ) ? absint( $connection['cache_ttl'] ) : 5 * MINUTE_IN_SECONDS;
+			
+			// Validate cache_ttl is within acceptable range (0-3600 seconds).
+			if ( $cache_ttl > 3600 ) {
+				$cache_ttl = 3600; // Cap at 1 hour.
+			}
+			
+			// Skip caching if TTL is 0 (disabled for this connection).
+			if ( $cache_ttl > 0 ) {
+				/**
+				 * Filter the cache TTL for remote site requests.
+				 *
+				 * @param int    $cache_ttl     Cache time-to-live in seconds (default: connection setting or 300).
+				 * @param string $connection_id Connection ID.
+				 * @param string $endpoint      API endpoint.
+				 * @param array  $connection    Full connection data.
+				 */
+				$cache_ttl = apply_filters( 'wp_mcp_ai_pro_remote_request_cache_ttl', $cache_ttl, $connection_id, $endpoint, $connection );
+
+				$cache_key = self::get_request_cache_key( $connection_id, $endpoint );
+				WP_MCP_AI_Cache_Helper::set( $cache_key, $decoded, $cache_ttl );
+			}
 		}
 
 		return $decoded;
@@ -285,14 +446,22 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $base_url Base site URL.
-	 * @param string $endpoint API endpoint.
+	 * @param string $base_url  Base site URL.
+	 * @param string $endpoint  API endpoint.
+	 * @param array  $connection Optional connection data for context.
 	 * @return string|WP_Error Full URL or error.
 	 */
-	protected static function build_api_url( $base_url, $endpoint ) {
+	protected static function build_api_url( $base_url, $endpoint, $connection = array() ) {
 		$base_url = untrailingslashit( $base_url );
 		$endpoint = ltrim( $endpoint, '/' );
 
+		// For generic REST APIs, just append the endpoint directly.
+		if ( ! empty( $connection['connection_type'] ) && 'generic' === $connection['connection_type'] ) {
+			$api_url = $base_url . '/' . $endpoint;
+			return $api_url;
+		}
+
+		// For WordPress/WooCommerce endpoints, use /wp-json/ prefix.
 		// Determine if this is a WooCommerce endpoint.
 		if ( 0 === strpos( $endpoint, 'wc/' ) ) {
 			$api_url = $base_url . '/wp-json/' . $endpoint;
@@ -396,6 +565,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
+		if ( 'woocommerce' === $auth_type ) {
+			if ( empty( $connection['consumer_key'] ) || empty( $connection['consumer_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_wc_keys',
+					__( 'Consumer key and consumer secret are required for WooCommerce authentication.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
+
 		return true;
 	}
 
@@ -407,7 +585,44 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return string Connection ID.
 	 */
 	protected static function generate_connection_id() {
-		return 'conn_' . wp_generate_password( 12, false );
+		return 'conn_' . strtolower( wp_generate_password( 12, false ) );
+	}
+
+	/**
+	 * Migrate connection IDs to lowercase format.
+	 *
+	 * This method normalizes existing connection IDs that may have mixed case
+	 * to lowercase format for consistency with sanitize_key().
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connections Array of connections.
+	 * @return array Migrated connections array.
+	 */
+	protected static function migrate_connection_ids( $connections ) {
+		$needs_migration = false;
+		$migrated = array();
+
+		foreach ( $connections as $key => $connection ) {
+			$lowercase_key = strtolower( $key );
+			
+			// Check if key needs migration.
+			if ( $key !== $lowercase_key ) {
+				$needs_migration = true;
+				// Update the id field to match the new lowercase key.
+				$connection['id'] = $lowercase_key;
+				$migrated[ $lowercase_key ] = $connection;
+			} else {
+				$migrated[ $key ] = $connection;
+			}
+		}
+
+		// Save migrated data if changes were made.
+		if ( $needs_migration ) {
+			update_option( self::OPTION_NAME, $migrated );
+		}
+
+		return $migrated;
 	}
 
 	/**
@@ -463,5 +678,194 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $decrypted;
+	}
+
+	/**
+	 * Generate cache key for remote site requests.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $endpoint      API endpoint with query parameters.
+	 * @return string Cache key.
+	 */
+	protected static function get_request_cache_key( $connection_id, $endpoint ) {
+		return 'remote_request_' . wp_hash( $connection_id . '_' . $endpoint );
+	}
+
+	/**
+	 * Invalidate cache for a specific connection.
+	 *
+	 * Useful when connection settings change or when fresh data is needed.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return int Number of cache entries cleared.
+	 */
+	public static function invalidate_connection_cache( $connection_id ) {
+		// Use wp_hash for consistent hashing with cache key generation.
+		$hash_prefix = wp_hash( $connection_id . '_' );
+		return WP_MCP_AI_Cache_Helper::delete_pattern( 'remote_request_' . substr( $hash_prefix, 0, 8 ) . '%' );
+	}
+
+	/**
+	 * Make HTTP request with retry logic and exponential backoff.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $url  Request URL.
+	 * @param array  $args Request arguments.
+	 * @return array|WP_Error HTTP response or error.
+	 */
+	protected static function make_request_with_retry( $url, $args ) {
+		$max_retries = 3;
+		$retry_delay = 1; // Start with 1 second.
+
+		/**
+		 * Filter the maximum number of retry attempts for remote requests.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int $max_retries Maximum retry attempts (default: 3).
+		 */
+		$max_retries = apply_filters( 'wp_mcp_ai_pro_remote_request_max_retries', $max_retries );
+
+		for ( $attempt = 1; $attempt <= $max_retries; $attempt++ ) {
+			$response = wp_remote_request( $url, $args );
+
+			// Success - return response.
+			if ( ! is_wp_error( $response ) ) {
+				$status_code = wp_remote_retrieve_response_code( $response );
+				// Retry on 5xx errors (server errors) but not 4xx (client errors).
+				if ( $status_code < 500 ) {
+					return $response;
+				}
+			}
+
+			// If this was the last attempt, return the error.
+			if ( $attempt >= $max_retries ) {
+				return $response;
+			}
+
+			// Wait before retrying (exponential backoff with shorter delays).
+			// Use microseconds for non-blocking behavior in web context.
+			usleep( $retry_delay * 100000 ); // 0.1s, 0.2s, 0.4s
+			$retry_delay *= 2; // Double the delay for next retry.
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Generate deduplication key for requests.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $endpoint      API endpoint.
+	 * @param string $method        HTTP method.
+	 * @param array  $body          Request body.
+	 * @return string Deduplication key.
+	 */
+	protected static function get_dedup_key( $connection_id, $endpoint, $method, $body ) {
+		$key_parts = array( $connection_id, $endpoint, $method );
+		if ( ! empty( $body ) ) {
+			$key_parts[] = wp_json_encode( $body );
+		}
+		return 'remote_dedup_' . wp_hash( implode( '|', $key_parts ) );
+	}
+
+	/**
+	 * Record health metric for connection monitoring.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param bool   $success       Whether request was successful.
+	 * @param float  $duration      Request duration in seconds.
+	 * @return void
+	 */
+	protected static function record_health_metric( $connection_id, $success, $duration ) {
+		if ( empty( $connection_id ) ) {
+			return;
+		}
+
+		$health_key = 'remote_health_' . sanitize_key( $connection_id );
+		$health_data = get_transient( $health_key );
+
+		if ( false === $health_data ) {
+			$health_data = array(
+				'success_count' => 0,
+				'failure_count' => 0,
+				'total_duration' => 0,
+				'request_count' => 0,
+				'last_success' => 0,
+				'last_failure' => 0,
+			);
+		}
+
+		$health_data['request_count']++;
+		$health_data['total_duration'] += $duration;
+
+		if ( $success ) {
+			$health_data['success_count']++;
+			$health_data['last_success'] = time();
+		} else {
+			$health_data['failure_count']++;
+			$health_data['last_failure'] = time();
+		}
+
+		// Store for 1 hour.
+		set_transient( $health_key, $health_data, HOUR_IN_SECONDS );
+	}
+
+	/**
+	 * Get health metrics for a connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return array Health metrics.
+	 */
+	public static function get_health_metrics( $connection_id ) {
+		$health_key = 'remote_health_' . sanitize_key( $connection_id );
+		$health_data = get_transient( $health_key );
+
+		if ( false === $health_data ) {
+			return array(
+				'success_count' => 0,
+				'failure_count' => 0,
+				'success_rate' => 100,
+				'avg_duration' => 0,
+				'request_count' => 0,
+				'last_success' => null,
+				'last_failure' => null,
+				'status' => 'unknown',
+			);
+		}
+
+		$total_requests = $health_data['request_count'];
+		$success_rate = $total_requests > 0 ? ( $health_data['success_count'] / $total_requests ) * 100 : 100;
+		$avg_duration = $total_requests > 0 ? $health_data['total_duration'] / $total_requests : 0;
+
+		// Determine status.
+		$status = 'healthy';
+		if ( $success_rate < 50 ) {
+			$status = 'unhealthy';
+		} elseif ( $success_rate < 80 ) {
+			$status = 'degraded';
+		}
+
+		return array(
+			'success_count' => $health_data['success_count'],
+			'failure_count' => $health_data['failure_count'],
+			'success_rate' => round( $success_rate, 2 ),
+			'avg_duration' => round( $avg_duration, 3 ),
+			'request_count' => $total_requests,
+			'last_success' => $health_data['last_success'] > 0 ? $health_data['last_success'] : null,
+			'last_failure' => $health_data['last_failure'] > 0 ? $health_data['last_failure'] : null,
+			'status' => $status,
+		);
 	}
 }

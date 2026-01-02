@@ -88,9 +88,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			$connection_id = sanitize_key( $_GET['connection_id'] );
-			WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
+			$deleted = WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
 
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&deleted=1' ) );
+			if ( $deleted ) {
+				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&deleted=1' ) );
+			} else {
+				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . urlencode( __( 'Connection not found or could not be deleted.', 'wp-mcp-ai-pro' ) ) ) );
+			}
 			exit;
 		}
 
@@ -125,12 +129,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'id'              => isset( $_POST['connection_id'] ) ? sanitize_key( $_POST['connection_id'] ) : '',
 				'name'            => isset( $_POST['name'] ) ? sanitize_text_field( $_POST['name'] ) : '',
 				'url'             => isset( $_POST['url'] ) ? esc_url_raw( $_POST['url'] ) : '',
+				'connection_type' => isset( $_POST['connection_type'] ) ? sanitize_key( $_POST['connection_type'] ) : 'wordpress',
 				'auth_type'       => isset( $_POST['auth_type'] ) ? sanitize_key( $_POST['auth_type'] ) : 'none',
 				'username'        => isset( $_POST['username'] ) ? sanitize_text_field( $_POST['username'] ) : '',
 				'password'        => isset( $_POST['password'] ) ? $_POST['password'] : '',
 				'token'           => isset( $_POST['token'] ) ? $_POST['token'] : '',
+				'consumer_key'    => isset( $_POST['consumer_key'] ) ? sanitize_text_field( $_POST['consumer_key'] ) : '',
+				'consumer_secret' => isset( $_POST['consumer_secret'] ) ? $_POST['consumer_secret'] : '',
 				'has_woocommerce' => ! empty( $_POST['has_woocommerce'] ),
 				'enabled'         => ! empty( $_POST['enabled'] ),
+				'cache_ttl'       => isset( $_POST['cache_ttl'] ) ? max( 0, min( 3600, absint( $_POST['cache_ttl'] ) ) ) : 300,
+				'test_endpoint'   => isset( $_POST['test_endpoint'] ) ? sanitize_text_field( $_POST['test_endpoint'] ) : '',
 			);
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -156,6 +165,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		if ( $editing ) {
 			$connection_to_edit = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $editing );
+			
+			// If editing but connection not found, show error and list instead.
+			if ( null === $connection_to_edit ) {
+				$editing = '';
+				$_GET['error'] = __( 'Connection not found.', 'wp-mcp-ai-pro' );
+			}
 		}
 
 		?>
@@ -210,11 +225,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 */
 	protected function render_connections_list( $connections ) {
 		?>
-		<p>
+		<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&add=1' ) ); ?>" class="button button-primary">
 				<?php esc_html_e( 'Add New Connection', 'wp-mcp-ai-pro' ); ?>
 			</a>
-		</p>
+			<div>
+				<span class="dashicons dashicons-info-outline" style="color: #2271b1; vertical-align: middle;"></span>
+				<em style="color: #646970;">
+					<?php
+					printf(
+						/* translators: %s: cache duration */
+						esc_html__( 'Caching enabled: %s TTL', 'wp-mcp-ai-pro' ),
+						'<strong>5 minutes</strong>'
+					);
+					?>
+				</em>
+			</div>
+		</div>
 
 		<?php if ( empty( $connections ) ) : ?>
 			<p><?php esc_html_e( 'No remote site connections configured yet.', 'wp-mcp-ai-pro' ); ?></p>
@@ -223,20 +250,63 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<thead>
 					<tr>
 						<th><?php esc_html_e( 'Name', 'wp-mcp-ai-pro' ); ?></th>
+						<th><?php esc_html_e( 'Type', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'URL', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'Auth Type', 'wp-mcp-ai-pro' ); ?></th>
-						<th><?php esc_html_e( 'WooCommerce', 'wp-mcp-ai-pro' ); ?></th>
+						<th><?php esc_html_e( 'Health', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'Status', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'Actions', 'wp-mcp-ai-pro' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $connections as $connection ) : ?>
+					<?php foreach ( $connections as $connection_key => $connection ) : ?>
+						<?php
+						// Use the array key as the connection ID (most reliable).
+						// Fall back to $connection['id'] if key is numeric (shouldn't happen, but defensive).
+						$connection_id = is_string( $connection_key ) ? $connection_key : ( isset( $connection['id'] ) ? $connection['id'] : '' );
+						$health_metrics = WP_MCP_AI_Pro_Remote_Site_Manager::get_health_metrics( $connection_id );
+						?>
 						<tr>
 							<td><strong><?php echo esc_html( $connection['name'] ); ?></strong></td>
+							<td>
+								<?php
+								$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
+								$type_label = 'wordpress' === $connection_type ? __( 'WordPress', 'wp-mcp-ai-pro' ) : __( 'Generic REST API', 'wp-mcp-ai-pro' );
+								$type_badge_color = 'wordpress' === $connection_type ? '#2271b1' : '#50575e';
+								?>
+								<span style="display: inline-block; padding: 2px 8px; background: <?php echo esc_attr( $type_badge_color ); ?>; color: white; border-radius: 3px; font-size: 11px;">
+									<?php echo esc_html( $type_label ); ?>
+								</span>
+								<?php if ( 'wordpress' === $connection_type && ! empty( $connection['has_woocommerce'] ) ) : ?>
+									<span style="display: inline-block; padding: 2px 8px; background: #96588a; color: white; border-radius: 3px; font-size: 11px; margin-left: 4px;">WC</span>
+								<?php endif; ?>
+							</td>
 							<td><?php echo esc_html( $connection['url'] ); ?></td>
 							<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $connection['auth_type'] ) ) ); ?></td>
-							<td><?php echo ! empty( $connection['has_woocommerce'] ) ? '✓' : '—'; ?></td>
+							<td>
+								<?php
+								$status_colors = array(
+									'healthy' => '#46b450',
+									'degraded' => '#ffb900',
+									'unhealthy' => '#dc3232',
+									'unknown' => '#8c8f94',
+								);
+								$status_color = isset( $status_colors[ $health_metrics['status'] ] ) ? $status_colors[ $health_metrics['status'] ] : $status_colors['unknown'];
+								?>
+								<span style="color: <?php echo esc_attr( $status_color ); ?>;">●</span>
+								<?php
+								if ( $health_metrics['request_count'] > 0 ) {
+									printf(
+										/* translators: 1: success rate, 2: request count */
+										esc_html__( '%1$s%% (%2$d reqs)', 'wp-mcp-ai-pro' ),
+										esc_html( $health_metrics['success_rate'] ),
+										absint( $health_metrics['request_count'] )
+									);
+								} else {
+									esc_html_e( 'No data', 'wp-mcp-ai-pro' );
+								}
+								?>
+							</td>
 							<td>
 								<?php if ( ! empty( $connection['enabled'] ) ) : ?>
 									<span style="color: green;">●</span> <?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?>
@@ -245,13 +315,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<?php endif; ?>
 							</td>
 							<td>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection['id'] ) ); ?>">
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id ) ); ?>">
 									<?php esc_html_e( 'Edit', 'wp-mcp-ai-pro' ); ?>
 								</a> |
-								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=test&connection_id=' . $connection['id'] ), 'test_connection_' . $connection['id'] ) ); ?>">
+								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=test&connection_id=' . $connection_id ), 'test_connection_' . $connection_id ) ); ?>">
 									<?php esc_html_e( 'Test', 'wp-mcp-ai-pro' ); ?>
 								</a> |
-								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=delete&connection_id=' . $connection['id'] ), 'delete_connection_' . $connection['id'] ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'wp-mcp-ai-pro' ); ?>');" style="color: #b32d2e;">
+								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=delete&connection_id=' . $connection_id ), 'delete_connection_' . $connection_id ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'wp-mcp-ai-pro' ); ?>');" style="color: #b32d2e;">
 									<?php esc_html_e( 'Delete', 'wp-mcp-ai-pro' ); ?>
 								</a>
 							</td>
@@ -259,6 +329,104 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+
+			<div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+				<h3 style="margin-top: 0;"><?php esc_html_e( 'Performance & Reliability Features', 'wp-mcp-ai-pro' ); ?></h3>
+				<p style="margin-bottom: 15px;">
+					<?php esc_html_e( 'Remote site requests include advanced features for performance, reliability, and monitoring.', 'wp-mcp-ai-pro' ); ?>
+				</p>
+				<table class="form-table" style="background: white; border: 1px solid #ddd;">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Request Caching', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'GET requests are cached to reduce redundant API calls. Default: 5 minutes. Configure per-connection in connection settings above.', 'wp-mcp-ai-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Rate Limiting', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: 1: rate limit, 2: filter name */
+									esc_html__( 'Limited to %1$s per user to prevent abuse. Customize via %2$s filter.', 'wp-mcp-ai-pro' ),
+									'<code>30 requests/minute</code>',
+									'<code>wp_mcp_ai_pro_remote_wp_rate_limit</code>'
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Retry Logic', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Automatic retry with exponential backoff (3 attempts) for transient errors. Improves reliability.', 'wp-mcp-ai-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Request Deduplication', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Prevents duplicate simultaneous requests to the same endpoint. Reduces load on remote servers.', 'wp-mcp-ai-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Compression Support', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Requests accept gzip/deflate compression to reduce bandwidth and improve speed for large responses.', 'wp-mcp-ai-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Health Monitoring', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Tracks success rates, response times, and connection health. View health status in the "Health" column above.', 'wp-mcp-ai-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+				</table>
+				<p style="margin-top: 15px;">
+					<strong><?php esc_html_e( 'Developer Note:', 'wp-mcp-ai-pro' ); ?></strong>
+					<?php
+					printf(
+						/* translators: %s: documentation link */
+						esc_html__( 'Use filters to customize caching, rate limits, and retry behavior. See %s for details.', 'wp-mcp-ai-pro' ),
+						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/tools/remote-wp-connection.md' ) . '" target="_blank">' . esc_html__( 'documentation', 'wp-mcp-ai-pro' ) . '</a>'
+					);
+					?>
+				</p>
+			</div>
 		<?php endif; ?>
 		<?php
 	}
@@ -299,7 +467,29 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="url" name="url" id="url" class="regular-text" value="<?php echo $is_edit ? esc_attr( $connection['url'] ) : ''; ?>" placeholder="https://example.com" required>
-						<p class="description"><?php esc_html_e( 'The full URL of the remote WordPress site (including https://).', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'The full URL of the remote site (including https://).', 'wp-mcp-ai-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr>
+					<th scope="row">
+						<label for="connection_type"><?php esc_html_e( 'Connection Type', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<?php
+						$connection_type = $is_edit && isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
+						?>
+						<select name="connection_type" id="connection_type" class="regular-text" required>
+							<option value="wordpress" <?php selected( $connection_type, 'wordpress' ); ?>>
+								<?php esc_html_e( 'WordPress / WooCommerce', 'wp-mcp-ai-pro' ); ?>
+							</option>
+							<option value="generic" <?php selected( $connection_type, 'generic' ); ?>>
+								<?php esc_html_e( 'Generic REST API', 'wp-mcp-ai-pro' ); ?>
+							</option>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Select "WordPress / WooCommerce" for WordPress sites, or "Generic REST API" for any other REST API (Stripe, GitHub, custom APIs, etc.).', 'wp-mcp-ai-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 
@@ -313,6 +503,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="application_password" <?php selected( $is_edit ? $connection['auth_type'] : '', 'application_password' ); ?>><?php esc_html_e( 'Application Password', 'wp-mcp-ai-pro' ); ?></option>
 							<option value="basic_auth" <?php selected( $is_edit ? $connection['auth_type'] : '', 'basic_auth' ); ?>><?php esc_html_e( 'Basic Auth', 'wp-mcp-ai-pro' ); ?></option>
 							<option value="jwt" <?php selected( $is_edit ? $connection['auth_type'] : '', 'jwt' ); ?>><?php esc_html_e( 'JWT Token', 'wp-mcp-ai-pro' ); ?></option>
+							<option value="woocommerce" <?php selected( $is_edit ? $connection['auth_type'] : '', 'woocommerce' ); ?>><?php esc_html_e( 'WooCommerce API Keys (ck_/cs_)', 'wp-mcp-ai-pro' ); ?></option>
 						</select>
 					</td>
 				</tr>
@@ -332,7 +523,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="password" name="password" id="password" class="regular-text" value="" autocomplete="new-password">
-						<p class="description"><?php esc_html_e( 'Leave blank to keep existing password.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing password.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 
@@ -342,11 +535,37 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<textarea name="token" id="token" class="large-text" rows="3" autocomplete="off"></textarea>
-						<p class="description"><?php esc_html_e( 'Leave blank to keep existing token.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing token.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 
-				<tr>
+				<tr id="consumer_key_field" style="display: none;">
+					<th scope="row">
+						<label for="consumer_key"><?php esc_html_e( 'Consumer Key', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="consumer_key" id="consumer_key" class="regular-text" value="" autocomplete="off" placeholder="ck_...">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer key.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr id="consumer_secret_field" style="display: none;">
+					<th scope="row">
+						<label for="consumer_secret"><?php esc_html_e( 'Consumer Secret', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="password" name="consumer_secret" id="consumer_secret" class="regular-text" value="" autocomplete="new-password" placeholder="cs_...">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="wordpress-only-field">
 					<th scope="row"><?php esc_html_e( 'WooCommerce', 'wp-mcp-ai-pro' ); ?></th>
 					<td>
 						<label>
@@ -357,6 +576,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<tr class="generic-only-field" style="display:none;">
+					<th scope="row">
+						<label for="test_endpoint"><?php esc_html_e( 'Test Endpoint', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="test_endpoint" id="test_endpoint" class="regular-text" value="<?php echo $is_edit && isset( $connection['test_endpoint'] ) ? esc_attr( $connection['test_endpoint'] ) : '/'; ?>" placeholder="/">
+						<p class="description">
+							<?php esc_html_e( 'API endpoint to use for connection testing (e.g., /api/health or /). Default: /', 'wp-mcp-ai-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Status', 'wp-mcp-ai-pro' ); ?></th>
 					<td>
@@ -364,6 +595,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<input type="checkbox" name="enabled" value="1" <?php checked( ! $is_edit || ! empty( $connection['enabled'] ) ); ?>>
 							<?php esc_html_e( 'Connection enabled', 'wp-mcp-ai-pro' ); ?>
 						</label>
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+						<label for="cache_ttl"><?php esc_html_e( 'Cache TTL (seconds)', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="number" name="cache_ttl" id="cache_ttl" class="small-text" value="<?php echo $is_edit && isset( $connection['cache_ttl'] ) ? esc_attr( $connection['cache_ttl'] ) : '300'; ?>" min="0" max="3600">
+						<p class="description">
+							<?php esc_html_e( 'How long to cache GET requests (in seconds). Default: 300 (5 minutes). Set to 0 to disable caching for this connection.', 'wp-mcp-ai-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 			</table>
@@ -381,23 +624,53 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var usernameField = document.getElementById('username_field');
 			var passwordField = document.getElementById('password_field');
 			var tokenField = document.getElementById('token_field');
+			var consumerKeyField = document.getElementById('consumer_key_field');
+			var consumerSecretField = document.getElementById('consumer_secret_field');
 
 			usernameField.style.display = 'none';
 			passwordField.style.display = 'none';
 			tokenField.style.display = 'none';
+			consumerKeyField.style.display = 'none';
+			consumerSecretField.style.display = 'none';
 
 			if (authType === 'application_password' || authType === 'basic_auth') {
 				usernameField.style.display = 'table-row';
 				passwordField.style.display = 'table-row';
 			} else if (authType === 'jwt') {
 				tokenField.style.display = 'table-row';
+			} else if (authType === 'woocommerce') {
+				consumerKeyField.style.display = 'table-row';
+				consumerSecretField.style.display = 'table-row';
 			}
+		}
+
+		function toggleConnectionTypeFields(connectionType) {
+			var wordpressFields = document.querySelectorAll('.wordpress-only-field');
+			var genericFields = document.querySelectorAll('.generic-only-field');
+
+			// Show/hide WordPress-specific fields
+			wordpressFields.forEach(function(field) {
+				field.style.display = connectionType === 'wordpress' ? 'table-row' : 'none';
+			});
+
+			// Show/hide Generic REST API fields
+			genericFields.forEach(function(field) {
+				field.style.display = connectionType === 'generic' ? 'table-row' : 'none';
+			});
 		}
 
 		// Initialize on page load
 		document.addEventListener('DOMContentLoaded', function() {
 			var authType = document.getElementById('auth_type').value;
+			var connectionType = document.getElementById('connection_type').value;
+			
 			toggleAuthFields(authType);
+			toggleConnectionTypeFields(connectionType);
+			
+			// Add event listener for connection type changes
+			document.getElementById('connection_type').addEventListener('change', function() {
+				toggleConnectionTypeFields(this.value);
+			});
 		});
 		</script>
 		<?php

@@ -547,6 +547,11 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-media.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudways-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudflare-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/mailjet-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php';
 }
 
 // Load assistant builder blocks for all versions (base and full).
@@ -583,6 +588,10 @@ if ( is_admin() ) {
 	// Load Auth0 Setup wizard (submenu of wp-mcp-ai-dashboard).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 	wp_mcp_ai_container()->get( 'admin.auth0_setup' );
+
+	// Initialize Admin Settings to register OAuth and admin-post handlers.
+	// This must be initialized to register Gmail, Meta, QuickBooks, Mailjet OAuth hooks.
+	wp_mcp_ai_container()->get( 'admin.settings' );
 
 	// Load test assistant page (submenu of AI Assistants CPT).
 	// Test pages are excluded from production builds. Load them conditionally.

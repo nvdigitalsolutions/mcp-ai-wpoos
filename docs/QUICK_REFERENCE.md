@@ -587,6 +587,11 @@ Settings → WP oOS → Chat Theme
 
 ## 🆘 Getting Help
 
+### Quick Start Resources
+- **[Use Cases & Quickstart Guides](getting-started/USE_CASES_AND_QUICKSTARTS.md) ⭐ NEW** - 7 major use cases with step-by-step guides
+- **[5-Minute Quick Start](getting-started/QUICK_START_5_MINUTES.md)** - Get started immediately
+- **[Documentation Index](DOCUMENTATION_INDEX.md)** - Complete documentation map
+
 ### Support Channels
 1. **Documentation** - Check [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)
 2. **Troubleshooting** - See [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md)

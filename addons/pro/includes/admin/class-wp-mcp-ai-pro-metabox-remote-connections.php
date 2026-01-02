@@ -86,14 +86,16 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 		<p><?php esc_html_e( 'Select which remote site connections this assistant can access:', 'wp-mcp-ai-pro' ); ?></p>
 
 		<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">
-			<?php foreach ( $connections as $connection ) : ?>
+			<?php foreach ( $connections as $connection_key => $connection ) : ?>
 				<?php
-				$is_enabled = in_array( $connection['id'], $enabled_connections, true );
+				// Use the array key as the connection ID (most reliable).
+				$connection_id = is_string( $connection_key ) ? $connection_key : ( isset( $connection['id'] ) ? $connection['id'] : '' );
+				$is_enabled = in_array( $connection_id, $enabled_connections, true );
 				$connection_status = ! empty( $connection['enabled'] ) ? 'enabled' : 'disabled';
 				?>
 				<div style="margin-bottom: 10px; padding: 8px; background: #f9f9f9; border-left: 3px solid <?php echo 'enabled' === $connection_status ? '#46b450' : '#dc3232'; ?>;">
 					<label style="display: block; margin-bottom: 5px;">
-						<input type="checkbox" name="wp_mcp_ai_pro_remote_connections[]" value="<?php echo esc_attr( $connection['id'] ); ?>" <?php checked( $is_enabled ); ?> <?php disabled( 'disabled' === $connection_status ); ?>>
+						<input type="checkbox" name="wp_mcp_ai_pro_remote_connections[]" value="<?php echo esc_attr( $connection_id ); ?>" <?php checked( $is_enabled ); ?> <?php disabled( 'disabled' === $connection_status ); ?>>
 						<strong><?php echo esc_html( $connection['name'] ); ?></strong>
 						<?php if ( 'disabled' === $connection_status ) : ?>
 							<span style="color: #dc3232; font-size: 11px;">(<?php esc_html_e( 'Disabled', 'wp-mcp-ai-pro' ); ?>)</span>
@@ -135,7 +137,7 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 			return;
 		}
 
-		if ( ! wp_verify_nonce( $_POST['wp_mcp_ai_pro_remote_connections_nonce'], 'wp_mcp_ai_pro_remote_connections' ) ) {
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_pro_remote_connections_nonce'] ) ), 'wp_mcp_ai_pro_remote_connections' ) ) {
 			return;
 		}
 
@@ -153,9 +155,7 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 		$enabled_connections = array();
 
 		if ( isset( $_POST['wp_mcp_ai_pro_remote_connections'] ) && is_array( $_POST['wp_mcp_ai_pro_remote_connections'] ) ) {
-			foreach ( $_POST['wp_mcp_ai_pro_remote_connections'] as $connection_id ) {
-				$enabled_connections[] = sanitize_key( $connection_id );
-			}
+			$enabled_connections = array_map( 'sanitize_key', wp_unslash( $_POST['wp_mcp_ai_pro_remote_connections'] ) );
 		}
 
 		update_post_meta( $post_id, self::META_KEY, $enabled_connections );
