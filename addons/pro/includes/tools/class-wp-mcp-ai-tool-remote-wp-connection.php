@@ -113,26 +113,6 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			),
 			'required'             => array( 'action' ),
 			'additionalProperties' => false,
-			// Add oneOf constraint to make connection_id required when action is not list_connections
-			'oneOf'                => array(
-				array(
-					'properties' => array(
-						'action' => array(
-							'const' => 'list_connections',
-						),
-					),
-				),
-				array(
-					'required' => array( 'action', 'connection_id' ),
-					'properties' => array(
-						'action' => array(
-							'not' => array(
-								'const' => 'list_connections',
-							),
-						),
-					),
-				),
-			),
 		);
 	}
 

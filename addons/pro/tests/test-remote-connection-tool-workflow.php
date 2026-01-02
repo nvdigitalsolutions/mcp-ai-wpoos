@@ -285,26 +285,27 @@ class Test_Remote_Connection_Tool_Workflow extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test schema validation: oneOf constraint.
+	 * Test schema validation: basic structure.
 	 *
-	 * Note: This tests the schema definition, actual validation
-	 * would happen at the OpenAI API level.
+	 * Note: The oneOf constraint was removed because OpenAI's function calling API
+	 * doesn't support oneOf/anyOf/allOf at the root level of the schema.
+	 * Conditional requirement is validated in the execute() method instead.
 	 */
-	public function test_schema_has_oneof_constraint() {
+	public function test_schema_basic_structure() {
 		$schema = $this->tool->get_parameters_schema();
 
-		$this->assertArrayHasKey( 'oneOf', $schema );
-		$this->assertIsArray( $schema['oneOf'] );
-		$this->assertCount( 2, $schema['oneOf'] );
+		// Should NOT have oneOf at root level (causes OpenAI validation errors).
+		$this->assertArrayNotHasKey( 'oneOf', $schema );
 
-		// First oneOf: list_connections without connection_id.
-		$this->assertArrayHasKey( 'properties', $schema['oneOf'][0] );
-		$this->assertArrayHasKey( 'action', $schema['oneOf'][0]['properties'] );
-		$this->assertEquals( 'list_connections', $schema['oneOf'][0]['properties']['action']['const'] );
+		// Should have proper basic structure.
+		$this->assertEquals( 'object', $schema['type'] );
+		$this->assertArrayHasKey( 'properties', $schema );
+		$this->assertArrayHasKey( 'required', $schema );
+		$this->assertContains( 'action', $schema['required'] );
 
-		// Second oneOf: other actions require connection_id.
-		$this->assertArrayHasKey( 'required', $schema['oneOf'][1] );
-		$this->assertContains( 'connection_id', $schema['oneOf'][1]['required'] );
+		// Action and connection_id properties should exist.
+		$this->assertArrayHasKey( 'action', $schema['properties'] );
+		$this->assertArrayHasKey( 'connection_id', $schema['properties'] );
 	}
 
 	/**
