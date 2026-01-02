@@ -31,12 +31,33 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_name() {
+		return __( 'Generic REST API', 'wp-mcp-ai-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Connect to any REST API with full support for custom endpoints, headers, and authentication. Includes caching, retry logic, health monitoring, and request deduplication.', 'wp-mcp-ai-pro' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return $this->get_schema();
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_definition() {
 		return array(
 			'name'                 => 'generic_rest_api',
-			'description'          => __( 'Connect to any REST API with full support for custom endpoints, headers, and authentication. Includes caching, retry logic, health monitoring, and request deduplication.', 'wp-mcp-ai-pro' ),
+			'description'          => $this->get_description(),
 			'required_capability'  => 'edit_posts',
-			'input_schema'         => $this->get_schema(),
+			'input_schema'         => $this->get_parameters_schema(),
 		);
 	}
 
