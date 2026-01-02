@@ -390,6 +390,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 			$configured_count = count( array_filter( $connectors ) );
 			$total_count      = count( $connectors );
 
+			// Get tool count from registry.
+			$available_tools = 0;
+			if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+				$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+				$registry->init();
+				$tools           = $registry->get_tools();
+				$available_tools = count( $tools );
+			}
+
 			?>
 			<div class="wp-mcp-ai-status-card">
 				<h3>
@@ -415,6 +424,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item" style="border-top: 1px solid #ddd; margin-top: 10px; padding-top: 15px;">
+					<span><?php esc_html_e( 'Available Tools', 'wp-mcp-ai' ); ?></span>
+					<strong>
+						<?php
+						printf(
+							/* translators: %d: number of available tools */
+							esc_html__( '%d tools loaded', 'wp-mcp-ai' ),
+							absint( $available_tools )
+						);
+						?>
+					</strong>
+				</div>
+				<div class="wp-mcp-ai-status-item">
 					<span><?php esc_html_e( 'Service Connectors', 'wp-mcp-ai' ); ?></span>
 					<strong>
 						<?php
