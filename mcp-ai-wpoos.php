@@ -550,6 +550,8 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudways-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudflare-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/mailjet-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php';
 }
 
 // Load assistant builder blocks for all versions (base and full).
