@@ -531,24 +531,146 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Render Gmail footer content.
 		 */
-		private function render_gmail_footer() {
-			?>
-			<tr>
-				<th scope="row"></th>
-				<td>
+	/**
+	 * Render Gmail footer content.
+	 */
+	private function render_gmail_footer() {
+		$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+		$gmail_connected = ! empty( $settings['gmail_refresh_token'] );
+		$gmail_email     = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
+		$has_credentials = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
+		$oauth_connect_url = wp_nonce_url(
+			admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
+			'wp_mcp_ai_gmail_oauth_start'
+		);
+		?>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Gmail Connection', 'wp-mcp-ai' ); ?></th>
+			<td>
+				<?php if ( $gmail_connected ) : ?>
+					<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #155724;">
+							<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+							<strong><?php esc_html_e( 'Connected to Gmail', 'wp-mcp-ai' ); ?></strong>
+							<?php if ( $gmail_email ) : ?>
+								<?php
+								printf(
+									/* translators: %s: Gmail email address */
+									esc_html__( 'as %s', 'wp-mcp-ai' ),
+									'<code>' . esc_html( $gmail_email ) . '</code>'
+								);
+								?>
+							<?php endif; ?>
+						</p>
+					</div>
+					<p>
+						<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
+							<?php esc_html_e( 'Reconnect Gmail Account', 'wp-mcp-ai' ); ?>
+						</a>
+					</p>
 					<p class="description">
-						<strong><?php esc_html_e( 'How to get Gmail OAuth credentials:', 'wp-mcp-ai' ); ?></strong>
+						<?php
+						echo wp_kses_post(
+							__(
+								'Your Gmail account is connected. You can now use Gmail integration tools to search and read emails.',
+								'wp-mcp-ai'
+							)
+						);
+						?>
+					</p>
+				<?php elseif ( $has_credentials ) : ?>
+					<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #856404;">
+							<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+							<strong><?php esc_html_e( 'Gmail Not Connected', 'wp-mcp-ai' ); ?></strong>
+						</p>
+					</div>
+					<p>
+						<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button button-primary">
+							<?php esc_html_e( 'Connect Gmail Account', 'wp-mcp-ai' ); ?>
+						</a>
+					</p>
+					<p class="description">
+						<?php
+						echo wp_kses_post(
+							__(
+								'Click the button above to authorize WP MCP AI to access your Gmail account. You will be redirected to Google to grant permissions.',
+								'wp-mcp-ai'
+							)
+						);
+						?>
+					</p>
+					<p class="description">
+						<strong><?php esc_html_e( 'Required Permissions:', 'wp-mcp-ai' ); ?></strong>
 					</p>
 					<ul style="list-style: disc; margin-left: 20px;">
-						<li><?php esc_html_e( 'Go to Google Cloud Console and create a new project', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Enable the Gmail API for your project', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Create OAuth 2.0 credentials (Web application)', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Add authorized redirect URI pointing to your WordPress site', 'wp-mcp-ai' ); ?></li>
+						<li><code>gmail.readonly</code>: <?php esc_html_e( 'Read access to Gmail messages and settings', 'wp-mcp-ai' ); ?></li>
 					</ul>
-				</td>
-			</tr>
-			<?php
-		}
+				<?php else : ?>
+					<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #721c24;">
+							<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+							<strong><?php esc_html_e( 'Gmail OAuth Credentials Required', 'wp-mcp-ai' ); ?></strong>
+						</p>
+					</div>
+					<p class="description">
+						<?php
+						echo wp_kses_post(
+							__(
+								'To connect your Gmail account, first configure your Gmail OAuth Client ID and Client Secret in the fields above, then save your settings.',
+								'wp-mcp-ai'
+							)
+						);
+						?>
+					</p>
+					<p class="description">
+						<strong><?php esc_html_e( 'Setup Instructions:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ol style="margin-left: 20px;">
+						<li>
+							<?php
+							printf(
+								/* translators: %s: URL to Google Cloud Console */
+								wp_kses_post( __( 'Go to <a href="%s" target="_blank">Google Cloud Console</a>', 'wp-mcp-ai' ) ),
+								esc_url( 'https://console.cloud.google.com/' )
+							);
+							?>
+						</li>
+						<li><?php esc_html_e( 'Create a new project or select an existing one', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Enable the Gmail API for your project', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Create OAuth 2.0 credentials (Web application type)', 'wp-mcp-ai' ); ?></li>
+						<li>
+							<?php
+							printf(
+								/* translators: %s: Callback URL */
+								esc_html__( 'Set Authorized redirect URI to: %s', 'wp-mcp-ai' ),
+								'<br><code>' . esc_html( admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_callback' ) ) . '</code>'
+							);
+							?>
+						</li>
+						<li><?php esc_html_e( 'Copy the Client ID and Client Secret to the fields above', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Save your settings', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Click the "Connect Gmail Account" button that will appear', 'wp-mcp-ai' ); ?></li>
+					</ol>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<p class="description">
+					<strong><?php esc_html_e( 'About Gmail Integration:', 'wp-mcp-ai' ); ?></strong>
+				</p>
+				<ul style="list-style: disc; margin-left: 20px;">
+					<li><?php esc_html_e( 'OAuth 2.0 credentials are obtained from Google Cloud Console', 'wp-mcp-ai' ); ?></li>
+					<li><?php esc_html_e( 'Access tokens are automatically refreshed when expired', 'wp-mcp-ai' ); ?></li>
+					<li><?php esc_html_e( 'Supports searching and reading Gmail messages', 'wp-mcp-ai' ); ?></li>
+					<li><?php esc_html_e( 'Requires gmail.readonly scope for read access', 'wp-mcp-ai' ); ?></li>
+				</ul>
+			</td>
+		</tr>
+		<?php
+	}
 
 		/**
 		 * Render Brave Search footer content.
