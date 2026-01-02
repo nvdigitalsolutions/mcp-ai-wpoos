@@ -1145,89 +1145,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Cloudflare footer content.
 		 */
 		private function render_cloudflare_footer() {
-			$settings             = WP_MCP_AI_Admin_Settings::get_settings();
-			$cloudflare_connected = ! empty( $settings['cloudflare_connected'] );
-			$zone_name            = isset( $settings['cloudflare_zone_name'] ) ? $settings['cloudflare_zone_name'] : '';
-			$has_token            = ! empty( $settings['cloudflare_api_token'] );
-			$test_url             = wp_nonce_url(
-				admin_url( 'admin-post.php?action=wp_mcp_ai_cloudflare_test_connection' ),
-				'wp_mcp_ai_cloudflare_test_connection'
-			);
-			$disconnect_url       = wp_nonce_url(
-				admin_url( 'admin-post.php?action=wp_mcp_ai_cloudflare_disconnect' ),
-				'wp_mcp_ai_cloudflare_disconnect'
-			);
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Cloudflare Connection', 'wp-mcp-ai' ); ?></th>
 				<td>
-					<?php if ( $cloudflare_connected ) : ?>
-						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
-							<p style="margin: 0; color: #155724;">
-								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
-								<strong><?php esc_html_e( 'Connected to Cloudflare', 'wp-mcp-ai' ); ?></strong>
-								<?php if ( $zone_name ) : ?>
-									<?php
-									printf(
-										/* translators: %s: Zone name */
-										esc_html__( '(Zone: %s)', 'wp-mcp-ai' ),
-										'<code>' . esc_html( $zone_name ) . '</code>'
-									);
-									?>
-								<?php endif; ?>
-							</p>
-						</div>
-						<p>
-							<a href="<?php echo esc_url( $test_url ); ?>" class="button">
-								<?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?>
-							</a>
-							<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
-								<?php esc_html_e( 'Disconnect', 'wp-mcp-ai' ); ?>
-							</a>
-						</p>
-						<p class="description">
-							<?php
-							echo wp_kses_post(
-								__(
-									'Your Cloudflare API token is valid. You can now use cache management and zone configuration tools.',
-									'wp-mcp-ai'
-								)
-							);
-							?>
-						</p>
-					<?php elseif ( $has_token ) : ?>
-						<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
-							<p style="margin: 0; color: #856404;">
-								<span class="dashicons dashicons-warning" style="color: #856404;"></span>
-								<strong><?php esc_html_e( 'Cloudflare Not Connected', 'wp-mcp-ai' ); ?></strong>
-							</p>
-						</div>
-						<p>
-							<a href="<?php echo esc_url( $test_url ); ?>" class="button button-primary">
-								<?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?>
-							</a>
-						</p>
-						<p class="description">
-							<?php
-							echo wp_kses_post(
-								__(
-									'Click the button above to validate your API token and zone ID. This will verify your credentials are working correctly.',
-									'wp-mcp-ai'
-								)
-							);
-							?>
-						</p>
-					<?php else : ?>
-						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
-							<p style="margin: 0; color: #721c24;">
-								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
-								<strong><?php esc_html_e( 'Cloudflare API Token Required', 'wp-mcp-ai' ); ?></strong>
-							</p>
-						</div>
-						<p class="description">
-							<?php esc_html_e( 'Enter your Cloudflare API token in the field above, then save settings. After that, you can test the connection using the button that will appear here.', 'wp-mcp-ai' ); ?>
-						</p>
-					<?php endif; ?>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-cloudflare-connection" class="button button-secondary">
+							<?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?>
+						</button>
+						<span id="wp-mcp-ai-cloudflare-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<div id="wp-mcp-ai-cloudflare-zone-info" style="margin-top: 10px;"></div>
+					<p class="description">
+						<?php esc_html_e( 'Enter your Cloudflare API token and Zone ID in the fields above, then click "Test Connection" to verify they work. You can test before saving.', 'wp-mcp-ai' ); ?>
+					</p>
 				</td>
 			</tr>
 			<tr>
