@@ -316,6 +316,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$args['headers']['Content-Type'] = 'application/json';
 		}
 
+		// Check cache for GET requests only (read-only operations).
+		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			$cache_key     = self::get_request_cache_key( $connection['id'], $endpoint );
+			$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
+
+			if ( false !== $cached_result && is_array( $cached_result ) ) {
+				return $cached_result;
+			}
+		}
+
 		$response = wp_remote_request( $url, $args );
 
 		if ( is_wp_error( $response ) ) {
@@ -355,6 +365,23 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				'wp_mcp_ai_pro_json_error',
 				__( 'Invalid JSON response from remote site.', 'wp-mcp-ai-pro' )
 			);
+		}
+
+		// Cache successful GET requests.
+		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			$cache_ttl = 5 * MINUTE_IN_SECONDS;
+
+			/**
+			 * Filter the cache TTL for remote site requests.
+			 *
+			 * @param int    $cache_ttl     Cache time-to-live in seconds (default: 300).
+			 * @param string $connection_id Connection ID.
+			 * @param string $endpoint      API endpoint.
+			 */
+			$cache_ttl = apply_filters( 'wp_mcp_ai_pro_remote_request_cache_ttl', $cache_ttl, $connection['id'], $endpoint );
+
+			$cache_key = self::get_request_cache_key( $connection['id'], $endpoint );
+			WP_MCP_AI_Cache_Helper::set( $cache_key, $decoded, $cache_ttl );
 		}
 
 		return $decoded;
@@ -589,5 +616,32 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		return $decrypted;
+	}
+
+	/**
+	 * Generate cache key for remote site requests.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @param string $endpoint      API endpoint with query parameters.
+	 * @return string Cache key.
+	 */
+	protected static function get_request_cache_key( $connection_id, $endpoint ) {
+		return 'remote_request_' . md5( $connection_id . '_' . $endpoint );
+	}
+
+	/**
+	 * Invalidate cache for a specific connection.
+	 *
+	 * Useful when connection settings change or when fresh data is needed.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 * @return int Number of cache entries cleared.
+	 */
+	public static function invalidate_connection_cache( $connection_id ) {
+		return WP_MCP_AI_Cache_Helper::delete_pattern( 'remote_request_' . md5( $connection_id . '_' ) . '%' );
 	}
 }

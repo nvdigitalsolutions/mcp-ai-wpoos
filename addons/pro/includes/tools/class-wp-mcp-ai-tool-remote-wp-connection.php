@@ -805,6 +805,11 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'read-only',            // Only reads data, does not modify state.
 			'external-api',         // Makes external API calls.
 			'requires-capability',  // Requires 'edit_posts' capability.
+			'cacheable',            // Results can be cached.
+			'network-dependent',    // Requires internet connectivity.
+			'may-timeout',          // External API calls may timeout.
+			'large-response',       // May return large data sets.
+			'paginated',            // Supports pagination.
 		);
 	}
 }
