@@ -191,6 +191,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder' => 'My Site',
 					'disabled'    => ! $is_pro_active,
 				),
+				'mailjet_client_id'                 => array(
+					'type'        => 'text',
+					'label'       => __( 'Mailjet OAuth Client ID', 'wp-mcp-ai' ),
+					'description' => __( 'OAuth 2.0 Client ID from Mailjet developer portal for 1-click connection.', 'wp-mcp-ai' ) . $pro_notice,
+					'placeholder' => '',
+					'disabled'    => ! $is_pro_active,
+				),
+				'mailjet_client_secret'             => array(
+					'type'         => 'password',
+					'label'        => __( 'Mailjet OAuth Client Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from Mailjet developer portal for 1-click connection.', 'wp-mcp-ai' ) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
 
 				// remove.bg API.
 				'removebg_api_key'                  => array(
@@ -381,7 +396,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'mailjet',
 					'label'  => $is_pro_active ? __( 'Mailjet', 'wp-mcp-ai' ) : __( 'Mailjet (Pro)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-email-alt',
-					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name' ),
+					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_client_id', 'mailjet_client_secret' ),
 					'pro'    => true,
 				),
 				'quickbooks'       => array(
@@ -500,6 +515,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					break;
 				case 'quickbooks':
 					$this->render_quickbooks_footer();
+					break;
+				case 'cloudways':
+					$this->render_cloudways_footer();
+					break;
+				case 'cloudflare':
+					$this->render_cloudflare_footer();
+					break;
+				case 'mailjet':
+					$this->render_mailjet_footer();
 					break;
 			}
 		}
@@ -693,7 +717,91 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render QuickBooks footer content.
 		 */
 		private function render_quickbooks_footer() {
+			$settings             = WP_MCP_AI_Admin_Settings::get_settings();
+			$quickbooks_connected = ! empty( $settings['quickbooks_connected'] );
+			$company_id           = isset( $settings['quickbooks_company_id'] ) ? $settings['quickbooks_company_id'] : '';
+			$has_credentials      = ! empty( $settings['quickbooks_client_id'] ) && ! empty( $settings['quickbooks_client_secret'] );
+			$oauth_connect_url    = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_quickbooks_oauth_start' ),
+				'wp_mcp_ai_quickbooks_oauth_start'
+			);
+			$disconnect_url       = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_quickbooks_disconnect' ),
+				'wp_mcp_ai_quickbooks_disconnect'
+			);
 			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'QuickBooks Connection', 'wp-mcp-ai' ); ?></th>
+				<td>
+					<?php if ( $quickbooks_connected ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'Connected to QuickBooks', 'wp-mcp-ai' ); ?></strong>
+								<?php if ( $company_id ) : ?>
+									<?php
+									printf(
+										/* translators: %s: Company ID */
+										esc_html__( '(Company: %s)', 'wp-mcp-ai' ),
+										'<code>' . esc_html( $company_id ) . '</code>'
+									);
+									?>
+								<?php endif; ?>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
+								<?php esc_html_e( 'Reconnect QuickBooks Account', 'wp-mcp-ai' ); ?>
+							</a>
+							<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
+								<?php esc_html_e( 'Disconnect', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Your QuickBooks account is connected. You can now use financial reporting and accounting tools.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php elseif ( $has_credentials ) : ?>
+						<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #856404;">
+								<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+								<strong><?php esc_html_e( 'QuickBooks Not Connected', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button button-primary">
+								<?php esc_html_e( 'Connect QuickBooks Account', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Click the button above to authorize WP MCP AI to access your QuickBooks account. You will be redirected to Intuit to grant permissions and select your company.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #721c24;">
+								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+								<strong><?php esc_html_e( 'QuickBooks OAuth Credentials Required', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php esc_html_e( 'Enter your QuickBooks OAuth Client ID and Client Secret in the fields above, then save settings. After that, you can connect using the button that will appear here.', 'wp-mcp-ai' ); ?>
+						</p>
+					<?php endif; ?>
+				</td>
+			</tr>
 			<tr>
 				<th scope="row"></th>
 				<td>
@@ -703,7 +811,313 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<ul style="list-style: disc; margin-left: 20px;">
 						<li><?php esc_html_e( 'Company ID is also known as Realm ID in QuickBooks', 'wp-mcp-ai' ); ?></li>
 						<li><?php esc_html_e( 'OAuth credentials are obtained from developer.intuit.com', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'API Key is used for authentication with reports endpoint', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Access tokens are automatically refreshed when expired', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Supports accounting, invoicing, and financial reporting', 'wp-mcp-ai' ); ?></li>
+					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Mailjet footer content.
+		 */
+		private function render_mailjet_footer() {
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$mailjet_connected = ! empty( $settings['mailjet_connected'] );
+			$has_credentials   = ! empty( $settings['mailjet_client_id'] ) && ! empty( $settings['mailjet_client_secret'] );
+			$oauth_connect_url = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_mailjet_oauth_start' ),
+				'wp_mcp_ai_mailjet_oauth_start'
+			);
+			$disconnect_url    = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_mailjet_disconnect' ),
+				'wp_mcp_ai_mailjet_disconnect'
+			);
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Mailjet Connection', 'wp-mcp-ai' ); ?></th>
+				<td>
+					<?php if ( $mailjet_connected ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'Connected to Mailjet', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
+								<?php esc_html_e( 'Reconnect Mailjet Account', 'wp-mcp-ai' ); ?>
+							</a>
+							<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
+								<?php esc_html_e( 'Disconnect', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Your Mailjet account is connected. You can now use email sending and campaign management tools.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php elseif ( $has_credentials ) : ?>
+						<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #856404;">
+								<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+								<strong><?php esc_html_e( 'Mailjet Not Connected', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button button-primary">
+								<?php esc_html_e( 'Connect Mailjet Account', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Click the button above to authorize WP MCP AI to access your Mailjet account. You will be redirected to Mailjet to grant permissions.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #721c24;">
+								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+								<strong><?php esc_html_e( 'Mailjet OAuth Credentials Required', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php esc_html_e( 'Enter your Mailjet OAuth Client ID and Client Secret in the fields above, then save settings. After that, you can connect using the button that will appear here.', 'wp-mcp-ai' ); ?>
+						</p>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'Mailjet Integration:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Create an OAuth app in your Mailjet developer portal', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Access tokens are automatically refreshed when expired', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Supports transactional emails, campaigns, and contact management', 'wp-mcp-ai' ); ?></li>
+					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Cloudways footer content.
+		 */
+		private function render_cloudways_footer() {
+			$settings           = WP_MCP_AI_Admin_Settings::get_settings();
+			$cloudways_connected = ! empty( $settings['cloudways_connected'] );
+			$account_name       = isset( $settings['cloudways_account_name'] ) ? $settings['cloudways_account_name'] : '';
+			$has_credentials    = ! empty( $settings['cloudways_email'] ) && ! empty( $settings['cloudways_api_key'] );
+			$connect_url        = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_cloudways_connect' ),
+				'wp_mcp_ai_cloudways_connect'
+			);
+			$disconnect_url     = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_cloudways_disconnect' ),
+				'wp_mcp_ai_cloudways_disconnect'
+			);
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Cloudways Connection', 'wp-mcp-ai' ); ?></th>
+				<td>
+					<?php if ( $cloudways_connected ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'Connected to Cloudways', 'wp-mcp-ai' ); ?></strong>
+								<?php if ( $account_name ) : ?>
+									<?php
+									printf(
+										/* translators: %s: Account info */
+										esc_html__( '(%s)', 'wp-mcp-ai' ),
+										'<code>' . esc_html( $account_name ) . '</code>'
+									);
+									?>
+								<?php endif; ?>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $connect_url ); ?>" class="button">
+								<?php esc_html_e( 'Refresh Connection', 'wp-mcp-ai' ); ?>
+							</a>
+							<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
+								<?php esc_html_e( 'Disconnect', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Your Cloudways account is connected. Access tokens are automatically managed. You can now use server management and application deployment tools.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php elseif ( $has_credentials ) : ?>
+						<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #856404;">
+								<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+								<strong><?php esc_html_e( 'Cloudways Not Connected', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $connect_url ); ?>" class="button button-primary">
+								<?php esc_html_e( 'Connect Cloudways Account', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Click the button above to validate your credentials and connect to Cloudways. The connection will exchange your API key for an access token.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #721c24;">
+								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+								<strong><?php esc_html_e( 'Cloudways API Credentials Required', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php esc_html_e( 'Enter your Cloudways email and API key in the fields above, then save settings. After that, you can connect using the button that will appear here.', 'wp-mcp-ai' ); ?>
+						</p>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'Cloudways Integration:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Get your API key from your Cloudways account settings', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Server ID and App ID can be found in your Cloudways dashboard', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'OAuth tokens are automatically refreshed when expired', 'wp-mcp-ai' ); ?></li>
+					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Cloudflare footer content.
+		 */
+		private function render_cloudflare_footer() {
+			$settings             = WP_MCP_AI_Admin_Settings::get_settings();
+			$cloudflare_connected = ! empty( $settings['cloudflare_connected'] );
+			$zone_name            = isset( $settings['cloudflare_zone_name'] ) ? $settings['cloudflare_zone_name'] : '';
+			$has_token            = ! empty( $settings['cloudflare_api_token'] );
+			$test_url             = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_cloudflare_test_connection' ),
+				'wp_mcp_ai_cloudflare_test_connection'
+			);
+			$disconnect_url       = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_cloudflare_disconnect' ),
+				'wp_mcp_ai_cloudflare_disconnect'
+			);
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Cloudflare Connection', 'wp-mcp-ai' ); ?></th>
+				<td>
+					<?php if ( $cloudflare_connected ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'Connected to Cloudflare', 'wp-mcp-ai' ); ?></strong>
+								<?php if ( $zone_name ) : ?>
+									<?php
+									printf(
+										/* translators: %s: Zone name */
+										esc_html__( '(Zone: %s)', 'wp-mcp-ai' ),
+										'<code>' . esc_html( $zone_name ) . '</code>'
+									);
+									?>
+								<?php endif; ?>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $test_url ); ?>" class="button">
+								<?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?>
+							</a>
+							<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
+								<?php esc_html_e( 'Disconnect', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Your Cloudflare API token is valid. You can now use cache management and zone configuration tools.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php elseif ( $has_token ) : ?>
+						<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #856404;">
+								<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+								<strong><?php esc_html_e( 'Cloudflare Not Connected', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p>
+							<a href="<?php echo esc_url( $test_url ); ?>" class="button button-primary">
+								<?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Click the button above to validate your API token and zone ID. This will verify your credentials are working correctly.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #721c24;">
+								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+								<strong><?php esc_html_e( 'Cloudflare API Token Required', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php esc_html_e( 'Enter your Cloudflare API token in the field above, then save settings. After that, you can test the connection using the button that will appear here.', 'wp-mcp-ai' ); ?>
+						</p>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'Cloudflare Integration:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Create an API token in your Cloudflare dashboard under "My Profile" > "API Tokens"', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Token needs "Zone.Cache Purge" permission for cache management', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Find your Zone ID in the Overview page of your domain', 'wp-mcp-ai' ); ?></li>
 					</ul>
 				</td>
 			</tr>
