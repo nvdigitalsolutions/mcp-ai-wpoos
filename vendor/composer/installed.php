@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-image-tools-svg-support',
-        'version' => 'dev-copilot/enhance-image-tools-svg-support',
-        'reference' => '05b7c9fbb9bd8d18ceefd43410ba87311b1eaab5',
+        'pretty_version' => 'dev-copilot/fix-remote-connection-edit-delete',
+        'version' => 'dev-copilot/fix-remote-connection-edit-delete',
+        'reference' => 'd1273c8e1969c1ac6f03985688971d6ec734f282',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-image-tools-svg-support',
-            'version' => 'dev-copilot/enhance-image-tools-svg-support',
-            'reference' => '05b7c9fbb9bd8d18ceefd43410ba87311b1eaab5',
+            'pretty_version' => 'dev-copilot/fix-remote-connection-edit-delete',
+            'version' => 'dev-copilot/fix-remote-connection-edit-delete',
+            'reference' => 'd1273c8e1969c1ac6f03985688971d6ec734f282',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

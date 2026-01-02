@@ -48,6 +48,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return array();
 		}
 
+		// Migrate connection IDs to lowercase if needed.
+		$connections = self::migrate_connection_ids( $connections );
+
 		return $connections;
 	}
 
@@ -493,7 +496,44 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return string Connection ID.
 	 */
 	protected static function generate_connection_id() {
-		return 'conn_' . wp_generate_password( 12, false );
+		return 'conn_' . strtolower( wp_generate_password( 12, false ) );
+	}
+
+	/**
+	 * Migrate connection IDs to lowercase format.
+	 *
+	 * This method normalizes existing connection IDs that may have mixed case
+	 * to lowercase format for consistency with sanitize_key().
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connections Array of connections.
+	 * @return array Migrated connections array.
+	 */
+	protected static function migrate_connection_ids( $connections ) {
+		$needs_migration = false;
+		$migrated = array();
+
+		foreach ( $connections as $key => $connection ) {
+			$lowercase_key = strtolower( $key );
+			
+			// Check if key needs migration.
+			if ( $key !== $lowercase_key ) {
+				$needs_migration = true;
+				// Update the id field to match the new lowercase key.
+				$connection['id'] = $lowercase_key;
+				$migrated[ $lowercase_key ] = $connection;
+			} else {
+				$migrated[ $key ] = $connection;
+			}
+		}
+
+		// Save migrated data if changes were made.
+		if ( $needs_migration ) {
+			update_option( self::OPTION_NAME, $migrated );
+		}
+
+		return $migrated;
 	}
 
 	/**
