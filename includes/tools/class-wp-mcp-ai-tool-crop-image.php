@@ -78,7 +78,8 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 						'enum'        => array( 'center', 'top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right' ),
 						'default'     => 'center',
 					),
-				)
+				),
+				$this->get_output_format_parameter_schema()
 			),
 			'required'             => array(),
 			'additionalProperties' => false,
@@ -171,8 +172,16 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 			return $result;
 		}
 
-		// Save as new attachment.
-		$storage = $this->save_as_attachment( $image_editor, $arguments, $user_id, 'cropped' );
+		// Check if SVG output is requested.
+		$output_format = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'default';
+
+		if ( 'svg' === $output_format ) {
+			// Convert the cropped image to SVG.
+			$storage = $this->convert_to_svg( $image_editor, $arguments, $user_id );
+		} else {
+			// Save as new raster attachment.
+			$storage = $this->save_as_attachment( $image_editor, $arguments, $user_id, 'cropped' );
+		}
 
 		// Clean up temp file if exists.
 		if ( isset( $image_editor->temp_file ) ) {
@@ -202,13 +211,30 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 			'crop_width'      => $crop_params['width'],
 			'crop_height'     => $crop_params['height'],
 			'operation'       => 'crop',
+			'output_format'   => $output_format,
 			'text'            => sprintf(
-				/* translators: 1: crop dimensions, 2: original dimensions */
-				__( 'Successfully cropped image to %1$s from %2$s.', 'wp-mcp-ai' ),
+				/* translators: 1: crop dimensions, 2: original dimensions, 3: output format */
+				__( 'Successfully cropped image to %1$s from %2$s%3$s.', 'wp-mcp-ai' ),
 				$new_size['width'] . 'x' . $new_size['height'],
-				$original_size['width'] . 'x' . $original_size['height']
+				$original_size['width'] . 'x' . $original_size['height'],
+				'svg' === $output_format ? ' and converted to SVG' : ''
 			),
 		);
+
+		// Add vectorization metadata if SVG output was used.
+		if ( 'svg' === $output_format && isset( $storage['vectorized'] ) ) {
+			$result_data['vectorized']  = true;
+			$result_data['svg_size']    = isset( $storage['svg_size'] ) ? $storage['svg_size'] : $storage['bytes'];
+			$result_data['source_size'] = isset( $storage['source_size'] ) ? $storage['source_size'] : 0;
+			$result_data['duration_ms'] = isset( $storage['duration_ms'] ) ? $storage['duration_ms'] : 0;
+		}
+
+		// Add image_url structure for agentic workflow and chat client display.
+		if ( ! empty( $storage['url'] ) ) {
+			$result_data['image_url'] = array(
+				'url' => $storage['url'],
+			);
+		}
 
 		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included
 		// in the default response to prevent bloating tool results sent to chat clients and LLMs.

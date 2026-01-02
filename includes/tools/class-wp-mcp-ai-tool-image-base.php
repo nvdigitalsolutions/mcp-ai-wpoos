@@ -16,12 +16,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 
 /**
  * Abstract base class for image manipulation tools.
  */
 abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_NodeJS_Subprocess;
 
 	/**
 	 * Get allowed image MIME types.
@@ -838,6 +840,215 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 				'type'        => 'string',
 				'description' => __( 'Optional base file name for the saved image attachment.', 'wp-mcp-ai' ),
 			),
+		);
+	}
+
+	/**
+	 * Get output format parameter schema.
+	 *
+	 * @return array
+	 */
+	protected function get_output_format_parameter_schema() {
+		return array(
+			'output_format' => array(
+				'type'        => 'string',
+				'description' => __( 'Output format for the processed image. Use "svg" to vectorize the result. Default is the same as source format.', 'wp-mcp-ai' ),
+				'enum'        => array( 'default', 'svg' ),
+				'default'     => 'default',
+			),
+		);
+	}
+
+	/**
+	 * Convert a raster image to SVG format using vectorization.
+	 *
+	 * @param WP_Image_Editor $image_editor Image editor instance with processed raster image.
+	 * @param array           $arguments    Tool arguments for naming/metadata.
+	 * @param int             $user_id      User ID for attachment author.
+	 * @return array|WP_Error Attachment data with SVG or error.
+	 */
+	protected function convert_to_svg( WP_Image_Editor $image_editor, array $arguments, $user_id ) {
+		// Check if Node.js is available.
+		if ( ! $this->is_nodejs_available() ) {
+			return new WP_Error(
+				'wp_mcp_ai_nodejs_required',
+				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'wp-mcp-ai' )
+			);
+		}
+
+		// Save the processed raster image to a temporary file.
+		$temp_input = wp_tempnam( 'svg-convert-input-' );
+		if ( ! $temp_input ) {
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary file for SVG conversion.', 'wp-mcp-ai' ) );
+		}
+
+		$result = $image_editor->save( $temp_input );
+		if ( is_wp_error( $result ) ) {
+			wp_delete_file( $temp_input );
+			return $result;
+		}
+
+		// Use the actual saved path from the result array.
+		$saved_path = isset( $result['path'] ) ? $result['path'] : $temp_input;
+
+		// Verify the file was saved.
+		if ( ! file_exists( $saved_path ) ) {
+			wp_delete_file( $temp_input );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to save temporary file for SVG conversion.', 'wp-mcp-ai' ) );
+		}
+
+		// Prepare SVG output file.
+		$temp_output = wp_tempnam( 'svg-convert-output-' );
+		if ( ! $temp_output ) {
+			wp_delete_file( $saved_path );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary SVG output file.', 'wp-mcp-ai' ) );
+		}
+
+		// Add .svg extension.
+		$temp_output_svg = $temp_output . '.svg';
+		rename( $temp_output, $temp_output_svg );
+		$temp_output = $temp_output_svg;
+
+		// Prepare vectorization options - use sensible defaults for image tool output.
+		$vectorization_options = array(
+			'colorMode'      => 'color',
+			'colorPrecision' => isset( $arguments['color_precision'] ) ? absint( $arguments['color_precision'] ) : 6,
+			'filterSpeckle'  => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
+			'mode'           => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
+			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
+		);
+
+		// Execute vectorization script.
+		$script_path = WP_MCP_AI_PATH . 'bin/vectorize-image.js';
+		$script_args = array(
+			$saved_path,
+			$temp_output,
+			wp_json_encode( $vectorization_options ),
+		);
+
+		$vectorize_result = $this->execute_nodejs_script(
+			$script_path,
+			$script_args,
+			array(
+				'timeout'    => 60,
+				'parse_json' => true,
+			)
+		);
+
+		// Cleanup temporary input file.
+		wp_delete_file( $saved_path );
+
+		if ( is_wp_error( $vectorize_result ) ) {
+			wp_delete_file( $temp_output );
+			return $vectorize_result;
+		}
+
+		if ( ! isset( $vectorize_result['success'] ) || ! $vectorize_result['success'] ) {
+			wp_delete_file( $temp_output );
+			return new WP_Error(
+				'wp_mcp_ai_vectorization_failed',
+				isset( $vectorize_result['error'] ) ? $vectorize_result['error'] : __( 'SVG vectorization failed.', 'wp-mcp-ai' )
+			);
+		}
+
+		// Read SVG file.
+		$svg_data = file_get_contents( $temp_output );
+		if ( false === $svg_data || '' === $svg_data ) {
+			wp_delete_file( $temp_output );
+			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'wp-mcp-ai' ) );
+		}
+
+		// Cleanup temporary output file.
+		wp_delete_file( $temp_output );
+
+		// Save as WordPress attachment.
+		$storage = $this->save_svg_as_attachment( $svg_data, $arguments, $user_id );
+		if ( is_wp_error( $storage ) ) {
+			return $storage;
+		}
+
+		// Add vectorization metadata to storage result.
+		$storage['vectorized']  = true;
+		$storage['svg_size']    = isset( $vectorize_result['output_size'] ) ? $vectorize_result['output_size'] : $storage['bytes'];
+		$storage['source_size'] = isset( $vectorize_result['input_size'] ) ? $vectorize_result['input_size'] : 0;
+		$storage['duration_ms'] = isset( $vectorize_result['duration_ms'] ) ? $vectorize_result['duration_ms'] : 0;
+
+		return $storage;
+	}
+
+	/**
+	 * Save SVG data as WordPress attachment.
+	 *
+	 * @param string $svg_data  SVG file content.
+	 * @param array  $arguments Original tool arguments.
+	 * @param int    $user_id   User ID.
+	 * @return array|WP_Error Attachment data or WP_Error on failure.
+	 */
+	protected function save_svg_as_attachment( $svg_data, array $arguments, $user_id ) {
+		// Generate file name.
+		$base_name = isset( $arguments['file_name'] ) ? sanitize_file_name( $arguments['file_name'] ) : 'image';
+		if ( empty( $base_name ) ) {
+			$base_name = 'image';
+		}
+
+		// Remove extension if present.
+		$base_name = preg_replace( '/\.(png|jpg|jpeg|gif|webp)$/i', '', $base_name );
+		$file_name = $base_name . '-svg-' . gmdate( 'Ymd-His' ) . '.svg';
+
+		// Upload SVG file.
+		if ( ! function_exists( 'wp_upload_bits' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$upload = wp_upload_bits( $file_name, null, $svg_data );
+
+		if ( ! empty( $upload['error'] ) ) {
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'wp-mcp-ai' ), array( 'error' => $upload['error'] ) );
+		}
+
+		$file_path = isset( $upload['file'] ) ? $upload['file'] : '';
+
+		if ( '' === $file_path || ! file_exists( $file_path ) ) {
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to write SVG file to disk.', 'wp-mcp-ai' ) );
+		}
+
+		// Create attachment.
+		$attachment = array(
+			'post_mime_type' => 'image/svg+xml',
+			'post_title'     => sanitize_text_field( __( 'SVG Image', 'wp-mcp-ai' ) ),
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
+
+		if ( $user_id ) {
+			$attachment['post_author'] = $user_id;
+		}
+
+		$attachment_id = wp_insert_attachment( $attachment, $file_path );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_delete_file( $file_path );
+			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'wp-mcp-ai' ), array( 'error' => $attachment_id ) );
+		}
+
+		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
+
+		// Get attachment URL.
+		$attachment_url = wp_get_attachment_url( $attachment_id );
+		if ( false === $attachment_url ) {
+			// Use a fallback URL if possible.
+			$upload_dir     = wp_upload_dir();
+			$attachment_url = str_replace( $upload_dir['basedir'], $upload_dir['baseurl'], $file_path );
+		}
+
+		return array(
+			'attachment_id' => (int) $attachment_id,
+			'file'          => $file_path,
+			'file_name'     => wp_basename( $file_path ),
+			'url'           => $attachment_url,
+			'mime_type'     => 'image/svg+xml',
+			'bytes'         => $bytes ? (int) $bytes : 0,
+			'title'         => get_the_title( $attachment_id ),
 		);
 	}
 }
