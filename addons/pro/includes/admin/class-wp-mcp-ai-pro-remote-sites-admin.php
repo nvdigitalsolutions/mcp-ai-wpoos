@@ -137,6 +137,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'consumer_secret' => isset( $_POST['consumer_secret'] ) ? $_POST['consumer_secret'] : '',
 				'has_woocommerce' => ! empty( $_POST['has_woocommerce'] ),
 				'enabled'         => ! empty( $_POST['enabled'] ),
+				'cache_ttl'       => isset( $_POST['cache_ttl'] ) ? absint( $_POST['cache_ttl'] ) : 300,
 			);
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -250,6 +251,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<th><?php esc_html_e( 'URL', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'Auth Type', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'WooCommerce', 'wp-mcp-ai-pro' ); ?></th>
+						<th><?php esc_html_e( 'Health', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'Status', 'wp-mcp-ai-pro' ); ?></th>
 						<th><?php esc_html_e( 'Actions', 'wp-mcp-ai-pro' ); ?></th>
 					</tr>
@@ -260,12 +262,37 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						// Use the array key as the connection ID (most reliable).
 						// Fall back to $connection['id'] if key is numeric (shouldn't happen, but defensive).
 						$connection_id = is_string( $connection_key ) ? $connection_key : ( isset( $connection['id'] ) ? $connection['id'] : '' );
+						$health_metrics = WP_MCP_AI_Pro_Remote_Site_Manager::get_health_metrics( $connection_id );
 						?>
 						<tr>
 							<td><strong><?php echo esc_html( $connection['name'] ); ?></strong></td>
 							<td><?php echo esc_html( $connection['url'] ); ?></td>
 							<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $connection['auth_type'] ) ) ); ?></td>
 							<td><?php echo ! empty( $connection['has_woocommerce'] ) ? '✓' : '—'; ?></td>
+							<td>
+								<?php
+								$status_colors = array(
+									'healthy' => '#46b450',
+									'degraded' => '#ffb900',
+									'unhealthy' => '#dc3232',
+									'unknown' => '#8c8f94',
+								);
+								$status_color = isset( $status_colors[ $health_metrics['status'] ] ) ? $status_colors[ $health_metrics['status'] ] : $status_colors['unknown'];
+								?>
+								<span style="color: <?php echo esc_attr( $status_color ); ?>;">●</span>
+								<?php
+								if ( $health_metrics['request_count'] > 0 ) {
+									printf(
+										/* translators: 1: success rate, 2: request count */
+										esc_html__( '%1$s%% (%2$d reqs)', 'wp-mcp-ai-pro' ),
+										esc_html( $health_metrics['success_rate'] ),
+										absint( $health_metrics['request_count'] )
+									);
+								} else {
+									esc_html_e( 'No data', 'wp-mcp-ai-pro' );
+								}
+								?>
+							</td>
 							<td>
 								<?php if ( ! empty( $connection['enabled'] ) ) : ?>
 									<span style="color: green;">●</span> <?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?>
@@ -290,9 +317,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			</table>
 
 			<div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
-				<h3 style="margin-top: 0;"><?php esc_html_e( 'Performance Settings', 'wp-mcp-ai-pro' ); ?></h3>
+				<h3 style="margin-top: 0;"><?php esc_html_e( 'Performance & Reliability Features', 'wp-mcp-ai-pro' ); ?></h3>
 				<p style="margin-bottom: 15px;">
-					<?php esc_html_e( 'Remote site requests are cached and rate-limited to improve performance and reduce load on remote servers.', 'wp-mcp-ai-pro' ); ?>
+					<?php esc_html_e( 'Remote site requests include advanced features for performance, reliability, and monitoring.', 'wp-mcp-ai-pro' ); ?>
 				</p>
 				<table class="form-table" style="background: white; border: 1px solid #ddd;">
 					<tr>
@@ -303,14 +330,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
 							</p>
 							<p class="description">
-								<?php
-								printf(
-									/* translators: 1: cache TTL, 2: filter name */
-									esc_html__( 'GET requests are cached for %1$s to reduce redundant API calls. Customize via %2$s filter.', 'wp-mcp-ai-pro' ),
-									'<code>5 minutes</code>',
-									'<code>wp_mcp_ai_pro_remote_request_cache_ttl</code>'
-								);
-								?>
+								<?php esc_html_e( 'GET requests are cached to reduce redundant API calls. Default: 5 minutes. Configure per-connection in connection settings above.', 'wp-mcp-ai-pro' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -333,13 +353,61 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</p>
 						</td>
 					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Retry Logic', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Automatic retry with exponential backoff (3 attempts) for transient errors. Improves reliability.', 'wp-mcp-ai-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Request Deduplication', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Prevents duplicate simultaneous requests to the same endpoint. Reduces load on remote servers.', 'wp-mcp-ai-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Compression Support', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Requests accept gzip/deflate compression to reduce bandwidth and improve speed for large responses.', 'wp-mcp-ai-pro' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Health Monitoring', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php esc_html_e( 'Tracks success rates, response times, and connection health. View health status in the "Health" column above.', 'wp-mcp-ai-pro' ); ?>
+							</p>
+						</td>
+					</tr>
 				</table>
 				<p style="margin-top: 15px;">
 					<strong><?php esc_html_e( 'Developer Note:', 'wp-mcp-ai-pro' ); ?></strong>
 					<?php
 					printf(
 						/* translators: %s: documentation link */
-						esc_html__( 'Use filters to customize caching and rate limits. See %s for details.', 'wp-mcp-ai-pro' ),
+						esc_html__( 'Use filters to customize caching, rate limits, and retry behavior. See %s for details.', 'wp-mcp-ai-pro' ),
 						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/tools/remote-wp-connection.md' ) . '" target="_blank">' . esc_html__( 'documentation', 'wp-mcp-ai-pro' ) . '</a>'
 					);
 					?>
@@ -479,6 +547,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<input type="checkbox" name="enabled" value="1" <?php checked( ! $is_edit || ! empty( $connection['enabled'] ) ); ?>>
 							<?php esc_html_e( 'Connection enabled', 'wp-mcp-ai-pro' ); ?>
 						</label>
+					</td>
+				</tr>
+				
+				<tr>
+					<th scope="row">
+						<label for="cache_ttl"><?php esc_html_e( 'Cache TTL (seconds)', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="number" name="cache_ttl" id="cache_ttl" class="small-text" value="<?php echo $is_edit && isset( $connection['cache_ttl'] ) ? esc_attr( $connection['cache_ttl'] ) : '300'; ?>" min="0" max="3600">
+						<p class="description">
+							<?php esc_html_e( 'How long to cache GET requests (in seconds). Default: 300 (5 minutes). Set to 0 to disable caching for this connection.', 'wp-mcp-ai-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 			</table>

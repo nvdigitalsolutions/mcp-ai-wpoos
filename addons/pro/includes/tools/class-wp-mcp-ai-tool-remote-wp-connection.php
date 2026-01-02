@@ -879,6 +879,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'large-response',       // May return large data sets.
 			'paginated',            // Supports pagination.
 			'rate-limited',         // Subject to rate limiting (30 requests/min/user).
+			'supports-compression', // Supports gzip/deflate compression.
 		);
 	}
 }
