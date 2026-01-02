@@ -88,9 +88,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			$connection_id = sanitize_key( $_GET['connection_id'] );
-			WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
+			$deleted = WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
 
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&deleted=1' ) );
+			if ( $deleted ) {
+				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&deleted=1' ) );
+			} else {
+				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . urlencode( __( 'Connection not found or could not be deleted.', 'wp-mcp-ai-pro' ) ) ) );
+			}
 			exit;
 		}
 
@@ -158,6 +162,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		if ( $editing ) {
 			$connection_to_edit = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $editing );
+			
+			// If editing but connection not found, show error and list instead.
+			if ( null === $connection_to_edit ) {
+				$editing = '';
+				$_GET['error'] = __( 'Connection not found.', 'wp-mcp-ai-pro' );
+			}
 		}
 
 		?>
