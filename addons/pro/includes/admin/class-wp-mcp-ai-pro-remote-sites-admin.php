@@ -222,11 +222,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 */
 	protected function render_connections_list( $connections ) {
 		?>
-		<p>
+		<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&add=1' ) ); ?>" class="button button-primary">
 				<?php esc_html_e( 'Add New Connection', 'wp-mcp-ai-pro' ); ?>
 			</a>
-		</p>
+			<div>
+				<span class="dashicons dashicons-info-outline" style="color: #2271b1; vertical-align: middle;"></span>
+				<em style="color: #646970;">
+					<?php
+					printf(
+						/* translators: %s: cache duration */
+						esc_html__( 'Caching enabled: %s TTL', 'wp-mcp-ai-pro' ),
+						'<strong>5 minutes</strong>'
+					);
+					?>
+				</em>
+			</div>
+		</div>
 
 		<?php if ( empty( $connections ) ) : ?>
 			<p><?php esc_html_e( 'No remote site connections configured yet.', 'wp-mcp-ai-pro' ); ?></p>
@@ -276,6 +288,63 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+
+			<div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+				<h3 style="margin-top: 0;"><?php esc_html_e( 'Performance Settings', 'wp-mcp-ai-pro' ); ?></h3>
+				<p style="margin-bottom: 15px;">
+					<?php esc_html_e( 'Remote site requests are cached and rate-limited to improve performance and reduce load on remote servers.', 'wp-mcp-ai-pro' ); ?>
+				</p>
+				<table class="form-table" style="background: white; border: 1px solid #ddd;">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Request Caching', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: 1: cache TTL, 2: filter name */
+									esc_html__( 'GET requests are cached for %1$s to reduce redundant API calls. Customize via %2$s filter.', 'wp-mcp-ai-pro' ),
+									'<code>5 minutes</code>',
+									'<code>wp_mcp_ai_pro_remote_request_cache_ttl</code>'
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Rate Limiting', 'wp-mcp-ai-pro' ); ?></th>
+						<td>
+							<p>
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+							</p>
+							<p class="description">
+								<?php
+								printf(
+									/* translators: 1: rate limit, 2: filter name */
+									esc_html__( 'Limited to %1$s per user to prevent abuse. Customize via %2$s filter.', 'wp-mcp-ai-pro' ),
+									'<code>30 requests/minute</code>',
+									'<code>wp_mcp_ai_pro_remote_wp_rate_limit</code>'
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+				</table>
+				<p style="margin-top: 15px;">
+					<strong><?php esc_html_e( 'Developer Note:', 'wp-mcp-ai-pro' ); ?></strong>
+					<?php
+					printf(
+						/* translators: %s: documentation link */
+						esc_html__( 'Use filters to customize caching and rate limits. See %s for details.', 'wp-mcp-ai-pro' ),
+						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/tools/remote-wp-connection.md' ) . '" target="_blank">' . esc_html__( 'documentation', 'wp-mcp-ai-pro' ) . '</a>'
+					);
+					?>
+				</p>
+			</div>
 		<?php endif; ?>
 		<?php
 	}
