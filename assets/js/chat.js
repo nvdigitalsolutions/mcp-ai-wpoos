@@ -8127,6 +8127,12 @@
             url = result.download_url.trim();
         } else if (typeof result.downloadUrl === 'string' && result.downloadUrl.trim()) {
             url = result.downloadUrl.trim();
+        } else if (typeof result.image_url === 'string' && result.image_url.trim()) {
+            // Handle direct string image_url (e.g., from some image generation tools)
+            url = result.image_url.trim();
+        } else if (typeof result.video_url === 'string' && result.video_url.trim()) {
+            // Handle direct string video_url (e.g., from some video generation tools)
+            url = result.video_url.trim();
         } else if (nestedVideo) {
             // Handle video_url structure from generate_veo_video
             if (typeof nestedVideo.url === 'string' && nestedVideo.url.trim()) {

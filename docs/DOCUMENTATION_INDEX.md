@@ -434,6 +434,8 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [README.md](../README.md) | Main plugin documentation with features, installation, and usage | Everyone |
+| [USE_CASES_AND_QUICKSTARTS.md](getting-started/USE_CASES_AND_QUICKSTARTS.md) | **NEW:** Comprehensive use cases and quickstart guides covering 7 major categories (41KB) | Everyone |
+| [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
 | [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using WP oOS | All Users |
 

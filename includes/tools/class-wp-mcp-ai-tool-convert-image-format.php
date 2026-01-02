@@ -50,7 +50,7 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 					'format'  => array(
 						'type'        => 'string',
 						'description' => __( 'Target image format.', 'wp-mcp-ai' ),
-						'enum'        => array( 'png', 'jpeg', 'jpg', 'webp', 'gif' ),
+						'enum'        => array( 'png', 'jpeg', 'jpg', 'webp', 'gif', 'svg' ),
 					),
 					'quality' => array(
 						'type'        => 'integer',
@@ -113,7 +113,7 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 			$format = 'jpeg';
 		}
 
-		$allowed_formats = array( 'png', 'jpeg', 'webp', 'gif' );
+		$allowed_formats = array( 'png', 'jpeg', 'webp', 'gif', 'svg' );
 		if ( ! in_array( $format, $allowed_formats, true ) ) {
 			return new WP_Error( 'wp_mcp_ai_invalid_format', __( 'Invalid target format specified.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 		}
@@ -131,6 +131,60 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 		}
 
 		$original_mime = $image_editor->mime_type;
+
+		// Handle SVG conversion separately.
+		if ( 'svg' === $format ) {
+			// Convert directly to SVG.
+			$storage = $this->convert_to_svg( $image_editor, $arguments, $user_id );
+
+			// Clean up temp file if exists.
+			if ( isset( $image_editor->temp_file ) ) {
+				$this->delete_temp_file( $image_editor->temp_file );
+			}
+
+			if ( is_wp_error( $storage ) ) {
+				return $storage;
+			}
+
+			$result_data = array(
+				'attachment_id'   => $storage['attachment_id'],
+				'url'             => $storage['url'],
+				'file_name'       => $storage['file_name'],
+				'mime_type'       => $storage['mime_type'],
+				'bytes'           => $storage['bytes'],
+				'title'           => $storage['title'],
+				'original_format' => $this->mime_to_format( $original_mime ),
+				'new_format'      => 'svg',
+				'quality'         => null,
+				'operation'       => 'convert',
+				'vectorized'      => true,
+				'svg_size'        => isset( $storage['svg_size'] ) ? $storage['svg_size'] : $storage['bytes'],
+				'source_size'     => isset( $storage['source_size'] ) ? $storage['source_size'] : 0,
+				'duration_ms'     => isset( $storage['duration_ms'] ) ? $storage['duration_ms'] : 0,
+				'text'            => sprintf(
+					/* translators: 1: original format, 2: new format */
+					__( 'Successfully converted image from %1$s to %2$s.', 'wp-mcp-ai' ),
+					strtoupper( $this->mime_to_format( $original_mime ) ),
+					'SVG'
+				),
+			);
+
+			// Add image_url structure for agentic workflow and chat client display.
+			if ( ! empty( $storage['url'] ) ) {
+				$result_data['image_url'] = array(
+					'url' => $storage['url'],
+				);
+			}
+
+			/**
+			 * Filter the convert image format result.
+			 *
+			 * @param array $result_data Result array.
+			 * @param array $arguments   Tool arguments.
+			 * @param array $context     Execution context.
+			 */
+			return apply_filters( 'wp_mcp_ai_convert_image_format_result', $result_data, $arguments, $context );
+		}
 
 		// Set new MIME type and quality.
 		$mime_type_map = array(
@@ -209,11 +263,12 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	protected function mime_to_format( $mime_type ) {
 		$map = array(
-			'image/png'  => 'png',
-			'image/jpeg' => 'jpeg',
-			'image/jpg'  => 'jpeg',
-			'image/webp' => 'webp',
-			'image/gif'  => 'gif',
+			'image/png'     => 'png',
+			'image/jpeg'    => 'jpeg',
+			'image/jpg'     => 'jpeg',
+			'image/webp'    => 'webp',
+			'image/gif'     => 'gif',
+			'image/svg+xml' => 'svg',
 		);
 
 		return isset( $map[ $mime_type ] ) ? $map[ $mime_type ] : 'unknown';
