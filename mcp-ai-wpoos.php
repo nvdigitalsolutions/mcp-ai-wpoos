@@ -589,6 +589,10 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 	wp_mcp_ai_container()->get( 'admin.auth0_setup' );
 
+	// Initialize Admin Settings to register OAuth and admin-post handlers.
+	// This must be initialized to register Gmail, Meta, QuickBooks, Mailjet OAuth hooks.
+	wp_mcp_ai_container()->get( 'admin.settings' );
+
 	// Load test assistant page (submenu of AI Assistants CPT).
 	// Test pages are excluded from production builds. Load them conditionally.
 	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php' ) ) {
