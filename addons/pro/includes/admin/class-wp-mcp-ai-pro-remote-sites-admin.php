@@ -129,6 +129,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'username'        => isset( $_POST['username'] ) ? sanitize_text_field( $_POST['username'] ) : '',
 				'password'        => isset( $_POST['password'] ) ? $_POST['password'] : '',
 				'token'           => isset( $_POST['token'] ) ? $_POST['token'] : '',
+				'consumer_key'    => isset( $_POST['consumer_key'] ) ? sanitize_text_field( $_POST['consumer_key'] ) : '',
+				'consumer_secret' => isset( $_POST['consumer_secret'] ) ? $_POST['consumer_secret'] : '',
 				'has_woocommerce' => ! empty( $_POST['has_woocommerce'] ),
 				'enabled'         => ! empty( $_POST['enabled'] ),
 			);
@@ -313,6 +315,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="application_password" <?php selected( $is_edit ? $connection['auth_type'] : '', 'application_password' ); ?>><?php esc_html_e( 'Application Password', 'wp-mcp-ai-pro' ); ?></option>
 							<option value="basic_auth" <?php selected( $is_edit ? $connection['auth_type'] : '', 'basic_auth' ); ?>><?php esc_html_e( 'Basic Auth', 'wp-mcp-ai-pro' ); ?></option>
 							<option value="jwt" <?php selected( $is_edit ? $connection['auth_type'] : '', 'jwt' ); ?>><?php esc_html_e( 'JWT Token', 'wp-mcp-ai-pro' ); ?></option>
+							<option value="woocommerce" <?php selected( $is_edit ? $connection['auth_type'] : '', 'woocommerce' ); ?>><?php esc_html_e( 'WooCommerce API Keys (ck_/cs_)', 'wp-mcp-ai-pro' ); ?></option>
 						</select>
 					</td>
 				</tr>
@@ -332,7 +335,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="password" name="password" id="password" class="regular-text" value="" autocomplete="new-password">
-						<p class="description"><?php esc_html_e( 'Leave blank to keep existing password.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing password.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 
@@ -342,7 +347,33 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<textarea name="token" id="token" class="large-text" rows="3" autocomplete="off"></textarea>
-						<p class="description"><?php esc_html_e( 'Leave blank to keep existing token.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing token.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr id="consumer_key_field" style="display: none;">
+					<th scope="row">
+						<label for="consumer_key"><?php esc_html_e( 'Consumer Key', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="consumer_key" id="consumer_key" class="regular-text" value="" autocomplete="off" placeholder="ck_...">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer key.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr id="consumer_secret_field" style="display: none;">
+					<th scope="row">
+						<label for="consumer_secret"><?php esc_html_e( 'Consumer Secret', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="password" name="consumer_secret" id="consumer_secret" class="regular-text" value="" autocomplete="new-password" placeholder="cs_...">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 
@@ -381,16 +412,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var usernameField = document.getElementById('username_field');
 			var passwordField = document.getElementById('password_field');
 			var tokenField = document.getElementById('token_field');
+			var consumerKeyField = document.getElementById('consumer_key_field');
+			var consumerSecretField = document.getElementById('consumer_secret_field');
 
 			usernameField.style.display = 'none';
 			passwordField.style.display = 'none';
 			tokenField.style.display = 'none';
+			consumerKeyField.style.display = 'none';
+			consumerSecretField.style.display = 'none';
 
 			if (authType === 'application_password' || authType === 'basic_auth') {
 				usernameField.style.display = 'table-row';
 				passwordField.style.display = 'table-row';
 			} else if (authType === 'jwt') {
 				tokenField.style.display = 'table-row';
+			} else if (authType === 'woocommerce') {
+				consumerKeyField.style.display = 'table-row';
+				consumerSecretField.style.display = 'table-row';
 			}
 		}
 
