@@ -936,6 +936,67 @@
 	 * Initialize Cloudways connection test handlers.
 	 */
 	function initCloudwaysHandlers() {
+		// Test Cloudways connection
+		$('#wp-mcp-ai-test-cloudways-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-cloudways-test-result');
+			const $accountInfo = $('#wp-mcp-ai-cloudways-account-info');
+			const email = $('input[name="wp_mcp_ai_settings[cloudways_email]"]').val();
+			const apiKey = $('input[name="wp_mcp_ai_settings[cloudways_api_key]"]').val();
+
+			if (!email || !apiKey) {
+				$result.html('<span style="color: #d63638;">Please enter both email and API key first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to Cloudways...</span>');
+			$accountInfo.html('');
+
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_cloudways_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					email: email,
+					api_key: apiKey
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+						if (response.data.account_info) {
+							const accountData = response.data.account_info;
+							let html = '<div style="background: #f0f0f1; padding: 10px; border-radius: 4px; margin-top: 10px;">';
+							html += '<p style="margin: 0 0 5px 0;"><strong>Account Information:</strong></p>';
+							html += '<ul style="margin: 0; padding-left: 20px;">';
+							if (accountData.email) {
+								html += '<li><strong>Email:</strong> ' + accountData.email + '</li>';
+							}
+							if (accountData.server_count !== undefined) {
+								html += '<li><strong>Servers:</strong> ' + accountData.server_count + '</li>';
+							}
+							html += '</ul></div>';
+							$accountInfo.html(html);
+						}
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$accountInfo.html('');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+					$accountInfo.html('');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+
+		// Existing fetch data handler
 		$('#wp-mcp-ai-fetch-cloudways-data').on('click', function (e) {
 			e.preventDefault();
 			const $button = $(this);
