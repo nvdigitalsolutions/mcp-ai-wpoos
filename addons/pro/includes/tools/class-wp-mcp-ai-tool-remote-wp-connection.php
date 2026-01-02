@@ -39,7 +39,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. Supports multiple site connections with per-assistant configuration.', 'wp-mcp-ai-pro' );
+		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -49,13 +49,9 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'connection_id' => array(
-					'type'        => 'string',
-					'description' => __( 'The ID of the remote site connection to use. Required unless listing connections.', 'wp-mcp-ai-pro' ),
-				),
 				'action'        => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform on the remote site.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs before any other action.', 'wp-mcp-ai-pro' ),
 					'enum'        => array(
 						'list_connections',
 						'test_connection',
@@ -71,6 +67,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 						'get_wc_categories',
 					),
 					'default'     => 'list_connections',
+				),
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'REQUIRED (except for list_connections action). The connection ID obtained from calling list_connections first. Format: conn_XXXX. You must call list_connections before using any other action to get this ID.', 'wp-mcp-ai-pro' ),
 				),
 				'post_type'     => array(
 					'type'        => 'string',
@@ -113,6 +113,26 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			),
 			'required'             => array( 'action' ),
 			'additionalProperties' => false,
+			// Add oneOf constraint to make connection_id required when action is not list_connections
+			'oneOf'                => array(
+				array(
+					'properties' => array(
+						'action' => array(
+							'const' => 'list_connections',
+						),
+					),
+				),
+				array(
+					'required' => array( 'action', 'connection_id' ),
+					'properties' => array(
+						'action' => array(
+							'not' => array(
+								'const' => 'list_connections',
+							),
+						),
+					),
+				),
+			),
 		);
 	}
 
@@ -152,25 +172,63 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
 
 		if ( empty( $connection_id ) ) {
+			// Get available connections to include in error message.
+			$available_connections = $this->list_connections( $context );
+			$connection_list       = '';
+			
+			if ( ! is_wp_error( $available_connections ) && ! empty( $available_connections['connections'] ) ) {
+				$connections_formatted = array();
+				foreach ( $available_connections['connections'] as $conn ) {
+					$connections_formatted[] = sprintf( '%s (%s)', $conn['id'], $conn['name'] );
+				}
+				$connection_list = ' Available connections: ' . implode( ', ', $connections_formatted ) . '.';
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_connection',
-				__( 'Connection ID is required for this action.', 'wp-mcp-ai-pro' )
+				sprintf(
+					/* translators: 1: action name, 2: list of available connections */
+					__( 'Connection ID is required for action "%1$s".%2$s You must provide the connection_id parameter with one of the available connection IDs.', 'wp-mcp-ai-pro' ),
+					$action,
+					$connection_list
+				)
 			);
 		}
 
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( null === $connection ) {
+			// Get available connections to include in error message.
+			$available_connections = $this->list_connections( $context );
+			$connection_list       = '';
+			
+			if ( ! is_wp_error( $available_connections ) && ! empty( $available_connections['connections'] ) ) {
+				$connections_formatted = array();
+				foreach ( $available_connections['connections'] as $conn ) {
+					$connections_formatted[] = sprintf( '%s (%s)', $conn['id'], $conn['name'] );
+				}
+				$connection_list = ' Available connections: ' . implode( ', ', $connections_formatted ) . '.';
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_connection',
-				__( 'Invalid connection ID.', 'wp-mcp-ai-pro' )
+				sprintf(
+					/* translators: 1: connection ID, 2: list of available connections */
+					__( 'Invalid connection ID "%1$s".%2$s Use one of the available connection IDs.', 'wp-mcp-ai-pro' ),
+					$connection_id,
+					$connection_list
+				)
 			);
 		}
 
 		if ( empty( $connection['enabled'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_disabled_connection',
-				__( 'This connection is disabled.', 'wp-mcp-ai-pro' )
+				sprintf(
+					/* translators: %s: connection name */
+					__( 'Connection "%s" is disabled. Please ask the user to enable it in the WordPress admin under NV oOS → Remote Sites.', 'wp-mcp-ai-pro' ),
+					isset( $connection['name'] ) ? $connection['name'] : $connection_id
+				)
 			);
 		}
 
@@ -178,7 +236,11 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $this->is_connection_enabled_for_assistant( $connection_id, $context ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_connection_not_enabled',
-				__( 'This connection is not enabled for the current assistant.', 'wp-mcp-ai-pro' )
+				sprintf(
+					/* translators: %s: connection name */
+					__( 'Connection "%s" is not enabled for this assistant. Please ask the user to enable it in the assistant editor under Remote Site Connections metabox.', 'wp-mcp-ai-pro' ),
+					isset( $connection['name'] ) ? $connection['name'] : $connection_id
+				)
 			);
 		}
 
