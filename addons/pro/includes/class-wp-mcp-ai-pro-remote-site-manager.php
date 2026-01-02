@@ -168,7 +168,19 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		$connections[ $connection_id ] = $connection;
 
-		update_option( self::OPTION_NAME, $connections );
+		$updated = update_option( self::OPTION_NAME, $connections );
+
+		if ( false === $updated && ! isset( $connections[ $connection_id ] ) ) {
+			// update_option returns false if the value is the same, which shouldn't happen here
+			// but also returns false on actual failure. Check if it was actually saved.
+			$saved_connections = get_option( self::OPTION_NAME, array() );
+			if ( ! isset( $saved_connections[ $connection_id ] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_save_failed',
+					__( 'Failed to save connection. Please try again.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
 
 		return $connection_id;
 	}
