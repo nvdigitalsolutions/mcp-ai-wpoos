@@ -15,12 +15,16 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
+require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.php';
 
 /**
  * Provides a tool for editing images via Gemini Nano Banana and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_SVG_Vectorizer;
 
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
@@ -66,56 +70,59 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 		return array(
 			'type'                 => 'object',
-			'properties'           => array(
-				'prompt'           => array(
-					'type'        => 'string',
-					'description' => __( 'Text instruction describing the desired edits (e.g., "remove background", "change sky to sunset", "make brighter").', 'wp-mcp-ai' ),
+			'properties'           => array_merge(
+				array(
+					'prompt'           => array(
+						'type'        => 'string',
+						'description' => __( 'Text instruction describing the desired edits (e.g., "remove background", "change sky to sunset", "make brighter").', 'wp-mcp-ai' ),
+					),
+					'attachment_id'    => array(
+						'type'        => 'integer',
+						'description' => __( 'WordPress attachment ID of the image to edit.', 'wp-mcp-ai' ),
+					),
+					'file_id'          => $this->get_file_id_parameter_schema( __( 'OpenAI or Gemini file identifier. Use this when the image was uploaded via the files endpoint.', 'wp-mcp-ai' ) ),
+					'url'              => $this->get_url_parameter_schema( 'image', __( 'URL of the image to edit. REQUIRED when user attaches an image in chat - extract the "url" field from the message content segment (look for segments with type:"input_image" that contain a url field). Can be a WordPress media URL or external URL.', 'wp-mcp-ai' ) ),
+					'image_url'        => array(
+						'type'        => 'string',
+						'description' => __( 'URL of the image to edit (legacy parameter, use "url" instead).', 'wp-mcp-ai' ),
+					),
+					'image_data'       => array(
+						'type'        => 'string',
+						'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id, url, or file_id). Useful for editing images created in the chat.', 'wp-mcp-ai' ),
+					),
+					'source_mime_type' => array(
+						'type'        => 'string',
+						'description' => __( 'MIME type of the source image data (required when using image_data).', 'wp-mcp-ai' ),
+					),
+					'model'            => array(
+						'type'        => 'string',
+						'description' => __( 'Gemini image model to use.', 'wp-mcp-ai' ),
+						'default'     => $defaults['model'],
+					),
+					'aspect_ratio'     => array(
+						'type'        => 'string',
+						'description' => __( 'Aspect ratio for the edited image.', 'wp-mcp-ai' ),
+						'enum'        => $aspect_choices,
+						'default'     => $defaults['aspect_ratio'],
+					),
+					'mime_type'        => array(
+						'type'        => 'string',
+						'description' => __( 'Preferred MIME type for the saved image.', 'wp-mcp-ai' ),
+						'enum'        => $mime_choices,
+						'default'     => $defaults['mime_type'],
+					),
+					'file_name'        => array(
+						'type'        => 'string',
+						'description' => __( 'Optional base file name for the saved image attachment.', 'wp-mcp-ai' ),
+					),
+					'timeout'          => array(
+						'type'        => 'integer',
+						'description' => __( 'Override the Gemini request timeout in seconds.', 'wp-mcp-ai' ),
+						'minimum'     => 5,
+						'maximum'     => 300,
+					),
 				),
-				'attachment_id'    => array(
-					'type'        => 'integer',
-					'description' => __( 'WordPress attachment ID of the image to edit.', 'wp-mcp-ai' ),
-				),
-				'file_id'          => $this->get_file_id_parameter_schema( __( 'OpenAI or Gemini file identifier. Use this when the image was uploaded via the files endpoint.', 'wp-mcp-ai' ) ),
-				'url'              => $this->get_url_parameter_schema( 'image', __( 'URL of the image to edit. REQUIRED when user attaches an image in chat - extract the "url" field from the message content segment (look for segments with type:"input_image" that contain a url field). Can be a WordPress media URL or external URL.', 'wp-mcp-ai' ) ),
-				'image_url'        => array(
-					'type'        => 'string',
-					'description' => __( 'URL of the image to edit (legacy parameter, use "url" instead).', 'wp-mcp-ai' ),
-				),
-				'image_data'       => array(
-					'type'        => 'string',
-					'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id, url, or file_id). Useful for editing images created in the chat.', 'wp-mcp-ai' ),
-				),
-				'source_mime_type' => array(
-					'type'        => 'string',
-					'description' => __( 'MIME type of the source image data (required when using image_data).', 'wp-mcp-ai' ),
-				),
-				'model'            => array(
-					'type'        => 'string',
-					'description' => __( 'Gemini image model to use.', 'wp-mcp-ai' ),
-					'default'     => $defaults['model'],
-				),
-				'aspect_ratio'     => array(
-					'type'        => 'string',
-					'description' => __( 'Aspect ratio for the edited image.', 'wp-mcp-ai' ),
-					'enum'        => $aspect_choices,
-					'default'     => $defaults['aspect_ratio'],
-				),
-				'mime_type'        => array(
-					'type'        => 'string',
-					'description' => __( 'Preferred MIME type for the saved image.', 'wp-mcp-ai' ),
-					'enum'        => $mime_choices,
-					'default'     => $defaults['mime_type'],
-				),
-				'file_name'        => array(
-					'type'        => 'string',
-					'description' => __( 'Optional base file name for the saved image attachment.', 'wp-mcp-ai' ),
-				),
-				'timeout'          => array(
-					'type'        => 'integer',
-					'description' => __( 'Override the Gemini request timeout in seconds.', 'wp-mcp-ai' ),
-					'minimum'     => 5,
-					'maximum'     => 300,
-				),
+				$this->get_output_format_parameter_schema()
 			),
 			'required'             => array( 'prompt' ),
 			'additionalProperties' => false,
@@ -245,13 +252,37 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			return $storage;
 		}
 
+		// Check if SVG output is requested.
+		$output_format = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'default';
+
+		if ( 'svg' === $output_format ) {
+			// Convert the edited raster image to SVG.
+			$svg_storage = $this->convert_to_svg( $storage, $arguments );
+
+			if ( is_wp_error( $svg_storage ) ) {
+				// If SVG conversion fails, return the original raster image.
+				WP_MCP_AI_Logger::log_error(
+					'gemini_edit_svg_conversion_failed',
+					'Failed to convert Gemini-edited image to SVG',
+					array(
+						'error'         => $svg_storage->get_error_message(),
+						'attachment_id' => $storage['attachment_id'],
+					)
+				);
+			} else {
+				// Replace storage with SVG version.
+				$storage = $svg_storage;
+			}
+		}
+
 		// Build descriptive text message for the LLM and chat UI.
 		$text = sprintf(
-			/* translators: 1: image title, 2: attachment ID */
-			__( 'Successfully edited image "%1$s" (ID: %2$d). Edit instruction: %3$s', 'wp-mcp-ai' ),
+			/* translators: 1: image title, 2: attachment ID, 3: edit instruction, 4: output format */
+			__( 'Successfully edited image "%1$s" (ID: %2$d). Edit instruction: %3$s%4$s', 'wp-mcp-ai' ),
 			$storage['title'],
 			$storage['attachment_id'],
-			$prompt
+			$prompt,
+			'svg' === $output_format ? ' and converted to SVG' : ''
 		);
 
 		$result = array(
@@ -268,8 +299,17 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'edit_instruction'  => $prompt,
 			'source_attachment' => isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : null,
 			'provider'          => 'gemini', // Track provider for accurate cost attribution.
+			'output_format'     => $output_format,
 			'text'              => $text, // Descriptive message for LLM and chat UI.
 		);
+
+		// Add vectorization metadata if SVG output was used.
+		if ( 'svg' === $output_format && isset( $storage['vectorized'] ) ) {
+			$result['vectorized']  = true;
+			$result['svg_size']    = isset( $storage['svg_size'] ) ? $storage['svg_size'] : $storage['bytes'];
+			$result['source_size'] = isset( $storage['source_size'] ) ? $storage['source_size'] : 0;
+			$result['duration_ms'] = isset( $storage['duration_ms'] ) ? $storage['duration_ms'] : 0;
+		}
 
 		// Include usage metadata if available for accurate cost tracking.
 		if ( isset( $image['usage'] ) && is_array( $image['usage'] ) ) {
@@ -1278,13 +1318,18 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'title',
 			'model',
 			'aspect_ratio',
-			'format',           // Image format (png, jpeg, webp) for chat UI rendering.
+			'format',           // Image format (png, jpeg, webp, svg) for chat UI rendering.
 			'edit_instruction',
 			'source_attachment',
 			'provider',
 			'usage',
-			'cost',  // Cost data for UI display.
-			'text',  // Descriptive message about the edited image.
+			'cost',             // Cost data for UI display.
+			'text',             // Descriptive message about the edited image.
+			'output_format',    // Output format selected (default or svg).
+			'vectorized',       // SVG vectorization flag.
+			'svg_size',         // SVG file size if vectorized.
+			'source_size',      // Source raster size if vectorized.
+			'duration_ms',      // Vectorization duration if vectorized.
 		);
 
 		$sanitized = array();
