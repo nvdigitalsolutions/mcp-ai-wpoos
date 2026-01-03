@@ -12,6 +12,30 @@
 .wp-mcp-ai-settings-dashboard .nav-tab-wrapper {
 	margin-bottom: 20px;
 	border-bottom: 1px solid #ccd0d4;
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: #8c8f94 #f0f0f1;
+}
+
+.wp-mcp-ai-settings-dashboard .nav-tab-wrapper::-webkit-scrollbar {
+	height: 8px;
+}
+
+.wp-mcp-ai-settings-dashboard .nav-tab-wrapper::-webkit-scrollbar-track {
+	background: #f0f0f1;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-settings-dashboard .nav-tab-wrapper::-webkit-scrollbar-thumb {
+	background: #8c8f94;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-settings-dashboard .nav-tab-wrapper::-webkit-scrollbar-thumb:hover {
+	background: #646970;
 }
 
 .wp-mcp-ai-settings-dashboard .nav-tab {
@@ -260,6 +284,130 @@
 	font-weight: 600;
 }
 
+/* ===========================
+   Touch-Friendly Enhancements
+   =========================== */
+
+/* Swipe indicator for horizontal scrolling areas */
+.wp-mcp-ai-table-wrapper::after,
+.nav-tab-wrapper::after,
+.wp-mcp-ai-token-manager__nav::after,
+.wp-mcp-ai-orchestration__nav::after {
+	content: "";
+	position: absolute;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 30px;
+	background: linear-gradient(to left, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 100%);
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+@media screen and (max-width: 782px) {
+	/* Show swipe indicator on mobile when content overflows */
+	.wp-mcp-ai-table-wrapper[data-has-overflow]::after,
+	.nav-tab-wrapper[data-has-overflow]::after,
+	.wp-mcp-ai-token-manager__nav[data-has-overflow]::after,
+	.wp-mcp-ai-orchestration__nav[data-has-overflow]::after {
+		opacity: 1;
+	}
+
+	/* Add position relative to containers */
+	.wp-mcp-ai-table-wrapper,
+	.nav-tab-wrapper,
+	.wp-mcp-ai-token-manager__nav,
+	.wp-mcp-ai-orchestration__nav {
+		position: relative;
+	}
+
+	/* Touch feedback - increase tap highlight */
+	* {
+		-webkit-tap-highlight-color: rgba(34, 113, 177, 0.2);
+	}
+
+	/* Improve scrollbar visibility on touch devices */
+	.wp-mcp-ai-table-wrapper::-webkit-scrollbar,
+	.nav-tab-wrapper::-webkit-scrollbar,
+	.wp-mcp-ai-token-manager__nav::-webkit-scrollbar,
+	.wp-mcp-ai-orchestration__nav::-webkit-scrollbar {
+		height: 6px;
+	}
+
+	.wp-mcp-ai-table-wrapper::-webkit-scrollbar-thumb,
+	.nav-tab-wrapper::-webkit-scrollbar-thumb,
+	.wp-mcp-ai-token-manager__nav::-webkit-scrollbar-thumb,
+	.wp-mcp-ai-orchestration__nav::-webkit-scrollbar-thumb {
+		background: #2271b1;
+		border-radius: 3px;
+	}
+
+	/* Add momentum scrolling */
+	.wp-mcp-ai-table-wrapper,
+	.nav-tab-wrapper,
+	.wp-mcp-ai-token-manager__nav,
+	.wp-mcp-ai-orchestration__nav {
+		-webkit-overflow-scrolling: touch;
+		scroll-behavior: smooth;
+	}
+}
+
+/* Larger touch targets for interactive elements */
+@media (hover: none) and (pointer: coarse) {
+	/* Touch device detection - increase all interactive elements */
+	.button,
+	input[type="submit"],
+	input[type="button"],
+	.nav-tab,
+	.wp-mcp-ai-token-manager__nav-item,
+	.wp-mcp-ai-orchestration__nav-item,
+	a.button {
+		min-height: 44px;
+		min-width: 44px;
+		padding: 12px 18px;
+	}
+
+	/* Toggle switches - larger for touch */
+	.wp-mcp-ai-toggle-switch {
+		min-width: 64px;
+		min-height: 36px;
+	}
+
+	/* Checkbox and radio - larger touch area */
+	input[type="checkbox"],
+	input[type="radio"] {
+		min-width: 24px;
+		min-height: 24px;
+		margin: 8px;
+	}
+
+	/* Links - add padding for better touch targets */
+	a:not(.button) {
+		padding: 4px 8px;
+		margin: -4px -8px;
+	}
+
+	/* Select dropdowns - larger for touch */
+	select {
+		min-height: 44px;
+		padding: 10px 14px;
+		font-size: 16px; /* Prevents zoom on iOS */
+	}
+
+	/* Input fields - prevent zoom on iOS */
+	input[type="text"],
+	input[type="search"],
+	input[type="email"],
+	input[type="url"],
+	input[type="tel"],
+	input[type="number"],
+	textarea {
+		font-size: 16px;
+		min-height: 44px;
+	}
+}
+
 /* Token Manager Styles */
 .wp-mcp-ai-token-manager__nav {
 	display: flex;
@@ -267,6 +415,30 @@
 	margin-bottom: 20px;
 	padding-bottom: 10px;
 	border-bottom: 2px solid #e5e5e5;
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: #8c8f94 #f0f0f1;
+}
+
+.wp-mcp-ai-token-manager__nav::-webkit-scrollbar {
+	height: 8px;
+}
+
+.wp-mcp-ai-token-manager__nav::-webkit-scrollbar-track {
+	background: #f0f0f1;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-token-manager__nav::-webkit-scrollbar-thumb {
+	background: #8c8f94;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-token-manager__nav::-webkit-scrollbar-thumb:hover {
+	background: #646970;
 }
 
 .wp-mcp-ai-token-manager__nav-item {
@@ -282,6 +454,7 @@
 	font-size: 14px;
 	font-weight: 500;
 	transition: all 0.2s ease;
+	flex-shrink: 0;
 }
 
 .wp-mcp-ai-token-manager__nav-item .dashicons {
@@ -317,6 +490,30 @@
 	margin-bottom: 20px;
 	padding-bottom: 10px;
 	border-bottom: 2px solid #e5e5e5;
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: #8c8f94 #f0f0f1;
+}
+
+.wp-mcp-ai-orchestration__nav::-webkit-scrollbar {
+	height: 8px;
+}
+
+.wp-mcp-ai-orchestration__nav::-webkit-scrollbar-track {
+	background: #f0f0f1;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-orchestration__nav::-webkit-scrollbar-thumb {
+	background: #8c8f94;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-orchestration__nav::-webkit-scrollbar-thumb:hover {
+	background: #646970;
 }
 
 .wp-mcp-ai-orchestration__nav-item {
@@ -332,6 +529,7 @@
 	font-size: 14px;
 	font-weight: 500;
 	transition: all 0.2s ease;
+	flex-shrink: 0;
 }
 
 .wp-mcp-ai-orchestration__nav-item .dashicons {
@@ -453,6 +651,37 @@
 .wp-mcp-ai-tool-limit-input {
 	width: 120px;
 	text-align: right;
+}
+
+/* Token Manager Table Action Buttons */
+.wp-mcp-ai-token-manager table td:last-child {
+	white-space: nowrap;
+	min-width: 140px;
+}
+
+.wp-mcp-ai-reset-user-usage,
+.wp-mcp-ai-view-user-details {
+	margin: 2px 0;
+	padding: 4px 10px;
+	font-size: 12px;
+	line-height: 1.4;
+	min-width: 60px;
+}
+
+/* Stack buttons vertically in action column on smaller screens */
+@media screen and (max-width: 1280px) {
+	.wp-mcp-ai-token-manager table td:last-child {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		align-items: stretch;
+	}
+
+	.wp-mcp-ai-reset-user-usage,
+	.wp-mcp-ai-view-user-details {
+		width: 100%;
+		margin: 0;
+	}
 }
 
 /* Responsive Design */
@@ -972,5 +1201,335 @@
 	.wp-mcp-ai-subtab {
 		font-size: 12px;
 		padding: 6px 10px;
+	}
+
+	/* Make filter bar stack vertically on mobile */
+	.wp-mcp-ai-tools-filter-form {
+		grid-template-columns: 1fr !important;
+	}
+
+	.wp-mcp-ai-filter-actions {
+		grid-column: 1 !important;
+		justify-content: stretch !important;
+	}
+
+	.wp-mcp-ai-filter-actions .button {
+		flex: 1;
+	}
+}
+
+/* ===========================
+   Mobile Card Layouts (< 600px)
+   =========================== */
+@media screen and (max-width: 600px) {
+	/* Token Manager table card layout */
+	.wp-mcp-ai-token-manager table thead {
+		display: none;
+	}
+
+	.wp-mcp-ai-token-manager table,
+	.wp-mcp-ai-token-manager table tbody,
+	.wp-mcp-ai-token-manager table tr {
+		display: block;
+		width: 100%;
+	}
+
+	.wp-mcp-ai-token-manager table {
+		border: none;
+	}
+
+	.wp-mcp-ai-token-manager table tr {
+		background: #fff;
+		border: 1px solid #dcdcde;
+		border-radius: 8px;
+		margin-bottom: 16px;
+		padding: 16px;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
+
+	.wp-mcp-ai-token-manager table tr:hover {
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+		transform: translateY(-1px);
+		transition: all 0.2s ease;
+	}
+
+	.wp-mcp-ai-token-manager table td {
+		display: block;
+		width: 100% !important;
+		padding: 8px 0;
+		border: none;
+		text-align: left;
+	}
+
+	/* Add labels for context in card layout */
+	.wp-mcp-ai-token-manager table td:nth-child(1)::before {
+		content: "User: ";
+		font-weight: 600;
+		color: #646970;
+		display: inline;
+		margin-right: 6px;
+	}
+
+	.wp-mcp-ai-token-manager table td:nth-child(2)::before {
+		content: "Tier: ";
+		font-weight: 600;
+		color: #646970;
+		display: inline;
+		margin-right: 6px;
+	}
+
+	.wp-mcp-ai-token-manager table td:nth-child(3)::before {
+		content: "Requests: ";
+		font-weight: 600;
+		color: #646970;
+		display: inline;
+		margin-right: 6px;
+	}
+
+	.wp-mcp-ai-token-manager table td:nth-child(4)::before {
+		content: "Total Tokens: ";
+		font-weight: 600;
+		color: #646970;
+		display: inline;
+		margin-right: 6px;
+	}
+
+	.wp-mcp-ai-token-manager table td:nth-child(5)::before {
+		content: "Cost: ";
+		font-weight: 600;
+		color: #646970;
+		display: inline;
+		margin-right: 6px;
+	}
+
+	/* Action buttons in card layout */
+	.wp-mcp-ai-token-manager table td:last-child {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding-top: 12px;
+		margin-top: 12px;
+		border-top: 1px solid #f0f0f1;
+	}
+
+	.wp-mcp-ai-token-manager table td:last-child::before {
+		content: "Actions:";
+		font-weight: 600;
+		color: #646970;
+		margin-bottom: 4px;
+	}
+
+	.wp-mcp-ai-token-manager table td:last-child .button {
+		width: 100%;
+		text-align: center;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* Hide detail rows in card view */
+	.wp-mcp-ai-token-manager table .wp-mcp-ai-user-details-row {
+		display: none;
+	}
+
+	/* General admin table card layouts */
+	.wp-mcp-ai-settings-dashboard table.widefat thead {
+		display: none;
+	}
+
+	.wp-mcp-ai-settings-dashboard table.widefat,
+	.wp-mcp-ai-settings-dashboard table.widefat tbody,
+	.wp-mcp-ai-settings-dashboard table.widefat tr {
+		display: block;
+		width: 100%;
+	}
+
+	.wp-mcp-ai-settings-dashboard table.widefat tr {
+		background: #fff;
+		border: 1px solid #dcdcde;
+		border-radius: 8px;
+		margin-bottom: 16px;
+		padding: 16px;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
+
+	.wp-mcp-ai-settings-dashboard table.widefat td {
+		display: block;
+		width: 100% !important;
+		padding: 8px 0;
+		border: none;
+	}
+
+	/* Touch targets - ensure minimum 44x44px */
+	.wp-mcp-ai-settings-dashboard .button,
+	.wp-mcp-ai-settings-dashboard input[type="button"],
+	.wp-mcp-ai-settings-dashboard input[type="submit"],
+	.wp-mcp-ai-token-manager .button,
+	.wp-mcp-ai-tools-manager .button {
+		min-height: 44px;
+		min-width: 44px;
+		padding: 10px 16px;
+		font-size: 14px;
+	}
+
+	/* Links should have adequate touch area */
+	.wp-mcp-ai-settings-dashboard a:not(.button),
+	.wp-mcp-ai-token-manager a:not(.button),
+	.wp-mcp-ai-tools-manager a:not(.button) {
+		padding: 8px 4px;
+		display: inline-block;
+	}
+
+	/* Checkbox and radio inputs need larger touch targets */
+	.wp-mcp-ai-settings-dashboard input[type="checkbox"],
+	.wp-mcp-ai-settings-dashboard input[type="radio"] {
+		min-width: 24px;
+		min-height: 24px;
+		margin: 4px;
+	}
+
+	/* Category headers in card view */
+	.wp-mcp-ai-tools-category h4 {
+		font-size: 16px;
+		padding: 12px;
+	}
+
+	/* Chart containers - optimize for mobile */
+	.wp-mcp-ai-chart-container {
+		margin-bottom: 20px;
+	}
+
+	.wp-mcp-ai-chart-row {
+		flex-direction: column;
+	}
+
+	.wp-mcp-ai-chart-container.wp-mcp-ai-chart-half {
+		width: 100%;
+		max-width: 100%;
+	}
+}
+
+/* ===========================
+   Tablet Optimizations (768px - 1024px)
+   =========================== */
+
+/* Tablet portrait (768px - 900px) */
+@media screen and (min-width: 768px) and (max-width: 900px) {
+	/* Adjust dashboard grid for tablets */
+	.wp-mcp-ai-dashboard {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	/* Navigation tabs - optimize spacing */
+	.nav-tab-wrapper .nav-tab {
+		padding: 8px 14px;
+		font-size: 13px;
+	}
+
+	/* Sub-navigation for tablets */
+	.wp-mcp-ai-token-manager__nav,
+	.wp-mcp-ai-orchestration__nav {
+		gap: 8px;
+	}
+
+	.wp-mcp-ai-token-manager__nav-item,
+	.wp-mcp-ai-orchestration__nav-item {
+		padding: 10px 16px;
+		font-size: 13px;
+	}
+
+	/* Table columns - optimize widths */
+	.wp-mcp-ai-tools-manager table th:nth-child(1),
+	.wp-mcp-ai-tools-manager table td:nth-child(1) {
+		width: 22%;
+	}
+
+	.wp-mcp-ai-tools-manager table th:nth-child(2),
+	.wp-mcp-ai-tools-manager table td:nth-child(2) {
+		width: 18%;
+	}
+
+	.wp-mcp-ai-tools-manager table th:nth-child(3),
+	.wp-mcp-ai-tools-manager table td:nth-child(3) {
+		width: 48%;
+	}
+
+	.wp-mcp-ai-tools-manager table th:nth-child(4),
+	.wp-mcp-ai-tools-manager table td:nth-child(4) {
+		width: 12%;
+	}
+
+	/* Chart containers - optimize aspect ratio */
+	.wp-mcp-ai-chart-container {
+		padding: 16px;
+	}
+
+	.wp-mcp-ai-chart-row {
+		gap: 16px;
+	}
+
+	/* Filter bar - adjust for tablet */
+	.wp-mcp-ai-tools-filter-bar {
+		padding: 16px;
+	}
+
+	.wp-mcp-ai-tools-filter-form {
+		gap: 16px;
+	}
+}
+
+/* Tablet landscape (901px - 1024px) */
+@media screen and (min-width: 901px) and (max-width: 1024px) {
+	/* Adjust dashboard grid for landscape tablets */
+	.wp-mcp-ai-dashboard {
+		grid-template-columns: repeat(3, 1fr);
+		gap: 1.25rem;
+	}
+
+	/* Navigation - more compact */
+	.nav-tab-wrapper .nav-tab {
+		padding: 8px 16px;
+		font-size: 14px;
+	}
+
+	/* Chart row - allow side-by-side on landscape */
+	.wp-mcp-ai-chart-row {
+		display: flex;
+		flex-direction: row;
+		gap: 20px;
+	}
+
+	.wp-mcp-ai-chart-container.wp-mcp-ai-chart-half {
+		flex: 1;
+	}
+
+	/* Tables - slightly larger touch targets */
+	.wp-mcp-ai-toggle-switch {
+		width: 56px;
+		height: 28px;
+	}
+
+	.wp-mcp-ai-toggle-slider:before {
+		height: 22px;
+		width: 22px;
+	}
+
+	.wp-mcp-ai-tool-toggle:checked + .wp-mcp-ai-toggle-slider:before {
+		transform: translateX(28px);
+	}
+
+	/* Optimize section widths */
+	.wp-mcp-ai-section__body {
+		max-width: 100%;
+	}
+
+	/* Form tables - better spacing */
+	.form-table th {
+		width: 30%;
+	}
+
+	.form-table td {
+		width: 70%;
 	}
 }

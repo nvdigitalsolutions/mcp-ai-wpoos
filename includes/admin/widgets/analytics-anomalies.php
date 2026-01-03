@@ -113,7 +113,7 @@ $severity_colors = array(
 
 		<!-- Anomaly Chart -->
 		<div class="wp-mcp-ai-chart-container" style="margin-top: 20px;">
-			<canvas id="wp-mcp-ai-anomaly-scatter-chart" width="400" height="250"></canvas>
+			<canvas id="wp-mcp-ai-anomaly-scatter-chart"></canvas>
 		</div>
 
 		<script type="text/javascript">

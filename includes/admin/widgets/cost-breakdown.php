@@ -58,7 +58,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 	<!-- Cost by Provider Chart -->
 	<?php if ( ! empty( $by_provider ) ) : ?>
 		<div class="wp-mcp-ai-chart-container" style="margin-top: 20px;">
-			<canvas id="wp-mcp-ai-dashboard-cost-breakdown" width="400" height="200"></canvas>
+			<canvas id="wp-mcp-ai-dashboard-cost-breakdown"></canvas>
 		</div>
 
 		<script type="text/javascript">

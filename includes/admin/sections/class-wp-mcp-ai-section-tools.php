@@ -1401,44 +1401,74 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				</div>
 
 				<!-- Search and Filter Bar -->
-				<div class="wp-mcp-ai-tools-filter-bar" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
-					<div id="wp-mcp-ai-tools-filter-form" style="display: flex; gap: 10px; align-items: center;">
-						<label for="tool_search" style="font-weight: 600;">
-							<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
-						</label>
-						<input type="search" 
-								id="tool_search" 
-								name="tool_search" 
-								value="<?php echo esc_attr( $search ); ?>" 
-								placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
-								style="flex: 1; max-width: 300px;">
+				<?php
+				$has_active_filters = ! empty( $search ) || ! empty( $filter_group );
+				$filter_bar_class   = 'wp-mcp-ai-tools-filter-bar';
+				if ( $has_active_filters ) {
+					$filter_bar_class .= ' has-active-filters';
+				}
+				?>
+				<div class="<?php echo esc_attr( $filter_bar_class ); ?>" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+					<div class="wp-mcp-ai-tools-filter-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start;">
+						<div class="wp-mcp-ai-filter-group" style="display: flex; flex-direction: column; gap: 8px;">
+							<label for="tool_search" style="font-weight: 600;">
+								<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
+								<?php if ( ! empty( $search ) ) : ?>
+									<span class="wp-mcp-ai-filter-active-badge">
+										<span class="dashicons dashicons-filter" style="font-size: 11px; width: 11px; height: 11px;"></span>
+										<?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?>
+									</span>
+								<?php endif; ?>
+							</label>
+							<input type="search" 
+									id="tool_search" 
+									name="tool_search" 
+									value="<?php echo esc_attr( $search ); ?>" 
+									placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
+									style="width: 100%;">
+						</div>
 
-						<label for="tool_group" style="font-weight: 600; margin-left: 10px;">
-							<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
-						</label>
-						<select id="tool_group" name="tool_group" style="min-width: 200px;">
-							<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
-							<?php foreach ( $group_labels as $group_key => $group_label ) : ?>
-								<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $filter_group, $group_key ); ?>>
-									<?php echo esc_html( $group_label ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
+						<div class="wp-mcp-ai-filter-group" style="display: flex; flex-direction: column; gap: 8px;">
+							<label for="tool_group" style="font-weight: 600;">
+								<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
+								<?php if ( ! empty( $filter_group ) ) : ?>
+									<span class="wp-mcp-ai-filter-active-badge">
+										<span class="dashicons dashicons-filter" style="font-size: 11px; width: 11px; height: 11px;"></span>
+										<?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?>
+									</span>
+								<?php endif; ?>
+							</label>
+							<select id="tool_group" name="tool_group" style="width: 100%;">
+								<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
+								<?php foreach ( $group_labels as $group_key => $group_label ) : ?>
+									<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $filter_group, $group_key ); ?>>
+										<?php echo esc_html( $group_label ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
 
-						<button type="button" id="wp-mcp-ai-filter-tools" class="button">
-							<?php esc_html_e( 'Filter', 'wp-mcp-ai' ); ?>
-						</button>
+						<div class="wp-mcp-ai-filter-actions" style="grid-column: 1 / -1; display: flex; gap: 10px; justify-content: flex-end;">
+							<button type="button" id="wp-mcp-ai-filter-tools" class="button">
+								<?php esc_html_e( 'Filter', 'wp-mcp-ai' ); ?>
+							</button>
 
-						<?php if ( ! empty( $search ) || ! empty( $filter_group ) ) : ?>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=tools&subtab=tools_manager' ) ); ?>" class="button">
-								<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
-							</a>
-						<?php endif; ?>
+							<?php if ( ! empty( $search ) || ! empty( $filter_group ) ) : ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=tools&subtab=tools_manager' ) ); ?>" class="button">
+									<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
+								</a>
+							<?php endif; ?>
+						</div>
 					</div>
 
 					<script>
 					(function($) {
 						$('#wp-mcp-ai-filter-tools').on('click', function() {
+							const $button = $(this);
+							
+							// Add loading state
+							$button.addClass('is-loading').prop('disabled', true);
+							
 							const search = $('#tool_search').val();
 							const group = $('#tool_group').val();
 							const url = new URL(window.location.href);
@@ -1520,8 +1550,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<tr>
 									<th style="width: 20%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
 									<th style="width: 15%;"><?php esc_html_e( 'Slug', 'wp-mcp-ai' ); ?></th>
-									<th style="width: 40%;"><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
-									<th style="width: 15%;"><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
+									<th style="width: 55%;"><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
 									<th style="width: 10%;"><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
 								</tr>
 							</thead>
@@ -1564,11 +1593,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 											<?php endif; ?>
 										</td>
 										<td>
-											<span class="wp-mcp-ai-tool-status" style="display: inline-block; padding: 4px 8px; background: <?php echo esc_attr( $status_color ); ?>; color: white; border-radius: 3px; font-size: 11px; font-weight: bold;">
-												<?php echo esc_html( $status_text ); ?>
-											</span>
-										</td>
-										<td>
 											<?php if ( $is_available ) : ?>
 												<label class="wp-mcp-ai-toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
 													<input type="checkbox" 
@@ -1584,30 +1608,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 										</td>
 									</tr>
 									<?php
-									// Add a second row for badges if they exist.
+									// Badge row - always show to display status.
 									$has_pro_badge   = $this->is_pro_tool( $slug );
 									$status_label    = $this->get_tool_status_label( $slug );
 									$has_status_label = ! empty( $status_label );
-									
-									if ( $has_pro_badge || $has_status_label ) :
-										?>
-										<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>-badges" class="wp-mcp-ai-tool-badges-row">
-											<td colspan="5" style="padding-top: 0; padding-bottom: 8px; border-top: 0;">
-												<?php if ( $has_pro_badge ) : ?>
-													<span class="wp-mcp-ai-pro-badge" style="display: inline-block; margin-right: 6px; padding: 2px 5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
-														<?php esc_html_e( 'Pro', 'wp-mcp-ai' ); ?>
-													</span>
-												<?php endif; ?>
-												<?php if ( $has_status_label ) :
-													$label_config = $this->get_status_label_config( $status_label );
-													?>
-													<span class="wp-mcp-ai-tool-status-label <?php echo esc_attr( $label_config['class'] ); ?>" style="display: inline-block; padding: 2px 5px; background: <?php echo esc_attr( $label_config['color'] ); ?>; color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
-														<?php echo esc_html( $label_config['text'] ); ?>
-													</span>
-												<?php endif; ?>
-											</td>
-										</tr>
-									<?php endif; ?>
+									?>
+									<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>-badges" class="wp-mcp-ai-tool-badges-row">
+										<td colspan="4" style="padding-top: 0; padding-bottom: 8px; border-top: 0;">
+											<!-- Status Badge (always shown) -->
+											<span class="wp-mcp-ai-tool-status" style="display: inline-block; margin-right: 6px; padding: 2px 5px; background: <?php echo esc_attr( $status_color ); ?>; color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+												<?php echo esc_html( $status_text ); ?>
+											</span>
+											<?php if ( $has_pro_badge ) : ?>
+												<span class="wp-mcp-ai-pro-badge" style="display: inline-block; margin-right: 6px; padding: 2px 5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+													<?php esc_html_e( 'Pro', 'wp-mcp-ai' ); ?>
+												</span>
+											<?php endif; ?>
+											<?php if ( $has_status_label ) :
+												$label_config = $this->get_status_label_config( $status_label );
+												?>
+												<span class="wp-mcp-ai-tool-status-label <?php echo esc_attr( $label_config['class'] ); ?>" style="display: inline-block; padding: 2px 5px; background: <?php echo esc_attr( $label_config['color'] ); ?>; color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+													<?php echo esc_html( $label_config['text'] ); ?>
+												</span>
+											<?php endif; ?>
+										</td>
+									</tr>
 								<?php endforeach; ?>
 							</tbody>
 						</table>
