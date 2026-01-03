@@ -202,9 +202,86 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 			if ( '' !== $overall_feedback ) {
 				$response['overall_feedback'] = $overall_feedback;
 			}
+
+			// Add Chart.js visualization for question performance.
+			$response['chart'] = $this->generate_results_chart( $detailed_results, $questions );
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Generate Chart.js configuration for individual results.
+	 *
+	 * @param array $detailed_results Detailed results array.
+	 * @param array $questions        Quiz questions.
+	 * @return array Chart.js configuration.
+	 */
+	private function generate_results_chart( $detailed_results, $questions ) {
+		$labels         = array();
+		$points_earned  = array();
+		$points_max     = array();
+
+		foreach ( $detailed_results as $result ) {
+			$q_num = $result['question_number'];
+			$labels[] = sprintf( __( 'Q%d', 'wp-mcp-ai' ), $q_num );
+
+			$earned = isset( $result['points_earned'] ) ? floatval( $result['points_earned'] ) : 0;
+			$max    = isset( $result['points_possible'] ) ? floatval( $result['points_possible'] ) : 1;
+
+			$points_earned[] = $earned;
+			$points_max[]    = $max;
+		}
+
+		return array(
+			'type' => 'bar',
+			'data' => array(
+				'labels'   => $labels,
+				'datasets' => array(
+					array(
+						'label'           => __( 'Points Earned', 'wp-mcp-ai' ),
+						'data'            => $points_earned,
+						'backgroundColor' => 'rgba(75, 192, 192, 0.6)',
+						'borderColor'     => 'rgba(75, 192, 192, 1)',
+						'borderWidth'     => 1,
+					),
+					array(
+						'label'           => __( 'Points Possible', 'wp-mcp-ai' ),
+						'data'            => $points_max,
+						'backgroundColor' => 'rgba(201, 203, 207, 0.6)',
+						'borderColor'     => 'rgba(201, 203, 207, 1)',
+						'borderWidth'     => 1,
+					),
+				),
+			),
+			'options' => array(
+				'responsive' => true,
+				'plugins'    => array(
+					'title' => array(
+						'display' => true,
+						'text'    => __( 'Your Performance by Question', 'wp-mcp-ai' ),
+					),
+					'legend' => array(
+						'display' => true,
+					),
+				),
+				'scales'     => array(
+					'y' => array(
+						'beginAtZero' => true,
+						'title'       => array(
+							'display' => true,
+							'text'    => __( 'Points', 'wp-mcp-ai' ),
+						),
+					),
+					'x' => array(
+						'title' => array(
+							'display' => true,
+							'text'    => __( 'Question', 'wp-mcp-ai' ),
+						),
+					),
+				),
+			),
+		);
 	}
 
 	/**

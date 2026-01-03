@@ -249,7 +249,7 @@ Grades a quiz submission.
 
 ### 7. get_quiz_submissions
 
-Retrieves all submissions for a quiz.
+Retrieves all submissions for a quiz with embedded Chart.js visualizations.
 
 **Slug**: `get_quiz_submissions`
 
@@ -264,12 +264,23 @@ Retrieves all submissions for a quiz.
 - `total`: Total submissions
 - `page`: Current page
 - `total_pages`: Total pages
+- `charts`: Chart.js configurations for:
+  - `status_overview` - Doughnut chart showing graded vs pending
+  - `pass_fail` - Doughnut chart showing passed vs failed (if graded submissions exist)
+  - `score_distribution` - Bar chart of score ranges (if graded submissions exist)
+
+**Chart Integration**:
+```javascript
+const result = await getQuizSubmissions({ quiz_id: 123 });
+const ctx = document.getElementById('statusChart').getContext('2d');
+new Chart(ctx, result.charts.status_overview);
+```
 
 **Permissions**: Only the quiz author or users with `edit_others_posts` capability can view.
 
 ### 8. get_quiz_results
 
-Retrieves detailed results for a graded submission.
+Retrieves detailed results for a graded submission with embedded Chart.js visualization.
 
 **Slug**: `get_quiz_results`
 
@@ -286,6 +297,21 @@ Retrieves detailed results for a graded submission.
 - `percentage`: Percentage score (if graded)
 - `passed`: Pass/fail status (if graded)
 - `overall_feedback`: Tutor feedback (if provided)
+- `chart`: Chart.js configuration showing performance by question (if graded)
+
+**Chart Integration**:
+```javascript
+const result = await getQuizResults({ submission_id: 456 });
+if (result.chart) {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(ctx, result.chart);
+}
+```
+
+**Chart Details**:
+- Type: Bar chart
+- Shows points earned vs points possible for each question
+- Helps students visualize their performance across questions
 
 **Permissions**: Students can view their own results, quiz authors can view all results.
 
