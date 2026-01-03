@@ -219,6 +219,30 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			update_post_meta( $submission_id, '_mcp_ai_submission_overall_feedback', $overall_feedback );
 		}
 
+		// Audit logging for grade changes.
+		$audit_log = array(
+			'timestamp'     => current_time( 'mysql' ),
+			'grader_id'     => $current_user_id,
+			'grader_name'   => get_userdata( $current_user_id )->display_name,
+			'student_id'    => absint( $submission->post_author ),
+			'student_name'  => get_userdata( $submission->post_author )->display_name,
+			'quiz_id'       => $quiz_id,
+			'quiz_title'    => get_the_title( $quiz_id ),
+			'earned_points' => $earned_points,
+			'total_points'  => absint( $total_points ),
+			'percentage'    => round( $percentage, 2 ),
+			'passed'        => $passed,
+			'ip_address'    => $this->get_client_ip(),
+		);
+
+		// Store audit log in post meta (append to existing logs).
+		$existing_logs = get_post_meta( $submission_id, '_mcp_ai_submission_audit_log', true );
+		if ( ! is_array( $existing_logs ) ) {
+			$existing_logs = array();
+		}
+		$existing_logs[] = $audit_log;
+		update_post_meta( $submission_id, '_mcp_ai_submission_audit_log', $existing_logs );
+
 		return array(
 			'summary'          => sprintf(
 				/* translators: 1: earned points, 2: total points, 3: percentage */
@@ -239,6 +263,40 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'graded_at'        => current_time( 'mysql' ),
 			'overall_feedback' => $overall_feedback,
 		);
+	}
+
+	/**
+	 * Get client IP address for audit logging.
+	 *
+	 * @return string Client IP address.
+	 */
+	private function get_client_ip() {
+		$ip_address = '';
+
+		// Check for various proxy headers.
+		$headers = array(
+			'HTTP_CLIENT_IP',
+			'HTTP_X_FORWARDED_FOR',
+			'HTTP_X_FORWARDED',
+			'HTTP_X_CLUSTER_CLIENT_IP',
+			'HTTP_FORWARDED_FOR',
+			'HTTP_FORWARDED',
+			'REMOTE_ADDR',
+		);
+
+		foreach ( $headers as $header ) {
+			if ( ! empty( $_SERVER[ $header ] ) ) {
+				$ip_address = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
+				// If multiple IPs, take the first one.
+				if ( strpos( $ip_address, ',' ) !== false ) {
+					$ip_parts   = explode( ',', $ip_address );
+					$ip_address = trim( $ip_parts[0] );
+				}
+				break;
+			}
+		}
+
+		return $ip_address;
 	}
 
 	/**

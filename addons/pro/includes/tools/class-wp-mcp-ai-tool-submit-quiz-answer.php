@@ -95,6 +95,22 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to submit quiz answers.', 'wp-mcp-ai' ) );
 		}
 
+		// Rate limiting: Check for too many submissions in a short time.
+		$rate_limit_key = 'wp_mcp_ai_quiz_submit_' . $current_user_id;
+		$recent_submissions = get_transient( $rate_limit_key );
+
+		if ( false === $recent_submissions ) {
+			$recent_submissions = 0;
+		}
+
+		// Allow max 5 submissions per 5 minutes per user.
+		if ( $recent_submissions >= 5 ) {
+			return new WP_Error(
+				'wp_mcp_ai_rate_limit_exceeded',
+				__( 'Too many submission attempts. Please wait a few minutes before trying again.', 'wp-mcp-ai' )
+			);
+		}
+
 		$quiz_id    = isset( $arguments['quiz_id'] ) ? absint( $arguments['quiz_id'] ) : 0;
 		$answers    = isset( $arguments['answers'] ) && is_array( $arguments['answers'] ) ? $arguments['answers'] : array();
 		$user_id    = isset( $arguments['user_id'] ) ? absint( $arguments['user_id'] ) : $current_user_id;
@@ -329,6 +345,12 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			update_post_meta( $submission_id, '_mcp_ai_submission_completion_time', $completion_time_minutes );
 		}
 
+		// Store IP address for anti-cheating measures.
+		$ip_address = $this->get_client_ip();
+		if ( $ip_address ) {
+			update_post_meta( $submission_id, '_mcp_ai_submission_ip_address', $ip_address );
+		}
+
 		$submission = get_post( $submission_id );
 
 		$result = array(
@@ -356,7 +378,44 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			$result['completion_time_minutes'] = $completion_time_minutes;
 		}
 
+		// Increment rate limit counter (5 minutes window).
+		set_transient( $rate_limit_key, $recent_submissions + 1, 5 * MINUTE_IN_SECONDS );
+
 		return $result;
+	}
+
+	/**
+	 * Get client IP address for anti-cheating measures.
+	 *
+	 * @return string Client IP address.
+	 */
+	private function get_client_ip() {
+		$ip_address = '';
+
+		// Check for various proxy headers.
+		$headers = array(
+			'HTTP_CLIENT_IP',
+			'HTTP_X_FORWARDED_FOR',
+			'HTTP_X_FORWARDED',
+			'HTTP_X_CLUSTER_CLIENT_IP',
+			'HTTP_FORWARDED_FOR',
+			'HTTP_FORWARDED',
+			'REMOTE_ADDR',
+		);
+
+		foreach ( $headers as $header ) {
+			if ( ! empty( $_SERVER[ $header ] ) ) {
+				$ip_address = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
+				// If multiple IPs, take the first one.
+				if ( strpos( $ip_address, ',' ) !== false ) {
+					$ip_parts   = explode( ',', $ip_address );
+					$ip_address = trim( $ip_parts[0] );
+				}
+				break;
+			}
+		}
+
+		return $ip_address;
 	}
 
 	/**
