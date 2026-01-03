@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-table-layout-for-tools',
-        'version' => 'dev-copilot/update-table-layout-for-tools',
-        'reference' => '610c4ea38b68aee48bcdd7a67104ee4115614059',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-script-yet-again',
+        'version' => 'dev-copilot/rebuild-all-zips-script-yet-again',
+        'reference' => '38e643b69ba60d39eec4d97df6b75adf6c5ecf44',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-table-layout-for-tools',
-            'version' => 'dev-copilot/update-table-layout-for-tools',
-            'reference' => '610c4ea38b68aee48bcdd7a67104ee4115614059',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-script-yet-again',
+            'version' => 'dev-copilot/rebuild-all-zips-script-yet-again',
+            'reference' => '38e643b69ba60d39eec4d97df6b75adf6c5ecf44',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
