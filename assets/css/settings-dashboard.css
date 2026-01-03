@@ -459,14 +459,49 @@
 @media screen and (max-width: 782px) {
 	.wp-mcp-ai-token-manager__nav {
 		flex-direction: column;
+		gap: 5px;
 	}
 
 	.wp-mcp-ai-token-manager__nav-item {
 		justify-content: center;
+		width: 100%;
 	}
 
 	.wp-mcp-ai-stats-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.wp-mcp-ai-token-manager__content {
+		padding: 15px;
+	}
+
+	/* Form table responsive improvements */
+	.wp-mcp-ai-settings-dashboard .form-table {
+		border-collapse: collapse;
+	}
+
+	.wp-mcp-ai-settings-dashboard .form-table th,
+	.wp-mcp-ai-settings-dashboard .form-table td {
+		display: block;
+		width: 100%;
+		padding: 10px 0;
+	}
+
+	.wp-mcp-ai-settings-dashboard .form-table th {
+		padding-bottom: 5px;
+		font-size: 14px;
+	}
+
+	/* Full width inputs on mobile */
+	.wp-mcp-ai-settings-dashboard input[type="text"],
+	.wp-mcp-ai-settings-dashboard input[type="password"],
+	.wp-mcp-ai-settings-dashboard input[type="email"],
+	.wp-mcp-ai-settings-dashboard input[type="url"],
+	.wp-mcp-ai-settings-dashboard input[type="number"],
+	.wp-mcp-ai-settings-dashboard select,
+	.wp-mcp-ai-settings-dashboard textarea {
+		width: 100%;
+		max-width: 100%;
 	}
 }
 

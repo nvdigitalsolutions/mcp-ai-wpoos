@@ -317,19 +317,56 @@
 		grid-template-columns: 1fr;
 	}
 
+	.wp-mcp-ai-datasets-search {
+		flex-direction: column;
+	}
+
+	.wp-mcp-ai-datasets-search input[type="text"] {
+		max-width: 100%;
+	}
+
 	.wp-mcp-ai-datasets-filters {
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 10px;
+		width: 100%;
 	}
 
 	.wp-mcp-ai-datasets-filters select {
 		min-width: 100%;
+		width: 100%;
 	}
 
 	.wp-mcp-ai-modal-content {
 		width: 95%;
 		margin: 2% auto;
+		max-height: 95vh;
+	}
+
+	.wp-mcp-ai-modal-body {
+		padding: 20px;
+	}
+
+	.dataset-card-footer {
+		flex-direction: column;
+	}
+
+	.dataset-card-footer .button {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.dataset-meta {
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	/* Better code block handling on mobile */
+	.dataset-preview-data pre,
+	.dataset-usage-section code {
+		font-size: 12px;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 }
 

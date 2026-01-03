@@ -1,0 +1,302 @@
+/**
+ * Admin Responsive Utilities for NV oOS
+ *
+ * Shared responsive utility classes and table wrappers for mobile optimization.
+ * Follows WordPress admin breakpoints (782px).
+ *
+ * @package WP_MCP_AI
+ */
+
+/* ============================================================
+   TABLE RESPONSIVE WRAPPERS
+   ============================================================ */
+
+/**
+ * Horizontal scroll wrapper for wide tables on mobile.
+ * Add this class to a container wrapping your table.
+ */
+.wp-mcp-ai-table-wrapper {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	margin: 1rem 0;
+}
+
+.wp-mcp-ai-table-wrapper table {
+	min-width: 600px; /* Ensure table maintains minimum width */
+}
+
+/* ============================================================
+   RESPONSIVE TABLE PATTERNS
+   ============================================================ */
+
+/**
+ * Stacked table pattern for mobile.
+ * Tables transform into stacked cards on small screens.
+ */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-table-responsive thead {
+		position: absolute;
+		left: -9999px;
+		top: -9999px;
+	}
+
+	.wp-mcp-ai-table-responsive tbody tr {
+		display: block;
+		margin-bottom: 1rem;
+		border: 1px solid #dcdcde;
+		border-radius: 4px;
+		background: #fff;
+	}
+
+	.wp-mcp-ai-table-responsive tbody td {
+		display: block;
+		text-align: right;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid #f0f0f1;
+		position: relative;
+		padding-left: 50%;
+	}
+
+	.wp-mcp-ai-table-responsive tbody td:last-child {
+		border-bottom: none;
+	}
+
+	.wp-mcp-ai-table-responsive tbody td::before {
+		content: attr(data-label);
+		position: absolute;
+		left: 1rem;
+		width: 45%;
+		padding-right: 1rem;
+		white-space: nowrap;
+		text-align: left;
+		font-weight: 600;
+		color: #1d2327;
+	}
+
+	/* Actions column handling */
+	.wp-mcp-ai-table-responsive tbody td[data-label="Actions"],
+	.wp-mcp-ai-table-responsive tbody td.actions {
+		text-align: left;
+		padding-left: 1rem;
+	}
+
+	.wp-mcp-ai-table-responsive tbody td[data-label="Actions"]::before,
+	.wp-mcp-ai-table-responsive tbody td.actions::before {
+		position: relative;
+		display: block;
+		width: 100%;
+		margin-bottom: 0.5rem;
+	}
+}
+
+/* ============================================================
+   GRID UTILITIES
+   ============================================================ */
+
+.wp-mcp-ai-grid-2 {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 1rem;
+}
+
+.wp-mcp-ai-grid-3 {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1rem;
+}
+
+.wp-mcp-ai-grid-4 {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 1rem;
+}
+
+@media screen and (max-width: 1280px) {
+	.wp-mcp-ai-grid-4 {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-grid-2,
+	.wp-mcp-ai-grid-3,
+	.wp-mcp-ai-grid-4 {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ============================================================
+   FLEXBOX UTILITIES
+   ============================================================ */
+
+.wp-mcp-ai-flex-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
+.wp-mcp-ai-flex-column-mobile {
+	display: flex;
+	gap: 1rem;
+}
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-flex-column-mobile {
+		flex-direction: column;
+	}
+}
+
+/* ============================================================
+   VISIBILITY UTILITIES
+   ============================================================ */
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-hide-mobile {
+		display: none !important;
+	}
+}
+
+@media screen and (min-width: 783px) {
+	.wp-mcp-ai-hide-desktop {
+		display: none !important;
+	}
+}
+
+/* ============================================================
+   SPACING UTILITIES
+   ============================================================ */
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-mobile-p-sm {
+		padding: 0.75rem !important;
+	}
+
+	.wp-mcp-ai-mobile-m-sm {
+		margin: 0.5rem !important;
+	}
+
+	.wp-mcp-ai-mobile-gap-sm {
+		gap: 0.5rem !important;
+	}
+}
+
+/* ============================================================
+   FORM UTILITIES
+   ============================================================ */
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-form-responsive input[type="text"],
+	.wp-mcp-ai-form-responsive input[type="password"],
+	.wp-mcp-ai-form-responsive input[type="email"],
+	.wp-mcp-ai-form-responsive input[type="url"],
+	.wp-mcp-ai-form-responsive input[type="number"],
+	.wp-mcp-ai-form-responsive select,
+	.wp-mcp-ai-form-responsive textarea {
+		width: 100%;
+		max-width: 100%;
+	}
+}
+
+/* ============================================================
+   BUTTON GROUP UTILITIES
+   ============================================================ */
+
+.wp-mcp-ai-button-group {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+@media screen and (max-width: 600px) {
+	.wp-mcp-ai-button-group {
+		flex-direction: column;
+	}
+
+	.wp-mcp-ai-button-group .button {
+		width: 100%;
+		text-align: center;
+		justify-content: center;
+	}
+}
+
+/* ============================================================
+   CARD/PANEL UTILITIES
+   ============================================================ */
+
+.wp-mcp-ai-card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 1.5rem;
+	margin-bottom: 1rem;
+}
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-card {
+		padding: 1rem;
+	}
+}
+
+/* ============================================================
+   STAT CARDS
+   ============================================================ */
+
+.wp-mcp-ai-stat-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 1rem;
+	margin: 1.5rem 0;
+}
+
+@media screen and (max-width: 600px) {
+	.wp-mcp-ai-stat-cards {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ============================================================
+   MODAL/DIALOG RESPONSIVE
+   ============================================================ */
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-modal-content {
+		width: 95% !important;
+		margin: 5% auto !important;
+		max-height: 90vh !important;
+	}
+
+	.wp-mcp-ai-modal-body {
+		padding: 1rem !important;
+	}
+}
+
+/* ============================================================
+   OVERFLOW TEXT HANDLING
+   ============================================================ */
+
+.wp-mcp-ai-text-truncate {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-text-wrap-mobile {
+		white-space: normal;
+		word-break: break-word;
+	}
+}
+
+/* ============================================================
+   CODE BLOCKS
+   ============================================================ */
+
+@media screen and (max-width: 782px) {
+	pre,
+	code {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		word-wrap: break-word;
+		white-space: pre-wrap;
+	}
+}

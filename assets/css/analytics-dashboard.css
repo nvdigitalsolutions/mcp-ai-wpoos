@@ -203,10 +203,19 @@
 @media screen and (max-width: 782px) {
 	.wp-mcp-ai-stats-grid {
 		grid-template-columns: repeat(2, 1fr);
+		gap: 10px;
+	}
+
+	.wp-mcp-ai-stat-card {
+		padding: 15px 10px;
 	}
 
 	.wp-mcp-ai-stat-value {
 		font-size: 20px;
+	}
+
+	.wp-mcp-ai-stat-label {
+		font-size: 11px;
 	}
 
 	.wp-mcp-ai-cost-amount,
@@ -216,12 +225,31 @@
 
 	.wp-mcp-ai-chart-container {
 		min-height: 250px;
+		padding: 10px;
+	}
+
+	.wp-mcp-ai-cost-summary,
+	.wp-mcp-ai-forecast-summary {
+		padding: 15px;
+	}
+
+	.wp-mcp-ai-widget-actions {
+		text-align: center;
+	}
+
+	.wp-mcp-ai-widget-actions .button {
+		margin: 0.25rem;
+		width: 100%;
 	}
 }
 
 @media screen and (max-width: 600px) {
 	.wp-mcp-ai-stats-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.wp-mcp-ai-stat-value {
+		font-size: 24px;
 	}
 }
 
