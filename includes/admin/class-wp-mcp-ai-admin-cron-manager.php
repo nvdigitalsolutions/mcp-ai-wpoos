@@ -431,9 +431,9 @@ class WP_MCP_AI_Admin_Cron_Manager {
 							printf(
 								/* translators: 1: total items, 2: active items */
 								esc_html__( '%1$d failed items in queue (%2$d active, %3$d dismissed)', 'wp-mcp-ai' ),
-								$dlq_stats['total'],
-								$dlq_stats['active'],
-								$dlq_stats['dismissed']
+								(int) $dlq_stats['total'],
+								(int) $dlq_stats['active'],
+								(int) $dlq_stats['dismissed']
 							);
 							?>
 							<?php if ( ! empty( $dlq_stats['by_type'] ) ) : ?>

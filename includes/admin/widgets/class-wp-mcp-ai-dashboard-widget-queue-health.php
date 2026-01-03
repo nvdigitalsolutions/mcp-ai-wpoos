@@ -92,7 +92,7 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 						printf(
 							/* translators: %d: number of failed items */
 							esc_html__( '%d failed items', 'wp-mcp-ai' ),
-							$dlq_stats['total']
+							(int) $dlq_stats['total']
 						);
 					} else {
 						esc_html_e( '✓ No failures', 'wp-mcp-ai' );
@@ -109,8 +109,8 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 						printf(
 							/* translators: 1: active count, 2: dismissed count */
 							esc_html__( '%1$d / %2$d', 'wp-mcp-ai' ),
-							$dlq_stats['active'],
-							$dlq_stats['dismissed']
+							(int) $dlq_stats['active'],
+							(int) $dlq_stats['dismissed']
 						);
 						?>
 					</span>
@@ -144,13 +144,13 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 							printf(
 								/* translators: %d: number of critical issues */
 								esc_html__( '⚠️ %d critical', 'wp-mcp-ai' ),
-								$critical_count
+								(int) $critical_count
 							);
 						} else {
 							printf(
 								/* translators: %d: number of warnings */
 								esc_html__( '⚠️ %d warnings', 'wp-mcp-ai' ),
-								$warning_count
+								(int) $warning_count
 							);
 						}
 					} else {

@@ -155,18 +155,18 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 			wp_die( esc_html__( 'You do not have permission to manage the dead letter queue.', 'wp-mcp-ai' ) );
 		}
 
-		$item_id = isset( $_GET['item_id'] ) ? sanitize_key( $_GET['item_id'] ) : '';
-		$action  = isset( $_GET['action'] ) ? sanitize_key( $_GET['action'] ) : '';
+		$item_id    = isset( $_GET['item_id'] ) ? sanitize_key( $_GET['item_id'] ) : '';
+		$dlq_action = isset( $_GET['dlq_action'] ) ? sanitize_key( $_GET['dlq_action'] ) : '';
 
-		if ( '' === $item_id || '' === $action ) {
+		if ( '' === $item_id || '' === $dlq_action ) {
 			wp_die( esc_html__( 'Missing parameters.', 'wp-mcp-ai' ) );
 		}
 
-		check_admin_referer( 'wp_mcp_ai_dlq_' . $action . '_' . $item_id );
+		check_admin_referer( 'wp_mcp_ai_dlq_' . $dlq_action . '_' . $item_id );
 
 		$result = false;
 
-		switch ( $action ) {
+		switch ( $dlq_action ) {
 			case 'retry':
 				$result = WP_MCP_AI_Dead_Letter_Queue::retry( $item_id );
 				break;
@@ -180,7 +180,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 				break;
 		}
 
-		$redirect_args = array( 'action_result' => $action );
+		$redirect_args = array( 'action_result' => $dlq_action );
 
 		if ( is_wp_error( $result ) ) {
 			$redirect_args['error'] = $result->get_error_code();
@@ -285,8 +285,8 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 					printf(
 						/* translators: 1: number of items processed, 2: number of errors */
 						esc_html__( 'Bulk action completed: %1$d items processed, %2$d errors.', 'wp-mcp-ai' ),
-						$processed,
-						$errors
+						(int) $processed,
+						(int) $errors
 					);
 					?>
 				</p>
@@ -483,7 +483,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 				array(
 					'action'  => 'wp_mcp_ai_dlq_single_action',
 					'item_id' => $item_id,
-					'action'  => 'retry',
+					'dlq_action' => 'retry',
 				),
 				admin_url( 'admin-post.php' )
 			),
@@ -502,7 +502,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 					array(
 						'action'  => 'wp_mcp_ai_dlq_single_action',
 						'item_id' => $item_id,
-						'action'  => 'dismiss',
+						'dlq_action' => 'dismiss',
 					),
 					admin_url( 'admin-post.php' )
 				),
@@ -519,9 +519,9 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 		$delete_url = wp_nonce_url(
 			add_query_arg(
 				array(
-					'action'  => 'wp_mcp_ai_dlq_single_action',
-					'item_id' => $item_id,
-					'action'  => 'delete',
+					'action'     => 'wp_mcp_ai_dlq_single_action',
+					'item_id'    => $item_id,
+					'dlq_action' => 'delete',
 				),
 				admin_url( 'admin-post.php' )
 			),

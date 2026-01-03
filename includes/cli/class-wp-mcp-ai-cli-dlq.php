@@ -55,7 +55,7 @@ class WP_MCP_AI_CLI_DLQ {
  * @param array $args       Positional arguments.
  * @param array $assoc_args Associative arguments.
  */
-public function list( $args, $assoc_args ) {
+public function list_items( $args, $assoc_args ) {
 if ( ! class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
 WP_CLI::error( 'Dead Letter Queue class not found.' );
 }
