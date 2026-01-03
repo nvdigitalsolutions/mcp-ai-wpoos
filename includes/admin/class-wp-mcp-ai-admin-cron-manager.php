@@ -278,6 +278,13 @@ class WP_MCP_AI_Admin_Cron_Manager {
 				</div>
 			<?php endif; ?>
 
+			<?php
+			// Show DLQ and SLA statistics if classes are available.
+			if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) || class_exists( 'WP_MCP_AI_SLA_Manager' ) ) :
+				$this->render_dlq_sla_stats();
+			endif;
+			?>
+
 			<?php if ( empty( $jobs ) ) : ?>
 				<div class="wp-mcp-ai-cron-manager__empty">
 					<h3><?php esc_html_e( 'No Scheduled Events', 'wp-mcp-ai' ); ?></h3>
@@ -399,6 +406,126 @@ class WP_MCP_AI_Admin_Cron_Manager {
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render DLQ and SLA statistics section.
+	 */
+	private function render_dlq_sla_stats() {
+		?>
+		<div class="wp-mcp-ai-cron-manager__intro" style="margin-top:2rem;">
+			<h2 style="margin-top:0;"><?php esc_html_e( 'Job Queue Health', 'wp-mcp-ai' ); ?></h2>
+
+			<?php if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) : ?>
+				<?php
+				$dlq_stats = WP_MCP_AI_Dead_Letter_Queue::get_stats();
+				if ( $dlq_stats['total'] > 0 ) :
+					?>
+					<div style="padding:1rem;background:#fff3cd;border-left:4px solid #ffc107;margin-bottom:1rem;">
+						<strong><?php esc_html_e( 'Dead Letter Queue', 'wp-mcp-ai' ); ?></strong>
+						<p style="margin:0.5rem 0 0 0;">
+							<?php
+							printf(
+								/* translators: 1: total items, 2: active items */
+								esc_html__( '%1$d failed items in queue (%2$d active, %3$d dismissed)', 'wp-mcp-ai' ),
+								$dlq_stats['total'],
+								$dlq_stats['active'],
+								$dlq_stats['dismissed']
+							);
+							?>
+							<?php if ( ! empty( $dlq_stats['by_type'] ) ) : ?>
+								<br>
+								<?php
+								$type_labels = array(
+									'webhook'    => __( 'Webhooks', 'wp-mcp-ai' ),
+									'cron_job'   => __( 'Cron Jobs', 'wp-mcp-ai' ),
+									'async_tool' => __( 'Async Tools', 'wp-mcp-ai' ),
+									'job_queue'  => __( 'Queue Jobs', 'wp-mcp-ai' ),
+								);
+								$type_parts  = array();
+								foreach ( $dlq_stats['by_type'] as $type => $count ) {
+									$label        = isset( $type_labels[ $type ] ) ? $type_labels[ $type ] : $type;
+									$type_parts[] = sprintf( '%s: %d', esc_html( $label ), $count );
+								}
+								echo esc_html( implode( ', ', $type_parts ) );
+								?>
+							<?php endif; ?>
+						</p>
+						<p style="margin:0.5rem 0 0 0;">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dlq-manager' ) ); ?>" class="button button-secondary">
+								<?php esc_html_e( 'View Dead Letter Queue →', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+					</div>
+				<?php else : ?>
+					<div style="padding:1rem;background:#d4edda;border-left:4px solid #28a745;margin-bottom:1rem;">
+						<strong><?php esc_html_e( 'Dead Letter Queue', 'wp-mcp-ai' ); ?></strong>
+						<p style="margin:0.5rem 0 0 0;">
+							✓ <?php esc_html_e( 'No failed items - all jobs completing successfully', 'wp-mcp-ai' ); ?>
+						</p>
+					</div>
+				<?php endif; ?>
+			<?php endif; ?>
+
+			<?php if ( class_exists( 'WP_MCP_AI_SLA_Manager' ) && WP_MCP_AI_SLA_Manager::is_enabled() ) : ?>
+				<div style="padding:1rem;background:#e7f3ff;border-left:4px solid #2271b1;margin-bottom:1rem;">
+					<strong><?php esc_html_e( 'SLA Prioritization', 'wp-mcp-ai' ); ?></strong>
+					<p style="margin:0.5rem 0;">
+						<?php esc_html_e( 'Jobs are automatically prioritized into tiers based on latency requirements:', 'wp-mcp-ai' ); ?>
+					</p>
+					<?php
+					$tiers_info = WP_MCP_AI_SLA_Manager::get_all_tiers_info();
+					?>
+					<table style="width:100%;margin-top:0.5rem;border-collapse:collapse;">
+						<tr style="background:#f0f6fc;">
+							<th style="padding:0.5rem;text-align:left;border:1px solid #ddd;"><?php esc_html_e( 'Tier', 'wp-mcp-ai' ); ?></th>
+							<th style="padding:0.5rem;text-align:left;border:1px solid #ddd;"><?php esc_html_e( 'Priority', 'wp-mcp-ai' ); ?></th>
+							<th style="padding:0.5rem;text-align:left;border:1px solid #ddd;"><?php esc_html_e( 'SLA Target', 'wp-mcp-ai' ); ?></th>
+							<th style="padding:0.5rem;text-align:left;border:1px solid #ddd;"><?php esc_html_e( 'Max Concurrent', 'wp-mcp-ai' ); ?></th>
+						</tr>
+						<?php foreach ( $tiers_info as $tier => $info ) : ?>
+							<tr>
+								<td style="padding:0.5rem;border:1px solid #ddd;">
+									<strong><?php echo esc_html( ucfirst( str_replace( '_', ' ', $tier ) ) ); ?></strong>
+								</td>
+								<td style="padding:0.5rem;border:1px solid #ddd;"><?php echo esc_html( $info['priority'] ); ?></td>
+								<td style="padding:0.5rem;border:1px solid #ddd;"><?php echo esc_html( $info['sla_target'] ); ?>s</td>
+								<td style="padding:0.5rem;border:1px solid #ddd;"><?php echo esc_html( $info['concurrent'] ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</table>
+
+					<?php
+					// Show tuning recommendations if there are issues.
+					$recommendations = WP_MCP_AI_SLA_Manager::get_tuning_recommendations();
+					$has_issues      = false;
+					foreach ( $recommendations as $rec ) {
+						if ( 'ok' !== $rec['status'] ) {
+							$has_issues = true;
+							break;
+						}
+					}
+					?>
+
+					<?php if ( $has_issues ) : ?>
+						<div style="margin-top:1rem;padding:0.75rem;background:#fff3cd;border:1px solid #ffc107;border-radius:4px;">
+							<strong><?php esc_html_e( '⚠️ Tuning Recommendations:', 'wp-mcp-ai' ); ?></strong>
+							<ul style="margin:0.5rem 0 0 1.5rem;padding:0;">
+								<?php foreach ( $recommendations as $rec ) : ?>
+									<?php if ( 'ok' !== $rec['status'] ) : ?>
+										<li>
+											<strong><?php echo esc_html( ucfirst( $rec['tier'] ) ); ?>:</strong>
+											<?php echo esc_html( $rec['message'] ); ?>
+										</li>
+									<?php endif; ?>
+								<?php endforeach; ?>
+							</ul>
+						</div>
+					<?php endif; ?>
+				</div>
 			<?php endif; ?>
 		</div>
 		<?php
