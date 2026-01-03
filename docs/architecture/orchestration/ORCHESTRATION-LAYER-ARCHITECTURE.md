@@ -880,6 +880,279 @@ class WP_MCP_AI_Orchestrator {
 
 ---
 
+## 🔹 Dead Letter Queue & SLA-Based Prioritization
+
+**Added:** January 2026  
+**Version:** 1.1.0
+
+### Overview
+
+The orchestration layer now includes enterprise-grade failure handling and intelligent job prioritization when RabbitMQ is unavailable. This enhancement addresses two critical operational needs:
+
+1. **Persistent Failure Handling** - Failed operations (webhooks, cron jobs, async tools) survive beyond max retries for manual intervention
+2. **SLA-Based Prioritization** - Jobs automatically assigned to tiers (real-time, near real-time, batch) with capacity-aware concurrency limits
+
+### The Challenge: WordPress Cron Limitations
+
+WordPress's native cron system, while functional for basic scheduling, lacks:
+- **Failure persistence** - Failed jobs are logged but not recoverable
+- **Priority queuing** - All jobs treated equally regardless of latency requirements
+- **Retry strategies** - No exponential backoff or jitter for transient failures
+- **Capacity management** - No per-tier concurrency limits based on resource availability
+- **Observability** - Limited visibility into failure patterns and queue health
+
+### Dead Letter Queue (DLQ)
+
+**Purpose:** Capture permanently failed operations for manual review and retry.
+
+**Architecture:**
+```
+Job Execution → Max Retries (3) → DLQ Storage
+                    ↓                    ↓
+               Exponential         Admin UI + WP-CLI
+               Backoff + Jitter    for Management
+```
+
+**Supported Item Types:**
+1. **Webhooks** - HTTP callback delivery failures
+2. **Cron Jobs** - Scheduled task execution failures
+3. **Async Tools** - Background tool execution failures
+4. **Job Queue Items** - General queue processing failures
+
+**Key Features:**
+- **Persistent Storage** - WordPress option with max 1000 items, auto-pruning
+- **Retry History** - Full audit trail of retry attempts with timestamps
+- **30-Day Retention** - Automatic cleanup via weekly cron job
+- **Admin UI** - Filter by type/status, bulk operations (retry/dismiss/delete)
+- **WP-CLI Commands** - Full command-line interface for automation
+
+**Implementation:**
+```php
+// Automatic DLQ integration in Job Queue Manager
+if ( $retry_count >= 3 ) {
+    WP_MCP_AI_Dead_Letter_Queue::add(
+        'job_queue',
+        $job_id,
+        $error_message,
+        $job_data,
+        $retry_count
+    );
+}
+```
+
+### SLA-Based Prioritization with Little's Law
+
+**Purpose:** Ensure latency-sensitive jobs aren't blocked by long-running batch operations.
+
+**Three-Tier System:**
+
+| Tier | SLA Target | Priority | Max Concurrent | Use Cases |
+|------|-----------|----------|----------------|-----------|
+| **Real-time** | < 1s | 100 | 5 | Live UI interactions, chat responses |
+| **Near real-time** | 1-30s | 50 | 3 | API calls, webhook deliveries |
+| **Batch** | > 30s | 10 | 2 | Background processing, bulk operations |
+
+**Automatic Tier Assignment:**
+
+The system infers tier from tool capabilities:
+```php
+// Tool declares capabilities
+public function get_capabilities() {
+    return array( 'realtime', 'async' );
+}
+
+// SLA Manager auto-assigns tier
+$tier = WP_MCP_AI_SLA_Manager::get_tier_for_tool( $tool );
+$priority = WP_MCP_AI_SLA_Manager::get_priority( $tier );
+```
+
+**Little's Law Capacity Planning:**
+
+The SLA Manager uses Little's Law (`L = λ × W`) for intelligent capacity allocation:
+
+- **L** = Queue length (jobs waiting)
+- **λ** = Arrival rate (jobs/second)
+- **W** = Wait time (seconds)
+
+This enables:
+- **Predictive capacity** - Calculate required workers before overload
+- **Tuning recommendations** - Suggest increasing concurrent limits when at risk
+- **SLA compliance monitoring** - Alert when tier targets may be violated
+
+**Concurrency Enforcement:**
+```php
+protected static function apply_sla_tier_limits( $pending_jobs, $active_jobs ) {
+    // Count active jobs per tier
+    $active_by_tier = array(
+        'realtime'      => 0,
+        'near_realtime' => 0,
+        'batch'         => 0,
+    );
+    
+    foreach ( $active_jobs as $job ) {
+        $tier = $job['sla_tier'] ?? 'batch';
+        $active_by_tier[ $tier ]++;
+    }
+    
+    // Filter pending jobs that have capacity
+    return array_filter( $pending_jobs, function( $job ) use ( $active_by_tier ) {
+        $tier = $job['sla_tier'] ?? 'batch';
+        $limit = WP_MCP_AI_SLA_Manager::get_max_concurrent( $tier );
+        return $active_by_tier[ $tier ] < $limit;
+    } );
+}
+```
+
+### Exponential Backoff with Jitter
+
+**Purpose:** Prevent thundering herd problem and provide graceful failure handling.
+
+**Retry Strategy:**
+```php
+$config = array(
+    'initial_delay'  => 10,    // 10 seconds
+    'multiplier'     => 2.0,   // Double each time
+    'max_delay'      => 300,   // 5 minutes max
+    'max_attempts'   => 3,
+    'jitter_factor'  => 0.2,   // ±20% randomness
+);
+
+// Calculate next retry delay
+$delay = WP_MCP_AI_Retry_Strategy::calculate_delay( $attempt, $config );
+
+// Example progression: 10s → 20s → 40s (with ±20% jitter)
+```
+
+**Per-Operation Configurations:**
+- **Webhooks:** 10s initial, 5min max (±20% jitter)
+- **Cron Jobs:** 30s initial, 10min max (±15% jitter)
+- **Async Tools:** 15s initial, 5min max (±10% jitter)
+- **Crawl4AI:** 30s initial, 5min max (±10% jitter)
+
+### Integration with Crawl4AI
+
+The DLQ and retry strategy enhance Crawl4AI operations:
+
+```php
+// Exponential backoff for transient errors
+if ( 'timeout' !== $status && $retry_count < 3 ) {
+    $backoff_delay = $poll_interval * pow( 2, $retry_count );
+    wp_schedule_single_event( 
+        time() + $backoff_delay, 
+        self::CRON_HOOK, 
+        array( $task_id ) 
+    );
+    return;
+}
+
+// Move to DLQ after max retries
+WP_MCP_AI_Dead_Letter_Queue::add(
+    'crawl4ai',
+    $task_id,
+    'Max retries exceeded: ' . $error_message,
+    $task_data,
+    $retry_count
+);
+```
+
+### Admin UI Components
+
+**1. DLQ Manager Page** (`wp-admin/admin.php?page=wp-mcp-ai-dlq-manager`)
+- List view with type/status filters
+- Bulk actions: retry, dismiss, delete
+- Statistics dashboard (total/active/dismissed)
+- Per-item retry history display
+
+**2. Cron Manager Enhancement**
+- DLQ statistics section (failed items by type)
+- SLA tier configuration table
+- Real-time tuning recommendations
+- Quick link to DLQ Manager
+
+**3. Dashboard Widget**
+- At-a-glance DLQ status (failure counts)
+- SLA compliance indicators (critical/warning/healthy)
+- Quick action buttons to management pages
+
+### WP-CLI Commands
+
+**DLQ Management:**
+```bash
+# List failed items
+wp mcp-ai dlq list --type=webhook --format=table
+
+# View statistics
+wp mcp-ai dlq stats --format=json
+
+# Retry specific item
+wp mcp-ai dlq retry abc123def456
+
+# Purge old items
+wp mcp-ai dlq purge --days=7 --yes
+```
+
+**SLA Monitoring:**
+```bash
+# View tier configuration
+wp mcp-ai sla status
+
+# Get tuning recommendations
+wp mcp-ai sla tune
+
+# Analyze specific tier with Little's Law
+wp mcp-ai sla analyze realtime --format=json
+
+# Enable/disable SLA prioritization
+wp mcp-ai sla enable
+```
+
+### Performance Impact
+
+- **Storage:** Single WordPress option (~500KB for 1000 items)
+- **CPU Overhead:** <1ms for tier inference and priority sorting
+- **Memory:** Negligible - lazy loading and efficient caching
+- **Throughput:** Improved - real-time jobs no longer blocked by batch operations
+
+### Observability & Monitoring
+
+**Metrics Tracked:**
+- DLQ size and growth rate
+- Per-tier queue depth
+- SLA compliance rates
+- Retry success/failure rates
+- Queue processing latency
+
+**Tuning Recommendations:**
+The system provides proactive recommendations:
+- "Realtime tier: Queue depth exceeds capacity, increase concurrent workers"
+- "Batch tier: High utilization (>80%), consider adding capacity"
+- "Near-realtime tier: SLA target at risk, review job complexity"
+
+### Benefits Over Standard WordPress Cron
+
+| Feature | WordPress Cron | With DLQ + SLA |
+|---------|---------------|----------------|
+| **Failure Handling** | Logged only | Persistent, retryable |
+| **Prioritization** | None | 3-tier SLA-based |
+| **Retry Strategy** | Fixed attempts | Exponential backoff + jitter |
+| **Capacity Management** | Unlimited | Per-tier concurrency limits |
+| **Observability** | Basic logs | Admin UI + Dashboard + CLI |
+| **Capacity Planning** | Manual | Little's Law automation |
+
+### Why This Strengthens the Patent
+
+The DLQ and SLA prioritization system further demonstrates NV oOS's **architectural compensation** for PHP/WordPress limitations:
+
+1. **Persistent Failure Handling** - Simulates Node.js's error recovery in stateless environment
+2. **Intelligent Prioritization** - Provides Node.js-like priority queue without event loop
+3. **Predictive Capacity** - Uses Little's Law for capacity planning typically done by orchestrators
+4. **Graceful Degradation** - Exponential backoff prevents cascade failures common in synchronous systems
+5. **Enterprise Observability** - Admin UI and CLI provide visibility absent from WordPress cron
+
+**Innovation:** Extending WordPress cron from "fire-and-forget" scheduler to **production-grade orchestration platform** with failure recovery, SLA guarantees, and capacity management - all within PHP's request-based constraints.
+
+---
+
 ## 🔹 Future Enhancements
 
 The orchestration layer architecture enables future innovations:

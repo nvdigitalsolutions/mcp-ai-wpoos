@@ -20,6 +20,39 @@ This document provides a comprehensive index of all documentation available for 
 
 ## 🆕 Latest Updates - January 2026 ⭐ **LATEST UPDATES**
 
+### Dead Letter Queue & SLA Prioritization (January 3, 2026) ⭐ **NEW FEATURES**
+
+Enterprise-grade failure handling and intelligent job prioritization for WordPress-native cron:
+
+- **[dead-letter-queue.md](architecture/dead-letter-queue.md)** ⭐ **NEW (Jan 3)**
+  - Persistent storage for failed webhooks, cron jobs, async tools, and queue items
+  - Automatic retry with exponential backoff + jitter (prevents thundering herd)
+  - Max 1000 items with 30-day retention and weekly cleanup cron
+  - Admin UI at `wp-admin/admin.php?page=wp-mcp-ai-dlq-manager`
+  - WP-CLI commands: `wp mcp-ai dlq list/stats/retry/dismiss/delete/purge/clear`
+  - Integration: Job Queue Manager, Job Notifier, Crawl4AI
+  
+- **[sla-prioritization.md](architecture/sla-prioritization.md)** ⭐ **NEW (Jan 3)**
+  - Three-tier SLA system: Real-time (<1s), Near real-time (1-30s), Batch (>30s)
+  - Little's Law capacity planning (`L = λ × W`) for optimal worker allocation
+  - Per-tier concurrency limits (realtime: 5, near-realtime: 3, batch: 2)
+  - Automatic tier inference from tool capabilities
+  - Tuning recommendations and queue health monitoring
+  - WP-CLI commands: `wp mcp-ai sla status/tune/analyze/enable/disable`
+
+- **Enhanced Admin UI:**
+  - DLQ Manager page with filters, bulk actions, and statistics
+  - Cron Manager shows DLQ stats and SLA tier configuration
+  - WordPress Dashboard widget for at-a-glance queue health
+  - Color-coded status indicators (green/yellow/red)
+
+- **Updated Documentation:**
+  - `ORCHESTRATION-LAYER-ARCHITECTURE.md` - New DLQ & SLA section (20KB → 30KB)
+  - `job-notification-system.md` - Webhook retry and DLQ integration
+  - Complete API reference and troubleshooting guides
+
+**Impact:** Transforms WordPress cron from "fire-and-forget" to production-grade orchestration with failure recovery, SLA guarantees, and capacity management.
+
 ### Gap Documentation Review (January 3, 2026) 🎉 **100% HIGH-PRIORITY COMPLETE**
 
 Comprehensive review of all gap documentation with exceptional results:
@@ -524,6 +557,8 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [CURRENT-STATE-AGENTIC-WORKFLOW.md](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
 | [agentic-workflow-architecture.md](architecture/core/agentic-workflow-architecture.md) | Detailed agentic workflow architecture, optimizations, and testing | Developers |
 | [ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
+| [dead-letter-queue.md](architecture/dead-letter-queue.md) | **NEW (Jan 2026):** Dead Letter Queue for persistent failure handling (12KB) | Developers/Admins |
+| [sla-prioritization.md](architecture/sla-prioritization.md) | **NEW (Jan 2026):** SLA-based job prioritization with Little's Law capacity planning (16KB) | Developers/Admins |
 | [ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md) | Complete implementation guide with code examples and PR #852 enhancements | Developers |
 | [ORCHESTRATION-DASHBOARD-SUMMARY.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-SUMMARY.md) | User-friendly feature overview, use cases, and quick start guide | Users/Admins |
 | [ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md](visual-guides/orchestration/ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md) | Visual walkthrough with UI layouts and component details | All Users |
