@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Quiz Tools provide a complete assessment system for tutors and educators to create, manage, and grade quizzes. This toolkit includes 7 new tools that enable full quiz lifecycle management.
+The Quiz Tools provide a complete assessment system for tutors and educators to create, manage, and grade quizzes. This toolkit includes 8 tools that enable full quiz lifecycle management.
 
 **⚠️ Important: This is a Full Version feature that must be enabled before use.**
 
@@ -19,7 +19,7 @@ To enable the quiz system:
 
 Once enabled, the system will:
 - Register quiz and submission custom post types (CPT)
-- Load all 7 quiz management tools
+- Load all 8 quiz management tools
 - Enable automatic JetEngine CCT synchronization (when available)
 
 **Storage Architecture:**
@@ -34,6 +34,7 @@ Once enabled, the system will:
 - **Flexible Grading**: Manual grading with per-question feedback
 - **Result Tracking**: Comprehensive results and submission management
 - **Permission Control**: Role-based access for tutors and students
+- **Quiz Editing**: Update existing quizzes with new questions or settings
 - **JetEngine Integration**: Automatic CCT synchronization for advanced queries and REST API access
 
 ## Storage & REST API Access
@@ -48,6 +49,10 @@ Once enabled, the system will:
 When JetEngine is active, quiz data is automatically synchronized to:
 - `quizzes` CCT - Available at `/wp-json/jet-cct/quizzes`
 - `quiz_submissions` CCT - Available at `/wp-json/jet-cct/quiz_submissions`
+
+**New CCT Fields (v1.1):**
+- `started_at` - ISO 8601 timestamp when quiz was started
+- `completion_time` - Time taken to complete quiz in minutes
 
 This enables:
 - Advanced filtering and queries via JetEngine REST API
@@ -105,7 +110,58 @@ Creates a new quiz with questions.
 }
 ```
 
-### 2. get_quiz
+### 2. update_quiz
+
+Updates an existing quiz with new questions or settings.
+
+**Slug**: `update_quiz`
+
+**Parameters**:
+- `quiz_id` (integer, required): ID of the quiz to update
+- `title` (string, optional): New title for the quiz
+- `description` (string, optional): New description or instructions
+- `time_limit` (integer, optional): New time limit in minutes (0 = no limit)
+- `questions` (array, optional): New array of questions (replaces all existing questions)
+  - Same structure as create_quiz questions
+- `passing_score` (integer, optional): New minimum percentage to pass (0-100)
+
+**Returns**:
+- `quiz_id`: Quiz ID
+- `title`: Updated quiz title
+- `description`: Updated description
+- `time_limit`: Updated time limit
+- `question_count`: Number of questions
+- `total_points`: Total possible points
+- `passing_score`: Passing percentage
+- `updated_fields`: Array of fields that were updated
+- `updated_at`: Timestamp of update
+
+**Permissions**: Only the quiz author or users with `edit_others_posts` capability can update quizzes.
+
+**Example**:
+```json
+{
+  "quiz_id": 123,
+  "title": "JavaScript Fundamentals - Updated",
+  "time_limit": 45,
+  "questions": [
+    {
+      "question": "What is the output of typeof null?",
+      "type": "multiple_choice",
+      "options": ["null", "object", "undefined"],
+      "correct_answer": "object",
+      "points": 3
+    }
+  ]
+}
+```
+
+**Notes**:
+- At least one field must be provided to update
+- Updating questions replaces all existing questions
+- CCT synchronization is automatically triggered on update
+
+### 3. get_quiz
 
 Retrieves details of a specific quiz.
 
@@ -124,7 +180,7 @@ Retrieves details of a specific quiz.
 - `total_points`: Total possible points
 - `passing_score`: Passing percentage
 
-### 3. list_quizzes
+### 4. list_quizzes
 
 Lists available quizzes with pagination.
 
@@ -141,7 +197,7 @@ Lists available quizzes with pagination.
 - `page`: Current page
 - `total_pages`: Total pages
 
-### 4. submit_quiz_answer
+### 5. submit_quiz_answer
 
 Submits answers for a quiz with optional time tracking.
 
@@ -168,7 +224,7 @@ Submits answers for a quiz with optional time tracking.
 - For quizzes with time limits, `started_at` is required and submission will be rejected if time limit is exceeded.
 - A 1-minute grace period is allowed for submission processing.
 
-### 5. grade_quiz
+### 6. grade_quiz
 
 Grades a quiz submission.
 
@@ -190,7 +246,7 @@ Grades a quiz submission.
 
 **Permissions**: Only the quiz author or users with `edit_others_posts` capability can grade.
 
-### 6. get_quiz_submissions
+### 7. get_quiz_submissions
 
 Retrieves all submissions for a quiz.
 
@@ -210,7 +266,7 @@ Retrieves all submissions for a quiz.
 
 **Permissions**: Only the quiz author or users with `edit_others_posts` capability can view.
 
-### 7. get_quiz_results
+### 8. get_quiz_results
 
 Retrieves detailed results for a graded submission.
 
