@@ -55,14 +55,26 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 				$args['categories'] = self::get_tool_categories();
 			}
 
+			$has_active_filters = ! empty( $args['search'] ) || ! empty( $args['filter_group'] );
+			$filter_bar_class   = 'wp-mcp-ai-tools-filter-bar';
+			if ( $has_active_filters ) {
+				$filter_bar_class .= ' has-active-filters';
+			}
+
 			ob_start();
 			?>
 			<!-- Search and Filter Bar -->
-			<div class="wp-mcp-ai-tools-filter-bar" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+			<div class="<?php echo esc_attr( $filter_bar_class ); ?>" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
 				<div class="wp-mcp-ai-tools-filter-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start;">
 					<div class="wp-mcp-ai-filter-group" style="display: flex; flex-direction: column; gap: 8px;">
 						<label for="tool_search" style="font-weight: 600;">
 							<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
+							<?php if ( ! empty( $args['search'] ) ) : ?>
+								<span class="wp-mcp-ai-filter-active-badge">
+									<span class="dashicons dashicons-filter" style="font-size: 11px; width: 11px; height: 11px;"></span>
+									<?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?>
+								</span>
+							<?php endif; ?>
 						</label>
 						<input type="search" 
 								id="tool_search" 
@@ -75,6 +87,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 					<div class="wp-mcp-ai-filter-group" style="display: flex; flex-direction: column; gap: 8px;">
 						<label for="tool_group" style="font-weight: 600;">
 							<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
+							<?php if ( ! empty( $args['filter_group'] ) ) : ?>
+								<span class="wp-mcp-ai-filter-active-badge">
+									<span class="dashicons dashicons-filter" style="font-size: 11px; width: 11px; height: 11px;"></span>
+									<?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?>
+								</span>
+							<?php endif; ?>
 						</label>
 						<select id="tool_group" name="tool_group" style="width: 100%;">
 							<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
@@ -102,6 +120,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 				<script>
 				(function($) {
 					$('#wp-mcp-ai-filter-tools').on('click', function() {
+						const $button = $(this);
+						
+						// Add loading state
+						$button.addClass('is-loading').prop('disabled', true);
+						
 						const search = $('#tool_search').val();
 						const group = $('#tool_group').val();
 						const url = new URL(window.location.href);
