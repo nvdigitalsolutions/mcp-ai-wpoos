@@ -44,7 +44,7 @@
 - [🧠 Language Model Providers](#language-model-providers-openai-gemini-ollama-lm-studio)
 - [🧱 ChatKit Integration](#chatkit-integration)
 - [🌐 Crawl4AI Integration](#crawl4ai-integration)
-- [📡 Job Notification System](#job-notification-system)
+- [📡 Job Notification System](#-job-notification-system)
 - [🧊 Elementor Widgets](#elementor-widgets)
 
 ### Performance & Optimization
