@@ -291,6 +291,30 @@
 	margin-bottom: 20px;
 	padding-bottom: 10px;
 	border-bottom: 2px solid #e5e5e5;
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: #8c8f94 #f0f0f1;
+}
+
+.wp-mcp-ai-token-manager__nav::-webkit-scrollbar {
+	height: 8px;
+}
+
+.wp-mcp-ai-token-manager__nav::-webkit-scrollbar-track {
+	background: #f0f0f1;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-token-manager__nav::-webkit-scrollbar-thumb {
+	background: #8c8f94;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-token-manager__nav::-webkit-scrollbar-thumb:hover {
+	background: #646970;
 }
 
 .wp-mcp-ai-token-manager__nav-item {
@@ -306,6 +330,7 @@
 	font-size: 14px;
 	font-weight: 500;
 	transition: all 0.2s ease;
+	flex-shrink: 0;
 }
 
 .wp-mcp-ai-token-manager__nav-item .dashicons {
@@ -341,6 +366,30 @@
 	margin-bottom: 20px;
 	padding-bottom: 10px;
 	border-bottom: 2px solid #e5e5e5;
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: #8c8f94 #f0f0f1;
+}
+
+.wp-mcp-ai-orchestration__nav::-webkit-scrollbar {
+	height: 8px;
+}
+
+.wp-mcp-ai-orchestration__nav::-webkit-scrollbar-track {
+	background: #f0f0f1;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-orchestration__nav::-webkit-scrollbar-thumb {
+	background: #8c8f94;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-orchestration__nav::-webkit-scrollbar-thumb:hover {
+	background: #646970;
 }
 
 .wp-mcp-ai-orchestration__nav-item {
@@ -356,6 +405,7 @@
 	font-size: 14px;
 	font-weight: 500;
 	transition: all 0.2s ease;
+	flex-shrink: 0;
 }
 
 .wp-mcp-ai-orchestration__nav-item .dashicons {
@@ -477,6 +527,37 @@
 .wp-mcp-ai-tool-limit-input {
 	width: 120px;
 	text-align: right;
+}
+
+/* Token Manager Table Action Buttons */
+.wp-mcp-ai-token-manager table td:last-child {
+	white-space: nowrap;
+	min-width: 140px;
+}
+
+.wp-mcp-ai-reset-user-usage,
+.wp-mcp-ai-view-user-details {
+	margin: 2px 0;
+	padding: 4px 10px;
+	font-size: 12px;
+	line-height: 1.4;
+	min-width: 60px;
+}
+
+/* Stack buttons vertically in action column on smaller screens */
+@media screen and (max-width: 1280px) {
+	.wp-mcp-ai-token-manager table td:last-child {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		align-items: stretch;
+	}
+
+	.wp-mcp-ai-reset-user-usage,
+	.wp-mcp-ai-view-user-details {
+		width: 100%;
+		margin: 0;
+	}
 }
 
 /* Responsive Design */
@@ -996,5 +1077,19 @@
 	.wp-mcp-ai-subtab {
 		font-size: 12px;
 		padding: 6px 10px;
+	}
+
+	/* Make filter bar stack vertically on mobile */
+	.wp-mcp-ai-tools-filter-form {
+		grid-template-columns: 1fr !important;
+	}
+
+	.wp-mcp-ai-filter-actions {
+		grid-column: 1 !important;
+		justify-content: stretch !important;
+	}
+
+	.wp-mcp-ai-filter-actions .button {
+		flex: 1;
 	}
 }
