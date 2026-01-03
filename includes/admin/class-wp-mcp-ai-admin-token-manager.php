@@ -76,20 +76,30 @@ class WP_MCP_AI_Admin_Token_Manager {
 			. '.wp-mcp-ai-token-manager__stat{padding:1rem;background:#fff;border:1px solid #dcdcde;border-radius:4px;flex:1;min-width:120px;}'
 			. '.wp-mcp-ai-token-manager__stat-label{font-size:0.875rem;color:#646970;margin-bottom:0.25rem;}'
 			. '.wp-mcp-ai-token-manager__stat-value{font-size:1.75rem;font-weight:600;color:#1d2327;}'
-			. '.wp-mcp-ai-token-manager__table{margin-top:1.5rem;border-collapse:collapse;width:100%;}'
+			. '.wp-mcp-ai-token-manager__table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:1.5rem;}'
+			. '.wp-mcp-ai-token-manager__table{border-collapse:collapse;width:100%;min-width:700px;}'
 			. '.wp-mcp-ai-token-manager__table th,.wp-mcp-ai-token-manager__table td{border:1px solid #dcdcde;padding:0.75rem;text-align:left;vertical-align:top;}'
-			. '.wp-mcp-ai-token-manager__table th{background:#f8f9ff;font-weight:600;}'
+			. '.wp-mcp-ai-token-manager__table th{background:#f8f9ff;font-weight:600;white-space:nowrap;}'
 			. '.wp-mcp-ai-token-manager__empty{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;background:#fff;border-radius:4px;}'
 			. '.wp-mcp-ai-token-manager__empty h3{margin-top:0;}'
 			. '.wp-mcp-ai-token-manager__empty ul{margin-left:1.5rem;}'
-			. '.wp-mcp-ai-token-manager__actions form{display:inline-block;margin-right:0.5rem;}'
+			. '.wp-mcp-ai-token-manager__actions form{display:inline-block;margin-right:0.5rem;margin-bottom:0.25rem;}'
 			. '.wp-mcp-ai-token-manager__status{display:inline-block;padding:0.25rem 0.5rem;border-radius:3px;font-size:0.75rem;font-weight:600;}'
 			. '.wp-mcp-ai-token-manager__status--active{background:#d5f0db;color:#0a5f1a;}'
 			. '.wp-mcp-ai-token-manager__status--revoked{background:#fef7e0;color:#8b6c00;}'
 			. '.wp-mcp-ai-token-manager__assistant-link{text-decoration:none;}'
 			. '.wp-mcp-ai-token-manager__assistant-link:hover{text-decoration:underline;}'
 			. '.wp-mcp-ai-token-manager__security-note{margin-top:1.5rem;padding:1rem;background:#fff8e5;border-left:4px solid #dba617;}'
-			. '.wp-mcp-ai-token-manager__security-note p{margin:0;}';
+			. '.wp-mcp-ai-token-manager__security-note p{margin:0;}'
+			. '@media screen and (max-width:782px){'
+			. '.wp-mcp-ai-token-manager__stats{flex-direction:column;gap:1rem;}'
+			. '.wp-mcp-ai-token-manager__stat{min-width:auto;}'
+			. '.wp-mcp-ai-token-manager__intro{padding:0.75rem;margin:1rem 0;}'
+			. '.wp-mcp-ai-token-manager__table{font-size:14px;}'
+			. '.wp-mcp-ai-token-manager__table th,.wp-mcp-ai-token-manager__table td{padding:0.5rem;}'
+			. '.wp-mcp-ai-token-manager__actions form{display:block;margin:0.25rem 0;}'
+			. '.wp-mcp-ai-token-manager__actions .button{width:100%;}'
+			. '}';
 
 		// phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Inline-only style registration.
 		wp_register_style( 'wp-mcp-ai-token-manager-inline', false );
@@ -351,7 +361,8 @@ class WP_MCP_AI_Admin_Token_Manager {
 					<p><strong><?php esc_html_e( 'Security Note:', 'wp-mcp-ai' ); ?></strong> <?php esc_html_e( 'Tokens are only displayed once upon creation. Store them securely immediately after generation.', 'wp-mcp-ai' ); ?></p>
 				</div>
 			<?php else : ?>
-				<table class="wp-mcp-ai-token-manager__table">
+				<div class="wp-mcp-ai-token-manager__table-wrapper">
+					<table class="wp-mcp-ai-token-manager__table">
 					<thead>
 						<tr>
 							<th scope="col"><?php esc_html_e( 'Token ID', 'wp-mcp-ai' ); ?></th>
@@ -427,6 +438,7 @@ class WP_MCP_AI_Admin_Token_Manager {
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+				</div>
 
 				<div class="wp-mcp-ai-token-manager__security-note">
 					<p><strong><?php esc_html_e( 'Security Best Practices:', 'wp-mcp-ai' ); ?></strong></p>

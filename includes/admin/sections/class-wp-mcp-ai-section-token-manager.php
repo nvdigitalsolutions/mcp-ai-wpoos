@@ -239,6 +239,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					</div>
 				</div>
 
+				<div class="wp-mcp-ai-table-wrapper">
 				<table class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
@@ -322,6 +323,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+				</div>
 
 				<div style="margin-top: 20px;">
 					<button type="button" id="wp-mcp-ai-export-usage-csv" class="button button-primary">
@@ -479,6 +481,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			</p>
 		</div>
 
+		<div class="wp-mcp-ai-table-wrapper">
 		<table class="wp-list-table widefat fixed striped">
 			<thead>
 				<tr>
@@ -653,6 +656,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				<?php endforeach; ?>
 			</tbody>
 		</table>
+		</div>
 
 		<!-- Recommendations Modal -->
 		<div id="wp-mcp-ai-recommendations-modal" class="wp-mcp-ai-modal" style="display: none;">
@@ -669,6 +673,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 					<!-- Presets -->
 					<h3><?php esc_html_e( 'Available Presets', 'wp-mcp-ai' ); ?></h3>
+					<div class="wp-mcp-ai-table-wrapper">
 					<table class="wp-list-table widefat fixed striped">
 						<thead>
 							<tr>
@@ -707,11 +712,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							<?php endforeach; ?>
 						</tbody>
 					</table>
+					</div>
 
 					<h3 style="margin-top: 20px;"><?php esc_html_e( 'Tool Categories', 'wp-mcp-ai' ); ?></h3>
 					<p class="description">
 						<?php esc_html_e( 'Tools are grouped into categories based on their characteristics. Multipliers are applied to base tier limits.', 'wp-mcp-ai' ); ?>
 					</p>
+					<div class="wp-mcp-ai-table-wrapper">
 					<table class="wp-list-table widefat fixed striped">
 						<thead>
 							<tr>
@@ -735,12 +742,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							<?php endforeach; ?>
 						</tbody>
 					</table>
+					</div>
 
 					<h3 style="margin-top: 20px;"><?php esc_html_e( 'Tools Needing Optimization', 'wp-mcp-ai' ); ?></h3>
 					<?php
 					$mismatched = WP_MCP_AI_Tool_Recommendations::get_mismatched_tools();
 					if ( ! empty( $mismatched ) ) :
 						?>
+						<div class="wp-mcp-ai-table-wrapper">
 						<table class="wp-list-table widefat fixed striped">
 							<thead>
 								<tr>
@@ -761,6 +770,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<?php endforeach; ?>
 							</tbody>
 						</table>
+						</div>
 					<?php else : ?>
 						<div class="notice notice-success inline">
 							<p><?php esc_html_e( 'All tools are using recommended settings!', 'wp-mcp-ai' ); ?></p>
@@ -953,6 +963,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 			<!-- Usage by Provider -->
 			<h4><?php esc_html_e( 'Usage by Provider', 'wp-mcp-ai' ); ?></h4>
+			<div class="wp-mcp-ai-table-wrapper">
 			<table class="wp-list-table widefat fixed striped">
 				<thead>
 					<tr>
@@ -1008,6 +1019,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					<span style="font-size: 11px; margin-left: 5px;"><?php esc_html_e( 'badges indicate models used across multiple providers', 'wp-mcp-ai' ); ?></span>
 				<?php endif; ?>
 			</p>
+			<div class="wp-mcp-ai-table-wrapper">
 			<table class="wp-list-table widefat fixed striped wp-mcp-ai-top-models-table">
 				<thead>
 					<tr>
@@ -1072,12 +1084,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					<?php endif; ?>
 				</tbody>
 			</table>
+			</div>
 
 			<!-- Top Tools -->
 			<h4 style="margin-top: 30px;"><?php esc_html_e( 'Top Tools by Usage', 'wp-mcp-ai' ); ?></h4>
 			<p class="description" style="margin-top: -5px; margin-bottom: 10px;">
 				<?php esc_html_e( 'Top 10 AI tools sorted by total token usage across all users.', 'wp-mcp-ai' ); ?>
 			</p>
+			<div class="wp-mcp-ai-table-wrapper">
 			<table class="wp-list-table widefat fixed striped wp-mcp-ai-top-tools-table">
 				<thead>
 					<tr>
@@ -1114,6 +1128,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					<?php endif; ?>
 				</tbody>
 			</table>
+			</div>
 			<?php
 		}
 

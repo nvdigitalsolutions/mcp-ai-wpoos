@@ -600,6 +600,7 @@
 
 	.wp-mcp-ai-section__header {
 		padding: 0.875rem 1rem;
+		flex-wrap: wrap;
 	}
 
 	.wp-mcp-ai-section__icon {
@@ -612,6 +613,19 @@
 		font-size: 0.9375rem;
 	}
 
+	.wp-mcp-ai-section__subtitle {
+		font-size: 0.75rem;
+	}
+
+	.wp-mcp-ai-section__badge {
+		margin-left: 0;
+		margin-right: 0;
+	}
+
+	.wp-mcp-ai-section__body {
+		padding: 1rem;
+	}
+
 	.wp-mcp-ai-section__body .form-table th {
 		width: auto;
 		display: block;
@@ -621,6 +635,18 @@
 	.wp-mcp-ai-section__body .form-table td {
 		display: block;
 		padding: 0 0 1rem;
+	}
+
+	/* Make inputs full width on mobile */
+	.wp-mcp-ai-section__body .form-table input[type="text"],
+	.wp-mcp-ai-section__body .form-table input[type="password"],
+	.wp-mcp-ai-section__body .form-table input[type="email"],
+	.wp-mcp-ai-section__body .form-table input[type="url"],
+	.wp-mcp-ai-section__body .form-table input[type="number"],
+	.wp-mcp-ai-section__body .form-table select,
+	.wp-mcp-ai-section__body .form-table textarea {
+		width: 100%;
+		max-width: 100%;
 	}
 }
 

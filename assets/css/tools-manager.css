@@ -98,3 +98,42 @@
 .wp-mcp-ai-tools-manager table.wp-list-table tr.wp-mcp-ai-tool-badges-row td {
 	padding-left: 12px;
 }
+
+/* Mobile responsive enhancements */
+@media screen and (max-width: 782px) {
+	/* Wrap tools table in scrollable container */
+	.wp-mcp-ai-tools-manager {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table {
+		min-width: 600px;
+	}
+
+	/* Adjust toggle switch for touch */
+	.wp-mcp-ai-toggle-switch {
+		width: 60px;
+		height: 30px;
+	}
+
+	.wp-mcp-ai-toggle-slider:before {
+		height: 24px;
+		width: 24px;
+	}
+
+	.wp-mcp-ai-tool-toggle:checked + .wp-mcp-ai-toggle-slider:before {
+		transform: translateX(30px);
+	}
+}
+
+@media screen and (max-width: 600px) {
+	.wp-mcp-ai-tools-manager table.wp-list-table {
+		font-size: 14px;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table th,
+	.wp-mcp-ai-tools-manager table.wp-list-table td {
+		padding: 8px;
+	}
+}

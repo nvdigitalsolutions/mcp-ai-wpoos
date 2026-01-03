@@ -37,7 +37,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 
 			ob_start();
 			?>
-			<div class="wp-mcp-ai-model-config-table-wrapper">
+			<div class="wp-mcp-ai-model-config-table-wrapper wp-mcp-ai-table-wrapper">
 				<div class="wp-mcp-ai-model-config-header" style="margin-bottom: 20px;">
 					<h3><?php esc_html_e( 'Model Configurations', 'wp-mcp-ai' ); ?></h3>
 					<p class="description">
