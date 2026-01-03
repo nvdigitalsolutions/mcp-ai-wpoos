@@ -107,10 +107,10 @@ Git properly tracked all 8 files as renames (not delete + add), preserving file 
 
 ## Related Documentation
 
-- [docs/DOCUMENTATION_INDEX.md](../DOCUMENTATION_INDEX.md) - Main documentation index
-- [docs/fixes/README.md](../docs/fixes/README.md) - Fix documentation index
-- [docs/implementation-summaries/README.md](../docs/implementation-summaries/README.md) - Implementation summaries index
-- [CHANGELOG.md](../CHANGELOG.md) - Version history with this reorganization entry
+- [docs/DOCUMENTATION_INDEX.md](../../../DOCUMENTATION_INDEX.md) - Main documentation index
+- [docs/fixes/README.md](../../../fixes/README.md) - Fix documentation index
+- [docs/implementation-summaries/README.md](../../../implementation-summaries/README.md) - Implementation summaries index
+- [CHANGELOG.md](../../../../CHANGELOG.md) - Version history with this reorganization entry
 
 ---
 

@@ -239,7 +239,7 @@ Some security warnings may be false positives. In such cases:
 
 For security vulnerabilities:
 - **Email:** security@nvdigitalsolutions.com
-- **See:** [SECURITY.md](../../SECURITY.md) for reporting guidelines
+- **See:** [SECURITY.md](../../../SECURITY.md) for reporting guidelines
 
 ## Additional Security Resources
 
@@ -296,4 +296,4 @@ A: Security checks only run in CI/CD and have no impact on plugin performance. T
 
 **Last Updated:** 2025-12-29  
 **Maintainer:** NV Digital Solutions  
-**Related:** [SECURITY.md](../../SECURITY.md), [Security Hardening](SECURITY_HARDENING.md)
+**Related:** [SECURITY.md](../../../SECURITY.md), [Security Hardening](SECURITY_HARDENING.md)

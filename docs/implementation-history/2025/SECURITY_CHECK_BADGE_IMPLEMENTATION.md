@@ -175,10 +175,10 @@ Potential improvements for future iterations:
 
 ## Related Documentation
 
-- [Security Policy](../../SECURITY.md)
-- [Security Checks Documentation](../docs/features/security/SECURITY_CHECKS.md)
-- [Security Hardening Guide](../docs/features/security/SECURITY_HARDENING.md)
-- [Root Security Key](../docs/features/security/root-security-key.md)
+- [Security Policy](../../../SECURITY.md)
+- [Security Checks Documentation](../../features/security/SECURITY_CHECKS.md)
+- [Security Hardening Guide](../../features/security/SECURITY_HARDENING.md)
+- [Root Security Key](../../features/security/root-security-key.md)
 
 ## Workflow Maintenance
 

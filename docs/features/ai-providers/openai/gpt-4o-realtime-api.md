@@ -292,7 +292,7 @@ Until native WebRTC support is added, you can:
 - [OpenAI Realtime API Documentation](https://platform.openai.com/docs/models/gpt-4o-realtime-preview)
 - [OpenAI WebRTC Guide](https://platform.openai.com/docs/guides/realtime-webrtc)
 - [OpenAI Community Forum - Realtime API Updates](https://community.openai.com/t/realtime-api-updates-webrtc-cheaper-prices-4o-mini-and-more/1059962)
-- [WP oOS Audio Tools Documentation](../../tools/audio-tools.md)
+- [WP oOS Tool Reference](../../../reference/tools/tool-reference.md)
 
 ## Version History
 
