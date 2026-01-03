@@ -531,12 +531,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( ! empty( $settings['enable_quiz_system'] ) ) {
 			$pro_tools['create_quiz']          = 'wordpress-core';
+			$pro_tools['update_quiz']          = 'wordpress-core';
 			$pro_tools['get_quiz']             = 'wordpress-core';
 			$pro_tools['list_quizzes']         = 'wordpress-core';
 			$pro_tools['submit_quiz_answer']   = 'wordpress-core';
 			$pro_tools['grade_quiz']           = 'wordpress-core';
 			$pro_tools['get_quiz_submissions'] = 'wordpress-core';
 			$pro_tools['get_quiz_results']     = 'wordpress-core';
+			$pro_tools['get_quiz_analytics']   = 'wordpress-core';
 		}
 
 		// Add project management tool mappings if enabled.

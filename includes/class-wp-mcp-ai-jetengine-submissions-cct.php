@@ -371,6 +371,25 @@ class WP_MCP_AI_JetEngine_Submissions_CCT {
 			),
 			self::build_field(
 				++$base_id,
+				'started_at',
+				__( 'Started At', 'wp-mcp-ai' ),
+				'text',
+				array(
+					'description' => __( 'ISO 8601 timestamp when quiz was started.', 'wp-mcp-ai' ),
+				)
+			),
+			self::build_field(
+				++$base_id,
+				'completion_time',
+				__( 'Completion Time', 'wp-mcp-ai' ),
+				'number',
+				array(
+					'min'         => 0,
+					'description' => __( 'Time taken to complete quiz in minutes.', 'wp-mcp-ai' ),
+				)
+			),
+			self::build_field(
+				++$base_id,
 				'cpt_post_id',
 				__( 'CPT Post ID', 'wp-mcp-ai' ),
 				'number',

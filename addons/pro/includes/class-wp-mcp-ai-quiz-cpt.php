@@ -278,13 +278,15 @@ class WP_MCP_AI_Quiz_CPT {
 			}
 
 			// Get submission metadata.
-			$quiz_id       = get_post_meta( $post_id, '_mcp_ai_submission_quiz_id', true );
-			$status        = get_post_meta( $post_id, '_mcp_ai_submission_status', true );
-			$earned_points = get_post_meta( $post_id, '_mcp_ai_submission_earned_points', true );
-			$total_points  = get_post_meta( $post_id, '_mcp_ai_submission_total_points', true );
-			$percentage    = get_post_meta( $post_id, '_mcp_ai_submission_percentage', true );
-			$passed        = get_post_meta( $post_id, '_mcp_ai_submission_passed', true );
-			$graded_by     = get_post_meta( $post_id, '_mcp_ai_submission_graded_by', true );
+			$quiz_id         = get_post_meta( $post_id, '_mcp_ai_submission_quiz_id', true );
+			$status          = get_post_meta( $post_id, '_mcp_ai_submission_status', true );
+			$earned_points   = get_post_meta( $post_id, '_mcp_ai_submission_earned_points', true );
+			$total_points    = get_post_meta( $post_id, '_mcp_ai_submission_total_points', true );
+			$percentage      = get_post_meta( $post_id, '_mcp_ai_submission_percentage', true );
+			$passed          = get_post_meta( $post_id, '_mcp_ai_submission_passed', true );
+			$graded_by       = get_post_meta( $post_id, '_mcp_ai_submission_graded_by', true );
+			$started_at      = get_post_meta( $post_id, '_mcp_ai_submission_started_at', true );
+			$completion_time = get_post_meta( $post_id, '_mcp_ai_submission_completion_time', true );
 
 			// Map CPT data to CCT fields.
 			$cct_data = array(
@@ -293,6 +295,14 @@ class WP_MCP_AI_Quiz_CPT {
 				'status'      => $status ? $status : 'pending',
 				'cpt_post_id' => $post_id,
 			);
+
+			// Add time tracking data if available.
+			if ( $started_at ) {
+				$cct_data['started_at'] = sanitize_text_field( $started_at );
+			}
+			if ( $completion_time ) {
+				$cct_data['completion_time'] = floatval( $completion_time );
+			}
 
 			// Add grading data if available.
 			if ( 'graded' === $status ) {

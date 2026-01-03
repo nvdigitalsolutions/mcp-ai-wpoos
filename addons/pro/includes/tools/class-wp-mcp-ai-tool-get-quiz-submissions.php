@@ -172,6 +172,9 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 			wp_reset_postdata();
 		}
 
+		// Generate Chart.js visualizations for submissions overview.
+		$chart_data = $this->generate_submissions_charts( $submissions, $quiz_id );
+
 		return array(
 			'summary'     => sprintf(
 				/* translators: %d: number of submissions */
@@ -185,7 +188,186 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 			'page'        => $page,
 			'per_page'    => $per_page,
 			'total_pages' => $query->max_num_pages,
+			'charts'      => $chart_data,
 		);
+	}
+
+	/**
+	 * Generate Chart.js configurations for submissions overview.
+	 *
+	 * @param array $submissions Submissions data.
+	 * @param int   $quiz_id     Quiz ID.
+	 * @return array Chart.js configurations.
+	 */
+	private function generate_submissions_charts( $submissions, $quiz_id ) {
+		$passing_score = get_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', true );
+
+		// Count by status.
+		$graded_count  = 0;
+		$pending_count = 0;
+		$passed_count  = 0;
+		$failed_count  = 0;
+		$scores        = array();
+
+		foreach ( $submissions as $submission ) {
+			if ( 'graded' === $submission['status'] ) {
+				$graded_count++;
+				if ( isset( $submission['passed'] ) ) {
+					if ( $submission['passed'] ) {
+						$passed_count++;
+					} else {
+						$failed_count++;
+					}
+				}
+				if ( isset( $submission['percentage'] ) ) {
+					$scores[] = $submission['percentage'];
+				}
+			} else {
+				$pending_count++;
+			}
+		}
+
+		$charts = array();
+
+		// Status overview chart.
+		$charts['status_overview'] = array(
+			'type' => 'doughnut',
+			'data' => array(
+				'labels'   => array(
+					__( 'Graded', 'wp-mcp-ai' ),
+					__( 'Pending', 'wp-mcp-ai' ),
+				),
+				'datasets' => array(
+					array(
+						'data'            => array( $graded_count, $pending_count ),
+						'backgroundColor' => array(
+							'rgba(75, 192, 192, 0.6)',
+							'rgba(255, 206, 86, 0.6)',
+						),
+						'borderColor'     => array(
+							'rgba(75, 192, 192, 1)',
+							'rgba(255, 206, 86, 1)',
+						),
+						'borderWidth'     => 1,
+					),
+				),
+			),
+			'options' => array(
+				'responsive' => true,
+				'plugins'    => array(
+					'title' => array(
+						'display' => true,
+						'text'    => __( 'Submission Status', 'wp-mcp-ai' ),
+					),
+					'legend' => array(
+						'display'  => true,
+						'position' => 'bottom',
+					),
+				),
+			),
+		);
+
+		// Pass/fail chart (only if there are graded submissions).
+		if ( $graded_count > 0 ) {
+			$charts['pass_fail'] = array(
+				'type' => 'doughnut',
+				'data' => array(
+					'labels'   => array(
+						__( 'Passed', 'wp-mcp-ai' ),
+						__( 'Failed', 'wp-mcp-ai' ),
+					),
+					'datasets' => array(
+						array(
+							'data'            => array( $passed_count, $failed_count ),
+							'backgroundColor' => array(
+								'rgba(75, 192, 192, 0.6)',
+								'rgba(255, 99, 132, 0.6)',
+							),
+							'borderColor'     => array(
+								'rgba(75, 192, 192, 1)',
+								'rgba(255, 99, 132, 1)',
+							),
+							'borderWidth'     => 1,
+						),
+					),
+				),
+				'options' => array(
+					'responsive' => true,
+					'plugins'    => array(
+						'title' => array(
+							'display' => true,
+							'text'    => sprintf(
+								/* translators: %d: passing score */
+								__( 'Pass/Fail Rate (Passing: %d%%)', 'wp-mcp-ai' ),
+								$passing_score
+							),
+						),
+						'legend' => array(
+							'display'  => true,
+							'position' => 'bottom',
+						),
+					),
+				),
+			);
+
+			// Score distribution (if scores available).
+			if ( ! empty( $scores ) ) {
+				$bins = array_fill( 0, 10, 0 );
+				foreach ( $scores as $score ) {
+					$bin_index = min( floor( $score / 10 ), 9 );
+					$bins[ $bin_index ]++;
+				}
+
+				$labels = array();
+				for ( $i = 0; $i < 10; $i++ ) {
+					$start    = $i * 10;
+					$end      = $start + 10;
+					$labels[] = "{$start}-{$end}%";
+				}
+
+				$charts['score_distribution'] = array(
+					'type' => 'bar',
+					'data' => array(
+						'labels'   => $labels,
+						'datasets' => array(
+							array(
+								'label'           => __( 'Number of Students', 'wp-mcp-ai' ),
+								'data'            => $bins,
+								'backgroundColor' => 'rgba(54, 162, 235, 0.6)',
+								'borderColor'     => 'rgba(54, 162, 235, 1)',
+								'borderWidth'     => 1,
+							),
+						),
+					),
+					'options' => array(
+						'responsive' => true,
+						'plugins'    => array(
+							'title' => array(
+								'display' => true,
+								'text'    => __( 'Score Distribution', 'wp-mcp-ai' ),
+							),
+						),
+						'scales'     => array(
+							'y' => array(
+								'beginAtZero' => true,
+								'title'       => array(
+									'display' => true,
+									'text'    => __( 'Number of Students', 'wp-mcp-ai' ),
+								),
+							),
+							'x' => array(
+								'title' => array(
+									'display' => true,
+									'text'    => __( 'Score Range', 'wp-mcp-ai' ),
+								),
+							),
+						),
+					),
+				);
+			}
+		}
+
+		return $charts;
 	}
 
 	/**
