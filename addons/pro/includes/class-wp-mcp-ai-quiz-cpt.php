@@ -40,12 +40,16 @@ class WP_MCP_AI_Quiz_CPT {
 	public static function init() {
 		// Only available in Full Version (not Base Version).
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			// Still show notice if accessing quiz pages.
+			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
 			return;
 		}
 
 		// Only initialize if quiz system is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_quiz_system'] ) ) {
+			// Show notice if trying to access quiz pages when disabled.
+			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
 			return;
 		}
 
@@ -53,6 +57,82 @@ class WP_MCP_AI_Quiz_CPT {
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'sync_quiz_to_cct' ), 10, 2 );
 		add_action( 'save_post_' . self::SUBMISSION_POST_TYPE, array( __CLASS__, 'sync_submission_to_cct' ), 10, 2 );
 		add_action( 'delete_post', array( __CLASS__, 'handle_post_deletion' ), 10, 2 );
+	}
+
+	/**
+	 * Show admin notice when quiz system is disabled but user tries to access quiz pages.
+	 */
+	public static function show_disabled_notice() {
+		// Only show on quiz-related pages.
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return;
+		}
+
+		// Check if we're on a quiz or submission post type page.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
+		$post_type   = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$is_quiz_page = ( $post_type === self::POST_TYPE || $post_type === self::SUBMISSION_POST_TYPE );
+		if ( ! $is_quiz_page ) {
+			return;
+		}
+
+		// Check if in Base Version.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			?>
+			<div class="notice notice-warning">
+				<p>
+					<strong><?php esc_html_e( 'Quiz System Not Available', 'wp-mcp-ai' ); ?></strong>
+				</p>
+				<p>
+					<?php
+					echo wp_kses_post(
+						__( 'The Quiz System is a <strong>Full Version</strong> feature and is not available in Base Version mode.', 'wp-mcp-ai' )
+					);
+					?>
+				</p>
+				<p>
+					<?php
+					echo wp_kses_post(
+						sprintf(
+							/* translators: %s: Code snippet */
+							__( 'To use the Quiz System, remove or set to <code>false</code> the following constant in your <code>wp-config.php</code>: %s', 'wp-mcp-ai' ),
+							'<code>define( \'WP_MCP_AI_BASE_VERSION\', true );</code>'
+						)
+					);
+					?>
+				</p>
+			</div>
+			<?php
+			return;
+		}
+
+		// Check if feature is disabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_quiz_system'] ) ) {
+			$settings_url = admin_url( 'admin.php?page=wp_mcp_ai_settings&tab=tools' );
+			?>
+			<div class="notice notice-warning">
+				<p>
+					<strong><?php esc_html_e( 'Quiz System Disabled', 'wp-mcp-ai' ); ?></strong>
+				</p>
+				<p>
+					<?php esc_html_e( 'The Quiz System is currently disabled. Enable it to create and manage quizzes.', 'wp-mcp-ai' ); ?>
+				</p>
+				<p>
+					<?php
+					echo wp_kses_post(
+						sprintf(
+							/* translators: %s: Link to settings page */
+							__( 'To enable the Quiz System, go to <a href="%s">Settings &rarr; NV oOS &rarr; Tools &amp; Features</a>, click the <strong>Features</strong> tab, check <strong>"Enable Quiz System"</strong>, and save your changes.', 'wp-mcp-ai' ),
+							esc_url( $settings_url )
+						)
+					);
+					?>
+				</p>
+			</div>
+			<?php
+		}
 	}
 
 	/**
