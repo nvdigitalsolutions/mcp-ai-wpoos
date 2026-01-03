@@ -31,7 +31,7 @@
 - [📦 Installation](#installation)
 - [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
 - [⚙️ Configuration Checklist](#configuration-checklist-action-items)
-- [📚 Documentation](#documentation)
+- [📚 Documentation](#-documentation)
 
 ### Core Functionality
 - [🧠 Memory & Tool Stack Overview](#memory-tool-stack-overview)
