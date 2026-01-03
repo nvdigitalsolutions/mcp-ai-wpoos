@@ -417,9 +417,23 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'admin.dlq_manager',
+			function () {
+				return new WP_MCP_AI_Admin_DLQ_Manager();
+			}
+		);
+
+		$this->singleton(
 			'admin.token_manager',
 			function () {
 				return new WP_MCP_AI_Admin_Token_Manager();
+			}
+		);
+
+		$this->singleton(
+			'admin.dashboard_widget_queue_health',
+			function () {
+				return new WP_MCP_AI_Dashboard_Widget_Queue_Health();
 			}
 		);
 
