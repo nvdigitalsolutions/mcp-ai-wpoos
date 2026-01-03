@@ -68,7 +68,10 @@ https://bots.nvdigital.solutions/wp-admin/admin-post.php?action=wp_mcp_ai_gmail_
 
 1. `includes/class-wp-mcp-ai-container.php` - Added admin.settings service registration
 2. `mcp-ai-wpoos.php` - Initialize admin.settings on plugin load  
-3. `GOOGLE_OAUTH_SETUP.md` - Complete setup guide (new file)
+3. Documentation files:
+   - [`google-oauth-setup.md`](../getting-started/installation-setup/google-oauth-setup.md) - Complete setup guide
+   - [`oauth-settings-architecture.md`](../architecture/integrations/oauth-settings-architecture.md) - Architecture documentation
+   - [`gmail-oauth-fix-summary.md`](gmail-oauth-fix-summary.md) - This fix summary
 
 ## Testing Performed
 
@@ -98,7 +101,8 @@ All other OAuth integrations that depend on `WP_MCP_AI_Admin_Settings` are now a
 
 ## Additional Resources
 
-- Full setup guide: `GOOGLE_OAUTH_SETUP.md` in the plugin root
+- Full setup guide: [`google-oauth-setup.md`](../getting-started/installation-setup/google-oauth-setup.md)
+- Architecture documentation: [`oauth-settings-architecture.md`](../architecture/integrations/oauth-settings-architecture.md)
 - Google OAuth docs: https://developers.google.com/identity/protocols/oauth2
 - Gmail API docs: https://developers.google.com/gmail/api
 
