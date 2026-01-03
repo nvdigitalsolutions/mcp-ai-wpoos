@@ -218,6 +218,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Remove_Background'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remove-background.php',
 			'WP_MCP_AI_Tool_Generate_Jukebox_Music'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-jukebox-music.php',
 			'WP_MCP_AI_Tool_Check_Jukebox_Status'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-jukebox-status.php',
+			// Architectural Drawing tool (Pro feature).
+			'WP_MCP_AI_Tool_Generate_Architectural_Drawing' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-architectural-drawing.php',
 			// Project Management tools (Pro feature).
 			'WP_MCP_AI_Tool_Create_Project'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-project.php',
 			'WP_MCP_AI_Tool_Update_Project'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-project.php',
