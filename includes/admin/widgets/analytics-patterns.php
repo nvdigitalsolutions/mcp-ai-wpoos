@@ -29,12 +29,12 @@ if ( $has_analytics ) {
 		<div class="wp-mcp-ai-pattern-charts" style="display: grid; gap: 20px;">
 			<!-- Hourly Pattern Chart -->
 			<div class="wp-mcp-ai-chart-container">
-				<canvas id="wp-mcp-ai-hourly-pattern-chart" width="400" height="200"></canvas>
+				<canvas id="wp-mcp-ai-hourly-pattern-chart"></canvas>
 			</div>
 
 			<!-- Daily Pattern Chart -->
 			<div class="wp-mcp-ai-chart-container">
-				<canvas id="wp-mcp-ai-daily-pattern-chart" width="400" height="200"></canvas>
+				<canvas id="wp-mcp-ai-daily-pattern-chart"></canvas>
 			</div>
 		</div>
 

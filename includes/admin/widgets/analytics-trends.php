@@ -28,7 +28,7 @@ if ( $has_analytics ) {
 	<?php if ( $has_analytics && ! empty( $trend_data['daily_usage'] ) ) : ?>
 		<!-- Trend Chart -->
 		<div class="wp-mcp-ai-chart-container" style="margin-bottom: 20px;">
-			<canvas id="wp-mcp-ai-analytics-trend-chart" width="400" height="250"></canvas>
+			<canvas id="wp-mcp-ai-analytics-trend-chart"></canvas>
 		</div>
 
 		<!-- Trend Statistics -->
