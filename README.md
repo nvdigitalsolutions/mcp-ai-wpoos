@@ -22,7 +22,7 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (December 2025)](#latest-updates-december-2025)
+- [🆕 Latest Updates (December 2025)](#-latest-updates-december-2025)
 - [🧩 Overview](#overview)
 - [🎯 Our Mission](#mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#active-security-monitoring)
