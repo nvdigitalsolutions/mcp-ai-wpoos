@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Quiz Tools provide a complete assessment system for tutors and educators to create, manage, and grade quizzes. This toolkit includes 8 tools that enable full quiz lifecycle management.
+The Quiz Tools provide a complete assessment system for tutors and educators to create, manage, grade quizzes, and visualize analytics. This toolkit includes 9 tools that enable full quiz lifecycle management with Chart.js visualizations.
 
 **⚠️ Important: This is a Full Version feature that must be enabled before use.**
 
@@ -19,7 +19,7 @@ To enable the quiz system:
 
 Once enabled, the system will:
 - Register quiz and submission custom post types (CPT)
-- Load all 8 quiz management tools
+- Load all 9 quiz management tools
 - Enable automatic JetEngine CCT synchronization (when available)
 
 **Storage Architecture:**
@@ -35,6 +35,7 @@ Once enabled, the system will:
 - **Result Tracking**: Comprehensive results and submission management
 - **Permission Control**: Role-based access for tutors and students
 - **Quiz Editing**: Update existing quizzes with new questions or settings
+- **Analytics & Visualization**: Chart.js powered analytics with 5 chart types
 - **JetEngine Integration**: Automatic CCT synchronization for advanced queries and REST API access
 
 ## Storage & REST API Access
@@ -288,6 +289,90 @@ Retrieves detailed results for a graded submission.
 
 **Permissions**: Students can view their own results, quiz authors can view all results.
 
+### 9. get_quiz_analytics
+
+Generates Chart.js visualization data for quiz analytics.
+
+**Slug**: `get_quiz_analytics`
+
+**Parameters**:
+- `quiz_id` (integer, required): ID of the quiz to analyze
+- `chart_types` (array, optional): Types of charts to generate. Options:
+  - `score_distribution` - Bar chart showing distribution of scores
+  - `pass_fail_rate` - Doughnut chart showing pass/fail percentages
+  - `completion_times` - Bar chart showing time taken to complete
+  - `question_performance` - Bar chart showing success rate per question
+  - `submission_timeline` - Line chart showing submissions over time
+
+**Returns**:
+- `quiz_id`: Quiz ID
+- `quiz_title`: Quiz title
+- `total_submissions`: Number of graded submissions analyzed
+- `passing_score`: Passing score percentage
+- `charts`: Object containing requested Chart.js configurations
+  - Each chart includes `type`, `data`, and `options` for Chart.js
+- `stats`: Summary statistics
+  - `average_score`: Average percentage score
+  - `median_score`: Median percentage score
+  - `pass_rate`: Percentage of students who passed
+  - `average_completion`: Average completion time in minutes
+
+**Chart.js Integration**:
+```javascript
+// Example: Render score distribution chart
+const ctx = document.getElementById('scoreChart').getContext('2d');
+const chartConfig = result.charts.score_distribution;
+new Chart(ctx, chartConfig);
+```
+
+**Example Response**:
+```json
+{
+  "quiz_id": 123,
+  "total_submissions": 25,
+  "charts": {
+    "score_distribution": {
+      "type": "bar",
+      "data": {
+        "labels": ["0-10%", "11-20%", ...],
+        "datasets": [{
+          "label": "Number of Students",
+          "data": [0, 1, 2, 5, 8, 6, 3, 0, 0, 0],
+          "backgroundColor": "rgba(54, 162, 235, 0.6)"
+        }]
+      },
+      "options": { ... }
+    },
+    "pass_fail_rate": {
+      "type": "doughnut",
+      "data": {
+        "labels": ["Passed", "Failed"],
+        "datasets": [{
+          "data": [18, 7],
+          "backgroundColor": [
+            "rgba(75, 192, 192, 0.6)",
+            "rgba(255, 99, 132, 0.6)"
+          ]
+        }]
+      }
+    }
+  },
+  "stats": {
+    "average_score": 74.5,
+    "median_score": 76.0,
+    "pass_rate": 72.0,
+    "average_completion": 12.3
+  }
+}
+```
+
+**Permissions**: Only quiz author or users with `edit_others_posts` capability.
+
+**Notes**:
+- Requires at least one graded submission
+- All Chart.js configurations are ready to use
+- Statistics exclude pending submissions
+
 ## Workflow Example
 
 ### 1. Tutor Creates Quiz
@@ -311,6 +396,17 @@ Tutor uses grade_quiz to score each question and provide feedback
 ### 4. Student Views Results
 ```
 Student uses get_quiz_results to see their score, answers, and feedback
+```
+
+### 5. Tutor Analyzes Performance
+```
+Tutor uses get_quiz_analytics to generate Chart.js visualizations
+Renders charts showing:
+- Score distribution across all students
+- Pass/fail rates
+- Time spent on quiz
+- Performance by question
+- Submission timeline
 ```
 
 ## Custom Post Types

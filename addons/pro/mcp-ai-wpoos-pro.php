@@ -538,6 +538,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['grade_quiz']           = 'wordpress-core';
 			$pro_tools['get_quiz_submissions'] = 'wordpress-core';
 			$pro_tools['get_quiz_results']     = 'wordpress-core';
+			$pro_tools['get_quiz_analytics']   = 'wordpress-core';
 		}
 
 		// Add project management tool mappings if enabled.
