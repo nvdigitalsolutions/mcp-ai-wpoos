@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Tool Status Labels feature provides a simple, file-based system for managing and displaying the development status of tools in the WP oOS Tools Manager. This allows maintainers to quickly communicate tool maturity without requiring code changes or database updates.
+The Tool Status Labels feature provides a simple, file-based system for managing and displaying the development status of tools in the NV oOS Tools Manager. This allows maintainers to quickly communicate tool maturity without requiring code changes or database updates.
 
 Status labels are displayed as **3-letter abbreviations** for a compact UI (e.g., "STA" for stable, "BET" for beta).
 
@@ -59,7 +59,7 @@ problematic_tool = bug
 
 ### Frontend Display
 
-Status labels are displayed in the Tools Manager (`Settings → WP oOS → Tools → Tools Manager`) as colored badges beside tool names, similar to the "Pro" badge.
+Status labels are displayed in the Tools Manager (`Settings → NV oOS → Tools → Tools Manager`) as colored badges beside tool names, similar to the "Pro" badge.
 
 **Location:** `includes/admin/sections/class-wp-mcp-ai-section-tools.php`
 

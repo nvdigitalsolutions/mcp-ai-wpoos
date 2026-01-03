@@ -1,4 +1,4 @@
-# WP oOS - Consolidation Map
+# NV oOS - Consolidation Map
 
 **Date:** December 20, 2025  
 **Master Document:** `docs/MASTER_CONSOLIDATION_2025.md`  

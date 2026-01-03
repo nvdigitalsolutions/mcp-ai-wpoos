@@ -18,7 +18,7 @@ We've added comprehensive debug logging to trace the attachment metadata flow. W
 
 ### 1. Upload Response Normalization
 ```javascript
-[WP oOS] normaliseUploadResponse - created record: {
+[NV oOS] normaliseUploadResponse - created record: {
   id: 2360,
   fileId: 'wp-attachment-2360',
   name: '81R4xIDAR1L._SL1500_',
@@ -36,7 +36,7 @@ We've added comprehensive debug logging to trace the attachment metadata flow. W
 
 ### 2. Pending Attachments Rendering
 ```javascript
-[WP oOS] renderPendingAttachments - attachment data: {
+[NV oOS] renderPendingAttachments - attachment data: {
   id: 2360,
   fileId: 'wp-attachment-2360',
   name: '81R4xIDAR1L._SL1500_',
@@ -52,7 +52,7 @@ We've added comprehensive debug logging to trace the attachment metadata flow. W
 
 ### 3. Display Attachment Creation (on send)
 ```javascript
-[WP oOS] buildDisplayAttachment - creating display attachment: {
+[NV oOS] buildDisplayAttachment - creating display attachment: {
   attachment_id: 2360,
   attachment_fileId: 'wp-attachment-2360',
   record_id: 2360,
@@ -141,7 +141,7 @@ record_id: undefined
 
 1. **Clear browser cache** and reload the page
 2. **Open browser console** (F12)
-3. **Filter console** for "[WP oOS]" messages
+3. **Filter console** for "[NV oOS]" messages
 4. **Attach a file** using the attach button
 5. **Check the normaliseUploadResponse log** - verify ID is present
 6. **Check the renderPendingAttachments log** - verify metaText includes ID

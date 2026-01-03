@@ -2,7 +2,7 @@
 
 ## Issue Summary
 
-The playbook statistics displayed in **Settings → WP oOS → Advanced → Playbook Management** showed inflated attachment counts because it counted ALL attachments that had ever been associated with a profession, including orphaned attachments from version history.
+The playbook statistics displayed in **Settings → NV oOS → Advanced → Playbook Management** showed inflated attachment counts because it counted ALL attachments that had ever been associated with a profession, including orphaned attachments from version history.
 
 **Example:**
 - Display showed: "Total Playbook Attachments: 1475"
@@ -150,7 +150,7 @@ Orphaned attachments:
 ## Testing
 
 ### Manual Testing
-1. Go to **Settings → WP oOS → Advanced**
+1. Go to **Settings → NV oOS → Advanced**
 2. Scroll to **Playbook Management** section
 3. Check statistics:
    - Total Playbook Attachments should match Professions count

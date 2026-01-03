@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS plugin exposes a global console function `wpMcpAiTestGetTranscript()` that allows you to test the GET `/chat-transcripts/{session_key}` endpoint directly from your browser's developer console.
+The NV oOS plugin exposes a global console function `wpMcpAiTestGetTranscript()` that allows you to test the GET `/chat-transcripts/{session_key}` endpoint directly from your browser's developer console.
 
 ## Usage
 
@@ -112,7 +112,7 @@ The function logs detailed information to the console:
 
 ## Requirements
 
-- Must be on a page where the WP oOS chat JavaScript is loaded
+- Must be on a page where the NV oOS chat JavaScript is loaded
 - WordPress REST API nonce must be available in the global configuration
 - User must have appropriate permissions to access the transcript
 
@@ -132,7 +132,7 @@ wpMcpAiTestGetTranscript('1e05412c-c158-44c1-8f8d-584c9f29a1e9')
 
 ### Error: "transcriptsEndpoint not configured"
 
-The chat JavaScript hasn't been initialized yet, or you're on a page without the WP oOS chat widget. Try:
+The chat JavaScript hasn't been initialized yet, or you're on a page without the NV oOS chat widget. Try:
 
 1. Navigate to a page with the chat widget
 2. Wait for the page to fully load

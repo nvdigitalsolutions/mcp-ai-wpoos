@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document outlines a comprehensive plan to integrate HuggingFace's Dataset Viewer API into the WP oOS plugin, enabling AI assistants to discover, explore, and query over 100,000+ datasets hosted on HuggingFace Hub directly from WordPress without downloading them.
+This document outlines a comprehensive plan to integrate HuggingFace's Dataset Viewer API into the NV oOS plugin, enabling AI assistants to discover, explore, and query over 100,000+ datasets hosted on HuggingFace Hub directly from WordPress without downloading them.
 
 ## Overview
 
@@ -31,7 +31,7 @@ This document outlines a comprehensive plan to integrate HuggingFace's Dataset V
 ### For WordPress Users
 - No Python or complex setup required
 - Works directly via REST API
-- Integrates seamlessly with existing WP oOS workflow
+- Integrates seamlessly with existing NV oOS workflow
 - Can be used in chat, tools, or custom automations
 
 ### For Developers
@@ -88,7 +88,7 @@ class WP_MCP_AI_Huggingface_Datasets_Client {
 
 ### 2. Tool Layer
 
-Each Dataset Viewer API endpoint maps to a WP oOS tool that AI assistants can use.
+Each Dataset Viewer API endpoint maps to a NV oOS tool that AI assistants can use.
 
 #### Tool: `huggingface_dataset_is_valid`
 **Purpose**: Check if a dataset exists and is accessible

@@ -26,7 +26,7 @@ The following tools have default multipliers:
 
 ### Via Admin UI
 
-1. Navigate to **Settings → WP oOS → Token Usage Manager**
+1. Navigate to **Settings → NV oOS → Token Usage Manager**
 2. Click the **Per Tool** tab
 3. Adjust multipliers in the **Multiplier** column (0.1 to 10.0 range)
 4. Click **Save All Tool Settings**

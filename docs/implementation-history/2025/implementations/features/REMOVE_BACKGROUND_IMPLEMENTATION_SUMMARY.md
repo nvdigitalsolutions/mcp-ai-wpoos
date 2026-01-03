@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented a complete remove background tool for the WP oOS (Open Operator System) plugin that supports both free and paid background removal methods, making it accessible to all users regardless of budget.
+Successfully implemented a complete remove background tool for the NV oOS (Open Operator System) plugin that supports both free and paid background removal methods, making it accessible to all users regardless of budget.
 
 ## Problem Statement
 
@@ -39,7 +39,7 @@ A complete tool class that:
 - `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` - Added UI field with instructions
 
 Users can now configure the remove.bg API key at:
-**WP Admin → Settings → WP oOS → Tools → External Tools**
+**WP Admin → Settings → NV oOS → Tools → External Tools**
 
 The settings field includes:
 - Link to https://www.remove.bg/api

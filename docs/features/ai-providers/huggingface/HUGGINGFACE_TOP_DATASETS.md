@@ -1,8 +1,8 @@
-# Top Free HuggingFace Datasets for WP oOS Integration
+# Top Free HuggingFace Datasets for NV oOS Integration
 
 ## Executive Summary
 
-This document catalogs the **top 50+ free HuggingFace datasets** that should be integrated into the WP oOS plugin, organized by category and use case. These datasets represent the most valuable, widely-used, and production-ready datasets available on HuggingFace Hub.
+This document catalogs the **top 50+ free HuggingFace datasets** that should be integrated into the NV oOS plugin, organized by category and use case. These datasets represent the most valuable, widely-used, and production-ready datasets available on HuggingFace Hub.
 
 **Key Benefits**:
 - **Zero Cost**: All datasets are freely available
@@ -1006,7 +1006,7 @@ Each dataset should have:
 
 ## Conclusion
 
-This catalog represents the **most valuable free datasets** on HuggingFace for WordPress integration. By implementing access to these 50+ datasets, WP oOS will:
+This catalog represents the **most valuable free datasets** on HuggingFace for WordPress integration. By implementing access to these 50+ datasets, NV oOS will:
 
 ✅ Enable 10x more AI use cases
 ✅ Support diverse content types (text, image, audio, multimodal)
@@ -1023,5 +1023,5 @@ This catalog represents the **most valuable free datasets** on HuggingFace for W
 
 - HuggingFace Hub: https://huggingface.co/datasets
 - Dataset Viewer API: https://huggingface.co/docs/dataset-viewer
-- WP oOS Documentation: `/docs/`
+- NV oOS Documentation: `/docs/`
 - Implementation Plan: `HUGGINGFACE_DATASETS_IMPLEMENTATION_PLAN.md`

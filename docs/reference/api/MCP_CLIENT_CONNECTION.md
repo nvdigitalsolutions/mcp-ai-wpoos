@@ -1,6 +1,6 @@
-# Connecting MCP Clients to WP oOS
+# Connecting MCP Clients to NV oOS
 
-This guide explains how to connect MCP clients (like LM Studio, Claude Desktop, OpenAI Agent Builder, etc.) to the WP oOS MCP server.
+This guide explains how to connect MCP clients (like LM Studio, Claude Desktop, OpenAI Agent Builder, etc.) to the NV oOS MCP server.
 
 ## Client Compatibility Matrix
 
@@ -13,11 +13,11 @@ This guide explains how to connect MCP clients (like LM Studio, Claude Desktop, 
 | **Cline (VSCode)** | HTTP/REST | Bearer Token | ✅ Fully Supported | Configure as HTTP MCP server |
 | **Continue.dev** | HTTP/REST | Bearer Token | ✅ Fully Supported | Add as MCP server in config |
 
-† Claude Desktop primarily uses stdio transport. For HTTP servers like WP oOS, use `@modelcontextprotocol/server-http` as a bridge.
+† Claude Desktop primarily uses stdio transport. For HTTP servers like NV oOS, use `@modelcontextprotocol/server-http` as a bridge.
 
 ## MCP Standard Compliance
 
-WP oOS implements the **Model Context Protocol (MCP) 2024-11-05** specification strictly:
+NV oOS implements the **Model Context Protocol (MCP) 2024-11-05** specification strictly:
 
 - **Protocol**: JSON-RPC 2.0 over HTTP
 - **Transport**: POST requests for all operations  
@@ -78,7 +78,7 @@ All MCP clients must start with an `initialize` request:
       "prompts": { "listChanged": true }
     },
     "serverInfo": {
-      "name": "WP oOS",
+      "name": "NV oOS",
       "version": "1.0.0"
     },
     "instructions": "This is a WordPress site...",
@@ -294,6 +294,6 @@ This page provides:
 ## Further Reading
 
 - [MCP Specification](https://spec.modelcontextprotocol.io/)
-- [WP oOS Documentation](../README.md)
+- [NV oOS Documentation](../README.md)
 - [Tool Reference](../tools/tool-reference.md)
 - [REST API Reference](./rest-api.md)

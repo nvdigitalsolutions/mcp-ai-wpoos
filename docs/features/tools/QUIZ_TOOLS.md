@@ -12,7 +12,7 @@ The Quiz Tools provide a complete assessment system for tutors and educators to 
 
 To enable the quiz system:
 1. Ensure you are NOT in Base Version mode (do not define `WP_MCP_AI_BASE_VERSION` constant)
-2. Go to **WP Admin → Settings → WP oOS → Tools & Features**
+2. Go to **WP Admin → Settings → NV oOS → Tools & Features**
 3. Navigate to the **Features** subtab
 4. Check **"Enable Quiz System"**
 5. Save changes

@@ -1,13 +1,13 @@
 # Profession Re-seeding Feature - Visual UI Guide
 
 ## Location
-**WordPress Admin → WP oOS → General Settings → Advanced → Data Management**
+**WordPress Admin → NV oOS → General Settings → Advanced → Data Management**
 
 ## UI Layout
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ WP oOS                                                                   │
+│ NV oOS                                                                   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  ┌───────────────────────────────────────────────────────────────────┐ │

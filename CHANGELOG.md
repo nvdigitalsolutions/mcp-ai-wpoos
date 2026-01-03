@@ -35,7 +35,7 @@
   - See `includes/tools/class-wp-mcp-ai-tool-create-chart.php` (lines 250-252, 261-268)
 
 ### Changed
-- **Plugin Rename**: Updated plugin name from "Open Operator System (WP oOS)" to "NV Digital Open Operator System (oOS)"
+- **Plugin Rename**: Updated plugin name from "Open Operator System (NV oOS)" to "NV Digital Open Operator System (oOS)"
   - Updated all plugin headers in main files and core/pro versions
   - Updated README.md, readme.txt, and all documentation references
   - Updated build scripts to generate correct plugin names
@@ -542,7 +542,7 @@
   - Increased minimum timeout for completion requests from 30s to 120s
   - Resource Manager now allows bypassing PHP `max_execution_time` constraint for external HTTP requests
   - Local AI models can now take the time they need (60-240s+) without timing out
-  - Timeout can be further increased via Settings → WP oOS → Request Timeout if needed【F:includes/class-resource-manager.php†L189-L220】【F:includes/class-wp-mcp-ai-ollama-client.php†L111-L119】【F:includes/class-wp-mcp-ai-lm-studio-client.php†L253-L261】
+  - Timeout can be further increased via Settings → NV oOS → Request Timeout if needed【F:includes/class-resource-manager.php†L189-L220】【F:includes/class-wp-mcp-ai-ollama-client.php†L111-L119】【F:includes/class-wp-mcp-ai-lm-studio-client.php†L253-L261】
 - JavaScript lint errors: Fixed 6 linting errors including unused function parameters in admin-settings.js and camelcase identifier warnings in settings-dashboard.js
 - JavaScript lint error for unused `waitForCrawl4aiTask` function (documented as reserved for future use)
 - 164 PHP coding standard violations auto-fixed across 19 files

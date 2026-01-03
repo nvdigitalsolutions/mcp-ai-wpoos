@@ -90,7 +90,7 @@ $result = $orchestrator->execute_tool('generate_veo_video', $args, $context);
 
 ### Settings Location
 
-**WordPress Admin → Settings → WP oOS → Orchestration**
+**WordPress Admin → Settings → NV oOS → Orchestration**
 
 ### Available Settings
 
@@ -272,7 +272,7 @@ Shows:
 ### Debug Logging
 
 Enable logging in:
-**WordPress Admin → Settings → WP oOS → Enable Logging**
+**WordPress Admin → Settings → NV oOS → Enable Logging**
 
 Logs include:
 - Orchestration routing decisions
@@ -284,7 +284,7 @@ Logs include:
 ### Issue: Tools Still Timing Out
 
 **Solution**: Check settings
-1. Go to **Settings → WP oOS → Orchestration**
+1. Go to **Settings → NV oOS → Orchestration**
 2. Verify **Enable Automatic Async Tool Execution** is checked
 3. Verify **Enable Cron-Based Task Orchestration** is checked
 4. Check **Tools → Cron Manager** to see if jobs are queued

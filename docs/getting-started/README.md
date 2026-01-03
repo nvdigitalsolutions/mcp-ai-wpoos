@@ -1,6 +1,6 @@
-# Getting Started with WP oOS
+# Getting Started with NV oOS
 
-Quick start guides and installation documentation for Open Operator System (WP oOS).
+Quick start guides and installation documentation for Open Operator System (NV oOS).
 
 ## 📂 Contents
 

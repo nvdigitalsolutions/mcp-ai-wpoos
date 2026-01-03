@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS plugin now supports loading chat sessions from the User Chat History widget into the main Chat widget. This enables users to review previous conversations and seamlessly load them into the active chat interface.
+The NV oOS plugin now supports loading chat sessions from the User Chat History widget into the main Chat widget. This enables users to review previous conversations and seamlessly load them into the active chat interface.
 
 ## Feature Description
 

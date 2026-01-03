@@ -1,4 +1,4 @@
-# WP oOS Quick Reference Guide
+# NV oOS Quick Reference Guide
 
 **Version:** 1.1.0  
 **Last Updated:** December 24, 2025
@@ -20,7 +20,7 @@ This quick reference provides fast access to the most common tasks and commands 
 ```bash
 # 1. Upload plugin
 # 2. Activate from WordPress admin
-# 3. Go to Settings → WP oOS
+# 3. Go to Settings → NV oOS
 # 4. Add OpenAI API key
 # 5. Create your first assistant
 ```
@@ -73,10 +73,10 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ### Required Configuration
 | Setting | Location | Default | Notes |
 |---------|----------|---------|-------|
-| OpenAI API Key | Settings → WP oOS | None | **Required** |
-| Default Model | Settings → WP oOS | gpt-4o-mini | Cost-effective |
-| Request Timeout | Settings → WP oOS | 30s | Min 5s |
-| Enable Logging | Settings → WP oOS | Off | Use for debugging |
+| OpenAI API Key | Settings → NV oOS | None | **Required** |
+| Default Model | Settings → NV oOS | gpt-4o-mini | Cost-effective |
+| Request Timeout | Settings → NV oOS | 30s | Min 5s |
+| Enable Logging | Settings → NV oOS | Off | Use for debugging |
 
 ### Optional Integration Keys
 - **Gemini API Key** - For Gemini provider support
@@ -238,7 +238,7 @@ add_filter( 'wp_mcp_ai_chat_capability', function( $cap ) {
 
 ### Auth0 Setup (ChatGPT)
 ```
-1. Settings → WP oOS
+1. Settings → NV oOS
 2. Add Auth0 Domain
 3. Add Auth0 Audience
 4. Add Auth0 Scope
@@ -248,7 +248,7 @@ add_filter( 'wp_mcp_ai_chat_capability', function( $cap ) {
 
 ### WordPress.com/Gravatar Bridge
 ```
-1. Settings → WP oOS → Authentication
+1. Settings → NV oOS → Authentication
 2. Enable WordPress.com/Gravatar identity bridge
 3. (Optional) Configure userinfo endpoint
 4. Save settings
@@ -405,7 +405,7 @@ X-WP-MCP-AI-Guest: guest_token_here
 2. Verify file size < 5MB (default)
 3. Check WordPress upload_max_filesize
 4. Ensure proper permissions on uploads folder
-5. Review attachment settings in WP oOS
+5. Review attachment settings in NV oOS
 ```
 
 ---
@@ -512,7 +512,7 @@ add_action( 'wp_mcp_ai_before_tool_execution', function( $tool, $args, $context 
 
 ### Chat Theme Colors
 ```
-Settings → WP oOS → Chat Theme
+Settings → NV oOS → Chat Theme
 - Primary Color
 - Secondary Color
 - User Message Background

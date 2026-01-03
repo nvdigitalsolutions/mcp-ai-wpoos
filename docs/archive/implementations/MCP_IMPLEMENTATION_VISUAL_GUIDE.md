@@ -89,7 +89,7 @@ Authorization: Bearer cred_xxxxx.SECRET
 **Response:**
 ```json
 {
-  "name": "WP oOS MCP Server",
+  "name": "NV oOS MCP Server",
   "version": "1.0.0",
   "protocolVersion": "2024-11-05",
   "capabilities": {
@@ -166,7 +166,7 @@ Authorization: Bearer cred_xxxxx.SECRET
       "prompts": { "listChanged": true }
     },
     "serverInfo": {
-      "name": "WP oOS",
+      "name": "NV oOS",
       "version": "1.0.0"
     },
     "instructions": "This is a WordPress site..."

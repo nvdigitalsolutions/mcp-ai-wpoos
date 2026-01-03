@@ -6,7 +6,7 @@ This checklist helps verify that the chat transcript fixes are working correctly
 ## Prerequisites
 
 - [ ] WordPress 6.0+ installed
-- [ ] WP oOS plugin installed with these fixes
+- [ ] NV oOS plugin installed with these fixes
 - [ ] At least one AI assistant configured
 - [ ] User account with access to chat interface
 
@@ -17,7 +17,7 @@ This checklist helps verify that the chat transcript fixes are working correctly
 **Purpose**: Verify that session keys with hyphens (UUIDs) are preserved and can retrieve transcripts.
 
 **Steps**:
-1. Enable debug logging: `Settings → WP oOS → Enable Logging`
+1. Enable debug logging: `Settings → NV oOS → Enable Logging`
 2. Start a chat conversation (this generates a UUID session key)
 3. Add several messages to the conversation
 4. Note the session key from browser console or localStorage

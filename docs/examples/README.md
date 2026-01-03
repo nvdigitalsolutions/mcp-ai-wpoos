@@ -1,6 +1,6 @@
-# WP oOS Documentation Examples
+# NV oOS Documentation Examples
 
-This directory contains HTML example files and interactive demonstrations for various WP oOS features.
+This directory contains HTML example files and interactive demonstrations for various NV oOS features.
 
 ## Available Examples
 
@@ -38,9 +38,9 @@ When adding new example files:
 
 ## Note
 
-These examples are for demonstration and learning purposes. To actually use the WP oOS features, you need to:
+These examples are for demonstration and learning purposes. To actually use the NV oOS features, you need to:
 
-1. Have the WP oOS plugin installed and activated on a WordPress site
+1. Have the NV oOS plugin installed and activated on a WordPress site
 2. Be on a page where the relevant JavaScript is loaded
 3. Have appropriate user permissions
 

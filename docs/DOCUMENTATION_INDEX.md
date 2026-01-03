@@ -1,10 +1,10 @@
-# WP oOS Documentation Index
+# NV oOS Documentation Index
 
 **Last Updated:** December 29, 2025  
 **Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05
 
-This document provides a comprehensive index of all documentation available for the Open Operator System (WP oOS) plugin.
+This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
 **Total Documentation:** 659+ files (640+ in docs/ folder, 16 essential files in root)
 
@@ -110,7 +110,7 @@ Complete review of all implementations vs. documentation coverage:
 ## 🆕 Project Management System Documentation (December 24, 2025) ⭐ **NEW**
 
 ### Comprehensive Project Management Gap Analysis and Strategy
-Complete review and enhancement of project management capabilities for the WP oOS repository:
+Complete review and enhancement of project management capabilities for the NV oOS repository:
 
 - **[PROJECT_MANAGEMENT_GAP_ANALYSIS.md](PROJECT_MANAGEMENT_GAP_ANALYSIS.md)** ⭐ **NEW (Dec 24)**
   - Comprehensive gap analysis of internal WordPress PM features and GitHub repository management
@@ -322,7 +322,7 @@ Symfony Process component integration for Pro addon tools completed:
 ## Previous Updates (December 8, 2025)
 
 ### Symfony Integration Analysis
-Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
+Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 - **[SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md](implementation-history/2025/implementations/integrations/SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md)** ⭐ **START HERE**
   - Decision-maker focused overview
@@ -331,7 +331,7 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
   - 14KB, quick read (~15 minutes)
 
 - **[SYMFONY_AI_INTEGRATION_ANALYSIS.md](implementation-history/2025/implementations/integrations/SYMFONY_AI_INTEGRATION_ANALYSIS.md)**
-  - Deep-dive on Symfony AI capabilities vs WP oOS features
+  - Deep-dive on Symfony AI capabilities vs NV oOS features
   - Semantic search/RAG implementation proposal
   - Phase-based rollout plan (Q1-Q3 2026)
   - 26KB, technical analysis
@@ -439,7 +439,7 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [USE_CASES_AND_QUICKSTARTS.md](getting-started/USE_CASES_AND_QUICKSTARTS.md) | **NEW:** Comprehensive use cases and quickstart guides covering 7 major categories (41KB) | Everyone |
 | [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
-| [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using WP oOS | All Users |
+| [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
 
 ### Architecture & Design
 

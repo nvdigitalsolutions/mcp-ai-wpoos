@@ -380,9 +380,9 @@ See: docs/ERROR_HANDLING.md for complete documentation
 
 1. **Create `docs/ERROR_CODES.md`:**
 ```markdown
-# WP oOS Error Code Reference
+# NV oOS Error Code Reference
 
-All error codes used in the WP oOS plugin, organized by category.
+All error codes used in the NV oOS plugin, organized by category.
 
 ## REST API Error Codes
 
@@ -517,7 +517,7 @@ All errors follow this JSON structure:
 4. Verify data types match specification
 
 **500 Internal Server Error:**
-1. Enable logging in WP oOS settings
+1. Enable logging in NV oOS settings
 2. Check PHP error logs
 3. Verify API credentials are configured
 4. Test with simple request to isolate issue

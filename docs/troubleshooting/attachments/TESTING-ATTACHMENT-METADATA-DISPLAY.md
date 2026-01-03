@@ -23,10 +23,10 @@ This makes the display consistent with how image generation tools (`edit_gemini_
 1. **WordPress Environment**
    - WordPress 6.0 or later
    - PHP 7.4 or later
-   - WP oOS plugin activated
+   - NV oOS plugin activated
 
 2. **OpenAI Configuration**
-   - Valid OpenAI API key configured in WP oOS settings
+   - Valid OpenAI API key configured in NV oOS settings
    - At least one assistant configured to use OpenAI as the provider
 
 3. **Test Files**
@@ -37,7 +37,7 @@ This makes the display consistent with how image generation tools (`edit_gemini_
 
 #### 1. Configure an OpenAI Assistant
 
-1. Go to WordPress Admin → **WP oOS → Assistants**
+1. Go to WordPress Admin → **NV oOS → Assistants**
 2. Create or edit an assistant
 3. Set the following:
    - **Provider:** OpenAI
@@ -49,7 +49,7 @@ This makes the display consistent with how image generation tools (`edit_gemini_
 
 1. **Open the Chat Widget**
    - Navigate to a page with the chat widget shortcode: `[wp_mcp_ai_chat assistant_id="X"]`
-   - Or use the Test Assistant page in WP oOS admin
+   - Or use the Test Assistant page in NV oOS admin
 
 2. **Attach a File**
    - Click the attachment/upload button in the chat widget

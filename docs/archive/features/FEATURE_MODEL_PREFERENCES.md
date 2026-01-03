@@ -7,7 +7,7 @@ This feature allows administrators to set a preferred AI model for each tool in 
 ## User Interface Location
 
 The feature is accessible in:
-**WordPress Admin → Settings → WP oOS → Token Manager Tab → Per Tool View**
+**WordPress Admin → Settings → NV oOS → Token Manager Tab → Per Tool View**
 
 ## How It Works
 

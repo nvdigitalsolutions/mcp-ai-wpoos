@@ -4,7 +4,7 @@
 This implementation adds a UI for the Gemini cost tracking migration feature to the WordPress admin dashboard, making it accessible to administrators without CLI access.
 
 ## Location in UI
-**Path**: WordPress Admin → Settings → WP oOS → Advanced Settings → Data Management (sub-tab)
+**Path**: WordPress Admin → Settings → NV oOS → Advanced Settings → Data Management (sub-tab)
 
 ## Problem Solved
 Previously, the migration function existed but was only accessible via WP-CLI:
@@ -175,7 +175,7 @@ private function handle_migrate_gemini_costs() {
 
 ### Step 1: Navigate to Settings
 1. Log in to WordPress admin
-2. Go to Settings → WP oOS
+2. Go to Settings → NV oOS
 3. Click "Advanced Settings" tab
 4. Click "Data Management" sub-tab
 5. Scroll to "Gemini Cost Tracking Migration" section

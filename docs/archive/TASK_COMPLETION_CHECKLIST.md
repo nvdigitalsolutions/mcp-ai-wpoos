@@ -57,7 +57,7 @@
 ## Pending Items (Requires Manual Testing)
 
 ### Manual Testing
-- [ ] Navigate to WordPress admin → Settings → WP oOS → Orchestration tab
+- [ ] Navigate to WordPress admin → Settings → NV oOS → Orchestration tab
 - [ ] Verify "Per Model" section displays correctly
 - [ ] Check that fallback model shows as dropdown (not text input)
 - [ ] Verify models are grouped by provider (OpenAI, Anthropic, Gemini)

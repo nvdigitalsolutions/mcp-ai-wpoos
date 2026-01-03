@@ -4,7 +4,7 @@
 
 ## Overview
 
-WP oOS now supports real-time display of token usage and estimated costs directly in the frontend chat interface. This feature helps users understand the API usage and associated costs for each AI interaction.
+NV oOS now supports real-time display of token usage and estimated costs directly in the frontend chat interface. This feature helps users understand the API usage and associated costs for each AI interaction.
 
 ## Integration with Plugin Layers
 
@@ -45,7 +45,7 @@ This feature integrates seamlessly with existing plugin infrastructure:
 
 ### Via Admin Settings
 
-1. Navigate to **WP oOS → General Settings**
+1. Navigate to **NV oOS → General Settings**
 2. Scroll to **Show Usage Costs** checkbox
 3. Check "Display token usage and estimated costs in chat interface"
 4. Click **Save Changes**
@@ -179,12 +179,12 @@ Dark mode is automatically supported via `prefers-color-scheme: dark`.
 When logging is enabled (`enable_logging` in General Settings):
 
 1. **Via System Logs Tool**:
-   - Navigate to WP oOS → Tools
+   - Navigate to NV oOS → Tools
    - Use "Get System Logs" tool
    - Filter for event type: `cost_calculation`
 
 2. **Via Recent Activity**:
-   - Navigate to WP oOS → Advanced
+   - Navigate to NV oOS → Advanced
    - View Recent Activity section
    - Cost calculations appear with full details
 
@@ -202,7 +202,7 @@ foreach ( $activity as $entry ) {
 
 ### Requirements
 
-- WP oOS 1.1.0 or higher
+- NV oOS 1.1.0 or higher
 - Enhanced Token Tracking enabled (automatic)
 - Cost Calculator class loaded (automatic)
 

@@ -1,8 +1,8 @@
-# Dataset Assignment Guide for WP oOS Assistants
+# Dataset Assignment Guide for NV oOS Assistants
 
 ## Overview
 
-This guide explains how to assign preferred HuggingFace datasets to AI assistants in WP oOS, enabling them to make smarter dataset recommendations tailored to your specific use cases.
+This guide explains how to assign preferred HuggingFace datasets to AI assistants in NV oOS, enabling them to make smarter dataset recommendations tailored to your specific use cases.
 
 ## What Are Preferred Datasets?
 
@@ -35,7 +35,7 @@ Pre-vet datasets for quality, relevance, and appropriateness before they're reco
 
 ### Step 1: Enable HuggingFace Datasets Integration
 
-1. Go to **WP oOS → Settings → Providers**
+1. Go to **NV oOS → Settings → Providers**
 2. Scroll to **HuggingFace Dataset Viewer**
 3. Check **"Enable tools for querying HuggingFace datasets"**
 4. Click **Save Changes**
@@ -318,7 +318,7 @@ A: HuggingFace Dataset Viewer API has rate limits (60 requests/hour for free tie
 
 Need help? Check:
 1. **Admin UI**: Tooltips and descriptions in the Preferred Datasets metabox
-2. **Logs**: Enable logging in WP oOS settings to see tool execution
+2. **Logs**: Enable logging in NV oOS settings to see tool execution
 3. **GitHub Issues**: Report bugs or request features
 4. **Documentation Index**: Browse all available docs
 

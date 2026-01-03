@@ -167,9 +167,9 @@ Any LM Studio model that supports OpenAI-compatible function calling:
    # Start the server on default port 1234
    ```
 
-2. **Configure WP oOS**
+2. **Configure NV oOS**
    ```
-   WordPress Admin → Settings → WP oOS → Providers → LM Studio
+   WordPress Admin → Settings → NV oOS → Providers → LM Studio
    
    ✅ Enable LM Studio Provider
    📍 Endpoint URL: http://localhost:1234

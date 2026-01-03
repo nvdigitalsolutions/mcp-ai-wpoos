@@ -1,6 +1,6 @@
 # Profession Playbooks
 
-This directory contains authorable playbooks for the WP oOS profession system. Playbooks are assembled from modular text files and automatically converted into memory file attachments for AI assistants.
+This directory contains authorable playbooks for the NV oOS profession system. Playbooks are assembled from modular text files and automatically converted into memory file attachments for AI assistants.
 
 ## Directory Structure
 
@@ -228,7 +228,7 @@ Potential improvements:
 ## Troubleshooting
 
 ### Playbooks not updating after editing txt file
-1. Go to WP Admin → Settings → WP oOS → Advanced
+1. Go to WP Admin → Settings → NV oOS → Advanced
 2. Click "Reseed Professions"
 3. Choose "Update" (not "Replace")
 4. Wait for completion message

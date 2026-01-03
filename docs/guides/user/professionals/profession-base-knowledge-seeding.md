@@ -177,7 +177,7 @@ WP_MCP_AI_Profession_Base_Knowledge_Seeder::seed_base_knowledge( true );
 
 The "Reseed Professions" button in the admin settings automatically calls the base knowledge seeder in force mode after updating professions.
 
-**Location:** Settings → WP oOS → Professions
+**Location:** Settings → NV oOS → Professions
 
 ### AJAX Handler
 

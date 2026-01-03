@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the implementation of automated security checks and security badge for the WP oOS WordPress plugin repository.
+This document summarizes the implementation of automated security checks and security badge for the NV oOS WordPress plugin repository.
 
 ## Implementation Date
 

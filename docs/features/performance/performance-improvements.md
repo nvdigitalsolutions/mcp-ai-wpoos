@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explains the performance optimizations made to the WP oOS plugin, including both frontend (browser) and backend (PHP/WordPress) improvements.
+This document explains the performance optimizations made to the NV oOS plugin, including both frontend (browser) and backend (PHP/WordPress) improvements.
 
 ## Issues Fixed
 

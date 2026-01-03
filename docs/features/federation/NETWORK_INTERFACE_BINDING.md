@@ -36,7 +36,7 @@ The implementation follows strict SoC principles:
 
 ### Admin UI
 
-**Location**: Settings → WP oOS → Providers → Ollama (or LM Studio)
+**Location**: Settings → NV oOS → Providers → Ollama (or LM Studio)
 
 **Fields**:
 - **Ollama Network Interface (Optional)**: Text field for interface name or IP
@@ -145,7 +145,7 @@ $response = $client->create_chat_completion( $messages );
 
 When using network interface binding with private network addresses, you should also configure the security settings:
 
-**Settings → WP oOS → Security**
+**Settings → NV oOS → Security**
 
 1. **Enable Loopback/Private Network SSL Bypass** (Default: Enabled)
    - Automatically disables SSL verification for localhost and private network addresses
@@ -179,7 +179,7 @@ See `docs/SECURITY_HARDENING.md` for more details on these security settings.
 1. **Verify interface exists**: Run `ip a` or `ifconfig` on server to check interfaces
 2. **Check routing**: Ensure the interface can reach the target IP
 3. **Test manually**: Use `curl --interface eth0 http://192.168.2.222:11434/api/tags`
-4. **Check logs**: Enable WP oOS logging to see HTTP request details
+4. **Check logs**: Enable NV oOS logging to see HTTP request details
 5. **Verify firewall**: Ensure server firewall allows outbound connections on the interface
 
 ### Wrong Interface Applied

@@ -2,7 +2,7 @@
 
 ## Overview
 
-LM Studio is a local AI model hosting platform that provides an OpenAI-compatible API. The WP oOS plugin includes full support for LM Studio as an AI provider, allowing you to run AI models locally on your machine or private network.
+LM Studio is a local AI model hosting platform that provides an OpenAI-compatible API. The NV oOS plugin includes full support for LM Studio as an AI provider, allowing you to run AI models locally on your machine or private network.
 
 ## Features
 
@@ -22,9 +22,9 @@ LM Studio is a local AI model hosting platform that provides an OpenAI-compatibl
 4. Load the model in LM Studio
 5. Start the local server (typically runs on `http://localhost:1234`)
 
-### 2. Configure WP oOS Plugin
+### 2. Configure NV oOS Plugin
 
-Navigate to **Settings → WP oOS → Providers → LM Studio**:
+Navigate to **Settings → NV oOS → Providers → LM Studio**:
 
 1. **Enable LM Studio Provider**: ✅ Check this box
 2. **LM Studio Endpoint URL**: `http://localhost:1234`
@@ -69,7 +69,7 @@ $options = array(
 
 ### Provider Priority
 
-Configure provider priority at **Settings → WP oOS → Providers → Priority Order**:
+Configure provider priority at **Settings → NV oOS → Providers → Priority Order**:
 
 Default order:
 1. OpenAI
@@ -121,7 +121,7 @@ For remote WordPress (e.g., Cloudways) connecting to local LM Studio:
 cloudflared tunnel --url http://localhost:1234
 ```
 
-Then use the provided tunnel URL in WP oOS settings.
+Then use the provided tunnel URL in NV oOS settings.
 
 #### Option 2: VPN
 1. Set up VPN between WordPress server and LM Studio machine
@@ -172,7 +172,7 @@ The plugin automatically appends `/v1/models`, `/v1/chat/completions`, etc.
 **Error**: Request times out
 
 **Solutions**:
-1. Increase timeout in **Settings → WP oOS → Advanced → Request Timeout**
+1. Increase timeout in **Settings → NV oOS → Advanced → Request Timeout**
 2. Local AI models take longer to respond (120+ seconds recommended)
 3. Ensure sufficient hardware resources (RAM, CPU/GPU)
 
@@ -405,5 +405,5 @@ if (is_wp_error($result)) {
 
 - [LM Studio Official Website](https://lmstudio.ai/)
 - [OpenAI API Documentation](https://platform.openai.com/docs/api-reference)
-- [WP oOS Documentation](/docs/)
+- [NV oOS Documentation](/docs/)
 - *(Provider configuration documentation pending)*

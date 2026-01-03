@@ -1,11 +1,11 @@
-# WP oOS Dynamic AI Orchestration Layer Architecture
+# NV oOS Dynamic AI Orchestration Layer Architecture
 
 **Last Updated:** November 5, 2024  
 **Plugin Version:** 1.0.0
 
 ## Overview
 
-This document explains the **novel differentiators** of the WP oOS (Open Operator System) orchestration layer compared to standard SSE (Server-Sent Events) and MCP (Model Context Protocol) implementations. While SSE and MCP provide the foundational communication protocols, WP oOS adds a sophisticated **orchestration and enforcement layer** that transforms passive streaming into an intelligent, policy-aware, resource-managed system.
+This document explains the **novel differentiators** of the NV oOS (Open Operator System) orchestration layer compared to standard SSE (Server-Sent Events) and MCP (Model Context Protocol) implementations. While SSE and MCP provide the foundational communication protocols, NV oOS adds a sophisticated **orchestration and enforcement layer** that transforms passive streaming into an intelligent, policy-aware, resource-managed system.
 
 **Critical Context:** This orchestration layer exists fundamentally to **overcome PHP's architectural limitations** for real-time AI streaming — limitations that typically make Node.js the default choice for these systems. Understanding this context is essential to appreciating the technical novelty and patent-worthiness of the implementation.
 
@@ -57,15 +57,15 @@ PHP is fundamentally **terrible** at:
 - **Go microservices** for high-concurrency streaming protocols
 - **Redis/RabbitMQ** for inter-process communication and state management
 
-### The WP oOS Innovation: Orchestration Layer as PHP Workaround
+### The NV oOS Innovation: Orchestration Layer as PHP Workaround
 
-**WP oOS achieves what PHP shouldn't be able to do** — real-time AI orchestration, streaming responses, and autonomous agent coordination — by implementing a sophisticated **orchestration layer** that creates a "persistent-behavior illusion" within WordPress/PHP's synchronous, request-based architecture.
+**NV oOS achieves what PHP shouldn't be able to do** — real-time AI orchestration, streaming responses, and autonomous agent coordination — by implementing a sophisticated **orchestration layer** that creates a "persistent-behavior illusion" within WordPress/PHP's synchronous, request-based architecture.
 
 This is the **core technical innovation** that makes the system patent-worthy: not just implementing MCP/SSE in PHP, but building a complete orchestration subsystem that compensates for PHP's architectural deficiencies.
 
-#### How WP oOS Overcomes PHP's Limitations
+#### How NV oOS Overcomes PHP's Limitations
 
-| PHP Limitation | Node.js Native Solution | WP oOS Orchestration Workaround |
+| PHP Limitation | Node.js Native Solution | NV oOS Orchestration Workaround |
 |----------------|------------------------|----------------------------------|
 | **No persistent state** | In-memory variables survive across requests | **Registry & Policy Engine** — Maintains tool availability, budget allocations, and policy state in WordPress database and transient cache |
 | **Blocking I/O** | Async/await with non-blocking operations | **Predictive Budget Allocator** — Pre-calculates resource needs and fails fast before blocking operations start |
@@ -77,7 +77,7 @@ This is the **core technical innovation** that makes the system patent-worthy: n
 
 #### The "Persistent-Behavior Illusion"
 
-WP oOS creates the **appearance of persistence** where none exists:
+NV oOS creates the **appearance of persistence** where none exists:
 
 1. **Budget tracking appears continuous** — Each request reconstructs budget state from database/cache, applies new usage, and persists back
 2. **Tool registry appears always-available** — Registry rebuilds on each request but caches tool definitions in WordPress transients
@@ -85,9 +85,9 @@ WP oOS creates the **appearance of persistence** where none exists:
 4. **SSE streaming appears non-blocking** — PHP's output buffering and chunked transfer encoding create illusion of async streaming
 5. **Policy enforcement appears stateful** — Capability checks leverage WordPress's user system to reconstruct authorization context each request
 
-**In essence:** WP oOS wraps WordPress (a request-based framework) in a **controlled, pseudo-persistent AI runtime**, giving it the same orchestration behaviors as Node's event loop — but implemented through database state, dynamic cron jobs, and predictive resource scheduling.
+**In essence:** NV oOS wraps WordPress (a request-based framework) in a **controlled, pseudo-persistent AI runtime**, giving it the same orchestration behaviors as Node's event loop — but implemented through database state, dynamic cron jobs, and predictive resource scheduling.
 
-This architectural workaround is what makes WP oOS novel and patent-relevant — it achieves **distributed orchestration with deterministic resource gating** in an environment specifically designed NOT to support such patterns.
+This architectural workaround is what makes NV oOS novel and patent-relevant — it achieves **distributed orchestration with deterministic resource gating** in an environment specifically designed NOT to support such patterns.
 
 ---
 
@@ -124,9 +124,9 @@ This architectural workaround is what makes WP oOS novel and patent-relevant —
 
 ---
 
-## 🔹 What WP oOS Adds: Novel Differentiators
+## 🔹 What NV oOS Adds: Novel Differentiators
 
-The **WP oOS Dynamic AI Orchestration Layer** extends both SSE and MCP with five major innovations:
+The **NV oOS Dynamic AI Orchestration Layer** extends both SSE and MCP with five major innovations:
 
 ### 1. Real-Time Resource Budget Enforcement
 
@@ -422,7 +422,7 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 
 ---
 
-## 🔹 Visual Comparison: Node.js Event Loop vs WP oOS Orchestration
+## 🔹 Visual Comparison: Node.js Event Loop vs NV oOS Orchestration
 
 ### Node.js Native Architecture (Typical AI Streaming System)
 
@@ -467,7 +467,7 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 
 ---
 
-### WP oOS Architecture (PHP/WordPress Compensated System)
+### NV oOS Architecture (PHP/WordPress Compensated System)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -489,7 +489,7 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 └─────────────────────────────────────────────────────────────┘
                               ↕
          ┌────────────────────────────────────────┐
-         │    WP oOS Orchestration Layer (DB)     │
+         │    NV oOS Orchestration Layer (DB)     │
          │                                        │
          │  ┌──────────────────────────────────┐ │
          │  │   Registry & Policy Engine       │ │
@@ -538,7 +538,7 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 
 ### Side-by-Side Mechanism Comparison
 
-| Feature | Node.js Native | WP oOS Equivalent |
+| Feature | Node.js Native | NV oOS Equivalent |
 |---------|---------------|-------------------|
 | **Persistent State** | In-memory variables | Database + transient cache |
 | **Event Loop** | Built-in async/await | WordPress cron scheduler |
@@ -553,15 +553,15 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 
 ### The Technical Achievement
 
-WP oOS successfully implements **every major capability** of a Node.js AI orchestration system — but does so by building a sophisticated compensation layer that works **despite** PHP's architectural constraints, not because of them.
+NV oOS successfully implements **every major capability** of a Node.js AI orchestration system — but does so by building a sophisticated compensation layer that works **despite** PHP's architectural constraints, not because of them.
 
 This is the **patent's core innovation**: proving that sophisticated AI orchestration is achievable in PHP/WordPress through a novel orchestration architecture that recreates persistent, event-driven behavior in a stateless, synchronous environment.
 
 ---
 
-## 🔹 Comparison Table: Standard vs WP oOS Extension
+## 🔹 Comparison Table: Standard vs NV oOS Extension
 
-| Aspect | Current SSE/MCP | WP oOS Orchestration Extension |
+| Aspect | Current SSE/MCP | NV oOS Orchestration Extension |
 |--------|-----------------|-------------------------------|
 | **Streaming Control** | Passive one-way output | Feedback-aware, pause/resume with predictive budgeting |
 | **Tool Access** | Open, context-agnostic | Capability-gated via policy engine with per-tool authorization |
@@ -581,7 +581,7 @@ This is the **patent's core innovation**: proving that sophisticated AI orchestr
 
 Think of **SSE + MCP** as "**the plumbing**" — they let data flow between client and server, defining the pipe structure and message format.
 
-The **WP oOS orchestration layer** adds the "**smart water regulator**":
+The **NV oOS orchestration layer** adds the "**smart water regulator**":
 - Measures flow rate in real-time
 - Predicts overuse before pipes burst
 - Enforces permissions on who can use which taps
@@ -589,7 +589,7 @@ The **WP oOS orchestration layer** adds the "**smart water regulator**":
 - Keeps detailed logs of all water usage
 - Adjusts flow based on current system capacity
 
-Just as a modern smart home water system prevents flooding and ensures fair distribution, WP oOS prevents resource exhaustion and ensures secure, policy-compliant AI operations.
+Just as a modern smart home water system prevents flooding and ensures fair distribution, NV oOS prevents resource exhaustion and ensures secure, policy-compliant AI operations.
 
 ---
 
@@ -619,7 +619,7 @@ Client Receives Tokens
 
 ---
 
-### WP oOS Orchestrated Flow
+### NV oOS Orchestrated Flow
 
 ```
 Client Request
@@ -659,7 +659,7 @@ Client Receives Optimized Response
 
 ---
 
-### WP oOS Cron Manager Subsystem Flow
+### NV oOS Cron Manager Subsystem Flow
 
 ```
 AI Agent Request (Cron Tool)
@@ -787,7 +787,7 @@ class WP_MCP_AI_Orchestrator {
 - API rate limits hit unexpectedly
 - Cascading failures across sessions
 
-**With WP oOS Orchestration:**
+**With NV oOS Orchestration:**
 - Dynamic allocation matches request to available resources
 - Predictive budgeting prevents exhaustion before it occurs
 - Safety margins protect against rate limit violations
@@ -800,7 +800,7 @@ class WP_MCP_AI_Orchestrator {
 - No intelligent load balancing
 - Resource contention not managed
 
-**WP oOS Implementation:**
+**NV oOS Implementation:**
 - Workload tiers enable graceful degradation
 - Multi-provider load balancing spreads requests
 - Dynamic budget reallocation optimizes throughput
@@ -841,7 +841,7 @@ class WP_MCP_AI_Orchestrator {
 - Risk of resource exhaustion affecting all users
 - No audit trail of who used which tools
 
-**With WP oOS Orchestration**:
+**With NV oOS Orchestration**:
 - Editors can access content tools; administrators access system tools
 - Each user gets fair resource allocation based on tier
 - Predictive management prevents one user from exhausting resources
@@ -857,7 +857,7 @@ class WP_MCP_AI_Orchestrator {
 - Resource usage not tracked
 - Compliance requirements not addressed
 
-**With WP oOS Orchestration**:
+**With NV oOS Orchestration**:
 - Complete audit trail meets compliance requirements
 - Capability-based access enforces least privilege
 - Resource budgets tracked per user/session
@@ -872,7 +872,7 @@ class WP_MCP_AI_Orchestrator {
 - No adaptation to hosting constraints
 - Frequent fatal errors from exhaustion
 
-**With WP oOS Orchestration**:
+**With NV oOS Orchestration**:
 - Automatic detection of 128MB limit → Low tier
 - Token limit reduced to 1,000 to prevent exhaustion
 - Request timeout adjusted to fit PHP execution time
@@ -912,14 +912,14 @@ The orchestration layer architecture enables future innovations:
 - [tool-reference.md](../../reference/tools/tool-reference.md) - Complete catalog of orchestrated tools
 - [mcp-server-authentication.md](../../reference/api/mcp-server-authentication.md) - Authentication implementation
 - [rest-api.md](../../reference/api/rest-api.md) - REST API and SSE endpoint documentation
-- [BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md) - Best practices for using WP oOS
+- [BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md) - Best practices for using NV oOS
 - [DOCUMENTATION_INDEX.md](../../DOCUMENTATION_INDEX.md) - Complete documentation index
 
 ---
 
 ## 🔹 Summary
 
-The WP oOS Dynamic AI Orchestration Layer represents a **fundamental architectural leap** beyond standard SSE and MCP implementations:
+The NV oOS Dynamic AI Orchestration Layer represents a **fundamental architectural leap** beyond standard SSE and MCP implementations:
 
 | Innovation | Impact |
 |------------|--------|
@@ -937,7 +937,7 @@ This orchestration layer is the **novel contribution** disclosed in the provisio
 
 **The Core Innovation:**
 
-Most AI streaming systems use Node.js because it was **designed** for real-time, persistent, async operations. WP oOS achieves the same results in PHP/WordPress — which was **explicitly not designed** for these patterns — by implementing a sophisticated orchestration layer that:
+Most AI streaming systems use Node.js because it was **designed** for real-time, persistent, async operations. NV oOS achieves the same results in PHP/WordPress — which was **explicitly not designed** for these patterns — by implementing a sophisticated orchestration layer that:
 
 1. **Recreates Node's event loop behavior** using WordPress cron and database state persistence
 2. **Simulates persistent memory** through registry caching and predictive budget reconstruction
@@ -951,7 +951,7 @@ The patent's strength lies not in implementing MCP/SSE (which are standard proto
 
 The inclusion of the **Cron Manager subsystem** further strengthens the patent's autonomous orchestration capabilities by enabling AI agents to create, monitor, and manage scheduled operations that inherit the same resource budgets and capability constraints as real-time sessions, ensuring policy compliance during deferred execution — effectively extending the "persistent-behavior illusion" across time-shifted workloads.
 
-**In other words:** WP oOS proves that sophisticated AI orchestration is possible in PHP/WordPress, but only through this novel architectural compensation layer — which is precisely what makes it patentable as a technical workaround to fundamental platform limitations.
+**In other words:** NV oOS proves that sophisticated AI orchestration is possible in PHP/WordPress, but only through this novel architectural compensation layer — which is precisely what makes it patentable as a technical workaround to fundamental platform limitations.
 
 ---
 

@@ -1,6 +1,6 @@
 # Features Guides
 
-This directory contains comprehensive how-to guides for WP oOS features.
+This directory contains comprehensive how-to guides for NV oOS features.
 
 ## Available Guides
 

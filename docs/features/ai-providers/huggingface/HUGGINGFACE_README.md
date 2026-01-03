@@ -1,6 +1,6 @@
 # HuggingFace Integration - Documentation Index
 
-This directory contains comprehensive planning documentation for integrating HuggingFace capabilities into WP oOS.
+This directory contains comprehensive planning documentation for integrating HuggingFace capabilities into NV oOS.
 
 ## 📚 Document Overview
 
@@ -228,7 +228,7 @@ This directory contains comprehensive planning documentation for integrating Hug
 - [GitHub Repository](https://github.com/huggingface/huggingface.js)
 - [npm Package](https://www.npmjs.com/package/@huggingface/inference)
 
-### WP oOS Plugin
+### NV oOS Plugin
 <!-- Architecture documentation coming soon -->
 <!-- Tool development guide coming soon -->
 <!-- Testing guide coming soon -->
@@ -262,7 +262,7 @@ This directory contains comprehensive planning documentation for integrating Hug
 
 ### For Implementation Help
 - Review: Implementation plan week-by-week guide
-- Check: WP oOS documentation and examples
+- Check: NV oOS documentation and examples
 - Contact: Development team
 
 ---

@@ -9,10 +9,10 @@ Attachments appear in the chat UI bubble but the AI may not be able to see or re
 Open browser console and look for log messages when sending a message with an attachment:
 
 ```
-[WP oOS] User clicked send: {message_length, has_attachments, attachment_count, ...}
-[WP oOS] Created segment from attachment: {attachment_id, segment_type, segment_attachment_id, ...}
-[WP oOS] Created payloadContent: {is_array, segment_count, segments}
-[WP oOS] Sending messages to API: [...full JSON payload...]
+[NV oOS] User clicked send: {message_length, has_attachments, attachment_count, ...}
+[NV oOS] Created segment from attachment: {attachment_id, segment_type, segment_attachment_id, ...}
+[NV oOS] Created payloadContent: {is_array, segment_count, segments}
+[NV oOS] Sending messages to API: [...full JSON payload...]
 ```
 
 ### 2. Verify Segment Creation

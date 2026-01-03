@@ -1,7 +1,7 @@
 # Gemini Geospatial API Integration - Implementation Summary
 
 ## Overview
-Successfully integrated the Gemini Geospatial API into WP oOS, enabling AI-powered location-based queries with Google Maps grounding. This feature allows users to ask natural language questions about places, directions, and local information.
+Successfully integrated the Gemini Geospatial API into NV oOS, enabling AI-powered location-based queries with Google Maps grounding. This feature allows users to ask natural language questions about places, directions, and local information.
 
 ## What Was Implemented
 
@@ -170,7 +170,7 @@ The implementation uses the Gemini API v1beta endpoint with:
 - Error logging with detailed context
 
 ### Settings
-Uses existing WP oOS settings:
+Uses existing NV oOS settings:
 - Gemini API key
 - Default Gemini model
 - Logging preferences

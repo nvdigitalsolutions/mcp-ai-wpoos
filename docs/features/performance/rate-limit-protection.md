@@ -1,6 +1,6 @@
 # Rate-Limit Protection
 
-WP oOS includes comprehensive rate-limit protection features to ensure reliable API usage and prevent service disruptions.
+NV oOS includes comprehensive rate-limit protection features to ensure reliable API usage and prevent service disruptions.
 
 ## Features
 
@@ -209,4 +209,4 @@ Rate-limit events are logged when logging is enabled in the plugin settings:
 - `job_completed` - When a job completes successfully
 - `job_timeout` - When a job times out
 
-Enable logging in **Settings → WP oOS → Enable Logging** to monitor rate-limit activity.
+Enable logging in **Settings → NV oOS → Enable Logging** to monitor rate-limit activity.

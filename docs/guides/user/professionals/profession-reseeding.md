@@ -6,7 +6,7 @@ The profession re-seeding feature allows administrators to update or completely 
 
 ## Location
 
-Navigate to: **WordPress Admin → WP oOS → General Settings → Advanced → Data Management**
+Navigate to: **WordPress Admin → NV oOS → General Settings → Advanced → Data Management**
 
 ## Features
 

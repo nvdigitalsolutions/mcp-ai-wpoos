@@ -1,6 +1,6 @@
-# Copilot Instructions for Open Operator System (WP oOS)
+# Copilot Instructions for Open Operator System (NV oOS)
 
-This repository contains **Open Operator System (WP oOS)**, a WordPress plugin that provides an AI Assistant framework integrating with OpenAI GPT models, Gemini, Ollama, and MCP (Model Context Protocol) tools.
+This repository contains **Open Operator System (NV oOS)**, a WordPress plugin that provides an AI Assistant framework integrating with OpenAI GPT models, Gemini, Ollama, and MCP (Model Context Protocol) tools.
 
 ## Repository Structure
 
@@ -304,7 +304,7 @@ Always:
 
 ### Enable Logging
 
-In WordPress admin: **Settings → WP oOS → Enable Logging**
+In WordPress admin: **Settings → NV oOS → Enable Logging**
 
 Or via constant: `define( 'WP_MCP_AI_DEBUG', true );`
 

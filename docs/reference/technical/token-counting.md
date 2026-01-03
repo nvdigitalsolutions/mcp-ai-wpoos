@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS plugin now includes a `count_tokens` tool that allows AI assistants to accurately estimate token counts for text and messages before making API calls. This helps with:
+The NV oOS plugin now includes a `count_tokens` tool that allows AI assistants to accurately estimate token counts for text and messages before making API calls. This helps with:
 
 - **Budget Management**: Stay within model context limits
 - **Cost Estimation**: Predict API costs before making requests

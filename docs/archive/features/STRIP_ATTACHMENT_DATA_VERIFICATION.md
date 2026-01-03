@@ -161,7 +161,7 @@ In `includes/class-wp-mcp-ai-message-attachments.php`:
 
 ## Manual Testing Steps (for QA)
 
-1. **Setup**: WordPress with WP oOS plugin installed
+1. **Setup**: WordPress with NV oOS plugin installed
 2. **Create**: Assistant with file upload enabled
 3. **Test Image Upload**:
    - Open chat widget

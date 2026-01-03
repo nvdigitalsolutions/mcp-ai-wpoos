@@ -102,7 +102,7 @@ This document describes the enhancements made to team deployments to utilize pro
     - Technical Design & Drafting Team
     - IT Support & Services Team
     - Applied Mathematics & Statistics Team
-    - WP oOS Development Team
+    - NV oOS Development Team
 
 19. **financial-admin-teams.json** - 1 team
     - Financial Administration Team

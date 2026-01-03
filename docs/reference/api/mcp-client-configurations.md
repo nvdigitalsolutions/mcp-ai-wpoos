@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides comprehensive configuration examples for connecting various MCP (Model Context Protocol) clients to WordPress WP oOS.
+This guide provides comprehensive configuration examples for connecting various MCP (Model Context Protocol) clients to WordPress NV oOS.
 
 ## ⚠️ Getting 404 Errors?
 
@@ -14,7 +14,7 @@ If you're seeing `SSE error: Non-200 status code (404)` or similar errors, see t
 
 ## Three Connection Methods
 
-WordPress WP oOS supports **three distinct methods** for MCP connectivity:
+WordPress NV oOS supports **three distinct methods** for MCP connectivity:
 
 ### Method 1: JSON-RPC 2.0 over HTTP (Recommended for Remote)
 
@@ -404,7 +404,7 @@ curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
       "prompts": { "listChanged": true }
     },
     "serverInfo": {
-      "name": "WP oOS",
+      "name": "NV oOS",
       "version": "1.0.0"
     }
   }
@@ -495,7 +495,7 @@ curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
 **Solutions:**
 1. Verify using `/mcp` endpoint for JSON-RPC
 2. Check method name matches MCP spec
-3. Update to latest WP oOS version
+3. Update to latest NV oOS version
 4. Review [MCP Endpoint Documentation](mcp-endpoint.md)
 
 ### Issue: CORS Errors

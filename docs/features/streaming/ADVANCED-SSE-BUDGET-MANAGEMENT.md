@@ -1,6 +1,6 @@
 # Advanced SSE Token Budget Management (NOT YET IMPLEMENTED)
 
-> **STATUS**: This document describes features that DO NOT currently exist in WP oOS.
+> **STATUS**: This document describes features that DO NOT currently exist in NV oOS.
 > It outlines the architecture needed to implement advanced per-stream budget management
 > across SSE reconnects with predictive throttling.
 

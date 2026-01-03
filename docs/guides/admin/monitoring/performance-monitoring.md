@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS Performance Monitoring system provides real-time insights into plugin performance, historical trend analysis, AI-generated recommendations for optimization, and comprehensive error tracking. This guide covers the Performance Monitor CCT, Error Tracking Service, admin dashboard, widgets, and integration options.
+The NV oOS Performance Monitoring system provides real-time insights into plugin performance, historical trend analysis, AI-generated recommendations for optimization, and comprehensive error tracking. This guide covers the Performance Monitor CCT, Error Tracking Service, admin dashboard, widgets, and integration options.
 
 ## Architecture
 
@@ -112,7 +112,7 @@ The system automatically analyzes trends by comparing the first third and last t
 
 ### Accessing the Dashboard
 
-1. Navigate to **WordPress Admin → Settings → WP oOS**
+1. Navigate to **WordPress Admin → Settings → NV oOS**
 2. Click on the **Performance Monitoring** tab
 3. View real-time metrics, alerts, and recommendations
 
@@ -257,7 +257,7 @@ Execute performance tests directly from pages:
 
 **Usage:**
 ```
-Drag "WP oOS Performance Test Runner" widget to page
+Drag "NV oOS Performance Test Runner" widget to page
 Configure which tests to show
 Users can click buttons to get test execution instructions
 ```
@@ -368,7 +368,7 @@ All 6 Elementor widgets are also available as Gutenberg blocks:
 
 **Usage:**
 1. Open the block editor
-2. Search for "WP oOS Performance"
+2. Search for "NV oOS Performance"
 3. Insert desired block
 4. Configure block settings in the sidebar
 5. Publish/update
@@ -395,7 +395,7 @@ Add a performance widget to the WordPress dashboard:
 add_action('wp_dashboard_setup', function() {
     wp_add_dashboard_widget(
         'wp_mcp_ai_performance',
-        'WP oOS Performance',
+        'NV oOS Performance',
         function() {
             $alerts = WP_MCP_AI_Performance_Reporter::get_performance_alerts(3);
             
@@ -443,7 +443,7 @@ add_action('wp_mcp_ai_performance_test_complete', function($test_type, $componen
     if ($results['test_status'] === 'failed') {
         wp_mail(
             get_option('admin_email'),
-            'WP oOS Performance Alert',
+            'NV oOS Performance Alert',
             sprintf(
                 'Critical performance issue detected in %s (%s test)',
                 $component,
@@ -670,7 +670,7 @@ foreach ( $stats as $component => $data ) {
 
 - [Error Tracking Service Guide](error-tracking-service.md)
 - [Performance Testing Guide](../../developer/testing/performance-testing-guide.md)
-- [WP oOS Documentation Index](../../../DOCUMENTATION_INDEX.md)
+- [NV oOS Documentation Index](../../../DOCUMENTATION_INDEX.md)
 - [JetEngine Documentation](https://crocoblock.com/knowledge-base/jetengine/)
 - [Elementor Developer Docs](https://developers.elementor.com/)
 

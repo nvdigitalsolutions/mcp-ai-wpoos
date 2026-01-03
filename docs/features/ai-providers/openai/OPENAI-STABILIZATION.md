@@ -215,7 +215,7 @@ $embedding_model = $settings['openai_embedding_model']; // 'text-embedding-3-sma
 To use the higher quality model:
 
 ```php
-// In wp-admin → Settings → WP oOS
+// In wp-admin → Settings → NV oOS
 // Set OpenAI Embedding Model to: text-embedding-3-large
 ```
 
@@ -335,7 +335,7 @@ The system logs important events for monitoring:
 ### Check Logs
 
 ```php
-// View logs in wp-admin → Tools → WP oOS Logs
+// View logs in wp-admin → Tools → NV oOS Logs
 // Or programmatically
 $logs = WP_MCP_AI_Logger::get_recent_logs();
 ```

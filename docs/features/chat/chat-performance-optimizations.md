@@ -2,7 +2,7 @@
 
 ## Overview
 
-WP oOS includes several performance optimizations to make the chat flow as fast as possible while maintaining code quality and reliability. These optimizations can be disabled for debugging purposes.
+NV oOS includes several performance optimizations to make the chat flow as fast as possible while maintaining code quality and reliability. These optimizations can be disabled for debugging purposes.
 
 ## JavaScript Optimizations
 

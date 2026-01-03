@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS plugin supports asynchronous execution of long-running tools via WordPress Cron. This allows tools like image generation to run in the background without blocking the HTTP request, with client-side polling to retrieve results.
+The NV oOS plugin supports asynchronous execution of long-running tools via WordPress Cron. This allows tools like image generation to run in the background without blocking the HTTP request, with client-side polling to retrieve results.
 
 ## When Tools Run Asynchronously
 
@@ -150,7 +150,7 @@ if (result.async === true && result.status === 'pending' && result.job_id) {
     // Start polling for the async result
     waitForAsyncToolResult(state, result.job_id, toolName)
         .catch(function (error) {
-            console.error('[WP oOS] Async tool polling failed:', error);
+            console.error('[NV oOS] Async tool polling failed:', error);
         });
     // Don't display pending message here - waitForAsyncToolResult handles it
     return;

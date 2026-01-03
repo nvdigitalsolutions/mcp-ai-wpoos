@@ -1,4 +1,4 @@
-# WP oOS Technical Reference
+# NV oOS Technical Reference
 
 **Last Updated:** November 8, 2025  
 **Purpose:** Consolidated technical documentation for fixes, troubleshooting, architecture decisions, and implementation details  
@@ -22,7 +22,7 @@
 
 ## Overview
 
-This document provides technical reference material for developers working with the Open Operator System (WP oOS) plugin. It consolidates detailed information about:
+This document provides technical reference material for developers working with the Open Operator System (NV oOS) plugin. It consolidates detailed information about:
 
 - Architecture decisions and patterns
 - Bug fixes and their technical solutions
@@ -1147,7 +1147,7 @@ curl http://localhost:1234/v1/models
 ### Diagnostic Pages
 
 #### Using Diagnostic Tools
-**Access:** WP Admin → WP oOS → Diagnostics
+**Access:** WP Admin → NV oOS → Diagnostics
 
 **Available Tests:**
 1. **Connection Test:** Verify provider connectivity
@@ -1592,7 +1592,7 @@ wp eval 'echo WP_MCP_AI_Auth0::generate_token( 1 );'
 
 **Dashboard Access:**
 ```
-WP Admin → WP oOS → Orchestration Dashboard
+WP Admin → NV oOS → Orchestration Dashboard
 ```
 
 **Key Metrics:**

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the implementation of the Token Usage Manager enhancements for WP oOS (WordPress Open Operator System). The implementation follows the comprehensive plan outlined in `docs/TOKEN-MANAGER-ENHANCEMENT-PLAN.md`.
+This document summarizes the implementation of the Token Usage Manager enhancements for NV oOS (WordPress Open Operator System). The implementation follows the comprehensive plan outlined in `docs/TOKEN-MANAGER-ENHANCEMENT-PLAN.md`.
 
 ## Implementation Status
 
@@ -722,14 +722,14 @@ For issues or questions:
 1. Check the documentation in `docs/`
 2. Review test files for usage examples
 3. Open an issue on GitHub
-4. Contact the WP oOS development team
+4. Contact the NV oOS development team
 
 ## Credits
 
 **Implementation Date**: 2025-11-11  
 **Based On**: TOKEN-MANAGER-ENHANCEMENT-PLAN.md  
 **Repository**: nvdigitalsolutions/mcp-ai-wpoos  
-**Contributors**: GitHub Copilot Workspace, WP oOS Development Team
+**Contributors**: GitHub Copilot Workspace, NV oOS Development Team
 
 ---
 

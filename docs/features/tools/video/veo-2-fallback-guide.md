@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS plugin now includes automatic fallback support for video generation. When using the Veo video generation tool, the system will automatically try Veo 2.0 if Veo 3.1 is unavailable or quota limits are reached.
+The NV oOS plugin now includes automatic fallback support for video generation. When using the Veo video generation tool, the system will automatically try Veo 2.0 if Veo 3.1 is unavailable or quota limits are reached.
 
 ## How It Works
 
@@ -222,7 +222,7 @@ If your 4-second video becomes 5 seconds:
 
 ### Enable Logging
 
-In WordPress admin: **Settings → WP oOS → Enable Logging**
+In WordPress admin: **Settings → NV oOS → Enable Logging**
 
 Or via constant:
 ```php
