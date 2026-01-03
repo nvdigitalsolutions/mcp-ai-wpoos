@@ -220,12 +220,15 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Audit logging for grade changes.
+		$grader_data  = get_userdata( $current_user_id );
+		$student_data = get_userdata( $submission->post_author );
+
 		$audit_log = array(
 			'timestamp'     => current_time( 'mysql' ),
 			'grader_id'     => $current_user_id,
-			'grader_name'   => get_userdata( $current_user_id )->display_name,
+			'grader_name'   => $grader_data ? $grader_data->display_name : 'Unknown',
 			'student_id'    => absint( $submission->post_author ),
-			'student_name'  => get_userdata( $submission->post_author )->display_name,
+			'student_name'  => $student_data ? $student_data->display_name : 'Unknown',
 			'quiz_id'       => $quiz_id,
 			'quiz_title'    => get_the_title( $quiz_id ),
 			'earned_points' => $earned_points,
@@ -285,7 +288,7 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		foreach ( $headers as $header ) {
-			if ( ! empty( $_SERVER[ $header ] ) ) {
+			if ( isset( $_SERVER[ $header ] ) && ! empty( $_SERVER[ $header ] ) ) {
 				$ip_address = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
 				// If multiple IPs, take the first one.
 				if ( strpos( $ip_address, ',' ) !== false ) {

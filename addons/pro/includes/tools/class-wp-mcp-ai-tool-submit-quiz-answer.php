@@ -404,7 +404,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 		);
 
 		foreach ( $headers as $header ) {
-			if ( ! empty( $_SERVER[ $header ] ) ) {
+			if ( isset( $_SERVER[ $header ] ) && ! empty( $_SERVER[ $header ] ) ) {
 				$ip_address = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
 				// If multiple IPs, take the first one.
 				if ( strpos( $ip_address, ',' ) !== false ) {
