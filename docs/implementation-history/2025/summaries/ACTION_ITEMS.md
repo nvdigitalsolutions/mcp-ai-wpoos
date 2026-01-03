@@ -353,13 +353,22 @@ Based on the December 2025 gap analysis and [INCOMPLETE-FEATURES-REVIEW.md](../.
 - **Details:** See [INCOMPLETE-FEATURES-REVIEW.md](../../../archive/summaries/INCOMPLETE-FEATURES-REVIEW.md), Phase 1.1
 
 ### RabbitMQ Message Consumption Loop
-- **File:** `includes/class-wp-mcp-ai-cli-command.php`
+- **File:** `includes/class-wp-mcp-ai-cli-command.php` (line ~1153)
 - **Description:** Implement actual message consumption loop when AMQPQueue::consume is available
 - **Current:** Waiting for php-amqp extension (external dependency issue, not code issue)
-- **Priority:** Medium
+- **Priority:** Medium (External Dependency)
 - **Effort:** 4-6 hours
-- **Dependencies:** AMQPQueue library, RabbitMQ configuration, php-amqp extension
-- **Issue:** To be created when dependency available
+- **Dependencies:** 
+  - php-amqp extension must be installed
+  - RabbitMQ server configuration
+  - AMQPQueue::consume() method availability
+- **Blocker:** External dependency - php-amqp extension not widely available
+- **Workaround:** Current implementation uses basic get() method for message retrieval
+- **Issue:** To be created when dependency is commonly available
+- **Notes:** 
+  - Feature is functional with current basic implementation
+  - Full consume() loop would provide better performance at scale
+  - Not a bug - just an optimization opportunity when dependency becomes available
 
 ### ✅ Settings UI Exposure - COMPLETE
 - **Description:** Expose all 28 previously hidden settings in admin UI
@@ -370,16 +379,59 @@ Based on the December 2025 gap analysis and [INCOMPLETE-FEATURES-REVIEW.md](../.
 - **Pending:** Comprehensive functional testing
 
 ### Gemini Video File Naming Pattern
-- **File:** `includes/services/class-wp-mcp-ai-gemini-video-generation-service.php`
-- **Description:** Handle inconsistent Veo video file naming patterns (veo-video-veo_XXXXX.mp4 vs veo-video-XXXXX.mp4)
-- **Current:** Comment noting potential file naming inconsistency
-- **Priority:** Low
+- **File:** `includes/services/class-wp-mcp-ai-gemini-video-generation-service.php` (line ~1099)
+- **Description:** Handle inconsistent Veo video file naming patterns from Gemini API
+- **Current:** 
+  - Expected pattern: `veo-video-veo_XXXXX.mp4`
+  - Actual API response may return: `veo-video-XXXXX.mp4`
+  - Comment in code: "Expected: veo-video-veo_XXXXX.mp4, but file might be veo-video-XXXXX.mp4"
+- **Priority:** Low (Minor Inconsistency)
 - **Effort:** 1-2 hours
-- **Dependencies:** None
+- **Dependencies:** None - self-contained fix
 - **Issue:** To be created
+- **Workaround:** Code should handle both patterns with flexible matching
+- **Recommended Fix:**
+  ```php
+  // Add flexible pattern matching in file download logic
+  $patterns = array(
+      'veo-video-veo_*.mp4',
+      'veo-video-*.mp4',
+  );
+  // Try both patterns to locate file
+  ```
+- **Impact:** Low - affects video generation error handling edge cases
+- **Notes:** 
+  - Not blocking production use
+  - Gemini API may standardize naming in future
+  - Current implementation likely handles this gracefully
+
+### Gemini Batch Embed Tool Integration ⭐ NEW GAP
+- **Files:** 
+  - `includes/tools/class-wp-mcp-ai-tool-batch-embed-content.php`
+  - `includes/class-wp-mcp-ai-gemini-client.php` (batch_embed_content method exists)
+- **Description:** Update batch embed tool to support Gemini as provider option
+- **Current:** 
+  - Gemini client has `batch_embed_content()` method (lines 983-1149) ✅
+  - Tool still only uses OpenAI ❌
+  - Need to add provider selection to tool
+- **Priority:** ⭐ HIGH (Completes Phase 1 implementation)
+- **Effort:** 2-3 hours
+- **Dependencies:** None - Gemini method already implemented
+- **Issue:** To be created
+- **Recommended Implementation:**
+  - Add `provider` parameter to tool schema (default: 'openai')
+  - Add conditional logic to use Gemini client when provider='gemini'
+  - Update tool documentation to list Gemini as supported provider
+  - Add test coverage for Gemini provider path
+- **Impact:** HIGH - Enables Gemini batch embeddings through tool interface
+- **Notes:**
+  - This completes the Gemini batch embeddings feature end-to-end
+  - Identified in GEMINI_INTEGRATION_GAP_ANALYSIS.md Phase 1.5
+  - Should be completed before v1.1.0 release
 
 ---
 
 **Document Created:** November 2, 2024  
-**Last Updated:** December 12, 2025 (Updated completion status for Predictive Analytics and Settings UI from [INCOMPLETE-FEATURES-REVIEW.md](../../../archive/summaries/INCOMPLETE-FEATURES-REVIEW.md))  
+**Last Updated:** January 3, 2026 (Added Gemini Batch Embed Tool Integration, expanded RabbitMQ and Video File Naming TODOs)  
+**Previous Update:** December 12, 2025 (Updated completion status for Predictive Analytics and Settings UI)  
 **Next Review:** Weekly until all immediate items complete, then monthly
