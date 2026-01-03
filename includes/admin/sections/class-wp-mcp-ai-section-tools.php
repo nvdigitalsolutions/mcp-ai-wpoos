@@ -1550,20 +1550,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 									<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>">
 										<td>
 											<strong><?php echo esc_html( $name ); ?></strong>
-											<?php if ( $this->is_pro_tool( $slug ) ) : ?>
-												<span class="wp-mcp-ai-pro-badge" style="display: inline-block; margin-left: 8px; padding: 2px 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
-													<?php esc_html_e( 'Pro', 'wp-mcp-ai' ); ?>
-												</span>
-											<?php endif; ?>
-											<?php
-											$status_label = $this->get_tool_status_label( $slug );
-											if ( $status_label ) :
-												$label_config = $this->get_status_label_config( $status_label );
-												?>
-												<span class="wp-mcp-ai-tool-status-label <?php echo esc_attr( $label_config['class'] ); ?>" style="display: inline-block; margin-left: 8px; padding: 2px 6px; background: <?php echo esc_attr( $label_config['color'] ); ?>; color: white; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
-													<?php echo esc_html( $label_config['text'] ); ?>
-												</span>
-											<?php endif; ?>
 										</td>
 										<td>
 											<code style="font-size: 11px;"><?php echo esc_html( $slug ); ?></code>
@@ -1597,6 +1583,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 											<?php endif; ?>
 										</td>
 									</tr>
+									<?php
+									// Add a second row for badges if they exist.
+									$has_pro_badge   = $this->is_pro_tool( $slug );
+									$status_label    = $this->get_tool_status_label( $slug );
+									$has_status_label = ! empty( $status_label );
+									
+									if ( $has_pro_badge || $has_status_label ) :
+										?>
+										<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>-badges" class="wp-mcp-ai-tool-badges-row">
+											<td colspan="5" style="padding-top: 0; padding-bottom: 8px; border-top: 0;">
+												<?php if ( $has_pro_badge ) : ?>
+													<span class="wp-mcp-ai-pro-badge" style="display: inline-block; margin-right: 6px; padding: 2px 5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+														<?php esc_html_e( 'Pro', 'wp-mcp-ai' ); ?>
+													</span>
+												<?php endif; ?>
+												<?php if ( $has_status_label ) :
+													$label_config = $this->get_status_label_config( $status_label );
+													?>
+													<span class="wp-mcp-ai-tool-status-label <?php echo esc_attr( $label_config['class'] ); ?>" style="display: inline-block; padding: 2px 5px; background: <?php echo esc_attr( $label_config['color'] ); ?>; color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+														<?php echo esc_html( $label_config['text'] ); ?>
+													</span>
+												<?php endif; ?>
+											</td>
+										</tr>
+									<?php endif; ?>
 								<?php endforeach; ?>
 							</tbody>
 						</table>

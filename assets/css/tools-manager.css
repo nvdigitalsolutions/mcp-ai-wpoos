@@ -85,3 +85,16 @@
 .wp-mcp-ai-tool-status {
 	transition: background-color 0.3s, color 0.3s;
 }
+
+/* Badge row styling */
+.wp-mcp-ai-tools-manager table.wp-list-table tr.wp-mcp-ai-tool-badges-row {
+	background-color: inherit;
+}
+
+.wp-mcp-ai-tools-manager table.wp-list-table tr.wp-mcp-ai-tool-badges-row:hover {
+	background-color: #f9f9f9;
+}
+
+.wp-mcp-ai-tools-manager table.wp-list-table tr.wp-mcp-ai-tool-badges-row td {
+	padding-left: 12px;
+}
