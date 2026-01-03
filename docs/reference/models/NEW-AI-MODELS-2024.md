@@ -4,7 +4,7 @@ This document outlines the new AI models added to Open Operator System in respon
 
 ## Overview
 
-WP oOS now supports the latest AI models from OpenAI and Google Gemini, including advanced reasoning models ("thinking models") and experimental next-generation models.
+NV oOS now supports the latest AI models from OpenAI and Google Gemini, including advanced reasoning models ("thinking models") and experimental next-generation models.
 
 ## OpenAI Models
 
@@ -89,7 +89,7 @@ These will become available automatically when OpenAI releases them.
 
 ### Selecting Default Models
 
-1. Navigate to **Settings → WP oOS → AI Provider Configuration**
+1. Navigate to **Settings → NV oOS → AI Provider Configuration**
 2. Under **OpenAI**, select your preferred default model
 3. Under **Google Gemini**, select your preferred Gemini model
 4. Save changes
@@ -107,7 +107,7 @@ You can override the default model for individual assistants:
 
 The plugin supports automatic failover between providers:
 
-1. Go to **Settings → WP oOS → Provider Priority Order**
+1. Go to **Settings → NV oOS → Provider Priority Order**
 2. Drag and drop providers to set priority
 3. System will try providers in order if one fails
 
@@ -134,7 +134,7 @@ The plugin supports automatic failover between providers:
 
 No migration is required. The plugin automatically includes new models:
 
-1. Update WP oOS to latest version
+1. Update NV oOS to latest version
 2. New models appear in dropdowns automatically
 3. Existing assistants continue working with current settings
 4. Test new models before changing defaults
@@ -213,7 +213,7 @@ For issues or questions about new models:
 
 ### Overview
 
-WP oOS includes **foundational support** for AI models with video understanding capabilities. The tool infrastructure is in place, with full implementation planned for a future release.
+NV oOS includes **foundational support** for AI models with video understanding capabilities. The tool infrastructure is in place, with full implementation planned for a future release.
 
 **Current Status:** Phase 1 Complete (Foundation & Architecture)
 **Next Phase:** Gemini File API Integration (2-3 weeks)
@@ -338,7 +338,7 @@ Users can prepare for video analysis by:
 
 **API Keys:**
 - Google Gemini API key required (video analysis uses Gemini models)
-- Configure at: Settings → WP oOS → AI Provider Configuration
+- Configure at: Settings → NV oOS → AI Provider Configuration
 
 **User Permissions:**
 - `upload_files` capability required
@@ -383,6 +383,6 @@ Video analysis will be more expensive than image analysis due to:
 - [OpenAI Models Documentation](https://platform.openai.com/docs/models)
 - [Google Gemini Models](https://ai.google.dev/models/gemini)
 - [Gemini Video Understanding Guide](https://ai.google.dev/gemini-api/docs/vision)
-- [WP oOS Model Selector Code](../../../includes/class-wp-mcp-ai-model-selector.php)
+- [NV oOS Model Selector Code](../../../includes/class-wp-mcp-ai-model-selector.php)
 - [Provider Configuration](../../../includes/admin/sections/class-wp-mcp-ai-section-providers.php)
 - [Video Tools](../../../includes/tools/class-wp-mcp-ai-tool-analyze-video.php)

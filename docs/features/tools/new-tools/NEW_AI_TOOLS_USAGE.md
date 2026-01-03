@@ -20,10 +20,10 @@ This document provides comprehensive guidance on using the three new AI-powered 
 ## Quick Start
 
 ### Enable in WordPress Admin
-1. Go to **Settings → WP oOS → Tools & Features**
+1. Go to **Settings → NV oOS → Tools & Features**
 2. Enable **AI Media Library** for automatic image processing
 3. Enable **AI Comments Moderation** for automatic comment analysis
-4. Configure your OpenAI or Gemini API key in **Settings → WP oOS → Providers**
+4. Configure your OpenAI or Gemini API key in **Settings → NV oOS → Providers**
 
 ### Use via AI Assistant
 Ask the assistant to use these tools directly:
@@ -175,13 +175,13 @@ Ask the assistant to use these tools directly:
 These tools are also used automatically by WordPress integrations when enabled in settings:
 
 ### Media Library Integration
-When enabled at **Settings → WP oOS → Tools & Features → AI Media Library**:
+When enabled at **Settings → NV oOS → Tools & Features → AI Media Library**:
 - Automatically generates alt text for newly uploaded images
 - Automatically generates captions for newly uploaded images
 - Respects overwrite settings for existing metadata
 
 ### Comments Moderation Integration
-When enabled at **Settings → WP oOS → Tools & Features → AI Comments Moderation**:
+When enabled at **Settings → NV oOS → Tools & Features → AI Comments Moderation**:
 - Automatically analyzes incoming comments before publication
 - Applies recommendations based on confidence threshold
 - Stores analysis in comment meta for moderator review
@@ -432,7 +432,7 @@ var_dump($registry->is_tool_registered('generate_image_alt_text'));
 **Symptoms**: `OpenAI/Gemini API key is not configured`
 
 **Solutions**:
-1. ✅ Navigate to **Settings → WP oOS → Providers**
+1. ✅ Navigate to **Settings → NV oOS → Providers**
 2. ✅ Enter your API key for OpenAI or Gemini
 3. ✅ Click "Test Connection" to verify
 4. ✅ Ensure no extra spaces in API key
@@ -495,7 +495,7 @@ current_user_can('moderate_comments');   // For comment tool
 **Symptoms**: Comments bypass AI analysis
 
 **Check These Settings**:
-1. ✅ **Settings → WP oOS → Tools & Features → AI Comments Moderation**
+1. ✅ **Settings → NV oOS → Tools & Features → AI Comments Moderation**
    - Feature must be enabled
    
 2. ✅ **User is not a moderator**

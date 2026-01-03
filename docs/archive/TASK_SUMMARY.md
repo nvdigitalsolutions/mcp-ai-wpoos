@@ -33,7 +33,7 @@
 ## 🎯 What Was Implemented
 
 ### User Interface
-Located at: **WordPress Admin → Settings → WP oOS → Advanced Settings → Data Management**
+Located at: **WordPress Admin → Settings → NV oOS → Advanced Settings → Data Management**
 
 **Features**:
 - Clear description of what the migration does

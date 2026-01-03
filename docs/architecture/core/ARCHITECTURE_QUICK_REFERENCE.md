@@ -1,4 +1,4 @@
-# WP oOS Architecture Quick Reference
+# NV oOS Architecture Quick Reference
 
 **For**: GitHub Copilot and Developers  
 **Version**: 1.0.0  

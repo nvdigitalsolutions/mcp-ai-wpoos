@@ -159,7 +159,7 @@ public function ajax_export_results() {
 1. **Create Test Page**:
    - Create a new page in WordPress
    - Edit with Elementor
-   - Add "WP oOS Performance Test Runner" widget
+   - Add "NV oOS Performance Test Runner" widget
 
 2. **Test Security Test**:
    - Click "Security Tests" button

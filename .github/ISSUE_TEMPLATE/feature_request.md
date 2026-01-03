@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest a new feature or enhancement for WP oOS
+about: Suggest a new feature or enhancement for NV oOS
 title: '[FEATURE] '
 labels: 'type:feature,status:needs-triage'
 assignees: ''

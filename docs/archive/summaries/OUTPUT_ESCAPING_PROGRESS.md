@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document tracks progress on the systematic file-by-file review to add proper output escaping across the WP oOS codebase.
+This document tracks progress on the systematic file-by-file review to add proper output escaping across the NV oOS codebase.
 
 **Issue**: High-priority gap from code review - ~500 instances of missing output escaping
 **Estimated Effort**: 5-6 hours

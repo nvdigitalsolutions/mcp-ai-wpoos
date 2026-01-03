@@ -58,11 +58,11 @@ You should see JSON output. If you get a 404 or error, your REST API is disabled
 
 ### 2. Check Plugin is Active
 
-The `/mcp` endpoint only exists when the WP oOS plugin is active.
+The `/mcp` endpoint only exists when the NV oOS plugin is active.
 
 **Verify:**
 - Go to **Plugins** in WordPress admin
-- Ensure "Open Operator System (WP oOS)" is **Active**
+- Ensure "Open Operator System (NV oOS)" is **Active**
 
 ### 3. Test the MCP Endpoint Directly
 
@@ -223,7 +223,7 @@ tail -f /var/log/php_errors.log
 ### Step 4: Re-activate Plugin
 
 Sometimes reactivating fixes registration issues:
-1. Deactivate WP oOS plugin
+1. Deactivate NV oOS plugin
 2. Activate it again
 3. Test the endpoint
 
@@ -309,7 +309,7 @@ curl -X POST "https://bots.nvdigital.solutions/wp-json/mcp-ai/v1/mcp" \
       "prompts": { "listChanged": true }
     },
     "serverInfo": {
-      "name": "WP oOS",
+      "name": "NV oOS",
       "version": "1.0.0"
     }
   }

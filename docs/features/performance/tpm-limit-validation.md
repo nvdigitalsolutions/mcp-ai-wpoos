@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS plugin now includes intelligent TPM (Tokens Per Minute) limit validation and automatic model fallback to prevent API rate limit errors and optimize model selection based on request size.
+The NV oOS plugin now includes intelligent TPM (Tokens Per Minute) limit validation and automatic model fallback to prevent API rate limit errors and optimize model selection based on request size.
 
 ## Problem
 
@@ -18,7 +18,7 @@ This wastes time, costs money (failed API calls may still incur charges), and pr
 
 ## Solution
 
-WP oOS now performs **preemptive TPM validation** and **automatic model fallback** to prevent these errors.
+NV oOS now performs **preemptive TPM validation** and **automatic model fallback** to prevent these errors.
 
 ### Key Features
 
@@ -41,7 +41,7 @@ Request → Calculate Total Tokens (Input + Reserved Output)
 
 ### Model Fallback Chain
 
-When automatic routing is enabled, WP oOS follows this intelligent fallback chain:
+When automatic routing is enabled, NV oOS follows this intelligent fallback chain:
 
 #### For OpenAI Models
 
@@ -227,7 +227,7 @@ WP_MCP_AI_Logger::log_error(
 );
 ```
 
-View logs in: **Settings → WP oOS → Recent Activity / Recent Errors**
+View logs in: **Settings → NV oOS → Recent Activity / Recent Errors**
 
 ## Best Practices
 
@@ -353,4 +353,4 @@ Selects the appropriate model with TPM-aware fallback.
 For issues or questions:
 - GitHub Issues: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
 - Documentation: See `docs/` directory
-- Logs: Check Settings → WP oOS → Recent Activity
+- Logs: Check Settings → NV oOS → Recent Activity

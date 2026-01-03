@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document clarifies the terminology and build artifacts for the Open Operator System (WP oOS) plugin.
+This document clarifies the terminology and build artifacts for the Open Operator System (NV oOS) plugin.
 
 ## Three Build Artifacts
 
@@ -152,6 +152,6 @@ This allows release ZIP files to persist in the repository while keeping the wor
 
 **Base = Core = Same Plugin**
 
-The terms "base plugin" and "core plugin" are used interchangeably throughout the codebase and documentation. They both refer to the same artifact: the free, standalone version of WP oOS that works without any commercial add-ons.
+The terms "base plugin" and "core plugin" are used interchangeably throughout the codebase and documentation. They both refer to the same artifact: the free, standalone version of NV oOS that works without any commercial add-ons.
 
 The build script accepts both `--base` and `--core` flags to accommodate both terminologies, but they produce the exact same output file.

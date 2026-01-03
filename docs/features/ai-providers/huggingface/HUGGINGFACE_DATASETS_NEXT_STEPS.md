@@ -171,7 +171,7 @@ No manual registration needed - tools will be available once the plugin is loade
 To verify the tools are registered:
 
 1. Activate the plugin
-2. Go to WP oOS → Settings → Providers
+2. Go to NV oOS → Settings → Providers
 3. Ensure "Enable HuggingFace Datasets" is checked
 4. Create an AI assistant with all tools enabled
 5. Ask the assistant to list available HuggingFace tools

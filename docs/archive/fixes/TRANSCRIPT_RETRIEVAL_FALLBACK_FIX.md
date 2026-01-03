@@ -7,7 +7,7 @@ When a conversation was saved via `POST /chat-transcripts`, it would save succes
 ### Error Symptoms
 
 ```
-[WP oOS] Conversation saved successfully to CCT
+[NV oOS] Conversation saved successfully to CCT
 GET /chat-transcripts/c9547c44-e89b-4ba6-baf1-98d9c368e28e?user_id=1&assistant_id=331 404 (Not Found)
 Error: The requested chat transcript could not be found.
 ```
@@ -65,7 +65,7 @@ The existing test suite uses mock handlers that don't interact with actual JetEn
 
 To verify the fix works correctly:
 
-1. Enable debug logging in WordPress (Settings → WP oOS → Enable Logging)
+1. Enable debug logging in WordPress (Settings → NV oOS → Enable Logging)
 2. Save a conversation via the chat interface
 3. Try to load the conversation from history
 4. Check logs to see which query path was taken

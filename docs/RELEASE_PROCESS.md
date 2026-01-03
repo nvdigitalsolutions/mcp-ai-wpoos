@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document outlines the complete release process for WP oOS plugin, from planning through post-release activities. Following this process ensures consistent, high-quality releases.
+This document outlines the complete release process for NV oOS plugin, from planning through post-release activities. Following this process ensures consistent, high-quality releases.
 
 ## Release Types
 
@@ -165,7 +165,7 @@ We're preparing to release v1.x.x and would appreciate your help testing!
 **Testing Period:** Dec 15-22
 **Expected Release:** Dec 24
 
-Thank you for helping make WP oOS better! 🚀
+Thank you for helping make NV oOS better! 🚀
 ```
 
 ---
@@ -309,7 +309,7 @@ git push origin --delete release/v1.x.x
 
 **Announcement Template:**
 ```markdown
-## WP oOS v1.x.x Released! 🚀
+## NV oOS v1.x.x Released! 🚀
 
 We're excited to announce the release of WP Open Operator System v1.x.x!
 

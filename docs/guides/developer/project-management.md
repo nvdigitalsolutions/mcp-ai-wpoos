@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the newly implemented Project/Task/Events Management system for WP oOS (Open Operator System). This is a **Pro Feature** that provides comprehensive project management capabilities with integrated calendar support.
+This document describes the newly implemented Project/Task/Events Management system for NV oOS (Open Operator System). This is a **Pro Feature** that provides comprehensive project management capabilities with integrated calendar support.
 
 ## Features
 
@@ -70,7 +70,7 @@ All metadata is stored using WordPress post meta for efficient querying and filt
 
 ### Feature Toggle
 Administrators can enable/disable the feature at:
-**Settings → WP oOS → Tools & Features → Project Management**
+**Settings → NV oOS → Tools & Features → Project Management**
 
 ### Pro Feature
 - Only available in the Pro addon (requires `WP_MCP_AI_PRO_VERSION` constant to be defined)

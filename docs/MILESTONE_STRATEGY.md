@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document defines the milestone management strategy for the WP oOS plugin. Milestones represent specific releases and help track progress toward version goals.
+This document defines the milestone management strategy for the NV oOS plugin. Milestones represent specific releases and help track progress toward version goals.
 
 ## Milestone Types
 

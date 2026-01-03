@@ -1,6 +1,6 @@
 # Google OAuth Setup Guide for Gmail Integration
 
-This guide explains how to configure OAuth 2.0 credentials in the Google Cloud Console for Gmail integration in WP oOS (Open Operator System).
+This guide explains how to configure OAuth 2.0 credentials in the Google Cloud Console for Gmail integration in NV oOS (Open Operator System).
 
 ## Prerequisites
 
@@ -38,7 +38,7 @@ This guide explains how to configure OAuth 2.0 credentials in the Google Cloud C
 ### 4. Configure OAuth Client
 
 1. For "Application type", select **Web application**
-2. Enter a name for your OAuth client (e.g., "WP oOS Gmail Integration")
+2. Enter a name for your OAuth client (e.g., "NV oOS Gmail Integration")
 
 #### Required Configuration for Your Site
 
@@ -68,16 +68,16 @@ https://bots.nvdigital.solutions/wp-admin/admin-post.php?action=wp_mcp_ai_gmail_
    - **Client Secret** (looks like: `GOCSPX-abcd1234...`)
 3. **Copy both values** - you'll need them in the next step
 
-### 6. Configure WP oOS
+### 6. Configure NV oOS
 
-1. In your WordPress admin panel, go to **WP oOS Dashboard** > **Tools** > **Connections**
+1. In your WordPress admin panel, go to **NV oOS Dashboard** > **Tools** > **Connections**
 2. Click on the **Gmail** tab
 3. Enter your:
    - **Gmail OAuth Client ID**: Paste the Client ID from step 5
    - **Gmail OAuth Client Secret**: Paste the Client Secret from step 5
 4. Click **Save Settings**
 5. After saving, you'll see a **Connect Gmail Account** button
-6. Click it to authorize WP oOS to access your Gmail account
+6. Click it to authorize NV oOS to access your Gmail account
 
 ## Troubleshooting
 
@@ -109,7 +109,7 @@ If you see "Google did not return a refresh token":
 1. Go to https://myaccount.google.com/permissions
 2. Find your app in the list
 3. Remove access to it
-4. Go back to WP oOS and click "Connect Gmail Account" again
+4. Go back to NV oOS and click "Connect Gmail Account" again
 5. Make sure to grant all requested permissions
 
 ## Security Best Practices
@@ -122,7 +122,7 @@ If you see "Google did not return a refresh token":
 
 ## Support
 
-For issues specific to WP oOS:
+For issues specific to NV oOS:
 - Check the plugin documentation
 - Contact support at https://nvdigitalsolutions.com
 

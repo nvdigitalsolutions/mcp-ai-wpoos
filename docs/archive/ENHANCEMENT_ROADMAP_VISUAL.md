@@ -1,4 +1,4 @@
-# WP oOS Enhancement Roadmap - Visual Guide
+# NV oOS Enhancement Roadmap - Visual Guide
 
 **Date**: 2025-11-15  
 **Status**: Planning Phase
@@ -9,7 +9,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        WP oOS ENHANCEMENT TIMELINE                          │
+│                        NV oOS ENHANCEMENT TIMELINE                          │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 COMPLETED PHASES:

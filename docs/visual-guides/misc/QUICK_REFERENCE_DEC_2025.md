@@ -29,7 +29,7 @@ OpenAI's latest model family is now fully supported with 6 variants:
 - 💰 Cost tracking enabled
 
 **How to Use:**
-1. Go to **Settings → WP oOS → Default Model**
+1. Go to **Settings → NV oOS → Default Model**
 2. Select a GPT-5.2 variant
 3. Save settings
 
@@ -219,7 +219,7 @@ OpenAI's latest model family is now fully supported with 6 variants:
 
 **For admins:**
 ```
-1. Settings → WP oOS → Default Model
+1. Settings → NV oOS → Default Model
 2. Choose: gpt-5.2 (or variant)
 3. Save
 ```
@@ -236,7 +236,7 @@ OpenAI's latest model family is now fully supported with 6 variants:
 
 **Verify Pro addon:**
 ```
-1. Settings → WP oOS → Tools
+1. Settings → NV oOS → Tools
 2. Look for "PRO" badges
 3. Count: Should see 38 pro tools
 4. Base tools: 71 available
@@ -246,7 +246,7 @@ OpenAI's latest model family is now fully supported with 6 variants:
 
 **Federation & Mesh:**
 ```
-1. Settings → WP oOS → Advanced
+1. Settings → NV oOS → Advanced
 2. Click "Federation & Mesh" tab
 3. Configure regional routing
 4. Set rate limits

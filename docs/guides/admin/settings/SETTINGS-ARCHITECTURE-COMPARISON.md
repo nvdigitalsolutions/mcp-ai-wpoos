@@ -29,7 +29,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     WP oOS Settings Dashboard                    │
+│                     NV oOS Settings Dashboard                    │
 │                 (class-wp-mcp-ai-settings-dashboard.php)         │
 └─────────────────────────────────────────────────────────────────┘
                                   │

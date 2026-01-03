@@ -27,7 +27,7 @@ Added comprehensive logging at multiple stages of the streaming request lifecycl
 
 Logs:
 ```javascript
-[WP oOS] Starting streaming request: {
+[NV oOS] Starting streaming request: {
     endpoint: "https://example.com/wp-json/mcp-ai/v1/chat-client",
     assistantId: 331,
     messageCount: 2,
@@ -45,7 +45,7 @@ Logs:
 
 Logs:
 ```javascript
-[WP oOS] Streaming response received: {
+[NV oOS] Streaming response received: {
     status: 200,
     statusText: "OK",
     ok: true,
@@ -67,7 +67,7 @@ Logs:
 
 Logs:
 ```javascript
-[WP oOS] HTTP error response: {
+[NV oOS] HTTP error response: {
     status: 403,
     statusText: "Forbidden",
     url: "https://example.com/wp-json/mcp-ai/v1/chat-client"
@@ -83,7 +83,7 @@ Logs:
 
 Logs:
 ```javascript
-[WP oOS] Streaming request failed: {
+[NV oOS] Streaming request failed: {
     errorType: "TypeError",
     errorMessage: "Failed to fetch",
     errorStatus: "N/A",
@@ -97,7 +97,7 @@ Logs:
 
 If response body is available:
 ```javascript
-[WP oOS] Server response text: "{"code":"rest_forbidden","message":"Sorry, you are not allowed to do that.","data":{"status":403}}"
+[NV oOS] Server response text: "{"code":"rest_forbidden","message":"Sorry, you are not allowed to do that.","data":{"status":403}}"
 ```
 
 **Purpose:** Provides detailed error context for debugging
@@ -109,12 +109,12 @@ If response body is available:
 
 Start:
 ```javascript
-[WP oOS] Starting SSE stream processing
+[NV oOS] Starting SSE stream processing
 ```
 
 Completion:
 ```javascript
-[WP oOS] SSE stream completed: {
+[NV oOS] SSE stream completed: {
     totalContentLength: 1234,
     contentSample: "Here is the response content..."
 }
@@ -129,7 +129,7 @@ Completion:
 
 Logs:
 ```javascript
-[WP oOS] Failed to parse SSE event data: {
+[NV oOS] Failed to parse SSE event data: {
     eventType: "message",
     eventData: "data: {invalid json...",
     error: "Unexpected token i in JSON at position 0"
@@ -145,12 +145,12 @@ Logs:
 
 Logs:
 ```javascript
-[WP oOS] Error reading SSE stream chunk: {
+[NV oOS] Error reading SSE stream chunk: {
     error: "Stream closed unexpectedly",
     errorType: "DOMException"
 }
 
-[WP oOS] SSE stream processing error: {
+[NV oOS] SSE stream processing error: {
     error: "Stream closed unexpectedly",
     errorType: "DOMException"
 }
@@ -164,8 +164,8 @@ Logs:
 
 **Symptoms:**
 ```
-[WP oOS] Starting streaming request: {...}
-[WP oOS] Streaming request failed: {
+[NV oOS] Starting streaming request: {...}
+[NV oOS] Streaming request failed: {
     errorType: "TypeError",
     errorMessage: "Failed to fetch",
     errorStatus: "N/A"
@@ -185,10 +185,10 @@ Logs:
 
 **Symptoms:**
 ```
-[WP oOS] Starting streaming request: {...}
-[WP oOS] Streaming response received: {status: 403, statusText: "Forbidden"}
-[WP oOS] HTTP error response: {...}
-[WP oOS] Server response text: "{"code":"rest_forbidden",...}"
+[NV oOS] Starting streaming request: {...}
+[NV oOS] Streaming response received: {status: 403, statusText: "Forbidden"}
+[NV oOS] HTTP error response: {...}
+[NV oOS] Server response text: "{"code":"rest_forbidden",...}"
 ```
 
 **Diagnosis:** Server rejected request due to permissions
@@ -204,10 +204,10 @@ Logs:
 
 **Symptoms:**
 ```
-[WP oOS] Starting streaming request: {...}
-[WP oOS] Streaming response received: {status: 200, ...}
-[WP oOS] Starting SSE stream processing
-[WP oOS] Failed to parse SSE event data: {
+[NV oOS] Starting streaming request: {...}
+[NV oOS] Streaming response received: {status: 200, ...}
+[NV oOS] Starting SSE stream processing
+[NV oOS] Failed to parse SSE event data: {
     eventType: "message",
     eventData: "data: {broken...",
     error: "Unexpected token..."
@@ -226,10 +226,10 @@ Logs:
 
 **Symptoms:**
 ```
-[WP oOS] Starting streaming request: {...}
-[WP oOS] Streaming response received: {status: 200, ...}
-[WP oOS] Starting SSE stream processing
-[WP oOS] Error reading SSE stream chunk: {
+[NV oOS] Starting streaming request: {...}
+[NV oOS] Streaming response received: {status: 200, ...}
+[NV oOS] Starting SSE stream processing
+[NV oOS] Error reading SSE stream chunk: {
     error: "Stream closed unexpectedly"
 }
 ```
@@ -259,24 +259,24 @@ To test the enhanced logging:
 
 3. **Expected Logs (Success)**
    ```
-   [WP oOS] User clicked send: {...}
-   [WP oOS] Starting streaming request: {...}
-   [WP oOS] Created streaming message element
-   [WP oOS] Streaming response received: {...}
-   [WP oOS] Starting SSE stream processing
-   [WP oOS] SSE message event received: {...}
-   [WP oOS] Content chunk extracted: "..."
-   [WP oOS] updateStreamingMessage called: {...}
-   [WP oOS] SSE stream completed: {...}
+   [NV oOS] User clicked send: {...}
+   [NV oOS] Starting streaming request: {...}
+   [NV oOS] Created streaming message element
+   [NV oOS] Streaming response received: {...}
+   [NV oOS] Starting SSE stream processing
+   [NV oOS] SSE message event received: {...}
+   [NV oOS] Content chunk extracted: "..."
+   [NV oOS] updateStreamingMessage called: {...}
+   [NV oOS] SSE stream completed: {...}
    ```
 
 4. **Expected Logs (Failure)**
    ```
-   [WP oOS] User clicked send: {...}
-   [WP oOS] Starting streaming request: {...}
-   [WP oOS] Created streaming message element
-   [WP oOS] Streaming request failed: {...}
-   [WP oOS] Server response text: "..." (if available)
+   [NV oOS] User clicked send: {...}
+   [NV oOS] Starting streaming request: {...}
+   [NV oOS] Created streaming message element
+   [NV oOS] Streaming request failed: {...}
+   [NV oOS] Server response text: "..." (if available)
    ```
 
 ## Files Modified
@@ -374,8 +374,8 @@ Potential improvements:
 ### Too Many Logs
 
 **Solutions:**
-1. Filter by "[WP oOS]" prefix
-2. Use DevTools filter: `/\[WP oOS\]/`
+1. Filter by "[NV oOS]" prefix
+2. Use DevTools filter: `/\[NV oOS\]/`
 3. Collapse verbose entries
 4. Clear console between tests
 
@@ -383,7 +383,7 @@ Potential improvements:
 
 **If you see:**
 ```
-[WP oOS] Streaming request failed: {errorMessage: "Failed to fetch", ...}
+[NV oOS] Streaming request failed: {errorMessage: "Failed to fetch", ...}
 ```
 
 **But no response text, check:**
@@ -415,7 +415,7 @@ console.error = originalError;
 
 Or filter in DevTools:
 ```
--[WP oOS]
+-[NV oOS]
 ```
 
 ## Related Documentation

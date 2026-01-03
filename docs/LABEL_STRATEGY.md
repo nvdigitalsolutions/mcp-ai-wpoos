@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document defines the complete label taxonomy for issue and pull request management in the WP oOS repository. Consistent labeling enables efficient filtering, searching, prioritization, and automation.
+This document defines the complete label taxonomy for issue and pull request management in the NV oOS repository. Consistent labeling enables efficient filtering, searching, prioritization, and automation.
 
 ## Label Categories
 

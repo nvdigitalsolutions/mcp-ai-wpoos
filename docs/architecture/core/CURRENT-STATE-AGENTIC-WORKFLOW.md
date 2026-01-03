@@ -23,7 +23,7 @@
 
 ## Overview
 
-Open Operator System (WP oOS) implements a sophisticated **agentic workflow** where AI assistants autonomously execute tools in iterative loops until they have all information needed to respond to user queries. This document describes the **current state** of how assistants and processing components work together.
+Open Operator System (NV oOS) implements a sophisticated **agentic workflow** where AI assistants autonomously execute tools in iterative loops until they have all information needed to respond to user queries. This document describes the **current state** of how assistants and processing components work together.
 
 ### Key Concepts
 
@@ -163,7 +163,7 @@ Open Operator System (WP oOS) implements a sophisticated **agentic workflow** wh
 
 ### Assistant Definition
 
-An **Assistant** in WP oOS is a complete AI agent configuration stored as a WordPress Custom Post Type.
+An **Assistant** in NV oOS is a complete AI agent configuration stored as a WordPress Custom Post Type.
 
 #### Core Properties
 
@@ -829,7 +829,7 @@ The loop has a maximum iteration limit to prevent:
 
 2. **Admin Setting** (General Settings → Custom AI Settings subtab)
    ```
-   Settings → WP oOS → General Settings → Custom AI Settings (Filters) → Max Agentic Iterations
+   Settings → NV oOS → General Settings → Custom AI Settings (Filters) → Max Agentic Iterations
    ```
 
 3. **Programmatic Filter**
@@ -1376,7 +1376,7 @@ Configured in **WordPress Admin → AI Assistants → Edit Assistant**
 
 ### Global Configuration
 
-Configured in **Settings → WP oOS**
+Configured in **Settings → NV oOS**
 
 #### General Settings Tab
 

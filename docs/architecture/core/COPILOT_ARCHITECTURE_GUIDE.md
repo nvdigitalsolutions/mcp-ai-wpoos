@@ -1,4 +1,4 @@
-# Open Operator System (WP oOS) - Architecture Guide for Copilot
+# Open Operator System (NV oOS) - Architecture Guide for Copilot
 
 **Version:** 1.0.0  
 **Last Updated:** 2025-11-11  
@@ -34,7 +34,7 @@
 
 ## Overview
 
-Open Operator System (WP oOS) is a sophisticated WordPress plugin that provides an AI Assistant framework integrating with multiple AI providers (OpenAI, Gemini, Ollama, Anthropic) and implementing the Model Context Protocol (MCP).
+Open Operator System (NV oOS) is a sophisticated WordPress plugin that provides an AI Assistant framework integrating with multiple AI providers (OpenAI, Gemini, Ollama, Anthropic) and implementing the Model Context Protocol (MCP).
 
 ### Key Architectural Principles
 
@@ -2525,7 +2525,7 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements
 
 **Menu Structure**:
 ```
-WP oOS (Top-level menu)
+NV oOS (Top-level menu)
 ├── Dashboard (Overview)
 ├── JetEngine Integration
 ├── WooCommerce Integration
@@ -2533,7 +2533,7 @@ WP oOS (Top-level menu)
 └── Gmail Crawl Integration
 
 Tools (WordPress menu)
-└── WP oOS Diagnostic
+└── NV oOS Diagnostic
     ├── Dashboard Diagnostic
     ├── MCP Server Diagnostic
     └── Provider Diagnostics
@@ -3043,7 +3043,7 @@ array(
 
 ### Overview
 
-WP oOS supports multiple authentication methods to accommodate different use cases:
+NV oOS supports multiple authentication methods to accommodate different use cases:
 
 1. **WordPress Nonce** - Standard WordPress authentication for logged-in users
 2. **Assistant Credentials** - Plugin-issued bearer tokens for API access
@@ -4330,8 +4330,8 @@ public function check_limit( $user_id, $assistant_id ) {
 - Uses WordPress authentication
 
 **Admin Menu**:
-- Top-level menu: "WP oOS"
-- Tools submenu: "WP oOS Diagnostic"
+- Top-level menu: "NV oOS"
+- Tools submenu: "NV oOS Diagnostic"
 
 **Shortcodes**:
 - `[wp_mcp_ai_chat]` - Embed chat interface
@@ -4581,7 +4581,7 @@ public function handle_my_endpoint( $request ) {
 
 ## Conclusion
 
-This architecture guide provides a comprehensive overview of the Open Operator System (WP oOS) plugin codebase. It covers:
+This architecture guide provides a comprehensive overview of the Open Operator System (NV oOS) plugin codebase. It covers:
 
 - Plugin entry point and initialization flow
 - Core architectural patterns (DI, Service/Repository, Singleton, Factory, Strategy)
@@ -4654,4 +4654,4 @@ This guide should enable Copilot to:
 
 **Document Version**: 1.0.0  
 **Last Updated**: 2025-11-11  
-**Maintained By**: WP oOS Development Team
+**Maintained By**: NV oOS Development Team

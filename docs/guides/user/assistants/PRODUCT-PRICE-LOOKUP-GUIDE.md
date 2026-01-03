@@ -278,11 +278,11 @@ $result = $assistant->call_tool( 'scrape_product', [
 
 1. **Crawl4AI Integration**
    - Required for URL crawling and price extraction
-   - Configure in: Settings → WP oOS → Crawl4AI Base URL
+   - Configure in: Settings → NV oOS → Crawl4AI Base URL
 
 2. **Google Cloud Vision API** (Optional)
    - Required for image-based product identification
-   - Configure credentials in Settings → WP oOS → Vision API
+   - Configure credentials in Settings → NV oOS → Vision API
 
 3. **LLM Configuration** (Required for Document Processing)
    - Document text extraction uses the `submit_document_prompt` tool

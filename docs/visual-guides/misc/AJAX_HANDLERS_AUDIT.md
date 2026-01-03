@@ -1,7 +1,7 @@
 # AJAX Handler Registration and Security Audit Report
 
 **Date**: 2025-11-15  
-**Plugin**: Open Operator System (WP oOS)  
+**Plugin**: Open Operator System (NV oOS)  
 **Version**: Current HEAD
 
 ## Executive Summary
@@ -257,7 +257,7 @@ When adding new AJAX handlers:
 
 ## Conclusion
 
-The WP oOS plugin has **excellent AJAX handler security**. All handlers are:
+The NV oOS plugin has **excellent AJAX handler security**. All handlers are:
 - Properly registered with WordPress
 - Protected with nonce verification
 - Protected with appropriate capability/authentication checks

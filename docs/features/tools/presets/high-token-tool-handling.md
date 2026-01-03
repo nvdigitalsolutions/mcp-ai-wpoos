@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS system includes intelligent handling for tools that return large amounts of data (such as web crawling, document parsing, or large database queries). When these tools return results that exceed the current AI model's token limits, the system can automatically switch to a higher-capacity model or gracefully handle the overflow through message truncation.
+The NV oOS system includes intelligent handling for tools that return large amounts of data (such as web crawling, document parsing, or large database queries). When these tools return results that exceed the current AI model's token limits, the system can automatically switch to a higher-capacity model or gracefully handle the overflow through message truncation.
 
 ## The Problem
 
@@ -36,7 +36,7 @@ ERROR: "Request too large for gpt-4o-mini: Limit 200,000, Requested 463,045"
 
 ## The Solution
 
-WP oOS implements a three-tier strategy to handle this scenario:
+NV oOS implements a three-tier strategy to handle this scenario:
 
 ### 1. Token Limit Detection
 
@@ -80,7 +80,7 @@ If truncation still doesn't work:
 
 ### Admin Settings
 
-Navigate to **Settings → WP oOS → High Token Tool Handling**
+Navigate to **Settings → NV oOS → High Token Tool Handling**
 
 #### Enable Auto-Switch to High-Capacity Model
 - **Default**: Enabled ✓
@@ -102,7 +102,7 @@ Navigate to **Settings → WP oOS → High Token Tool Handling**
 
 You can configure different fallback models for each AI model directly in the settings page:
 
-1. Navigate to **Settings → WP oOS → High Token Tool Handling**
+1. Navigate to **Settings → NV oOS → High Token Tool Handling**
 2. Scroll to the **Per-Model Fallback Configuration** section
 3. For each model (e.g., `gpt-4o-mini`, `gpt-4o`), select a specific fallback from the dropdown
 4. Leave blank to use the global fallback setting
@@ -133,7 +133,7 @@ gpt-4-turbo → (blank - uses global fallback)
 
 For advanced users with JetEngine installed, you can also configure fallback models for additional AI models in the Model Rate Limits CCT:
 
-1. Navigate to **WP oOS → Model Rate Limits** in the WordPress admin
+1. Navigate to **NV oOS → Model Rate Limits** in the WordPress admin
 2. Edit the model you want to configure (e.g., `claude-3-opus`)
 3. Set the **High-Capacity Fallback Model** field to your preferred fallback
 4. Save the model configuration
@@ -216,7 +216,7 @@ add_filter( 'wp_mcp_ai_crawl4ai_result_token_limit', function( $limit, $response
 
 ### Enable Logging
 
-Enable logging in **Settings → WP oOS → Enable Logging** to see:
+Enable logging in **Settings → NV oOS → Enable Logging** to see:
 - When model switches occur
 - What triggered the switch
 - Token counts before/after
@@ -239,9 +239,9 @@ Context:
 ```
 
 **New in 1.2.0**: The log now includes `fallback_source` which indicates where the fallback came from:
-- `settings_per_model`: Model-specific fallback configured in Settings → WP oOS
+- `settings_per_model`: Model-specific fallback configured in Settings → NV oOS
 - `cct_per_model`: Model-specific fallback configured in Model Rate Limits CCT (JetEngine)
-- `global`: Global fallback setting from Settings → WP oOS
+- `global`: Global fallback setting from Settings → NV oOS
 
 #### Agentic Model Switch Event
 ```
@@ -414,13 +414,13 @@ A: Use per-model configuration when:
 
 **Q: How do I set up per-model fallback?**
 A: In the main settings page:
-1. Go to **Settings → WP oOS → High Token Tool Handling**
+1. Go to **Settings → NV oOS → High Token Tool Handling**
 2. Scroll to **Per-Model Fallback Configuration**
 3. For each model, select a fallback or leave blank to use global fallback
 4. Click **Save Changes**
 
 For additional models (with JetEngine):
-1. Go to **WP oOS → Model Rate Limits** in WordPress admin
+1. Go to **NV oOS → Model Rate Limits** in WordPress admin
 2. Edit the model you want to configure
 3. Set the **High-Capacity Fallback Model** field
 4. Save the configuration
@@ -428,7 +428,7 @@ For additional models (with JetEngine):
 The system will automatically use the per-model setting when available, falling back to the global setting if not configured.
 
 **Q: What if I don't have JetEngine installed?**
-A: You can still configure per-model fallbacks in Settings → WP oOS for the most common OpenAI models (gpt-4o-mini, gpt-4o, gpt-4-turbo, o1-preview, o1-mini). JetEngine is only needed to configure additional models beyond these.
+A: You can still configure per-model fallbacks in Settings → NV oOS for the most common OpenAI models (gpt-4o-mini, gpt-4o, gpt-4-turbo, o1-preview, o1-mini). JetEngine is only needed to configure additional models beyond these.
 
 ## Related Documentation
 
@@ -442,7 +442,7 @@ A: You can still configure per-model fallbacks in Settings → WP oOS for the mo
 ## Changelog
 
 ### Version 1.2.0
-- Added per-model fallback configuration UI in Settings → WP oOS
+- Added per-model fallback configuration UI in Settings → NV oOS
 - Support for configuring fallbacks for common OpenAI models (gpt-4o-mini, gpt-4o, gpt-4-turbo, o1-preview, o1-mini)
 - Updated fallback resolution order: Settings per-model → CCT per-model → Global → Default
 - Enhanced logging with three fallback source types: `settings_per_model`, `cct_per_model`, `global`

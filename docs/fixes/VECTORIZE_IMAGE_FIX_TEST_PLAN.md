@@ -131,7 +131,7 @@ tail -f /path/to/php-error.log | grep "WP_MCP_AI"
 ```
 
 ### Check Plugin Logs
-If debugging is enabled (Settings → WP oOS → Enable Logging):
+If debugging is enabled (Settings → NV oOS → Enable Logging):
 ```bash
 # Via WP-CLI
 wp option get wp_mcp_ai_recent_errors --format=json

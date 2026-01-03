@@ -15,7 +15,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    WP oOS Security Layer                         │
+│                    NV oOS Security Layer                         │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌───────────────────────────────────────────────────────────────────┐
@@ -165,7 +165,7 @@ done
 // wp-config.php
 define('WP_MCP_AI_ROOT_SECURITY_KEY', 'your-32-char-minimum-key');
 ```
-Then test via WordPress admin → Settings → WP oOS → Security Monitor
+Then test via WordPress admin → Settings → NV oOS → Security Monitor
 
 ### 5. Tool Scope Sanity
 Test via WordPress admin with different user roles:

@@ -2,7 +2,7 @@
 
 ## Overview
 
-WP oOS includes Server-Sent Events (SSE) support that can significantly speed up chat responses by streaming data as it's generated rather than waiting for the complete response. This document explains how to enable and test this feature.
+NV oOS includes Server-Sent Events (SSE) support that can significantly speed up chat responses by streaming data as it's generated rather than waiting for the complete response. This document explains how to enable and test this feature.
 
 ## Quick Start (TL;DR)
 
@@ -87,11 +87,11 @@ Simply add the `enable_streaming="true"` attribute to your shortcode:
 
 ### Method 2: Via Elementor Widget (Visual Editor)
 
-**NEW:** The Elementor "WP oOS Chat" widget includes a streaming toggle!
+**NEW:** The Elementor "NV oOS Chat" widget includes a streaming toggle!
 
 **Steps:**
 1. Edit your page in Elementor
-2. Add/edit the "WP oOS Chat" widget
+2. Add/edit the "NV oOS Chat" widget
 3. Go to **Chat Settings** section
 4. Toggle "Enable SSE Streaming" to **Yes**
 5. Update/Publish your page
@@ -174,7 +174,7 @@ function appendToChat(content) {
 
 If you're using LM Studio which has SSE bugs, enable POST method:
 
-1. Go to **Settings → WP oOS → Assistant Settings**
+1. Go to **Settings → NV oOS → Assistant Settings**
 2. Find "Enable POST Method on SSE Endpoint"
 3. ☑️ Check the box
 4. Save settings
@@ -265,7 +265,7 @@ Allow non-logged-in users to chat with streaming:
 ├─────────────────────────────────────┤
 │  Text Block: "AI Assistant"         │
 ├─────────────────────────────────────┤
-│  WP oOS Chat Widget                  │
+│  NV oOS Chat Widget                  │
 │  - Enable SSE Streaming: Yes         │
 │  - Show assistant tools: Yes         │
 │  - Show prompt shortcuts: Yes        │
@@ -389,7 +389,7 @@ Create a new JavaScript file `assets/js/sse-chat.js`:
 
 ```javascript
 /**
- * SSE-enabled chat for WP oOS.
+ * SSE-enabled chat for NV oOS.
  */
 (function() {
     'use strict';
@@ -731,7 +731,7 @@ Ideas for improving SSE support:
 
 ## Conclusion
 
-**SSE streaming is NOW BUILT-IN to WP oOS!** 🎉
+**SSE streaming is NOW BUILT-IN to NV oOS!** 🎉
 
 ### For Most Users (Shortcode/Widget):
 

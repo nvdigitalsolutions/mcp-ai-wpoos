@@ -1,6 +1,6 @@
 # Newsletter Plugin Integration Guide
 
-This guide covers the Newsletter plugin integration tools available in WP oOS (Open Operator System).
+This guide covers the Newsletter plugin integration tools available in NV oOS (Open Operator System).
 
 ## Overview
 

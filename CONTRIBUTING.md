@@ -1,4 +1,4 @@
-# Contributing to WP oOS
+# Contributing to NV oOS
 
 Thanks for taking the time to contribute! This guide summarises the steps you need to get a local environment running, configure API access, run automated checks, and extend the tool registry.
 
@@ -26,7 +26,7 @@ Thanks for taking the time to contribute! This guide summarises the steps you ne
 
 ## Configuring API Keys
 
-1. In the WordPress admin dashboard, navigate to **Settings → WP oOS**.
+1. In the WordPress admin dashboard, navigate to **Settings → NV oOS**.
 2. Paste your OpenAI API key into the **OpenAI API Key** field.
 3. (Optional) Update the default model, timeout, or choose a default assistant post.
 4. Save the settings. They are stored in the `wp_mcp_ai_settings` option. You can also script this step via WP-CLI:
@@ -130,4 +130,4 @@ Check [ROADMAP.md](docs/ROADMAP.md) for planned features and release dates. Vote
 
 Maintainers follow [RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for all releases.
 
-Thank you for helping improve WP oOS. 🚀
+Thank you for helping improve NV oOS. 🚀

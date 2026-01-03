@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS plugin includes comprehensive automated security checks that run on every push, pull request, and weekly via GitHub Actions. The security workflow provides multi-layered analysis to identify vulnerabilities, unsafe coding patterns, and potential security risks.
+The NV oOS plugin includes comprehensive automated security checks that run on every push, pull request, and weekly via GitHub Actions. The security workflow provides multi-layered analysis to identify vulnerabilities, unsafe coding patterns, and potential security risks.
 
 ## Security Badge
 

@@ -1,7 +1,7 @@
 # Region Support Implementation Summary
 
 ## Overview
-This document summarizes the implementation of region support for profession playbooks in the WP oOS plugin. Region context is now systematically captured, stored, and used to provide more accurate and relevant guidance across all professions.
+This document summarizes the implementation of region support for profession playbooks in the NV oOS plugin. Region context is now systematically captured, stored, and used to provide more accurate and relevant guidance across all professions.
 
 ## Completed Work (Phases 1-2)
 

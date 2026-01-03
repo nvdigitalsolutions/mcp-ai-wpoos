@@ -3,7 +3,7 @@
 **Version:** 1.0.0  
 **Last Updated:** November 9, 2024
 
-This document provides a comprehensive overview of the agentic workflow implementation in Open Operator System (WP oOS), including architecture, optimizations, and best practices.
+This document provides a comprehensive overview of the agentic workflow implementation in Open Operator System (NV oOS), including architecture, optimizations, and best practices.
 
 ---
 
@@ -224,7 +224,7 @@ Configuration is applied in this priority order:
    ```
 
 2. **Admin Setting**
-   - Navigate to: **Settings → WP oOS → General Settings → Custom AI Settings (Filters)**
+   - Navigate to: **Settings → NV oOS → General Settings → Custom AI Settings (Filters)**
    - Field: **Max Agentic Iterations**
    - Range: 1-50
    - Default: 5

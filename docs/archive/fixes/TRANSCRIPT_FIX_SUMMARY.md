@@ -99,7 +99,7 @@ To verify in production:
 
 1. **Enable Debug Logging**
    ```php
-   Settings → WP oOS → Enable Logging
+   Settings → NV oOS → Enable Logging
    ```
 
 2. **Test Save/Retrieve Cycle**

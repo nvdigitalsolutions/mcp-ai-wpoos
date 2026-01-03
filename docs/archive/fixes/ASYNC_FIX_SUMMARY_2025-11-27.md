@@ -25,7 +25,7 @@ const hasToolResults = data && Array.isArray(data.tool_results) && data.tool_res
 
 if (!message && !hasToolResults) {
     // Only error if BOTH message AND tool_results are missing
-    console.error('[WP oOS] handleChatResponse: No message or tool_results found');
+    console.error('[NV oOS] handleChatResponse: No message or tool_results found');
     return Promise.resolve();
 }
 ```

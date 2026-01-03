@@ -1,6 +1,6 @@
 # Base Version vs. Full Version Comparison
 
-This document provides a detailed comparison between the Base Version and Full Version of WP oOS.
+This document provides a detailed comparison between the Base Version and Full Version of NV oOS.
 
 ## Quick Comparison
 
@@ -269,7 +269,7 @@ This document provides a detailed comparison between the Base Version and Full V
    - Install Python + rembg (for background removal)
    - Install OpenAI Jukebox (for music generation)
 4. The additional 6 Pro tools will automatically become available
-5. Configure tools in WP oOS → Tools & Features
+5. Configure tools in NV oOS → Tools & Features
 
 ### From Full to Base (Removing Pro Addon)
 

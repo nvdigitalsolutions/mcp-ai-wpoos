@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This document outlines the plan to migrate all 78 base tools in WP oOS to use Symfony Validator for argument validation. **Batch 4 is now complete** with 23 tools migrated (29%). The remaining 55 tools will be migrated in 9 batches over 3 quarters (Q1-Q3 2026).
+This document outlines the plan to migrate all 78 base tools in NV oOS to use Symfony Validator for argument validation. **Batch 4 is now complete** with 23 tools migrated (29%). The remaining 55 tools will be migrated in 9 batches over 3 quarters (Q1-Q3 2026).
 
 **Total Effort**: 1,040-1,280 hours (26-32 weeks)  
 **Investment**: $156K-$192K (at $150/hour)  

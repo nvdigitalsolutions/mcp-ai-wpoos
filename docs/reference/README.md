@@ -1,6 +1,6 @@
 # API & Technical Reference
 
-Complete technical reference documentation for WP oOS APIs, tools, models, and specifications.
+Complete technical reference documentation for NV oOS APIs, tools, models, and specifications.
 
 ## 📂 Reference Sections
 

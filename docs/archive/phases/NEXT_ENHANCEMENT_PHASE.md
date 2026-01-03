@@ -1,4 +1,4 @@
-# WP oOS - Next Enhancement Phase
+# NV oOS - Next Enhancement Phase
 
 **Date**: 2025-11-15  
 **Current Version**: 1.0.0 (Beta)  

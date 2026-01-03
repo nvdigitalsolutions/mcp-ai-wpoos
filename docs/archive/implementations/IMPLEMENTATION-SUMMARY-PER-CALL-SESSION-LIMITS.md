@@ -2,7 +2,7 @@
 
 ## What Was Built
 
-This implementation adds **two new layers of token limit control** to the WP oOS orchestration layer:
+This implementation adds **two new layers of token limit control** to the NV oOS orchestration layer:
 
 1. **Per-Call Limits** - Monitor individual tool executions
 2. **Per-Session Limits** - Control total budget per chat session
@@ -11,7 +11,7 @@ This implementation adds **two new layers of token limit control** to the WP oOS
 
 ### Enabling the Features
 
-1. Go to **WordPress Admin → Settings → WP oOS**
+1. Go to **WordPress Admin → Settings → NV oOS**
 2. Click the **Orchestration** tab
 3. Click the **Thresholds** sub-tab
 4. Scroll to **"Per-Call and Per-Session Limits"** section
@@ -284,7 +284,7 @@ Session data is cached via WordPress transients, minimizing database queries.
 Check:
 1. Are the features enabled? (checkboxes checked)
 2. Are limits set appropriately? (not 0)
-3. Is logging enabled? (Settings → WP oOS → Enable Logging)
+3. Is logging enabled? (Settings → NV oOS → Enable Logging)
 4. Is session_id being passed in context?
 
 ### Sessions Not Tracking

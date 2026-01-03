@@ -101,7 +101,7 @@ Available profession categories:
 ```
 
 5. **Reseed playbooks** in WordPress admin:
-   - Go to Settings → WP oOS → Advanced
+   - Go to Settings → NV oOS → Advanced
    - Click "Reseed Professions"
    - Choose "Update" (not "Replace")
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Chat Client Settings page provides comprehensive configuration options for the frontend chat interface. This settings section is located under **WP oOS → General Settings → Chat Client**.
+The Chat Client Settings page provides comprehensive configuration options for the frontend chat interface. This settings section is located under **NV oOS → General Settings → Chat Client**.
 
 For information about chat interface templates (visual layouts), see [Chat Templates](./chat-templates.md).
 
@@ -138,7 +138,7 @@ Optimized for users with accessibility needs:
 ### Accessing Settings
 
 1. Navigate to **WordPress Admin Dashboard**
-2. Click **WP oOS** in the left sidebar
+2. Click **NV oOS** in the left sidebar
 3. Click **General Settings** tab (should be active by default)
 4. Scroll down to find **Chat Client** section
 5. Use the sub-tabs to navigate between settings categories

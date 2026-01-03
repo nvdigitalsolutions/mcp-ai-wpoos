@@ -1,4 +1,4 @@
-# WP oOS REST API
+# NV oOS REST API
 
 **Status:** ✅ VERIFIED - December 20, 2025  
 **Namespace:** `/wp-json/mcp-ai/v1`  
@@ -71,7 +71,7 @@ Developers can adjust the underlying `WP_Query` arguments or transform the respo
     "resources": { "subscribe": false, "listChanged": false }
   },
   "implementation": {
-    "name": "WP oOS",
+    "name": "NV oOS",
     "version": "1.0.0"
   },
   "rest": {
@@ -130,7 +130,7 @@ Successful requests return the assistant ID and the raw response payload from th
 - When streaming is active the server replies with `Content-Type: text/event-stream; charset=UTF-8`, disables caching with `no-transform`, and flushes frames as they are generated so clients can process partial completions in real time.【F:includes/class-wp-mcp-ai-rest.php†L1668-L1772】
 - Authentication is unchanged—continue sending either an Auth0 bearer token or an assistant-issued credential via `Authorization: Bearer …`, or a WordPress REST nonce when calling from the same origin.【F:docs/mcp-server-authentication.md†L11-L34】
 
-### Connect LM Studio to WP oOS
+### Connect LM Studio to NV oOS
 
 LM Studio can act as an MCP client by pointing its `mcp.json` configuration at the plugin’s REST endpoints. Follow this checklist to make the connection reliable:
 

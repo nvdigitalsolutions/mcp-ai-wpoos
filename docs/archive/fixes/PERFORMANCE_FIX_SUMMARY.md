@@ -43,7 +43,7 @@ tests/performance-test.html      ← Interactive demo
 4. Run "New Method" test → No violations!
 
 ### Live Chat Test
-1. Load WordPress with WP oOS plugin
+1. Load WordPress with NV oOS plugin
 2. Open any chat interface
 3. Open DevTools Console
 4. Send messages and stream responses

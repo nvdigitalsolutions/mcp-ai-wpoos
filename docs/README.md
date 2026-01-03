@@ -1,8 +1,8 @@
-# WP oOS Documentation
+# NV oOS Documentation
 
 ⭐ **[Complete Documentation Index](DOCUMENTATION_INDEX.md)** ⭐
 
-Welcome to the comprehensive documentation for Open Operator System (WP oOS).
+Welcome to the comprehensive documentation for Open Operator System (NV oOS).
 
 ---
 

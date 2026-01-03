@@ -4,7 +4,7 @@
 
 **Yes, test jobs DO show up in the Cron Manager!**
 
-Navigate to: **WP Admin → WP oOS → Cron Manager**  
+Navigate to: **WP Admin → NV oOS → Cron Manager**  
 Or: `/wp-admin/admin.php?page=wp-mcp-ai-cron-manager`
 
 ## How It Works

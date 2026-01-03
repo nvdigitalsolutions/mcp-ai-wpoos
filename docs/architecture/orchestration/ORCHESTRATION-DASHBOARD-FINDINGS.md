@@ -235,7 +235,7 @@ Multiple Elementor widgets exist for dashboard functionality:
 
 Based on the implementation code, the orchestration dashboard can be accessed via:
 
-**WordPress Admin → WP oOS → Orchestration Dashboard**
+**WordPress Admin → NV oOS → Orchestration Dashboard**
 
 Or directly:
 - **Admin URL:** `admin.php?page=wp-mcp-ai-dashboard&tab=orchestration`

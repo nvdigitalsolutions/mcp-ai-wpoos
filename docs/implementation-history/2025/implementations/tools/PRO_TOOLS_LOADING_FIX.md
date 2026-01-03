@@ -121,7 +121,7 @@ Expected output:
 
 ### Manual Verification
 1. Check that no flags are set in wp-config.php (WP_MCP_AI_BASE_VERSION undefined or false)
-2. Load WordPress admin and go to WP oOS → Settings → Tools
+2. Load WordPress admin and go to NV oOS → Settings → Tools
 3. Verify Pro tools appear in the settings sections:
    - Product Actualization
    - Lookup Product Price

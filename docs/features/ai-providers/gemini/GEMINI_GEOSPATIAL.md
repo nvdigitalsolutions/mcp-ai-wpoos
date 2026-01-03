@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS plugin now includes integration with Google's Gemini Geospatial API, enabling AI-powered location-based queries with Google Maps grounding. This feature allows users to ask natural language questions about places, directions, and local information, receiving rich, contextual answers powered by Gemini's AI and Google Maps data.
+The NV oOS plugin now includes integration with Google's Gemini Geospatial API, enabling AI-powered location-based queries with Google Maps grounding. This feature allows users to ask natural language questions about places, directions, and local information, receiving rich, contextual answers powered by Gemini's AI and Google Maps data.
 
 ## What is Gemini Geospatial API?
 
@@ -111,13 +111,13 @@ A new tool `gemini_geospatial_query` is available for AI assistants:
 
 ### Requirements
 
-1. **Gemini API Key**: Configure in Settings → WP oOS
+1. **Gemini API Key**: Configure in Settings → NV oOS
 2. **Gemini Model**: Set default model (recommended: `gemini-1.5-flash` or `gemini-1.5-pro`)
 3. **User Capabilities**: Users must have at least `read` capability
 
 ### Settings Location
 
-Navigate to **WordPress Admin → Settings → WP oOS**:
+Navigate to **WordPress Admin → Settings → NV oOS**:
 - Set your Gemini API key
 - Choose default Gemini model
 - Enable logging for debugging
@@ -185,7 +185,7 @@ const mapContextualView = new google.maps.ContextualView({
 ### Example Implementation
 
 ```javascript
-// Make API call to WP oOS
+// Make API call to NV oOS
 fetch('/wp-json/mcp-ai/v1/chat', {
   method: 'POST',
   headers: {
@@ -265,7 +265,7 @@ add_filter( 'wp_mcp_ai_gemini_geospatial_query_result', function( $response, $ar
 ### Common Issues
 
 **1. "No Gemini API key has been configured"**
-- Solution: Add your Gemini API key in Settings → WP oOS
+- Solution: Add your Gemini API key in Settings → NV oOS
 
 **2. "You must be authenticated to use geospatial queries"**
 - Solution: Ensure user is logged in or using valid token authentication
@@ -282,7 +282,7 @@ add_filter( 'wp_mcp_ai_gemini_geospatial_query_result', function( $response, $ar
 
 ### Debugging
 
-Enable logging in Settings → WP oOS to see detailed request/response logs:
+Enable logging in Settings → NV oOS to see detailed request/response logs:
 
 ```php
 // View recent logs
@@ -371,4 +371,4 @@ For issues, questions, or feature requests:
 
 ## License
 
-This feature is part of WP oOS and is licensed under GPLv3 or later.
+This feature is part of NV oOS and is licensed under GPLv3 or later.

@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug or issue with WP oOS
+about: Report a bug or issue with NV oOS
 title: '[BUG] '
 labels: 'type:bug,status:needs-triage'
 assignees: ''
