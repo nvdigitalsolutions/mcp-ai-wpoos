@@ -355,6 +355,7 @@ class WP_MCP_AI_Job_Notifier {
 	 * Send a webhook notification.
 	 *
 	 * Hooked to 'wp_mcp_ai_send_webhook' action for async delivery.
+	 * Tracks delivery attempts and moves to dead letter queue after max retries.
 	 *
 	 * @param string $url     Webhook URL.
 	 * @param array  $payload Payload to send.
@@ -380,6 +381,67 @@ class WP_MCP_AI_Job_Notifier {
 					'error' => $response->get_error_message(),
 				)
 			);
+
+			// Track webhook delivery failures and add to DLQ after max retries.
+			self::handle_webhook_failure( $url, $payload, $response );
+		}
+	}
+
+	/**
+	 * Handle webhook delivery failure.
+	 *
+	 * Tracks retry attempts and moves to dead letter queue after max failures.
+	 *
+	 * @param string   $url      Webhook URL.
+	 * @param array    $payload  Webhook payload.
+	 * @param WP_Error $error    Error object.
+	 */
+	protected static function handle_webhook_failure( $url, $payload, $error ) {
+		// Generate identifier for this webhook + payload combination.
+		$identifier = md5( $url . wp_json_encode( $payload ) );
+
+		// Track retry count in transients (expires after 1 hour).
+		$retry_key   = 'wp_mcp_ai_webhook_retry_' . $identifier;
+		$retry_count = get_transient( $retry_key );
+
+		if ( false === $retry_count ) {
+			$retry_count = 0;
+		}
+
+		$retry_count = absint( $retry_count ) + 1;
+		$max_retries = 3;
+
+		// Store updated retry count.
+		set_transient( $retry_key, $retry_count, HOUR_IN_SECONDS );
+
+		// If max retries exceeded, move to dead letter queue.
+		if ( $retry_count >= $max_retries && class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+			$retry_history = array();
+			for ( $i = 0; $i < $retry_count; $i++ ) {
+				$retry_history[] = array(
+					'timestamp' => time() - ( ( $retry_count - $i - 1 ) * 300 ),
+					'result'    => 'failed',
+					'error'     => $error->get_error_message(),
+				);
+			}
+
+			WP_MCP_AI_Dead_Letter_Queue::add(
+				WP_MCP_AI_Dead_Letter_Queue::TYPE_WEBHOOK,
+				$identifier,
+				array(
+					'url'     => $url,
+					'payload' => $payload,
+				),
+				sprintf(
+					'Webhook delivery failed after %d attempts: %s',
+					$retry_count,
+					$error->get_error_message()
+				),
+				$retry_history
+			);
+
+			// Clear retry transient since it's now in DLQ.
+			delete_transient( $retry_key );
 		}
 	}
 

@@ -271,7 +271,32 @@ class WP_MCP_AI_Job_Queue_Manager {
 			return self::save_queue_state( $queue );
 		}
 
-		// Max retries exceeded - mark as failed.
+		// Max retries exceeded - move to dead letter queue.
+		if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+			$retry_history = isset( $queue[ $job_id ]['retry_history'] ) ? $queue[ $job_id ]['retry_history'] : array();
+			
+			// Build retry history from queue data.
+			for ( $i = 0; $i <= $retry_count; $i++ ) {
+				$retry_history[] = array(
+					'timestamp' => time() - ( ( $retry_count - $i ) * 300 ), // Estimate timestamps.
+					'result'    => 'failed',
+					'error'     => $error->get_error_message(),
+				);
+			}
+
+			WP_MCP_AI_Dead_Letter_Queue::add(
+				WP_MCP_AI_Dead_Letter_Queue::TYPE_JOB_QUEUE,
+				$job_id,
+				array(
+					'job_id'   => $job_id,
+					'job_data' => $job,
+				),
+				$error->get_error_message(),
+				$retry_history
+			);
+		}
+
+		// Mark as failed and remove from queue.
 		$queue[ $job_id ]['status']     = 'failed';
 		$queue[ $job_id ]['failed_at']  = time();
 		$queue[ $job_id ]['last_error'] = $error->get_error_message();
