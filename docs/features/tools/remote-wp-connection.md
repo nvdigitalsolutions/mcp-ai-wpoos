@@ -362,7 +362,7 @@ Get WooCommerce product categories.
 
 ## Related Documentation
 
-- [Tool Reference](../tool-reference.md)
-- [Tool Grouping](../tool-grouping.md)
-- [Security Best Practices](../../security/best-practices.md)
-- [WooCommerce Integration](../../integrations/woocommerce.md)
+- [Tool Reference](../../reference/tools/tool-reference.md)
+- [Tool Grouping](../../reference/tools/tool-grouping.md)
+- [Security Best Practices](../security/SECURITY_HARDENING.md)
+- [WP All Import/Export Integration](../integrations/WP_ALL_IMPORT_EXPORT_INTEGRATION.md)
