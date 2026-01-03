@@ -475,6 +475,18 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'admin.settings',
+			function ( $container ) {
+				return new WP_MCP_AI_Admin_Settings(
+					$container->get( 'admin.settings_base' ),
+					$container->get( 'admin.ajax_handlers' ),
+					$container->get( 'admin.settings_renderer' ),
+					$container->get( 'admin.oauth_manager' )
+				);
+			}
+		);
+
+		$this->singleton(
 			'admin.settings_dashboard',
 			function () {
 				return new WP_MCP_AI_Settings_Dashboard();

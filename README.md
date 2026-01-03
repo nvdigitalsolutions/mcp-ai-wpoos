@@ -90,7 +90,7 @@
 
 ## 🧩 Overview
 
-Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
+Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular (Object-Oriented) AI framework (Object-Oriented Systems) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
 
 The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **66 Pro tools** including advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **193 built-in tools**.
 
@@ -935,6 +935,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Configure Crawl4AI access** in **Settings → NV oOS → Tools** when you want the Crawl4AI tool to be available to assistants.
 - [ ] **Review attachment MIME overrides** in **Settings → NV oOS → Attachments** before enabling file uploads for end users.
 - [ ] **Review Send Group Email permissions** in **Settings → NV oOS → Tools** to choose the capability and recipient cap for the group email automation.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L348-L359】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L938-L953】
+- [ ] **Connect Gmail** under **Settings → NV oOS → Tools → Connections → Gmail** to enable Gmail search tools with OAuth 2.0. See [Google OAuth Setup Guide](docs/getting-started/installation-setup/google-oauth-setup.md) for complete configuration steps.
 - [ ] **Connect QuickBooks Online** under **Settings → NV oOS → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
 - [ ] **Configure Mailjet credentials** in **Settings → NV oOS → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
 - [ ] **Enable Federation & Discovery** (Optional) in **Settings → NV oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】

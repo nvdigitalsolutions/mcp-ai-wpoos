@@ -3,7 +3,7 @@
  * NV oOS Provider Connectivity Diagnostic Page
  *
  * Test connectivity and configuration for all AI providers:
- * OpenAI, Google Gemini, Ollama (local AI), and LM Studio.
+ * OpenAI, Google Gemini, Ollama (local AI), LM Studio, and Google Maps Platform.
  *
  * @package WP_MCP_AI
  */
@@ -81,7 +81,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			<div class="wrap">
 				<h1><?php esc_html_e( 'AI Provider Connectivity Diagnostics', 'wp-mcp-ai' ); ?></h1>
 				<p class="description">
-					<?php esc_html_e( 'Test connectivity and configuration for all AI providers including OpenAI, Google Gemini, Ollama, and LM Studio.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Test connectivity and configuration for all AI providers including OpenAI, Google Gemini, Ollama, LM Studio, and Google Maps Platform.', 'wp-mcp-ai' ); ?>
 				</p>
 
 				<!-- OpenAI -->
@@ -341,9 +341,56 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- Google Maps Platform -->
+				<div class="card">
+					<h2><?php esc_html_e( '6. Google Maps Platform', 'wp-mcp-ai' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'API Key Configured', 'wp-mcp-ai' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['google_maps_api_key'] ) ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'wp-mcp-ai' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['google_maps_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'wp-mcp-ai' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Available APIs', 'wp-mcp-ai' ); ?></th>
+								<td><?php esc_html_e( 'Geocoding API, Places API, Maps JavaScript API', 'wp-mcp-ai' ); ?></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="google_maps-test-result" style="margin: 15px 0;"></div>
+
+					<button 
+						type="button" 
+						class="button button-primary test-provider" 
+						data-provider="google_maps"
+						<?php echo esc_attr( empty( $settings['google_maps_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test Google Maps Connection', 'wp-mcp-ai' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['google_maps_api_key'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your Google Maps API key in settings to enable testing.', 'wp-mcp-ai' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Note: This test verifies API key validity using the Geocoding API. Ensure Geocoding API and Places API are enabled in Google Cloud Console.', 'wp-mcp-ai' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
 				<!-- Provider Summary -->
 				<div class="card">
-					<h2><?php esc_html_e( '6. Provider Summary', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '7. Provider Summary', 'wp-mcp-ai' ); ?></h2>
 					<?php
 					$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 					$configured       = array();
@@ -362,6 +409,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					}
 					if ( ! empty( $settings['lm_studio_endpoint_url'] ) ) {
 						$configured[] = 'LM Studio';
+					}
+					if ( ! empty( $settings['google_maps_api_key'] ) ) {
+						$configured[] = 'Google Maps';
 					}
 					?>
 					<table class="widefat striped">
@@ -410,7 +460,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Troubleshooting -->
 				<div class="card">
-					<h2><?php esc_html_e( '7. Troubleshooting Guide', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '8. Troubleshooting Guide', 'wp-mcp-ai' ); ?></h2>
 					
 					<h3><?php esc_html_e( 'Common Issues:', 'wp-mcp-ai' ); ?></h3>
 					<ul>
@@ -457,6 +507,15 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 								<li><?php esc_html_e( 'Check CORS settings if accessing from different origin', 'wp-mcp-ai' ); ?></li>
 							</ul>
 						</li>
+						<li>
+							<strong><?php esc_html_e( 'Google Maps connection fails:', 'wp-mcp-ai' ); ?></strong>
+							<ul>
+								<li><?php esc_html_e( 'Verify API key is correct and active', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Check that Geocoding API and Places API are enabled in Google Cloud Console', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Ensure billing is enabled for your Google Cloud project', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Verify API key restrictions (if any) allow requests from your server', 'wp-mcp-ai' ); ?></li>
+							</ul>
+						</li>
 					</ul>
 
 					<h3><?php esc_html_e( 'Useful Links:', 'wp-mcp-ai' ); ?></h3>
@@ -465,6 +524,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						<li><a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-mcp-ai-mcp-diagnostic' ) ); ?>"><?php esc_html_e( 'MCP Server Diagnostic', 'wp-mcp-ai' ); ?></a></li>
 						<li><a href="https://platform.openai.com/api-keys" target="_blank"><?php esc_html_e( 'OpenAI API Keys', 'wp-mcp-ai' ); ?></a></li>
 						<li><a href="https://aistudio.google.com/app/apikey" target="_blank"><?php esc_html_e( 'Google AI Studio', 'wp-mcp-ai' ); ?></a></li>
+						<li><a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank"><?php esc_html_e( 'Google Cloud Console - Maps API', 'wp-mcp-ai' ); ?></a></li>
 						<li><a href="https://ollama.com/" target="_blank"><?php esc_html_e( 'Ollama Documentation', 'wp-mcp-ai' ); ?></a></li>
 						<li><a href="https://lmstudio.ai/" target="_blank"><?php esc_html_e( 'LM Studio Download', 'wp-mcp-ai' ); ?></a></li>
 					</ul>
@@ -578,6 +638,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'lm_studio':
 					self::test_lm_studio( $settings );
+					break;
+
+				case 'google_maps':
+					self::test_google_maps( $settings );
 					break;
 
 				default:
@@ -878,6 +942,59 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					array(
 						'message' => __( 'LM Studio connection successful!', 'wp-mcp-ai' ),
 						'details' => $result,
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'wp-mcp-ai' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test Google Maps connection.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_google_maps( $settings ) {
+			if ( empty( $settings['google_maps_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Google Maps API key is not configured.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Google Maps client class not found.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			try {
+				$client = new WP_MCP_AI_Google_Maps_Client();
+
+				// Test with a simple geocoding request to a well-known location.
+				$result = $client->geocode( 'New York City, NY, USA' );
+
+				if ( is_wp_error( $result ) ) {
+					wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+					return;
+				}
+
+				// Check if we got results.
+				$results_count = isset( $result['results'] ) ? count( $result['results'] ) : 0;
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Google Maps connection successful!', 'wp-mcp-ai' ),
+						'details' => array(
+							__( 'API Status', 'wp-mcp-ai' )     => __( 'Valid', 'wp-mcp-ai' ),
+							__( 'Test Results', 'wp-mcp-ai' )   => $results_count > 0 ? __( 'Geocoding works', 'wp-mcp-ai' ) : __( 'No results', 'wp-mcp-ai' ),
+							__( 'Results Found', 'wp-mcp-ai' ) => $results_count,
+						),
 					)
 				);
 			} catch ( Exception $e ) {
