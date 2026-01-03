@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-composer-no-dev-yet-again',
-        'version' => 'dev-copilot/run-composer-no-dev-yet-again',
-        'reference' => '5ab825e8dbe5288390f57d301964992ca414ebdc',
+        'pretty_version' => 'dev-copilot/update-table-layout-for-tools',
+        'version' => 'dev-copilot/update-table-layout-for-tools',
+        'reference' => '610c4ea38b68aee48bcdd7a67104ee4115614059',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-composer-no-dev-yet-again',
-            'version' => 'dev-copilot/run-composer-no-dev-yet-again',
-            'reference' => '5ab825e8dbe5288390f57d301964992ca414ebdc',
+            'pretty_version' => 'dev-copilot/update-table-layout-for-tools',
+            'version' => 'dev-copilot/update-table-layout-for-tools',
+            'reference' => '610c4ea38b68aee48bcdd7a67104ee4115614059',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
