@@ -508,4 +508,207 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertEquals( 'wp_mcp_ai_points_exceed_max', $result->get_error_code() );
 	}
+
+	/**
+	 * Test update_quiz tool updates title.
+	 */
+	public function test_update_quiz_title() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		// Create a quiz first.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Original Title',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'What is 2+2?',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', 1 );
+
+		// Update the quiz title.
+		$tool   = new WP_MCP_AI_Tool_Update_Quiz();
+		$result = $tool->execute(
+			array(
+				'quiz_id' => $quiz_id,
+				'title'   => 'Updated Title',
+			),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertArrayHasKey( 'quiz_id', $result );
+		$this->assertEquals( 'Updated Title', $result['title'] );
+		$this->assertContains( 'title', $result['updated_fields'] );
+
+		// Verify in database.
+		$quiz = get_post( $quiz_id );
+		$this->assertEquals( 'Updated Title', $quiz->post_title );
+	}
+
+	/**
+	 * Test update_quiz tool updates questions.
+	 */
+	public function test_update_quiz_questions() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		// Create a quiz first.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Math Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$old_questions = array(
+			array(
+				'question' => 'What is 1+1?',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $old_questions );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', 1 );
+
+		// Update with new questions.
+		$new_questions = array(
+			array(
+				'question' => 'What is 2+2?',
+				'type'     => 'multiple_choice',
+				'options'  => array( '3', '4', '5' ),
+				'points'   => 2,
+			),
+			array(
+				'question' => 'Is 3+3=6?',
+				'type'     => 'true_false',
+				'points'   => 1,
+			),
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Update_Quiz();
+		$result = $tool->execute(
+			array(
+				'quiz_id'   => $quiz_id,
+				'questions' => $new_questions,
+			),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 2, $result['question_count'] );
+		$this->assertEquals( 3, $result['total_points'] );
+		$this->assertContains( 'questions', $result['updated_fields'] );
+	}
+
+	/**
+	 * Test update_quiz requires permission.
+	 */
+	public function test_update_quiz_requires_permission() {
+		$admin_user  = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$other_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Create a quiz as admin.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Admin Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Test?',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+
+		// Try to update as different user without permission.
+		$tool   = new WP_MCP_AI_Tool_Update_Quiz();
+		$result = $tool->execute(
+			array(
+				'quiz_id' => $quiz_id,
+				'title'   => 'Hacked Title',
+			),
+			array( 'user_id' => $other_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+	}
+
+	/**
+	 * Test update_quiz allows author to update.
+	 */
+	public function test_update_quiz_author_can_update() {
+		$author_user = $this->factory->user->create( array( 'role' => 'author' ) );
+
+		// Create a quiz as author.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Author Quiz',
+				'post_status' => 'publish',
+				'post_author' => $author_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Test?',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+
+		// Author should be able to update their own quiz.
+		$tool   = new WP_MCP_AI_Tool_Update_Quiz();
+		$result = $tool->execute(
+			array(
+				'quiz_id'    => $quiz_id,
+				'time_limit' => 45,
+			),
+			array( 'user_id' => $author_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 45, $result['time_limit'] );
+	}
+
+	/**
+	 * Test update_quiz validates quiz_id is required.
+	 */
+	public function test_update_quiz_requires_quiz_id() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		$tool   = new WP_MCP_AI_Tool_Update_Quiz();
+		$result = $tool->execute(
+			array(
+				'title' => 'New Title',
+			),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_missing_quiz_id', $result->get_error_code() );
+	}
 }
