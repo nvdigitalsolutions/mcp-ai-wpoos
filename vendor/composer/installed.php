@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-image-tools-svg-vectorization',
-        'version' => 'dev-copilot/enhance-image-tools-svg-vectorization',
-        'reference' => 'b8530b3ed580ea8f074c20b82802cfbed99854f3',
+        'pretty_version' => 'dev-copilot/add-dead-letter-queue',
+        'version' => 'dev-copilot/add-dead-letter-queue',
+        'reference' => '486fc6b29ae458cad92d9a6228aea5cbb51dd79d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-image-tools-svg-vectorization',
-            'version' => 'dev-copilot/enhance-image-tools-svg-vectorization',
-            'reference' => 'b8530b3ed580ea8f074c20b82802cfbed99854f3',
+            'pretty_version' => 'dev-copilot/add-dead-letter-queue',
+            'version' => 'dev-copilot/add-dead-letter-queue',
+            'reference' => '486fc6b29ae458cad92d9a6228aea5cbb51dd79d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
