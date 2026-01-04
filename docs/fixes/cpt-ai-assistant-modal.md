@@ -99,6 +99,12 @@ The AI Assistant now uses a modal dialog interface:
 
 - [ ] Open modal on post edit screen
 - [ ] Open modal on page edit screen  
+- [ ] Open modal on product edit screen (WooCommerce)
+- [ ] Open modal on quiz edit screen (Pro - Quiz System)
+- [ ] Open modal on place edit screen (Pro - Places Management)
+- [ ] Open modal on project edit screen (Pro - Project Management)
+- [ ] Open modal on task edit screen (Pro - Project Management)
+- [ ] Open modal on event edit screen (Pro - Project Management)
 - [ ] Open modal on term edit screen (category, tag)
 - [ ] Send messages and receive responses
 - [ ] Close modal via close button
