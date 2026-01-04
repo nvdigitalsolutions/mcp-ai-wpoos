@@ -302,4 +302,178 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 		// Should include custom type.
 		$this->assertContains( 'custom_type', $post_types );
 	}
+
+	/**
+	 * Test that quiz CPT is included when quiz system is enabled.
+	 */
+	public function test_quiz_cpt_included_when_enabled() {
+		// Enable AI CPT management and quiz system.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ai_cpt_management' => true,
+				'enable_quiz_system'       => true,
+			)
+		);
+
+		// Get instance.
+		$integration = WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $integration );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
+		$method->setAccessible( true );
+
+		$post_types = $method->invoke( $integration );
+
+		// Should include quiz CPT.
+		$this->assertContains( 'mcp_ai_quiz', $post_types );
+	}
+
+	/**
+	 * Test that quiz CPT is not included when quiz system is disabled.
+	 */
+	public function test_quiz_cpt_not_included_when_disabled() {
+		// Enable AI CPT management but not quiz system.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ai_cpt_management' => true,
+			)
+		);
+
+		// Get instance.
+		$integration = WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $integration );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
+		$method->setAccessible( true );
+
+		$post_types = $method->invoke( $integration );
+
+		// Should not include quiz CPT.
+		$this->assertNotContains( 'mcp_ai_quiz', $post_types );
+	}
+
+	/**
+	 * Test that place CPT is included when places management is enabled.
+	 */
+	public function test_place_cpt_included_when_enabled() {
+		// Enable AI CPT management and places management.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ai_cpt_management'   => true,
+				'enable_places_management'   => true,
+			)
+		);
+
+		// Get instance.
+		$integration = WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $integration );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
+		$method->setAccessible( true );
+
+		$post_types = $method->invoke( $integration );
+
+		// Should include place CPT.
+		$this->assertContains( 'mcp_ai_place', $post_types );
+	}
+
+	/**
+	 * Test that project management CPTs are included when enabled.
+	 */
+	public function test_project_management_cpts_included_when_enabled() {
+		// Enable AI CPT management and project management.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ai_cpt_management'  => true,
+				'enable_project_management' => true,
+			)
+		);
+
+		// Get instance.
+		$integration = WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $integration );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
+		$method->setAccessible( true );
+
+		$post_types = $method->invoke( $integration );
+
+		// Should include project management CPTs.
+		$this->assertContains( 'mcp_ai_project', $post_types );
+		$this->assertContains( 'mcp_ai_task', $post_types );
+		$this->assertContains( 'mcp_ai_event', $post_types );
+	}
+
+	/**
+	 * Test that project management CPTs are not included when disabled.
+	 */
+	public function test_project_management_cpts_not_included_when_disabled() {
+		// Enable AI CPT management but not project management.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ai_cpt_management' => true,
+			)
+		);
+
+		// Get instance.
+		$integration = WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $integration );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
+		$method->setAccessible( true );
+
+		$post_types = $method->invoke( $integration );
+
+		// Should not include project management CPTs.
+		$this->assertNotContains( 'mcp_ai_project', $post_types );
+		$this->assertNotContains( 'mcp_ai_task', $post_types );
+		$this->assertNotContains( 'mcp_ai_event', $post_types );
+	}
+
+	/**
+	 * Test that all Pro CPTs are included when all features are enabled.
+	 */
+	public function test_all_pro_cpts_included_when_all_features_enabled() {
+		// Enable all features.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ai_cpt_management'  => true,
+				'enable_quiz_system'        => true,
+				'enable_places_management'  => true,
+				'enable_project_management' => true,
+			)
+		);
+
+		// Get instance.
+		$integration = WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $integration );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
+		$method->setAccessible( true );
+
+		$post_types = $method->invoke( $integration );
+
+		// Should include all Pro CPTs.
+		$this->assertContains( 'mcp_ai_quiz', $post_types );
+		$this->assertContains( 'mcp_ai_place', $post_types );
+		$this->assertContains( 'mcp_ai_project', $post_types );
+		$this->assertContains( 'mcp_ai_task', $post_types );
+		$this->assertContains( 'mcp_ai_event', $post_types );
+
+		// Should also still include core post types.
+		$this->assertContains( 'post', $post_types );
+		$this->assertContains( 'page', $post_types );
+	}
 }

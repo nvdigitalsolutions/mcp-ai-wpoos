@@ -140,6 +140,26 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			$post_types[] = 'product';
 		}
 
+		// Get settings to check for enabled Pro features.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		// Add Quiz CPT if quiz system is enabled.
+		if ( ! empty( $settings['enable_quiz_system'] ) ) {
+			$post_types[] = 'mcp_ai_quiz';
+		}
+
+		// Add Place CPT if places management is enabled.
+		if ( ! empty( $settings['enable_places_management'] ) ) {
+			$post_types[] = 'mcp_ai_place';
+		}
+
+		// Add Project Management CPTs if project management is enabled.
+		if ( ! empty( $settings['enable_project_management'] ) ) {
+			$post_types[] = 'mcp_ai_project';
+			$post_types[] = 'mcp_ai_task';
+			$post_types[] = 'mcp_ai_event';
+		}
+
 		/**
 		 * Filter the supported post types for AI assistant integration.
 		 *
