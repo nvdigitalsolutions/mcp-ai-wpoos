@@ -32,6 +32,10 @@ function wp_mcp_ai_init_project_management_admin() {
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-event-metabox.php';
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-admin-columns.php';
 
+	// Load AI-enhanced features.
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-ai-actions.php';
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-bulk-ai.php';
+
 	// Initialize metaboxes.
 	WP_MCP_AI_Project_Metabox::init();
 	WP_MCP_AI_Task_Metabox::init();
@@ -39,6 +43,10 @@ function wp_mcp_ai_init_project_management_admin() {
 
 	// Initialize admin columns.
 	WP_MCP_AI_Project_Management_Admin_Columns::init();
+
+	// Initialize AI-enhanced features.
+	WP_MCP_AI_Project_Management_AI_Actions::init();
+	WP_MCP_AI_Project_Management_Bulk_AI::init();
 }
 add_action( 'admin_init', 'wp_mcp_ai_init_project_management_admin' );
 
