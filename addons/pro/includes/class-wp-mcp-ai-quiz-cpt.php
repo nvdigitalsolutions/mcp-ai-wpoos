@@ -35,6 +35,13 @@ class WP_MCP_AI_Quiz_CPT {
 	const SYNC_LOCK_TIMEOUT = 5;
 
 	/**
+	 * Metabox instances.
+	 *
+	 * @var array
+	 */
+	protected static $metaboxes = array();
+
+	/**
 	 * Initialize the class.
 	 */
 	public static function init() {
@@ -54,9 +61,15 @@ class WP_MCP_AI_Quiz_CPT {
 		}
 
 		add_action( 'init', array( __CLASS__, 'register_post_types' ) );
+		add_action( 'add_meta_boxes', array( __CLASS__, 'register_meta_boxes' ) );
+		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'save_quiz_meta' ), 5, 2 );
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'sync_quiz_to_cct' ), 10, 2 );
 		add_action( 'save_post_' . self::SUBMISSION_POST_TYPE, array( __CLASS__, 'sync_submission_to_cct' ), 10, 2 );
 		add_action( 'delete_post', array( __CLASS__, 'handle_post_deletion' ), 10, 2 );
+		add_action( 'admin_notices', array( __CLASS__, 'show_info_notice' ) );
+
+		// Load metabox classes.
+		self::load_metabox_classes();
 	}
 
 	/**
@@ -136,6 +149,116 @@ class WP_MCP_AI_Quiz_CPT {
 	}
 
 	/**
+	 * Load metabox classes.
+	 */
+	protected static function load_metabox_classes() {
+		// Load base metabox class.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-quiz-metabox-base.php';
+
+		// Load metabox implementations.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-quiz-metabox-details.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-quiz-metabox-questions.php';
+
+		// Initialize metabox instances.
+		self::$metaboxes['details']   = new WP_MCP_AI_Quiz_Metabox_Details();
+		self::$metaboxes['questions'] = new WP_MCP_AI_Quiz_Metabox_Questions();
+	}
+
+	/**
+	 * Register meta boxes for quiz editing.
+	 */
+	public static function register_meta_boxes() {
+		$screen = get_current_screen();
+
+		// Only add metaboxes on quiz edit screen.
+		if ( ! $screen || self::POST_TYPE !== $screen->post_type ) {
+			return;
+		}
+
+		// Register each metabox.
+		foreach ( self::$metaboxes as $metabox ) {
+			add_meta_box(
+				$metabox->get_id(),
+				$metabox->get_title(),
+				array( $metabox, 'render' ),
+				self::POST_TYPE,
+				$metabox->get_context(),
+				$metabox->get_priority()
+			);
+		}
+	}
+
+	/**
+	 * Save quiz meta data from metaboxes.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	public static function save_quiz_meta( $post_id, $post ) {
+		// Check if this is an autosave.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
+		// Check post type.
+		if ( self::POST_TYPE !== $post->post_type ) {
+			return;
+		}
+
+		// Check permissions.
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		// Call save method on each metabox.
+		foreach ( self::$metaboxes as $metabox ) {
+			$metabox->save( $post_id, $post );
+		}
+	}
+
+	/**
+	 * Show informational notice on quiz edit screen.
+	 */
+	public static function show_info_notice() {
+		$screen = get_current_screen();
+
+		// Only show on quiz edit screens.
+		if ( ! $screen || ! in_array( $screen->id, array( self::POST_TYPE, 'edit-' . self::POST_TYPE ), true ) ) {
+			return;
+		}
+
+		// Don't show if feature is disabled (other notice will show).
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_quiz_system'] ) ) {
+			return;
+		}
+		?>
+		<div class="notice notice-info quiz-info-notice">
+			<p>
+				<strong><?php esc_html_e( 'Quiz Management', 'wp-mcp-ai' ); ?></strong>
+			</p>
+			<p>
+				<?php esc_html_e( 'Quizzes can be created and managed both manually here in the WordPress admin and via AI assistant tools.', 'wp-mcp-ai' ); ?>
+			</p>
+			<p>
+				<?php
+				echo wp_kses_post(
+					__( '<strong>Manual Management:</strong> Use the editor below to add a description, and the "Quiz Questions" metabox to add/edit questions.', 'wp-mcp-ai' )
+				);
+				?>
+			</p>
+			<p>
+				<?php
+				echo wp_kses_post(
+					__( '<strong>AI Tools:</strong> AI assistants can create quizzes using the <code>create_quiz</code> tool, and you can edit them here afterwards.', 'wp-mcp-ai' )
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Register Quiz and Submission custom post types.
 	 */
 	public static function register_post_types() {
@@ -171,7 +294,7 @@ class WP_MCP_AI_Quiz_CPT {
 				'has_archive'        => false,
 				'hierarchical'       => false,
 				'menu_position'      => null,
-				'supports'           => array( 'title', 'author' ),
+				'supports'           => array( 'title', 'editor', 'author' ),
 				'show_in_rest'       => false,
 			)
 		);
