@@ -52,18 +52,8 @@ class WP_MCP_AI_Build_Assistant_Page {
 	 */
 	public function enqueue_scripts( $hook ) {
 		// Check if we're on the Build Assistant page.
-		// Use page_hook property first, with fallback to page query parameter.
-		if ( ! empty( $this->page_hook ) ) {
-			if ( $hook !== $this->page_hook ) {
-				return;
-			}
-		} else {
-			// Fallback check: ensure we're on the correct page by checking the page parameter.
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-			$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
-			if ( 'wp-mcp-ai-build-assistant' !== $page ) {
-				return;
-			}
+		if ( ! $this->is_build_assistant_page( $hook ) ) {
+			return;
 		}
 
 		// Enqueue chat assets for the Prompt tab modal.
@@ -309,6 +299,33 @@ class WP_MCP_AI_Build_Assistant_Page {
 				'tool'      => __( 'Tool', 'wp-mcp-ai' ),
 			),
 		);
+	}
+
+	/**
+	 * Check if we're on the Build Assistant page.
+	 *
+	 * @param string $hook Current admin page hook.
+	 * @return bool True if on Build Assistant page, false otherwise.
+	 */
+	private function is_build_assistant_page( $hook ) {
+		// Primary check: use page_hook property if available.
+		if ( ! empty( $this->page_hook ) ) {
+			return $hook === $this->page_hook;
+		}
+
+		// Fallback: check using get_current_screen() if available.
+		if ( function_exists( 'get_current_screen' ) ) {
+			$screen = get_current_screen();
+			if ( $screen && isset( $screen->id ) ) {
+				// The screen ID for submenus is typically parent-page_page_menu-slug.
+				return false !== strpos( $screen->id, 'wp-mcp-ai-build-assistant' );
+			}
+		}
+
+		// Last resort: check page query parameter (with sanitization).
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+		$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
+		return 'wp-mcp-ai-build-assistant' === $page;
 	}
 
 	/**
