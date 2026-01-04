@@ -318,12 +318,15 @@ class WP_MCP_AI_Build_Assistant_Page {
 			$screen = get_current_screen();
 			if ( $screen && isset( $screen->id ) ) {
 				// The screen ID for submenus is typically parent-page_page_menu-slug.
-				return false !== strpos( $screen->id, 'wp-mcp-ai-build-assistant' );
+				// Check for exact match or if it ends with our page slug.
+				return $screen->id === 'mcp_ai_assistant_page_wp-mcp-ai-build-assistant'
+					|| false !== strpos( $screen->id, '_page_wp-mcp-ai-build-assistant' );
 			}
 		}
 
 		// Last resort: check page query parameter (with sanitization).
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+		// This is a read-only check for admin page routing, not user input processing.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin page check.
 		$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
 		return 'wp-mcp-ai-build-assistant' === $page;
 	}
