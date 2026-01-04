@@ -25,6 +25,46 @@
 	max-width: 100%;
 }
 
+/* Build with AI Button */
+.wp-mcp-ai-prompt-action {
+	margin-top: 15px;
+	margin-bottom: 15px;
+	padding: 15px;
+	background: #f0f6fc;
+	border: 1px solid #c3e4f7;
+	border-radius: 4px;
+	text-align: center;
+}
+
+.wp-mcp-ai-build-with-ai-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 8px 24px;
+	font-size: 14px;
+	line-height: 1.5;
+	transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-build-with-ai-btn .dashicons {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+}
+
+.wp-mcp-ai-build-with-ai-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.wp-mcp-ai-prompt-action .description {
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #646970;
+	text-align: center;
+}
+
 /* Chat Wrapper */
 .wp-mcp-ai-pm-assistant-chat-wrapper {
 	margin-top: 15px;
@@ -127,6 +167,15 @@
 
 /* Dark mode support (WordPress 5.7+) */
 @media (prefers-color-scheme: dark) {
+	.wp-mcp-ai-prompt-action {
+		background: #1e1e1e;
+		border-color: #3c3c3c;
+	}
+
+	.wp-mcp-ai-prompt-action .description {
+		color: #a7aaad;
+	}
+
 	.wp-mcp-ai-pm-assistant-intro {
 		background: #1e1e1e;
 		border-left-color: #4f94d4;

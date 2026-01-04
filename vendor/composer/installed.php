@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-ai-assistant-section',
+        'version' => 'dev-copilot/add-ai-assistant-section',
+        'reference' => 'f0f2438e2321e71c804b89b60e73f2db8998fb39',
         'pretty_version' => 'dev-copilot/update-filtering-method',
         'version' => 'dev-copilot/update-filtering-method',
         'reference' => '7d85153d11ad79f0c8d30772d7818952a067e03b',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-ai-assistant-section',
+            'version' => 'dev-copilot/add-ai-assistant-section',
+            'reference' => 'f0f2438e2321e71c804b89b60e73f2db8998fb39',
             'pretty_version' => 'dev-copilot/update-filtering-method',
             'version' => 'dev-copilot/update-filtering-method',
             'reference' => '7d85153d11ad79f0c8d30772d7818952a067e03b',
