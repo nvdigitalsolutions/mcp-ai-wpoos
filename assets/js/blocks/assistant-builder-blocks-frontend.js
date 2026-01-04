@@ -62,6 +62,78 @@
 			const $deselectAll = $block.find( '.wp-mcp-ai-tools-grid__deselect-all' );
 			const $selectedCount = $block.find( '.wp-mcp-ai-tools-grid__selected-count' );
 			const $checkboxes = $block.find( '.wp-mcp-ai-tools-grid__checkbox' );
+			const $searchInput = $block.find( '.wp-mcp-ai-tools-grid__search-input' );
+			const $groupSelect = $block.find( '.wp-mcp-ai-tools-grid__group-select' );
+			const $clearFilters = $block.find( '.wp-mcp-ai-tools-grid__clear-filters' );
+			const $visibleCount = $block.find( '.wp-mcp-ai-tools-grid__visible-count' );
+			const $visibleCountText = $block.find( '.wp-mcp-ai-tools-grid__visible-count-text' );
+
+			let searchTerm = '';
+			let selectedGroup = '';
+
+			/**
+			 * Apply filters to show/hide tools and groups.
+			 */
+			function applyFilters() {
+				let visibleToolsCount = 0;
+				const hasActiveFilters = searchTerm !== '' || selectedGroup !== '';
+
+				// Show/hide clear filters button.
+				$clearFilters.toggle( hasActiveFilters );
+
+				// Filter each group and its tools.
+				$block.find( '.wp-block-wp-mcp-ai-tools-grid__group' ).each( function () {
+					const $group = $( this );
+					const groupId = $group.find( 'summary' ).data( 'group-id' ) || '';
+					let visibleInGroup = 0;
+
+					// If a specific group is selected, hide all other groups.
+					if ( selectedGroup && groupId !== selectedGroup ) {
+						$group.addClass( 'wp-block-wp-mcp-ai-tools-grid__group--hidden' );
+						return;
+					}
+
+					// Filter tools within the group.
+					$group.find( '.wp-block-wp-mcp-ai-tools-grid__item' ).each( function () {
+						const $item = $( this );
+						const toolName = $item.find( '.wp-block-wp-mcp-ai-tools-grid__item-name' ).text().toLowerCase();
+						const toolDesc = $item.find( '.wp-block-wp-mcp-ai-tools-grid__item-description' ).text().toLowerCase();
+						const searchLower = searchTerm.toLowerCase();
+
+						// Check if tool matches search term.
+						const matchesSearch = ! searchTerm ||
+							toolName.indexOf( searchLower ) !== -1 ||
+							toolDesc.indexOf( searchLower ) !== -1;
+
+						if ( matchesSearch ) {
+							$item.removeClass( 'wp-block-wp-mcp-ai-tools-grid__item--hidden' );
+							visibleInGroup++;
+							visibleToolsCount++;
+						} else {
+							$item.addClass( 'wp-block-wp-mcp-ai-tools-grid__item--hidden' );
+						}
+					} );
+
+					// Hide group if no visible tools.
+					if ( visibleInGroup === 0 ) {
+						$group.addClass( 'wp-block-wp-mcp-ai-tools-grid__group--hidden' );
+					} else {
+						$group.removeClass( 'wp-block-wp-mcp-ai-tools-grid__group--hidden' );
+					}
+				} );
+
+				// Update visible count indicator.
+				if ( hasActiveFilters ) {
+					const totalTools = $block.find( '.wp-block-wp-mcp-ai-tools-grid__item' ).length;
+					$visibleCountText.text( visibleToolsCount + ' of ' + totalTools + ' tools shown' );
+					$visibleCount.show();
+				} else {
+					$visibleCount.hide();
+				}
+
+				// Update counts after filtering.
+				updateCounts();
+			}
 
 			/**
 			 * Update counts and selected state.
@@ -92,18 +164,57 @@
 				$block.trigger( 'toolsChanged', { tools: selectedTools } );
 			}
 
+			/**
+			 * Clear all filters.
+			 */
+			function clearFilters() {
+				searchTerm = '';
+				selectedGroup = '';
+				$searchInput.val( '' );
+				$groupSelect.val( '' );
+				applyFilters();
+			}
+
+			// Store group IDs in summary elements for filtering.
+			$block.find( '.wp-block-wp-mcp-ai-tools-grid__group' ).each( function () {
+				const $group = $( this );
+				const $select = $groupSelect.find( 'option' ).filter( function () {
+					return $( this ).text() === $group.find( '.wp-block-wp-mcp-ai-tools-grid__group-title' ).text();
+				} );
+				if ( $select.length ) {
+					$group.find( 'summary' ).attr( 'data-group-id', $select.val() );
+				}
+			} );
+
+			// Handle search input.
+			$searchInput.on( 'input', function () {
+				searchTerm = $( this ).val();
+				applyFilters();
+			} );
+
+			// Handle group filter.
+			$groupSelect.on( 'change', function () {
+				selectedGroup = $( this ).val();
+				applyFilters();
+			} );
+
+			// Handle clear filters button.
+			$clearFilters.on( 'click', clearFilters );
+
 			// Handle checkbox changes.
 			$checkboxes.on( 'change', updateCounts );
 
-			// Handle select all.
+			// Handle select all (only visible checkboxes).
 			$selectAll.on( 'click', function () {
-				$checkboxes.prop( 'checked', true );
+				$checkboxes.not( '.wp-block-wp-mcp-ai-tools-grid__item--hidden .wp-mcp-ai-tools-grid__checkbox' )
+					.prop( 'checked', true );
 				updateCounts();
 			} );
 
-			// Handle deselect all.
+			// Handle deselect all (only visible checkboxes).
 			$deselectAll.on( 'click', function () {
-				$checkboxes.prop( 'checked', false );
+				$checkboxes.not( '.wp-block-wp-mcp-ai-tools-grid__item--hidden .wp-mcp-ai-tools-grid__checkbox' )
+					.prop( 'checked', false );
 				updateCounts();
 			} );
 

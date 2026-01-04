@@ -131,6 +131,28 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	<?php endif; ?>
 
 	<?php if ( $show_actions ) : ?>
+		<div class="wp-block-wp-mcp-ai-tools-grid__filters">
+			<div class="wp-block-wp-mcp-ai-tools-grid__search">
+				<input 
+					type="search" 
+					class="wp-mcp-ai-tools-grid__search-input" 
+					placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>"
+					aria-label="<?php esc_attr_e( 'Search tools', 'wp-mcp-ai' ); ?>"
+				>
+				<span class="wp-mcp-ai-tools-grid__search-icon dashicons dashicons-search"></span>
+			</div>
+			<div class="wp-block-wp-mcp-ai-tools-grid__group-filter">
+				<select class="wp-mcp-ai-tools-grid__group-select" aria-label="<?php esc_attr_e( 'Filter by group', 'wp-mcp-ai' ); ?>">
+					<option value=""><?php esc_html_e( 'All Groups', 'wp-mcp-ai' ); ?></option>
+					<?php foreach ( $groups as $group ) : ?>
+						<option value="<?php echo esc_attr( $group['id'] ); ?>"><?php echo esc_html( $group['label'] ); ?></option>
+					<?php endforeach; ?>
+				</select>
+			</div>
+			<button type="button" class="button wp-mcp-ai-tools-grid__clear-filters" style="display: none;">
+				<?php esc_html_e( 'Clear Filters', 'wp-mcp-ai' ); ?>
+			</button>
+		</div>
 		<div class="wp-block-wp-mcp-ai-tools-grid__actions">
 			<button type="button" class="button wp-mcp-ai-tools-grid__select-all">
 				<?php esc_html_e( 'Select All', 'wp-mcp-ai' ); ?>
@@ -141,6 +163,9 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 			<span class="wp-mcp-ai-tools-grid__count">
 				<strong class="wp-mcp-ai-tools-grid__selected-count">0</strong>
 				<?php esc_html_e( 'tools selected', 'wp-mcp-ai' ); ?>
+			</span>
+			<span class="wp-mcp-ai-tools-grid__visible-count" style="display: none;">
+				<span class="wp-mcp-ai-tools-grid__visible-count-text"></span>
 			</span>
 		</div>
 	<?php endif; ?>
