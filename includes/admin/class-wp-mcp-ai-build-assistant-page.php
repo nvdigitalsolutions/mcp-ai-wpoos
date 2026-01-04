@@ -51,7 +51,8 @@ class WP_MCP_AI_Build_Assistant_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_scripts( $hook ) {
-		if ( $hook !== $this->page_hook ) {
+		// Check if we're on the Build Assistant page.
+		if ( ! $this->is_build_assistant_page( $hook ) ) {
 			return;
 		}
 
@@ -298,6 +299,36 @@ class WP_MCP_AI_Build_Assistant_Page {
 				'tool'      => __( 'Tool', 'wp-mcp-ai' ),
 			),
 		);
+	}
+
+	/**
+	 * Check if we're on the Build Assistant page.
+	 *
+	 * @param string $hook Current admin page hook.
+	 * @return bool True if on Build Assistant page, false otherwise.
+	 */
+	private function is_build_assistant_page( $hook ) {
+		// Primary check: use page_hook property if available.
+		if ( ! empty( $this->page_hook ) ) {
+			return $hook === $this->page_hook;
+		}
+
+		// Fallback: check using get_current_screen() if available.
+		if ( function_exists( 'get_current_screen' ) ) {
+			$screen = get_current_screen();
+			if ( $screen && isset( $screen->id ) ) {
+				// The screen ID for submenus is typically parent-page_page_menu-slug.
+				// Check for exact match or if it ends with our page slug.
+				return $screen->id === 'mcp_ai_assistant_page_wp-mcp-ai-build-assistant'
+					|| false !== strpos( $screen->id, '_page_wp-mcp-ai-build-assistant' );
+			}
+		}
+
+		// Last resort: check page query parameter (with sanitization).
+		// This is a read-only check for admin page routing, not user input processing.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin page check.
+		$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
+		return 'wp-mcp-ai-build-assistant' === $page;
 	}
 
 	/**
