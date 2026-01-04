@@ -131,26 +131,28 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	<?php endif; ?>
 
 	<?php if ( $show_actions ) : ?>
-		<div class="wp-block-wp-mcp-ai-tools-grid__filters">
-			<div class="wp-block-wp-mcp-ai-tools-grid__search">
-				<input 
-					type="search" 
-					class="wp-mcp-ai-tools-grid__search-input" 
-					placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>"
-					aria-label="<?php esc_attr_e( 'Search tools', 'wp-mcp-ai' ); ?>"
-				>
-				<span class="wp-mcp-ai-tools-grid__search-icon dashicons dashicons-search"></span>
-			</div>
-			<div class="wp-block-wp-mcp-ai-tools-grid__group-filter">
-				<select class="wp-mcp-ai-tools-grid__group-select" aria-label="<?php esc_attr_e( 'Filter by group', 'wp-mcp-ai' ); ?>">
-					<option value=""><?php esc_html_e( 'All Groups', 'wp-mcp-ai' ); ?></option>
-					<?php foreach ( $groups as $group ) : ?>
-						<option value="<?php echo esc_attr( $group['id'] ); ?>"><?php echo esc_html( $group['label'] ); ?></option>
-					<?php endforeach; ?>
-				</select>
-			</div>
+		<div class="wp-block-wp-mcp-ai-tools-grid__filter-bar">
+			<label for="<?php echo esc_attr( $unique_id . '-search' ); ?>" class="wp-block-wp-mcp-ai-tools-grid__filter-label">
+				<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
+			</label>
+			<input 
+				type="search" 
+				id="<?php echo esc_attr( $unique_id . '-search' ); ?>"
+				class="wp-mcp-ai-tools-grid__search-input" 
+				placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>"
+				aria-label="<?php esc_attr_e( 'Search tools', 'wp-mcp-ai' ); ?>"
+			>
+			<label for="<?php echo esc_attr( $unique_id . '-group' ); ?>" class="wp-block-wp-mcp-ai-tools-grid__filter-label">
+				<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
+			</label>
+			<select id="<?php echo esc_attr( $unique_id . '-group' ); ?>" class="wp-mcp-ai-tools-grid__group-select" aria-label="<?php esc_attr_e( 'Filter by group', 'wp-mcp-ai' ); ?>">
+				<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
+				<?php foreach ( $groups as $group ) : ?>
+					<option value="<?php echo esc_attr( $group['id'] ); ?>"><?php echo esc_html( $group['label'] ); ?></option>
+				<?php endforeach; ?>
+			</select>
 			<button type="button" class="button wp-mcp-ai-tools-grid__clear-filters" style="display: none;">
-				<?php esc_html_e( 'Clear Filters', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
 			</button>
 		</div>
 		<div class="wp-block-wp-mcp-ai-tools-grid__actions">
