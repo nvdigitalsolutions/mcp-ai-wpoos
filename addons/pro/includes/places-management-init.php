@@ -128,3 +128,6 @@ function wp_mcp_ai_register_places_management_post_type() {
 	}
 }
 add_action( 'init', 'wp_mcp_ai_register_places_management_post_type' );
+
+// Load Place CPT admin enhancements.
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-place-cpt.php';
