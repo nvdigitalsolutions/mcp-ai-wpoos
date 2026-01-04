@@ -145,6 +145,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Pro tool interfaces (extend Core interfaces).
 		// Pro tools can implement additional interfaces for advanced features.
 
+		// Get settings for conditional loading.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
 		// Load Pro admin sections.
 		// Performance section is only loaded in admin context.
 		if ( is_admin() ) {
@@ -155,10 +158,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 			// Load Remote Connections metabox for assistants.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-remote-connections.php';
+
+			// Load AI CPT Management Integration if enabled.
+			if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-cpt-ai-integration.php';
+				WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
+			}
 		}
 
 		// Load quiz system support files if enabled.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( ! empty( $settings['enable_quiz_system'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-quiz-cpt.php';
 			// Load JetEngine quiz CCT if JetEngine is active.
