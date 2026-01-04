@@ -184,3 +184,26 @@ function wp_mcp_ai_register_project_management_post_types() {
 	);
 }
 add_action( 'init', 'wp_mcp_ai_register_project_management_post_types' );
+
+/**
+ * Initialize AI Assistant metabox for project management CPTs.
+ */
+function wp_mcp_ai_init_project_management_ai_assistant() {
+	// Check if we're in admin context.
+	if ( ! is_admin() ) {
+		return;
+	}
+
+	// Check if project management is enabled.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $settings['enable_project_management'] ) ) {
+		return;
+	}
+
+	// Load the metabox class.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php';
+
+	// Initialize the metabox.
+	new WP_MCP_AI_Project_Management_AI_Assistant_Metabox();
+}
+add_action( 'admin_init', 'wp_mcp_ai_init_project_management_ai_assistant' );

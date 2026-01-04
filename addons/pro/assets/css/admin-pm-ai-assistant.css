@@ -1,0 +1,186 @@
+/**
+ * Project Management AI Assistant Metabox Styles
+ *
+ * Styles for the AI assistant chat interface within project/task/event edit screens.
+ *
+ * @package WP_MCP_AI
+ */
+
+/* Assistant Selector */
+.wp-mcp-ai-pm-assistant-selector {
+	margin-bottom: 15px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.wp-mcp-ai-pm-assistant-selector label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 8px;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-pm-assistant-selector select {
+	width: 100%;
+	max-width: 100%;
+}
+
+/* Chat Wrapper */
+.wp-mcp-ai-pm-assistant-chat-wrapper {
+	margin-top: 15px;
+}
+
+.wp-mcp-ai-pm-assistant-intro {
+	margin-bottom: 15px;
+	padding: 12px;
+	background: #f0f6fc;
+	border-left: 3px solid #0073aa;
+	border-radius: 3px;
+}
+
+.wp-mcp-ai-pm-assistant-intro p {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #1d2327;
+}
+
+/* Chat Container */
+.wp-mcp-ai-pm-assistant-chat-container {
+	position: relative;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat-instance {
+	min-height: 400px;
+	max-height: 600px;
+}
+
+/* Adjust chat interface for metabox context */
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat {
+	border: none;
+	box-shadow: none;
+	border-radius: 0;
+}
+
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__messages {
+	max-height: 350px;
+	padding: 15px;
+}
+
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__input-wrapper {
+	border-top: 1px solid #dcdcde;
+	padding: 12px;
+}
+
+/* Error Messages */
+.wp-mcp-ai-pm-assistant-chat-container .notice {
+	margin: 15px;
+	padding: 12px;
+}
+
+.wp-mcp-ai-pm-assistant-chat-container .notice p {
+	margin: 0;
+	font-size: 13px;
+}
+
+/* Loading State */
+.wp-mcp-ai-pm-assistant-loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 200px;
+	color: #646970;
+}
+
+.wp-mcp-ai-pm-assistant-loading::before {
+	content: '';
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	border: 2px solid #dcdcde;
+	border-top-color: #0073aa;
+	border-radius: 50%;
+	margin-right: 10px;
+	animation: wp-mcp-ai-pm-spin 0.6s linear infinite;
+}
+
+@keyframes wp-mcp-ai-pm-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Responsive adjustments for smaller screens */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-pm-assistant-intro p {
+		font-size: 14px;
+	}
+
+	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__messages {
+		max-height: 300px;
+	}
+}
+
+/* Dark mode support (WordPress 5.7+) */
+@media (prefers-color-scheme: dark) {
+	.wp-mcp-ai-pm-assistant-intro {
+		background: #1e1e1e;
+		border-left-color: #4f94d4;
+	}
+
+	.wp-mcp-ai-pm-assistant-intro p {
+		color: #ddd;
+	}
+
+	.wp-mcp-ai-pm-assistant-chat-container {
+		background: #1e1e1e;
+		border-color: #3c3c3c;
+	}
+
+	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__input-wrapper {
+		border-top-color: #3c3c3c;
+	}
+}
+
+/* Compact mode adjustments */
+.wp-mcp-ai-pm-assistant-chat-container.wp-mcp-ai-compact {
+	font-size: 13px;
+}
+
+.wp-mcp-ai-pm-assistant-chat-container.wp-mcp-ai-compact .wp-mcp-ai-chat__message {
+	padding: 10px;
+	margin-bottom: 8px;
+}
+
+/* Integration with WordPress admin color schemes */
+body.admin-color-light .wp-mcp-ai-pm-assistant-intro {
+	border-left-color: #04a4cc;
+}
+
+body.admin-color-blue .wp-mcp-ai-pm-assistant-intro {
+	border-left-color: #096484;
+}
+
+body.admin-color-coffee .wp-mcp-ai-pm-assistant-intro {
+	border-left-color: #c7a589;
+}
+
+body.admin-color-ectoplasm .wp-mcp-ai-pm-assistant-intro {
+	border-left-color: #a3b745;
+}
+
+body.admin-color-midnight .wp-mcp-ai-pm-assistant-intro {
+	border-left-color: #e14d43;
+}
+
+body.admin-color-ocean .wp-mcp-ai-pm-assistant-intro {
+	border-left-color: #9ebaa0;
+}
+
+body.admin-color-sunrise .wp-mcp-ai-pm-assistant-intro {
+	border-left-color: #dd823b;
+}
