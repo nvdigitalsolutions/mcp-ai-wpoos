@@ -99,6 +99,74 @@
 	font-size: 14px;
 }
 
+.wp-block-wp-mcp-ai-tools-grid__filters {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 1rem;
+	flex-wrap: wrap;
+}
+
+.wp-block-wp-mcp-ai-tools-grid__search {
+	position: relative;
+	flex: 1 1 300px;
+	max-width: 400px;
+}
+
+.wp-mcp-ai-tools-grid__search-input {
+	width: 100%;
+	padding: 8px 12px 8px 36px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	font-size: 14px;
+	line-height: 1.4;
+	box-shadow: 0 0 0 transparent;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wp-mcp-ai-tools-grid__search-input:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.wp-mcp-ai-tools-grid__search-icon {
+	position: absolute;
+	left: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: #646970;
+	pointer-events: none;
+}
+
+.wp-block-wp-mcp-ai-tools-grid__group-filter {
+	flex: 0 0 auto;
+}
+
+.wp-mcp-ai-tools-grid__group-select {
+	padding: 8px 12px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	font-size: 14px;
+	background-color: #fff;
+	min-width: 180px;
+}
+
+.wp-mcp-ai-tools-grid__group-select:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.wp-mcp-ai-tools-grid__clear-filters {
+	color: #d63638;
+}
+
+.wp-mcp-ai-tools-grid__clear-filters:hover {
+	color: #d63638;
+	border-color: #d63638;
+}
+
 .wp-block-wp-mcp-ai-tools-grid__actions {
 	display: flex;
 	align-items: center;
@@ -122,6 +190,17 @@
 	color: #2271b1;
 }
 
+.wp-mcp-ai-tools-grid__visible-count {
+	font-size: 13px;
+	color: #646970;
+	font-style: italic;
+}
+
+.wp-mcp-ai-tools-grid__visible-count-text {
+	color: #d63638;
+	font-weight: 500;
+}
+
 .wp-block-wp-mcp-ai-tools-grid__groups {
 	display: flex;
 	flex-direction: column;
@@ -133,6 +212,10 @@
 	border-radius: 6px;
 	background: #fff;
 	overflow: hidden;
+}
+
+.wp-block-wp-mcp-ai-tools-grid__group--hidden {
+	display: none;
 }
 
 .wp-block-wp-mcp-ai-tools-grid__group > summary {
@@ -196,6 +279,10 @@
 	background: #fff;
 	padding: 12px;
 	transition: all 0.2s ease;
+}
+
+.wp-block-wp-mcp-ai-tools-grid__item--hidden {
+	display: none;
 }
 
 .wp-block-wp-mcp-ai-tools-grid__item:hover {
@@ -588,6 +675,20 @@
 	}
 
 	.wp-block-wp-mcp-ai-assistant-selector .wp-mcp-ai-assistant-selector__select {
+		width: 100%;
+	}
+
+	.wp-block-wp-mcp-ai-tools-grid__filters {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.wp-block-wp-mcp-ai-tools-grid__search {
+		flex: 1 1 auto;
+		max-width: none;
+	}
+
+	.wp-mcp-ai-tools-grid__group-select {
 		width: 100%;
 	}
 
