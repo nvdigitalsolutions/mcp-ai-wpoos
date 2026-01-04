@@ -69,13 +69,22 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			return;
 		}
 
-		// Enqueue chat assets (reuse existing shortcode assets).
-		if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
-			$shortcode = new WP_MCP_AI_Shortcode();
-			$shortcode->register_assets();
-			wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
-			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
+		// Check if shortcode class is available.
+		if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+			return;
 		}
+
+		// Register chat assets if not already registered.
+		if ( ! wp_script_is( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'registered' ) ) {
+			// Call the static register_assets method via a temporary instance.
+			// Note: This is a limitation of the current architecture where register_assets is not static.
+			$shortcode_instance = new WP_MCP_AI_Shortcode();
+			$shortcode_instance->register_assets();
+		}
+
+		// Enqueue chat assets.
+		wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
+		wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 
 		// Enqueue custom metabox assets.
 		$script_url = WP_MCP_AI_PRO_URL . 'assets/js/admin-pm-ai-assistant.js';
@@ -118,6 +127,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 				'postId'      => $post->ID,
 				'postType'    => $post->post_type,
 				'nonce'       => wp_create_nonce( 'wp_mcp_ai_pm_assistant' ),
+				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'strings'     => array(
 					'assistantTitle' => $this->get_assistant_title( $context_type ),
 					'placeholder'    => $this->get_placeholder_text( $context_type ),
@@ -338,6 +348,11 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 	 * AJAX handler to render chat shortcode.
 	 */
 	public function ajax_render_chat() {
+		// Check if shortcode class is available first (fail fast).
+		if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Chat functionality not available.', 'wp-mcp-ai' ) ) );
+		}
+
 		// Verify nonce.
 		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'wp_mcp_ai_pm_assistant' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'wp-mcp-ai' ) ) );
@@ -367,11 +382,6 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			wp_send_json_error( array( 'message' => __( 'Invalid or inactive assistant.', 'wp-mcp-ai' ) ) );
 		}
 
-		// Render chat using shortcode.
-		if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Chat functionality not available.', 'wp-mcp-ai' ) ) );
-		}
-
 		// Build shortcode attributes.
 		$shortcode_atts = array(
 			'assistant'        => $assistant_id,
@@ -380,8 +390,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		);
 
 		// Create shortcode instance and render.
-		$shortcode = new WP_MCP_AI_Shortcode();
-		$atts_str  = '';
+		$atts_str = '';
 		foreach ( $shortcode_atts as $key => $value ) {
 			$atts_str .= ' ' . $key . '="' . esc_attr( $value ) . '"';
 		}
@@ -389,12 +398,9 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		// Render the shortcode.
 		$html = do_shortcode( '[mcp_ai_chat' . $atts_str . ']' );
 
-		// Prepend context message if provided.
-		if ( $context_message ) {
-			// Store context for this session (use transient with short lifetime).
-			$transient_key = 'wp_mcp_ai_pm_context_' . get_current_user_id() . '_' . $assistant_id;
-			set_transient( $transient_key, $context_message, 300 ); // 5 minutes.
-		}
+		// Note: Context message display could be implemented via a filter on the chat interface.
+		// For now, context is passed in the initial JavaScript configuration.
+		// Future enhancement: Store in transient and retrieve via chat service.
 
 		wp_send_json_success( array( 'html' => $html ) );
 	}

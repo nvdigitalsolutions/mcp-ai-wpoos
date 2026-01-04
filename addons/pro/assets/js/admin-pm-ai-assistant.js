@@ -57,6 +57,16 @@
 		const $container = $('#wp-mcp-ai-pm-assistant-chat-container');
 		const config = window.wpMcpAiPmAssistant || {};
 
+		// Ensure AJAX URL is available.
+		const ajaxUrl = config.ajaxUrl || window.ajaxurl;
+		if (!ajaxUrl) {
+			console.error('[PM AI Assistant] AJAX URL not available');
+			$container.html(
+				'<div class="notice notice-error"><p>Configuration error: AJAX URL not found. Please refresh the page.</p></div>'
+			);
+			return;
+		}
+
 		// Show loading state.
 		$container.html('<div class="wp-mcp-ai-pm-assistant-loading">Loading AI assistant...</div>');
 
@@ -65,7 +75,7 @@
 
 		// Make AJAX request to get the rendered chat shortcode.
 		$.ajax({
-			url: window.ajaxurl || '/wp-admin/admin-ajax.php',
+			url: ajaxUrl,
 			type: 'POST',
 			data: {
 				action: 'wp_mcp_ai_pm_render_chat',
@@ -85,6 +95,13 @@
 							window.wpMcpAiChatInit.init();
 						} catch (error) {
 							console.error('[PM AI Assistant] Failed to reinitialize chat:', error);
+							// Show user-friendly error message.
+							$container.prepend(
+								'<div class="notice notice-warning is-dismissible"><p>' +
+									'Chat loaded but initialization encountered an issue. Some features may not work properly. ' +
+									'<a href="#" onclick="window.location.reload(); return false;">Refresh page</a>' +
+									'</p></div>'
+							);
 						}
 					}
 				} else {
