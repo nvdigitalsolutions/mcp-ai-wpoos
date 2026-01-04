@@ -177,38 +177,67 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	 */
 	public function render_ai_metabox( $post ) {
 		?>
-		<div class="wp-mcp-ai-cpt-assistant" data-post-id="<?php echo esc_attr( $post->ID ); ?>" data-post-type="<?php echo esc_attr( $post->post_type ); ?>">
-			<div class="wp-mcp-ai-cpt-chat-messages" id="wp-mcp-ai-cpt-chat-messages">
-				<div class="wp-mcp-ai-cpt-welcome-message">
-					<p><?php esc_html_e( '👋 Hi! I\'m your AI assistant. I can help you:', 'wp-mcp-ai' ); ?></p>
-					<ul>
-						<li><?php esc_html_e( '✍️ Write and edit content', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( '🔍 Research topics and find information', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( '📝 Generate titles and descriptions', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( '🎨 Create images and media', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( '🔧 Use any available AI tools', 'wp-mcp-ai' ); ?></li>
-					</ul>
-					<p><strong><?php esc_html_e( 'Try asking me:', 'wp-mcp-ai' ); ?></strong></p>
-					<ul>
-						<li><?php esc_html_e( '"Write an introduction for this post"', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( '"Generate an SEO-friendly title"', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( '"Create a featured image"', 'wp-mcp-ai' ); ?></li>
-					</ul>
+		<div class="wp-mcp-ai-cpt-assistant-wrapper">
+			<div class="wp-mcp-ai-cpt-assistant-info">
+				<p><?php esc_html_e( 'Get AI assistance with content creation, editing, research, and more.', 'wp-mcp-ai' ); ?></p>
+			</div>
+			<button 
+				type="button" 
+				class="button button-primary button-large wp-mcp-ai-cpt-open-assistant" 
+				data-post-id="<?php echo esc_attr( $post->ID ); ?>" 
+				data-post-type="<?php echo esc_attr( $post->post_type ); ?>"
+			>
+				<span class="dashicons dashicons-format-chat"></span>
+				<?php esc_html_e( 'Open AI Assistant', 'wp-mcp-ai' ); ?>
+			</button>
+		</div>
+
+		<!-- Modal container for AI Assistant -->
+		<div id="wp-mcp-ai-cpt-assistant-modal" class="wp-mcp-ai-cpt-modal" style="display: none;">
+			<div class="wp-mcp-ai-cpt-modal__backdrop"></div>
+			<div class="wp-mcp-ai-cpt-modal__panel">
+				<div class="wp-mcp-ai-cpt-modal__header">
+					<h2><?php esc_html_e( 'AI Assistant', 'wp-mcp-ai' ); ?></h2>
+					<button type="button" class="wp-mcp-ai-cpt-modal__close" aria-label="<?php esc_attr_e( 'Close', 'wp-mcp-ai' ); ?>">
+						<span class="dashicons dashicons-no-alt"></span>
+					</button>
+				</div>
+				<div class="wp-mcp-ai-cpt-modal__body">
+					<div class="wp-mcp-ai-cpt-assistant" data-post-id="<?php echo esc_attr( $post->ID ); ?>" data-post-type="<?php echo esc_attr( $post->post_type ); ?>">
+						<div class="wp-mcp-ai-cpt-chat-messages" id="wp-mcp-ai-cpt-chat-messages">
+							<div class="wp-mcp-ai-cpt-welcome-message">
+								<p><?php esc_html_e( '👋 Hi! I\'m your AI assistant. I can help you:', 'wp-mcp-ai' ); ?></p>
+								<ul>
+									<li><?php esc_html_e( '✍️ Write and edit content', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '🔍 Research topics and find information', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '📝 Generate titles and descriptions', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '🎨 Create images and media', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '🔧 Use any available AI tools', 'wp-mcp-ai' ); ?></li>
+								</ul>
+								<p><strong><?php esc_html_e( 'Try asking me:', 'wp-mcp-ai' ); ?></strong></p>
+								<ul>
+									<li><?php esc_html_e( '"Write an introduction for this post"', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '"Generate an SEO-friendly title"', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '"Create a featured image"', 'wp-mcp-ai' ); ?></li>
+								</ul>
+							</div>
+						</div>
+						<div class="wp-mcp-ai-cpt-chat-input-wrapper">
+							<textarea 
+								id="wp-mcp-ai-cpt-chat-input" 
+								class="wp-mcp-ai-cpt-chat-input" 
+								placeholder="<?php esc_attr_e( 'Ask me anything...', 'wp-mcp-ai' ); ?>"
+								rows="3"
+							></textarea>
+							<button type="button" id="wp-mcp-ai-cpt-send-button" class="button button-primary wp-mcp-ai-cpt-send-button">
+								<span class="dashicons dashicons-format-chat"></span>
+								<?php esc_html_e( 'Send', 'wp-mcp-ai' ); ?>
+							</button>
+						</div>
+						<div class="wp-mcp-ai-cpt-chat-status" id="wp-mcp-ai-cpt-chat-status"></div>
+					</div>
 				</div>
 			</div>
-			<div class="wp-mcp-ai-cpt-chat-input-wrapper">
-				<textarea 
-					id="wp-mcp-ai-cpt-chat-input" 
-					class="wp-mcp-ai-cpt-chat-input" 
-					placeholder="<?php esc_attr_e( 'Ask me anything...', 'wp-mcp-ai' ); ?>"
-					rows="3"
-				></textarea>
-				<button type="button" id="wp-mcp-ai-cpt-send-button" class="button button-primary wp-mcp-ai-cpt-send-button">
-					<span class="dashicons dashicons-format-chat"></span>
-					<?php esc_html_e( 'Send', 'wp-mcp-ai' ); ?>
-				</button>
-			</div>
-			<div class="wp-mcp-ai-cpt-chat-status" id="wp-mcp-ai-cpt-chat-status"></div>
 		</div>
 		<?php
 	}
@@ -223,31 +252,58 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 		?>
 		<div class="wp-mcp-ai-cpt-term-assistant-wrapper">
 			<h2><?php esc_html_e( 'AI Assistant', 'wp-mcp-ai' ); ?></h2>
-			<div class="wp-mcp-ai-cpt-assistant" data-term-id="<?php echo esc_attr( $term->term_id ); ?>" data-taxonomy="<?php echo esc_attr( $taxonomy ); ?>">
-				<div class="wp-mcp-ai-cpt-chat-messages" id="wp-mcp-ai-cpt-chat-messages-term">
-					<div class="wp-mcp-ai-cpt-welcome-message">
-						<p><?php esc_html_e( '👋 Hi! I\'m your AI assistant. I can help you:', 'wp-mcp-ai' ); ?></p>
-						<ul>
-							<li><?php esc_html_e( '✍️ Write descriptions for this term', 'wp-mcp-ai' ); ?></li>
-							<li><?php esc_html_e( '🔍 Research and suggest related content', 'wp-mcp-ai' ); ?></li>
-							<li><?php esc_html_e( '📝 Generate SEO metadata', 'wp-mcp-ai' ); ?></li>
-							<li><?php esc_html_e( '🔧 Use any available AI tools', 'wp-mcp-ai' ); ?></li>
-						</ul>
-					</div>
-				</div>
-				<div class="wp-mcp-ai-cpt-chat-input-wrapper">
-					<textarea 
-						id="wp-mcp-ai-cpt-chat-input-term" 
-						class="wp-mcp-ai-cpt-chat-input" 
-						placeholder="<?php esc_attr_e( 'Ask me anything...', 'wp-mcp-ai' ); ?>"
-						rows="3"
-					></textarea>
-					<button type="button" id="wp-mcp-ai-cpt-send-button-term" class="button button-primary wp-mcp-ai-cpt-send-button">
-						<span class="dashicons dashicons-format-chat"></span>
-						<?php esc_html_e( 'Send', 'wp-mcp-ai' ); ?>
+			<div class="wp-mcp-ai-cpt-assistant-info">
+				<p><?php esc_html_e( 'Get AI assistance with term descriptions, SEO metadata, and content suggestions.', 'wp-mcp-ai' ); ?></p>
+			</div>
+			<button 
+				type="button" 
+				class="button button-primary button-large wp-mcp-ai-cpt-open-assistant" 
+				data-term-id="<?php echo esc_attr( $term->term_id ); ?>" 
+				data-taxonomy="<?php echo esc_attr( $taxonomy ); ?>"
+			>
+				<span class="dashicons dashicons-format-chat"></span>
+				<?php esc_html_e( 'Open AI Assistant', 'wp-mcp-ai' ); ?>
+			</button>
+		</div>
+
+		<!-- Modal container for AI Assistant -->
+		<div id="wp-mcp-ai-cpt-assistant-modal-term" class="wp-mcp-ai-cpt-modal" style="display: none;">
+			<div class="wp-mcp-ai-cpt-modal__backdrop"></div>
+			<div class="wp-mcp-ai-cpt-modal__panel">
+				<div class="wp-mcp-ai-cpt-modal__header">
+					<h2><?php esc_html_e( 'AI Assistant', 'wp-mcp-ai' ); ?></h2>
+					<button type="button" class="wp-mcp-ai-cpt-modal__close" aria-label="<?php esc_attr_e( 'Close', 'wp-mcp-ai' ); ?>">
+						<span class="dashicons dashicons-no-alt"></span>
 					</button>
 				</div>
-				<div class="wp-mcp-ai-cpt-chat-status" id="wp-mcp-ai-cpt-chat-status-term"></div>
+				<div class="wp-mcp-ai-cpt-modal__body">
+					<div class="wp-mcp-ai-cpt-assistant" data-term-id="<?php echo esc_attr( $term->term_id ); ?>" data-taxonomy="<?php echo esc_attr( $taxonomy ); ?>">
+						<div class="wp-mcp-ai-cpt-chat-messages" id="wp-mcp-ai-cpt-chat-messages-term">
+							<div class="wp-mcp-ai-cpt-welcome-message">
+								<p><?php esc_html_e( '👋 Hi! I\'m your AI assistant. I can help you:', 'wp-mcp-ai' ); ?></p>
+								<ul>
+									<li><?php esc_html_e( '✍️ Write descriptions for this term', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '🔍 Research and suggest related content', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '📝 Generate SEO metadata', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '🔧 Use any available AI tools', 'wp-mcp-ai' ); ?></li>
+								</ul>
+							</div>
+						</div>
+						<div class="wp-mcp-ai-cpt-chat-input-wrapper">
+							<textarea 
+								id="wp-mcp-ai-cpt-chat-input-term" 
+								class="wp-mcp-ai-cpt-chat-input" 
+								placeholder="<?php esc_attr_e( 'Ask me anything...', 'wp-mcp-ai' ); ?>"
+								rows="3"
+							></textarea>
+							<button type="button" id="wp-mcp-ai-cpt-send-button-term" class="button button-primary wp-mcp-ai-cpt-send-button">
+								<span class="dashicons dashicons-format-chat"></span>
+								<?php esc_html_e( 'Send', 'wp-mcp-ai' ); ?>
+							</button>
+						</div>
+						<div class="wp-mcp-ai-cpt-chat-status" id="wp-mcp-ai-cpt-chat-status-term"></div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<?php

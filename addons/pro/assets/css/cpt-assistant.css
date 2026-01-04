@@ -5,6 +5,128 @@
  */
 
 /* AI Assistant Metabox Container */
+.wp-mcp-ai-cpt-assistant-wrapper {
+	padding: 12px;
+}
+
+.wp-mcp-ai-cpt-assistant-info {
+	margin-bottom: 12px;
+}
+
+.wp-mcp-ai-cpt-assistant-info p {
+	margin: 0;
+	font-size: 13px;
+	color: #646970;
+	line-height: 1.5;
+}
+
+/* Open Assistant Button */
+.wp-mcp-ai-cpt-open-assistant {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	width: 100%;
+	padding: 10px 16px;
+	font-size: 14px;
+}
+
+.wp-mcp-ai-cpt-open-assistant .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+}
+
+/* Modal Styles */
+.wp-mcp-ai-cpt-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 100000;
+	display: none;
+}
+
+.wp-mcp-ai-cpt-modal__backdrop {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.7);
+	backdrop-filter: blur(2px);
+	z-index: 1;
+}
+
+.wp-mcp-ai-cpt-modal__panel {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 90%;
+	max-width: 800px;
+	max-height: 90vh;
+	background: #fff;
+	border-radius: 4px;
+	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+	display: flex;
+	flex-direction: column;
+	z-index: 2;
+}
+
+.wp-mcp-ai-cpt-modal__header {
+	padding: 20px 24px;
+	border-bottom: 1px solid #ddd;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-cpt-modal__header h2 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-cpt-modal__close {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 4px;
+	margin: -4px;
+	color: #50575e;
+	transition: color 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.wp-mcp-ai-cpt-modal__close:hover {
+	color: #d63638;
+}
+
+.wp-mcp-ai-cpt-modal__close .dashicons {
+	font-size: 24px;
+	width: 24px;
+	height: 24px;
+}
+
+.wp-mcp-ai-cpt-modal__body {
+	padding: 24px;
+	overflow-y: auto;
+	flex: 1;
+	min-height: 0;
+}
+
+/* Prevent body scroll when modal is open */
+body.wp-mcp-ai-cpt-modal-open {
+	overflow: hidden;
+}
+
+/* AI Assistant Container (inside modal) */
 .wp-mcp-ai-cpt-assistant {
 	display: flex;
 	flex-direction: column;
@@ -15,12 +137,14 @@
 /* Chat Messages Container */
 .wp-mcp-ai-cpt-chat-messages {
 	flex: 1;
-	max-height: 400px;
+	min-height: 400px;
+	max-height: 50vh;
 	overflow-y: auto;
 	padding: 12px;
 	background: #f9f9f9;
 	border: 1px solid #ddd;
 	border-radius: 4px;
+	margin-bottom: 12px;
 }
 
 .wp-mcp-ai-cpt-chat-messages::-webkit-scrollbar {
@@ -241,13 +365,29 @@
 
 .wp-mcp-ai-cpt-term-assistant-wrapper h2 {
 	margin-top: 0;
-	margin-bottom: 16px;
+	margin-bottom: 12px;
 	padding-bottom: 12px;
 	border-bottom: 1px solid #dcdcde;
 }
 
+.wp-mcp-ai-cpt-term-assistant-wrapper .wp-mcp-ai-cpt-assistant-info {
+	margin-bottom: 16px;
+}
+
 /* Responsive Adjustments */
 @media screen and (max-width: 782px) {
+	.wp-mcp-ai-cpt-modal__panel {
+		width: 95%;
+		max-height: 95vh;
+	}
+
+	.wp-mcp-ai-cpt-modal__header {
+		padding: 16px 20px;
+	}
+
+	.wp-mcp-ai-cpt-modal__body {
+		padding: 20px;
+	}
 	.wp-mcp-ai-cpt-chat-input-wrapper {
 		flex-direction: column;
 	}
@@ -260,14 +400,11 @@
 	.wp-mcp-ai-cpt-message {
 		max-width: 95%;
 	}
+
+	.wp-mcp-ai-cpt-open-assistant {
+		font-size: 13px;
+		padding: 8px 12px;
+	}
 }
 
-/* Sidebar Metabox Adjustments */
-.postbox .wp-mcp-ai-cpt-assistant {
-	margin: -6px -12px -12px -12px;
-	padding: 12px;
-}
-
-.postbox .wp-mcp-ai-cpt-chat-messages {
-	max-height: 300px;
-}
+/* Remove Sidebar Metabox Adjustments (no longer needed with modal) */

@@ -1,7 +1,7 @@
 /**
  * AI CPT Assistant JavaScript
  *
- * Handles chat interface interactions for the AI assistant metabox.
+ * Handles modal and chat interface interactions for the AI assistant metabox.
  */
 
 (function ($) {
@@ -22,6 +22,34 @@
 		 * Bind event handlers
 		 */
 		bindEvents: function () {
+			// Open modal button click
+			$(document).on('click', '.wp-mcp-ai-cpt-open-assistant', function (e) {
+				e.preventDefault();
+				const $button = $(this);
+				const isTermScreen = $button.data('term-id') !== undefined;
+				WpMcpAiCptAssistant.openModal(isTermScreen);
+			});
+
+			// Close modal button click
+			$(document).on('click', '.wp-mcp-ai-cpt-modal__close', function (e) {
+				e.preventDefault();
+				WpMcpAiCptAssistant.closeModal();
+			});
+
+			// Close modal on backdrop click
+			$(document).on('click', '.wp-mcp-ai-cpt-modal', function (e) {
+				if ($(e.target).hasClass('wp-mcp-ai-cpt-modal') || $(e.target).hasClass('wp-mcp-ai-cpt-modal__backdrop')) {
+					WpMcpAiCptAssistant.closeModal();
+				}
+			});
+
+			// Close modal on Escape key
+			$(document).on('keydown', function (e) {
+				if (e.key === 'Escape' && $('.wp-mcp-ai-cpt-modal').is(':visible')) {
+					WpMcpAiCptAssistant.closeModal();
+				}
+			});
+
 			// Send button click
 			$(document).on('click', '.wp-mcp-ai-cpt-send-button', function (e) {
 				e.preventDefault();
@@ -38,6 +66,38 @@
 					WpMcpAiCptAssistant.sendMessage(isTermScreen);
 				}
 			});
+		},
+
+		/**
+		 * Open the AI assistant modal
+		 *
+		 * @param {boolean} isTermScreen Whether this is a term edit screen
+		 */
+		openModal: function (isTermScreen) {
+			const modalId = isTermScreen ? '#wp-mcp-ai-cpt-assistant-modal-term' : '#wp-mcp-ai-cpt-assistant-modal';
+			const $modal = $(modalId);
+
+			if ($modal.length === 0) {
+				return;
+			}
+
+			// Show modal
+			$modal.show();
+			$('body').addClass('wp-mcp-ai-cpt-modal-open');
+
+			// Focus on the input field
+			setTimeout(function () {
+				const inputId = isTermScreen ? '#wp-mcp-ai-cpt-chat-input-term' : '#wp-mcp-ai-cpt-chat-input';
+				$(inputId).focus();
+			}, 100);
+		},
+
+		/**
+		 * Close the AI assistant modal
+		 */
+		closeModal: function () {
+			$('.wp-mcp-ai-cpt-modal').hide();
+			$('body').removeClass('wp-mcp-ai-cpt-modal-open');
 		},
 
 		/**
@@ -110,7 +170,7 @@
 						WpMcpAiCptAssistant.addMessage(messagesId, 'error', errorMsg);
 					}
 				},
-				error: function (xhr, status, error) {
+				error: function () {
 					$button.prop('disabled', false);
 					const errorMsg = wpMcpAiCpt.i18n.error;
 					WpMcpAiCptAssistant.showStatus(statusId, errorMsg, 'error');
