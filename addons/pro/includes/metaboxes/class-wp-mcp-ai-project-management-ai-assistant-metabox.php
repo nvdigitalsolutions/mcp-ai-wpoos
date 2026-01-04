@@ -324,12 +324,23 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 	private function render_chat_container( $post ) {
 		$context_type = $this->get_context_type( $post->post_type );
 		?>
-		<div id="wp-mcp-ai-pm-assistant-chat-wrapper" class="wp-mcp-ai-pm-assistant-chat-wrapper" style="display:none;">
-			<div class="wp-mcp-ai-pm-assistant-intro">
-				<p><?php echo esc_html( $this->get_intro_text( $context_type ) ); ?></p>
-			</div>
-			<div id="wp-mcp-ai-pm-assistant-chat-container" class="wp-mcp-ai-pm-assistant-chat-container">
-				<!-- Chat interface will be injected here by JavaScript -->
+		<!-- Modal container for chat interface -->
+		<div id="wp-mcp-ai-pm-assistant-modal" class="wp-mcp-ai-pm-assistant-modal" style="display: none;">
+			<div class="wp-mcp-ai-pm-assistant-modal__backdrop"></div>
+			<div class="wp-mcp-ai-pm-assistant-modal__panel">
+				<div class="wp-mcp-ai-pm-assistant-modal__header">
+					<h2 id="wp-mcp-ai-pm-assistant-modal__title"><?php echo esc_html( $this->get_assistant_title( $context_type ) ); ?></h2>
+					<button type="button" class="wp-mcp-ai-pm-assistant-modal__close" aria-label="<?php echo esc_attr__( 'Close', 'wp-mcp-ai' ); ?>">
+						<span class="dashicons dashicons-no-alt"></span>
+					</button>
+				</div>
+				<div class="wp-mcp-ai-pm-assistant-modal__body">
+					<div class="wp-mcp-ai-pm-assistant-intro">
+						<p><?php echo esc_html( $this->get_intro_text( $context_type ) ); ?></p>
+					</div>
+					<!-- Chat interface will be injected here by JavaScript -->
+					<div id="wp-mcp-ai-pm-assistant-chat-container" class="wp-mcp-ai-pm-assistant-chat-container"></div>
+				</div>
 			</div>
 		</div>
 		<?php

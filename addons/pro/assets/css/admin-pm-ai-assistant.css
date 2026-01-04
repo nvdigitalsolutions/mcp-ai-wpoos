@@ -65,9 +65,93 @@
 	text-align: center;
 }
 
-/* Chat Wrapper */
-.wp-mcp-ai-pm-assistant-chat-wrapper {
-	margin-top: 15px;
+/* Modal overlay and structure */
+.wp-mcp-ai-pm-assistant-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 100000;
+	display: none;
+}
+
+.wp-mcp-ai-pm-assistant-modal__backdrop {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.7);
+	backdrop-filter: blur(2px);
+	z-index: 1;
+}
+
+.wp-mcp-ai-pm-assistant-modal__panel {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 90%;
+	max-width: 800px;
+	max-height: 90vh;
+	background: #fff;
+	border-radius: 4px;
+	box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+	display: flex;
+	flex-direction: column;
+	z-index: 2;
+}
+
+.wp-mcp-ai-pm-assistant-modal__header {
+	padding: 20px 24px;
+	border-bottom: 1px solid #ddd;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-pm-assistant-modal__header h2 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-pm-assistant-modal__close {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 4px;
+	margin: -4px;
+	color: #50575e;
+	transition: color 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.wp-mcp-ai-pm-assistant-modal__close:hover {
+	color: #d63638;
+}
+
+.wp-mcp-ai-pm-assistant-modal__close .dashicons {
+	font-size: 24px;
+	width: 24px;
+	height: 24px;
+}
+
+.wp-mcp-ai-pm-assistant-modal__body {
+	padding: 24px;
+	overflow-y: auto;
+	flex: 1;
+	min-height: 0;
+}
+
+/* Prevent body scroll when modal is open */
+body.wp-mcp-ai-pm-assistant-modal-open {
+	overflow: hidden;
 }
 
 .wp-mcp-ai-pm-assistant-intro {
@@ -88,37 +172,23 @@
 /* Chat Container */
 .wp-mcp-ai-pm-assistant-chat-container {
 	position: relative;
-	background: #fff;
-	border: 1px solid #dcdcde;
-	border-radius: 4px;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
 }
 
-.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat-instance {
-	min-height: 400px;
-	max-height: 600px;
-}
-
-/* Adjust chat interface for metabox context */
 .wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat {
+	max-width: 100%;
+	margin: 0;
 	border: none;
 	box-shadow: none;
-	border-radius: 0;
 }
 
 .wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__messages {
-	max-height: 350px;
-	padding: 15px;
-}
-
-.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__input-wrapper {
-	border-top: 1px solid #dcdcde;
-	padding: 12px;
+	min-height: 400px;
+	max-height: 50vh;
 }
 
 /* Error Messages */
 .wp-mcp-ai-pm-assistant-chat-container .notice {
-	margin: 15px;
+	margin: 15px 0;
 	padding: 12px;
 }
 
@@ -156,12 +226,48 @@
 
 /* Responsive adjustments for smaller screens */
 @media screen and (max-width: 782px) {
+	.wp-mcp-ai-pm-assistant-modal__panel {
+		width: 95%;
+		max-height: 95vh;
+	}
+
+	.wp-mcp-ai-pm-assistant-modal__header {
+		padding: 16px;
+	}
+
+	.wp-mcp-ai-pm-assistant-modal__body {
+		padding: 16px;
+	}
+
 	.wp-mcp-ai-pm-assistant-intro p {
 		font-size: 14px;
 	}
 
 	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__messages {
-		max-height: 300px;
+		min-height: 300px;
+		max-height: 40vh;
+	}
+}
+
+@media screen and (max-width: 600px) {
+	.wp-mcp-ai-pm-assistant-modal__panel {
+		width: 100%;
+		height: 100%;
+		max-width: none;
+		max-height: none;
+		border-radius: 0;
+		top: 0;
+		left: 0;
+		transform: none;
+	}
+
+	.wp-mcp-ai-pm-assistant-modal__body {
+		padding: 12px;
+	}
+
+	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__messages {
+		min-height: 250px;
+		max-height: 50vh;
 	}
 }
 
@@ -185,24 +291,18 @@
 		color: #ddd;
 	}
 
-	.wp-mcp-ai-pm-assistant-chat-container {
+	.wp-mcp-ai-pm-assistant-modal__panel {
 		background: #1e1e1e;
 		border-color: #3c3c3c;
 	}
 
-	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__input-wrapper {
-		border-top-color: #3c3c3c;
+	.wp-mcp-ai-pm-assistant-modal__header {
+		border-bottom-color: #3c3c3c;
 	}
-}
 
-/* Compact mode adjustments */
-.wp-mcp-ai-pm-assistant-chat-container.wp-mcp-ai-compact {
-	font-size: 13px;
-}
-
-.wp-mcp-ai-pm-assistant-chat-container.wp-mcp-ai-compact .wp-mcp-ai-chat__message {
-	padding: 10px;
-	margin-bottom: 8px;
+	.wp-mcp-ai-pm-assistant-modal__header h2 {
+		color: #ddd;
+	}
 }
 
 /* Integration with WordPress admin color schemes */

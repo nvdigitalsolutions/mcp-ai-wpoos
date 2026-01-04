@@ -14,12 +14,14 @@
 	 */
 	function initPmAiAssistant() {
 		const $selector = $('#wp-mcp-ai-pm-assistant-select');
-		const $chatWrapper = $('#wp-mcp-ai-pm-assistant-chat-wrapper');
+		const $modal = $('#wp-mcp-ai-pm-assistant-modal');
 		const $chatContainer = $('#wp-mcp-ai-pm-assistant-chat-container');
 		const $buildAction = $('#wp-mcp-ai-pm-build-action');
 		const $buildBtn = $('#wp-mcp-ai-pm-build-btn');
+		const $modalClose = $modal.find('.wp-mcp-ai-pm-assistant-modal__close');
+		const $modalBackdrop = $modal.find('.wp-mcp-ai-pm-assistant-modal__backdrop');
 
-		if (!$selector.length || !$chatContainer.length) {
+		if (!$selector.length || !$chatContainer.length || !$modal.length) {
 			return;
 		}
 
@@ -36,8 +38,6 @@
 			const assistantTitle = $selectedOption.data('title') || $selectedOption.text();
 
 			if (!assistantId) {
-				$chatWrapper.hide();
-				$chatContainer.empty();
 				$buildAction.hide();
 				return;
 			}
@@ -48,29 +48,68 @@
 
 			// Show Build with AI button.
 			$buildAction.show();
-
-			// Hide chat wrapper until button is clicked.
-			$chatWrapper.hide();
-			$chatContainer.empty();
 		});
 
 		// Handle Build with AI button click.
 		$buildBtn.on('click', function () {
 			const assistantId = $(this).attr('data-assistant-id');
+			const assistantTitle = $(this).attr('data-assistant-title');
 
 			if (!assistantId) {
 				return;
 			}
 
-			// Show chat wrapper.
-			$chatWrapper.show();
-
-			// Initialize chat interface.
-			initChatInterface(assistantId, contextType, contextData, postId);
-
-			// Optionally hide the button after clicking (uncomment if desired).
-			// $buildAction.hide();
+			// Open modal and initialize chat interface.
+			openModal(assistantId, assistantTitle, contextType, contextData, postId);
 		});
+
+		// Close modal on close button click.
+		$modalClose.on('click', closeModal);
+
+		// Close modal on backdrop click.
+		$modal.on('click', function (event) {
+			if (event.target === $modal[0] || event.target === $modalBackdrop[0]) {
+				closeModal();
+			}
+		});
+
+		// Close modal on Escape key.
+		$(document).on('keydown', function (e) {
+			if (e.key === 'Escape' && $modal.is(':visible')) {
+				closeModal();
+			}
+		});
+
+		/**
+		 * Open the modal with chat interface.
+		 *
+		 * @param {string} assistantId     Assistant ID.
+		 * @param {string} assistantTitle  Assistant title.
+		 * @param {string} contextType     Context type (project, task, or event).
+		 * @param {Object} contextData     Context data about the current item.
+		 * @param {number} postId          Current post ID.
+		 */
+		function openModal(assistantId, assistantTitle, contextType, contextData, postId) {
+			// Update modal title.
+			$modal.find('#wp-mcp-ai-pm-assistant-modal__title').text(assistantTitle || 'AI Assistant');
+
+			// Show modal.
+			$modal.show();
+			$('body').addClass('wp-mcp-ai-pm-assistant-modal-open');
+
+			// Initialize chat interface if not already initialized.
+			if ($chatContainer.is(':empty')) {
+				initChatInterface(assistantId, contextType, contextData, postId);
+			}
+		}
+
+		/**
+		 * Close the modal.
+		 */
+		function closeModal() {
+			$modal.hide();
+			$('body').removeClass('wp-mcp-ai-pm-assistant-modal-open');
+		}
 	}
 
 	/**
