@@ -131,6 +131,27 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	<?php endif; ?>
 
 	<?php if ( $show_actions ) : ?>
+		<?php
+		// Render tool presets if helper class is available.
+		if ( class_exists( 'WP_MCP_AI_Tool_Presets_Helper' ) && class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+			$available_tools = array();
+			foreach ( $registry->get_tools() as $tool ) {
+				if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
+					$available_tools[] = $tool->get_slug();
+				}
+			}
+
+			WP_MCP_AI_Tool_Presets_Helper::render_presets(
+				array(
+					'available_tools'   => $available_tools,
+					'container_class'   => 'wp-block-wp-mcp-ai-tools-grid__presets',
+					'checkbox_selector' => '.wp-mcp-ai-tools-grid__checkbox',
+				)
+			);
+		}
+		?>
+
 		<div class="wp-block-wp-mcp-ai-tools-grid__filter-bar">
 			<label for="<?php echo esc_attr( $unique_id . '-search' ); ?>" class="wp-block-wp-mcp-ai-tools-grid__filter-label">
 				<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>

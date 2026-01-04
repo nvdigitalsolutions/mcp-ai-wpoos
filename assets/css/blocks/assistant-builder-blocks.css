@@ -99,6 +99,44 @@
 	font-size: 14px;
 }
 
+/* Tool Presets */
+.wp-block-wp-mcp-ai-tools-grid__presets,
+.wp-mcp-ai-tool-presets {
+	margin: 0 0 1rem;
+}
+
+.wp-block-wp-mcp-ai-tools-grid__presets__title,
+.wp-mcp-ai-tool-presets__title {
+	margin: 0 0 0.5rem;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wp-block-wp-mcp-ai-tools-grid__presets__description,
+.wp-mcp-ai-tool-presets__description {
+	margin: 0 0 1rem;
+}
+
+.wp-block-wp-mcp-ai-tools-grid__presets__buttons,
+.wp-mcp-ai-tool-presets__buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 1rem;
+}
+
+.wp-mcp-ai-tool-preset-btn {
+	transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-tool-preset-btn.wp-mcp-ai-preset-active {
+	background-color: #2271b1;
+	color: #fff;
+	border-color: #2271b1;
+}
+
+/* Filter Bar */
 .wp-block-wp-mcp-ai-tools-grid__filter-bar {
 	display: flex;
 	align-items: center;
