@@ -732,6 +732,11 @@
 		width: 100%;
 	}
 
+	.wp-block-wp-mcp-ai-tools-grid__presets__buttons,
+	.wp-mcp-ai-tool-presets__buttons {
+		gap: 0.4rem;
+	}
+
 	.wp-block-wp-mcp-ai-tools-grid__filter-bar {
 		flex-direction: column;
 		align-items: stretch;

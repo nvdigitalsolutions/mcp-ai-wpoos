@@ -289,10 +289,15 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		// If available tools are provided, filter presets.
 		$filter_tools = ! empty( $args['available_tools'] ) && is_array( $args['available_tools'] );
 
-		echo '<div class="' . esc_attr( $args['container_class'] ) . '">';
-		echo '<h3 class="' . esc_attr( $args['container_class'] ) . '__title">' . esc_html( $args['title'] ) . '</h3>';
-		echo '<p class="' . esc_attr( $args['container_class'] ) . '__description description">' . esc_html( $args['description'] ) . '</p>';
-		echo '<div class="' . esc_attr( $args['container_class'] ) . '__buttons">';
+		$container_style = 'margin-top: 1rem;';
+		$title_style     = 'margin-top: 0; margin-bottom: 0.5rem; font-size: 14px;';
+		$desc_style      = 'margin-top: 0; margin-bottom: 1rem;';
+		$buttons_style   = 'display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;';
+
+		echo '<div class="' . esc_attr( $args['container_class'] ) . '" style="' . esc_attr( $container_style ) . '">';
+		echo '<h3 class="' . esc_attr( $args['container_class'] ) . '__title" style="' . esc_attr( $title_style ) . '">' . esc_html( $args['title'] ) . '</h3>';
+		echo '<p class="' . esc_attr( $args['container_class'] ) . '__description description" style="' . esc_attr( $desc_style ) . '">' . esc_html( $args['description'] ) . '</p>';
+		echo '<div class="' . esc_attr( $args['container_class'] ) . '__buttons" style="' . esc_attr( $buttons_style ) . '">';
 
 		foreach ( $presets as $preset_key => $preset_data ) {
 			if ( ! isset( $preset_data['name'], $preset_data['tools'] ) || ! is_array( $preset_data['tools'] ) ) {
