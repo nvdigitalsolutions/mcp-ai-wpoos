@@ -406,6 +406,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'label'          => __( 'Enable AI CPT Management', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Add AI assistant to WordPress post/page/product/term edit screens (Pro Version only)', 'wp-mcp-ai' ),
 					'description'    => __( 'Enables AI assistant integration on WordPress custom post type edit screens (posts, pages, products, terms). Adds an AI metabox that allows you to use AI tools to help create, edit, and manage content directly from the WordPress admin interface. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
+
+				// Places Management fields.
+				'enable_places_management'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Places Management', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable AI-powered places and location management (Pro Version only)', 'wp-mcp-ai' ),
+					'description'    => __( 'Enables AI-powered places management for attractions, businesses, and locations. Provides 6+ tools for creating, searching, listing, and managing places with Google Maps integration. Includes geocoding, radius search, and place data enrichment. Enhances all geospatial and mapping tools. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
 			);
@@ -508,7 +515,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management', 'enable_ai_cpt_management' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management' ),
 				),
 				'media'          => array(
 					'id'     => 'media',
