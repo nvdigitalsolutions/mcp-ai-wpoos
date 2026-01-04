@@ -406,6 +406,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'label'          => __( 'Enable AI CPT Management', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Add AI assistant to WordPress post/page/product/term edit screens (Pro Version only)', 'wp-mcp-ai' ),
 					'description'    => __( 'Enables AI assistant integration on WordPress custom post type edit screens (posts, pages, products, terms). Adds an AI metabox that allows you to use AI tools to help create, edit, and manage content directly from the WordPress admin interface. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 
 				// Places Management fields.
 				'enable_places_management'             => array(
