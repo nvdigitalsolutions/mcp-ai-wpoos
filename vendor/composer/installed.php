@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-syntax-error-dashboard',
-        'version' => 'dev-copilot/fix-syntax-error-dashboard',
-        'reference' => 'eb7dc6e1eda13e7942791d631e622bac94c3ff60',
+        'pretty_version' => 'dev-copilot/update-filtering-method',
+        'version' => 'dev-copilot/update-filtering-method',
+        'reference' => '7d85153d11ad79f0c8d30772d7818952a067e03b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-syntax-error-dashboard',
-            'version' => 'dev-copilot/fix-syntax-error-dashboard',
-            'reference' => 'eb7dc6e1eda13e7942791d631e622bac94c3ff60',
+            'pretty_version' => 'dev-copilot/update-filtering-method',
+            'version' => 'dev-copilot/update-filtering-method',
+            'reference' => '7d85153d11ad79f0c8d30772d7818952a067e03b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
