@@ -52,16 +52,18 @@ class WP_MCP_AI_Build_Assistant_Page {
 	 */
 	public function enqueue_scripts( $hook ) {
 		// Check if we're on the Build Assistant page.
-		// Use both page_hook property and manual check for robustness.
-		if ( ! empty( $this->page_hook ) && $hook !== $this->page_hook ) {
-			return;
-		}
-		
-		// Fallback check: ensure we're on the correct page by checking the page parameter.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
-		$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
-		if ( empty( $this->page_hook ) && 'wp-mcp-ai-build-assistant' !== $page ) {
-			return;
+		// Use page_hook property first, with fallback to page query parameter.
+		if ( ! empty( $this->page_hook ) ) {
+			if ( $hook !== $this->page_hook ) {
+				return;
+			}
+		} else {
+			// Fallback check: ensure we're on the correct page by checking the page parameter.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+			$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
+			if ( 'wp-mcp-ai-build-assistant' !== $page ) {
+				return;
+			}
 		}
 
 		// Enqueue chat assets for the Prompt tab modal.
