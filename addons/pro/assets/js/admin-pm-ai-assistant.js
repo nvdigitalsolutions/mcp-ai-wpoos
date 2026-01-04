@@ -16,6 +16,8 @@
 		const $selector = $('#wp-mcp-ai-pm-assistant-select');
 		const $chatWrapper = $('#wp-mcp-ai-pm-assistant-chat-wrapper');
 		const $chatContainer = $('#wp-mcp-ai-pm-assistant-chat-container');
+		const $buildAction = $('#wp-mcp-ai-pm-build-action');
+		const $buildBtn = $('#wp-mcp-ai-pm-build-btn');
 
 		if (!$selector.length || !$chatContainer.length) {
 			return;
@@ -30,12 +32,22 @@
 		// Handle assistant selection.
 		$selector.on('change', function () {
 			const assistantId = $(this).val();
+			const $selectedOption = $(this).find('option:selected');
+			const assistantTitle = $selectedOption.data('title') || $selectedOption.text();
 
 			if (!assistantId) {
 				$chatWrapper.hide();
 				$chatContainer.empty();
+				$buildAction.hide();
 				return;
 			}
+
+			// Update Build with AI button data attributes.
+			$buildBtn.attr('data-assistant-id', assistantId);
+			$buildBtn.attr('data-assistant-title', assistantTitle);
+
+			// Show Build with AI button.
+			$buildAction.show();
 
 			// Show chat wrapper.
 			$chatWrapper.show();
