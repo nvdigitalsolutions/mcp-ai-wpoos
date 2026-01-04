@@ -1,0 +1,89 @@
+<?php
+/**
+ * Base class for Place metaboxes.
+ *
+ * @package WP_MCP_AI
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Abstract base class for all place metaboxes.
+ */
+abstract class WP_MCP_AI_Place_Metabox_Base {
+
+	/**
+	 * Get the metabox ID.
+	 *
+	 * @return string
+	 */
+	abstract public function get_id();
+
+	/**
+	 * Get the metabox title.
+	 *
+	 * @return string
+	 */
+	abstract public function get_title();
+
+	/**
+	 * Get the metabox context (normal, side, advanced).
+	 *
+	 * @return string
+	 */
+	public function get_context() {
+		return 'normal';
+	}
+
+	/**
+	 * Get the metabox priority (high, core, default, low).
+	 *
+	 * @return string
+	 */
+	public function get_priority() {
+		return 'default';
+	}
+
+	/**
+	 * Render the metabox content.
+	 *
+	 * @param WP_Post $post The post object.
+	 * @return void
+	 */
+	abstract public function render( $post );
+
+	/**
+	 * Save metabox data.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 * @return void
+	 */
+	public function save( $post_id, $post ) {
+		// Override in child classes if needed.
+	}
+
+	/**
+	 * Check if current user has permission to view this metabox.
+	 *
+	 * @return bool
+	 */
+	protected function can_view() {
+		return current_user_can( 'edit_posts' );
+	}
+
+	/**
+	 * Render a permission denied message.
+	 *
+	 * @param string $message Optional custom message.
+	 * @return void
+	 */
+	protected function render_permission_denied( $message = '' ) {
+		if ( empty( $message ) ) {
+			$message = __( 'You do not have permission to access this section.', 'wp-mcp-ai' );
+		}
+		echo '<p>' . esc_html( $message ) . '</p>';
+	}
+}

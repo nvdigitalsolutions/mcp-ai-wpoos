@@ -399,6 +399,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables AI-powered project, task, and event management. Provides 13 tools for creating, updating, listing, and deleting projects, tasks, and events. Includes automatic JetEngine CCT synchronization when available. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
+
+				// Places Management fields.
+				'enable_places_management'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Places Management', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable AI-powered places and location management (Pro Version only)', 'wp-mcp-ai' ),
+					'description'    => __( 'Enables AI-powered places management for attractions, businesses, and locations. Provides 6+ tools for creating, searching, listing, and managing places with Google Maps integration. Includes geocoding, radius search, and place data enrichment. Enhances all geospatial and mapping tools. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -499,7 +508,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management', 'enable_places_management' ),
 				),
 				'media'          => array(
 					'id'     => 'media',

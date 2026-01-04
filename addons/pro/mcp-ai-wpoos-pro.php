@@ -169,6 +169,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Project Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/project-management-init.php';
 
+		// Load Places Management CPT registration (Pro feature).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/places-management-init.php';
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 
@@ -302,6 +305,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Quiz_Results'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
 			);
 			$pro_tools  = array_merge( $pro_tools, $quiz_tools );
+		}
+
+		// Add places management tools if enabled.
+		if ( ! empty( $settings['enable_places_management'] ) ) {
+			$places_tools = array(
+				'WP_MCP_AI_Tool_Create_Place'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-place.php',
+				'WP_MCP_AI_Tool_List_Places'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-places.php',
+				'WP_MCP_AI_Tool_Update_Place'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-place.php',
+				'WP_MCP_AI_Tool_Delete_Place'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-place.php',
+				'WP_MCP_AI_Tool_Get_Place'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-place.php',
+				'WP_MCP_AI_Tool_Search_And_Save_Places' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-and-save-places.php',
+			);
+			$pro_tools    = array_merge( $pro_tools, $places_tools );
 		}
 
 		/**
