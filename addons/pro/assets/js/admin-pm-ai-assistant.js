@@ -49,11 +49,27 @@
 			// Show Build with AI button.
 			$buildAction.show();
 
+			// Hide chat wrapper until button is clicked.
+			$chatWrapper.hide();
+			$chatContainer.empty();
+		});
+
+		// Handle Build with AI button click.
+		$buildBtn.on('click', function () {
+			const assistantId = $(this).attr('data-assistant-id');
+
+			if (!assistantId) {
+				return;
+			}
+
 			// Show chat wrapper.
 			$chatWrapper.show();
 
 			// Initialize chat interface.
 			initChatInterface(assistantId, contextType, contextData, postId);
+
+			// Optionally hide the button after clicking (uncomment if desired).
+			// $buildAction.hide();
 		});
 	}
 

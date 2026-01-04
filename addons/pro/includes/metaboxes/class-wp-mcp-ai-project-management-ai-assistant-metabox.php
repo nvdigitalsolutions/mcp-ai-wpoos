@@ -309,9 +309,9 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		<div class="wp-mcp-ai-prompt-action" id="wp-mcp-ai-pm-build-action" style="display:none;">
 			<button type="button" class="button button-primary button-hero wp-mcp-ai-build-with-ai-btn" id="wp-mcp-ai-pm-build-btn" data-assistant-id="" data-assistant-title="">
 				<span class="dashicons dashicons-format-chat"></span>
-				<?php esc_html_e( 'Build with AI', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Chat with AI', 'wp-mcp-ai' ); ?>
 			</button>
-			<p class="description"><?php esc_html_e( 'Click to open the AI chat interface and describe your assistant.', 'wp-mcp-ai' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Click to open the AI chat interface for assistance with this item.', 'wp-mcp-ai' ); ?></p>
 		</div>
 		<?php
 	}
