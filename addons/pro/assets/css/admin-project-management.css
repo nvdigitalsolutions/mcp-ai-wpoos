@@ -1,0 +1,154 @@
+/**
+ * Project Management Admin Styles
+ * 
+ * Styles for the project, task, and event admin interfaces.
+ */
+
+/* Status badges */
+.wp-mcp-ai-status,
+.wp-mcp-ai-priority,
+.wp-mcp-ai-event-type {
+	display: inline-block;
+	padding: 3px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.5;
+}
+
+/* Project statuses */
+.wp-mcp-ai-status-planning {
+	background-color: #f0f0f1;
+	color: #50575e;
+}
+
+.wp-mcp-ai-status-active {
+	background-color: #00a32a;
+	color: #fff;
+}
+
+.wp-mcp-ai-status-on-hold {
+	background-color: #dba617;
+	color: #fff;
+}
+
+.wp-mcp-ai-status-completed {
+	background-color: #2271b1;
+	color: #fff;
+}
+
+.wp-mcp-ai-status-cancelled {
+	background-color: #d63638;
+	color: #fff;
+}
+
+/* Task statuses */
+.wp-mcp-ai-status-todo {
+	background-color: #f0f0f1;
+	color: #50575e;
+}
+
+.wp-mcp-ai-status-in-progress {
+	background-color: #00a32a;
+	color: #fff;
+}
+
+.wp-mcp-ai-status-review {
+	background-color: #dba617;
+	color: #fff;
+}
+
+/* Task priorities */
+.wp-mcp-ai-priority-low {
+	background-color: #f0f0f1;
+	color: #50575e;
+}
+
+.wp-mcp-ai-priority-medium {
+	background-color: #2271b1;
+	color: #fff;
+}
+
+.wp-mcp-ai-priority-high {
+	background-color: #dba617;
+	color: #fff;
+}
+
+.wp-mcp-ai-priority-urgent {
+	background-color: #d63638;
+	color: #fff;
+}
+
+/* Event types */
+.wp-mcp-ai-event-type-meeting {
+	background-color: #2271b1;
+	color: #fff;
+}
+
+.wp-mcp-ai-event-type-deadline {
+	background-color: #d63638;
+	color: #fff;
+}
+
+.wp-mcp-ai-event-type-milestone {
+	background-color: #00a32a;
+	color: #fff;
+}
+
+.wp-mcp-ai-event-type-reminder {
+	background-color: #dba617;
+	color: #fff;
+}
+
+.wp-mcp-ai-event-type-other {
+	background-color: #f0f0f1;
+	color: #50575e;
+}
+
+/* Overdue dates */
+.wp-mcp-ai-overdue {
+	color: #d63638;
+	font-weight: 600;
+}
+
+/* Metabox styling */
+.wp-mcp-ai-project-details p,
+.wp-mcp-ai-task-details p,
+.wp-mcp-ai-event-details p {
+	margin-bottom: 15px;
+}
+
+.wp-mcp-ai-project-details label,
+.wp-mcp-ai-task-details label,
+.wp-mcp-ai-event-details label {
+	display: block;
+	margin-bottom: 5px;
+}
+
+.wp-mcp-ai-project-details .description,
+.wp-mcp-ai-task-details .description,
+.wp-mcp-ai-event-details .description {
+	display: block;
+	margin-top: 5px;
+	font-style: italic;
+	color: #646970;
+}
+
+/* Admin column improvements */
+.column-status,
+.column-priority,
+.column-type {
+	width: 100px;
+}
+
+.column-start_date,
+.column-end_date,
+.column-due_date {
+	width: 110px;
+}
+
+.column-assigned_to,
+.column-project,
+.column-location {
+	width: 150px;
+}

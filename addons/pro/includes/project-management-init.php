@@ -12,6 +12,68 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Initialize project management admin interface.
+ */
+function wp_mcp_ai_init_project_management_admin() {
+	// Only load in admin context.
+	if ( ! is_admin() ) {
+		return;
+	}
+
+	// Check if project management is enabled.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $settings['enable_project_management'] ) ) {
+		return;
+	}
+
+	// Load metabox classes.
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-metabox.php';
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-task-metabox.php';
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-event-metabox.php';
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-admin-columns.php';
+
+	// Initialize metaboxes.
+	WP_MCP_AI_Project_Metabox::init();
+	WP_MCP_AI_Task_Metabox::init();
+	WP_MCP_AI_Event_Metabox::init();
+
+	// Initialize admin columns.
+	WP_MCP_AI_Project_Management_Admin_Columns::init();
+}
+add_action( 'admin_init', 'wp_mcp_ai_init_project_management_admin' );
+
+/**
+ * Enqueue project management admin styles.
+ *
+ * @param string $hook Current admin page hook.
+ */
+function wp_mcp_ai_enqueue_project_management_admin_styles( $hook ) {
+	// Only load on project management edit screens.
+	$screen = get_current_screen();
+	if ( ! $screen || ! in_array( $screen->post_type, array( 'mcp_ai_project', 'mcp_ai_task', 'mcp_ai_event' ), true ) ) {
+		return;
+	}
+
+	// Check if project management is enabled.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $settings['enable_project_management'] ) ) {
+		return;
+	}
+
+	// Enqueue admin styles.
+	$css_file = WP_MCP_AI_PRO_PATH . 'assets/css/admin-project-management.css';
+	if ( file_exists( $css_file ) ) {
+		wp_enqueue_style(
+			'wp-mcp-ai-project-management-admin',
+			WP_MCP_AI_PRO_URL . 'assets/css/admin-project-management.css',
+			array(),
+			WP_MCP_AI_PRO_VERSION
+		);
+	}
+}
+add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_project_management_admin_styles' );
+
+/**
  * Register project management custom post types.
  */
 function wp_mcp_ai_register_project_management_post_types() {
