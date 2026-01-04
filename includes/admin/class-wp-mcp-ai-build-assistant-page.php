@@ -51,7 +51,16 @@ class WP_MCP_AI_Build_Assistant_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_scripts( $hook ) {
-		if ( $hook !== $this->page_hook ) {
+		// Check if we're on the Build Assistant page.
+		// Use both page_hook property and manual check for robustness.
+		if ( ! empty( $this->page_hook ) && $hook !== $this->page_hook ) {
+			return;
+		}
+		
+		// Fallback check: ensure we're on the correct page by checking the page parameter.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+		$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
+		if ( empty( $this->page_hook ) && 'wp-mcp-ai-build-assistant' !== $page ) {
 			return;
 		}
 
