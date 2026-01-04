@@ -20,6 +20,11 @@ The AI CPT Management Interface adds an intelligent AI assistant directly to Wor
 - **Posts** - Standard WordPress blog posts
 - **Pages** - WordPress pages
 - **Products** - WooCommerce products (when WooCommerce is active)
+- **Quizzes** - Quiz CPT (when Quiz System is enabled)
+- **Places** - Place CPT (when Places Management is enabled)
+- **Projects** - Project CPT (when Project Management is enabled)
+- **Tasks** - Task CPT (when Project Management is enabled)
+- **Events** - Event CPT (when Project Management is enabled)
 - **Custom Post Types** - Can be extended via filters
 
 ### Taxonomies
@@ -97,6 +102,28 @@ When editing a category, tag, or other taxonomy term:
 "Write a description for this category"
 "Suggest related categories"
 "Generate SEO metadata for this term"
+```
+
+### Quiz Management
+```
+"Generate quiz questions based on this topic"
+"Create answer options for this question"
+"Suggest difficulty levels for this quiz"
+```
+
+### Place Management
+```
+"Write a description for this location"
+"Generate location details and amenities"
+"Create SEO-friendly place descriptions"
+```
+
+### Project Management
+```
+"Create a project plan for this initiative"
+"Generate task list for this project"
+"Write project status updates"
+"Schedule events for project milestones"
 ```
 
 ## Technical Details
