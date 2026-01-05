@@ -90,10 +90,16 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		$script_url = WP_MCP_AI_PRO_URL . 'assets/js/admin-pm-ai-assistant.js';
 		$style_url  = WP_MCP_AI_PRO_URL . 'assets/css/admin-pm-ai-assistant.css';
 
+		// Build dependencies array - include wp-dom-ready if available for block editor support.
+		$script_dependencies = array( 'jquery', WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
+		if ( wp_script_is( 'wp-dom-ready', 'registered' ) ) {
+			$script_dependencies[] = 'wp-dom-ready';
+		}
+
 		wp_enqueue_script(
 			'wp-mcp-ai-pm-ai-assistant',
 			$script_url,
-			array( 'jquery', WP_MCP_AI_Shortcode::SCRIPT_HANDLE ),
+			$script_dependencies,
 			WP_MCP_AI_PRO_VERSION,
 			true
 		);

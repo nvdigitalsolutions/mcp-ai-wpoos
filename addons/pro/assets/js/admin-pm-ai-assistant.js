@@ -554,16 +554,142 @@ console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString()
 		}, 100);
 	}
 
-	// Initialize on document ready.
-	console.log('[PM AI Assistant] Registering document.ready handler');
-	$(document).ready(function () {
-		console.log('[PM AI Assistant] ⚡ Document ready event fired, calling initPmAiAssistant()');
-		try {
-			initPmAiAssistant();
-			console.log('[PM AI Assistant] ✓ Initialization complete');
-		} catch (error) {
-			console.error('[PM AI Assistant] CRITICAL: Initialization failed with error:', error);
+	/**
+	 * Check if the block editor (Gutenberg) is active.
+	 *
+	 * @return {boolean} True if block editor is active.
+	 */
+	function isBlockEditorActive() {
+		// Check if wp.data and editor store exist (block editor indicators).
+		return typeof wp !== 'undefined' && 
+			   wp.data && 
+			   typeof wp.data.select === 'function' &&
+			   wp.data.select('core/editor') !== undefined;
+	}
+
+	/**
+	 * Wait for the metabox to be rendered in the DOM.
+	 * Uses polling with exponential backoff for the block editor.
+	 *
+	 * @param {Function} callback - Function to call when metabox is ready.
+	 * @param {number} maxAttempts - Maximum number of polling attempts.
+	 */
+	function waitForMetabox(callback, maxAttempts) {
+		maxAttempts = maxAttempts || 50;
+		let attempts = 0;
+		let delay = 100; // Start with 100ms delay.
+
+		function checkMetabox() {
+			attempts++;
+			
+			const $selector = $('#wp-mcp-ai-pm-assistant-select');
+			const $modal = $('#wp-mcp-ai-pm-assistant-modal');
+			const $chatContainer = $('#wp-mcp-ai-pm-assistant-chat-container');
+
+			console.log('[PM AI Assistant] Polling attempt ' + attempts + '/' + maxAttempts + ', delay: ' + delay + 'ms');
+			console.log('[PM AI Assistant] Found elements:', {
+				selector: $selector.length,
+				modal: $modal.length,
+				chatContainer: $chatContainer.length
+			});
+
+			if ($selector.length && $modal.length && $chatContainer.length) {
+				console.log('[PM AI Assistant] ✓ All required elements found after ' + attempts + ' attempts');
+				callback();
+				return;
+			}
+
+			if (attempts >= maxAttempts) {
+				console.error('[PM AI Assistant] TIMEOUT: Metabox elements not found after ' + maxAttempts + ' attempts');
+				return;
+			}
+
+			// Use exponential backoff: increase delay up to 500ms max.
+			delay = Math.min(delay * 1.2, 500);
+			setTimeout(checkMetabox, delay);
 		}
-	});
-	console.log('[PM AI Assistant] Script initialization complete, waiting for document.ready');
+
+		checkMetabox();
+	}
+
+	/**
+	 * Initialize for block editor context.
+	 * Uses wp.domReady if available, or waits for metabox to appear.
+	 */
+	function initForBlockEditor() {
+		console.log('[PM AI Assistant] Block editor detected, using specialized initialization');
+
+		// Use wp.domReady if available (WordPress 5.0+).
+		if (typeof wp !== 'undefined' && wp.domReady) {
+			console.log('[PM AI Assistant] Using wp.domReady hook');
+			wp.domReady(function() {
+				console.log('[PM AI Assistant] ⚡ wp.domReady fired');
+				waitForMetabox(function() {
+					try {
+						initPmAiAssistant();
+						console.log('[PM AI Assistant] ✓ Block editor initialization complete');
+					} catch (error) {
+						console.error('[PM AI Assistant] CRITICAL: Block editor initialization failed:', error);
+					}
+				});
+			});
+		} else {
+			// Fallback: Wait for document ready then poll for metabox.
+			console.log('[PM AI Assistant] wp.domReady not available, using fallback polling');
+			$(document).ready(function() {
+				console.log('[PM AI Assistant] ⚡ document.ready fired, starting metabox polling');
+				waitForMetabox(function() {
+					try {
+						initPmAiAssistant();
+						console.log('[PM AI Assistant] ✓ Block editor initialization complete (fallback)');
+					} catch (error) {
+						console.error('[PM AI Assistant] CRITICAL: Block editor initialization failed:', error);
+					}
+				});
+			});
+		}
+	}
+
+	// Determine which editor is active and initialize accordingly.
+	console.log('[PM AI Assistant] Determining editor type...');
+	console.log('[PM AI Assistant] wp object available?', typeof wp !== 'undefined');
+	console.log('[PM AI Assistant] wp.domReady available?', typeof wp !== 'undefined' && typeof wp.domReady !== 'undefined');
+	console.log('[PM AI Assistant] wp.data available?', typeof wp !== 'undefined' && typeof wp.data !== 'undefined');
+
+	if (isBlockEditorActive()) {
+		initForBlockEditor();
+	} else {
+		// For classic editor or when block editor detection fails, use a hybrid approach.
+		// Try classic first, but also set up polling as a fallback.
+		console.log('[PM AI Assistant] Block editor not detected, using hybrid approach');
+		$(document).ready(function () {
+			console.log('[PM AI Assistant] ⚡ Document ready event fired');
+			
+			const $selector = $('#wp-mcp-ai-pm-assistant-select');
+			
+			if ($selector.length) {
+				// Elements exist, initialize immediately.
+				console.log('[PM AI Assistant] Elements found immediately, initializing');
+				try {
+					initPmAiAssistant();
+					console.log('[PM AI Assistant] ✓ Initialization complete');
+				} catch (error) {
+					console.error('[PM AI Assistant] CRITICAL: Initialization failed:', error);
+				}
+			} else {
+				// Elements don't exist yet, poll for them (might be block editor).
+				console.log('[PM AI Assistant] Elements not found, starting polling (might be block editor)');
+				waitForMetabox(function() {
+					try {
+						initPmAiAssistant();
+						console.log('[PM AI Assistant] ✓ Initialization complete (after polling)');
+					} catch (error) {
+						console.error('[PM AI Assistant] CRITICAL: Initialization failed:', error);
+					}
+				}, 30); // Use fewer attempts for hybrid mode.
+			}
+		});
+	}
+	
+	console.log('[PM AI Assistant] Script initialization complete, waiting for editor to load');
 })(jQuery);
