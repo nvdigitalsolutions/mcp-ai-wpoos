@@ -22,17 +22,26 @@
 		const $modalBackdrop = $modal.find('.wp-mcp-ai-pm-assistant-modal__backdrop');
 
 		if (!$selector.length || !$chatContainer.length || !$modal.length) {
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Required elements not found:', {
+					selector: $selector.length,
+					chatContainer: $chatContainer.length,
+					modal: $modal.length
+				});
+			}
 			return;
 		}
 
 		// Move modal to body to ensure position: fixed works correctly.
 		// Modals rendered inside metaboxes may not display as overlays due to CSS positioning contexts.
-		// Force hide the modal before moving to prevent flash of visible content.
-		$modal.hide();
+		// Remove any inline styles that might interfere, then hide using CSS class.
+		$modal.removeAttr('style');
+		$modal.removeClass('wp-mcp-ai-pm-assistant-modal--visible');
 		$modal.appendTo('body');
 		
-		// Ensure modal stays hidden after move (belt and suspenders approach).
-		$modal.css('display', 'none');
+		if (window.console && console.log) {
+			console.log('[PM AI Assistant] Modal moved to body and hidden');
+		}
 
 		// Get localized data.
 		const config = window.wpMcpAiPmAssistant || {};
@@ -48,6 +57,9 @@
 
 			if (!assistantId) {
 				$buildAction.hide();
+				if (window.console && console.log) {
+					console.log('[PM AI Assistant] No assistant selected, hiding button');
+				}
 				return;
 			}
 
@@ -57,6 +69,9 @@
 
 			// Show Build with AI button.
 			$buildAction.show();
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Assistant selected:', assistantId, assistantTitle);
+			}
 		});
 
 		// Handle Build with AI button click.
@@ -84,7 +99,7 @@
 
 		// Close modal on Escape key.
 		$(document).on('keydown', function (e) {
-			if (e.key === 'Escape' && $modal.is(':visible')) {
+			if (e.key === 'Escape' && $modal.hasClass('wp-mcp-ai-pm-assistant-modal--visible')) {
 				closeModal();
 			}
 		});
@@ -99,16 +114,27 @@
 		 * @param {number} postId          Current post ID.
 		 */
 		function openModal(assistantId, assistantTitle, contextType, contextData, postId) {
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Opening modal for assistant:', assistantId, assistantTitle);
+			}
+			
 			// Update modal title.
 			$modal.find('#wp-mcp-ai-pm-assistant-modal__title').text(assistantTitle || 'AI Assistant');
 
-			// Show modal with explicit display style to override any CSS.
-			$modal.css('display', 'block');
+			// Show modal using CSS class to override any inline styles.
+			$modal.addClass('wp-mcp-ai-pm-assistant-modal--visible');
 			$('body').addClass('wp-mcp-ai-pm-assistant-modal-open');
 
 			// Initialize chat interface if not already initialized.
 			if ($chatContainer.is(':empty')) {
+				if (window.console && console.log) {
+					console.log('[PM AI Assistant] Chat container is empty, initializing...');
+				}
 				initChatInterface(assistantId, contextType, contextData, postId);
+			} else {
+				if (window.console && console.log) {
+					console.log('[PM AI Assistant] Chat container already has content, skipping initialization');
+				}
 			}
 		}
 
@@ -116,8 +142,46 @@
 		 * Close the modal.
 		 */
 		function closeModal() {
-			$modal.css('display', 'none');
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Closing modal');
+			}
+			$modal.removeClass('wp-mcp-ai-pm-assistant-modal--visible');
 			$('body').removeClass('wp-mcp-ai-pm-assistant-modal-open');
+		}
+	}
+
+	/**
+	 * Isolate chat form from page form validation.
+	 * Prevents the chat form from interfering with WordPress edit page form validation.
+	 *
+	 * @param {jQuery} $container Chat container element.
+	 */
+	function isolateChatForm($container) {
+		const $chatForm = $container.find('.wp-mcp-ai-chat__form');
+		
+		if (!$chatForm.length) {
+			return;
+		}
+
+		// Prevent form submission from bubbling to page form.
+		$chatForm.on('submit', function(event) {
+			event.stopPropagation();
+		});
+
+		// Prevent Enter key in chat inputs from triggering page form submission.
+		$chatForm.on('keydown', 'input, textarea', function(event) {
+			if (event.key === 'Enter' && !event.shiftKey) {
+				// Let the chat form handle Enter key, don't let it bubble to page form.
+				event.stopPropagation();
+			}
+		});
+
+		// Mark form as isolated to prevent WordPress validation from checking it.
+		$chatForm.attr('data-isolated-form', 'true');
+		$chatForm.addClass('wp-mcp-ai-isolated-form');
+
+		if (window.console && console.log) {
+			console.log('[PM AI Assistant] Chat form isolated from page form validation');
 		}
 	}
 
@@ -164,6 +228,9 @@
 				if (response.success && response.data.html) {
 					// Insert the rendered chat HTML.
 					$container.html(response.data.html);
+
+					// Isolate chat form from page form validation.
+					isolateChatForm($container);
 
 					// Trigger chat initialization if available.
 					if (window.wpMcpAiChatInit && typeof window.wpMcpAiChatInit.init === 'function') {

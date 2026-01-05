@@ -128,8 +128,8 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Chat with AI', $output, 'Output should contain Chat with AI button text' );
 
 		// Verify modal starts hidden.
-		$this->assertStringContainsString( 'style="display: none;"', $output, 'Modal should have display:none style on render' );
-		$this->assertStringContainsString( 'id="wp-mcp-ai-pm-build-action" style="display:none;"', $output, 'Build action should be hidden initially' );
+		$this->assertStringContainsString( 'style="display: none;"', $output, 'Modal should have display: none style on render' );
+		$this->assertStringContainsString( 'id="wp-mcp-ai-pm-build-action" style="display: none;"', $output, 'Build action should be hidden initially' );
 	}
 
 	/**

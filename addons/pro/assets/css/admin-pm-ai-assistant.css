@@ -73,7 +73,12 @@
 	right: 0;
 	bottom: 0;
 	z-index: 100000;
-	display: none;
+	display: none !important;
+}
+
+/* Modal visible state */
+.wp-mcp-ai-pm-assistant-modal.wp-mcp-ai-pm-assistant-modal--visible {
+	display: block !important;
 }
 
 .wp-mcp-ai-pm-assistant-modal__backdrop {
@@ -172,6 +177,17 @@ body.wp-mcp-ai-pm-assistant-modal-open {
 /* Chat Container */
 .wp-mcp-ai-pm-assistant-chat-container {
 	position: relative;
+}
+
+/* Isolated chat form - prevent interaction with page form */
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-isolated-form,
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__form[data-isolated-form] {
+	/* 
+	 * CSS isolation creates a new stacking context (visual separation).
+	 * JavaScript event handlers (stopPropagation) provide actual form isolation.
+	 * This CSS serves as a visual marker and provides additional rendering isolation.
+	 */
+	isolation: isolate;
 }
 
 .wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat {
