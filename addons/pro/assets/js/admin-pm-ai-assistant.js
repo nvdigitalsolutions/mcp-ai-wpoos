@@ -250,6 +250,7 @@
 					if (window.console && console.log) {
 						console.log('[PM AI Assistant] AJAX response received successfully');
 						console.log('[PM AI Assistant] Response data keys:', Object.keys(response.data));
+						console.log('[PM AI Assistant] Full response data:', response.data);
 					}
 					
 					// Insert the rendered chat HTML.
@@ -277,17 +278,23 @@
 							console.log('[PM AI Assistant] Config keys:', Object.keys(response.data.config));
 						}
 					} else {
-						if (window.console && console.warn) {
-							console.warn('[PM AI Assistant] Chat configuration or instance ID missing in response');
-							console.warn('[PM AI Assistant] Has config:', !!response.data.config);
-							console.warn('[PM AI Assistant] Has instance_id:', !!response.data.instance_id);
-							if (!response.data.config) {
-								console.warn('[PM AI Assistant] Config is:', response.data.config);
-							}
-							if (!response.data.instance_id) {
-								console.warn('[PM AI Assistant] Instance ID is:', response.data.instance_id);
-							}
+						if (window.console && console.error) {
+							console.error('[PM AI Assistant] CRITICAL: Chat configuration or instance ID missing in response!');
+							console.error('[PM AI Assistant] Has config:', !!response.data.config);
+							console.error('[PM AI Assistant] Config value:', response.data.config);
+							console.error('[PM AI Assistant] Config type:', typeof response.data.config);
+							console.error('[PM AI Assistant] Has instance_id:', !!response.data.instance_id);
+							console.error('[PM AI Assistant] Instance ID value:', response.data.instance_id);
+							console.error('[PM AI Assistant] Full response.data:', response.data);
 						}
+						
+						// Show error message to user
+						$container.prepend(
+							'<div class="notice notice-error"><p>' +
+								'<strong>Configuration Error:</strong> The chat interface loaded but assistant configuration is missing. ' +
+								'This may indicate a server-side issue. Check the browser console for details.' +
+							'</p></div>'
+						);
 					}
 
 					// Isolate chat form from page form validation.

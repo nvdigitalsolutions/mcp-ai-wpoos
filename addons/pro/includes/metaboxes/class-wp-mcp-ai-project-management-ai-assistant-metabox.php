@@ -424,6 +424,19 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			$instance_id = $matches[1];
 		}
 
+		// Log what we have so far for debugging.
+		WP_MCP_AI_Logger::log_debug(
+			'PM Assistant AJAX: After rendering shortcode',
+			array(
+				'assistant_id'             => $assistant_id,
+				'html_length'              => strlen( $html ),
+				'extracted_instance_id'    => $instance_id,
+				'global_configs_exists'    => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ),
+				'global_configs_keys'      => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ? array_keys( $GLOBALS['wp_mcp_ai_chat_configs'] ) : array(),
+				'config_exists_for_id'     => $instance_id && isset( $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] ),
+			)
+		);
+
 		// Extract the chat configuration from the global set by the shortcode.
 		// The shortcode stores config in $GLOBALS['wp_mcp_ai_chat_configs'] keyed by instance ID.
 		$chat_config = null;
