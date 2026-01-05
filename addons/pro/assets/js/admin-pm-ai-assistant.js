@@ -31,6 +31,7 @@
 		const $modal = $('#wp-mcp-ai-pm-assistant-modal');
 		const $chatContainer = $('#wp-mcp-ai-pm-assistant-chat-container');
 		const $buildBtn = $('#wp-mcp-ai-pm-build-btn');
+		const $buildActionWrapper = $('#wp-mcp-ai-pm-build-action');
 		const $modalClose = $modal.find('.wp-mcp-ai-pm-assistant-modal__close');
 		const $modalBackdrop = $modal.find('.wp-mcp-ai-pm-assistant-modal__backdrop');
 
@@ -51,8 +52,12 @@
 		$modal.removeClass('wp-mcp-ai-pm-assistant-modal--visible');
 		$modal.appendTo('body');
 		
+		// Ensure button wrapper is hidden on page load - modal opens directly on dropdown change
+		$buildActionWrapper.hide();
+		
 		if (window.console && console.log) {
 			console.log('[PM AI Assistant] Modal moved to body and hidden');
+			console.log('[PM AI Assistant] Button wrapper hidden');
 		}
 
 		// Get localized data.
@@ -70,6 +75,8 @@
 			if (!assistantId) {
 				// Close modal if open when no assistant selected
 				closeModal();
+				// Ensure button wrapper stays hidden
+				$buildActionWrapper.hide();
 				if (window.console && console.log) {
 					console.log('[PM AI Assistant] No assistant selected, closing modal if open');
 				}
@@ -80,6 +87,9 @@
 				console.log('[PM AI Assistant] Assistant selected:', assistantId, assistantTitle);
 				console.log('[PM AI Assistant] Opening modal directly...');
 			}
+
+			// Ensure button wrapper stays hidden - modal opens directly on dropdown change
+			$buildActionWrapper.hide();
 
 			// Open modal and initialize chat interface directly.
 			openModal(assistantId, assistantTitle, contextType, contextData, postId);
