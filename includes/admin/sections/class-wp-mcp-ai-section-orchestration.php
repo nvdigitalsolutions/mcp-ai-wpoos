@@ -51,6 +51,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		}
 
 		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md';
+		}
+
+		/**
 		 * Get field definitions.
 		 *
 		 * @return array

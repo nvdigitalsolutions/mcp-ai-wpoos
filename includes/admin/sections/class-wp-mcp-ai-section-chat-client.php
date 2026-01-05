@@ -60,6 +60,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 		}
 
 		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/chat/chat-client-settings.md';
+		}
+
+		/**
 		 * Get field definitions.
 		 *
 		 * @return array

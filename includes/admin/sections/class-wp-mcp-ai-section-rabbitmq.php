@@ -40,6 +40,33 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 	}
 
 	/**
+	 * Get tab ID.
+	 *
+	 * @return string Tab ID.
+	 */
+	public function get_tab() {
+		return 'orchestration';
+	}
+
+	/**
+	 * Get section description.
+	 *
+	 * @return string Section description.
+	 */
+	public function get_description() {
+		return __( 'Configure RabbitMQ message broker integration for distributed queue-based tool execution and job orchestration.', 'wp-mcp-ai' );
+	}
+
+	/**
+	 * Get documentation URL for this section.
+	 *
+	 * @return string Documentation URL.
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/federation/RABBITMQ-CLOUDWAYS-INTEGRATION-PLAN.md';
+	}
+
+	/**
 	 * Get section icon.
 	 *
 	 * @return string Section icon (dashicon class).

@@ -53,6 +53,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		}
 
 		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/integrations/oauth-settings-architecture.md';
+		}
+
+		/**
 		 * Get section priority.
 		 *
 		 * @return int
