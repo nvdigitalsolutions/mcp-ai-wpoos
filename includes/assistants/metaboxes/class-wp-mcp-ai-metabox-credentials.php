@@ -62,6 +62,16 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 	}
 
 	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @since 1.0.0
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/mcp-server-authentication.md';
+	}
+
+	/**
 	 * Render the metabox content.
 	 *
 	 * @since 1.0.0
@@ -157,6 +167,7 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 		);
 
 		$this->print_credential_action_script();
+		$this->render_documentation_link();
 	}
 
 	/**
