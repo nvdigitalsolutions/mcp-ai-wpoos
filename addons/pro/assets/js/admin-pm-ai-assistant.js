@@ -2,12 +2,26 @@
  * Project Management AI Assistant Metabox
  *
  * Handles the AI assistant chat interface within project/task/event edit screens.
+ * Uses client-side HTML and configuration generation (like Build Assistant page)
+ * to avoid issues with PHP shortcode rendering and globals in AJAX contexts.
  *
  * @package WP_MCP_AI
  */
 
 (function ($) {
 	'use strict';
+
+	/**
+	 * Escape HTML to prevent XSS.
+	 *
+	 * @param {string} text Text to escape.
+	 * @return {string} Escaped text.
+	 */
+	function escapeHtml(text) {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
 
 	/**
 	 * Initialize the AI assistant metabox.
@@ -208,6 +222,8 @@
 
 	/**
 	 * Initialize the chat interface.
+	 * Builds HTML and configuration directly in JavaScript (like Build Assistant page).
+	 * This avoids issues with PHP shortcode rendering and globals in AJAX contexts.
 	 *
 	 * @param {string} assistantId   Assistant ID.
 	 * @param {string} contextType   Context type (project, task, or event).
@@ -218,126 +234,73 @@
 		const $container = $('#wp-mcp-ai-pm-assistant-chat-container');
 		const config = window.wpMcpAiPmAssistant || {};
 
-		// Ensure AJAX URL is available.
-		const ajaxUrl = config.ajaxUrl || window.ajaxurl;
-		if (!ajaxUrl) {
-			console.error('[PM AI Assistant] AJAX URL not available');
-			$container.html(
-				'<div class="notice notice-error"><p>Configuration error: AJAX URL not found. Please refresh the page.</p></div>'
-			);
-			return;
+		if (window.console && console.log) {
+			console.log('[PM AI Assistant] Initializing chat interface for assistant:', assistantId);
 		}
 
-		// Show loading state.
-		$container.html('<div class="wp-mcp-ai-pm-assistant-loading">Loading AI assistant...</div>');
+		// Clear previous chat container.
+		$container.empty();
 
-		// Build context message to prepend to chat.
-		const contextMessage = buildContextMessage(contextType, contextData);
+		// Create unique instance ID for this chat.
+		const instanceId = 'wp-mcp-ai-pm-chat-' + assistantId + '-' + Date.now();
 
-		// Make AJAX request to get the rendered chat shortcode.
-		$.ajax({
-			url: ajaxUrl,
-			type: 'POST',
-			data: {
-				action: 'wp_mcp_ai_pm_render_chat',
-				assistant_id: assistantId,
-				context_message: contextMessage,
-				post_id: postId,
-				nonce: config.nonce,
-			},
-			success: function (response) {
-				if (response.success && response.data.html) {
-					if (window.console && console.log) {
-						console.log('[PM AI Assistant] AJAX response received successfully');
-						console.log('[PM AI Assistant] Response data keys:', Object.keys(response.data));
-						console.log('[PM AI Assistant] Full response data:', response.data);
-					}
-					
-					// Insert the rendered chat HTML.
-					$container.html(response.data.html);
+		// Build chat HTML structure directly in JavaScript.
+		const chatHTML = buildChatHTML(instanceId);
+		$container.html(chatHTML);
 
-					// Inject the chat configuration into the global window object.
-					// This is necessary because wp_add_inline_script() doesn't work in AJAX contexts.
-					if (response.data.config && response.data.instance_id) {
-						if (!window.wpMcpAiChatInstances) {
-							window.wpMcpAiChatInstances = {};
-						}
-						
-						// Check if configuration already exists and log warning if overwriting
-						if (window.wpMcpAiChatInstances[response.data.instance_id]) {
-							if (window.console && console.warn) {
-								console.warn('[PM AI Assistant] Overwriting existing configuration for instance:', response.data.instance_id);
-							}
-						}
-						
-						window.wpMcpAiChatInstances[response.data.instance_id] = response.data.config;
-						
-						if (window.console && console.log) {
-							console.log('[PM AI Assistant] Chat configuration injected for instance:', response.data.instance_id);
-							console.log('[PM AI Assistant] Assistant ID:', response.data.config.assistantId);
-							console.log('[PM AI Assistant] Config keys:', Object.keys(response.data.config));
-						}
-					} else {
-						if (window.console && console.error) {
-							console.error('[PM AI Assistant] CRITICAL: Chat configuration or instance ID missing in response!');
-							console.error('[PM AI Assistant] Has config:', !!response.data.config);
-							console.error('[PM AI Assistant] Config value:', response.data.config);
-							console.error('[PM AI Assistant] Config type:', typeof response.data.config);
-							console.error('[PM AI Assistant] Has instance_id:', !!response.data.instance_id);
-							console.error('[PM AI Assistant] Instance ID value:', response.data.instance_id);
-							console.error('[PM AI Assistant] Full response.data:', response.data);
-						}
-						
-						// Show error message to user
-						$container.prepend(
-							'<div class="notice notice-error"><p>' +
-								'<strong>Configuration Error:</strong> The chat interface loaded but assistant configuration is missing. ' +
-								'This may indicate a server-side issue. Check the browser console for details.' +
-							'</p></div>'
-						);
-					}
+		// Initialize chat instance configuration directly in JavaScript.
+		if (!window.wpMcpAiChatInstances) {
+			window.wpMcpAiChatInstances = {};
+		}
 
-					// Isolate chat form from page form validation.
-					isolateChatForm($container);
+		// Build endpoints from global config or defaults.
+		const baseRestUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) ? window.wpMcpAiChat.restUrl : '/wp-json/mcp-ai/v1';
+		
+		// Get file upload configuration from global config.
+		const fileAccept = (window.wpMcpAiChat && window.wpMcpAiChat.fileAccept) ? window.wpMcpAiChat.fileAccept : '';
+		const allowedImageMimes = (window.wpMcpAiChat && window.wpMcpAiChat.allowedImageMimes) ? window.wpMcpAiChat.allowedImageMimes : [];
+		const allowedFileMimes = (window.wpMcpAiChat && window.wpMcpAiChat.allowedFileMimes) ? window.wpMcpAiChat.allowedFileMimes : [];
+		const allowedExtensions = (window.wpMcpAiChat && window.wpMcpAiChat.allowedExtensions) ? window.wpMcpAiChat.allowedExtensions : [];
 
-					// Trigger chat initialization after a brief delay to ensure DOM is fully ready.
-					// Using requestAnimationFrame twice ensures the browser has painted the new elements.
-					if (window.wpMcpAiChatInit && typeof window.wpMcpAiChatInit.init === 'function') {
-						window.requestAnimationFrame(function() {
-							window.requestAnimationFrame(function() {
-								try {
-									if (window.console && console.log) {
-										console.log('[PM AI Assistant] Initializing chat after DOM update');
-									}
-									window.wpMcpAiChatInit.init();
-								} catch (error) {
-									console.error('[PM AI Assistant] Failed to reinitialize chat:', error);
-									// Show user-friendly error message.
-									$container.prepend(
-										'<div class="notice notice-warning is-dismissible"><p>' +
-											'Chat loaded but initialization encountered an issue. Some features may not work properly. ' +
-											'<a href="#" onclick="window.location.reload(); return false;">Refresh page</a>' +
-											'</p></div>'
-									);
-								}
-							});
-						});
-					}
-				} else {
-					$container.html(
-						'<div class="notice notice-error"><p>' +
-							(response.data?.message || 'Failed to load AI assistant.') +
-							'</p></div>'
-					);
-				}
-			},
-			error: function (xhr, status, error) {
-				console.error('[PM AI Assistant] AJAX error:', error);
-				$container.html(
-					'<div class="notice notice-error"><p>Failed to load AI assistant. Please refresh the page and try again.</p></div>'
-				);
-			},
-		});
+		// Create configuration object.
+		window.wpMcpAiChatInstances[instanceId] = {
+			id: instanceId,
+			assistantId: assistantId,
+			userId: (window.wpMcpAiChat && typeof window.wpMcpAiChat.currentUserId !== 'undefined') ? window.wpMcpAiChat.currentUserId : 0,
+			restUrl: baseRestUrl,
+			messagesEndpoint: baseRestUrl + '/chat-client',
+			toolsEndpoint: baseRestUrl + '/tools',
+			filesEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.filesEndpoint) ? window.wpMcpAiChat.filesEndpoint : baseRestUrl + '/files/',
+			transcriptsEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.transcriptsEndpoint) ? window.wpMcpAiChat.transcriptsEndpoint : baseRestUrl + '/chat-transcripts',
+			crawl4aiTaskEndpoint: baseRestUrl + '/crawl4ai/task/',
+			crawl4aiDefaultPollMs: 5000,
+			sessionKey: generateSessionKey(),
+			enableStreaming: true,
+			canUploadAttachments: true,
+			saveTranscript: false, // Don't save metabox chats.
+			allowSensitiveTools: true, // Admin users can access all tools.
+			requiredCapability: 'edit_posts',
+			allowGuests: false,
+			toolShortcuts: [],
+			fileAccept: fileAccept,
+			allowedImageMimes: allowedImageMimes,
+			allowedFileMimes: allowedFileMimes,
+			allowedExtensions: allowedExtensions,
+			restNonce: (window.wpMcpAiChat && window.wpMcpAiChat.nonce) ? window.wpMcpAiChat.nonce : '',
+			historyPerPage: 20,
+			asyncToolTimeout: 300000 // 5 minutes.
+		};
+
+		if (window.console && console.log) {
+			console.log('[PM AI Assistant] Chat configuration created for instance:', instanceId);
+			console.log('[PM AI Assistant] Assistant ID:', assistantId);
+		}
+
+		// Isolate chat form from page form validation.
+		isolateChatForm($container);
+
+		// Initialize chat instance.
+		initializeChatInstance(instanceId);
 	}
 
 	/**
@@ -415,6 +378,167 @@
 			'. You can list, create, update, or delete related items as needed.';
 
 		return message;
+	}
+
+	/**
+	 * Build the chat interface HTML structure.
+	 * Based on Build Assistant page approach.
+	 *
+	 * @param {string} instanceId - Unique instance identifier.
+	 * @return {string} HTML string for chat interface.
+	 */
+	function buildChatHTML(instanceId) {
+		return '<div class="wp-mcp-ai-chat wp-mcp-ai-chat--template-compact" id="' + escapeHtml(instanceId) + '" data-wp-mcp-ai-chat data-template="compact">' +
+			'<div class="wp-mcp-ai-chat__transcript-controls">' +
+			'<button type="button" class="wp-mcp-ai-chat__transcript-toggle" aria-expanded="false" aria-label="Expand conversation">' +
+			'<svg class="wp-mcp-ai-chat__transcript-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z"></path>' +
+			'</svg>' +
+			'<span class="screen-reader-text">Expand conversation</span>' +
+			'</button>' +
+			'</div>' +
+			'<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>' +
+			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite"><span class="wp-mcp-ai-chat__status-text"></span></div>' +
+			'<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>' +
+			'<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed" aria-expanded="false" aria-controls="' + escapeHtml(instanceId) + '-tool-shortcuts">' +
+			'<span class="wp-mcp-ai-chat__tool-shortcuts-toggle-text">Quick Tasks</span>' +
+			'<svg class="wp-mcp-ai-chat__tool-shortcuts-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z"></path>' +
+			'</svg>' +
+			'</button>' +
+			'<div id="' + escapeHtml(instanceId) + '-tool-shortcuts" class="wp-mcp-ai-chat__tool-shortcuts wp-mcp-ai-chat__tool-shortcuts--collapsed" role="group" aria-label="Assistant tool tasks" hidden></div>' +
+			'</div>' +
+			'<textarea id="' + escapeHtml(instanceId) + '-input" class="wp-mcp-ai-chat__input" rows="4" placeholder="Ask something…" required></textarea>' +
+			'<div class="wp-mcp-ai-chat__attachments" hidden>' +
+			'<div class="wp-mcp-ai-chat__attachments-header">Attachments</div>' +
+			'<ul class="wp-mcp-ai-chat__attachments-list"></ul>' +
+			'</div>' +
+			'<div class="wp-mcp-ai-chat__actions">' +
+			'<input type="file" class="wp-mcp-ai-chat__file-input" multiple hidden>' +
+			'<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden>' +
+			'<button type="button" class="wp-mcp-ai-chat__voice-chat" aria-label="Voice chat">' +
+			'<svg class="wp-mcp-ai-chat__voice-chat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>' +
+			'<circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>' +
+			'</svg>' +
+			'<span class="screen-reader-text">Voice chat</span>' +
+			'</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="Transcribe audio">' +
+			'<svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>' +
+			'<path d="M12 16a7 7 0 0 0 6.93-6H17a5 5 0 0 1-10 0H5.07A7 7 0 0 0 12 16zm-1 2.05V21h2v-2.95A9 9 0 0 0 20.95 11H19a7 7 0 0 1-14 0H3.05A9 9 0 0 0 11 18.05z"></path>' +
+			'</svg>' +
+			'<span class="screen-reader-text">Transcribe audio</span>' +
+			'</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__attach">Attach file</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__build" hidden>Build</button>' +
+			'<button type="submit" class="wp-mcp-ai-chat__submit">Send</button>' +
+			'</div>' +
+			'<div class="wp-mcp-ai-chat__controls">' +
+			'<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite" aria-atomic="true"></div>' +
+			'<div class="wp-mcp-ai-chat__cron-status" role="status" aria-live="polite" aria-atomic="true" hidden>' +
+			'<span class="wp-mcp-ai-chat__cron-status-label">Jobs:</span>' +
+			'<span class="wp-mcp-ai-chat__cron-status-pending" title="Pending jobs">' +
+			'<span class="wp-mcp-ai-chat__cron-status-count">0</span>' +
+			'</span>' +
+			'<span class="wp-mcp-ai-chat__cron-status-completed" title="Completed jobs">' +
+			'<span class="wp-mcp-ai-chat__cron-status-count">0</span>' +
+			'</span>' +
+			'</div>' +
+			'<div class="wp-mcp-ai-chat__control-buttons">' +
+			'<button type="button" class="wp-mcp-ai-chat__save" aria-label="Save conversation" title="Save conversation">' +
+			'<svg class="wp-mcp-ai-chat__save-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM5 5v14h14V9h-4V5H5z"></path>' +
+			'<path d="M7 5h6v3H7V5zm5 9a2 2 0 11-4 0 2 2 0 014 0z"></path>' +
+			'</svg>' +
+			'<span class="screen-reader-text">Save conversation</span>' +
+			'</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__export" aria-label="Export conversation" title="Export conversation">' +
+			'<svg class="wp-mcp-ai-chat__export-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M12 16a1 1 0 01-1-1V5a1 1 0 012 0v10a1 1 0 01-1 1z"></path>' +
+			'<path d="M12 16a1 1 0 01-.707-.293l-4-4a1 1 0 011.414-1.414L12 13.586l3.293-3.293a1 1 0 011.414 1.414l-4 4A1 1 0 0112 16z"></path>' +
+			'<path d="M5 19a1 1 0 010-2h14a1 1 0 010 2H5z"></path>' +
+			'</svg>' +
+			'<span class="screen-reader-text">Export conversation</span>' +
+			'</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__history-toggle" aria-expanded="false" aria-controls="' + escapeHtml(instanceId) + '-history" aria-label="Show previous conversations">' +
+			'<svg class="wp-mcp-ai-chat__history-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M6 5.5a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h7a1 1 0 010 2H7a1 1 0 01-1-1z"></path>' +
+			'<path d="M5 9a1 1 0 012 0 1 1 0 11-2 0zm0 6a1 1 0 012 0 1 1 0 11-2 0zm0-12a1 1 0 012 0 1 1 0 11-2 0z"></path>' +
+			'</svg>' +
+			'<span class="screen-reader-text">Show previous conversations</span>' +
+			'</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__new-chat" aria-label="Start new conversation">' +
+			'<svg class="wp-mcp-ai-chat__new-chat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M12 4a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H5a1 1 0 110-2h6V5a1 1 0 011-1z"></path>' +
+			'</svg>' +
+			'<span class="screen-reader-text">Start new conversation</span>' +
+			'</button>' +
+			'</div>' +
+			'</div>' +
+			'<section class="wp-mcp-ai-chat__history" id="' + escapeHtml(instanceId) + '-history" hidden aria-label="Previous conversations">' +
+			'<div class="wp-mcp-ai-chat__history-header">' +
+			'<button type="button" class="wp-mcp-ai-chat__history-refresh" aria-label="Refresh conversation history" title="Refresh conversation history">' +
+			'<svg class="wp-mcp-ai-chat__history-refresh-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M4 12a8 8 0 018-8V3c-1.105 0-2.165.21-3.13.594l1.42 1.42A6.004 6.004 0 0112 5a7 7 0 110 14 7 7 0 01-6.93-6H3a8 8 0 008 8 8 8 0 000-16V3l-3 3 3 3v-1.078z"></path>' +
+			'</svg>' +
+			'<span class="screen-reader-text">Refresh conversation history</span>' +
+			'</button>' +
+			'</div>' +
+			'<div class="wp-mcp-ai-chat__history-status" role="status" aria-live="polite" hidden></div>' +
+			'<ul class="wp-mcp-ai-chat__history-list" role="list"></ul>' +
+			'<button type="button" class="wp-mcp-ai-chat__history-load-more" hidden>Load More</button>' +
+			'</section>' +
+			'</div>';
+	}
+
+	/**
+	 * Generate a unique session key for the chat instance.
+	 *
+	 * @return {string} Session key.
+	 */
+	function generateSessionKey() {
+		return 'pm-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+	}
+
+	/**
+	 * Initialize a chat instance manually.
+	 *
+	 * @param {string} instanceId - Instance identifier.
+	 */
+	function initializeChatInstance(instanceId) {
+		// Wait a brief moment for DOM to settle.
+		setTimeout(function() {
+			const container = document.getElementById(instanceId);
+
+			if (!container) {
+				console.error('[PM AI Assistant] Container not found:', instanceId);
+				return;
+			}
+
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Triggering chat initialization for:', instanceId);
+			}
+
+			// Re-initialize chat.js to pick up the new instance.
+			if (window.wpMcpAiChatInit && typeof window.wpMcpAiChatInit.init === 'function') {
+				try {
+					window.wpMcpAiChatInit.init();
+					
+					// Focus the textarea to give user immediate access.
+					setTimeout(function() {
+						const textarea = container.querySelector('.wp-mcp-ai-chat__input');
+						if (textarea) {
+							textarea.focus();
+						}
+					}, 200);
+				} catch (error) {
+					console.error('[PM AI Assistant] Failed to initialize chat:', error);
+				}
+			} else {
+				console.error('[PM AI Assistant] wpMcpAiChatInit.init not available');
+			}
+		}, 100);
 	}
 
 	// Initialize on document ready.
