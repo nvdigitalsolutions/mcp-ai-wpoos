@@ -91,7 +91,7 @@
 
 		// Close modal on Escape key.
 		$(document).on('keydown', function (e) {
-			if (e.key === 'Escape' && $modal.is(':visible')) {
+			if (e.key === 'Escape' && $modal.hasClass('wp-mcp-ai-pm-assistant-modal--visible')) {
 				closeModal();
 			}
 		});
