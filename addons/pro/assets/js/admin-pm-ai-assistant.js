@@ -27,7 +27,12 @@
 
 		// Move modal to body to ensure position: fixed works correctly.
 		// Modals rendered inside metaboxes may not display as overlays due to CSS positioning contexts.
+		// Force hide the modal before moving to prevent flash of visible content.
+		$modal.hide();
 		$modal.appendTo('body');
+		
+		// Ensure modal stays hidden after move (belt and suspenders approach).
+		$modal.css('display', 'none');
 
 		// Get localized data.
 		const config = window.wpMcpAiPmAssistant || {};
@@ -97,8 +102,8 @@
 			// Update modal title.
 			$modal.find('#wp-mcp-ai-pm-assistant-modal__title').text(assistantTitle || 'AI Assistant');
 
-			// Show modal.
-			$modal.show();
+			// Show modal with explicit display style to override any CSS.
+			$modal.css('display', 'block');
 			$('body').addClass('wp-mcp-ai-pm-assistant-modal-open');
 
 			// Initialize chat interface if not already initialized.
@@ -111,7 +116,7 @@
 		 * Close the modal.
 		 */
 		function closeModal() {
-			$modal.hide();
+			$modal.css('display', 'none');
 			$('body').removeClass('wp-mcp-ai-pm-assistant-modal-open');
 		}
 	}
