@@ -34,12 +34,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		/**
 		 * Check if Pro features should be available.
 		 *
-		 * This method checks the filter dynamically at runtime rather than caching
-		 * the result, allowing filters added via code snippets to work properly.
+		 * This method checks for the WP_MCP_AI_PRO_DASHBOARD_ENABLED constant first,
+		 * then falls back to the filter for backward compatibility. Constant approach
+		 * is preferred as it's more standard for WordPress configuration.
 		 *
 		 * @return bool True if Pro features are available.
 		 */
 		public function is_pro_active() {
+			// Check for wp-config.php constant first (recommended method).
+			if ( defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) && WP_MCP_AI_PRO_DASHBOARD_ENABLED ) {
+				return true;
+			}
+
 			/**
 			 * Filter pro dashboard availability.
 			 *
@@ -47,6 +53,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			 * - Testing Pro features without a license
 			 * - Custom licensing implementations
 			 * - Development environments
+			 *
+			 * Note: Using the WP_MCP_AI_PRO_DASHBOARD_ENABLED constant in wp-config.php
+			 * is the recommended approach over this filter.
 			 *
 			 * @since 1.5.0
 			 *
@@ -375,7 +384,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<?php esc_html_e( 'ISO 27001 Compliant', 'wp-mcp-ai' ); ?>
 					<?php endif; ?>
 				</div>
-				
+
 				<div class="wp-mcp-ai-progress-bar">
 					<div class="wp-mcp-ai-progress" style="width: <?php echo esc_attr( $compliance_percentage ); ?>%;">
 						<span class="wp-mcp-ai-progress-text"><?php echo esc_html( $compliance_percentage ); ?>%</span>

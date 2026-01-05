@@ -153,10 +153,19 @@ The **NV oOS Pro Dashboard** is a dedicated WordPress admin section that provide
 
 ### Pro Users
 
-**Activation:**
+**Activation (Recommended - wp-config.php constant):**
 ```php
-add_filter('wp_mcp_ai_pro_dashboard_available', '__return_true');
+// Add to wp-config.php
+define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );
 ```
+
+**Alternative Activation (Legacy - filter):**
+```php
+// Add to theme functions.php or code snippets plugin
+add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
+```
+
+**Note:** Using the constant in wp-config.php is the recommended approach as it's more standard for WordPress configuration and loads earlier in the WordPress bootstrap process.
 
 **Full Access To:**
 - All dashboard pages without restrictions
