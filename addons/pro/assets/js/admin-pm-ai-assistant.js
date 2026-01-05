@@ -22,11 +22,13 @@
 		const $modalBackdrop = $modal.find('.wp-mcp-ai-pm-assistant-modal__backdrop');
 
 		if (!$selector.length || !$chatContainer.length || !$modal.length) {
-			console.log('[PM AI Assistant] Required elements not found:', {
-				selector: $selector.length,
-				chatContainer: $chatContainer.length,
-				modal: $modal.length
-			});
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Required elements not found:', {
+					selector: $selector.length,
+					chatContainer: $chatContainer.length,
+					modal: $modal.length
+				});
+			}
 			return;
 		}
 
@@ -37,7 +39,9 @@
 		$modal.removeClass('wp-mcp-ai-pm-assistant-modal--visible');
 		$modal.appendTo('body');
 		
-		console.log('[PM AI Assistant] Modal moved to body and hidden');
+		if (window.console && console.log) {
+			console.log('[PM AI Assistant] Modal moved to body and hidden');
+		}
 
 		// Get localized data.
 		const config = window.wpMcpAiPmAssistant || {};
@@ -53,7 +57,9 @@
 
 			if (!assistantId) {
 				$buildAction.hide();
-				console.log('[PM AI Assistant] No assistant selected, hiding button');
+				if (window.console && console.log) {
+					console.log('[PM AI Assistant] No assistant selected, hiding button');
+				}
 				return;
 			}
 
@@ -63,7 +69,9 @@
 
 			// Show Build with AI button.
 			$buildAction.show();
-			console.log('[PM AI Assistant] Assistant selected:', assistantId, assistantTitle);
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Assistant selected:', assistantId, assistantTitle);
+			}
 		});
 
 		// Handle Build with AI button click.
@@ -106,7 +114,9 @@
 		 * @param {number} postId          Current post ID.
 		 */
 		function openModal(assistantId, assistantTitle, contextType, contextData, postId) {
-			console.log('[PM AI Assistant] Opening modal for assistant:', assistantId, assistantTitle);
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Opening modal for assistant:', assistantId, assistantTitle);
+			}
 			
 			// Update modal title.
 			$modal.find('#wp-mcp-ai-pm-assistant-modal__title').text(assistantTitle || 'AI Assistant');
@@ -117,10 +127,14 @@
 
 			// Initialize chat interface if not already initialized.
 			if ($chatContainer.is(':empty')) {
-				console.log('[PM AI Assistant] Chat container is empty, initializing...');
+				if (window.console && console.log) {
+					console.log('[PM AI Assistant] Chat container is empty, initializing...');
+				}
 				initChatInterface(assistantId, contextType, contextData, postId);
 			} else {
-				console.log('[PM AI Assistant] Chat container already has content, skipping initialization');
+				if (window.console && console.log) {
+					console.log('[PM AI Assistant] Chat container already has content, skipping initialization');
+				}
 			}
 		}
 
@@ -128,7 +142,9 @@
 		 * Close the modal.
 		 */
 		function closeModal() {
-			console.log('[PM AI Assistant] Closing modal');
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Closing modal');
+			}
 			$modal.removeClass('wp-mcp-ai-pm-assistant-modal--visible');
 			$('body').removeClass('wp-mcp-ai-pm-assistant-modal-open');
 		}
