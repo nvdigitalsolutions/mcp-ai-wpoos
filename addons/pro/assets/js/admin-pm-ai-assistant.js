@@ -151,6 +151,41 @@
 	}
 
 	/**
+	 * Isolate chat form from page form validation.
+	 * Prevents the chat form from interfering with WordPress edit page form validation.
+	 *
+	 * @param {jQuery} $container Chat container element.
+	 */
+	function isolateChatForm($container) {
+		const $chatForm = $container.find('.wp-mcp-ai-chat__form');
+		
+		if (!$chatForm.length) {
+			return;
+		}
+
+		// Prevent form submission from bubbling to page form.
+		$chatForm.on('submit', function(event) {
+			event.stopPropagation();
+		});
+
+		// Prevent Enter key in chat inputs from triggering page form submission.
+		$chatForm.on('keydown', 'input, textarea', function(event) {
+			if (event.key === 'Enter' && !event.shiftKey) {
+				// Let the chat form handle Enter key, don't let it bubble to page form.
+				event.stopPropagation();
+			}
+		});
+
+		// Mark form as isolated to prevent WordPress validation from checking it.
+		$chatForm.attr('data-isolated-form', 'true');
+		$chatForm.addClass('wp-mcp-ai-isolated-form');
+
+		if (window.console && console.log) {
+			console.log('[PM AI Assistant] Chat form isolated from page form validation');
+		}
+	}
+
+	/**
 	 * Initialize the chat interface.
 	 *
 	 * @param {string} assistantId   Assistant ID.
@@ -193,6 +228,9 @@
 				if (response.success && response.data.html) {
 					// Insert the rendered chat HTML.
 					$container.html(response.data.html);
+
+					// Isolate chat form from page form validation.
+					isolateChatForm($container);
 
 					// Trigger chat initialization if available.
 					if (window.wpMcpAiChatInit && typeof window.wpMcpAiChatInit.init === 'function') {

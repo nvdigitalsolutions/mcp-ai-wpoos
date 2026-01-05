@@ -179,6 +179,13 @@ body.wp-mcp-ai-pm-assistant-modal-open {
 	position: relative;
 }
 
+/* Isolated chat form - prevent interaction with page form */
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-isolated-form,
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__form[data-isolated-form] {
+	/* Ensure form is isolated and doesn't participate in page form validation */
+	isolation: isolate;
+}
+
 .wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat {
 	max-width: 100%;
 	margin: 0;
