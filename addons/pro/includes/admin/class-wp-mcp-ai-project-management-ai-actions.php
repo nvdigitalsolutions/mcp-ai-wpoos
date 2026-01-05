@@ -148,10 +148,16 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 			return;
 		}
 
+		// Build dependencies array - include wp-dom-ready if available for block editor support.
+		$dependencies = array( 'jquery' );
+		if ( wp_script_is( 'wp-dom-ready', 'registered' ) ) {
+			$dependencies[] = 'wp-dom-ready';
+		}
+
 		wp_enqueue_script(
 			'wp-mcp-ai-pm-ai-actions',
 			WP_MCP_AI_PRO_URL . 'assets/js/admin-pm-ai-actions.js',
-			array( 'jquery' ),
+			$dependencies,
 			WP_MCP_AI_PRO_VERSION,
 			true
 		);
