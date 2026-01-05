@@ -8,8 +8,18 @@
  * @package WP_MCP_AI
  */
 
+// Unconditional debug output to verify script loads
+console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString());
+
 (function ($) {
 	'use strict';
+	
+	// Verify jQuery is available
+	if (!$) {
+		console.error('[PM AI Assistant] CRITICAL: jQuery is not available!');
+		return;
+	}
+	console.log('[PM AI Assistant] jQuery is available, version:', $.fn.jquery);
 
 	/**
 	 * Escape HTML to prevent XSS.
@@ -27,31 +37,29 @@
 	 * Initialize the AI assistant metabox.
 	 */
 	function initPmAiAssistant() {
+		console.log('[PM AI Assistant] initPmAiAssistant() function called');
+		
 		const $selector = $('#wp-mcp-ai-pm-assistant-select');
 		const $modal = $('#wp-mcp-ai-pm-assistant-modal');
 		const $chatContainer = $('#wp-mcp-ai-pm-assistant-chat-container');
 		const $modalClose = $modal.find('.wp-mcp-ai-pm-assistant-modal__close');
 		const $modalBackdrop = $modal.find('.wp-mcp-ai-pm-assistant-modal__backdrop');
 
+		console.log('[PM AI Assistant] Element search results:', {
+			selector: $selector.length,
+			modal: $modal.length,
+			chatContainer: $chatContainer.length,
+			modalClose: $modalClose.length,
+			modalBackdrop: $modalBackdrop.length
+		});
+
 		if (!$selector.length || !$chatContainer.length || !$modal.length) {
-			if (window.console && console.log) {
-				console.log('[PM AI Assistant] Required elements not found:', {
-					selector: $selector.length,
-					chatContainer: $chatContainer.length,
-					modal: $modal.length
-				});
-			}
+			console.error('[PM AI Assistant] CRITICAL: Required elements not found - initialization aborted');
 			return;
 		}
 
 		// Log successful initialization
-		if (window.console && console.log) {
-			console.log('[PM AI Assistant] Initialization successful, elements found:', {
-				selector: true,
-				modal: true,
-				chatContainer: true
-			});
-		}
+		console.log('[PM AI Assistant] ✓ Initialization successful, all elements found');
 
 		// Move modal to body to ensure position: fixed works correctly.
 		// Modals rendered inside metaboxes may not display as overlays due to CSS positioning contexts.
@@ -59,15 +67,19 @@
 		$modal.removeClass('wp-mcp-ai-pm-assistant-modal--visible');
 		$modal.appendTo('body');
 		
-		if (window.console && console.log) {
-			console.log('[PM AI Assistant] Modal moved to body and hidden');
-		}
+		console.log('[PM AI Assistant] ✓ Modal moved to body, parent is now:', $modal.parent()[0].tagName);
 
 		// Get localized data.
 		const config = window.wpMcpAiPmAssistant || {};
 		const contextType = config.contextType || 'project';
 		const contextData = config.contextData || {};
 		const postId = config.postId || 0;
+		
+		console.log('[PM AI Assistant] Configuration loaded:', {
+			hasConfig: !!window.wpMcpAiPmAssistant,
+			contextType: contextType,
+			postId: postId
+		});
 
 		// Handle assistant selection - open modal directly.
 		$selector.on('change', function () {
@@ -75,31 +87,26 @@
 			const $selectedOption = $(this).find('option:selected');
 			const assistantTitle = $selectedOption.data('title') || $selectedOption.text();
 
-			if (window.console && console.log) {
-				console.log('[PM AI Assistant] Selector change event fired, assistantId:', assistantId);
-			}
+			console.log('[PM AI Assistant] ⚡ Selector change event fired!', {
+				assistantId: assistantId,
+				assistantTitle: assistantTitle,
+				hasValue: !!assistantId
+			});
 
 			if (!assistantId) {
 				// Close modal if open when no assistant selected
 				closeModal();
-				if (window.console && console.log) {
-					console.log('[PM AI Assistant] No assistant selected, closing modal if open');
-				}
+				console.log('[PM AI Assistant] No assistant selected, modal closed');
 				return;
 			}
 
-			if (window.console && console.log) {
-				console.log('[PM AI Assistant] Assistant selected:', assistantId, assistantTitle);
-				console.log('[PM AI Assistant] Opening modal directly...');
-			}
+			console.log('[PM AI Assistant] ➜ Opening modal for assistant:', assistantId, assistantTitle);
 
 			// Open modal and initialize chat interface directly.
 			openModal(assistantId, assistantTitle, contextType, contextData, postId);
 		});
 
-		if (window.console && console.log) {
-			console.log('[PM AI Assistant] Event handler attached to selector');
-		}
+		console.log('[PM AI Assistant] ✓ Change event handler attached to selector');
 
 		// Close modal on close button click.
 		$modalClose.on('click', closeModal);
@@ -117,6 +124,8 @@
 				closeModal();
 			}
 		});
+		
+		console.log('[PM AI Assistant] ✓ Close handlers attached (button, backdrop, escape key)');
 
 		/**
 		 * Open the modal with chat interface.
@@ -128,13 +137,16 @@
 		 * @param {number} postId          Current post ID.
 		 */
 		function openModal(assistantId, assistantTitle, contextType, contextData, postId) {
-			if (window.console && console.log) {
-				console.log('[PM AI Assistant] Opening modal for assistant:', assistantId, assistantTitle);
-			}
+			console.log('[PM AI Assistant] openModal() called with:', {
+				assistantId: assistantId,
+				assistantTitle: assistantTitle,
+				contextType: contextType,
+				postId: postId
+			});
 			
 			// Verify modal element exists
 			if (!$modal.length) {
-				console.error('[PM AI Assistant] Modal element not found in DOM');
+				console.error('[PM AI Assistant] CRITICAL: Modal element not found in DOM');
 				return;
 			}
 			
@@ -146,22 +158,18 @@
 			$modal.addClass('wp-mcp-ai-pm-assistant-modal--visible');
 			$('body').addClass('wp-mcp-ai-pm-assistant-modal-open');
 			
-			if (window.console && console.log) {
-				console.log('[PM AI Assistant] Modal visibility class added, checking display...');
-				console.log('[PM AI Assistant] Modal display style:', $modal.css('display'));
-				console.log('[PM AI Assistant] Modal has visible class:', $modal.hasClass('wp-mcp-ai-pm-assistant-modal--visible'));
-			}
+			console.log('[PM AI Assistant] Modal display updated:', {
+				displayStyle: $modal.css('display'),
+				hasVisibleClass: $modal.hasClass('wp-mcp-ai-pm-assistant-modal--visible'),
+				bodyHasOpenClass: $('body').hasClass('wp-mcp-ai-pm-assistant-modal-open')
+			});
 
 			// Initialize chat interface if not already initialized.
 			if ($chatContainer.is(':empty')) {
-				if (window.console && console.log) {
-					console.log('[PM AI Assistant] Chat container is empty, initializing...');
-				}
+				console.log('[PM AI Assistant] Chat container is empty, initializing chat interface...');
 				initChatInterface(assistantId, contextType, contextData, postId);
 			} else {
-				if (window.console && console.log) {
-					console.log('[PM AI Assistant] Chat container already has content, skipping initialization');
-				}
+				console.log('[PM AI Assistant] Chat container already has content, skipping re-initialization');
 			}
 		}
 
@@ -169,9 +177,7 @@
 		 * Close the modal.
 		 */
 		function closeModal() {
-			if (window.console && console.log) {
-				console.log('[PM AI Assistant] Closing modal');
-			}
+			console.log('[PM AI Assistant] Closing modal');
 			$modal.removeClass('wp-mcp-ai-pm-assistant-modal--visible');
 			$('body').removeClass('wp-mcp-ai-pm-assistant-modal-open');
 		}
@@ -187,6 +193,7 @@
 		const $chatForm = $container.find('.wp-mcp-ai-chat__form');
 		
 		if (!$chatForm.length) {
+			console.log('[PM AI Assistant] No chat form found yet (will be created by chat.js)');
 			return;
 		}
 
@@ -207,9 +214,7 @@
 		$chatForm.attr('data-isolated-form', 'true');
 		$chatForm.addClass('wp-mcp-ai-isolated-form');
 
-		if (window.console && console.log) {
-			console.log('[PM AI Assistant] Chat form isolated from page form validation');
-		}
+		console.log('[PM AI Assistant] ✓ Chat form isolated from page form validation');
 	}
 
 	/**
@@ -225,19 +230,19 @@
 	function initChatInterface(assistantId, _contextType, _contextData, _postId) {
 		const $container = $('#wp-mcp-ai-pm-assistant-chat-container');
 
-		if (window.console && console.log) {
-			console.log('[PM AI Assistant] Initializing chat interface for assistant:', assistantId);
-		}
+		console.log('[PM AI Assistant] initChatInterface() called for assistant:', assistantId);
 
 		// Clear previous chat container.
 		$container.empty();
 
 		// Create unique instance ID for this chat.
 		const instanceId = 'wp-mcp-ai-pm-chat-' + assistantId + '-' + Date.now();
+		console.log('[PM AI Assistant] Generated instance ID:', instanceId);
 
 		// Build chat HTML structure directly in JavaScript.
 		const chatHTML = buildChatHTML(instanceId);
 		$container.html(chatHTML);
+		console.log('[PM AI Assistant] ✓ Chat HTML injected into container');
 
 		// Initialize chat instance configuration directly in JavaScript.
 		if (!window.wpMcpAiChatInstances) {
@@ -246,6 +251,11 @@
 
 		// Build endpoints from global config or defaults.
 		const baseRestUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) ? window.wpMcpAiChat.restUrl : '/wp-json/mcp-ai/v1';
+		
+		console.log('[PM AI Assistant] Building chat configuration...', {
+			hasWpMcpAiChat: !!window.wpMcpAiChat,
+			baseRestUrl: baseRestUrl
+		});
 		
 		// Get file upload configuration from global config.
 		const fileAccept = (window.wpMcpAiChat && window.wpMcpAiChat.fileAccept) ? window.wpMcpAiChat.fileAccept : '';
@@ -282,10 +292,7 @@
 			asyncToolTimeout: 300000 // 5 minutes.
 		};
 
-		if (window.console && console.log) {
-			console.log('[PM AI Assistant] Chat configuration created for instance:', instanceId);
-			console.log('[PM AI Assistant] Assistant ID:', assistantId);
-		}
+		console.log('[PM AI Assistant] ✓ Chat configuration created and stored in window.wpMcpAiChatInstances[' + instanceId + ']');
 
 		// Isolate chat form from page form validation.
 		isolateChatForm($container);
@@ -500,42 +507,58 @@
 	 * @param {string} instanceId - Instance identifier.
 	 */
 	function initializeChatInstance(instanceId) {
+		console.log('[PM AI Assistant] initializeChatInstance() called for:', instanceId);
+		
 		// Wait a brief moment for DOM to settle.
 		setTimeout(function() {
 			const container = document.getElementById(instanceId);
 
 			if (!container) {
-				console.error('[PM AI Assistant] Container not found:', instanceId);
+				console.error('[PM AI Assistant] CRITICAL: Container element not found in DOM:', instanceId);
 				return;
 			}
-
-			if (window.console && console.log) {
-				console.log('[PM AI Assistant] Triggering chat initialization for:', instanceId);
-			}
+			
+			console.log('[PM AI Assistant] ✓ Container element found, checking for chat init function...');
+			console.log('[PM AI Assistant] window.wpMcpAiChatInit available?', !!window.wpMcpAiChatInit);
+			console.log('[PM AI Assistant] window.wpMcpAiChatInit.init available?', 
+				!!(window.wpMcpAiChatInit && typeof window.wpMcpAiChatInit.init === 'function'));
 
 			// Re-initialize chat.js to pick up the new instance.
 			if (window.wpMcpAiChatInit && typeof window.wpMcpAiChatInit.init === 'function') {
 				try {
+					console.log('[PM AI Assistant] Calling window.wpMcpAiChatInit.init()...');
 					window.wpMcpAiChatInit.init();
+					console.log('[PM AI Assistant] ✓ Chat initialization successful');
 					
 					// Focus the textarea to give user immediate access.
 					setTimeout(function() {
 						const textarea = container.querySelector('.wp-mcp-ai-chat__input');
 						if (textarea) {
 							textarea.focus();
+							console.log('[PM AI Assistant] ✓ Chat textarea focused');
 						}
 					}, 200);
 				} catch (error) {
-					console.error('[PM AI Assistant] Failed to initialize chat:', error);
+					console.error('[PM AI Assistant] CRITICAL: Chat initialization failed with error:', error);
 				}
 			} else {
-				console.error('[PM AI Assistant] wpMcpAiChatInit.init not available');
+				console.error('[PM AI Assistant] CRITICAL: window.wpMcpAiChatInit.init not available');
+				console.error('[PM AI Assistant] This means the chat bundle script is not loaded or not initialized');
+				console.error('[PM AI Assistant] Check that wp-mcp-ai-chat script is enqueued properly');
 			}
 		}, 100);
 	}
 
 	// Initialize on document ready.
+	console.log('[PM AI Assistant] Registering document.ready handler');
 	$(document).ready(function () {
-		initPmAiAssistant();
+		console.log('[PM AI Assistant] ⚡ Document ready event fired, calling initPmAiAssistant()');
+		try {
+			initPmAiAssistant();
+			console.log('[PM AI Assistant] ✓ Initialization complete');
+		} catch (error) {
+			console.error('[PM AI Assistant] CRITICAL: Initialization failed with error:', error);
+		}
 	});
+	console.log('[PM AI Assistant] Script initialization complete, waiting for document.ready');
 })(jQuery);
