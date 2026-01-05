@@ -57,6 +57,16 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	}
 
 	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @since 1.0.0
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#general-tab';
+	}
+
+	/**
 	 * Check if current user can view this metabox.
 	 *
 	 * @since 1.0.0
@@ -189,5 +199,6 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 		<textarea id="wp-mcp-ai-system-prompt" name="wp_mcp_ai_system_prompt" class="widefat" rows="5"><?php echo esc_textarea( $system_prompt ); ?></textarea>
 	</p>
 		<?php
+		$this->render_documentation_link();
 	}
 }
