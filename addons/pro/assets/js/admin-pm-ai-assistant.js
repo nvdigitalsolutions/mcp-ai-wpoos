@@ -34,8 +34,7 @@
 
 		// Move modal to body to ensure position: fixed works correctly.
 		// Modals rendered inside metaboxes may not display as overlays due to CSS positioning contexts.
-		// Remove any inline styles that might interfere, then hide using CSS class.
-		$modal.removeAttr('style');
+		// Ensure modal stays hidden - don't remove the inline style set by PHP.
 		$modal.removeClass('wp-mcp-ai-pm-assistant-modal--visible');
 		$modal.appendTo('body');
 		
