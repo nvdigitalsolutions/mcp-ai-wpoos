@@ -156,4 +156,111 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 		$reflection = new ReflectionMethod( $dashboard, 'is_pro_active' );
 		$this->assertTrue( $reflection->isPublic(), 'is_pro_active method should be public' );
 	}
+
+	/**
+	 * Test that recent activity rendering handles missing array keys without warnings.
+	 */
+	public function test_recent_activity_handles_missing_keys() {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
+
+		// Enable Pro dashboard to test the rendering.
+		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
+
+		// Test with various incomplete data structures that might cause undefined array key warnings.
+		$test_events = array(
+			// Complete event with all expected keys.
+			array(
+				'icon'      => 'shield',
+				'message'   => 'Test event with all keys',
+				'time'      => '2025-01-05 10:00:00',
+			),
+			// Event with timestamp key (actual data structure).
+			array(
+				'message'   => 'Event with timestamp key',
+				'timestamp' => '2025-01-05 11:00:00',
+			),
+			// Event with only message.
+			array(
+				'message' => 'Event with only message',
+			),
+			// Empty event array.
+			array(),
+		);
+
+		update_option( 'wp_mcp_ai_recent_activity', $test_events );
+
+		// Capture output and ensure no PHP warnings are generated.
+		ob_start();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard->render_overview();
+		$output = ob_get_clean();
+
+		// Verify output contains expected elements.
+		$this->assertStringContainsString( 'wp-mcp-ai-activity-list', $output, 'Activity list should be rendered' );
+		$this->assertStringContainsString( 'Test event with all keys', $output, 'Complete event should be displayed' );
+		$this->assertStringContainsString( 'Event with timestamp key', $output, 'Event with timestamp should be displayed' );
+		$this->assertStringContainsString( 'Event with only message', $output, 'Event with only message should be displayed' );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_recent_activity' );
+		remove_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
+	}
+
+	/**
+	 * Test that recent activity with empty array doesn't cause errors.
+	 */
+	public function test_recent_activity_handles_empty_array() {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
+
+		// Enable Pro dashboard.
+		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
+
+		// Set empty array.
+		update_option( 'wp_mcp_ai_recent_activity', array() );
+
+		// Capture output.
+		ob_start();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard->render_overview();
+		$output = ob_get_clean();
+
+		// Should show empty state, not the activity list.
+		$this->assertStringContainsString( 'wp-mcp-ai-empty-state', $output, 'Empty state should be shown' );
+		$this->assertStringNotContainsString( 'wp-mcp-ai-activity-list', $output, 'Activity list should not be rendered' );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_recent_activity' );
+		remove_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
+	}
+
+	/**
+	 * Test that recent activity handles non-pro mode correctly.
+	 */
+	public function test_recent_activity_non_pro_mode() {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
+
+		// Set some events.
+		update_option(
+			'wp_mcp_ai_recent_activity',
+			array(
+				array(
+					'message'   => 'Test event',
+					'timestamp' => '2025-01-05 10:00:00',
+				),
+			)
+		);
+
+		// Capture output with Pro disabled.
+		ob_start();
+		$dashboard = new WP_MCP_AI_Pro_Dashboard();
+		$dashboard->render_overview();
+		$output = ob_get_clean();
+
+		// Should show empty state, not the activity list (Pro is disabled).
+		$this->assertStringContainsString( 'wp-mcp-ai-empty-state', $output, 'Empty state should be shown when Pro is disabled' );
+		$this->assertStringNotContainsString( 'Test event', $output, 'Events should not be displayed when Pro is disabled' );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_recent_activity' );
+	}
 }
