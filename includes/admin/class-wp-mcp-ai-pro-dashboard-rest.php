@@ -153,6 +153,76 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					),
 				)
 			);
+
+			// Evidence endpoints.
+			register_rest_route(
+				self::NAMESPACE,
+				'/evidence/(?P<control_id>[\\w.-]+)',
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => array( $this, 'get_evidence' ),
+						'permission_callback' => array( $this, 'check_permission' ),
+					),
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'add_evidence' ),
+						'permission_callback' => array( $this, 'check_pro_permission' ),
+					),
+				)
+			);
+
+			// Audit trail endpoint.
+			register_rest_route(
+				self::NAMESPACE,
+				'/audit-trail',
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'get_audit_trail' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+					'args'                => array(
+						'limit' => array(
+							'default'           => 50,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				)
+			);
+
+			// Risk matrix data endpoint.
+			register_rest_route(
+				self::NAMESPACE,
+				'/risks/matrix',
+				array(
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'get_risk_matrix' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				)
+			);
+
+			// Compliance checks endpoint.
+			register_rest_route(
+				self::NAMESPACE,
+				'/compliance/checks',
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => array( $this, 'get_compliance_checks' ),
+						'permission_callback' => array( $this, 'check_permission' ),
+					),
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'run_compliance_check' ),
+						'permission_callback' => array( $this, 'check_pro_permission' ),
+						'args'                => array(
+							'check_type' => array(
+								'required'          => true,
+								'sanitize_callback' => 'sanitize_text_field',
+							),
+						),
+					),
+				)
+			);
 		}
 
 		/**
@@ -229,7 +299,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			$category = $request->get_param( 'category' );
 			$status   = $request->get_param( 'status' );
 
-			// Sample controls data (in production, this would come from database).
+			// Try to get from database first.
+			if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
+				$args     = array();
+				if ( ! empty( $category ) ) {
+					$args['category'] = $category;
+				}
+				if ( ! empty( $status ) ) {
+					$args['status'] = $status;
+				}
+
+				$controls = WP_MCP_AI_Pro_Database::get_controls( $args );
+
+				if ( ! empty( $controls ) ) {
+					return rest_ensure_response( $controls );
+				}
+			}
+
+			// Fallback to sample controls data.
 			$controls = $this->get_sample_controls();
 
 			// Filter by category.
@@ -265,19 +352,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			$type  = $request->get_param( 'type' );
 			$scope = $request->get_param( 'scope' );
 
-			// Generate consistent UUID for report identification.
-			$report_id = wp_generate_uuid4();
+			// Use the report generator.
+			$generator = new WP_MCP_AI_Report_Generator();
+			$result    = $generator->generate_report( $type, $scope );
 
-			// In production, this would generate actual reports.
-			$report = array(
-				'report_id'    => $report_id,
-				'type'         => $type,
-				'scope'        => $scope,
-				'generated'    => current_time( 'mysql' ),
-				'download_url' => admin_url( 'admin-ajax.php?action=wp_mcp_ai_download_report&id=' . $report_id ),
-			);
+			if ( ! $result['success'] ) {
+				return new WP_Error(
+					'report_generation_failed',
+					$result['message'],
+					array( 'status' => 500 )
+				);
+			}
 
-			return rest_ensure_response( $report );
+			return rest_ensure_response( $result );
 		}
 
 		/**
@@ -286,7 +373,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		 * @return WP_REST_Response Response object.
 		 */
 		public function get_risks() {
-			// Sample risk data (in production, this would come from database).
+			// Try to get from database first.
+			if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
+				$risks = WP_MCP_AI_Pro_Database::get_risks();
+
+				if ( ! empty( $risks ) ) {
+					return rest_ensure_response( $risks );
+				}
+			}
+
+			// Fallback to sample risk data.
 			$risks = array(
 				array(
 					'id'          => 'RISK-001',
@@ -399,6 +495,234 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			);
 
 			return rest_ensure_response( $updated_control );
+		}
+
+		/**
+		 * Get evidence for a control.
+		 *
+		 * @param WP_REST_Request $request Request object.
+		 * @return WP_REST_Response Response object.
+		 */
+		public function get_evidence( $request ) {
+			$control_id = $request->get_param( 'control_id' );
+
+			if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
+				$evidence = WP_MCP_AI_Pro_Database::get_evidence( $control_id );
+				return rest_ensure_response( $evidence );
+			}
+
+			return rest_ensure_response( array() );
+		}
+
+		/**
+		 * Add evidence for a control.
+		 *
+		 * @param WP_REST_Request $request Request object.
+		 * @return WP_REST_Response|WP_Error Response object or error.
+		 */
+		public function add_evidence( $request ) {
+			$control_id = $request->get_param( 'control_id' );
+			$title      = $request->get_param( 'title' );
+			$description = $request->get_param( 'description' );
+			$evidence_type = $request->get_param( 'evidence_type' );
+
+			if ( empty( $title ) ) {
+				return new WP_Error(
+					'missing_title',
+					__( 'Evidence title is required.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
+				$evidence_data = array(
+					'control_id'    => $control_id,
+					'evidence_type' => $evidence_type ?? 'document',
+					'title'         => $title,
+					'description'   => $description ?? '',
+					'uploaded_by'   => get_current_user_id(),
+				);
+
+				$evidence_id = WP_MCP_AI_Pro_Database::add_evidence( $evidence_data );
+
+				if ( $evidence_id ) {
+					return rest_ensure_response(
+						array(
+							'success'     => true,
+							'evidence_id' => $evidence_id,
+							'message'     => __( 'Evidence added successfully.', 'wp-mcp-ai' ),
+						)
+					);
+				}
+			}
+
+			return new WP_Error(
+				'evidence_add_failed',
+				__( 'Failed to add evidence.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		/**
+		 * Get audit trail.
+		 *
+		 * @param WP_REST_Request $request Request object.
+		 * @return WP_REST_Response Response object.
+		 */
+		public function get_audit_trail( $request ) {
+			$limit = $request->get_param( 'limit' );
+
+			if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
+				$audit = WP_MCP_AI_Pro_Database::get_audit_trail( array( 'limit' => $limit ) );
+				return rest_ensure_response( $audit );
+			}
+
+			// Fallback to recent activity.
+			$activity = get_option( 'wp_mcp_ai_recent_activity', array() );
+			return rest_ensure_response( array_slice( $activity, 0, $limit ) );
+		}
+
+		/**
+		 * Get risk matrix data for visualization.
+		 *
+		 * @return WP_REST_Response Response object.
+		 */
+		public function get_risk_matrix() {
+			// Initialize 5x5 matrix.
+			$matrix = array();
+			for ( $likelihood = 1; $likelihood <= 5; $likelihood++ ) {
+				for ( $impact = 1; $impact <= 5; $impact++ ) {
+					$key = sprintf( '%d-%d', $likelihood, $impact );
+					$matrix[ $key ] = array(
+						'likelihood' => $likelihood,
+						'impact'     => $impact,
+						'score'      => $likelihood * $impact,
+						'count'      => 0,
+						'risks'      => array(),
+					);
+				}
+			}
+
+			// Get all risks.
+			if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
+				$risks = WP_MCP_AI_Pro_Database::get_risks();
+			} else {
+				// Fallback sample data.
+				$risks = array(
+					array(
+						'risk_id'    => 'R-001',
+						'title'      => 'Unauthorized access',
+						'likelihood' => 3,
+						'impact'     => 5,
+						'risk_level' => 'high',
+					),
+					array(
+						'risk_id'    => 'R-002',
+						'title'      => 'Data loss',
+						'likelihood' => 2,
+						'impact'     => 4,
+						'risk_level' => 'medium',
+					),
+				);
+			}
+
+			// Place risks in matrix.
+			foreach ( $risks as $risk ) {
+				$likelihood = isset( $risk['likelihood'] ) ? (int) $risk['likelihood'] : 3;
+				$impact     = isset( $risk['impact'] ) ? (int) $risk['impact'] : 3;
+				$key        = sprintf( '%d-%d', $likelihood, $impact );
+
+				if ( isset( $matrix[ $key ] ) ) {
+					$matrix[ $key ]['count']++;
+					$matrix[ $key ]['risks'][] = array(
+						'id'    => $risk['risk_id'],
+						'title' => $risk['title'],
+						'level' => $risk['risk_level'] ?? 'medium',
+					);
+				}
+			}
+
+			return rest_ensure_response(
+				array(
+					'matrix' => array_values( $matrix ),
+					'totals' => array(
+						'total_risks' => count( $risks ),
+						'high_risks'  => count( array_filter( $risks, function( $r ) {
+							return ( $r['risk_level'] ?? '' ) === 'high';
+						} ) ),
+					),
+				)
+			);
+		}
+
+		/**
+		 * Get compliance checks.
+		 *
+		 * @return WP_REST_Response Response object.
+		 */
+		public function get_compliance_checks() {
+			if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
+				global $wpdb;
+				$checks_table = $wpdb->prefix . 'mcp_ai_compliance_checks';
+				$checks       = $wpdb->get_results( "SELECT * FROM $checks_table ORDER BY last_run DESC LIMIT 20", ARRAY_A );
+
+				if ( ! empty( $checks ) ) {
+					return rest_ensure_response( $checks );
+				}
+			}
+
+			// Fallback sample data.
+			return rest_ensure_response(
+				array(
+					array(
+						'check_type' => 'authentication',
+						'check_name' => 'Multi-factor authentication check',
+						'status'     => 'completed',
+						'result'     => 'pass',
+						'score'      => 100,
+						'last_run'   => current_time( 'mysql' ),
+					),
+					array(
+						'check_type' => 'encryption',
+						'check_name' => 'Data encryption check',
+						'status'     => 'completed',
+						'result'     => 'pass',
+						'score'      => 100,
+						'last_run'   => current_time( 'mysql' ),
+					),
+				)
+			);
+		}
+
+		/**
+		 * Run a compliance check.
+		 *
+		 * @param WP_REST_Request $request Request object.
+		 * @return WP_REST_Response|WP_Error Response object or error.
+		 */
+		public function run_compliance_check( $request ) {
+			$check_type = $request->get_param( 'check_type' );
+
+			if ( ! in_array( $check_type, array( 'authentication', 'encryption', 'logging', 'backup' ), true ) ) {
+				return new WP_Error(
+					'invalid_check_type',
+					__( 'Invalid compliance check type.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
+				$check_name = ucfirst( $check_type ) . ' Compliance Check';
+				$result     = WP_MCP_AI_Pro_Database::run_compliance_check( $check_type, $check_name );
+
+				return rest_ensure_response( $result );
+			}
+
+			return new WP_Error(
+				'check_failed',
+				__( 'Compliance check system not available.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
 		}
 
 		/**
