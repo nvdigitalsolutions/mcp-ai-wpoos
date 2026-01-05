@@ -294,11 +294,13 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		$output = ob_get_clean();
 
 		$response = json_decode( $output, true );
+		$instance_id = isset( $response['data']['instance_id'] ) ? $response['data']['instance_id'] : '';
+		$config_map  = isset( $response['data']['config_map'] ) && is_array( $response['data']['config_map'] ) ? $response['data']['config_map'] : array();
 
 		$this->assertTrue( $response['success'], 'AJAX should succeed with valid data' );
-		$this->assertNotEmpty( $response['data']['instance_id'], 'Instance ID should be returned' );
+		$this->assertNotEmpty( $instance_id, 'Instance ID should be returned' );
 		$this->assertIsArray( $response['data']['config'], 'Chat configuration should be returned' );
 		$this->assertArrayHasKey( 'assistantId', $response['data']['config'], 'Assistant ID should be present in config' );
-		$this->assertArrayHasKey( $response['data']['instance_id'], $response['data']['config_map'], 'Config map should include instance ID' );
+		$this->assertArrayHasKey( $instance_id, $config_map, 'Config map should include instance ID' );
 	}
 }
