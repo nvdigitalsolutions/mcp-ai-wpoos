@@ -60,20 +60,27 @@ This document helps troubleshoot issues with the AI Assistant modal in Project M
 
 **Symptoms:**
 - Modal opens but shows loading spinner forever
-- Modal opens but shows error message
+- Modal opens but shows error message "Assistant configuration was not found"
 - Modal opens but chat container is empty
 
 **Causes and Fixes:**
-1. **AJAX endpoint not available:**
+1. **Assistant configuration not passed to chat (FIXED):**
+   - Previous issue: Inline scripts from `wp_add_inline_script()` don't execute in AJAX context
+   - Fix: Configuration now extracted from PHP and injected via JavaScript
+   - Check console for: `[PM AI Assistant] Chat configuration injected for instance: ...`
+   - Check console for: `[PM AI Assistant] Assistant ID: <number>`
+   - If these messages are missing, the fix may not be working
+
+2. **AJAX endpoint not available:**
    - Check Network tab in browser console
    - Look for `admin-ajax.php` request
    - Verify response is successful (200 status)
 
-2. **Shortcode class not available:**
+3. **Shortcode class not available:**
    - Ensure `WP_MCP_AI_Shortcode` class exists
    - Check that core plugin is active
 
-3. **Chat initialization errors:**
+4. **Chat initialization errors:**
    - Check for JavaScript errors after chat HTML is injected
    - Look for `window.wpMcpAiChatInit` availability
    - Clear localStorage and try again
@@ -98,6 +105,8 @@ Expected messages when opening modal:
 ```
 [PM AI Assistant] Opening modal for assistant: 331 Jamaica Relief
 [PM AI Assistant] Chat container is empty, initializing...
+[PM AI Assistant] Chat configuration injected for instance: wp-mcp-ai-chat-xxxxx
+[PM AI Assistant] Assistant ID: 331
 ```
 
 ### 2. Check CSS Application
