@@ -30,7 +30,6 @@
 		const $selector = $('#wp-mcp-ai-pm-assistant-select');
 		const $modal = $('#wp-mcp-ai-pm-assistant-modal');
 		const $chatContainer = $('#wp-mcp-ai-pm-assistant-chat-container');
-		const $buildAction = $('#wp-mcp-ai-pm-build-action');
 		const $buildBtn = $('#wp-mcp-ai-pm-build-btn');
 		const $modalClose = $modal.find('.wp-mcp-ai-pm-assistant-modal__close');
 		const $modalBackdrop = $modal.find('.wp-mcp-ai-pm-assistant-modal__backdrop');
@@ -62,33 +61,32 @@
 		const contextData = config.contextData || {};
 		const postId = config.postId || 0;
 
-		// Handle assistant selection.
+		// Handle assistant selection - open modal directly.
 		$selector.on('change', function () {
 			const assistantId = $(this).val();
 			const $selectedOption = $(this).find('option:selected');
 			const assistantTitle = $selectedOption.data('title') || $selectedOption.text();
 
 			if (!assistantId) {
-				// Hide button by removing inline style and adding display: none !important
-				$buildAction.attr('style', 'display: none !important;');
+				// Close modal if open when no assistant selected
+				closeModal();
 				if (window.console && console.log) {
-					console.log('[PM AI Assistant] No assistant selected, hiding button');
+					console.log('[PM AI Assistant] No assistant selected, closing modal if open');
 				}
 				return;
 			}
 
-			// Update Build with AI button data attributes.
-			$buildBtn.attr('data-assistant-id', assistantId);
-			$buildBtn.attr('data-assistant-title', assistantTitle);
-
-			// Show Build with AI button by removing the inline style entirely (let CSS take over)
-			$buildAction.attr('style', '');
 			if (window.console && console.log) {
 				console.log('[PM AI Assistant] Assistant selected:', assistantId, assistantTitle);
+				console.log('[PM AI Assistant] Opening modal directly...');
 			}
+
+			// Open modal and initialize chat interface directly.
+			openModal(assistantId, assistantTitle, contextType, contextData, postId);
 		});
 
-		// Handle Build with AI button click.
+		// Note: Build with AI button is now hidden - modal opens directly on dropdown change
+		// Keeping button click handler for backwards compatibility in case button is re-enabled
 		$buildBtn.on('click', function () {
 			const assistantId = $(this).attr('data-assistant-id');
 			const assistantTitle = $(this).attr('data-assistant-title');
@@ -226,13 +224,12 @@
 	 * This avoids issues with PHP shortcode rendering and globals in AJAX contexts.
 	 *
 	 * @param {string} assistantId   Assistant ID.
-	 * @param {string} contextType   Context type (project, task, or event).
-	 * @param {Object} contextData   Context data about the current item.
-	 * @param {number} postId        Current post ID.
+	 * @param {string} _contextType  Context type (project, task, or event). Reserved for future use.
+	 * @param {Object} _contextData  Context data about the current item. Reserved for future use.
+	 * @param {number} _postId       Current post ID. Reserved for future use.
 	 */
-	function initChatInterface(assistantId, contextType, contextData, postId) {
+	function initChatInterface(assistantId, _contextType, _contextData, _postId) {
 		const $container = $('#wp-mcp-ai-pm-assistant-chat-container');
-		const config = window.wpMcpAiPmAssistant || {};
 
 		if (window.console && console.log) {
 			console.log('[PM AI Assistant] Initializing chat interface for assistant:', assistantId);
@@ -305,11 +302,13 @@
 
 	/**
 	 * Build context message for the AI assistant.
+	 * Reserved for future use when context passing is implemented.
 	 *
 	 * @param {string} contextType Context type.
 	 * @param {Object} contextData Context data.
 	 * @return {string} Context message.
 	 */
+	// eslint-disable-next-line no-unused-vars
 	function buildContextMessage(contextType, contextData) {
 		let message = 'You are assisting with a ' + contextType + ' in the WordPress admin area.\n\n';
 		message += '**Current ' + contextType.charAt(0).toUpperCase() + contextType.slice(1) + ' Details:**\n';
