@@ -646,6 +646,22 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-key-rotation.php';
 	WP_MCP_AI_Admin_Key_Rotation::init();
 
+	// Load ISO 27001 certification badge display.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-iso27001-badge.php';
+
+	// Load Pro Dashboard for ISO 27001 compliance management.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-database.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-license.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-report-generator.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
+	
+	// Initialize Pro Dashboard components.
+	new WP_MCP_AI_Pro_Database();
+	new WP_MCP_AI_Pro_License();
+	new WP_MCP_AI_Pro_Dashboard();
+	new WP_MCP_AI_Pro_Dashboard_REST();
+
 	/**
 	 * Add plugin action links in the plugins list.
 	 *
