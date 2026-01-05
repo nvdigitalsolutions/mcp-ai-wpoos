@@ -511,6 +511,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'geocode_address'                    => 'external-tools',
 				'search_places'                      => 'external-tools',
 				'gemini_geospatial_query'            => 'external-tools',
+				'payhere_get_payment'                => 'external-tools',
 				'list_github_repositories'           => 'external-tools',
 				'github_repository_operations'       => 'external-tools',
 				'manage_github_codespace'            => 'external-tools',
@@ -928,6 +929,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Woo_Orders'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
 				'WP_MCP_AI_Tool_Get_Woo_Products'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-products.php',
 				'WP_MCP_AI_Tool_Create_Woo_Product'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-woo-product.php',
+				// PayHere payment gateway integration.
+				'WP_MCP_AI_Tool_PayHere_Get_Payment'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-payhere-get-payment.php',
 				'WP_MCP_AI_Tool_Get_JetEngine_Items'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php',
 				'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-forms.php',
 				'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-submissions.php',
