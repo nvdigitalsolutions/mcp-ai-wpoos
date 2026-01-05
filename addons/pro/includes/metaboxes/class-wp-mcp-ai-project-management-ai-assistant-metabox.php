@@ -416,19 +416,30 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		// Render the shortcode.
 		$html = do_shortcode( '[mcp_ai_chat' . $atts_str . ']' );
 
-		// Extract the chat configuration from the global set by the shortcode.
-		// The shortcode stores config in $GLOBALS['wp_mcp_ai_chat_configs'] for AJAX access.
-		$chat_config = null;
-		if ( isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) && is_array( $GLOBALS['wp_mcp_ai_chat_configs'] ) ) {
-			// Get the most recently added config (last element).
-			$chat_config = end( $GLOBALS['wp_mcp_ai_chat_configs'] );
-		}
-
 		// Extract instance ID from the HTML to match with configuration.
 		// The chat container has id="wp-mcp-ai-chat-{unique_id}".
 		$instance_id = null;
 		if ( preg_match( '/id="(wp-mcp-ai-chat-[^"]+)"/', $html, $matches ) ) {
 			$instance_id = $matches[1];
+		}
+
+		// Extract the chat configuration from the global set by the shortcode.
+		// The shortcode stores config in $GLOBALS['wp_mcp_ai_chat_configs'] keyed by instance ID.
+		$chat_config = null;
+		if ( $instance_id && isset( $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] ) ) {
+			$chat_config = $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ];
+		}
+
+		// If we couldn't extract the config, log a warning but still return the HTML.
+		if ( ! $chat_config || ! $instance_id ) {
+			WP_MCP_AI_Logger::log_warning(
+				'Could not extract chat configuration or instance ID for AJAX response',
+				array(
+					'instance_id_found' => (bool) $instance_id,
+					'config_found'      => (bool) $chat_config,
+					'assistant_id'      => $assistant_id,
+				)
+			);
 		}
 
 		wp_send_json_success(

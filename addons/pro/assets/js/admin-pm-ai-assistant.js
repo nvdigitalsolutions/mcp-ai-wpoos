@@ -235,6 +235,14 @@
 						if (!window.wpMcpAiChatInstances) {
 							window.wpMcpAiChatInstances = {};
 						}
+						
+						// Check if configuration already exists and log warning if overwriting
+						if (window.wpMcpAiChatInstances[response.data.instance_id]) {
+							if (window.console && console.warn) {
+								console.warn('[PM AI Assistant] Overwriting existing configuration for instance:', response.data.instance_id);
+							}
+						}
+						
 						window.wpMcpAiChatInstances[response.data.instance_id] = response.data.config;
 						
 						if (window.console && console.log) {
