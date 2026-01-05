@@ -25,48 +25,6 @@
 	max-width: 100%;
 }
 
-/* Build with AI Button Container */
-.wp-mcp-ai-pm-build-action-wrapper {
-	margin-top: 15px;
-	margin-bottom: 15px;
-	padding: 15px;
-	background: #f0f6fc;
-	border: 1px solid #c3e4f7;
-	border-radius: 4px;
-	text-align: center;
-	display: block;
-}
-
-/* Build with AI Button */
-.wp-mcp-ai-build-with-ai-btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-	padding: 8px 24px;
-	font-size: 14px;
-	line-height: 1.5;
-	transition: all 0.2s ease;
-}
-
-.wp-mcp-ai-build-with-ai-btn .dashicons {
-	font-size: 20px;
-	width: 20px;
-	height: 20px;
-}
-
-.wp-mcp-ai-build-with-ai-btn:hover {
-	transform: translateY(-1px);
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.wp-mcp-ai-pm-build-action-wrapper .description {
-	margin: 8px 0 0;
-	font-size: 12px;
-	color: #646970;
-	text-align: center;
-}
-
 /* Modal overlay and structure */
 .wp-mcp-ai-pm-assistant-modal {
 	position: fixed;
@@ -291,15 +249,6 @@ body.wp-mcp-ai-pm-assistant-modal-open {
 
 /* Dark mode support (WordPress 5.7+) */
 @media (prefers-color-scheme: dark) {
-	.wp-mcp-ai-pm-build-action-wrapper {
-		background: #1e1e1e;
-		border-color: #3c3c3c;
-	}
-
-	.wp-mcp-ai-pm-build-action-wrapper .description {
-		color: #a7aaad;
-	}
-
 	.wp-mcp-ai-pm-assistant-intro {
 		background: #1e1e1e;
 		border-left-color: #4f94d4;

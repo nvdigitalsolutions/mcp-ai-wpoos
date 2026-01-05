@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-documentation-link-rendering',
-        'version' => 'dev-copilot/fix-documentation-link-rendering',
-        'reference' => '3b0795f8201543cfc5a7214cdb1d2fd61d1b4dcf',
+        'pretty_version' => 'dev-copilot/perform-code-review-chat-client',
+        'version' => 'dev-copilot/perform-code-review-chat-client',
+        'reference' => '197c7801441773683a25381918d216c412d1967e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-documentation-link-rendering',
-            'version' => 'dev-copilot/fix-documentation-link-rendering',
-            'reference' => '3b0795f8201543cfc5a7214cdb1d2fd61d1b4dcf',
+            'pretty_version' => 'dev-copilot/perform-code-review-chat-client',
+            'version' => 'dev-copilot/perform-code-review-chat-client',
+            'reference' => '197c7801441773683a25381918d216c412d1967e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
