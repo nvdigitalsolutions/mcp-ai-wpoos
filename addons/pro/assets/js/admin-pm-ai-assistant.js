@@ -124,9 +124,8 @@
 			// Update modal title.
 			$modal.find('#wp-mcp-ai-pm-assistant-modal__title').text(assistantTitle || 'AI Assistant');
 
-			// Show modal - remove inline style and add visible class
-			// This ensures both CSS class and any inline styles work together
-			$modal.attr('style', ''); // Remove any inline styles that might interfere
+			// Show modal - properly remove inline style attribute and add visible class
+			$modal.removeAttr('style');
 			$modal.addClass('wp-mcp-ai-pm-assistant-modal--visible');
 			$('body').addClass('wp-mcp-ai-pm-assistant-modal-open');
 			
