@@ -148,49 +148,114 @@ Core Plugin (Free):
 
 **Benefit:** ALL users get enterprise-grade certified security
 
-### Pro Add-on - Advanced Compliance Tools
+### Pro Add-on - Dedicated "NV oOS Pro Dashboard" 🔒
 
-**Premium Compliance Features:**
+**Why Separate Dashboard?**
+- Core settings have many tabs/subtabs already (Overview, Providers, Authentication, Security, Tools, Integrations, Advanced)
+- Pro features need their own space to avoid clutter
+- Better UX - enterprise customers get focused compliance interface
+- Clear visual separation between free and pro features
+- Room for future pro feature expansion without overwhelming free users
+
+**Admin Menu Structure:**
+
+#### Core Plugin Settings (Free - Under WordPress Settings)
 ```
-🔒 ISO 27001 Compliance Dashboard
-   ├── Real-time compliance status monitoring
-   ├── Control effectiveness metrics
-   ├── Risk register visualization
-   └── Automated compliance checks
+WordPress Admin → Settings → NV oOS
+├── Overview
+├── Providers (OpenAI, Gemini, Ollama)
+├── Authentication (Auth0, JWT)
+├── Security ← ISO 27001 certified controls visible here
+│   ├── Rate Limiting
+│   ├── Root Security Key
+│   ├── Nefarious Usage Monitor
+│   └── Basic Security Events Log
+├── Tools
+├── Integrations
+├── Advanced
+└── [ISO 27001 Certification Badge displayed]
+```
 
-🔒 Advanced Audit & Reporting
-   ├── Custom compliance reports
-   ├── Executive summaries
-   ├── Audit trail exports
-   ├── Evidence collection automation
-   └── Third-party audit preparation
-
-🔒 Multi-Framework Support
-   ├── SOC 2 compliance tracking
-   ├── HIPAA compliance features
-   ├── GDPR compliance tools
-   ├── Industry-specific frameworks
-   └── Custom compliance frameworks
-
-🔒 Enhanced Security Features
-   ├── Advanced threat detection
-   ├── Security information and event management (SIEM) integration
-   ├── Automated vulnerability remediation
-   ├── Security orchestration
-   └── Custom security policies
-
-🔒 Professional Services
-   ├── Dedicated compliance support
-   ├── Security consultation
-   ├── Custom security assessments
-   ├── White-label compliance documentation
-   └── On-site security audits
+#### Pro Dashboard (Dedicated Top-Level Admin Menu) 🔒
+```
+WordPress Admin → NV oOS Pro Dashboard (Top-level menu with icon)
+├── Compliance Overview
+│   ├── ISO 27001 Compliance Status Dashboard
+│   ├── Overall Compliance Score (percentage)
+│   ├── Control Effectiveness Heatmap
+│   ├── Risk Register Summary
+│   └── Recent Security Events
+│
+├── ISO 27001 Management
+│   ├── Control Status (93 controls with status indicators)
+│   ├── Statement of Applicability (interactive)
+│   ├── Risk Register Visualization
+│   ├── Gap Analysis Tool
+│   └── Evidence Collection Manager
+│
+├── Audit & Reporting
+│   ├── Generate Compliance Reports
+│   │   ├── ISO 27001 Status Report
+│   │   ├── Executive Summary
+│   │   ├── Control Effectiveness Report
+│   │   └── Custom Report Builder
+│   ├── Audit Trail Export
+│   ├── Evidence Package Generator
+│   └── Third-Party Audit Preparation
+│
+├── Security Monitoring (Advanced)
+│   ├── Real-time Threat Dashboard
+│   ├── SIEM Integration
+│   │   ├── Splunk Connector
+│   │   ├── ELK Stack Integration
+│   │   └── Custom SIEM Export
+│   ├── Advanced Security Analytics
+│   ├── Anomaly Detection
+│   └── Security Metrics & KPIs
+│
+├── Multi-Framework Compliance
+│   ├── SOC 2 Tracking
+│   ├── HIPAA Compliance Tools
+│   ├── GDPR Management
+│   ├── Industry Frameworks
+│   │   ├── NIST CSF
+│   │   ├── PCI DSS (for WooCommerce users)
+│   │   └── CIS Controls
+│   └── Custom Framework Builder
+│
+├── Risk Management
+│   ├── Interactive Risk Register
+│   ├── Risk Assessment Wizard
+│   ├── Treatment Plan Tracker
+│   ├── Risk Heatmap Visualization
+│   └── Risk Trend Analysis
+│
+├── Incident Management (Advanced)
+│   ├── Incident Dashboard
+│   ├── Incident Workflow Automation
+│   ├── Communication Templates
+│   ├── Post-Incident Analysis
+│   └── Lessons Learned Database
+│
+└── Professional Services
+    ├── Consultation Requests
+    ├── Custom Security Assessments
+    ├── Support Tickets (Priority)
+    └── Training Resources
 ```
 
 **Pricing Strategy:**
-- **Compliance Dashboard Add-on:** $99/year
-- **Professional Compliance Suite:** $299/year
-- **Enterprise Compliance Package:** $999/year + services
+- **Pro Compliance Dashboard:** $149/year (includes dashboard + basic reporting)
+- **Professional Compliance Suite:** $299/year (+ SIEM, multi-framework, advanced features)
+- **Enterprise Compliance Package:** $999/year (+ professional services, white-label, on-site)
+
+**Benefits of Dedicated Dashboard:**
+1. ✅ **Clean Separation:** Free users don't see pro tabs/clutter
+2. ✅ **Enterprise Branding:** Pro dashboard looks professional and feature-rich
+3. ✅ **Better Navigation:** Focused interface for compliance tasks
+4. ✅ **Upsell Opportunity:** Clear visual of premium value
+5. ✅ **Scalability:** Easy to add more pro features without affecting core
+6. ✅ **User Experience:** Enterprise customers get dedicated compliance workspace
 
 ---
 
