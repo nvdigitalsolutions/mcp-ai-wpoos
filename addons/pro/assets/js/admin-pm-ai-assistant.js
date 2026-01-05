@@ -30,8 +30,6 @@
 		const $selector = $('#wp-mcp-ai-pm-assistant-select');
 		const $modal = $('#wp-mcp-ai-pm-assistant-modal');
 		const $chatContainer = $('#wp-mcp-ai-pm-assistant-chat-container');
-		const $buildBtn = $('#wp-mcp-ai-pm-build-btn');
-		const $buildActionWrapper = $('#wp-mcp-ai-pm-build-action');
 		const $modalClose = $modal.find('.wp-mcp-ai-pm-assistant-modal__close');
 		const $modalBackdrop = $modal.find('.wp-mcp-ai-pm-assistant-modal__backdrop');
 
@@ -52,12 +50,8 @@
 		$modal.removeClass('wp-mcp-ai-pm-assistant-modal--visible');
 		$modal.appendTo('body');
 		
-		// Ensure button wrapper is hidden on page load - modal opens directly on dropdown change
-		$buildActionWrapper.hide();
-		
 		if (window.console && console.log) {
 			console.log('[PM AI Assistant] Modal moved to body and hidden');
-			console.log('[PM AI Assistant] Button wrapper hidden');
 		}
 
 		// Get localized data.
@@ -75,8 +69,6 @@
 			if (!assistantId) {
 				// Close modal if open when no assistant selected
 				closeModal();
-				// Ensure button wrapper stays hidden
-				$buildActionWrapper.hide();
 				if (window.console && console.log) {
 					console.log('[PM AI Assistant] No assistant selected, closing modal if open');
 				}
@@ -88,31 +80,7 @@
 				console.log('[PM AI Assistant] Opening modal directly...');
 			}
 
-			// Ensure button wrapper stays hidden - modal opens directly on dropdown change
-			$buildActionWrapper.hide();
-
 			// Open modal and initialize chat interface directly.
-			openModal(assistantId, assistantTitle, contextType, contextData, postId);
-		});
-
-		// Note: Build with AI button is now hidden - modal opens directly on dropdown change
-		// Keeping button click handler for backwards compatibility in case button is re-enabled
-		$buildBtn.on('click', function () {
-			const assistantId = $(this).attr('data-assistant-id');
-			const assistantTitle = $(this).attr('data-assistant-title');
-
-			if (!assistantId) {
-				if (window.console && console.warn) {
-					console.warn('[PM AI Assistant] Cannot open modal: No assistant ID set on button');
-				}
-				return;
-			}
-
-			if (window.console && console.log) {
-				console.log('[PM AI Assistant] Build button clicked with assistant:', assistantId, assistantTitle);
-			}
-
-			// Open modal and initialize chat interface.
 			openModal(assistantId, assistantTitle, contextType, contextData, postId);
 		});
 
