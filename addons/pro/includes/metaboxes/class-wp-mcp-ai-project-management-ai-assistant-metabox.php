@@ -417,9 +417,10 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		$html = do_shortcode( '[mcp_ai_chat' . $atts_str . ']' );
 
 		// Extract instance ID from the HTML to match with configuration.
-		// The chat container has id="wp-mcp-ai-chat-{unique_id}".
+		// The chat container has id="wp-mcp-ai-chat-{unique_id}" and data-wp-mcp-ai-chat attribute.
+		// Use DOTALL flag (s) to handle multi-line HTML.
 		$instance_id = null;
-		if ( preg_match( '/id="(wp-mcp-ai-chat-[^"]+)"/', $html, $matches ) ) {
+		if ( preg_match( '/id="(wp-mcp-ai-chat-[^"]+)"/s', $html, $matches ) ) {
 			$instance_id = $matches[1];
 		}
 
@@ -437,6 +438,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 				array(
 					'assistant_id' => $assistant_id,
 					'html_length'  => strlen( $html ),
+					'html_preview' => substr( $html, 0, 200 ),
 				)
 			);
 		}
@@ -445,9 +447,20 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			WP_MCP_AI_Logger::log_warning(
 				'Could not extract chat configuration for AJAX response',
 				array(
-					'instance_id'  => $instance_id,
-					'assistant_id' => $assistant_id,
+					'instance_id'       => $instance_id,
+					'assistant_id'      => $assistant_id,
 					'configs_available' => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ? array_keys( $GLOBALS['wp_mcp_ai_chat_configs'] ) : array(),
+					'global_exists'     => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ),
+				)
+			);
+		} else {
+			// Log success for debugging.
+			WP_MCP_AI_Logger::log_debug(
+				'Successfully extracted chat configuration for AJAX response',
+				array(
+					'instance_id'  => $instance_id,
+					'assistant_id' => isset( $chat_config['assistantId'] ) ? $chat_config['assistantId'] : null,
+					'config_keys'  => array_keys( $chat_config ),
 				)
 			);
 		}
