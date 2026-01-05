@@ -4,10 +4,10 @@ This document helps troubleshoot issues with the AI Assistant modal in Project M
 
 ## Expected Behavior
 
-1. When you select an assistant from the dropdown, a "Chat with AI" button appears
-2. When you click the button, a modal overlay should appear on top of the page (not inline)
-3. The modal should display as a popup with a semi-transparent backdrop
-4. The chat interface loads inside the modal via AJAX
+1. When you select an assistant from the dropdown, the modal overlay should open immediately (no button click required)
+2. The modal should display as a popup with a semi-transparent backdrop on top of the page (not inline)
+3. The chat interface loads inside the modal directly via JavaScript
+4. The "Chat with AI" button wrapper should remain hidden at all times
 
 ## Common Issues and Solutions
 
@@ -34,12 +34,31 @@ This document helps troubleshoot issues with the AI Assistant modal in Project M
    - Check browser console for "[PM AI Assistant] Modal moved to body and hidden" message
    - If not present, JavaScript initialization failed
 
-### Issue: Modal doesn't open when clicking button
+### Issue: Button appears when selecting assistant (FIXED)
 
 **Symptoms:**
-- Button appears after selecting assistant
-- Clicking button does nothing
-- No modal appears
+- After selecting an assistant from dropdown, a "Chat with AI" button appears
+- Modal doesn't open immediately
+- Button has to be clicked to open modal
+
+**Cause:**
+- The button wrapper had inline style `display: none !important` which could be overridden by CSS or cleared by cached state
+- JavaScript didn't explicitly hide the button wrapper on page load or selection
+
+**Fix (Applied):**
+- JavaScript now explicitly calls `$buildActionWrapper.hide()` at three points:
+  1. On page initialization (line 56)
+  2. When assistant is selected from dropdown (line 92)
+  3. When assistant selection is cleared (line 79)
+- Modal now opens immediately on dropdown change without showing button
+- Multiple layers of protection ensure button stays hidden
+
+### Issue: Modal doesn't open when selecting assistant
+
+**Symptoms:**
+- Dropdown selection does nothing
+- Modal doesn't appear after selecting assistant
+- No console messages
 
 **Causes and Fixes:**
 1. **JavaScript errors:**
@@ -48,13 +67,14 @@ This document helps troubleshoot issues with the AI Assistant modal in Project M
    - Fix any JavaScript conflicts
 
 2. **Event handler not attached:**
-   - Check console for "[PM AI Assistant] Assistant selected" message
-   - If missing, jQuery might not be ready
+   - Check console for "[PM AI Assistant] Assistant selected" message after selecting from dropdown
+   - Check console for "[PM AI Assistant] Opening modal directly..." message
+   - If missing, jQuery might not be ready or event handler failed to attach
 
-3. **AJAX failures:**
-   - Check console for AJAX errors
-   - Verify `wpMcpAiPmAssistant` is defined in page source
-   - Check that nonce is valid
+3. **Modal initialization issues:**
+   - Check console for "[PM AI Assistant] Button wrapper hidden" message on page load
+   - If missing, JavaScript initialization failed
+   - Ensure modal element exists in DOM before JavaScript runs
 
 ### Issue: Chat interface doesn't load in modal
 
@@ -64,17 +84,16 @@ This document helps troubleshoot issues with the AI Assistant modal in Project M
 - Modal opens but chat container is empty
 
 **Causes and Fixes:**
-1. **Assistant configuration not passed to chat (FIXED):**
-   - Previous issue: Inline scripts from `wp_add_inline_script()` don't execute in AJAX context
-   - Fix: Configuration now extracted from PHP and injected via JavaScript
-   - Check console for: `[PM AI Assistant] Chat configuration injected for instance: ...`
-   - Check console for: `[PM AI Assistant] Assistant ID: <number>`
-   - If these messages are missing, the fix may not be working
+1. **Assistant configuration not passed to chat:**
+   - Configuration is now built directly in JavaScript instead of PHP
+   - Check console for: `[PM AI Assistant] Initializing chat interface for assistant: <id>`
+   - Check console for: `[PM AI Assistant] Chat configuration created for instance: ...`
+   - If these messages are missing, JavaScript initialization failed
 
-2. **AJAX endpoint not available:**
-   - Check Network tab in browser console
-   - Look for `admin-ajax.php` request
-   - Verify response is successful (200 status)
+2. **AJAX endpoint issues (DEPRECATED - Chat now initializes directly via JavaScript):**
+   - Old behavior used AJAX to fetch chat HTML
+   - New behavior builds chat HTML directly in JavaScript
+   - No AJAX call needed for initial modal opening
 
 3. **Shortcode class not available:**
    - Ensure `WP_MCP_AI_Shortcode` class exists
@@ -94,19 +113,25 @@ The JavaScript includes debug logging. Open browser console (F12) and look for m
 Expected messages on page load:
 ```
 [PM AI Assistant] Modal moved to body and hidden
+[PM AI Assistant] Button wrapper hidden
 ```
 
 Expected messages when selecting assistant:
 ```
 [PM AI Assistant] Assistant selected: 331 Jamaica Relief
+[PM AI Assistant] Opening modal directly...
 ```
 
 Expected messages when opening modal:
 ```
 [PM AI Assistant] Opening modal for assistant: 331 Jamaica Relief
+[PM AI Assistant] Modal visibility class added, checking display...
+[PM AI Assistant] Modal display style: block
+[PM AI Assistant] Modal has visible class: true
 [PM AI Assistant] Chat container is empty, initializing...
-[PM AI Assistant] Chat configuration injected for instance: wp-mcp-ai-chat-xxxxx
-[PM AI Assistant] Assistant ID: 331
+[PM AI Assistant] Initializing chat interface for assistant: 331
+[PM AI Assistant] Chat configuration created for instance: wp-mcp-ai-pm-chat-331-xxxxx
+[PM AI Assistant] Triggering chat initialization for: wp-mcp-ai-pm-chat-331-xxxxx
 ```
 
 ### 2. Check CSS Application
@@ -164,11 +189,12 @@ The modal uses a fixed positioning overlay:
 
 1. Page loads → `initPmAiAssistant()` runs
 2. Modal is moved from metabox to `<body>`
-3. Inline styles removed, CSS classes control visibility
-4. User selects assistant → Button appears
-5. User clicks button → `openModal()` called
-6. AJAX request fetches chat HTML → Injected into modal
-7. Chat initialized → User can interact
+3. Button wrapper is explicitly hidden with jQuery `.hide()`
+4. Inline styles removed from modal, CSS classes control visibility
+5. User selects assistant → Modal opens immediately (no button shown)
+6. Chat interface built directly in JavaScript → Injected into modal
+7. Chat configuration created in JavaScript → Passed to chat instance
+8. Chat initialized → User can interact
 
 ## Still Having Issues?
 
