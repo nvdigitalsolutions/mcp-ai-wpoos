@@ -14,6 +14,13 @@ console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString()
 (function ($) {
 	'use strict';
 	
+	// Configuration constants for metabox polling behavior.
+	const DEFAULT_POLLING_ATTEMPTS = 50;  // Max attempts for block editor (50 × ~200ms avg = ~10s).
+	const HYBRID_POLLING_ATTEMPTS = 30;   // Max attempts for hybrid mode (30 × ~200ms avg = ~6s).
+	const INITIAL_POLLING_DELAY = 100;    // Initial delay in milliseconds.
+	const MAX_POLLING_DELAY = 500;        // Maximum delay after exponential backoff.
+	const BACKOFF_MULTIPLIER = 1.5;       // Exponential backoff multiplier.
+	
 	// Verify jQuery is available
 	if (!$) {
 		console.error('[PM AI Assistant] CRITICAL: jQuery is not available!');
@@ -561,10 +568,16 @@ console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString()
 	 */
 	function isBlockEditorActive() {
 		// Check if wp.data and editor store exist (block editor indicators).
-		return typeof wp !== 'undefined' && 
-			   wp.data && 
-			   typeof wp.data.select === 'function' &&
-			   wp.data.select('core/editor') !== undefined;
+		// Wrap in try-catch to handle potential exceptions from wp.data.select().
+		try {
+			return typeof wp !== 'undefined' && 
+				   wp.data && 
+				   typeof wp.data.select === 'function' &&
+				   wp.data.select('core/editor') !== undefined;
+		} catch (error) {
+			console.log('[PM AI Assistant] Block editor detection failed:', error);
+			return false;
+		}
 	}
 
 	/**
@@ -575,9 +588,9 @@ console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString()
 	 * @param {number} maxAttempts - Maximum number of polling attempts.
 	 */
 	function waitForMetabox(callback, maxAttempts) {
-		maxAttempts = maxAttempts || 50;
+		maxAttempts = maxAttempts || DEFAULT_POLLING_ATTEMPTS;
 		let attempts = 0;
-		let delay = 100; // Start with 100ms delay.
+		let delay = INITIAL_POLLING_DELAY;
 
 		function checkMetabox() {
 			attempts++;
@@ -604,8 +617,8 @@ console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString()
 				return;
 			}
 
-			// Use exponential backoff: increase delay up to 500ms max.
-			delay = Math.min(delay * 1.2, 500);
+			// Use exponential backoff: increase delay up to MAX_POLLING_DELAY.
+			delay = Math.min(delay * BACKOFF_MULTIPLIER, MAX_POLLING_DELAY);
 			setTimeout(checkMetabox, delay);
 		}
 
@@ -686,7 +699,7 @@ console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString()
 					} catch (error) {
 						console.error('[PM AI Assistant] CRITICAL: Initialization failed:', error);
 					}
-				}, 30); // Use fewer attempts for hybrid mode.
+				}, HYBRID_POLLING_ATTEMPTS);
 			}
 		});
 	}
