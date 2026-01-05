@@ -129,7 +129,8 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 
 		// Verify modal starts hidden.
 		$this->assertStringContainsString( 'style="display: none;"', $output, 'Modal should have display: none style on render' );
-		$this->assertStringContainsString( 'id="wp-mcp-ai-pm-build-action" style="display: none;"', $output, 'Build action should be hidden initially' );
+		$this->assertStringContainsString( 'id="wp-mcp-ai-pm-build-action" style="display: none !important;"', $output, 'Build action should be hidden with !important initially' );
+		$this->assertStringContainsString( 'wp-mcp-ai-pm-build-action-wrapper', $output, 'Build action should have wrapper class' );
 	}
 
 	/**

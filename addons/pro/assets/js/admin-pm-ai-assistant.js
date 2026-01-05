@@ -55,7 +55,8 @@
 			const assistantTitle = $selectedOption.data('title') || $selectedOption.text();
 
 			if (!assistantId) {
-				$buildAction.hide();
+				// Hide button by removing inline style and adding display: none !important
+				$buildAction.attr('style', 'display: none !important;');
 				if (window.console && console.log) {
 					console.log('[PM AI Assistant] No assistant selected, hiding button');
 				}
@@ -66,8 +67,8 @@
 			$buildBtn.attr('data-assistant-id', assistantId);
 			$buildBtn.attr('data-assistant-title', assistantTitle);
 
-			// Show Build with AI button.
-			$buildAction.show();
+			// Show Build with AI button by removing the inline style entirely (let CSS take over)
+			$buildAction.attr('style', '');
 			if (window.console && console.log) {
 				console.log('[PM AI Assistant] Assistant selected:', assistantId, assistantTitle);
 			}
@@ -79,7 +80,14 @@
 			const assistantTitle = $(this).attr('data-assistant-title');
 
 			if (!assistantId) {
+				if (window.console && console.warn) {
+					console.warn('[PM AI Assistant] Cannot open modal: No assistant ID set on button');
+				}
 				return;
+			}
+
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Build button clicked with assistant:', assistantId, assistantTitle);
 			}
 
 			// Open modal and initialize chat interface.
@@ -117,12 +125,26 @@
 				console.log('[PM AI Assistant] Opening modal for assistant:', assistantId, assistantTitle);
 			}
 			
+			// Verify modal element exists
+			if (!$modal.length) {
+				console.error('[PM AI Assistant] Modal element not found in DOM');
+				return;
+			}
+			
 			// Update modal title.
 			$modal.find('#wp-mcp-ai-pm-assistant-modal__title').text(assistantTitle || 'AI Assistant');
 
-			// Show modal using CSS class to override any inline styles.
+			// Show modal - remove inline style and add visible class
+			// This ensures both CSS class and any inline styles work together
+			$modal.attr('style', ''); // Remove any inline styles that might interfere
 			$modal.addClass('wp-mcp-ai-pm-assistant-modal--visible');
 			$('body').addClass('wp-mcp-ai-pm-assistant-modal-open');
+			
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Modal visibility class added, checking display...');
+				console.log('[PM AI Assistant] Modal display style:', $modal.css('display'));
+				console.log('[PM AI Assistant] Modal has visible class:', $modal.hasClass('wp-mcp-ai-pm-assistant-modal--visible'));
+			}
 
 			// Initialize chat interface if not already initialized.
 			if ($chatContainer.is(':empty')) {
