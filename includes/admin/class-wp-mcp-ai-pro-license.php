@@ -46,7 +46,12 @@ class WP_MCP_AI_Pro_License {
 	 * @return bool
 	 */
 	public static function is_pro_active() {
-		// Allow override via filter for testing/development.
+		// Check for wp-config.php constant first (recommended method).
+		if ( defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) && WP_MCP_AI_PRO_DASHBOARD_ENABLED ) {
+			return true;
+		}
+
+		// Allow override via filter for testing/development (backward compatibility).
 		$force_pro = apply_filters( 'wp_mcp_ai_pro_dashboard_available', false );
 		if ( $force_pro ) {
 			return true;
