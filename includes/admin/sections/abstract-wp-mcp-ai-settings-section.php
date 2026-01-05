@@ -66,6 +66,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		}
 
 		/**
+		 * Get documentation URL for this section.
+		 *
+		 * Override this method in child classes to provide section-specific documentation links.
+		 *
+		 * @return string Documentation URL or empty string if no documentation available.
+		 */
+		public function get_documentation_url() {
+			return '';
+		}
+
+		/**
 		 * Validate input for this section.
 		 *
 		 * @param array $input Raw input from form.
@@ -364,12 +375,22 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		 * Render the section wrapper.
 		 */
 		public function render_wrapper() {
-			$description = $this->get_description();
+			$description       = $this->get_description();
+			$documentation_url = $this->get_documentation_url();
 			?>
 			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
 				<?php if ( $description ) : ?>
 					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
+				<?php endif; ?>
+				<?php if ( $documentation_url ) : ?>
+					<p class="section-documentation">
+						<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+						<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'View Documentation', 'wp-mcp-ai' ); ?>
+							<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
+						</a>
+					</p>
 				<?php endif; ?>
 				<table class="form-table" role="presentation">
 					<?php $this->render(); ?>

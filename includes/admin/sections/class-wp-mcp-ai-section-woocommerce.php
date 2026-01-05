@@ -60,6 +60,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_WooCommerce_Integration' ) ) {
 		}
 
 		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/tools/tool-reference.md#woocommerce-tools';
+		}
+
+		/**
 		 * Get section priority.
 		 *
 		 * @return int

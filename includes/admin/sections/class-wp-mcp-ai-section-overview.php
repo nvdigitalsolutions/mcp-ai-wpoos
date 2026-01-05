@@ -60,6 +60,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 		}
 
 		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/QUICK_REFERENCE.md';
+		}
+
+		/**
 		 * Get field definitions.
 		 *
 		 * This section is display-only, no editable fields.

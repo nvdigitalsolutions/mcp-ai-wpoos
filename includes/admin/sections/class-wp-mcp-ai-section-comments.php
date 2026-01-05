@@ -60,6 +60,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Comments' ) ) {
 		}
 
 		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/ai-providers/openai/OPENAI_API_GAP_ANALYSIS.md#moderation-api';
+		}
+
+		/**
 		 * Get field definitions.
 		 *
 		 * @return array

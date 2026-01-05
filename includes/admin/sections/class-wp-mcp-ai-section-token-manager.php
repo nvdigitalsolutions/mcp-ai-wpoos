@@ -62,6 +62,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		}
 
 		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/performance/TOKEN_MANAGEMENT_GUIDE.md';
+		}
+
+		/**
 		 * Render the token manager section.
 		 */
 		public function render() {
