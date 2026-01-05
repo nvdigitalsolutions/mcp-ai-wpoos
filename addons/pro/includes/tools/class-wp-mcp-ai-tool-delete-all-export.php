@@ -146,6 +146,7 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Export implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'requires-plugin',     // Requires WP All Export plugin.
 			'state-changing',      // Modifies state by deleting data.
 			'destructive',         // Permanently deletes data.

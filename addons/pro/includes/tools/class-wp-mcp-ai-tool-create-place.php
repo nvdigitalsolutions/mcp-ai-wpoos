@@ -163,7 +163,8 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'database-write', 'requires-capability' );
+		return array(
+			'pro', 'database-write', 'requires-capability' );
 	}
 
 	/**

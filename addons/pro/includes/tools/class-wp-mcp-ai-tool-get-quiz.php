@@ -143,6 +143,7 @@ class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'read-only',
 			'local-only',
 			'requires-capability',

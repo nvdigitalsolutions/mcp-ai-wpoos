@@ -139,6 +139,7 @@ class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'read-only',
 			'local-only',
 			'requires-capability',

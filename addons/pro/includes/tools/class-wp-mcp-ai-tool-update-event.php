@@ -82,7 +82,8 @@ class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	}
 
 	public function get_capability_flags() {
-		return array( 'database-write' );
+		return array(
+			'pro', 'database-write' );
 	}
 
 	public static function is_available() {
