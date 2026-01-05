@@ -588,6 +588,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder'  => 'AIza...',
 					'autocomplete' => 'new-password',
 				),
+
+				// PayHere Settings.
+				'payhere_app_id'                     => array(
+					'type'         => 'text',
+					'label'        => __( 'PayHere App ID', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: PayHere dashboard URL */
+						__( 'Your PayHere App ID. Required for payment retrieval tools. Get your credentials from <a href="%s" target="_blank">PayHere Settings</a> under API Keys.', 'wp-mcp-ai' ),
+						'https://www.payhere.lk/merchant/settings/api-keys'
+					),
+					'placeholder'  => 'app-...',
+					'autocomplete' => 'off',
+				),
+				'payhere_app_secret'                 => array(
+					'type'         => 'password',
+					'label'        => __( 'PayHere App Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'Your PayHere App Secret. Keep this secure and never share it publicly.', 'wp-mcp-ai' ),
+					'placeholder'  => 'secret-...',
+					'autocomplete' => 'new-password',
+				),
+				'payhere_sandbox_mode'               => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'PayHere Sandbox Mode', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable sandbox mode for testing', 'wp-mcp-ai' ),
+					'description'    => __( 'When enabled, all PayHere API requests will use the sandbox environment. Disable for production use with real transactions.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 			);
 		}
 
@@ -651,6 +678,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'Google Maps', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-location',
 					'fields' => array( 'google_maps_api_key' ),
+				),
+				'payhere'              => array(
+					'id'     => 'payhere',
+					'label'  => __( 'PayHere', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-money-alt',
+					'fields' => array( 'payhere_app_id', 'payhere_app_secret', 'payhere_sandbox_mode' ),
 				),
 			);
 		}
