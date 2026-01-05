@@ -649,6 +649,10 @@ if ( is_admin() ) {
 	// Load ISO 27001 certification badge display.
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-iso27001-badge.php';
 
+	// Load Pro Dashboard for ISO 27001 compliance management.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
+	new WP_MCP_AI_Pro_Dashboard();
+
 	/**
 	 * Add plugin action links in the plugins list.
 	 *
