@@ -44,6 +44,15 @@
 			return;
 		}
 
+		// Log successful initialization
+		if (window.console && console.log) {
+			console.log('[PM AI Assistant] Initialization successful, elements found:', {
+				selector: true,
+				modal: true,
+				chatContainer: true
+			});
+		}
+
 		// Move modal to body to ensure position: fixed works correctly.
 		// Modals rendered inside metaboxes may not display as overlays due to CSS positioning contexts.
 		// Ensure modal stays hidden - don't remove the inline style set by PHP.
@@ -66,6 +75,10 @@
 			const $selectedOption = $(this).find('option:selected');
 			const assistantTitle = $selectedOption.data('title') || $selectedOption.text();
 
+			if (window.console && console.log) {
+				console.log('[PM AI Assistant] Selector change event fired, assistantId:', assistantId);
+			}
+
 			if (!assistantId) {
 				// Close modal if open when no assistant selected
 				closeModal();
@@ -83,6 +96,10 @@
 			// Open modal and initialize chat interface directly.
 			openModal(assistantId, assistantTitle, contextType, contextData, postId);
 		});
+
+		if (window.console && console.log) {
+			console.log('[PM AI Assistant] Event handler attached to selector');
+		}
 
 		// Close modal on close button click.
 		$modalClose.on('click', closeModal);
@@ -124,9 +141,8 @@
 			// Update modal title.
 			$modal.find('#wp-mcp-ai-pm-assistant-modal__title').text(assistantTitle || 'AI Assistant');
 
-			// Show modal - remove inline style and add visible class
-			// This ensures both CSS class and any inline styles work together
-			$modal.attr('style', ''); // Remove any inline styles that might interfere
+			// Show modal - properly remove inline style attribute and add visible class
+			$modal.removeAttr('style');
 			$modal.addClass('wp-mcp-ai-pm-assistant-modal--visible');
 			$('body').addClass('wp-mcp-ai-pm-assistant-modal-open');
 			
