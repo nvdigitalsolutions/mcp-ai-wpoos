@@ -24,7 +24,7 @@ To use this tool, you need:
 2. Navigate to **Settings → API Keys**
 3. Create a new API key or use an existing one
 4. Copy your **App ID** and **App Secret**
-5. In WordPress admin, go to **Settings → NV oOS → Providers → PayHere**
+5. In WordPress admin, go to **Settings → NV oOS → Tools → Connections → PayHere**
 6. Enter your credentials and select the appropriate environment mode
 
 ### User Permissions
