@@ -153,8 +153,7 @@ console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString()
 			// Update modal title.
 			$modal.find('#wp-mcp-ai-pm-assistant-modal__title').text(assistantTitle || 'AI Assistant');
 
-			// Show modal - properly remove inline style attribute and add visible class
-			$modal.removeAttr('style');
+			// Show modal by adding visible class. The CSS !important rule will override the inline display: none.
 			$modal.addClass('wp-mcp-ai-pm-assistant-modal--visible');
 			$('body').addClass('wp-mcp-ai-pm-assistant-modal-open');
 			

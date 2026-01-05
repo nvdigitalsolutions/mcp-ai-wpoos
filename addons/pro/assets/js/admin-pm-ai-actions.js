@@ -19,10 +19,23 @@
 			var $resultContent = $container.find('.wp-mcp-ai-pm-ai-result-content');
 			var $loading = $container.find('.wp-mcp-ai-pm-ai-loading');
 			
-			// Get title from the editor
-			var title = $('#title').val();
+			// Get title from the editor - try multiple selectors for compatibility
+			var title = $('#title').val() || $('#post-title-0').val() || $('input[name="post_title"]').val() || '';
+			title = $.trim(title);
+			
+			// Debug logging to help troubleshoot title detection
+			if (window.console && console.log) {
+				console.log('[PM AI Actions] Title detection:', {
+					classic: $('#title').val(),
+					block: $('#post-title-0').val(),
+					generic: $('input[name="post_title"]').val(),
+					final: title
+				});
+			}
+			
 			if (!title) {
 				alert(wpMcpAiPmAi.strings.noTitle);
+				$('#title, #post-title-0, input[name="post_title"]').first().focus();
 				return;
 			}
 			
