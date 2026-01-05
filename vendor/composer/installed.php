@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chat-client-rendering-another-one',
-        'version' => 'dev-copilot/fix-chat-client-rendering-another-one',
-        'reference' => '8ab10dad99e161f0bf2dc74c77fd958ad57411d4',
+        'pretty_version' => 'dev-copilot/fix-undefined-array-key-error',
+        'version' => 'dev-copilot/fix-undefined-array-key-error',
+        'reference' => 'a815d1da7d200aa31884ef7ecc7765e14e25799a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chat-client-rendering-another-one',
-            'version' => 'dev-copilot/fix-chat-client-rendering-another-one',
-            'reference' => '8ab10dad99e161f0bf2dc74c77fd958ad57411d4',
+            'pretty_version' => 'dev-copilot/fix-undefined-array-key-error',
+            'version' => 'dev-copilot/fix-undefined-array-key-error',
+            'reference' => 'a815d1da7d200aa31884ef7ecc7765e14e25799a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

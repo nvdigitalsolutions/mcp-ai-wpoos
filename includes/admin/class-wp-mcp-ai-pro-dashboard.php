@@ -463,8 +463,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<?php foreach ( array_slice( $recent_events, 0, 5 ) as $event ) : ?>
 							<li class="wp-mcp-ai-activity-item">
 								<span class="wp-mcp-ai-activity-icon dashicons dashicons-<?php echo esc_attr( $event['icon'] ?? 'info' ); ?>"></span>
-								<span class="wp-mcp-ai-activity-text"><?php echo esc_html( $event['message'] ); ?></span>
-								<span class="wp-mcp-ai-activity-time"><?php echo esc_html( $event['time'] ); ?></span>
+								<span class="wp-mcp-ai-activity-text"><?php echo esc_html( $event['message'] ?? '' ); ?></span>
+								<span class="wp-mcp-ai-activity-time"><?php echo esc_html( $event['timestamp'] ?? '' ); ?></span>
 							</li>
 						<?php endforeach; ?>
 					</ul>
