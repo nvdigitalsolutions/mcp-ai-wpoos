@@ -416,10 +416,27 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		// Render the shortcode.
 		$html = do_shortcode( '[mcp_ai_chat' . $atts_str . ']' );
 
-		// Note: Context message display could be implemented via a filter on the chat interface.
-		// For now, context is passed in the initial JavaScript configuration.
-		// Future enhancement: Store in transient and retrieve via chat service.
+		// Extract the chat configuration from the global set by the shortcode.
+		// The shortcode stores config in $GLOBALS['wp_mcp_ai_chat_configs'] for AJAX access.
+		$chat_config = null;
+		if ( isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) && is_array( $GLOBALS['wp_mcp_ai_chat_configs'] ) ) {
+			// Get the most recently added config (last element).
+			$chat_config = end( $GLOBALS['wp_mcp_ai_chat_configs'] );
+		}
 
-		wp_send_json_success( array( 'html' => $html ) );
+		// Extract instance ID from the HTML to match with configuration.
+		// The chat container has id="wp-mcp-ai-chat-{unique_id}".
+		$instance_id = null;
+		if ( preg_match( '/id="(wp-mcp-ai-chat-[^"]+)"/', $html, $matches ) ) {
+			$instance_id = $matches[1];
+		}
+
+		wp_send_json_success(
+			array(
+				'html'        => $html,
+				'config'      => $chat_config,
+				'instance_id' => $instance_id,
+			)
+		);
 	}
 }

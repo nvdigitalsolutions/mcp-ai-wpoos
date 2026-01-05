@@ -229,6 +229,24 @@
 					// Insert the rendered chat HTML.
 					$container.html(response.data.html);
 
+					// Inject the chat configuration into the global window object.
+					// This is necessary because wp_add_inline_script() doesn't work in AJAX contexts.
+					if (response.data.config && response.data.instance_id) {
+						if (!window.wpMcpAiChatInstances) {
+							window.wpMcpAiChatInstances = {};
+						}
+						window.wpMcpAiChatInstances[response.data.instance_id] = response.data.config;
+						
+						if (window.console && console.log) {
+							console.log('[PM AI Assistant] Chat configuration injected for instance:', response.data.instance_id);
+							console.log('[PM AI Assistant] Assistant ID:', response.data.config.assistantId);
+						}
+					} else {
+						if (window.console && console.warn) {
+							console.warn('[PM AI Assistant] Chat configuration or instance ID missing in response');
+						}
+					}
+
 					// Isolate chat form from page form validation.
 					isolateChatForm($container);
 
