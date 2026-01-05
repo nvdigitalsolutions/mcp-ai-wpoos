@@ -651,7 +651,9 @@ if ( is_admin() ) {
 
 	// Load Pro Dashboard for ISO 27001 compliance management.
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
 	new WP_MCP_AI_Pro_Dashboard();
+	new WP_MCP_AI_Pro_Dashboard_REST();
 
 	/**
 	 * Add plugin action links in the plugins list.

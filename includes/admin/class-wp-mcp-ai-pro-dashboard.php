@@ -332,11 +332,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<h3><?php esc_html_e( '🔒 Pro Dashboard Preview', 'wp-mcp-ai' ); ?></h3>
 					<p>
 						<?php
+						$upgrade_url = apply_filters( 'wp_mcp_ai_pro_upgrade_url', admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=overview' ) );
 						echo wp_kses_post(
 							sprintf(
 								/* translators: %s: Link to upgrade page */
 								__( 'You\'re viewing a preview of the Pro Dashboard. <a href="%s">Upgrade to Pro</a> to unlock full compliance automation, real-time monitoring, and advanced reporting features.', 'wp-mcp-ai' ),
-								'#upgrade' // Replace with actual upgrade URL.
+								esc_url( $upgrade_url )
 							)
 						);
 						?>
@@ -432,7 +433,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<span class="dashicons dashicons-warning"></span>
 					<?php esc_html_e( 'Manage Risks', 'wp-mcp-ai' ); ?>
 				</a>
-				<a href="<?php echo esc_url( plugins_url( '../docs/compliance/iso27001/README.md', dirname( __FILE__ ) ) ); ?>" class="button" target="_blank">
+				<a href="<?php echo esc_url( plugins_url( 'docs/compliance/iso27001/README.md', WP_MCP_AI_FILE ) ); ?>" class="button" target="_blank">
 					<span class="dashicons dashicons-book"></span>
 					<?php esc_html_e( 'View ISMS Documentation', 'wp-mcp-ai' ); ?>
 				</a>
@@ -472,30 +473,34 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render documentation links widget.
 		 */
 		private function render_documentation_links() {
-			$docs_base = plugins_url( '../docs/compliance/iso27001/', dirname( __FILE__ ) );
+			$docs_path = WP_MCP_AI_PATH . 'docs/compliance/iso27001/';
+			$docs = array(
+				'ISMS-Policy.md'                  => __( 'ISMS Policy', 'wp-mcp-ai' ),
+				'Statement-of-Applicability.md'   => __( 'Statement of Applicability', 'wp-mcp-ai' ),
+				'Risk-Assessment.md'              => __( 'Risk Assessment', 'wp-mcp-ai' ),
+				'Business-Continuity-Plan.md'     => __( 'Business Continuity Plan', 'wp-mcp-ai' ),
+			);
 			?>
 			<div class="wp-mcp-ai-documentation-links">
 				<ul>
-					<li><a href="<?php echo esc_url( $docs_base . 'ISMS-Policy.md' ); ?>" target="_blank">
-						<span class="dashicons dashicons-media-document"></span>
-						<?php esc_html_e( 'ISMS Policy', 'wp-mcp-ai' ); ?>
-					</a></li>
-					<li><a href="<?php echo esc_url( $docs_base . 'Statement-of-Applicability.md' ); ?>" target="_blank">
-						<span class="dashicons dashicons-list-view"></span>
-						<?php esc_html_e( 'Statement of Applicability', 'wp-mcp-ai' ); ?>
-					</a></li>
-					<li><a href="<?php echo esc_url( $docs_base . 'Risk-Assessment.md' ); ?>" target="_blank">
-						<span class="dashicons dashicons-warning"></span>
-						<?php esc_html_e( 'Risk Assessment', 'wp-mcp-ai' ); ?>
-					</a></li>
-					<li><a href="<?php echo esc_url( $docs_base . 'Business-Continuity-Plan.md' ); ?>" target="_blank">
-						<span class="dashicons dashicons-backup"></span>
-						<?php esc_html_e( 'Business Continuity Plan', 'wp-mcp-ai' ); ?>
-					</a></li>
-					<li><a href="<?php echo esc_url( $docs_base . 'procedures/' ); ?>" target="_blank">
-						<span class="dashicons dashicons-admin-tools"></span>
-						<?php esc_html_e( 'All Procedures', 'wp-mcp-ai' ); ?>
-					</a></li>
+					<?php foreach ( $docs as $file => $label ) : ?>
+						<?php if ( file_exists( $docs_path . $file ) ) : ?>
+							<li>
+								<a href="<?php echo esc_url( plugins_url( 'docs/compliance/iso27001/' . $file, WP_MCP_AI_FILE ) ); ?>" target="_blank">
+									<span class="dashicons dashicons-media-document"></span>
+									<?php echo esc_html( $label ); ?>
+								</a>
+							</li>
+						<?php endif; ?>
+					<?php endforeach; ?>
+					<?php if ( is_dir( $docs_path . 'procedures' ) ) : ?>
+						<li>
+							<a href="<?php echo esc_url( plugins_url( 'docs/compliance/iso27001/procedures/', WP_MCP_AI_FILE ) ); ?>" target="_blank">
+								<span class="dashicons dashicons-admin-tools"></span>
+								<?php esc_html_e( 'All Procedures', 'wp-mcp-ai' ); ?>
+							</a>
+						</li>
+					<?php endif; ?>
 				</ul>
 			</div>
 			<?php
