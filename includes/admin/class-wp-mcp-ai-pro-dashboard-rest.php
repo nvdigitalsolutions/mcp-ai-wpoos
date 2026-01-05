@@ -250,7 +250,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 
 			// Check for wp-config.php constant first (recommended method).
 			$is_pro_active = defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) && WP_MCP_AI_PRO_DASHBOARD_ENABLED;
-			
+
 			// Fall back to filter for backward compatibility.
 			if ( ! $is_pro_active ) {
 				$is_pro_active = apply_filters( 'wp_mcp_ai_pro_dashboard_available', false );

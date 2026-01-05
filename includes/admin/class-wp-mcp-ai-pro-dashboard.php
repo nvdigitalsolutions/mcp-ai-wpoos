@@ -384,7 +384,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<?php esc_html_e( 'ISO 27001 Compliant', 'wp-mcp-ai' ); ?>
 					<?php endif; ?>
 				</div>
-				
+
 				<div class="wp-mcp-ai-progress-bar">
 					<div class="wp-mcp-ai-progress" style="width: <?php echo esc_attr( $compliance_percentage ); ?>%;">
 						<span class="wp-mcp-ai-progress-text"><?php echo esc_html( $compliance_percentage ); ?>%</span>

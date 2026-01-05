@@ -414,10 +414,10 @@ class WP_MCP_AI_Pro_License {
 								<label for="wp_mcp_ai_license_key"><?php esc_html_e( 'License Key', 'mcp-ai-wpoos' ); ?></label>
 							</th>
 							<td>
-								<input type="text" 
-									id="wp_mcp_ai_license_key" 
-									name="wp_mcp_ai_license_key" 
-									class="regular-text" 
+								<input type="text"
+									id="wp_mcp_ai_license_key"
+									name="wp_mcp_ai_license_key"
+									class="regular-text"
 									value="<?php echo esc_attr( $license_key ); ?>"
 									placeholder="XXXX-XXXX-XXXX-XXXX" />
 								<p class="description">
