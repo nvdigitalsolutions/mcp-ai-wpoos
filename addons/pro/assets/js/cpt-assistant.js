@@ -15,6 +15,11 @@
 		 * Initialize the assistant
 		 */
 		init: function () {
+			// Move modals to body to ensure position: fixed works correctly.
+			// Modals rendered inside metaboxes may not display as overlays due to CSS positioning contexts.
+			$('#wp-mcp-ai-cpt-assistant-modal').appendTo('body');
+			$('#wp-mcp-ai-cpt-assistant-modal-term').appendTo('body');
+			
 			this.bindEvents();
 		},
 
