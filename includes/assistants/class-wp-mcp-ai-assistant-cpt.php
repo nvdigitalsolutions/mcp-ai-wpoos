@@ -1970,6 +1970,26 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					} );
 				}
 
+				function updateGroupCounts() {
+					var groups = document.querySelectorAll( '.wp-mcp-ai-tools__group' );
+
+					groups.forEach( function( group ) {
+						var checkboxes = group.querySelectorAll( '.wp-mcp-ai-tools__checkbox' );
+						var selectedCount = 0;
+
+						checkboxes.forEach( function( checkbox ) {
+							if ( checkbox.checked ) {
+								selectedCount++;
+							}
+						} );
+
+						var selectedSpan = group.querySelector( '.wp-mcp-ai-tools__group-selected' );
+						if ( selectedSpan ) {
+							selectedSpan.textContent = selectedCount;
+						}
+					} );
+				}
+
 				document.addEventListener( 'DOMContentLoaded', function() {
 					var toolItems = document.querySelectorAll( '.wp-mcp-ai-tools__item' );
 					var prebuiltTemplate = document.getElementById( 'wp-mcp-ai-prebuilt-shortcut-template' );
@@ -1985,8 +2005,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 						checkbox.addEventListener( 'change', function() {
 							syncToolControls( item );
+							updateGroupCounts();
 						} );
 					} );
+
+					// Initialize counts on page load.
+					updateGroupCounts();
 
 					if ( ! prebuiltTemplate ) {
 						return;
@@ -2221,10 +2245,22 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$list_id      = 'wp-mcp-ai-tools-list-' . $group_suffix;
 				$open_attr    = 0 === $group_index ? ' open' : '';
 
+				// Count selected tools in this group.
+				$group_selected_count = 0;
+				foreach ( $grouped_tools[ $group_id ] as $tool ) {
+					$tool_slug = $tool->get_slug();
+					if ( in_array( $tool_slug, $selected_tools, true ) ) {
+						++$group_selected_count;
+					}
+				}
+
 				echo '<details class="wp-mcp-ai-tools__group" role="group" aria-labelledby="' . esc_attr( $summary_id ) . '"' . esc_attr( $open_attr ) . '>';
 				echo '<summary id="' . esc_attr( $summary_id ) . '" class="wp-mcp-ai-tools__summary">';
 				echo '<span class="wp-mcp-ai-tools__summary-title">' . esc_html( $group_label ) . '</span>';
-				echo '<span class="wp-mcp-ai-tools__summary-count" aria-hidden="true">' . esc_html( number_format_i18n( $group_count ) ) . '</span>';
+				echo '<span class="wp-mcp-ai-tools__summary-count" aria-hidden="true">';
+				echo '<span class="wp-mcp-ai-tools__group-selected">' . esc_html( number_format_i18n( $group_selected_count ) ) . '</span>';
+				echo ' / ' . esc_html( number_format_i18n( $group_count ) );
+				echo '</span>';
 				/* translators: %d: number of tools */
 				echo '<span class="screen-reader-text">' . esc_html( sprintf( _n( '%d tool in this group', '%d tools in this group', $group_count, 'wp-mcp-ai' ), $group_count ) ) . '</span>';
 				echo '</summary>';
