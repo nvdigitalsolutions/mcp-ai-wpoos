@@ -1126,6 +1126,30 @@
 	background: #f6f7f7;
 	padding: 8px 12px 0;
 	border-radius: 4px 4px 0 0;
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: #8c8f94 #f0f0f1;
+}
+
+.wp-mcp-ai-subtab-nav::-webkit-scrollbar {
+	height: 8px;
+}
+
+.wp-mcp-ai-subtab-nav::-webkit-scrollbar-track {
+	background: #f0f0f1;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-subtab-nav::-webkit-scrollbar-thumb {
+	background: #8c8f94;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-subtab-nav::-webkit-scrollbar-thumb:hover {
+	background: #646970;
 }
 
 .wp-mcp-ai-subtab {
@@ -1144,6 +1168,8 @@
 	transition: all 0.2s ease;
 	position: relative;
 	bottom: -1px;
+	flex-shrink: 0;
+	white-space: nowrap;
 }
 
 .wp-mcp-ai-subtab .dashicons {
@@ -1194,13 +1220,19 @@
 	}
 
 	.wp-mcp-ai-subtab-nav {
-		flex-wrap: wrap;
-		gap: 4px;
+		padding: 6px 8px 0;
+		gap: 2px;
 	}
 
 	.wp-mcp-ai-subtab {
-		font-size: 12px;
+		font-size: 11px;
 		padding: 6px 10px;
+	}
+
+	.wp-mcp-ai-subtab .dashicons {
+		width: 14px;
+		height: 14px;
+		font-size: 14px;
 	}
 
 	/* Make filter bar stack vertically on mobile */
