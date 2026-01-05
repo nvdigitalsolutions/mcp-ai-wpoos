@@ -73,7 +73,12 @@
 	right: 0;
 	bottom: 0;
 	z-index: 100000;
-	display: none;
+	display: none !important;
+}
+
+/* Modal visible state */
+.wp-mcp-ai-pm-assistant-modal.wp-mcp-ai-pm-assistant-modal--visible {
+	display: block !important;
 }
 
 .wp-mcp-ai-pm-assistant-modal__backdrop {
