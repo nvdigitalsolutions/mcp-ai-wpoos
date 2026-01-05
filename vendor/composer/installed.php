@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-array-key-warning-pro-dashboard',
+        'version' => 'dev-copilot/fix-array-key-warning-pro-dashboard',
+        'reference' => 'b6bcb90d6a50d5ba29f4eab1b3d43e5bb3857e30',
         'pretty_version' => 'dev-copilot/fix-pm-assistant-modal-chat',
         'version' => 'dev-copilot/fix-pm-assistant-modal-chat',
         'reference' => '2fd3ace32b8e39b0a8f41860e1d8a1655e407444',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-array-key-warning-pro-dashboard',
+            'version' => 'dev-copilot/fix-array-key-warning-pro-dashboard',
+            'reference' => 'b6bcb90d6a50d5ba29f4eab1b3d43e5bb3857e30',
             'pretty_version' => 'dev-copilot/fix-pm-assistant-modal-chat',
             'version' => 'dev-copilot/fix-pm-assistant-modal-chat',
             'reference' => '2fd3ace32b8e39b0a8f41860e1d8a1655e407444',
