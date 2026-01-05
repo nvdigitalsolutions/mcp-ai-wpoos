@@ -84,10 +84,6 @@ class Test_Pro_Dashboard_Constant extends WP_UnitTestCase {
 	public function test_license_filter_backward_compatibility() {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-license.php';
 		
-		// Initially disabled (assuming no valid license).
-		// Note: This might be true if there's a valid license in the test environment.
-		$initial = WP_MCP_AI_Pro_License::is_pro_active();
-		
 		// Enable with filter.
 		add_filter( 'wp_mcp_ai_pro_dashboard_available', '__return_true' );
 		$this->assertTrue( WP_MCP_AI_Pro_License::is_pro_active(), 'Filter should enable Pro in License class' );

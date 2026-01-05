@@ -1,3 +1,4 @@
+<?php
 /**
  * wp-config.php snippet for enabling NV oOS Pro Dashboard
  *
