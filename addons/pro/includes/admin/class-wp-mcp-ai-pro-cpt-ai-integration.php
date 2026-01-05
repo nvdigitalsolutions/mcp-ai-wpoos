@@ -371,11 +371,17 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			WP_MCP_AI_PRO_VERSION
 		);
 
+		// Build dependencies array - include wp-dom-ready if available for block editor support.
+		$script_dependencies = array( 'jquery', 'wp-api' );
+		if ( wp_script_is( 'wp-dom-ready', 'registered' ) ) {
+			$script_dependencies[] = 'wp-dom-ready';
+		}
+
 		// Enqueue JavaScript.
 		wp_enqueue_script(
 			'wp-mcp-ai-cpt-assistant',
 			WP_MCP_AI_PRO_URL . 'assets/js/cpt-assistant.js',
-			array( 'jquery', 'wp-api' ),
+			$script_dependencies,
 			WP_MCP_AI_PRO_VERSION,
 			true
 		);

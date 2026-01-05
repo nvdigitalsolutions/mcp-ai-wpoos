@@ -2,10 +2,93 @@
  * AI CPT Assistant JavaScript
  *
  * Handles modal and chat interface interactions for the AI assistant metabox.
+ * Uses modern WordPress data store subscription for block editor compatibility.
  */
 
 (function ($) {
 	'use strict';
+
+	/**
+	 * Check if the block editor (Gutenberg) is active.
+	 *
+	 * @return {boolean} True if block editor is active.
+	 */
+	function isBlockEditorActive() {
+		try {
+			return typeof wp !== 'undefined' && 
+				   wp.data && 
+				   typeof wp.data.select === 'function' &&
+				   wp.data.select('core/editor') !== undefined;
+		} catch (error) {
+			return false;
+		}
+	}
+
+	/**
+	 * Wait for modal elements using WordPress data store subscription (modern approach).
+	 * Falls back to polling for classic editor or when data store is not available.
+	 *
+	 * @param {Function} callback - Function to call when elements are ready.
+	 */
+	function waitForElements(callback) {
+		const $modal = $('#wp-mcp-ai-cpt-assistant-modal, #wp-mcp-ai-cpt-assistant-modal-term');
+
+		// If elements already exist, initialize immediately
+		if ($modal.length) {
+			callback();
+			return;
+		}
+
+		// For block editor, use data store subscription if available
+		if (isBlockEditorActive() && typeof wp !== 'undefined' && wp.data && wp.data.subscribe) {
+			let unsubscribe = null;
+			let initialized = false;
+
+			// Subscribe to data store changes
+			unsubscribe = wp.data.subscribe(function() {
+				if (initialized) {
+					return;
+				}
+
+				const $modal = $('#wp-mcp-ai-cpt-assistant-modal, #wp-mcp-ai-cpt-assistant-modal-term');
+
+				if ($modal.length) {
+					initialized = true;
+					
+					if (unsubscribe) {
+						unsubscribe();
+					}
+					
+					callback();
+				}
+			});
+
+			// Fallback timeout (10 seconds)
+			setTimeout(function() {
+				if (!initialized && unsubscribe) {
+					unsubscribe();
+				}
+			}, 10000);
+		} else {
+			// Fallback: Simple polling for classic editor
+			let attempts = 0;
+			const maxAttempts = 30;
+			const pollInterval = 200;
+
+			const pollTimer = setInterval(function() {
+				attempts++;
+				
+				const $modal = $('#wp-mcp-ai-cpt-assistant-modal, #wp-mcp-ai-cpt-assistant-modal-term');
+
+				if ($modal.length) {
+					clearInterval(pollTimer);
+					callback();
+				} else if (attempts >= maxAttempts) {
+					clearInterval(pollTimer);
+				}
+			}, pollInterval);
+		}
+	}
 
 	/**
 	 * AI CPT Assistant Handler
@@ -291,9 +374,20 @@
 		}
 	};
 
-	// Initialize when document is ready
-	$(document).ready(function () {
-		WpMcpAiCptAssistant.init();
-	});
+	// Initialize using modern approach
+	if (typeof wp !== 'undefined' && wp.domReady) {
+		wp.domReady(function() {
+			waitForElements(function() {
+				WpMcpAiCptAssistant.init();
+			});
+		});
+	} else {
+		// Fallback for classic editor or older WordPress
+		$(document).ready(function () {
+			waitForElements(function() {
+				WpMcpAiCptAssistant.init();
+			});
+		});
+	}
 
 })(jQuery);
