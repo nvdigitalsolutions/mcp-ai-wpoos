@@ -519,22 +519,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render controls summary.
 		 */
 		private function render_controls_summary() {
+			$controls = $this->get_iso27001_controls();
+			$stats    = $this->calculate_controls_stats( $controls );
 			?>
 			<div class="wp-mcp-ai-controls-summary">
 				<div class="wp-mcp-ai-control-stat">
-					<h3>52</h3>
+					<h3><?php echo esc_html( $stats['implemented'] ); ?></h3>
 					<p><?php esc_html_e( 'Implemented', 'wp-mcp-ai' ); ?></p>
 				</div>
 				<div class="wp-mcp-ai-control-stat">
-					<h3>26</h3>
+					<h3><?php echo esc_html( $stats['partial'] ); ?></h3>
 					<p><?php esc_html_e( 'Partial', 'wp-mcp-ai' ); ?></p>
 				</div>
 				<div class="wp-mcp-ai-control-stat">
-					<h3>3</h3>
+					<h3><?php echo esc_html( $stats['planned'] ); ?></h3>
 					<p><?php esc_html_e( 'Planned', 'wp-mcp-ai' ); ?></p>
 				</div>
 				<div class="wp-mcp-ai-control-stat">
-					<h3>12</h3>
+					<h3><?php echo esc_html( $stats['not_applicable'] ); ?></h3>
 					<p><?php esc_html_e( 'N/A', 'wp-mcp-ai' ); ?></p>
 				</div>
 			</div>
@@ -545,17 +547,138 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render controls table.
 		 */
 		private function render_controls_table() {
-			if ( $this->is_pro_active() ) {
-				?>
-				<p><?php esc_html_e( 'Full interactive controls table with filtering and status updates.', 'wp-mcp-ai' ); ?></p>
-				<?php
-			} else {
+			$controls = $this->get_iso27001_controls();
+			
+			if ( empty( $controls ) ) {
 				?>
 				<p class="wp-mcp-ai-empty-state">
-					<?php esc_html_e( 'Upgrade to Pro to view and manage all 93 ISO 27001:2022 controls with real-time status tracking.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Unable to load ISO 27001 controls. Please check that the Statement of Applicability document is available.', 'wp-mcp-ai' ); ?>
 				</p>
 				<?php
+				return;
 			}
+			?>
+			<div class="wp-mcp-ai-controls-filter">
+				<label for="controls-status-filter"><?php esc_html_e( 'Filter by status:', 'wp-mcp-ai' ); ?></label>
+				<select id="controls-status-filter">
+					<option value="all"><?php esc_html_e( 'All Controls', 'wp-mcp-ai' ); ?></option>
+					<option value="implemented"><?php esc_html_e( 'Implemented', 'wp-mcp-ai' ); ?></option>
+					<option value="partial"><?php esc_html_e( 'Partial', 'wp-mcp-ai' ); ?></option>
+					<option value="planned"><?php esc_html_e( 'Planned', 'wp-mcp-ai' ); ?></option>
+					<option value="not_applicable"><?php esc_html_e( 'Not Applicable', 'wp-mcp-ai' ); ?></option>
+				</select>
+				
+				<label for="controls-search"><?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?></label>
+				<input type="text" id="controls-search" placeholder="<?php esc_attr_e( 'Search controls...', 'wp-mcp-ai' ); ?>" />
+			</div>
+
+			<table class="wp-list-table widefat fixed striped wp-mcp-ai-controls-table">
+				<thead>
+					<tr>
+						<th style="width: 120px;"><?php esc_html_e( 'Control ID', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Control Name', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 120px;"><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 100px;"><?php esc_html_e( 'Applicable', 'wp-mcp-ai' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $controls as $control ) : ?>
+						<tr class="wp-mcp-ai-control-row" data-status="<?php echo esc_attr( $control['status_key'] ); ?>">
+							<td><strong><?php echo esc_html( $control['id'] ); ?></strong></td>
+							<td>
+								<strong><?php echo esc_html( $control['name'] ); ?></strong>
+								<?php if ( ! empty( $control['justification'] ) ) : ?>
+									<p class="description"><?php echo esc_html( wp_trim_words( $control['justification'], 20 ) ); ?></p>
+								<?php endif; ?>
+							</td>
+							<td>
+								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $control['status_key'] ); ?>">
+									<?php echo esc_html( $control['status'] ); ?>
+								</span>
+							</td>
+							<td>
+								<?php if ( $control['applicable'] ) : ?>
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php else : ?>
+									<span class="dashicons dashicons-dismiss" style="color: #dc3232;"></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+
+			<style>
+				.wp-mcp-ai-controls-filter {
+					margin-bottom: 20px;
+					display: flex;
+					gap: 10px;
+					align-items: center;
+				}
+				.wp-mcp-ai-controls-filter label {
+					font-weight: 600;
+				}
+				.wp-mcp-ai-controls-filter select,
+				.wp-mcp-ai-controls-filter input[type="text"] {
+					padding: 5px 10px;
+				}
+				.wp-mcp-ai-controls-filter input[type="text"] {
+					flex: 1;
+					max-width: 300px;
+				}
+				.wp-mcp-ai-controls-table .description {
+					margin: 5px 0 0 0;
+					color: #646970;
+				}
+				.wp-mcp-ai-status-badge {
+					display: inline-block;
+					padding: 4px 8px;
+					border-radius: 3px;
+					font-size: 12px;
+					font-weight: 600;
+				}
+				.wp-mcp-ai-status-implemented {
+					background: #d4edda;
+					color: #155724;
+				}
+				.wp-mcp-ai-status-partial {
+					background: #fff3cd;
+					color: #856404;
+				}
+				.wp-mcp-ai-status-planned {
+					background: #d1ecf1;
+					color: #0c5460;
+				}
+				.wp-mcp-ai-status-not_applicable {
+					background: #e2e3e5;
+					color: #383d41;
+				}
+			</style>
+
+			<script>
+			jQuery(document).ready(function($) {
+				// Filter controls
+				$('#controls-status-filter').on('change', function() {
+					var status = $(this).val();
+					if (status === 'all') {
+						$('.wp-mcp-ai-control-row').show();
+					} else {
+						$('.wp-mcp-ai-control-row').hide();
+						$('.wp-mcp-ai-control-row[data-status="' + status + '"]').show();
+					}
+				});
+
+				// Search controls
+				$('#controls-search').on('keyup', function() {
+					var search = $(this).val().toLowerCase();
+					$('.wp-mcp-ai-control-row').each(function() {
+						var text = $(this).text().toLowerCase();
+						$(this).toggle(text.indexOf(search) > -1);
+					});
+				});
+			});
+			</script>
+			<?php
 		}
 
 		/**
@@ -693,6 +816,100 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<?php endforeach; ?>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Get ISO 27001 controls from Statement of Applicability.
+		 *
+		 * @return array Array of controls with id, name, status, applicable, and justification.
+		 */
+		private function get_iso27001_controls() {
+			$soa_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Statement-of-Applicability.md';
+			
+			if ( ! file_exists( $soa_file ) ) {
+				return array();
+			}
+
+			$content = file_get_contents( $soa_file );
+			if ( empty( $content ) ) {
+				return array();
+			}
+
+			$controls = array();
+			$lines    = explode( "\n", $content );
+			$current_control = null;
+
+			foreach ( $lines as $line ) {
+				// Match control ID header (e.g., "### A.5.1 Policies for Information Security").
+				if ( preg_match( '/^###\s+(A\.\d+\.\d+(?:\.\d+)?)\s+(.+)$/', $line, $matches ) ) {
+					// Save previous control if exists.
+					if ( $current_control ) {
+						$controls[] = $current_control;
+					}
+
+					// Start new control.
+					$current_control = array(
+						'id'            => $matches[1],
+						'name'          => trim( $matches[2] ),
+						'status'        => '',
+						'status_key'    => '',
+						'applicable'    => true,
+						'justification' => '',
+					);
+				} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$status_text = trim( $matches[1] );
+					$current_control['status'] = $status_text;
+					
+					// Map status to key.
+					if ( strpos( $status_text, 'Implemented' ) !== false ) {
+						$current_control['status_key'] = 'implemented';
+					} elseif ( strpos( $status_text, 'Partial' ) !== false ) {
+						$current_control['status_key'] = 'partial';
+					} elseif ( strpos( $status_text, 'Planned' ) !== false ) {
+						$current_control['status_key'] = 'planned';
+					} elseif ( strpos( $status_text, 'Not Applicable' ) !== false ) {
+						$current_control['status_key'] = 'not_applicable';
+						$current_control['applicable'] = false;
+					}
+				} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$applicable_text = trim( $matches[1] );
+					$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
+				} elseif ( $current_control && preg_match( '/^\*\*Justification:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$current_control['justification'] = trim( $matches[1] );
+				}
+			}
+
+			// Save last control.
+			if ( $current_control ) {
+				$controls[] = $current_control;
+			}
+
+			return $controls;
+		}
+
+		/**
+		 * Calculate statistics for controls.
+		 *
+		 * @param array $controls Array of controls.
+		 * @return array Statistics with counts for each status.
+		 */
+		private function calculate_controls_stats( $controls ) {
+			$stats = array(
+				'implemented'    => 0,
+				'partial'        => 0,
+				'planned'        => 0,
+				'not_applicable' => 0,
+				'total'          => count( $controls ),
+			);
+
+			foreach ( $controls as $control ) {
+				$status_key = $control['status_key'] ?? '';
+				if ( isset( $stats[ $status_key ] ) ) {
+					++$stats[ $status_key ];
+				}
+			}
+
+			return $stats;
 		}
 	}
 }
