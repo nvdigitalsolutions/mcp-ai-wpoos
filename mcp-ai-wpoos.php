@@ -646,6 +646,9 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-key-rotation.php';
 	WP_MCP_AI_Admin_Key_Rotation::init();
 
+	// Load ISO 27001 certification badge display.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-iso27001-badge.php';
+
 	/**
 	 * Add plugin action links in the plugins list.
 	 *
