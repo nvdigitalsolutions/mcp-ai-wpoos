@@ -24,19 +24,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		const PAGE_SLUG = 'nvoos-pro-dashboard';
 
 		/**
-		 * Pro feature availability flag.
-		 *
-		 * @var bool
-		 */
-		private $is_pro_active = false;
-
-		/**
 		 * Constructor.
 		 */
 		public function __construct() {
-			// Check if Pro features are enabled.
-			$this->is_pro_active = $this->check_pro_availability();
-
 			add_action( 'admin_menu', array( $this, 'register_menu' ), 25 );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		}
@@ -44,11 +34,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		/**
 		 * Check if Pro features should be available.
 		 *
+		 * This method checks the filter dynamically at runtime rather than caching
+		 * the result, allowing filters added via code snippets to work properly.
+		 *
 		 * @return bool True if Pro features are available.
 		 */
-		private function check_pro_availability() {
+		public function is_pro_active() {
 			/**
 			 * Filter pro dashboard availability.
+			 *
+			 * Allows enabling Pro dashboard features via filter, useful for:
+			 * - Testing Pro features without a license
+			 * - Custom licensing implementations
+			 * - Development environments
+			 *
+			 * @since 1.5.0
 			 *
 			 * @param bool $is_available Whether Pro dashboard is available.
 			 */
@@ -173,7 +173,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
-					'isProActive' => $this->is_pro_active,
+					'isProActive' => $this->is_pro_active(),
 				)
 			);
 		}
@@ -326,7 +326,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render Pro status notice.
 		 */
 		private function render_pro_status_notice() {
-			if ( ! $this->is_pro_active ) {
+			if ( ! $this->is_pro_active() ) {
 				?>
 				<div class="notice notice-info wp-mcp-ai-pro-notice">
 					<h3><?php esc_html_e( '🔒 Pro Dashboard Preview', 'wp-mcp-ai' ); ?></h3>
@@ -449,7 +449,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$recent_events = get_option( 'wp_mcp_ai_recent_activity', array() );
 			?>
 			<div class="wp-mcp-ai-recent-activity">
-				<?php if ( $this->is_pro_active && ! empty( $recent_events ) ) : ?>
+				<?php if ( $this->is_pro_active() && ! empty( $recent_events ) ) : ?>
 					<ul class="wp-mcp-ai-activity-list">
 						<?php foreach ( array_slice( $recent_events, 0, 5 ) as $event ) : ?>
 							<li class="wp-mcp-ai-activity-item">
@@ -536,7 +536,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render controls table.
 		 */
 		private function render_controls_table() {
-			if ( $this->is_pro_active ) {
+			if ( $this->is_pro_active() ) {
 				?>
 				<p><?php esc_html_e( 'Full interactive controls table with filtering and status updates.', 'wp-mcp-ai' ); ?></p>
 				<?php
@@ -553,7 +553,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render report generator.
 		 */
 		private function render_report_generator() {
-			if ( $this->is_pro_active ) {
+			if ( $this->is_pro_active() ) {
 				?>
 				<p><?php esc_html_e( 'Generate compliance reports in PDF, DOCX, or Excel format.', 'wp-mcp-ai' ); ?></p>
 				<?php
@@ -570,7 +570,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render audit history.
 		 */
 		private function render_audit_history() {
-			if ( $this->is_pro_active ) {
+			if ( $this->is_pro_active() ) {
 				?>
 				<p><?php esc_html_e( 'View past audit reports and findings.', 'wp-mcp-ai' ); ?></p>
 				<?php
@@ -587,7 +587,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render monitoring dashboard.
 		 */
 		private function render_monitoring_dashboard() {
-			if ( $this->is_pro_active ) {
+			if ( $this->is_pro_active() ) {
 				?>
 				<p><?php esc_html_e( 'Real-time security monitoring with SIEM integration.', 'wp-mcp-ai' ); ?></p>
 				<?php
@@ -604,7 +604,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render risk matrix.
 		 */
 		private function render_risk_matrix() {
-			if ( $this->is_pro_active ) {
+			if ( $this->is_pro_active() ) {
 				?>
 				<p><?php esc_html_e( 'Interactive 5×5 risk matrix with heatmap visualization.', 'wp-mcp-ai' ); ?></p>
 				<?php
@@ -621,7 +621,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render risk register.
 		 */
 		private function render_risk_register() {
-			if ( $this->is_pro_active ) {
+			if ( $this->is_pro_active() ) {
 				?>
 				<p><?php esc_html_e( 'Complete risk register with treatment tracking.', 'wp-mcp-ai' ); ?></p>
 				<?php
@@ -675,7 +675,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 								</div>
 							</div>
 						<?php endif; ?>
-						<?php if ( ! $this->is_pro_active && $framework['status'] === 'pending' ) : ?>
+						<?php if ( ! $this->is_pro_active() && $framework['status'] === 'pending' ) : ?>
 							<p class="wp-mcp-ai-framework-cta">
 								<small><?php esc_html_e( 'Pro feature', 'wp-mcp-ai' ); ?></small>
 							</p>

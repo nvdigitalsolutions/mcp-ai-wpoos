@@ -58,7 +58,7 @@ class WP_MCP_AI_ISO27001_Badge {
 					<span class="nvoos-badge-status"><?php echo esc_html( $status['label'] ); ?></span>
 					<p>
 						<?php echo esc_html( $status['description'] ); ?>
-						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings&tab=security' ) ); ?>" class="nvoos-badge-link">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-dashboard-iso27001' ) ); ?>" class="nvoos-badge-link">
 							<?php esc_html_e( 'View Security Controls', 'wp-mcp-ai' ); ?>
 						</a>
 						<?php if ( ! empty( $status['docs_link'] ) ) : ?>
