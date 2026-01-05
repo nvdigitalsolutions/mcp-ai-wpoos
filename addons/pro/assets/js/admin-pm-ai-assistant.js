@@ -232,7 +232,7 @@
 					// Attempt to recover configuration/instance from the response map if direct values are missing.
 					var responseConfig = response.data.config;
 					var responseInstanceId = response.data.instance_id;
-					var configMap = response.data.config_map || response.data.configs || null;
+					var configMap = response.data.config_map || null;
 
 					if ((!responseConfig || !responseInstanceId) && configMap) {
 						var configKeys = Object.keys(configMap);
