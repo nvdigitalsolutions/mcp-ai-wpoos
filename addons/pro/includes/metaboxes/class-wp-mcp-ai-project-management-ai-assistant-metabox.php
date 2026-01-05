@@ -430,14 +430,24 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			$chat_config = $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ];
 		}
 
-		// If we couldn't extract the config, log a warning but still return the HTML.
-		if ( ! $chat_config || ! $instance_id ) {
+		// If we couldn't extract the config or instance ID, log specific warnings.
+		if ( ! $instance_id ) {
 			WP_MCP_AI_Logger::log_warning(
-				'Could not extract chat configuration or instance ID for AJAX response',
+				'Could not extract instance ID from chat HTML for AJAX response',
 				array(
-					'instance_id_found' => (bool) $instance_id,
-					'config_found'      => (bool) $chat_config,
-					'assistant_id'      => $assistant_id,
+					'assistant_id' => $assistant_id,
+					'html_length'  => strlen( $html ),
+				)
+			);
+		}
+
+		if ( ! $chat_config ) {
+			WP_MCP_AI_Logger::log_warning(
+				'Could not extract chat configuration for AJAX response',
+				array(
+					'instance_id'  => $instance_id,
+					'assistant_id' => $assistant_id,
+					'configs_available' => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ? array_keys( $GLOBALS['wp_mcp_ai_chat_configs'] ) : array(),
 				)
 			);
 		}
