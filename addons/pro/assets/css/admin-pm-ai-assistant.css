@@ -182,7 +182,11 @@ body.wp-mcp-ai-pm-assistant-modal-open {
 /* Isolated chat form - prevent interaction with page form */
 .wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-isolated-form,
 .wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__form[data-isolated-form] {
-	/* Ensure form is isolated and doesn't participate in page form validation */
+	/* 
+	 * CSS isolation creates a new stacking context (visual separation).
+	 * JavaScript event handlers (stopPropagation) provide actual form isolation.
+	 * This CSS serves as a visual marker and provides additional rendering isolation.
+	 */
 	isolation: isolate;
 }
 
