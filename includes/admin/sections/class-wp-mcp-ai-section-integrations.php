@@ -229,6 +229,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
+				// PayHere Settings.
+				'payhere_app_id'                    => array(
+					'type'         => 'text',
+					'label'        => __( 'PayHere App ID', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: PayHere dashboard URL */
+						__( 'Your PayHere App ID. Required for payment retrieval tools. Get your credentials from <a href="%s" target="_blank">PayHere Settings</a> under API Keys.', 'wp-mcp-ai' ),
+						'https://www.payhere.lk/merchant/settings/api-keys'
+					),
+					'placeholder'  => 'app-...',
+					'autocomplete' => 'off',
+				),
+				'payhere_app_secret'                => array(
+					'type'         => 'password',
+					'label'        => __( 'PayHere App Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'Your PayHere App Secret. Keep this secure and never share it publicly.', 'wp-mcp-ai' ),
+					'placeholder'  => 'secret-...',
+					'autocomplete' => 'new-password',
+				),
+				'payhere_sandbox_mode'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'PayHere Sandbox Mode', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable sandbox mode for testing', 'wp-mcp-ai' ),
+					'description'    => __( 'When enabled, all PayHere API requests will use the sandbox environment. Disable for production use with real transactions.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+
 				// QuickBooks.
 				'quickbooks_api_key'                => array(
 					'type'         => 'password',
@@ -389,6 +416,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'brave_search_api_key' ),
 				),
+				'payhere'          => array(
+					'id'     => 'payhere',
+					'label'  => __( 'PayHere', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-money-alt',
+					'fields' => array( 'payhere_app_id', 'payhere_app_secret', 'payhere_sandbox_mode' ),
+				),
+				'removebg'         => array(
+					'id'     => 'removebg',
+					'label'  => __( 'remove.bg', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-format-image',
+					'fields' => array( 'removebg_api_key' ),
+				),
 				'cloudflare'       => array(
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'wp-mcp-ai' ),
@@ -515,6 +554,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					break;
 				case 'brave_search':
 					$this->render_brave_search_footer();
+					break;
+				case 'payhere':
+					$this->render_payhere_footer();
 					break;
 				case 'meta':
 					$this->render_meta_footer();
@@ -698,6 +740,99 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<p class="description">
 						<?php esc_html_e( 'Enter your Brave Search API key in the field above, then click "Test Connection" to verify it works. You can test before saving.', 'wp-mcp-ai' ); ?>
 					</p>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render PayHere footer content.
+		 */
+		private function render_payhere_footer() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_credentials = ! empty( $settings['payhere_app_id'] ) && ! empty( $settings['payhere_app_secret'] );
+			$is_sandbox = ! empty( $settings['payhere_sandbox_mode'] );
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'PayHere Configuration', 'wp-mcp-ai' ); ?></th>
+				<td>
+					<?php if ( $has_credentials ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'PayHere Credentials Configured', 'wp-mcp-ai' ); ?></strong>
+								<?php if ( $is_sandbox ) : ?>
+									<span style="margin-left: 10px; padding: 2px 8px; background: #fff3cd; color: #856404; border-radius: 3px; font-size: 12px;">
+										<?php esc_html_e( 'Sandbox Mode', 'wp-mcp-ai' ); ?>
+									</span>
+								<?php else : ?>
+									<span style="margin-left: 10px; padding: 2px 8px; background: #d1ecf1; color: #0c5460; border-radius: 3px; font-size: 12px;">
+										<?php esc_html_e( 'Live Mode', 'wp-mcp-ai' ); ?>
+									</span>
+								<?php endif; ?>
+							</p>
+						</div>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Your PayHere credentials are configured. AI assistants can now retrieve payment information using the PayHere API.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #721c24;">
+								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+								<strong><?php esc_html_e( 'PayHere Credentials Required', 'wp-mcp-ai' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'To enable PayHere payment retrieval tools, configure your PayHere App ID and App Secret in the fields above, then save your settings.',
+									'wp-mcp-ai'
+								)
+							);
+							?>
+						</p>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'About PayHere Integration:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'API credentials are obtained from PayHere Merchant Dashboard', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Supports retrieving payment information by order ID or transaction ID', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Sandbox mode allows testing without affecting live transactions', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Always disable sandbox mode before going to production', 'wp-mcp-ai' ); ?></li>
+					</ul>
+					<p class="description">
+						<strong><?php esc_html_e( 'Setup Instructions:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ol style="margin-left: 20px;">
+						<li>
+							<?php
+							printf(
+								/* translators: %s: URL to PayHere Settings */
+								wp_kses_post( __( 'Go to <a href="%s" target="_blank">PayHere Merchant Settings</a>', 'wp-mcp-ai' ) ),
+								esc_url( 'https://www.payhere.lk/merchant/settings/api-keys' )
+							);
+							?>
+						</li>
+						<li><?php esc_html_e( 'Navigate to "API Keys" section', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Copy your App ID and App Secret', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Paste them into the fields above', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Enable sandbox mode for testing (optional)', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Save your settings', 'wp-mcp-ai' ); ?></li>
+					</ol>
 				</td>
 			</tr>
 			<?php
