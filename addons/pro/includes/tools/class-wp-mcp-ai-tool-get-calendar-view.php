@@ -85,7 +85,8 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'read-only' );
+		return array(
+			'pro', 'read-only' );
 	}
 
 	/**

@@ -82,7 +82,8 @@ class WP_MCP_AI_Tool_List_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'read-only' );
+		return array(
+			'pro', 'read-only' );
 	}
 
 	/**

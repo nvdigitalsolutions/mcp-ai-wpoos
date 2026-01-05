@@ -225,6 +225,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Export implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'requires-plugin',     // Requires WP All Export plugin.
 			'state-changing',      // Modifies state by scheduling cron jobs.
 			'local-only',          // No external API calls.

@@ -87,7 +87,8 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'database-write' );
+		return array(
+			'pro', 'database-write' );
 	}
 
 	/**

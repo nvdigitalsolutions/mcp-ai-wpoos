@@ -423,6 +423,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'write',
 			'local-only',
 			'requires-capability',

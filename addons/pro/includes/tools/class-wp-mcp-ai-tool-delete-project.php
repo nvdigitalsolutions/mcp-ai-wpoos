@@ -40,7 +40,8 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	}
 
 	public function get_capability_flags() {
-		return array( 'database-write', 'destructive' );
+		return array(
+			'pro', 'database-write', 'destructive' );
 	}
 
 	public static function is_available() {

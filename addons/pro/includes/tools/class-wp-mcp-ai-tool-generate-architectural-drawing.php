@@ -1050,6 +1050,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'requires-credentials',
 			'requires-capability',
 			'write',

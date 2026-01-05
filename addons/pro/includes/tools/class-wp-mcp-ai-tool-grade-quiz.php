@@ -307,6 +307,7 @@ class WP_MCP_AI_Tool_Grade_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'write',
 			'local-only',
 			'requires-capability',
