@@ -416,10 +416,48 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		// Render the shortcode.
 		$html = do_shortcode( '[mcp_ai_chat' . $atts_str . ']' );
 
-		// Note: Context message display could be implemented via a filter on the chat interface.
-		// For now, context is passed in the initial JavaScript configuration.
-		// Future enhancement: Store in transient and retrieve via chat service.
+		// Extract instance ID from the HTML to match with configuration.
+		// The chat container has id="wp-mcp-ai-chat-{unique_id}".
+		$instance_id = null;
+		if ( preg_match( '/id="(wp-mcp-ai-chat-[^"]+)"/', $html, $matches ) ) {
+			$instance_id = $matches[1];
+		}
 
-		wp_send_json_success( array( 'html' => $html ) );
+		// Extract the chat configuration from the global set by the shortcode.
+		// The shortcode stores config in $GLOBALS['wp_mcp_ai_chat_configs'] keyed by instance ID.
+		$chat_config = null;
+		if ( $instance_id && isset( $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] ) ) {
+			$chat_config = $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ];
+		}
+
+		// If we couldn't extract the config or instance ID, log specific warnings.
+		if ( ! $instance_id ) {
+			WP_MCP_AI_Logger::log_warning(
+				'Could not extract instance ID from chat HTML for AJAX response',
+				array(
+					'assistant_id' => $assistant_id,
+					'html_length'  => strlen( $html ),
+				)
+			);
+		}
+
+		if ( ! $chat_config ) {
+			WP_MCP_AI_Logger::log_warning(
+				'Could not extract chat configuration for AJAX response',
+				array(
+					'instance_id'  => $instance_id,
+					'assistant_id' => $assistant_id,
+					'configs_available' => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ? array_keys( $GLOBALS['wp_mcp_ai_chat_configs'] ) : array(),
+				)
+			);
+		}
+
+		wp_send_json_success(
+			array(
+				'html'        => $html,
+				'config'      => $chat_config,
+				'instance_id' => $instance_id,
+			)
+		);
 	}
 }
