@@ -226,11 +226,6 @@
 			},
 			success: function (response) {
 				if (response.success && response.data.html) {
-					if (window.console && console.log) {
-						console.log('[PM AI Assistant] AJAX response received successfully');
-						console.log('[PM AI Assistant] Response data keys:', Object.keys(response.data));
-					}
-					
 					// Insert the rendered chat HTML.
 					$container.html(response.data.html);
 
@@ -253,47 +248,30 @@
 						if (window.console && console.log) {
 							console.log('[PM AI Assistant] Chat configuration injected for instance:', response.data.instance_id);
 							console.log('[PM AI Assistant] Assistant ID:', response.data.config.assistantId);
-							console.log('[PM AI Assistant] Config keys:', Object.keys(response.data.config));
 						}
 					} else {
 						if (window.console && console.warn) {
 							console.warn('[PM AI Assistant] Chat configuration or instance ID missing in response');
-							console.warn('[PM AI Assistant] Has config:', !!response.data.config);
-							console.warn('[PM AI Assistant] Has instance_id:', !!response.data.instance_id);
-							if (!response.data.config) {
-								console.warn('[PM AI Assistant] Config is:', response.data.config);
-							}
-							if (!response.data.instance_id) {
-								console.warn('[PM AI Assistant] Instance ID is:', response.data.instance_id);
-							}
 						}
 					}
 
 					// Isolate chat form from page form validation.
 					isolateChatForm($container);
 
-					// Trigger chat initialization after a brief delay to ensure DOM is fully ready.
-					// Using requestAnimationFrame twice ensures the browser has painted the new elements.
+					// Trigger chat initialization if available.
 					if (window.wpMcpAiChatInit && typeof window.wpMcpAiChatInit.init === 'function') {
-						window.requestAnimationFrame(function() {
-							window.requestAnimationFrame(function() {
-								try {
-									if (window.console && console.log) {
-										console.log('[PM AI Assistant] Initializing chat after DOM update');
-									}
-									window.wpMcpAiChatInit.init();
-								} catch (error) {
-									console.error('[PM AI Assistant] Failed to reinitialize chat:', error);
-									// Show user-friendly error message.
-									$container.prepend(
-										'<div class="notice notice-warning is-dismissible"><p>' +
-											'Chat loaded but initialization encountered an issue. Some features may not work properly. ' +
-											'<a href="#" onclick="window.location.reload(); return false;">Refresh page</a>' +
-											'</p></div>'
-									);
-								}
-							});
-						});
+						try {
+							window.wpMcpAiChatInit.init();
+						} catch (error) {
+							console.error('[PM AI Assistant] Failed to reinitialize chat:', error);
+							// Show user-friendly error message.
+							$container.prepend(
+								'<div class="notice notice-warning is-dismissible"><p>' +
+									'Chat loaded but initialization encountered an issue. Some features may not work properly. ' +
+									'<a href="#" onclick="window.location.reload(); return false;">Refresh page</a>' +
+									'</p></div>'
+							);
+						}
 					}
 				} else {
 					$container.html(
