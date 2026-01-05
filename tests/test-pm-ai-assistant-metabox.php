@@ -122,9 +122,10 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		// Verify output contains expected elements.
 		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-select', $output, 'Output should contain assistant selector' );
 		$this->assertStringContainsString( 'Test Assistant', $output, 'Output should contain assistant name' );
+		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-modal', $output, 'Output should contain modal' );
 		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-chat-container', $output, 'Output should contain chat container' );
-		$this->assertStringContainsString( 'wp-mcp-ai-build-with-ai-btn', $output, 'Output should contain Build with AI button' );
-		$this->assertStringContainsString( 'Build with AI', $output, 'Output should contain Build with AI button text' );
+		$this->assertStringContainsString( 'wp-mcp-ai-build-with-ai-btn', $output, 'Output should contain Chat with AI button' );
+		$this->assertStringContainsString( 'Chat with AI', $output, 'Output should contain Chat with AI button text' );
 	}
 
 	/**
