@@ -685,6 +685,15 @@ class WP_MCP_AI_Shortcode {
 				$GLOBALS['wp_mcp_ai_chat_configs'] = array();
 			}
 			$GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] = $config;
+			
+			// Log for debugging PM assistant issues.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( sprintf(
+					'[WP_MCP_AI] Shortcode stored config for instance: %s (assistant_id: %s)',
+					$instance_id,
+					isset( $config['assistantId'] ) ? $config['assistantId'] : 'N/A'
+				) );
+			}
 
 			$inline_config  = 'window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};';
 			$inline_config .= 'window.wpMcpAiChatInstances[' . wp_json_encode( $instance_id ) . '] = ' . wp_json_encode( $config ) . ';';

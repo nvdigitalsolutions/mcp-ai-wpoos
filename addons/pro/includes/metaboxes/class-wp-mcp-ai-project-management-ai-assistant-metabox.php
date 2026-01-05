@@ -444,6 +444,55 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			$chat_config = $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ];
 		}
 
+		// Fallback: If config not found in global, build it manually.
+		// This can happen if the shortcode returns early or in certain WordPress configurations.
+		if ( ! $chat_config && $instance_id ) {
+			WP_MCP_AI_Logger::log_warning(
+				'PM Assistant: Config not found in global, building fallback config',
+				array(
+					'instance_id'  => $instance_id,
+					'assistant_id' => $assistant_id,
+				)
+			);
+
+			// Build a minimal config manually - this ensures the chat can initialize.
+			$session_key = wp_generate_uuid4();
+			if ( ! $session_key ) {
+				$session_key = wp_unique_id( 'wp-mcp-ai-session-' );
+			}
+
+			$chat_config = array(
+				'id'                    => $instance_id,
+				'assistantId'           => $assistant_id,
+				'userId'                => get_current_user_id(),
+				'restUrl'               => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ),
+				'messagesEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
+				'toolsEndpoint'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
+				'filesEndpoint'         => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
+				'transcriptsEndpoint'   => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'crawl4aiTaskEndpoint'  => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
+				'crawl4aiDefaultPollMs' => 5000,
+				'requiredCapability'    => 'edit_posts',
+				'allowGuests'           => false,
+				'canUploadAttachments'  => current_user_can( 'upload_files' ),
+				'saveTranscript'        => false,
+				'enableStreaming'       => true,
+				'allowSensitiveTools'   => false,
+				'sessionKey'            => sanitize_key( $session_key ),
+				'historyPerPage'        => 20,
+				'restNonce'             => wp_create_nonce( 'wp_rest' ),
+				'asyncToolTimeout'      => 300000, // 5 minutes default.
+			);
+
+			// Try to get tool shortcuts for the assistant.
+			if ( class_exists( 'WP_MCP_AI_Shortcode' ) && method_exists( 'WP_MCP_AI_Shortcode', 'get_assistant_tool_shortcuts' ) ) {
+				$tool_shortcuts = WP_MCP_AI_Shortcode::get_assistant_tool_shortcuts( $assistant_id );
+				if ( ! empty( $tool_shortcuts ) ) {
+					$chat_config['toolShortcuts'] = $tool_shortcuts;
+				}
+			}
+		}
+
 		// If we couldn't extract the config or instance ID, log specific warnings.
 		if ( ! $instance_id ) {
 			WP_MCP_AI_Logger::log_warning(
