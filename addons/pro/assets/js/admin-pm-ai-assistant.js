@@ -382,6 +382,10 @@ console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString()
 	/**
 	 * Build the chat interface HTML structure.
 	 * Based on Build Assistant page approach.
+	 * IMPORTANT: Must match the structure expected by chat.js, which requires:
+	 * - A <form class="wp-mcp-ai-chat__form"> wrapper around input controls
+	 * - Messages div BEFORE the form
+	 * - Controls div AFTER the form
 	 *
 	 * @param {string} instanceId - Unique instance identifier.
 	 * @return {string} HTML string for chat interface.
@@ -397,7 +401,8 @@ console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString()
 			'</button>' +
 			'</div>' +
 			'<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>' +
-			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite"><span class="wp-mcp-ai-chat__status-text"></span></div>' +
+			'<form class="wp-mcp-ai-chat__form" data-instance-id="' + escapeHtml(instanceId) + '">' +
+			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden><span class="wp-mcp-ai-chat__status-text"></span></div>' +
 			'<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>' +
 			'<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed" aria-expanded="false" aria-controls="' + escapeHtml(instanceId) + '-tool-shortcuts">' +
 			'<span class="wp-mcp-ai-chat__tool-shortcuts-toggle-text">Quick Tasks</span>' +
@@ -433,6 +438,7 @@ console.log('[PM AI Assistant] Script file loaded at:', new Date().toISOString()
 			'<button type="button" class="wp-mcp-ai-chat__build" hidden>Build</button>' +
 			'<button type="submit" class="wp-mcp-ai-chat__submit">Send</button>' +
 			'</div>' +
+			'</form>' +
 			'<div class="wp-mcp-ai-chat__controls">' +
 			'<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite" aria-atomic="true"></div>' +
 			'<div class="wp-mcp-ai-chat__cron-status" role="status" aria-live="polite" aria-atomic="true" hidden>' +
