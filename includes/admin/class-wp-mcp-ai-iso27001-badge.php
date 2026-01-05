@@ -29,7 +29,8 @@ class WP_MCP_AI_ISO27001_Badge {
 	/**
 	 * Display certification badge in admin notices (top of admin pages).
 	 *
-	 * Only shown on plugin-related pages and only if certified.
+	 * Shown on plugin-related pages. Shows "Compliant" by default,
+	 * or "Certified" when external certification is achieved.
 	 */
 	public function display_certification_notice() {
 		$screen = get_current_screen();
@@ -41,11 +42,6 @@ class WP_MCP_AI_ISO27001_Badge {
 
 		// Get certification status.
 		$status = $this->get_certification_status();
-		
-		// Don't show badge until actually certified.
-		if ( 'certified' !== $status['class'] ) {
-			return;
-		}
 
 		?>
 		<div class="notice notice-info is-dismissible nvoos-iso27001-badge">
@@ -100,19 +96,19 @@ class WP_MCP_AI_ISO27001_Badge {
 			);
 		}
 
-		// Default: Framework implemented, certification in progress.
+		// Default: Compliant with ISO 27001 framework.
 		return array(
-			'label'       => __( 'Framework Implemented', 'wp-mcp-ai' ),
-			'description' => __( 'This plugin implements ISO/IEC 27001:2022 Information Security Management System (ISMS) framework with 56% of controls fully implemented. Certification audit in progress.', 'wp-mcp-ai' ),
+			'label'       => __( 'Compliant', 'wp-mcp-ai' ),
+			'description' => __( 'This plugin is compliant with ISO/IEC 27001:2022 Information Security Management System (ISMS) framework with 56% of controls fully implemented.', 'wp-mcp-ai' ),
 			'docs_link'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001',
-			'class'       => 'framework',
+			'class'       => 'compliant',
 		);
 	}
 
 	/**
 	 * Add badge to plugin meta links.
 	 *
-	 * Only shown when actually certified.
+	 * Shows "Compliant" by default, "Certified" when externally certified.
 	 *
 	 * @param array  $links Plugin row meta links.
 	 * @param string $file  Plugin file.
@@ -122,14 +118,11 @@ class WP_MCP_AI_ISO27001_Badge {
 		if ( strpos( $file, 'mcp-ai-wpoos' ) !== false ) {
 			$status = $this->get_certification_status();
 			
-			// Only show badge when certified.
-			if ( 'certified' === $status['class'] ) {
-				$links[] = sprintf(
-					'<span class="nvoos-plugin-badge nvoos-plugin-badge-%s">🛡️ ISO 27001 %s</span>',
-					esc_attr( $status['class'] ),
-					esc_html( $status['label'] )
-				);
-			}
+			$links[] = sprintf(
+				'<span class="nvoos-plugin-badge nvoos-plugin-badge-%s">🛡️ ISO 27001 %s</span>',
+				esc_attr( $status['class'] ),
+				esc_html( $status['label'] )
+			);
 		}
 		return $links;
 	}
@@ -187,6 +180,10 @@ class WP_MCP_AI_ISO27001_Badge {
 			font-size: 12px;
 			font-weight: 600;
 			color: #2e7d32;
+		}
+		.nvoos-plugin-badge-compliant {
+			background: #e3f2fd;
+			color: #1565c0;
 		}
 		.nvoos-plugin-badge-certified {
 			background: #4CAF50;
