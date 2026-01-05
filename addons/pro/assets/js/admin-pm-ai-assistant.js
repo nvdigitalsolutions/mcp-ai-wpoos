@@ -25,6 +25,10 @@
 			return;
 		}
 
+		// Move modal to body to ensure position: fixed works correctly.
+		// Modals rendered inside metaboxes may not display as overlays due to CSS positioning contexts.
+		$modal.appendTo('body');
+
 		// Get localized data.
 		const config = window.wpMcpAiPmAssistant || {};
 		const contextType = config.contextType || 'project';
