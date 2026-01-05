@@ -319,4 +319,63 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		// Verify instance ID is in the HTML.
 		$this->assertStringContainsString( $response['data']['instance_id'], $response['data']['html'], 'Instance ID should be in HTML' );
 	}
+
+	/**
+	 * Test that PM assistant script includes wp-dom-ready dependency when available.
+	 *
+	 * This ensures block editor compatibility by including the wp-dom-ready dependency
+	 * which is used to properly initialize the PM assistant in the block editor context.
+	 */
+	public function test_script_includes_wp_dom_ready_dependency() {
+		// Skip if Pro addon is not available.
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Enable project management.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_project_management'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Create a test task.
+		$task_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_task',
+				'post_title'  => 'Test Task',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Set global post to the task.
+		global $post;
+		$post = get_post( $task_id );
+
+		// Register wp-dom-ready script (simulating WordPress core).
+		wp_register_script( 'wp-dom-ready', 'https://example.com/wp-dom-ready.js', array(), '1.0', true );
+
+		// Load the metabox class.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php';
+
+		// Create metabox instance.
+		$metabox = new WP_MCP_AI_Project_Management_AI_Assistant_Metabox();
+
+		// Simulate the enqueue_assets method.
+		$metabox->enqueue_assets( 'post.php' );
+
+		// Get script dependencies.
+		$script_handle = 'wp-mcp-ai-pm-ai-assistant';
+		$this->assertTrue( wp_script_is( $script_handle, 'enqueued' ), 'PM assistant script should be enqueued' );
+
+		// Get the script object to check dependencies.
+		global $wp_scripts;
+		$script = $wp_scripts->registered[ $script_handle ];
+
+		// Verify wp-dom-ready is in dependencies when available.
+		$this->assertContains( 'wp-dom-ready', $script->deps, 'Script should include wp-dom-ready dependency for block editor support' );
+		$this->assertContains( 'jquery', $script->deps, 'Script should include jquery dependency' );
+		$this->assertContains( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, $script->deps, 'Script should include chat bundle dependency' );
+
+		// Verify script is loaded in footer for proper initialization.
+		$this->assertTrue( $script->extra['group'] === 1, 'Script should be loaded in footer' );
+	}
 }
