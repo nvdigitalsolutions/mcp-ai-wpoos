@@ -432,7 +432,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			$chat_config = $chat_configs[ $instance_id ];
 		} elseif ( ! $chat_config && 1 === count( $chat_configs ) ) {
 			$chat_config  = reset( $chat_configs );
-			$instance_key = key( $chat_configs );
+			$instance_key = array_key_first( $chat_configs );
 
 			if ( ! $instance_id && $instance_key ) {
 				$instance_id = $instance_key;

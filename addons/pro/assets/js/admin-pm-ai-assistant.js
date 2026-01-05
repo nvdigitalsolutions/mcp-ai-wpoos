@@ -237,6 +237,12 @@
 					if ((!responseConfig || !responseInstanceId) && configMap) {
 						var configKeys = Object.keys(configMap);
 
+						if (!responseInstanceId && configKeys.length > 1 && window.console && console.warn) {
+							console.warn('[PM AI Assistant] Multiple chat configurations available but no instance ID was returned; cannot auto-select config.', {
+								configKeys: configKeys
+							});
+						}
+
 						if (!responseInstanceId && configKeys.length === 1) {
 							responseInstanceId = configKeys[0];
 						}
