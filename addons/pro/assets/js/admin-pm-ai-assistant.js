@@ -229,29 +229,56 @@
 					// Insert the rendered chat HTML.
 					$container.html(response.data.html);
 
+					// Attempt to recover configuration/instance from the response map if direct values are missing.
+					var responseConfig = response.data.config;
+					var responseInstanceId = response.data.instance_id;
+					var configMap = response.data.config_map || null;
+					var hasConsoleWarn = window.console && console.warn;
+
+					if ((!responseConfig || !responseInstanceId) && configMap) {
+						var configKeys = Object.keys(configMap);
+
+						if (!responseInstanceId && configKeys.length > 1 && hasConsoleWarn) {
+							console.warn('[PM AI Assistant] Multiple chat configurations available but no instance ID was returned; cannot auto-select config.', {
+								configKeys: configKeys
+							});
+						}
+
+						if (!responseInstanceId && configKeys.length === 1) {
+							responseInstanceId = configKeys[0];
+						}
+
+						if (responseInstanceId && configMap[responseInstanceId]) {
+							responseConfig = configMap[responseInstanceId];
+						}
+					}
+
 					// Inject the chat configuration into the global window object.
 					// This is necessary because wp_add_inline_script() doesn't work in AJAX contexts.
-					if (response.data.config && response.data.instance_id) {
+					if (responseConfig && responseInstanceId) {
 						if (!window.wpMcpAiChatInstances) {
 							window.wpMcpAiChatInstances = {};
 						}
 						
 						// Check if configuration already exists and log warning if overwriting
-						if (window.wpMcpAiChatInstances[response.data.instance_id]) {
+						if (window.wpMcpAiChatInstances[responseInstanceId]) {
 							if (window.console && console.warn) {
-								console.warn('[PM AI Assistant] Overwriting existing configuration for instance:', response.data.instance_id);
+								console.warn('[PM AI Assistant] Overwriting existing configuration for instance:', responseInstanceId);
 							}
 						}
 						
-						window.wpMcpAiChatInstances[response.data.instance_id] = response.data.config;
+						window.wpMcpAiChatInstances[responseInstanceId] = responseConfig;
 						
 						if (window.console && console.log) {
-							console.log('[PM AI Assistant] Chat configuration injected for instance:', response.data.instance_id);
-							console.log('[PM AI Assistant] Assistant ID:', response.data.config.assistantId);
+							console.log('[PM AI Assistant] Chat configuration injected for instance:', responseInstanceId);
+							console.log('[PM AI Assistant] Assistant ID:', responseConfig.assistantId);
 						}
 					} else {
-						if (window.console && console.warn) {
-							console.warn('[PM AI Assistant] Chat configuration or instance ID missing in response');
+						if (hasConsoleWarn) {
+							console.warn('[PM AI Assistant] Chat configuration or instance ID missing in response', {
+								instanceId: responseInstanceId,
+								configKeys: configMap ? Object.keys(configMap) : []
+							});
 						}
 					}
 

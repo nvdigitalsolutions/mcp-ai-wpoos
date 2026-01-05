@@ -416,6 +416,8 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		// Render the shortcode.
 		$html = do_shortcode( '[mcp_ai_chat' . $atts_str . ']' );
 
+		$chat_configs = isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) && is_array( $GLOBALS['wp_mcp_ai_chat_configs'] ) ? $GLOBALS['wp_mcp_ai_chat_configs'] : array();
+
 		// Extract instance ID from the HTML to match with configuration.
 		// The chat container has id="wp-mcp-ai-chat-{unique_id}".
 		$instance_id = null;
@@ -426,8 +428,16 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		// Extract the chat configuration from the global set by the shortcode.
 		// The shortcode stores config in $GLOBALS['wp_mcp_ai_chat_configs'] keyed by instance ID.
 		$chat_config = null;
-		if ( $instance_id && isset( $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] ) ) {
-			$chat_config = $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ];
+		if ( $instance_id && isset( $chat_configs[ $instance_id ] ) ) {
+			$chat_config = $chat_configs[ $instance_id ];
+		} elseif ( 1 === count( $chat_configs ) ) {
+			reset( $chat_configs );
+			$instance_key = key( $chat_configs );
+			$chat_config  = current( $chat_configs );
+
+			if ( ! $instance_id && $instance_key ) {
+				$instance_id = $instance_key;
+			}
 		}
 
 		// If we couldn't extract the config or instance ID, log specific warnings.
@@ -447,7 +457,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 				array(
 					'instance_id'  => $instance_id,
 					'assistant_id' => $assistant_id,
-					'configs_available' => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ? array_keys( $GLOBALS['wp_mcp_ai_chat_configs'] ) : array(),
+					'configs_available' => array_keys( $chat_configs ),
 				)
 			);
 		}
@@ -457,6 +467,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 				'html'        => $html,
 				'config'      => $chat_config,
 				'instance_id' => $instance_id,
+				'config_map'  => $chat_configs,
 			)
 		);
 	}
