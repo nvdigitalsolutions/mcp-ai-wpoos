@@ -25,13 +25,13 @@
 ### Getting Started
 - [🆕 Latest Updates (December 2025)](#-latest-updates-december-2025)
 - [🧩 Overview](#overview)
-- [🎯 Our Mission](#mission-modernizing-small-to-medium-business-websites)
-- [🛡️ Active Security Monitoring](#active-security-monitoring)
-- [🏗 System Architecture](#system-architecture)
+- [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
+- [🛡️ Active Security Monitoring](#-active-security-monitoring)
+- [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#features)
 - [📦 Installation](#installation)
-- [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](#configuration-checklist-action-items)
+- [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
+- [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
 ### Core Functionality
