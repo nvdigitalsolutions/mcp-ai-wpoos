@@ -1462,6 +1462,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return array Array of controls with id, name, status, applicable, and justification.
 		 */
 		private function get_iso27001_controls() {
+			// Try embedded data first (always available in production).
+			if ( class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
+				$controls = WP_MCP_AI_Compliance_Data::get_iso27001_controls();
+				if ( ! empty( $controls ) ) {
+					return $controls;
+				}
+			}
+
+			// Fallback to parsing markdown file (development/debugging).
 			$soa_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Statement-of-Applicability.md';
 			
 			if ( ! file_exists( $soa_file ) ) {
@@ -1559,6 +1568,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return int Compliance percentage (0-100).
 		 */
 		private function get_soc2_compliance() {
+			// Try embedded data first.
+			if ( class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
+				return WP_MCP_AI_Compliance_Data::get_soc2_compliance();
+			}
+
+			// Fallback to file parsing.
 			$soc2_file = WP_MCP_AI_PATH . 'docs/compliance/soc2/Statement-of-Applicability.md';
 			
 			if ( ! file_exists( $soc2_file ) ) {
@@ -1593,6 +1608,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return int Compliance percentage (0-100).
 		 */
 		private function get_hipaa_compliance() {
+			// Try embedded data first.
+			if ( class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
+				return WP_MCP_AI_Compliance_Data::get_hipaa_compliance();
+			}
+
+			// Fallback to file parsing.
 			$hipaa_file = WP_MCP_AI_PATH . 'docs/compliance/hipaa/Statement-of-Applicability.md';
 			
 			if ( ! file_exists( $hipaa_file ) ) {
