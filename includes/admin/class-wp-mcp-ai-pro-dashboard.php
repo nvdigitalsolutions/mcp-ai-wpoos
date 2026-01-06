@@ -1543,7 +1543,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'name'       => 'SOC 2',
 					'status'     => $soc2_compliance >= 95 ? 'compliant' : 'pending',
 					'percentage' => $soc2_compliance,
-					'completed'  => round( $soc2_compliance * 0.54 ), // Approximate 54 criteria
+					// SOC 2 has 54 Trust Services Criteria. Convert percentage to completed count.
+					// Formula: percentage / 100 * 54 = percentage * 0.54
+					'completed'  => round( $soc2_compliance * 0.54 ),
 					'total'      => 54,
 					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
 				),
@@ -1551,7 +1553,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'name'       => 'HIPAA',
 					'status'     => $hipaa_compliance >= 95 ? 'compliant' : 'pending',
 					'percentage' => $hipaa_compliance,
-					'completed'  => round( $hipaa_compliance * 0.43 ), // Approximate 43 safeguards
+					// HIPAA has 43 applicable safeguards. Convert percentage to completed count.
+					// Formula: percentage / 100 * 43 = percentage * 0.43
+					'completed'  => round( $hipaa_compliance * 0.43 ),
 					'total'      => 43,
 					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
 				),
