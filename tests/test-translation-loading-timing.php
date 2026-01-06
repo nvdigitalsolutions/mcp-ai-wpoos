@@ -12,19 +12,17 @@
 class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 
 	/**
-	 * Verify that plugin action links hook is registered on admin_init.
+	 * Verify that plugin action links filter is registered directly.
 	 *
 	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-	 * Plugin action links use translation functions, so the filter should be
-	 * registered via the admin_init action (which runs after init).
+	 * To avoid translation loading issues, the plugin action links now use
+	 * untranslated text and the filter is registered directly (not via a hook).
 	 */
-	public function test_plugin_action_links_registered_on_admin_init() {
-		global $wp_filter;
-
-		// Check that the registration function is hooked to admin_init.
+	public function test_plugin_action_links_registered_directly() {
+		// Check that the plugin action links filter is registered.
 		$this->assertTrue(
-			has_action( 'admin_init', 'wp_mcp_ai_register_plugin_action_links' ),
-			'Plugin action links should be registered via admin_init action'
+			has_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' ),
+			'Plugin action links filter should be registered'
 		);
 	}
 
@@ -111,12 +109,11 @@ class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 		do_action( 'plugins_loaded' );
 
 		// At this point, admin_notices should not have translation-using handlers.
-		// We can't easily test this directly, but we can verify the registration.
-		// functions are hooked to admin_init (which runs after init).
+		// We can't easily test this directly, but we can verify the registration
+		// function for activation security notice is hooked to admin_init (which runs after init).
 		$this->assertTrue(
-			has_action( 'admin_init', 'wp_mcp_ai_register_plugin_action_links' ) ||
 			has_action( 'admin_init', 'wp_mcp_ai_register_activation_security_notice' ),
-			'At least one registration function should be hooked to admin_init'
+			'Activation security notice registration function should be hooked to admin_init'
 		);
 	}
 }
