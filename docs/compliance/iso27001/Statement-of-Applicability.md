@@ -1021,32 +1021,64 @@ This Statement of Applicability (SoA) documents the implementation status of all
 **Applicability:** Yes  
 **Justification:** Environment isolation  
 **Implementation:**
-- Separate Git branches (development, staging, main)
-- Environment-specific configurations
-- Separate testing environments
-- Production deployment controls
-**Evidence:** Git branch strategy, CI/CD workflows
+- Three distinct environments: Development (local/Docker), Staging (mirrored prod), Production (live)
+- Physical/logical separation with isolated infrastructure and databases
+- Environment-specific configurations (WP_MCP_AI_ENV, debug settings)
+- Strict access control matrix (developers no prod access, admins audited)
+- Data flow controls (code-only promotion, anonymized data only to lower envs)
+- Deployment gates (2 gates: dev→staging, staging→prod with approvals)
+- Automated environment validation checks
+- Separate API keys and encryption keys per environment
+**Evidence:**
+- Technology Controls procedure: `docs/compliance/iso27001/procedures/Technology-Controls.md` (Section 1)
+- Environment detection functions
+- Configuration management code
+- Access control matrix
+- Deployment gate automation
+- Git branch strategy (feature → staging → main)
 
 ### A.8.32 Change Management
 **Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Controlled changes  
 **Implementation:**
-- Git-based change management
-- Pull request review process
-- Semantic versioning
-- Change documentation (CHANGELOG.md)
-**Evidence:** [CHANGELOG.md](../../CHANGELOG.md), PR review process
+- Formal change management process with 3 categories (Standard, Normal, Emergency)
+- Comprehensive change request template with 9 sections
+- Change approval workflow with technical, security, and management reviews
+- Risk-based approval requirements (high-risk requires management/CISO approval)
+- Deployment gates with pre/post-implementation checklists
+- Documented rollback procedures with clear triggers
+- Emergency change procedure with expedited approval (CISO required)
+- Change tracking and monthly reporting (success rate, rollback frequency, etc.)
+- Automated change tracking via Git commits and PR system
+**Evidence:**
+- Technology Controls procedure: `docs/compliance/iso27001/procedures/Technology-Controls.md` (Section 2)
+- Change request template
+- Approval workflow diagram
+- Rollback procedures
+- Emergency change process
+- Git commit history
+- GitHub PR review process
+- CHANGELOG.md with semantic versioning
 
 ### A.8.33 Test Information
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Protect production data  
 **Implementation:**
-- Test data generation (sanitized)
-- Separate test databases
-- **In Progress:** Test data anonymization procedures
-**Evidence:** Test setup scripts, test data generators
+- Comprehensive test data generation procedures (synthetic data preferred)
+- Production data anonymization process with email, IP, and PII anonymization
+- Test data protection controls and access logs
+- Automated test data cleanup procedures (7-30 day retention)
+- Test data lifecycle management (creation → use → cleanup)
+- GDPR/CCPA compliant test data handling
+- Four test data categories: Synthetic, Anonymized, Subsets (restricted), Prohibited
+**Evidence:**
+- Technology Controls procedure: `docs/compliance/iso27001/procedures/Technology-Controls.md` (Section 3)
+- Test data generation functions
+- Anonymization algorithms
+- Automated cleanup scripts
+- Test data retention policies
 
 ### A.8.34 Protection of Information Systems During Audit Testing
 **Status:** 🔄 Partial  
