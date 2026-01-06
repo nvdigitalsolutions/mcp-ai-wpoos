@@ -1,14 +1,23 @@
 # NV oOS Documentation Index
 
-**Last Updated:** January 3, 2026  
+**Last Updated:** January 6, 2026  
 **Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 659+ files (640+ in docs/ folder, 5 essential files in root)
+**Total Documentation:** 665+ files (645+ in docs/ folder, 5 essential files in root)
 
-> **📌 JANUARY 6, 2026 UPDATE**: Root Directory Organization completed - Moved 25 markdown files from root to appropriate docs/ subdirectories. Root now contains only 5 essential files (README, CHANGELOG, BUILD, CONTRIBUTING, SECURITY). Files organized into implementation-summaries/, fixes/, visual-guides/, and troubleshooting/ for better discoverability.
+> **📌 JANUARY 6, 2026 UPDATE (WEEK 2)**: 
+> - **100% ISO 27001:2022 Compliance Achieved** - 83 of 83 applicable controls implemented (was 56%)
+> - **SOC 2 & HIPAA Frameworks Added** - SOC 2: 100% (54/54), HIPAA: 98% (42/43)
+> - **Pro CPT Documentation** - Events, Quizzes, and Places (21 tools total)
+> - **Root Directory Organization** - Moved 25 files to organized subdirectories
+> - **Pro Dashboard Modernization** - Singleton pattern with industry standards
+> - **PM Assistant Fixes** - 6 critical modal and chat fixes
+> - **WordPress 6.7+ Compatibility** - Translation timing fixes
+> - **Text Domain Migration** - Complete migration to mcp-ai-wpoos (12,773 instances)
+> - **Production Ready** - Dev dependencies removed from vendor
 
 > **📌 JANUARY 3, 2026 UPDATE**: Gap Documentation Review completed - 100% high-priority completion achieved! All 10 critical items complete including Code Coverage Dashboard. Overall quality score: 98/100 (up from 95/100). Production ready with A+ grade. See [Gap Documentation Review Summary](GAP_DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Status Update](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md) for details.
 
@@ -629,6 +638,17 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [CROSS-WIDGET-COMMUNICATION.md](guides/user/chat/CROSS-WIDGET-COMMUNICATION.md) | Load sessions between User Chat History and Chat widgets | Users/Devs |
 | [chat-history-persistence.md](guides/user/chat/chat-history-persistence.md) | Chat history persistence system | Users/Devs |
 | [chat-history-persistence-quickstart.md](getting-started/quick-starts/chat-history-persistence-quickstart.md) | Quick guide for chat persistence | Users |
+
+### Pro Features ⭐ **PRO ADDON**
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [PRO_CPT_OVERVIEW.md](features/pro-cpt/PRO_CPT_OVERVIEW.md) | **NEW:** Events, Quizzes, and Places CPT overview (21 tools) | Users/Admins |
+
+**Pro Custom Post Types:**
+- **Events** (5 tools) - Calendar management, Google Calendar integration
+- **Quizzes** (9 tools) - Assessments, grading, analytics, JetEngine CCT
+- **Places** (7 tools) - Location management, Google Places API integration
 
 ### Performance & Optimization
 
