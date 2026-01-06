@@ -594,20 +594,22 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-asset-inventory-admin.php';
 	// Initialize Asset Inventory singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
 	WP_MCP_AI_Asset_Inventory::get_instance();
 
 	// Load ISO 27001 Security Training System (Control A.6.3).
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-training.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-training-admin.php';
 	// Initialize Security Training singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
 	WP_MCP_AI_Security_Training::get_instance();
 
 	// Load ISO 27001 Supplier Security Management (Controls A.5.19-A.5.22).
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-supplier-security.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-supplier-security-admin.php';
 	// Initialize Supplier Security singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
 	WP_MCP_AI_Supplier_Security::get_instance();
-	new WP_MCP_AI_Supplier_Security_Admin();
 
 	// Load ISO 27001 Information Labelling System (Control A.5.13).
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-information-labelling.php';
@@ -623,8 +625,8 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-audit.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-audit-admin.php';
 	// Initialize Security Audit singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
 	WP_MCP_AI_Security_Audit::get_instance();
-	new WP_MCP_AI_Security_Audit_Admin();
 
 	// Load diagnostic pages (always available under Tools menu).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
@@ -706,7 +708,7 @@ if ( is_admin() ) {
 	// Initialize Pro Dashboard components.
 	new WP_MCP_AI_Pro_Database();
 	new WP_MCP_AI_Pro_License();
-	new WP_MCP_AI_Pro_Dashboard();
+	WP_MCP_AI_Pro_Dashboard::get_instance(); // Use singleton pattern.
 	new WP_MCP_AI_Pro_Dashboard_REST();
 
 	/**

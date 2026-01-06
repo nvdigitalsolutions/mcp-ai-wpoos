@@ -5,6 +5,10 @@
  * Manages the dedicated Pro Dashboard top-level admin menu for ISO/IEC 27001
  * compliance monitoring, reporting, and management tools.
  *
+ * Uses singleton pattern and centralized delegate page management for better
+ * architecture and maintainability. All ISO 27001 compliance admin pages are
+ * coordinated through this controller to ensure consistency and prevent conflicts.
+ *
  * @package WP_MCP_AI
  * @since 1.5.0
  */
@@ -16,6 +20,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 	/**
 	 * Pro Dashboard controller for compliance and enterprise features.
+	 *
+	 * Implements centralized management of ISO 27001 compliance modules.
+	 * Delegate pages are instantiated and coordinated to prevent duplicate
+	 * menu registrations and ensure consistent behavior.
+	 *
+	 * @since 1.5.0
 	 */
 	class WP_MCP_AI_Pro_Dashboard {
 		/**
@@ -24,11 +34,276 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		const PAGE_SLUG = 'nvoos-pro-dashboard';
 
 		/**
-		 * Constructor.
+		 * Delegate page keys as constants for type safety.
 		 */
-		public function __construct() {
+		const DELEGATE_SECURITY_AUDITS = 'security_audits';
+		const DELEGATE_SECURITY_TRAINING = 'security_training';
+		const DELEGATE_SUPPLIER_SECURITY = 'supplier_security';
+		const DELEGATE_ASSET_INVENTORY = 'asset_inventory';
+
+		/**
+		 * Singleton instance.
+		 *
+		 * @var WP_MCP_AI_Pro_Dashboard|null
+		 */
+		private static $instance = null;
+
+		/**
+		 * Delegate admin pages.
+		 *
+		 * @var array<string, object>
+		 */
+		private $delegate_pages = array();
+
+		/**
+		 * Whether delegates have been initialized.
+		 *
+		 * @var bool
+		 */
+		private $delegates_initialized = false;
+
+		/**
+		 * Get singleton instance.
+		 *
+		 * @return WP_MCP_AI_Pro_Dashboard
+		 */
+		public static function get_instance() {
+			if ( null === self::$instance ) {
+				self::$instance = new self();
+			}
+			return self::$instance;
+		}
+
+		/**
+		 * Constructor (private for singleton pattern).
+		 */
+		private function __construct() {
+			$this->init_hooks();
+		}
+
+		/**
+		 * Prevent cloning of singleton.
+		 */
+		private function __clone() {}
+
+		/**
+		 * Prevent unserialization of singleton.
+		 *
+		 * @throws Exception When attempting to unserialize.
+		 */
+		public function __wakeup() {
+			throw new Exception( 'Cannot unserialize singleton' );
+		}
+
+		/**
+		 * Initialize WordPress hooks.
+		 *
+		 * Separates hook registration from initialization for better testability.
+		 *
+		 * @return void
+		 */
+		private function init_hooks() {
 			add_action( 'admin_menu', array( $this, 'register_menu' ), 25 );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+			add_action( 'admin_init', array( $this, 'lazy_init_delegates' ), 1 );
+		}
+
+		/**
+		 * Lazy initialization of delegate pages.
+		 *
+		 * Defers delegate instantiation until admin_init for better performance
+		 * and to ensure all plugins are loaded.
+		 *
+		 * @return void
+		 */
+		public function lazy_init_delegates() {
+			if ( ! $this->delegates_initialized ) {
+				$this->init_delegate_pages();
+				$this->delegates_initialized = true;
+			}
+		}
+
+		/**
+		 * Initialize delegate admin pages.
+		 *
+		 * Centralizes instantiation of ISO 27001 compliance admin pages.
+		 * These pages register themselves under the Pro Dashboard menu but are
+		 * instantiated here to ensure proper coordination and prevent duplicate
+		 * menu registrations.
+		 *
+		 * Each delegate corresponds to a specific ISO 27001 control or control group:
+		 * - Security Audits: Control A.5.35 (Independent Review)
+		 * - Security Training: Control A.6.3 (Awareness, Education & Training)
+		 * - Supplier Security: Controls A.5.19-A.5.22 (Supplier Relationships)
+		 * - Asset Inventory: Control A.5.9 (Inventory of Assets)
+		 *
+		 * @return void
+		 */
+		private function init_delegate_pages() {
+			$delegates = $this->get_delegate_config();
+
+			foreach ( $delegates as $key => $class_name ) {
+				$this->register_delegate( $key, $class_name );
+			}
+
+			/**
+			 * Fires after delegate pages are initialized.
+			 *
+			 * Allows plugins to hook into the delegate initialization process.
+			 *
+			 * @since 1.5.0
+			 *
+			 * @param array $delegate_pages Array of initialized delegate page instances.
+			 */
+			do_action( 'wp_mcp_ai_pro_dashboard_delegates_initialized', $this->delegate_pages );
+		}
+
+		/**
+		 * Get delegate configuration.
+		 *
+		 * Centralized configuration using class constants for type safety.
+		 * Can be filtered to allow plugins to add custom delegates.
+		 *
+		 * @return array<string, string> Array of delegate key => class name pairs.
+		 */
+		private function get_delegate_config() {
+			$config = array(
+				self::DELEGATE_SECURITY_AUDITS   => 'WP_MCP_AI_Security_Audit_Admin',
+				self::DELEGATE_SECURITY_TRAINING => 'WP_MCP_AI_Security_Training_Admin',
+				self::DELEGATE_SUPPLIER_SECURITY => 'WP_MCP_AI_Supplier_Security_Admin',
+				self::DELEGATE_ASSET_INVENTORY   => 'WP_MCP_AI_Asset_Inventory_Admin',
+			);
+
+			/**
+			 * Filter delegate page configuration.
+			 *
+			 * Allows plugins/themes to add or remove delegate pages.
+			 *
+			 * @since 1.5.0
+			 *
+			 * @param array $config Array of delegate key => class name pairs.
+			 */
+			return apply_filters( 'wp_mcp_ai_pro_dashboard_delegate_config', $config );
+		}
+
+		/**
+		 * Register a single delegate page.
+		 *
+		 * Validates class exists and handles instantiation with error recovery.
+		 *
+		 * @param string $key Delegate identifier key.
+		 * @param string $class_name Fully qualified class name.
+		 * @return bool True if registered successfully, false otherwise.
+		 */
+		private function register_delegate( $key, $class_name ) {
+			// Validate inputs.
+			if ( empty( $key ) || empty( $class_name ) ) {
+				return false;
+			}
+
+			// Skip if class doesn't exist.
+			if ( ! class_exists( $class_name ) ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log(
+						sprintf(
+							'[WP_MCP_AI] Pro Dashboard delegate class not found: %s (key: %s)',
+							$class_name,
+							$key
+						)
+					);
+				}
+				return false;
+			}
+
+			try {
+				$this->delegate_pages[ $key ] = new $class_name();
+
+				// Log successful initialization if logging enabled.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'info',
+						sprintf( 'Pro Dashboard delegate initialized: %s', $key ),
+						array(
+							'delegate' => $key,
+							'class'    => $class_name,
+						)
+					);
+				}
+
+				return true;
+
+			} catch ( Exception $e ) {
+				// Log initialization error but don't break the page.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'error',
+						sprintf( 'Failed to initialize Pro Dashboard delegate: %s', $class_name ),
+						array(
+							'delegate'  => $key,
+							'class'     => $class_name,
+							'error'     => $e->getMessage(),
+							'trace'     => $e->getTraceAsString(),
+						)
+					);
+				}
+
+				// Show admin notice in debug mode.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					add_action(
+						'admin_notices',
+						function () use ( $key, $class_name, $e ) {
+							printf(
+								'<div class="notice notice-error"><p><strong>%s:</strong> %s (%s: %s)</p></div>',
+								esc_html__( 'Pro Dashboard Error', 'mcp-ai-wpoos' ),
+								esc_html( sprintf( 'Failed to initialize %s', $key ) ),
+								esc_html( $class_name ),
+								esc_html( $e->getMessage() )
+							);
+						}
+					);
+				}
+
+				return false;
+			}
+		}
+
+		/**
+		 * Get registered delegate page instance.
+		 *
+		 * Provides access to individual delegate page instances for testing
+		 * or integration purposes.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string $key Delegate page key (e.g., 'security_audits', 'security_training').
+		 * @return object|null Delegate page instance or null if not found.
+		 */
+		public function get_delegate( $key ) {
+			return isset( $this->delegate_pages[ $key ] ) ? $this->delegate_pages[ $key ] : null;
+		}
+
+		/**
+		 * Get all registered delegate pages.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @return array Array of delegate page instances keyed by delegate key.
+		 */
+		public function get_delegates() {
+			return $this->delegate_pages;
+		}
+
+		/**
+		 * Check if a delegate page is registered.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string $key Delegate page key.
+		 * @return bool True if delegate is registered, false otherwise.
+		 */
+		public function has_delegate( $key ) {
+			return isset( $this->delegate_pages[ $key ] );
 		}
 
 		/**
@@ -101,10 +376,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		/**
 		 * Get submenu page definitions.
 		 *
+		 * Organized menu structure for ISO 27001 compliance management.
+		 * Standalone admin pages (Security Audits, Training, etc.) are now
+		 * managed by their respective classes but coordinated through Pro Dashboard.
+		 *
 		 * @return array Array of submenu page configurations.
 		 */
 		private function get_submenu_pages() {
 			return array(
+				// Core Compliance Pages.
 				array(
 					'page_title' => __( 'Compliance Overview', 'mcp-ai-wpoos' ),
 					'menu_title' => __( 'Overview', 'mcp-ai-wpoos' ),
@@ -119,8 +399,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'menu_slug'  => self::PAGE_SLUG . '-iso27001',
 					'callback'   => 'render_iso27001',
 				),
+				// Note: Security Audits submenu is registered by WP_MCP_AI_Security_Audit_Admin.
+				// Note: Asset Inventory submenu is registered by WP_MCP_AI_Asset_Inventory_Admin.
+				// Note: Supplier Security submenu is registered by WP_MCP_AI_Supplier_Security_Admin.
+				// Note: Security Training submenus are registered by WP_MCP_AI_Security_Training_Admin.
 				array(
-					'page_title' => __( 'Audit & Reporting', 'mcp-ai-wpoos' ),
+					'page_title' => __( 'Compliance Reports', 'mcp-ai-wpoos' ),
 					'menu_title' => __( 'Reports', 'mcp-ai-wpoos' ),
 					'capability' => 'manage_options',
 					'menu_slug'  => self::PAGE_SLUG . '-reports',
@@ -362,12 +646,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		}
 
 		/**
-		 * Render Audit & Reporting page.
+		 * Render Compliance Reports page.
+		 *
+		 * This page provides access to compliance report generation and export.
+		 * For detailed audit management, see the "Security Audits" menu item.
 		 */
 		public function render_reports() {
 			?>
 			<div class="wrap wp-mcp-ai-pro-dashboard">
-				<h1><?php esc_html_e( 'Audit & Reporting', 'mcp-ai-wpoos' ); ?></h1>
+				<h1><?php esc_html_e( 'Compliance Reports', 'mcp-ai-wpoos' ); ?></h1>
+				<p class="description">
+					<?php esc_html_e( 'Generate and export compliance reports for management review and audit purposes.', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'For detailed audit management, visit the "Security Audits" page.', 'mcp-ai-wpoos' ); ?>
+				</p>
 
 				<?php $this->render_pro_status_notice(); ?>
 
@@ -377,7 +668,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</div>
 
 				<div class="wp-mcp-ai-audit-history">
-					<h2><?php esc_html_e( 'Audit History', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( 'Recent Reports', 'mcp-ai-wpoos' ); ?></h2>
 					<?php $this->render_audit_history(); ?>
 				</div>
 			</div>
