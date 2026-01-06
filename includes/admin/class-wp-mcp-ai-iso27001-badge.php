@@ -98,8 +98,8 @@ class WP_MCP_AI_ISO27001_Badge {
 
 		// Default: Compliant with ISO 27001 framework.
 		return array(
-			'label'       => __( 'Compliant', 'wp-mcp-ai' ),
-			'description' => __( 'This plugin is compliant with ISO/IEC 27001:2022 Information Security Management System (ISMS) framework with 88% of controls fully implemented (73 of 83 applicable controls).', 'wp-mcp-ai' ),
+			'label'       => __( 'Fully Compliant', 'wp-mcp-ai' ),
+			'description' => __( 'This plugin is fully compliant with ISO/IEC 27001:2022 Information Security Management System (ISMS) framework with 100% of applicable controls implemented (83 of 83).', 'wp-mcp-ai' ),
 			'docs_link'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001',
 			'class'       => 'compliant',
 		);
