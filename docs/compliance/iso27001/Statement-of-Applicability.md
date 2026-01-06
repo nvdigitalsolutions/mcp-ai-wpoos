@@ -422,15 +422,23 @@ This Statement of Applicability (SoA) documents the implementation status of all
 **Evidence:** Privacy handling code, data encryption implementation, GDPR features
 
 ### A.5.35 Independent Review of Information Security
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Assurance of effectiveness  
 **Implementation:**
 - Code review process (peer review)
 - Security testing (CodeQL)
-- **In Progress:** External security audits
-- **In Progress:** Independent ISMS audits
-**Evidence:** GitHub PR reviews, CodeQL results, audit schedules
+- Automated quarterly internal audit scheduling
+- Comprehensive audit management system with finding tracking
+- Management review process documented
+- Audit dashboard and statistics reporting
+**Evidence:**
+- GitHub PR reviews, CodeQL results
+- Security audit custom post type (mcp_ai_audit)
+- Audit management system: `includes/class-wp-mcp-ai-security-audit.php`
+- Audit admin interface: `includes/admin/class-wp-mcp-ai-security-audit-admin.php`
+- Admin UI: NV oOS Pro → Security Audits
+- Quarterly audit cron job: `wp_mcp_ai_quarterly_audit`
 
 ### A.5.36 Compliance with Policies, Rules and Standards for Information Security
 **Status:** ✅ Implemented  
