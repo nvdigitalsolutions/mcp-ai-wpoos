@@ -44,7 +44,7 @@ class WP_MCP_AI_Asset_Inventory_Admin {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'nvoos-pro_page_nvoos-asset-inventory' !== $hook ) {
+		if ( 'nvoos-pro-dashboard_page_nvoos-asset-inventory' !== $hook ) {
 			return;
 		}
 
