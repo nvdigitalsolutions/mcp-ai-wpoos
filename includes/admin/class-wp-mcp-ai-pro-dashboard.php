@@ -24,11 +24,49 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		const PAGE_SLUG = 'nvoos-pro-dashboard';
 
 		/**
+		 * Delegate admin pages.
+		 *
+		 * @var array
+		 */
+		private $delegate_pages = array();
+
+		/**
 		 * Constructor.
 		 */
 		public function __construct() {
 			add_action( 'admin_menu', array( $this, 'register_menu' ), 25 );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+			
+			// Initialize delegate pages if their classes are loaded.
+			$this->init_delegate_pages();
+		}
+
+		/**
+		 * Initialize delegate admin pages.
+		 *
+		 * These pages are instantiated here instead of auto-initializing
+		 * at file bottom to ensure proper coordination with Pro Dashboard.
+		 */
+		private function init_delegate_pages() {
+			// Security Audits - removed from standalone initialization.
+			if ( class_exists( 'WP_MCP_AI_Security_Audit_Admin' ) ) {
+				$this->delegate_pages['security_audits'] = new WP_MCP_AI_Security_Audit_Admin();
+			}
+			
+			// Security Training - removed from standalone initialization.
+			if ( class_exists( 'WP_MCP_AI_Security_Training_Admin' ) ) {
+				$this->delegate_pages['security_training'] = new WP_MCP_AI_Security_Training_Admin();
+			}
+			
+			// Supplier Security - removed from standalone initialization.
+			if ( class_exists( 'WP_MCP_AI_Supplier_Security_Admin' ) ) {
+				$this->delegate_pages['supplier_security'] = new WP_MCP_AI_Supplier_Security_Admin();
+			}
+			
+			// Asset Inventory - removed from standalone initialization.
+			if ( class_exists( 'WP_MCP_AI_Asset_Inventory_Admin' ) ) {
+				$this->delegate_pages['asset_inventory'] = new WP_MCP_AI_Asset_Inventory_Admin();
+			}
 		}
 
 		/**
@@ -101,10 +139,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		/**
 		 * Get submenu page definitions.
 		 *
+		 * Organized menu structure for ISO 27001 compliance management.
+		 * Standalone admin pages (Security Audits, Training, etc.) are now
+		 * managed by their respective classes but coordinated through Pro Dashboard.
+		 *
 		 * @return array Array of submenu page configurations.
 		 */
 		private function get_submenu_pages() {
 			return array(
+				// Core Compliance Pages.
 				array(
 					'page_title' => __( 'Compliance Overview', 'mcp-ai-wpoos' ),
 					'menu_title' => __( 'Overview', 'mcp-ai-wpoos' ),
@@ -119,8 +162,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'menu_slug'  => self::PAGE_SLUG . '-iso27001',
 					'callback'   => 'render_iso27001',
 				),
+				// Note: Security Audits submenu is registered by WP_MCP_AI_Security_Audit_Admin.
+				// Note: Asset Inventory submenu is registered by WP_MCP_AI_Asset_Inventory_Admin.
+				// Note: Supplier Security submenu is registered by WP_MCP_AI_Supplier_Security_Admin.
+				// Note: Security Training submenus are registered by WP_MCP_AI_Security_Training_Admin.
 				array(
-					'page_title' => __( 'Audit & Reporting', 'mcp-ai-wpoos' ),
+					'page_title' => __( 'Compliance Reports', 'mcp-ai-wpoos' ),
 					'menu_title' => __( 'Reports', 'mcp-ai-wpoos' ),
 					'capability' => 'manage_options',
 					'menu_slug'  => self::PAGE_SLUG . '-reports',
@@ -362,12 +409,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		}
 
 		/**
-		 * Render Audit & Reporting page.
+		 * Render Compliance Reports page.
+		 *
+		 * This page provides access to compliance report generation and export.
+		 * For detailed audit management, see the "Security Audits" menu item.
 		 */
 		public function render_reports() {
 			?>
 			<div class="wrap wp-mcp-ai-pro-dashboard">
-				<h1><?php esc_html_e( 'Audit & Reporting', 'mcp-ai-wpoos' ); ?></h1>
+				<h1><?php esc_html_e( 'Compliance Reports', 'mcp-ai-wpoos' ); ?></h1>
+				<p class="description">
+					<?php esc_html_e( 'Generate and export compliance reports for management review and audit purposes.', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'For detailed audit management, visit the "Security Audits" page.', 'mcp-ai-wpoos' ); ?>
+				</p>
 
 				<?php $this->render_pro_status_notice(); ?>
 
@@ -377,7 +431,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</div>
 
 				<div class="wp-mcp-ai-audit-history">
-					<h2><?php esc_html_e( 'Audit History', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( 'Recent Reports', 'mcp-ai-wpoos' ); ?></h2>
 					<?php $this->render_audit_history(); ?>
 				</div>
 			</div>
