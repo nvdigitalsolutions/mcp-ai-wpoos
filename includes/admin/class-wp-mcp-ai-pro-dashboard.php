@@ -1573,20 +1573,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$frameworks = $this->get_framework_status();
 			?>
 			<div class="wp-mcp-ai-frameworks-grid">
-				),
-			);
-			?>
-			<div class="wp-mcp-ai-frameworks-grid">
 				<?php foreach ( $frameworks as $framework ) : ?>
 					<div class="wp-mcp-ai-framework-card">
 						<h3><?php echo esc_html( $framework['name'] ); ?></h3>
 						<div class="wp-mcp-ai-framework-status <?php echo esc_attr( $framework['status'] ); ?>">
 							<?php echo esc_html( ucfirst( $framework['status'] ) ); ?>
 						</div>
-						<?php if ( $framework['progress'] > 0 ) : ?>
+						<?php if ( $framework['percentage'] > 0 ) : ?>
 							<div class="wp-mcp-ai-framework-progress">
-								<div class="wp-mcp-ai-progress" style="width: <?php echo esc_attr( $framework['progress'] ); ?>%;">
-									<?php echo esc_html( $framework['progress'] ); ?>%
+								<div class="wp-mcp-ai-progress" style="width: <?php echo esc_attr( $framework['percentage'] ); ?>%;">
+									<?php echo esc_html( $framework['percentage'] ); ?>%
 								</div>
 							</div>
 						<?php endif; ?>
