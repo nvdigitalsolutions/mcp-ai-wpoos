@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-translation-loading-error-one-more-time',
-        'version' => 'dev-copilot/fix-translation-loading-error-one-more-time',
-        'reference' => '89db396e115e05db9023650e19e0eb3351fd366e',
+        'pretty_version' => 'dev-copilot/rebuild-plugin-zips-script',
+        'version' => 'dev-copilot/rebuild-plugin-zips-script',
+        'reference' => '3d2ea9a781864663b92d2fbbda73d6fbe568ac68',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-translation-loading-error-one-more-time',
-            'version' => 'dev-copilot/fix-translation-loading-error-one-more-time',
-            'reference' => '89db396e115e05db9023650e19e0eb3351fd366e',
+            'pretty_version' => 'dev-copilot/rebuild-plugin-zips-script',
+            'version' => 'dev-copilot/rebuild-plugin-zips-script',
+            'reference' => '3d2ea9a781864663b92d2fbbda73d6fbe568ac68',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
