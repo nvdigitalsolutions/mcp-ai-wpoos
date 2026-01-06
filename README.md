@@ -61,7 +61,7 @@
 - [🌊 SSE Streaming Support](#sse-streaming-support)
 - [📝 MCP JSON-RPC 2.0 Endpoint](#mcp-json-rpc-20-endpoint)
 - [🔑 Assistant API Credentials](#assistant-api-credentials)
-- [🎫 Token Management UI](#token-management-ui)
+- [🎫 Token Management UI](#-token-management-ui)
 
 ### Assistant Management
 - [🛠 Assistant Editor Overview](#assistant-editor-overview)
