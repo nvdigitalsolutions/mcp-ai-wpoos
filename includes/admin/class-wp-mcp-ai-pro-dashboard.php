@@ -1402,6 +1402,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$iso_total_applicable = $iso_stats['total'] - $iso_stats['not_applicable'];
 			$iso_compliance = $iso_total_applicable > 0 ? round( ( $iso_stats['implemented'] / $iso_total_applicable ) * 100 ) : 0;
 			
+			// Calculate SOC 2 compliance from Trust Services Criteria.
+			$soc2_compliance = $this->get_soc2_compliance();
+			
+			// Calculate HIPAA compliance from Security Rule safeguards.
+			$hipaa_compliance = $this->get_hipaa_compliance();
+			
 			$frameworks = array(
 				array(
 					'name'   => 'ISO 27001:2022',
@@ -1410,13 +1416,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				),
 				array(
 					'name'   => 'SOC 2',
-					'status' => 'pending',
-					'progress' => 0,
+					'status' => $soc2_compliance >= 95 ? 'compliant' : 'in_progress',
+					'progress' => $soc2_compliance,
 				),
 				array(
 					'name'   => 'HIPAA',
-					'status' => 'pending',
-					'progress' => 0,
+					'status' => $hipaa_compliance >= 95 ? 'compliant' : 'in_progress',
+					'progress' => $hipaa_compliance,
 				),
 				array(
 					'name'   => 'GDPR',
@@ -1542,6 +1548,73 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			return $stats;
+		}
+
+		/**
+		 * Get SOC 2 compliance percentage.
+		 *
+		 * Calculates compliance by parsing the SOC 2 Statement of Applicability
+		 * and counting implemented vs total Trust Services Criteria.
+		 *
+		 * @return int Compliance percentage (0-100).
+		 */
+		private function get_soc2_compliance() {
+			$soc2_file = WP_MCP_AI_PATH . 'docs/compliance/soc2/Statement-of-Applicability.md';
+			
+			if ( ! file_exists( $soc2_file ) ) {
+				return 0;
+			}
+
+			$content = file_get_contents( $soc2_file );
+			if ( empty( $content ) ) {
+				return 0;
+			}
+
+			// Count total criteria and implemented criteria.
+			// SOC 2 SoA uses "✅ Implemented" status markers.
+			$total = preg_match_all( '/^\*\*Status:\*\*/m', $content );
+			$implemented = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content );
+			
+			if ( $total > 0 ) {
+				return round( ( $implemented / $total ) * 100 );
+			}
+			
+			return 0;
+		}
+
+		/**
+		 * Get HIPAA compliance percentage.
+		 *
+		 * Calculates compliance by parsing the HIPAA Statement of Applicability
+		 * and counting implemented vs total safeguards (excluding N/A).
+		 *
+		 * @return int Compliance percentage (0-100).
+		 */
+		private function get_hipaa_compliance() {
+			$hipaa_file = WP_MCP_AI_PATH . 'docs/compliance/hipaa/Statement-of-Applicability.md';
+			
+			if ( ! file_exists( $hipaa_file ) ) {
+				return 0;
+			}
+
+			$content = file_get_contents( $hipaa_file );
+			if ( empty( $content ) ) {
+				return 0;
+			}
+
+			// Count total safeguards and implemented safeguards.
+			// HIPAA SoA uses "✅ Implemented" and "❌ Not Applicable" status markers.
+			$total = preg_match_all( '/^\*\*Status:\*\*/m', $content );
+			$implemented = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content );
+			$not_applicable = preg_match_all( '/^\*\*Status:\*\*.*❌.*Not Applicable/m', $content );
+			
+			$applicable_total = $total - $not_applicable;
+			
+			if ( $applicable_total > 0 ) {
+				return round( ( $implemented / $applicable_total ) * 100 );
+			}
+			
+			return 0;
 		}
 	}
 }
