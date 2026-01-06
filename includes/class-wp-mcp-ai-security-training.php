@@ -69,7 +69,6 @@ class WP_MCP_AI_Security_Training {
 	 */
 	protected function __construct() {
 		$this->init_hooks();
-		$this->create_default_modules();
 	}
 
 	/**
@@ -78,6 +77,9 @@ class WP_MCP_AI_Security_Training {
 	protected function init_hooks() {
 		// Register custom post type for training modules.
 		add_action( 'init', array( $this, 'register_post_types' ) );
+
+		// Create default training modules after WordPress is fully loaded.
+		add_action( 'init', array( $this, 'create_default_modules' ) );
 
 		// Schedule annual training reminders.
 		add_action( 'wp_mcp_ai_annual_training_reminder', array( $this, 'send_training_reminders' ) );
