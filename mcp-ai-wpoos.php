@@ -11,7 +11,7 @@
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
- * Text Domain: mcp-ai-wpoos
+ * Text Domain: wp-mcp-ai
  * Domain Path: /languages
  * Network: true
  *

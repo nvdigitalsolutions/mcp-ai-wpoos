@@ -31,8 +31,8 @@ class WP_MCP_AI_Security_Training_Admin {
 	public function add_admin_menu() {
 		add_submenu_page(
 			'nvoos-pro-dashboard',
-			__( 'Security Training', 'mcp-ai-wpoos' ),
-			__( 'Security Training', 'mcp-ai-wpoos' ),
+			__( 'Security Training', 'wp-mcp-ai' ),
+			__( 'Security Training', 'wp-mcp-ai' ),
 			'read',
 			'nvoos-security-training',
 			array( $this, 'render_page' )
@@ -41,8 +41,8 @@ class WP_MCP_AI_Security_Training_Admin {
 		// Add admin stats page for administrators.
 		add_submenu_page(
 			'nvoos-pro-dashboard',
-			__( 'Training Statistics', 'mcp-ai-wpoos' ),
-			__( 'Training Stats', 'mcp-ai-wpoos' ),
+			__( 'Training Statistics', 'wp-mcp-ai' ),
+			__( 'Training Stats', 'wp-mcp-ai' ),
 			'manage_options',
 			'nvoos-training-statistics',
 			array( $this, 'render_stats_page' )
@@ -81,8 +81,8 @@ class WP_MCP_AI_Security_Training_Admin {
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
 				'apiUrl'  => rest_url( 'mcp-ai/v1/training' ),
 				'strings' => array(
-					'completeSuccess' => __( 'Training completed successfully!', 'mcp-ai-wpoos' ),
-					'completeError'   => __( 'Failed to record completion. Please try again.', 'mcp-ai-wpoos' ),
+					'completeSuccess' => __( 'Training completed successfully!', 'wp-mcp-ai' ),
+					'completeError'   => __( 'Failed to record completion. Please try again.', 'wp-mcp-ai' ),
 				),
 			)
 		);
@@ -146,17 +146,17 @@ class WP_MCP_AI_Security_Training_Admin {
 
 		?>
 		<div class="wrap wp-mcp-ai-security-training">
-			<h1><?php echo esc_html__( 'Security Training', 'mcp-ai-wpoos' ); ?></h1>
+			<h1><?php echo esc_html__( 'Security Training', 'wp-mcp-ai' ); ?></h1>
 
 			<div class="wp-mcp-ai-training-notice" style="display: none;"></div>
 
 			<div class="wp-mcp-ai-training-progress">
-				<h2><?php echo esc_html__( 'Your Progress', 'mcp-ai-wpoos' ); ?></h2>
+				<h2><?php echo esc_html__( 'Your Progress', 'wp-mcp-ai' ); ?></h2>
 				<p>
 					<?php
 					/* translators: %1$d: completed modules, %2$d: total modules */
 					printf(
-						esc_html__( 'Completed %1$d of %2$d training modules', 'mcp-ai-wpoos' ),
+						esc_html__( 'Completed %1$d of %2$d training modules', 'wp-mcp-ai' ),
 						count( $completions ),
 						count( $modules )
 					);
@@ -168,7 +168,7 @@ class WP_MCP_AI_Security_Training_Admin {
 			</div>
 
 			<div class="wp-mcp-ai-training-modules">
-				<h2><?php echo esc_html__( 'Available Training Modules', 'mcp-ai-wpoos' ); ?></h2>
+				<h2><?php echo esc_html__( 'Available Training Modules', 'wp-mcp-ai' ); ?></h2>
 
 				<?php foreach ( $modules as $module ) : ?>
 					<?php
@@ -184,15 +184,15 @@ class WP_MCP_AI_Security_Training_Admin {
 							<h3>
 								<?php echo esc_html( $module->post_title ); ?>
 								<?php if ( $mandatory ) : ?>
-									<span class="wp-mcp-ai-badge wp-mcp-ai-badge-mandatory"><?php echo esc_html__( 'Mandatory', 'mcp-ai-wpoos' ); ?></span>
+									<span class="wp-mcp-ai-badge wp-mcp-ai-badge-mandatory"><?php echo esc_html__( 'Mandatory', 'wp-mcp-ai' ); ?></span>
 								<?php endif; ?>
 								<?php if ( $is_completed ) : ?>
-									<span class="wp-mcp-ai-badge wp-mcp-ai-badge-completed"><?php echo esc_html__( 'Completed', 'mcp-ai-wpoos' ); ?></span>
+									<span class="wp-mcp-ai-badge wp-mcp-ai-badge-completed"><?php echo esc_html__( 'Completed', 'wp-mcp-ai' ); ?></span>
 								<?php endif; ?>
 							</h3>
 							<div class="wp-mcp-ai-module-meta">
 								<span class="wp-mcp-ai-module-type"><?php echo esc_html( WP_MCP_AI_Security_Training::MODULE_TYPES[ $type ] ?? $type ); ?></span>
-								<span class="wp-mcp-ai-module-duration"><?php echo esc_html( $duration ); ?> <?php echo esc_html__( 'minutes', 'mcp-ai-wpoos' ); ?></span>
+								<span class="wp-mcp-ai-module-duration"><?php echo esc_html( $duration ); ?> <?php echo esc_html__( 'minutes', 'wp-mcp-ai' ); ?></span>
 								<span class="wp-mcp-ai-module-role"><?php echo esc_html( WP_MCP_AI_Security_Training::TRAINING_ROLES[ $role ] ?? $role ); ?></span>
 							</div>
 						</div>
@@ -203,12 +203,12 @@ class WP_MCP_AI_Security_Training_Admin {
 							<?php endif; ?>
 
 							<button type="button" class="button wp-mcp-ai-view-module" data-module-id="<?php echo esc_attr( $module->ID ); ?>">
-								<?php echo esc_html__( 'View Module', 'mcp-ai-wpoos' ); ?>
+								<?php echo esc_html__( 'View Module', 'wp-mcp-ai' ); ?>
 							</button>
 
 							<?php if ( ! $is_completed ) : ?>
 								<button type="button" class="button button-primary wp-mcp-ai-complete-module" data-module-id="<?php echo esc_attr( $module->ID ); ?>">
-									<?php echo esc_html__( 'Mark as Complete', 'mcp-ai-wpoos' ); ?>
+									<?php echo esc_html__( 'Mark as Complete', 'wp-mcp-ai' ); ?>
 								</button>
 							<?php endif; ?>
 						</div>
@@ -222,7 +222,7 @@ class WP_MCP_AI_Security_Training_Admin {
 
 			<?php if ( empty( $modules ) ) : ?>
 				<div class="notice notice-info">
-					<p><?php echo esc_html__( 'No training modules available yet.', 'mcp-ai-wpoos' ); ?></p>
+					<p><?php echo esc_html__( 'No training modules available yet.', 'wp-mcp-ai' ); ?></p>
 				</div>
 			<?php endif; ?>
 		</div>
@@ -237,34 +237,34 @@ class WP_MCP_AI_Security_Training_Admin {
 
 		?>
 		<div class="wrap wp-mcp-ai-training-stats">
-			<h1><?php echo esc_html__( 'Training Statistics', 'mcp-ai-wpoos' ); ?></h1>
+			<h1><?php echo esc_html__( 'Training Statistics', 'wp-mcp-ai' ); ?></h1>
 
 			<div class="wp-mcp-ai-stats-grid">
 				<div class="wp-mcp-ai-stat-card">
 					<div class="wp-mcp-ai-stat-value"><?php echo esc_html( $stats['total_modules'] ); ?></div>
-					<div class="wp-mcp-ai-stat-label"><?php echo esc_html__( 'Training Modules', 'mcp-ai-wpoos' ); ?></div>
+					<div class="wp-mcp-ai-stat-label"><?php echo esc_html__( 'Training Modules', 'wp-mcp-ai' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card">
 					<div class="wp-mcp-ai-stat-value"><?php echo esc_html( $stats['total_users'] ); ?></div>
-					<div class="wp-mcp-ai-stat-label"><?php echo esc_html__( 'Total Users', 'mcp-ai-wpoos' ); ?></div>
+					<div class="wp-mcp-ai-stat-label"><?php echo esc_html__( 'Total Users', 'wp-mcp-ai' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card">
 					<div class="wp-mcp-ai-stat-value"><?php echo esc_html( $stats['total_completions'] ); ?></div>
-					<div class="wp-mcp-ai-stat-label"><?php echo esc_html__( 'Total Completions', 'mcp-ai-wpoos' ); ?></div>
+					<div class="wp-mcp-ai-stat-label"><?php echo esc_html__( 'Total Completions', 'wp-mcp-ai' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card">
 					<div class="wp-mcp-ai-stat-value"><?php echo esc_html( $stats['completion_rate'] ); ?>%</div>
-					<div class="wp-mcp-ai-stat-label"><?php echo esc_html__( 'Completion Rate', 'mcp-ai-wpoos' ); ?></div>
+					<div class="wp-mcp-ai-stat-label"><?php echo esc_html__( 'Completion Rate', 'wp-mcp-ai' ); ?></div>
 				</div>
 			</div>
 
 			<div class="wp-mcp-ai-training-info">
-				<h2><?php echo esc_html__( 'About Security Training', 'mcp-ai-wpoos' ); ?></h2>
-				<p><?php echo esc_html__( 'This security training system implements ISO 27001:2022 Control A.6.3 - Information Security Awareness, Education and Training.', 'mcp-ai-wpoos' ); ?></p>
-				<p><?php echo esc_html__( 'All users should complete mandatory training modules annually to maintain security awareness and compliance.', 'mcp-ai-wpoos' ); ?></p>
+				<h2><?php echo esc_html__( 'About Security Training', 'wp-mcp-ai' ); ?></h2>
+				<p><?php echo esc_html__( 'This security training system implements ISO 27001:2022 Control A.6.3 - Information Security Awareness, Education and Training.', 'wp-mcp-ai' ); ?></p>
+				<p><?php echo esc_html__( 'All users should complete mandatory training modules annually to maintain security awareness and compliance.', 'wp-mcp-ai' ); ?></p>
 			</div>
 		</div>
 		<?php

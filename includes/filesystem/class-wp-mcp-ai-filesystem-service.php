@@ -68,7 +68,7 @@ class WP_MCP_AI_Filesystem_Service {
 				'filesystem_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to write file: %s', 'mcp-ai-wpoos' ),
+					__( 'Failed to write file: %s', 'wp-mcp-ai' ),
 					$e->getMessage()
 				)
 			);
@@ -91,7 +91,7 @@ class WP_MCP_AI_Filesystem_Service {
 				'filesystem_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to append to file: %s', 'mcp-ai-wpoos' ),
+					__( 'Failed to append to file: %s', 'wp-mcp-ai' ),
 					$e->getMessage()
 				)
 			);
@@ -114,7 +114,7 @@ class WP_MCP_AI_Filesystem_Service {
 				'filesystem_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to create directory: %s', 'mcp-ai-wpoos' ),
+					__( 'Failed to create directory: %s', 'wp-mcp-ai' ),
 					$e->getMessage()
 				)
 			);
@@ -146,7 +146,7 @@ class WP_MCP_AI_Filesystem_Service {
 				'filesystem_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to remove file: %s', 'mcp-ai-wpoos' ),
+					__( 'Failed to remove file: %s', 'wp-mcp-ai' ),
 					$e->getMessage()
 				)
 			);
@@ -170,7 +170,7 @@ class WP_MCP_AI_Filesystem_Service {
 				'filesystem_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to copy file: %s', 'mcp-ai-wpoos' ),
+					__( 'Failed to copy file: %s', 'wp-mcp-ai' ),
 					$e->getMessage()
 				)
 			);
@@ -194,7 +194,7 @@ class WP_MCP_AI_Filesystem_Service {
 				'filesystem_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to rename file: %s', 'mcp-ai-wpoos' ),
+					__( 'Failed to rename file: %s', 'wp-mcp-ai' ),
 					$e->getMessage()
 				)
 			);
@@ -219,7 +219,7 @@ class WP_MCP_AI_Filesystem_Service {
 				'filesystem_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to change permissions: %s', 'mcp-ai-wpoos' ),
+					__( 'Failed to change permissions: %s', 'wp-mcp-ai' ),
 					$e->getMessage()
 				)
 			);

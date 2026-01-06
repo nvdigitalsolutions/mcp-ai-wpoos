@@ -173,7 +173,7 @@ class WP_MCP_AI_Security_Training_REST {
 		if ( ! $module || 'mcp_ai_training' !== $module->post_type ) {
 			return new WP_Error(
 				'invalid_module',
-				__( 'Invalid training module ID.', 'mcp-ai-wpoos' ),
+				__( 'Invalid training module ID.', 'wp-mcp-ai' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -185,7 +185,7 @@ class WP_MCP_AI_Security_Training_REST {
 			return new WP_REST_Response(
 				array(
 					'success' => true,
-					'message' => __( 'Training completion recorded successfully.', 'mcp-ai-wpoos' ),
+					'message' => __( 'Training completion recorded successfully.', 'wp-mcp-ai' ),
 				),
 				200
 			);
@@ -193,7 +193,7 @@ class WP_MCP_AI_Security_Training_REST {
 
 		return new WP_Error(
 			'completion_failed',
-			__( 'Failed to record training completion.', 'mcp-ai-wpoos' ),
+			__( 'Failed to record training completion.', 'wp-mcp-ai' ),
 			array( 'status' => 500 )
 		);
 	}

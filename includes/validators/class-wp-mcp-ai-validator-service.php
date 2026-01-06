@@ -83,7 +83,7 @@ class WP_MCP_AI_Validator_Service {
 
 		return new \WP_Error(
 			'validation_failed',
-			__( 'Validation failed', 'mcp-ai-wpoos' ),
+			__( 'Validation failed', 'wp-mcp-ai' ),
 			array( 'errors' => $errors )
 		);
 	}

@@ -93,18 +93,18 @@ class WP_MCP_AI_Security_Audit {
 	 */
 	public function register_post_type() {
 		$labels = array(
-			'name'               => __( 'Security Audits', 'mcp-ai-wpoos' ),
-			'singular_name'      => __( 'Security Audit', 'mcp-ai-wpoos' ),
-			'add_new'            => __( 'Add New Audit', 'mcp-ai-wpoos' ),
-			'add_new_item'       => __( 'Add New Security Audit', 'mcp-ai-wpoos' ),
-			'edit_item'          => __( 'Edit Security Audit', 'mcp-ai-wpoos' ),
-			'new_item'           => __( 'New Security Audit', 'mcp-ai-wpoos' ),
-			'view_item'          => __( 'View Security Audit', 'mcp-ai-wpoos' ),
-			'search_items'       => __( 'Search Audits', 'mcp-ai-wpoos' ),
-			'not_found'          => __( 'No audits found', 'mcp-ai-wpoos' ),
-			'not_found_in_trash' => __( 'No audits found in trash', 'mcp-ai-wpoos' ),
-			'parent_item_colon'  => __( 'Parent Audit:', 'mcp-ai-wpoos' ),
-			'menu_name'          => __( 'Security Audits', 'mcp-ai-wpoos' ),
+			'name'               => __( 'Security Audits', 'wp-mcp-ai' ),
+			'singular_name'      => __( 'Security Audit', 'wp-mcp-ai' ),
+			'add_new'            => __( 'Add New Audit', 'wp-mcp-ai' ),
+			'add_new_item'       => __( 'Add New Security Audit', 'wp-mcp-ai' ),
+			'edit_item'          => __( 'Edit Security Audit', 'wp-mcp-ai' ),
+			'new_item'           => __( 'New Security Audit', 'wp-mcp-ai' ),
+			'view_item'          => __( 'View Security Audit', 'wp-mcp-ai' ),
+			'search_items'       => __( 'Search Audits', 'wp-mcp-ai' ),
+			'not_found'          => __( 'No audits found', 'wp-mcp-ai' ),
+			'not_found_in_trash' => __( 'No audits found in trash', 'wp-mcp-ai' ),
+			'parent_item_colon'  => __( 'Parent Audit:', 'wp-mcp-ai' ),
+			'menu_name'          => __( 'Security Audits', 'wp-mcp-ai' ),
 		);
 
 		$args = array(
@@ -145,7 +145,7 @@ class WP_MCP_AI_Security_Audit {
 	public function register_meta_boxes() {
 		add_meta_box(
 			'wp_mcp_ai_audit_details',
-			__( 'Audit Details', 'mcp-ai-wpoos' ),
+			__( 'Audit Details', 'wp-mcp-ai' ),
 			array( $this, 'render_audit_details_meta_box' ),
 			'mcp_ai_audit',
 			'normal',
@@ -154,7 +154,7 @@ class WP_MCP_AI_Security_Audit {
 
 		add_meta_box(
 			'wp_mcp_ai_audit_findings',
-			__( 'Audit Findings', 'mcp-ai-wpoos' ),
+			__( 'Audit Findings', 'wp-mcp-ai' ),
 			array( $this, 'render_audit_findings_meta_box' ),
 			'mcp_ai_audit',
 			'normal',
@@ -180,71 +180,71 @@ class WP_MCP_AI_Security_Audit {
 		?>
 		<table class="form-table">
 			<tr>
-				<th><label for="wp_mcp_ai_audit_date"><?php esc_html_e( 'Audit Date', 'mcp-ai-wpoos' ); ?></label></th>
+				<th><label for="wp_mcp_ai_audit_date"><?php esc_html_e( 'Audit Date', 'wp-mcp-ai' ); ?></label></th>
 				<td>
 					<input type="date" id="wp_mcp_ai_audit_date" name="wp_mcp_ai_audit_date" 
 						value="<?php echo esc_attr( $audit_date ); ?>" class="regular-text" required />
 				</td>
 			</tr>
 			<tr>
-				<th><label for="wp_mcp_ai_audit_type"><?php esc_html_e( 'Audit Type', 'mcp-ai-wpoos' ); ?></label></th>
+				<th><label for="wp_mcp_ai_audit_type"><?php esc_html_e( 'Audit Type', 'wp-mcp-ai' ); ?></label></th>
 				<td>
 					<select id="wp_mcp_ai_audit_type" name="wp_mcp_ai_audit_type" class="regular-text" required>
-						<option value=""><?php esc_html_e( 'Select Type', 'mcp-ai-wpoos' ); ?></option>
+						<option value=""><?php esc_html_e( 'Select Type', 'wp-mcp-ai' ); ?></option>
 						<option value="<?php echo esc_attr( self::TYPE_INTERNAL ); ?>" <?php selected( $audit_type, self::TYPE_INTERNAL ); ?>>
-							<?php esc_html_e( 'Internal Audit', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Internal Audit', 'wp-mcp-ai' ); ?>
 						</option>
 						<option value="<?php echo esc_attr( self::TYPE_EXTERNAL ); ?>" <?php selected( $audit_type, self::TYPE_EXTERNAL ); ?>>
-							<?php esc_html_e( 'External Audit', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'External Audit', 'wp-mcp-ai' ); ?>
 						</option>
 						<option value="<?php echo esc_attr( self::TYPE_MANAGEMENT_REVIEW ); ?>" <?php selected( $audit_type, self::TYPE_MANAGEMENT_REVIEW ); ?>>
-							<?php esc_html_e( 'Management Review', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Management Review', 'wp-mcp-ai' ); ?>
 						</option>
 					</select>
 				</td>
 			</tr>
 			<tr>
-				<th><label for="wp_mcp_ai_audit_status"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></label></th>
+				<th><label for="wp_mcp_ai_audit_status"><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></label></th>
 				<td>
 					<select id="wp_mcp_ai_audit_status" name="wp_mcp_ai_audit_status" class="regular-text" required>
-						<option value=""><?php esc_html_e( 'Select Status', 'mcp-ai-wpoos' ); ?></option>
+						<option value=""><?php esc_html_e( 'Select Status', 'wp-mcp-ai' ); ?></option>
 						<option value="<?php echo esc_attr( self::STATUS_SCHEDULED ); ?>" <?php selected( $audit_status, self::STATUS_SCHEDULED ); ?>>
-							<?php esc_html_e( 'Scheduled', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Scheduled', 'wp-mcp-ai' ); ?>
 						</option>
 						<option value="<?php echo esc_attr( self::STATUS_IN_PROGRESS ); ?>" <?php selected( $audit_status, self::STATUS_IN_PROGRESS ); ?>>
-							<?php esc_html_e( 'In Progress', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'In Progress', 'wp-mcp-ai' ); ?>
 						</option>
 						<option value="<?php echo esc_attr( self::STATUS_COMPLETED ); ?>" <?php selected( $audit_status, self::STATUS_COMPLETED ); ?>>
-							<?php esc_html_e( 'Completed', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Completed', 'wp-mcp-ai' ); ?>
 						</option>
 						<option value="<?php echo esc_attr( self::STATUS_OVERDUE ); ?>" <?php selected( $audit_status, self::STATUS_OVERDUE ); ?>>
-							<?php esc_html_e( 'Overdue', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Overdue', 'wp-mcp-ai' ); ?>
 						</option>
 					</select>
 				</td>
 			</tr>
 			<tr>
-				<th><label for="wp_mcp_ai_auditor"><?php esc_html_e( 'Auditor', 'mcp-ai-wpoos' ); ?></label></th>
+				<th><label for="wp_mcp_ai_auditor"><?php esc_html_e( 'Auditor', 'wp-mcp-ai' ); ?></label></th>
 				<td>
 					<input type="text" id="wp_mcp_ai_auditor" name="wp_mcp_ai_auditor" 
 						value="<?php echo esc_attr( $auditor ); ?>" class="regular-text" />
-					<p class="description"><?php esc_html_e( 'Name of the internal or external auditor', 'mcp-ai-wpoos' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Name of the internal or external auditor', 'wp-mcp-ai' ); ?></p>
 				</td>
 			</tr>
 			<tr>
-				<th><label for="wp_mcp_ai_audit_scope"><?php esc_html_e( 'Audit Scope', 'mcp-ai-wpoos' ); ?></label></th>
+				<th><label for="wp_mcp_ai_audit_scope"><?php esc_html_e( 'Audit Scope', 'wp-mcp-ai' ); ?></label></th>
 				<td>
 					<textarea id="wp_mcp_ai_audit_scope" name="wp_mcp_ai_audit_scope" 
 						class="large-text" rows="4"><?php echo esc_textarea( $scope ); ?></textarea>
-					<p class="description"><?php esc_html_e( 'Controls, processes, or areas included in this audit', 'mcp-ai-wpoos' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Controls, processes, or areas included in this audit', 'wp-mcp-ai' ); ?></p>
 				</td>
 			</tr>
 			<tr>
-				<th><label for="wp_mcp_ai_controls_reviewed"><?php esc_html_e( 'Controls Reviewed', 'mcp-ai-wpoos' ); ?></label></th>
+				<th><label for="wp_mcp_ai_controls_reviewed"><?php esc_html_e( 'Controls Reviewed', 'wp-mcp-ai' ); ?></label></th>
 				<td>
 					<input type="number" id="wp_mcp_ai_controls_reviewed" name="wp_mcp_ai_controls_reviewed" 
 						value="<?php echo esc_attr( $controls_reviewed ); ?>" min="0" max="93" class="small-text" />
-					<p class="description"><?php esc_html_e( 'Number of ISO 27001 controls reviewed', 'mcp-ai-wpoos' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Number of ISO 27001 controls reviewed', 'wp-mcp-ai' ); ?></p>
 				</td>
 			</tr>
 		</table>
@@ -266,7 +266,7 @@ class WP_MCP_AI_Security_Audit {
 		<div id="wp-mcp-ai-audit-findings-container">
 			<p>
 				<button type="button" class="button" id="wp-mcp-ai-add-finding">
-					<?php esc_html_e( 'Add Finding', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Add Finding', 'wp-mcp-ai' ); ?>
 				</button>
 			</p>
 			<div id="wp-mcp-ai-findings-list">
@@ -286,7 +286,7 @@ class WP_MCP_AI_Security_Audit {
 			});
 			
 			$(document).on('click', '.wp-mcp-ai-remove-finding', function() {
-				if (confirm('<?php esc_html_e( 'Are you sure you want to remove this finding?', 'mcp-ai-wpoos' ); ?>')) {
+				if (confirm('<?php esc_html_e( 'Are you sure you want to remove this finding?', 'wp-mcp-ai' ); ?>')) {
 					$(this).closest('.wp-mcp-ai-finding-row').remove();
 				}
 			});
@@ -332,68 +332,68 @@ class WP_MCP_AI_Security_Audit {
 		<div class="wp-mcp-ai-finding-row">
 			<h4>
 				<?php /* translators: %d: Finding number */ ?>
-				<?php printf( esc_html__( 'Finding #%d', 'mcp-ai-wpoos' ), $index + 1 ); ?>
+				<?php printf( esc_html__( 'Finding #%d', 'wp-mcp-ai' ), $index + 1 ); ?>
 				<button type="button" class="button button-small wp-mcp-ai-remove-finding" style="float: right;">
-					<?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?>
 				</button>
 			</h4>
 			<div class="wp-mcp-ai-finding-field">
-				<label><?php esc_html_e( 'Control ID', 'mcp-ai-wpoos' ); ?></label>
+				<label><?php esc_html_e( 'Control ID', 'wp-mcp-ai' ); ?></label>
 				<input type="text" name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][control]" 
 					value="<?php echo esc_attr( $control ); ?>" class="regular-text" 
 					placeholder="A.5.1" />
 			</div>
 			<div class="wp-mcp-ai-finding-field">
-				<label><?php esc_html_e( 'Severity', 'mcp-ai-wpoos' ); ?></label>
+				<label><?php esc_html_e( 'Severity', 'wp-mcp-ai' ); ?></label>
 				<select name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][severity]" class="regular-text">
-					<option value=""><?php esc_html_e( 'Select Severity', 'mcp-ai-wpoos' ); ?></option>
+					<option value=""><?php esc_html_e( 'Select Severity', 'wp-mcp-ai' ); ?></option>
 					<option value="<?php echo esc_attr( self::SEVERITY_CRITICAL ); ?>" <?php selected( $severity, self::SEVERITY_CRITICAL ); ?>>
-						<?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Critical', 'wp-mcp-ai' ); ?>
 					</option>
 					<option value="<?php echo esc_attr( self::SEVERITY_HIGH ); ?>" <?php selected( $severity, self::SEVERITY_HIGH ); ?>>
-						<?php esc_html_e( 'High', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'High', 'wp-mcp-ai' ); ?>
 					</option>
 					<option value="<?php echo esc_attr( self::SEVERITY_MEDIUM ); ?>" <?php selected( $severity, self::SEVERITY_MEDIUM ); ?>>
-						<?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Medium', 'wp-mcp-ai' ); ?>
 					</option>
 					<option value="<?php echo esc_attr( self::SEVERITY_LOW ); ?>" <?php selected( $severity, self::SEVERITY_LOW ); ?>>
-						<?php esc_html_e( 'Low', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Low', 'wp-mcp-ai' ); ?>
 					</option>
 					<option value="<?php echo esc_attr( self::SEVERITY_OBSERVATION ); ?>" <?php selected( $severity, self::SEVERITY_OBSERVATION ); ?>>
-						<?php esc_html_e( 'Observation', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Observation', 'wp-mcp-ai' ); ?>
 					</option>
 				</select>
 			</div>
 			<div class="wp-mcp-ai-finding-field">
-				<label><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></label>
+				<label><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></label>
 				<select name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][status]" class="regular-text">
-					<option value=""><?php esc_html_e( 'Select Status', 'mcp-ai-wpoos' ); ?></option>
+					<option value=""><?php esc_html_e( 'Select Status', 'wp-mcp-ai' ); ?></option>
 					<option value="<?php echo esc_attr( self::FINDING_OPEN ); ?>" <?php selected( $status, self::FINDING_OPEN ); ?>>
-						<?php esc_html_e( 'Open', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Open', 'wp-mcp-ai' ); ?>
 					</option>
 					<option value="<?php echo esc_attr( self::FINDING_IN_PROGRESS ); ?>" <?php selected( $status, self::FINDING_IN_PROGRESS ); ?>>
-						<?php esc_html_e( 'In Progress', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'In Progress', 'wp-mcp-ai' ); ?>
 					</option>
 					<option value="<?php echo esc_attr( self::FINDING_RESOLVED ); ?>" <?php selected( $status, self::FINDING_RESOLVED ); ?>>
-						<?php esc_html_e( 'Resolved', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Resolved', 'wp-mcp-ai' ); ?>
 					</option>
 					<option value="<?php echo esc_attr( self::FINDING_ACCEPTED ); ?>" <?php selected( $status, self::FINDING_ACCEPTED ); ?>>
-						<?php esc_html_e( 'Accepted Risk', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Accepted Risk', 'wp-mcp-ai' ); ?>
 					</option>
 				</select>
 			</div>
 			<div class="wp-mcp-ai-finding-field">
-				<label><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></label>
+				<label><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></label>
 				<textarea name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][description]" 
 					class="large-text" rows="3"><?php echo esc_textarea( $description ); ?></textarea>
 			</div>
 			<div class="wp-mcp-ai-finding-field">
-				<label><?php esc_html_e( 'Recommendation', 'mcp-ai-wpoos' ); ?></label>
+				<label><?php esc_html_e( 'Recommendation', 'wp-mcp-ai' ); ?></label>
 				<textarea name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][recommendation]" 
 					class="large-text" rows="3"><?php echo esc_textarea( $recommendation ); ?></textarea>
 			</div>
 			<div class="wp-mcp-ai-finding-field">
-				<label><?php esc_html_e( 'Due Date', 'mcp-ai-wpoos' ); ?></label>
+				<label><?php esc_html_e( 'Due Date', 'wp-mcp-ai' ); ?></label>
 				<input type="date" name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][due_date]" 
 					value="<?php echo esc_attr( $due_date ); ?>" class="regular-text" />
 			</div>
@@ -581,12 +581,12 @@ class WP_MCP_AI_Security_Audit {
 			array(
 				'post_title'   => sprintf(
 					/* translators: %s: Quarter and year */
-					__( 'Quarterly Security Audit - %s', 'mcp-ai-wpoos' ),
+					__( 'Quarterly Security Audit - %s', 'wp-mcp-ai' ),
 					gmdate( 'Q Y' )
 				),
 				'post_type'    => 'mcp_ai_audit',
 				'post_status'  => 'draft',
-				'post_content' => __( 'Scheduled quarterly internal security audit as per ISO 27001:2022 Control A.5.35', 'mcp-ai-wpoos' ),
+				'post_content' => __( 'Scheduled quarterly internal security audit as per ISO 27001:2022 Control A.5.35', 'wp-mcp-ai' ),
 			)
 		);
 
@@ -610,12 +610,12 @@ class WP_MCP_AI_Security_Audit {
 		$admin_email = get_option( 'admin_email' );
 		$subject = sprintf(
 			/* translators: %s: Site name */
-			__( '[%s] Quarterly Security Audit Scheduled', 'mcp-ai-wpoos' ),
+			__( '[%s] Quarterly Security Audit Scheduled', 'wp-mcp-ai' ),
 			get_bloginfo( 'name' )
 		);
 		$message = sprintf(
 			/* translators: 1: Edit URL */
-			__( "A quarterly security audit has been scheduled.\n\nPlease review and complete the audit at:\n%s", 'mcp-ai-wpoos' ),
+			__( "A quarterly security audit has been scheduled.\n\nPlease review and complete the audit at:\n%s", 'wp-mcp-ai' ),
 			get_edit_post_link( $audit_id )
 		);
 

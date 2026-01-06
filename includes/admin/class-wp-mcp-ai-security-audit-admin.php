@@ -37,8 +37,8 @@ class WP_MCP_AI_Security_Audit_Admin {
 	public function add_admin_page() {
 		add_submenu_page(
 			'nvoos-pro-dashboard',
-			__( 'Security Audits Dashboard', 'mcp-ai-wpoos' ),
-			__( 'Security Audits', 'mcp-ai-wpoos' ),
+			__( 'Security Audits Dashboard', 'wp-mcp-ai' ),
+			__( 'Security Audits', 'wp-mcp-ai' ),
 			'manage_options',
 			'nvoos-pro-dashboard-audits',
 			array( $this, 'render_admin_page' )
@@ -79,7 +79,7 @@ class WP_MCP_AI_Security_Audit_Admin {
 	 */
 	public function render_admin_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos' ) );
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'wp-mcp-ai' ) );
 		}
 
 		$audit_system = WP_MCP_AI_Security_Audit::get_instance();
@@ -87,72 +87,72 @@ class WP_MCP_AI_Security_Audit_Admin {
 		$recent_audits = $audit_system->get_recent_audits( 10 );
 		?>
 		<div class="wrap wp-mcp-ai-security-audit-admin">
-			<h1><?php esc_html_e( 'Security Audits Dashboard', 'mcp-ai-wpoos' ); ?></h1>
+			<h1><?php esc_html_e( 'Security Audits Dashboard', 'wp-mcp-ai' ); ?></h1>
 			<p class="description">
-				<?php esc_html_e( 'ISO 27001:2022 Control A.5.35 - Independent Review of Information Security', 'mcp-ai-wpoos' ); ?>
+				<?php esc_html_e( 'ISO 27001:2022 Control A.5.35 - Independent Review of Information Security', 'wp-mcp-ai' ); ?>
 			</p>
 
 			<!-- Statistics Cards -->
 			<div class="wp-mcp-ai-audit-stats">
 				<div class="wp-mcp-ai-stat-card">
 					<div class="stat-value"><?php echo esc_html( $stats['total_audits'] ); ?></div>
-					<div class="stat-label"><?php esc_html_e( 'Total Audits', 'mcp-ai-wpoos' ); ?></div>
+					<div class="stat-label"><?php esc_html_e( 'Total Audits', 'wp-mcp-ai' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card stat-completed">
 					<div class="stat-value"><?php echo esc_html( $stats['completed'] ); ?></div>
-					<div class="stat-label"><?php esc_html_e( 'Completed', 'mcp-ai-wpoos' ); ?></div>
+					<div class="stat-label"><?php esc_html_e( 'Completed', 'wp-mcp-ai' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card stat-in-progress">
 					<div class="stat-value"><?php echo esc_html( $stats['in_progress'] ); ?></div>
-					<div class="stat-label"><?php esc_html_e( 'In Progress', 'mcp-ai-wpoos' ); ?></div>
+					<div class="stat-label"><?php esc_html_e( 'In Progress', 'wp-mcp-ai' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card stat-scheduled">
 					<div class="stat-value"><?php echo esc_html( $stats['scheduled'] ); ?></div>
-					<div class="stat-label"><?php esc_html_e( 'Scheduled', 'mcp-ai-wpoos' ); ?></div>
+					<div class="stat-label"><?php esc_html_e( 'Scheduled', 'wp-mcp-ai' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card stat-overdue">
 					<div class="stat-value"><?php echo esc_html( $stats['overdue'] ); ?></div>
-					<div class="stat-label"><?php esc_html_e( 'Overdue', 'mcp-ai-wpoos' ); ?></div>
+					<div class="stat-label"><?php esc_html_e( 'Overdue', 'wp-mcp-ai' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card stat-findings">
 					<div class="stat-value"><?php echo esc_html( $stats['total_findings'] ); ?></div>
-					<div class="stat-label"><?php esc_html_e( 'Total Findings', 'mcp-ai-wpoos' ); ?></div>
+					<div class="stat-label"><?php esc_html_e( 'Total Findings', 'wp-mcp-ai' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card stat-open-findings">
 					<div class="stat-value"><?php echo esc_html( $stats['open_findings'] ); ?></div>
-					<div class="stat-label"><?php esc_html_e( 'Open Findings', 'mcp-ai-wpoos' ); ?></div>
+					<div class="stat-label"><?php esc_html_e( 'Open Findings', 'wp-mcp-ai' ); ?></div>
 				</div>
 			</div>
 
 			<!-- Action Buttons -->
 			<div class="wp-mcp-ai-audit-actions">
 				<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_audit' ) ); ?>" class="button button-primary button-large">
-					<?php esc_html_e( 'Create New Audit', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Create New Audit', 'wp-mcp-ai' ); ?>
 				</a>
 				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_audit' ) ); ?>" class="button button-large">
-					<?php esc_html_e( 'View All Audits', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'View All Audits', 'wp-mcp-ai' ); ?>
 				</a>
 			</div>
 
 			<!-- Recent Audits Table -->
-			<h2><?php esc_html_e( 'Recent Audits', 'mcp-ai-wpoos' ); ?></h2>
+			<h2><?php esc_html_e( 'Recent Audits', 'wp-mcp-ai' ); ?></h2>
 			<?php if ( ! empty( $recent_audits ) ) : ?>
 				<table class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
-							<th><?php esc_html_e( 'Audit', 'mcp-ai-wpoos' ); ?></th>
-							<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos' ); ?></th>
-							<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos' ); ?></th>
-							<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
-							<th><?php esc_html_e( 'Auditor', 'mcp-ai-wpoos' ); ?></th>
-							<th><?php esc_html_e( 'Findings', 'mcp-ai-wpoos' ); ?></th>
-							<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Audit', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Date', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Type', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Auditor', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Findings', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -188,7 +188,7 @@ class WP_MCP_AI_Security_Audit_Admin {
 								</td>
 								<td>
 									<a href="<?php echo esc_url( get_edit_post_link( $audit->ID ) ); ?>" class="button button-small">
-										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+										<?php esc_html_e( 'Edit', 'wp-mcp-ai' ); ?>
 									</a>
 								</td>
 							</tr>
@@ -196,23 +196,23 @@ class WP_MCP_AI_Security_Audit_Admin {
 					</tbody>
 				</table>
 			<?php else : ?>
-				<p><?php esc_html_e( 'No audits found. Create your first security audit to get started.', 'mcp-ai-wpoos' ); ?></p>
+				<p><?php esc_html_e( 'No audits found. Create your first security audit to get started.', 'wp-mcp-ai' ); ?></p>
 			<?php endif; ?>
 
 			<!-- Audit Schedule Information -->
 			<div class="wp-mcp-ai-audit-schedule">
-				<h2><?php esc_html_e( 'Audit Schedule', 'mcp-ai-wpoos' ); ?></h2>
+				<h2><?php esc_html_e( 'Audit Schedule', 'wp-mcp-ai' ); ?></h2>
 				<p>
-					<?php esc_html_e( 'Quarterly internal audits are automatically scheduled on the first day of each quarter (January 1, April 1, July 1, October 1).', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Quarterly internal audits are automatically scheduled on the first day of each quarter (January 1, April 1, July 1, October 1).', 'wp-mcp-ai' ); ?>
 				</p>
 				<p>
-					<strong><?php esc_html_e( 'Next Scheduled Audit:', 'mcp-ai-wpoos' ); ?></strong>
+					<strong><?php esc_html_e( 'Next Scheduled Audit:', 'wp-mcp-ai' ); ?></strong>
 					<?php
 					$next_audit = wp_next_scheduled( 'wp_mcp_ai_quarterly_audit' );
 					if ( $next_audit ) {
 						echo esc_html( gmdate( 'F j, Y', $next_audit ) );
 					} else {
-						esc_html_e( 'Not scheduled', 'mcp-ai-wpoos' );
+						esc_html_e( 'Not scheduled', 'wp-mcp-ai' );
 					}
 					?>
 				</p>
@@ -220,26 +220,26 @@ class WP_MCP_AI_Security_Audit_Admin {
 
 			<!-- Quick Links -->
 			<div class="wp-mcp-ai-quick-links">
-				<h2><?php esc_html_e( 'ISO 27001 Resources', 'mcp-ai-wpoos' ); ?></h2>
+				<h2><?php esc_html_e( 'ISO 27001 Resources', 'wp-mcp-ai' ); ?></h2>
 				<ul>
 					<li>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-dashboard' ) ); ?>">
-							<?php esc_html_e( 'Pro Dashboard - Compliance Overview', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Pro Dashboard - Compliance Overview', 'wp-mcp-ai' ); ?>
 						</a>
 					</li>
 					<li>
 						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_lesson' ) ); ?>">
-							<?php esc_html_e( 'Lessons Learned (A.5.27)', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Lessons Learned (A.5.27)', 'wp-mcp-ai' ); ?>
 						</a>
 					</li>
 					<li>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-dashboard-suppliers' ) ); ?>">
-							<?php esc_html_e( 'Supplier Security (A.5.19-A.5.22)', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Supplier Security (A.5.19-A.5.22)', 'wp-mcp-ai' ); ?>
 						</a>
 					</li>
 					<li>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-dashboard-asset-inventory' ) ); ?>">
-							<?php esc_html_e( 'Asset Inventory (A.5.9)', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Asset Inventory (A.5.9)', 'wp-mcp-ai' ); ?>
 						</a>
 					</li>
 				</ul>
@@ -256,9 +256,9 @@ class WP_MCP_AI_Security_Audit_Admin {
 	 */
 	private function format_audit_type( $type ) {
 		$types = array(
-			'internal'          => __( 'Internal Audit', 'mcp-ai-wpoos' ),
-			'external'          => __( 'External Audit', 'mcp-ai-wpoos' ),
-			'management_review' => __( 'Management Review', 'mcp-ai-wpoos' ),
+			'internal'          => __( 'Internal Audit', 'wp-mcp-ai' ),
+			'external'          => __( 'External Audit', 'wp-mcp-ai' ),
+			'management_review' => __( 'Management Review', 'wp-mcp-ai' ),
 		);
 
 		return isset( $types[ $type ] ) ? $types[ $type ] : '-';
@@ -279,10 +279,10 @@ class WP_MCP_AI_Security_Audit_Admin {
 		);
 
 		$labels = array(
-			'scheduled'   => __( 'Scheduled', 'mcp-ai-wpoos' ),
-			'in_progress' => __( 'In Progress', 'mcp-ai-wpoos' ),
-			'completed'   => __( 'Completed', 'mcp-ai-wpoos' ),
-			'overdue'     => __( 'Overdue', 'mcp-ai-wpoos' ),
+			'scheduled'   => __( 'Scheduled', 'wp-mcp-ai' ),
+			'in_progress' => __( 'In Progress', 'wp-mcp-ai' ),
+			'completed'   => __( 'Completed', 'wp-mcp-ai' ),
+			'overdue'     => __( 'Overdue', 'wp-mcp-ai' ),
 		);
 
 		if ( isset( $statuses[ $status ] ) && isset( $labels[ $status ] ) ) {

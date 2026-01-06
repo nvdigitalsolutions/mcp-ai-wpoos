@@ -95,7 +95,7 @@ class WP_MCP_AI_Process_Service {
 				'process_timeout',
 				sprintf(
 					/* translators: %d: timeout in seconds */
-					__( 'Process timed out after %d seconds', 'mcp-ai-wpoos' ),
+					__( 'Process timed out after %d seconds', 'wp-mcp-ai' ),
 					$timeout
 				),
 				array(
@@ -109,7 +109,7 @@ class WP_MCP_AI_Process_Service {
 				'process_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Process failed: %s', 'mcp-ai-wpoos' ),
+					__( 'Process failed: %s', 'wp-mcp-ai' ),
 					$e->getMessage()
 				),
 				array(
@@ -123,7 +123,7 @@ class WP_MCP_AI_Process_Service {
 				'process_exception',
 				sprintf(
 					/* translators: %s: exception message */
-					__( 'Process exception: %s', 'mcp-ai-wpoos' ),
+					__( 'Process exception: %s', 'wp-mcp-ai' ),
 					$e->getMessage()
 				)
 			);
@@ -269,7 +269,7 @@ class WP_MCP_AI_Process_Service {
 				'process_timeout',
 				sprintf(
 					/* translators: %d: timeout in seconds */
-					__( 'Process timed out after %d seconds', 'mcp-ai-wpoos' ),
+					__( 'Process timed out after %d seconds', 'wp-mcp-ai' ),
 					$timeout
 				),
 				array(
@@ -283,7 +283,7 @@ class WP_MCP_AI_Process_Service {
 				'process_exception',
 				sprintf(
 					/* translators: %s: exception message */
-					__( 'Process exception: %s', 'mcp-ai-wpoos' ),
+					__( 'Process exception: %s', 'wp-mcp-ai' ),
 					$e->getMessage()
 				)
 			);

@@ -147,7 +147,7 @@ class WP_MCP_AI_Pro_License {
 			add_settings_error(
 				'wp_mcp_ai_license',
 				'empty_license',
-				__( 'Please enter a license key.', 'mcp-ai-wpoos' ),
+				__( 'Please enter a license key.', 'wp-mcp-ai' ),
 				'error'
 			);
 			return;
@@ -164,14 +164,14 @@ class WP_MCP_AI_Pro_License {
 			add_settings_error(
 				'wp_mcp_ai_license',
 				'license_activated',
-				__( 'License activated successfully!', 'mcp-ai-wpoos' ),
+				__( 'License activated successfully!', 'wp-mcp-ai' ),
 				'success'
 			);
 		} else {
 			add_settings_error(
 				'wp_mcp_ai_license',
 				'activation_failed',
-				$result['message'] ?? __( 'License activation failed.', 'mcp-ai-wpoos' ),
+				$result['message'] ?? __( 'License activation failed.', 'wp-mcp-ai' ),
 				'error'
 			);
 		}
@@ -211,7 +211,7 @@ class WP_MCP_AI_Pro_License {
 		if ( ! $data || ! isset( $data['success'] ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Invalid response from license server.', 'mcp-ai-wpoos' ),
+				'message' => __( 'Invalid response from license server.', 'wp-mcp-ai' ),
 			);
 		}
 
@@ -312,7 +312,7 @@ class WP_MCP_AI_Pro_License {
 						<?php
 						printf(
 							/* translators: %d: number of days */
-							esc_html__( 'Your NV oOS Pro license expires in %d days. Please renew to continue using Pro features.', 'mcp-ai-wpoos' ),
+							esc_html__( 'Your NV oOS Pro license expires in %d days. Please renew to continue using Pro features.', 'wp-mcp-ai' ),
 							(int) $days_until_expiry
 						);
 						?>
@@ -327,9 +327,9 @@ class WP_MCP_AI_Pro_License {
 			?>
 			<div class="notice notice-error">
 				<p>
-					<?php esc_html_e( 'Your NV oOS Pro license has expired. Pro features are disabled. Please renew your license.', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Your NV oOS Pro license has expired. Pro features are disabled. Please renew your license.', 'wp-mcp-ai' ); ?>
 					<a href="<?php echo esc_url( apply_filters( 'wp_mcp_ai_pro_upgrade_url', 'https://nvdigitalsolutions.com/renew' ) ); ?>" class="button button-primary" style="margin-left: 10px;">
-						<?php esc_html_e( 'Renew License', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Renew License', 'wp-mcp-ai' ); ?>
 					</a>
 				</p>
 			</div>
@@ -341,7 +341,7 @@ class WP_MCP_AI_Pro_License {
 			?>
 			<div class="notice notice-error">
 				<p>
-					<?php esc_html_e( 'Your NV oOS Pro license is invalid. Pro features are disabled.', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Your NV oOS Pro license is invalid. Pro features are disabled.', 'wp-mcp-ai' ); ?>
 				</p>
 			</div>
 			<?php
@@ -361,18 +361,18 @@ class WP_MCP_AI_Pro_License {
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'NV oOS Pro License', 'mcp-ai-wpoos' ); ?></h1>
+			<h1><?php esc_html_e( 'NV oOS Pro License', 'wp-mcp-ai' ); ?></h1>
 
 			<?php settings_errors( 'wp_mcp_ai_license' ); ?>
 
 			<?php if ( 'valid' === $license_status ) : ?>
 				<div class="notice notice-success inline">
 					<p>
-						<strong><?php esc_html_e( 'Pro License Active', 'mcp-ai-wpoos' ); ?></strong><br>
+						<strong><?php esc_html_e( 'Pro License Active', 'wp-mcp-ai' ); ?></strong><br>
 						<?php
 						printf(
 							/* translators: %s: plan name */
-							esc_html__( 'Plan: %s', 'mcp-ai-wpoos' ),
+							esc_html__( 'Plan: %s', 'wp-mcp-ai' ),
 							'<strong>' . esc_html( ucfirst( $plan ) ) . '</strong>'
 						);
 						?>
@@ -381,7 +381,7 @@ class WP_MCP_AI_Pro_License {
 						if ( ! empty( $expires ) ) {
 							printf(
 								/* translators: %s: expiration date */
-								esc_html__( 'Expires: %s', 'mcp-ai-wpoos' ),
+								esc_html__( 'Expires: %s', 'wp-mcp-ai' ),
 								esc_html( date_i18n( get_option( 'date_format' ), strtotime( $expires ) ) )
 							);
 						}
@@ -393,7 +393,7 @@ class WP_MCP_AI_Pro_License {
 					<?php wp_nonce_field( 'wp_mcp_ai_license_deactivation', 'wp_mcp_ai_license_nonce' ); ?>
 					<table class="form-table">
 						<tr>
-							<th scope="row"><?php esc_html_e( 'License Key', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="row"><?php esc_html_e( 'License Key', 'wp-mcp-ai' ); ?></th>
 							<td>
 								<code><?php echo esc_html( str_repeat( '*', strlen( $license_key ) - 8 ) . substr( $license_key, -8 ) ); ?></code>
 							</td>
@@ -401,7 +401,7 @@ class WP_MCP_AI_Pro_License {
 					</table>
 					<p class="submit">
 						<button type="submit" name="wp_mcp_ai_deactivate_license" class="button button-secondary">
-							<?php esc_html_e( 'Deactivate License', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Deactivate License', 'wp-mcp-ai' ); ?>
 						</button>
 					</p>
 				</form>
@@ -411,7 +411,7 @@ class WP_MCP_AI_Pro_License {
 					<table class="form-table">
 						<tr>
 							<th scope="row">
-								<label for="wp_mcp_ai_license_key"><?php esc_html_e( 'License Key', 'mcp-ai-wpoos' ); ?></label>
+								<label for="wp_mcp_ai_license_key"><?php esc_html_e( 'License Key', 'wp-mcp-ai' ); ?></label>
 							</th>
 							<td>
 								<input type="text"
@@ -424,7 +424,7 @@ class WP_MCP_AI_Pro_License {
 									<?php
 									printf(
 										/* translators: %s: purchase URL */
-										wp_kses_post( __( 'Enter your license key. Don\'t have one? <a href="%s" target="_blank">Purchase a license</a>', 'mcp-ai-wpoos' ) ),
+										wp_kses_post( __( 'Enter your license key. Don\'t have one? <a href="%s" target="_blank">Purchase a license</a>', 'wp-mcp-ai' ) ),
 										esc_url( apply_filters( 'wp_mcp_ai_pro_upgrade_url', 'https://nvdigitalsolutions.com/pricing' ) )
 									);
 									?>
@@ -434,7 +434,7 @@ class WP_MCP_AI_Pro_License {
 					</table>
 					<p class="submit">
 						<button type="submit" name="wp_mcp_ai_activate_license" class="button button-primary">
-							<?php esc_html_e( 'Activate License', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Activate License', 'wp-mcp-ai' ); ?>
 						</button>
 					</p>
 				</form>

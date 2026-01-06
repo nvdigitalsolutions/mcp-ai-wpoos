@@ -115,7 +115,7 @@ class WP_MCP_AI_ISO27001_Badge {
 	 * @return array Modified links.
 	 */
 	public function add_plugin_meta_badge( $links, $file ) {
-		if ( strpos( $file, 'mcp-ai-wpoos' ) !== false ) {
+		if ( strpos( $file, 'wp-mcp-ai' ) !== false ) {
 			$status = $this->get_certification_status();
 			
 			$links[] = sprintf(

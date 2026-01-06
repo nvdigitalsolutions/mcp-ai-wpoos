@@ -73,7 +73,7 @@ abstract class WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Interface {
 				'php_version_too_old',
 				sprintf(
 					/* translators: %s: current PHP version */
-					__( 'This tool uses Symfony Validator which requires PHP 8.0 or higher for attribute support. You are running PHP %s. Please upgrade PHP or use the non-validated version of this tool.', 'mcp-ai-wpoos' ),
+					__( 'This tool uses Symfony Validator which requires PHP 8.0 or higher for attribute support. You are running PHP %s. Please upgrade PHP or use the non-validated version of this tool.', 'wp-mcp-ai' ),
 					PHP_VERSION
 				),
 				array(
@@ -92,7 +92,7 @@ abstract class WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Interface {
 				'invalid_validation_class',
 				sprintf(
 					/* translators: %s: class name */
-					__( 'Validation class not found: %s', 'mcp-ai-wpoos' ),
+					__( 'Validation class not found: %s', 'wp-mcp-ai' ),
 					$class_name
 				)
 			);

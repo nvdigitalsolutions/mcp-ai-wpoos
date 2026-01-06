@@ -97,11 +97,11 @@ class WP_MCP_AI_Security_Training {
 			'mcp_ai_training',
 			array(
 				'labels'              => array(
-					'name'          => __( 'Security Training', 'mcp-ai-wpoos' ),
-					'singular_name' => __( 'Training Module', 'mcp-ai-wpoos' ),
-					'add_new'       => __( 'Add Training Module', 'mcp-ai-wpoos' ),
-					'add_new_item'  => __( 'Add New Training Module', 'mcp-ai-wpoos' ),
-					'edit_item'     => __( 'Edit Training Module', 'mcp-ai-wpoos' ),
+					'name'          => __( 'Security Training', 'wp-mcp-ai' ),
+					'singular_name' => __( 'Training Module', 'wp-mcp-ai' ),
+					'add_new'       => __( 'Add Training Module', 'wp-mcp-ai' ),
+					'add_new_item'  => __( 'Add New Training Module', 'wp-mcp-ai' ),
+					'edit_item'     => __( 'Edit Training Module', 'wp-mcp-ai' ),
 				),
 				'public'              => false,
 				'show_ui'             => true,
@@ -128,7 +128,7 @@ class WP_MCP_AI_Security_Training {
 	public function add_meta_boxes() {
 		add_meta_box(
 			'mcp_ai_training_details',
-			__( 'Training Details', 'mcp-ai-wpoos' ),
+			__( 'Training Details', 'wp-mcp-ai' ),
 			array( $this, 'render_training_details_meta_box' ),
 			'mcp_ai_training',
 			'normal',
@@ -152,7 +152,7 @@ class WP_MCP_AI_Security_Training {
 		?>
 		<table class="form-table">
 			<tr>
-				<th><label for="training_role"><?php esc_html_e( 'Target Role', 'mcp-ai-wpoos' ); ?></label></th>
+				<th><label for="training_role"><?php esc_html_e( 'Target Role', 'wp-mcp-ai' ); ?></label></th>
 				<td>
 					<select name="training_role" id="training_role">
 						<?php foreach ( self::TRAINING_ROLES as $key => $label ) : ?>
@@ -164,7 +164,7 @@ class WP_MCP_AI_Security_Training {
 				</td>
 			</tr>
 			<tr>
-				<th><label for="training_type"><?php esc_html_e( 'Module Type', 'mcp-ai-wpoos' ); ?></label></th>
+				<th><label for="training_type"><?php esc_html_e( 'Module Type', 'wp-mcp-ai' ); ?></label></th>
 				<td>
 					<select name="training_type" id="training_type">
 						<?php foreach ( self::MODULE_TYPES as $key => $label ) : ?>
@@ -176,16 +176,16 @@ class WP_MCP_AI_Security_Training {
 				</td>
 			</tr>
 			<tr>
-				<th><label for="training_duration"><?php esc_html_e( 'Duration (minutes)', 'mcp-ai-wpoos' ); ?></label></th>
+				<th><label for="training_duration"><?php esc_html_e( 'Duration (minutes)', 'wp-mcp-ai' ); ?></label></th>
 				<td>
 					<input type="number" name="training_duration" id="training_duration" value="<?php echo esc_attr( $duration ); ?>" min="1" />
 				</td>
 			</tr>
 			<tr>
-				<th><label for="training_mandatory"><?php esc_html_e( 'Mandatory', 'mcp-ai-wpoos' ); ?></label></th>
+				<th><label for="training_mandatory"><?php esc_html_e( 'Mandatory', 'wp-mcp-ai' ); ?></label></th>
 				<td>
 					<input type="checkbox" name="training_mandatory" id="training_mandatory" value="1" <?php checked( $mandatory, '1' ); ?> />
-					<span class="description"><?php esc_html_e( 'Required for compliance', 'mcp-ai-wpoos' ); ?></span>
+					<span class="description"><?php esc_html_e( 'Required for compliance', 'wp-mcp-ai' ); ?></span>
 				</td>
 			</tr>
 		</table>
@@ -385,7 +385,7 @@ class WP_MCP_AI_Security_Training {
 	 * @param WP_User $user User object.
 	 */
 	protected function send_reminder_email( $user ) {
-		$subject = __( 'Annual Security Training Reminder', 'mcp-ai-wpoos' );
+		$subject = __( 'Annual Security Training Reminder', 'wp-mcp-ai' );
 		$message = sprintf(
 			/* translators: %s: user display name */
 			__( 'Hi %s,
@@ -397,7 +397,7 @@ You can access your training dashboard at: %s
 Thank you for helping maintain our security standards.
 
 Best regards,
-Security Team', 'mcp-ai-wpoos' ),
+Security Team', 'wp-mcp-ai' ),
 			$user->display_name,
 			admin_url( 'admin.php?page=nvoos-security-training' )
 		);
