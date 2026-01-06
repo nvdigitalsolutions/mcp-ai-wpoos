@@ -292,7 +292,6 @@ class WP_MCP_AI_Security_Training {
 		$completions[ $module_id ] = array(
 			'completed_at' => gmdate( 'Y-m-d H:i:s' ),
 			'score'        => $score,
-			'module_id'    => $module_id,
 		);
 
 		update_user_meta( $user_id, 'wp_mcp_ai_training_completions', $completions );

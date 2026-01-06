@@ -109,8 +109,11 @@ class WP_MCP_AI_Security_Training_REST {
 		$modules = get_posts( $args );
 		$result  = array();
 
+		// Get current user's role for filtering (optional role-based access).
+		$user_id = get_current_user_id();
+
 		foreach ( $modules as $module ) {
-			$result[] = array(
+			$module_data = array(
 				'id'        => $module->ID,
 				'title'     => $module->post_title,
 				'content'   => $module->post_content,
@@ -120,6 +123,10 @@ class WP_MCP_AI_Security_Training_REST {
 				'duration'  => get_post_meta( $module->ID, '_training_duration', true ),
 				'mandatory' => get_post_meta( $module->ID, '_training_mandatory', true ) === '1',
 			);
+
+			// Note: Role-based filtering can be implemented here if needed.
+			// For now, all logged-in users can see all modules (as per ISO 27001 awareness requirement).
+			$result[] = $module_data;
 		}
 
 		return new WP_REST_Response(

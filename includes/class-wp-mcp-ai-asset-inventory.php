@@ -326,16 +326,31 @@ class WP_MCP_AI_Asset_Inventory {
 
 		$latest = filemtime( $path );
 
-		$iterator = new RecursiveIteratorIterator(
-			new RecursiveDirectoryIterator( $path, RecursiveDirectoryIterator::SKIP_DOTS )
-		);
+		try {
+			$iterator = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $path, RecursiveDirectoryIterator::SKIP_DOTS ),
+				RecursiveIteratorIterator::CATCH_GET_CHILD // Handle permission errors.
+			);
 
-		foreach ( $iterator as $file ) {
-			if ( $file->isFile() ) {
-				$mtime = $file->getMTime();
-				if ( $mtime > $latest ) {
-					$latest = $mtime;
+			foreach ( $iterator as $file ) {
+				if ( $file->isFile() ) {
+					$mtime = $file->getMTime();
+					if ( $mtime > $latest ) {
+						$latest = $mtime;
+					}
 				}
+			}
+		} catch ( Exception $e ) {
+			// Log error but continue with directory mtime.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log(
+					'Error reading directory for asset discovery',
+					array(
+						'path'  => $path,
+						'error' => $e->getMessage(),
+					),
+					'warning'
+				);
 			}
 		}
 
