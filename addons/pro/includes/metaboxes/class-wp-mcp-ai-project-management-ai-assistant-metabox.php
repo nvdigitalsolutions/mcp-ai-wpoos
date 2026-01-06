@@ -32,7 +32,6 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 	public function __construct() {
 		add_action( 'add_meta_boxes', array( $this, 'register_metabox' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_pm_render_chat', array( $this, 'ajax_render_chat' ) );
 	}
 
 	/**
@@ -256,9 +255,9 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			return;
 		}
 
-		// Render assistant selector and chat container.
+		// Render assistant selector and inline chat container.
 		$this->render_assistant_selector( $assistants );
-		$this->render_chat_container( $post );
+		$this->render_inline_chat_container( $post );
 	}
 
 	/**
@@ -316,31 +315,22 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 	}
 
 	/**
-	 * Render chat container.
+	 * Render inline chat container.
+	 * Chat will be rendered inline when an assistant is selected.
 	 *
 	 * @param WP_Post $post Post object.
 	 */
-	private function render_chat_container( $post ) {
+	private function render_inline_chat_container( $post ) {
 		$context_type = $this->get_context_type( $post->post_type );
 		?>
-		<!-- Modal container for chat interface -->
-		<div id="wp-mcp-ai-pm-assistant-modal" class="wp-mcp-ai-pm-assistant-modal" style="display: none;">
-			<div class="wp-mcp-ai-pm-assistant-modal__backdrop"></div>
-			<div class="wp-mcp-ai-pm-assistant-modal__panel">
-				<div class="wp-mcp-ai-pm-assistant-modal__header">
-					<h2 id="wp-mcp-ai-pm-assistant-modal__title"><?php echo esc_html( $this->get_assistant_title( $context_type ) ); ?></h2>
-					<button type="button" class="wp-mcp-ai-pm-assistant-modal__close" aria-label="<?php echo esc_attr__( 'Close', 'wp-mcp-ai' ); ?>">
-						<span class="dashicons dashicons-no-alt"></span>
-					</button>
-				</div>
-				<div class="wp-mcp-ai-pm-assistant-modal__body">
-					<div class="wp-mcp-ai-pm-assistant-intro">
-						<p><?php echo esc_html( $this->get_intro_text( $context_type ) ); ?></p>
-					</div>
-					<!-- Chat interface will be injected here by JavaScript -->
-					<div id="wp-mcp-ai-pm-assistant-chat-container" class="wp-mcp-ai-pm-assistant-chat-container"></div>
-				</div>
+		<!-- Inline container for chat interface -->
+		<div id="wp-mcp-ai-pm-assistant-inline-container" class="wp-mcp-ai-pm-assistant-inline-container" style="display: none; margin-top: 15px;">
+			<div class="wp-mcp-ai-pm-assistant-inline-header">
+				<h3 id="wp-mcp-ai-pm-assistant-inline-title"><?php echo esc_html( $this->get_assistant_title( $context_type ) ); ?></h3>
+				<p class="description"><?php echo esc_html( $this->get_intro_text( $context_type ) ); ?></p>
 			</div>
+			<!-- Chat interface will be rendered here when assistant is selected -->
+			<div id="wp-mcp-ai-pm-assistant-chat-container" class="wp-mcp-ai-pm-assistant-chat-container"></div>
 		</div>
 		<?php
 	}
@@ -359,179 +349,5 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		);
 
 		return isset( $texts[ $context_type ] ) ? $texts[ $context_type ] : __( 'Ask your AI assistant for help.', 'wp-mcp-ai' );
-	}
-
-	/**
-	 * AJAX handler to render chat shortcode.
-	 */
-	public function ajax_render_chat() {
-		// Check if shortcode class is available first (fail fast).
-		if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Chat functionality not available.', 'wp-mcp-ai' ) ) );
-		}
-
-		// Verify nonce.
-		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ) ), 'wp_mcp_ai_pm_assistant' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Security check failed.', 'wp-mcp-ai' ) ) );
-		}
-
-		// Check permissions.
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to use this feature.', 'wp-mcp-ai' ) ) );
-		}
-
-		// Get parameters.
-		$assistant_id    = isset( $_POST['assistant_id'] ) ? absint( $_POST['assistant_id'] ) : 0;
-		$context_message = isset( $_POST['context_message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['context_message'] ) ) : '';
-		$post_id         = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
-
-		if ( ! $assistant_id ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid assistant ID.', 'wp-mcp-ai' ) ) );
-		}
-
-		if ( $post_id && ! current_user_can( 'edit_post', $post_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to edit this item.', 'wp-mcp-ai' ) ) );
-		}
-
-		// Verify assistant exists.
-		$assistant = get_post( $assistant_id );
-		if ( ! $assistant || 'mcp_ai_assistant' !== $assistant->post_type || 'publish' !== $assistant->post_status ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid or inactive assistant.', 'wp-mcp-ai' ) ) );
-		}
-
-		// Build shortcode attributes.
-		$shortcode_atts = array(
-			'assistant'        => $assistant_id,
-			'save_transcript'  => 'false', // Don't save metabox chats to main transcript log.
-			'template'         => 'compact', // Use compact template for metabox.
-		);
-
-		// Create shortcode instance and render.
-		$atts_str = '';
-		foreach ( $shortcode_atts as $key => $value ) {
-			$atts_str .= ' ' . $key . '="' . esc_attr( $value ) . '"';
-		}
-
-		// Render the shortcode.
-		$html = do_shortcode( '[mcp_ai_chat' . $atts_str . ']' );
-
-		// Extract instance ID from the HTML to match with configuration.
-		// The chat container has id="wp-mcp-ai-chat-{unique_id}" and data-wp-mcp-ai-chat attribute.
-		// Use DOTALL flag (s) to handle multi-line HTML.
-		$instance_id = null;
-		if ( preg_match( '/id="(wp-mcp-ai-chat-[^"]+)"/s', $html, $matches ) ) {
-			$instance_id = $matches[1];
-		}
-
-		// Log what we have so far for debugging.
-		WP_MCP_AI_Logger::log_debug(
-			'PM Assistant AJAX: After rendering shortcode',
-			array(
-				'assistant_id'             => $assistant_id,
-				'html_length'              => strlen( $html ),
-				'extracted_instance_id'    => $instance_id,
-				'global_configs_exists'    => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ),
-				'global_configs_keys'      => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ? array_keys( $GLOBALS['wp_mcp_ai_chat_configs'] ) : array(),
-				'config_exists_for_id'     => $instance_id && isset( $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] ),
-			)
-		);
-
-		// Extract the chat configuration from the global set by the shortcode.
-		// The shortcode stores config in $GLOBALS['wp_mcp_ai_chat_configs'] keyed by instance ID.
-		$chat_config = null;
-		if ( $instance_id && isset( $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] ) ) {
-			$chat_config = $GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ];
-		}
-
-		// Fallback: If config not found in global, build it manually.
-		// This can happen if the shortcode returns early or in certain WordPress configurations.
-		if ( ! $chat_config && $instance_id ) {
-			WP_MCP_AI_Logger::log_warning(
-				'PM Assistant: Config not found in global, building fallback config',
-				array(
-					'instance_id'  => $instance_id,
-					'assistant_id' => $assistant_id,
-				)
-			);
-
-			// Build a minimal config manually - this ensures the chat can initialize.
-			$session_key = wp_generate_uuid4();
-			if ( ! $session_key ) {
-				$session_key = wp_unique_id( 'wp-mcp-ai-session-' );
-			}
-
-			$chat_config = array(
-				'id'                    => $instance_id,
-				'assistantId'           => $assistant_id,
-				'userId'                => get_current_user_id(),
-				'restUrl'               => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ),
-				'messagesEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
-				'toolsEndpoint'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
-				'filesEndpoint'         => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
-				'transcriptsEndpoint'   => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
-				'crawl4aiTaskEndpoint'  => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
-				'crawl4aiDefaultPollMs' => 5000,
-				'requiredCapability'    => 'edit_posts',
-				'allowGuests'           => false,
-				'canUploadAttachments'  => current_user_can( 'upload_files' ),
-				'saveTranscript'        => false,
-				'enableStreaming'       => true,
-				'allowSensitiveTools'   => false,
-				'sessionKey'            => sanitize_key( $session_key ),
-				'historyPerPage'        => 20,
-				'restNonce'             => wp_create_nonce( 'wp_rest' ),
-				'asyncToolTimeout'      => 300000, // 5 minutes default.
-			);
-
-			// Try to get tool shortcuts for the assistant.
-			if ( class_exists( 'WP_MCP_AI_Shortcode' ) && method_exists( 'WP_MCP_AI_Shortcode', 'get_assistant_tool_shortcuts' ) ) {
-				$tool_shortcuts = WP_MCP_AI_Shortcode::get_assistant_tool_shortcuts( $assistant_id );
-				if ( ! empty( $tool_shortcuts ) ) {
-					$chat_config['toolShortcuts'] = $tool_shortcuts;
-				}
-			}
-		}
-
-		// If we couldn't extract the config or instance ID, log specific warnings.
-		if ( ! $instance_id ) {
-			WP_MCP_AI_Logger::log_warning(
-				'Could not extract instance ID from chat HTML for AJAX response',
-				array(
-					'assistant_id' => $assistant_id,
-					'html_length'  => strlen( $html ),
-					'html_preview' => substr( $html, 0, 200 ),
-				)
-			);
-		}
-
-		if ( ! $chat_config ) {
-			WP_MCP_AI_Logger::log_warning(
-				'Could not extract chat configuration for AJAX response',
-				array(
-					'instance_id'       => $instance_id,
-					'assistant_id'      => $assistant_id,
-					'configs_available' => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ) ? array_keys( $GLOBALS['wp_mcp_ai_chat_configs'] ) : array(),
-					'global_exists'     => isset( $GLOBALS['wp_mcp_ai_chat_configs'] ),
-				)
-			);
-		} else {
-			// Log success for debugging.
-			WP_MCP_AI_Logger::log_debug(
-				'Successfully extracted chat configuration for AJAX response',
-				array(
-					'instance_id'  => $instance_id,
-					'assistant_id' => isset( $chat_config['assistantId'] ) ? $chat_config['assistantId'] : null,
-					'config_keys'  => array_keys( $chat_config ),
-				)
-			);
-		}
-
-		wp_send_json_success(
-			array(
-				'html'        => $html,
-				'config'      => $chat_config,
-				'instance_id' => $instance_id,
-			)
-		);
 	}
 }
