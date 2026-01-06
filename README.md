@@ -29,7 +29,7 @@
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#features)
-- [📦 Installation](#installation)
+- [📦 Installation](#-installation)
 - [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 - [⚙️ Configuration Checklist](#%EF%B8%8F-configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
