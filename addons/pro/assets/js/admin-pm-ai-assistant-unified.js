@@ -246,6 +246,9 @@
 	 */
 	function buildChatHTML(instanceId) {
 		// Build compact chat template for modal
+		// IMPORTANT: Use <div> instead of <form> because the modal is rendered inside the WordPress
+		// post edit form, and nested forms are invalid HTML (browsers strip nested form tags).
+		// The chat.js init() function will handle both form and div containers.
 		return '<div class="wp-mcp-ai-chat wp-mcp-ai-chat--template-compact" id="' + escapeHtml(instanceId) + '" data-wp-mcp-ai-chat data-template="compact">' +
 			'<div class="wp-mcp-ai-chat__transcript-controls">' +
 			'<button type="button" class="wp-mcp-ai-chat__transcript-toggle" aria-expanded="false">' +
@@ -254,7 +257,7 @@
 			'</button>' +
 			'</div>' +
 			'<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>' +
-			'<form class="wp-mcp-ai-chat__form">' +
+			'<div class="wp-mcp-ai-chat__form">' +
 			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>' +
 			'<textarea class="wp-mcp-ai-chat__input" rows="4" placeholder="Ask something…"></textarea>' +
 			'<div class="wp-mcp-ai-chat__attachments" hidden>' +
@@ -266,9 +269,9 @@
 			'<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden>' +
 			'<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="Transcribe audio"><svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path></svg><span class="screen-reader-text">Transcribe audio</span></button>' +
 			'<button type="button" class="wp-mcp-ai-chat__attach">Attach file</button>' +
-			'<button type="submit" class="wp-mcp-ai-chat__submit">Send</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__submit">Send</button>' +
 			'</div>' +
-			'</form>' +
+			'</div>' +
 			'<div class="wp-mcp-ai-chat__controls">' +
 			'<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite"></div>' +
 			'<div class="wp-mcp-ai-chat__control-buttons">' +
