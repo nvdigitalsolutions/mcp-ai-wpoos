@@ -126,6 +126,37 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_pro_load_textdomain' ) ) {
+	/**
+	 * Load Pro addon text domain for translations.
+	 *
+	 * When the Pro addon is bundled with the base plugin (cloned repository),
+	 * it doesn't have a plugin header, so WordPress cannot auto-load its translations.
+	 * We manually load the text domain on the init hook to comply with WordPress 6.7+
+	 * requirements for translation loading timing.
+	 *
+	 * @since 1.0.0
+	 */
+	function wp_mcp_ai_pro_load_textdomain() {
+		// Only load if Pro is bundled (no plugin header).
+		// If Pro is installed as separate plugin, WordPress handles this automatically.
+		if ( ! is_plugin_active( plugin_basename( WP_MCP_AI_PRO_FILE ) ) ) {
+			// Check if languages directory exists.
+			$languages_dir = WP_MCP_AI_PRO_PATH . 'languages';
+			
+			// Load plugin text domain.
+			// Use relative path from WP_PLUGIN_DIR for load_plugin_textdomain.
+			$relative_path = str_replace( WP_PLUGIN_DIR . '/', '', $languages_dir );
+			
+			load_plugin_textdomain(
+				'mcp-ai-wpoos-pro',
+				false,
+				$relative_path
+			);
+		}
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 	/**
 	 * Initialize Open Operator System Pro.
@@ -141,6 +172,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			add_action( 'admin_notices', 'wp_mcp_ai_pro_missing_core_notice' );
 			return;
 		}
+		
+		// Register text domain loading on init hook.
+		// This ensures translations are loaded at the correct time for WordPress 6.7+.
+		add_action( 'init', 'wp_mcp_ai_pro_load_textdomain', 1 );
 
 		// Load Pro tool interfaces (extend Core interfaces).
 		// Pro tools can implement additional interfaces for advanced features.
