@@ -122,11 +122,12 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		// Verify output contains expected elements.
 		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-select', $output, 'Output should contain assistant selector' );
 		$this->assertStringContainsString( 'Test Assistant', $output, 'Output should contain assistant name' );
-		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-inline-container', $output, 'Output should contain inline container' );
+		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-modal', $output, 'Output should contain modal container' );
 		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-chat-container', $output, 'Output should contain chat container' );
+		$this->assertStringContainsString( 'wp-mcp-ai-pm-open-assistant', $output, 'Output should contain Open AI Assistant button' );
 
-		// Verify inline container starts hidden.
-		$this->assertStringContainsString( 'style="display: none;"', $output, 'Inline container should have display: none style on render' );
+		// Verify modal starts hidden.
+		$this->assertStringContainsString( 'style="display: none;"', $output, 'Modal should have display: none style on render' );
 	}
 
 	/**
@@ -277,8 +278,8 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		$metabox->enqueue_assets( 'post.php' );
 
 		// Get script dependencies.
-		$script_handle = 'wp-mcp-ai-pm-ai-assistant';
-		$this->assertTrue( wp_script_is( $script_handle, 'enqueued' ), 'PM assistant script should be enqueued' );
+		$script_handle = 'wp-mcp-ai-pm-ai-assistant-unified';
+		$this->assertTrue( wp_script_is( $script_handle, 'enqueued' ), 'PM assistant unified script should be enqueued' );
 
 		// Get the script object to check dependencies.
 		global $wp_scripts;
