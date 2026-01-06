@@ -44,9 +44,9 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 	 * @return array Modified bulk actions.
 	 */
 	public static function register_bulk_actions( $actions ) {
-		$actions['ai_generate_descriptions'] = __( '🤖 AI: Generate Descriptions', 'wp-mcp-ai' );
-		$actions['ai_analyze']               = __( '🤖 AI: Analyze Selected', 'wp-mcp-ai' );
-		$actions['ai_optimize']              = __( '🤖 AI: Optimize & Improve', 'wp-mcp-ai' );
+		$actions['ai_generate_descriptions'] = __( '🤖 AI: Generate Descriptions', 'mcp-ai-wpoos-pro' );
+		$actions['ai_analyze']               = __( '🤖 AI: Analyze Selected', 'mcp-ai-wpoos-pro' );
+		$actions['ai_optimize']              = __( '🤖 AI: Optimize & Improve', 'mcp-ai-wpoos-pro' );
 		return $actions;
 	}
 
@@ -99,7 +99,7 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 	private static function process_single_item( $post_id, $action ) {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			return new WP_Error( 'invalid_post', __( 'Invalid post.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'invalid_post', __( 'Invalid post.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		switch ( $action ) {
@@ -113,7 +113,7 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 				return self::optimize_item( $post );
 
 			default:
-				return new WP_Error( 'invalid_action', __( 'Invalid action.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'invalid_action', __( 'Invalid action.', 'mcp-ai-wpoos-pro' ) );
 		}
 	}
 
@@ -130,7 +130,7 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_Service' ) ) {
-			return new WP_Error( 'service_unavailable', __( 'AI service unavailable.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'service_unavailable', __( 'AI service unavailable.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$assistants = get_posts(
@@ -142,7 +142,7 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 		);
 
 		if ( empty( $assistants ) ) {
-			return new WP_Error( 'no_assistant', __( 'No assistant available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'no_assistant', __( 'No assistant available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$post_type_labels = array(
@@ -203,7 +203,7 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_Service' ) ) {
-			return new WP_Error( 'service_unavailable', __( 'AI service unavailable.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'service_unavailable', __( 'AI service unavailable.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$assistants = get_posts(
@@ -215,7 +215,7 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 		);
 
 		if ( empty( $assistants ) ) {
-			return new WP_Error( 'no_assistant', __( 'No assistant available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'no_assistant', __( 'No assistant available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$prompt = sprintf(
@@ -257,7 +257,7 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 	 */
 	private static function optimize_item( $post ) {
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_Service' ) ) {
-			return new WP_Error( 'service_unavailable', __( 'AI service unavailable.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'service_unavailable', __( 'AI service unavailable.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$assistants = get_posts(
@@ -269,7 +269,7 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 		);
 
 		if ( empty( $assistants ) ) {
-			return new WP_Error( 'no_assistant', __( 'No assistant available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'no_assistant', __( 'No assistant available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$prompt = sprintf(
@@ -336,18 +336,18 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 		$total     = isset( $_REQUEST['total'] ) ? absint( $_REQUEST['total'] ) : 0;
 
 		$action_labels = array(
-			'ai_generate_descriptions' => __( 'descriptions generated', 'wp-mcp-ai' ),
-			'ai_analyze'               => __( 'items analyzed', 'wp-mcp-ai' ),
-			'ai_optimize'              => __( 'items optimized', 'wp-mcp-ai' ),
+			'ai_generate_descriptions' => __( 'descriptions generated', 'mcp-ai-wpoos-pro' ),
+			'ai_analyze'               => __( 'items analyzed', 'mcp-ai-wpoos-pro' ),
+			'ai_optimize'              => __( 'items optimized', 'mcp-ai-wpoos-pro' ),
 		);
 
-		$action_label = isset( $action_labels[ $action ] ) ? $action_labels[ $action ] : __( 'items processed', 'wp-mcp-ai' );
+		$action_label = isset( $action_labels[ $action ] ) ? $action_labels[ $action ] : __( 'items processed', 'mcp-ai-wpoos-pro' );
 
 		printf(
 			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
 			sprintf(
 				/* translators: 1: number of items processed, 2: total items, 3: action label */
-				esc_html__( '🤖 AI processed %1$d of %2$d items: %3$s', 'wp-mcp-ai' ),
+				esc_html__( '🤖 AI processed %1$d of %2$d items: %3$s', 'mcp-ai-wpoos-pro' ),
 				esc_html( $processed ),
 				esc_html( $total ),
 				esc_html( $action_label )
@@ -362,14 +362,14 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 		check_ajax_referer( 'wp_mcp_ai_pm_bulk', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		$post_ids = isset( $_POST['post_ids'] ) ? array_map( 'absint', $_POST['post_ids'] ) : array();
 		$action   = isset( $_POST['bulk_action'] ) ? sanitize_key( $_POST['bulk_action'] ) : '';
 
 		if ( empty( $post_ids ) || empty( $action ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		$results = array(

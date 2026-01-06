@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List Places', 'wp-mcp-ai' );
+		return __( 'List Places', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists saved places with optional filtering by type, location, radius, rating, and tags. Supports geospatial queries to find places near a specific location.', 'wp-mcp-ai' );
+		return __( 'Lists saved places with optional filtering by type, location, radius, rating, and tags. Supports geospatial queries to find places near a specific location.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,62 +45,62 @@ class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'place_type'     => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by place type (e.g., restaurant, hotel, attraction)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by place type (e.g., restaurant, hotel, attraction)', 'mcp-ai-wpoos-pro' ),
 				),
 				'tags'           => array(
 					'type'        => 'array',
-					'description' => __( 'Filter by tags (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by tags (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
 				'latitude'       => array(
 					'type'        => 'number',
-					'description' => __( 'Center latitude for radius search', 'wp-mcp-ai' ),
+					'description' => __( 'Center latitude for radius search', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => -90,
 					'maximum'     => 90,
 				),
 				'longitude'      => array(
 					'type'        => 'number',
-					'description' => __( 'Center longitude for radius search', 'wp-mcp-ai' ),
+					'description' => __( 'Center longitude for radius search', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => -180,
 					'maximum'     => 180,
 				),
 				'radius'         => array(
 					'type'        => 'number',
-					'description' => __( 'Search radius in kilometers (default: 10)', 'wp-mcp-ai' ),
+					'description' => __( 'Search radius in kilometers (default: 10)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 0.1,
 					'maximum'     => 100,
 				),
 				'min_rating'     => array(
 					'type'        => 'number',
-					'description' => __( 'Minimum rating (0-5)', 'wp-mcp-ai' ),
+					'description' => __( 'Minimum rating (0-5)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 5,
 				),
 				'price_level'    => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by price level (1-4)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by price level (1-4)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 4,
 				),
 				'has_amenity'    => array(
 					'type'        => 'string',
-					'description' => __( 'Filter places that have a specific amenity', 'wp-mcp-ai' ),
+					'description' => __( 'Filter places that have a specific amenity', 'mcp-ai-wpoos-pro' ),
 				),
 				'search'         => array(
 					'type'        => 'string',
-					'description' => __( 'Search term to match place names or descriptions', 'wp-mcp-ai' ),
+					'description' => __( 'Search term to match place names or descriptions', 'mcp-ai-wpoos-pro' ),
 				),
 				'limit'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of places to return (default: 20, max: 100)', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of places to return (default: 20, max: 100)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
 				'include_closed' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Include places that are currently closed (default: false)', 'wp-mcp-ai' ),
+					'description' => __( 'Include places that are currently closed (default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 			),
@@ -141,7 +141,7 @@ class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to list places.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to list places.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Build query args.

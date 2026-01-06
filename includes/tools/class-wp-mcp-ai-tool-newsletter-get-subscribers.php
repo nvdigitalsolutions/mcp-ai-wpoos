@@ -28,7 +28,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Newsletter Get Subscribers tool is disabled because the Newsletter plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The Newsletter Get Subscribers tool is disabled because the Newsletter plugin is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -42,14 +42,14 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Newsletter Subscribers', 'wp-mcp-ai' );
+		return __( 'Get Newsletter Subscribers', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieve Newsletter plugin subscribers with filtering options. Requires Newsletter plugin.', 'wp-mcp-ai' );
+		return __( 'Retrieve Newsletter plugin subscribers with filtering options. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,35 +61,35 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 			'properties'           => array(
 				'limit'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of subscribers to retrieve.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of subscribers to retrieve.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
 				'offset'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of subscribers to skip for pagination.', 'wp-mcp-ai' ),
+					'description' => __( 'Number of subscribers to skip for pagination.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
 				'status'  => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by subscription status: confirmed, not_confirmed, or unsubscribed.', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by subscription status: confirmed, not_confirmed, or unsubscribed.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'confirmed', 'not_confirmed', 'unsubscribed' ),
 				),
 				'list_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by list ID (1-40).', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by list ID (1-40).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 40,
 				),
 				'email'   => array(
 					'type'        => 'string',
-					'description' => __( 'Search by email address (partial match supported).', 'wp-mcp-ai' ),
+					'description' => __( 'Search by email address (partial match supported).', 'mcp-ai-wpoos' ),
 				),
 				'name'    => array(
 					'type'        => 'string',
-					'description' => __( 'Search by name (partial match supported).', 'wp-mcp-ai' ),
+					'description' => __( 'Search by name (partial match supported).', 'mcp-ai-wpoos' ),
 				),
 			),
 			'additionalProperties' => false,
@@ -105,17 +105,17 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view newsletter subscribers.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view newsletter subscribers.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		global $wpdb;

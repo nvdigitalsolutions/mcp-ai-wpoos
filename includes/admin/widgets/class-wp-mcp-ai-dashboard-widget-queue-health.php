@@ -37,7 +37,7 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 
 		wp_add_dashboard_widget(
 			'wp_mcp_ai_queue_health',
-			__( 'NV oOS: Job Queue Health', 'wp-mcp-ai' ),
+			__( 'NV oOS: Job Queue Health', 'mcp-ai-wpoos' ),
 			array( $this, 'render_widget' )
 		);
 	}
@@ -85,17 +85,17 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 			$has_items = $dlq_stats['total'] > 0;
 			?>
 			<div class="wp-mcp-ai-widget-stat">
-				<span class="wp-mcp-ai-widget-label"><?php esc_html_e( 'Dead Letter Queue', 'wp-mcp-ai' ); ?></span>
+				<span class="wp-mcp-ai-widget-label"><?php esc_html_e( 'Dead Letter Queue', 'mcp-ai-wpoos' ); ?></span>
 				<span class="wp-mcp-ai-widget-value <?php echo $has_items ? 'wp-mcp-ai-widget-value--warning' : 'wp-mcp-ai-widget-value--success'; ?>">
 					<?php
 					if ( $has_items ) {
 						printf(
 							/* translators: %d: number of failed items */
-							esc_html__( '%d failed items', 'wp-mcp-ai' ),
+							esc_html__( '%d failed items', 'mcp-ai-wpoos' ),
 							(int) $dlq_stats['total']
 						);
 					} else {
-						esc_html_e( '✓ No failures', 'wp-mcp-ai' );
+						esc_html_e( '✓ No failures', 'mcp-ai-wpoos' );
 					}
 					?>
 				</span>
@@ -103,12 +103,12 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 
 			<?php if ( $has_items ) : ?>
 				<div class="wp-mcp-ai-widget-stat">
-					<span class="wp-mcp-ai-widget-label"><?php esc_html_e( 'Active / Dismissed', 'wp-mcp-ai' ); ?></span>
+					<span class="wp-mcp-ai-widget-label"><?php esc_html_e( 'Active / Dismissed', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-widget-value">
 						<?php
 						printf(
 							/* translators: 1: active count, 2: dismissed count */
-							esc_html__( '%1$d / %2$d', 'wp-mcp-ai' ),
+							esc_html__( '%1$d / %2$d', 'mcp-ai-wpoos' ),
 							(int) $dlq_stats['active'],
 							(int) $dlq_stats['dismissed']
 						);
@@ -136,25 +136,25 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 			?>
 
 			<div class="wp-mcp-ai-widget-stat">
-				<span class="wp-mcp-ai-widget-label"><?php esc_html_e( 'SLA Compliance', 'wp-mcp-ai' ); ?></span>
+				<span class="wp-mcp-ai-widget-label"><?php esc_html_e( 'SLA Compliance', 'mcp-ai-wpoos' ); ?></span>
 				<span class="wp-mcp-ai-widget-value <?php echo $has_issues ? 'wp-mcp-ai-widget-value--warning' : 'wp-mcp-ai-widget-value--success'; ?>">
 					<?php
 					if ( $has_issues ) {
 						if ( $critical_count > 0 ) {
 							printf(
 								/* translators: %d: number of critical issues */
-								esc_html__( '⚠️ %d critical', 'wp-mcp-ai' ),
+								esc_html__( '⚠️ %d critical', 'mcp-ai-wpoos' ),
 								(int) $critical_count
 							);
 						} else {
 							printf(
 								/* translators: %d: number of warnings */
-								esc_html__( '⚠️ %d warnings', 'wp-mcp-ai' ),
+								esc_html__( '⚠️ %d warnings', 'mcp-ai-wpoos' ),
 								(int) $warning_count
 							);
 						}
 					} else {
-						esc_html_e( '✓ All tiers healthy', 'wp-mcp-ai' );
+						esc_html_e( '✓ All tiers healthy', 'mcp-ai-wpoos' );
 					}
 					?>
 				</span>
@@ -162,7 +162,7 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 
 			<?php if ( $has_issues ) : ?>
 				<div class="wp-mcp-ai-widget-stat">
-					<span class="wp-mcp-ai-widget-label"><?php esc_html_e( 'Issues', 'wp-mcp-ai' ); ?></span>
+					<span class="wp-mcp-ai-widget-label"><?php esc_html_e( 'Issues', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-widget-value" style="font-size:0.875rem;font-weight:normal;">
 						<?php
 						$issue_parts = array();
@@ -181,11 +181,11 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 		<div class="wp-mcp-ai-widget-actions">
 			<?php if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) && $dlq_stats['total'] > 0 ) : ?>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dlq-manager' ) ); ?>" class="button button-secondary" style="margin-right:0.5rem;">
-					<?php esc_html_e( 'View DLQ', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'View DLQ', 'mcp-ai-wpoos' ); ?>
 				</a>
 			<?php endif; ?>
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-cron-manager' ) ); ?>" class="button button-secondary">
-				<?php esc_html_e( 'Cron Manager', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Cron Manager', 'mcp-ai-wpoos' ); ?>
 			</a>
 		</div>
 		<?php

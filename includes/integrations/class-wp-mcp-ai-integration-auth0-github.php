@@ -157,7 +157,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 
 			return new WP_Error(
 				'wp_mcp_ai_auth0_github_unmapped',
-				__( 'Auth0 GitHub identity could not be mapped to a WordPress user.', 'wp-mcp-ai' ),
+				__( 'Auth0 GitHub identity could not be mapped to a WordPress user.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -253,7 +253,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( '' === $domain ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_missing_domain',
-					__( 'Auth0 domain is not configured for the GitHub bridge.', 'wp-mcp-ai' ),
+					__( 'Auth0 domain is not configured for the GitHub bridge.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -278,7 +278,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( 200 !== $code ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_userinfo_failed',
-					__( 'Auth0 rejected the userinfo request for the supplied GitHub token.', 'wp-mcp-ai' ),
+					__( 'Auth0 rejected the userinfo request for the supplied GitHub token.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -288,7 +288,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 
 			return is_array( $data ) ? $data : new WP_Error(
 				'wp_mcp_ai_auth0_github_userinfo_invalid',
-				__( 'Auth0 returned an unexpected response while resolving the GitHub user.', 'wp-mcp-ai' ),
+				__( 'Auth0 returned an unexpected response while resolving the GitHub user.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -310,7 +310,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( '' === $domain ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_missing_domain',
-					__( 'Auth0 domain is not configured for the GitHub bridge.', 'wp-mcp-ai' ),
+					__( 'Auth0 domain is not configured for the GitHub bridge.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -335,7 +335,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( 200 !== $code ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_profile_fetch_failed',
-					__( 'Auth0 Management API did not return a profile for the GitHub identity.', 'wp-mcp-ai' ),
+					__( 'Auth0 Management API did not return a profile for the GitHub identity.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -345,7 +345,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 
 			return is_array( $data ) ? $data : new WP_Error(
 				'wp_mcp_ai_auth0_github_profile_invalid',
-				__( 'Auth0 Management API returned an unexpected payload for the GitHub identity.', 'wp-mcp-ai' ),
+				__( 'Auth0 Management API returned an unexpected payload for the GitHub identity.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -364,7 +364,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( '' === $client_id || '' === $client_secret ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_missing_credentials',
-					__( 'Auth0 Management API credentials are required to resolve GitHub identities.', 'wp-mcp-ai' ),
+					__( 'Auth0 Management API credentials are required to resolve GitHub identities.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -372,7 +372,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( '' === $domain ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_missing_domain',
-					__( 'Auth0 domain is not configured for the GitHub bridge.', 'wp-mcp-ai' ),
+					__( 'Auth0 domain is not configured for the GitHub bridge.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -412,7 +412,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( 200 !== $code ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_token_failed',
-					__( 'Unable to obtain an Auth0 Management API token for the GitHub bridge.', 'wp-mcp-ai' ),
+					__( 'Unable to obtain an Auth0 Management API token for the GitHub bridge.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -423,7 +423,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( ! is_array( $data ) || empty( $data['access_token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_token_invalid',
-					__( 'Auth0 returned an unexpected response while requesting a Management API token.', 'wp-mcp-ai' ),
+					__( 'Auth0 returned an unexpected response while requesting a Management API token.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -500,7 +500,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( ! $email ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_missing_email',
-					__( 'Auth0 did not return an email address for the GitHub identity, preventing automatic user creation.', 'wp-mcp-ai' ),
+					__( 'Auth0 did not return an email address for the GitHub identity, preventing automatic user creation.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -533,7 +533,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( is_wp_error( $user_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_user_creation_failed',
-					__( 'Failed to create a WordPress user for the Auth0 GitHub identity.', 'wp-mcp-ai' ),
+					__( 'Failed to create a WordPress user for the Auth0 GitHub identity.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 500,
 						'details' => array( 'error' => $user_id->get_error_message() ),
@@ -679,7 +679,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( '' === $header ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_missing_header',
-					__( 'The Authorization header is required to resolve Auth0 GitHub identities.', 'wp-mcp-ai' ),
+					__( 'The Authorization header is required to resolve Auth0 GitHub identities.', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -687,7 +687,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 			if ( ! preg_match( '/^Bearer\s+(.*)$/i', $header, $matches ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_auth0_github_invalid_header',
-					__( 'The Authorization header is not a valid bearer token.', 'wp-mcp-ai' ),
+					__( 'The Authorization header is not a valid bearer token.', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}

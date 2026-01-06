@@ -210,7 +210,7 @@ class WP_MCP_AI_Crawler {
 		if ( self::is_expired( $job ) ) {
 			self::finalise_with_error(
 				$job,
-				new WP_Error( 'wp_mcp_ai_crawl4ai_timeout', __( 'The Crawl4AI job timed out before completion.', 'wp-mcp-ai' ) ),
+				new WP_Error( 'wp_mcp_ai_crawl4ai_timeout', __( 'The Crawl4AI job timed out before completion.', 'mcp-ai-wpoos' ) ),
 				'timeout'
 			);
 			return;

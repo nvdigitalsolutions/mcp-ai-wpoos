@@ -37,14 +37,14 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Purge Cloudflare Cache', 'wp-mcp-ai' );
+		return __( 'Purge Cloudflare Cache', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Requests a cache purge for the configured Cloudflare zone.', 'wp-mcp-ai' );
+		return __( 'Requests a cache purge for the configured Cloudflare zone.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -56,12 +56,12 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'purge_everything' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to purge the entire Cloudflare cache for the zone.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to purge the entire Cloudflare cache for the zone.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'urls'             => array(
 					'type'        => 'array',
-					'description' => __( 'Specific asset URLs to purge. Provide absolute URLs that map to the configured zone.', 'wp-mcp-ai' ),
+					'description' => __( 'Specific asset URLs to purge. Provide absolute URLs that map to the configured zone.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'   => 'string',
 						'format' => 'uri',
@@ -69,21 +69,21 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 				),
 				'hosts'            => array(
 					'type'        => 'array',
-					'description' => __( 'Hostnames to purge from cache.', 'wp-mcp-ai' ),
+					'description' => __( 'Hostnames to purge from cache.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
 				'tags'             => array(
 					'type'        => 'array',
-					'description' => __( 'Cache tags to purge.', 'wp-mcp-ai' ),
+					'description' => __( 'Cache tags to purge.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
 				'timeout'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Optional timeout in seconds for the Cloudflare API request.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional timeout in seconds for the Cloudflare API request.', 'mcp-ai-wpoos' ),
 					'minimum'     => self::MIN_TIMEOUT,
 					'maximum'     => self::MAX_TIMEOUT,
 				),
@@ -103,15 +103,15 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to purge the Cloudflare cache.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to purge the Cloudflare cache.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_settings', __( 'The admin settings component is not available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_settings', __( 'The admin settings component is not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -122,11 +122,11 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 		if ( '' === $api_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_cloudflare_token',
-				__( 'No Cloudflare API token has been configured.', 'wp-mcp-ai' ),
+				__( 'No Cloudflare API token has been configured.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_cloudflare_api_token' => __( 'Add a Cloudflare API token in the NV oOS settings.', 'wp-mcp-ai' ),
+						'configure_cloudflare_api_token' => __( 'Add a Cloudflare API token in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -135,11 +135,11 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 		if ( '' === $zone_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_cloudflare_zone',
-				__( 'No Cloudflare zone ID has been configured.', 'wp-mcp-ai' ),
+				__( 'No Cloudflare zone ID has been configured.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_cloudflare_zone_id' => __( 'Add the Cloudflare zone ID in the NV oOS settings.', 'wp-mcp-ai' ),
+						'configure_cloudflare_zone_id' => __( 'Add the Cloudflare zone ID in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -165,7 +165,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 		);
 
 		if ( false === $request_args['body'] ) {
-			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Cloudflare purge request.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Cloudflare purge request.', 'mcp-ai-wpoos' ) );
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -184,7 +184,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 
 			return new WP_Error(
 				'wp_mcp_ai_cloudflare_http_error',
-				__( 'The Cloudflare API request failed to complete.', 'wp-mcp-ai' ),
+				__( 'The Cloudflare API request failed to complete.', 'mcp-ai-wpoos' ),
 				array( 'error' => $response )
 			);
 		}
@@ -226,7 +226,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 		);
 
 		$result = array(
-			'message' => __( 'Cloudflare accepted the purge request.', 'wp-mcp-ai' ),
+			'message' => __( 'Cloudflare accepted the purge request.', 'mcp-ai-wpoos' ),
 			'request' => $summary,
 		);
 
@@ -257,7 +257,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 
 		if ( isset( $arguments['urls'] ) ) {
 			if ( ! is_array( $arguments['urls'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_urls', __( 'The URLs parameter must be an array of absolute URLs.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_urls', __( 'The URLs parameter must be an array of absolute URLs.', 'mcp-ai-wpoos' ) );
 			}
 
 			$files = array();
@@ -274,7 +274,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 			}
 
 			if ( empty( $files ) && ! empty( $arguments['urls'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_urls', __( 'None of the supplied URLs were valid.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_urls', __( 'None of the supplied URLs were valid.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( ! empty( $files ) ) {
@@ -284,7 +284,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 
 		if ( isset( $arguments['hosts'] ) ) {
 			if ( ! is_array( $arguments['hosts'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_hosts', __( 'Hosts must be provided as an array.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_hosts', __( 'Hosts must be provided as an array.', 'mcp-ai-wpoos' ) );
 			}
 
 			$hosts = array();
@@ -301,7 +301,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 			}
 
 			if ( empty( $hosts ) && ! empty( $arguments['hosts'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_hosts', __( 'None of the supplied hosts were valid.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_hosts', __( 'None of the supplied hosts were valid.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( ! empty( $hosts ) ) {
@@ -311,7 +311,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 
 		if ( isset( $arguments['tags'] ) ) {
 			if ( ! is_array( $arguments['tags'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_tags', __( 'Tags must be provided as an array.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_tags', __( 'Tags must be provided as an array.', 'mcp-ai-wpoos' ) );
 			}
 
 			$tags = array();
@@ -328,7 +328,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 			}
 
 			if ( empty( $tags ) && ! empty( $arguments['tags'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_tags', __( 'None of the supplied tags were valid.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_tags', __( 'None of the supplied tags were valid.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( ! empty( $tags ) ) {
@@ -337,7 +337,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( empty( $payload ) ) {
-			return new WP_Error( 'wp_mcp_ai_empty_payload', __( 'Provide purge_everything or at least one URL, host, or tag to purge.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_empty_payload', __( 'Provide purge_everything or at least one URL, host, or tag to purge.', 'mcp-ai-wpoos' ) );
 		}
 
 		return $payload;
@@ -474,7 +474,7 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
-		return __( 'Cloudflare rejected the purge request.', 'wp-mcp-ai' );
+		return __( 'Cloudflare rejected the purge request.', 'mcp-ai-wpoos' );
 	}
 
 	/**

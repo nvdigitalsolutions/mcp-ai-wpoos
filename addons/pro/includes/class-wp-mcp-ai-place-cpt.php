@@ -78,8 +78,8 @@ class WP_MCP_AI_Place_CPT {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			?>
 			<div class="notice notice-warning">
-				<p><strong><?php esc_html_e( 'Places Management Not Available', 'wp-mcp-ai' ); ?></strong></p>
-				<p><?php echo wp_kses_post( __( 'The Places Management System is a <strong>Full Version</strong> feature and is not available in Base Version mode.', 'wp-mcp-ai' ) ); ?></p>
+				<p><strong><?php esc_html_e( 'Places Management Not Available', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+				<p><?php echo wp_kses_post( __( 'The Places Management System is a <strong>Full Version</strong> feature and is not available in Base Version mode.', 'mcp-ai-wpoos-pro' ) ); ?></p>
 			</div>
 			<?php
 			return;
@@ -91,14 +91,14 @@ class WP_MCP_AI_Place_CPT {
 			$settings_url = admin_url( 'admin.php?page=wp_mcp_ai_settings&tab=tools&subtab=features' );
 			?>
 			<div class="notice notice-warning">
-				<p><strong><?php esc_html_e( 'Places Management Disabled', 'wp-mcp-ai' ); ?></strong></p>
-				<p><?php esc_html_e( 'The Places Management System is currently disabled. Enable it to create and manage places.', 'wp-mcp-ai' ); ?></p>
+				<p><strong><?php esc_html_e( 'Places Management Disabled', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+				<p><?php esc_html_e( 'The Places Management System is currently disabled. Enable it to create and manage places.', 'mcp-ai-wpoos-pro' ); ?></p>
 				<p>
 					<?php
 					echo wp_kses_post(
 						sprintf(
 							/* translators: %s: Link to settings page */
-							__( 'To enable Places Management, go to <a href="%s">Settings &rarr; NV oOS &rarr; Tools &amp; Features &rarr; Features</a>, check <strong>"Enable Places Management"</strong>, and save your changes.', 'wp-mcp-ai' ),
+							__( 'To enable Places Management, go to <a href="%s">Settings &rarr; NV oOS &rarr; Tools &amp; Features &rarr; Features</a>, check <strong>"Enable Places Management"</strong>, and save your changes.', 'mcp-ai-wpoos-pro' ),
 							esc_url( $settings_url )
 						)
 					);
@@ -125,26 +125,26 @@ class WP_MCP_AI_Place_CPT {
 		}
 		?>
 		<div class="notice notice-info place-info-notice">
-			<p><strong><?php esc_html_e( 'Places Management with AI Integration', 'wp-mcp-ai' ); ?></strong></p>
-			<p><?php esc_html_e( 'Places can be created and managed both manually here in the WordPress admin and via AI assistant tools.', 'wp-mcp-ai' ); ?></p>
+			<p><strong><?php esc_html_e( 'Places Management with AI Integration', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+			<p><?php esc_html_e( 'Places can be created and managed both manually here in the WordPress admin and via AI assistant tools.', 'mcp-ai-wpoos-pro' ); ?></p>
 			<p>
 				<?php
 				echo wp_kses_post(
-					__( '<strong>Manual Management:</strong> Use the editor and metaboxes below to add location details, contact info, business hours, and amenities.', 'wp-mcp-ai' )
+					__( '<strong>Manual Management:</strong> Use the editor and metaboxes below to add location details, contact info, business hours, and amenities.', 'mcp-ai-wpoos-pro' )
 				);
 				?>
 			</p>
 			<p>
 				<?php
 				echo wp_kses_post(
-					__( '<strong>AI Tools:</strong> AI assistants can create places using <code>create_place</code>, search with <code>search_and_save_places</code>, and manage them with <code>update_place</code>, <code>delete_place</code>, and <code>list_places</code> tools.', 'wp-mcp-ai' )
+					__( '<strong>AI Tools:</strong> AI assistants can create places using <code>create_place</code>, search with <code>search_and_save_places</code>, and manage them with <code>update_place</code>, <code>delete_place</code>, and <code>list_places</code> tools.', 'mcp-ai-wpoos-pro' )
 				);
 				?>
 			</p>
 			<p>
 				<?php
 				echo wp_kses_post(
-					__( '<strong>Google Maps Integration:</strong> Places automatically geocode addresses and can be enriched with data from Google Places API.', 'wp-mcp-ai' )
+					__( '<strong>Google Maps Integration:</strong> Places automatically geocode addresses and can be enriched with data from Google Places API.', 'mcp-ai-wpoos-pro' )
 				);
 				?>
 			</p>
@@ -245,10 +245,10 @@ class WP_MCP_AI_Place_CPT {
 			$new_columns[ $key ] = $value;
 
 			if ( 'title' === $key ) {
-				$new_columns['place_type']  = __( 'Type', 'wp-mcp-ai' );
-				$new_columns['location']    = __( 'Location', 'wp-mcp-ai' );
-				$new_columns['rating']      = __( 'Rating', 'wp-mcp-ai' );
-				$new_columns['price_level'] = __( 'Price', 'wp-mcp-ai' );
+				$new_columns['place_type']  = __( 'Type', 'mcp-ai-wpoos-pro' );
+				$new_columns['location']    = __( 'Location', 'mcp-ai-wpoos-pro' );
+				$new_columns['rating']      = __( 'Rating', 'mcp-ai-wpoos-pro' );
+				$new_columns['price_level'] = __( 'Price', 'mcp-ai-wpoos-pro' );
 			}
 		}
 

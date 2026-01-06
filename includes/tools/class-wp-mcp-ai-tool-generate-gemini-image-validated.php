@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image_Validated extends WP_MCP_AI_Validated
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Gemini Image (Validated)', 'wp-mcp-ai' );
+		return __( 'Generate Gemini Image (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates an image with Gemini and stores it in the Media Library with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Creates an image with Gemini and stores it in the Media Library with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

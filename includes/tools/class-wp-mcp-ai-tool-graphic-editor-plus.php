@@ -46,14 +46,14 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Graphic Editor Plus', 'wp-mcp-ai' );
+		return __( 'Graphic Editor Plus', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Comprehensive graphic editing tool with both local operations (logo overlay, smart resize, canvas expansion) and AI-powered features (style transfer, background removal, intelligent enhancement). Use local operations for speed and AI operations for intelligent transformations.', 'wp-mcp-ai' );
+		return __( 'Comprehensive graphic editing tool with both local operations (logo overlay, smart resize, canvas expansion) and AI-powered features (style transfer, background removal, intelligent enhancement). Use local operations for speed and AI operations for intelligent transformations.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -67,7 +67,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 				array(
 					'operation'         => array(
 						'type'        => 'string',
-						'description' => __( 'Operation to perform. LOCAL: add_logo, resize_graphic, expand_scene. AI-POWERED: ai_enhance, ai_style, ai_background, ai_retouch', 'wp-mcp-ai' ),
+						'description' => __( 'Operation to perform. LOCAL: add_logo, resize_graphic, expand_scene. AI-POWERED: ai_enhance, ai_style, ai_background, ai_retouch', 'mcp-ai-wpoos' ),
 						'enum'        => array( 
 							'add_logo', 
 							'resize_graphic', 
@@ -81,30 +81,30 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 					// Logo parameters (for add_logo operation).
 					'logo_attachment_id' => array(
 						'type'        => 'integer',
-						'description' => __( 'Attachment ID of logo image. Required for add_logo.', 'wp-mcp-ai' ),
+						'description' => __( 'Attachment ID of logo image. Required for add_logo.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 					),
 					'logo_url'          => array(
 						'type'        => 'string',
-						'description' => __( 'URL of logo image. Alternative to logo_attachment_id.', 'wp-mcp-ai' ),
+						'description' => __( 'URL of logo image. Alternative to logo_attachment_id.', 'mcp-ai-wpoos' ),
 						'format'      => 'uri',
 					),
 					'logo_position'     => array(
 						'type'        => 'string',
-						'description' => __( 'Logo position: top-left, top-right, bottom-left, bottom-right, center. Default: bottom-left', 'wp-mcp-ai' ),
+						'description' => __( 'Logo position: top-left, top-right, bottom-left, bottom-right, center. Default: bottom-left', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'center' ),
 						'default'     => 'bottom-left',
 					),
 					'logo_scale'        => array(
 						'type'        => 'number',
-						'description' => __( 'Logo scale relative to image width (0.05-0.5). Default: 0.15', 'wp-mcp-ai' ),
+						'description' => __( 'Logo scale relative to image width (0.05-0.5). Default: 0.15', 'mcp-ai-wpoos' ),
 						'minimum'     => 0.05,
 						'maximum'     => 0.5,
 						'default'     => 0.15,
 					),
 					'logo_margin'       => array(
 						'type'        => 'integer',
-						'description' => __( 'Margin in pixels from edge. Default: 20', 'wp-mcp-ai' ),
+						'description' => __( 'Margin in pixels from edge. Default: 20', 'mcp-ai-wpoos' ),
 						'minimum'     => 0,
 						'maximum'     => 500,
 						'default'     => 20,
@@ -112,30 +112,30 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 					// Resize parameters (for resize_graphic operation).
 					'target_width'      => array(
 						'type'        => 'integer',
-						'description' => __( 'Target width in pixels for resize_graphic.', 'wp-mcp-ai' ),
+						'description' => __( 'Target width in pixels for resize_graphic.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 10000,
 					),
 					'target_height'     => array(
 						'type'        => 'integer',
-						'description' => __( 'Target height in pixels for resize_graphic.', 'wp-mcp-ai' ),
+						'description' => __( 'Target height in pixels for resize_graphic.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 10000,
 					),
 					'output_format'     => array(
 						'type'        => 'string',
-						'description' => __( 'Output format: png, jpg, webp. Default: png', 'wp-mcp-ai' ),
+						'description' => __( 'Output format: png, jpg, webp. Default: png', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'png', 'jpg', 'jpeg', 'webp' ),
 						'default'     => 'png',
 					),
 					'maintain_ratio'    => array(
 						'type'        => 'boolean',
-						'description' => __( 'Maintain aspect ratio when resizing. Default: true', 'wp-mcp-ai' ),
+						'description' => __( 'Maintain aspect ratio when resizing. Default: true', 'mcp-ai-wpoos' ),
 						'default'     => true,
 					),
 					'quality'           => array(
 						'type'        => 'integer',
-						'description' => __( 'Output quality for JPG/WebP (1-100). Default: 90', 'wp-mcp-ai' ),
+						'description' => __( 'Output quality for JPG/WebP (1-100). Default: 90', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 100,
 						'default'     => 90,
@@ -143,35 +143,35 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 					// Expand scene parameters (for expand_scene operation).
 					'expand_direction'  => array(
 						'type'        => 'string',
-						'description' => __( 'Expansion direction: all, top, bottom, left, right, horizontal, vertical. Default: all', 'wp-mcp-ai' ),
+						'description' => __( 'Expansion direction: all, top, bottom, left, right, horizontal, vertical. Default: all', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'all', 'top', 'bottom', 'left', 'right', 'horizontal', 'vertical' ),
 						'default'     => 'all',
 					),
 					'expand_pixels'     => array(
 						'type'        => 'integer',
-						'description' => __( 'Pixels to expand. Default: 50', 'wp-mcp-ai' ),
+						'description' => __( 'Pixels to expand. Default: 50', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 2000,
 						'default'     => 50,
 					),
 					'background_color'  => array(
 						'type'        => 'string',
-						'description' => __( 'Background color (hex like #FF0000 or "transparent"). Default: transparent', 'wp-mcp-ai' ),
+						'description' => __( 'Background color (hex like #FF0000 or "transparent"). Default: transparent', 'mcp-ai-wpoos' ),
 						'default'     => 'transparent',
 					),
 					// AI operation parameters (for AI-powered operations).
 					'prompt'            => array(
 						'type'        => 'string',
-						'description' => __( 'Instruction for AI operations (ai_enhance, ai_style, ai_background, ai_retouch). Examples: "remove background", "convert to watercolor", "enhance brightness"', 'wp-mcp-ai' ),
+						'description' => __( 'Instruction for AI operations (ai_enhance, ai_style, ai_background, ai_retouch). Examples: "remove background", "convert to watercolor", "enhance brightness"', 'mcp-ai-wpoos' ),
 					),
 					'model'             => array(
 						'type'        => 'string',
-						'description' => __( 'Gemini model for AI operations. Default: gemini-2.0-flash-exp', 'wp-mcp-ai' ),
+						'description' => __( 'Gemini model for AI operations. Default: gemini-2.0-flash-exp', 'mcp-ai-wpoos' ),
 						'default'     => 'gemini-2.0-flash-exp',
 					),
 					'aspect_ratio'      => array(
 						'type'        => 'string',
-						'description' => __( 'Aspect ratio for AI operations: 1:1, 16:9, 4:3, 3:2, 9:16. Default: 1:1', 'wp-mcp-ai' ),
+						'description' => __( 'Aspect ratio for AI operations: 1:1, 16:9, 4:3, 3:2, 9:16. Default: 1:1', 'mcp-ai-wpoos' ),
 						'enum'        => array( '1:1', '16:9', '4:3', '3:2', '2:3', '9:16', '3:4' ),
 						'default'     => '1:1',
 					),
@@ -208,15 +208,15 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to use Graphic Editor Plus.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to use Graphic Editor Plus.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id && ! user_can( $user_id, 'upload_files' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get operation type.
@@ -224,7 +224,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 
 		$valid_operations = array( 'add_logo', 'resize_graphic', 'expand_scene', 'ai_enhance', 'ai_style', 'ai_background', 'ai_retouch' );
 		if ( ! in_array( $operation, $valid_operations, true ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_operation', __( 'Invalid operation. Must be: add_logo, resize_graphic, expand_scene, ai_enhance, ai_style, ai_background, or ai_retouch.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_operation', __( 'Invalid operation. Must be: add_logo, resize_graphic, expand_scene, ai_enhance, ai_style, ai_background, or ai_retouch.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		// Enrich arguments with metadata from context messages if available.
@@ -240,7 +240,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			return $this->execute_ai_operation( $operation, $arguments, $user_id, $context );
 		}
 
-		return new WP_Error( 'wp_mcp_ai_invalid_operation', __( 'Operation not implemented.', 'wp-mcp-ai' ), array( 'status' => 500 ) );
+		return new WP_Error( 'wp_mcp_ai_invalid_operation', __( 'Operation not implemented.', 'mcp-ai-wpoos' ), array( 'status' => 500 ) );
 	}
 
 	/**
@@ -260,7 +260,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			case 'expand_scene':
 				return $this->execute_expand_scene( $arguments, $user_id );
 			default:
-				return new WP_Error( 'wp_mcp_ai_invalid_operation', __( 'Unknown local operation.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_operation', __( 'Unknown local operation.', 'mcp-ai-wpoos' ) );
 		}
 	}
 
@@ -276,7 +276,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	protected function execute_ai_operation( $operation, $arguments, $user_id, $context ) {
 		// Validate that prompt is provided for AI operations.
 		if ( empty( $arguments['prompt'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_prompt', __( 'AI operations require a prompt parameter describing the desired transformation.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_prompt', __( 'AI operations require a prompt parameter describing the desired transformation.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		// Build intelligent prompt based on operation type.
@@ -310,7 +310,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		}
 
 		if ( empty( $image['image'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_empty_response', __( 'AI returned an empty image response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_empty_response', __( 'AI returned an empty image response.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Store the result as an attachment.
@@ -333,7 +333,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			'model'         => $model,
 			'text'          => sprintf(
 				/* translators: 1: operation name, 2: prompt */
-				__( 'Successfully applied %1$s using AI: "%2$s"', 'wp-mcp-ai' ),
+				__( 'Successfully applied %1$s using AI: "%2$s"', 'mcp-ai-wpoos' ),
 				str_replace( '_', ' ', $operation ),
 				$base_prompt
 			),
@@ -398,7 +398,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		}
 
 		if ( false === $image_data ) {
-			return new WP_Error( 'wp_mcp_ai_read_failed', __( 'Failed to read image data.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_read_failed', __( 'Failed to read image data.', 'mcp-ai-wpoos' ) );
 		}
 
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
@@ -423,7 +423,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		$image_data = base64_decode( $image['image'] );
 		
 		if ( false === $image_data ) {
-			return new WP_Error( 'wp_mcp_ai_decode_failed', __( 'Failed to decode AI image data.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_decode_failed', __( 'Failed to decode AI image data.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Generate filename.
@@ -443,7 +443,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		$saved = file_put_contents( $file_path, $image_data );
 
 		if ( false === $saved ) {
-			return new WP_Error( 'wp_mcp_ai_save_failed', __( 'Failed to save AI-generated image.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_save_failed', __( 'Failed to save AI-generated image.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Create attachment.
@@ -501,7 +501,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			if ( isset( $image_editor->temp_file ) ) {
 				$this->delete_temp_file( $image_editor->temp_file );
 			}
-			return new WP_Error( 'wp_mcp_ai_missing_logo', __( 'Either logo_attachment_id or logo_url must be specified for add_logo operation.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_logo', __( 'Either logo_attachment_id or logo_url must be specified for add_logo operation.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$logo_editor = $this->load_source_image( $logo_args, $user_id );
@@ -585,7 +585,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			'logo_scale'    => $scale,
 			'text'          => sprintf(
 				/* translators: %s: logo position */
-				__( 'Successfully added logo at %s position.', 'wp-mcp-ai' ),
+				__( 'Successfully added logo at %s position.', 'mcp-ai-wpoos' ),
 				$position
 			),
 		);
@@ -612,7 +612,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			if ( isset( $image_editor->temp_file ) ) {
 				$this->delete_temp_file( $image_editor->temp_file );
 			}
-			return new WP_Error( 'wp_mcp_ai_missing_dimensions', __( 'Either target_width or target_height must be specified.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_dimensions', __( 'Either target_width or target_height must be specified.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$maintain_ratio = isset( $arguments['maintain_ratio'] ) ? (bool) $arguments['maintain_ratio'] : true;
@@ -676,7 +676,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			'operation'       => 'resize_graphic',
 			'text'            => sprintf(
 				/* translators: 1: original dimensions, 2: new dimensions, 3: format */
-				__( 'Successfully resized from %1$s to %2$s (%3$s)', 'wp-mcp-ai' ),
+				__( 'Successfully resized from %1$s to %2$s (%3$s)', 'mcp-ai-wpoos' ),
 				$original_size['width'] . 'x' . $original_size['height'],
 				$new_size['width'] . 'x' . $new_size['height'],
 				strtoupper( $output_format )
@@ -694,7 +694,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	protected function execute_expand_scene( $arguments, $user_id ) {
 		return new WP_Error(
 			'wp_mcp_ai_not_implemented',
-			__( 'Canvas expansion is not yet implemented. Please use the AI operations (ai_enhance, ai_style, ai_background) for intelligent image transformations.', 'wp-mcp-ai' ),
+			__( 'Canvas expansion is not yet implemented. Please use the AI operations (ai_enhance, ai_style, ai_background) for intelligent image transformations.', 'mcp-ai-wpoos' ),
 			array( 'status' => 501 )
 		);
 	}
@@ -753,7 +753,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		$overlay_resource = $overlay_editor->get_image();
 
 		if ( is_wp_error( $base_resource ) || is_wp_error( $overlay_resource ) ) {
-			return new WP_Error( 'wp_mcp_ai_resource_error', __( 'Failed to get image resources.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_resource_error', __( 'Failed to get image resources.', 'mcp-ai-wpoos' ) );
 		}
 
 		$overlay_size = $overlay_editor->get_size();
@@ -775,9 +775,9 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			
 			$result = imagecopy( $base_resource, $overlay_resource, $x, $y, 0, 0, $overlay_size['width'], $overlay_size['height'] );
 			
-			return $result ? true : new WP_Error( 'wp_mcp_ai_gd_error', __( 'GD overlay failed.', 'wp-mcp-ai' ) );
+			return $result ? true : new WP_Error( 'wp_mcp_ai_gd_error', __( 'GD overlay failed.', 'mcp-ai-wpoos' ) );
 		}
 
-		return new WP_Error( 'wp_mcp_ai_unsupported', __( 'Unsupported image editor type.', 'wp-mcp-ai' ) );
+		return new WP_Error( 'wp_mcp_ai_unsupported', __( 'Unsupported image editor type.', 'mcp-ai-wpoos' ) );
 	}
 }

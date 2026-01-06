@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'AI Media Library', 'wp-mcp-ai' );
+			return __( 'AI Media Library', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -56,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure AI-powered automatic generation of alt text and captions for uploaded images to improve accessibility and SEO.', 'wp-mcp-ai' );
+			return __( 'Configure AI-powered automatic generation of alt text and captions for uploaded images to improve accessibility and SEO.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -92,38 +92,38 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 			return array(
 				'enable_ai_media_library'     => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable AI Media Library', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Automatically analyze images on upload', 'wp-mcp-ai' ),
-					'description'    => __( 'When enabled, newly uploaded images will be automatically analyzed by AI to generate alt text and captions. This feature uses vision-capable AI models (requires OpenAI or Gemini API key).', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable AI Media Library', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically analyze images on upload', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, newly uploaded images will be automatically analyzed by AI to generate alt text and captions. This feature uses vision-capable AI models (requires OpenAI or Gemini API key).', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'ai_media_generate_alt_text'  => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Generate Alt Text', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Automatically generate alt text for accessibility', 'wp-mcp-ai' ),
-					'description'    => __( 'Generate descriptive alt text for images to improve accessibility for screen readers and SEO.', 'wp-mcp-ai' ),
+					'label'          => __( 'Generate Alt Text', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically generate alt text for accessibility', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Generate descriptive alt text for images to improve accessibility for screen readers and SEO.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'ai_media_generate_caption'   => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Generate Captions', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Automatically generate image captions', 'wp-mcp-ai' ),
-					'description'    => __( 'Generate detailed captions for images to provide context and enhance content.', 'wp-mcp-ai' ),
+					'label'          => __( 'Generate Captions', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically generate image captions', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Generate detailed captions for images to provide context and enhance content.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'ai_media_overwrite_existing' => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Overwrite Existing', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Replace existing alt text and captions', 'wp-mcp-ai' ),
-					'description'    => __( 'When enabled, AI will overwrite any existing alt text or captions. When disabled, AI will only fill in missing metadata.', 'wp-mcp-ai' ),
+					'label'          => __( 'Overwrite Existing', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Replace existing alt text and captions', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, AI will overwrite any existing alt text or captions. When disabled, AI will only fill in missing metadata.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'allowed_image_mimes'         => array(
 					'type'        => 'textarea',
-					'label'       => __( 'Allowed Image MIME Types', 'wp-mcp-ai' ),
+					'label'       => __( 'Allowed Image MIME Types', 'mcp-ai-wpoos' ),
 					'description' => sprintf(
 						/* translators: %s: Default image MIME types */
-						__( 'Comma-separated list of allowed image file extensions for AI analysis and uploads. Leave empty to use WordPress defaults. Common formats: jpg, jpeg, png, gif, webp, svg. Current WordPress defaults: %s', 'wp-mcp-ai' ),
+						__( 'Comma-separated list of allowed image file extensions for AI analysis and uploads. Leave empty to use WordPress defaults. Common formats: jpg, jpeg, png, gif, webp, svg. Current WordPress defaults: %s', 'mcp-ai-wpoos' ),
 						'<code>' . esc_html( $default_image_mimes ) . '</code>'
 					),
 					'default'     => '',
@@ -132,8 +132,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 				),
 				'allowed_file_mimes'          => array(
 					'type'        => 'textarea',
-					'label'       => __( 'Allowed File MIME Types', 'wp-mcp-ai' ),
-					'description' => __( 'Comma-separated list of allowed file extensions for chat uploads and AI processing. Leave empty to use WordPress defaults. This controls what file types users can upload through chat and assistant interfaces. For security, only include file types you trust.', 'wp-mcp-ai' ),
+					'label'       => __( 'Allowed File MIME Types', 'mcp-ai-wpoos' ),
+					'description' => __( 'Comma-separated list of allowed file extensions for chat uploads and AI processing. Leave empty to use WordPress defaults. This controls what file types users can upload through chat and assistant interfaces. For security, only include file types you trust.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'jpg, jpeg, png, pdf, doc, docx, txt',
 					'rows'        => 4,
@@ -157,12 +157,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 				<th scope="row"></th>
 				<td>
 					<p class="description">
-						<strong><?php esc_html_e( 'Note:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						echo wp_kses_post(
 							__(
 								'This feature requires a vision-capable AI provider (OpenAI GPT-4o or Gemini) to be configured in the Providers tab. Image analysis will use the default provider specified in General Settings.',
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							)
 						);
 						?>
@@ -172,7 +172,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 						echo wp_kses_post(
 							__(
 								'Each image upload will consume AI tokens. Consider the API costs when enabling this feature for high-volume sites.',
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							)
 						);
 						?>

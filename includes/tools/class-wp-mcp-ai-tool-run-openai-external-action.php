@@ -31,14 +31,14 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Run OpenAI External Action', 'wp-mcp-ai' );
+		return __( 'Run OpenAI External Action', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Invokes a predefined OpenAI workflow or assistant using the Responses API.', 'wp-mcp-ai' );
+		return __( 'Invokes a predefined OpenAI workflow or assistant using the Responses API.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -51,19 +51,19 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 				'action_type'     => array(
 					'type'        => 'string',
 					'enum'        => array( 'workflow', 'assistant' ),
-					'description' => __( 'Whether to invoke a workflow or an assistant.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to invoke a workflow or an assistant.', 'mcp-ai-wpoos' ),
 				),
 				'identifier'      => array(
 					'type'        => 'string',
-					'description' => __( 'The workflow_id or assistant_id to trigger.', 'wp-mcp-ai' ),
+					'description' => __( 'The workflow_id or assistant_id to trigger.', 'mcp-ai-wpoos' ),
 				),
 				'input_text'      => array(
 					'type'        => 'string',
-					'description' => __( 'Optional user instruction or message to include in the request.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional user instruction or message to include in the request.', 'mcp-ai-wpoos' ),
 				),
 				'input_variables' => array(
 					'type'                 => 'object',
-					'description'          => __( 'Optional key/value inputs forwarded to the workflow or assistant.', 'wp-mcp-ai' ),
+					'description'          => __( 'Optional key/value inputs forwarded to the workflow or assistant.', 'mcp-ai-wpoos' ),
 					'additionalProperties' => array(
 						'anyOf' => array(
 							array(
@@ -117,23 +117,23 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to run external OpenAI actions.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to run external OpenAI actions.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$action_type = isset( $arguments['action_type'] ) ? strtolower( sanitize_key( $arguments['action_type'] ) ) : '';
 
 		if ( ! in_array( $action_type, array( 'workflow', 'assistant' ), true ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_action', __( 'The provided action type is not supported.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_action', __( 'The provided action type is not supported.', 'mcp-ai-wpoos' ) );
 		}
 
 		$identifier = isset( $arguments['identifier'] ) ? sanitize_text_field( $arguments['identifier'] ) : '';
 
 		if ( empty( $identifier ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_identifier', __( 'A workflow_id or assistant_id must be supplied.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_identifier', __( 'A workflow_id or assistant_id must be supplied.', 'mcp-ai-wpoos' ) );
 		}
 
 		$input_text = isset( $arguments['input_text'] ) ? sanitize_textarea_field( $arguments['input_text'] ) : '';
@@ -141,7 +141,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 		$input_variables = array();
 		if ( isset( $arguments['input_variables'] ) ) {
 			if ( ! is_array( $arguments['input_variables'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_variables', __( 'Input variables must be provided as an object.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_variables', __( 'Input variables must be provided as an object.', 'mcp-ai-wpoos' ) );
 			}
 
 			$input_variables = $this->sanitize_input_variables( $arguments['input_variables'] );
@@ -153,11 +153,11 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_api_key',
-				__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+				__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -172,7 +172,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 		$encoded_body = wp_json_encode( $payload );
 
 		if ( false === $encoded_body ) {
-			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the OpenAI request payload.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the OpenAI request payload.', 'mcp-ai-wpoos' ) );
 		}
 
 		$timeout = $this->resolve_request_timeout( $arguments, $context );
@@ -201,7 +201,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 
 			return new WP_Error(
 				'wp_mcp_ai_http_error',
-				__( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
+				__( 'The OpenAI API request failed to complete.', 'mcp-ai-wpoos' ),
 				array( 'error' => $response )
 			);
 		}
@@ -213,11 +213,11 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI external action response.', array( 'body' => $body ) );
 
-			return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The OpenAI API returned malformed JSON.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The OpenAI API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $status_code < 200 || $status_code >= 300 ) {
-			$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from OpenAI.', 'wp-mcp-ai' );
+			$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from OpenAI.', 'mcp-ai-wpoos' );
 
 			WP_MCP_AI_Logger::log_error(
 				'OpenAI external action returned an error.',
@@ -372,7 +372,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 	protected function build_payload( $action_type, $identifier, $input_text, array $input_variables ) {
 		$payload = array(
 			'metadata' => array(
-				'source'      => 'wp-mcp-ai',
+				'source'      => 'mcp-ai-wpoos',
 				'action_type' => $action_type,
 			),
 		);
@@ -417,7 +417,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 			}
 
 			if ( empty( $messages ) ) {
-				return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Assistant actions require either input text or variables.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Assistant actions require either input text or variables.', 'mcp-ai-wpoos' ) );
 			}
 
 			$payload['input'] = $messages;

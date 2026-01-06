@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Generate_Music_Validated extends WP_MCP_AI_Validated_Tool i
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Music (Validated)', 'wp-mcp-ai' );
+		return __( 'Generate Music (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates instrumental music from a text description using Google Gemini Lyria model and saves it to the Media Library with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Generates instrumental music from a text description using Google Gemini Lyria model and saves it to the Media Library with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

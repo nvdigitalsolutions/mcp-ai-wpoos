@@ -90,7 +90,7 @@ class WP_MCP_AI_Transcript_Repository {
 		if ( ! $this->table_exists() ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_unavailable',
-				__( 'Chat transcripts are not available. Ensure JetEngine Custom Content Types is active and that the /wp-json/jet-cct/ai_chat_transcripts endpoint loads successfully.', 'wp-mcp-ai' ),
+				__( 'Chat transcripts are not available. Ensure JetEngine Custom Content Types is active and that the /wp-json/jet-cct/ai_chat_transcripts endpoint loads successfully.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -238,7 +238,7 @@ class WP_MCP_AI_Transcript_Repository {
 		if ( '' === $session_key ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcript_missing',
-				__( 'Session key is required.', 'wp-mcp-ai' ),
+				__( 'Session key is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -246,7 +246,7 @@ class WP_MCP_AI_Transcript_Repository {
 		if ( ! $this->table_exists() ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_unavailable',
-				__( 'Chat transcripts are not available.', 'wp-mcp-ai' ),
+				__( 'Chat transcripts are not available.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -504,7 +504,7 @@ class WP_MCP_AI_Transcript_Repository {
 
 			return new WP_Error(
 				'wp_mcp_ai_transcript_missing',
-				__( 'The requested chat transcript could not be found.', 'wp-mcp-ai' ),
+				__( 'The requested chat transcript could not be found.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}

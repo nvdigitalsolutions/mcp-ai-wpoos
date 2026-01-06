@@ -46,11 +46,11 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_google_maps_api_key',
-					__( 'No Google Maps API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No Google Maps API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -61,7 +61,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			if ( empty( $address ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_address',
-					__( 'An address must be supplied for geocoding.', 'wp-mcp-ai' ),
+					__( 'An address must be supplied for geocoding.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -99,8 +99,8 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The Google Maps API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'Google Maps', 'wp-mcp-ai' )
+					__( 'The Google Maps API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'Google Maps', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -111,11 +111,11 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode Google Maps geocoding response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Google Maps API returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Google Maps API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : __( 'Unexpected response from Google Maps.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : __( 'Unexpected response from Google Maps.', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
 					'Google Maps returned an error response for geocoding.',
@@ -137,7 +137,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			}
 
 			if ( isset( $decoded['status'] ) && 'OK' !== $decoded['status'] ) {
-				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : sprintf( __( 'Google Maps status: %s', 'wp-mcp-ai' ), $decoded['status'] );
+				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : sprintf( __( 'Google Maps status: %s', 'mcp-ai-wpoos' ), $decoded['status'] );
 
 				return new WP_Error(
 					'wp_mcp_ai_geocoding_failed',
@@ -168,11 +168,11 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_google_maps_api_key',
-					__( 'No Google Maps API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No Google Maps API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -219,8 +219,8 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The Google Maps API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'Google Maps', 'wp-mcp-ai' )
+					__( 'The Google Maps API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'Google Maps', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -231,11 +231,11 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode Google Maps reverse geocoding response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Google Maps API returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Google Maps API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 || ( isset( $decoded['status'] ) && 'OK' !== $decoded['status'] ) ) {
-				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : __( 'Reverse geocoding failed.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : __( 'Reverse geocoding failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_reverse_geocoding_failed',
@@ -266,11 +266,11 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_google_maps_api_key',
-					__( 'No Google Maps API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No Google Maps API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -319,8 +319,8 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The Google Maps API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'Google Maps', 'wp-mcp-ai' )
+					__( 'The Google Maps API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'Google Maps', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -331,11 +331,11 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode Google Maps nearby search response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Google Maps API returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Google Maps API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 || ( isset( $decoded['status'] ) && 'OK' !== $decoded['status'] && 'ZERO_RESULTS' !== $decoded['status'] ) ) {
-				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : __( 'Nearby search failed.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : __( 'Nearby search failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_places_search_failed',
@@ -365,11 +365,11 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_google_maps_api_key',
-					__( 'No Google Maps API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No Google Maps API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_google_maps_api_key' => __( 'Add a Google Maps API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -380,7 +380,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			if ( empty( $query ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_query',
-					__( 'A search query must be supplied for text search.', 'wp-mcp-ai' ),
+					__( 'A search query must be supplied for text search.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -422,8 +422,8 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The Google Maps API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'Google Maps', 'wp-mcp-ai' )
+					__( 'The Google Maps API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'Google Maps', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -434,11 +434,11 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode Google Maps text search response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Google Maps API returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Google Maps API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 || ( isset( $decoded['status'] ) && 'OK' !== $decoded['status'] && 'ZERO_RESULTS' !== $decoded['status'] ) ) {
-				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : __( 'Text search failed.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : __( 'Text search failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_places_text_search_failed',

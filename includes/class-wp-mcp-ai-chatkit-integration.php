@@ -17,7 +17,7 @@ class WP_MCP_AI_ChatKit_Integration {
 	/**
 	 * Unique identifier used when registering the integration with ChatKit.
 	 */
-	const ADDON_ID = 'wp-mcp-ai';
+	const ADDON_ID = 'mcp-ai-wpoos';
 
 	/**
 	 * Track whether the ChatKit integration has already been initialised.
@@ -151,8 +151,8 @@ class WP_MCP_AI_ChatKit_Integration {
 
 		$definition = array(
 			'id'             => self::ADDON_ID,
-			'name'           => __( 'NV oOS', 'wp-mcp-ai' ),
-			'description'    => __( 'Connect ChatKit workflows to NV oOS assistants.', 'wp-mcp-ai' ),
+			'name'           => __( 'NV oOS', 'mcp-ai-wpoos' ),
+			'description'    => __( 'Connect ChatKit workflows to NV oOS assistants.', 'mcp-ai-wpoos' ),
 			'version'        => WP_MCP_AI_VERSION,
 			'icon'           => WP_MCP_AI_URL . 'assets/images/ai-icon.svg',
 			'rest_namespace' => $rest_namespace,
@@ -178,56 +178,56 @@ class WP_MCP_AI_ChatKit_Integration {
 			'surfaces'       => array(
 				'shortcode'        => array(
 					'type'        => 'shortcode',
-					'label'       => __( 'Shortcode chat surface', 'wp-mcp-ai' ),
-					'description' => __( 'Embed the NV oOS chat UI anywhere shortcodes render using [wp_mcp_ai_chat].', 'wp-mcp-ai' ),
+					'label'       => __( 'Shortcode chat surface', 'mcp-ai-wpoos' ),
+					'description' => __( 'Embed the NV oOS chat UI anywhere shortcodes render using [wp_mcp_ai_chat].', 'mcp-ai-wpoos' ),
 					'tag'         => 'wp_mcp_ai_chat',
 					'attributes'  => array(
 						'assistant'       => array(
 							'type'        => 'integer',
 							'required'    => true,
-							'label'       => __( 'Assistant ID', 'wp-mcp-ai' ),
-							'description' => __( 'Numeric assistant ID passed to the shortcode when no global default is configured.', 'wp-mcp-ai' ),
+							'label'       => __( 'Assistant ID', 'mcp-ai-wpoos' ),
+							'description' => __( 'Numeric assistant ID passed to the shortcode when no global default is configured.', 'mcp-ai-wpoos' ),
 						),
 						'allow_guests'    => array(
 							'type'        => 'boolean',
 							'required'    => false,
-							'label'       => __( 'Allow guests', 'wp-mcp-ai' ),
-							'description' => __( 'Enable guest access and issue temporary tokens for unauthenticated visitors.', 'wp-mcp-ai' ),
+							'label'       => __( 'Allow guests', 'mcp-ai-wpoos' ),
+							'description' => __( 'Enable guest access and issue temporary tokens for unauthenticated visitors.', 'mcp-ai-wpoos' ),
 							'default'     => false,
 						),
 						'save_transcript' => array(
 							'type'        => 'boolean',
 							'required'    => false,
-							'label'       => __( 'Save transcript', 'wp-mcp-ai' ),
-							'description' => __( 'Persist chat transcripts to the JetEngine Custom Content Type.', 'wp-mcp-ai' ),
+							'label'       => __( 'Save transcript', 'mcp-ai-wpoos' ),
+							'description' => __( 'Persist chat transcripts to the JetEngine Custom Content Type.', 'mcp-ai-wpoos' ),
 							'default'     => true,
 						),
 					),
 				),
 				'elementor_widget' => array(
 					'type'        => 'elementor_widget',
-					'label'       => __( 'Elementor chat widget', 'wp-mcp-ai' ),
-					'description' => __( 'Drop the NV oOS Chat widget into Elementor layouts to mirror the shortcode behaviour.', 'wp-mcp-ai' ),
+					'label'       => __( 'Elementor chat widget', 'mcp-ai-wpoos' ),
+					'description' => __( 'Drop the NV oOS Chat widget into Elementor layouts to mirror the shortcode behaviour.', 'mcp-ai-wpoos' ),
 					'widget'      => 'wp_mcp_ai_chat',
 					'attributes'  => array(
 						'assistant'       => array(
 							'type'        => 'integer',
 							'required'    => true,
-							'label'       => __( 'Assistant control', 'wp-mcp-ai' ),
-							'description' => __( 'Elementor control used to choose which assistant powers the chat surface.', 'wp-mcp-ai' ),
+							'label'       => __( 'Assistant control', 'mcp-ai-wpoos' ),
+							'description' => __( 'Elementor control used to choose which assistant powers the chat surface.', 'mcp-ai-wpoos' ),
 						),
 						'allow_guests'    => array(
 							'type'        => 'boolean',
 							'required'    => false,
-							'label'       => __( 'Allow guests control', 'wp-mcp-ai' ),
-							'description' => __( 'Toggle that issues guest tokens when the assistant permits public access.', 'wp-mcp-ai' ),
+							'label'       => __( 'Allow guests control', 'mcp-ai-wpoos' ),
+							'description' => __( 'Toggle that issues guest tokens when the assistant permits public access.', 'mcp-ai-wpoos' ),
 							'default'     => false,
 						),
 						'save_transcript' => array(
 							'type'        => 'boolean',
 							'required'    => false,
-							'label'       => __( 'Save transcript control', 'wp-mcp-ai' ),
-							'description' => __( 'Control that stores chat exchanges in the ai_chat_transcripts Custom Content Type.', 'wp-mcp-ai' ),
+							'label'       => __( 'Save transcript control', 'mcp-ai-wpoos' ),
+							'description' => __( 'Control that stores chat exchanges in the ai_chat_transcripts Custom Content Type.', 'mcp-ai-wpoos' ),
 							'default'     => true,
 						),
 					),
@@ -237,20 +237,20 @@ class WP_MCP_AI_ChatKit_Integration {
 				'assistant_id'   => array(
 					'type'        => 'integer',
 					'required'    => true,
-					'label'       => __( 'Assistant ID', 'wp-mcp-ai' ),
-					'description' => __( 'ID of the AI Assistant to engage for ChatKit requests.', 'wp-mcp-ai' ),
+					'label'       => __( 'Assistant ID', 'mcp-ai-wpoos' ),
+					'description' => __( 'ID of the AI Assistant to engage for ChatKit requests.', 'mcp-ai-wpoos' ),
 				),
 				'system_prompt'  => array(
 					'type'        => 'string',
 					'required'    => false,
-					'label'       => __( 'System Prompt Override', 'wp-mcp-ai' ),
-					'description' => __( 'Optional system prompt override applied to ChatKit initiated chats.', 'wp-mcp-ai' ),
+					'label'       => __( 'System Prompt Override', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional system prompt override applied to ChatKit initiated chats.', 'mcp-ai-wpoos' ),
 				),
 				'tool_shortcuts' => array(
 					'type'        => 'array',
 					'required'    => false,
-					'label'       => __( 'Shortcut Presets', 'wp-mcp-ai' ),
-					'description' => __( 'Tool shortcut presets exposed to ChatKit operators.', 'wp-mcp-ai' ),
+					'label'       => __( 'Shortcut Presets', 'mcp-ai-wpoos' ),
+					'description' => __( 'Tool shortcut presets exposed to ChatKit operators.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'                 => 'object',
 						'properties'           => array(

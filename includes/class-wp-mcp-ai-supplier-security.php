@@ -442,11 +442,11 @@ class WP_MCP_AI_Supplier_Security {
 		
 		$subject = sprintf(
 			/* translators: %d: Number of suppliers */
-			__( '[NV oOS] %d Supplier(s) Due for Security Review', 'wp-mcp-ai' ),
+			__( '[NV oOS] %d Supplier(s) Due for Security Review', 'mcp-ai-wpoos' ),
 			count( $suppliers )
 		);
 
-		$message = __( 'The following suppliers are due for their periodic security review:', 'wp-mcp-ai' ) . "\n\n";
+		$message = __( 'The following suppliers are due for their periodic security review:', 'mcp-ai-wpoos' ) . "\n\n";
 		
 		foreach ( $suppliers as $supplier ) {
 			$message .= sprintf(
@@ -460,7 +460,7 @@ class WP_MCP_AI_Supplier_Security {
 		}
 
 		$message .= sprintf(
-			"\n" . __( 'Review suppliers at: %s', 'wp-mcp-ai' ),
+			"\n" . __( 'Review suppliers at: %s', 'mcp-ai-wpoos' ),
 			admin_url( 'admin.php?page=nvoos-pro-dashboard-suppliers' )
 		);
 

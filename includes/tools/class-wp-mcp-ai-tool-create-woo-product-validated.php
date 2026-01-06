@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Create_Woo_Product_Validated extends WP_MCP_AI_Validated_To
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create WooCommerce Product Draft (Validated)', 'wp-mcp-ai' );
+		return __( 'Create WooCommerce Product Draft (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a WooCommerce product draft using merchandising data with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Creates a WooCommerce product draft using merchandising data with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

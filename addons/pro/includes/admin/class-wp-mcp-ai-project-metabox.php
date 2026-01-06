@@ -34,7 +34,7 @@ class WP_MCP_AI_Project_Metabox {
 
 		add_meta_box(
 			'wp_mcp_ai_project_details',
-			__( 'Project Details', 'wp-mcp-ai' ),
+			__( 'Project Details', 'mcp-ai-wpoos-pro' ),
 			array( __CLASS__, 'render_metabox' ),
 			'mcp_ai_project',
 			'normal',
@@ -68,20 +68,20 @@ class WP_MCP_AI_Project_Metabox {
 		<div class="wp-mcp-ai-project-details">
 			<p>
 				<label for="project_status">
-					<strong><?php esc_html_e( 'Status:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Status:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<select id="project_status" name="project_status" class="widefat">
-					<option value="planning" <?php selected( $status, 'planning' ); ?>><?php esc_html_e( 'Planning', 'wp-mcp-ai' ); ?></option>
-					<option value="active" <?php selected( $status, 'active' ); ?>><?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></option>
-					<option value="on-hold" <?php selected( $status, 'on-hold' ); ?>><?php esc_html_e( 'On Hold', 'wp-mcp-ai' ); ?></option>
-					<option value="completed" <?php selected( $status, 'completed' ); ?>><?php esc_html_e( 'Completed', 'wp-mcp-ai' ); ?></option>
-					<option value="cancelled" <?php selected( $status, 'cancelled' ); ?>><?php esc_html_e( 'Cancelled', 'wp-mcp-ai' ); ?></option>
+					<option value="planning" <?php selected( $status, 'planning' ); ?>><?php esc_html_e( 'Planning', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="active" <?php selected( $status, 'active' ); ?>><?php esc_html_e( 'Active', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="on-hold" <?php selected( $status, 'on-hold' ); ?>><?php esc_html_e( 'On Hold', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="completed" <?php selected( $status, 'completed' ); ?>><?php esc_html_e( 'Completed', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="cancelled" <?php selected( $status, 'cancelled' ); ?>><?php esc_html_e( 'Cancelled', 'mcp-ai-wpoos-pro' ); ?></option>
 				</select>
 			</p>
 
 			<p>
 				<label for="project_start_date">
-					<strong><?php esc_html_e( 'Start Date:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Start Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<input 
 					type="date" 
@@ -94,7 +94,7 @@ class WP_MCP_AI_Project_Metabox {
 
 			<p>
 				<label for="project_end_date">
-					<strong><?php esc_html_e( 'End Date:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'End Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<input 
 					type="date" 
@@ -107,7 +107,7 @@ class WP_MCP_AI_Project_Metabox {
 
 			<p>
 				<label for="project_assigned_to">
-					<strong><?php esc_html_e( 'Assigned Team Members:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Assigned Team Members:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<select id="project_assigned_to" name="project_assigned_to[]" multiple class="widefat" style="height: 150px;">
 					<?php
@@ -122,7 +122,7 @@ class WP_MCP_AI_Project_Metabox {
 					}
 					?>
 				</select>
-				<span class="description"><?php esc_html_e( 'Hold Ctrl/Cmd to select multiple users', 'wp-mcp-ai' ); ?></span>
+				<span class="description"><?php esc_html_e( 'Hold Ctrl/Cmd to select multiple users', 'mcp-ai-wpoos-pro' ); ?></span>
 			</p>
 		</div>
 		<?php

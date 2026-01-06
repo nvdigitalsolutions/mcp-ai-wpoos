@@ -29,7 +29,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video_Validated extends WP_MCP_AI_Tool_Genera
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Sora Video (Validated)', 'wp-mcp-ai' );
+		return __( 'Generate Sora Video (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**

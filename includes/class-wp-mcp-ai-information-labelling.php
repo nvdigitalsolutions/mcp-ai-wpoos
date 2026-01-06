@@ -70,26 +70,26 @@ class WP_MCP_AI_Information_Labelling {
 	public function get_classification_levels() {
 		return array(
 			self::CLASSIFICATION_PUBLIC       => array(
-				'label'       => __( 'Public', 'wp-mcp-ai' ),
-				'description' => __( 'Information that can be freely shared publicly', 'wp-mcp-ai' ),
+				'label'       => __( 'Public', 'mcp-ai-wpoos' ),
+				'description' => __( 'Information that can be freely shared publicly', 'mcp-ai-wpoos' ),
 				'color'       => '#4caf50',
 				'icon'        => '🌐',
 			),
 			self::CLASSIFICATION_INTERNAL     => array(
-				'label'       => __( 'Internal', 'wp-mcp-ai' ),
-				'description' => __( 'Information for internal use only', 'wp-mcp-ai' ),
+				'label'       => __( 'Internal', 'mcp-ai-wpoos' ),
+				'description' => __( 'Information for internal use only', 'mcp-ai-wpoos' ),
 				'color'       => '#2196f3',
 				'icon'        => '🏢',
 			),
 			self::CLASSIFICATION_CONFIDENTIAL => array(
-				'label'       => __( 'Confidential', 'wp-mcp-ai' ),
-				'description' => __( 'Sensitive information requiring protection', 'wp-mcp-ai' ),
+				'label'       => __( 'Confidential', 'mcp-ai-wpoos' ),
+				'description' => __( 'Sensitive information requiring protection', 'mcp-ai-wpoos' ),
 				'color'       => '#ff9800',
 				'icon'        => '🔒',
 			),
 			self::CLASSIFICATION_RESTRICTED   => array(
-				'label'       => __( 'Restricted', 'wp-mcp-ai' ),
-				'description' => __( 'Highly sensitive information with strict access controls', 'wp-mcp-ai' ),
+				'label'       => __( 'Restricted', 'mcp-ai-wpoos' ),
+				'description' => __( 'Highly sensitive information with strict access controls', 'mcp-ai-wpoos' ),
 				'color'       => '#f44336',
 				'icon'        => '🛡️',
 			),
@@ -107,7 +107,7 @@ class WP_MCP_AI_Information_Labelling {
 		if ( in_array( $post_type, $post_types, true ) ) {
 			add_meta_box(
 				'wp_mcp_ai_classification',
-				__( 'Information Classification', 'wp-mcp-ai' ),
+				__( 'Information Classification', 'mcp-ai-wpoos' ),
 				array( $this, 'render_classification_meta_box' ),
 				$post_type,
 				'side',
@@ -151,7 +151,7 @@ class WP_MCP_AI_Information_Labelling {
 		</div>
 
 		<p class="description">
-			<?php esc_html_e( 'Select the appropriate classification level based on the sensitivity of this information.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Select the appropriate classification level based on the sensitivity of this information.', 'mcp-ai-wpoos' ); ?>
 		</p>
 		<?php
 	}
@@ -203,7 +203,7 @@ class WP_MCP_AI_Information_Labelling {
 
 			// Add classification after title.
 			if ( 'title' === $key ) {
-				$new_columns['classification'] = __( 'Classification', 'wp-mcp-ai' );
+				$new_columns['classification'] = __( 'Classification', 'mcp-ai-wpoos' );
 			}
 		}
 

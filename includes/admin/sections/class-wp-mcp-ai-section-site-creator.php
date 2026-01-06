@@ -44,7 +44,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'Site Creator', 'wp-mcp-ai' );
+			return __( 'Site Creator', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -71,7 +71,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Enable AI-powered automated site creation from plans. When enabled, AI assistants can programmatically create complete WordPress sites by installing themes, plugins, configuring options, and creating content.', 'wp-mcp-ai' );
+			return __( 'Enable AI-powered automated site creation from plans. When enabled, AI assistants can programmatically create complete WordPress sites by installing themes, plugins, configuring options, and creating content.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -92,43 +92,43 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 			return array(
 				'enable_site_creator'                     => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Site Creator', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Allow AI to create and configure sites', 'wp-mcp-ai' ),
-					'description'    => __( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content. This feature requires manage_options capability.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Site Creator', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Allow AI to create and configure sites', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content. This feature requires manage_options capability.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'site_creator_allow_plugin_install'       => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Allow Plugin Installation', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable automatic plugin installation from WordPress.org', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
+					'label'          => __( 'Allow Plugin Installation', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable automatic plugin installation from WordPress.org', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'site_creator_allow_theme_install'        => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Allow Theme Installation', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable automatic theme installation from WordPress.org', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
+					'label'          => __( 'Allow Theme Installation', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable automatic theme installation from WordPress.org', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'site_creator_allow_option_updates'       => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Allow Option Updates', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable automatic WordPress option updates', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'wp-mcp-ai' ),
+					'label'          => __( 'Allow Option Updates', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable automatic WordPress option updates', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'site_creator_allow_wp_cli_tools'         => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Allow WP-CLI Tools', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable WP-CLI inspection and execution tools', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI to inspect and interact with the WP-CLI environment. This includes checking WP-CLI availability and version information.', 'wp-mcp-ai' ),
+					'label'          => __( 'Allow WP-CLI Tools', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable WP-CLI inspection and execution tools', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows AI to inspect and interact with the WP-CLI environment. This includes checking WP-CLI availability and version information.', 'mcp-ai-wpoos' ),
 				),
 				'site_creator_allow_elementor_kit_import' => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Allow Elementor Kit Import', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable Elementor template kit import', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI to import Elementor template kits from the Media Library. Requires Elementor to be active.', 'wp-mcp-ai' ),
+					'label'          => __( 'Allow Elementor Kit Import', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Elementor template kit import', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows AI to import Elementor template kits from the Media Library. Requires Elementor to be active.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 			);
@@ -158,7 +158,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 					self::IMPORT_RESULT_TRANSIENT,
 					array(
 						'success' => false,
-						'message' => __( 'Security check failed. Please try again.', 'wp-mcp-ai' ),
+						'message' => __( 'Security check failed. Please try again.', 'mcp-ai-wpoos' ),
 					),
 					60
 				);
@@ -171,7 +171,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 					self::IMPORT_RESULT_TRANSIENT,
 					array(
 						'success' => false,
-						'message' => __( 'You do not have permission to import template kits.', 'wp-mcp-ai' ),
+						'message' => __( 'You do not have permission to import template kits.', 'mcp-ai-wpoos' ),
 					),
 					60
 				);
@@ -184,7 +184,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 					self::IMPORT_RESULT_TRANSIENT,
 					array(
 						'success' => false,
-						'message' => __( 'Elementor must be active to import template kits.', 'wp-mcp-ai' ),
+						'message' => __( 'Elementor must be active to import template kits.', 'mcp-ai-wpoos' ),
 					),
 					60
 				);
@@ -206,7 +206,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 					self::IMPORT_RESULT_TRANSIENT,
 					array(
 						'success' => false,
-						'message' => __( 'Please select a template kit ZIP file.', 'wp-mcp-ai' ),
+						'message' => __( 'Please select a template kit ZIP file.', 'mcp-ai-wpoos' ),
 					),
 					60
 				);
@@ -224,7 +224,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 					self::IMPORT_RESULT_TRANSIENT,
 					array(
 						'success' => false,
-						'message' => __( 'Import tool not available.', 'wp-mcp-ai' ),
+						'message' => __( 'Import tool not available.', 'mcp-ai-wpoos' ),
 					),
 					60
 				);
@@ -288,23 +288,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 				<th scope="row"></th>
 				<td>
 					<p class="description">
-						<strong><?php esc_html_e( 'Security Note:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Security Note:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						echo wp_kses_post(
 							__(
 								'Site creator tools require administrative capabilities (manage_options, install_plugins, install_themes). Only users with these capabilities can execute site creator operations. All plugins and themes are installed exclusively from the official WordPress.org repository.',
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							)
 						);
 						?>
 					</p>
 					<p class="description">
-						<strong><?php esc_html_e( 'Performance Consideration:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Performance Consideration:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						echo wp_kses_post(
 							__(
 								'Site creation operations (especially plugin/theme installation) can take several minutes to complete and may temporarily impact site performance. These operations are marked as long-running and should be executed with appropriate timeouts.',
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							)
 						);
 						?>
@@ -333,7 +333,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 				<th scope="row" colspan="2">
 					<h3 style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccd0d4;">
 						<span class="dashicons dashicons-layout" style="margin-right: 5px;"></span>
-						<?php esc_html_e( 'Import Elementor Template Kit', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Import Elementor Template Kit', 'mcp-ai-wpoos' ); ?>
 					</h3>
 				</th>
 			</tr>
@@ -345,7 +345,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 						<div class="notice notice-warning inline" style="margin: 0;">
 							<p>
 								<span class="dashicons dashicons-warning" style="color: #dba617;"></span>
-								<?php esc_html_e( 'Elementor must be installed and activated to use this feature.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Elementor must be installed and activated to use this feature.', 'mcp-ai-wpoos' ); ?>
 							</p>
 						</div>
 					</td>
@@ -365,7 +365,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 					<th scope="row"></th>
 					<td>
 						<p class="description" style="margin-bottom: 15px;">
-							<?php esc_html_e( 'Import an Elementor template kit ZIP file from your Media Library to quickly create pages with pre-designed layouts.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Import an Elementor template kit ZIP file from your Media Library to quickly create pages with pre-designed layouts.', 'mcp-ai-wpoos' ); ?>
 						</p>
 
 						<form method="post" id="wp-mcp-ai-elementor-kit-form">
@@ -376,19 +376,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 								<tr>
 									<th scope="row">
 										<label for="wp-mcp-ai-kit-attachment">
-											<?php esc_html_e( 'Template Kit ZIP', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Template Kit ZIP', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</th>
 									<td>
 										<div style="display: flex; align-items: center; gap: 10px;">
 											<input type="hidden" name="attachment_id" id="wp-mcp-ai-kit-attachment-id" value="">
-											<input type="text" id="wp-mcp-ai-kit-attachment" class="regular-text" readonly placeholder="<?php esc_attr_e( 'No file selected', 'wp-mcp-ai' ); ?>">
+											<input type="text" id="wp-mcp-ai-kit-attachment" class="regular-text" readonly placeholder="<?php esc_attr_e( 'No file selected', 'mcp-ai-wpoos' ); ?>">
 											<button type="button" class="button" id="wp-mcp-ai-select-kit">
-												<?php esc_html_e( 'Select File', 'wp-mcp-ai' ); ?>
+												<?php esc_html_e( 'Select File', 'mcp-ai-wpoos' ); ?>
 											</button>
 										</div>
 										<p class="description">
-											<?php esc_html_e( 'Select a ZIP file containing an Elementor template kit from your Media Library.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Select a ZIP file containing an Elementor template kit from your Media Library.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
@@ -396,7 +396,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 								<tr>
 									<th scope="row">
 										<label for="wp-mcp-ai-max-pages">
-											<?php esc_html_e( 'Max Pages', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Max Pages', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</th>
 									<td>
@@ -408,7 +408,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 											<option value="5" selected>5</option>
 										</select>
 										<p class="description">
-											<?php esc_html_e( 'Maximum number of pages to create from the template kit.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Maximum number of pages to create from the template kit.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
@@ -416,30 +416,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 								<tr>
 									<th scope="row">
 										<label for="wp-mcp-ai-page-status">
-											<?php esc_html_e( 'Page Status', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Page Status', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</th>
 									<td>
 										<select name="page_status" id="wp-mcp-ai-page-status">
-											<option value="draft" selected><?php esc_html_e( 'Draft', 'wp-mcp-ai' ); ?></option>
-											<option value="publish"><?php esc_html_e( 'Published', 'wp-mcp-ai' ); ?></option>
+											<option value="draft" selected><?php esc_html_e( 'Draft', 'mcp-ai-wpoos' ); ?></option>
+											<option value="publish"><?php esc_html_e( 'Published', 'mcp-ai-wpoos' ); ?></option>
 										</select>
 										<p class="description">
-											<?php esc_html_e( 'Status for created pages.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Status for created pages.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
 
 								<tr>
-									<th scope="row"><?php esc_html_e( 'Options', 'wp-mcp-ai' ); ?></th>
+									<th scope="row"><?php esc_html_e( 'Options', 'mcp-ai-wpoos' ); ?></th>
 									<td>
 										<label style="display: block; margin-bottom: 8px;">
 											<input type="checkbox" name="overwrite_existing" value="1">
-											<?php esc_html_e( 'Overwrite existing pages with the same title', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Overwrite existing pages with the same title', 'mcp-ai-wpoos' ); ?>
 										</label>
 										<label style="display: block;">
 											<input type="checkbox" name="set_front_page" value="1">
-											<?php esc_html_e( 'Set Home page as static front page', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Set Home page as static front page', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</td>
 								</tr>
@@ -450,15 +450,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 										<div style="display: flex; gap: 10px; margin-top: 10px;">
 											<button type="submit" name="action_type" value="test" class="button button-secondary">
 												<span class="dashicons dashicons-visibility" style="margin-top: 3px;"></span>
-												<?php esc_html_e( 'Test Import', 'wp-mcp-ai' ); ?>
+												<?php esc_html_e( 'Test Import', 'mcp-ai-wpoos' ); ?>
 											</button>
 											<button type="submit" name="action_type" value="import" class="button button-primary">
 												<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
-												<?php esc_html_e( 'Run Import', 'wp-mcp-ai' ); ?>
+												<?php esc_html_e( 'Run Import', 'mcp-ai-wpoos' ); ?>
 											</button>
 										</div>
 										<p class="description" style="margin-top: 10px;">
-											<?php esc_html_e( 'Test Import simulates the operation without creating pages. Run Import creates the actual pages.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Test Import simulates the operation without creating pages. Run Import creates the actual pages.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
@@ -483,8 +483,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 				?>
 				<div class="notice notice-error inline" style="margin: 0 0 15px;">
 					<p>
-						<strong><?php esc_html_e( 'Import Failed:', 'wp-mcp-ai' ); ?></strong>
-						<?php echo esc_html( isset( $result['message'] ) ? $result['message'] : __( 'Unknown error occurred.', 'wp-mcp-ai' ) ); ?>
+						<strong><?php esc_html_e( 'Import Failed:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php echo esc_html( isset( $result['message'] ) ? $result['message'] : __( 'Unknown error occurred.', 'mcp-ai-wpoos' ) ); ?>
 					</p>
 				</div>
 				<?php
@@ -499,9 +499,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 					<strong>
 						<?php
 						if ( $is_dry_run ) {
-							esc_html_e( 'Test Import Complete:', 'wp-mcp-ai' );
+							esc_html_e( 'Test Import Complete:', 'mcp-ai-wpoos' );
 						} else {
-							esc_html_e( 'Import Complete:', 'wp-mcp-ai' );
+							esc_html_e( 'Import Complete:', 'mcp-ai-wpoos' );
 						}
 						?>
 					</strong>
@@ -511,15 +511,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 				<?php if ( ! empty( $data['pages_created'] ) || ! empty( $data['pages_updated'] ) ) : ?>
 					<div style="margin-top: 10px;">
 						<?php if ( ! empty( $data['pages_created'] ) ) : ?>
-							<p><strong><?php esc_html_e( 'Pages Created:', 'wp-mcp-ai' ); ?></strong></p>
+							<p><strong><?php esc_html_e( 'Pages Created:', 'mcp-ai-wpoos' ); ?></strong></p>
 							<ul style="margin-left: 20px; list-style: disc;">
 								<?php foreach ( $data['pages_created'] as $page ) : ?>
 									<li>
 										<?php echo esc_html( $page['title'] ); ?>
 										<?php if ( ! $is_dry_run && ! empty( $page['edit_link'] ) ) : ?>
-											- <a href="<?php echo esc_url( $page['edit_link'] ); ?>" target="_blank"><?php esc_html_e( 'Edit', 'wp-mcp-ai' ); ?></a>
+											- <a href="<?php echo esc_url( $page['edit_link'] ); ?>" target="_blank"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></a>
 											<?php if ( ! empty( $page['permalink'] ) ) : ?>
-												| <a href="<?php echo esc_url( $page['permalink'] ); ?>" target="_blank"><?php esc_html_e( 'View', 'wp-mcp-ai' ); ?></a>
+												| <a href="<?php echo esc_url( $page['permalink'] ); ?>" target="_blank"><?php esc_html_e( 'View', 'mcp-ai-wpoos' ); ?></a>
 											<?php endif; ?>
 										<?php endif; ?>
 									</li>
@@ -528,13 +528,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 						<?php endif; ?>
 
 						<?php if ( ! empty( $data['pages_updated'] ) ) : ?>
-							<p><strong><?php esc_html_e( 'Pages Updated:', 'wp-mcp-ai' ); ?></strong></p>
+							<p><strong><?php esc_html_e( 'Pages Updated:', 'mcp-ai-wpoos' ); ?></strong></p>
 							<ul style="margin-left: 20px; list-style: disc;">
 								<?php foreach ( $data['pages_updated'] as $page ) : ?>
 									<li>
 										<?php echo esc_html( $page['title'] ); ?>
 										<?php if ( ! $is_dry_run && ! empty( $page['edit_link'] ) ) : ?>
-											- <a href="<?php echo esc_url( $page['edit_link'] ); ?>" target="_blank"><?php esc_html_e( 'Edit', 'wp-mcp-ai' ); ?></a>
+											- <a href="<?php echo esc_url( $page['edit_link'] ); ?>" target="_blank"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></a>
 										<?php endif; ?>
 									</li>
 								<?php endforeach; ?>
@@ -545,7 +545,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 
 				<?php if ( ! empty( $data['pages_skipped'] ) ) : ?>
 					<div style="margin-top: 10px;">
-						<p><strong><?php esc_html_e( 'Pages Skipped:', 'wp-mcp-ai' ); ?></strong></p>
+						<p><strong><?php esc_html_e( 'Pages Skipped:', 'mcp-ai-wpoos' ); ?></strong></p>
 						<ul style="margin-left: 20px; list-style: disc;">
 							<?php foreach ( $data['pages_skipped'] as $page ) : ?>
 								<li>
@@ -561,7 +561,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 
 				<?php if ( ! empty( $data['errors'] ) ) : ?>
 					<div style="margin-top: 10px;">
-						<p><strong style="color: #d63638;"><?php esc_html_e( 'Errors:', 'wp-mcp-ai' ); ?></strong></p>
+						<p><strong style="color: #d63638;"><?php esc_html_e( 'Errors:', 'mcp-ai-wpoos' ); ?></strong></p>
 						<ul style="margin-left: 20px; list-style: disc; color: #d63638;">
 							<?php foreach ( $data['errors'] as $error ) : ?>
 								<li>
@@ -581,7 +581,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 				<?php if ( ! empty( $data['front_page'] ) ) : ?>
 					<p style="margin-top: 10px;">
 						<span class="dashicons dashicons-admin-home" style="color: #00a32a;"></span>
-						<?php esc_html_e( 'Front page has been set.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Front page has been set.', 'mcp-ai-wpoos' ); ?>
 					</p>
 				<?php endif; ?>
 			</div>
@@ -606,9 +606,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 					}
 
 					mediaFrame = wp.media({
-						title: '<?php echo esc_js( __( 'Select Template Kit ZIP', 'wp-mcp-ai' ) ); ?>',
+						title: '<?php echo esc_js( __( 'Select Template Kit ZIP', 'mcp-ai-wpoos' ) ); ?>',
 						button: {
-							text: '<?php echo esc_js( __( 'Use This File', 'wp-mcp-ai' ) ); ?>'
+							text: '<?php echo esc_js( __( 'Use This File', 'mcp-ai-wpoos' ) ); ?>'
 						},
 						library: {
 							type: 'application/zip'

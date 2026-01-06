@@ -39,8 +39,8 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
-			__( 'Dead Letter Queue', 'wp-mcp-ai' ),
-			__( 'Dead Letter Queue', 'wp-mcp-ai' ),
+			__( 'Dead Letter Queue', 'mcp-ai-wpoos' ),
+			__( 'Dead Letter Queue', 'mcp-ai-wpoos' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
@@ -94,7 +94,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 	 */
 	public function handle_bulk_action() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to manage the dead letter queue.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'You do not have permission to manage the dead letter queue.', 'mcp-ai-wpoos' ) );
 		}
 
 		check_admin_referer( 'wp_mcp_ai_dlq_bulk_action' );
@@ -152,14 +152,14 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 	 */
 	public function handle_single_action() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to manage the dead letter queue.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'You do not have permission to manage the dead letter queue.', 'mcp-ai-wpoos' ) );
 		}
 
 		$item_id    = isset( $_GET['item_id'] ) ? sanitize_key( $_GET['item_id'] ) : '';
 		$dlq_action = isset( $_GET['dlq_action'] ) ? sanitize_key( $_GET['dlq_action'] ) : '';
 
 		if ( '' === $item_id || '' === $dlq_action ) {
-			wp_die( esc_html__( 'Missing parameters.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'Missing parameters.', 'mcp-ai-wpoos' ) );
 		}
 
 		check_admin_referer( 'wp_mcp_ai_dlq_' . $dlq_action . '_' . $item_id );
@@ -220,13 +220,13 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Dead Letter Queue', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'Dead Letter Queue', 'mcp-ai-wpoos' ); ?></h1>
 
 			<?php $this->render_notices(); ?>
 
 			<div class="wp-mcp-ai-dlq__intro">
-				<p><strong><?php esc_html_e( 'About Dead Letter Queue', 'wp-mcp-ai' ); ?></strong></p>
-				<p><?php esc_html_e( 'The Dead Letter Queue (DLQ) stores failed jobs, webhooks, and async operations that exceeded maximum retry attempts. Items here can be retried manually, dismissed, or deleted.', 'wp-mcp-ai' ); ?></p>
+				<p><strong><?php esc_html_e( 'About Dead Letter Queue', 'mcp-ai-wpoos' ); ?></strong></p>
+				<p><?php esc_html_e( 'The Dead Letter Queue (DLQ) stores failed jobs, webhooks, and async operations that exceeded maximum retry attempts. Items here can be retried manually, dismissed, or deleted.', 'mcp-ai-wpoos' ); ?></p>
 			</div>
 
 			<?php $this->render_statistics( $stats ); ?>
@@ -234,8 +234,8 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 
 			<?php if ( empty( $items ) ) : ?>
 				<div class="wp-mcp-ai-dlq__empty">
-					<h3><?php esc_html_e( 'No items in dead letter queue', 'wp-mcp-ai' ); ?></h3>
-					<p><?php esc_html_e( 'This is good! All your jobs and webhooks are completing successfully.', 'wp-mcp-ai' ); ?></p>
+					<h3><?php esc_html_e( 'No items in dead letter queue', 'mcp-ai-wpoos' ); ?></h3>
+					<p><?php esc_html_e( 'This is good! All your jobs and webhooks are completing successfully.', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 			<?php else : ?>
 				<?php $this->render_table( $items ); ?>
@@ -257,16 +257,16 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 					<?php
 					switch ( $action ) {
 						case 'retry':
-							esc_html_e( 'Item successfully retried.', 'wp-mcp-ai' );
+							esc_html_e( 'Item successfully retried.', 'mcp-ai-wpoos' );
 							break;
 						case 'dismiss':
-							esc_html_e( 'Item dismissed.', 'wp-mcp-ai' );
+							esc_html_e( 'Item dismissed.', 'mcp-ai-wpoos' );
 							break;
 						case 'delete':
-							esc_html_e( 'Item deleted.', 'wp-mcp-ai' );
+							esc_html_e( 'Item deleted.', 'mcp-ai-wpoos' );
 							break;
 						default:
-							esc_html_e( 'Action completed successfully.', 'wp-mcp-ai' );
+							esc_html_e( 'Action completed successfully.', 'mcp-ai-wpoos' );
 					}
 					?>
 				</p>
@@ -284,7 +284,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 					<?php
 					printf(
 						/* translators: 1: number of items processed, 2: number of errors */
-						esc_html__( 'Bulk action completed: %1$d items processed, %2$d errors.', 'wp-mcp-ai' ),
+						esc_html__( 'Bulk action completed: %1$d items processed, %2$d errors.', 'mcp-ai-wpoos' ),
 						(int) $processed,
 						(int) $errors
 					);
@@ -298,7 +298,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 			$error = sanitize_key( $_GET['error'] );
 			?>
 			<div class="notice notice-error is-dismissible">
-				<p><?php esc_html_e( 'An error occurred. Please try again.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'An error occurred. Please try again.', 'mcp-ai-wpoos' ); ?></p>
 			</div>
 			<?php
 		}
@@ -314,15 +314,15 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 		?>
 		<div class="wp-mcp-ai-dlq__stats">
 			<div class="wp-mcp-ai-dlq__stat">
-				<div class="wp-mcp-ai-dlq__stat-label"><?php esc_html_e( 'Total Items', 'wp-mcp-ai' ); ?></div>
+				<div class="wp-mcp-ai-dlq__stat-label"><?php esc_html_e( 'Total Items', 'mcp-ai-wpoos' ); ?></div>
 				<div class="wp-mcp-ai-dlq__stat-value"><?php echo esc_html( number_format_i18n( $stats['total'] ) ); ?></div>
 			</div>
 			<div class="wp-mcp-ai-dlq__stat">
-				<div class="wp-mcp-ai-dlq__stat-label"><?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></div>
+				<div class="wp-mcp-ai-dlq__stat-label"><?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></div>
 				<div class="wp-mcp-ai-dlq__stat-value"><?php echo esc_html( number_format_i18n( $stats['active'] ) ); ?></div>
 			</div>
 			<div class="wp-mcp-ai-dlq__stat">
-				<div class="wp-mcp-ai-dlq__stat-label"><?php esc_html_e( 'Dismissed', 'wp-mcp-ai' ); ?></div>
+				<div class="wp-mcp-ai-dlq__stat-label"><?php esc_html_e( 'Dismissed', 'mcp-ai-wpoos' ); ?></div>
 				<div class="wp-mcp-ai-dlq__stat-value"><?php echo esc_html( number_format_i18n( $stats['dismissed'] ) ); ?></div>
 			</div>
 		</div>
@@ -341,26 +341,26 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 			<input type="hidden" name="page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>">
 
 			<label>
-				<?php esc_html_e( 'Type:', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Type:', 'mcp-ai-wpoos' ); ?>
 				<select name="filter_type">
-					<option value="all" <?php selected( $filter_type, 'all' ); ?>><?php esc_html_e( 'All Types', 'wp-mcp-ai' ); ?></option>
-					<option value="webhook" <?php selected( $filter_type, 'webhook' ); ?>><?php esc_html_e( 'Webhooks', 'wp-mcp-ai' ); ?></option>
-					<option value="cron_job" <?php selected( $filter_type, 'cron_job' ); ?>><?php esc_html_e( 'Cron Jobs', 'wp-mcp-ai' ); ?></option>
-					<option value="async_tool" <?php selected( $filter_type, 'async_tool' ); ?>><?php esc_html_e( 'Async Tools', 'wp-mcp-ai' ); ?></option>
-					<option value="job_queue" <?php selected( $filter_type, 'job_queue' ); ?>><?php esc_html_e( 'Job Queue', 'wp-mcp-ai' ); ?></option>
+					<option value="all" <?php selected( $filter_type, 'all' ); ?>><?php esc_html_e( 'All Types', 'mcp-ai-wpoos' ); ?></option>
+					<option value="webhook" <?php selected( $filter_type, 'webhook' ); ?>><?php esc_html_e( 'Webhooks', 'mcp-ai-wpoos' ); ?></option>
+					<option value="cron_job" <?php selected( $filter_type, 'cron_job' ); ?>><?php esc_html_e( 'Cron Jobs', 'mcp-ai-wpoos' ); ?></option>
+					<option value="async_tool" <?php selected( $filter_type, 'async_tool' ); ?>><?php esc_html_e( 'Async Tools', 'mcp-ai-wpoos' ); ?></option>
+					<option value="job_queue" <?php selected( $filter_type, 'job_queue' ); ?>><?php esc_html_e( 'Job Queue', 'mcp-ai-wpoos' ); ?></option>
 				</select>
 			</label>
 
 			<label>
-				<?php esc_html_e( 'Status:', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?>
 				<select name="filter_dismissed">
-					<option value="" <?php selected( $filter_dismissed, '' ); ?>><?php esc_html_e( 'All', 'wp-mcp-ai' ); ?></option>
-					<option value="no" <?php selected( $filter_dismissed, 'no' ); ?>><?php esc_html_e( 'Active Only', 'wp-mcp-ai' ); ?></option>
-					<option value="yes" <?php selected( $filter_dismissed, 'yes' ); ?>><?php esc_html_e( 'Dismissed Only', 'wp-mcp-ai' ); ?></option>
+					<option value="" <?php selected( $filter_dismissed, '' ); ?>><?php esc_html_e( 'All', 'mcp-ai-wpoos' ); ?></option>
+					<option value="no" <?php selected( $filter_dismissed, 'no' ); ?>><?php esc_html_e( 'Active Only', 'mcp-ai-wpoos' ); ?></option>
+					<option value="yes" <?php selected( $filter_dismissed, 'yes' ); ?>><?php esc_html_e( 'Dismissed Only', 'mcp-ai-wpoos' ); ?></option>
 				</select>
 			</label>
 
-			<?php submit_button( __( 'Filter', 'wp-mcp-ai' ), 'secondary', 'submit', false ); ?>
+			<?php submit_button( __( 'Filter', 'mcp-ai-wpoos' ), 'secondary', 'submit', false ); ?>
 		</form>
 		<?php
 	}
@@ -379,12 +379,12 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 			<div class="tablenav top">
 				<div class="alignleft actions bulkactions">
 					<select name="action">
-						<option value=""><?php esc_html_e( 'Bulk Actions', 'wp-mcp-ai' ); ?></option>
-						<option value="retry"><?php esc_html_e( 'Retry', 'wp-mcp-ai' ); ?></option>
-						<option value="dismiss"><?php esc_html_e( 'Dismiss', 'wp-mcp-ai' ); ?></option>
-						<option value="delete"><?php esc_html_e( 'Delete', 'wp-mcp-ai' ); ?></option>
+						<option value=""><?php esc_html_e( 'Bulk Actions', 'mcp-ai-wpoos' ); ?></option>
+						<option value="retry"><?php esc_html_e( 'Retry', 'mcp-ai-wpoos' ); ?></option>
+						<option value="dismiss"><?php esc_html_e( 'Dismiss', 'mcp-ai-wpoos' ); ?></option>
+						<option value="delete"><?php esc_html_e( 'Delete', 'mcp-ai-wpoos' ); ?></option>
 					</select>
-					<?php submit_button( __( 'Apply', 'wp-mcp-ai' ), 'action', '', false ); ?>
+					<?php submit_button( __( 'Apply', 'mcp-ai-wpoos' ), 'action', '', false ); ?>
 				</div>
 			</div>
 
@@ -392,12 +392,12 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 				<thead>
 					<tr>
 						<th style="width:40px;"><input type="checkbox" id="select-all"></th>
-						<th><?php esc_html_e( 'Type', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Identifier', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Failure Reason', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Retries', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Added', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Identifier', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Failure Reason', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Retries', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Added', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -415,7 +415,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 							<td>
 								<code><?php echo esc_html( $item['identifier'] ); ?></code>
 								<?php if ( ! empty( $item['dismissed'] ) ) : ?>
-									<br><em><?php esc_html_e( '(Dismissed)', 'wp-mcp-ai' ); ?></em>
+									<br><em><?php esc_html_e( '(Dismissed)', 'mcp-ai-wpoos' ); ?></em>
 								<?php endif; ?>
 							</td>
 							<td>
@@ -455,10 +455,10 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 	 */
 	protected function format_type( $type ) {
 		$labels = array(
-			'webhook'    => __( 'Webhook', 'wp-mcp-ai' ),
-			'cron_job'   => __( 'Cron Job', 'wp-mcp-ai' ),
-			'async_tool' => __( 'Async Tool', 'wp-mcp-ai' ),
-			'job_queue'  => __( 'Job Queue', 'wp-mcp-ai' ),
+			'webhook'    => __( 'Webhook', 'mcp-ai-wpoos' ),
+			'cron_job'   => __( 'Cron Job', 'mcp-ai-wpoos' ),
+			'async_tool' => __( 'Async Tool', 'mcp-ai-wpoos' ),
+			'job_queue'  => __( 'Job Queue', 'mcp-ai-wpoos' ),
 		);
 
 		$label = isset( $labels[ $type ] ) ? $labels[ $type ] : $type;
@@ -492,7 +492,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 		$actions[] = sprintf(
 			'<a href="%s">%s</a>',
 			esc_url( $retry_url ),
-			esc_html__( 'Retry', 'wp-mcp-ai' )
+			esc_html__( 'Retry', 'mcp-ai-wpoos' )
 		);
 
 		// Dismiss link (if not already dismissed).
@@ -511,7 +511,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 			$actions[] = sprintf(
 				'<a href="%s">%s</a>',
 				esc_url( $dismiss_url ),
-				esc_html__( 'Dismiss', 'wp-mcp-ai' )
+				esc_html__( 'Dismiss', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -530,8 +530,8 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 		$actions[] = sprintf(
 			'<a href="%s" onclick="return confirm(\'%s\')">%s</a>',
 			esc_url( $delete_url ),
-			esc_js( __( 'Are you sure you want to delete this item?', 'wp-mcp-ai' ) ),
-			esc_html__( 'Delete', 'wp-mcp-ai' )
+			esc_js( __( 'Are you sure you want to delete this item?', 'mcp-ai-wpoos' ) ),
+			esc_html__( 'Delete', 'mcp-ai-wpoos' )
 		);
 
 		return implode( ' | ', $actions );

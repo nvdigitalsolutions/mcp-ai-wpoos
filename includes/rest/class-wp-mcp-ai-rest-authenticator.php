@@ -167,7 +167,7 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( empty( $key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_mesh_key',
-				__( 'Mesh API key is missing.', 'wp-mcp-ai' ),
+				__( 'Mesh API key is missing.', 'mcp-ai-wpoos' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -178,7 +178,7 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( empty( $settings['enable_mesh'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mesh_disabled',
-				__( 'Mesh networking is not enabled on this site.', 'wp-mcp-ai' ),
+				__( 'Mesh networking is not enabled on this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -189,7 +189,7 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( empty( $inbound_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mesh_not_configured',
-				__( 'Mesh networking inbound API key is not configured.', 'wp-mcp-ai' ),
+				__( 'Mesh networking inbound API key is not configured.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -198,7 +198,7 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( ! hash_equals( $inbound_key, $key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_mesh_key',
-				__( 'Invalid mesh API key.', 'wp-mcp-ai' ),
+				__( 'Invalid mesh API key.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -308,11 +308,11 @@ class WP_MCP_AI_REST_Authenticator {
 
 			return ( $pre instanceof WP_Error ) ? $pre : new WP_Error(
 				'wp_mcp_ai_invalid_bearer_token',
-				__( 'The supplied bearer token is invalid.', 'wp-mcp-ai' ),
+				__( 'The supplied bearer token is invalid.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 401,
 					'actions' => array(
-						'obtain_new_token' => __( 'Request a fresh Auth0 access token and retry the call.', 'wp-mcp-ai' ),
+						'obtain_new_token' => __( 'Request a fresh Auth0 access token and retry the call.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -321,11 +321,11 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( empty( $token ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_bearer_token',
-				__( 'The supplied bearer token is invalid.', 'wp-mcp-ai' ),
+				__( 'The supplied bearer token is invalid.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 401,
 					'actions' => array(
-						'obtain_new_token' => __( 'Request a fresh Auth0 access token and retry the call.', 'wp-mcp-ai' ),
+						'obtain_new_token' => __( 'Request a fresh Auth0 access token and retry the call.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -346,11 +346,11 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( ! function_exists( 'openssl_verify' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_openssl',
-				__( 'PHP OpenSSL support is required to validate Auth0 bearer tokens.', 'wp-mcp-ai' ),
+				__( 'PHP OpenSSL support is required to validate Auth0 bearer tokens.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 500,
 					'actions' => array(
-						'enable_openssl' => __( 'Enable the PHP OpenSSL extension on the web server.', 'wp-mcp-ai' ),
+						'enable_openssl' => __( 'Enable the PHP OpenSSL extension on the web server.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -362,11 +362,11 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( empty( $domain ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_not_configured',
-				__( 'Auth0 authentication is not configured. Set the Auth0 domain in the NV oOS settings screen.', 'wp-mcp-ai' ),
+				__( 'Auth0 authentication is not configured. Set the Auth0 domain in the NV oOS settings screen.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 500,
 					'actions' => array(
-						'configure_auth0_domain' => __( 'In WordPress, visit Settings → NV oOS and provide the Auth0 domain.', 'wp-mcp-ai' ),
+						'configure_auth0_domain' => __( 'In WordPress, visit Settings → NV oOS and provide the Auth0 domain.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -412,11 +412,11 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( empty( $payload['exp'] ) || time() >= (int) $payload['exp'] ) {
 			return new WP_Error(
 				'wp_mcp_ai_expired_bearer_token',
-				__( 'The provided bearer token has expired.', 'wp-mcp-ai' ),
+				__( 'The provided bearer token has expired.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 401,
 					'actions' => array(
-						'obtain_new_token' => __( 'Request a fresh Auth0 access token and retry the call.', 'wp-mcp-ai' ),
+						'obtain_new_token' => __( 'Request a fresh Auth0 access token and retry the call.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -431,11 +431,11 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( ! empty( $audience ) && ! $this->audience_matches( $payload, $audience ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_bearer_audience',
-				__( 'The bearer token was not issued for this MCP API.', 'wp-mcp-ai' ),
+				__( 'The bearer token was not issued for this MCP API.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 403,
 					'actions' => array(
-						'request_correct_audience' => __( 'Request an Auth0 access token that includes the configured API audience.', 'wp-mcp-ai' ),
+						'request_correct_audience' => __( 'Request an Auth0 access token that includes the configured API audience.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -445,13 +445,13 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( ! empty( $required_scope ) && ! $this->scope_satisfied( $payload, $required_scope ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_insufficient_bearer_scope',
-				__( 'The bearer token is missing the required scope to call this endpoint.', 'wp-mcp-ai' ),
+				__( 'The bearer token is missing the required scope to call this endpoint.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 403,
 					'actions' => array(
 						'request_scope' => sprintf(
 							/* translators: %s: required Auth0 scope name */
-							__( 'Request an Auth0 access token that includes the "%s" scope.', 'wp-mcp-ai' ),
+							__( 'Request an Auth0 access token that includes the "%s" scope.', 'mcp-ai-wpoos' ),
 							$required_scope
 						),
 					),
@@ -520,11 +520,11 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_jwks_fetch_failed',
-				__( 'Unable to contact Auth0 to validate the bearer token.', 'wp-mcp-ai' ),
+				__( 'Unable to contact Auth0 to validate the bearer token.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 502,
 					'actions' => array(
-						'retry_request' => __( 'Retry the request once connectivity with Auth0 is restored.', 'wp-mcp-ai' ),
+						'retry_request' => __( 'Retry the request once connectivity with Auth0 is restored.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -534,11 +534,11 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( 200 !== $code ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_jwks_fetch_failed',
-				__( 'Auth0 rejected the JWKS request while validating the bearer token.', 'wp-mcp-ai' ),
+				__( 'Auth0 rejected the JWKS request while validating the bearer token.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 502,
 					'actions' => array(
-						'retry_request' => __( 'Retry the request once connectivity with Auth0 is restored.', 'wp-mcp-ai' ),
+						'retry_request' => __( 'Retry the request once connectivity with Auth0 is restored.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -549,11 +549,11 @@ class WP_MCP_AI_REST_Authenticator {
 		if ( empty( $body['keys'] ) || ! is_array( $body['keys'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_jwks_fetch_failed',
-				__( 'Auth0 did not return a valid JWKS response.', 'wp-mcp-ai' ),
+				__( 'Auth0 did not return a valid JWKS response.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 502,
 					'actions' => array(
-						'retry_request' => __( 'Retry the request once connectivity with Auth0 is restored.', 'wp-mcp-ai' ),
+						'retry_request' => __( 'Retry the request once connectivity with Auth0 is restored.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -579,7 +579,7 @@ class WP_MCP_AI_REST_Authenticator {
 			'wp_mcp_ai_insufficient_permissions',
 			sprintf(
 				/* translators: %s: WordPress capability name */
-				__( 'The authenticated user cannot access the NV oOS API. Grant the account the "%s" capability or switch to another user.', 'wp-mcp-ai' ),
+				__( 'The authenticated user cannot access the NV oOS API. Grant the account the "%s" capability or switch to another user.', 'mcp-ai-wpoos' ),
 				$capability
 			),
 			array(
@@ -587,7 +587,7 @@ class WP_MCP_AI_REST_Authenticator {
 				'actions' => array(
 					'grant_capability' => sprintf(
 						/* translators: %s: WordPress capability name */
-						__( 'Assign a role that includes the "%s" capability.', 'wp-mcp-ai' ),
+						__( 'Assign a role that includes the "%s" capability.', 'mcp-ai-wpoos' ),
 						$capability
 					),
 				),
@@ -771,11 +771,11 @@ class WP_MCP_AI_REST_Authenticator {
 	protected function invalid_bearer_error() {
 		return new WP_Error(
 			'wp_mcp_ai_invalid_bearer_token',
-			__( 'The supplied bearer token is invalid.', 'wp-mcp-ai' ),
+			__( 'The supplied bearer token is invalid.', 'mcp-ai-wpoos' ),
 			array(
 				'status'  => 401,
 				'actions' => array(
-					'obtain_new_token' => __( 'Request a fresh Auth0 access token and retry the call.', 'wp-mcp-ai' ),
+					'obtain_new_token' => __( 'Request a fresh Auth0 access token and retry the call.', 'mcp-ai-wpoos' ),
 				),
 			)
 		);

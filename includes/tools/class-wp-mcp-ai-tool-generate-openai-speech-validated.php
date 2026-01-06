@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech_Validated extends WP_MCP_AI_Validate
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate OpenAI Speech (Validated)', 'wp-mcp-ai' );
+		return __( 'Generate OpenAI Speech (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Converts text to speech using OpenAI and stores the audio in the Media Library with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Converts text to speech using OpenAI and stores the audio in the Media Library with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

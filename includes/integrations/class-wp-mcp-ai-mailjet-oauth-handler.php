@@ -27,7 +27,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 		 */
 		public function handle_mailjet_oauth_start() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_mailjet_oauth_start' );
@@ -37,7 +37,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 			if ( empty( $settings['mailjet_client_id'] ) || empty( $settings['mailjet_client_secret'] ) ) {
 				$this->add_settings_redirect_notice(
 					'mailjet_oauth_missing_client',
-					__( 'Enter a Mailjet OAuth Client ID and Client Secret before connecting the account.', 'wp-mcp-ai' ),
+					__( 'Enter a Mailjet OAuth Client ID and Client Secret before connecting the account.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -81,7 +81,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 		 */
 		public function handle_mailjet_oauth_callback() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			// OAuth callback parameters from Mailjet. No nonce verification required as state parameter provides CSRF protection.
@@ -101,7 +101,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 					'mailjet_oauth_error',
 					sprintf(
 						/* translators: %s: Mailjet error message. */
-						__( 'Mailjet returned an error during authorization: %s', 'wp-mcp-ai' ),
+						__( 'Mailjet returned an error during authorization: %s', 'mcp-ai-wpoos' ),
 						$error_message
 					),
 					'error'
@@ -117,7 +117,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 			if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
 				$this->add_settings_redirect_notice(
 					'mailjet_oauth_state_mismatch',
-					__( 'The Mailjet authorization request could not be verified. Please try again.', 'wp-mcp-ai' ),
+					__( 'The Mailjet authorization request could not be verified. Please try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -126,7 +126,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 			if ( empty( $code ) ) {
 				$this->add_settings_redirect_notice(
 					'mailjet_oauth_missing_code',
-					__( 'Mailjet did not return an authorization code. Please try again.', 'wp-mcp-ai' ),
+					__( 'Mailjet did not return an authorization code. Please try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -137,7 +137,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 			if ( empty( $settings['mailjet_client_id'] ) || empty( $settings['mailjet_client_secret'] ) ) {
 				$this->add_settings_redirect_notice(
 					'mailjet_oauth_missing_client',
-					__( 'Enter a Mailjet OAuth Client ID and Client Secret before connecting the account.', 'wp-mcp-ai' ),
+					__( 'Enter a Mailjet OAuth Client ID and Client Secret before connecting the account.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -173,7 +173,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'Mailjet OAuth token exchange failed.', array( 'error' => $response->get_error_message() ) );
 				$this->add_settings_redirect_notice(
 					'mailjet_oauth_token_request_failed',
-					__( 'Mailjet could not exchange the authorization code. Check the OAuth credentials and try again.', 'wp-mcp-ai' ),
+					__( 'Mailjet could not exchange the authorization code. Check the OAuth credentials and try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -192,7 +192,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 				);
 				$this->add_settings_redirect_notice(
 					'mailjet_oauth_token_request_error',
-					__( 'Mailjet rejected the authorization code. Review the OAuth application configuration and try again.', 'wp-mcp-ai' ),
+					__( 'Mailjet rejected the authorization code. Review the OAuth application configuration and try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -204,7 +204,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'Mailjet OAuth token response was not valid JSON.', array( 'body' => $body ) );
 				$this->add_settings_redirect_notice(
 					'mailjet_oauth_token_invalid_json',
-					__( 'Mailjet returned an unexpected response while exchanging the authorization code.', 'wp-mcp-ai' ),
+					__( 'Mailjet returned an unexpected response while exchanging the authorization code.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -216,7 +216,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'Mailjet OAuth callback omitted an access token.', array( 'response' => $decoded ) );
 				$this->add_settings_redirect_notice(
 					'mailjet_oauth_missing_access_token',
-					__( 'Mailjet did not return an access token. Please try again.', 'wp-mcp-ai' ),
+					__( 'Mailjet did not return an access token. Please try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -236,7 +236,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 
 			$this->add_settings_redirect_notice(
 				'mailjet_connected',
-				__( 'Successfully connected to Mailjet! Your access token has been saved.', 'wp-mcp-ai' ),
+				__( 'Successfully connected to Mailjet! Your access token has been saved.', 'mcp-ai-wpoos' ),
 				'success'
 			);
 			$this->redirect_to_settings_page();
@@ -247,7 +247,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 		 */
 		public function handle_mailjet_disconnect() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_mailjet_disconnect' );
@@ -265,7 +265,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 
 			$this->add_settings_redirect_notice(
 				'mailjet_disconnected',
-				__( 'Disconnected from Mailjet. Your OAuth credentials remain saved for future connections.', 'wp-mcp-ai' ),
+				__( 'Disconnected from Mailjet. Your OAuth credentials remain saved for future connections.', 'mcp-ai-wpoos' ),
 				'success'
 			);
 			$this->redirect_to_settings_page();
@@ -359,7 +359,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 			if ( empty( $settings['mailjet_access_token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_mailjet_no_token',
-					__( 'Mailjet is not connected.', 'wp-mcp-ai' )
+					__( 'Mailjet is not connected.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -387,14 +387,14 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 			if ( empty( $settings['mailjet_refresh_token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_mailjet_no_refresh_token',
-					__( 'Mailjet refresh token is not available. Please reconnect.', 'wp-mcp-ai' )
+					__( 'Mailjet refresh token is not available. Please reconnect.', 'mcp-ai-wpoos' )
 				);
 			}
 
 			if ( empty( $settings['mailjet_client_id'] ) || empty( $settings['mailjet_client_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_mailjet_no_credentials',
-					__( 'Mailjet OAuth credentials are not configured.', 'wp-mcp-ai' )
+					__( 'Mailjet OAuth credentials are not configured.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -428,7 +428,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 					'wp_mcp_ai_mailjet_refresh_failed',
 					sprintf(
 						/* translators: %d: HTTP status code. */
-						__( 'Mailjet token refresh failed with HTTP %d', 'wp-mcp-ai' ),
+						__( 'Mailjet token refresh failed with HTTP %d', 'mcp-ai-wpoos' ),
 						$status_code
 					)
 				);
@@ -439,7 +439,7 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 			if ( ! is_array( $decoded ) || empty( $decoded['access_token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_mailjet_invalid_refresh_response',
-					__( 'Mailjet returned an invalid refresh response.', 'wp-mcp-ai' )
+					__( 'Mailjet returned an invalid refresh response.', 'mcp-ai-wpoos' )
 				);
 			}
 

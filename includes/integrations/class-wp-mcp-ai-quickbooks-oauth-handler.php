@@ -28,7 +28,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 		 */
 		public function handle_quickbooks_oauth_start() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_quickbooks_oauth_start' );
@@ -38,7 +38,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			if ( empty( $settings['quickbooks_client_id'] ) || empty( $settings['quickbooks_client_secret'] ) ) {
 				$this->add_settings_redirect_notice(
 					'quickbooks_oauth_missing_client',
-					__( 'Enter a QuickBooks OAuth Client ID and Client Secret before connecting the account.', 'wp-mcp-ai' ),
+					__( 'Enter a QuickBooks OAuth Client ID and Client Secret before connecting the account.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -92,7 +92,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 		 */
 		public function handle_quickbooks_oauth_callback() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			// OAuth callback parameters from QuickBooks. No nonce verification required as state parameter provides CSRF protection.
@@ -114,7 +114,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 					'quickbooks_oauth_error',
 					sprintf(
 						/* translators: %s: QuickBooks error message. */
-						__( 'QuickBooks returned an error during authorization: %s', 'wp-mcp-ai' ),
+						__( 'QuickBooks returned an error during authorization: %s', 'mcp-ai-wpoos' ),
 						$error_message
 					),
 					'error'
@@ -130,7 +130,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
 				$this->add_settings_redirect_notice(
 					'quickbooks_oauth_state_mismatch',
-					__( 'The QuickBooks authorization request could not be verified. Please try again.', 'wp-mcp-ai' ),
+					__( 'The QuickBooks authorization request could not be verified. Please try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -139,7 +139,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			if ( empty( $code ) ) {
 				$this->add_settings_redirect_notice(
 					'quickbooks_oauth_missing_code',
-					__( 'QuickBooks did not return an authorization code. Please try again.', 'wp-mcp-ai' ),
+					__( 'QuickBooks did not return an authorization code. Please try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -148,7 +148,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			if ( empty( $realm_id ) ) {
 				$this->add_settings_redirect_notice(
 					'quickbooks_oauth_missing_realm_id',
-					__( 'QuickBooks did not return a company ID (realmId). Please try again.', 'wp-mcp-ai' ),
+					__( 'QuickBooks did not return a company ID (realmId). Please try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -159,7 +159,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			if ( empty( $settings['quickbooks_client_id'] ) || empty( $settings['quickbooks_client_secret'] ) ) {
 				$this->add_settings_redirect_notice(
 					'quickbooks_oauth_missing_client',
-					__( 'Enter a QuickBooks OAuth Client ID and Client Secret before connecting the account.', 'wp-mcp-ai' ),
+					__( 'Enter a QuickBooks OAuth Client ID and Client Secret before connecting the account.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -198,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'QuickBooks OAuth token exchange failed.', array( 'error' => $response->get_error_message() ) );
 				$this->add_settings_redirect_notice(
 					'quickbooks_oauth_token_request_failed',
-					__( 'QuickBooks could not exchange the authorization code. Check the OAuth credentials and try again.', 'wp-mcp-ai' ),
+					__( 'QuickBooks could not exchange the authorization code. Check the OAuth credentials and try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -217,7 +217,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 				);
 				$this->add_settings_redirect_notice(
 					'quickbooks_oauth_token_request_error',
-					__( 'QuickBooks rejected the authorization code. Review the OAuth application configuration and try again.', 'wp-mcp-ai' ),
+					__( 'QuickBooks rejected the authorization code. Review the OAuth application configuration and try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -229,7 +229,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'QuickBooks OAuth token response was not valid JSON.', array( 'body' => $body ) );
 				$this->add_settings_redirect_notice(
 					'quickbooks_oauth_token_invalid_json',
-					__( 'QuickBooks returned an unexpected response while exchanging the authorization code.', 'wp-mcp-ai' ),
+					__( 'QuickBooks returned an unexpected response while exchanging the authorization code.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -241,7 +241,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'QuickBooks OAuth callback omitted an access token.', array( 'response' => $decoded ) );
 				$this->add_settings_redirect_notice(
 					'quickbooks_oauth_missing_access_token',
-					__( 'QuickBooks did not return an access token. Please try again.', 'wp-mcp-ai' ),
+					__( 'QuickBooks did not return an access token. Please try again.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -264,7 +264,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 				'quickbooks_connected',
 				sprintf(
 					/* translators: %s: Company ID. */
-					__( 'Successfully connected to QuickBooks! Company ID: %s', 'wp-mcp-ai' ),
+					__( 'Successfully connected to QuickBooks! Company ID: %s', 'mcp-ai-wpoos' ),
 					$realm_id
 				),
 				'success'
@@ -277,7 +277,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 		 */
 		public function handle_quickbooks_disconnect() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_quickbooks_disconnect' );
@@ -295,7 +295,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 
 			$this->add_settings_redirect_notice(
 				'quickbooks_disconnected',
-				__( 'Disconnected from QuickBooks. Your OAuth credentials and company ID remain saved for future connections.', 'wp-mcp-ai' ),
+				__( 'Disconnected from QuickBooks. Your OAuth credentials and company ID remain saved for future connections.', 'mcp-ai-wpoos' ),
 				'success'
 			);
 			$this->redirect_to_settings_page();
@@ -389,7 +389,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			if ( empty( $settings['quickbooks_access_token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_quickbooks_no_token',
-					__( 'QuickBooks is not connected.', 'wp-mcp-ai' )
+					__( 'QuickBooks is not connected.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -417,14 +417,14 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			if ( empty( $settings['quickbooks_refresh_token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_quickbooks_no_refresh_token',
-					__( 'QuickBooks refresh token is not available. Please reconnect.', 'wp-mcp-ai' )
+					__( 'QuickBooks refresh token is not available. Please reconnect.', 'mcp-ai-wpoos' )
 				);
 			}
 
 			if ( empty( $settings['quickbooks_client_id'] ) || empty( $settings['quickbooks_client_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_quickbooks_no_credentials',
-					__( 'QuickBooks OAuth credentials are not configured.', 'wp-mcp-ai' )
+					__( 'QuickBooks OAuth credentials are not configured.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -459,7 +459,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 					'wp_mcp_ai_quickbooks_refresh_failed',
 					sprintf(
 						/* translators: %d: HTTP status code. */
-						__( 'QuickBooks token refresh failed with HTTP %d', 'wp-mcp-ai' ),
+						__( 'QuickBooks token refresh failed with HTTP %d', 'mcp-ai-wpoos' ),
 						$status_code
 					)
 				);
@@ -470,7 +470,7 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			if ( ! is_array( $decoded ) || empty( $decoded['access_token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_quickbooks_invalid_refresh_response',
-					__( 'QuickBooks returned an invalid refresh response.', 'wp-mcp-ai' )
+					__( 'QuickBooks returned an invalid refresh response.', 'mcp-ai-wpoos' )
 				);
 			}
 

@@ -44,7 +44,7 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 				'wp_mcp_ai_script_not_found',
 				sprintf(
 					/* translators: %s: script path */
-					__( 'Node.js script not found: %s', 'wp-mcp-ai' ),
+					__( 'Node.js script not found: %s', 'mcp-ai-wpoos' ),
 					$script_path
 				)
 			);
@@ -97,7 +97,7 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 				'wp_mcp_ai_script_timeout',
 				sprintf(
 					/* translators: %d: timeout in seconds */
-					__( 'Node.js script execution timed out after %d seconds.', 'wp-mcp-ai' ),
+					__( 'Node.js script execution timed out after %d seconds.', 'mcp-ai-wpoos' ),
 					$timeout
 				)
 			);
@@ -125,7 +125,7 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 				'wp_mcp_ai_script_error',
 				sprintf(
 					/* translators: 1: return code, 2: error message */
-					__( 'Node.js script failed with code %1$d: %2$s', 'wp-mcp-ai' ),
+					__( 'Node.js script failed with code %1$d: %2$s', 'mcp-ai-wpoos' ),
 					$return_code,
 					$error_message
 				),
@@ -145,7 +145,7 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 					'wp_mcp_ai_invalid_json',
 					sprintf(
 						/* translators: %s: json error */
-						__( 'Failed to parse Node.js script output as JSON: %s', 'wp-mcp-ai' ),
+						__( 'Failed to parse Node.js script output as JSON: %s', 'mcp-ai-wpoos' ),
 						json_last_error_msg()
 					),
 					array(
@@ -199,7 +199,7 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 
 		return new WP_Error(
 			'wp_mcp_ai_nodejs_not_found',
-			__( 'Node.js executable not found. Please ensure Node.js is installed and accessible.', 'wp-mcp-ai' )
+			__( 'Node.js executable not found. Please ensure Node.js is installed and accessible.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -230,7 +230,7 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 		if ( 0 !== $return_code || empty( $output ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_nodejs_version_error',
-				__( 'Failed to get Node.js version.', 'wp-mcp-ai' )
+				__( 'Failed to get Node.js version.', 'mcp-ai-wpoos' )
 			);
 		}
 

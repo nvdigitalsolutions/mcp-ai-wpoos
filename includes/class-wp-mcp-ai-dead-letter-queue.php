@@ -57,14 +57,14 @@ class WP_MCP_AI_Dead_Letter_Queue {
 		if ( ! in_array( $type, self::get_valid_types(), true ) ) {
 			return new WP_Error(
 				'invalid_type',
-				__( 'Invalid dead letter queue item type.', 'wp-mcp-ai' )
+				__( 'Invalid dead letter queue item type.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( '' === $identifier ) {
 			return new WP_Error(
 				'invalid_identifier',
-				__( 'Dead letter queue item must have an identifier.', 'wp-mcp-ai' )
+				__( 'Dead letter queue item must have an identifier.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -178,7 +178,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 		if ( ! $item ) {
 			return new WP_Error(
 				'item_not_found',
-				__( 'Dead letter queue item not found.', 'wp-mcp-ai' )
+				__( 'Dead letter queue item not found.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -205,7 +205,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 			default:
 				$result = new WP_Error(
 					'unsupported_type',
-					__( 'Unsupported item type for retry.', 'wp-mcp-ai' )
+					__( 'Unsupported item type for retry.', 'mcp-ai-wpoos' )
 				);
 		}
 
@@ -250,7 +250,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 		if ( ! isset( $item['data']['url'], $item['data']['payload'] ) ) {
 			return new WP_Error(
 				'invalid_webhook_data',
-				__( 'Webhook data is incomplete.', 'wp-mcp-ai' )
+				__( 'Webhook data is incomplete.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -265,7 +265,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 
 		return new WP_Error(
 			'webhook_sender_unavailable',
-			__( 'Webhook sender not available.', 'wp-mcp-ai' )
+			__( 'Webhook sender not available.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -279,7 +279,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 		if ( ! isset( $item['data']['hook'], $item['data']['args'] ) ) {
 			return new WP_Error(
 				'invalid_cron_data',
-				__( 'Cron job data is incomplete.', 'wp-mcp-ai' )
+				__( 'Cron job data is incomplete.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -293,7 +293,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 		if ( false === $scheduled ) {
 			return new WP_Error(
 				'cron_schedule_failed',
-				__( 'Failed to reschedule cron job.', 'wp-mcp-ai' )
+				__( 'Failed to reschedule cron job.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -310,7 +310,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 		if ( ! isset( $item['data']['job_id'] ) ) {
 			return new WP_Error(
 				'invalid_async_tool_data',
-				__( 'Async tool data is incomplete.', 'wp-mcp-ai' )
+				__( 'Async tool data is incomplete.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -325,7 +325,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 
 		return new WP_Error(
 			'async_executor_unavailable',
-			__( 'Async tool executor not available.', 'wp-mcp-ai' )
+			__( 'Async tool executor not available.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -339,7 +339,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 		if ( ! isset( $item['data']['job_id'], $item['data']['job_data'] ) ) {
 			return new WP_Error(
 				'invalid_job_queue_data',
-				__( 'Job queue data is incomplete.', 'wp-mcp-ai' )
+				__( 'Job queue data is incomplete.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -353,7 +353,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 			if ( ! $result ) {
 				return new WP_Error(
 					'job_enqueue_failed',
-					__( 'Failed to re-enqueue job.', 'wp-mcp-ai' )
+					__( 'Failed to re-enqueue job.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -362,7 +362,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 
 		return new WP_Error(
 			'job_queue_manager_unavailable',
-			__( 'Job queue manager not available.', 'wp-mcp-ai' )
+			__( 'Job queue manager not available.', 'mcp-ai-wpoos' )
 		);
 	}
 

@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List Quizzes', 'wp-mcp-ai' );
+		return __( 'List Quizzes', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists available quizzes with optional filtering.', 'wp-mcp-ai' );
+		return __( 'Lists available quizzes with optional filtering.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,19 +43,19 @@ class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'author_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by quiz author ID.', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by quiz author ID.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'per_page'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of quizzes to retrieve per page.', 'wp-mcp-ai' ),
+					'description' => __( 'Number of quizzes to retrieve per page.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
 				'page'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination.', 'wp-mcp-ai' ),
+					'description' => __( 'Page number for pagination.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 					'minimum'     => 1,
 				),
@@ -76,7 +76,7 @@ class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view quizzes.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view quizzes.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$author_id = isset( $arguments['author_id'] ) ? absint( $arguments['author_id'] ) : 0;
@@ -123,7 +123,7 @@ class WP_MCP_AI_Tool_List_Quizzes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		return array(
 			'summary'     => sprintf(
 				/* translators: %d: number of quizzes */
-				_n( 'Found %d quiz', 'Found %d quizzes', count( $quizzes ), 'wp-mcp-ai' ),
+				_n( 'Found %d quiz', 'Found %d quizzes', count( $quizzes ), 'mcp-ai-wpoos-pro' ),
 				count( $quizzes )
 			),
 			'quizzes'     => $quizzes,

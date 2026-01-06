@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Performance Recommendations', 'wp-mcp-ai' );
+		return __( 'NV oOS Performance Recommendations', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -64,17 +64,17 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Recommendations Settings', 'wp-mcp-ai' ),
+				'label' => __( 'Recommendations Settings', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Performance Recommendations', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter title…', 'wp-mcp-ai' ),
+				'default'     => __( 'Performance Recommendations', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter title…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -82,13 +82,13 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 		$this->add_control(
 			'severity_filter',
 			array(
-				'label'       => __( 'Minimum Severity', 'wp-mcp-ai' ),
+				'label'       => __( 'Minimum Severity', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => array(
-					'all'      => __( 'All Recommendations', 'wp-mcp-ai' ),
-					'critical' => __( 'Critical Only', 'wp-mcp-ai' ),
-					'high'     => __( 'High and Above', 'wp-mcp-ai' ),
-					'medium'   => __( 'Medium and Above', 'wp-mcp-ai' ),
+					'all'      => __( 'All Recommendations', 'mcp-ai-wpoos' ),
+					'critical' => __( 'Critical Only', 'mcp-ai-wpoos' ),
+					'high'     => __( 'High and Above', 'mcp-ai-wpoos' ),
+					'medium'   => __( 'Medium and Above', 'mcp-ai-wpoos' ),
 				),
 				'default'     => 'all',
 				'label_block' => true,
@@ -98,7 +98,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 		$this->add_control(
 			'limit',
 			array(
-				'label'   => __( 'Number of Recommendations', 'wp-mcp-ai' ),
+				'label'   => __( 'Number of Recommendations', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::NUMBER,
 				'default' => 5,
 				'min'     => 1,
@@ -109,13 +109,13 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 		$this->add_control(
 			'show_action_buttons',
 			array(
-				'label'        => __( 'Show Action Buttons', 'wp-mcp-ai' ),
+				'label'        => __( 'Show Action Buttons', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
-				'description'  => __( 'Display buttons for quick actions on recommendations.', 'wp-mcp-ai' ),
+				'description'  => __( 'Display buttons for quick actions on recommendations.', 'mcp-ai-wpoos' ),
 			)
 		);
 
@@ -139,7 +139,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 	protected function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			echo '<div class="wp-mcp-ai-recommendations">';
-			echo '<p>' . esc_html__( 'You do not have permission to view recommendations.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p>' . esc_html__( 'You do not have permission to view recommendations.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -163,7 +163,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 		if ( empty( $recommendations ) ) {
 			echo '<div class="wp-mcp-ai-recommendations__empty">';
 			echo '<span class="dashicons dashicons-yes-alt"></span>';
-			echo '<p>' . esc_html__( 'No recommendations at this time. Your system is performing well!', 'wp-mcp-ai' ) . '</p>';
+			echo '<p>' . esc_html__( 'No recommendations at this time. Your system is performing well!', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 		} else {
 			echo '<div class="wp-mcp-ai-recommendations__list">';
@@ -185,8 +185,8 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 
 				if ( $show_actions ) {
 					echo '<div class="wp-mcp-ai-recommendations__buttons">';
-					echo '<button class="wp-mcp-ai-recommendations__btn wp-mcp-ai-recommendations__btn--primary" data-action="apply">' . esc_html__( 'Apply Fix', 'wp-mcp-ai' ) . '</button>';
-					echo '<button class="wp-mcp-ai-recommendations__btn wp-mcp-ai-recommendations__btn--secondary" data-action="dismiss">' . esc_html__( 'Dismiss', 'wp-mcp-ai' ) . '</button>';
+					echo '<button class="wp-mcp-ai-recommendations__btn wp-mcp-ai-recommendations__btn--primary" data-action="apply">' . esc_html__( 'Apply Fix', 'mcp-ai-wpoos' ) . '</button>';
+					echo '<button class="wp-mcp-ai-recommendations__btn wp-mcp-ai-recommendations__btn--secondary" data-action="dismiss">' . esc_html__( 'Dismiss', 'mcp-ai-wpoos' ) . '</button>';
 					echo '</div>';
 				}
 				echo '</div>';
@@ -306,7 +306,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 					if ('dismiss' === action) {
 						item.fadeOut();
 					} else if ('apply' === action) {
-						alert('<?php echo esc_js( __( 'Auto-apply feature coming soon. Please implement fixes manually for now.', 'wp-mcp-ai' ) ); ?>');
+						alert('<?php echo esc_js( __( 'Auto-apply feature coming soon. Please implement fixes manually for now.', 'mcp-ai-wpoos' ) ); ?>');
 					}
 				});
 			});

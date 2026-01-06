@@ -28,7 +28,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Newsletter Get Emails tool is disabled because the Newsletter plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The Newsletter Get Emails tool is disabled because the Newsletter plugin is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -42,14 +42,14 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Newsletter Emails', 'wp-mcp-ai' );
+		return __( 'Get Newsletter Emails', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieve newsletter email campaigns with filtering options. Requires Newsletter plugin.', 'wp-mcp-ai' );
+		return __( 'Retrieve newsletter email campaigns with filtering options. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,25 +61,25 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'limit'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of emails to retrieve.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of emails to retrieve.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 10,
 				),
 				'offset' => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of emails to skip for pagination.', 'wp-mcp-ai' ),
+					'description' => __( 'Number of emails to skip for pagination.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
 				'status' => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by status: new, sending, sent, or paused.', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by status: new, sending, sent, or paused.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'new', 'sending', 'sent', 'paused' ),
 				),
 				'type'   => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by type: message or followup.', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by type: message or followup.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'message', 'followup' ),
 				),
 			),
@@ -96,17 +96,17 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view newsletter emails.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view newsletter emails.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		global $wpdb;

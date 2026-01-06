@@ -33,7 +33,7 @@ trait WP_MCP_AI_SVG_Vectorizer {
 		if ( ! $this->is_nodejs_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_nodejs_required',
-				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'wp-mcp-ai' )
+				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -42,14 +42,14 @@ trait WP_MCP_AI_SVG_Vectorizer {
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_not_found',
-				__( 'Generated image file not found for SVG conversion.', 'wp-mcp-ai' )
+				__( 'Generated image file not found for SVG conversion.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		// Prepare SVG output file.
 		$temp_output = wp_tempnam( 'svg-convert-' );
 		if ( ! $temp_output ) {
-			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary SVG output file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary SVG output file.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Add .svg extension.
@@ -92,7 +92,7 @@ trait WP_MCP_AI_SVG_Vectorizer {
 			wp_delete_file( $temp_output );
 			return new WP_Error(
 				'wp_mcp_ai_vectorization_failed',
-				isset( $vectorize_result['error'] ) ? $vectorize_result['error'] : __( 'SVG vectorization failed.', 'wp-mcp-ai' )
+				isset( $vectorize_result['error'] ) ? $vectorize_result['error'] : __( 'SVG vectorization failed.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -100,7 +100,7 @@ trait WP_MCP_AI_SVG_Vectorizer {
 		$svg_data = file_get_contents( $temp_output );
 		if ( false === $svg_data || '' === $svg_data ) {
 			wp_delete_file( $temp_output );
-			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Cleanup temporary output file.
@@ -147,19 +147,19 @@ trait WP_MCP_AI_SVG_Vectorizer {
 		$upload = wp_upload_bits( $file_name, null, $svg_data );
 
 		if ( ! empty( $upload['error'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'wp-mcp-ai' ), array( 'error' => $upload['error'] ) );
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'mcp-ai-wpoos' ), array( 'error' => $upload['error'] ) );
 		}
 
 		$file_path = isset( $upload['file'] ) ? $upload['file'] : '';
 
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to write SVG file to disk.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to write SVG file to disk.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Create attachment.
 		$attachment = array(
 			'post_mime_type' => 'image/svg+xml',
-			'post_title'     => sanitize_text_field( __( 'SVG Image', 'wp-mcp-ai' ) ),
+			'post_title'     => sanitize_text_field( __( 'SVG Image', 'mcp-ai-wpoos' ) ),
 			'post_content'   => '',
 			'post_status'    => 'inherit',
 		);
@@ -168,7 +168,7 @@ trait WP_MCP_AI_SVG_Vectorizer {
 
 		if ( is_wp_error( $attachment_id ) ) {
 			wp_delete_file( $file_path );
-			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'wp-mcp-ai' ), array( 'error' => $attachment_id ) );
+			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'mcp-ai-wpoos' ), array( 'error' => $attachment_id ) );
 		}
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
@@ -202,7 +202,7 @@ trait WP_MCP_AI_SVG_Vectorizer {
 		return array(
 			'output_format' => array(
 				'type'        => 'string',
-				'description' => __( 'Output format for the generated/edited image. Use "svg" to vectorize the raster output. Default is raster format.', 'wp-mcp-ai' ),
+				'description' => __( 'Output format for the generated/edited image. Use "svg" to vectorize the raster output. Default is raster format.', 'mcp-ai-wpoos' ),
 				'enum'        => array( 'default', 'svg' ),
 				'default'     => 'default',
 			),

@@ -33,14 +33,14 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Edit OpenAI Image', 'wp-mcp-ai' );
+		return __( 'Edit OpenAI Image', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Edits an existing image using OpenAI\'s DALL-E image editing API. Can use a mask to specify which areas to edit.', 'wp-mcp-ai' );
+		return __( 'Edits an existing image using OpenAI\'s DALL-E image editing API. Can use a mask to specify which areas to edit.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -53,38 +53,38 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				array(
 					'image_id'        => array(
 						'type'        => 'integer',
-						'description' => __( 'WordPress attachment ID of the image to edit.', 'wp-mcp-ai' ),
+						'description' => __( 'WordPress attachment ID of the image to edit.', 'mcp-ai-wpoos' ),
 					),
 					'prompt'          => array(
 						'type'        => 'string',
-						'description' => __( 'Description of the desired edits to the image.', 'wp-mcp-ai' ),
+						'description' => __( 'Description of the desired edits to the image.', 'mcp-ai-wpoos' ),
 					),
 					'mask_id'         => array(
 						'type'        => 'integer',
-						'description' => __( 'Optional: WordPress attachment ID of a mask image (transparent areas will be edited).', 'wp-mcp-ai' ),
+						'description' => __( 'Optional: WordPress attachment ID of a mask image (transparent areas will be edited).', 'mcp-ai-wpoos' ),
 					),
 					'model'           => array(
 						'type'        => 'string',
-						'description' => __( 'OpenAI model to use for editing.', 'wp-mcp-ai' ),
+						'description' => __( 'OpenAI model to use for editing.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'dall-e-2' ),
 						'default'     => 'dall-e-2',
 					),
 					'n'               => array(
 						'type'        => 'integer',
-						'description' => __( 'Number of edited images to generate.', 'wp-mcp-ai' ),
+						'description' => __( 'Number of edited images to generate.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 10,
 						'default'     => 1,
 					),
 					'size'            => array(
 						'type'        => 'string',
-						'description' => __( 'Size of the edited image.', 'wp-mcp-ai' ),
+						'description' => __( 'Size of the edited image.', 'mcp-ai-wpoos' ),
 						'enum'        => array( '256x256', '512x512', '1024x1024' ),
 						'default'     => '1024x1024',
 					),
 					'response_format' => array(
 						'type'        => 'string',
-						'description' => __( 'Format for the response.', 'wp-mcp-ai' ),
+						'description' => __( 'Format for the response.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'url', 'b64_json' ),
 						'default'     => 'b64_json',
 					),
@@ -103,7 +103,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $arguments['image_id'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The image_id parameter is required.', 'wp-mcp-ai' ),
+				'error'   => __( 'The image_id parameter is required.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -111,7 +111,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( ! wp_attachment_is_image( $image_id ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The specified image_id is not a valid image attachment.', 'wp-mcp-ai' ),
+				'error'   => __( 'The specified image_id is not a valid image attachment.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $arguments['prompt'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The prompt parameter is required.', 'wp-mcp-ai' ),
+				'error'   => __( 'The prompt parameter is required.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -130,7 +130,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( ! $image_path || ! file_exists( $image_path ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The image file could not be found.', 'wp-mcp-ai' ),
+				'error'   => __( 'The image file could not be found.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -209,7 +209,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $saved_images ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Failed to save edited images.', 'wp-mcp-ai' ),
+				'error'   => __( 'Failed to save edited images.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -247,7 +247,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		if ( empty( $image_content ) ) {
-			return new WP_Error( 'no_image_content', __( 'No image content received.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'no_image_content', __( 'No image content received.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Generate filename.
@@ -265,7 +265,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		if ( false === file_put_contents( $file_path, $image_content ) ) {
-			return new WP_Error( 'save_failed', __( 'Failed to save image file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'save_failed', __( 'Failed to save image file.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Create attachment.

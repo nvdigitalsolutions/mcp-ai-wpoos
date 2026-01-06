@@ -31,7 +31,7 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Quiz Questions', 'wp-mcp-ai' );
+		return __( 'Quiz Questions', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -85,7 +85,7 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 
 			<p>
 				<button type="button" id="wp-mcp-ai-add-question" class="button button-secondary">
-					<?php esc_html_e( '+ Add Question', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( '+ Add Question', 'mcp-ai-wpoos-pro' ); ?>
 				</button>
 			</p>
 
@@ -113,9 +113,9 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 		?>
 		<div class="quiz-question-row" data-index="<?php echo esc_attr( $index ); ?>">
 			<div class="question-header">
-				<span class="question-number"><?php echo esc_html( sprintf( __( 'Question %s', 'wp-mcp-ai' ), '{NUMBER}' ) ); ?></span>
+				<span class="question-number"><?php echo esc_html( sprintf( __( 'Question %s', 'mcp-ai-wpoos-pro' ), '{NUMBER}' ) ); ?></span>
 				<span class="question-handle dashicons dashicons-move"></span>
-				<button type="button" class="button-link remove-question" title="<?php esc_attr_e( 'Remove Question', 'wp-mcp-ai' ); ?>">
+				<button type="button" class="button-link remove-question" title="<?php esc_attr_e( 'Remove Question', 'mcp-ai-wpoos-pro' ); ?>">
 					<span class="dashicons dashicons-trash"></span>
 				</button>
 			</div>
@@ -123,7 +123,7 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 			<div class="question-fields">
 				<p>
 					<label>
-						<strong><?php esc_html_e( 'Question Text:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Question Text:', 'mcp-ai-wpoos-pro' ); ?></strong>
 					</label>
 					<textarea 
 						name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][question]" 
@@ -136,18 +136,18 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 				<div class="question-meta-row">
 					<p class="question-type-field">
 						<label>
-							<strong><?php esc_html_e( 'Type:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Type:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label>
 						<select name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][type]" class="question-type">
-							<option value="multiple_choice" <?php selected( $type, 'multiple_choice' ); ?>><?php esc_html_e( 'Multiple Choice', 'wp-mcp-ai' ); ?></option>
-							<option value="true_false" <?php selected( $type, 'true_false' ); ?>><?php esc_html_e( 'True/False', 'wp-mcp-ai' ); ?></option>
-							<option value="short_answer" <?php selected( $type, 'short_answer' ); ?>><?php esc_html_e( 'Short Answer', 'wp-mcp-ai' ); ?></option>
+							<option value="multiple_choice" <?php selected( $type, 'multiple_choice' ); ?>><?php esc_html_e( 'Multiple Choice', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="true_false" <?php selected( $type, 'true_false' ); ?>><?php esc_html_e( 'True/False', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="short_answer" <?php selected( $type, 'short_answer' ); ?>><?php esc_html_e( 'Short Answer', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 					</p>
 
 					<p class="question-points-field">
 						<label>
-							<strong><?php esc_html_e( 'Points:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Points:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label>
 						<input 
 							type="number" 
@@ -162,7 +162,7 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 
 				<!-- Multiple Choice Options -->
 				<div class="question-options multiple-choice-options" style="<?php echo ( 'multiple_choice' !== $type ) ? 'display:none;' : ''; ?>">
-					<label><strong><?php esc_html_e( 'Answer Options:', 'wp-mcp-ai' ); ?></strong></label>
+					<label><strong><?php esc_html_e( 'Answer Options:', 'mcp-ai-wpoos-pro' ); ?></strong></label>
 					<div class="options-list">
 						<?php
 						foreach ( $options as $opt_index => $option_value ) {
@@ -172,10 +172,10 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 									type="text" 
 									name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][options][]" 
 									value="<?php echo esc_attr( $option_value ); ?>" 
-									placeholder="<?php esc_attr_e( 'Option text', 'wp-mcp-ai' ); ?>"
+									placeholder="<?php esc_attr_e( 'Option text', 'mcp-ai-wpoos-pro' ); ?>"
 									class="widefat"
 								/>
-								<button type="button" class="button-link remove-option" title="<?php esc_attr_e( 'Remove option', 'wp-mcp-ai' ); ?>">
+								<button type="button" class="button-link remove-option" title="<?php esc_attr_e( 'Remove option', 'mcp-ai-wpoos-pro' ); ?>">
 									<span class="dashicons dashicons-no-alt"></span>
 								</button>
 							</div>
@@ -183,22 +183,22 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 						}
 						?>
 					</div>
-					<button type="button" class="button button-small add-option"><?php esc_html_e( '+ Add Option', 'wp-mcp-ai' ); ?></button>
+					<button type="button" class="button button-small add-option"><?php esc_html_e( '+ Add Option', 'mcp-ai-wpoos-pro' ); ?></button>
 				</div>
 
 				<!-- Correct Answer -->
 				<p class="correct-answer-field">
 					<label>
-						<strong><?php esc_html_e( 'Correct Answer (for grading reference):', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Correct Answer (for grading reference):', 'mcp-ai-wpoos-pro' ); ?></strong>
 					</label>
 					<input 
 						type="text" 
 						name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][correct_answer]" 
 						value="<?php echo esc_attr( $correct_answer ); ?>" 
 						class="widefat"
-						placeholder="<?php esc_attr_e( 'Optional: Enter the correct answer', 'wp-mcp-ai' ); ?>"
+						placeholder="<?php esc_attr_e( 'Optional: Enter the correct answer', 'mcp-ai-wpoos-pro' ); ?>"
 					/>
-					<span class="description"><?php esc_html_e( 'This is used as a reference for grading. For true/false, use "true" or "false".', 'wp-mcp-ai' ); ?></span>
+					<span class="description"><?php esc_html_e( 'This is used as a reference for grading. For true/false, use "true" or "false".', 'mcp-ai-wpoos-pro' ); ?></span>
 				</p>
 			</div>
 		</div>

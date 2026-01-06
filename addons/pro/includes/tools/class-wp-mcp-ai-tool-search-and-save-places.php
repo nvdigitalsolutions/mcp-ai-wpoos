@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Search and Save Places', 'wp-mcp-ai' );
+		return __( 'Search and Save Places', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Searches for places using Google Places API and optionally saves the results to the database for future reference. This enhances geospatial capabilities by building a local database of places.', 'wp-mcp-ai' );
+		return __( 'Searches for places using Google Places API and optionally saves the results to the database for future reference. This enhances geospatial capabilities by building a local database of places.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,40 +45,40 @@ class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'query'          => array(
 					'type'        => 'string',
-					'description' => __( 'Search query text or keywords', 'wp-mcp-ai' ),
+					'description' => __( 'Search query text or keywords', 'mcp-ai-wpoos-pro' ),
 				),
 				'latitude'       => array(
 					'type'        => 'number',
-					'description' => __( 'Center latitude for search', 'wp-mcp-ai' ),
+					'description' => __( 'Center latitude for search', 'mcp-ai-wpoos-pro' ),
 				),
 				'longitude'      => array(
 					'type'        => 'number',
-					'description' => __( 'Center longitude for search', 'wp-mcp-ai' ),
+					'description' => __( 'Center longitude for search', 'mcp-ai-wpoos-pro' ),
 				),
 				'radius'         => array(
 					'type'        => 'integer',
-					'description' => __( 'Search radius in meters (max 50000)', 'wp-mcp-ai' ),
+					'description' => __( 'Search radius in meters (max 50000)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 50000,
 					'default'     => 1500,
 				),
 				'type'           => array(
 					'type'        => 'string',
-					'description' => __( 'Place type (e.g., restaurant, cafe, hotel)', 'wp-mcp-ai' ),
+					'description' => __( 'Place type (e.g., restaurant, cafe, hotel)', 'mcp-ai-wpoos-pro' ),
 				),
 				'save_results'   => array(
 					'type'        => 'boolean',
-					'description' => __( 'Save search results to database (default: true)', 'wp-mcp-ai' ),
+					'description' => __( 'Save search results to database (default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
 				'skip_existing'  => array(
 					'type'        => 'boolean',
-					'description' => __( 'Skip places that already exist in database (default: true)', 'wp-mcp-ai' ),
+					'description' => __( 'Skip places that already exist in database (default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
 				'update_existing' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Update existing places with fresh data (default: false)', 'wp-mcp-ai' ),
+					'description' => __( 'Update existing places with fresh data (default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 			),
@@ -118,12 +118,12 @@ class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface,
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to search and save places.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to search and save places.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Use Google Maps client to search.
 		if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_class', __( 'Google Maps client not available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_class', __( 'Google Maps client not available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$client  = new WP_MCP_AI_Google_Maps_Client();
@@ -152,7 +152,7 @@ class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface,
 		} else {
 			return new WP_Error(
 				'wp_mcp_ai_missing_parameters',
-				__( 'Either query or both latitude and longitude must be provided.', 'wp-mcp-ai' )
+				__( 'Either query or both latitude and longitude must be provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

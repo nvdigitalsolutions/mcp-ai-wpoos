@@ -54,7 +54,7 @@ class WP_MCP_AI_Assistant_Service {
 		if ( ! $assistant_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_assistant',
-				__( 'Assistant ID is required.', 'wp-mcp-ai' ),
+				__( 'Assistant ID is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -64,7 +64,7 @@ class WP_MCP_AI_Assistant_Service {
 		if ( ! $assistant_post || 'mcp_ai_assistant' !== $assistant_post->post_type ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_assistant',
-				__( 'Invalid assistant ID.', 'wp-mcp-ai' ),
+				__( 'Invalid assistant ID.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -72,7 +72,7 @@ class WP_MCP_AI_Assistant_Service {
 		if ( 'publish' !== $assistant_post->post_status ) {
 			return new WP_Error(
 				'wp_mcp_ai_assistant_not_published',
-				__( 'Assistant is not published.', 'wp-mcp-ai' ),
+				__( 'Assistant is not published.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -86,7 +86,7 @@ class WP_MCP_AI_Assistant_Service {
 		if ( $required_capability && ! user_can( $user_id, $required_capability ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_insufficient_permissions',
-				__( 'You do not have permission to use this assistant.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to use this assistant.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}

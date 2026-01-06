@@ -29,7 +29,7 @@ class WP_MCP_AI_Place_Metabox_Details extends WP_MCP_AI_Place_Metabox_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Place Details', 'wp-mcp-ai' );
+		return __( 'Place Details', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -63,45 +63,45 @@ class WP_MCP_AI_Place_Metabox_Details extends WP_MCP_AI_Place_Metabox_Base {
 		<div class="wp-mcp-ai-place-details">
 			<table class="form-table">
 				<tr>
-					<th scope="row"><label for="place_rating"><?php esc_html_e( 'Rating', 'wp-mcp-ai' ); ?></label></th>
+					<th scope="row"><label for="place_rating"><?php esc_html_e( 'Rating', 'mcp-ai-wpoos-pro' ); ?></label></th>
 					<td>
 						<input type="number" id="place_rating" name="place_rating" value="<?php echo esc_attr( $rating ); ?>" min="0" max="5" step="0.1" class="small-text" />
-						<span class="description"><?php esc_html_e( 'Out of 5.0', 'wp-mcp-ai' ); ?></span>
+						<span class="description"><?php esc_html_e( 'Out of 5.0', 'mcp-ai-wpoos-pro' ); ?></span>
 					</td>
 				</tr>
 				<tr>
-					<th scope="row"><label for="place_price_level"><?php esc_html_e( 'Price Level', 'wp-mcp-ai' ); ?></label></th>
+					<th scope="row"><label for="place_price_level"><?php esc_html_e( 'Price Level', 'mcp-ai-wpoos-pro' ); ?></label></th>
 					<td>
 						<select id="place_price_level" name="place_price_level">
-							<option value=""><?php esc_html_e( '-- Select --', 'wp-mcp-ai' ); ?></option>
-							<option value="1" <?php selected( $price_level, '1' ); ?>>$ <?php esc_html_e( '(Budget)', 'wp-mcp-ai' ); ?></option>
-							<option value="2" <?php selected( $price_level, '2' ); ?>>$$ <?php esc_html_e( '(Moderate)', 'wp-mcp-ai' ); ?></option>
-							<option value="3" <?php selected( $price_level, '3' ); ?>>$$$ <?php esc_html_e( '(Expensive)', 'wp-mcp-ai' ); ?></option>
-							<option value="4" <?php selected( $price_level, '4' ); ?>>$$$$ <?php esc_html_e( '(Very Expensive)', 'wp-mcp-ai' ); ?></option>
+							<option value=""><?php esc_html_e( '-- Select --', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="1" <?php selected( $price_level, '1' ); ?>>$ <?php esc_html_e( '(Budget)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="2" <?php selected( $price_level, '2' ); ?>>$$ <?php esc_html_e( '(Moderate)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="3" <?php selected( $price_level, '3' ); ?>>$$$ <?php esc_html_e( '(Expensive)', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="4" <?php selected( $price_level, '4' ); ?>>$$$$ <?php esc_html_e( '(Very Expensive)', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
 					</td>
 				</tr>
 				<tr>
-					<th scope="row"><label for="place_google_place_id"><?php esc_html_e( 'Google Place ID', 'wp-mcp-ai' ); ?></label></th>
+					<th scope="row"><label for="place_google_place_id"><?php esc_html_e( 'Google Place ID', 'mcp-ai-wpoos-pro' ); ?></label></th>
 					<td>
 						<input type="text" id="place_google_place_id" name="place_google_place_id" value="<?php echo esc_attr( $google_place_id ); ?>" class="regular-text" readonly />
-						<p class="description"><?php esc_html_e( 'Auto-populated from Google Places API', 'wp-mcp-ai' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Auto-populated from Google Places API', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 			</table>
 
-			<h4><?php esc_html_e( 'Business Hours', 'wp-mcp-ai' ); ?></h4>
-			<p class="description"><?php esc_html_e( 'Enter hours in format: 9:00 AM - 5:00 PM or "Closed"', 'wp-mcp-ai' ); ?></p>
+			<h4><?php esc_html_e( 'Business Hours', 'mcp-ai-wpoos-pro' ); ?></h4>
+			<p class="description"><?php esc_html_e( 'Enter hours in format: 9:00 AM - 5:00 PM or "Closed"', 'mcp-ai-wpoos-pro' ); ?></p>
 			<table class="form-table">
 				<?php
 				$days = array(
-					'monday'    => __( 'Monday', 'wp-mcp-ai' ),
-					'tuesday'   => __( 'Tuesday', 'wp-mcp-ai' ),
-					'wednesday' => __( 'Wednesday', 'wp-mcp-ai' ),
-					'thursday'  => __( 'Thursday', 'wp-mcp-ai' ),
-					'friday'    => __( 'Friday', 'wp-mcp-ai' ),
-					'saturday'  => __( 'Saturday', 'wp-mcp-ai' ),
-					'sunday'    => __( 'Sunday', 'wp-mcp-ai' ),
+					'monday'    => __( 'Monday', 'mcp-ai-wpoos-pro' ),
+					'tuesday'   => __( 'Tuesday', 'mcp-ai-wpoos-pro' ),
+					'wednesday' => __( 'Wednesday', 'mcp-ai-wpoos-pro' ),
+					'thursday'  => __( 'Thursday', 'mcp-ai-wpoos-pro' ),
+					'friday'    => __( 'Friday', 'mcp-ai-wpoos-pro' ),
+					'saturday'  => __( 'Saturday', 'mcp-ai-wpoos-pro' ),
+					'sunday'    => __( 'Sunday', 'mcp-ai-wpoos-pro' ),
 				);
 
 				foreach ( $days as $day_key => $day_label ) :
@@ -116,8 +116,8 @@ class WP_MCP_AI_Place_Metabox_Details extends WP_MCP_AI_Place_Metabox_Base {
 				<?php endforeach; ?>
 			</table>
 
-			<h4><?php esc_html_e( 'Amenities', 'wp-mcp-ai' ); ?></h4>
-			<p class="description"><?php esc_html_e( 'Enter one amenity per line (e.g., wifi, parking, wheelchair_accessible)', 'wp-mcp-ai' ); ?></p>
+			<h4><?php esc_html_e( 'Amenities', 'mcp-ai-wpoos-pro' ); ?></h4>
+			<p class="description"><?php esc_html_e( 'Enter one amenity per line (e.g., wifi, parking, wheelchair_accessible)', 'mcp-ai-wpoos-pro' ); ?></p>
 			<textarea id="place_amenities" name="place_amenities" rows="5" class="large-text"><?php echo esc_textarea( implode( "\n", $amenities ) ); ?></textarea>
 		</div>
 		<?php

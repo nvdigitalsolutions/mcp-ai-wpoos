@@ -38,7 +38,7 @@ function wp_mcp_ai_extract_generic_tool_response( $raw_response, $provider_ident
 			'wp_mcp_ai_unsupported_provider',
 			sprintf(
 				/* translators: %s: Provider identifier */
-				__( 'Unsupported AI provider: %s', 'wp-mcp-ai' ),
+				__( 'Unsupported AI provider: %s', 'mcp-ai-wpoos' ),
 				$provider_identifier
 			),
 			array( 'status' => 500 )

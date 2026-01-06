@@ -24,8 +24,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	public static function get_presets() {
 		$presets = array(
 			'ai_ml'               => array(
-				'name'        => __( 'AI/ML', 'wp-mcp-ai' ),
-				'description' => __( 'AI model management, embeddings, batches, and ML operations', 'wp-mcp-ai' ),
+				'name'        => __( 'AI/ML', 'mcp-ai-wpoos' ),
+				'description' => __( 'AI model management, embeddings, batches, and ML operations', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'list_available_models',
 					'suggest_best_model',
@@ -50,8 +50,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 			'media'               => array(
-				'name'        => __( 'Media', 'wp-mcp-ai' ),
-				'description' => __( 'Image, video, and audio generation, editing, and processing tools', 'wp-mcp-ai' ),
+				'name'        => __( 'Media', 'mcp-ai-wpoos' ),
+				'description' => __( 'Image, video, and audio generation, editing, and processing tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'generate_openai_image',
 					'generate_gemini_image',
@@ -82,8 +82,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 			'content_writing'     => array(
-				'name'        => __( 'Content Writing', 'wp-mcp-ai' ),
-				'description' => __( 'Tools for creating and managing content, posts, and pages', 'wp-mcp-ai' ),
+				'name'        => __( 'Content Writing', 'mcp-ai-wpoos' ),
+				'description' => __( 'Tools for creating and managing content, posts, and pages', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'search_content',
 					'search_attachments',
@@ -105,8 +105,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 			'ecommerce'           => array(
-				'name'        => __( 'E-commerce Support', 'wp-mcp-ai' ),
-				'description' => __( 'WooCommerce and product management tools', 'wp-mcp-ai' ),
+				'name'        => __( 'E-commerce Support', 'mcp-ai-wpoos' ),
+				'description' => __( 'WooCommerce and product management tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'get_woo_recent_orders',
 					'get_woo_products',
@@ -125,8 +125,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 			'site_management'     => array(
-				'name'        => __( 'Site Management', 'wp-mcp-ai' ),
-				'description' => __( 'WordPress core management and monitoring tools', 'wp-mcp-ai' ),
+				'name'        => __( 'Site Management', 'mcp-ai-wpoos' ),
+				'description' => __( 'WordPress core management and monitoring tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'get_site_summary',
 					'get_system_logs',
@@ -149,8 +149,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 			'seo_marketing'       => array(
-				'name'        => __( 'SEO & Marketing', 'wp-mcp-ai' ),
-				'description' => __( 'SEO analysis and social media management tools', 'wp-mcp-ai' ),
+				'name'        => __( 'SEO & Marketing', 'mcp-ai-wpoos' ),
+				'description' => __( 'SEO analysis and social media management tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'get_rankmath_seo',
 					'web_search',
@@ -171,8 +171,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 			'development'         => array(
-				'name'        => __( 'Development', 'wp-mcp-ai' ),
-				'description' => __( 'Code snippets, CLI, and technical development tools', 'wp-mcp-ai' ),
+				'name'        => __( 'Development', 'mcp-ai-wpoos' ),
+				'description' => __( 'Code snippets, CLI, and technical development tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'create_wpcode_snippet',
 					'check_wp_cli',
@@ -192,8 +192,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 			'data_analytics'      => array(
-				'name'        => __( 'Data & Analytics', 'wp-mcp-ai' ),
-				'description' => __( 'Data collection, reporting, and analytics tools', 'wp-mcp-ai' ),
+				'name'        => __( 'Data & Analytics', 'mcp-ai-wpoos' ),
+				'description' => __( 'Data collection, reporting, and analytics tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'get_jetengine_items',
 					'list_jetengine_rest_routes',
@@ -214,8 +214,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 			'design_professional' => array(
-				'name'        => __( 'Design Professional', 'wp-mcp-ai' ),
-				'description' => __( 'CAD, rendering, 3D modeling, branding, and visual design tools', 'wp-mcp-ai' ),
+				'name'        => __( 'Design Professional', 'mcp-ai-wpoos' ),
+				'description' => __( 'CAD, rendering, 3D modeling, branding, and visual design tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					'generate_openai_image',
 					'generate_gemini_image',
@@ -271,8 +271,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	public static function render_presets( $args = array() ) {
 		$defaults = array(
 			'available_tools'   => array(),
-			'title'             => __( 'Quick Tool Selection Presets', 'wp-mcp-ai' ),
-			'description'       => __( 'Click a preset to add its tools to your selection. Click again to remove them. You can combine multiple presets.', 'wp-mcp-ai' ),
+			'title'             => __( 'Quick Tool Selection Presets', 'mcp-ai-wpoos' ),
+			'description'       => __( 'Click a preset to add its tools to your selection. Click again to remove them. You can combine multiple presets.', 'mcp-ai-wpoos' ),
 			'button_class'      => 'button',
 			'container_class'   => 'wp-mcp-ai-tool-presets',
 			'include_script'    => true,

@@ -162,7 +162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 
 			return new WP_Error(
 				'wp_mcp_ai_wordpress_gravatar_unmapped',
-				__( 'WordPress.com/Gravatar identity could not be mapped to a WordPress user.', 'wp-mcp-ai' ),
+				__( 'WordPress.com/Gravatar identity could not be mapped to a WordPress user.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -245,7 +245,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 			if ( empty( $userinfo_url ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_wordpress_gravatar_missing_endpoint',
-					__( 'WordPress/Gravatar userinfo endpoint is not configured.', 'wp-mcp-ai' ),
+					__( 'WordPress/Gravatar userinfo endpoint is not configured.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -287,7 +287,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 			if ( 200 !== $code ) {
 				return new WP_Error(
 					'wp_mcp_ai_wordpress_gravatar_userinfo_failed',
-					__( 'Failed to fetch WordPress/Gravatar profile information.', 'wp-mcp-ai' ),
+					__( 'Failed to fetch WordPress/Gravatar profile information.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -297,7 +297,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 
 			return is_array( $data ) ? $data : new WP_Error(
 				'wp_mcp_ai_wordpress_gravatar_userinfo_invalid',
-				__( 'Userinfo endpoint returned an unexpected response.', 'wp-mcp-ai' ),
+				__( 'Userinfo endpoint returned an unexpected response.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -365,7 +365,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 			if ( ! $email ) {
 				return new WP_Error(
 					'wp_mcp_ai_wordpress_gravatar_missing_email',
-					__( 'WordPress/Gravatar identity did not return an email address, preventing automatic user creation.', 'wp-mcp-ai' ),
+					__( 'WordPress/Gravatar identity did not return an email address, preventing automatic user creation.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -398,7 +398,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 			if ( is_wp_error( $user_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_wordpress_gravatar_user_creation_failed',
-					__( 'Failed to create a WordPress user for the WordPress/Gravatar identity.', 'wp-mcp-ai' ),
+					__( 'Failed to create a WordPress user for the WordPress/Gravatar identity.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 500,
 						'details' => array( 'error' => $user_id->get_error_message() ),
@@ -558,7 +558,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 			if ( '' === $header ) {
 				return new WP_Error(
 					'wp_mcp_ai_wordpress_gravatar_missing_header',
-					__( 'The Authorization header is required to resolve WordPress/Gravatar identities.', 'wp-mcp-ai' ),
+					__( 'The Authorization header is required to resolve WordPress/Gravatar identities.', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -566,7 +566,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 			if ( ! preg_match( '/^Bearer\s+(.*)$/i', $header, $matches ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_wordpress_gravatar_invalid_header',
-					__( 'The Authorization header is not a valid bearer token.', 'wp-mcp-ai' ),
+					__( 'The Authorization header is not a valid bearer token.', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}

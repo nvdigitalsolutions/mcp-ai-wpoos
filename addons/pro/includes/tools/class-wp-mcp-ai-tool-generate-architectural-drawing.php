@@ -45,14 +45,14 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Architectural Drawing', 'wp-mcp-ai' );
+		return __( 'Generate Architectural Drawing', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates professional architectural drawings (floor plans, elevations, sections, details) using OpenAI DALL-E or Gemini Imagen. Supports 10 drawing types, 6 presentation styles, building codes, dimension specifications, and material lists. Output can be PNG (raster) or SVG (vector).', 'wp-mcp-ai' );
+		return __( 'Generates professional architectural drawings (floor plans, elevations, sections, details) using OpenAI DALL-E or Gemini Imagen. Supports 10 drawing types, 6 presentation styles, building codes, dimension specifications, and material lists. Output can be PNG (raster) or SVG (vector).', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -64,47 +64,47 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 			'properties'           => array(
 				'prompt'             => array(
 					'type'        => 'string',
-					'description' => __( 'Architectural requirements or description (e.g., "residential floor plan with 3 bedrooms, open kitchen, 2000 sq ft").', 'wp-mcp-ai' ),
+					'description' => __( 'Architectural requirements or description (e.g., "residential floor plan with 3 bedrooms, open kitchen, 2000 sq ft").', 'mcp-ai-wpoos-pro' ),
 				),
 				'drawing_type'       => array(
 					'type'        => 'string',
-					'description' => __( 'Type of architectural drawing to generate.', 'wp-mcp-ai' ),
+					'description' => __( 'Type of architectural drawing to generate.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => $this->get_drawing_types(),
 					'default'     => self::DEFAULT_DRAWING_TYPE,
 				),
 				'presentation_style' => array(
 					'type'        => 'string',
-					'description' => __( 'Visual presentation style for the drawing.', 'wp-mcp-ai' ),
+					'description' => __( 'Visual presentation style for the drawing.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => $this->get_presentation_styles(),
 					'default'     => self::DEFAULT_STYLE,
 				),
 				'scale'              => array(
 					'type'        => 'string',
-					'description' => __( 'Architectural scale notation (e.g., "1/4\"=1\'-0\"", "1:100", "1:50"). Default: 1/4"=1\'-0"', 'wp-mcp-ai' ),
+					'description' => __( 'Architectural scale notation (e.g., "1/4\"=1\'-0\"", "1:100", "1:50"). Default: 1/4"=1\'-0"', 'mcp-ai-wpoos-pro' ),
 					'default'     => self::DEFAULT_SCALE,
 				),
 				'dimensions'         => array(
 					'type'        => 'object',
-					'description' => __( 'Dimensional specifications for the space (width, depth, height in feet or meters).', 'wp-mcp-ai' ),
+					'description' => __( 'Dimensional specifications for the space (width, depth, height in feet or meters).', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
 						'width'  => array(
 							'type'        => 'number',
-							'description' => __( 'Width of the space.', 'wp-mcp-ai' ),
+							'description' => __( 'Width of the space.', 'mcp-ai-wpoos-pro' ),
 							'minimum'     => 1,
 						),
 						'depth'  => array(
 							'type'        => 'number',
-							'description' => __( 'Depth of the space.', 'wp-mcp-ai' ),
+							'description' => __( 'Depth of the space.', 'mcp-ai-wpoos-pro' ),
 							'minimum'     => 1,
 						),
 						'height' => array(
 							'type'        => 'number',
-							'description' => __( 'Height of the space (for sections/elevations).', 'wp-mcp-ai' ),
+							'description' => __( 'Height of the space (for sections/elevations).', 'mcp-ai-wpoos-pro' ),
 							'minimum'     => 1,
 						),
 						'unit'   => array(
 							'type'        => 'string',
-							'description' => __( 'Unit of measurement.', 'wp-mcp-ai' ),
+							'description' => __( 'Unit of measurement.', 'mcp-ai-wpoos-pro' ),
 							'enum'        => array( 'feet', 'meters', 'inches', 'centimeters' ),
 							'default'     => 'feet',
 						),
@@ -112,63 +112,63 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 				),
 				'materials'          => array(
 					'type'        => 'array',
-					'description' => __( 'List of materials/finishes to include (e.g., ["wood flooring", "concrete walls", "glass curtain wall"]).', 'wp-mcp-ai' ),
+					'description' => __( 'List of materials/finishes to include (e.g., ["wood flooring", "concrete walls", "glass curtain wall"]).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
 				'building_code'      => array(
 					'type'        => 'string',
-					'description' => __( 'Building code standard to reference (IBC, IRC, NBC, Eurocode).', 'wp-mcp-ai' ),
+					'description' => __( 'Building code standard to reference (IBC, IRC, NBC, Eurocode).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'ibc', 'irc', 'nbc', 'eurocode', 'none' ),
 					'default'     => 'none',
 				),
 				'annotations'        => array(
 					'type'        => 'boolean',
-					'description' => __( 'Include dimension annotations and callouts. Default: true for technical/annotated styles.', 'wp-mcp-ai' ),
+					'description' => __( 'Include dimension annotations and callouts. Default: true for technical/annotated styles.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
 				'provider'           => array(
 					'type'        => 'string',
-					'description' => __( 'AI provider to use for generation.', 'wp-mcp-ai' ),
+					'description' => __( 'AI provider to use for generation.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'openai', 'gemini' ),
 					'default'     => self::DEFAULT_PROVIDER,
 				),
 				'model'              => array(
 					'type'        => 'string',
-					'description' => __( 'AI model to use. For OpenAI: gpt-image-1.5, gpt-image-1, dall-e-3. For Gemini: gemini-2.5-flash-image.', 'wp-mcp-ai' ),
+					'description' => __( 'AI model to use. For OpenAI: gpt-image-1.5, gpt-image-1, dall-e-3. For Gemini: gemini-2.5-flash-image.', 'mcp-ai-wpoos-pro' ),
 					'default'     => self::DEFAULT_MODEL,
 				),
 				'size'               => array(
 					'type'        => 'string',
-					'description' => __( 'Image size. OpenAI: 1024x1024, 1024x1536, 1536x1024. Gemini uses aspect_ratio instead.', 'wp-mcp-ai' ),
+					'description' => __( 'Image size. OpenAI: 1024x1024, 1024x1536, 1536x1024. Gemini uses aspect_ratio instead.', 'mcp-ai-wpoos-pro' ),
 					'default'     => self::DEFAULT_SIZE,
 				),
 				'aspect_ratio'       => array(
 					'type'        => 'string',
-					'description' => __( 'Aspect ratio for Gemini (1:1, 3:4, 4:3, 9:16, 16:9). Default: 3:4 for portrait drawings.', 'wp-mcp-ai' ),
+					'description' => __( 'Aspect ratio for Gemini (1:1, 3:4, 4:3, 9:16, 16:9). Default: 3:4 for portrait drawings.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( '1:1', '3:4', '4:3', '9:16', '16:9' ),
 					'default'     => '3:4',
 				),
 				'quality'            => array(
 					'type'        => 'string',
-					'description' => __( 'Image quality. OpenAI: low, medium, high. Default: high for architectural drawings.', 'wp-mcp-ai' ),
+					'description' => __( 'Image quality. OpenAI: low, medium, high. Default: high for architectural drawings.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'low', 'medium', 'high', 'auto' ),
 					'default'     => self::DEFAULT_QUALITY,
 				),
 				'output_format'      => array(
 					'type'        => 'string',
-					'description' => __( 'Output format: png (raster) or svg (vector). SVG is vectorized from raster output.', 'wp-mcp-ai' ),
+					'description' => __( 'Output format: png (raster) or svg (vector). SVG is vectorized from raster output.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'png', 'svg', 'both' ),
 					'default'     => self::DEFAULT_OUTPUT_FORMAT,
 				),
 				'file_name'          => array(
 					'type'        => 'string',
-					'description' => __( 'Optional base file name for the saved drawing.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional base file name for the saved drawing.', 'mcp-ai-wpoos-pro' ),
 				),
 				'timeout'            => array(
 					'type'        => 'integer',
-					'description' => __( 'Request timeout in seconds (5-300). Default: 90.', 'wp-mcp-ai' ),
+					'description' => __( 'Request timeout in seconds (5-300). Default: 90.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 5,
 					'maximum'     => 300,
 					'default'     => 90,
@@ -185,20 +185,20 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'label'   => __( 'generate_architectural_drawing', 'wp-mcp-ai' ),
-				'payload' => __( 'generate_architectural_drawing', 'wp-mcp-ai' ),
+				'label'   => __( 'generate_architectural_drawing', 'mcp-ai-wpoos-pro' ),
+				'payload' => __( 'generate_architectural_drawing', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'label'   => __( 'Floor Plan with dimensions', 'wp-mcp-ai' ),
-				'payload' => __( 'Use generate_architectural_drawing to create a residential floor plan. Ask for room layout, square footage, and special features, then generate with dimensions and annotations.', 'wp-mcp-ai' ),
+				'label'   => __( 'Floor Plan with dimensions', 'mcp-ai-wpoos-pro' ),
+				'payload' => __( 'Use generate_architectural_drawing to create a residential floor plan. Ask for room layout, square footage, and special features, then generate with dimensions and annotations.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'label'   => __( 'Building Elevation', 'wp-mcp-ai' ),
-				'payload' => __( 'Use generate_architectural_drawing to create a building elevation. Ask about building style, materials, and height, then generate with material callouts.', 'wp-mcp-ai' ),
+				'label'   => __( 'Building Elevation', 'mcp-ai-wpoos-pro' ),
+				'payload' => __( 'Use generate_architectural_drawing to create a building elevation. Ask about building style, materials, and height, then generate with material callouts.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'label'   => __( 'Construction Detail', 'wp-mcp-ai' ),
-				'payload' => __( 'Use generate_architectural_drawing to create a construction detail. Ask about the specific building assembly (wall section, window detail, etc.) and materials, then generate with annotations and scale.', 'wp-mcp-ai' ),
+				'label'   => __( 'Construction Detail', 'mcp-ai-wpoos-pro' ),
+				'payload' => __( 'Use generate_architectural_drawing to create a construction detail. Ask about the specific building assembly (wall section, window detail, etc.) and materials, then generate with annotations and scale.', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 	}
@@ -218,7 +218,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( ! $user_id && ! $has_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You must be authenticated to generate architectural drawings.', 'wp-mcp-ai' ),
+				__( 'You must be authenticated to generate architectural drawings.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
@@ -228,14 +228,14 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 			if ( ! user_can( $user_id, 'upload_files' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_forbidden',
-					__( 'You do not have permission to generate architectural drawings.', 'wp-mcp-ai' )
+					__( 'You do not have permission to generate architectural drawings.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_wrong_site',
-					__( 'You do not have access to this site.', 'wp-mcp-ai' )
+					__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -247,7 +247,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( '' === $prompt ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_prompt',
-				__( 'No prompt was supplied for the architectural drawing request.', 'wp-mcp-ai' ),
+				__( 'No prompt was supplied for the architectural drawing request.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -455,7 +455,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( empty( $image['image'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_response',
-				__( 'OpenAI returned an empty image response.', 'wp-mcp-ai' )
+				__( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -514,7 +514,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( empty( $image['image'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_response',
-				__( 'Gemini returned an empty image response.', 'wp-mcp-ai' )
+				__( 'Gemini returned an empty image response.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -559,7 +559,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( '' === $data ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_data',
-				__( 'Image data is empty.', 'wp-mcp-ai' )
+				__( 'Image data is empty.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -581,7 +581,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( ! empty( $upload['error'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_upload_failed',
-				__( 'Failed to save the generated drawing.', 'wp-mcp-ai' ),
+				__( 'Failed to save the generated drawing.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $upload['error'] )
 			);
 		}
@@ -590,7 +590,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_missing',
-				__( 'Failed to write the generated drawing to disk.', 'wp-mcp-ai' )
+				__( 'Failed to write the generated drawing to disk.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -671,7 +671,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( '' === $data ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_data',
-				__( 'Image data is empty.', 'wp-mcp-ai' )
+				__( 'Image data is empty.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -695,7 +695,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( ! empty( $upload['error'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_upload_failed',
-				__( 'Failed to save the generated drawing.', 'wp-mcp-ai' ),
+				__( 'Failed to save the generated drawing.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $upload['error'] )
 			);
 		}
@@ -704,7 +704,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_missing',
-				__( 'Failed to write the generated drawing to disk.', 'wp-mcp-ai' )
+				__( 'Failed to write the generated drawing to disk.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -776,7 +776,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( ! $this->is_nodejs_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_nodejs_required',
-				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'wp-mcp-ai' )
+				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -785,7 +785,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_not_found',
-				__( 'Generated image file not found for SVG conversion.', 'wp-mcp-ai' )
+				__( 'Generated image file not found for SVG conversion.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -794,7 +794,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( ! $temp_output ) {
 			return new WP_Error(
 				'wp_mcp_ai_temp_file_error',
-				__( 'Failed to create temporary SVG output file.', 'wp-mcp-ai' )
+				__( 'Failed to create temporary SVG output file.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -839,7 +839,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 			wp_delete_file( $temp_output );
 			return new WP_Error(
 				'wp_mcp_ai_vectorization_failed',
-				isset( $vectorize_result['error'] ) ? $vectorize_result['error'] : __( 'SVG vectorization failed.', 'wp-mcp-ai' )
+				isset( $vectorize_result['error'] ) ? $vectorize_result['error'] : __( 'SVG vectorization failed.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -849,7 +849,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 			wp_delete_file( $temp_output );
 			return new WP_Error(
 				'wp_mcp_ai_read_error',
-				__( 'Failed to read vectorized SVG file.', 'wp-mcp-ai' )
+				__( 'Failed to read vectorized SVG file.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -895,7 +895,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( ! empty( $upload['error'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_upload_failed',
-				__( 'Failed to save SVG file.', 'wp-mcp-ai' ),
+				__( 'Failed to save SVG file.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $upload['error'] )
 			);
 		}
@@ -905,13 +905,13 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_upload_failed',
-				__( 'Failed to write SVG file to disk.', 'wp-mcp-ai' )
+				__( 'Failed to write SVG file to disk.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		$attachment = array(
 			'post_mime_type' => 'image/svg+xml',
-			'post_title'     => sanitize_text_field( __( 'Architectural Drawing SVG', 'wp-mcp-ai' ) ),
+			'post_title'     => sanitize_text_field( __( 'Architectural Drawing SVG', 'mcp-ai-wpoos-pro' ) ),
 			'post_content'   => '',
 			'post_status'    => 'inherit',
 		);
@@ -949,13 +949,13 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		$prompt = trim( $prompt );
 
 		if ( '' === $prompt ) {
-			return __( 'Architectural Drawing', 'wp-mcp-ai' );
+			return __( 'Architectural Drawing', 'mcp-ai-wpoos-pro' );
 		}
 
 		$excerpt = wp_trim_words( $prompt, 10, '…' );
 
 		/* translators: %s: Short excerpt of the prompt. */
-		return sprintf( __( 'Architectural Drawing: %s', 'wp-mcp-ai' ), $excerpt );
+		return sprintf( __( 'Architectural Drawing: %s', 'mcp-ai-wpoos-pro' ), $excerpt );
 	}
 
 	/**

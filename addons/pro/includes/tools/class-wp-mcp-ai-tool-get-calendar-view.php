@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Calendar View', 'wp-mcp-ai' );
+		return __( 'Get Calendar View', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Gets a unified calendar view combining projects, tasks, and events within a specified date range. Perfect for displaying comprehensive schedules and timelines.', 'wp-mcp-ai' );
+		return __( 'Gets a unified calendar view combining projects, tasks, and events within a specified date range. Perfect for displaying comprehensive schedules and timelines.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,25 +45,25 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'start_date'    => array(
 					'type'        => 'string',
-					'description' => __( 'Start date for calendar view (YYYY-MM-DD) (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Start date for calendar view (YYYY-MM-DD) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'end_date'      => array(
 					'type'        => 'string',
-					'description' => __( 'End date for calendar view (YYYY-MM-DD) (required)', 'wp-mcp-ai' ),
+					'description' => __( 'End date for calendar view (YYYY-MM-DD) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'project_id'    => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by specific project ID (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by specific project ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'user_id'       => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by specific user ID (shows items assigned to or attended by user) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by specific user ID (shows items assigned to or attended by user) (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'include_types' => array(
 					'type'        => 'array',
-					'description' => __( 'Types to include in calendar view (default: all)', 'wp-mcp-ai' ),
+					'description' => __( 'Types to include in calendar view (default: all)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 						'enum' => array( 'projects', 'tasks', 'events' ),
@@ -72,7 +72,7 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 				),
 				'group_by_date' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Group results by date for easier calendar rendering (default: true)', 'wp-mcp-ai' ),
+					'description' => __( 'Group results by date for easier calendar rendering (default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
 			),
@@ -114,18 +114,18 @@ class WP_MCP_AI_Tool_Get_Calendar_View implements WP_MCP_AI_Tool_Interface, WP_M
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view calendar.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view calendar.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$start_date = isset( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : '';
 		$end_date   = isset( $arguments['end_date'] ) ? sanitize_text_field( $arguments['end_date'] ) : '';
 
 		if ( ! $start_date || ! $end_date ) {
-			return new WP_Error( 'wp_mcp_ai_missing_dates', __( 'Both start_date and end_date are required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_dates', __( 'Both start_date and end_date are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( ! $this->validate_date( $start_date ) || ! $this->validate_date( $end_date ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_dates', __( 'Invalid date format. Use YYYY-MM-DD.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_dates', __( 'Invalid date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$project_id    = isset( $arguments['project_id'] ) ? absint( $arguments['project_id'] ) : 0;

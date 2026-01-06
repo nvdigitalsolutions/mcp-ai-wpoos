@@ -30,8 +30,8 @@ class WP_MCP_AI_Supplier_Security_Admin {
 	public function add_admin_menu() {
 		add_submenu_page(
 			'nvoos-pro-dashboard',
-			__( 'Supplier Security', 'wp-mcp-ai' ),
-			__( 'Supplier Security', 'wp-mcp-ai' ),
+			__( 'Supplier Security', 'mcp-ai-wpoos' ),
+			__( 'Supplier Security', 'mcp-ai-wpoos' ),
 			'manage_options',
 			'nvoos-pro-dashboard-suppliers',
 			array( $this, 'render_admin_page' )
@@ -70,11 +70,11 @@ class WP_MCP_AI_Supplier_Security_Admin {
 				'restUrl'   => rest_url( 'mcp-ai/v1/suppliers' ),
 				'nonce'     => wp_create_nonce( 'wp_rest' ),
 				'strings'   => array(
-					'confirmDelete' => __( 'Are you sure you want to delete this supplier?', 'wp-mcp-ai' ),
-					'updateSuccess' => __( 'Supplier updated successfully', 'wp-mcp-ai' ),
-					'updateError'   => __( 'Failed to update supplier', 'wp-mcp-ai' ),
-					'deleteSuccess' => __( 'Supplier deleted successfully', 'wp-mcp-ai' ),
-					'deleteError'   => __( 'Failed to delete supplier', 'wp-mcp-ai' ),
+					'confirmDelete' => __( 'Are you sure you want to delete this supplier?', 'mcp-ai-wpoos' ),
+					'updateSuccess' => __( 'Supplier updated successfully', 'mcp-ai-wpoos' ),
+					'updateError'   => __( 'Failed to update supplier', 'mcp-ai-wpoos' ),
+					'deleteSuccess' => __( 'Supplier deleted successfully', 'mcp-ai-wpoos' ),
+					'deleteError'   => __( 'Failed to delete supplier', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -91,12 +91,12 @@ class WP_MCP_AI_Supplier_Security_Admin {
 		?>
 		<div class="wrap wp-mcp-ai-supplier-security">
 			<h1>
-				<?php esc_html_e( 'Supplier Security Management', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Supplier Security Management', 'mcp-ai-wpoos' ); ?>
 				<span class="wp-mcp-ai-badge wp-mcp-ai-badge-iso">🛡️ ISO 27001</span>
 			</h1>
 			
 			<p class="description">
-				<?php esc_html_e( 'Manage third-party vendor security assessments, monitoring, and compliance. Implements ISO 27001:2022 controls A.5.19-A.5.22.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Manage third-party vendor security assessments, monitoring, and compliance. Implements ISO 27001:2022 controls A.5.19-A.5.22.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<!-- Statistics Dashboard -->
@@ -104,38 +104,38 @@ class WP_MCP_AI_Supplier_Security_Admin {
 				<div class="wp-mcp-ai-stat-card">
 					<div class="wp-mcp-ai-stat-icon">📊</div>
 					<div class="wp-mcp-ai-stat-value"><?php echo esc_html( $stats['total'] ); ?></div>
-					<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Total Suppliers', 'wp-mcp-ai' ); ?></div>
+					<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Total Suppliers', 'mcp-ai-wpoos' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card">
 					<div class="wp-mcp-ai-stat-icon">🔴</div>
 					<div class="wp-mcp-ai-stat-value"><?php echo esc_html( $stats['by_category']['critical'] ); ?></div>
-					<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Critical Suppliers', 'wp-mcp-ai' ); ?></div>
+					<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Critical Suppliers', 'mcp-ai-wpoos' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card">
 					<div class="wp-mcp-ai-stat-icon">⚠️</div>
 					<div class="wp-mcp-ai-stat-value"><?php echo esc_html( $stats['due_for_review'] ); ?></div>
-					<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Due for Review', 'wp-mcp-ai' ); ?></div>
+					<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Due for Review', 'mcp-ai-wpoos' ); ?></div>
 				</div>
 
 				<div class="wp-mcp-ai-stat-card">
 					<div class="wp-mcp-ai-stat-icon">📈</div>
 					<div class="wp-mcp-ai-stat-value"><?php echo esc_html( $stats['avg_uptime'] ); ?>%</div>
-					<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Avg Uptime', 'wp-mcp-ai' ); ?></div>
+					<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Avg Uptime', 'mcp-ai-wpoos' ); ?></div>
 				</div>
 			</div>
 
 			<!-- Action Buttons -->
 			<div class="wp-mcp-ai-actions">
 				<button type="button" class="button button-primary" id="generate-sbom">
-					<?php esc_html_e( '📦 Generate SBOM', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( '📦 Generate SBOM', 'mcp-ai-wpoos' ); ?>
 				</button>
 				<button type="button" class="button button-secondary" id="scan-dependencies">
-					<?php esc_html_e( '🔍 Scan Dependencies', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( '🔍 Scan Dependencies', 'mcp-ai-wpoos' ); ?>
 				</button>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=nvoos-pro-dashboard-suppliers&tab=add' ) ); ?>" class="button">
-					<?php esc_html_e( '➕ Add Supplier', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( '➕ Add Supplier', 'mcp-ai-wpoos' ); ?>
 				</a>
 			</div>
 
@@ -143,11 +143,11 @@ class WP_MCP_AI_Supplier_Security_Admin {
 				<!-- Review Alert -->
 				<div class="notice notice-warning">
 					<p>
-						<strong><?php esc_html_e( 'Review Required:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Review Required:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						printf(
 							/* translators: %d: Number of suppliers */
-							esc_html( _n( '%d supplier is due for security review.', '%d suppliers are due for security review.', count( $due_for_review ), 'wp-mcp-ai' ) ),
+							esc_html( _n( '%d supplier is due for security review.', '%d suppliers are due for security review.', count( $due_for_review ), 'mcp-ai-wpoos' ) ),
 							count( $due_for_review )
 						);
 						?>
@@ -159,14 +159,14 @@ class WP_MCP_AI_Supplier_Security_Admin {
 			<table class="wp-list-table widefat fixed striped wp-mcp-ai-suppliers-table">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Supplier', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Service', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Category', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Risk Level', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Next Review', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Uptime', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Supplier', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Service', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Category', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Risk Level', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Next Review', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Uptime', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -218,10 +218,10 @@ class WP_MCP_AI_Supplier_Security_Admin {
 								</td>
 								<td>
 									<button type="button" class="button button-small wp-mcp-ai-view-supplier" data-supplier-id="<?php echo esc_attr( $supplier['id'] ); ?>">
-										<?php esc_html_e( 'View', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'View', 'mcp-ai-wpoos' ); ?>
 									</button>
 									<button type="button" class="button button-small wp-mcp-ai-record-incident" data-supplier-id="<?php echo esc_attr( $supplier['id'] ); ?>">
-										<?php esc_html_e( 'Incident', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Incident', 'mcp-ai-wpoos' ); ?>
 									</button>
 								</td>
 							</tr>
@@ -229,7 +229,7 @@ class WP_MCP_AI_Supplier_Security_Admin {
 					<?php else : ?>
 						<tr>
 							<td colspan="8" style="text-align: center;">
-								<?php esc_html_e( 'No suppliers found.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'No suppliers found.', 'mcp-ai-wpoos' ); ?>
 							</td>
 						</tr>
 					<?php endif; ?>
@@ -238,7 +238,7 @@ class WP_MCP_AI_Supplier_Security_Admin {
 
 			<!-- Risk Distribution -->
 			<div class="wp-mcp-ai-risk-distribution">
-				<h2><?php esc_html_e( 'Risk Distribution', 'wp-mcp-ai' ); ?></h2>
+				<h2><?php esc_html_e( 'Risk Distribution', 'mcp-ai-wpoos' ); ?></h2>
 				<div class="wp-mcp-ai-risk-bars">
 					<?php foreach ( $stats['by_risk'] as $risk => $count ) : ?>
 						<div class="wp-mcp-ai-risk-bar">
@@ -258,35 +258,35 @@ class WP_MCP_AI_Supplier_Security_Admin {
 
 			<!-- Compliance Controls Reference -->
 			<div class="wp-mcp-ai-compliance-reference">
-				<h2><?php esc_html_e( 'ISO 27001:2022 Controls Coverage', 'wp-mcp-ai' ); ?></h2>
+				<h2><?php esc_html_e( 'ISO 27001:2022 Controls Coverage', 'mcp-ai-wpoos' ); ?></h2>
 				<table class="widefat">
 					<thead>
 						<tr>
-							<th><?php esc_html_e( 'Control', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Implementation', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Control', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Implementation', 'mcp-ai-wpoos' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr>
 							<td><strong>A.5.19</strong></td>
-							<td><?php esc_html_e( 'Information Security in Supplier Relationships', 'wp-mcp-ai' ); ?></td>
-							<td><span class="wp-mcp-ai-status wp-mcp-ai-status-approved">✅ <?php esc_html_e( 'Implemented', 'wp-mcp-ai' ); ?></span></td>
+							<td><?php esc_html_e( 'Information Security in Supplier Relationships', 'mcp-ai-wpoos' ); ?></td>
+							<td><span class="wp-mcp-ai-status wp-mcp-ai-status-approved">✅ <?php esc_html_e( 'Implemented', 'mcp-ai-wpoos' ); ?></span></td>
 						</tr>
 						<tr>
 							<td><strong>A.5.20</strong></td>
-							<td><?php esc_html_e( 'Addressing Information Security Within Supplier Agreements', 'wp-mcp-ai' ); ?></td>
-							<td><span class="wp-mcp-ai-status wp-mcp-ai-status-approved">✅ <?php esc_html_e( 'Implemented', 'wp-mcp-ai' ); ?></span></td>
+							<td><?php esc_html_e( 'Addressing Information Security Within Supplier Agreements', 'mcp-ai-wpoos' ); ?></td>
+							<td><span class="wp-mcp-ai-status wp-mcp-ai-status-approved">✅ <?php esc_html_e( 'Implemented', 'mcp-ai-wpoos' ); ?></span></td>
 						</tr>
 						<tr>
 							<td><strong>A.5.21</strong></td>
-							<td><?php esc_html_e( 'Managing Information Security in the ICT Supply Chain', 'wp-mcp-ai' ); ?></td>
-							<td><span class="wp-mcp-ai-status wp-mcp-ai-status-approved">✅ <?php esc_html_e( 'Implemented', 'wp-mcp-ai' ); ?></span></td>
+							<td><?php esc_html_e( 'Managing Information Security in the ICT Supply Chain', 'mcp-ai-wpoos' ); ?></td>
+							<td><span class="wp-mcp-ai-status wp-mcp-ai-status-approved">✅ <?php esc_html_e( 'Implemented', 'mcp-ai-wpoos' ); ?></span></td>
 						</tr>
 						<tr>
 							<td><strong>A.5.22</strong></td>
-							<td><?php esc_html_e( 'Monitoring, Review and Change Management of Supplier Services', 'wp-mcp-ai' ); ?></td>
-							<td><span class="wp-mcp-ai-status wp-mcp-ai-status-approved">✅ <?php esc_html_e( 'Implemented', 'wp-mcp-ai' ); ?></span></td>
+							<td><?php esc_html_e( 'Monitoring, Review and Change Management of Supplier Services', 'mcp-ai-wpoos' ); ?></td>
+							<td><span class="wp-mcp-ai-status wp-mcp-ai-status-approved">✅ <?php esc_html_e( 'Implemented', 'mcp-ai-wpoos' ); ?></span></td>
 						</tr>
 					</tbody>
 				</table>
@@ -294,21 +294,21 @@ class WP_MCP_AI_Supplier_Security_Admin {
 
 			<!-- Documentation Links -->
 			<div class="wp-mcp-ai-documentation">
-				<h3><?php esc_html_e( 'Documentation', 'wp-mcp-ai' ); ?></h3>
+				<h3><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos' ); ?></h3>
 				<ul>
 					<li>
 						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/procedures/Vendor-Security.md' ); ?>" target="_blank">
-							<?php esc_html_e( '📄 Vendor Security Assessment Procedure', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( '📄 Vendor Security Assessment Procedure', 'mcp-ai-wpoos' ); ?>
 						</a>
 					</li>
 					<li>
 						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>" target="_blank">
-							<?php esc_html_e( '📋 Statement of Applicability', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( '📋 Statement of Applicability', 'mcp-ai-wpoos' ); ?>
 						</a>
 					</li>
 					<li>
 						<a href="<?php echo esc_url( rest_url( 'mcp-ai/v1/suppliers' ) ); ?>" target="_blank">
-							<?php esc_html_e( '🔌 REST API Documentation', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( '🔌 REST API Documentation', 'mcp-ai-wpoos' ); ?>
 						</a>
 					</li>
 				</ul>

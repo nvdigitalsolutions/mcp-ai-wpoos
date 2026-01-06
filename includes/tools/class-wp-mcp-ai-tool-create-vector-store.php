@@ -29,14 +29,14 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Vector Store', 'wp-mcp-ai' );
+		return __( 'Create Vector Store', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new OpenAI vector store for knowledge retrieval and semantic search. Vector stores can contain multiple files for RAG (Retrieval-Augmented Generation).', 'wp-mcp-ai' );
+		return __( 'Creates a new OpenAI vector store for knowledge retrieval and semantic search. Vector stores can contain multiple files for RAG (Retrieval-Augmented Generation).', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -48,18 +48,18 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 			'properties' => array(
 				'name'          => array(
 					'type'        => 'string',
-					'description' => __( 'Name of the vector store.', 'wp-mcp-ai' ),
+					'description' => __( 'Name of the vector store.', 'mcp-ai-wpoos' ),
 				),
 				'file_ids'      => array(
 					'type'        => 'array',
-					'description' => __( 'Optional: Array of OpenAI file IDs to add to the vector store.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional: Array of OpenAI file IDs to add to the vector store.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
 				'expires_after' => array(
 					'type'        => 'object',
-					'description' => __( 'Optional: Auto-expiration configuration.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional: Auto-expiration configuration.', 'mcp-ai-wpoos' ),
 					'properties'  => array(
 						'anchor' => array(
 							'type' => 'string',
@@ -74,7 +74,7 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 				),
 				'metadata'      => array(
 					'type'        => 'object',
-					'description' => __( 'Optional: Custom metadata as key-value pairs (max 16 pairs).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional: Custom metadata as key-value pairs (max 16 pairs).', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'   => array( 'name' ),
@@ -89,7 +89,7 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 		if ( empty( $arguments['name'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The name parameter is required.', 'wp-mcp-ai' ),
+				'error'   => __( 'The name parameter is required.', 'mcp-ai-wpoos' ),
 			);
 		}
 

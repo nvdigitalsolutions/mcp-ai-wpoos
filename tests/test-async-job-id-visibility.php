@@ -43,7 +43,7 @@ class Test_Async_Job_ID_Visibility extends WP_UnitTestCase {
 			'job_id'    => $job_id,
 			'message'   => sprintf(
 				/* translators: 1: tool name, 2: job ID */
-				__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready.', 'wp-mcp-ai' ),
+				__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready.', 'mcp-ai-wpoos' ),
 				$tool_name,
 				$job_id
 			),
@@ -73,7 +73,7 @@ class Test_Async_Job_ID_Visibility extends WP_UnitTestCase {
 			'job_id'    => $job_id,
 			'message'   => sprintf(
 				/* translators: 1: tool name, 2: job ID, 3: call ID */
-				__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready. (Call ID: %3$s)', 'wp-mcp-ai' ),
+				__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready. (Call ID: %3$s)', 'mcp-ai-wpoos' ),
 				$tool_name,
 				$job_id,
 				$tool_call_id

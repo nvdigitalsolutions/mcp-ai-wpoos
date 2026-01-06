@@ -266,9 +266,9 @@ class WP_MCP_AI_SLA_Manager {
 		$concurrent = self::get_default_concurrent( $tier );
 
 		$descriptions = array(
-			self::TIER_REALTIME      => __( 'Real-time tier for interactive UI operations requiring < 1s response.', 'wp-mcp-ai' ),
-			self::TIER_NEAR_REALTIME => __( 'Near real-time tier for async operations with 1-30s latency tolerance.', 'wp-mcp-ai' ),
-			self::TIER_BATCH         => __( 'Batch tier for background processing with > 30s acceptable latency.', 'wp-mcp-ai' ),
+			self::TIER_REALTIME      => __( 'Real-time tier for interactive UI operations requiring < 1s response.', 'mcp-ai-wpoos' ),
+			self::TIER_NEAR_REALTIME => __( 'Near real-time tier for async operations with 1-30s latency tolerance.', 'mcp-ai-wpoos' ),
+			self::TIER_BATCH         => __( 'Batch tier for background processing with > 30s acceptable latency.', 'mcp-ai-wpoos' ),
 		);
 
 		return array(
@@ -305,7 +305,7 @@ class WP_MCP_AI_SLA_Manager {
 	public static function analyze_queue_metrics( $tier ) {
 		if ( ! class_exists( 'WP_MCP_AI_Job_Queue_Manager' ) ) {
 			return array(
-				'error' => __( 'Job Queue Manager not available.', 'wp-mcp-ai' ),
+				'error' => __( 'Job Queue Manager not available.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -360,7 +360,7 @@ class WP_MCP_AI_SLA_Manager {
 				$recommendations[ $tier ]['status']  = 'warning';
 				$recommendations[ $tier ]['message'] = sprintf(
 					/* translators: %d: recommended worker count */
-					__( 'Queue is over capacity. Consider increasing concurrent workers to %d.', 'wp-mcp-ai' ),
+					__( 'Queue is over capacity. Consider increasing concurrent workers to %d.', 'mcp-ai-wpoos' ),
 					$recommendations[ $tier ]['recommended']
 				);
 			}
@@ -369,7 +369,7 @@ class WP_MCP_AI_SLA_Manager {
 				$recommendations[ $tier ]['status']  = 'critical';
 				$recommendations[ $tier ]['message'] = sprintf(
 					/* translators: 1: SLA target in seconds, 2: recommended worker count */
-					__( 'SLA target of %1$ds is at risk. Increase concurrent workers to %2$d or optimize job execution time.', 'wp-mcp-ai' ),
+					__( 'SLA target of %1$ds is at risk. Increase concurrent workers to %2$d or optimize job execution time.', 'mcp-ai-wpoos' ),
 					$metrics['sla_target'],
 					$recommendations[ $tier ]['recommended']
 				);

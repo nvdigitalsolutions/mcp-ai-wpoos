@@ -47,10 +47,10 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 		$new_columns = array(
 			'cb'           => $columns['cb'],
 			'title'        => $columns['title'],
-			'status'       => __( 'Status', 'wp-mcp-ai' ),
-			'start_date'   => __( 'Start Date', 'wp-mcp-ai' ),
-			'end_date'     => __( 'End Date', 'wp-mcp-ai' ),
-			'assigned_to'  => __( 'Team Members', 'wp-mcp-ai' ),
+			'status'       => __( 'Status', 'mcp-ai-wpoos-pro' ),
+			'start_date'   => __( 'Start Date', 'mcp-ai-wpoos-pro' ),
+			'end_date'     => __( 'End Date', 'mcp-ai-wpoos-pro' ),
+			'assigned_to'  => __( 'Team Members', 'mcp-ai-wpoos-pro' ),
 			'author'       => $columns['author'],
 			'date'         => $columns['date'],
 		);
@@ -69,11 +69,11 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 				$status = get_post_meta( $post_id, '_project_status', true );
 				if ( ! empty( $status ) ) {
 					$status_labels = array(
-						'planning'  => __( 'Planning', 'wp-mcp-ai' ),
-						'active'    => __( 'Active', 'wp-mcp-ai' ),
-						'on-hold'   => __( 'On Hold', 'wp-mcp-ai' ),
-						'completed' => __( 'Completed', 'wp-mcp-ai' ),
-						'cancelled' => __( 'Cancelled', 'wp-mcp-ai' ),
+						'planning'  => __( 'Planning', 'mcp-ai-wpoos-pro' ),
+						'active'    => __( 'Active', 'mcp-ai-wpoos-pro' ),
+						'on-hold'   => __( 'On Hold', 'mcp-ai-wpoos-pro' ),
+						'completed' => __( 'Completed', 'mcp-ai-wpoos-pro' ),
+						'cancelled' => __( 'Cancelled', 'mcp-ai-wpoos-pro' ),
 					);
 					$label = isset( $status_labels[ $status ] ) ? $status_labels[ $status ] : ucfirst( $status );
 					printf( '<span class="wp-mcp-ai-status wp-mcp-ai-status-%s">%s</span>', esc_attr( $status ), esc_html( $label ) );
@@ -133,11 +133,11 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 		$new_columns = array(
 			'cb'          => $columns['cb'],
 			'title'       => $columns['title'],
-			'status'      => __( 'Status', 'wp-mcp-ai' ),
-			'priority'    => __( 'Priority', 'wp-mcp-ai' ),
-			'project'     => __( 'Project', 'wp-mcp-ai' ),
-			'due_date'    => __( 'Due Date', 'wp-mcp-ai' ),
-			'assigned_to' => __( 'Assigned To', 'wp-mcp-ai' ),
+			'status'      => __( 'Status', 'mcp-ai-wpoos-pro' ),
+			'priority'    => __( 'Priority', 'mcp-ai-wpoos-pro' ),
+			'project'     => __( 'Project', 'mcp-ai-wpoos-pro' ),
+			'due_date'    => __( 'Due Date', 'mcp-ai-wpoos-pro' ),
+			'assigned_to' => __( 'Assigned To', 'mcp-ai-wpoos-pro' ),
 			'author'      => $columns['author'],
 			'date'        => $columns['date'],
 		);
@@ -156,11 +156,11 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 				$status = get_post_meta( $post_id, '_task_status', true );
 				if ( ! empty( $status ) ) {
 					$status_labels = array(
-						'todo'        => __( 'To Do', 'wp-mcp-ai' ),
-						'in-progress' => __( 'In Progress', 'wp-mcp-ai' ),
-						'review'      => __( 'Review', 'wp-mcp-ai' ),
-						'completed'   => __( 'Completed', 'wp-mcp-ai' ),
-						'cancelled'   => __( 'Cancelled', 'wp-mcp-ai' ),
+						'todo'        => __( 'To Do', 'mcp-ai-wpoos-pro' ),
+						'in-progress' => __( 'In Progress', 'mcp-ai-wpoos-pro' ),
+						'review'      => __( 'Review', 'mcp-ai-wpoos-pro' ),
+						'completed'   => __( 'Completed', 'mcp-ai-wpoos-pro' ),
+						'cancelled'   => __( 'Cancelled', 'mcp-ai-wpoos-pro' ),
 					);
 					$label = isset( $status_labels[ $status ] ) ? $status_labels[ $status ] : ucfirst( $status );
 					printf( '<span class="wp-mcp-ai-status wp-mcp-ai-status-%s">%s</span>', esc_attr( $status ), esc_html( $label ) );
@@ -173,10 +173,10 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 				$priority = get_post_meta( $post_id, '_task_priority', true );
 				if ( ! empty( $priority ) ) {
 					$priority_labels = array(
-						'low'    => __( 'Low', 'wp-mcp-ai' ),
-						'medium' => __( 'Medium', 'wp-mcp-ai' ),
-						'high'   => __( 'High', 'wp-mcp-ai' ),
-						'urgent' => __( 'Urgent', 'wp-mcp-ai' ),
+						'low'    => __( 'Low', 'mcp-ai-wpoos-pro' ),
+						'medium' => __( 'Medium', 'mcp-ai-wpoos-pro' ),
+						'high'   => __( 'High', 'mcp-ai-wpoos-pro' ),
+						'urgent' => __( 'Urgent', 'mcp-ai-wpoos-pro' ),
 					);
 					$label = isset( $priority_labels[ $priority ] ) ? $priority_labels[ $priority ] : ucfirst( $priority );
 					printf( '<span class="wp-mcp-ai-priority wp-mcp-ai-priority-%s">%s</span>', esc_attr( $priority ), esc_html( $label ) );
@@ -256,11 +256,11 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 		$new_columns = array(
 			'cb'         => $columns['cb'],
 			'title'      => $columns['title'],
-			'type'       => __( 'Type', 'wp-mcp-ai' ),
-			'start_date' => __( 'Start Date', 'wp-mcp-ai' ),
-			'end_date'   => __( 'End Date', 'wp-mcp-ai' ),
-			'location'   => __( 'Location', 'wp-mcp-ai' ),
-			'project'    => __( 'Project', 'wp-mcp-ai' ),
+			'type'       => __( 'Type', 'mcp-ai-wpoos-pro' ),
+			'start_date' => __( 'Start Date', 'mcp-ai-wpoos-pro' ),
+			'end_date'   => __( 'End Date', 'mcp-ai-wpoos-pro' ),
+			'location'   => __( 'Location', 'mcp-ai-wpoos-pro' ),
+			'project'    => __( 'Project', 'mcp-ai-wpoos-pro' ),
 			'author'     => $columns['author'],
 			'date'       => $columns['date'],
 		);
@@ -279,11 +279,11 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 				$type = get_post_meta( $post_id, '_event_type', true );
 				if ( ! empty( $type ) ) {
 					$type_labels = array(
-						'meeting'   => __( 'Meeting', 'wp-mcp-ai' ),
-						'deadline'  => __( 'Deadline', 'wp-mcp-ai' ),
-						'milestone' => __( 'Milestone', 'wp-mcp-ai' ),
-						'reminder'  => __( 'Reminder', 'wp-mcp-ai' ),
-						'other'     => __( 'Other', 'wp-mcp-ai' ),
+						'meeting'   => __( 'Meeting', 'mcp-ai-wpoos-pro' ),
+						'deadline'  => __( 'Deadline', 'mcp-ai-wpoos-pro' ),
+						'milestone' => __( 'Milestone', 'mcp-ai-wpoos-pro' ),
+						'reminder'  => __( 'Reminder', 'mcp-ai-wpoos-pro' ),
+						'other'     => __( 'Other', 'mcp-ai-wpoos-pro' ),
 					);
 					$label = isset( $type_labels[ $type ] ) ? $type_labels[ $type ] : ucfirst( $type );
 					printf( '<span class="wp-mcp-ai-event-type wp-mcp-ai-event-type-%s">%s</span>', esc_attr( $type ), esc_html( $label ) );
@@ -303,7 +303,7 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 						echo ' ' . esc_html( $time );
 					}
 					if ( '1' === $all_day ) {
-						echo ' <em>(' . esc_html__( 'All day', 'wp-mcp-ai' ) . ')</em>';
+						echo ' <em>(' . esc_html__( 'All day', 'mcp-ai-wpoos-pro' ) . ')</em>';
 					}
 				} else {
 					echo '—';

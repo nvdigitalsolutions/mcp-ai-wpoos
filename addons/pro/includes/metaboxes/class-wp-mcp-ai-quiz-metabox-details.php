@@ -31,7 +31,7 @@ class WP_MCP_AI_Quiz_Metabox_Details extends WP_MCP_AI_Quiz_Metabox_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Quiz Settings', 'wp-mcp-ai' );
+		return __( 'Quiz Settings', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -82,7 +82,7 @@ class WP_MCP_AI_Quiz_Metabox_Details extends WP_MCP_AI_Quiz_Metabox_Base {
 		<div class="wp-mcp-ai-quiz-details">
 			<p>
 				<label for="wp_mcp_ai_quiz_time_limit">
-					<strong><?php esc_html_e( 'Time Limit (minutes):', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Time Limit (minutes):', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label>
 				<input 
 					type="number" 
@@ -93,12 +93,12 @@ class WP_MCP_AI_Quiz_Metabox_Details extends WP_MCP_AI_Quiz_Metabox_Base {
 					step="1"
 					class="widefat"
 				/>
-				<span class="description"><?php esc_html_e( 'Set to 0 for no time limit', 'wp-mcp-ai' ); ?></span>
+				<span class="description"><?php esc_html_e( 'Set to 0 for no time limit', 'mcp-ai-wpoos-pro' ); ?></span>
 			</p>
 
 			<p>
 				<label for="wp_mcp_ai_quiz_passing_score">
-					<strong><?php esc_html_e( 'Passing Score (%):', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Passing Score (%):', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label>
 				<input 
 					type="number" 
@@ -110,7 +110,7 @@ class WP_MCP_AI_Quiz_Metabox_Details extends WP_MCP_AI_Quiz_Metabox_Base {
 					step="1"
 					class="widefat"
 				/>
-				<span class="description"><?php esc_html_e( 'Minimum percentage to pass (0-100)', 'wp-mcp-ai' ); ?></span>
+				<span class="description"><?php esc_html_e( 'Minimum percentage to pass (0-100)', 'mcp-ai-wpoos-pro' ); ?></span>
 			</p>
 		</div>
 		<?php

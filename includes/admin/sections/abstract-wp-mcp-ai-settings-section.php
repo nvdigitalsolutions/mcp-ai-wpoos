@@ -387,7 +387,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					<p class="section-documentation">
 						<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
 						<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
-							<?php esc_html_e( 'View Documentation', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
 							<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
 						</a>
 					</p>

@@ -29,14 +29,14 @@ class WP_MCP_AI_Tool_List_Vector_Stores implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List Vector Stores', 'wp-mcp-ai' );
+		return __( 'List Vector Stores', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists all OpenAI vector stores with optional filtering and pagination. Use this to discover available knowledge bases.', 'wp-mcp-ai' );
+		return __( 'Lists all OpenAI vector stores with optional filtering and pagination. Use this to discover available knowledge bases.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -48,24 +48,24 @@ class WP_MCP_AI_Tool_List_Vector_Stores implements WP_MCP_AI_Tool_Interface, WP_
 			'properties' => array(
 				'limit'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of vector stores to return (1-100, default 20).', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of vector stores to return (1-100, default 20).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
 				'order'  => array(
 					'type'        => 'string',
-					'description' => __( 'Sort order (asc or desc, default desc).', 'wp-mcp-ai' ),
+					'description' => __( 'Sort order (asc or desc, default desc).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'asc', 'desc' ),
 					'default'     => 'desc',
 				),
 				'after'  => array(
 					'type'        => 'string',
-					'description' => __( 'Cursor for pagination (ID of the last item from previous page).', 'wp-mcp-ai' ),
+					'description' => __( 'Cursor for pagination (ID of the last item from previous page).', 'mcp-ai-wpoos' ),
 				),
 				'before' => array(
 					'type'        => 'string',
-					'description' => __( 'Cursor for reverse pagination (ID of the first item from previous page).', 'wp-mcp-ai' ),
+					'description' => __( 'Cursor for reverse pagination (ID of the first item from previous page).', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'   => array(),

@@ -29,14 +29,14 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Vector Store', 'wp-mcp-ai' );
+		return __( 'Get Vector Store', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves detailed information about a specific OpenAI vector store including file counts, status, and metadata.', 'wp-mcp-ai' );
+		return __( 'Retrieves detailed information about a specific OpenAI vector store including file counts, status, and metadata.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -48,7 +48,7 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties' => array(
 				'vector_store_id' => array(
 					'type'        => 'string',
-					'description' => __( 'The ID of the vector store to retrieve.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the vector store to retrieve.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'   => array( 'vector_store_id' ),
@@ -62,7 +62,7 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['vector_store_id'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The vector_store_id parameter is required.', 'wp-mcp-ai' ),
+				'error'   => __( 'The vector_store_id parameter is required.', 'mcp-ai-wpoos' ),
 			);
 		}
 

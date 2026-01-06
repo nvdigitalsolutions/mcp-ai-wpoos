@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Update Quiz', 'wp-mcp-ai' );
+		return __( 'Update Quiz', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Updates an existing quiz with new questions or settings. Only the quiz author or users with edit_others_posts capability can update quizzes.', 'wp-mcp-ai' );
+		return __( 'Updates an existing quiz with new questions or settings. Only the quiz author or users with edit_others_posts capability can update quizzes.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,48 +43,48 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'quiz_id'       => array(
 					'type'        => 'integer',
-					'description' => __( 'ID of the quiz to update.', 'wp-mcp-ai' ),
+					'description' => __( 'ID of the quiz to update.', 'mcp-ai-wpoos-pro' ),
 				),
 				'title'         => array(
 					'type'        => 'string',
-					'description' => __( 'New title of the quiz (optional).', 'wp-mcp-ai' ),
+					'description' => __( 'New title of the quiz (optional).', 'mcp-ai-wpoos-pro' ),
 				),
 				'description'   => array(
 					'type'        => 'string',
-					'description' => __( 'New description or instructions for the quiz (optional).', 'wp-mcp-ai' ),
+					'description' => __( 'New description or instructions for the quiz (optional).', 'mcp-ai-wpoos-pro' ),
 				),
 				'time_limit'    => array(
 					'type'        => 'integer',
-					'description' => __( 'New time limit in minutes for completing the quiz. 0 for no limit (optional).', 'wp-mcp-ai' ),
+					'description' => __( 'New time limit in minutes for completing the quiz. 0 for no limit (optional).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
 				'questions'     => array(
 					'type'        => 'array',
-					'description' => __( 'New array of questions for the quiz (optional). This will replace all existing questions.', 'wp-mcp-ai' ),
+					'description' => __( 'New array of questions for the quiz (optional). This will replace all existing questions.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
 							'question'       => array(
 								'type'        => 'string',
-								'description' => __( 'The question text.', 'wp-mcp-ai' ),
+								'description' => __( 'The question text.', 'mcp-ai-wpoos-pro' ),
 							),
 							'type'           => array(
 								'type'        => 'string',
-								'description' => __( 'Question type: multiple_choice, true_false, or short_answer.', 'wp-mcp-ai' ),
+								'description' => __( 'Question type: multiple_choice, true_false, or short_answer.', 'mcp-ai-wpoos-pro' ),
 								'enum'        => array( 'multiple_choice', 'true_false', 'short_answer' ),
 							),
 							'options'        => array(
 								'type'        => 'array',
-								'description' => __( 'Answer options for multiple choice questions.', 'wp-mcp-ai' ),
+								'description' => __( 'Answer options for multiple choice questions.', 'mcp-ai-wpoos-pro' ),
 								'items'       => array( 'type' => 'string' ),
 							),
 							'correct_answer' => array(
 								'type'        => 'string',
-								'description' => __( 'The correct answer (for grading reference).', 'wp-mcp-ai' ),
+								'description' => __( 'The correct answer (for grading reference).', 'mcp-ai-wpoos-pro' ),
 							),
 							'points'         => array(
 								'type'        => 'integer',
-								'description' => __( 'Points awarded for correct answer.', 'wp-mcp-ai' ),
+								'description' => __( 'Points awarded for correct answer.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 1,
 								'minimum'     => 1,
 							),
@@ -94,7 +94,7 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'passing_score' => array(
 					'type'        => 'integer',
-					'description' => __( 'New minimum percentage (0-100) required to pass the quiz (optional).', 'wp-mcp-ai' ),
+					'description' => __( 'New minimum percentage (0-100) required to pass the quiz (optional).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
@@ -115,21 +115,21 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to update quizzes.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to update quizzes.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Get quiz ID.
 		$quiz_id = isset( $arguments['quiz_id'] ) ? absint( $arguments['quiz_id'] ) : 0;
 
 		if ( ! $quiz_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Verify quiz exists.
 		$quiz = get_post( $quiz_id );
 
 		if ( ! $quiz || 'mcp_ai_quiz' !== $quiz->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Check permissions: must be author or have edit_others_posts capability.
@@ -137,7 +137,7 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 		if ( ! $is_author && ! $can_edit_others ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this quiz.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this quiz.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Track what's being updated.
@@ -147,7 +147,7 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( isset( $arguments['title'] ) ) {
 			$title = sanitize_text_field( $arguments['title'] );
 			if ( '' === $title ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_title', __( 'Quiz title cannot be empty.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_title', __( 'Quiz title cannot be empty.', 'mcp-ai-wpoos-pro' ) );
 			}
 			wp_update_post(
 				array(
@@ -176,7 +176,7 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( isset( $arguments['passing_score'] ) ) {
 			$passing_score = absint( $arguments['passing_score'] );
 			if ( $passing_score < 0 || $passing_score > 100 ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_passing_score', __( 'Passing score must be between 0 and 100.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_passing_score', __( 'Passing score must be between 0 and 100.', 'mcp-ai-wpoos-pro' ) );
 			}
 			update_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', $passing_score );
 			$updated_fields[] = 'passing_score';
@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$questions = $arguments['questions'];
 
 			if ( empty( $questions ) ) {
-				return new WP_Error( 'wp_mcp_ai_missing_questions', __( 'At least one question is required.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_missing_questions', __( 'At least one question is required.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			// Validate questions.
@@ -196,11 +196,11 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 			foreach ( $questions as $index => $question_data ) {
 				if ( ! isset( $question_data['question'] ) || '' === trim( $question_data['question'] ) ) {
-					return new WP_Error( 'wp_mcp_ai_invalid_question', sprintf( __( 'Question %d is missing question text.', 'wp-mcp-ai' ), $index + 1 ) );
+					return new WP_Error( 'wp_mcp_ai_invalid_question', sprintf( __( 'Question %d is missing question text.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
 				}
 
 				if ( ! isset( $question_data['type'] ) || ! in_array( $question_data['type'], array( 'multiple_choice', 'true_false', 'short_answer' ), true ) ) {
-					return new WP_Error( 'wp_mcp_ai_invalid_type', sprintf( __( 'Question %d has an invalid type.', 'wp-mcp-ai' ), $index + 1 ) );
+					return new WP_Error( 'wp_mcp_ai_invalid_type', sprintf( __( 'Question %d has an invalid type.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
 				}
 
 				$validated_question = array(
@@ -212,7 +212,7 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				// Validate options for multiple choice.
 				if ( 'multiple_choice' === $validated_question['type'] ) {
 					if ( empty( $question_data['options'] ) || ! is_array( $question_data['options'] ) ) {
-						return new WP_Error( 'wp_mcp_ai_missing_options', sprintf( __( 'Question %d is missing answer options.', 'wp-mcp-ai' ), $index + 1 ) );
+						return new WP_Error( 'wp_mcp_ai_missing_options', sprintf( __( 'Question %d is missing answer options.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
 					}
 					$validated_question['options'] = array_map( 'sanitize_text_field', $question_data['options'] );
 				}
@@ -234,7 +234,7 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		// If nothing was updated, return error.
 		if ( empty( $updated_fields ) ) {
-			return new WP_Error( 'wp_mcp_ai_no_updates', __( 'No fields provided to update.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_no_updates', __( 'No fields provided to update.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Trigger CCT sync by touching the post (this will trigger the save_post hook).
@@ -256,7 +256,7 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'summary'        => sprintf(
 				/* translators: 1: quiz title, 2: quiz ID, 3: comma-separated list of updated fields */
-				__( 'Quiz updated: %1$s (ID: %2$d). Updated fields: %3$s', 'wp-mcp-ai' ),
+				__( 'Quiz updated: %1$s (ID: %2$d). Updated fields: %3$s', 'mcp-ai-wpoos-pro' ),
 				$quiz->post_title,
 				$quiz_id,
 				implode( ', ', $updated_fields )

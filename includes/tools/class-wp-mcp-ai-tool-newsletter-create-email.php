@@ -28,7 +28,7 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Newsletter Create Email tool is disabled because the Newsletter plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The Newsletter Create Email tool is disabled because the Newsletter plugin is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -42,14 +42,14 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Newsletter Email', 'wp-mcp-ai' );
+		return __( 'Create Newsletter Email', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Create a new newsletter email campaign with subject, content, and settings. Requires Newsletter plugin.', 'wp-mcp-ai' );
+		return __( 'Create a new newsletter email campaign with subject, content, and settings. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,32 +61,32 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'subject'           => array(
 					'type'        => 'string',
-					'description' => __( 'Email subject line.', 'wp-mcp-ai' ),
+					'description' => __( 'Email subject line.', 'mcp-ai-wpoos' ),
 				),
 				'message'           => array(
 					'type'        => 'string',
-					'description' => __( 'Email HTML content/body.', 'wp-mcp-ai' ),
+					'description' => __( 'Email HTML content/body.', 'mcp-ai-wpoos' ),
 				),
 				'type'              => array(
 					'type'        => 'string',
-					'description' => __( 'Email type: message (standard newsletter) or followup (automated). Default: message.', 'wp-mcp-ai' ),
+					'description' => __( 'Email type: message (standard newsletter) or followup (automated). Default: message.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'message', 'followup' ),
 					'default'     => 'message',
 				),
 				'status'            => array(
 					'type'        => 'string',
-					'description' => __( 'Email status: new (draft), sending, sent, paused. Default: new.', 'wp-mcp-ai' ),
+					'description' => __( 'Email status: new (draft), sending, sent, paused. Default: new.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'new', 'sending', 'sent', 'paused' ),
 					'default'     => 'new',
 				),
 				'track'             => array(
 					'type'        => 'boolean',
-					'description' => __( 'Enable click and open tracking. Default: true.', 'wp-mcp-ai' ),
+					'description' => __( 'Enable click and open tracking. Default: true.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'lists'             => array(
 					'type'        => 'array',
-					'description' => __( 'Target list IDs (1-40). Empty means all confirmed subscribers.', 'wp-mcp-ai' ),
+					'description' => __( 'Target list IDs (1-40). Empty means all confirmed subscribers.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'integer',
 					),
@@ -94,36 +94,36 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 				// Enhanced parameters for comprehensive newsletter creation.
 				'preheader'         => array(
 					'type'        => 'string',
-					'description' => __( 'Preheader text (preview text shown in email clients).', 'wp-mcp-ai' ),
+					'description' => __( 'Preheader text (preview text shown in email clients).', 'mcp-ai-wpoos' ),
 					'maxLength'   => 150,
 				),
 				'sender_name'       => array(
 					'type'        => 'string',
-					'description' => __( 'Sender name to display in email from field.', 'wp-mcp-ai' ),
+					'description' => __( 'Sender name to display in email from field.', 'mcp-ai-wpoos' ),
 				),
 				'sender_email'      => array(
 					'type'        => 'string',
-					'description' => __( 'Sender email address.', 'wp-mcp-ai' ),
+					'description' => __( 'Sender email address.', 'mcp-ai-wpoos' ),
 					'format'      => 'email',
 				),
 				'send_time'         => array(
 					'type'        => 'string',
-					'description' => __( 'Schedule send time in ISO 8601 format (e.g., "2024-12-31T10:00:00"). Leave empty to send immediately.', 'wp-mcp-ai' ),
+					'description' => __( 'Schedule send time in ISO 8601 format (e.g., "2024-12-31T10:00:00"). Leave empty to send immediately.', 'mcp-ai-wpoos' ),
 					'format'      => 'date-time',
 				),
 				'featured_image_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Attachment ID for the email featured image/banner.', 'wp-mcp-ai' ),
+					'description' => __( 'Attachment ID for the email featured image/banner.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'tags'              => array(
 					'type'        => 'array',
-					'description' => __( 'Array of tag names for email organization (custom meta).', 'wp-mcp-ai' ),
+					'description' => __( 'Array of tag names for email organization (custom meta).', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
 				),
 				'meta_input'        => array(
 					'type'                 => 'object',
-					'description'          => __( 'Array of custom field key-value pairs for email metadata.', 'wp-mcp-ai' ),
+					'description'          => __( 'Array of custom field key-value pairs for email metadata.', 'mcp-ai-wpoos' ),
 					'additionalProperties' => true,
 				),
 			),
@@ -141,26 +141,26 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create newsletter emails.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create newsletter emails.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate required fields.
 		if ( empty( $arguments['subject'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_subject', __( 'Email subject is required.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_subject', __( 'Email subject is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		if ( empty( $arguments['message'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_message', __( 'Email message is required.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_message', __( 'Email message is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		global $wpdb;
@@ -223,7 +223,7 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 		);
 
 		if ( false === $result ) {
-			return new WP_Error( 'wp_mcp_ai_insert_failed', __( 'Failed to create newsletter email.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_insert_failed', __( 'Failed to create newsletter email.', 'mcp-ai-wpoos' ) );
 		}
 
 		$email_id = $wpdb->insert_id;
@@ -240,7 +240,7 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 			'subject'  => $subject,
 			'type'     => $type,
 			'status'   => $status,
-			'message'  => __( 'Newsletter email created successfully.', 'wp-mcp-ai' ),
+			'message'  => __( 'Newsletter email created successfully.', 'mcp-ai-wpoos' ),
 			'edit_url' => admin_url( 'admin.php?page=newsletter_emails_edit&id=' . $email_id ),
 		);
 	}

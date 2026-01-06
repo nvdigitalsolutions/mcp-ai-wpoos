@@ -34,7 +34,7 @@ class WP_MCP_AI_Event_Metabox {
 
 		add_meta_box(
 			'wp_mcp_ai_event_details',
-			__( 'Event Details', 'wp-mcp-ai' ),
+			__( 'Event Details', 'mcp-ai-wpoos-pro' ),
 			array( __CLASS__, 'render_metabox' ),
 			'mcp_ai_event',
 			'normal',
@@ -73,21 +73,21 @@ class WP_MCP_AI_Event_Metabox {
 		<div class="wp-mcp-ai-event-details">
 			<p>
 				<label for="event_type">
-					<strong><?php esc_html_e( 'Event Type:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Event Type:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<select id="event_type" name="event_type" class="widefat">
-					<option value="meeting" <?php selected( $type, 'meeting' ); ?>><?php esc_html_e( 'Meeting', 'wp-mcp-ai' ); ?></option>
-					<option value="deadline" <?php selected( $type, 'deadline' ); ?>><?php esc_html_e( 'Deadline', 'wp-mcp-ai' ); ?></option>
-					<option value="milestone" <?php selected( $type, 'milestone' ); ?>><?php esc_html_e( 'Milestone', 'wp-mcp-ai' ); ?></option>
-					<option value="reminder" <?php selected( $type, 'reminder' ); ?>><?php esc_html_e( 'Reminder', 'wp-mcp-ai' ); ?></option>
-					<option value="other" <?php selected( $type, 'other' ); ?>><?php esc_html_e( 'Other', 'wp-mcp-ai' ); ?></option>
+					<option value="meeting" <?php selected( $type, 'meeting' ); ?>><?php esc_html_e( 'Meeting', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="deadline" <?php selected( $type, 'deadline' ); ?>><?php esc_html_e( 'Deadline', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="milestone" <?php selected( $type, 'milestone' ); ?>><?php esc_html_e( 'Milestone', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="reminder" <?php selected( $type, 'reminder' ); ?>><?php esc_html_e( 'Reminder', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="other" <?php selected( $type, 'other' ); ?>><?php esc_html_e( 'Other', 'mcp-ai-wpoos-pro' ); ?></option>
 				</select>
 			</p>
 
 			<p>
 				<label>
 					<input type="checkbox" id="event_all_day" name="event_all_day" value="1" <?php checked( $all_day, '1' ); ?> />
-					<strong><?php esc_html_e( 'All-day event', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'All-day event', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label>
 			</p>
 
@@ -95,7 +95,7 @@ class WP_MCP_AI_Event_Metabox {
 				<div style="flex: 1;">
 					<p>
 						<label for="event_start_date">
-							<strong><?php esc_html_e( 'Start Date:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Start Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label><br>
 						<input 
 							type="date" 
@@ -110,7 +110,7 @@ class WP_MCP_AI_Event_Metabox {
 				<div style="flex: 1;">
 					<p class="event-time-field">
 						<label for="event_start_time">
-							<strong><?php esc_html_e( 'Start Time:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Start Time:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label><br>
 						<input 
 							type="time" 
@@ -127,7 +127,7 @@ class WP_MCP_AI_Event_Metabox {
 				<div style="flex: 1;">
 					<p>
 						<label for="event_end_date">
-							<strong><?php esc_html_e( 'End Date:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'End Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label><br>
 						<input 
 							type="date" 
@@ -141,7 +141,7 @@ class WP_MCP_AI_Event_Metabox {
 				<div style="flex: 1;">
 					<p class="event-time-field">
 						<label for="event_end_time">
-							<strong><?php esc_html_e( 'End Time:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'End Time:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label><br>
 						<input 
 							type="time" 
@@ -156,7 +156,7 @@ class WP_MCP_AI_Event_Metabox {
 
 			<p>
 				<label for="event_location">
-					<strong><?php esc_html_e( 'Location:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Location:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<input 
 					type="text" 
@@ -164,16 +164,16 @@ class WP_MCP_AI_Event_Metabox {
 					name="event_location" 
 					value="<?php echo esc_attr( $location ); ?>" 
 					class="widefat"
-					placeholder="<?php esc_attr_e( 'e.g., Conference Room A, Zoom Link, etc.', 'wp-mcp-ai' ); ?>"
+					placeholder="<?php esc_attr_e( 'e.g., Conference Room A, Zoom Link, etc.', 'mcp-ai-wpoos-pro' ); ?>"
 				/>
 			</p>
 
 			<p>
 				<label for="event_project_id">
-					<strong><?php esc_html_e( 'Related Project:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Related Project:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<select id="event_project_id" name="event_project_id" class="widefat">
-					<option value=""><?php esc_html_e( '-- No Project --', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '-- No Project --', 'mcp-ai-wpoos-pro' ); ?></option>
 					<?php
 					$projects = get_posts(
 						array(
@@ -198,7 +198,7 @@ class WP_MCP_AI_Event_Metabox {
 
 			<p>
 				<label for="event_attendees">
-					<strong><?php esc_html_e( 'Attendees:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Attendees:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<select id="event_attendees" name="event_attendees[]" multiple class="widefat" style="height: 150px;">
 					<?php
@@ -213,7 +213,7 @@ class WP_MCP_AI_Event_Metabox {
 					}
 					?>
 				</select>
-				<span class="description"><?php esc_html_e( 'Hold Ctrl/Cmd to select multiple attendees', 'wp-mcp-ai' ); ?></span>
+				<span class="description"><?php esc_html_e( 'Hold Ctrl/Cmd to select multiple attendees', 'mcp-ai-wpoos-pro' ); ?></span>
 			</p>
 		</div>
 

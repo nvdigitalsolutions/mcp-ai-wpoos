@@ -182,7 +182,7 @@ class WP_MCP_AI_Retry_Strategy {
 		if ( ! self::should_retry( $attempt, $config ) ) {
 			return new WP_Error(
 				'max_retries_exceeded',
-				__( 'Maximum retry attempts exceeded.', 'wp-mcp-ai' ),
+				__( 'Maximum retry attempts exceeded.', 'mcp-ai-wpoos' ),
 				array(
 					'attempt'      => $attempt,
 					'max_attempts' => isset( $config['max_attempts'] ) ? $config['max_attempts'] : self::DEFAULT_MAX_ATTEMPTS,
@@ -198,7 +198,7 @@ class WP_MCP_AI_Retry_Strategy {
 		if ( false === $scheduled ) {
 			return new WP_Error(
 				'schedule_failed',
-				__( 'Failed to schedule retry event.', 'wp-mcp-ai' ),
+				__( 'Failed to schedule retry event.', 'mcp-ai-wpoos' ),
 				array(
 					'hook'      => $hook,
 					'timestamp' => $timestamp,
@@ -269,7 +269,7 @@ class WP_MCP_AI_Retry_Strategy {
 		if ( ! self::should_retry( $attempt, $config ) ) {
 			return new WP_Error(
 				'max_retries_exceeded',
-				__( 'Maximum retry attempts exceeded before execution.', 'wp-mcp-ai' )
+				__( 'Maximum retry attempts exceeded before execution.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -293,7 +293,7 @@ class WP_MCP_AI_Retry_Strategy {
 
 					return new WP_Error(
 						'retry_needed',
-						__( 'Operation failed, retry required.', 'wp-mcp-ai' ),
+						__( 'Operation failed, retry required.', 'mcp-ai-wpoos' ),
 						array(
 							'attempt'    => $attempt,
 							'next_delay' => self::calculate_delay( $attempt + 1, $config ),

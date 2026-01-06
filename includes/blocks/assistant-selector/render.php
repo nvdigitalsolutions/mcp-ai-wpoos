@@ -12,11 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 $default_id        = isset( $attributes['defaultAssistantId'] ) ? absint( $attributes['defaultAssistantId'] ) : 0;
 $label             = isset( $attributes['label'] ) && '' !== $attributes['label']
 	? $attributes['label']
-	: __( 'Select an Assistant:', 'wp-mcp-ai' );
+	: __( 'Select an Assistant:', 'mcp-ai-wpoos' );
 $show_start_button = isset( $attributes['showStartButton'] ) ? $attributes['showStartButton'] : true;
 $start_button_text = isset( $attributes['startButtonText'] ) && '' !== $attributes['startButtonText']
 	? $attributes['startButtonText']
-	: __( 'Start Chat', 'wp-mcp-ai' );
+	: __( 'Start Chat', 'mcp-ai-wpoos' );
 
 // Get assistants.
 $assistants = array();
@@ -76,7 +76,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 		<?php echo esc_html( $label ); ?>
 	</label>
 	<select id="<?php echo esc_attr( $unique_id ); ?>-select" class="wp-mcp-ai-assistant-selector__select">
-		<option value=""><?php esc_html_e( '— Select an assistant —', 'wp-mcp-ai' ); ?></option>
+		<option value=""><?php esc_html_e( '— Select an assistant —', 'mcp-ai-wpoos' ); ?></option>
 		<?php foreach ( $assistants as $assistant ) : ?>
 			<option 
 				value="<?php echo esc_attr( $assistant['id'] ); ?>"

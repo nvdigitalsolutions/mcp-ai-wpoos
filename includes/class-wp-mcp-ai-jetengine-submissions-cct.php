@@ -214,7 +214,7 @@ class WP_MCP_AI_JetEngine_Submissions_CCT {
 	 * @return array
 	 */
 	protected static function get_registration_request() {
-		$label = __( 'Quiz Submissions', 'wp-mcp-ai' );
+		$label = __( 'Quiz Submissions', 'mcp-ai-wpoos' );
 
 		return array(
 			'name'        => $label,
@@ -294,107 +294,107 @@ class WP_MCP_AI_JetEngine_Submissions_CCT {
 			self::build_field(
 				++$base_id,
 				'quiz_id',
-				__( 'Quiz ID', 'wp-mcp-ai' ),
+				__( 'Quiz ID', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'is_required' => true,
-					'description' => __( 'Associated quiz ID.', 'wp-mcp-ai' ),
+					'description' => __( 'Associated quiz ID.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'student_id',
-				__( 'Student ID', 'wp-mcp-ai' ),
+				__( 'Student ID', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'is_required' => true,
-					'description' => __( 'Student user ID.', 'wp-mcp-ai' ),
+					'description' => __( 'Student user ID.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'status',
-				__( 'Status', 'wp-mcp-ai' ),
+				__( 'Status', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'Submission status (pending, graded).', 'wp-mcp-ai' ),
+					'description' => __( 'Submission status (pending, graded).', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'earned_points',
-				__( 'Earned Points', 'wp-mcp-ai' ),
+				__( 'Earned Points', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
-					'description' => __( 'Points earned.', 'wp-mcp-ai' ),
+					'description' => __( 'Points earned.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'total_points',
-				__( 'Total Points', 'wp-mcp-ai' ),
+				__( 'Total Points', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
-					'description' => __( 'Total possible points.', 'wp-mcp-ai' ),
+					'description' => __( 'Total possible points.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'percentage',
-				__( 'Percentage', 'wp-mcp-ai' ),
+				__( 'Percentage', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
 					'max'         => 100,
-					'description' => __( 'Score percentage.', 'wp-mcp-ai' ),
+					'description' => __( 'Score percentage.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'passed',
-				__( 'Passed', 'wp-mcp-ai' ),
+				__( 'Passed', 'mcp-ai-wpoos' ),
 				'checkbox',
 				array(
-					'description' => __( 'Whether the student passed.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether the student passed.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'graded_by',
-				__( 'Graded By', 'wp-mcp-ai' ),
+				__( 'Graded By', 'mcp-ai-wpoos' ),
 				'number',
 				array(
-					'description' => __( 'User ID who graded.', 'wp-mcp-ai' ),
+					'description' => __( 'User ID who graded.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'started_at',
-				__( 'Started At', 'wp-mcp-ai' ),
+				__( 'Started At', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'ISO 8601 timestamp when quiz was started.', 'wp-mcp-ai' ),
+					'description' => __( 'ISO 8601 timestamp when quiz was started.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'completion_time',
-				__( 'Completion Time', 'wp-mcp-ai' ),
+				__( 'Completion Time', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
-					'description' => __( 'Time taken to complete quiz in minutes.', 'wp-mcp-ai' ),
+					'description' => __( 'Time taken to complete quiz in minutes.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'cpt_post_id',
-				__( 'CPT Post ID', 'wp-mcp-ai' ),
+				__( 'CPT Post ID', 'mcp-ai-wpoos' ),
 				'number',
 				array(
-					'description' => __( 'Linked CPT post ID.', 'wp-mcp-ai' ),
+					'description' => __( 'Linked CPT post ID.', 'mcp-ai-wpoos' ),
 				)
 			),
 		);

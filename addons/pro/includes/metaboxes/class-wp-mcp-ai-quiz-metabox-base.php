@@ -84,7 +84,7 @@ abstract class WP_MCP_AI_Quiz_Metabox_Base {
 	 */
 	protected function render_permission_denied( $message = '' ) {
 		if ( empty( $message ) ) {
-			$message = __( 'You do not have permission to access this section.', 'wp-mcp-ai' );
+			$message = __( 'You do not have permission to access this section.', 'mcp-ai-wpoos-pro' );
 		}
 		echo '<p>' . esc_html( $message ) . '</p>';
 	}

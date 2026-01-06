@@ -31,7 +31,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'Plugins', 'wp-mcp-ai' );
+			return __( 'Plugins', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -52,7 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure WordPress plugin integrations including JetEngine, WooCommerce, Elementor, and Newsletter.', 'wp-mcp-ai' );
+			return __( 'Configure WordPress plugin integrations including JetEngine, WooCommerce, Elementor, and Newsletter.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -102,17 +102,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 			if ( $jetengine_active ) {
 				$fields['enable_jetengine_cct'] = array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable JetEngine CCT Storage', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable JetEngine CCT storage', 'wp-mcp-ai' ),
-					'description'    => __( 'Use JetEngine Custom Content Types for efficient chat transcript and assistant data storage.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable JetEngine CCT Storage', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable JetEngine CCT storage', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Use JetEngine Custom Content Types for efficient chat transcript and assistant data storage.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				);
 
 				$fields['enable_jetengine_tools'] = array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable JetEngine AI Tools', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable JetEngine AI tools', 'wp-mcp-ai' ),
-					'description'    => __( 'Activate JetEngine-specific tools for post type management, taxonomy operations, and CCT queries.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable JetEngine AI Tools', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable JetEngine AI tools', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Activate JetEngine-specific tools for post type management, taxonomy operations, and CCT queries.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				);
 
@@ -138,9 +138,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 			if ( $woocommerce_active ) {
 				$fields['enable_woocommerce_tools'] = array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable WooCommerce AI Tools', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable WooCommerce AI tools', 'wp-mcp-ai' ),
-					'description'    => __( 'Activate WooCommerce-specific tools for managing products, orders, and customers.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable WooCommerce AI Tools', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable WooCommerce AI tools', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Activate WooCommerce-specific tools for managing products, orders, and customers.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				);
 
@@ -166,9 +166,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 			if ( $elementor_active ) {
 				$fields['enable_elementor_widgets'] = array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Elementor AI Widgets', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable Elementor AI widgets', 'wp-mcp-ai' ),
-					'description'    => __( 'Add AI-powered chat widgets and other AI elements to Elementor page builder.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Elementor AI Widgets', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Elementor AI widgets', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Add AI-powered chat widgets and other AI elements to Elementor page builder.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				);
 
@@ -194,9 +194,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 			if ( $newsletter_active ) {
 				$fields['enable_newsletter_tools'] = array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Newsletter AI Tools', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable Newsletter AI tools', 'wp-mcp-ai' ),
-					'description'    => __( 'Activate Newsletter-specific tools for managing subscribers, campaigns, and email statistics.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Newsletter AI Tools', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Newsletter AI tools', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Activate Newsletter-specific tools for managing subscribers, campaigns, and email statistics.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				);
 
@@ -220,7 +220,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 		private function get_section_header( $name, $icon, $active ) {
 			$status_icon  = $active ? '✓' : '○';
 			$status_color = $active ? '#0a5f1a' : '#646970';
-			$status_text  = $active ? __( 'Active', 'wp-mcp-ai' ) : __( 'Not Active', 'wp-mcp-ai' );
+			$status_text  = $active ? __( 'Active', 'mcp-ai-wpoos' ) : __( 'Not Active', 'mcp-ai-wpoos' );
 
 			return sprintf(
 				'<div style="margin: 30px 0 10px 0; padding-top: 20px; border-top: 1px solid #ddd;">
@@ -251,7 +251,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 				</div>',
 				sprintf(
 					/* translators: %s: Plugin name */
-					esc_html__( '%s is not installed or not active. Install and activate the plugin to enable integration features.', 'wp-mcp-ai' ),
+					esc_html__( '%s is not installed or not active. Install and activate the plugin to enable integration features.', 'mcp-ai-wpoos' ),
 					esc_html( $name )
 				)
 			);
@@ -264,13 +264,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 		 */
 		private function get_jetengine_tools_list() {
 			return '<div style="margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px;">
-				<p style="margin: 0 0 5px 0; font-weight: 600;">' . esc_html__( 'Available JetEngine Tools:', 'wp-mcp-ai' ) . '</p>
+				<p style="margin: 0 0 5px 0; font-weight: 600;">' . esc_html__( 'Available JetEngine Tools:', 'mcp-ai-wpoos' ) . '</p>
 				<ul style="margin: 5px 0; padding-left: 20px;">
-					<li><code>jetengine_create_post_type</code> - ' . esc_html__( 'Create custom post types dynamically', 'wp-mcp-ai' ) . '</li>
-					<li><code>jetengine_create_taxonomy</code> - ' . esc_html__( 'Create custom taxonomies', 'wp-mcp-ai' ) . '</li>
-					<li><code>jetengine_query_cct</code> - ' . esc_html__( 'Query Custom Content Types efficiently', 'wp-mcp-ai' ) . '</li>
-					<li><code>jetengine_create_cct_item</code> - ' . esc_html__( 'Create CCT entries programmatically', 'wp-mcp-ai' ) . '</li>
-					<li><code>jetengine_update_cct_item</code> - ' . esc_html__( 'Update existing CCT items', 'wp-mcp-ai' ) . '</li>
+					<li><code>jetengine_create_post_type</code> - ' . esc_html__( 'Create custom post types dynamically', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>jetengine_create_taxonomy</code> - ' . esc_html__( 'Create custom taxonomies', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>jetengine_query_cct</code> - ' . esc_html__( 'Query Custom Content Types efficiently', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>jetengine_create_cct_item</code> - ' . esc_html__( 'Create CCT entries programmatically', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>jetengine_update_cct_item</code> - ' . esc_html__( 'Update existing CCT items', 'mcp-ai-wpoos' ) . '</li>
 				</ul>
 			</div>';
 		}
@@ -282,11 +282,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 		 */
 		private function get_woocommerce_tools_list() {
 			return '<div style="margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px;">
-				<p style="margin: 0 0 5px 0; font-weight: 600;">' . esc_html__( 'Available WooCommerce Tools:', 'wp-mcp-ai' ) . '</p>
+				<p style="margin: 0 0 5px 0; font-weight: 600;">' . esc_html__( 'Available WooCommerce Tools:', 'mcp-ai-wpoos' ) . '</p>
 				<ul style="margin: 5px 0; padding-left: 20px;">
-					<li><code>woocommerce_get_products</code> - ' . esc_html__( 'Retrieve product information and inventory', 'wp-mcp-ai' ) . '</li>
-					<li><code>woocommerce_get_orders</code> - ' . esc_html__( 'Access order details and status', 'wp-mcp-ai' ) . '</li>
-					<li><code>woocommerce_get_customers</code> - ' . esc_html__( 'Query customer data and purchase history', 'wp-mcp-ai' ) . '</li>
+					<li><code>woocommerce_get_products</code> - ' . esc_html__( 'Retrieve product information and inventory', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>woocommerce_get_orders</code> - ' . esc_html__( 'Access order details and status', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>woocommerce_get_customers</code> - ' . esc_html__( 'Query customer data and purchase history', 'mcp-ai-wpoos' ) . '</li>
 				</ul>
 			</div>';
 		}
@@ -298,10 +298,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 		 */
 		private function get_elementor_widgets_list() {
 			return '<div style="margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px;">
-				<p style="margin: 0 0 5px 0; font-weight: 600;">' . esc_html__( 'Available Elementor Widgets:', 'wp-mcp-ai' ) . '</p>
+				<p style="margin: 0 0 5px 0; font-weight: 600;">' . esc_html__( 'Available Elementor Widgets:', 'mcp-ai-wpoos' ) . '</p>
 				<ul style="margin: 5px 0; padding-left: 20px;">
-					<li><strong>' . esc_html__( 'AI Chat Widget', 'wp-mcp-ai' ) . '</strong> - ' . esc_html__( 'Embeddable AI chat interface for Elementor pages', 'wp-mcp-ai' ) . '</li>
-					<li><strong>' . esc_html__( 'AI Assistant Selector', 'wp-mcp-ai' ) . '</strong> - ' . esc_html__( 'Widget to choose and interact with different AI assistants', 'wp-mcp-ai' ) . '</li>
+					<li><strong>' . esc_html__( 'AI Chat Widget', 'mcp-ai-wpoos' ) . '</strong> - ' . esc_html__( 'Embeddable AI chat interface for Elementor pages', 'mcp-ai-wpoos' ) . '</li>
+					<li><strong>' . esc_html__( 'AI Assistant Selector', 'mcp-ai-wpoos' ) . '</strong> - ' . esc_html__( 'Widget to choose and interact with different AI assistants', 'mcp-ai-wpoos' ) . '</li>
 				</ul>
 			</div>';
 		}
@@ -313,14 +313,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 		 */
 		private function get_newsletter_tools_list() {
 			return '<div style="margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px;">
-				<p style="margin: 0 0 5px 0; font-weight: 600;">' . esc_html__( 'Available Newsletter Tools:', 'wp-mcp-ai' ) . '</p>
+				<p style="margin: 0 0 5px 0; font-weight: 600;">' . esc_html__( 'Available Newsletter Tools:', 'mcp-ai-wpoos' ) . '</p>
 				<ul style="margin: 5px 0; padding-left: 20px;">
-					<li><code>newsletter_add_subscriber</code> - ' . esc_html__( 'Add or update newsletter subscribers', 'wp-mcp-ai' ) . '</li>
-					<li><code>newsletter_get_subscribers</code> - ' . esc_html__( 'Retrieve and filter subscriber lists', 'wp-mcp-ai' ) . '</li>
-					<li><code>newsletter_unsubscribe</code> - ' . esc_html__( 'Unsubscribe or remove subscribers', 'wp-mcp-ai' ) . '</li>
-					<li><code>newsletter_get_subscriber_stats</code> - ' . esc_html__( 'Get subscriber statistics and metrics', 'wp-mcp-ai' ) . '</li>
-					<li><code>newsletter_create_email</code> - ' . esc_html__( 'Create new email campaigns', 'wp-mcp-ai' ) . '</li>
-					<li><code>newsletter_get_emails</code> - ' . esc_html__( 'Retrieve email campaign information', 'wp-mcp-ai' ) . '</li>
+					<li><code>newsletter_add_subscriber</code> - ' . esc_html__( 'Add or update newsletter subscribers', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>newsletter_get_subscribers</code> - ' . esc_html__( 'Retrieve and filter subscriber lists', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>newsletter_unsubscribe</code> - ' . esc_html__( 'Unsubscribe or remove subscribers', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>newsletter_get_subscriber_stats</code> - ' . esc_html__( 'Get subscriber statistics and metrics', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>newsletter_create_email</code> - ' . esc_html__( 'Create new email campaigns', 'mcp-ai-wpoos' ) . '</li>
+					<li><code>newsletter_get_emails</code> - ' . esc_html__( 'Retrieve email campaign information', 'mcp-ai-wpoos' ) . '</li>
 				</ul>
 			</div>';
 		}

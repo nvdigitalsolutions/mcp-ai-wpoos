@@ -53,7 +53,7 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Primary Roles', 'wp-mcp-ai' );
+		return __( 'Primary Roles', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -76,7 +76,7 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 	 */
 	public function render( $post ) {
 		if ( ! $this->can_view() ) {
-			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
 		}
 
 		wp_nonce_field( 'wp_mcp_ai_primary_roles_meta', 'wp_mcp_ai_primary_roles_meta_nonce' );
@@ -101,7 +101,7 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 		?>
 		<div class="wp-mcp-ai-primary-roles">
 			<p class="description">
-				<?php esc_html_e( 'Select up to 3 professions to define the primary roles for this assistant. Role instructions will be programmatically combined to create the system prompt.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Select up to 3 professions to define the primary roles for this assistant. Role instructions will be programmatically combined to create the system prompt.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<?php if ( empty( $professions ) ) : ?>
@@ -109,8 +109,8 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 					<?php
 					printf(
 						/* translators: %s: URL to create profession */
-						esc_html__( 'No professions found. Please %s first.', 'wp-mcp-ai' ),
-						'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'create a profession', 'wp-mcp-ai' ) . '</a>'
+						esc_html__( 'No professions found. Please %s first.', 'mcp-ai-wpoos' ),
+						'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'create a profession', 'mcp-ai-wpoos' ) . '</a>'
 					);
 					?>
 				</p>
@@ -123,9 +123,9 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 					<thead>
 						<tr>
 							<th style="width: 40px;"></th>
-							<th><?php esc_html_e( 'Profession', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Category', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Profession', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Category', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -165,7 +165,7 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 				</table>
 
 				<p class="description" style="margin-top: 10px;">
-					<?php esc_html_e( 'Maximum 3 roles can be selected. Additional selections will uncheck the first selected role.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Maximum 3 roles can be selected. Additional selections will uncheck the first selected role.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<?php

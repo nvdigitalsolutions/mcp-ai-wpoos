@@ -32,14 +32,14 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Vision Product Search', 'wp-mcp-ai' );
+		return __( 'Vision Product Search', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Searches for similar products using Google Cloud Vision API Product Search feature. Note: Requires proper Google Cloud authentication to succeed.', 'wp-mcp-ai' );
+		return __( 'Searches for similar products using Google Cloud Vision API Product Search feature. Note: Requires proper Google Cloud authentication to succeed.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -51,29 +51,29 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'image_url'        => array(
 					'type'        => 'string',
-					'description' => __( 'URL of the product image to search for.', 'wp-mcp-ai' ),
+					'description' => __( 'URL of the product image to search for.', 'mcp-ai-wpoos' ),
 				),
 				'image_content'    => array(
 					'type'        => 'string',
-					'description' => __( 'Base64-encoded image content as an alternative to image_url.', 'wp-mcp-ai' ),
+					'description' => __( 'Base64-encoded image content as an alternative to image_url.', 'mcp-ai-wpoos' ),
 				),
 				'product_set'      => array(
 					'type'        => 'string',
-					'description' => __( 'Optional product set resource name to search within.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional product set resource name to search within.', 'mcp-ai-wpoos' ),
 				),
 				'product_category' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional product category to filter results.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional product category to filter results.', 'mcp-ai-wpoos' ),
 				),
 				'filter'           => array(
 					'type'        => 'string',
-					'description' => __( 'Optional filter expression for product search.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional filter expression for product search.', 'mcp-ai-wpoos' ),
 				),
 				'max_results'      => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
 					'maximum'     => 100,
-					'description' => __( 'Maximum number of similar products to return (1-100).', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of similar products to return (1-100).', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array(),
@@ -102,7 +102,7 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_vision_forbidden',
-				__( 'You do not have permission to use Vision Product Search.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to use Vision Product Search.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -110,7 +110,7 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_vision_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, 
 		if ( empty( $arguments['image_url'] ) && empty( $arguments['image_content'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_vision_missing_image',
-				__( 'Either image_url or image_content must be provided.', 'wp-mcp-ai' ),
+				__( 'Either image_url or image_content must be provided.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -190,7 +190,7 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, 
 				'wp_mcp_ai_vision_request_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Vision API request failed: %s', 'wp-mcp-ai' ),
+					__( 'Vision API request failed: %s', 'mcp-ai-wpoos' ),
 					$response->get_error_message()
 				),
 				array( 'status' => 500 )
@@ -203,7 +203,7 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, 
 
 		// Handle API errors (expected when authentication is missing).
 		if ( $status_code >= 400 ) {
-			$error_message = __( 'Vision API returned an error.', 'wp-mcp-ai' );
+			$error_message = __( 'Vision API returned an error.', 'mcp-ai-wpoos' );
 			if ( is_array( $decoded ) && isset( $decoded['error']['message'] ) ) {
 				$error_message = $decoded['error']['message'];
 			}
@@ -221,7 +221,7 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, 
 		if ( ! is_array( $decoded ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_vision_invalid_response',
-				__( 'Vision API returned an invalid response.', 'wp-mcp-ai' ),
+				__( 'Vision API returned an invalid response.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}

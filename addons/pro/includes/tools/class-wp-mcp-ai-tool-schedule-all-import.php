@@ -33,7 +33,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The WP All Import Pro tool is disabled because WP All Import plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The WP All Import Pro tool is disabled because WP All Import plugin is not active.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -47,14 +47,14 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Schedule WP All Import', 'wp-mcp-ai' );
+		return __( 'Schedule WP All Import', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Schedules a WP All Import to run at specified intervals (Pro feature). Requires WP All Import plugin.', 'wp-mcp-ai' );
+		return __( 'Schedules a WP All Import to run at specified intervals (Pro feature). Requires WP All Import plugin.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -66,18 +66,18 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'import_id'  => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the import template to schedule.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the import template to schedule.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'interval'   => array(
 					'type'        => 'string',
-					'description' => __( 'Schedule interval: hourly, twicedaily, daily, or weekly.', 'wp-mcp-ai' ),
+					'description' => __( 'Schedule interval: hourly, twicedaily, daily, or weekly.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'hourly', 'twicedaily', 'daily', 'weekly' ),
 					'default'     => 'daily',
 				),
 				'start_time' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional start time in Y-m-d H:i:s format. Defaults to next interval.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional start time in Y-m-d H:i:s format. Defaults to next interval.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'import_id' ),
@@ -94,21 +94,21 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_all_import_missing', __( 'WP All Import is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_all_import_missing', __( 'WP All Import is not active on this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to schedule imports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to schedule imports.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to schedule imports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to schedule imports.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( empty( $arguments['import_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Import ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Import ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$import_id = absint( $arguments['import_id'] );
@@ -116,7 +116,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 		// Verify import exists.
 		$import = get_post( $import_id );
 		if ( ! $import || 'import' !== $import->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_import', __( 'Invalid import ID.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_import', __( 'Invalid import ID.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$interval   = isset( $arguments['interval'] ) ? sanitize_key( $arguments['interval'] ) : 'daily';
@@ -155,7 +155,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 		$scheduled = wp_schedule_event( $timestamp, $interval, $hook, array( $import_id ) );
 
 		if ( false === $scheduled ) {
-			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule import.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule import.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Store schedule metadata.
@@ -172,7 +172,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 
 		return array(
 			'success'     => true,
-			'message'     => __( 'Import scheduled successfully.', 'wp-mcp-ai' ),
+			'message'     => __( 'Import scheduled successfully.', 'mcp-ai-wpoos-pro' ),
 			'import_id'   => $import_id,
 			'import_name' => $import->post_title,
 			'interval'    => $interval,
@@ -190,7 +190,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_All_Import implements WP_MCP_AI_Tool_Interface
 		if ( ! isset( $schedules['weekly'] ) ) {
 			$schedules['weekly'] = array(
 				'interval' => 604800, // 7 days in seconds.
-				'display'  => __( 'Once Weekly', 'wp-mcp-ai' ),
+				'display'  => __( 'Once Weekly', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 		return $schedules;

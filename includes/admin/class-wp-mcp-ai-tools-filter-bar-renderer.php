@@ -68,11 +68,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 				<div class="wp-mcp-ai-tools-filter-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start;">
 					<div class="wp-mcp-ai-filter-group" style="display: flex; flex-direction: column; gap: 8px;">
 						<label for="tool_search" style="font-weight: 600;">
-							<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
 							<?php if ( ! empty( $args['search'] ) ) : ?>
 								<span class="wp-mcp-ai-filter-active-badge">
 									<span class="dashicons dashicons-filter" style="font-size: 11px; width: 11px; height: 11px;"></span>
-									<?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?>
 								</span>
 							<?php endif; ?>
 						</label>
@@ -80,22 +80,22 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 								id="tool_search" 
 								name="tool_search" 
 								value="<?php echo esc_attr( $args['search'] ); ?>" 
-								placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
+								placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>" 
 								style="width: 100%;">
 					</div>
 
 					<div class="wp-mcp-ai-filter-group" style="display: flex; flex-direction: column; gap: 8px;">
 						<label for="tool_group" style="font-weight: 600;">
-							<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Category:', 'mcp-ai-wpoos' ); ?>
 							<?php if ( ! empty( $args['filter_group'] ) ) : ?>
 								<span class="wp-mcp-ai-filter-active-badge">
 									<span class="dashicons dashicons-filter" style="font-size: 11px; width: 11px; height: 11px;"></span>
-									<?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?>
 								</span>
 							<?php endif; ?>
 						</label>
 						<select id="tool_group" name="tool_group" style="width: 100%;">
-							<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
+							<option value=""><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos' ); ?></option>
 							<?php foreach ( $args['categories'] as $group_key => $group_label ) : ?>
 								<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $args['filter_group'], $group_key ); ?>>
 									<?php echo esc_html( $group_label ); ?>
@@ -106,12 +106,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 
 					<div class="wp-mcp-ai-filter-actions" style="grid-column: 1 / -1; display: flex; gap: 10px; justify-content: flex-end;">
 						<button type="button" id="wp-mcp-ai-filter-tools" class="button">
-							<?php esc_html_e( 'Filter', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Filter', 'mcp-ai-wpoos' ); ?>
 						</button>
 
 						<?php if ( ! empty( $args['search'] ) || ! empty( $args['filter_group'] ) ) : ?>
 							<a href="<?php echo esc_url( $args['clear_url'] ); ?>" class="button">
-								<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
 							</a>
 						<?php endif; ?>
 					</div>
@@ -181,10 +181,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 		 */
 		private static function get_tool_categories() {
 			return array(
-				'wordpress-core'    => __( 'WordPress Core', 'wp-mcp-ai' ),
-				'wordpress-plugins' => __( 'WordPress Plugins', 'wp-mcp-ai' ),
-				'external-tools'    => __( 'External Tools', 'wp-mcp-ai' ),
-				'other'             => __( 'Other Tools', 'wp-mcp-ai' ),
+				'wordpress-core'    => __( 'WordPress Core', 'mcp-ai-wpoos' ),
+				'wordpress-plugins' => __( 'WordPress Plugins', 'mcp-ai-wpoos' ),
+				'external-tools'    => __( 'External Tools', 'mcp-ai-wpoos' ),
+				'other'             => __( 'Other Tools', 'mcp-ai-wpoos' ),
 			);
 		}
 

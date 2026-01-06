@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, 
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The WP All Import tool is disabled because WP All Import plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The WP All Import tool is disabled because WP All Import plugin is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -47,14 +47,14 @@ class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get WP All Import Status', 'wp-mcp-ai' );
+		return __( 'Get WP All Import Status', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Gets the status and progress of a WP All Import operation. Requires WP All Import plugin.', 'wp-mcp-ai' );
+		return __( 'Gets the status and progress of a WP All Import operation. Requires WP All Import plugin.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -66,7 +66,7 @@ class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'import_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the import to check status.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the import to check status.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 			),
@@ -84,25 +84,25 @@ class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_all_import_missing', __( 'WP All Import is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_all_import_missing', __( 'WP All Import is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to check import status.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to check import status.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to check import status.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to check import status.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $arguments['import_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Import ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Import ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		$import_id = absint( $arguments['import_id'] );
@@ -110,7 +110,7 @@ class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, 
 		// Verify import exists.
 		$import = get_post( $import_id );
 		if ( ! $import || 'import' !== $import->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_import', __( 'Invalid import ID.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_import', __( 'Invalid import ID.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get import status metadata.

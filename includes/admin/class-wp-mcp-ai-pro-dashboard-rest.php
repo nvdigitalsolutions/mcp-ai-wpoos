@@ -243,7 +243,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				return new WP_Error(
 					'rest_forbidden',
-					__( 'You do not have permission to access this resource.', 'wp-mcp-ai' ),
+					__( 'You do not have permission to access this resource.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -259,7 +259,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			if ( ! $is_pro_active ) {
 				return new WP_Error(
 					'pro_required',
-					__( 'This feature requires Pro Dashboard to be enabled.', 'wp-mcp-ai' ),
+					__( 'This feature requires Pro Dashboard to be enabled.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -285,7 +285,7 @@ public function get_compliance_status() {
 	if ( empty( $controls ) ) {
 		return new WP_Error(
 			'soa_not_found',
-			__( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'wp-mcp-ai' ),
+			__( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ),
 			array( 'status' => 500 )
 		);
 	}
@@ -571,7 +571,7 @@ return rest_ensure_response( $status );
 			if ( empty( $title ) ) {
 				return new WP_Error(
 					'missing_title',
-					__( 'Evidence title is required.', 'wp-mcp-ai' ),
+					__( 'Evidence title is required.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -592,7 +592,7 @@ return rest_ensure_response( $status );
 						array(
 							'success'     => true,
 							'evidence_id' => $evidence_id,
-							'message'     => __( 'Evidence added successfully.', 'wp-mcp-ai' ),
+							'message'     => __( 'Evidence added successfully.', 'mcp-ai-wpoos' ),
 						)
 					);
 				}
@@ -600,7 +600,7 @@ return rest_ensure_response( $status );
 
 			return new WP_Error(
 				'evidence_add_failed',
-				__( 'Failed to add evidence.', 'wp-mcp-ai' ),
+				__( 'Failed to add evidence.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -748,7 +748,7 @@ return rest_ensure_response( $status );
 			if ( ! in_array( $check_type, array( 'authentication', 'encryption', 'logging', 'backup' ), true ) ) {
 				return new WP_Error(
 					'invalid_check_type',
-					__( 'Invalid compliance check type.', 'wp-mcp-ai' ),
+					__( 'Invalid compliance check type.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -762,7 +762,7 @@ return rest_ensure_response( $status );
 
 			return new WP_Error(
 				'check_failed',
-				__( 'Compliance check system not available.', 'wp-mcp-ai' ),
+				__( 'Compliance check system not available.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}

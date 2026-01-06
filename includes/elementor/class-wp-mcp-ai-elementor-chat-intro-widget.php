@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Chat Intro', 'wp-mcp-ai' );
+		return __( 'NV oOS Chat Intro', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,17 +61,17 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Intro Content', 'wp-mcp-ai' ),
+				'label' => __( 'Intro Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Welcome to NV oOS Chat', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Welcome to NV oOS Chat', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -79,10 +79,10 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'description',
 			array(
-				'label'       => __( 'Description', 'wp-mcp-ai' ),
+				'label'       => __( 'Description', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXTAREA,
-				'default'     => __( 'Start a conversation with your AI assistant to plan tasks, explore MCP tools, or keep track of ongoing projects.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Provide a short introduction for visitors.', 'wp-mcp-ai' ),
+				'default'     => __( 'Start a conversation with your AI assistant to plan tasks, explore MCP tools, or keep track of ongoing projects.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Provide a short introduction for visitors.', 'mcp-ai-wpoos' ),
 				'rows'        => 4,
 			)
 		);
@@ -92,9 +92,9 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 		$repeater->add_control(
 			'item_text',
 			array(
-				'label'       => __( 'Talking Point', 'wp-mcp-ai' ),
+				'label'       => __( 'Talking Point', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Ask for status updates on active tasks', 'wp-mcp-ai' ),
+				'default'     => __( 'Ask for status updates on active tasks', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -102,15 +102,15 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'talking_points',
 			array(
-				'label'       => __( 'Talking Points', 'wp-mcp-ai' ),
+				'label'       => __( 'Talking Points', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::REPEATER,
 				'fields'      => $repeater->get_controls(),
 				'default'     => array(
 					array(
-						'item_text' => __( 'Summarise the latest plan from your assistant', 'wp-mcp-ai' ),
+						'item_text' => __( 'Summarise the latest plan from your assistant', 'mcp-ai-wpoos' ),
 					),
 					array(
-						'item_text' => __( 'Request follow-up actions or clarifications', 'wp-mcp-ai' ),
+						'item_text' => __( 'Request follow-up actions or clarifications', 'mcp-ai-wpoos' ),
 					),
 				),
 				'title_field' => '{{{ item_text }}}',
@@ -120,19 +120,19 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'button_text',
 			array(
-				'label'       => __( 'Button Text', 'wp-mcp-ai' ),
+				'label'       => __( 'Button Text', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Open Chat', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter call-to-action text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Open Chat', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter call-to-action text…', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'button_link',
 			array(
-				'label'       => __( 'Button Link', 'wp-mcp-ai' ),
+				'label'       => __( 'Button Link', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::URL,
-				'placeholder' => __( 'https://example.com', 'wp-mcp-ai' ),
+				'placeholder' => __( 'https://example.com', 'mcp-ai-wpoos' ),
 				'default'     => array(
 					'url'         => '',
 					'is_external' => false,

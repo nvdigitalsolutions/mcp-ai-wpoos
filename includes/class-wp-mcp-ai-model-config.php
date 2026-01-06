@@ -1833,23 +1833,23 @@ class WP_MCP_AI_Model_Config {
 		$providers = array();
 
 		if ( ! empty( $settings['openai_api_key'] ) ) {
-			$providers['openai'] = __( 'OpenAI', 'wp-mcp-ai' );
+			$providers['openai'] = __( 'OpenAI', 'mcp-ai-wpoos' );
 		}
 
 		if ( ! empty( $settings['anthropic_api_key'] ) ) {
-			$providers['anthropic'] = __( 'Anthropic (Claude)', 'wp-mcp-ai' );
+			$providers['anthropic'] = __( 'Anthropic (Claude)', 'mcp-ai-wpoos' );
 		}
 
 		if ( ! empty( $settings['gemini_api_key'] ) ) {
-			$providers['gemini'] = __( 'Google Gemini', 'wp-mcp-ai' );
+			$providers['gemini'] = __( 'Google Gemini', 'mcp-ai-wpoos' );
 		}
 
 		if ( ! empty( $settings['ollama_endpoint_url'] ) ) {
-			$providers['ollama'] = __( 'Ollama (Local)', 'wp-mcp-ai' );
+			$providers['ollama'] = __( 'Ollama (Local)', 'mcp-ai-wpoos' );
 		}
 
 		if ( ! empty( $settings['lm_studio_endpoint_url'] ) ) {
-			$providers['lm_studio'] = __( 'LM Studio (Local)', 'wp-mcp-ai' );
+			$providers['lm_studio'] = __( 'LM Studio (Local)', 'mcp-ai-wpoos' );
 		}
 
 		return $providers;

@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Assistant Base Knowledge', 'wp-mcp-ai' );
+		return __( 'NV oOS Assistant Base Knowledge', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,17 +61,17 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Content', 'wp-mcp-ai' ),
+				'label' => __( 'Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Assistant knowledge base', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Assistant knowledge base', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -79,22 +79,22 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 		$this->add_control(
 			'assistant_id',
 			array(
-				'label'       => __( 'Assistant', 'wp-mcp-ai' ),
+				'label'       => __( 'Assistant', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $this->get_assistant_options(),
 				'default'     => '',
 				'label_block' => true,
-				'description' => __( 'Choose which assistant to display base knowledge for. Only published assistants appear in this list.', 'wp-mcp-ai' ),
+				'description' => __( 'Choose which assistant to display base knowledge for. Only published assistants appear in this list.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_file_sizes',
 			array(
-				'label'        => __( 'Show file sizes', 'wp-mcp-ai' ),
+				'label'        => __( 'Show file sizes', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -103,10 +103,10 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 		$this->add_control(
 			'empty_message',
 			array(
-				'label'       => __( 'Empty state message', 'wp-mcp-ai' ),
+				'label'       => __( 'Empty state message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Select an assistant in the widget settings to view its base knowledge.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'wp-mcp-ai' ),
+				'default'     => __( 'Select an assistant in the widget settings to view its base knowledge.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -114,10 +114,10 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 		$this->add_control(
 			'no_files_message',
 			array(
-				'label'       => __( 'No files message', 'wp-mcp-ai' ),
+				'label'       => __( 'No files message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'No base knowledge files have been attached to this assistant yet.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no knowledge files are present…', 'wp-mcp-ai' ),
+				'default'     => __( 'No base knowledge files have been attached to this assistant yet.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no knowledge files are present…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -218,7 +218,7 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 
 		if ( '' !== $vector_store ) {
 			echo '<div class="wp-mcp-ai-assistant-base-knowledge__vector-store">';
-			echo '<span class="wp-mcp-ai-assistant-base-knowledge__vector-store-label">' . esc_html__( 'Vector Store ID:', 'wp-mcp-ai' ) . '</span>';
+			echo '<span class="wp-mcp-ai-assistant-base-knowledge__vector-store-label">' . esc_html__( 'Vector Store ID:', 'mcp-ai-wpoos' ) . '</span>';
 			echo '<code class="wp-mcp-ai-assistant-base-knowledge__vector-store-value">' . esc_html( $vector_store ) . '</code>';
 			echo '</div>';
 		}
@@ -232,7 +232,7 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 	 * @return array
 	 */
 	protected function get_assistant_options() {
-		$options = array( '' => __( 'Select an assistant', 'wp-mcp-ai' ) );
+		$options = array( '' => __( 'Select an assistant', 'mcp-ai-wpoos' ) );
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			return $options;
@@ -297,7 +297,7 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 			$title = get_the_title( $attachment );
 			if ( '' === $title ) {
 				/* translators: %d: Attachment ID. */
-				$title = sprintf( __( 'Attachment #%d', 'wp-mcp-ai' ), $file_id );
+				$title = sprintf( __( 'Attachment #%d', 'mcp-ai-wpoos' ), $file_id );
 			}
 
 			$url  = wp_get_attachment_url( $file_id );

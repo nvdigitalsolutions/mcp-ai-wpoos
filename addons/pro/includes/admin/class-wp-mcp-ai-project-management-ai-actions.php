@@ -47,7 +47,7 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		foreach ( $post_types as $post_type ) {
 			add_meta_box(
 				'wp_mcp_ai_pm_ai_actions',
-				__( '🤖 AI Assistant', 'wp-mcp-ai' ),
+				__( '🤖 AI Assistant', 'mcp-ai-wpoos-pro' ),
 				array( __CLASS__, 'render_ai_metabox' ),
 				$post_type,
 				'side',
@@ -68,52 +68,52 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		?>
 		<div class="wp-mcp-ai-pm-ai-actions">
 			<p class="description">
-				<?php esc_html_e( 'Use AI to enhance your project management:', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Use AI to enhance your project management:', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
 
 			<?php if ( 'mcp_ai_project' === $post_type ) : ?>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
 						<span class="dashicons dashicons-edit"></span>
-						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Generate Description', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="suggest_tasks" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
 						<span class="dashicons dashicons-list-view"></span>
-						<?php esc_html_e( 'Suggest Tasks', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Suggest Tasks', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="analyze_project" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
 						<span class="dashicons dashicons-chart-bar"></span>
-						<?php esc_html_e( 'Analyze Project', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Analyze Project', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 			<?php elseif ( 'mcp_ai_task' === $post_type ) : ?>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
 						<span class="dashicons dashicons-edit"></span>
-						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Generate Description', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="estimate_time" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
 						<span class="dashicons dashicons-clock"></span>
-						<?php esc_html_e( 'Estimate Duration', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Estimate Duration', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 			<?php elseif ( 'mcp_ai_event' === $post_type ) : ?>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
 						<span class="dashicons dashicons-edit"></span>
-						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Generate Description', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="suggest_agenda" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
 						<span class="dashicons dashicons-text-page"></span>
-						<?php esc_html_e( 'Suggest Agenda', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Suggest Agenda', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 			<?php endif; ?>
@@ -127,7 +127,7 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 			<div class="wp-mcp-ai-pm-ai-loading" style="display: none;">
 				<p>
 					<span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span>
-					<?php esc_html_e( 'AI is thinking...', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'AI is thinking...', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 			</div>
 		</div>
@@ -170,11 +170,11 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp_mcp_ai_pm_ai_actions' ),
 				'strings' => array(
-					'error'      => __( 'An error occurred. Please try again.', 'wp-mcp-ai' ),
-					'noTitle'    => __( 'Please add a title first.', 'wp-mcp-ai' ),
-					'applied'    => __( 'AI suggestion applied!', 'wp-mcp-ai' ),
-					'viewTasks'  => __( 'View suggested tasks below:', 'wp-mcp-ai' ),
-					'copyToDesc' => __( 'Copy to Description', 'wp-mcp-ai' ),
+					'error'      => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'noTitle'    => __( 'Please add a title first.', 'mcp-ai-wpoos-pro' ),
+					'applied'    => __( 'AI suggestion applied!', 'mcp-ai-wpoos-pro' ),
+					'viewTasks'  => __( 'View suggested tasks below:', 'mcp-ai-wpoos-pro' ),
+					'copyToDesc' => __( 'Copy to Description', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -187,19 +187,19 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		check_ajax_referer( 'wp_mcp_ai_pm_ai_actions', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 		$title   = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
 
 		if ( ! $post_id || ! $title ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			wp_send_json_error( array( 'message' => __( 'Post not found.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Post not found.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Use AI to generate description based on title and context.
@@ -219,7 +219,7 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		check_ajax_referer( 'wp_mcp_ai_pm_ai_actions', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		$post_id     = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
@@ -227,7 +227,7 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		$description = isset( $_POST['description'] ) ? wp_kses_post( wp_unslash( $_POST['description'] ) ) : '';
 
 		if ( ! $post_id || ! $title ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Use AI to suggest tasks.
@@ -247,18 +247,18 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		check_ajax_referer( 'wp_mcp_ai_pm_ai_actions', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 
 		if ( ! $post_id ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post || 'mcp_ai_project' !== $post->post_type ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid project.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid project.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Analyze project using AI.
@@ -290,7 +290,7 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 
 		// Get assistant service.
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_Service' ) ) {
-			return new WP_Error( 'service_unavailable', __( 'AI service is not available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'service_unavailable', __( 'AI service is not available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$assistant_service = WP_MCP_AI_Assistant_Service::get_instance();
@@ -313,7 +313,7 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		);
 
 		if ( empty( $assistants ) ) {
-			return new WP_Error( 'no_assistant', __( 'No AI assistant available. Please create an assistant first.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'no_assistant', __( 'No AI assistant available. Please create an assistant first.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$assistant_id = $assistants[0]->ID;
@@ -347,7 +347,7 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 	 */
 	private static function suggest_tasks_with_ai( $title, $description ) {
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_Service' ) ) {
-			return new WP_Error( 'service_unavailable', __( 'AI service is not available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'service_unavailable', __( 'AI service is not available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$assistant_service = WP_MCP_AI_Assistant_Service::get_instance();
@@ -367,7 +367,7 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		);
 
 		if ( empty( $assistants ) ) {
-			return new WP_Error( 'no_assistant', __( 'No AI assistant available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'no_assistant', __( 'No AI assistant available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		try {
@@ -447,7 +447,7 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_Service' ) ) {
-			return new WP_Error( 'service_unavailable', __( 'AI service is not available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'service_unavailable', __( 'AI service is not available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$prompt = sprintf(
@@ -471,7 +471,7 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		);
 
 		if ( empty( $assistants ) ) {
-			return new WP_Error( 'no_assistant', __( 'No AI assistant available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'no_assistant', __( 'No AI assistant available.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		try {

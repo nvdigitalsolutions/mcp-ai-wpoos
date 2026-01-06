@@ -243,12 +243,12 @@ class WP_MCP_AI_Job_Notifier {
 	 */
 	public static function register_webhook( $job_id, $webhook_url, $events = array() ) {
 		if ( ! is_string( $webhook_url ) || ! filter_var( $webhook_url, FILTER_VALIDATE_URL ) ) {
-			return new WP_Error( 'invalid_webhook_url', __( 'Invalid webhook URL provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'invalid_webhook_url', __( 'Invalid webhook URL provided.', 'mcp-ai-wpoos' ) );
 		}
 
 		$job_id = sanitize_text_field( $job_id );
 		if ( '' === $job_id ) {
-			return new WP_Error( 'invalid_job_id', __( 'Invalid job ID provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'invalid_job_id', __( 'Invalid job ID provided.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $events ) ) {
@@ -262,7 +262,7 @@ class WP_MCP_AI_Job_Notifier {
 		}
 
 		if ( count( $webhooks[ $job_id ] ) >= self::MAX_WEBHOOKS_PER_JOB ) {
-			return new WP_Error( 'too_many_webhooks', __( 'Maximum webhooks per job exceeded.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'too_many_webhooks', __( 'Maximum webhooks per job exceeded.', 'mcp-ai-wpoos' ) );
 		}
 
 		$webhooks[ $job_id ][] = array(

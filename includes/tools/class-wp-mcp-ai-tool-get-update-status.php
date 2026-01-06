@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Update Status', 'wp-mcp-ai' );
+		return __( 'Get Update Status', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns pending core, plugin, and theme updates with version and download details.', 'wp-mcp-ai' );
+		return __( 'Returns pending core, plugin, and theme updates with version and download details.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -44,7 +44,7 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 				'component_type' => array(
 					'type'        => 'string',
 					'enum'        => array( 'core', 'plugin', 'theme' ),
-					'description' => __( 'Limit the response to core, plugin, or theme updates.', 'wp-mcp-ai' ),
+					'description' => __( 'Limit the response to core, plugin, or theme updates.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'additionalProperties' => false,
@@ -62,11 +62,11 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'update_core' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect update status.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect update status.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/update.php';
@@ -79,7 +79,7 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 		);
 
 		if ( $component_type && ! isset( $valid_component_map[ $component_type ] ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_component', __( 'Invalid component type supplied.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_component', __( 'Invalid component type supplied.', 'mcp-ai-wpoos' ) );
 		}
 
 		$update_summary = wp_get_update_data();
