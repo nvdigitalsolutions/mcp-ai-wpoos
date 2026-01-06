@@ -236,6 +236,59 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that modal CSS is enqueued for popup overlay.
+	 *
+	 * Verifies that the cpt-assistant.css file containing modal styles
+	 * is enqueued to ensure the modal displays as an overlay instead of inline.
+	 */
+	public function test_modal_css_is_enqueued() {
+		// Skip if Pro addon is not available.
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Enable project management.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_project_management'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Create a test task.
+		$task_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_task',
+				'post_title'  => 'Test Task',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Set global post to the task.
+		global $post;
+		$post = get_post( $task_id );
+
+		// Load the metabox class.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php';
+
+		// Create metabox instance.
+		$metabox = new WP_MCP_AI_Project_Management_AI_Assistant_Metabox();
+
+		// Simulate the enqueue_assets method.
+		$metabox->enqueue_assets( 'post.php' );
+
+		// Verify modal CSS is enqueued.
+		$style_handle = 'wp-mcp-ai-cpt-assistant';
+		$this->assertTrue( wp_style_is( $style_handle, 'enqueued' ), 'Modal CSS (cpt-assistant.css) should be enqueued for popup overlay' );
+
+		// Verify PM assistant specific CSS is also enqueued.
+		$pm_style_handle = 'wp-mcp-ai-pm-ai-assistant';
+		$this->assertTrue( wp_style_is( $pm_style_handle, 'enqueued' ), 'PM assistant CSS should be enqueued' );
+
+		// Verify the modal CSS URL is correct.
+		global $wp_styles;
+		$style = $wp_styles->registered[ $style_handle ];
+		$this->assertStringContainsString( 'cpt-assistant.css', $style->src, 'Modal CSS should reference cpt-assistant.css file' );
+	}
+
+	/**
 	 * Test that PM assistant script includes wp-dom-ready dependency when available.
 	 *
 	 * This ensures block editor compatibility by including the wp-dom-ready dependency
