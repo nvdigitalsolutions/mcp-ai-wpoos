@@ -92,6 +92,17 @@ window.wpMcpAiChatInstances = {};
 
 // Build configuration (inherit from global wpMcpAiChat if available)
 const baseConfig = window.wpMcpAiChat || {};
+
+// Warn if base configuration is missing
+if (!window.wpMcpAiChat) {
+console.warn('[PM AI Assistant] wpMcpAiChat global not found, using defaults');
+}
+
+// Warn if critical fields are missing
+if (!baseConfig.nonce) {
+console.warn('[PM AI Assistant] REST nonce is missing, authentication may fail');
+}
+
 const restUrl = baseConfig.restUrl || '/wp-json/mcp-ai/v1';
 
 window.wpMcpAiChatInstances[instanceId] = {
@@ -123,6 +134,12 @@ asyncToolTimeout: baseConfig.asyncToolTimeout || 300000
 };
 
 console.log('[PM AI Assistant] ✓ Configuration created for instance:', instanceId);
+console.log('[PM AI Assistant] Configuration:', {
+assistantId: assistantId,
+hasNonce: !!baseConfig.nonce,
+hasRestUrl: !!baseConfig.restUrl,
+hasUserId: !!baseConfig.currentUserId
+});
 
 // Initialize the chat instance
 setTimeout(function() {
@@ -229,9 +246,14 @@ return 'pm-' + Math.random().toString(36).substring(2, 15) + Math.random().toStr
  * Initialize a chat instance.
  *
  * @param {string} instanceId Instance identifier.
+ * @param {number} retryCount Current retry attempt (for internal use).
  */
-function initializeChatInstance(instanceId) {
+function initializeChatInstance(instanceId, retryCount) {
 console.log('[PM AI Assistant] Initializing chat instance:', instanceId);
+
+retryCount = retryCount || 0;
+var maxRetries = 10;
+var retryDelay = 100;
 
 var container = document.getElementById(instanceId);
 
@@ -240,8 +262,17 @@ console.error('[PM AI Assistant] Container not found:', instanceId);
 return;
 }
 
+// Check if chat initialization function is available
 if (!window.wpMcpAiChatInit || typeof window.wpMcpAiChatInit.init !== 'function') {
-console.error('[PM AI Assistant] Chat init function not available');
+// Retry if we haven't exceeded max attempts
+if (retryCount < maxRetries) {
+console.log('[PM AI Assistant] Chat init not ready, retrying... (' + (retryCount + 1) + '/' + maxRetries + ')');
+setTimeout(function() {
+initializeChatInstance(instanceId, retryCount + 1);
+}, retryDelay);
+return;
+}
+console.error('[PM AI Assistant] Chat init function not available after ' + maxRetries + ' retries');
 return;
 }
 
