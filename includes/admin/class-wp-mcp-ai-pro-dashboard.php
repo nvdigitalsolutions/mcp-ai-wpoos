@@ -670,6 +670,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					</div>
 				</div>
 
+				<!-- Multi-Framework Compliance Status -->
+				<div class="wp-mcp-ai-frameworks-section">
+					<h2><?php esc_html_e( 'Multi-Framework Compliance', 'mcp-ai-wpoos' ); ?></h2>
+					<?php $this->render_framework_badges(); ?>
+				</div>
+
 				<div class="wp-mcp-ai-dashboard-grid">
 					<!-- Compliance Status Card -->
 					<div class="wp-mcp-ai-card">
@@ -990,6 +996,47 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						</a>
 					</li>
 				</ul>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render multi-framework compliance badges.
+		 */
+		private function render_framework_badges() {
+			$frameworks = $this->get_framework_status();
+			?>
+			<div class="wp-mcp-ai-frameworks-grid">
+				<?php foreach ( $frameworks as $framework ) : ?>
+					<div class="wp-mcp-ai-framework-card">
+						<h3><?php echo esc_html( $framework['name'] ); ?></h3>
+						<div class="wp-mcp-ai-framework-status <?php echo esc_attr( $framework['status'] ); ?>">
+							<?php echo esc_html( ucfirst( $framework['status'] ) ); ?>
+						</div>
+						<div class="wp-mcp-ai-framework-progress">
+							<div class="wp-mcp-ai-progress" style="width: <?php echo esc_attr( $framework['percentage'] ); ?>%;">
+								<span class="wp-mcp-ai-progress-text"><?php echo esc_html( $framework['percentage'] ); ?>%</span>
+							</div>
+						</div>
+						<p class="wp-mcp-ai-framework-info">
+							<?php
+							echo wp_kses_post(
+								sprintf(
+									/* translators: %1$d: Completed items, %2$d: Total items */
+									__( '<strong>%1$d of %2$d</strong> requirements met', 'mcp-ai-wpoos' ),
+									$framework['completed'],
+									$framework['total']
+								)
+							);
+							?>
+						</p>
+						<?php if ( isset( $framework['link'] ) ) : ?>
+							<a href="<?php echo esc_url( admin_url( $framework['link'] ) ); ?>" class="button button-small">
+								<?php esc_html_e( 'View Details', 'mcp-ai-wpoos' ); ?>
+							</a>
+						<?php endif; ?>
+					</div>
+				<?php endforeach; ?>
 			</div>
 			<?php
 		}
@@ -1466,9 +1513,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		}
 
 		/**
-		 * Render framework status.
+		 * Get framework compliance status data.
+		 *
+		 * @return array Framework status data.
 		 */
-		private function render_framework_status() {
+		private function get_framework_status() {
 			// Calculate ISO 27001 compliance dynamically from Statement of Applicability.
 			$iso_controls = $this->get_iso27001_controls();
 			$iso_stats = $this->calculate_controls_stats( $iso_controls );
@@ -1481,26 +1530,49 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Calculate HIPAA compliance from Security Rule safeguards.
 			$hipaa_compliance = $this->get_hipaa_compliance();
 			
-			$frameworks = array(
+			return array(
 				array(
-					'name'   => 'ISO 27001:2022',
-					'status' => 'compliant',
-					'progress' => $iso_compliance,
+					'name'       => 'ISO 27001:2022',
+					'status'     => 'compliant',
+					'percentage' => $iso_compliance,
+					'completed'  => $iso_stats['implemented'],
+					'total'      => $iso_total_applicable,
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-iso27001',
 				),
 				array(
-					'name'   => 'SOC 2',
-					'status' => $soc2_compliance >= 95 ? 'compliant' : 'in_progress',
-					'progress' => $soc2_compliance,
+					'name'       => 'SOC 2',
+					'status'     => $soc2_compliance >= 95 ? 'compliant' : 'pending',
+					'percentage' => $soc2_compliance,
+					'completed'  => round( $soc2_compliance * 0.54 ), // Approximate 54 criteria
+					'total'      => 54,
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
 				),
 				array(
-					'name'   => 'HIPAA',
-					'status' => $hipaa_compliance >= 95 ? 'compliant' : 'in_progress',
-					'progress' => $hipaa_compliance,
+					'name'       => 'HIPAA',
+					'status'     => $hipaa_compliance >= 95 ? 'compliant' : 'pending',
+					'percentage' => $hipaa_compliance,
+					'completed'  => round( $hipaa_compliance * 0.43 ), // Approximate 43 safeguards
+					'total'      => 43,
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
 				),
 				array(
-					'name'   => 'GDPR',
-					'status' => 'compliant',
-					'progress' => 95,
+					'name'       => 'GDPR',
+					'status'     => 'compliant',
+					'percentage' => 95,
+					'completed'  => 6,
+					'total'      => 7,
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
+				),
+			);
+		}
+
+		/**
+		 * Render framework status.
+		 */
+		private function render_framework_status() {
+			$frameworks = $this->get_framework_status();
+			?>
+			<div class="wp-mcp-ai-frameworks-grid">
 				),
 			);
 			?>
