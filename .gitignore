@@ -11,6 +11,9 @@ opcache-reset.php
 *.rar
 composer.phar
 
+# Temporary files
+/tmp/
+
 # Build output - keep only ZIP files, ignore extracted directories
 /build/wp-mcp-ai/
 /build/wp-mcp-ai-base/
