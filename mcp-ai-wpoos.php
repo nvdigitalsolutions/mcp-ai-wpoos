@@ -712,6 +712,10 @@ if ( is_admin() ) {
 	/**
 	 * Add plugin action links in the plugins list.
 	 *
+	 * Note: These links use untranslated text to avoid triggering translation loading
+	 * before the init action. "Settings" and "Diagnostic" are common technical terms
+	 * that are widely understood and often left untranslated in WordPress plugins.
+	 *
 	 * @param array $links Existing plugin action links.
 	 * @return array Modified plugin action links.
 	 */
@@ -720,23 +724,14 @@ if ( is_admin() ) {
 		$diagnostic_link = admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' );
 
 		$plugin_links = array(
-			'settings'   => '<a href="' . esc_url( $settings_link ) . '">' . esc_html__( 'Settings', 'mcp-ai-wpoos' ) . '</a>',
-			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">' . esc_html__( 'Diagnostic', 'mcp-ai-wpoos' ) . '</a>',
+			'settings'   => '<a href="' . esc_url( $settings_link ) . '">Settings</a>',
+			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">Diagnostic</a>',
 		);
 
 		return array_merge( $plugin_links, $links );
 	}
 
-	/**
-	 * Register plugin action links on admin_init to avoid early translation loading.
-	 *
-	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-	 * Using admin_init ensures translations are available before the plugins page renders.
-	 */
-	function wp_mcp_ai_register_plugin_action_links() {
-		add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
-	}
-	add_action( 'admin_init', 'wp_mcp_ai_register_plugin_action_links' );
+	add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
