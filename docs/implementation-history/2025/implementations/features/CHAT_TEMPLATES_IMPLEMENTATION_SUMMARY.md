@@ -2,7 +2,7 @@
 
 ## 🎨 Overview
 
-This document describes the complete implementation of chat templates for the WP oOS chat client, including:
+This document describes the complete implementation of chat templates for the NV oOS chat client, including:
 1. **Original Implementation**: CSS-based visual templates for the chat interface
 2. **Template Selector Enhancement**: UI controls for Elementor and Block Editor to select templates
 
@@ -13,7 +13,7 @@ This document describes the complete implementation of chat templates for the WP
 #### 1️⃣ Classic Template (Default)
 ```
 ┌─────────────────────────────────────────┐
-│  WP oOS Chat - Standard Layout          │
+│  NV oOS Chat - Standard Layout          │
 │                                          │
 │  ┌────────────────────────────────┐    │
 │  │ ┌──────────────────┐           │    │
@@ -41,7 +41,7 @@ Features:
 #### 2️⃣ Speech Bubbles Template
 ```
 ┌─────────────────────────────────────────┐
-│  WP oOS Chat - Comic Style              │
+│  NV oOS Chat - Comic Style              │
 │                                          │
 │  ┌────────────────────────────────┐    │
 │  │ ┌──────────────────┐           │    │
@@ -71,7 +71,7 @@ Features:
 #### 3️⃣ Compact Template
 ```
 ┌──────────────────────────┐
-│ WP oOS Chat - Mini       │
+│ NV oOS Chat - Mini       │
 │                          │
 │ ┌──────────────────┐    │
 │ │┌──────────┐      │    │
@@ -101,7 +101,7 @@ Features:
 #### 4️⃣ Sidebar Template
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  ┌──────────┐  WP oOS Chat - Full Application Style        │
+│  ┌──────────┐  NV oOS Chat - Full Application Style        │
 │  │ History  │                                                │
 │  ├──────────┤  ┌────────────────────────────────┐          │
 │  │ Chat 1   │  │ ┌──────────────────┐           │          │
@@ -341,7 +341,7 @@ if ( 'classic' !== $template ) {
 
 ### Elementor
 1. Edit a page with Elementor
-2. Add the "WP oOS Chat" widget to your page
+2. Add the "NV oOS Chat" widget to your page
 3. Click on the widget to open settings
 4. Find the "Chat Template" dropdown under "Chat Settings"
 5. Select your desired template

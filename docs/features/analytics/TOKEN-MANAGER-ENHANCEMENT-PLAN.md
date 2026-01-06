@@ -3,17 +3,17 @@
 **Version:** 1.0  
 **Created:** 2025-11-11  
 **Status:** Planning Phase  
-**Target:** WP oOS v1.1.0
+**Target:** NV oOS v1.1.0
 
 ## Executive Summary
 
-This document outlines practical enhancements to the WP oOS Token Usage Manager, focusing on improving the current 100,000 token default limit with dynamic, intelligent, and user-friendly features that align with the plugin's enterprise-grade architecture while maintaining WordPress best practices.
+This document outlines practical enhancements to the NV oOS Token Usage Manager, focusing on improving the current 100,000 token default limit with dynamic, intelligent, and user-friendly features that align with the plugin's enterprise-grade architecture while maintaining WordPress best practices.
 
 ## Current State Analysis
 
 ### Existing Token Management System
 
-The WP oOS plugin currently implements:
+The NV oOS plugin currently implements:
 
 1. **Fixed Token Limits**
    - `DEFAULT_GENERAL_LIMIT = 100000` tokens per user per 24 hours
@@ -490,7 +490,7 @@ public static function send_limit_alert( $user_id, $tool_slug, $forecast ) {
             "- Upgrading to a higher tier\n" .
             "- Spreading usage throughout the day\n\n" .
             "Thank you,\n" .
-            "WP oOS Team",
+            "NV oOS Team",
             'wp-mcp-ai'
         ),
         $user->display_name,
@@ -1239,7 +1239,7 @@ class WP_MCP_AI_Tiered_Limits_Test extends WP_UnitTestCase {
 
 ## Conclusion
 
-This enhancement plan provides a comprehensive roadmap for improving the WP oOS Token Usage Manager from a fixed 100k limit system to a flexible, intelligent, tier-based solution. The proposed changes maintain backward compatibility while adding enterprise-grade features that support various use cases and user segments.
+This enhancement plan provides a comprehensive roadmap for improving the NV oOS Token Usage Manager from a fixed 100k limit system to a flexible, intelligent, tier-based solution. The proposed changes maintain backward compatibility while adding enterprise-grade features that support various use cases and user segments.
 
 Key benefits include:
 - **Flexibility** through tiered limits
@@ -1248,10 +1248,10 @@ Key benefits include:
 - **Efficiency** through performance optimizations
 - **Scalability** to support growth
 
-Implementation will follow WordPress best practices, maintain security standards, and provide thorough testing at each phase. The result will be a world-class token management system that positions WP oOS as a leader in enterprise WordPress AI integration.
+Implementation will follow WordPress best practices, maintain security standards, and provide thorough testing at each phase. The result will be a world-class token management system that positions NV oOS as a leader in enterprise WordPress AI integration.
 
 ---
 
-**Document Maintainer:** WP oOS Development Team  
+**Document Maintainer:** NV oOS Development Team  
 **Review Schedule:** Quarterly  
 **Next Review:** 2025-02-11

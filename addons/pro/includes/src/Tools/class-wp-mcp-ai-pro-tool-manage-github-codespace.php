@@ -27,14 +27,14 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Manage GitHub Codespace', 'wp-mcp-ai' );
+		return __( 'Manage GitHub Codespace', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Create, start, stop, or list GitHub Codespaces for repository development.', 'wp-mcp-ai' );
+		return __( 'Create, start, stop, or list GitHub Codespaces for repository development.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -46,30 +46,30 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 			'properties'           => array(
 				'action'         => array(
 					'type'        => 'string',
-					'description' => __( 'Action to perform: create, list, start, stop, get, or delete.', 'wp-mcp-ai' ),
+					'description' => __( 'Action to perform: create, list, start, stop, get, or delete.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'create', 'list', 'start', 'stop', 'get', 'delete' ),
 				),
 				'owner'          => array(
 					'type'        => 'string',
-					'description' => __( 'Repository owner (required for create action).', 'wp-mcp-ai' ),
+					'description' => __( 'Repository owner (required for create action).', 'mcp-ai-wpoos-pro' ),
 				),
 				'repo'           => array(
 					'type'        => 'string',
-					'description' => __( 'Repository name (required for create action).', 'wp-mcp-ai' ),
+					'description' => __( 'Repository name (required for create action).', 'mcp-ai-wpoos-pro' ),
 				),
 				'ref'            => array(
 					'type'        => 'string',
-					'description' => __( 'Git branch, tag, or commit to open in the codespace (default: main).', 'wp-mcp-ai' ),
+					'description' => __( 'Git branch, tag, or commit to open in the codespace (default: main).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'main',
 				),
 				'machine'        => array(
 					'type'        => 'string',
-					'description' => __( 'Machine type for the codespace (e.g., basicLinux32gb).', 'wp-mcp-ai' ),
+					'description' => __( 'Machine type for the codespace (e.g., basicLinux32gb).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'basicLinux32gb',
 				),
 				'codespace_name' => array(
 					'type'        => 'string',
-					'description' => __( 'Codespace name (required for start, stop, get, and delete actions).', 'wp-mcp-ai' ),
+					'description' => __( 'Codespace name (required for start, stop, get, and delete actions).', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'action' ),
@@ -90,13 +90,13 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 		$required_capability = apply_filters( 'wp_mcp_ai_github_codespace_capability', 'manage_options', $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_github_forbidden', __( 'You do not have permission to manage GitHub Codespaces.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_github_forbidden', __( 'You do not have permission to manage GitHub Codespaces.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$action = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : '';
 
 		if ( empty( $action ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_action', __( 'Action parameter is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_action', __( 'Action parameter is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$client = new WP_MCP_AI_Github_Client();
@@ -121,7 +121,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 				return $this->handle_delete( $client, $arguments );
 
 			default:
-				return new WP_Error( 'wp_mcp_ai_invalid_action', __( 'Invalid action specified.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_action', __( 'Invalid action specified.', 'mcp-ai-wpoos-pro' ) );
 		}
 	}
 
@@ -173,7 +173,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 		$repo  = isset( $arguments['repo'] ) ? sanitize_text_field( $arguments['repo'] ) : '';
 
 		if ( empty( $owner ) || empty( $repo ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_params', __( 'Owner and repo parameters are required for create action.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_params', __( 'Owner and repo parameters are required for create action.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$codespace_args = array();
@@ -194,7 +194,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 
 		return array(
 			'success'   => true,
-			'message'   => __( 'Codespace created successfully.', 'wp-mcp-ai' ),
+			'message'   => __( 'Codespace created successfully.', 'mcp-ai-wpoos-pro' ),
 			'codespace' => array(
 				'name'       => $codespace['name'],
 				'web_url'    => $codespace['web_url'],
@@ -215,7 +215,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 		$codespace_name = isset( $arguments['codespace_name'] ) ? sanitize_text_field( $arguments['codespace_name'] ) : '';
 
 		if ( empty( $codespace_name ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_codespace', __( 'Codespace name is required for start action.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_codespace', __( 'Codespace name is required for start action.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$result = $client->start_codespace( $codespace_name );
@@ -226,7 +226,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 
 		return array(
 			'success' => true,
-			'message' => __( 'Codespace started successfully.', 'wp-mcp-ai' ),
+			'message' => __( 'Codespace started successfully.', 'mcp-ai-wpoos-pro' ),
 			'state'   => $result['state'] ?? 'starting',
 		);
 	}
@@ -242,7 +242,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 		$codespace_name = isset( $arguments['codespace_name'] ) ? sanitize_text_field( $arguments['codespace_name'] ) : '';
 
 		if ( empty( $codespace_name ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_codespace', __( 'Codespace name is required for stop action.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_codespace', __( 'Codespace name is required for stop action.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$result = $client->stop_codespace( $codespace_name );
@@ -253,7 +253,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 
 		return array(
 			'success' => true,
-			'message' => __( 'Codespace stopped successfully.', 'wp-mcp-ai' ),
+			'message' => __( 'Codespace stopped successfully.', 'mcp-ai-wpoos-pro' ),
 			'state'   => $result['state'] ?? 'stopping',
 		);
 	}
@@ -269,7 +269,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 		$codespace_name = isset( $arguments['codespace_name'] ) ? sanitize_text_field( $arguments['codespace_name'] ) : '';
 
 		if ( empty( $codespace_name ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_codespace', __( 'Codespace name is required for get action.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_codespace', __( 'Codespace name is required for get action.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$codespace = $client->get_codespace( $codespace_name );
@@ -301,7 +301,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 		$codespace_name = isset( $arguments['codespace_name'] ) ? sanitize_text_field( $arguments['codespace_name'] ) : '';
 
 		if ( empty( $codespace_name ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_codespace', __( 'Codespace name is required for delete action.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_codespace', __( 'Codespace name is required for delete action.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$result = $client->delete_codespace( $codespace_name );
@@ -312,7 +312,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Github_Codespace implements WP_MCP_AI_Tool_Inter
 
 		return array(
 			'success' => true,
-			'message' => __( 'Codespace deleted successfully.', 'wp-mcp-ai' ),
+			'message' => __( 'Codespace deleted successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

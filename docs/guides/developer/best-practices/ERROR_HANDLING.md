@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the error handling and logging improvements implemented in Phase 3 of the WP oOS plugin modernization effort.
+This document describes the error handling and logging improvements implemented in Phase 3 of the NV oOS plugin modernization effort.
 
 ## New Components
 
@@ -209,7 +209,7 @@ The `[mcp_ai_chat]` shortcode now includes comprehensive error logging:
 #### Example Error Log Entry
 
 ```
-[WP oOS] ERROR: Shortcode attempted to render unavailable assistant
+[NV oOS] ERROR: Shortcode attempted to render unavailable assistant
 Context: {
     "assistant_id": 123,
     "assistant_exists": false,
@@ -286,7 +286,7 @@ vendor/bin/phpunit tests/test-error-handler.php
 
 Logging can be enabled/disabled via WordPress admin:
 
-**Settings → WP oOS → Enable Logging**
+**Settings → NV oOS → Enable Logging**
 
 Or programmatically:
 ```php

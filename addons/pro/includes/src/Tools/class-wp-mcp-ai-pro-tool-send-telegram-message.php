@@ -32,14 +32,14 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Send Telegram Message', 'wp-mcp-ai' );
+		return __( 'Send Telegram Message', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Sends a text message to a Telegram chat using the Bot API.', 'wp-mcp-ai' );
+		return __( 'Sends a text message to a Telegram chat using the Bot API.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,24 +51,24 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 			'properties'           => array(
 				'token'                    => array(
 					'type'        => 'string',
-					'description' => __( 'Telegram bot token used to authenticate the request.', 'wp-mcp-ai' ),
+					'description' => __( 'Telegram bot token used to authenticate the request.', 'mcp-ai-wpoos-pro' ),
 				),
 				'chat_id'                  => array(
 					'type'        => 'string',
-					'description' => __( 'Unique identifier for the target chat or username of the target channel.', 'wp-mcp-ai' ),
+					'description' => __( 'Unique identifier for the target chat or username of the target channel.', 'mcp-ai-wpoos-pro' ),
 				),
 				'text'                     => array(
 					'type'        => 'string',
-					'description' => __( 'Text of the message to be sent.', 'wp-mcp-ai' ),
+					'description' => __( 'Text of the message to be sent.', 'mcp-ai-wpoos-pro' ),
 				),
 				'parse_mode'               => array(
 					'type'        => 'string',
 					'enum'        => array( 'Markdown', 'HTML' ),
-					'description' => __( 'Optional parse mode that controls how Telegram formats entities.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional parse mode that controls how Telegram formats entities.', 'mcp-ai-wpoos-pro' ),
 				),
 				'disable_web_page_preview' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Disables link previews for links in the sent message.', 'wp-mcp-ai' ),
+					'description' => __( 'Disables link previews for links in the sent message.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 			),
@@ -91,29 +91,29 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 		$required_capability = apply_filters( 'wp_mcp_ai_send_telegram_message_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send Telegram messages.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send Telegram messages.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$token = isset( $arguments['token'] ) ? $this->sanitize_token( $arguments['token'] ) : '';
 
 		if ( '' === $token ) {
-			return new WP_Error( 'wp_mcp_ai_missing_telegram_token', __( 'A valid Telegram bot token is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_telegram_token', __( 'A valid Telegram bot token is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$chat_id = isset( $arguments['chat_id'] ) ? sanitize_text_field( $arguments['chat_id'] ) : '';
 
 		if ( '' === $chat_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_chat_id', __( 'A target chat identifier is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_chat_id', __( 'A target chat identifier is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$text = isset( $arguments['text'] ) ? $this->sanitize_message_text( $arguments['text'] ) : '';
 
 		if ( '' === $text ) {
-			return new WP_Error( 'wp_mcp_ai_missing_message_text', __( 'Message text must be provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_message_text', __( 'Message text must be provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$parse_mode = '';
@@ -145,7 +145,7 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 		$body = wp_json_encode( $payload );
 
 		if ( false === $body ) {
-			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Telegram request payload.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Telegram request payload.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -177,7 +177,7 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 
 			return new WP_Error(
 				'wp_mcp_ai_telegram_http_error',
-				__( 'The Telegram API request failed to send.', 'wp-mcp-ai' ),
+				__( 'The Telegram API request failed to send.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $response )
 			);
 		}
@@ -191,7 +191,7 @@ class WP_MCP_AI_Pro_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interfa
 		}
 
 		if ( 200 !== $code || empty( $decoded['ok'] ) ) {
-			$message = isset( $decoded['description'] ) ? $decoded['description'] : __( 'Telegram API returned an error.', 'wp-mcp-ai' );
+			$message = isset( $decoded['description'] ) ? $decoded['description'] : __( 'Telegram API returned an error.', 'mcp-ai-wpoos-pro' );
 
 			WP_MCP_AI_Logger::log_error(
 				'Telegram sendMessage request was not successful.',

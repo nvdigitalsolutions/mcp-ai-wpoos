@@ -1,10 +1,10 @@
 # MCP Client Configuration Examples
 
-This directory contains example configuration files for connecting various MCP clients to your WordPress WP oOS server.
+This directory contains example configuration files for connecting various MCP clients to your WordPress NV oOS server.
 
 ## Important: Two Connection Methods
 
-WordPress WP oOS supports **TWO ways** to connect MCP clients:
+WordPress NV oOS supports **TWO ways** to connect MCP clients:
 
 ### Method 1: JSON-RPC 2.0 (Recommended - No SSE Required)
 **Endpoint:** `/wp-json/mcp-ai/v1/mcp`
@@ -201,7 +201,7 @@ Expected response:
     "protocolVersion": "2024-11-05",
     "capabilities": {...},
     "serverInfo": {
-      "name": "WP oOS",
+      "name": "NV oOS",
       "version": "1.0.0"
     }
   }
@@ -237,7 +237,7 @@ This error was caused by critical bugs that have been fixed in the latest versio
 3. ✅ **Missing Fields**: Added required `instructions` and proper initialization
 4. ✅ **Tool Polling**: Tools are now automatically included in the `initialize` response for immediate discovery
 
-**Solution**: Update to the latest version of WP oOS plugin
+**Solution**: Update to the latest version of NV oOS plugin
 
 **What Changed**:
 - The `initialize` method now includes tool definitions by default
@@ -351,7 +351,7 @@ This error was caused by critical bugs that have been fixed in the latest versio
 **Solutions:**
 1. Verify you're using the correct endpoint (`/mcp` for JSON-RPC)
 2. Check the method name matches MCP specification
-3. Update to latest version of WP oOS plugin
+3. Update to latest version of NV oOS plugin
 4. Review [MCP Endpoint Documentation](../../docs/reference/api/mcp-endpoint.md)
 
 ## Security Notes

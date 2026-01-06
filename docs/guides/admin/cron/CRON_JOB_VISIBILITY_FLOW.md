@@ -1,6 +1,6 @@
 # Cron Job Visibility Flow
 
-This document explains the complete flow of how test jobs show up in the WP oOS Cron Manager.
+This document explains the complete flow of how test jobs show up in the NV oOS Cron Manager.
 
 ## Visual Flow Diagram
 
@@ -191,7 +191,7 @@ Structure:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  WP oOS Cron Manager                                            │
+│  NV oOS Cron Manager                                            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  About Cron Manager                                             │

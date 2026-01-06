@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document describes the implementation of OpenAI's new GPT-Image-1.5 model in WP oOS. GPT-Image-1.5 is OpenAI's latest image generation model, offering significant improvements over GPT-Image-1:
+This document describes the implementation of OpenAI's new GPT-Image-1.5 model in NV oOS. GPT-Image-1.5 is OpenAI's latest image generation model, offering significant improvements over GPT-Image-1:
 
 - **4× Faster** generation speed
 - **20% Cost Reduction** across all quality tiers
@@ -263,4 +263,4 @@ Track user adoption and cost savings:
 
 ## Conclusion
 
-The GPT-Image-1.5 implementation provides WP oOS users with access to OpenAI's latest and most efficient image generation model. The changes maintain full backward compatibility while offering substantial performance and cost benefits to users who adopt the new model.
+The GPT-Image-1.5 implementation provides NV oOS users with access to OpenAI's latest and most efficient image generation model. The changes maintain full backward compatibility while offering substantial performance and cost benefits to users who adopt the new model.

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the enhancements made to the WP oOS plugin's performance monitoring system, specifically addressing the requirement to "check all branches to get the enhancements for the plugin performance monitor."
+This document summarizes the enhancements made to the NV oOS plugin's performance monitoring system, specifically addressing the requirement to "check all branches to get the enhancements for the plugin performance monitor."
 
 ## Problem Statement
 

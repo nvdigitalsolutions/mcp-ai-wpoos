@@ -4,7 +4,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                     WP oOS Chat - Sidebar Template                  │
+│                     NV oOS Chat - Sidebar Template                  │
 │                                                                      │
 │  ┌───────────────────┬────────────────────────────────────────────┐│
 │  │ CONVERSATIONS     │  Assistant Name                            ││
@@ -136,7 +136,7 @@ Stacks vertically
 
 ## Comparison with ChatGPT
 
-| Feature | ChatGPT | WP oOS Sidebar Template |
+| Feature | ChatGPT | NV oOS Sidebar Template |
 |---------|---------|-------------------------|
 | Sidebar width | ~260px | 260px ✓ |
 | Sidebar position | Left | Left ✓ |

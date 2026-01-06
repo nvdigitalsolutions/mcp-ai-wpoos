@@ -356,6 +356,6 @@ The foundation built in Phases 1-6 makes Phase 7 implementation straightforward,
 
 ---
 
-**Questions?** Open an issue on GitHub or contact the WP oOS development team.
+**Questions?** Open an issue on GitHub or contact the NV oOS development team.
 
 **Ready to proceed?** Review `docs/PHASE-7-ANALYTICS-PLAN.md` and approve the next steps.

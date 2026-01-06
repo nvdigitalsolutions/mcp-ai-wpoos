@@ -30,14 +30,14 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create or Update Post (Validated)', 'wp-mcp-ai' );
+		return __( 'Create or Update Post (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new post or updates an existing one with the supplied content. Uses Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Creates a new post or updates an existing one with the supplied content. Uses Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,34 +49,34 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 			'properties'           => array(
 				'post_id'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Existing post ID to update. Leave empty to create a new post.', 'wp-mcp-ai' ),
+					'description' => __( 'Existing post ID to update. Leave empty to create a new post.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'post_type' => array(
 					'type'        => 'string',
-					'description' => __( 'The post type to create or update.', 'wp-mcp-ai' ),
+					'description' => __( 'The post type to create or update.', 'mcp-ai-wpoos' ),
 					'default'     => 'post',
 				),
 				'title'     => array(
 					'type'        => 'string',
-					'description' => __( 'Title of the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Title of the post.', 'mcp-ai-wpoos' ),
 				),
 				'content'   => array(
 					'type'        => 'string',
-					'description' => __( 'Main content for the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Main content for the post.', 'mcp-ai-wpoos' ),
 				),
 				'status'    => array(
 					'type'        => 'string',
-					'description' => __( 'The status to assign to the post, e.g. draft or publish.', 'wp-mcp-ai' ),
+					'description' => __( 'The status to assign to the post, e.g. draft or publish.', 'mcp-ai-wpoos' ),
 					'default'     => 'draft',
 				),
 				'excerpt'   => array(
 					'type'        => 'string',
-					'description' => __( 'Optional excerpt for the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional excerpt for the post.', 'mcp-ai-wpoos' ),
 				),
 				'slug'      => array(
 					'type'        => 'string',
-					'description' => __( 'Optional slug to use for the post permalink.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional slug to use for the post permalink.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'content' ),
@@ -102,11 +102,11 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to manage posts.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to manage posts.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$post_id   = $validated_args->post_id ?? 0;
@@ -118,22 +118,22 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 			// Post existence already validated by WPPostExists constraint.
 
 			if ( $post->post_type !== $post_type ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not match the existing post.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not match the existing post.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( ! user_can( $user_id, 'edit_post', $post_id ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit this post.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit this post.', 'mcp-ai-wpoos' ) );
 			}
 		} else {
 			$post_type_object = get_post_type_object( $post_type );
 			if ( ! $post_type_object ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not exist.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not exist.', 'mcp-ai-wpoos' ) );
 			}
 
 			$create_cap = isset( $post_type_object->cap->create_posts ) ? $post_type_object->cap->create_posts : $post_type_object->cap->edit_posts;
 
 			if ( ! user_can( $user_id, $create_cap ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create posts of this type.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create posts of this type.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
@@ -160,7 +160,7 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 		if ( null !== $validated_args->title ) {
 			$post_data['post_title'] = sanitize_text_field( $validated_args->title );
 		} elseif ( ! $post_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'A title is required when creating a new post.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'A title is required when creating a new post.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( null !== $validated_args->excerpt ) {
@@ -196,13 +196,13 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 
 		$updated_post = get_post( $result );
 		if ( ! $updated_post ) {
-			return new WP_Error( 'wp_mcp_ai_unknown_error', __( 'The post was saved but could not be retrieved.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_unknown_error', __( 'The post was saved but could not be retrieved.', 'mcp-ai-wpoos' ) );
 		}
 
 		$response = array(
 			'summary'   => sprintf(
 				/* translators: 1: post ID, 2: post title */
-				__( 'Post saved: %1$s (ID: %2$d)', 'wp-mcp-ai' ),
+				__( 'Post saved: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
 				get_the_title( $updated_post ),
 				$updated_post->ID
 			),

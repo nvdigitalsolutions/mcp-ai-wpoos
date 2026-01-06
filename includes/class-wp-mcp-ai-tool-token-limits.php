@@ -473,7 +473,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 	 */
 	public static function get_available_models( $tool_slug = '' ) {
 		$models = array(
-			'default' => __( 'Default (use assistant/global setting)', 'wp-mcp-ai' ),
+			'default' => __( 'Default (use assistant/global setting)', 'mcp-ai-wpoos' ),
 		);
 
 		// Get settings.
@@ -575,7 +575,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 			if ( ! empty( $openai_models ) ) {
 				$models['openai_group'] = array(
-					'label'   => __( 'OpenAI', 'wp-mcp-ai' ),
+					'label'   => __( 'OpenAI', 'mcp-ai-wpoos' ),
 					'options' => $openai_models,
 				);
 			}
@@ -598,7 +598,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 			if ( ! empty( $anthropic_models ) ) {
 				$models['anthropic_group'] = array(
-					'label'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+					'label'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
 					'options' => $anthropic_models,
 				);
 			}
@@ -650,7 +650,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 			if ( ! empty( $gemini_models ) ) {
 				$models['gemini_group'] = array(
-					'label'   => __( 'Google Gemini & Gemma', 'wp-mcp-ai' ),
+					'label'   => __( 'Google Gemini & Gemma', 'mcp-ai-wpoos' ),
 					'options' => $gemini_models,
 				);
 			}
@@ -688,7 +688,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			}
 
 			$models['ollama_group'] = array(
-				'label'   => __( 'Ollama (Local)', 'wp-mcp-ai' ),
+				'label'   => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 				'options' => $ollama_models,
 			);
 		}
@@ -743,7 +743,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			}
 
 			$models['lm_studio_group'] = array(
-				'label'   => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
+				'label'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 				'options' => $lm_studio_models,
 			);
 		}
@@ -1105,7 +1105,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 					esc_html(
 						sprintf(
 							/* translators: 1: Session usage, 2: Session limit */
-							__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'wp-mcp-ai' ),
+							__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'mcp-ai-wpoos' ),
 							$session_usage,
 							$limit
 						)
@@ -1180,7 +1180,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 					esc_html(
 						sprintf(
 							/* translators: 1: Session usage, 2: Session limit */
-							__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'wp-mcp-ai' ),
+							__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'mcp-ai-wpoos' ),
 							$session_usage,
 							$limit
 						)
@@ -1391,7 +1391,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 					esc_html(
 						sprintf(
 							/* translators: 1: Tool name, 2: Daily limit, 3: Current tier, 4: Reset time */
-							__( 'Daily token limit exceeded for tool "%1$s". Your %3$s tier limit is %2$d tokens per day. Limit resets at %4$s. Consider upgrading to a higher tier for increased limits.', 'wp-mcp-ai' ),
+							__( 'Daily token limit exceeded for tool "%1$s". Your %3$s tier limit is %2$d tokens per day. Limit resets at %4$s. Consider upgrading to a higher tier for increased limits.', 'mcp-ai-wpoos' ),
 							$tool_slug,
 							$limit,
 							$tier,
@@ -1910,7 +1910,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 		$tier = self::get_user_tier( $user_id );
 
-		$subject = __( 'Token Limit Alert - Action Recommended', 'wp-mcp-ai' );
+		$subject = __( 'Token Limit Alert - Action Recommended', 'mcp-ai-wpoos' );
 
 		$message = sprintf(
 			/* translators: 1: User name, 2: Tool name, 3: Current usage, 4: Projected usage, 5: Limit, 6: Current tier */
@@ -1927,7 +1927,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 				"- Spreading usage throughout the day\n\n" .
 				"Thank you,\n" .
 				'NV oOS Team',
-				'wp-mcp-ai'
+				'mcp-ai-wpoos'
 			),
 			$user->display_name,
 			$tool_slug,
@@ -2091,12 +2091,12 @@ class WP_MCP_AI_Tool_Token_Limits {
 		);
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			$results['errors'][] = __( 'Insufficient permissions.', 'wp-mcp-ai' );
+			$results['errors'][] = __( 'Insufficient permissions.', 'mcp-ai-wpoos' );
 			return $results;
 		}
 
 		if ( ! isset( self::$tier_limits[ $new_tier ] ) ) {
-			$results['errors'][] = __( 'Invalid tier specified.', 'wp-mcp-ai' );
+			$results['errors'][] = __( 'Invalid tier specified.', 'mcp-ai-wpoos' );
 			return $results;
 		}
 
@@ -2104,7 +2104,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! empty( $expiry ) ) {
 			$expiry_timestamp = strtotime( $expiry . ' 23:59:59' );
 			if ( ! $expiry_timestamp ) {
-				$results['errors'][] = __( 'Invalid expiry date format.', 'wp-mcp-ai' );
+				$results['errors'][] = __( 'Invalid expiry date format.', 'mcp-ai-wpoos' );
 				return $results;
 			}
 		}
@@ -2151,7 +2151,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ),
+				'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -2159,7 +2159,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( get_option( 'wp_mcp_ai_tiered_limits_migrated' ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Migration has already been performed.', 'wp-mcp-ai' ),
+				'message' => __( 'Migration has already been performed.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -2213,7 +2213,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			'success' => true,
 			'message' => sprintf(
 				/* translators: %d: Number of users migrated */
-				__( 'Successfully migrated %d users to the tiered limit system.', 'wp-mcp-ai' ),
+				__( 'Successfully migrated %d users to the tiered limit system.', 'mcp-ai-wpoos' ),
 				$migrated
 			),
 			'count'   => $migrated,

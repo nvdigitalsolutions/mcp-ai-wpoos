@@ -32,7 +32,7 @@ if (renderedHtml && renderedHtml.trim()) {
     streamingMessageElement.innerHTML = renderedHtml;
 } else {
     // Fallback: preserve content as escaped plain text
-    console.warn('[WP oOS] Markdown rendering returned empty, preserving original content');
+    console.warn('[NV oOS] Markdown rendering returned empty, preserving original content');
     streamingMessageElement.innerHTML = escapeHtml(streamResult.content).replace(/\n/g, '<br />');
 }
 ```
@@ -186,7 +186,7 @@ Tests:       151 passed, 151 total
 
 **Debug Steps:**
 1. Open browser console
-2. Look for warning: `[WP oOS] Markdown rendering returned empty, preserving original content`
+2. Look for warning: `[NV oOS] Markdown rendering returned empty, preserving original content`
 3. If present, fallback is working
 4. If not, markdown rendering is working normally
 

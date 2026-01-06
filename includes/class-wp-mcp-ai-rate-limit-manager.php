@@ -52,7 +52,7 @@ class WP_MCP_AI_Rate_Limit_Manager {
 		if ( ! is_callable( $callable ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_callable',
-				__( 'The provided callable is not valid.', 'wp-mcp-ai' )
+				__( 'The provided callable is not valid.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -156,7 +156,7 @@ class WP_MCP_AI_Rate_Limit_Manager {
 
 		return new WP_Error(
 			'wp_mcp_ai_max_retries_exceeded',
-			__( 'Maximum retry attempts exceeded.', 'wp-mcp-ai' )
+			__( 'Maximum retry attempts exceeded.', 'mcp-ai-wpoos' )
 		);
 	}
 

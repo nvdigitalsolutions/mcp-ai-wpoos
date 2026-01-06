@@ -2,7 +2,7 @@
 
 ## Issue Summary
 
-When accessing the "Per Site" sub-tab in the Token Manager section of the WP oOS settings dashboard, JavaScript console errors appeared:
+When accessing the "Per Site" sub-tab in the Token Manager section of the NV oOS settings dashboard, JavaScript console errors appeared:
 
 ```
 POST https://bots.nvdigital.solutions/wp-admin/admin-ajax.php 400 (Bad Request)
@@ -151,7 +151,7 @@ The endpoints return Chart.js compatible data:
 
 To verify the fix works:
 
-1. Navigate to WP oOS Settings → Token Manager
+1. Navigate to NV oOS Settings → Token Manager
 2. Click on "Per Site" tab
 3. Observe that Provider Distribution and Model Distribution charts load without errors
 4. Check browser console - should show no 400 errors

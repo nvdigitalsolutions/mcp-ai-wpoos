@@ -9,7 +9,7 @@
 ## Dashboard Overview
 
 The Orchestration Dashboard is located at:
-**WordPress Admin → Settings → WP oOS → Orchestration Tab**
+**WordPress Admin → Settings → NV oOS → Orchestration Tab**
 
 ---
 
@@ -17,7 +17,7 @@ The Orchestration Dashboard is located at:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  WP oOS Settings Dashboard                            [Save]    │
+│  NV oOS Settings Dashboard                            [Save]    │
 ├─────────────────────────────────────────────────────────────────┤
 │  [General] [Assistants] [Providers] [ORCHESTRATION] [Tools]    │
 ├─────────────────────────────────────────────────────────────────┤
@@ -25,7 +25,7 @@ The Orchestration Dashboard is located at:
 │  ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓  │
 │  ┃ ℹ️  About the Orchestration Layer                          ┃  │
 │  ┃                                                             ┃  │
-│  ┃  The WP oOS Dynamic AI Orchestration Layer extends         ┃  │
+│  ┃  The NV oOS Dynamic AI Orchestration Layer extends         ┃  │
 │  ┃  standard SSE and MCP implementations with sophisticated   ┃  │
 │  ┃  resource management, security enforcement, and            ┃  │
 │  ┃  predictive optimization.                                  ┃  │

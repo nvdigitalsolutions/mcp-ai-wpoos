@@ -19,3 +19,83 @@
 .mcp-method-test:hover {
 	background-color: #f0f0f0 !important;
 }
+
+/* Mobile responsive enhancements for diagnostic tables */
+@media screen and (max-width: 782px) {
+	/* Wrap diagnostic tables in scroll containers */
+	.wrap table.widefat {
+		display: block;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.wrap table.widefat thead,
+	.wrap table.widefat tbody,
+	.wrap table.widefat tr {
+		display: block;
+	}
+
+	.wrap table.widefat thead {
+		display: none; /* Hide on mobile, use data-label pattern */
+	}
+
+	.wrap table.widefat tr {
+		margin-bottom: 1rem;
+		border: 1px solid #dcdcde;
+		border-radius: 4px;
+	}
+
+	.wrap table.widefat td {
+		display: block;
+		text-align: right;
+		padding: 0.75rem;
+		border-bottom: 1px solid #f0f0f1;
+		position: relative;
+		padding-left: 50%;
+	}
+
+	.wrap table.widefat td:last-child {
+		border-bottom: none;
+	}
+
+	.wrap table.widefat td::before {
+		content: attr(data-label);
+		position: absolute;
+		left: 0.75rem;
+		width: 45%;
+		padding-right: 0.75rem;
+		font-weight: 600;
+		text-align: left;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* For tables without data-labels, use a simpler horizontal scroll */
+	.wrap table.widefat:not([data-responsive]) {
+		display: table;
+		min-width: 600px;
+	}
+
+	.wrap table.widefat:not([data-responsive]) thead,
+	.wrap table.widefat:not([data-responsive]) tbody,
+	.wrap table.widefat:not([data-responsive]) tr {
+		display: table-row-group;
+	}
+
+	.wrap table.widefat:not([data-responsive]) tr {
+		display: table-row;
+		margin: 0;
+		border: none;
+	}
+
+	.wrap table.widefat:not([data-responsive]) td {
+		display: table-cell;
+		text-align: left;
+		padding: 8px;
+	}
+
+	.wrap table.widefat:not([data-responsive]) td::before {
+		display: none;
+	}
+}

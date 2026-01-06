@@ -1,11 +1,11 @@
-# Mesh Compute Pooling with WP oOS
+# Mesh Compute Pooling with NV oOS
 
 **Version:** 1.0.0  
 **Last Updated:** November 6, 2025
 
 ## Overview
 
-WP oOS supports **mesh networking** — a distributed architecture that allows multiple WordPress sites to pool their AI compute resources, share budget allocations, and coordinate workloads across a network of trusted peers. This feature works with **both anonymous and authenticated users**, as the pooling happens **server-to-server**, not per visitor.
+NV oOS supports **mesh networking** — a distributed architecture that allows multiple WordPress sites to pool their AI compute resources, share budget allocations, and coordinate workloads across a network of trusted peers. This feature works with **both anonymous and authenticated users**, as the pooling happens **server-to-server**, not per visitor.
 
 This document explains how mesh compute pooling works, how it supports different user types, and how to configure it for your deployment.
 
@@ -149,7 +149,7 @@ $response = wp_remote_post(
 - Keys are stored in WordPress options and validated at REST API boundary
 - Mesh authentication **bypasses user-level capability checks**
 - Calls without valid mesh keys are rejected with `wp_mcp_ai_invalid_mesh_key` error
-- Mesh must be explicitly enabled in **Settings → WP oOS → Mesh Network**
+- Mesh must be explicitly enabled in **Settings → NV oOS → Mesh Network**
 
 **Security:**
 - Mesh keys are 40+ character random strings prefixed with `mesh_`
@@ -304,7 +304,7 @@ fetch('/wp-json/mcp-ai/v1/chat', {
 ### Step 1: Enable Mesh Networking
 
 1. Log in to WordPress admin on Site A
-2. Navigate to **Settings → WP oOS**
+2. Navigate to **Settings → NV oOS**
 3. Scroll to **Mesh Network** section
 4. Check **Enable Mesh Networking**
 5. Click **Save Changes**
@@ -421,10 +421,10 @@ if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 
 Enable logging to track mesh usage:
 
-1. Navigate to **Settings → WP oOS**
+1. Navigate to **Settings → NV oOS**
 2. Check **Enable Logging**
 3. Review logs via:
-   - **Settings → WP oOS → Logs** tab
+   - **Settings → NV oOS → Logs** tab
    - WP-CLI: `wp option get wp_mcp_ai_recent_activity --format=json`
 
 **Logged information includes:**
@@ -577,9 +577,9 @@ The mesh request simply forwards the chat payload to the peer site's `/chat` end
 - Distribute workload evenly across peers
 - Cache frequently accessed data locally
 
-### Is mesh networking required to use WP oOS?
+### Is mesh networking required to use NV oOS?
 
-**No.** Mesh networking is an **optional feature**. You can use WP oOS as a standalone AI assistant system without enabling mesh.
+**No.** Mesh networking is an **optional feature**. You can use NV oOS as a standalone AI assistant system without enabling mesh.
 
 **Default behavior (mesh disabled):**
 - Assistants work normally with local tools

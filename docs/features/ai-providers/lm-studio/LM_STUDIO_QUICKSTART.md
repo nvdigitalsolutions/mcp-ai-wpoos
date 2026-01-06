@@ -2,7 +2,7 @@
 
 ## What Was Fixed
 
-The LM Studio provider was already fully implemented in WP oOS. This update fixes a configuration bug where the default endpoint URL caused malformed API requests.
+The LM Studio provider was already fully implemented in NV oOS. This update fixes a configuration bug where the default endpoint URL caused malformed API requests.
 
 ### The Bug
 - **Before**: Default endpoint `http://localhost:1234/v1` → URLs like `http://localhost:1234/v1/v1/models` ❌
@@ -20,9 +20,9 @@ Changed one configuration value to match the Ollama pattern (base URL without AP
 # Start server (default: port 1234)
 ```
 
-### 2. Configure WP oOS
+### 2. Configure NV oOS
 ```
-WordPress Admin → Settings → WP oOS → Providers → LM Studio
+WordPress Admin → Settings → NV oOS → Providers → LM Studio
 
 ✅ Enable LM Studio Provider: checked
 📍 Endpoint URL: http://localhost:1234
@@ -64,7 +64,7 @@ Endpoint: http://192.168.1.20:1234 ✅
 # On LM Studio machine:
 cloudflared tunnel --url http://localhost:1234
 
-# In WP oOS:
+# In NV oOS:
 Endpoint: https://your-tunnel.trycloudflare.com ✅
 ```
 

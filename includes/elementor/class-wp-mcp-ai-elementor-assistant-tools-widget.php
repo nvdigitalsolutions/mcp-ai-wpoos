@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Assistant Tools', 'wp-mcp-ai' );
+		return __( 'NV oOS Assistant Tools', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,17 +61,17 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Content', 'wp-mcp-ai' ),
+				'label' => __( 'Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Available assistant tools', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Available assistant tools', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -79,22 +79,22 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		$this->add_control(
 			'assistant_id',
 			array(
-				'label'       => __( 'Assistant', 'wp-mcp-ai' ),
+				'label'       => __( 'Assistant', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $this->get_assistant_options(),
 				'default'     => '',
 				'label_block' => true,
-				'description' => __( 'Choose which assistant to display tools for. Only published assistants appear in this list.', 'wp-mcp-ai' ),
+				'description' => __( 'Choose which assistant to display tools for. Only published assistants appear in this list.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_descriptions',
 			array(
-				'label'        => __( 'Show descriptions', 'wp-mcp-ai' ),
+				'label'        => __( 'Show descriptions', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -103,10 +103,10 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		$this->add_control(
 			'empty_message',
 			array(
-				'label'       => __( 'Empty state message', 'wp-mcp-ai' ),
+				'label'       => __( 'Empty state message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'No tools have been assigned to this assistant yet.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no tools are available…', 'wp-mcp-ai' ),
+				'default'     => __( 'No tools have been assigned to this assistant yet.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no tools are available…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -158,7 +158,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		}
 
 		if ( ! $assistant_id ) {
-			echo '<p class="wp-mcp-ai-assistant-tools__notice">' . esc_html__( 'Select an assistant in the widget settings to view its tools.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-assistant-tools__notice">' . esc_html__( 'Select an assistant in the widget settings to view its tools.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -170,7 +170,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 		if ( empty( $tool_items ) ) {
 			if ( ! $registry && ! empty( $tools['requested'] ) ) {
-				echo '<p class="wp-mcp-ai-assistant-tools__notice">' . esc_html__( 'The tool registry is currently unavailable.', 'wp-mcp-ai' ) . '</p>';
+				echo '<p class="wp-mcp-ai-assistant-tools__notice">' . esc_html__( 'The tool registry is currently unavailable.', 'mcp-ai-wpoos' ) . '</p>';
 			} else {
 				$empty_output = $this->format_text_inline( $empty_message );
 
@@ -196,12 +196,12 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 				if ( '' !== $slug ) {
 					/* translators: %s: tool slug. */
-					$copy_label   = sprintf( esc_html__( 'Copy the %s tool slug', 'wp-mcp-ai' ), $slug );
-					$success_text = esc_html__( 'Copied!', 'wp-mcp-ai' );
-					$failure_text = esc_html__( 'Copy failed', 'wp-mcp-ai' );
+					$copy_label   = sprintf( esc_html__( 'Copy the %s tool slug', 'mcp-ai-wpoos' ), $slug );
+					$success_text = esc_html__( 'Copied!', 'mcp-ai-wpoos' );
+					$failure_text = esc_html__( 'Copy failed', 'mcp-ai-wpoos' );
 
 					echo '<span class="wp-mcp-ai-assistant-tools__slug">';
-					echo '<span class="wp-mcp-ai-assistant-tools__slug-label">' . esc_html__( 'Slug:', 'wp-mcp-ai' ) . '</span> ';
+					echo '<span class="wp-mcp-ai-assistant-tools__slug-label">' . esc_html__( 'Slug:', 'mcp-ai-wpoos' ) . '</span> ';
 					echo '<button type="button" class="wp-mcp-ai-assistant-tools__copy-button" data-slug="' . esc_attr( $slug ) . '" data-success-message="' . esc_attr( $success_text ) . '" data-failure-message="' . esc_attr( $failure_text ) . '" aria-label="' . esc_attr( $copy_label ) . '">';
 					echo '<code class="wp-mcp-ai-assistant-tools__slug-code">' . esc_html( $slug ) . '</code>';
 					echo '<span class="wp-mcp-ai-assistant-tools__copy-feedback" aria-hidden="true" style="display:none;">' . esc_html( $success_text ) . '</span>';
@@ -234,7 +234,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 			if ( '' !== $missing_list ) {
 				echo '<p class="wp-mcp-ai-assistant-tools__notice wp-mcp-ai-assistant-tools__notice--warning">';
-				echo esc_html__( 'Some tools assigned to this assistant are no longer registered:', 'wp-mcp-ai' ) . ' ';
+				echo esc_html__( 'Some tools assigned to this assistant are no longer registered:', 'mcp-ai-wpoos' ) . ' ';
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each item already escaped via array_map('esc_html').
 				echo $missing_list;
 				echo '</p>';
@@ -412,7 +412,7 @@ JS;
 	 * @return array
 	 */
 	protected function get_assistant_options() {
-		$options = array( '' => __( 'Select an assistant…', 'wp-mcp-ai' ) );
+		$options = array( '' => __( 'Select an assistant…', 'mcp-ai-wpoos' ) );
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			return $options;

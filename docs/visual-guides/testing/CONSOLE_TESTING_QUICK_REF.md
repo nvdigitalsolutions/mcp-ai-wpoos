@@ -69,14 +69,14 @@ wpMcpAiTestGetTranscript('session-key-here')
 | Error | Cause | Solution |
 |-------|-------|----------|
 | "sessionKey parameter is required" | Missing session key | Provide session key as first parameter |
-| "transcriptsEndpoint not configured" | Chat not loaded | Navigate to page with WP oOS chat widget |
+| "transcriptsEndpoint not configured" | Chat not loaded | Navigate to page with NV oOS chat widget |
 | 404 Not Found | Transcript doesn't exist | Check session key, user ID, assistant ID |
 | 401 Unauthorized | Not logged in | Log in to WordPress |
 
 ## Where to Use
 
 1. Open Developer Console (F12)
-2. Navigate to page with WP oOS chat widget
+2. Navigate to page with NV oOS chat widget
 3. Run the function
 
 ## Full Documentation

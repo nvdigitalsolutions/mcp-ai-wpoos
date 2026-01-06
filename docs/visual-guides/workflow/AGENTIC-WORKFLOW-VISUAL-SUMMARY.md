@@ -1,6 +1,6 @@
 # Agentic Workflow Visual Summary
 
-**Quick Reference Diagram for WP oOS Agentic Workflow**
+**Quick Reference Diagram for NV oOS Agentic Workflow**
 
 ---
 
@@ -138,7 +138,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                      WP oOS ARCHITECTURE                      │
+│                      NV oOS ARCHITECTURE                      │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌────────────┐     ┌────────────┐     ┌────────────┐      │
@@ -268,7 +268,7 @@ Tool Call Received
 │     $assistant_meta['max_agentic_...'] │
 │                    ▼                    │
 │  2️⃣ ADMIN SETTING                      │
-│     Settings → WP oOS → Custom AI       │
+│     Settings → NV oOS → Custom AI       │
 │                    ▼                    │
 │  3️⃣ PROGRAMMATIC FILTER                │
 │     wp_mcp_ai_max_agentic_iterations   │
@@ -302,7 +302,7 @@ Tool Call Received
 
 ### Issue: Workflow stops too early
 **Check:** Max iterations setting  
-**Fix:** Increase in Settings → WP oOS → General Settings → Custom AI Settings (Filters)
+**Fix:** Increase in Settings → NV oOS → General Settings → Custom AI Settings (Filters)
 
 ### Issue: Tool not executing
 **Check:** User capability & tool enabled for assistant  
@@ -329,4 +329,4 @@ Tool Call Received
 ---
 
 **Quick Reference Card**  
-Print this page for a visual summary of how WP oOS agentic workflows operate!
+Print this page for a visual summary of how NV oOS agentic workflows operate!

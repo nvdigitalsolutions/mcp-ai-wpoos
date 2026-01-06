@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-This document provides a comprehensive gap analysis of the project management capabilities within the WP oOS plugin repository. The analysis covers both the **internal WordPress-based project management features** (CPT-based projects, tasks, and events) and the **GitHub repository project management** infrastructure (issues, labels, milestones, projects).
+This document provides a comprehensive gap analysis of the project management capabilities within the NV oOS plugin repository. The analysis covers both the **internal WordPress-based project management features** (CPT-based projects, tasks, and events) and the **GitHub repository project management** infrastructure (issues, labels, milestones, projects).
 
 ### Current State Overview
 
@@ -245,7 +245,7 @@ Create comprehensive test files:
 Create GitHub Projects configuration:
 
 1. **Create Project Boards:**
-   - "WP oOS Roadmap" - Long-term feature planning
+   - "NV oOS Roadmap" - Long-term feature planning
    - "Sprint Board" - Current sprint work (2-week cycles)
    - "Bug Triage" - Bug prioritization and assignment
 
@@ -430,7 +430,7 @@ Create comprehensive roadmap documentation:
 
 **File:** `docs/ROADMAP.md`
 ```markdown
-# WP oOS Roadmap
+# NV oOS Roadmap
 
 ## Vision
 [High-level vision statement]
@@ -932,7 +932,7 @@ Add PM troubleshooting section:
 **Problem:** Created projects but don't see them in admin.
 **Solution:**
 1. Verify project management is enabled:
-   - Settings → WP oOS → Tools & Features
+   - Settings → NV oOS → Tools & Features
    - Check "Enable Project Management"
 2. Verify you're using Pro version (not base)
 3. Check user capabilities (requires 'edit_posts')
@@ -1193,7 +1193,7 @@ Add PM troubleshooting section:
 
 ## 9. Conclusion
 
-The WP oOS plugin has a solid foundation for project management, both internally (WordPress CPT-based system) and externally (GitHub workflows). The primary gaps are in:
+The NV oOS plugin has a solid foundation for project management, both internally (WordPress CPT-based system) and externally (GitHub workflows). The primary gaps are in:
 
 1. **GitHub Project Management Infrastructure** - Missing boards, labels, milestones
 2. **Testing Coverage** - PM tools lack comprehensive tests

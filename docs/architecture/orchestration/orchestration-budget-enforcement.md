@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS orchestration layer implements intelligent budget management for tool execution, ensuring that tools operate within token and memory constraints. This system **predicts, orchestrates, and adjusts** tool responses to prevent API limit overruns and maintain system stability.
+The NV oOS orchestration layer implements intelligent budget management for tool execution, ensuring that tools operate within token and memory constraints. This system **predicts, orchestrates, and adjusts** tool responses to prevent API limit overruns and maintain system stability.
 
 ## Key Principles
 
@@ -235,7 +235,7 @@ The orchestration layer logs all budget-related events:
 }
 ```
 
-Enable logging in **Settings → WP oOS → Enable Logging** to see these events.
+Enable logging in **Settings → NV oOS → Enable Logging** to see these events.
 
 ## Best Practices
 

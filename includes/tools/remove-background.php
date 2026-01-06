@@ -24,7 +24,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	if ( empty( $image_path ) ) {
 		return new WP_Error(
 			'wp_mcp_ai_invalid_image_path',
-			__( 'Image path is required.', 'wp-mcp-ai' )
+			__( 'Image path is required.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -32,7 +32,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	if ( ! file_exists( $image_path ) ) {
 		return new WP_Error(
 			'wp_mcp_ai_image_not_found',
-			__( 'Image file not found.', 'wp-mcp-ai' )
+			__( 'Image file not found.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -40,7 +40,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		return new WP_Error(
 			'wp_mcp_ai_settings_not_available',
-			__( 'Plugin settings are not available.', 'wp-mcp-ai' )
+			__( 'Plugin settings are not available.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -50,7 +50,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	if ( empty( $api_key ) ) {
 		return new WP_Error(
 			'wp_mcp_ai_removebg_api_key_missing',
-			__( 'remove.bg API key is not configured. Please add it in the plugin settings.', 'wp-mcp-ai' )
+			__( 'remove.bg API key is not configured. Please add it in the plugin settings.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -62,7 +62,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	if ( false === $realpath ) {
 		return new WP_Error(
 			'wp_mcp_ai_invalid_image_path',
-			__( 'Invalid image path provided.', 'wp-mcp-ai' )
+			__( 'Invalid image path provided.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -81,7 +81,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	if ( empty( $uploads_basedir ) ) {
 		return new WP_Error(
 			'wp_mcp_ai_upload_dir_error',
-			__( 'Unable to determine uploads directory.', 'wp-mcp-ai' )
+			__( 'Unable to determine uploads directory.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -98,7 +98,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 		$normalized_realpath !== $uploads_basedir ) {
 		return new WP_Error(
 			'wp_mcp_ai_invalid_image_path',
-			__( 'Access denied. Only files in the WordPress uploads directory can be processed.', 'wp-mcp-ai' ),
+			__( 'Access denied. Only files in the WordPress uploads directory can be processed.', 'mcp-ai-wpoos' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -108,7 +108,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	if ( false === $image_data ) {
 		return new WP_Error(
 			'wp_mcp_ai_image_read_failed',
-			__( 'Failed to read the image file.', 'wp-mcp-ai' )
+			__( 'Failed to read the image file.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -148,7 +148,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 			'wp_mcp_ai_removebg_request_failed',
 			sprintf(
 				/* translators: %s: Error message */
-				__( 'Failed to connect to remove.bg API: %s', 'wp-mcp-ai' ),
+				__( 'Failed to connect to remove.bg API: %s', 'mcp-ai-wpoos' ),
 				$response->get_error_message()
 			)
 		);
@@ -157,7 +157,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	$response_code = wp_remote_retrieve_response_code( $response );
 	if ( 200 !== $response_code ) {
 		$response_body = wp_remote_retrieve_body( $response );
-		$error_message = __( 'Unknown error from remove.bg API.', 'wp-mcp-ai' );
+		$error_message = __( 'Unknown error from remove.bg API.', 'mcp-ai-wpoos' );
 
 		// Try to parse error message from response.
 		$error_data = json_decode( $response_body, true );
@@ -169,7 +169,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 			'wp_mcp_ai_removebg_api_error',
 			sprintf(
 				/* translators: 1: HTTP response code, 2: Error message */
-				__( 'remove.bg API returned error %1$d: %2$s', 'wp-mcp-ai' ),
+				__( 'remove.bg API returned error %1$d: %2$s', 'mcp-ai-wpoos' ),
 				$response_code,
 				$error_message
 			)
@@ -181,7 +181,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	if ( empty( $processed_image ) ) {
 		return new WP_Error(
 			'wp_mcp_ai_removebg_empty_response',
-			__( 'remove.bg API returned an empty response.', 'wp-mcp-ai' )
+			__( 'remove.bg API returned an empty response.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -211,7 +211,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 			'wp_mcp_ai_image_save_failed',
 			sprintf(
 				/* translators: %s: Error message */
-				__( 'Failed to save processed image: %s', 'wp-mcp-ai' ),
+				__( 'Failed to save processed image: %s', 'mcp-ai-wpoos' ),
 				$upload['error']
 			)
 		);
@@ -220,6 +220,6 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	// Return the path to the new image.
 	return isset( $upload['file'] ) ? $upload['file'] : new WP_Error(
 		'wp_mcp_ai_image_path_missing',
-		__( 'Processed image was saved but path is missing.', 'wp-mcp-ai' )
+		__( 'Processed image was saved but path is missing.', 'mcp-ai-wpoos' )
 	);
 }

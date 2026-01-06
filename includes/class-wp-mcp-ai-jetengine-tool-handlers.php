@@ -321,7 +321,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_jetengine_missing',
-				__( 'JetEngine is not active on this site.', 'wp-mcp-ai' )
+				__( 'JetEngine is not active on this site.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -329,7 +329,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 		if ( null === $config ) {
 			return new WP_Error(
 				'wp_mcp_ai_jetengine_unknown_operation',
-				__( 'The requested JetEngine operation is not supported.', 'wp-mcp-ai' )
+				__( 'The requested JetEngine operation is not supported.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -350,7 +350,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 			if ( empty( $instance ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_jetengine_missing_instance',
-					__( 'JetEngine requests must include an "instance" parameter.', 'wp-mcp-ai' )
+					__( 'JetEngine requests must include an "instance" parameter.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -361,7 +361,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 			if ( empty( $item_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_jetengine_missing_id',
-					__( 'JetEngine requests for this operation must include an item ID.', 'wp-mcp-ai' )
+					__( 'JetEngine requests for this operation must include an item ID.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -385,7 +385,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 				return self::normalise_wp_error(
 					new WP_Error(
 						'wp_mcp_ai_jetengine_route_unavailable',
-						__( 'The JetEngine REST route is not registered.', 'wp-mcp-ai' )
+						__( 'The JetEngine REST route is not registered.', 'mcp-ai-wpoos' )
 					),
 					'rest'
 				);
@@ -407,14 +407,14 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 		if ( ! $user_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_anonymous_user',
-				__( 'A valid user is required to execute JetEngine tools.', 'wp-mcp-ai' )
+				__( 'A valid user is required to execute JetEngine tools.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'The authenticated user does not have access to this site.', 'wp-mcp-ai' )
+				__( 'The authenticated user does not have access to this site.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -802,7 +802,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 		$code     = ! empty( $codes ) ? $codes[0] : 'wp_error';
 		$data     = $error->get_error_data( $code );
 		$messages = $error->get_error_messages( $code );
-		$message  = ! empty( $messages ) ? $messages[0] : __( 'An unexpected error occurred.', 'wp-mcp-ai' );
+		$message  = ! empty( $messages ) ? $messages[0] : __( 'An unexpected error occurred.', 'mcp-ai-wpoos' );
 
 		$status = 500;
 		if ( is_array( $data ) && isset( $data['status'] ) ) {
@@ -847,7 +847,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 
 		if ( empty( $message ) ) {
 			/* translators: %d: HTTP status code. */
-			$message = sprintf( __( 'JetEngine request returned HTTP %d.', 'wp-mcp-ai' ), (int) $status );
+			$message = sprintf( __( 'JetEngine request returned HTTP %d.', 'mcp-ai-wpoos' ), (int) $status );
 		}
 
 		return array(

@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Send_Group_Email_Validated extends WP_MCP_AI_Validated_Tool
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Send Group Email (Validated)', 'wp-mcp-ai' );
+		return __( 'Send Group Email (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Sends an email to recipients using the WordPress mailer with Symfony Validator for argument validation. Email content can be provided directly or loaded from attachment files.', 'wp-mcp-ai' );
+		return __( 'Sends an email to recipients using the WordPress mailer with Symfony Validator for argument validation. Email content can be provided directly or loaded from attachment files.', 'mcp-ai-wpoos' );
 	}
 
 	/**

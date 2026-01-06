@@ -151,7 +151,7 @@ python3 bin/check_markdown_links.py
 **Output:**
 ```
 ==================================================
-WP oOS Documentation Link Checker
+NV oOS Documentation Link Checker
 ==================================================
 
 Scanning 665 markdown files for links...

@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Quiz', 'wp-mcp-ai' );
+		return __( 'Get Quiz', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves details of a specific quiz, including questions and settings.', 'wp-mcp-ai' );
+		return __( 'Retrieves details of a specific quiz, including questions and settings.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,12 +43,12 @@ class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			'properties'           => array(
 				'quiz_id'         => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the quiz to retrieve.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the quiz to retrieve.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'include_answers' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to include correct answers (requires edit capability).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to include correct answers (requires edit capability).', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 			),
@@ -68,20 +68,20 @@ class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view quizzes.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view quizzes.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$quiz_id         = isset( $arguments['quiz_id'] ) ? absint( $arguments['quiz_id'] ) : 0;
 		$include_answers = isset( $arguments['include_answers'] ) ? (bool) $arguments['include_answers'] : false;
 
 		if ( ! $quiz_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$quiz = get_post( $quiz_id );
 
 		if ( ! $quiz || 'mcp_ai_quiz' !== $quiz->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Get quiz metadata.
@@ -122,7 +122,7 @@ class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		return array(
 			'summary'        => sprintf(
 				/* translators: %s: quiz title */
-				__( 'Quiz: %s', 'wp-mcp-ai' ),
+				__( 'Quiz: %s', 'mcp-ai-wpoos-pro' ),
 				get_the_title( $quiz )
 			),
 			'quiz_id'        => $quiz_id,
@@ -143,6 +143,7 @@ class WP_MCP_AI_Tool_Get_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'read-only',
 			'local-only',
 			'requires-capability',

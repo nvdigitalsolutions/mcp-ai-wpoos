@@ -37,14 +37,14 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Sora video', 'wp-mcp-ai' );
+		return __( 'Generate Sora video', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a video with OpenAI Sora and stores it in the Media Library. Supports both Sora 2 and Sora 2 Pro models for high-quality video generation.', 'wp-mcp-ai' );
+		return __( 'Creates a video with OpenAI Sora and stores it in the Media Library. Supports both Sora 2 and Sora 2 Pro models for high-quality video generation.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -58,51 +58,51 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			'properties'           => array(
 				'prompt'        => array(
 					'type'        => 'string',
-					'description' => __( 'The text prompt describing the desired video. Be detailed and specific about the visual elements, actions, and style you want to see.', 'wp-mcp-ai' ),
+					'description' => __( 'The text prompt describing the desired video. Be detailed and specific about the visual elements, actions, and style you want to see.', 'mcp-ai-wpoos' ),
 				),
 				'model'         => array(
 					'type'        => 'string',
-					'description' => __( 'OpenAI video model to use: "sora-2" (standard quality) or "sora-2-pro" (higher quality, more coherent).', 'wp-mcp-ai' ),
+					'description' => __( 'OpenAI video model to use: "sora-2" (standard quality) or "sora-2-pro" (higher quality, more coherent).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'sora-2', 'sora-2-pro' ),
 					'default'     => $defaults['model'],
 				),
 				'size'          => array(
 					'type'        => 'string',
-					'description' => __( 'Resolution of the generated video.', 'wp-mcp-ai' ),
+					'description' => __( 'Resolution of the generated video.', 'mcp-ai-wpoos' ),
 					'enum'        => array( '480p', '720p', '1080p' ),
 					'default'     => $defaults['size'],
 				),
 				'duration'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (5-20 for sora-2, 5-60 for sora-2-pro).', 'wp-mcp-ai' ),
+					'description' => __( 'Video duration in seconds (5-20 for sora-2, 5-60 for sora-2-pro).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,
 					'maximum'     => 60,
 					'default'     => $defaults['duration'],
 				),
 				'fps'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Frames per second (24, 30, or 60).', 'wp-mcp-ai' ),
+					'description' => __( 'Frames per second (24, 30, or 60).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 24, 30, 60 ),
 					'default'     => $defaults['fps'],
 				),
 				'aspect_ratio'  => array(
 					'type'        => 'string',
-					'description' => __( 'Video aspect ratio: "16:9" (landscape), "9:16" (portrait), "1:1" (square).', 'wp-mcp-ai' ),
+					'description' => __( 'Video aspect ratio: "16:9" (landscape), "9:16" (portrait), "1:1" (square).', 'mcp-ai-wpoos' ),
 					'enum'        => array( '16:9', '9:16', '1:1' ),
 					'default'     => '16:9',
 				),
 				'file_name'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional base file name for the saved video attachment.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional base file name for the saved video attachment.', 'mcp-ai-wpoos' ),
 				),
 				'save_to_media' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to save the generated video to WordPress Media Library. Default is true.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to save the generated video to WordPress Media Library. Default is true.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'timeout'       => array(
 					'type'        => 'integer',
-					'description' => __( 'Override the OpenAI request timeout in seconds. Video generation can take several minutes.', 'wp-mcp-ai' ),
+					'description' => __( 'Override the OpenAI request timeout in seconds. Video generation can take several minutes.', 'mcp-ai-wpoos' ),
 					'minimum'     => 60,
 					'maximum'     => 600,
 					'default'     => 300,
@@ -165,7 +165,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to generate videos.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to generate videos.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -173,7 +173,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -182,7 +182,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		if ( empty( $arguments['prompt'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_prompt',
-				__( 'Video generation requires a prompt.', 'wp-mcp-ai' ),
+				__( 'Video generation requires a prompt.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -287,11 +287,11 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_api_key',
-				__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+				__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -363,7 +363,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		$data = json_decode( $body, true );
 
 		if ( $code < 200 || $code >= 300 ) {
-			$message = isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'OpenAI Sora video generation failed.', 'wp-mcp-ai' );
+			$message = isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'OpenAI Sora video generation failed.', 'mcp-ai-wpoos' );
 
 			WP_MCP_AI_Logger::log_error(
 				'Sora API returned error',
@@ -397,7 +397,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 
 			return new WP_Error(
 				'wp_mcp_ai_sora_invalid_response',
-				__( 'OpenAI Sora returned an unexpected response format. Expected job ID and status.', 'wp-mcp-ai' ),
+				__( 'OpenAI Sora returned an unexpected response format. Expected job ID and status.', 'mcp-ai-wpoos' ),
 				array(
 					'status'        => 500,
 					'response_keys' => array_keys( $data ),
@@ -468,7 +468,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 
 				return new WP_Error(
 					'wp_mcp_ai_sora_status_error',
-					isset( $status_data['error']['message'] ) ? $status_data['error']['message'] : __( 'Failed to check video status.', 'wp-mcp-ai' ),
+					isset( $status_data['error']['message'] ) ? $status_data['error']['message'] : __( 'Failed to check video status.', 'mcp-ai-wpoos' ),
 					array(
 						'status'   => $status_code,
 						'response' => $status_data,
@@ -494,7 +494,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 				$video_url = self::API_ENDPOINT . '/' . $video_id . '/content';
 				break;
 			} elseif ( 'failed' === $video_status ) {
-				$error_message = isset( $status_data['processing_error'] ) ? $status_data['processing_error'] : __( 'Video generation failed.', 'wp-mcp-ai' );
+				$error_message = isset( $status_data['processing_error'] ) ? $status_data['processing_error'] : __( 'Video generation failed.', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
 					'Sora video generation failed',
@@ -527,7 +527,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 
 			return new WP_Error(
 				'wp_mcp_ai_sora_timeout',
-				__( 'Video generation timed out. The video may still be processing.', 'wp-mcp-ai' ),
+				__( 'Video generation timed out. The video may still be processing.', 'mcp-ai-wpoos' ),
 				array(
 					'status'    => 504,
 					'video_id'  => $video_id,
@@ -541,7 +541,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $video_url || ! wp_http_validate_url( $video_url ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_sora_invalid_video_url',
-				__( 'Invalid video URL received from API.', 'wp-mcp-ai' ),
+				__( 'Invalid video URL received from API.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -580,7 +580,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 
 			return new WP_Error(
 				'wp_mcp_ai_sora_download_failed',
-				__( 'Failed to download generated video.', 'wp-mcp-ai' ),
+				__( 'Failed to download generated video.', 'mcp-ai-wpoos' ),
 				array( 'status' => $download_code )
 			);
 		}
@@ -590,7 +590,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		if ( empty( $video_data ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_sora_download_empty',
-				__( 'Downloaded video is empty.', 'wp-mcp-ai' ),
+				__( 'Downloaded video is empty.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -625,13 +625,13 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 				'cost'          => $cost,
 				'message'       => sprintf(
 					/* translators: 1: attachment ID, 2: media library edit URL */
-					__( 'Video generated successfully and saved as <a href="%2$s" target="_blank">attachment ID %1$d</a>.', 'wp-mcp-ai' ),
+					__( 'Video generated successfully and saved as <a href="%2$s" target="_blank">attachment ID %1$d</a>.', 'mcp-ai-wpoos' ),
 					$save_result['attachment_id'],
 					esc_url( $edit_url )
 				),
 				'text'          => sprintf(
 					/* translators: 1: attachment ID, 2: duration, 3: resolution */
-					__( 'Successfully generated video (ID: %1$d). Format: %2$ds, %3$s', 'wp-mcp-ai' ),
+					__( 'Successfully generated video (ID: %1$d). Format: %2$ds, %3$s', 'mcp-ai-wpoos' ),
 					$save_result['attachment_id'],
 					$duration,
 					$size
@@ -659,10 +659,10 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			'model'     => $model,
 			'provider'  => 'openai',
 			'cost'      => $cost,
-			'message'   => __( 'Video generated successfully (temporary - not saved to Media Library).', 'wp-mcp-ai' ),
+			'message'   => __( 'Video generated successfully (temporary - not saved to Media Library).', 'mcp-ai-wpoos' ),
 			'text'      => sprintf(
 				/* translators: 1: duration, 2: resolution */
-				__( 'Successfully generated temporary video. Format: %1$ds, %2$s', 'wp-mcp-ai' ),
+				__( 'Successfully generated temporary video. Format: %1$ds, %2$s', 'mcp-ai-wpoos' ),
 				$duration,
 				$size
 			),
@@ -716,7 +716,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			'post_mime_type' => 'video/mp4',
 			'post_title'     => sprintf(
 				/* translators: %s: truncated prompt */
-				__( 'Sora Generated Video: %s', 'wp-mcp-ai' ),
+				__( 'Sora Generated Video: %s', 'mcp-ai-wpoos' ),
 				substr( $prompt, 0, 50 )
 			),
 			'post_content'   => $prompt,
@@ -916,7 +916,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 
 		$message = sprintf(
 			/* translators: 1: expected filename, 2: job ID */
-			__( 'Video generation started. Your video (%1$s) is being created and will be available within approximately 10 minutes. Job ID: %2$s', 'wp-mcp-ai' ),
+			__( 'Video generation started. Your video (%1$s) is being created and will be available within approximately 10 minutes. Job ID: %2$s', 'mcp-ai-wpoos' ),
 			$expected_filename,
 			$job_id
 		);

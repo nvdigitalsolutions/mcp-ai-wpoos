@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document provides a comprehensive implementation guide for the WP oOS Orchestration Dashboard, including architecture details, component breakdown, and integration points. The orchestration dashboard provides a unified interface for managing AI resource allocation, monitoring system health, and configuring orchestration policies.
+This document provides a comprehensive implementation guide for the NV oOS Orchestration Dashboard, including architecture details, component breakdown, and integration points. The orchestration dashboard provides a unified interface for managing AI resource allocation, monitoring system health, and configuring orchestration policies.
 
 ---
 

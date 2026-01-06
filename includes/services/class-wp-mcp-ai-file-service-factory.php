@@ -137,7 +137,7 @@ class WP_MCP_AI_File_Service_Factory {
 				'wp_mcp_ai_unsupported_provider',
 				sprintf(
 					/* translators: %s: provider name */
-					__( 'File uploads are not supported for provider: %s', 'wp-mcp-ai' ),
+					__( 'File uploads are not supported for provider: %s', 'mcp-ai-wpoos' ),
 					$provider
 				),
 				array( 'status' => 400 )
@@ -200,7 +200,7 @@ class WP_MCP_AI_File_Service_Factory {
 			'wp_mcp_ai_provider_not_implemented',
 			sprintf(
 				/* translators: %s: provider name */
-				__( 'File upload not yet implemented for provider: %s', 'wp-mcp-ai' ),
+				__( 'File upload not yet implemented for provider: %s', 'mcp-ai-wpoos' ),
 				$provider
 			),
 			array( 'status' => 501 )

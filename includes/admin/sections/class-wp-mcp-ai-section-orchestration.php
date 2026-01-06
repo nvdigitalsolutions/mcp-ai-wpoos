@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'Orchestration Layer', 'wp-mcp-ai' );
+			return __( 'Orchestration Layer', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -47,7 +47,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure the dynamic AI orchestration layer that manages resource budgets, capability gating, and distributed AI operations.', 'wp-mcp-ai' );
+			return __( 'Configure the dynamic AI orchestration layer that manages resource budgets, capability gating, and distributed AI operations.', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md';
 		}
 
 		/**
@@ -72,47 +81,47 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'orchestration_preset'            => array(
 					'type'        => 'hidden',
 					'default'     => 'auto',
-					'description' => __( 'Current orchestration configuration preset. Managed by the preset selector above.', 'wp-mcp-ai' ),
+					'description' => __( 'Current orchestration configuration preset. Managed by the preset selector above.', 'mcp-ai-wpoos' ),
 				),
 				'enable_budget_management'        => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Dynamic Budget Management', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable dynamic budget management', 'wp-mcp-ai' ),
-					'description'    => __( 'Automatically allocate and adjust token budgets based on system resources and workload tier.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Dynamic Budget Management', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable dynamic budget management', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Automatically allocate and adjust token budgets based on system resources and workload tier.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'enable_predictive_optimization'  => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Predictive Optimization', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable predictive optimization', 'wp-mcp-ai' ),
-					'description'    => __( 'Use historical usage patterns to forecast and prevent resource exhaustion.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Predictive Optimization', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable predictive optimization', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Use historical usage patterns to forecast and prevent resource exhaustion.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'enable_capability_gating'        => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Capability-Based Tool Gating', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable capability-based tool gating', 'wp-mcp-ai' ),
-					'description'    => __( 'Enforce WordPress capability checks for tool access based on user roles.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Capability-Based Tool Gating', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable capability-based tool gating', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enforce WordPress capability checks for tool access based on user roles.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'enable_cron_orchestration'       => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Cron-Based Task Orchestration', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable cron-based task orchestration', 'wp-mcp-ai' ),
-					'description'    => __( 'Allow AI agents to create and manage scheduled background tasks with inherited budget constraints.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Cron-Based Task Orchestration', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable cron-based task orchestration', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allow AI agents to create and manage scheduled background tasks with inherited budget constraints.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'enable_auto_async_execution'     => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Automatic Async Tool Execution', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Automatically queue long-running tools in background', 'wp-mcp-ai' ),
-					'description'    => __( 'Automatically execute long-running tools (video generation, image generation, etc.) asynchronously via WordPress cron to prevent PHP timeouts. When enabled, tools with "async", "long-running", or "may-timeout" capability flags will be queued immediately and return a job_id for status polling.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Automatic Async Tool Execution', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically queue long-running tools in background', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Automatically execute long-running tools (video generation, image generation, etc.) asynchronously via WordPress cron to prevent PHP timeouts. When enabled, tools with "async", "long-running", or "may-timeout" capability flags will be queued immediately and return a job_id for status polling.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'async_tool_timeout'              => array(
 					'type'        => 'number',
-					'label'       => __( 'Async Tool Timeout (seconds)', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum time in seconds to wait for async tools (like video generation) to complete before timing out. Default is 300 seconds (5 minutes). Increase this for tools that may take longer, such as high-quality video generation.', 'wp-mcp-ai' ),
+					'label'       => __( 'Async Tool Timeout (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum time in seconds to wait for async tools (like video generation) to complete before timing out. Default is 300 seconds (5 minutes). Increase this for tools that may take longer, such as high-quality video generation.', 'mcp-ai-wpoos' ),
 					'default'     => 300,
 					'min'         => 60,
 					'max'         => 900,
@@ -120,27 +129,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'cron_job_retention_period'       => array(
 					'type'        => 'select',
-					'label'       => __( 'Cron Job History Retention', 'wp-mcp-ai' ),
-					'description' => __( 'How long to keep executed cron jobs visible in the Cron Manager after they run. This allows you to verify test jobs ran successfully and review execution history. Jobs with "Executed" status will remain visible for this period before being automatically removed.', 'wp-mcp-ai' ),
+					'label'       => __( 'Cron Job History Retention', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to keep executed cron jobs visible in the Cron Manager after they run. This allows you to verify test jobs ran successfully and review execution history. Jobs with "Executed" status will remain visible for this period before being automatically removed.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'1'   => __( '1 hour - Quick tests only', 'wp-mcp-ai' ),
-						'6'   => __( '6 hours - Short-term testing', 'wp-mcp-ai' ),
-						'24'  => __( '24 hours - Standard (Recommended)', 'wp-mcp-ai' ),
-						'72'  => __( '3 days - Extended review', 'wp-mcp-ai' ),
-						'168' => __( '1 week - Full audit trail', 'wp-mcp-ai' ),
-						'720' => __( '30 days - Maximum retention', 'wp-mcp-ai' ),
-						'0'   => __( 'Never - Remove immediately (not recommended for testing)', 'wp-mcp-ai' ),
+						'1'   => __( '1 hour - Quick tests only', 'mcp-ai-wpoos' ),
+						'6'   => __( '6 hours - Short-term testing', 'mcp-ai-wpoos' ),
+						'24'  => __( '24 hours - Standard (Recommended)', 'mcp-ai-wpoos' ),
+						'72'  => __( '3 days - Extended review', 'mcp-ai-wpoos' ),
+						'168' => __( '1 week - Full audit trail', 'mcp-ai-wpoos' ),
+						'720' => __( '30 days - Maximum retention', 'mcp-ai-wpoos' ),
+						'0'   => __( 'Never - Remove immediately (not recommended for testing)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => '24',
 				),
 				'slider_section_health'           => array(
 					'type'    => 'html',
-					'content' => '<h3>' . esc_html__( 'Health Monitoring Thresholds', 'wp-mcp-ai' ) . '</h3>',
+					'content' => '<h3>' . esc_html__( 'Health Monitoring Thresholds', 'mcp-ai-wpoos' ) . '</h3>',
 				),
 				'memory_warning_threshold'        => array(
 					'type'        => 'slider',
-					'label'       => __( 'Memory Warning Threshold', 'wp-mcp-ai' ),
-					'description' => __( 'Trigger warnings when memory usage exceeds this percentage (modern cloud-native standard: 70%).', 'wp-mcp-ai' ),
+					'label'       => __( 'Memory Warning Threshold', 'mcp-ai-wpoos' ),
+					'description' => __( 'Trigger warnings when memory usage exceeds this percentage (modern cloud-native standard: 70%).', 'mcp-ai-wpoos' ),
 					'min'         => 50,
 					'max'         => 95,
 					'step'        => 5,
@@ -149,8 +158,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'memory_critical_threshold'       => array(
 					'type'        => 'slider',
-					'label'       => __( 'Memory Critical Threshold', 'wp-mcp-ai' ),
-					'description' => __( 'Trigger critical alerts when memory usage exceeds this percentage (modern cloud-native standard: 85%).', 'wp-mcp-ai' ),
+					'label'       => __( 'Memory Critical Threshold', 'mcp-ai-wpoos' ),
+					'description' => __( 'Trigger critical alerts when memory usage exceeds this percentage (modern cloud-native standard: 85%).', 'mcp-ai-wpoos' ),
 					'min'         => 75,
 					'max'         => 99,
 					'step'        => 1,
@@ -159,8 +168,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'error_rate_warning_threshold'    => array(
 					'type'        => 'slider',
-					'label'       => __( 'Error Rate Warning Threshold', 'wp-mcp-ai' ),
-					'description' => __( 'Trigger warnings when error rate exceeds this percentage (SRE best practice: 5%).', 'wp-mcp-ai' ),
+					'label'       => __( 'Error Rate Warning Threshold', 'mcp-ai-wpoos' ),
+					'description' => __( 'Trigger warnings when error rate exceeds this percentage (SRE best practice: 5%).', 'mcp-ai-wpoos' ),
 					'min'         => 5,
 					'max'         => 25,
 					'step'        => 1,
@@ -169,8 +178,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'error_rate_critical_threshold'   => array(
 					'type'        => 'slider',
-					'label'       => __( 'Error Rate Critical Threshold', 'wp-mcp-ai' ),
-					'description' => __( 'Trigger critical alerts when error rate exceeds this percentage (SRE best practice: 10%).', 'wp-mcp-ai' ),
+					'label'       => __( 'Error Rate Critical Threshold', 'mcp-ai-wpoos' ),
+					'description' => __( 'Trigger critical alerts when error rate exceeds this percentage (SRE best practice: 10%).', 'mcp-ai-wpoos' ),
 					'min'         => 10,
 					'max'         => 50,
 					'step'        => 5,
@@ -179,12 +188,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'slider_section_budget'           => array(
 					'type'    => 'html',
-					'content' => '<h3>' . esc_html__( 'Adaptive Budget Allocation', 'wp-mcp-ai' ) . '</h3>',
+					'content' => '<h3>' . esc_html__( 'Adaptive Budget Allocation', 'mcp-ai-wpoos' ) . '</h3>',
 				),
 				'high_priority_budget'            => array(
 					'type'        => 'slider',
-					'label'       => __( 'High Priority Budget', 'wp-mcp-ai' ),
-					'description' => __( 'Percentage of available budget allocated to high-priority tasks.', 'wp-mcp-ai' ),
+					'label'       => __( 'High Priority Budget', 'mcp-ai-wpoos' ),
+					'description' => __( 'Percentage of available budget allocated to high-priority tasks.', 'mcp-ai-wpoos' ),
 					'min'         => 50,
 					'max'         => 100,
 					'step'        => 5,
@@ -193,8 +202,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'medium_priority_budget'          => array(
 					'type'        => 'slider',
-					'label'       => __( 'Medium Priority Budget', 'wp-mcp-ai' ),
-					'description' => __( 'Percentage of available budget allocated to medium-priority tasks (modern standard: 75%).', 'wp-mcp-ai' ),
+					'label'       => __( 'Medium Priority Budget', 'mcp-ai-wpoos' ),
+					'description' => __( 'Percentage of available budget allocated to medium-priority tasks (modern standard: 75%).', 'mcp-ai-wpoos' ),
 					'min'         => 30,
 					'max'         => 100,
 					'step'        => 5,
@@ -203,8 +212,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'low_priority_budget'             => array(
 					'type'        => 'slider',
-					'label'       => __( 'Low Priority Budget', 'wp-mcp-ai' ),
-					'description' => __( 'Percentage of available budget allocated to low-priority tasks.', 'wp-mcp-ai' ),
+					'label'       => __( 'Low Priority Budget', 'mcp-ai-wpoos' ),
+					'description' => __( 'Percentage of available budget allocated to low-priority tasks.', 'mcp-ai-wpoos' ),
 					'min'         => 10,
 					'max'         => 80,
 					'step'        => 5,
@@ -213,8 +222,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'critical_health_reduction'       => array(
 					'type'        => 'slider',
-					'label'       => __( 'Critical Health Budget Reduction', 'wp-mcp-ai' ),
-					'description' => __( 'Reduce budgets to this percentage when system health is critical.', 'wp-mcp-ai' ),
+					'label'       => __( 'Critical Health Budget Reduction', 'mcp-ai-wpoos' ),
+					'description' => __( 'Reduce budgets to this percentage when system health is critical.', 'mcp-ai-wpoos' ),
 					'min'         => 10,
 					'max'         => 80,
 					'step'        => 5,
@@ -223,8 +232,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'warning_health_reduction'        => array(
 					'type'        => 'slider',
-					'label'       => __( 'Warning Health Budget Reduction', 'wp-mcp-ai' ),
-					'description' => __( 'Reduce budgets to this percentage when system health shows warnings.', 'wp-mcp-ai' ),
+					'label'       => __( 'Warning Health Budget Reduction', 'mcp-ai-wpoos' ),
+					'description' => __( 'Reduce budgets to this percentage when system health shows warnings.', 'mcp-ai-wpoos' ),
 					'min'         => 50,
 					'max'         => 100,
 					'step'        => 5,
@@ -233,12 +242,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'slider_section_tokens'           => array(
 					'type'    => 'html',
-					'content' => '<h3>' . esc_html__( 'Context Window Limits by Workload Tier', 'wp-mcp-ai' ) . '</h3><p class="description">' . esc_html__( 'These limits represent the total token budget per request, including system prompt, conversation history, user input, tool data, and AI output. Configuration Presets (above) set these values automatically, or you can customize them here.', 'wp-mcp-ai' ) . '</p><p class="description"><strong>' . esc_html__( 'Note:', 'wp-mcp-ai' ) . '</strong> ' . esc_html__( 'This is different from the "Tier Base Limits (tokens/day)" in the Token Manager, which control daily usage quotas per user tier.', 'wp-mcp-ai' ) . '</p>',
+					'content' => '<h3>' . esc_html__( 'Context Window Limits by Workload Tier', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'These limits represent the total token budget per request, including system prompt, conversation history, user input, tool data, and AI output. Configuration Presets (above) set these values automatically, or you can customize them here.', 'mcp-ai-wpoos' ) . '</p><p class="description"><strong>' . esc_html__( 'Note:', 'mcp-ai-wpoos' ) . '</strong> ' . esc_html__( 'This is different from the "Tier Base Limits (tokens/day)" in the Token Manager, which control daily usage quotas per user tier.', 'mcp-ai-wpoos' ) . '</p>',
 				),
 				'low_tier_max_tokens'             => array(
 					'type'        => 'slider',
-					'label'       => __( 'Low Tier Context Window', 'wp-mcp-ai' ),
-					'description' => __( 'Total context window for low-tier workloads (< 128MB memory). Includes all input and output tokens. Modern AI standard: 2000 tokens.', 'wp-mcp-ai' ),
+					'label'       => __( 'Low Tier Context Window', 'mcp-ai-wpoos' ),
+					'description' => __( 'Total context window for low-tier workloads (< 128MB memory). Includes all input and output tokens. Modern AI standard: 2000 tokens.', 'mcp-ai-wpoos' ),
 					'min'         => 500,
 					'max'         => 5000,
 					'step'        => 100,
@@ -247,8 +256,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'medium_tier_max_tokens'          => array(
 					'type'        => 'slider',
-					'label'       => __( 'Medium Tier Context Window', 'wp-mcp-ai' ),
-					'description' => __( 'Total context window for medium-tier workloads (128-512MB memory). Includes all input and output tokens. Modern AI standard: 8000 tokens.', 'wp-mcp-ai' ),
+					'label'       => __( 'Medium Tier Context Window', 'mcp-ai-wpoos' ),
+					'description' => __( 'Total context window for medium-tier workloads (128-512MB memory). Includes all input and output tokens. Modern AI standard: 8000 tokens.', 'mcp-ai-wpoos' ),
 					'min'         => 2000,
 					'max'         => 20000,
 					'step'        => 500,
@@ -257,8 +266,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'high_tier_max_tokens'            => array(
 					'type'        => 'slider',
-					'label'       => __( 'High Tier Context Window', 'wp-mcp-ai' ),
-					'description' => __( 'Total context window for high-tier workloads (> 512MB memory). Includes all input and output tokens. Modern AI standard: 32000 tokens.', 'wp-mcp-ai' ),
+					'label'       => __( 'High Tier Context Window', 'mcp-ai-wpoos' ),
+					'description' => __( 'Total context window for high-tier workloads (> 512MB memory). Includes all input and output tokens. Modern AI standard: 32000 tokens.', 'mcp-ai-wpoos' ),
 					'min'         => 8000,
 					'max'         => 128000,
 					'step'        => 1000,
@@ -267,19 +276,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'slider_section_call_limits'      => array(
 					'type'    => 'html',
-					'content' => '<h3>' . esc_html__( 'Per-Call and Per-Session Limits', 'wp-mcp-ai' ) . '</h3><p class="description">' . esc_html__( 'Set maximum token limits for individual tool calls and chat sessions to prevent runaway costs and ensure fair resource distribution.', 'wp-mcp-ai' ) . '</p>',
+					'content' => '<h3>' . esc_html__( 'Per-Call and Per-Session Limits', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Set maximum token limits for individual tool calls and chat sessions to prevent runaway costs and ensure fair resource distribution.', 'mcp-ai-wpoos' ) . '</p>',
 				),
 				'enable_per_call_limits'          => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Per-Call Token Limits', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable per-call token limits', 'wp-mcp-ai' ),
-					'description'    => __( 'Limit the maximum number of tokens a single tool call can consume.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Per-Call Token Limits', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable per-call token limits', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Limit the maximum number of tokens a single tool call can consume.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'per_call_token_limit'            => array(
 					'type'        => 'slider',
-					'label'       => __( 'Per-Call Token Limit', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum tokens per individual tool call (applies to all tools unless overridden). Set to 0 for unlimited.', 'wp-mcp-ai' ),
+					'label'       => __( 'Per-Call Token Limit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum tokens per individual tool call (applies to all tools unless overridden). Set to 0 for unlimited.', 'mcp-ai-wpoos' ),
 					'min'         => 0,
 					'max'         => 100000,
 					'step'        => 1000,
@@ -288,15 +297,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'enable_per_session_limits'       => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Per-Session Token Limits', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable per-session token limits', 'wp-mcp-ai' ),
-					'description'    => __( 'Limit the total number of tokens a single chat session can consume across all tool calls.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Per-Session Token Limits', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable per-session token limits', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Limit the total number of tokens a single chat session can consume across all tool calls.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'per_session_token_limit'         => array(
 					'type'        => 'slider',
-					'label'       => __( 'Per-Session Token Limit', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum tokens per chat session (cumulative across all tool calls). Set to 0 for unlimited.', 'wp-mcp-ai' ),
+					'label'       => __( 'Per-Session Token Limit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum tokens per chat session (cumulative across all tool calls). Set to 0 for unlimited.', 'mcp-ai-wpoos' ),
 					'min'         => 0,
 					'max'         => 500000,
 					'step'        => 5000,
@@ -305,12 +314,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'slider_section_predictive'       => array(
 					'type'    => 'html',
-					'content' => '<h3>' . esc_html__( 'Predictive Analytics', 'wp-mcp-ai' ) . '</h3>',
+					'content' => '<h3>' . esc_html__( 'Predictive Analytics', 'mcp-ai-wpoos' ) . '</h3>',
 				),
 				'prediction_confidence_threshold' => array(
 					'type'        => 'slider',
-					'label'       => __( 'Prediction Confidence Threshold', 'wp-mcp-ai' ),
-					'description' => __( 'Minimum confidence level required to act on predictions (modern ML standard: 40%).', 'wp-mcp-ai' ),
+					'label'       => __( 'Prediction Confidence Threshold', 'mcp-ai-wpoos' ),
+					'description' => __( 'Minimum confidence level required to act on predictions (modern ML standard: 40%).', 'mcp-ai-wpoos' ),
 					'min'         => 10,
 					'max'         => 90,
 					'step'        => 5,
@@ -319,8 +328,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'prediction_safety_buffer'        => array(
 					'type'        => 'slider',
-					'label'       => __( 'Prediction Safety Buffer', 'wp-mcp-ai' ),
-					'description' => __( 'Extra safety margin when making predictive adjustments (modern standard: 15%).', 'wp-mcp-ai' ),
+					'label'       => __( 'Prediction Safety Buffer', 'mcp-ai-wpoos' ),
+					'description' => __( 'Extra safety margin when making predictive adjustments (modern standard: 15%).', 'mcp-ai-wpoos' ),
 					'min'         => 10,
 					'max'         => 50,
 					'step'        => 5,
@@ -344,21 +353,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$doc_exists = file_exists( $doc_path );
 
 			$content  = '<div class="wp-mcp-ai-orchestration-intro">';
-			$content .= '<h3>' . esc_html__( 'About the Orchestration Layer', 'wp-mcp-ai' ) . '</h3>';
-			$content .= '<p>' . esc_html__( 'The NV oOS Dynamic AI Orchestration Layer extends standard SSE and MCP implementations with sophisticated resource management, security enforcement, and predictive optimization. This overcomes PHP\'s architectural limitations to provide Node.js-level orchestration capabilities within WordPress.', 'wp-mcp-ai' ) . '</p>';
+			$content .= '<h3>' . esc_html__( 'About the Orchestration Layer', 'mcp-ai-wpoos' ) . '</h3>';
+			$content .= '<p>' . esc_html__( 'The NV oOS Dynamic AI Orchestration Layer extends standard SSE and MCP implementations with sophisticated resource management, security enforcement, and predictive optimization. This overcomes PHP\'s architectural limitations to provide Node.js-level orchestration capabilities within WordPress.', 'mcp-ai-wpoos' ) . '</p>';
 
-			$content .= '<h4>' . esc_html__( 'Key Features:', 'wp-mcp-ai' ) . '</h4>';
+			$content .= '<h4>' . esc_html__( 'Key Features:', 'mcp-ai-wpoos' ) . '</h4>';
 			$content .= '<ul>';
-			$content .= '<li><strong>' . esc_html__( 'Real-Time Budget Enforcement', 'wp-mcp-ai' ) . ':</strong> ' . esc_html__( 'Monitors and adjusts token/memory budgets dynamically', 'wp-mcp-ai' ) . '</li>';
-			$content .= '<li><strong>' . esc_html__( 'Capability-Based Tool Gating', 'wp-mcp-ai' ) . ':</strong> ' . esc_html__( 'Enforces WordPress role permissions for tool access', 'wp-mcp-ai' ) . '</li>';
-			$content .= '<li><strong>' . esc_html__( 'Predictive Optimization', 'wp-mcp-ai' ) . ':</strong> ' . esc_html__( 'Prevents resource exhaustion before it occurs', 'wp-mcp-ai' ) . '</li>';
-			$content .= '<li><strong>' . esc_html__( 'Distributed Orchestration', 'wp-mcp-ai' ) . ':</strong> ' . esc_html__( 'Multi-provider coordination with unified policies', 'wp-mcp-ai' ) . '</li>';
-			$content .= '<li><strong>' . esc_html__( 'Cron-Based Task Management', 'wp-mcp-ai' ) . ':</strong> ' . esc_html__( 'Scheduled operations with budget inheritance', 'wp-mcp-ai' ) . '</li>';
-			$content .= '<li><strong>' . esc_html__( 'Auditability & Compliance', 'wp-mcp-ai' ) . ':</strong> ' . esc_html__( 'Complete logging and deterministic behavior', 'wp-mcp-ai' ) . '</li>';
+			$content .= '<li><strong>' . esc_html__( 'Real-Time Budget Enforcement', 'mcp-ai-wpoos' ) . ':</strong> ' . esc_html__( 'Monitors and adjusts token/memory budgets dynamically', 'mcp-ai-wpoos' ) . '</li>';
+			$content .= '<li><strong>' . esc_html__( 'Capability-Based Tool Gating', 'mcp-ai-wpoos' ) . ':</strong> ' . esc_html__( 'Enforces WordPress role permissions for tool access', 'mcp-ai-wpoos' ) . '</li>';
+			$content .= '<li><strong>' . esc_html__( 'Predictive Optimization', 'mcp-ai-wpoos' ) . ':</strong> ' . esc_html__( 'Prevents resource exhaustion before it occurs', 'mcp-ai-wpoos' ) . '</li>';
+			$content .= '<li><strong>' . esc_html__( 'Distributed Orchestration', 'mcp-ai-wpoos' ) . ':</strong> ' . esc_html__( 'Multi-provider coordination with unified policies', 'mcp-ai-wpoos' ) . '</li>';
+			$content .= '<li><strong>' . esc_html__( 'Cron-Based Task Management', 'mcp-ai-wpoos' ) . ':</strong> ' . esc_html__( 'Scheduled operations with budget inheritance', 'mcp-ai-wpoos' ) . '</li>';
+			$content .= '<li><strong>' . esc_html__( 'Auditability & Compliance', 'mcp-ai-wpoos' ) . ':</strong> ' . esc_html__( 'Complete logging and deterministic behavior', 'mcp-ai-wpoos' ) . '</li>';
 			$content .= '</ul>';
 
 			if ( $doc_exists ) {
-				$content .= '<p><a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration#architecture-doc' ) ) . '" class="button button-secondary">' . esc_html__( 'View Full Architecture Documentation', 'wp-mcp-ai' ) . '</a></p>';
+				$content .= '<p><a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration#architecture-doc' ) ) . '" class="button button-secondary">' . esc_html__( 'View Full Architecture Documentation', 'mcp-ai-wpoos' ) . '</a></p>';
 			}
 
 			$content .= '</div>';
@@ -389,7 +398,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				?>
 				<!-- Overall Health Status -->
 				<div class="wp-mcp-ai-performance-dashboard">
-					<h2><?php esc_html_e( 'System Health', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></h2>
 					<div class="health-status health-status-<?php echo esc_attr( $report['overall_health'] ); ?>">
 						<span class="health-icon dashicons dashicons-<?php echo esc_attr( $this->get_health_icon( $report['overall_health'] ) ); ?>"></span>
 						<span class="health-label"><?php echo esc_html( ucfirst( $report['overall_health'] ) ); ?></span>
@@ -398,15 +407,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					<!-- Summary Stats -->
 					<div class="performance-summary">
 						<div class="stat-card">
-							<h3><?php esc_html_e( 'Components', 'wp-mcp-ai' ); ?></h3>
+							<h3><?php esc_html_e( 'Components', 'mcp-ai-wpoos' ); ?></h3>
 							<div class="stat-value"><?php echo esc_html( $report['summary']['total_components'] ); ?></div>
 						</div>
 						<div class="stat-card">
-							<h3><?php esc_html_e( 'Alerts', 'wp-mcp-ai' ); ?></h3>
+							<h3><?php esc_html_e( 'Alerts', 'mcp-ai-wpoos' ); ?></h3>
 							<div class="stat-value"><?php echo esc_html( $report['summary']['total_alerts'] ); ?></div>
 						</div>
 						<div class="stat-card">
-							<h3><?php esc_html_e( 'Recommendations', 'wp-mcp-ai' ); ?></h3>
+							<h3><?php esc_html_e( 'Recommendations', 'mcp-ai-wpoos' ); ?></h3>
 							<div class="stat-value"><?php echo esc_html( $report['summary']['total_recommendations'] ); ?></div>
 						</div>
 					</div>
@@ -482,7 +491,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				}
 
 				// Return safe fallback.
-				return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Health status temporarily unavailable.', 'wp-mcp-ai' ) . '</p></div>';
+				return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Health status temporarily unavailable.', 'mcp-ai-wpoos' ) . '</p></div>';
 			}
 		}
 
@@ -494,11 +503,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		private function get_presets_content() {
 			try {
 				if ( ! class_exists( 'WP_MCP_AI_Orchestration_Preset_Service' ) ) {
-					return '<div class="notice notice-info inline"><p>' . esc_html__( 'Preset service not available.', 'wp-mcp-ai' ) . '</p></div>';
+					return '<div class="notice notice-info inline"><p>' . esc_html__( 'Preset service not available.', 'mcp-ai-wpoos' ) . '</p></div>';
 				}
 
 				if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
-					return '<div class="notice notice-info inline"><p>' . esc_html__( 'Renderer not available.', 'wp-mcp-ai' ) . '</p></div>';
+					return '<div class="notice notice-info inline"><p>' . esc_html__( 'Renderer not available.', 'mcp-ai-wpoos' ) . '</p></div>';
 				}
 
 				$presets = WP_MCP_AI_Orchestration_Preset_Service::get_presets();
@@ -525,7 +534,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				}
 
 				// Return safe fallback.
-				return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Configuration presets temporarily unavailable.', 'wp-mcp-ai' ) . '</p></div>';
+				return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Configuration presets temporarily unavailable.', 'mcp-ai-wpoos' ) . '</p></div>';
 			}
 		}
 
@@ -545,7 +554,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$resource_manager = WP_MCP_AI_Resource_Manager::instance();
 
 				$content  = '<div class="wp-mcp-ai-orchestration-stats">';
-				$content .= '<h3>' . esc_html__( 'Current Orchestration Status', 'wp-mcp-ai' ) . '</h3>';
+				$content .= '<h3>' . esc_html__( 'Current Orchestration Status', 'mcp-ai-wpoos' ) . '</h3>';
 
 				$content .= '<div class="wp-mcp-ai-stats-grid">';
 
@@ -563,7 +572,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$content .= '<div class="wp-mcp-ai-stats-card">';
 				$content .= '<div class="wp-mcp-ai-stats-card__icon"><span class="dashicons dashicons-performance"></span></div>';
 				$content .= '<div class="wp-mcp-ai-stats-card__content">';
-				$content .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Workload Tier', 'wp-mcp-ai' ) . '</div>';
+				$content .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Workload Tier', 'mcp-ai-wpoos' ) . '</div>';
 				$content .= '<div class="wp-mcp-ai-stats-card__value">' . esc_html( $memory_tier ) . '</div>';
 				$content .= '</div>';
 				$content .= '</div>';
@@ -574,11 +583,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$content   .= '<div class="wp-mcp-ai-stats-card__icon"><span class="dashicons dashicons-chart-bar"></span></div>';
 				$content   .= '<div class="wp-mcp-ai-stats-card__content">';
 				$content   .= '<div class="wp-mcp-ai-stats-card__label">';
-				$content   .= esc_html__( 'Context Window (Max Tokens)', 'wp-mcp-ai' );
+				$content   .= esc_html__( 'Context Window (Max Tokens)', 'mcp-ai-wpoos' );
 				$content   .= ' <span class="dashicons dashicons-info-outline wp-mcp-ai-tooltip-trigger" data-tooltip="context-window-info"></span>';
 				$content   .= '</div>';
 				$content   .= '<div class="wp-mcp-ai-stats-card__value">' . esc_html( number_format( $max_tokens ) ) . '</div>';
-				$content   .= '<div class="wp-mcp-ai-stats-card__subtitle">' . esc_html__( 'Total Budget Per Request', 'wp-mcp-ai' ) . '</div>';
+				$content   .= '<div class="wp-mcp-ai-stats-card__subtitle">' . esc_html__( 'Total Budget Per Request', 'mcp-ai-wpoos' ) . '</div>';
 				$content   .= '</div>';
 				$content   .= '</div>';
 
@@ -587,7 +596,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$content .= '<div class="wp-mcp-ai-stats-card">';
 				$content .= '<div class="wp-mcp-ai-stats-card__icon"><span class="dashicons dashicons-clock"></span></div>';
 				$content .= '<div class="wp-mcp-ai-stats-card__content">';
-				$content .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Request Timeout', 'wp-mcp-ai' ) . '</div>';
+				$content .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Request Timeout', 'mcp-ai-wpoos' ) . '</div>';
 				$content .= '<div class="wp-mcp-ai-stats-card__value">' . esc_html( $timeout ) . 's</div>';
 				$content .= '</div>';
 				$content .= '</div>';
@@ -631,7 +640,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$content .= '<div class="wp-mcp-ai-stats-card">';
 				$content .= '<div class="wp-mcp-ai-stats-card__icon"><span class="dashicons dashicons-calendar-alt"></span></div>';
 				$content .= '<div class="wp-mcp-ai-stats-card__content">';
-				$content .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Active Cron Jobs', 'wp-mcp-ai' ) . '</div>';
+				$content .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Active Cron Jobs', 'mcp-ai-wpoos' ) . '</div>';
 				$content .= '<div class="wp-mcp-ai-stats-card__value">' . esc_html( $active_jobs ) . '</div>';
 				$content .= '</div>';
 				$content .= '</div>';
@@ -645,11 +654,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 				// Quick actions.
 				$content .= '<div>';
-				$content .= '<h4>' . esc_html__( 'Quick Actions', 'wp-mcp-ai' ) . '</h4>';
+				$content .= '<h4>' . esc_html__( 'Quick Actions', 'mcp-ai-wpoos' ) . '</h4>';
 				$content .= '<p>';
-				$content .= '<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-cron-manager' ) ) . '" class="button button-secondary">' . esc_html__( 'Manage Cron Jobs', 'wp-mcp-ai' ) . '</a> ';
-				$content .= '<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ) . '" class="button button-secondary">' . esc_html__( 'View Token Manager', 'wp-mcp-ai' ) . '</a> ';
-				$content .= '<a href="' . esc_url( admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' ) ) . '" class="button button-secondary">' . esc_html__( 'Run Diagnostics', 'wp-mcp-ai' ) . '</a>';
+				$content .= '<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-cron-manager' ) ) . '" class="button button-secondary">' . esc_html__( 'Manage Cron Jobs', 'mcp-ai-wpoos' ) . '</a> ';
+				$content .= '<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ) . '" class="button button-secondary">' . esc_html__( 'View Token Manager', 'mcp-ai-wpoos' ) . '</a> ';
+				$content .= '<a href="' . esc_url( admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' ) ) . '" class="button button-secondary">' . esc_html__( 'Run Diagnostics', 'mcp-ai-wpoos' ) . '</a>';
 				$content .= '</p>';
 				$content .= '</div>';
 
@@ -682,7 +691,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				// Return a safe fallback that doesn't break the page.
 				return sprintf(
 					'<div class="notice notice-warning inline"><p>%s</p></div>',
-					esc_html__( 'Orchestration statistics temporarily unavailable. Please refresh the page or contact support if this persists.', 'wp-mcp-ai' )
+					esc_html__( 'Orchestration statistics temporarily unavailable. Please refresh the page or contact support if this persists.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -691,12 +700,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * Override render_wrapper to use custom structure without table.
 		 */
 		public function render_wrapper() {
-			$description = $this->get_description();
+			$description       = $this->get_description();
+			$documentation_url = $this->get_documentation_url();
 			?>
 			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
 				<?php if ( $description ) : ?>
 					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
+				<?php endif; ?>
+				<?php if ( $documentation_url ) : ?>
+					<p class="section-documentation">
+						<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+						<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
+							<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
+						</a>
+					</p>
 				<?php endif; ?>
 				<?php $this->render(); ?>
 			</div>
@@ -715,19 +734,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <nav class="wp-mcp-ai-orchestration__nav">
 <a href="<?php echo esc_url( $this->get_view_url( 'overview' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'overview' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-dashboard"></span>
-			<?php esc_html_e( 'Overview', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Overview', 'mcp-ai-wpoos' ); ?>
 </a>
 <a href="<?php echo esc_url( $this->get_view_url( 'settings' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'settings' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-admin-settings"></span>
-			<?php esc_html_e( 'Settings', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Settings', 'mcp-ai-wpoos' ); ?>
 </a>
 <a href="<?php echo esc_url( $this->get_view_url( 'thresholds' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'thresholds' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-performance"></span>
-			<?php esc_html_e( 'Thresholds', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Thresholds', 'mcp-ai-wpoos' ); ?>
 </a>
 <a href="<?php echo esc_url( $this->get_view_url( 'tools' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'tools' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-admin-tools"></span>
-			<?php esc_html_e( 'Tools', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Tools', 'mcp-ai-wpoos' ); ?>
 </a>
 </nav>
 
@@ -818,8 +837,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'cron_job_retention_period',
 			);
 
-			echo '<h3>' . esc_html__( 'Orchestration Features', 'wp-mcp-ai' ) . '</h3>';
-			echo '<p class="description">' . esc_html__( 'Enable or disable orchestration layer features. These settings control how the AI orchestration system manages resources, security, and task scheduling. All orchestration features work uniformly across all AI providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio).', 'wp-mcp-ai' ) . '</p>';
+			echo '<h3>' . esc_html__( 'Orchestration Features', 'mcp-ai-wpoos' ) . '</h3>';
+			echo '<p class="description">' . esc_html__( 'Enable or disable orchestration layer features. These settings control how the AI orchestration system manages resources, security, and task scheduling. All orchestration features work uniformly across all AI providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio).', 'mcp-ai-wpoos' ) . '</p>';
 
 			echo '<table class="form-table" role="presentation">';
 			foreach ( $settings_fields as $key ) {
@@ -951,7 +970,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		protected function get_view_groups() {
 			return array(
 				'overview'   => array(
-					'label'  => __( 'Overview', 'wp-mcp-ai' ),
+					'label'  => __( 'Overview', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						'orchestration_intro',
 						'health_status',
@@ -960,7 +979,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					),
 				),
 				'settings'   => array(
-					'label'  => __( 'Settings', 'wp-mcp-ai' ),
+					'label'  => __( 'Settings', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						'enable_budget_management',
 						'enable_predictive_optimization',
@@ -972,7 +991,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					),
 				),
 				'thresholds' => array(
-					'label'  => __( 'Thresholds', 'wp-mcp-ai' ),
+					'label'  => __( 'Thresholds', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						'slider_section_health',
 						'memory_warning_threshold',
@@ -1000,7 +1019,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					),
 				),
 				'tools'      => array(
-					'label'  => __( 'Tools', 'wp-mcp-ai' ),
+					'label'  => __( 'Tools', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						// Tools view is read-only, no editable fields.
 					),
@@ -1063,24 +1082,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			?>
 			<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
 				<p style="margin: 0 0 10px 0; font-size: 14px;">
-					<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'mcp-ai-wpoos' ); ?></strong>
 				</p>
 				<p style="margin: 0 0 10px 0;">
 					<?php
 					echo wp_kses_post(
 						__(
 							'Enable AI assistants to automatically install themes, plugins, update options, and create content. More powerful features available in the Pro addon.',
-							'wp-mcp-ai'
+							'mcp-ai-wpoos'
 						)
 					);
 					?>
 				</p>
 				<p style="margin: 0;">
 					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
-						<?php esc_html_e( 'Get NV oOS Pro', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
-						<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Learn More About Pro Tools', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</p>
 			</div>

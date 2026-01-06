@@ -1,4 +1,4 @@
-# WP oOS Roadmap
+# NV oOS Roadmap
 
 **Last Updated:** December 24, 2025  
 **Version:** 1.0
@@ -7,7 +7,7 @@
 
 ## Vision
 
-**WP oOS** aims to be the leading open-source AI orchestration platform for WordPress, enabling small to medium-sized businesses to modernize their websites with enterprise-grade AI capabilities without expensive custom development or middleware.
+**NV oOS** aims to be the leading open-source AI orchestration platform for WordPress, enabling small to medium-sized businesses to modernize their websites with enterprise-grade AI capabilities without expensive custom development or middleware.
 
 ### Core Principles
 

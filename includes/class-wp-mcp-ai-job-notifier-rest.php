@@ -52,20 +52,20 @@ class WP_MCP_AI_Job_Notifier_REST {
 					'callback'            => array( __CLASS__, 'handle_job_stream' ),
 					'args'                => array(
 						'job_id'        => array(
-							'description'       => __( 'Unique identifier for the job to stream.', 'wp-mcp-ai' ),
+							'description'       => __( 'Unique identifier for the job to stream.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => array( __CLASS__, 'sanitize_job_id' ),
 						),
 						'max_duration'  => array(
-							'description' => __( 'Maximum duration in seconds to keep the stream open.', 'wp-mcp-ai' ),
+							'description' => __( 'Maximum duration in seconds to keep the stream open.', 'mcp-ai-wpoos' ),
 							'type'        => 'integer',
 							'minimum'     => 10,
 							'maximum'     => 600,
 							'default'     => 300,
 						),
 						'poll_interval' => array(
-							'description' => __( 'Interval in seconds between status checks.', 'wp-mcp-ai' ),
+							'description' => __( 'Interval in seconds between status checks.', 'mcp-ai-wpoos' ),
 							'type'        => 'integer',
 							'minimum'     => 1,
 							'maximum'     => 30,
@@ -89,7 +89,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 					'callback'            => array( __CLASS__, 'handle_job_status' ),
 					'args'                => array(
 						'job_id' => array(
-							'description'       => __( 'Unique identifier for the job to check status.', 'wp-mcp-ai' ),
+							'description'       => __( 'Unique identifier for the job to check status.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => array( __CLASS__, 'sanitize_job_id' ),
@@ -113,20 +113,20 @@ class WP_MCP_AI_Job_Notifier_REST {
 					'callback'            => array( __CLASS__, 'handle_webhook_register' ),
 					'args'                => array(
 						'job_id'      => array(
-							'description'       => __( 'Job identifier or wildcard pattern to register webhook for.', 'wp-mcp-ai' ),
+							'description'       => __( 'Job identifier or wildcard pattern to register webhook for.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => array( __CLASS__, 'sanitize_job_id' ),
 						),
 						'webhook_url' => array(
-							'description'       => __( 'URL to POST webhook notifications to.', 'wp-mcp-ai' ),
+							'description'       => __( 'URL to POST webhook notifications to.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'format'            => 'uri',
 							'sanitize_callback' => 'esc_url_raw',
 						),
 						'events'      => array(
-							'description' => __( 'Array of event types to subscribe to.', 'wp-mcp-ai' ),
+							'description' => __( 'Array of event types to subscribe to.', 'mcp-ai-wpoos' ),
 							'type'        => 'array',
 							'items'       => array(
 								'type' => 'string',
@@ -182,7 +182,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 				// Authenticator not available - cannot validate mesh key securely.
 				return new WP_Error(
 					'wp_mcp_ai_auth_unavailable',
-					__( 'Authentication service is unavailable. Please try again later.', 'wp-mcp-ai' ),
+					__( 'Authentication service is unavailable. Please try again later.', 'mcp-ai-wpoos' ),
 					array( 'status' => 503 )
 				);
 			}
@@ -224,7 +224,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 				// Validation returned something unexpected - deny access.
 				return new WP_Error(
 					'wp_mcp_ai_invalid_bearer_token',
-					__( 'The supplied bearer token could not be validated.', 'wp-mcp-ai' ),
+					__( 'The supplied bearer token could not be validated.', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -233,7 +233,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 			// Return an error instead of allowing unvalidated access.
 			return new WP_Error(
 				'wp_mcp_ai_auth_unavailable',
-				__( 'Authentication service is unavailable. Please try again later.', 'wp-mcp-ai' ),
+				__( 'Authentication service is unavailable. Please try again later.', 'mcp-ai-wpoos' ),
 				array( 'status' => 503 )
 			);
 		}
@@ -269,13 +269,13 @@ class WP_MCP_AI_Job_Notifier_REST {
 		if ( empty( $nonce ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_credentials',
-				__( 'Authentication is required to view job status.', 'wp-mcp-ai' ),
+				__( 'Authentication is required to view job status.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 401,
 					'actions' => array(
-						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
-						'supply_guest_token'  => __( 'Include a guest token using the X-WP-MCP-AI-Guest header for public chat surfaces.', 'wp-mcp-ai' ),
-						'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
+						'supply_guest_token'  => __( 'Include a guest token using the X-WP-MCP-AI-Guest header for public chat surfaces.', 'mcp-ai-wpoos' ),
+						'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -284,11 +284,11 @@ class WP_MCP_AI_Job_Notifier_REST {
 		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 			return new WP_Error(
 				'rest_invalid_nonce',
-				__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+				__( 'Could not verify the request nonce.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => rest_authorization_required_code(),
 					'actions' => array(
-						'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+						'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -339,7 +339,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 				// Authenticator not available - cannot validate mesh key securely.
 				return new WP_Error(
 					'wp_mcp_ai_auth_unavailable',
-					__( 'Authentication service is unavailable. Please try again later.', 'wp-mcp-ai' ),
+					__( 'Authentication service is unavailable. Please try again later.', 'mcp-ai-wpoos' ),
 					array( 'status' => 503 )
 				);
 			}
@@ -364,7 +364,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 				// Authenticator not available - cannot validate bearer token securely.
 				return new WP_Error(
 					'wp_mcp_ai_auth_unavailable',
-					__( 'Authentication service is unavailable. Please try again later.', 'wp-mcp-ai' ),
+					__( 'Authentication service is unavailable. Please try again later.', 'mcp-ai-wpoos' ),
 					array( 'status' => 503 )
 				);
 			}
@@ -379,7 +379,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 				}
 				return new WP_Error(
 					'rest_forbidden',
-					__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
+					__( 'You do not have permission to register webhooks.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			} elseif ( $local instanceof WP_Error ) {
@@ -396,7 +396,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 				}
 				return new WP_Error(
 					'rest_forbidden',
-					__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
+					__( 'You do not have permission to register webhooks.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			} elseif ( is_wp_error( $validated ) ) {
@@ -406,7 +406,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 			// Validation returned something unexpected - deny access.
 			return new WP_Error(
 				'wp_mcp_ai_invalid_bearer_token',
-				__( 'The supplied bearer token could not be validated.', 'wp-mcp-ai' ),
+				__( 'The supplied bearer token could not be validated.', 'mcp-ai-wpoos' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -417,12 +417,12 @@ class WP_MCP_AI_Job_Notifier_REST {
 		if ( empty( $nonce ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_credentials',
-				__( 'Authentication is required to register webhooks.', 'wp-mcp-ai' ),
+				__( 'Authentication is required to register webhooks.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 401,
 					'actions' => array(
-						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
-						'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
+						'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -431,11 +431,11 @@ class WP_MCP_AI_Job_Notifier_REST {
 		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 			return new WP_Error(
 				'rest_invalid_nonce',
-				__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+				__( 'Could not verify the request nonce.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => rest_authorization_required_code(),
 					'actions' => array(
-						'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+						'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -445,7 +445,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
-				__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to register webhooks.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -484,7 +484,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 		if ( ! $status ) {
 			return new WP_Error(
 				'job_not_found',
-				__( 'Job status not found or expired.', 'wp-mcp-ai' ),
+				__( 'Job status not found or expired.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -515,7 +515,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 				'job_id'      => $job_id,
 				'webhook_url' => $webhook_url,
 				'events'      => $events,
-				'message'     => __( 'Webhook registered successfully.', 'wp-mcp-ai' ),
+				'message'     => __( 'Webhook registered successfully.', 'mcp-ai-wpoos' ),
 			)
 		);
 	}

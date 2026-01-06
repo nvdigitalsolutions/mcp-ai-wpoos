@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Event', 'wp-mcp-ai' );
+		return __( 'Create Event', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new calendar event. Events can be meetings, deadlines, milestones, or any time-based activities. Supports all-day events and time-specific events.', 'wp-mcp-ai' );
+		return __( 'Creates a new calendar event. Events can be meetings, deadlines, milestones, or any time-based activities. Supports all-day events and time-specific events.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,53 +45,53 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'title'       => array(
 					'type'        => 'string',
-					'description' => __( 'Event title (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Event title (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
 				'description' => array(
 					'type'        => 'string',
-					'description' => __( 'Event description (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Event description (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
 				'project_id'  => array(
 					'type'        => 'integer',
-					'description' => __( 'ID of the project this event belongs to (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'ID of the project this event belongs to (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'start_date'  => array(
 					'type'        => 'string',
-					'description' => __( 'Event start date in ISO 8601 format (YYYY-MM-DD) (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Event start date in ISO 8601 format (YYYY-MM-DD) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'start_time'  => array(
 					'type'        => 'string',
-					'description' => __( 'Event start time in 24-hour format (HH:MM) (optional, omit for all-day events)', 'wp-mcp-ai' ),
+					'description' => __( 'Event start time in 24-hour format (HH:MM) (optional, omit for all-day events)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
 				'end_date'    => array(
 					'type'        => 'string',
-					'description' => __( 'Event end date in ISO 8601 format (YYYY-MM-DD) (optional, defaults to start_date)', 'wp-mcp-ai' ),
+					'description' => __( 'Event end date in ISO 8601 format (YYYY-MM-DD) (optional, defaults to start_date)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'end_time'    => array(
 					'type'        => 'string',
-					'description' => __( 'Event end time in 24-hour format (HH:MM) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Event end time in 24-hour format (HH:MM) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
 				'location'    => array(
 					'type'        => 'string',
-					'description' => __( 'Event location (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Event location (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
 				'type'        => array(
 					'type'        => 'string',
-					'description' => __( 'Event type (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Event type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'meeting', 'deadline', 'milestone', 'reminder', 'other' ),
 					'default'     => 'meeting',
 				),
 				'attendees'   => array(
 					'type'        => 'array',
-					'description' => __( 'Array of user IDs who will attend this event (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Array of user IDs who will attend this event (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'integer',
 					),
@@ -106,7 +106,8 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'database-write' );
+		return array(
+			'pro', 'database-write' );
 	}
 
 	/**
@@ -134,11 +135,11 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create events.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create events.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $current_user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate and sanitize inputs.
@@ -154,37 +155,37 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$attendees   = isset( $arguments['attendees'] ) && is_array( $arguments['attendees'] ) ? array_map( 'absint', $arguments['attendees'] ) : array();
 
 		if ( '' === $title ) {
-			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Event title is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Event title is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( '' === $start_date ) {
-			return new WP_Error( 'wp_mcp_ai_missing_start_date', __( 'Event start date is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_start_date', __( 'Event start date is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate project exists.
 		if ( $project_id > 0 ) {
 			$project = get_post( $project_id );
 			if ( ! $project || 'mcp_ai_project' !== $project->post_type ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_project', __( 'Invalid project ID.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_project', __( 'Invalid project ID.', 'mcp-ai-wpoos-pro' ) );
 			}
 		}
 
 		// Validate dates.
 		if ( ! $this->validate_date( $start_date ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_start_date', __( 'Invalid start date format. Use YYYY-MM-DD.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_start_date', __( 'Invalid start date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( $end_date && ! $this->validate_date( $end_date ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_end_date', __( 'Invalid end date format. Use YYYY-MM-DD.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_end_date', __( 'Invalid end date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate times.
 		if ( $start_time && ! $this->validate_time( $start_time ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_start_time', __( 'Invalid start time format. Use HH:MM.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_start_time', __( 'Invalid start time format. Use HH:MM.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( $end_time && ! $this->validate_time( $end_time ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_end_time', __( 'Invalid end time format. Use HH:MM.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_end_time', __( 'Invalid end time format. Use HH:MM.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate event type.
@@ -196,7 +197,7 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		// Validate attendees.
 		foreach ( $attendees as $user_id ) {
 			if ( ! get_user_by( 'id', $user_id ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_attendee', sprintf( __( 'User ID %d does not exist.', 'wp-mcp-ai' ), $user_id ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_attendee', sprintf( __( 'User ID %d does not exist.', 'mcp-ai-wpoos-pro' ), $user_id ) );
 			}
 		}
 
@@ -246,7 +247,7 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		return array(
 			'success'  => true,
-			'message'  => __( 'Event created successfully.', 'wp-mcp-ai' ),
+			'message'  => __( 'Event created successfully.', 'mcp-ai-wpoos-pro' ),
 			'event_id' => $event_id,
 			'event'    => array(
 				'id'          => $event_id,

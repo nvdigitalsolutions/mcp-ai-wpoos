@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS plugin now includes a comprehensive suite of image manipulation tools that work entirely locally using WordPress's native image processing capabilities. These tools enable AI assistants to perform common image editing tasks without requiring external APIs.
+The NV oOS plugin now includes a comprehensive suite of image manipulation tools that work entirely locally using WordPress's native image processing capabilities. These tools enable AI assistants to perform common image editing tasks without requiring external APIs.
 
 ## Architecture
 

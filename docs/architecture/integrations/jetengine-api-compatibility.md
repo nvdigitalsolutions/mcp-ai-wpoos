@@ -2,7 +2,7 @@
 
 ## Overview
 
-WP oOS integrates with JetEngine Custom Content Types (CCT) to store performance monitoring data, chat transcripts, and other structured data. This document describes the compatibility layer implemented to support both old and new versions of JetEngine.
+NV oOS integrates with JetEngine Custom Content Types (CCT) to store performance monitoring data, chat transcripts, and other structured data. This document describes the compatibility layer implemented to support both old and new versions of JetEngine.
 
 ## The API Change
 
@@ -149,7 +149,7 @@ If you encounter this error:
 Fatal error: Uncaught Error: Call to undefined method Jet_Engine\Modules\Custom_Content_Types\Item_Handler::query_items()
 ```
 
-This indicates you're using JetEngine 3.3+ with code that hasn't been updated. Ensure you're using the latest version of WP oOS which includes this compatibility layer.
+This indicates you're using JetEngine 3.3+ with code that hasn't been updated. Ensure you're using the latest version of NV oOS which includes this compatibility layer.
 
 ## WordPress Options Fallback
 
@@ -163,7 +163,7 @@ This ensures the plugin remains functional even in Base Version mode (without Je
 
 ## Migration Notes
 
-If you're upgrading from an older version of WP oOS:
+If you're upgrading from an older version of NV oOS:
 
 1. **No migration required**: The compatibility layer handles both APIs transparently
 2. **No data loss**: Existing CCT data remains accessible

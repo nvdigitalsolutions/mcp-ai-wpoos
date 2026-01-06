@@ -5,11 +5,11 @@ Fixed SSE (Server-Sent Events) streaming failures when the rotate_image tool (or
 
 ## Error Manifestation
 ```
-[WP oOS] Streaming response received: {status: 200, statusText: '', ok: true, headers: {…}}
-[WP oOS] Created streaming message element
-[WP oOS] Starting SSE stream processing
+[NV oOS] Streaming response received: {status: 200, statusText: '', ok: true, headers: {…}}
+[NV oOS] Created streaming message element
+[NV oOS] Starting SSE stream processing
 Fetch failed loading: POST "https://bots.nvdigital.solutions/wp-json/mcp-ai/v1/chat-client"
-[WP oOS] SSE stream completed: {totalContentLength: 0, contentSample: ''}
+[NV oOS] SSE stream completed: {totalContentLength: 0, contentSample: ''}
 ```
 
 ## Root Cause

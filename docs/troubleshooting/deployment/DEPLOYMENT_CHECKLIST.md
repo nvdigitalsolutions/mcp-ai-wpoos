@@ -87,22 +87,22 @@ Instruct users to:
 
 1. Stay in DevTools
 2. Go to **Console** tab
-3. Filter for: `[WP oOS]`
+3. Filter for: `[NV oOS]`
 4. Click attach file button
 5. Upload a test image (JPEG, PNG, etc.)
 6. **Expected logs** (4 entries):
 
 ```javascript
-[WP oOS] normaliseUploadResponse - created record: {...}
-[WP oOS] renderPendingAttachments - attachment data: {...}
+[NV oOS] normaliseUploadResponse - created record: {...}
+[NV oOS] renderPendingAttachments - attachment data: {...}
 ```
 
 7. Send the message with attachment
 8. **Expected logs** (2 more entries):
 
 ```javascript
-[WP oOS] buildDisplayAttachment - creating display attachment: {...}
-[WP oOS] buildAttachmentMeta - ID resolution: {...}
+[NV oOS] buildDisplayAttachment - creating display attachment: {...}
+[NV oOS] buildAttachmentMeta - ID resolution: {...}
 ```
 
 ### Test 3: Verify UI Display

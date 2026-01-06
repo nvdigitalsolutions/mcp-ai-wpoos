@@ -4,7 +4,7 @@
 
 The **Custom AI Settings (Filters)** feature provides a user-friendly admin interface for configuring WordPress filter values that control AI behavior. This allows administrators to customize the plugin's behavior without writing any PHP code.
 
-**Location:** Settings → WP oOS → General Settings → Custom AI Settings (Filters)
+**Location:** Settings → NV oOS → General Settings → Custom AI Settings (Filters)
 
 **URL:** `admin.php?page=wp-mcp-ai-dashboard&tab=general&subtab=custom_filters`
 
@@ -119,7 +119,7 @@ Plugin Behavior (model selection, retries, timeouts, etc.)
 
 ### For Non-Developers
 
-1. Go to **WordPress Admin → Settings → WP oOS**
+1. Go to **WordPress Admin → Settings → NV oOS**
 2. Click the **General Settings** tab
 3. Click the **Custom AI Settings (Filters)** subtab
 4. Configure desired settings:

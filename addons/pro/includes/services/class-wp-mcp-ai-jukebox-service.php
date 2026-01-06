@@ -66,7 +66,7 @@ class WP_MCP_AI_Jukebox_Service {
 				'installed'    => false,
 				'python_path'  => null,
 				'jukebox_path' => null,
-				'message'      => __( 'Invalid Python path configuration. Must be a standard Python executable or absolute path.', 'wp-mcp-ai' ),
+				'message'      => __( 'Invalid Python path configuration. Must be a standard Python executable or absolute path.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -83,7 +83,7 @@ class WP_MCP_AI_Jukebox_Service {
 				'installed'    => false,
 				'python_path'  => null,
 				'jukebox_path' => null,
-				'message'      => __( 'Python is not available at the configured path.', 'wp-mcp-ai' ),
+				'message'      => __( 'Python is not available at the configured path.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -93,7 +93,7 @@ class WP_MCP_AI_Jukebox_Service {
 				'installed'    => false,
 				'python_path'  => $python_path,
 				'jukebox_path' => null,
-				'message'      => __( 'Jukebox installation path is not configured or does not exist.', 'wp-mcp-ai' ),
+				'message'      => __( 'Jukebox installation path is not configured or does not exist.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -106,7 +106,7 @@ class WP_MCP_AI_Jukebox_Service {
 				'jukebox_path' => $jukebox_path,
 				'message'      => sprintf(
 					/* translators: %s: path to sample.py */
-					__( 'Jukebox sample script not found at: %s', 'wp-mcp-ai' ),
+					__( 'Jukebox sample script not found at: %s', 'mcp-ai-wpoos-pro' ),
 					$sample_script
 				),
 			);
@@ -116,7 +116,7 @@ class WP_MCP_AI_Jukebox_Service {
 			'installed'    => true,
 			'python_path'  => $python_path,
 			'jukebox_path' => $jukebox_path,
-			'message'      => __( 'Jukebox is installed and available.', 'wp-mcp-ai' ),
+			'message'      => __( 'Jukebox is installed and available.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -148,7 +148,7 @@ class WP_MCP_AI_Jukebox_Service {
 		if ( empty( $prompt ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_jukebox_prompt',
-				__( 'Jukebox generation prompt cannot be empty.', 'wp-mcp-ai' ),
+				__( 'Jukebox generation prompt cannot be empty.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -293,7 +293,7 @@ class WP_MCP_AI_Jukebox_Service {
 
 			return new WP_Error(
 				'wp_mcp_ai_jukebox_generation_failed',
-				__( 'Jukebox generation failed. Check logs for details.', 'wp-mcp-ai' ),
+				__( 'Jukebox generation failed. Check logs for details.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status' => 500,
 					'error'  => $result,
@@ -323,7 +323,7 @@ class WP_MCP_AI_Jukebox_Service {
 		if ( empty( $audio_file ) || ! file_exists( $audio_file ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_jukebox_file_not_found',
-				__( 'Jukebox completed but the generated audio file could not be found.', 'wp-mcp-ai' ),
+				__( 'Jukebox completed but the generated audio file could not be found.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status' => 500,
 					'output' => $output_text,

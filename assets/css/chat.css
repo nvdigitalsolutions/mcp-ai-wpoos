@@ -2586,4 +2586,200 @@
     }
 }
 
+/* ========================================================================
+   RESPONSIVE STYLES - Chat UI
+   ======================================================================== */
+
+/**
+ * Mobile Layout (< 600px)
+ * Full-width container, compact spacing, stacked controls
+ */
+@media screen and (max-width: 600px) {
+    .wp-mcp-ai-chat {
+        max-width: 100%;
+        padding: 12px;
+        margin: 0 0 1rem;
+        border-radius: 8px;
+    }
+    
+    /* Compact message container */
+    .wp-mcp-ai-chat__messages {
+        min-height: 100px;
+        max-height: 300px;
+        gap: 0.75rem;
+    }
+    
+    /* Smaller message bubbles */
+    .wp-mcp-ai-chat__message,
+    .wp-mcp-ai-chat__bubble {
+        padding: 0.75rem 1rem;
+        max-width: 90%;
+        font-size: 0.9rem;
+    }
+    
+    /* Stack control buttons vertically */
+    .wp-mcp-ai-chat__control-buttons {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    /* Smaller button sizes for mobile (44px minimum for touch) */
+    .wp-mcp-ai-chat__history-toggle,
+    .wp-mcp-ai-chat__new-chat,
+    .wp-mcp-ai-chat__export,
+    .wp-mcp-ai-chat__save {
+        width: 44px;
+        height: 44px;
+    }
+    
+    /* Adjust input area */
+    .wp-mcp-ai-chat__input {
+        min-height: 100px;
+        font-size: 16px; /* Prevent iOS zoom */
+        padding: 0.75rem;
+    }
+    
+    /* Full-width action buttons on mobile */
+    .wp-mcp-ai-chat__actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .wp-mcp-ai-chat__submit,
+    .wp-mcp-ai-chat__build,
+    .wp-mcp-ai-chat__attach {
+        width: 100%;
+        justify-content: center;
+        padding: 0.75rem 1rem;
+        min-height: 44px;
+    }
+    
+    .wp-mcp-ai-chat__build {
+        margin-right: 0;
+    }
+    
+    /* Voice and transcribe buttons */
+    .wp-mcp-ai-chat__voice-chat,
+    .wp-mcp-ai-chat__transcribe {
+        width: 44px;
+        height: 44px;
+    }
+    
+    /* Smaller tool shortcuts */
+    .wp-mcp-ai-chat__tool-shortcut {
+        padding: 0.3rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Compact transcript controls */
+    .wp-mcp-ai-chat__transcript-controls {
+        top: 12px;
+        right: 12px;
+    }
+    
+    .wp-mcp-ai-chat__transcript-toggle {
+        width: 40px;
+        height: 40px;
+    }
+    
+    /* Attachments list */
+    .wp-mcp-ai-chat__attachments {
+        padding: 0.5rem;
+    }
+    
+    .wp-mcp-ai-chat__attachments-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    /* History on mobile */
+    .wp-mcp-ai-chat__history {
+        margin-top: 1rem;
+        padding-top: 1rem;
+    }
+    
+    .wp-mcp-ai-chat__history-session {
+        padding: 0.65rem 2.5rem 0.65rem 0.75rem;
+    }
+    
+    /* Action buttons on bubbles - make more visible on touch */
+    .wp-mcp-ai-chat__speech-button,
+    .wp-mcp-ai-chat__copy-button,
+    .wp-mcp-ai-chat__delete-button,
+    .wp-mcp-ai-chat__save-button {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+/**
+ * Small Tablets (600px - 782px)
+ * Optimize spacing and adjust container width
+ */
+@media screen and (min-width: 600px) and (max-width: 782px) {
+    .wp-mcp-ai-chat {
+        max-width: 95%;
+        padding: 16px;
+    }
+    
+    .wp-mcp-ai-chat__input {
+        font-size: 16px; /* Still prevent iOS zoom */
+        min-height: 110px;
+    }
+    
+    .wp-mcp-ai-chat__message,
+    .wp-mcp-ai-chat__bubble {
+        max-width: 85%;
+    }
+    
+    .wp-mcp-ai-chat__control-buttons {
+        justify-content: flex-start;
+    }
+}
+
+/**
+ * Touch Devices (any size)
+ * Ensure minimum 44px touch targets
+ */
+@media (hover: none) and (pointer: coarse) {
+    /* Ensure all interactive elements meet 44px minimum */
+    .wp-mcp-ai-chat__history-toggle,
+    .wp-mcp-ai-chat__new-chat,
+    .wp-mcp-ai-chat__export,
+    .wp-mcp-ai-chat__save,
+    .wp-mcp-ai-chat__voice-chat,
+    .wp-mcp-ai-chat__transcribe {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .wp-mcp-ai-chat__submit,
+    .wp-mcp-ai-chat__build,
+    .wp-mcp-ai-chat__attach {
+        min-height: 44px;
+        padding: 0.75rem 1.25rem;
+    }
+    
+    /* Make action buttons always visible on touch devices */
+    .wp-mcp-ai-chat__speech-button,
+    .wp-mcp-ai-chat__copy-button,
+    .wp-mcp-ai-chat__delete-button {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    /* Font size to prevent zoom */
+    .wp-mcp-ai-chat__input {
+        font-size: 16px;
+    }
+    
+    /* Add tap highlight */
+    .wp-mcp-ai-chat__submit,
+    .wp-mcp-ai-chat__build,
+    .wp-mcp-ai-chat__attach,
+    .wp-mcp-ai-chat__tool-shortcut {
+        -webkit-tap-highlight-color: rgba(59, 130, 246, 0.2);
+    }
+}
 

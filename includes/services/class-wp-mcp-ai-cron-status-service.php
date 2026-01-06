@@ -202,8 +202,8 @@ class WP_MCP_AI_Cron_Status_Service {
 
 		if ( $diff < MINUTE_IN_SECONDS ) {
 			return $past
-				? __( 'Just now', 'wp-mcp-ai' )
-				: __( 'In less than a minute', 'wp-mcp-ai' );
+				? __( 'Just now', 'mcp-ai-wpoos' )
+				: __( 'In less than a minute', 'mcp-ai-wpoos' );
 		}
 
 		if ( $diff < HOUR_IN_SECONDS ) {
@@ -211,12 +211,12 @@ class WP_MCP_AI_Cron_Status_Service {
 			return $past
 				? sprintf(
 					/* translators: %d: number of minutes */
-					_n( '%d minute ago', '%d minutes ago', $minutes, 'wp-mcp-ai' ),
+					_n( '%d minute ago', '%d minutes ago', $minutes, 'mcp-ai-wpoos' ),
 					$minutes
 				)
 				: sprintf(
 					/* translators: %d: number of minutes */
-					_n( 'In %d minute', 'In %d minutes', $minutes, 'wp-mcp-ai' ),
+					_n( 'In %d minute', 'In %d minutes', $minutes, 'mcp-ai-wpoos' ),
 					$minutes
 				);
 		}
@@ -226,12 +226,12 @@ class WP_MCP_AI_Cron_Status_Service {
 			return $past
 				? sprintf(
 					/* translators: %d: number of hours */
-					_n( '%d hour ago', '%d hours ago', $hours, 'wp-mcp-ai' ),
+					_n( '%d hour ago', '%d hours ago', $hours, 'mcp-ai-wpoos' ),
 					$hours
 				)
 				: sprintf(
 					/* translators: %d: number of hours */
-					_n( 'In %d hour', 'In %d hours', $hours, 'wp-mcp-ai' ),
+					_n( 'In %d hour', 'In %d hours', $hours, 'mcp-ai-wpoos' ),
 					$hours
 				);
 		}
@@ -240,12 +240,12 @@ class WP_MCP_AI_Cron_Status_Service {
 		return $past
 			? sprintf(
 				/* translators: %d: number of days */
-				_n( '%d day ago', '%d days ago', $days, 'wp-mcp-ai' ),
+				_n( '%d day ago', '%d days ago', $days, 'mcp-ai-wpoos' ),
 				$days
 			)
 			: sprintf(
 				/* translators: %d: number of days */
-				_n( 'In %d day', 'In %d days', $days, 'wp-mcp-ai' ),
+				_n( 'In %d day', 'In %d days', $days, 'mcp-ai-wpoos' ),
 				$days
 			);
 	}
@@ -702,7 +702,7 @@ class WP_MCP_AI_Cron_Status_Service {
 							$result_content = wp_json_encode(
 								array(
 									'success' => true,
-									'message' => __( 'Tool completed successfully but result could not be serialized.', 'wp-mcp-ai' ),
+									'message' => __( 'Tool completed successfully but result could not be serialized.', 'mcp-ai-wpoos' ),
 								)
 							);
 						}
@@ -836,7 +836,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			if ( ! $is_admin && $job_user_id !== $user_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_forbidden',
-					__( 'You do not have permission to view this job.', 'wp-mcp-ai' )
+					__( 'You do not have permission to view this job.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -856,7 +856,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			if ( ! $executor ) {
 				return new WP_Error(
 					'wp_mcp_ai_service_unavailable',
-					__( 'Async executor service is not available.', 'wp-mcp-ai' )
+					__( 'Async executor service is not available.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -870,7 +870,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			if ( ! $is_admin && $created_by !== $user_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_forbidden',
-					__( 'You do not have permission to view this job.', 'wp-mcp-ai' )
+					__( 'You do not have permission to view this job.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -909,7 +909,7 @@ class WP_MCP_AI_Cron_Status_Service {
 		if ( ! $job ) {
 			return new WP_Error(
 				'wp_mcp_ai_job_not_found',
-				__( 'Job not found or has been removed.', 'wp-mcp-ai' )
+				__( 'Job not found or has been removed.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -918,7 +918,7 @@ class WP_MCP_AI_Cron_Status_Service {
 		if ( ! $is_admin && $created_by !== $user_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to view this job.', 'wp-mcp-ai' )
+				__( 'You do not have permission to view this job.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -1189,7 +1189,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			$result_content = wp_json_encode(
 				array(
 					'success' => true,
-					'message' => __( 'Tool completed successfully.', 'wp-mcp-ai' ),
+					'message' => __( 'Tool completed successfully.', 'mcp-ai-wpoos' ),
 				)
 			);
 		}

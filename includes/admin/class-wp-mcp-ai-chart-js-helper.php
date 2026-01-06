@@ -72,7 +72,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 		}
 
 		// Only load on NV oOS settings pages.
-		if ( false === strpos( $hook, 'wp-mcp-ai' ) ) {
+		if ( false === strpos( $hook, 'mcp-ai-wpoos' ) ) {
 			return;
 		}
 
@@ -225,7 +225,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 				'labels'   => $labels,
 				'datasets' => array(
 					array(
-						'label'           => __( 'Token Usage', 'wp-mcp-ai' ),
+						'label'           => __( 'Token Usage', 'mcp-ai-wpoos' ),
 						'data'            => $data,
 						'borderColor'     => 'rgba(75, 192, 192, 1)',
 						'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
@@ -286,7 +286,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 			'labels'   => $labels,
 			'datasets' => array(
 				array(
-					'label'           => __( 'Token Usage', 'wp-mcp-ai' ),
+					'label'           => __( 'Token Usage', 'mcp-ai-wpoos' ),
 					'data'            => $data,
 					'borderColor'     => 'rgba(75, 192, 192, 1)',
 					'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
@@ -304,9 +304,9 @@ class WP_MCP_AI_Chart_JS_Helper {
 	 */
 	public static function get_tier_distribution_data() {
 		$tiers = array(
-			'free'       => __( 'Free', 'wp-mcp-ai' ),
-			'pro'        => __( 'Pro', 'wp-mcp-ai' ),
-			'enterprise' => __( 'Enterprise', 'wp-mcp-ai' ),
+			'free'       => __( 'Free', 'mcp-ai-wpoos' ),
+			'pro'        => __( 'Pro', 'mcp-ai-wpoos' ),
+			'enterprise' => __( 'Enterprise', 'mcp-ai-wpoos' ),
 		);
 
 		$tier_counts = array(
@@ -642,7 +642,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 					),
 					'title'  => array(
 						'display' => true,
-						'text'    => __( 'Token Usage Trend', 'wp-mcp-ai' ),
+						'text'    => __( 'Token Usage Trend', 'mcp-ai-wpoos' ),
 					),
 				),
 				'scales'              => array(
@@ -650,13 +650,13 @@ class WP_MCP_AI_Chart_JS_Helper {
 						'beginAtZero' => true,
 						'title'       => array(
 							'display' => true,
-							'text'    => __( 'Tokens', 'wp-mcp-ai' ),
+							'text'    => __( 'Tokens', 'mcp-ai-wpoos' ),
 						),
 					),
 					'x' => array(
 						'title' => array(
 							'display' => true,
-							'text'    => __( 'Date', 'wp-mcp-ai' ),
+							'text'    => __( 'Date', 'mcp-ai-wpoos' ),
 						),
 					),
 				),
@@ -684,7 +684,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 					),
 					'title'  => array(
 						'display' => true,
-						'text'    => __( 'User Tier Distribution', 'wp-mcp-ai' ),
+						'text'    => __( 'User Tier Distribution', 'mcp-ai-wpoos' ),
 					),
 				),
 			),
@@ -714,7 +714,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 				'percentage' => 0,
 				'usage'      => 0,
 				'limit'      => 0,
-				'label'      => __( 'Usage', 'wp-mcp-ai' ),
+				'label'      => __( 'Usage', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -772,7 +772,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 			'percentage' => round( $percentage, 1 ),
 			'usage'      => $total_usage,
 			'limit'      => $total_limit,
-			'label'      => __( 'Current Usage', 'wp-mcp-ai' ),
+			'label'      => __( 'Current Usage', 'mcp-ai-wpoos' ),
 			'color'      => $color,
 			'datasets'   => array(
 				array(
@@ -811,7 +811,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 					),
 					'title'   => array(
 						'display' => true,
-						'text'    => __( 'Token Usage', 'wp-mcp-ai' ),
+						'text'    => __( 'Token Usage', 'mcp-ai-wpoos' ),
 					),
 				),
 			),

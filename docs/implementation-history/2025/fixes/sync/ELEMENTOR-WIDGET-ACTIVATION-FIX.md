@@ -46,15 +46,15 @@ wp eval-file test-elementor-setting-manual.php
 ```
 
 **Manual Testing in WordPress Admin**:
-1. Go to **Settings → Elementor** (new dashboard) or **WP oOS → Elementor**
+1. Go to **Settings → Elementor** (new dashboard) or **NV oOS → Elementor**
 2. Uncheck "Enable Elementor Widgets"
 3. Save settings
 4. Edit a page with Elementor
-5. Search for "WP oOS" in the widget panel
+5. Search for "NV oOS" in the widget panel
 6. **Expected**: No widgets appear
 7. Return to settings, check the box, save
 8. Reload Elementor editor
-9. **Expected**: All 15 WP oOS widgets appear
+9. **Expected**: All 15 NV oOS widgets appear
 
 ## Backward Compatibility
 
@@ -89,21 +89,21 @@ Setting is stored in the `wp_mcp_ai_settings` option with the key `enable_elemen
 
 ### Widget List
 When enabled, the following widgets are registered:
-1. WP oOS Chat
-2. WP oOS Assistant Defaults
-3. WP oOS Assistant Base Knowledge
-4. WP oOS Assistant Prompt Shortcuts
-5. WP oOS Assistant Tools
-6. WP oOS Chat Intro
-7. WP oOS Chat FAQ
-8. WP oOS Chat Usage Timer
-9. WP oOS Dashboard Tool Matrix
-10. WP oOS Dashboard User Capability
-11. WP oOS Dashboard User Files
-12. WP oOS Dashboard User Chats
-13. WP oOS Dashboard Theme Preview
-14. WP oOS Dashboard Provider Links
-15. WP oOS Dashboard Activity Feed
+1. NV oOS Chat
+2. NV oOS Assistant Defaults
+3. NV oOS Assistant Base Knowledge
+4. NV oOS Assistant Prompt Shortcuts
+5. NV oOS Assistant Tools
+6. NV oOS Chat Intro
+7. NV oOS Chat FAQ
+8. NV oOS Chat Usage Timer
+9. NV oOS Dashboard Tool Matrix
+10. NV oOS Dashboard User Capability
+11. NV oOS Dashboard User Files
+12. NV oOS Dashboard User Chats
+13. NV oOS Dashboard Theme Preview
+14. NV oOS Dashboard Provider Links
+15. NV oOS Dashboard Activity Feed
 
 ## Security
 No security implications - this is a feature toggle that controls widget registration. The widgets themselves have their own capability checks.

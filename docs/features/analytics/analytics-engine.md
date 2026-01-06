@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Analytics Engine provides advanced statistical analysis and trend detection for token usage data in WP oOS. It implements Phase 7 (Week 5-6) of the Token Manager Enhancement Plan.
+The Analytics Engine provides advanced statistical analysis and trend detection for token usage data in NV oOS. It implements Phase 7 (Week 5-6) of the Token Manager Enhancement Plan.
 
 ## Features
 

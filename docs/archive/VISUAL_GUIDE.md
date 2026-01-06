@@ -1,7 +1,7 @@
 # Visual Guide: What You Should See on the Orchestration Page
 
 ## Navigate To
-**WordPress Admin → WP oOS → Orchestration**  
+**WordPress Admin → NV oOS → Orchestration**  
 URL: `admin.php?page=wp-mcp-ai-dashboard&tab=orchestration`
 
 ---

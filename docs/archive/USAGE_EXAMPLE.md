@@ -5,8 +5,8 @@
 ### Step 1: Open Browser Console
 Press **F12** (or **Cmd+Option+I** on Mac)
 
-### Step 2: Navigate to WP oOS Chat Page
-Make sure you're on a WordPress page with the WP oOS chat widget
+### Step 2: Navigate to NV oOS Chat Page
+Make sure you're on a WordPress page with the NV oOS chat widget
 
 ### Step 3: Run the Test Function
 

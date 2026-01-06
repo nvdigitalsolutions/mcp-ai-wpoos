@@ -4,7 +4,7 @@
 
 ✅ **COMPLETED** - December 6, 2025
 
-The high-priority output escaping gap identified in code review has been fully addressed. All remaining instances of missing output escaping across the WP oOS codebase have been fixed.
+The high-priority output escaping gap identified in code review has been fully addressed. All remaining instances of missing output escaping across the NV oOS codebase have been fixed.
 
 ## Final Metrics
 

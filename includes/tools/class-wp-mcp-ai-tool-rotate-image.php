@@ -28,14 +28,14 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Rotate Image', 'wp-mcp-ai' );
+		return __( 'Rotate Image', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Rotate an image by degrees or flip it horizontally/vertically.', 'wp-mcp-ai' );
+		return __( 'Rotate an image by degrees or flip it horizontally/vertically.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,18 +49,18 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 				array(
 					'angle'           => array(
 						'type'        => 'number',
-						'description' => __( 'Rotation angle in degrees (clockwise). Common values: 90, 180, 270.', 'wp-mcp-ai' ),
+						'description' => __( 'Rotation angle in degrees (clockwise). Common values: 90, 180, 270.', 'mcp-ai-wpoos' ),
 						'minimum'     => -360,
 						'maximum'     => 360,
 					),
 					'flip_horizontal' => array(
 						'type'        => 'boolean',
-						'description' => __( 'Flip the image horizontally (mirror).', 'wp-mcp-ai' ),
+						'description' => __( 'Flip the image horizontally (mirror).', 'mcp-ai-wpoos' ),
 						'default'     => false,
 					),
 					'flip_vertical'   => array(
 						'type'        => 'boolean',
-						'description' => __( 'Flip the image vertically.', 'wp-mcp-ai' ),
+						'description' => __( 'Flip the image vertically.', 'mcp-ai-wpoos' ),
 						'default'     => false,
 					),
 				),
@@ -96,15 +96,15 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to rotate images.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to rotate images.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id && ! user_can( $user_id, 'upload_files' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$angle           = isset( $arguments['angle'] ) ? floatval( $arguments['angle'] ) : 0;
@@ -112,7 +112,7 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 		$flip_vertical   = isset( $arguments['flip_vertical'] ) ? (bool) $arguments['flip_vertical'] : false;
 
 		if ( 0 === $angle && ! $flip_horizontal && ! $flip_vertical ) {
-			return new WP_Error( 'wp_mcp_ai_no_operation', __( 'At least one of angle, flip_horizontal, or flip_vertical must be specified.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_no_operation', __( 'At least one of angle, flip_horizontal, or flip_vertical must be specified.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		// Enrich arguments with metadata from context messages if available.
@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 				return $result;
 			}
 			/* translators: %s: rotation angle in degrees */
-			$operations[] = sprintf( __( 'rotated %s degrees', 'wp-mcp-ai' ), $angle );
+			$operations[] = sprintf( __( 'rotated %s degrees', 'mcp-ai-wpoos' ), $angle );
 		}
 
 		// Apply horizontal flip.
@@ -148,7 +148,7 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 				}
 				return $result;
 			}
-			$operations[] = __( 'flipped horizontally', 'wp-mcp-ai' );
+			$operations[] = __( 'flipped horizontally', 'mcp-ai-wpoos' );
 		}
 
 		// Apply vertical flip.
@@ -160,7 +160,7 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 				}
 				return $result;
 			}
-			$operations[] = __( 'flipped vertically', 'wp-mcp-ai' );
+			$operations[] = __( 'flipped vertically', 'mcp-ai-wpoos' );
 		}
 
 		// Check if SVG output is requested.
@@ -197,7 +197,7 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 			'output_format'   => $output_format,
 			'text'            => sprintf(
 				/* translators: 1: list of operations performed, 2: output format */
-				__( 'Successfully transformed image: %1$s%2$s.', 'wp-mcp-ai' ),
+				__( 'Successfully transformed image: %1$s%2$s.', 'mcp-ai-wpoos' ),
 				implode( ', ', $operations ),
 				'svg' === $output_format ? ' and converted to SVG' : ''
 			),

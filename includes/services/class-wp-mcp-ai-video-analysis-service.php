@@ -65,7 +65,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		if ( empty( $video_url ) && ! $attachment_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_video',
-				__( 'Either video_url or attachment_id must be provided.', 'wp-mcp-ai' ),
+				__( 'Either video_url or attachment_id must be provided.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -83,7 +83,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 			'wp_mcp_ai_unsupported_provider',
 			sprintf(
 				/* translators: %s: provider name */
-				__( 'Video analysis is not supported for provider: %s. Please use Gemini or OpenAI.', 'wp-mcp-ai' ),
+				__( 'Video analysis is not supported for provider: %s. Please use Gemini or OpenAI.', 'mcp-ai-wpoos' ),
 				$provider
 			),
 			array( 'status' => 400 )
@@ -265,12 +265,12 @@ class WP_MCP_AI_Video_Analysis_Service {
 
 			return new WP_Error(
 				'wp_mcp_ai_ffmpeg_not_available',
-				__( 'FFmpeg is not installed on this server. Video analysis for OpenAI requires FFmpeg to extract frames. Please install FFmpeg or use Gemini for video analysis.', 'wp-mcp-ai' ),
+				__( 'FFmpeg is not installed on this server. Video analysis for OpenAI requires FFmpeg to extract frames. Please install FFmpeg or use Gemini for video analysis.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 500,
 					'actions' => array(
-						'install_ffmpeg' => __( 'Install FFmpeg: https://ffmpeg.org/download.html', 'wp-mcp-ai' ),
-						'use_gemini'     => __( 'Alternatively, use Gemini which supports direct video analysis without FFmpeg.', 'wp-mcp-ai' ),
+						'install_ffmpeg' => __( 'Install FFmpeg: https://ffmpeg.org/download.html', 'mcp-ai-wpoos' ),
+						'use_gemini'     => __( 'Alternatively, use Gemini which supports direct video analysis without FFmpeg.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -296,7 +296,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 			$frame_extractor->cleanup_frames( $frame_paths );
 			return new WP_Error(
 				'wp_mcp_ai_no_frames',
-				__( 'No frames could be extracted from the video.', 'wp-mcp-ai' ),
+				__( 'No frames could be extracted from the video.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -305,7 +305,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		$content = array(
 			array(
 				'type' => 'text',
-				'text' => ! empty( $prompt ) ? $prompt : __( 'Analyze this video by examining the extracted frames. Describe what you see, including scenes, objects, actions, and any relevant details.', 'wp-mcp-ai' ),
+				'text' => ! empty( $prompt ) ? $prompt : __( 'Analyze this video by examining the extracted frames. Describe what you see, including scenes, objects, actions, and any relevant details.', 'mcp-ai-wpoos' ),
 			),
 		);
 
@@ -395,7 +395,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 			if ( ! $file_path || ! file_exists( $file_path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_file_not_found',
-					__( 'Video file not found on server.', 'wp-mcp-ai' ),
+					__( 'Video file not found on server.', 'mcp-ai-wpoos' ),
 					array( 'status' => 404 )
 				);
 			}
@@ -433,7 +433,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 				'wp_mcp_ai_download_failed',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'Failed to download video. HTTP status: %d', 'wp-mcp-ai' ),
+					__( 'Failed to download video. HTTP status: %d', 'mcp-ai-wpoos' ),
 					$code
 				),
 				array( 'status' => $code )
@@ -446,7 +446,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_not_video',
-				__( 'Downloaded file is not a video.', 'wp-mcp-ai' ),
+				__( 'Downloaded file is not a video.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -458,7 +458,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		if ( false === $written ) {
 			return new WP_Error(
 				'wp_mcp_ai_temp_file_failed',
-				__( 'Failed to write video to temporary file.', 'wp-mcp-ai' ),
+				__( 'Failed to write video to temporary file.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}

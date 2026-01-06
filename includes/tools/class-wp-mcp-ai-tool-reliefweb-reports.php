@@ -29,14 +29,14 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'ReliefWeb Reports', 'wp-mcp-ai' );
+		return __( 'ReliefWeb Reports', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Searches the ReliefWeb humanitarian dataset for recent reports filtered by country or disaster type.', 'wp-mcp-ai' );
+		return __( 'Searches the ReliefWeb humanitarian dataset for recent reports filtered by country or disaster type.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -48,28 +48,28 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'country'       => array(
 					'type'        => 'string',
-					'description' => __( 'Optional country name to filter by (for example, Jamaica).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional country name to filter by (for example, Jamaica).', 'mcp-ai-wpoos' ),
 				),
 				'disaster_type' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional disaster type to filter by (for example, Storm).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional disaster type to filter by (for example, Storm).', 'mcp-ai-wpoos' ),
 				),
 				'search'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional keyword search applied across report titles and body content.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional keyword search applied across report titles and body content.', 'mcp-ai-wpoos' ),
 				),
 				'limit'         => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 10,
-					'description' => __( 'Maximum number of reports to return (1-50).', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of reports to return (1-50).', 'mcp-ai-wpoos' ),
 				),
 				'sort'          => array(
 					'type'        => 'string',
 					'enum'        => array( 'date:desc', 'date:asc' ),
 					'default'     => 'date:desc',
-					'description' => __( 'Sort order for the ReliefWeb API (newest first by default).', 'wp-mcp-ai' ),
+					'description' => __( 'Sort order for the ReliefWeb API (newest first by default).', 'mcp-ai-wpoos' ),
 				),
 			),
 			'additionalProperties' => false,
@@ -87,11 +87,11 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_reliefweb_forbidden', __( 'You do not have permission to search ReliefWeb reports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_reliefweb_forbidden', __( 'You do not have permission to search ReliefWeb reports.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_reliefweb_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_reliefweb_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$country       = isset( $arguments['country'] ) ? sanitize_text_field( $arguments['country'] ) : '';
@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 		$search_term   = isset( $arguments['search'] ) ? sanitize_text_field( $arguments['search'] ) : '';
 
 		if ( '' === $country && '' === $disaster_type ) {
-			return new WP_Error( 'wp_mcp_ai_reliefweb_missing_filter', __( 'Provide at least a country or disaster type to search ReliefWeb reports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_reliefweb_missing_filter', __( 'Provide at least a country or disaster type to search ReliefWeb reports.', 'mcp-ai-wpoos' ) );
 		}
 
 		$limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
@@ -158,11 +158,11 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$payload = apply_filters( 'wp_mcp_ai_reliefweb_request_payload', $payload, $arguments, $context );
 
-		$appname = apply_filters( 'wp_mcp_ai_reliefweb_appname', 'wp-mcp-ai', $arguments, $context );
+		$appname = apply_filters( 'wp_mcp_ai_reliefweb_appname', 'mcp-ai-wpoos', $arguments, $context );
 		$appname = sanitize_text_field( $appname );
 
 		if ( '' === $appname ) {
-			$appname = 'wp-mcp-ai';
+			$appname = 'mcp-ai-wpoos';
 		}
 
 		$query_args = array(
@@ -192,7 +192,7 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_reliefweb_http_error',
-				__( 'The ReliefWeb request failed.', 'wp-mcp-ai' ),
+				__( 'The ReliefWeb request failed.', 'mcp-ai-wpoos' ),
 				$response
 			);
 		}
@@ -203,7 +203,7 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 				'wp_mcp_ai_reliefweb_bad_status',
 				sprintf(
 					/* translators: %d: HTTP status code. */
-					__( 'ReliefWeb returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+					__( 'ReliefWeb returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos' ),
 					$status_code
 				),
 				array(
@@ -217,7 +217,7 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 		$decoded = json_decode( $body, true );
 
 		if ( null === $decoded || ! is_array( $decoded ) ) {
-			return new WP_Error( 'wp_mcp_ai_reliefweb_bad_json', __( 'The ReliefWeb response could not be decoded.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_reliefweb_bad_json', __( 'The ReliefWeb response could not be decoded.', 'mcp-ai-wpoos' ) );
 		}
 
 		$results = array();
@@ -290,7 +290,7 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'summary'  => sprintf(
 				/* translators: %d: number of reports found */
-				__( 'Found %d ReliefWeb report(s)', 'wp-mcp-ai' ),
+				__( 'Found %d ReliefWeb report(s)', 'mcp-ai-wpoos' ),
 				isset( $decoded['count'] ) ? (int) $decoded['count'] : count( $results )
 			),
 			'filters'  => array_filter(

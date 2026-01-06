@@ -749,7 +749,7 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 	 * @return array
 	 */
 	protected static function get_registration_request() {
-		$label = __( 'Plugin Performance Monitor', 'wp-mcp-ai' );
+		$label = __( 'Plugin Performance Monitor', 'mcp-ai-wpoos' );
 
 		return array(
 			'name'        => $label,
@@ -826,232 +826,232 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 			self::build_field(
 				10001,
 				'test_type',
-				__( 'Test Type', 'wp-mcp-ai' ),
+				__( 'Test Type', 'mcp-ai-wpoos' ),
 				'select',
 				array(
 					'is_required' => true,
 					'options'     => array(
 						array(
 							'key'   => 'stress',
-							'value' => __( 'Stress Test', 'wp-mcp-ai' ),
+							'value' => __( 'Stress Test', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'security',
-							'value' => __( 'Security Test', 'wp-mcp-ai' ),
+							'value' => __( 'Security Test', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'speed',
-							'value' => __( 'Speed Benchmark', 'wp-mcp-ai' ),
+							'value' => __( 'Speed Benchmark', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'optimization',
-							'value' => __( 'Optimization Comparison', 'wp-mcp-ai' ),
+							'value' => __( 'Optimization Comparison', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'monitoring',
-							'value' => __( 'Error Monitoring', 'wp-mcp-ai' ),
+							'value' => __( 'Error Monitoring', 'mcp-ai-wpoos' ),
 						),
 					),
-					'description' => __( 'Type of performance test conducted.', 'wp-mcp-ai' ),
+					'description' => __( 'Type of performance test conducted.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10002,
 				'component',
-				__( 'Component', 'wp-mcp-ai' ),
+				__( 'Component', 'mcp-ai-wpoos' ),
 				'select',
 				array(
 					'is_required' => true,
 					'options'     => array(
 						array(
 							'key'   => 'rest_api',
-							'value' => __( 'REST API', 'wp-mcp-ai' ),
+							'value' => __( 'REST API', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'chat_ui',
-							'value' => __( 'Chat UI', 'wp-mcp-ai' ),
+							'value' => __( 'Chat UI', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'mcp_core',
-							'value' => __( 'MCP Core', 'wp-mcp-ai' ),
+							'value' => __( 'MCP Core', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'elementor',
-							'value' => __( 'Elementor Integration', 'wp-mcp-ai' ),
+							'value' => __( 'Elementor Integration', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'cpt_ai_peer',
-							'value' => __( 'CPT: AI Peer', 'wp-mcp-ai' ),
+							'value' => __( 'CPT: AI Peer', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'cpt_assistant',
-							'value' => __( 'CPT: Assistant', 'wp-mcp-ai' ),
+							'value' => __( 'CPT: Assistant', 'mcp-ai-wpoos' ),
 						),
 					),
-					'description' => __( 'Plugin component that was tested.', 'wp-mcp-ai' ),
+					'description' => __( 'Plugin component that was tested.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10003,
 				'optimizations_enabled',
-				__( 'Optimizations Enabled', 'wp-mcp-ai' ),
+				__( 'Optimizations Enabled', 'mcp-ai-wpoos' ),
 				'radio',
 				array(
 					'is_required' => true,
 					'options'     => array(
 						array(
 							'key'   => 'yes',
-							'value' => __( 'Yes', 'wp-mcp-ai' ),
+							'value' => __( 'Yes', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'no',
-							'value' => __( 'No', 'wp-mcp-ai' ),
+							'value' => __( 'No', 'mcp-ai-wpoos' ),
 						),
 					),
-					'description' => __( 'Whether optimization features were enabled during the test.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether optimization features were enabled during the test.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10004,
 				'response_time_ms',
-				__( 'Response Time (ms)', 'wp-mcp-ai' ),
+				__( 'Response Time (ms)', 'mcp-ai-wpoos' ),
 				'number',
 				array(
-					'description' => __( 'Average response time in milliseconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Average response time in milliseconds.', 'mcp-ai-wpoos' ),
 					'step'        => '0.01',
 				)
 			),
 			self::build_field(
 				10005,
 				'memory_usage_bytes',
-				__( 'Memory Usage (bytes)', 'wp-mcp-ai' ),
+				__( 'Memory Usage (bytes)', 'mcp-ai-wpoos' ),
 				'number',
 				array(
-					'description' => __( 'Peak memory usage in bytes.', 'wp-mcp-ai' ),
+					'description' => __( 'Peak memory usage in bytes.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10006,
 				'db_queries',
-				__( 'Database Queries', 'wp-mcp-ai' ),
+				__( 'Database Queries', 'mcp-ai-wpoos' ),
 				'number',
 				array(
-					'description' => __( 'Number of database queries executed.', 'wp-mcp-ai' ),
+					'description' => __( 'Number of database queries executed.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10016,
 				'error_rate',
-				__( 'Error Rate (%)', 'wp-mcp-ai' ),
+				__( 'Error Rate (%)', 'mcp-ai-wpoos' ),
 				'number',
 				array(
-					'description' => __( 'Percentage of requests that resulted in errors.', 'wp-mcp-ai' ),
+					'description' => __( 'Percentage of requests that resulted in errors.', 'mcp-ai-wpoos' ),
 					'step'        => '0.01',
 				)
 			),
 			self::build_field(
 				10017,
 				'total_errors',
-				__( 'Total Errors', 'wp-mcp-ai' ),
+				__( 'Total Errors', 'mcp-ai-wpoos' ),
 				'number',
 				array(
-					'description' => __( 'Total number of errors encountered during the test.', 'wp-mcp-ai' ),
+					'description' => __( 'Total number of errors encountered during the test.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10007,
 				'metrics_json',
-				__( 'Performance Metrics (JSON)', 'wp-mcp-ai' ),
+				__( 'Performance Metrics (JSON)', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'Complete performance metrics in JSON format for AI assistant analysis.', 'wp-mcp-ai' ),
+					'description' => __( 'Complete performance metrics in JSON format for AI assistant analysis.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10008,
 				'test_results_json',
-				__( 'Test Results (JSON)', 'wp-mcp-ai' ),
+				__( 'Test Results (JSON)', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'Detailed test results in JSON format for AI assistant diagnostics.', 'wp-mcp-ai' ),
+					'description' => __( 'Detailed test results in JSON format for AI assistant diagnostics.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10009,
 				'diagnostic_summary',
-				__( 'Diagnostic Summary', 'wp-mcp-ai' ),
+				__( 'Diagnostic Summary', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'Human-readable summary for quick AI assistant interpretation.', 'wp-mcp-ai' ),
+					'description' => __( 'Human-readable summary for quick AI assistant interpretation.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10010,
 				'test_status',
-				__( 'Test Status', 'wp-mcp-ai' ),
+				__( 'Test Status', 'mcp-ai-wpoos' ),
 				'select',
 				array(
 					'options'     => array(
 						array(
 							'key'   => 'passed',
-							'value' => __( 'Passed', 'wp-mcp-ai' ),
+							'value' => __( 'Passed', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'warning',
-							'value' => __( 'Warning', 'wp-mcp-ai' ),
+							'value' => __( 'Warning', 'mcp-ai-wpoos' ),
 						),
 						array(
 							'key'   => 'failed',
-							'value' => __( 'Failed', 'wp-mcp-ai' ),
+							'value' => __( 'Failed', 'mcp-ai-wpoos' ),
 						),
 					),
-					'description' => __( 'Overall test result status for quick filtering.', 'wp-mcp-ai' ),
+					'description' => __( 'Overall test result status for quick filtering.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10011,
 				'recommendations',
-				__( 'AI Recommendations (JSON)', 'wp-mcp-ai' ),
+				__( 'AI Recommendations (JSON)', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'Actionable recommendations generated for AI assistants to suggest fixes.', 'wp-mcp-ai' ),
+					'description' => __( 'Actionable recommendations generated for AI assistants to suggest fixes.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10012,
 				'tested_at',
-				__( 'Tested At', 'wp-mcp-ai' ),
+				__( 'Tested At', 'mcp-ai-wpoos' ),
 				'datetime-local',
 				array(
 					'is_required' => true,
-					'description' => __( 'Timestamp when the test was executed.', 'wp-mcp-ai' ),
+					'description' => __( 'Timestamp when the test was executed.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10013,
 				'php_version',
-				__( 'PHP Version', 'wp-mcp-ai' ),
+				__( 'PHP Version', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'PHP version during test execution.', 'wp-mcp-ai' ),
+					'description' => __( 'PHP version during test execution.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10014,
 				'wp_version',
-				__( 'WordPress Version', 'wp-mcp-ai' ),
+				__( 'WordPress Version', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'WordPress version during test execution.', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress version during test execution.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10015,
 				'plugin_version',
-				__( 'Plugin Version', 'wp-mcp-ai' ),
+				__( 'Plugin Version', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'WP MCP AI plugin version during test execution.', 'wp-mcp-ai' ),
+					'description' => __( 'WP MCP AI plugin version during test execution.', 'mcp-ai-wpoos' ),
 				)
 			),
 		);

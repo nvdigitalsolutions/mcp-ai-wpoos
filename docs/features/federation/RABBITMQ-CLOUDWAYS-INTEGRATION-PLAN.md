@@ -1,4 +1,4 @@
-# RabbitMQ Integration Plan for WP oOS on Cloudways
+# RabbitMQ Integration Plan for NV oOS on Cloudways
 
 **Version:** 1.0.0  
 **Last Updated:** November 27, 2025  
@@ -25,7 +25,7 @@
 
 ## Executive Summary
 
-This document outlines the plan to integrate RabbitMQ message queuing into Open Operator System (WP oOS) when deployed on Cloudways hosting. RabbitMQ provides enterprise-grade message queuing that will significantly enhance:
+This document outlines the plan to integrate RabbitMQ message queuing into Open Operator System (NV oOS) when deployed on Cloudways hosting. RabbitMQ provides enterprise-grade message queuing that will significantly enhance:
 
 1. **Agentic Workflow Processing** - Async tool execution, parallel processing, and improved resilience
 2. **Tool Management** - Decoupled tool execution, retry logic, and workload distribution
@@ -47,7 +47,7 @@ This document outlines the plan to integrate RabbitMQ message queuing into Open 
 
 ### Current Limitations
 
-WP oOS currently relies on WordPress's synchronous request model and WP-Cron for async operations. This creates challenges:
+NV oOS currently relies on WordPress's synchronous request model and WP-Cron for async operations. This creates challenges:
 
 1. **PHP Execution Limits** - Long-running tool executions risk timeouts
 2. **Sequential Processing** - Tools execute one-by-one, even when independent
@@ -110,7 +110,7 @@ rabbitmqctl set_permissions -p / username ".*" ".*" ".*"
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              WP oOS Plugin                                   │
+│                              NV oOS Plugin                                   │
 │                                                                              │
 │  ┌──────────────────┐     ┌──────────────────┐     ┌─────────────────────┐ │
 │  │   REST API       │────▶│   Chat Service   │────▶│   Tool Registry     │ │
@@ -459,7 +459,7 @@ $this->rabbitmq->publish( 'analytics', $analytics_message );
 
 ### Admin Settings
 
-New settings section at **Settings → WP oOS → RabbitMQ**:
+New settings section at **Settings → NV oOS → RabbitMQ**:
 
 ```php
 $rabbitmq_settings = array(
@@ -726,7 +726,7 @@ Requires `php-amqp` extension (Cloudways includes this when RabbitMQ is enabled)
 if ( ! extension_loaded( 'amqp' ) ) {
     add_action( 'admin_notices', function() {
         echo '<div class="notice notice-error"><p>';
-        echo esc_html__( 'WP oOS RabbitMQ integration requires the php-amqp extension.', 'wp-mcp-ai' );
+        echo esc_html__( 'NV oOS RabbitMQ integration requires the php-amqp extension.', 'wp-mcp-ai' );
         echo '</p></div>';
     } );
 }
@@ -748,7 +748,7 @@ If php-amqp is not available, use php-amqplib:
 
 ## Conclusion
 
-Integrating RabbitMQ into WP oOS on Cloudways will transform the plugin's agentic workflow capabilities from a synchronous, single-threaded model to an enterprise-grade, asynchronous, parallel processing system. The phased implementation approach ensures stability while progressively enabling more advanced features.
+Integrating RabbitMQ into NV oOS on Cloudways will transform the plugin's agentic workflow capabilities from a synchronous, single-threaded model to an enterprise-grade, asynchronous, parallel processing system. The phased implementation approach ensures stability while progressively enabling more advanced features.
 
 Key deliverables:
 1. **RabbitMQ client with connection pooling**

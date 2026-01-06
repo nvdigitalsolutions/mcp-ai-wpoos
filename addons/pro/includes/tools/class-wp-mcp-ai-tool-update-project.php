@@ -28,7 +28,7 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return string Tool name.
 	 */
 	public function get_name() {
-		return __( 'Update Project', 'wp-mcp-ai' );
+		return __( 'Update Project', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -37,7 +37,7 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return string Tool description.
 	 */
 	public function get_description() {
-		return __( 'Updates an existing project. Provide only the fields you want to update.', 'wp-mcp-ai' );
+		return __( 'Updates an existing project. Provide only the fields you want to update.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,34 +51,34 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'project_id'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Project ID to update (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Project ID to update (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'name'        => array(
 					'type'        => 'string',
-					'description' => __( 'New project name (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New project name (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'description' => array(
 					'type'        => 'string',
-					'description' => __( 'New project description (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New project description (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'status'      => array(
 					'type'        => 'string',
-					'description' => __( 'New project status (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New project status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'planning', 'active', 'on-hold', 'completed', 'cancelled' ),
 				),
 				'start_date'  => array(
 					'type'        => 'string',
-					'description' => __( 'New start date (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New start date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'end_date'    => array(
 					'type'        => 'string',
-					'description' => __( 'New end date (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New end date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'assigned_to' => array(
 					'type'        => 'array',
-					'description' => __( 'New array of assigned user IDs (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New array of assigned user IDs (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
 			),
@@ -93,7 +93,8 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return array Array of capability flag strings.
 	 */
 	public function get_capability_flags() {
-		return array( 'database-write' );
+		return array(
+			'pro', 'database-write' );
 	}
 
 	/**
@@ -121,18 +122,18 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update projects.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update projects.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$project_id = isset( $arguments['project_id'] ) ? absint( $arguments['project_id'] ) : 0;
 
 		if ( ! $project_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Project ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Project ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$project = get_post( $project_id );
 		if ( ! $project || 'mcp_ai_project' !== $project->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_project', __( 'Invalid project ID.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_project', __( 'Invalid project ID.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$post_data = array( 'ID' => $project_id );
@@ -167,7 +168,7 @@ class WP_MCP_AI_Tool_Update_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		return array(
 			'success'    => true,
-			'message'    => __( 'Project updated successfully.', 'wp-mcp-ai' ),
+			'message'    => __( 'Project updated successfully.', 'mcp-ai-wpoos-pro' ),
 			'project_id' => $project_id,
 		);
 	}

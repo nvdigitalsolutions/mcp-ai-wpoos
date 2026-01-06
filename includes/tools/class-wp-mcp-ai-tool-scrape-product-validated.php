@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Scrape_Product_Validated extends WP_MCP_AI_Validated_Tool i
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Scrape Product (Validated)', 'wp-mcp-ai' );
+		return __( 'Scrape Product (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Scrapes product information (title, subtitle, description, images, price, availability) from a product URL or saved HTML file with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Scrapes product information (title, subtitle, description, images, price, availability) from a product URL or saved HTML file with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

@@ -202,7 +202,7 @@ When creating new tools:
 
 To verify the fix resolves the reported errors:
 
-1. **Enable logging** in WP oOS settings
+1. **Enable logging** in NV oOS settings
 2. **Use a Gemini model** (e.g., gemini-3-pro-preview)
 3. **Invoke tools** that previously failed
 4. **Check logs** for `gemini_schema_enhancement` events

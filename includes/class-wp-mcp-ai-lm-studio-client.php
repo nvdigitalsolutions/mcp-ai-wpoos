@@ -60,7 +60,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( empty( $endpoint_url ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_lm_studio_endpoint',
-					__( 'No LM Studio endpoint URL has been configured.', 'wp-mcp-ai' ),
+					__( 'No LM Studio endpoint URL has been configured.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -93,8 +93,8 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The LM Studio connection test failed to complete.', 'wp-mcp-ai' ),
-					__( 'LM Studio', 'wp-mcp-ai' )
+					__( 'The LM Studio connection test failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'LM Studio', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -108,7 +108,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_api_error',
-					__( 'LM Studio returned an unexpected response.', 'wp-mcp-ai' ),
+					__( 'LM Studio returned an unexpected response.', 'mcp-ai-wpoos' ),
 					array( 'status' => $code )
 				);
 			}
@@ -117,7 +117,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			return array(
 				'success' => true,
-				'message' => __( 'Successfully connected to LM Studio instance.', 'wp-mcp-ai' ),
+				'message' => __( 'Successfully connected to LM Studio instance.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -132,7 +132,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( empty( $endpoint_url ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_lm_studio_endpoint',
-					__( 'No LM Studio endpoint URL has been configured.', 'wp-mcp-ai' ),
+					__( 'No LM Studio endpoint URL has been configured.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -158,8 +158,8 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The LM Studio model listing request failed to complete.', 'wp-mcp-ai' ),
-					__( 'LM Studio', 'wp-mcp-ai' )
+					__( 'The LM Studio model listing request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'LM Studio', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -172,11 +172,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( JSON_ERROR_NONE !== $json_err ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode LM Studio response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The LM Studio API returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The LM Studio API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error'] ) ? $decoded['error'] : __( 'Unexpected response from LM Studio.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['error'] ) ? $decoded['error'] : __( 'Unexpected response from LM Studio.', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
 					'LM Studio returned an error response.',
@@ -229,11 +229,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( empty( $endpoint_url ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_lm_studio_endpoint',
-					__( 'No LM Studio endpoint URL has been configured.', 'wp-mcp-ai' ),
+					__( 'No LM Studio endpoint URL has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -244,11 +244,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( empty( $model ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_lm_studio_model',
-					__( 'No LM Studio model has been configured.', 'wp-mcp-ai' ),
+					__( 'No LM Studio model has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_lm_studio_model' => __( 'Choose an LM Studio model in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_lm_studio_model' => __( 'Choose an LM Studio model in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -281,8 +281,8 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The LM Studio API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'LM Studio', 'wp-mcp-ai' )
+					__( 'The LM Studio API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'LM Studio', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -295,11 +295,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( JSON_ERROR_NONE !== $json_err ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode LM Studio response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The LM Studio API returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The LM Studio API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from LM Studio.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from LM Studio.', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
 					'LM Studio returned an error response.',
@@ -388,11 +388,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( empty( $messages ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_messages',
-					__( 'No chat messages were provided for the request.', 'wp-mcp-ai' ),
+					__( 'No chat messages were provided for the request.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'wp-mcp-ai' ),
+							'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -649,11 +649,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( empty( $endpoint_url ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_lm_studio_endpoint',
-					__( 'No LM Studio endpoint URL has been configured.', 'wp-mcp-ai' ),
+					__( 'No LM Studio endpoint URL has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -664,11 +664,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( empty( $model ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_lm_studio_model',
-					__( 'No LM Studio model has been configured.', 'wp-mcp-ai' ),
+					__( 'No LM Studio model has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_lm_studio_model' => __( 'Choose an LM Studio model in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_lm_studio_model' => __( 'Choose an LM Studio model in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -677,11 +677,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( empty( $prompt ) || ! is_string( $prompt ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_prompt',
-					__( 'No prompt was provided for the completion request.', 'wp-mcp-ai' ),
+					__( 'No prompt was provided for the completion request.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'review_request_payload' => __( 'Provide a text prompt before calling the API.', 'wp-mcp-ai' ),
+							'review_request_payload' => __( 'Provide a text prompt before calling the API.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -739,8 +739,8 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The LM Studio completion API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'LM Studio', 'wp-mcp-ai' )
+					__( 'The LM Studio completion API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'LM Studio', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -753,11 +753,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( JSON_ERROR_NONE !== $json_err ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode LM Studio completion response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The LM Studio completion API returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The LM Studio completion API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from LM Studio.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from LM Studio.', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
 					'LM Studio completion returned an error response.',
@@ -804,7 +804,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					continue;
 				}
 
-				$title      = isset( $document['title'] ) && '' !== $document['title'] ? sanitize_text_field( $document['title'] ) : __( 'Document', 'wp-mcp-ai' );
+				$title      = isset( $document['title'] ) && '' !== $document['title'] ? sanitize_text_field( $document['title'] ) : __( 'Document', 'mcp-ai-wpoos' );
 				$chunks     = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
 				$parts      = count( $chunks );
 				$part_index = 0;
@@ -816,13 +816,13 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 					if ( $parts > 1 ) {
 						/* translators: %1$s: document title, %2$d: chunk number. */
-						$label = sprintf( __( '%1$s (Part %2$d)', 'wp-mcp-ai' ), $title, $part_index );
+						$label = sprintf( __( '%1$s (Part %2$d)', 'mcp-ai-wpoos' ), $title, $part_index );
 					}
 
 					$messages[] = array(
 						'role'    => 'system',
 						/* translators: %1$s: document title, %2$s: extracted text snippet. */
-						'content' => sprintf( __( 'Reference document "%1$s": %2$s', 'wp-mcp-ai' ), $label, wp_kses_post( $chunk ) ),
+						'content' => sprintf( __( 'Reference document "%1$s": %2$s', 'mcp-ai-wpoos' ), $label, wp_kses_post( $chunk ) ),
 					);
 				}
 			}

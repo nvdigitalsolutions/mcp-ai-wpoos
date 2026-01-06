@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Usage & Timer', 'wp-mcp-ai' );
+		return __( 'NV oOS Usage & Timer', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,17 +61,17 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Content', 'wp-mcp-ai' ),
+				'label' => __( 'Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Session overview', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Session overview', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -79,10 +79,10 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$this->add_control(
 			'description',
 			array(
-				'label'       => __( 'Description', 'wp-mcp-ai' ),
+				'label'       => __( 'Description', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXTAREA,
-				'default'     => __( 'Track how long you have been collaborating and keep an eye on token usage for this workspace.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Provide additional context for the timer and usage summary.', 'wp-mcp-ai' ),
+				'default'     => __( 'Track how long you have been collaborating and keep an eye on token usage for this workspace.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Provide additional context for the timer and usage summary.', 'mcp-ai-wpoos' ),
 				'rows'        => 3,
 			)
 		);
@@ -92,17 +92,17 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$this->start_controls_section(
 			'section_timer',
 			array(
-				'label' => __( 'Timer', 'wp-mcp-ai' ),
+				'label' => __( 'Timer', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_timer',
 			array(
-				'label'        => __( 'Display Timer', 'wp-mcp-ai' ),
+				'label'        => __( 'Display Timer', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'true',
 				'default'      => 'true',
 			)
@@ -111,10 +111,10 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$this->add_control(
 			'timer_label',
 			array(
-				'label'       => __( 'Timer Label', 'wp-mcp-ai' ),
+				'label'       => __( 'Timer Label', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Focus timer', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Label displayed above the timer.', 'wp-mcp-ai' ),
+				'default'     => __( 'Focus timer', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Label displayed above the timer.', 'mcp-ai-wpoos' ),
 				'condition'   => array(
 					'show_timer' => 'true',
 				),
@@ -124,7 +124,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$this->add_control(
 			'timer_duration',
 			array(
-				'label'       => __( 'Duration (minutes)', 'wp-mcp-ai' ),
+				'label'       => __( 'Duration (minutes)', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::NUMBER,
 				'min'         => 1,
 				'max'         => 180,
@@ -133,17 +133,17 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 				'condition'   => array(
 					'show_timer' => 'true',
 				),
-				'description' => __( 'Set how long the countdown should run when the page loads.', 'wp-mcp-ai' ),
+				'description' => __( 'Set how long the countdown should run when the page loads.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'timer_complete_text',
 			array(
-				'label'       => __( 'Timer Complete Message', 'wp-mcp-ai' ),
+				'label'       => __( 'Timer Complete Message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Time is up! Take a break or start a new sprint.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Message displayed when the timer finishes.', 'wp-mcp-ai' ),
+				'default'     => __( 'Time is up! Take a break or start a new sprint.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Message displayed when the timer finishes.', 'mcp-ai-wpoos' ),
 				'condition'   => array(
 					'show_timer' => 'true',
 				),
@@ -155,17 +155,17 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$this->start_controls_section(
 			'section_usage',
 			array(
-				'label' => __( 'Usage Summary', 'wp-mcp-ai' ),
+				'label' => __( 'Usage Summary', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_usage',
 			array(
-				'label'        => __( 'Display Usage Totals', 'wp-mcp-ai' ),
+				'label'        => __( 'Display Usage Totals', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'true',
 				'default'      => 'true',
 			)
@@ -174,10 +174,10 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$this->add_control(
 			'usage_heading',
 			array(
-				'label'       => __( 'Usage Heading', 'wp-mcp-ai' ),
+				'label'       => __( 'Usage Heading', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Your token usage', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Heading shown above the usage summary.', 'wp-mcp-ai' ),
+				'default'     => __( 'Your token usage', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Heading shown above the usage summary.', 'mcp-ai-wpoos' ),
 				'condition'   => array(
 					'show_usage' => 'true',
 				),
@@ -187,10 +187,10 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$this->add_control(
 			'usage_empty_message',
 			array(
-				'label'       => __( 'No Usage Message', 'wp-mcp-ai' ),
+				'label'       => __( 'No Usage Message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXTAREA,
-				'default'     => __( 'Usage details will appear here after you exchange a few messages.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Message shown when no usage data is available yet.', 'wp-mcp-ai' ),
+				'default'     => __( 'Usage details will appear here after you exchange a few messages.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Message shown when no usage data is available yet.', 'mcp-ai-wpoos' ),
 				'rows'        => 2,
 				'condition'   => array(
 					'show_usage' => 'true',
@@ -201,10 +201,10 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$this->add_control(
 			'usage_login_message',
 			array(
-				'label'       => __( 'Login Required Message', 'wp-mcp-ai' ),
+				'label'       => __( 'Login Required Message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Log in to track personal usage and see token totals.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Message shown to visitors who are not logged in.', 'wp-mcp-ai' ),
+				'default'     => __( 'Log in to track personal usage and see token totals.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Message shown to visitors who are not logged in.', 'mcp-ai-wpoos' ),
 				'condition'   => array(
 					'show_usage' => 'true',
 				),
@@ -214,10 +214,10 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$this->add_control(
 			'usage_unavailable_message',
 			array(
-				'label'       => __( 'Unavailable Message', 'wp-mcp-ai' ),
+				'label'       => __( 'Unavailable Message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Usage tracking is currently unavailable.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Message displayed if usage tracking cannot be loaded.', 'wp-mcp-ai' ),
+				'default'     => __( 'Usage tracking is currently unavailable.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Message displayed if usage tracking cannot be loaded.', 'mcp-ai-wpoos' ),
 				'condition'   => array(
 					'show_usage' => 'true',
 				),
@@ -401,29 +401,29 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 
 		echo '<dl class="wp-mcp-ai-chat-usage-timer__usage-totals">';
 		echo '<div class="wp-mcp-ai-chat-usage-timer__usage-total">'
-			. '<dt>' . esc_html__( 'Prompt tokens', 'wp-mcp-ai' ) . '</dt>'
+			. '<dt>' . esc_html__( 'Prompt tokens', 'mcp-ai-wpoos' ) . '</dt>'
 			. '<dd>' . esc_html( number_format_i18n( $summary['totals']['prompt_tokens'] ) ) . '</dd>'
 			. '</div>';
 
 		echo '<div class="wp-mcp-ai-chat-usage-timer__usage-total">'
-			. '<dt>' . esc_html__( 'Completion tokens', 'wp-mcp-ai' ) . '</dt>'
+			. '<dt>' . esc_html__( 'Completion tokens', 'mcp-ai-wpoos' ) . '</dt>'
 			. '<dd>' . esc_html( number_format_i18n( $summary['totals']['completion_tokens'] ) ) . '</dd>'
 			. '</div>';
 
 		if ( $summary['totals']['cached_prompt_tokens'] > 0 ) {
 			echo '<div class="wp-mcp-ai-chat-usage-timer__usage-total">'
-				. '<dt>' . esc_html__( 'Cached prompt tokens', 'wp-mcp-ai' ) . '</dt>'
+				. '<dt>' . esc_html__( 'Cached prompt tokens', 'mcp-ai-wpoos' ) . '</dt>'
 				. '<dd>' . esc_html( number_format_i18n( $summary['totals']['cached_prompt_tokens'] ) ) . '</dd>'
 				. '</div>';
 		}
 
 		echo '<div class="wp-mcp-ai-chat-usage-timer__usage-total">'
-			. '<dt>' . esc_html__( 'Cached tokens', 'wp-mcp-ai' ) . '</dt>'
+			. '<dt>' . esc_html__( 'Cached tokens', 'mcp-ai-wpoos' ) . '</dt>'
 			. '<dd>' . esc_html( number_format_i18n( $summary['totals']['cached_tokens'] ) ) . '</dd>'
 			. '</div>';
 
 		echo '<div class="wp-mcp-ai-chat-usage-timer__usage-total">'
-			. '<dt>' . esc_html__( 'Total tokens', 'wp-mcp-ai' ) . '</dt>'
+			. '<dt>' . esc_html__( 'Total tokens', 'mcp-ai-wpoos' ) . '</dt>'
 			. '<dd>' . esc_html( number_format_i18n( $summary['totals']['total_tokens'] ) ) . '</dd>'
 			. '</div>';
 

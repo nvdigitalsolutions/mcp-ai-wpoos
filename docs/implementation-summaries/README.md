@@ -1,6 +1,6 @@
 # Implementation Summaries
 
-This directory contains comprehensive implementation summaries for major features and integrations added to the WP oOS plugin.
+This directory contains comprehensive implementation summaries for major features and integrations added to the NV oOS plugin.
 
 ## Feature Implementations
 

@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS System Health Status', 'wp-mcp-ai' );
+		return __( 'NV oOS System Health Status', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -64,17 +64,17 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Health Status Settings', 'wp-mcp-ai' ),
+				'label' => __( 'Health Status Settings', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'System Health Status', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter title…', 'wp-mcp-ai' ),
+				'default'     => __( 'System Health Status', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter title…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -82,10 +82,10 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'show_component_breakdown',
 			array(
-				'label'        => __( 'Show Component Breakdown', 'wp-mcp-ai' ),
+				'label'        => __( 'Show Component Breakdown', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -94,10 +94,10 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'show_critical_issues',
 			array(
-				'label'        => __( 'Show Critical Issues Count', 'wp-mcp-ai' ),
+				'label'        => __( 'Show Critical Issues Count', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -123,7 +123,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 	protected function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			echo '<div class="wp-mcp-ai-system-health">';
-			echo '<p>' . esc_html__( 'You do not have permission to view system health.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p>' . esc_html__( 'You do not have permission to view system health.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -153,7 +153,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 		echo '</div>';
 		echo '<div class="wp-mcp-ai-system-health__status-content">';
 		echo '<div class="wp-mcp-ai-system-health__status-label">' . esc_html( $this->get_status_label( $health['overall_status'] ) ) . '</div>';
-		echo '<div class="wp-mcp-ai-system-health__status-score">' . esc_html__( 'Health Score:', 'wp-mcp-ai' ) . ' ' . esc_html( $health['health_score'] ) . '%</div>';
+		echo '<div class="wp-mcp-ai-system-health__status-score">' . esc_html__( 'Health Score:', 'mcp-ai-wpoos' ) . ' ' . esc_html( $health['health_score'] ) . '%</div>';
 		echo '</div>';
 		echo '</div>';
 
@@ -164,7 +164,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 			echo '<span>' . esc_html(
 				sprintf(
 				/* translators: %d: Number of critical issues */
-					_n( '%d critical issue requires immediate attention', '%d critical issues require immediate attention', $health['critical_issues'], 'wp-mcp-ai' ),
+					_n( '%d critical issue requires immediate attention', '%d critical issues require immediate attention', $health['critical_issues'], 'mcp-ai-wpoos' ),
 					$health['critical_issues']
 				)
 			) . '</span>';
@@ -174,7 +174,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 		// Component breakdown.
 		if ( $show_breakdown && ! empty( $health['components'] ) ) {
 			echo '<div class="wp-mcp-ai-system-health__components">';
-			echo '<h4>' . esc_html__( 'Component Status', 'wp-mcp-ai' ) . '</h4>';
+			echo '<h4>' . esc_html__( 'Component Status', 'mcp-ai-wpoos' ) . '</h4>';
 			echo '<div class="wp-mcp-ai-system-health__components-grid">';
 
 			foreach ( $health['components'] as $component_key => $component_data ) {
@@ -212,12 +212,12 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 		}
 
 		$components = array(
-			'rest_api'      => __( 'REST API', 'wp-mcp-ai' ),
-			'chat_ui'       => __( 'Chat UI', 'wp-mcp-ai' ),
-			'mcp_core'      => __( 'MCP Core', 'wp-mcp-ai' ),
-			'elementor'     => __( 'Elementor', 'wp-mcp-ai' ),
-			'cpt_ai_peer'   => __( 'AI Peer CPT', 'wp-mcp-ai' ),
-			'cpt_assistant' => __( 'Assistant CPT', 'wp-mcp-ai' ),
+			'rest_api'      => __( 'REST API', 'mcp-ai-wpoos' ),
+			'chat_ui'       => __( 'Chat UI', 'mcp-ai-wpoos' ),
+			'mcp_core'      => __( 'MCP Core', 'mcp-ai-wpoos' ),
+			'elementor'     => __( 'Elementor', 'mcp-ai-wpoos' ),
+			'cpt_ai_peer'   => __( 'AI Peer CPT', 'mcp-ai-wpoos' ),
+			'cpt_assistant' => __( 'Assistant CPT', 'mcp-ai-wpoos' ),
 		);
 
 		$component_health = array();
@@ -272,7 +272,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 				'name'      => $name,
 				'status'    => $status,
 				/* translators: %d: Number of tests */
-				'last_test' => sprintf( __( '%d tests', 'wp-mcp-ai' ), $total ),
+				'last_test' => sprintf( __( '%d tests', 'mcp-ai-wpoos' ), $total ),
 			);
 		}
 
@@ -324,13 +324,13 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 	protected function get_status_label( $status ) {
 		switch ( $status ) {
 			case 'good':
-				return __( 'System is healthy', 'wp-mcp-ai' );
+				return __( 'System is healthy', 'mcp-ai-wpoos' );
 			case 'warning':
-				return __( 'Some issues detected', 'wp-mcp-ai' );
+				return __( 'Some issues detected', 'mcp-ai-wpoos' );
 			case 'critical':
-				return __( 'Critical issues require attention', 'wp-mcp-ai' );
+				return __( 'Critical issues require attention', 'mcp-ai-wpoos' );
 			default:
-				return __( 'Status unknown', 'wp-mcp-ai' );
+				return __( 'Status unknown', 'mcp-ai-wpoos' );
 		}
 	}
 }

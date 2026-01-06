@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Performance Test Runner', 'wp-mcp-ai' );
+		return __( 'NV oOS Performance Test Runner', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -64,17 +64,17 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Test Runner Settings', 'wp-mcp-ai' ),
+				'label' => __( 'Test Runner Settings', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Performance Test Runner', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter title…', 'wp-mcp-ai' ),
+				'default'     => __( 'Performance Test Runner', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter title…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -82,10 +82,10 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		$this->add_control(
 			'description',
 			array(
-				'label'       => __( 'Description', 'wp-mcp-ai' ),
+				'label'       => __( 'Description', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXTAREA,
-				'default'     => __( 'Run comprehensive performance tests to help AI assistants diagnose and fix issues.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter description…', 'wp-mcp-ai' ),
+				'default'     => __( 'Run comprehensive performance tests to help AI assistants diagnose and fix issues.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter description…', 'mcp-ai-wpoos' ),
 				'rows'        => 3,
 			)
 		);
@@ -93,14 +93,14 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		$this->add_control(
 			'enabled_tests',
 			array(
-				'label'       => __( 'Enabled Test Types', 'wp-mcp-ai' ),
+				'label'       => __( 'Enabled Test Types', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT2,
 				'multiple'    => true,
 				'options'     => array(
-					'stress'       => __( 'Stress Tests', 'wp-mcp-ai' ),
-					'security'     => __( 'Security Tests', 'wp-mcp-ai' ),
-					'speed'        => __( 'Speed Benchmarks', 'wp-mcp-ai' ),
-					'optimization' => __( 'Optimization Comparison', 'wp-mcp-ai' ),
+					'stress'       => __( 'Stress Tests', 'mcp-ai-wpoos' ),
+					'security'     => __( 'Security Tests', 'mcp-ai-wpoos' ),
+					'speed'        => __( 'Speed Benchmarks', 'mcp-ai-wpoos' ),
+					'optimization' => __( 'Optimization Comparison', 'mcp-ai-wpoos' ),
 				),
 				'default'     => array( 'stress', 'security', 'speed', 'optimization' ),
 				'label_block' => true,
@@ -110,10 +110,10 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		$this->add_control(
 			'show_results',
 			array(
-				'label'        => __( 'Show Results Immediately', 'wp-mcp-ai' ),
+				'label'        => __( 'Show Results Immediately', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -140,7 +140,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 	protected function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			echo '<div class="wp-mcp-ai-test-runner">';
-			echo '<p class="wp-mcp-ai-test-runner__notice">' . esc_html__( 'You do not have permission to run performance tests.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-test-runner__notice">' . esc_html__( 'You do not have permission to run performance tests.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -165,10 +165,10 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 		echo '<div class="wp-mcp-ai-test-runner__controls">';
 
 		$test_labels = array(
-			'stress'       => __( 'Stress Tests', 'wp-mcp-ai' ),
-			'security'     => __( 'Security Tests', 'wp-mcp-ai' ),
-			'speed'        => __( 'Speed Benchmarks', 'wp-mcp-ai' ),
-			'optimization' => __( 'Optimization Comparison', 'wp-mcp-ai' ),
+			'stress'       => __( 'Stress Tests', 'mcp-ai-wpoos' ),
+			'security'     => __( 'Security Tests', 'mcp-ai-wpoos' ),
+			'speed'        => __( 'Speed Benchmarks', 'mcp-ai-wpoos' ),
+			'optimization' => __( 'Optimization Comparison', 'mcp-ai-wpoos' ),
 		);
 
 		foreach ( $enabled_tests as $test_type ) {
@@ -184,7 +184,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 
 		if ( $show_results ) {
 			echo '<div class="wp-mcp-ai-test-runner__results" style="display:none;">';
-			echo '<h4>' . esc_html__( 'Test Results', 'wp-mcp-ai' ) . '</h4>';
+			echo '<h4>' . esc_html__( 'Test Results', 'mcp-ai-wpoos' ) . '</h4>';
 			echo '<div class="wp-mcp-ai-test-runner__results-content"></div>';
 			echo '</div>';
 		}
@@ -229,7 +229,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 					var resultsDiv = runner.find('.wp-mcp-ai-test-runner__results');
 
 					button.prop('disabled', true);
-					statusDiv.show().html('<p><?php echo esc_js( __( 'Running test...', 'wp-mcp-ai' ) ); ?></p>');
+					statusDiv.show().html('<p><?php echo esc_js( __( 'Running test...', 'mcp-ai-wpoos' ) ); ?></p>');
 
 					$.ajax({
 						url: '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>',
@@ -242,7 +242,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 						success: function(response) {
 							button.prop('disabled', false);
 							if (response.success) {
-								statusDiv.html('<p class="wp-mcp-ai-success"><?php echo esc_js( __( 'Test completed successfully!', 'wp-mcp-ai' ) ); ?></p>');
+								statusDiv.html('<p class="wp-mcp-ai-success"><?php echo esc_js( __( 'Test completed successfully!', 'mcp-ai-wpoos' ) ); ?></p>');
 								if (response.data && resultsDiv.length) {
 									resultsDiv.show();
 									resultsDiv.find('.wp-mcp-ai-test-runner__results-content').html(
@@ -251,14 +251,14 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 								}
 							} else {
 								// Handle both string and object error responses.
-								var errorMessage = '<?php echo esc_js( __( 'Unknown error', 'wp-mcp-ai' ) ); ?>';
+								var errorMessage = '<?php echo esc_js( __( 'Unknown error', 'mcp-ai-wpoos' ) ); ?>';
 								if (response.data) {
 									if (typeof response.data === 'object') {
 										// Extract message from object.
 										errorMessage = response.data.message || errorMessage;
 										
 										// Build detailed error HTML with proper escaping.
-										var errorHtml = '<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(errorMessage) + '</p>';
+										var errorHtml = '<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'mcp-ai-wpoos' ) ); ?> ' + escapeHtml(errorMessage) + '</p>';
 										
 										// Add additional details if available.
 										if (response.data.details) {
@@ -266,32 +266,32 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 										}
 										// Add test output if available (contains the actual failure details).
 										if (response.data.output) {
-											var outputLabel = '<?php echo esc_js( __( 'Test Output (Click to expand)', 'wp-mcp-ai' ) ); ?>';
+											var outputLabel = '<?php echo esc_js( __( 'Test Output (Click to expand)', 'mcp-ai-wpoos' ) ); ?>';
 											errorHtml += '<details class="wp-mcp-ai-test-output">' +
 												'<summary><strong>' + outputLabel + '</strong></summary>' +
 												'<pre>' + escapeHtml(response.data.output) + '</pre>' +
 												'</details>';
 										}
 										if (response.data.cli_command) {
-											errorHtml += '<p class="wp-mcp-ai-cli-command"><strong><?php echo esc_js( __( 'CLI Command:', 'wp-mcp-ai' ) ); ?></strong> <code>' + escapeHtml(response.data.cli_command) + '</code></p>';
+											errorHtml += '<p class="wp-mcp-ai-cli-command"><strong><?php echo esc_js( __( 'CLI Command:', 'mcp-ai-wpoos' ) ); ?></strong> <code>' + escapeHtml(response.data.cli_command) + '</code></p>';
 										}
 										if (response.data.setup_command) {
-											errorHtml += '<p class="wp-mcp-ai-setup-command"><strong><?php echo esc_js( __( 'Setup Command:', 'wp-mcp-ai' ) ); ?></strong> <code>' + escapeHtml(response.data.setup_command) + '</code></p>';
+											errorHtml += '<p class="wp-mcp-ai-setup-command"><strong><?php echo esc_js( __( 'Setup Command:', 'mcp-ai-wpoos' ) ); ?></strong> <code>' + escapeHtml(response.data.setup_command) + '</code></p>';
 										}
 										
 										statusDiv.html(errorHtml);
 									} else {
 										// Handle string error.
-										statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(response.data) + '</p>');
+										statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'mcp-ai-wpoos' ) ); ?> ' + escapeHtml(response.data) + '</p>');
 									}
 								} else {
-									statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'wp-mcp-ai' ) ); ?> ' + escapeHtml(errorMessage) + '</p>');
+									statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'mcp-ai-wpoos' ) ); ?> ' + escapeHtml(errorMessage) + '</p>');
 								}
 							}
 						},
 						error: function() {
 							button.prop('disabled', false);
-							statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'An error occurred while running the test.', 'wp-mcp-ai' ) ); ?></p>');
+							statusDiv.html('<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'An error occurred while running the test.', 'mcp-ai-wpoos' ) ); ?></p>');
 						}
 					});
 				});

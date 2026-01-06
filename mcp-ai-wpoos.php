@@ -76,14 +76,15 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	}
 
 	/**
-	 * Register PHP version notice on init to avoid early translation loading.
+	 * Register PHP version notice on admin_init to avoid early translation loading.
 	 *
 	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+	 * Using admin_init ensures notices are registered after init completes.
 	 */
 	function wp_mcp_ai_register_php_version_notice() {
 		add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
 	}
-	add_action( 'init', 'wp_mcp_ai_register_php_version_notice' );
+	add_action( 'admin_init', 'wp_mcp_ai_register_php_version_notice' );
 
 	/**
 	 * Prevent plugin activation on incompatible PHP versions.
@@ -126,14 +127,15 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 			}
 
 			/**
-			 * Register dev deps error notice on init to avoid early translation loading.
+			 * Register dev deps error notice on admin_init to avoid early translation loading.
 			 *
 			 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+			 * Using admin_init ensures notices are registered after init completes.
 			 */
 			function wp_mcp_ai_register_dev_deps_error_notice() {
 				add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
 			}
-			add_action( 'init', 'wp_mcp_ai_register_dev_deps_error_notice' );
+			add_action( 'admin_init', 'wp_mcp_ai_register_dev_deps_error_notice' );
 		}
 
 		// Log the issue.
@@ -416,6 +418,9 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
 // Load profession search helper for reusable search functionality.
 require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-profession-search-helper.php';
 
+// Load tool presets helper for reusable tool selection presets.
+require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-tool-presets-helper.php';
+
 // Load REST API context parameter fix to prevent caching issues.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php';
 
@@ -524,6 +529,15 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-peer-verifier
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 
+// Load ISO 27001 Asset Inventory REST API.
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-asset-inventory-rest.php';
+
+// Load ISO 27001 Security Training REST API.
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-rest.php';
+
+// Load ISO 27001 Supplier Security REST API (Controls A.5.19-A.5.22).
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
+
 // Load third-party plugin integrations only when not in base version mode.
 if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
@@ -575,6 +589,44 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
+
+	// Load ISO 27001 Asset Inventory System (Control A.5.9).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-asset-inventory-admin.php';
+	// Initialize Asset Inventory singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
+	WP_MCP_AI_Asset_Inventory::get_instance();
+
+	// Load ISO 27001 Security Training System (Control A.6.3).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-training.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-training-admin.php';
+	// Initialize Security Training singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
+	WP_MCP_AI_Security_Training::get_instance();
+
+	// Load ISO 27001 Supplier Security Management (Controls A.5.19-A.5.22).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-supplier-security.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-supplier-security-admin.php';
+	// Initialize Supplier Security singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
+	WP_MCP_AI_Supplier_Security::get_instance();
+
+	// Load ISO 27001 Information Labelling System (Control A.5.13).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-information-labelling.php';
+	// Initialize Information Labelling singleton.
+	WP_MCP_AI_Information_Labelling::get_instance();
+
+	// Load ISO 27001 Incident Learning System (Control A.5.27).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-incident-learning.php';
+	// Initialize Incident Learning singleton.
+	WP_MCP_AI_Incident_Learning::get_instance();
+
+	// Load ISO 27001 Security Audit System (Control A.5.35).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-audit.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-audit-admin.php';
+	// Initialize Security Audit singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
+	WP_MCP_AI_Security_Audit::get_instance();
 
 	// Load diagnostic pages (always available under Tools menu).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
@@ -643,8 +695,28 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-key-rotation.php';
 	WP_MCP_AI_Admin_Key_Rotation::init();
 
+	// Load ISO 27001 certification badge display.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-iso27001-badge.php';
+
+	// Load Pro Dashboard for ISO 27001 compliance management.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-database.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-license.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-report-generator.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
+	
+	// Initialize Pro Dashboard components.
+	new WP_MCP_AI_Pro_Database();
+	new WP_MCP_AI_Pro_License();
+	WP_MCP_AI_Pro_Dashboard::get_instance(); // Use singleton pattern.
+	new WP_MCP_AI_Pro_Dashboard_REST();
+
 	/**
 	 * Add plugin action links in the plugins list.
+	 *
+	 * Note: These links use untranslated text to avoid triggering translation loading
+	 * before the init action. "Settings" and "Diagnostic" are common technical terms
+	 * that are widely understood and often left untranslated in WordPress plugins.
 	 *
 	 * @param array $links Existing plugin action links.
 	 * @return array Modified plugin action links.
@@ -654,22 +726,14 @@ if ( is_admin() ) {
 		$diagnostic_link = admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' );
 
 		$plugin_links = array(
-			'settings'   => '<a href="' . esc_url( $settings_link ) . '">' . esc_html__( 'Settings', 'wp-mcp-ai' ) . '</a>',
-			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">' . esc_html__( 'Diagnostic', 'wp-mcp-ai' ) . '</a>',
+			'settings'   => '<a href="' . esc_url( $settings_link ) . '">Settings</a>',
+			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">Diagnostic</a>',
 		);
 
 		return array_merge( $plugin_links, $links );
 	}
 
-	/**
-	 * Register plugin action links on init to avoid early translation loading.
-	 *
-	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-	 */
-	function wp_mcp_ai_register_plugin_action_links() {
-		add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
-	}
-	add_action( 'init', 'wp_mcp_ai_register_plugin_action_links' );
+	add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -1394,7 +1458,7 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 
 		?>
 		<div class="notice <?php echo esc_attr( $notice_class ); ?> is-dismissible">
-			<h3><?php esc_html_e( 'Open Operator System Security Warning', 'wp-mcp-ai' ); ?></h3>
+			<h3><?php esc_html_e( 'Open Operator System Security Warning', 'mcp-ai-wpoos' ); ?></h3>
 			<p><strong><?php echo esc_html( $recommendation ); ?></strong></p>
 			
 			<?php if ( ! empty( $summary ) ) : ?>
@@ -1402,7 +1466,7 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 					<?php
 					printf(
 						/* translators: 1: number of critical issues, 2: number of warnings */
-						esc_html__( 'Security Check Results: %1$d critical issue(s), %2$d warning(s)', 'wp-mcp-ai' ),
+						esc_html__( 'Security Check Results: %1$d critical issue(s), %2$d warning(s)', 'mcp-ai-wpoos' ),
 						isset( $summary['critical'] ) ? absint( $summary['critical'] ) : 0,
 						isset( $summary['warning'] ) ? absint( $summary['warning'] ) : 0
 					);
@@ -1427,14 +1491,14 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 			<?php endif; ?>
 
 			<p>
-				<?php esc_html_e( 'This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.', 'mcp-ai-wpoos' ); ?>
 			</p>
 			<p>
 				<em>
 					<?php
 					printf(
 						/* translators: %s: code snippet for wp-config.php */
-						esc_html__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'wp-mcp-ai' ),
+						esc_html__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'mcp-ai-wpoos' ),
 						'<code>define( \'WP_MCP_AI_SKIP_SECURITY_CHECK\', true );</code>'
 					);
 					?>
@@ -1446,14 +1510,15 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 }
 
 /**
- * Register activation security notice on init to avoid early translation loading.
+ * Register activation security notice on admin_init to avoid early translation loading.
  *
  * WordPress 6.7.0+ requires translations to be loaded at init or later.
+ * Using admin_init ensures translations are available before admin notices are displayed.
  */
 function wp_mcp_ai_register_activation_security_notice() {
 	add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
 }
-add_action( 'init', 'wp_mcp_ai_register_activation_security_notice' );
+add_action( 'admin_init', 'wp_mcp_ai_register_activation_security_notice' );
 
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**

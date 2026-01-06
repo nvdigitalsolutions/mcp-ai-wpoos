@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Check WP-CLI Status', 'wp-mcp-ai' );
+		return __( 'Check WP-CLI Status', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Inspects the server for a WP-CLI binary and reports path, version, and execution support.', 'wp-mcp-ai' );
+		return __( 'Inspects the server for a WP-CLI binary and reports path, version, and execution support.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -58,24 +58,24 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_wp_cli_tools'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The check_wp_cli tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai' )
+				__( 'The check_wp_cli tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect the WP-CLI environment.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect the WP-CLI environment.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$candidates  = $this->get_candidate_paths();
 		$binary_info = $this->locate_binary( $candidates );
 		$result      = array(
-			'summary'       => $binary_info ? __( 'WP-CLI check complete', 'wp-mcp-ai' ) : __( 'WP-CLI not found', 'wp-mcp-ai' ),
+			'summary'       => $binary_info ? __( 'WP-CLI check complete', 'mcp-ai-wpoos-pro' ) : __( 'WP-CLI not found', 'mcp-ai-wpoos-pro' ),
 			'available'     => (bool) $binary_info,
 			'binary_path'   => $binary_info ? $binary_info['path'] : '',
 			'binary_type'   => $binary_info ? $binary_info['type'] : '',
@@ -86,16 +86,16 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 
 		if ( ! $binary_info ) {
-			$result['notes'][] = __( 'Unable to locate a wp binary in the expected paths or the current PATH environment.', 'wp-mcp-ai' );
+			$result['notes'][] = __( 'Unable to locate a wp binary in the expected paths or the current PATH environment.', 'mcp-ai-wpoos-pro' );
 			return $result;
 		}
 
 		if ( 'phar' === $binary_info['type'] ) {
-			$result['notes'][] = __( 'A wp-cli.phar archive was discovered. Ensure the PHP binary can execute it (for example: php wp-cli.phar --version).', 'wp-mcp-ai' );
+			$result['notes'][] = __( 'A wp-cli.phar archive was discovered. Ensure the PHP binary can execute it (for example: php wp-cli.phar --version).', 'mcp-ai-wpoos-pro' );
 		}
 
 		if ( ! $result['can_execute'] ) {
-			$result['notes'][] = __( 'Process execution functions (proc_open) are disabled, so the wp binary could not be interrogated for its version.', 'wp-mcp-ai' );
+			$result['notes'][] = __( 'Process execution functions (proc_open) are disabled, so the wp binary could not be interrogated for its version.', 'mcp-ai-wpoos-pro' );
 			return $result;
 		}
 
@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			if ( is_array( $data ) && ! empty( $data['stderr'] ) ) {
 				$result['notes'][] = sprintf(
 					/* translators: %s: WP-CLI stderr output. */
-					__( 'WP-CLI reported: %s', 'wp-mcp-ai' ),
+					__( 'WP-CLI reported: %s', 'mcp-ai-wpoos-pro' ),
 					$data['stderr']
 				);
 			}
@@ -123,7 +123,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! empty( $version_data['stderr'] ) ) {
 			$result['notes'][] = sprintf(
 				/* translators: %s: WP-CLI stderr output. */
-				__( 'WP-CLI emitted warnings: %s', 'wp-mcp-ai' ),
+				__( 'WP-CLI emitted warnings: %s', 'mcp-ai-wpoos-pro' ),
 				$version_data['stderr']
 			);
 		}
@@ -145,7 +145,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$php_binary = $this->get_php_binary();
 
 			if ( ! $php_binary ) {
-				return new WP_Error( 'wp_mcp_ai_wp_cli_php_missing', __( 'Unable to locate the PHP binary required to execute wp-cli.phar.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_wp_cli_php_missing', __( 'Unable to locate the PHP binary required to execute wp-cli.phar.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			$command = sprintf(
@@ -168,7 +168,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				'wp_mcp_ai_wp_cli_non_zero_exit',
 				sprintf(
 					/* translators: 1: exit code, 2: command. */
-					__( 'WP-CLI exited with code %1$s when executing %2$s.', 'wp-mcp-ai' ),
+					__( 'WP-CLI exited with code %1$s when executing %2$s.', 'mcp-ai-wpoos-pro' ),
 					$run['exit_code'],
 					$command
 				),
@@ -181,7 +181,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( empty( $version ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wp_cli_unknown_version',
-				__( 'WP-CLI executed successfully but the version string could not be determined.', 'wp-mcp-ai' ),
+				__( 'WP-CLI executed successfully but the version string could not be determined.', 'mcp-ai-wpoos-pro' ),
 				$run
 			);
 		}
@@ -202,7 +202,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	protected function run_process( $command ) {
 		if ( ! $this->can_execute_processes() ) {
-			return new WP_Error( 'wp_mcp_ai_process_disabled', __( 'Server configuration prevents executing external processes.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_process_disabled', __( 'Server configuration prevents executing external processes.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$descriptor_spec = array(
@@ -214,7 +214,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$process = proc_open( $command, $descriptor_spec, $pipes );
 
 		if ( ! is_resource( $process ) ) {
-			return new WP_Error( 'wp_mcp_ai_process_failure', __( 'Failed to open a process for the requested command.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_process_failure', __( 'Failed to open a process for the requested command.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		fclose( $pipes[0] );

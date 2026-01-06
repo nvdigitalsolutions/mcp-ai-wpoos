@@ -58,16 +58,16 @@ Created 4 comprehensive guides:
 // Added debug logging in 4 key functions:
 
 // 1. normaliseUploadResponse (line ~5577)
-console.log('[WP oOS] normaliseUploadResponse - created record:', {...});
+console.log('[NV oOS] normaliseUploadResponse - created record:', {...});
 
 // 2. renderPendingAttachments (line ~5638)
-console.log('[WP oOS] renderPendingAttachments - attachment data:', {...});
+console.log('[NV oOS] renderPendingAttachments - attachment data:', {...});
 
 // 3. buildDisplayAttachment (line ~5765)
-console.log('[WP oOS] buildDisplayAttachment - creating display attachment:', {...});
+console.log('[NV oOS] buildDisplayAttachment - creating display attachment:', {...});
 
 // 4. buildAttachmentMeta (line ~6628)
-console.log('[WP oOS] buildAttachmentMeta - ID resolution:', {...});
+console.log('[NV oOS] buildAttachmentMeta - ID resolution:', {...});
 ```
 
 ### Files Modified
@@ -106,7 +106,7 @@ redis-cli FLUSHALL  # if using Redis
 1. Open chat page
 2. Open browser console (F12)
 3. Attach a file
-4. Look for `[WP oOS]` console logs
+4. Look for `[NV oOS]` console logs
 5. Verify UI shows "ID: XXX"
 
 ### 3. Diagnose
@@ -146,7 +146,7 @@ Once working:
 When you attach a file, you should see:
 
 ```javascript
-[WP oOS] normaliseUploadResponse - created record: {
+[NV oOS] normaliseUploadResponse - created record: {
   id: 2360,
   fileId: 'wp-attachment-2360',
   name: '81R4xIDAR1L._SL1500_',
@@ -156,7 +156,7 @@ When you attach a file, you should see:
   from_data_data_id: 'N/A'
 }
 
-[WP oOS] renderPendingAttachments - attachment data: {
+[NV oOS] renderPendingAttachments - attachment data: {
   id: 2360,
   fileId: 'wp-attachment-2360',
   name: '81R4xIDAR1L._SL1500_',
@@ -165,14 +165,14 @@ When you attach a file, you should see:
   metaText: '219.3 KB • image/jpeg • ID: 2360'
 }
 
-[WP oOS] buildDisplayAttachment - creating display attachment: {
+[NV oOS] buildDisplayAttachment - creating display attachment: {
   attachment_id: 2360,
   record_id: 2360,
   found_in_library: true,
   meta: '219.3 KB • image/jpeg • ID: 2360'
 }
 
-[WP oOS] buildAttachmentMeta - ID resolution: {
+[NV oOS] buildAttachmentMeta - ID resolution: {
   record_id: 2360,
   record_id_type: 'number',
   resolved_attachmentId: 2360,
@@ -212,7 +212,7 @@ When you attach a file, you should see:
 ## Support
 
 If you need help:
-1. Collect all `[WP oOS]` console logs
+1. Collect all `[NV oOS]` console logs
 2. Screenshot Network tab showing upload response
 3. Inspect HTML element showing metadata
 4. Check ATTACHMENT_ID_TROUBLESHOOTING.md

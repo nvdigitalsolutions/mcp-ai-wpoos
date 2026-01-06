@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get OpenAI File Details', 'wp-mcp-ai' );
+		return __( 'Get OpenAI File Details', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves detailed metadata about a specific OpenAI file. Use this to verify file upload success, check file processing status, get file size and format info, or debug file-related issues.', 'wp-mcp-ai' );
+		return __( 'Retrieves detailed metadata about a specific OpenAI file. Use this to verify file upload success, check file processing status, get file size and format info, or debug file-related issues.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'file_id' => array(
 					'type'        => 'string',
-					'description' => __( 'The OpenAI file identifier (e.g., file-abc123).', 'wp-mcp-ai' ),
+					'description' => __( 'The OpenAI file identifier (e.g., file-abc123).', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'file_id' ),
@@ -65,19 +65,19 @@ class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to retrieve OpenAI file details.', 'wp-mcp-ai' )
+				__( 'You do not have permission to retrieve OpenAI file details.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate file_id.
 		if ( ! isset( $arguments['file_id'] ) || '' === $arguments['file_id'] ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_file_id',
-				__( 'File ID is required.', 'wp-mcp-ai' )
+				__( 'File ID is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -113,7 +113,7 @@ class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface
 			'file'    => $file_details,
 			'summary' => sprintf(
 				/* translators: 1: filename, 2: file size in bytes */
-				__( 'Retrieved details for file "%1$s" (%2$d bytes).', 'wp-mcp-ai' ),
+				__( 'Retrieved details for file "%1$s" (%2$d bytes).', 'mcp-ai-wpoos' ),
 				$file_details['filename'],
 				$file_details['bytes']
 			),

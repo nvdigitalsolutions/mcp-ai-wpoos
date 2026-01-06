@@ -40,8 +40,8 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
-			__( 'Crawl4AI Monitor', 'wp-mcp-ai' ),
-			__( 'Crawl4AI Monitor', 'wp-mcp-ai' ),
+			__( 'Crawl4AI Monitor', 'mcp-ai-wpoos' ),
+			__( 'Crawl4AI Monitor', 'mcp-ai-wpoos' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
@@ -152,12 +152,12 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 		$jobs  = $this->get_recent_jobs();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Crawl4AI Monitor', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'Crawl4AI Monitor', 'mcp-ai-wpoos' ); ?></h1>
 
 			<div class="wp-mcp-ai-crawl4ai-monitor__intro">
-				<p><strong><?php esc_html_e( 'About Crawl4AI Monitor', 'wp-mcp-ai' ); ?></strong></p>
-				<p><?php esc_html_e( 'The Crawl4AI Monitor displays web crawling jobs, browser pool status, and job history for the Crawl4AI integration. Crawl4AI allows AI assistants to scrape and extract data from websites using browser automation.', 'wp-mcp-ai' ); ?></p>
-				<p><?php esc_html_e( 'Configure Crawl4AI settings in NV oOS → Integrations → External Tools to connect to your Crawl4AI server.', 'wp-mcp-ai' ); ?></p>
+				<p><strong><?php esc_html_e( 'About Crawl4AI Monitor', 'mcp-ai-wpoos' ); ?></strong></p>
+				<p><?php esc_html_e( 'The Crawl4AI Monitor displays web crawling jobs, browser pool status, and job history for the Crawl4AI integration. Crawl4AI allows AI assistants to scrape and extract data from websites using browser automation.', 'mcp-ai-wpoos' ); ?></p>
+				<p><?php esc_html_e( 'Configure Crawl4AI settings in NV oOS → Integrations → External Tools to connect to your Crawl4AI server.', 'mcp-ai-wpoos' ); ?></p>
 			</div>
 
 			<?php
@@ -175,7 +175,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 						<?php
 						printf(
 							/* translators: %s: URL to settings page */
-							wp_kses_post( __( 'Crawl4AI is not configured. Please configure it in <a href="%s">NV oOS → Integrations → External Tools</a>.', 'wp-mcp-ai' ) ),
+							wp_kses_post( __( 'Crawl4AI is not configured. Please configure it in <a href="%s">NV oOS → Integrations → External Tools</a>.', 'mcp-ai-wpoos' ) ),
 							esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=integrations' ) )
 						);
 						?>
@@ -187,45 +187,45 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 
 			<div class="wp-mcp-ai-crawl4ai-monitor__stats">
 				<div class="wp-mcp-ai-crawl4ai-monitor__stat">
-					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Total Jobs', 'wp-mcp-ai' ); ?></div>
+					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Total Jobs', 'mcp-ai-wpoos' ); ?></div>
 					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value"><?php echo esc_html( $stats['total_jobs'] ); ?></div>
 				</div>
 				<div class="wp-mcp-ai-crawl4ai-monitor__stat">
-					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Running', 'wp-mcp-ai' ); ?></div>
+					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Running', 'mcp-ai-wpoos' ); ?></div>
 					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value"><?php echo esc_html( $stats['running_jobs'] ); ?></div>
 				</div>
 				<div class="wp-mcp-ai-crawl4ai-monitor__stat">
-					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Completed', 'wp-mcp-ai' ); ?></div>
+					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Completed', 'mcp-ai-wpoos' ); ?></div>
 					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value"><?php echo esc_html( $stats['completed_jobs'] ); ?></div>
 				</div>
 				<div class="wp-mcp-ai-crawl4ai-monitor__stat">
-					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Failed', 'wp-mcp-ai' ); ?></div>
+					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Failed', 'mcp-ai-wpoos' ); ?></div>
 					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value"><?php echo esc_html( $stats['failed_jobs'] ); ?></div>
 				</div>
 				<div class="wp-mcp-ai-crawl4ai-monitor__stat">
-					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Browser Pools', 'wp-mcp-ai' ); ?></div>
+					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Browser Pools', 'mcp-ai-wpoos' ); ?></div>
 					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value"><?php echo esc_html( $stats['browser_pools'] ); ?></div>
 				</div>
 			</div>
 
 			<?php if ( empty( $jobs ) ) : ?>
 				<div class="wp-mcp-ai-crawl4ai-monitor__empty">
-					<h3><?php esc_html_e( 'No Crawl Jobs Yet', 'wp-mcp-ai' ); ?></h3>
-					<p><?php esc_html_e( 'No web crawling jobs have been executed yet. The AI Assistant can create crawl jobs using the run_crawl4ai_job tool.', 'wp-mcp-ai' ); ?></p>
+					<h3><?php esc_html_e( 'No Crawl Jobs Yet', 'mcp-ai-wpoos' ); ?></h3>
+					<p><?php esc_html_e( 'No web crawling jobs have been executed yet. The AI Assistant can create crawl jobs using the run_crawl4ai_job tool.', 'mcp-ai-wpoos' ); ?></p>
 					<?php if ( $crawl4ai_configured ) : ?>
-						<p><?php esc_html_e( 'Once the assistant creates crawl jobs, they will appear here for monitoring and review.', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'Once the assistant creates crawl jobs, they will appear here for monitoring and review.', 'mcp-ai-wpoos' ); ?></p>
 					<?php endif; ?>
 				</div>
 			<?php else : ?>
 				<table class="wp-mcp-ai-crawl4ai-monitor__table">
 					<thead>
 						<tr>
-							<th scope="col"><?php esc_html_e( 'Job ID', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'URL', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Started', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Duration', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Browser Pool', 'wp-mcp-ai' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Job ID', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'URL', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Started', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Duration', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Browser Pool', 'mcp-ai-wpoos' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>

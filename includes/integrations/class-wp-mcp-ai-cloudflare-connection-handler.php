@@ -30,7 +30,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 		 */
 		public function handle_cloudflare_test_connection() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_cloudflare_test_connection' );
@@ -40,7 +40,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 			if ( empty( $settings['cloudflare_api_token'] ) ) {
 				$this->add_settings_redirect_notice(
 					'cloudflare_missing_token',
-					__( 'Enter your Cloudflare API token before testing the connection.', 'wp-mcp-ai' ),
+					__( 'Enter your Cloudflare API token before testing the connection.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -60,7 +60,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 					'cloudflare_token_invalid',
 					sprintf(
 						/* translators: %s: Error message. */
-						__( 'Cloudflare API token is invalid: %s', 'wp-mcp-ai' ),
+						__( 'Cloudflare API token is invalid: %s', 'mcp-ai-wpoos' ),
 						$token_verification->get_error_message()
 					),
 					'error'
@@ -81,7 +81,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 						'cloudflare_zone_invalid',
 						sprintf(
 							/* translators: %s: Error message. */
-							__( 'Cloudflare Zone ID verification failed: %s', 'wp-mcp-ai' ),
+							__( 'Cloudflare Zone ID verification failed: %s', 'mcp-ai-wpoos' ),
 							$zone_verification->get_error_message()
 						),
 						'error'
@@ -101,11 +101,11 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 
 			update_option( 'wp_mcp_ai_settings', $settings );
 
-			$message = __( 'Successfully connected to Cloudflare! Your API token is valid.', 'wp-mcp-ai' );
+			$message = __( 'Successfully connected to Cloudflare! Your API token is valid.', 'mcp-ai-wpoos' );
 			if ( ! empty( $settings['cloudflare_zone_name'] ) ) {
 				$message .= ' ' . sprintf(
 					/* translators: %s: Zone name. */
-					__( 'Zone "%s" is accessible.', 'wp-mcp-ai' ),
+					__( 'Zone "%s" is accessible.', 'mcp-ai-wpoos' ),
 					$settings['cloudflare_zone_name']
 				);
 			}
@@ -123,7 +123,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 		 */
 		public function handle_cloudflare_disconnect() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_cloudflare_disconnect' );
@@ -141,7 +141,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 
 			$this->add_settings_redirect_notice(
 				'cloudflare_disconnected',
-				__( 'Disconnected from Cloudflare. Your API token remains saved for future connections.', 'wp-mcp-ai' ),
+				__( 'Disconnected from Cloudflare. Your API token remains saved for future connections.', 'mcp-ai-wpoos' ),
 				'success'
 			);
 			$this->redirect_to_settings_page();
@@ -193,7 +193,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 				} else {
 					$error_message = sprintf(
 						/* translators: %d: HTTP status code. */
-						__( 'HTTP %d response', 'wp-mcp-ai' ),
+						__( 'HTTP %d response', 'mcp-ai-wpoos' ),
 						$status_code
 					);
 				}
@@ -209,7 +209,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 			if ( ! is_array( $decoded ) || ! isset( $decoded['success'] ) || true !== $decoded['success'] ) {
 				return new WP_Error(
 					'wp_mcp_ai_cloudflare_invalid_response',
-					__( 'Cloudflare returned an invalid response.', 'wp-mcp-ai' )
+					__( 'Cloudflare returned an invalid response.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -261,7 +261,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 				} else {
 					$error_message = sprintf(
 						/* translators: %d: HTTP status code. */
-						__( 'HTTP %d response', 'wp-mcp-ai' ),
+						__( 'HTTP %d response', 'mcp-ai-wpoos' ),
 						$status_code
 					);
 				}
@@ -277,7 +277,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 			if ( ! is_array( $decoded ) || ! isset( $decoded['success'] ) || true !== $decoded['success'] ) {
 				return new WP_Error(
 					'wp_mcp_ai_cloudflare_invalid_zone_response',
-					__( 'Could not verify zone information.', 'wp-mcp-ai' )
+					__( 'Could not verify zone information.', 'mcp-ai-wpoos' )
 				);
 			}
 

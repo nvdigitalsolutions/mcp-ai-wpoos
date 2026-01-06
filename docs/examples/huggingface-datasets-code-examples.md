@@ -1061,7 +1061,7 @@ function wpoos_display_category_suggestions_column( $column, $post_id ) {
 ```php
 <?php
 /**
- * Plugin Name: WP oOS Comment Moderation
+ * Plugin Name: NV oOS Comment Moderation
  * Description: Automatic comment moderation using HuggingFace datasets
  * Version: 1.0.0
  */

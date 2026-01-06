@@ -64,14 +64,14 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'OpenAI Usage Analytics', 'wp-mcp-ai' );
+		return __( 'OpenAI Usage Analytics', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Provides analytics on OpenAI API usage including total requests, tokens used, and estimated costs. Helps monitor and optimize API usage.', 'wp-mcp-ai' );
+		return __( 'Provides analytics on OpenAI API usage including total requests, tokens used, and estimated costs. Helps monitor and optimize API usage.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -83,27 +83,27 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 			'properties' => array(
 				'period'       => array(
 					'type'        => 'string',
-					'description' => __( 'Time period for analytics.', 'wp-mcp-ai' ),
+					'description' => __( 'Time period for analytics.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'today', 'week', 'month', 'custom' ),
 					'default'     => 'month',
 				),
 				'start_date'   => array(
 					'type'        => 'string',
-					'description' => __( 'Start date for custom period (YYYY-MM-DD).', 'wp-mcp-ai' ),
+					'description' => __( 'Start date for custom period (YYYY-MM-DD).', 'mcp-ai-wpoos' ),
 				),
 				'end_date'     => array(
 					'type'        => 'string',
-					'description' => __( 'End date for custom period (YYYY-MM-DD).', 'wp-mcp-ai' ),
+					'description' => __( 'End date for custom period (YYYY-MM-DD).', 'mcp-ai-wpoos' ),
 				),
 				'group_by'     => array(
 					'type'        => 'string',
-					'description' => __( 'How to group results.', 'wp-mcp-ai' ),
+					'description' => __( 'How to group results.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'model', 'tool', 'date', 'user' ),
 					'default'     => 'model',
 				),
 				'include_cost' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to calculate estimated costs.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to calculate estimated costs.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 			),
@@ -180,14 +180,14 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 
 			case 'custom':
 				if ( empty( $arguments['start_date'] ) || empty( $arguments['end_date'] ) ) {
-					return new WP_Error( 'missing_dates', __( 'Start and end dates are required for custom period.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'missing_dates', __( 'Start and end dates are required for custom period.', 'mcp-ai-wpoos' ) );
 				}
 
 				$start = strtotime( sanitize_text_field( $arguments['start_date'] ) );
 				$end   = strtotime( sanitize_text_field( $arguments['end_date'] ) );
 
 				if ( false === $start || false === $end ) {
-					return new WP_Error( 'invalid_dates', __( 'Invalid date format. Use YYYY-MM-DD.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'invalid_dates', __( 'Invalid date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos' ) );
 				}
 				break;
 

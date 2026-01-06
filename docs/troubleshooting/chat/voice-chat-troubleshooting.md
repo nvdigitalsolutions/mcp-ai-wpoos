@@ -1,6 +1,6 @@
 # Voice Chat Troubleshooting Guide
 
-This document provides troubleshooting steps for voice chat issues in Open Operator System (WP oOS).
+This document provides troubleshooting steps for voice chat issues in Open Operator System (NV oOS).
 
 ## Common Issue: Voice Chat Returns 404 Error
 
@@ -37,14 +37,14 @@ Some security plugins or server configurations may block custom REST API endpoin
 The Tools Controller might not be properly loaded if there was an error during plugin activation.
 
 **Solution:**
-1. Deactivate WP oOS plugin
+1. Deactivate NV oOS plugin
 2. Check PHP error logs for any errors
 3. Re-activate the plugin
 4. Flush permalinks (Settings → Permalinks → Save)
 
 #### 4. PHP Version Compatibility
 
-WP oOS requires PHP 7.4 or higher.
+NV oOS requires PHP 7.4 or higher.
 
 **Solution:**
 1. Check your PHP version (WordPress Admin → Site Health → Info → Server)
@@ -187,10 +187,10 @@ Check `wp-content/debug.log` for errors related to:
 - WP_MCP_AI_REST class
 - WP_MCP_AI_REST_Tools_Controller class
 
-#### Enable WP oOS Logging
+#### Enable NV oOS Logging
 
 In WordPress Admin:
-1. Go to Settings → WP oOS
+1. Go to Settings → NV oOS
 2. Enable "Debug Logging"
 3. Use voice chat
 4. Check the logs for detailed error information
@@ -217,7 +217,7 @@ If none of the above solutions work:
 2. Open a new issue with:
    - WordPress version
    - PHP version
-   - WP oOS version
+   - NV oOS version
    - Console error logs
    - Server error logs (if accessible)
    - Steps to reproduce

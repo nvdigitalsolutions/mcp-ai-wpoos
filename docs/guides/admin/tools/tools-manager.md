@@ -1,4 +1,4 @@
-# Tools Manager - WP oOS
+# Tools Manager - NV oOS
 
 ## Overview
 
@@ -6,7 +6,7 @@ The **Tools Manager** is a comprehensive interface for viewing and managing all 
 
 ## Accessing the Tools Manager
 
-1. Navigate to **Settings → WP oOS** in the WordPress admin
+1. Navigate to **Settings → NV oOS** in the WordPress admin
 2. Click on the **Tools & Features** tab
 3. The **Tools Manager** subtab is shown by default
 

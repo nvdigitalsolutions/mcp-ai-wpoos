@@ -31,7 +31,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Professional Playbook', 'wp-mcp-ai' );
+		return __( 'Professional Playbook', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -60,7 +60,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 	 */
 	public function render( $post ) {
 		if ( ! $this->can_view( $post ) ) {
-			wp_die( esc_html__( 'You do not have permission to edit this profession.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You do not have permission to edit this profession.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
 		}
 
 		// Deduplicate playbook attachments before displaying.
@@ -82,7 +82,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 		?>
 		<div class="wp-mcp-ai-profession-playbook">
 			<p class="description" style="margin-bottom: 15px;">
-				<?php esc_html_e( 'Playbooks are automatically assembled from modular text files (global + category + profession) and provide actionable instructions for AI assistants.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Playbooks are automatically assembled from modular text files (global + category + profession) and provide actionable instructions for AI assistants.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<?php if ( $playbook_attachment ) : ?>
@@ -96,23 +96,23 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 				
 				<div class="wp-mcp-ai-playbook-status" style="padding: 12px; background: #f0f0f1; border-left: 3px solid #2271b1; margin-bottom: 15px;">
 					<p style="margin: 0 0 8px 0;">
-						<strong><?php esc_html_e( 'Status:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?></strong>
 						<span class="dashicons dashicons-yes-alt" style="color: #00a32a; vertical-align: middle;"></span>
-						<span style="color: #00a32a;"><?php esc_html_e( 'Generated', 'wp-mcp-ai' ); ?></span>
+						<span style="color: #00a32a;"><?php esc_html_e( 'Generated', 'mcp-ai-wpoos' ); ?></span>
 					</p>
 					<p style="margin: 0 0 4px 0; font-size: 12px; color: #646970;">
-						<strong><?php esc_html_e( 'Size:', 'wp-mcp-ai' ); ?></strong> <?php echo esc_html( $file_size ); ?>
+						<strong><?php esc_html_e( 'Size:', 'mcp-ai-wpoos' ); ?></strong> <?php echo esc_html( $file_size ); ?>
 					</p>
 					<p style="margin: 0 0 4px 0; font-size: 12px; color: #646970;">
-						<strong><?php esc_html_e( 'Updated:', 'wp-mcp-ai' ); ?></strong> 
+						<strong><?php esc_html_e( 'Updated:', 'mcp-ai-wpoos' ); ?></strong> 
 						<?php
 						/* translators: %s: Time difference */
-						echo esc_html( sprintf( __( '%s ago', 'wp-mcp-ai' ), human_time_diff( $last_modified ) ) );
+						echo esc_html( sprintf( __( '%s ago', 'mcp-ai-wpoos' ), human_time_diff( $last_modified ) ) );
 						?>
 					</p>
 					<?php if ( $hash ) : ?>
 						<p style="margin: 0; font-size: 12px; color: #646970;">
-							<strong><?php esc_html_e( 'Hash:', 'wp-mcp-ai' ); ?></strong> 
+							<strong><?php esc_html_e( 'Hash:', 'mcp-ai-wpoos' ); ?></strong> 
 							<code style="font-size: 10px;"><?php echo esc_html( substr( $hash, 0, 16 ) ); ?>...</code>
 						</p>
 					<?php endif; ?>
@@ -121,7 +121,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 				<p style="margin-bottom: 10px;">
 					<a href="<?php echo esc_url( $file_url ); ?>" class="button button-secondary" target="_blank" style="width: 100%; text-align: center;">
 						<span class="dashicons dashicons-visibility" style="vertical-align: middle;"></span>
-						<?php esc_html_e( 'View Playbook', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'View Playbook', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</p>
 
@@ -129,9 +129,9 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 				
 				<div class="wp-mcp-ai-playbook-status" style="padding: 12px; background: #fff3cd; border-left: 3px solid #f0b849; margin-bottom: 15px;">
 					<p style="margin: 0;">
-						<strong><?php esc_html_e( 'Status:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?></strong>
 						<span class="dashicons dashicons-warning" style="color: #f0b849; vertical-align: middle;"></span>
-						<span style="color: #856404;"><?php esc_html_e( 'Not Generated', 'wp-mcp-ai' ); ?></span>
+						<span style="color: #856404;"><?php esc_html_e( 'Not Generated', 'mcp-ai-wpoos' ); ?></span>
 					</p>
 				</div>
 
@@ -140,7 +140,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 			<p style="margin-bottom: 10px;">
 				<button type="button" class="button button-primary wp-mcp-ai-regenerate-playbook" data-profession-id="<?php echo esc_attr( $post->ID ); ?>" style="width: 100%;">
 					<span class="dashicons dashicons-update" style="vertical-align: middle;"></span>
-					<?php esc_html_e( 'Regenerate Playbook', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Regenerate Playbook', 'mcp-ai-wpoos' ); ?>
 				</button>
 			</p>
 
@@ -150,23 +150,23 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 
 			<details style="margin-top: 15px;">
 				<summary style="cursor: pointer; color: #2271b1; font-weight: 500;">
-					<?php esc_html_e( 'How Playbooks Work', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'How Playbooks Work', 'mcp-ai-wpoos' ); ?>
 				</summary>
 				<div style="margin-top: 10px; padding: 10px; background: #f9f9f9; font-size: 12px; line-height: 1.6;">
 					<p style="margin: 0 0 8px 0;">
-						<?php esc_html_e( 'Playbooks are assembled from three layers:', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Playbooks are assembled from three layers:', 'mcp-ai-wpoos' ); ?>
 					</p>
 					<ol style="margin: 0 0 8px 20px; padding: 0;">
-						<li><strong><?php esc_html_e( 'Global Guidelines', 'wp-mcp-ai' ); ?></strong> - <?php esc_html_e( 'Universal professional conduct principles', 'wp-mcp-ai' ); ?></li>
-						<li><strong><?php esc_html_e( 'Category Workflows', 'wp-mcp-ai' ); ?></strong> - <?php esc_html_e( 'Standards shared across this profession category', 'wp-mcp-ai' ); ?></li>
-						<li><strong><?php esc_html_e( 'Profession-Specific', 'wp-mcp-ai' ); ?></strong> - <?php esc_html_e( 'Detailed instructions unique to this profession', 'wp-mcp-ai' ); ?></li>
+						<li><strong><?php esc_html_e( 'Global Guidelines', 'mcp-ai-wpoos' ); ?></strong> - <?php esc_html_e( 'Universal professional conduct principles', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong><?php esc_html_e( 'Category Workflows', 'mcp-ai-wpoos' ); ?></strong> - <?php esc_html_e( 'Standards shared across this profession category', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong><?php esc_html_e( 'Profession-Specific', 'mcp-ai-wpoos' ); ?></strong> - <?php esc_html_e( 'Detailed instructions unique to this profession', 'mcp-ai-wpoos' ); ?></li>
 					</ol>
 					<p style="margin: 0 0 8px 0;">
-						<?php esc_html_e( 'The system also adds intelligent tool recommendations and region-specific context automatically.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'The system also adds intelligent tool recommendations and region-specific context automatically.', 'mcp-ai-wpoos' ); ?>
 					</p>
 					<p style="margin: 0;">
 						<a href="<?php echo esc_url( WP_MCP_AI_URL . 'includes/knowledge-base/profession-playbooks/README.md' ); ?>" target="_blank">
-							<?php esc_html_e( 'Learn more about playbooks', 'wp-mcp-ai' ); ?> →
+							<?php esc_html_e( 'Learn more about playbooks', 'mcp-ai-wpoos' ); ?> →
 						</a>
 					</p>
 				</div>
@@ -215,7 +215,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 							$message
 								.removeClass('notice-error notice-warning')
 								.addClass('notice-success')
-								.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'Playbook regenerated successfully!', 'wp-mcp-ai' ) ); ?>);
+								.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'Playbook regenerated successfully!', 'mcp-ai-wpoos' ) ); ?>);
 							$message.show();
 							
 							// Reload the page after a short delay to show updated info.
@@ -226,7 +226,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 							$message
 								.removeClass('notice-success notice-warning')
 								.addClass('notice-error')
-								.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'Failed to regenerate playbook.', 'wp-mcp-ai' ) ); ?>);
+								.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'Failed to regenerate playbook.', 'mcp-ai-wpoos' ) ); ?>);
 							$message.show();
 							
 							$button.removeClass('updating').prop('disabled', false);
@@ -236,7 +236,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 						$message
 							.removeClass('notice-success notice-warning')
 							.addClass('notice-error')
-							.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+							.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 						$message.show();
 						
 						$button.removeClass('updating').prop('disabled', false);

@@ -143,7 +143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			// All providers failed, return the last error.
 			return $last_error ? $last_error : new WP_Error(
 				'no_providers_available',
-				__( 'No AI providers are available or configured.', 'wp-mcp-ai' )
+				__( 'No AI providers are available or configured.', 'mcp-ai-wpoos' )
 			);
 		}
 

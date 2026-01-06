@@ -75,7 +75,7 @@ class WP_MCP_AI_Mesh_Router {
 		if ( empty( $settings['enable_mesh'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mesh_disabled',
-				__( 'Mesh networking is not enabled.', 'wp-mcp-ai' )
+				__( 'Mesh networking is not enabled.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -87,7 +87,7 @@ class WP_MCP_AI_Mesh_Router {
 		if ( empty( $peer_sites ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_peers',
-				__( 'No peer sites configured in mesh network.', 'wp-mcp-ai' )
+				__( 'No peer sites configured in mesh network.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -120,7 +120,7 @@ class WP_MCP_AI_Mesh_Router {
 		if ( empty( $healthy_peers ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_healthy_peers',
-				__( 'No healthy peer sites available in mesh network.', 'wp-mcp-ai' )
+				__( 'No healthy peer sites available in mesh network.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -392,7 +392,7 @@ class WP_MCP_AI_Mesh_Router {
 		if ( empty( $peer_url ) || empty( $peer_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_peer_config',
-				__( 'Invalid peer configuration.', 'wp-mcp-ai' )
+				__( 'Invalid peer configuration.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -434,7 +434,7 @@ class WP_MCP_AI_Mesh_Router {
 
 		if ( $status_code < 200 || $status_code >= 300 ) {
 			$error_data = json_decode( $body, true );
-			$error_msg  = isset( $error_data['message'] ) ? $error_data['message'] : __( 'Unknown error', 'wp-mcp-ai' );
+			$error_msg  = isset( $error_data['message'] ) ? $error_data['message'] : __( 'Unknown error', 'mcp-ai-wpoos' );
 
 			return new WP_Error(
 				'wp_mcp_ai_remote_error',
@@ -448,7 +448,7 @@ class WP_MCP_AI_Mesh_Router {
 		if ( ! $data ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from peer site.', 'wp-mcp-ai' )
+				__( 'Invalid response from peer site.', 'mcp-ai-wpoos' )
 			);
 		}
 

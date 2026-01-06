@@ -91,8 +91,8 @@ class WP_MCP_AI_Token_Usage_Service {
 		if ( ! $registry ) {
 			// Fallback to hardcoded tools if registry is not available.
 			$tools = array(
-				'run_crawl4ai_job' => __( 'Crawl4AI Web Scraper', 'wp-mcp-ai' ),
-				'general_tools'    => __( 'General Tools (Default)', 'wp-mcp-ai' ),
+				'run_crawl4ai_job' => __( 'Crawl4AI Web Scraper', 'mcp-ai-wpoos' ),
+				'general_tools'    => __( 'General Tools (Default)', 'mcp-ai-wpoos' ),
 			);
 		} else {
 			// Ensure registry is initialized.
@@ -315,11 +315,11 @@ class WP_MCP_AI_Token_Usage_Service {
 		$provider = sanitize_key( $provider );
 
 		$provider_labels = array(
-			'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
-			'anthropic' => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-			'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
-			'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-			'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+			'openai'    => __( 'OpenAI', 'mcp-ai-wpoos' ),
+			'anthropic' => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+			'gemini'    => __( 'Gemini', 'mcp-ai-wpoos' ),
+			'ollama'    => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
+			'lm_studio' => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 		);
 
 		if ( isset( $provider_labels[ $provider ] ) ) {

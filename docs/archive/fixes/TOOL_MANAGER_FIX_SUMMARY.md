@@ -135,7 +135,7 @@ All security best practices followed:
 
 ## Usage
 
-1. **Navigate** to WP oOS Settings → Tools → Tools Manager
+1. **Navigate** to NV oOS Settings → Tools → Tools Manager
 2. **Search** for tools using name, slug, or description
 3. **Filter** by category (WordPress Core, WordPress Plugins, External Tools)
 4. **Toggle** switches to enable/disable tools

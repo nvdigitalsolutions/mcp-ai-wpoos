@@ -53,7 +53,17 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Default Settings', 'wp-mcp-ai' );
+		return __( 'Default Settings', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @since 1.0.0
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#general-tab';
 	}
 
 	/**
@@ -76,7 +86,7 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	 */
 	public function render( $post ) {
 		if ( ! $this->can_view() ) {
-			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
 		}
 
 		// Enqueue model selector JavaScript.
@@ -96,8 +106,8 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 				array(
 					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
-					'selectModelText' => __( '— Select Model —', 'wp-mcp-ai' ),
-					'errorMessage'    => __( 'Failed to load models. Please try again.', 'wp-mcp-ai' ),
+					'selectModelText' => __( '— Select Model —', 'mcp-ai-wpoos' ),
+					'errorMessage'    => __( 'Failed to load models. Please try again.', 'mcp-ai-wpoos' ),
 				)
 			);
 		}
@@ -138,7 +148,7 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 
 		?>
 	<p>
-		<label for="wp-mcp-ai-provider"><strong><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></strong></label>
+		<label for="wp-mcp-ai-provider"><strong><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></strong></label>
 		<select id="wp-mcp-ai-provider" name="wp_mcp_ai_provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#wp-mcp-ai-model">
 			<?php
 			foreach ( $provider_choices as $choice ) {
@@ -148,10 +158,10 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 				}
 
 				$provider_labels = array(
-					'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
-					'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
-					'ollama'    => __( 'Ollama', 'wp-mcp-ai' ),
-					'lm_studio' => __( 'LM Studio', 'wp-mcp-ai' ),
+					'openai'    => __( 'OpenAI', 'mcp-ai-wpoos' ),
+					'gemini'    => __( 'Gemini', 'mcp-ai-wpoos' ),
+					'ollama'    => __( 'Ollama', 'mcp-ai-wpoos' ),
+					'lm_studio' => __( 'LM Studio', 'mcp-ai-wpoos' ),
 				);
 
 				$label = isset( $provider_labels[ $choice ] ) ? $provider_labels[ $choice ] : ucfirst( str_replace( '_', ' ', $choice ) );
@@ -163,9 +173,9 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 		</select>
 	</p>
 	<p>
-		<label for="wp-mcp-ai-model"><strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong></label>
+		<label for="wp-mcp-ai-model"><strong><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></strong></label>
 		<select id="wp-mcp-ai-model" name="wp_mcp_ai_model" class="widefat">
-			<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+			<option value=""><?php esc_html_e( '— Select Model —', 'mcp-ai-wpoos' ); ?></option>
 			<?php if ( ! empty( $models ) ) : ?>
 				<?php foreach ( $models as $model_id => $model_name ) : ?>
 					<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $model, $model_id ); ?>>
@@ -181,13 +191,14 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 		</select>
 	</p>
 	<p>
-		<label for="wp-mcp-ai-temperature"><strong><?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?></strong></label>
+		<label for="wp-mcp-ai-temperature"><strong><?php esc_html_e( 'Temperature', 'mcp-ai-wpoos' ); ?></strong></label>
 		<input type="number" step="0.1" min="0" max="2" id="wp-mcp-ai-temperature" name="wp_mcp_ai_temperature" value="<?php echo esc_attr( $temperature ); ?>" class="widefat" />
 	</p>
 	<p>
-		<label for="wp-mcp-ai-system-prompt"><strong><?php esc_html_e( 'System Prompt', 'wp-mcp-ai' ); ?></strong></label>
+		<label for="wp-mcp-ai-system-prompt"><strong><?php esc_html_e( 'System Prompt', 'mcp-ai-wpoos' ); ?></strong></label>
 		<textarea id="wp-mcp-ai-system-prompt" name="wp_mcp_ai_system_prompt" class="widefat" rows="5"><?php echo esc_textarea( $system_prompt ); ?></textarea>
 	</p>
 		<?php
+		$this->render_documentation_link();
 	}
 }

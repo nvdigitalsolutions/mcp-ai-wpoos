@@ -30,14 +30,14 @@ class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Geocode Address', 'wp-mcp-ai' );
+		return __( 'Geocode Address', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Convert addresses to geographic coordinates (latitude/longitude) or coordinates to addresses using Google Maps Geocoding API.', 'wp-mcp-ai' );
+		return __( 'Convert addresses to geographic coordinates (latitude/longitude) or coordinates to addresses using Google Maps Geocoding API.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,31 +49,31 @@ class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'properties'           => array(
 				'address'     => array(
 					'type'        => 'string',
-					'description' => __( 'The address to geocode (e.g., "1600 Amphitheatre Parkway, Mountain View, CA"). Required for forward geocoding.', 'wp-mcp-ai' ),
+					'description' => __( 'The address to geocode (e.g., "1600 Amphitheatre Parkway, Mountain View, CA"). Required for forward geocoding.', 'mcp-ai-wpoos' ),
 				),
 				'latitude'    => array(
 					'type'        => 'number',
-					'description' => __( 'Latitude coordinate for reverse geocoding. Required with longitude for reverse geocoding.', 'wp-mcp-ai' ),
+					'description' => __( 'Latitude coordinate for reverse geocoding. Required with longitude for reverse geocoding.', 'mcp-ai-wpoos' ),
 				),
 				'longitude'   => array(
 					'type'        => 'number',
-					'description' => __( 'Longitude coordinate for reverse geocoding. Required with latitude for reverse geocoding.', 'wp-mcp-ai' ),
+					'description' => __( 'Longitude coordinate for reverse geocoding. Required with latitude for reverse geocoding.', 'mcp-ai-wpoos' ),
 				),
 				'language'    => array(
 					'type'        => 'string',
-					'description' => __( 'Language code for results (e.g., "en", "es", "fr").', 'wp-mcp-ai' ),
+					'description' => __( 'Language code for results (e.g., "en", "es", "fr").', 'mcp-ai-wpoos' ),
 				),
 				'region'      => array(
 					'type'        => 'string',
-					'description' => __( 'Region code for geocoding bias (e.g., "us", "uk").', 'wp-mcp-ai' ),
+					'description' => __( 'Region code for geocoding bias (e.g., "us", "uk").', 'mcp-ai-wpoos' ),
 				),
 				'result_type' => array(
 					'type'        => 'string',
-					'description' => __( 'Filter results by type for reverse geocoding (e.g., "street_address", "locality").', 'wp-mcp-ai' ),
+					'description' => __( 'Filter results by type for reverse geocoding (e.g., "street_address", "locality").', 'mcp-ai-wpoos' ),
 				),
 				'timeout'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Request timeout in seconds (5-60).', 'wp-mcp-ai' ),
+					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,
 					'maximum'     => 60,
 				),
@@ -94,16 +94,16 @@ class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to use geocoding.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to use geocoding.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id ) {
 			if ( ! user_can( $user_id, 'read' ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to use geocoding.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to use geocoding.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
@@ -140,7 +140,7 @@ class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP
 		} else {
 			return new WP_Error(
 				'wp_mcp_ai_missing_parameters',
-				__( 'Either "address" or both "latitude" and "longitude" must be provided.', 'wp-mcp-ai' ),
+				__( 'Either "address" or both "latitude" and "longitude" must be provided.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -153,13 +153,13 @@ class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! empty( $address ) ) {
 			$summary = sprintf(
 				/* translators: %s: address */
-				__( 'Geocoded address: %s', 'wp-mcp-ai' ),
+				__( 'Geocoded address: %s', 'mcp-ai-wpoos' ),
 				$address
 			);
 		} else {
 			$summary = sprintf(
 				/* translators: 1: latitude, 2: longitude */
-				__( 'Reverse geocoded coordinates: %1$s, %2$s', 'wp-mcp-ai' ),
+				__( 'Reverse geocoded coordinates: %1$s, %2$s', 'mcp-ai-wpoos' ),
 				$latitude,
 				$longitude
 			);

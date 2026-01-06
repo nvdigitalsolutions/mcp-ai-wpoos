@@ -540,7 +540,7 @@ wp_cache_set($cache_key, $config, 'wp_mcp_ai_models', 5 * MINUTE_IN_SECONDS);
 
 **"No Hugging Face API key configured"**
 ```
-Fix: Add API key in WP oOS → Providers → Hugging Face
+Fix: Add API key in NV oOS → Providers → Hugging Face
 Token format: hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
@@ -571,7 +571,7 @@ Example: meta-llama/Llama-3.3-70B-Instruct
 
 ```bash
 # Enable logging
-WP oOS → Settings → Enable Logging
+NV oOS → Settings → Enable Logging
 
 # View Hugging Face events
 wp option get wp_mcp_ai_recent_activity --format=json | jq '.[] | select(.event | contains("huggingface"))'
@@ -629,7 +629,7 @@ wp option get wp_mcp_ai_recent_errors --format=json
 - **Inference Endpoints**: https://ui.endpoints.huggingface.co/
 - **Pricing**: https://huggingface.co/pricing
 
-**WP oOS Documentation**:
+**NV oOS Documentation**:
 - Setup Guide: `docs/HUGGINGFACE_SETUP.md`
 - Implementation Summary: `docs/HUGGINGFACE_IMPLEMENTATION_SUMMARY.md`
 - Documentation Index: `docs/DOCUMENTATION_INDEX.md`

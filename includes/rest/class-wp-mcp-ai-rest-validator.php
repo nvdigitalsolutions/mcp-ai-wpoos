@@ -46,7 +46,7 @@ class WP_MCP_AI_REST_Validator {
 				'rest_invalid_param',
 				sprintf(
 					/* translators: %s: parameter name */
-					__( 'The "%s" parameter must be an array.', 'wp-mcp-ai' ),
+					__( 'The "%s" parameter must be an array.', 'mcp-ai-wpoos' ),
 					$param
 				),
 				array( 'status' => 400 )
@@ -56,11 +56,11 @@ class WP_MCP_AI_REST_Validator {
 		if ( empty( $value ) ) {
 			return new WP_Error(
 				'rest_invalid_param',
-				__( 'The "messages" array cannot be empty. At least one message is required.', 'wp-mcp-ai' ),
+				__( 'The "messages" array cannot be empty. At least one message is required.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'provide_messages' => __( 'Include at least one message object with "role" and "content" properties.', 'wp-mcp-ai' ),
+						'provide_messages' => __( 'Include at least one message object with "role" and "content" properties.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -72,7 +72,7 @@ class WP_MCP_AI_REST_Validator {
 					'rest_invalid_param',
 					sprintf(
 						/* translators: %d: message index */
-						__( 'Message at index %d must be an object/array.', 'wp-mcp-ai' ),
+						__( 'Message at index %d must be an object/array.', 'mcp-ai-wpoos' ),
 						$index
 					),
 					array( 'status' => 400 )
@@ -85,13 +85,13 @@ class WP_MCP_AI_REST_Validator {
 					'rest_invalid_param',
 					sprintf(
 						/* translators: %d: message index */
-						__( 'Message at index %d is missing required "role" property.', 'wp-mcp-ai' ),
+						__( 'Message at index %d is missing required "role" property.', 'mcp-ai-wpoos' ),
 						$index
 					),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'add_role' => __( 'Each message must include a "role" property with one of: "system", "user", "assistant", or "tool".', 'wp-mcp-ai' ),
+							'add_role' => __( 'Each message must include a "role" property with one of: "system", "user", "assistant", or "tool".', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -105,7 +105,7 @@ class WP_MCP_AI_REST_Validator {
 					'rest_invalid_param',
 					sprintf(
 						/* translators: 1: message index, 2: invalid role, 3: valid roles list */
-						__( 'Message at index %1$d has invalid role "%2$s". Must be one of: %3$s', 'wp-mcp-ai' ),
+						__( 'Message at index %1$d has invalid role "%2$s". Must be one of: %3$s', 'mcp-ai-wpoos' ),
 						$index,
 						$role,
 						implode( ', ', $valid_roles )
@@ -120,13 +120,13 @@ class WP_MCP_AI_REST_Validator {
 					'rest_invalid_param',
 					sprintf(
 						/* translators: %d: message index */
-						__( 'Message at index %d is missing required "content" property.', 'wp-mcp-ai' ),
+						__( 'Message at index %d is missing required "content" property.', 'mcp-ai-wpoos' ),
 						$index
 					),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'add_content' => __( 'Each message must include a "content" property (string or array of content parts).', 'wp-mcp-ai' ),
+							'add_content' => __( 'Each message must include a "content" property (string or array of content parts).', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -138,13 +138,13 @@ class WP_MCP_AI_REST_Validator {
 					'rest_invalid_param',
 					sprintf(
 						/* translators: %d: message index */
-						__( 'Tool message at index %d is missing required "tool_call_id" property.', 'wp-mcp-ai' ),
+						__( 'Tool message at index %d is missing required "tool_call_id" property.', 'mcp-ai-wpoos' ),
 						$index
 					),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'add_tool_call_id' => __( 'Messages with role "tool" must include a "tool_call_id" matching the assistant\'s tool call.', 'wp-mcp-ai' ),
+							'add_tool_call_id' => __( 'Messages with role "tool" must include a "tool_call_id" matching the assistant\'s tool call.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -171,7 +171,7 @@ class WP_MCP_AI_REST_Validator {
 				'rest_invalid_param',
 				sprintf(
 					/* translators: %s: parameter name */
-					__( 'The "%s" parameter must be an array.', 'wp-mcp-ai' ),
+					__( 'The "%s" parameter must be an array.', 'mcp-ai-wpoos' ),
 					$param
 				),
 				array( 'status' => 400 )
@@ -184,7 +184,7 @@ class WP_MCP_AI_REST_Validator {
 					'rest_invalid_param',
 					sprintf(
 						/* translators: %d: attachment index */
-						__( 'Attachment at index %d must be an object/array.', 'wp-mcp-ai' ),
+						__( 'Attachment at index %d must be an object/array.', 'mcp-ai-wpoos' ),
 						$index
 					),
 					array( 'status' => 400 )
@@ -200,13 +200,13 @@ class WP_MCP_AI_REST_Validator {
 					'rest_invalid_param',
 					sprintf(
 						/* translators: %d: attachment index */
-						__( 'Attachment at index %d must include either "file_id" (integer) or "url" (string).', 'wp-mcp-ai' ),
+						__( 'Attachment at index %d must include either "file_id" (integer) or "url" (string).', 'mcp-ai-wpoos' ),
 						$index
 					),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'provide_file_reference' => __( 'Each attachment must specify either a WordPress attachment ID via "file_id" or an external URL via "url".', 'wp-mcp-ai' ),
+							'provide_file_reference' => __( 'Each attachment must specify either a WordPress attachment ID via "file_id" or an external URL via "url".', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -220,7 +220,7 @@ class WP_MCP_AI_REST_Validator {
 						'rest_invalid_param',
 						sprintf(
 							/* translators: %d: attachment index */
-							__( 'Attachment at index %d has invalid "file_id". Must be a positive integer.', 'wp-mcp-ai' ),
+							__( 'Attachment at index %d has invalid "file_id". Must be a positive integer.', 'mcp-ai-wpoos' ),
 							$index
 						),
 						array( 'status' => 400 )
@@ -234,7 +234,7 @@ class WP_MCP_AI_REST_Validator {
 					'rest_invalid_param',
 					sprintf(
 						/* translators: %d: attachment index */
-						__( 'Attachment at index %d has invalid "url". Must be a valid URL.', 'wp-mcp-ai' ),
+						__( 'Attachment at index %d has invalid "url". Must be a valid URL.', 'mcp-ai-wpoos' ),
 						$index
 					),
 					array( 'status' => 400 )
@@ -266,7 +266,7 @@ class WP_MCP_AI_REST_Validator {
 			if ( null !== $value && ! is_array( $value ) ) {
 				return new WP_Error(
 					'rest_invalid_param',
-					__( 'The "params" parameter must be an object/array or null.', 'wp-mcp-ai' ),
+					__( 'The "params" parameter must be an object/array or null.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -279,7 +279,7 @@ class WP_MCP_AI_REST_Validator {
 				if ( ! is_array( $value ) ) {
 					return new WP_Error(
 						'rest_invalid_param',
-						__( 'The "params" parameter must be an object for tools/call method.', 'wp-mcp-ai' ),
+						__( 'The "params" parameter must be an object for tools/call method.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -287,11 +287,11 @@ class WP_MCP_AI_REST_Validator {
 				if ( ! isset( $value['name'] ) || ! is_string( $value['name'] ) ) {
 					return new WP_Error(
 						'rest_invalid_param',
-						__( 'MCP tools/call requires a "name" parameter (string) specifying the tool to call.', 'wp-mcp-ai' ),
+						__( 'MCP tools/call requires a "name" parameter (string) specifying the tool to call.', 'mcp-ai-wpoos' ),
 						array(
 							'status'  => 400,
 							'actions' => array(
-								'provide_tool_name' => __( 'Include "params": {"name": "tool_slug", "arguments": {...}} in your request.', 'wp-mcp-ai' ),
+								'provide_tool_name' => __( 'Include "params": {"name": "tool_slug", "arguments": {...}} in your request.', 'mcp-ai-wpoos' ),
 							),
 						)
 					);
@@ -301,7 +301,7 @@ class WP_MCP_AI_REST_Validator {
 				if ( isset( $value['arguments'] ) && ! is_array( $value['arguments'] ) ) {
 					return new WP_Error(
 						'rest_invalid_param',
-						__( 'The "arguments" parameter in tools/call must be an object.', 'wp-mcp-ai' ),
+						__( 'The "arguments" parameter in tools/call must be an object.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -317,7 +317,7 @@ class WP_MCP_AI_REST_Validator {
 						'rest_invalid_param',
 						sprintf(
 							/* translators: %s: method name */
-							__( 'The "params" parameter for %s method must be an object or null.', 'wp-mcp-ai' ),
+							__( 'The "params" parameter for %s method must be an object or null.', 'mcp-ai-wpoos' ),
 							$method
 						),
 						array( 'status' => 400 )
@@ -342,7 +342,7 @@ class WP_MCP_AI_REST_Validator {
 		if ( ! is_array( $messages ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_messages',
-				__( 'Messages must be provided as an array of role/content pairs.', 'wp-mcp-ai' ),
+				__( 'Messages must be provided as an array of role/content pairs.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -388,7 +388,7 @@ class WP_MCP_AI_REST_Validator {
 					'wp_mcp_ai_invalid_message_role',
 					sprintf(
 						/* translators: 1: Provided role, 2: list of supported roles. */
-						__( 'The message role "%1$s" is not supported. Supported roles: %2$s.', 'wp-mcp-ai' ),
+						__( 'The message role "%1$s" is not supported. Supported roles: %2$s.', 'mcp-ai-wpoos' ),
 						$display_role,
 						implode( ', ', $allowed_roles )
 					),
@@ -526,7 +526,7 @@ class WP_MCP_AI_REST_Validator {
 		if ( ! is_array( $content ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_message_content',
-				__( 'Message content must be a string or an array of segments.', 'wp-mcp-ai' ),
+				__( 'Message content must be a string or an array of segments.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}

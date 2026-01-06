@@ -23,7 +23,7 @@ When clicking the toggle switch:
 ### 1. Access the Tools Manager
 Navigate to: `/wp-admin/admin.php?page=wp-mcp-ai-dashboard&tab=tools`
 
-Or: **WP Admin → WP oOS → Settings → Tools tab → Tools Manager subtab**
+Or: **WP Admin → NV oOS → Settings → Tools tab → Tools Manager subtab**
 
 ### 2. Locate a Tool to Test
 Look for any tool in the list. Good candidates:

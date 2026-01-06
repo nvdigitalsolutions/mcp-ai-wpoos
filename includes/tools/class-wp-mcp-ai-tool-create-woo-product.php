@@ -35,7 +35,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The WooCommerce product creation tool is disabled because WooCommerce is not active.', 'wp-mcp-ai' );
+		return __( 'The WooCommerce product creation tool is disabled because WooCommerce is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
@@ -45,12 +45,12 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 
 	/** {@inheritdoc} */
 	public function get_name() {
-		return __( 'Create WooCommerce Product Draft', 'wp-mcp-ai' );
+		return __( 'Create WooCommerce Product Draft', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
 	public function get_description() {
-		return __( 'Creates a WooCommerce product draft using merchandising data gathered for a reference number.', 'wp-mcp-ai' );
+		return __( 'Creates a WooCommerce product draft using merchandising data gathered for a reference number.', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
@@ -60,43 +60,43 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'reference'             => array(
 					'type'        => 'string',
-					'description' => __( 'Reference identifier for the product. Used as the SKU.', 'wp-mcp-ai' ),
+					'description' => __( 'Reference identifier for the product. Used as the SKU.', 'mcp-ai-wpoos' ),
 					'minLength'   => 1,
 				),
 				'product_type'          => array(
 					'type'        => 'string',
-					'description' => __( 'Product type to create (simple or variable).', 'wp-mcp-ai' ),
+					'description' => __( 'Product type to create (simple or variable).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'simple', 'variable' ),
 					'default'     => 'simple',
 				),
 				'brand'                 => array(
 					'type'        => 'string',
-					'description' => __( 'Brand name associated with the product.', 'wp-mcp-ai' ),
+					'description' => __( 'Brand name associated with the product.', 'mcp-ai-wpoos' ),
 				),
 				'title'                 => array(
 					'type'        => 'string',
-					'description' => __( 'Product title.', 'wp-mcp-ai' ),
+					'description' => __( 'Product title.', 'mcp-ai-wpoos' ),
 				),
 				'local_price'           => array(
 					'type'        => array( 'string', 'number' ),
-					'description' => __( 'Local price for the product. Used as the regular price for simple products.', 'wp-mcp-ai' ),
+					'description' => __( 'Local price for the product. Used as the regular price for simple products.', 'mcp-ai-wpoos' ),
 				),
 				'description'           => array(
 					'type'        => 'string',
-					'description' => __( 'Full product description.', 'wp-mcp-ai' ),
+					'description' => __( 'Full product description.', 'mcp-ai-wpoos' ),
 				),
 				'description_secondary' => array(
 					'type'        => 'string',
-					'description' => __( 'Secondary description or marketing copy.', 'wp-mcp-ai' ),
+					'description' => __( 'Secondary description or marketing copy.', 'mcp-ai-wpoos' ),
 				),
 				'brand_page_url'        => array(
 					'type'        => 'string',
-					'description' => __( 'URL for the brand page to inspect for lifestyle imagery.', 'wp-mcp-ai' ),
+					'description' => __( 'URL for the brand page to inspect for lifestyle imagery.', 'mcp-ai-wpoos' ),
 					'format'      => 'uri',
 				),
 				'image_urls'            => array(
 					'type'        => 'array',
-					'description' => __( 'Explicit product or lifestyle image URLs to sideload.', 'wp-mcp-ai' ),
+					'description' => __( 'Explicit product or lifestyle image URLs to sideload.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'   => 'string',
 						'format' => 'uri',
@@ -107,7 +107,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 				// Enhanced parameters for comprehensive product creation.
 				'categories'            => array(
 					'type'        => 'array',
-					'description' => __( 'Array of product category IDs or names to assign. Categories will be auto-created if they don\'t exist.', 'wp-mcp-ai' ),
+					'description' => __( 'Array of product category IDs or names to assign. Categories will be auto-created if they don\'t exist.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -120,7 +120,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'tags'                  => array(
 					'type'        => 'array',
-					'description' => __( 'Array of product tag IDs or names to assign. Tags will be auto-created if they don\'t exist.', 'wp-mcp-ai' ),
+					'description' => __( 'Array of product tag IDs or names to assign. Tags will be auto-created if they don\'t exist.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -133,73 +133,73 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'sale_price'            => array(
 					'type'        => array( 'string', 'number' ),
-					'description' => __( 'Sale price for the product (must be lower than regular price).', 'wp-mcp-ai' ),
+					'description' => __( 'Sale price for the product (must be lower than regular price).', 'mcp-ai-wpoos' ),
 				),
 				'manage_stock'          => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to enable stock management for this product.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to enable stock management for this product.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'stock_quantity'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Stock quantity (requires manage_stock to be true).', 'wp-mcp-ai' ),
+					'description' => __( 'Stock quantity (requires manage_stock to be true).', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 				),
 				'stock_status'          => array(
 					'type'        => 'string',
-					'description' => __( 'Stock status: instock, outofstock, or onbackorder.', 'wp-mcp-ai' ),
+					'description' => __( 'Stock status: instock, outofstock, or onbackorder.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
 					'default'     => 'instock',
 				),
 				'weight'                => array(
 					'type'        => array( 'string', 'number' ),
-					'description' => __( 'Product weight for shipping calculations.', 'wp-mcp-ai' ),
+					'description' => __( 'Product weight for shipping calculations.', 'mcp-ai-wpoos' ),
 				),
 				'length'                => array(
 					'type'        => array( 'string', 'number' ),
-					'description' => __( 'Product length for shipping calculations.', 'wp-mcp-ai' ),
+					'description' => __( 'Product length for shipping calculations.', 'mcp-ai-wpoos' ),
 				),
 				'width'                 => array(
 					'type'        => array( 'string', 'number' ),
-					'description' => __( 'Product width for shipping calculations.', 'wp-mcp-ai' ),
+					'description' => __( 'Product width for shipping calculations.', 'mcp-ai-wpoos' ),
 				),
 				'height'                => array(
 					'type'        => array( 'string', 'number' ),
-					'description' => __( 'Product height for shipping calculations.', 'wp-mcp-ai' ),
+					'description' => __( 'Product height for shipping calculations.', 'mcp-ai-wpoos' ),
 				),
 				'virtual'               => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether this is a virtual product (no shipping).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether this is a virtual product (no shipping).', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'downloadable'          => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether this is a downloadable product.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether this is a downloadable product.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'reviews_allowed'       => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to allow customer reviews.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to allow customer reviews.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'attributes'            => array(
 					'type'        => 'array',
-					'description' => __( 'Product attributes (e.g., size, color).', 'wp-mcp-ai' ),
+					'description' => __( 'Product attributes (e.g., size, color).', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
 							'name'    => array(
 								'type'        => 'string',
-								'description' => __( 'Attribute name (e.g., "Size", "Color").', 'wp-mcp-ai' ),
+								'description' => __( 'Attribute name (e.g., "Size", "Color").', 'mcp-ai-wpoos' ),
 							),
 							'options' => array(
 								'type'        => 'array',
-								'description' => __( 'Array of attribute values.', 'wp-mcp-ai' ),
+								'description' => __( 'Array of attribute values.', 'mcp-ai-wpoos' ),
 								'items'       => array( 'type' => 'string' ),
 							),
 							'visible' => array(
 								'type'        => 'boolean',
-								'description' => __( 'Whether attribute is visible on product page.', 'wp-mcp-ai' ),
+								'description' => __( 'Whether attribute is visible on product page.', 'mcp-ai-wpoos' ),
 								'default'     => true,
 							),
 						),
@@ -208,7 +208,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'meta_input'            => array(
 					'type'                 => 'object',
-					'description'          => __( 'Array of custom field key-value pairs to set as product meta.', 'wp-mcp-ai' ),
+					'description'          => __( 'Array of custom field key-value pairs to set as product meta.', 'mcp-ai-wpoos' ),
 					'additionalProperties' => true,
 				),
 			),
@@ -226,28 +226,28 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to create products.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to create products.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! user_can( $user_id, 'manage_woocommerce' ) && ! user_can( $user_id, 'edit_products' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create WooCommerce products.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create WooCommerce products.', 'mcp-ai-wpoos' ) );
 		}
 
 		$reference_raw = isset( $arguments['reference'] ) ? (string) $arguments['reference'] : '';
 		$reference     = function_exists( 'wc_clean' ) ? wc_clean( $reference_raw ) : sanitize_text_field( $reference_raw );
 
 		if ( '' === $reference ) {
-			return new WP_Error( 'wp_mcp_ai_missing_reference', __( 'A product reference is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_reference', __( 'A product reference is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		$product_type = isset( $arguments['product_type'] ) ? sanitize_key( $arguments['product_type'] ) : 'simple';
@@ -259,7 +259,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		$title = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
 		if ( '' === $title ) {
 			/* translators: %s product reference */
-			$title = sprintf( __( 'Product %s', 'wp-mcp-ai' ), $reference );
+			$title = sprintf( __( 'Product %s', 'mcp-ai-wpoos' ), $reference );
 		}
 
 		$description  = isset( $arguments['description'] ) ? $this->sanitize_html( $arguments['description'] ) : '';
@@ -345,20 +345,20 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		$product_id = $product->save();
 
 		if ( ! $product_id ) {
-			return new WP_Error( 'wp_mcp_ai_product_not_saved', __( 'The product could not be saved.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_product_not_saved', __( 'The product could not be saved.', 'mcp-ai-wpoos' ) );
 		}
 
 		$saved_product = wc_get_product( $product_id );
 
 		if ( ! $saved_product ) {
-			return new WP_Error( 'wp_mcp_ai_product_missing', __( 'The product draft was created but could not be loaded.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_product_missing', __( 'The product draft was created but could not be loaded.', 'mcp-ai-wpoos' ) );
 		}
 
 		$messages = array();
 
 		if ( '' !== $brand ) {
 			if ( ! $this->assign_brand( $product_id, $brand ) ) {
-				$messages[] = __( 'The brand value was stored as product metadata because no brand taxonomy is registered.', 'wp-mcp-ai' );
+				$messages[] = __( 'The brand value was stored as product metadata because no brand taxonomy is registered.', 'mcp-ai-wpoos' );
 			}
 		}
 
@@ -378,7 +378,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! empty( $image_urls ) ) {
 			$attachments = $this->sideload_images( $product_id, $image_urls, $saved_product, $messages );
 		} else {
-			$messages[] = __( 'No images were attached because none could be discovered.', 'wp-mcp-ai' );
+			$messages[] = __( 'No images were attached because none could be discovered.', 'mcp-ai-wpoos' );
 		}
 
 		if ( ! empty( $attachments ) ) {
@@ -414,7 +414,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		$response = array(
 			'summary'      => sprintf(
 				/* translators: 1: product title, 2: product ID */
-				__( 'Created WooCommerce product: %1$s (ID: %2$d)', 'wp-mcp-ai' ),
+				__( 'Created WooCommerce product: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
 				$saved_product ? $saved_product->get_name() : $title,
 				$product_id
 			),
@@ -451,14 +451,14 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	protected function instantiate_product( $type ) {
 		if ( 'variable' === $type ) {
 			if ( ! class_exists( 'WC_Product_Variable' ) ) {
-				return new WP_Error( 'wp_mcp_ai_missing_product_class', __( 'Variable product support is unavailable.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_missing_product_class', __( 'Variable product support is unavailable.', 'mcp-ai-wpoos' ) );
 			}
 
 			return new WC_Product_Variable();
 		}
 
 		if ( ! class_exists( 'WC_Product_Simple' ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_product_class', __( 'Simple product support is unavailable.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_product_class', __( 'Simple product support is unavailable.', 'mcp-ai-wpoos' ) );
 		}
 
 		return new WC_Product_Simple();
@@ -591,7 +591,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 				$urls = $scraped;
 			} else {
 				/* translators: %s brand page URL */
-				$messages[] = sprintf( __( 'No images could be extracted from %s.', 'wp-mcp-ai' ), esc_url( $arguments['brand_page_url'] ) );
+				$messages[] = sprintf( __( 'No images could be extracted from %s.', 'mcp-ai-wpoos' ), esc_url( $arguments['brand_page_url'] ) );
 			}
 		}
 
@@ -599,11 +599,11 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 
 		if ( count( $urls ) > 10 ) {
 			$urls       = array_slice( $urls, 0, 10 );
-			$messages[] = __( 'Only the first 10 images were attached to match the gallery limit.', 'wp-mcp-ai' );
+			$messages[] = __( 'Only the first 10 images were attached to match the gallery limit.', 'mcp-ai-wpoos' );
 		}
 
 		if ( count( $urls ) > 0 && count( $urls ) < 2 ) {
-			$messages[] = __( 'Fewer than two images were available; consider supplying additional image URLs.', 'wp-mcp-ai' );
+			$messages[] = __( 'Fewer than two images were available; consider supplying additional image URLs.', 'mcp-ai-wpoos' );
 		}
 
 		return $urls;
@@ -817,7 +817,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			if ( is_wp_error( $attachment_id ) ) {
 				$messages[] = sprintf(
 					/* translators: %s image URL */
-					__( 'Image %s could not be imported.', 'wp-mcp-ai' ),
+					__( 'Image %s could not be imported.', 'mcp-ai-wpoos' ),
 					esc_url( $url )
 				);
 				continue;

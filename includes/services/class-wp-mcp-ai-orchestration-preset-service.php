@@ -56,8 +56,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_custom_preset() {
 		return array(
-			'name'        => __( 'Custom', 'wp-mcp-ai' ),
-			'description' => __( 'Your current customized settings.', 'wp-mcp-ai' ),
+			'name'        => __( 'Custom', 'mcp-ai-wpoos' ),
+			'description' => __( 'Your current customized settings.', 'mcp-ai-wpoos' ),
 			'settings'    => array(), // No changes - keeps current settings.
 		);
 	}
@@ -84,10 +84,10 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 		$base_preset   = call_user_func( array( self::class, $preset_method ) );
 
 		return array(
-			'name'        => __( 'Auto', 'wp-mcp-ai' ),
+			'name'        => __( 'Auto', 'mcp-ai-wpoos' ),
 			'description' => sprintf(
 				/* translators: %s: detected preset name */
-				__( 'Auto-detected: %s configuration based on your server capabilities.', 'wp-mcp-ai' ),
+				__( 'Auto-detected: %s configuration based on your server capabilities.', 'mcp-ai-wpoos' ),
 				$base_preset['name']
 			),
 			'settings'    => $base_preset['settings'],
@@ -101,8 +101,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_balanced_preset() {
 		return array(
-			'name'        => __( 'Balanced', 'wp-mcp-ai' ),
-			'description' => __( 'Modern balanced settings for production sites with moderate traffic.', 'wp-mcp-ai' ),
+			'name'        => __( 'Balanced', 'mcp-ai-wpoos' ),
+			'description' => __( 'Modern balanced settings for production sites with moderate traffic.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				// Health monitoring - Cloud-native standards (2024).
 				'memory_warning_threshold'        => 70,
@@ -138,8 +138,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_conservative_preset() {
 		return array(
-			'name'        => __( 'Conservative', 'wp-mcp-ai' ),
-			'description' => __( 'Lightweight limits for resource-constrained environments or shared hosting.', 'wp-mcp-ai' ),
+			'name'        => __( 'Conservative', 'mcp-ai-wpoos' ),
+			'description' => __( 'Lightweight limits for resource-constrained environments or shared hosting.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				'memory_warning_threshold'        => 60,
 				'memory_critical_threshold'       => 75,
@@ -171,8 +171,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_aggressive_preset() {
 		return array(
-			'name'        => __( 'Performance', 'wp-mcp-ai' ),
-			'description' => __( 'High-performance settings for dedicated servers with ample resources.', 'wp-mcp-ai' ),
+			'name'        => __( 'Performance', 'mcp-ai-wpoos' ),
+			'description' => __( 'High-performance settings for dedicated servers with ample resources.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				'memory_warning_threshold'        => 80,
 				'memory_critical_threshold'       => 90,
@@ -204,8 +204,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_development_preset() {
 		return array(
-			'name'        => __( 'Development', 'wp-mcp-ai' ),
-			'description' => __( 'Relaxed limits for development and testing environments.', 'wp-mcp-ai' ),
+			'name'        => __( 'Development', 'mcp-ai-wpoos' ),
+			'description' => __( 'Relaxed limits for development and testing environments.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				'memory_warning_threshold'        => 85,
 				'memory_critical_threshold'       => 95,
@@ -237,8 +237,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_high_traffic_preset() {
 		return array(
-			'name'        => __( 'High Traffic', 'wp-mcp-ai' ),
-			'description' => __( 'Optimized for high-volume sites with consistent traffic patterns.', 'wp-mcp-ai' ),
+			'name'        => __( 'High Traffic', 'mcp-ai-wpoos' ),
+			'description' => __( 'Optimized for high-volume sites with consistent traffic patterns.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				'memory_warning_threshold'        => 75,
 				'memory_critical_threshold'       => 88,
@@ -270,8 +270,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_burst_workload_preset() {
 		return array(
-			'name'        => __( 'Burst Workload', 'wp-mcp-ai' ),
-			'description' => __( 'Handles sudden traffic spikes and variable load patterns efficiently.', 'wp-mcp-ai' ),
+			'name'        => __( 'Burst Workload', 'mcp-ai-wpoos' ),
+			'description' => __( 'Handles sudden traffic spikes and variable load patterns efficiently.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				'memory_warning_threshold'        => 78,
 				'memory_critical_threshold'       => 90,
@@ -303,8 +303,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_cost_optimized_preset() {
 		return array(
-			'name'        => __( 'Cost Optimized', 'wp-mcp-ai' ),
-			'description' => __( 'Minimizes API token usage and operational costs while maintaining quality.', 'wp-mcp-ai' ),
+			'name'        => __( 'Cost Optimized', 'mcp-ai-wpoos' ),
+			'description' => __( 'Minimizes API token usage and operational costs while maintaining quality.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				'memory_warning_threshold'        => 65,
 				'memory_critical_threshold'       => 80,
@@ -336,8 +336,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_enterprise_preset() {
 		return array(
-			'name'        => __( 'Enterprise', 'wp-mcp-ai' ),
-			'description' => __( 'Fine-tuned for enterprise deployments with SLA requirements and high reliability.', 'wp-mcp-ai' ),
+			'name'        => __( 'Enterprise', 'mcp-ai-wpoos' ),
+			'description' => __( 'Fine-tuned for enterprise deployments with SLA requirements and high reliability.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				'memory_warning_threshold'        => 72,
 				'memory_critical_threshold'       => 87,
@@ -369,8 +369,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_failsafe_preset() {
 		return array(
-			'name'        => __( 'Failsafe', 'wp-mcp-ai' ),
-			'description' => __( 'Maximum protection against resource exhaustion with early intervention.', 'wp-mcp-ai' ),
+			'name'        => __( 'Failsafe', 'mcp-ai-wpoos' ),
+			'description' => __( 'Maximum protection against resource exhaustion with early intervention.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				'memory_warning_threshold'        => 55,
 				'memory_critical_threshold'       => 70,
@@ -402,8 +402,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_predictive_first_preset() {
 		return array(
-			'name'        => __( 'Predictive-First', 'wp-mcp-ai' ),
-			'description' => __( 'Emphasizes machine learning predictions for proactive resource management.', 'wp-mcp-ai' ),
+			'name'        => __( 'Predictive-First', 'mcp-ai-wpoos' ),
+			'description' => __( 'Emphasizes machine learning predictions for proactive resource management.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				'memory_warning_threshold'        => 70,
 				'memory_critical_threshold'       => 85,
@@ -438,8 +438,8 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_design_professional_preset() {
 		return array(
-			'name'        => __( 'Design Professional', 'wp-mcp-ai' ),
-			'description' => __( 'Optimized for creative professionals with image generation, video production, and vision tools. Higher token limits for resource-intensive design workflows.', 'wp-mcp-ai' ),
+			'name'        => __( 'Design Professional', 'mcp-ai-wpoos' ),
+			'description' => __( 'Optimized for creative professionals with image generation, video production, and vision tools. Higher token limits for resource-intensive design workflows.', 'mcp-ai-wpoos' ),
 			'settings'    => array(
 				'memory_warning_threshold'        => 75,
 				'memory_critical_threshold'       => 88,
@@ -480,7 +480,7 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 			if ( ! isset( $presets[ $preset_id ] ) ) {
 				return new WP_Error(
 					'invalid_preset',
-					__( 'Invalid preset identifier.', 'wp-mcp-ai' ),
+					__( 'Invalid preset identifier.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -554,7 +554,7 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 				'preset_application_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to apply preset: %s', 'wp-mcp-ai' ),
+					__( 'Failed to apply preset: %s', 'mcp-ai-wpoos' ),
 					$e->getMessage()
 				),
 				array( 'status' => 500 )

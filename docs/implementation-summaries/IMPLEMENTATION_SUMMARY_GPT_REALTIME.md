@@ -1,7 +1,7 @@
 # Implementation Summary: GPT-4o Realtime API Enhancement
 
 ## Overview
-This implementation adds support for OpenAI's December 2024 GPT-4o Realtime API updates to the WP oOS plugin, including new models, updated pricing, and comprehensive documentation.
+This implementation adds support for OpenAI's December 2024 GPT-4o Realtime API updates to the NV oOS plugin, including new models, updated pricing, and comprehensive documentation.
 
 ## Changes Made
 
@@ -89,7 +89,7 @@ Created comprehensive 254-line documentation covering:
 3. Pricing breakdown with examples
 4. Technical specifications (rate limits, context)
 5. Key improvements (WebRTC, features)
-6. Usage examples for WP oOS
+6. Usage examples for NV oOS
 7. Cost optimization tips
 8. Migration guide from previous models
 9. Cost impact analysis
@@ -226,7 +226,7 @@ Before deploying to production:
 
 - OpenAI Realtime API Docs: https://platform.openai.com/docs/models/gpt-4o-realtime-preview
 - OpenAI Community Announcement: https://community.openai.com/t/realtime-api-updates-webrtc-cheaper-prices-4o-mini-and-more/1059962
-- WP oOS Documentation: docs/features/ai-providers/openai/gpt-4o-realtime-api.md
+- NV oOS Documentation: docs/features/ai-providers/openai/gpt-4o-realtime-api.md
 
 ## Commits
 

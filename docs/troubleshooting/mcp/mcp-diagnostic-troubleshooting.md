@@ -2,7 +2,7 @@
 
 ## Overview
 
-The MCP Server Diagnostic page provides an interface for testing the Model Context Protocol (MCP) implementation in WP oOS. If you're unable to run the diagnostic tests, this guide will help you troubleshoot common issues.
+The MCP Server Diagnostic page provides an interface for testing the Model Context Protocol (MCP) implementation in NV oOS. If you're unable to run the diagnostic tests, this guide will help you troubleshoot common issues.
 
 ## Accessing the Diagnostic Page
 
@@ -11,7 +11,7 @@ The MCP diagnostic page is located at:
 /wp-admin/tools.php?page=wp-mcp-ai-mcp-diagnostic
 ```
 
-Or navigate to: **Tools → WP oOS MCP Test** in your WordPress admin dashboard.
+Or navigate to: **Tools → NV oOS MCP Test** in your WordPress admin dashboard.
 
 ## Available Tests
 
@@ -298,7 +298,7 @@ Before troubleshooting, verify:
 If tests still don't work after trying these solutions:
 
 1. **Enable Debug Logging**
-   - Go to Settings → WP oOS
+   - Go to Settings → NV oOS
    - Enable "Logging"
    - Reproduce the issue
    - Check logs for error messages
@@ -314,7 +314,7 @@ If tests still don't work after trying these solutions:
 4. **Contact Support**
    - Provide error messages from browser console
    - Include PHP error log entries
-   - Share WP oOS diagnostic information
+   - Share NV oOS diagnostic information
    - Describe exact steps that fail
 
 ## Related Documentation

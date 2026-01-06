@@ -3,6 +3,312 @@
  * Modern, clean, and collapsible design
  */
 
+/* ===========================
+   CSS Custom Properties (Badges)
+   =========================== */
+:root {
+	/* Badge Colors */
+	--wp-mcp-ai-badge-pro-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	--wp-mcp-ai-badge-status-enabled-bg: #00a32a;
+	--wp-mcp-ai-badge-status-disabled-bg: #646970;
+	--wp-mcp-ai-badge-status-unavailable-bg: #d63638;
+	--wp-mcp-ai-badge-beta-bg: #f0b849;
+	--wp-mcp-ai-badge-deprecated-bg: #d63638;
+	--wp-mcp-ai-badge-experimental-bg: #8c68cd;
+	--wp-mcp-ai-badge-tier-free-bg: #999;
+	--wp-mcp-ai-badge-tier-pro-bg: #0073aa;
+	--wp-mcp-ai-badge-tier-enterprise-bg: #46b450;
+	--wp-mcp-ai-badge-text-color: #fff;
+	
+	/* Badge Sizing */
+	--wp-mcp-ai-badge-font-size: 8px;
+	--wp-mcp-ai-badge-padding: 2px 5px;
+	--wp-mcp-ai-badge-border-radius: 3px;
+	--wp-mcp-ai-badge-letter-spacing: 0.5px;
+	
+	/* Table Colors */
+	--wp-mcp-ai-table-header-bg: #f8f9ff;
+	--wp-mcp-ai-table-hover-bg: #f9f9f9;
+	--wp-mcp-ai-table-zebra-bg: #fafafa;
+	--wp-mcp-ai-table-border-color: #c3c4c7;
+	
+	/* Transition Timings */
+	--wp-mcp-ai-transition-fast: 0.15s ease;
+	--wp-mcp-ai-transition-normal: 0.2s ease;
+	--wp-mcp-ai-transition-slow: 0.3s ease;
+}
+
+/* ===========================
+   Standardized Badge System
+   =========================== */
+
+/* Base badge styling */
+.wp-mcp-ai-badge {
+	display: inline-block;
+	padding: var(--wp-mcp-ai-badge-padding);
+	font-size: var(--wp-mcp-ai-badge-font-size);
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: var(--wp-mcp-ai-badge-letter-spacing);
+	border-radius: var(--wp-mcp-ai-badge-border-radius);
+	color: var(--wp-mcp-ai-badge-text-color);
+	line-height: 1.4;
+	white-space: nowrap;
+	transition: all var(--wp-mcp-ai-transition-fast);
+}
+
+/* PRO Badge */
+.wp-mcp-ai-badge--pro,
+.wp-mcp-ai-pro-badge {
+	background: var(--wp-mcp-ai-badge-pro-bg);
+}
+
+/* Status Badges */
+.wp-mcp-ai-badge--status-enabled,
+.wp-mcp-ai-tool-status[data-status="enabled"] {
+	background: var(--wp-mcp-ai-badge-status-enabled-bg);
+}
+
+.wp-mcp-ai-badge--status-disabled,
+.wp-mcp-ai-tool-status[data-status="disabled"] {
+	background: var(--wp-mcp-ai-badge-status-disabled-bg);
+}
+
+.wp-mcp-ai-badge--status-unavailable,
+.wp-mcp-ai-tool-status[data-status="unavailable"] {
+	background: var(--wp-mcp-ai-badge-status-unavailable-bg);
+}
+
+/* Special Status Badges */
+.wp-mcp-ai-badge--beta,
+.wp-mcp-ai-tool-status-label.beta {
+	background: var(--wp-mcp-ai-badge-beta-bg);
+}
+
+.wp-mcp-ai-badge--deprecated,
+.wp-mcp-ai-tool-status-label.deprecated {
+	background: var(--wp-mcp-ai-badge-deprecated-bg);
+}
+
+.wp-mcp-ai-badge--experimental,
+.wp-mcp-ai-tool-status-label.experimental {
+	background: var(--wp-mcp-ai-badge-experimental-bg);
+}
+
+/* Tier Badges */
+.wp-mcp-ai-badge--tier-free,
+.wp-mcp-ai-tier-badge[data-tier="free"] {
+	background: var(--wp-mcp-ai-badge-tier-free-bg);
+}
+
+.wp-mcp-ai-badge--tier-pro,
+.wp-mcp-ai-tier-badge[data-tier="pro"] {
+	background: var(--wp-mcp-ai-badge-tier-pro-bg);
+}
+
+.wp-mcp-ai-badge--tier-enterprise,
+.wp-mcp-ai-tier-badge[data-tier="enterprise"] {
+	background: var(--wp-mcp-ai-badge-tier-enterprise-bg);
+}
+
+/* Badge hover effects */
+.wp-mcp-ai-badge:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ===========================
+   Enhanced Table Styles
+   =========================== */
+
+/* Base table styling with improved hover and zebra striping */
+.wp-mcp-ai-settings-dashboard table.wp-list-table,
+.wp-mcp-ai-tools-manager table.wp-list-table,
+.wp-mcp-ai-token-manager table {
+	border: 1px solid var(--wp-mcp-ai-table-border-color);
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.wp-mcp-ai-settings-dashboard table.wp-list-table th,
+.wp-mcp-ai-tools-manager table.wp-list-table th,
+.wp-mcp-ai-token-manager table th {
+	background: var(--wp-mcp-ai-table-header-bg);
+	font-weight: 600;
+	padding: 12px;
+	text-align: left;
+	border-bottom: 2px solid var(--wp-mcp-ai-table-border-color);
+}
+
+/* Smooth hover transitions on table rows */
+.wp-mcp-ai-settings-dashboard table.wp-list-table tbody tr,
+.wp-mcp-ai-tools-manager table.wp-list-table tbody tr,
+.wp-mcp-ai-token-manager table tbody tr {
+	transition: background-color var(--wp-mcp-ai-transition-normal);
+}
+
+.wp-mcp-ai-settings-dashboard table.wp-list-table tbody tr:hover,
+.wp-mcp-ai-tools-manager table.wp-list-table tbody tr:hover,
+.wp-mcp-ai-token-manager table tbody tr:hover {
+	background-color: var(--wp-mcp-ai-table-hover-bg);
+}
+
+/* Zebra striping for better readability */
+.wp-mcp-ai-settings-dashboard table.wp-list-table tbody tr:nth-child(even),
+.wp-mcp-ai-tools-manager table.wp-list-table tbody tr:nth-child(even),
+.wp-mcp-ai-token-manager table tbody tr:nth-child(even) {
+	background-color: var(--wp-mcp-ai-table-zebra-bg);
+}
+
+.wp-mcp-ai-settings-dashboard table.wp-list-table tbody tr:nth-child(even):hover,
+.wp-mcp-ai-tools-manager table.wp-list-table tbody tr:nth-child(even):hover,
+.wp-mcp-ai-token-manager table tbody tr:nth-child(even):hover {
+	background-color: var(--wp-mcp-ai-table-hover-bg);
+}
+
+/* Enhanced cell padding and spacing */
+.wp-mcp-ai-settings-dashboard table.wp-list-table td,
+.wp-mcp-ai-tools-manager table.wp-list-table td,
+.wp-mcp-ai-token-manager table td {
+	padding: 12px;
+	border-bottom: 1px solid #e5e5e5;
+}
+
+/* Horizontal scroll wrapper for tables on mobile */
+.wp-mcp-ai-table-wrapper {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	margin-bottom: 20px;
+}
+
+/* Responsive table adjustments */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-table-wrapper table {
+		min-width: 600px;
+	}
+	
+	.wp-mcp-ai-settings-dashboard table.wp-list-table th,
+	.wp-mcp-ai-settings-dashboard table.wp-list-table td,
+	.wp-mcp-ai-tools-manager table.wp-list-table th,
+	.wp-mcp-ai-tools-manager table.wp-list-table td,
+	.wp-mcp-ai-token-manager table th,
+	.wp-mcp-ai-token-manager table td {
+		padding: 10px 8px;
+		font-size: 13px;
+	}
+}
+
+/* ===========================
+   Enhanced Filter Bar Styles
+   =========================== */
+
+.wp-mcp-ai-tools-filter-bar {
+	position: relative;
+	margin-bottom: 20px;
+	padding: 15px;
+	background: #f9f9f9;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	transition: border-color var(--wp-mcp-ai-transition-normal);
+}
+
+/* Active filter indicator */
+.wp-mcp-ai-tools-filter-bar.has-active-filters {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.wp-mcp-ai-tools-filter-bar.has-active-filters::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 4px;
+	height: 100%;
+	background: #2271b1;
+	border-radius: 4px 0 0 4px;
+}
+
+/* Filter form inputs with improved focus states */
+.wp-mcp-ai-tools-filter-bar input[type="search"],
+.wp-mcp-ai-tools-filter-bar select {
+	transition: border-color var(--wp-mcp-ai-transition-normal), 
+				box-shadow var(--wp-mcp-ai-transition-normal);
+}
+
+.wp-mcp-ai-tools-filter-bar input[type="search"]:focus,
+.wp-mcp-ai-tools-filter-bar select:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+/* Enhanced button styles */
+.wp-mcp-ai-filter-actions .button {
+	position: relative;
+	transition: all var(--wp-mcp-ai-transition-normal);
+}
+
+.wp-mcp-ai-filter-actions .button:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.wp-mcp-ai-filter-actions .button:active {
+	transform: translateY(0);
+}
+
+/* Loading state for filter button */
+.wp-mcp-ai-filter-actions .button.is-loading {
+	pointer-events: none;
+	opacity: 0.6;
+	position: relative;
+}
+
+.wp-mcp-ai-filter-actions .button.is-loading::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	right: 10px;
+	width: 12px;
+	height: 12px;
+	margin-top: -6px;
+	border: 2px solid #fff;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: wp-mcp-ai-spinner 0.6s linear infinite;
+}
+
+@keyframes wp-mcp-ai-spinner {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Active filters indicator badge */
+.wp-mcp-ai-filter-active-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	background: #2271b1;
+	color: #fff;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 600;
+	margin-left: 10px;
+	animation: wp-mcp-ai-badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes wp-mcp-ai-badge-pulse {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(34, 113, 177, 0.4);
+	}
+	50% {
+		box-shadow: 0 0 0 4px rgba(34, 113, 177, 0);
+	}
+}
+
 /* Dashboard Overview */
 .wp-mcp-ai-dashboard {
 	display: grid;
@@ -600,6 +906,7 @@
 
 	.wp-mcp-ai-section__header {
 		padding: 0.875rem 1rem;
+		flex-wrap: wrap;
 	}
 
 	.wp-mcp-ai-section__icon {
@@ -612,6 +919,19 @@
 		font-size: 0.9375rem;
 	}
 
+	.wp-mcp-ai-section__subtitle {
+		font-size: 0.75rem;
+	}
+
+	.wp-mcp-ai-section__badge {
+		margin-left: 0;
+		margin-right: 0;
+	}
+
+	.wp-mcp-ai-section__body {
+		padding: 1rem;
+	}
+
 	.wp-mcp-ai-section__body .form-table th {
 		width: auto;
 		display: block;
@@ -621,6 +941,18 @@
 	.wp-mcp-ai-section__body .form-table td {
 		display: block;
 		padding: 0 0 1rem;
+	}
+
+	/* Make inputs full width on mobile */
+	.wp-mcp-ai-section__body .form-table input[type="text"],
+	.wp-mcp-ai-section__body .form-table input[type="password"],
+	.wp-mcp-ai-section__body .form-table input[type="email"],
+	.wp-mcp-ai-section__body .form-table input[type="url"],
+	.wp-mcp-ai-section__body .form-table input[type="number"],
+	.wp-mcp-ai-section__body .form-table select,
+	.wp-mcp-ai-section__body .form-table textarea {
+		width: 100%;
+		max-width: 100%;
 	}
 }
 

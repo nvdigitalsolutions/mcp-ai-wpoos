@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 - Maintains SoC (Separation of Concerns)
 
 ### 2. Settings Integration
-Added new setting in **Settings → WP oOS → Orchestration**:
+Added new setting in **Settings → NV oOS → Orchestration**:
 
 **Enable Automatic Async Tool Execution** (default: ON)
 - When enabled: All tools with async flags execute in background
@@ -258,7 +258,7 @@ Potential improvements for future releases:
 3. Monitor cron manager for queued jobs
 
 ### Post-deployment
-1. ✅ Setting visible in admin: **Settings → WP oOS → Orchestration**
+1. ✅ Setting visible in admin: **Settings → NV oOS → Orchestration**
 2. ✅ Check cron manager: **Tools → Cron Manager**
 3. ✅ Monitor logs for orchestration events
 4. ✅ Verify video generation completes successfully

@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Activity Feed', 'wp-mcp-ai' );
+		return __( 'NV oOS Activity Feed', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,16 +61,16 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Activity Feed', 'wp-mcp-ai' ),
+				'label' => __( 'Activity Feed', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Recent MCP activity', 'wp-mcp-ai' ),
+				'default'     => __( 'Recent MCP activity', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -78,17 +78,17 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 		$this->add_control(
 			'description',
 			array(
-				'label'   => __( 'Description', 'wp-mcp-ai' ),
+				'label'   => __( 'Description', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::TEXTAREA,
 				'rows'    => 3,
-				'default' => __( 'Summaries of the latest tool executions and model requests captured by the MCP logger.', 'wp-mcp-ai' ),
+				'default' => __( 'Summaries of the latest tool executions and model requests captured by the MCP logger.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'entry_limit',
 			array(
-				'label'   => __( 'Entries to display', 'wp-mcp-ai' ),
+				'label'   => __( 'Entries to display', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::NUMBER,
 				'min'     => 1,
 				'max'     => 30,
@@ -99,10 +99,10 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 		$this->add_control(
 			'include_request_events',
 			array(
-				'label'        => __( 'Include provider request logs', 'wp-mcp-ai' ),
+				'label'        => __( 'Include provider request logs', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -159,7 +159,7 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) || ! WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
-			echo '<p class="wp-mcp-ai-activity-feed__notice">' . esc_html__( 'Enable logging in the NV oOS settings to populate the activity feed.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-activity-feed__notice">' . esc_html__( 'Enable logging in the NV oOS settings to populate the activity feed.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -177,7 +177,7 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 		}
 
 		if ( empty( $entries ) ) {
-			echo '<p class="wp-mcp-ai-activity-feed__notice">' . esc_html__( 'No recent activity has been recorded yet.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-activity-feed__notice">' . esc_html__( 'No recent activity has been recorded yet.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -207,7 +207,7 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
 			echo '<div class="wp-mcp-ai-activity-feed__message">' . esc_html( $message ) . '</div>';
 			if ( '' !== $context_markup ) {
 				echo '<details class="wp-mcp-ai-activity-feed__context">';
-				echo '<summary>' . esc_html__( 'View context', 'wp-mcp-ai' ) . '</summary>';
+				echo '<summary>' . esc_html__( 'View context', 'mcp-ai-wpoos' ) . '</summary>';
 				echo $context_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo '</details>';
 			}

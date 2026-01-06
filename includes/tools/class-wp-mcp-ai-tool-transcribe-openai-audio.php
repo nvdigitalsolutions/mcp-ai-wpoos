@@ -36,14 +36,14 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Transcribe OpenAI Audio', 'wp-mcp-ai' );
+		return __( 'Transcribe OpenAI Audio', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Converts an uploaded audio file into English text using OpenAI transcription or translation.', 'wp-mcp-ai' );
+		return __( 'Converts an uploaded audio file into English text using OpenAI transcription or translation.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -55,41 +55,41 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'attachment_id'           => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'WordPress attachment ID that contains the audio file.', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress attachment ID that contains the audio file.', 'mcp-ai-wpoos' ),
 				),
 				'file_id'                 => $this->get_file_id_parameter_schema(),
 				'url'                     => $this->get_url_parameter_schema( 'audio' ),
 				'translate'               => array(
 					'type'        => 'boolean',
-					'description' => __( 'When true the audio will be translated into English instead of a raw transcription.', 'wp-mcp-ai' ),
+					'description' => __( 'When true the audio will be translated into English instead of a raw transcription.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'model'                   => array(
 					'type'        => 'string',
-					'description' => __( 'Optional OpenAI model override for the transcription request.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional OpenAI model override for the transcription request.', 'mcp-ai-wpoos' ),
 					'default'     => self::DEFAULT_MODEL,
 				),
 				'prompt'                  => array(
 					'type'        => 'string',
-					'description' => __( 'Optional prompt that provides context for the transcription.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional prompt that provides context for the transcription.', 'mcp-ai-wpoos' ),
 				),
 				'temperature'             => array(
 					'type'        => array( 'number', 'integer', 'string' ),
-					'description' => __( 'Optional temperature override between 0 and 1.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional temperature override between 0 and 1.', 'mcp-ai-wpoos' ),
 				),
 				'timeout'                 => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Optional request timeout override in seconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional request timeout override in seconds.', 'mcp-ai-wpoos' ),
 				),
 				'response_format'         => array(
 					'type'        => 'string',
-					'description' => __( 'Response format: json, verbose_json (default with metadata), text, srt (subtitle), or vtt (subtitle).', 'wp-mcp-ai' ),
+					'description' => __( 'Response format: json, verbose_json (default with metadata), text, srt (subtitle), or vtt (subtitle).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'json', 'verbose_json', 'text', 'srt', 'vtt' ),
 					'default'     => self::DEFAULT_FORMAT,
 				),
 				'timestamp_granularities' => array(
 					'type'        => 'array',
-					'description' => __( 'Timestamp detail level. Provide ["segment"] for paragraph-level timestamps, ["word"] for word-level timestamps, or both.', 'wp-mcp-ai' ),
+					'description' => __( 'Timestamp detail level. Provide ["segment"] for paragraph-level timestamps, ["word"] for word-level timestamps, or both.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 						'enum' => array( 'word', 'segment' ),
@@ -97,7 +97,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 				),
 				'language'                => array(
 					'type'        => 'string',
-					'description' => __( 'Optional ISO language code hint for the transcription.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional ISO language code hint for the transcription.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array(),
@@ -120,7 +120,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_remote_url_not_supported',
-				__( 'Remote URLs are not supported for audio transcription. Please upload the audio file to WordPress Media Library first.', 'wp-mcp-ai' ),
+				__( 'Remote URLs are not supported for audio transcription. Please upload the audio file to WordPress Media Library first.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -134,7 +134,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		if ( ! $attachment_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_audio_source',
-				__( 'You must supply an audio attachment ID, file ID, or URL.', 'wp-mcp-ai' ),
+				__( 'You must supply an audio attachment ID, file ID, or URL.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -143,7 +143,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to transcribe audio.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to transcribe audio.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id > 0 && $user_id !== get_current_user_id() ) {
@@ -151,11 +151,11 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		}
 
 		if ( $user_id && ! user_can( $user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to transcribe audio.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to transcribe audio.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$audio = $this->prepare_audio_attachment( $attachment_id );
@@ -269,7 +269,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		if ( ! $attachment_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_audio_attachment',
-				__( 'You must supply an audio attachment ID.', 'wp-mcp-ai' ),
+				__( 'You must supply an audio attachment ID.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -277,7 +277,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		if ( ! WP_MCP_AI_Message_Attachments::user_can_access_attachment( $attachment_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_attachment_forbidden',
-				__( 'You do not have permission to use the requested attachment.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to use the requested attachment.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -286,7 +286,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		if ( ! $post || 'attachment' !== $post->post_type ) {
 			return new WP_Error(
 				'wp_mcp_ai_attachment_missing',
-				__( 'Attachment not found.', 'wp-mcp-ai' ),
+				__( 'Attachment not found.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -295,7 +295,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_attachment_missing_file',
-				__( 'The attachment file could not be located.', 'wp-mcp-ai' ),
+				__( 'The attachment file could not be located.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -304,7 +304,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		if ( false === $file_size ) {
 			return new WP_Error(
 				'wp_mcp_ai_attachment_size_unknown',
-				__( 'Could not determine attachment size.', 'wp-mcp-ai' ),
+				__( 'Could not determine attachment size.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -314,7 +314,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			return new WP_Error(
 				'wp_mcp_ai_attachment_too_large',
 				/* translators: %s: maximum file size in bytes */
-				sprintf( __( 'Audio attachments must be smaller than %s bytes.', 'wp-mcp-ai' ), number_format_i18n( $max_bytes ) ),
+				sprintf( __( 'Audio attachments must be smaller than %s bytes.', 'mcp-ai-wpoos' ), number_format_i18n( $max_bytes ) ),
 				array( 'status' => 413 )
 			);
 		}
@@ -346,7 +346,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		if ( '' === $mime_type || ! in_array( $mime_type, $allowed, true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_attachment_unsupported_mime',
-				__( 'The attachment is not a supported audio format.', 'wp-mcp-ai' ),
+				__( 'The attachment is not a supported audio format.', 'mcp-ai-wpoos' ),
 				array( 'status' => 415 )
 			);
 		}

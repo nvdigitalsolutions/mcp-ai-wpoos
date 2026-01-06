@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented a comprehensive per-model configuration system for the WP oOS Orchestration tab, following the repository's Separation of Concerns (SoC) architecture principles.
+Successfully implemented a comprehensive per-model configuration system for the NV oOS Orchestration tab, following the repository's Separation of Concerns (SoC) architecture principles.
 
 ## Problem Statement (Original Requirements)
 
@@ -231,7 +231,7 @@ Pre-configured 13 models:
 
 ### Accessing the Feature
 
-1. Navigate to **WP oOS → Orchestration**
+1. Navigate to **NV oOS → Orchestration**
 2. Click the **"Per Model"** tab
 3. View all configured models in a table
 

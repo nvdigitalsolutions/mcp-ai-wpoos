@@ -29,14 +29,14 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Search Knowledge Attachments', 'wp-mcp-ai' );
+		return __( 'Search Knowledge Attachments', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Searches Media Library files that the current request is allowed to access and returns download URLs with metadata.', 'wp-mcp-ai' );
+		return __( 'Searches Media Library files that the current request is allowed to access and returns download URLs with metadata.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -48,25 +48,25 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'search'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional keywords that should match the attachment title.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional keywords that should match the attachment title.', 'mcp-ai-wpoos' ),
 					'minLength'   => 1,
 				),
 				'mime_types' => array(
 					'type'        => 'array',
-					'description' => __( 'List of MIME types that attachments must match.', 'wp-mcp-ai' ),
+					'description' => __( 'List of MIME types that attachments must match.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
 				'offset'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of matching attachments to skip before collecting results.', 'wp-mcp-ai' ),
+					'description' => __( 'Number of matching attachments to skip before collecting results.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
 				'limit'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of attachments to return.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of attachments to return.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => self::MAX_RESULTS,
 					'default'     => 20,
@@ -87,7 +87,7 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_dependency',
-				__( 'Attachment search requires the message attachment helper to be available.', 'wp-mcp-ai' )
+				__( 'Attachment search requires the message attachment helper to be available.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -191,7 +191,7 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'summary'     => sprintf(
 				/* translators: %d: number of attachments found */
-				__( 'Found %d attachment(s)', 'wp-mcp-ai' ),
+				__( 'Found %d attachment(s)', 'mcp-ai-wpoos' ),
 				count( $results )
 			),
 			'attachments' => $results,

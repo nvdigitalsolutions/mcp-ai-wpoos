@@ -38,8 +38,8 @@ class WP_MCP_AI_Add_Team_Page {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'edit.php?post_type=mcp_ai_team',
-			__( 'Build Team', 'wp-mcp-ai' ),
-			__( 'Build Team', 'wp-mcp-ai' ),
+			__( 'Build Team', 'mcp-ai-wpoos' ),
+			__( 'Build Team', 'mcp-ai-wpoos' ),
 			'edit_posts',
 			'wp-mcp-ai-add-team',
 			array( $this, 'render_page' )
@@ -78,9 +78,9 @@ class WP_MCP_AI_Add_Team_Page {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp_mcp_ai_deploy_team' ),
 				'strings' => array(
-					'deploying' => __( 'Deploying team...', 'wp-mcp-ai' ),
-					'success'   => __( 'Team deployed successfully!', 'wp-mcp-ai' ),
-					'error'     => __( 'Error deploying team. Please try again.', 'wp-mcp-ai' ),
+					'deploying' => __( 'Deploying team...', 'mcp-ai-wpoos' ),
+					'success'   => __( 'Team deployed successfully!', 'mcp-ai-wpoos' ),
+					'error'     => __( 'Error deploying team. Please try again.', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -103,9 +103,9 @@ class WP_MCP_AI_Add_Team_Page {
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Add Team', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'Add Team', 'mcp-ai-wpoos' ); ?></h1>
 			<p class="description">
-				<?php esc_html_e( 'Deploy a team of AI assistants with one click. Each team member will be created as a separate assistant based on their professional template.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Deploy a team of AI assistants with one click. Each team member will be created as a separate assistant based on their professional template.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<?php if ( empty( $teams ) ) : ?>
@@ -114,8 +114,8 @@ class WP_MCP_AI_Add_Team_Page {
 						<?php
 						printf(
 							/* translators: %s: URL to create team */
-							esc_html__( 'No teams found. Please %s first to deploy teams of assistants.', 'wp-mcp-ai' ),
-							'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_team' ) ) . '">' . esc_html__( 'create a team', 'wp-mcp-ai' ) . '</a>'
+							esc_html__( 'No teams found. Please %s first to deploy teams of assistants.', 'mcp-ai-wpoos' ),
+							'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_team' ) ) . '">' . esc_html__( 'create a team', 'mcp-ai-wpoos' ) . '</a>'
 						);
 						?>
 					</p>
@@ -148,7 +148,7 @@ class WP_MCP_AI_Add_Team_Page {
 									<?php
 									printf(
 										/* translators: %d: number of team members */
-										esc_html( _n( '%d member', '%d members', $members_count, 'wp-mcp-ai' ) ),
+										esc_html( _n( '%d member', '%d members', $members_count, 'mcp-ai-wpoos' ) ),
 										absint( $members_count )
 									);
 									?>
@@ -162,7 +162,7 @@ class WP_MCP_AI_Add_Team_Page {
 
 								<?php if ( ! empty( $member_titles ) ) : ?>
 									<div class="team-members">
-										<strong><?php esc_html_e( 'Team Members:', 'wp-mcp-ai' ); ?></strong>
+										<strong><?php esc_html_e( 'Team Members:', 'mcp-ai-wpoos' ); ?></strong>
 										<ul>
 											<?php foreach ( $member_titles as $member_title ) : ?>
 												<li><?php echo esc_html( $member_title ); ?></li>
@@ -174,19 +174,19 @@ class WP_MCP_AI_Add_Team_Page {
 								<div class="team-settings">
 									<?php if ( $default_provider ) : ?>
 										<div class="team-setting">
-											<strong><?php esc_html_e( 'Provider:', 'wp-mcp-ai' ); ?></strong>
+											<strong><?php esc_html_e( 'Provider:', 'mcp-ai-wpoos' ); ?></strong>
 											<?php echo esc_html( ucfirst( str_replace( '_', ' ', $default_provider ) ) ); ?>
 										</div>
 									<?php endif; ?>
 									<?php if ( $default_model ) : ?>
 										<div class="team-setting">
-											<strong><?php esc_html_e( 'Model:', 'wp-mcp-ai' ); ?></strong>
+											<strong><?php esc_html_e( 'Model:', 'mcp-ai-wpoos' ); ?></strong>
 											<?php echo esc_html( $default_model ); ?>
 										</div>
 									<?php endif; ?>
 									<?php if ( $default_temperature ) : ?>
 										<div class="team-setting">
-											<strong><?php esc_html_e( 'Temperature:', 'wp-mcp-ai' ); ?></strong>
+											<strong><?php esc_html_e( 'Temperature:', 'mcp-ai-wpoos' ); ?></strong>
 											<?php echo esc_html( $default_temperature ); ?>
 										</div>
 									<?php endif; ?>
@@ -199,18 +199,18 @@ class WP_MCP_AI_Add_Team_Page {
 										<?php
 										printf(
 											/* translators: %d: number of assistants to create */
-											esc_html( _n( 'Deploy Team (%d Assistant)', 'Deploy Team (%d Assistants)', $members_count, 'wp-mcp-ai' ) ),
+											esc_html( _n( 'Deploy Team (%d Assistant)', 'Deploy Team (%d Assistants)', $members_count, 'mcp-ai-wpoos' ) ),
 											absint( $members_count )
 										);
 										?>
 									</button>
 								<?php else : ?>
 									<button type="button" class="button button-primary button-large" disabled>
-										<?php esc_html_e( 'No Members', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'No Members', 'mcp-ai-wpoos' ); ?>
 									</button>
 								<?php endif; ?>
 								<a href="<?php echo esc_url( get_edit_post_link( $team->ID ) ); ?>" class="button button-secondary">
-									<?php esc_html_e( 'Edit Team', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Edit Team', 'mcp-ai-wpoos' ); ?>
 								</a>
 							</div>
 						</div>
@@ -224,7 +224,7 @@ class WP_MCP_AI_Add_Team_Page {
 			<div class="wp-mcp-ai-modal-overlay"></div>
 			<div class="wp-mcp-ai-modal-content">
 				<div class="wp-mcp-ai-modal-header">
-					<h2><?php esc_html_e( 'Team Deployment Results', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( 'Team Deployment Results', 'mcp-ai-wpoos' ); ?></h2>
 					<button type="button" class="wp-mcp-ai-modal-close">&times;</button>
 				</div>
 				<div class="wp-mcp-ai-modal-body">
@@ -232,10 +232,10 @@ class WP_MCP_AI_Add_Team_Page {
 				</div>
 				<div class="wp-mcp-ai-modal-footer">
 					<button type="button" class="button button-primary wp-mcp-ai-modal-close">
-						<?php esc_html_e( 'Close', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Close', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant' ) ); ?>" class="button button-secondary">
-						<?php esc_html_e( 'View Assistants', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'View Assistants', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</div>
 			</div>
@@ -250,7 +250,7 @@ class WP_MCP_AI_Add_Team_Page {
 		check_ajax_referer( 'wp_mcp_ai_deploy_team', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Get team ID.
@@ -258,7 +258,7 @@ class WP_MCP_AI_Add_Team_Page {
 
 		// Validate team ID.
 		if ( ! $team_id || 'mcp_ai_team' !== get_post_type( $team_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid team.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid team.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Get team data.
@@ -269,7 +269,7 @@ class WP_MCP_AI_Add_Team_Page {
 		$default_temperature = get_post_meta( $team_id, '_wp_mcp_ai_team_default_temperature', true );
 
 		if ( ! is_array( $team_members ) || empty( $team_members ) ) {
-			wp_send_json_error( array( 'message' => __( 'Team has no members.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Team has no members.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		$created_assistants = array();
@@ -281,7 +281,7 @@ class WP_MCP_AI_Add_Team_Page {
 			if ( ! $profession || 'mcp_ai_profession' !== $profession->post_type ) {
 				$errors[] = sprintf(
 					/* translators: %d: profession ID */
-					__( 'Invalid profession ID: %d', 'wp-mcp-ai' ),
+					__( 'Invalid profession ID: %d', 'mcp-ai-wpoos' ),
 					$profession_id
 				);
 				continue;
@@ -305,13 +305,13 @@ class WP_MCP_AI_Add_Team_Page {
 			// Build system prompt.
 			$system_prompt = $role_description;
 			if ( ! empty( $knowledge_base ) ) {
-				$system_prompt .= "\n\n" . __( 'Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
+				$system_prompt .= "\n\n" . __( 'Knowledge Base:', 'mcp-ai-wpoos' ) . "\n" . $knowledge_base;
 			}
 
 			// Create assistant title with team prefix.
 			$assistant_title = sprintf(
 				/* translators: 1: team name, 2: profession name */
-				__( '%1$s - %2$s', 'wp-mcp-ai' ),
+				__( '%1$s - %2$s', 'mcp-ai-wpoos' ),
 				$team->post_title,
 				$profession->post_title
 			);
@@ -329,7 +329,7 @@ class WP_MCP_AI_Add_Team_Page {
 			if ( is_wp_error( $assistant_id ) ) {
 				$errors[] = sprintf(
 					/* translators: 1: profession name, 2: error message */
-					__( 'Failed to create %1$s: %2$s', 'wp-mcp-ai' ),
+					__( 'Failed to create %1$s: %2$s', 'mcp-ai-wpoos' ),
 					$profession->post_title,
 					$assistant_id->get_error_message()
 				);
@@ -364,7 +364,7 @@ class WP_MCP_AI_Add_Team_Page {
 		if ( empty( $created_assistants ) ) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'Failed to create any assistants.', 'wp-mcp-ai' ),
+					'message' => __( 'Failed to create any assistants.', 'mcp-ai-wpoos' ),
 					'errors'  => $errors,
 				)
 			);
@@ -374,7 +374,7 @@ class WP_MCP_AI_Add_Team_Page {
 			array(
 				'message'    => sprintf(
 					/* translators: %d: number of assistants created */
-					_n( '%d assistant created successfully!', '%d assistants created successfully!', count( $created_assistants ), 'wp-mcp-ai' ),
+					_n( '%d assistant created successfully!', '%d assistants created successfully!', count( $created_assistants ), 'mcp-ai-wpoos' ),
 					count( $created_assistants )
 				),
 				'assistants' => $created_assistants,

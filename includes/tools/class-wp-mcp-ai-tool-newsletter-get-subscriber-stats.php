@@ -28,7 +28,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Newsletter Get Subscriber Stats tool is disabled because the Newsletter plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The Newsletter Get Subscriber Stats tool is disabled because the Newsletter plugin is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -42,14 +42,14 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Newsletter Subscriber Statistics', 'wp-mcp-ai' );
+		return __( 'Get Newsletter Subscriber Statistics', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Get statistical overview of Newsletter plugin subscribers including counts by status and lists. Requires Newsletter plugin.', 'wp-mcp-ai' );
+		return __( 'Get statistical overview of Newsletter plugin subscribers including counts by status and lists. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,7 +61,7 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 			'properties'           => array(
 				'include_lists' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Include subscriber counts per list. Default: true.', 'wp-mcp-ai' ),
+					'description' => __( 'Include subscriber counts per list. Default: true.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 			),
@@ -78,17 +78,17 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view newsletter statistics.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view newsletter statistics.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		global $wpdb;

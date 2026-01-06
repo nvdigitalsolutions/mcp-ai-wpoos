@@ -27,14 +27,14 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'GitHub Repository Operations', 'wp-mcp-ai' );
+		return __( 'GitHub Repository Operations', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Perform GitHub repository operations such as creating branches and managing files in the custom-tools directory.', 'wp-mcp-ai' );
+		return __( 'Perform GitHub repository operations such as creating branches and managing files in the custom-tools directory.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -46,41 +46,41 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 			'properties'           => array(
 				'action'         => array(
 					'type'        => 'string',
-					'description' => __( 'Action to perform: list_branches, create_branch, get_file, or update_file.', 'wp-mcp-ai' ),
+					'description' => __( 'Action to perform: list_branches, create_branch, get_file, or update_file.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'list_branches', 'create_branch', 'get_file', 'update_file' ),
 				),
 				'owner'          => array(
 					'type'        => 'string',
-					'description' => __( 'Repository owner.', 'wp-mcp-ai' ),
+					'description' => __( 'Repository owner.', 'mcp-ai-wpoos-pro' ),
 				),
 				'repo'           => array(
 					'type'        => 'string',
-					'description' => __( 'Repository name.', 'wp-mcp-ai' ),
+					'description' => __( 'Repository name.', 'mcp-ai-wpoos-pro' ),
 				),
 				'branch_name'    => array(
 					'type'        => 'string',
-					'description' => __( 'Branch name for create_branch action.', 'wp-mcp-ai' ),
+					'description' => __( 'Branch name for create_branch action.', 'mcp-ai-wpoos-pro' ),
 				),
 				'source_branch'  => array(
 					'type'        => 'string',
-					'description' => __( 'Source branch to branch from (default: main).', 'wp-mcp-ai' ),
+					'description' => __( 'Source branch to branch from (default: main).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'main',
 				),
 				'file_path'      => array(
 					'type'        => 'string',
-					'description' => __( 'File path (must be within custom-tools/ directory for safety).', 'wp-mcp-ai' ),
+					'description' => __( 'File path (must be within custom-tools/ directory for safety).', 'mcp-ai-wpoos-pro' ),
 				),
 				'file_content'   => array(
 					'type'        => 'string',
-					'description' => __( 'File content for update_file action.', 'wp-mcp-ai' ),
+					'description' => __( 'File content for update_file action.', 'mcp-ai-wpoos-pro' ),
 				),
 				'commit_message' => array(
 					'type'        => 'string',
-					'description' => __( 'Commit message for update_file action.', 'wp-mcp-ai' ),
+					'description' => __( 'Commit message for update_file action.', 'mcp-ai-wpoos-pro' ),
 				),
 				'branch'         => array(
 					'type'        => 'string',
-					'description' => __( 'Branch to operate on (default: main).', 'wp-mcp-ai' ),
+					'description' => __( 'Branch to operate on (default: main).', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'main',
 				),
 			),
@@ -102,7 +102,7 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 		$required_capability = apply_filters( 'wp_mcp_ai_github_operations_capability', 'manage_options', $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_github_forbidden', __( 'You do not have permission to perform GitHub operations.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_github_forbidden', __( 'You do not have permission to perform GitHub operations.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$action = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : '';
@@ -110,7 +110,7 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 		$repo   = isset( $arguments['repo'] ) ? sanitize_text_field( $arguments['repo'] ) : '';
 
 		if ( empty( $action ) || empty( $owner ) || empty( $repo ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_params', __( 'Action, owner, and repo parameters are required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_params', __( 'Action, owner, and repo parameters are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$client = new WP_MCP_AI_Github_Client();
@@ -129,7 +129,7 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 				return $this->handle_update_file( $client, $owner, $repo, $arguments );
 
 			default:
-				return new WP_Error( 'wp_mcp_ai_invalid_action', __( 'Invalid action specified.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_action', __( 'Invalid action specified.', 'mcp-ai-wpoos-pro' ) );
 		}
 	}
 
@@ -179,7 +179,7 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 		$source_branch = isset( $arguments['source_branch'] ) ? sanitize_text_field( $arguments['source_branch'] ) : 'main';
 
 		if ( empty( $branch_name ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_branch_name', __( 'Branch name is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_branch_name', __( 'Branch name is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Get the SHA of the source branch.
@@ -199,7 +199,7 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 			'success' => true,
 			'message' => sprintf(
 				/* translators: %s: branch name */
-				__( 'Branch "%s" created successfully.', 'wp-mcp-ai' ),
+				__( 'Branch "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
 				$branch_name
 			),
 			'branch'  => array(
@@ -223,14 +223,14 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 		$branch    = isset( $arguments['branch'] ) ? sanitize_text_field( $arguments['branch'] ) : 'main';
 
 		if ( empty( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_file_path', __( 'File path is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_file_path', __( 'File path is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Safety check: Only allow access to custom-tools directory.
 		if ( ! $this->is_safe_path( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_unsafe_path',
-				__( 'For safety, only files in the custom-tools/ directory can be accessed.', 'wp-mcp-ai' )
+				__( 'For safety, only files in the custom-tools/ directory can be accessed.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -274,14 +274,14 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 		$branch         = isset( $arguments['branch'] ) ? sanitize_text_field( $arguments['branch'] ) : 'main';
 
 		if ( empty( $file_path ) || empty( $file_content ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_params', __( 'File path and content are required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_params', __( 'File path and content are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Safety check: Only allow modifications to custom-tools directory.
 		if ( ! $this->is_safe_path( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_unsafe_path',
-				__( 'For safety, only files in the custom-tools/ directory can be modified.', 'wp-mcp-ai' )
+				__( 'For safety, only files in the custom-tools/ directory can be modified.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -310,7 +310,7 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 			'success' => true,
 			'message' => sprintf(
 				/* translators: %s: file path */
-				__( 'File "%s" updated successfully.', 'wp-mcp-ai' ),
+				__( 'File "%s" updated successfully.', 'mcp-ai-wpoos-pro' ),
 				$file_path
 			),
 			'commit'  => array(
@@ -359,7 +359,7 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 		if ( 0 !== strpos( trim( $code ), '<?php' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_php',
-				__( 'PHP files must start with <?php tag.', 'wp-mcp-ai' )
+				__( 'PHP files must start with <?php tag.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -371,7 +371,7 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 					'wp_mcp_ai_dangerous_function',
 					sprintf(
 						/* translators: %s: function name */
-						__( 'Dangerous function "%s" is not allowed in custom tools.', 'wp-mcp-ai' ),
+						__( 'Dangerous function "%s" is not allowed in custom tools.', 'mcp-ai-wpoos-pro' ),
 						$func
 					)
 				);
@@ -409,7 +409,7 @@ class WP_MCP_AI_Pro_Tool_Github_Repository_Operations implements WP_MCP_AI_Tool_
 				if ( 0 !== $return_code ) {
 					return new WP_Error(
 						'wp_mcp_ai_syntax_error',
-						__( 'PHP syntax error: ', 'wp-mcp-ai' ) . ( $errors ? $errors : $output )
+						__( 'PHP syntax error: ', 'mcp-ai-wpoos-pro' ) . ( $errors ? $errors : $output )
 					);
 				}
 			} else {
