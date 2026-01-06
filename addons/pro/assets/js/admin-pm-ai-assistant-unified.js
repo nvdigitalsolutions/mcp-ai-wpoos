@@ -5,12 +5,13 @@
  * Based on the test assistant page pattern for consistency.
  *
  * @package WP_MCP_AI
+ * @version 1.0.1
  */
 
 (function ($) {
 	'use strict';
 
-	console.log('[PM AI Assistant Unified] Script loaded:', new Date().toISOString());
+	console.log('[PM AI Assistant Unified] Script loaded v1.0.1:', new Date().toISOString());
 
 	/**
 	 * Escape HTML to prevent XSS attacks.
@@ -279,6 +280,9 @@
 		// IMPORTANT: Use <div> instead of <form> because the modal is rendered inside the WordPress
 		// post edit form, and nested forms are invalid HTML (browsers strip nested form tags).
 		// The chat.js init() function will handle both form and div containers.
+		//
+		// CRITICAL: The .wp-mcp-ai-chat__form wrapper div (line 291) is REQUIRED for chat initialization.
+		// Without it, chat.js init() will exit early and buttons will not work.
 		return '<div class="wp-mcp-ai-chat wp-mcp-ai-chat--template-compact" id="' + escapeHtml(instanceId) + '" data-wp-mcp-ai-chat data-template="compact">' +
 			'<div class="wp-mcp-ai-chat__transcript-controls">' +
 			'<button type="button" class="wp-mcp-ai-chat__transcript-toggle" aria-expanded="false">' +
@@ -287,6 +291,7 @@
 			'</button>' +
 			'</div>' +
 			'<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>' +
+			// CRITICAL: .wp-mcp-ai-chat__form wrapper STARTS here - required for initialization
 			'<div class="wp-mcp-ai-chat__form">' +
 			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>' +
 			'<textarea class="wp-mcp-ai-chat__input" rows="4" placeholder="Ask something…"></textarea>' +
@@ -302,6 +307,7 @@
 			// Use type="button" (not "submit") to prevent triggering parent WordPress form submission
 			'<button type="button" class="wp-mcp-ai-chat__submit">Send</button>' +
 			'</div>' +
+			// CRITICAL: .wp-mcp-ai-chat__form wrapper ENDS here
 			'</div>' +
 			'<div class="wp-mcp-ai-chat__controls">' +
 			'<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite"></div>' +
@@ -346,6 +352,14 @@
 				hasDataAttr: container.hasAttribute('data-wp-mcp-ai-chat'),
 				instanceId: container.getAttribute('id')
 			});
+
+			// Critical diagnostic: If form is missing, log the container's HTML structure
+			if (!form) {
+				console.error('[PM AI Assistant Unified] ❌ CRITICAL: .wp-mcp-ai-chat__form element is MISSING!');
+				console.error('[PM AI Assistant Unified] This will cause chat initialization to fail.');
+				console.error('[PM AI Assistant Unified] Container HTML structure:', container.innerHTML.substring(0, 500));
+				console.error('[PM AI Assistant Unified] This may indicate a caching issue. Please hard-refresh (Ctrl+Shift+R).');
+			}
 
 			// Debug: Log instance configuration
 			const config = window.wpMcpAiChatInstances ? window.wpMcpAiChatInstances[instanceId] : null;
