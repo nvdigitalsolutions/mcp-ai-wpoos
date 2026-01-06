@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Service {
 				'wp_mcp_ai_tool_not_found',
 				sprintf(
 					/* translators: %s: tool name */
-					__( 'Tool "%s" not found.', 'wp-mcp-ai' ),
+					__( 'Tool "%s" not found.', 'mcp-ai-wpoos' ),
 					$tool_name
 				),
 				array( 'status' => 404 )
@@ -79,7 +79,7 @@ class WP_MCP_AI_Tool_Service {
 				'wp_mcp_ai_tool_permission_denied',
 				sprintf(
 					/* translators: %s: tool name */
-					__( 'You do not have permission to use the "%s" tool.', 'wp-mcp-ai' ),
+					__( 'You do not have permission to use the "%s" tool.', 'mcp-ai-wpoos' ),
 					$tool_name
 				),
 				array( 'status' => 403 )
@@ -217,7 +217,7 @@ class WP_MCP_AI_Tool_Service {
 				'wp_mcp_ai_tool_not_found',
 				sprintf(
 					/* translators: %s: tool name */
-					__( 'Tool "%s" not found.', 'wp-mcp-ai' ),
+					__( 'Tool "%s" not found.', 'mcp-ai-wpoos' ),
 					$tool_name
 				)
 			);
@@ -234,7 +234,7 @@ class WP_MCP_AI_Tool_Service {
 					'wp_mcp_ai_missing_tool_argument',
 					sprintf(
 						/* translators: 1: parameter name, 2: tool name */
-						__( 'Missing required argument "%1$s" for tool "%2$s".', 'wp-mcp-ai' ),
+						__( 'Missing required argument "%1$s" for tool "%2$s".', 'mcp-ai-wpoos' ),
 						$param,
 						$tool_name
 					)

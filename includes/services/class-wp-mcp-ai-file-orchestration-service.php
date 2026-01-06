@@ -132,7 +132,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 		if ( empty( $file_identifier ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_file_identifier',
-				__( 'File identifier is required.', 'wp-mcp-ai' ),
+				__( 'File identifier is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -223,7 +223,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 		if ( empty( $file_identifier ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_file_identifier',
-				__( 'File identifier is required.', 'wp-mcp-ai' ),
+				__( 'File identifier is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -392,7 +392,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 		if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_not_found',
-				__( 'File not found on server.', 'wp-mcp-ai' ),
+				__( 'File not found on server.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -400,7 +400,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 		if ( empty( $mime_type ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_mime_type',
-				__( 'MIME type is required for file upload.', 'wp-mcp-ai' ),
+				__( 'MIME type is required for file upload.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -421,7 +421,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 		if ( false === $file_content ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_read_error',
-				__( 'Failed to read file content.', 'wp-mcp-ai' ),
+				__( 'Failed to read file content.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -449,7 +449,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 
 		return new WP_Error(
 			'wp_mcp_ai_processing_timeout',
-			__( 'File processing timed out. The file may still be processing.', 'wp-mcp-ai' ),
+			__( 'File processing timed out. The file may still be processing.', 'mcp-ai-wpoos' ),
 			array( 'status' => 408 )
 		);
 	}
@@ -474,7 +474,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 			'wp_mcp_ai_processing_failed',
 			sprintf(
 				/* translators: %s: provider name */
-				__( 'File processing failed on %s servers.', 'wp-mcp-ai' ),
+				__( 'File processing failed on %s servers.', 'mcp-ai-wpoos' ),
 				$this->provider_name
 			),
 			array( 'status' => 500 )
@@ -499,7 +499,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 
 		return new WP_Error(
 			'wp_mcp_ai_max_attempts_reached',
-			__( 'Maximum polling attempts reached while waiting for file processing.', 'wp-mcp-ai' ),
+			__( 'Maximum polling attempts reached while waiting for file processing.', 'mcp-ai-wpoos' ),
 			array( 'status' => 408 )
 		);
 	}

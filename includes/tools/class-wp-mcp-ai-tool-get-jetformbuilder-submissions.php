@@ -28,7 +28,7 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The JetFormBuilder submissions tool is disabled because JetFormBuilder is not active.', 'wp-mcp-ai' );
+		return __( 'The JetFormBuilder submissions tool is disabled because JetFormBuilder is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
@@ -38,12 +38,12 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 
 	/** {@inheritdoc} */
 	public function get_name() {
-		return __( 'Get JetFormBuilder Submissions', 'wp-mcp-ai' );
+		return __( 'Get JetFormBuilder Submissions', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
 	public function get_description() {
-		return __( 'Retrieves recent JetFormBuilder submissions for a given form, including key field snapshots.', 'wp-mcp-ai' );
+		return __( 'Retrieves recent JetFormBuilder submissions for a given form, including key field snapshots.', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
@@ -53,15 +53,15 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 			'properties'           => array(
 				'form_id'   => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Identifier of the JetFormBuilder form whose submissions should be listed.', 'wp-mcp-ai' ),
+					'description' => __( 'Identifier of the JetFormBuilder form whose submissions should be listed.', 'mcp-ai-wpoos' ),
 				),
 				'status'    => array(
 					'type'        => 'string',
-					'description' => __( 'Optional submission status filter (for example success or failed).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional submission status filter (for example success or failed).', 'mcp-ai-wpoos' ),
 				),
 				'limit'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of submissions to return (1-50).', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of submissions to return (1-50).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 10,
@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 				'transport' => array(
 					'type'        => 'string',
 					'enum'        => array( 'auto', 'rest', 'http' ),
-					'description' => __( 'Optional transport hint for the JetFormBuilder request.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional transport hint for the JetFormBuilder request.', 'mcp-ai-wpoos' ),
 					'default'     => 'auto',
 				),
 			),
@@ -87,26 +87,26 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_jetformbuilder_missing', __( 'JetFormBuilder is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_jetformbuilder_missing', __( 'JetFormBuilder is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetFormBuilder submissions.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetFormBuilder submissions.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! $this->user_can_view_records( $user_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetFormBuilder submissions.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetFormBuilder submissions.', 'mcp-ai-wpoos' ) );
 		}
 
 		$form_id = $this->sanitize_form_id( isset( $arguments['form_id'] ) ? $arguments['form_id'] : '' );
 		if ( '' === $form_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_form_id', __( 'A JetFormBuilder form identifier must be provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_form_id', __( 'A JetFormBuilder form identifier must be provided.', 'mcp-ai-wpoos' ) );
 		}
 
 		$limit     = $this->sanitize_limit( isset( $arguments['limit'] ) ? $arguments['limit'] : null, 10 );
@@ -496,7 +496,7 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 	 */
 	protected function transform_handler_error( array $result ) {
 		$error   = isset( $result['error'] ) && is_array( $result['error'] ) ? $result['error'] : array();
-		$message = isset( $error['message'] ) ? (string) $error['message'] : __( 'JetFormBuilder request failed.', 'wp-mcp-ai' );
+		$message = isset( $error['message'] ) ? (string) $error['message'] : __( 'JetFormBuilder request failed.', 'mcp-ai-wpoos' );
 		$code    = isset( $error['code'] ) ? sanitize_key( $error['code'] ) : 'jetformbuilder_error';
 		$status  = isset( $result['status'] ) ? (int) $result['status'] : 500;
 

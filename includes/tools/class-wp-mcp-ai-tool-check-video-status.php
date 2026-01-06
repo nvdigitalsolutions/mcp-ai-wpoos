@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Check Video Generation Status', 'wp-mcp-ai' );
+		return __( 'Check Video Generation Status', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video in async mode.', 'wp-mcp-ai' );
+		return __( 'Checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video in async mode.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -45,7 +45,7 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'job_id' => array(
 					'type'        => 'string',
-					'description' => __( 'The job ID returned from generate_veo_video when using async mode.', 'wp-mcp-ai' ),
+					'description' => __( 'The job ID returned from generate_veo_video when using async mode.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'job_id' ),
@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 		if ( empty( $arguments['job_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_job_id',
-				__( 'Job ID is required.', 'wp-mcp-ai' ),
+				__( 'Job ID is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -96,7 +96,7 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 					'job_id'        => $job_id,
 					'attachment_id' => $result['attachment_id'],
 					'url'           => isset( $result['url'] ) ? $result['url'] : wp_get_attachment_url( $result['attachment_id'] ),
-					'message'       => __( 'Video generation completed successfully.', 'wp-mcp-ai' ),
+					'message'       => __( 'Video generation completed successfully.', 'mcp-ai-wpoos' ),
 				);
 			}
 
@@ -106,7 +106,7 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 				'status'  => 'completed',
 				'job_id'  => $job_id,
 				'result'  => $result,
-				'message' => __( 'Video generation completed successfully.', 'wp-mcp-ai' ),
+				'message' => __( 'Video generation completed successfully.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -130,15 +130,15 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 	protected function get_status_message( $status ) {
 		switch ( $status ) {
 			case 'pending':
-				return __( 'Video generation request is queued and will start shortly.', 'wp-mcp-ai' );
+				return __( 'Video generation request is queued and will start shortly.', 'mcp-ai-wpoos' );
 			case 'polling':
-				return __( 'Video is being generated. Please check again in a few seconds.', 'wp-mcp-ai' );
+				return __( 'Video is being generated. Please check again in a few seconds.', 'mcp-ai-wpoos' );
 			case 'completed':
-				return __( 'Video generation completed successfully.', 'wp-mcp-ai' );
+				return __( 'Video generation completed successfully.', 'mcp-ai-wpoos' );
 			case 'failed':
-				return __( 'Video generation failed.', 'wp-mcp-ai' );
+				return __( 'Video generation failed.', 'mcp-ai-wpoos' );
 			default:
-				return __( 'Unknown status.', 'wp-mcp-ai' );
+				return __( 'Unknown status.', 'mcp-ai-wpoos' );
 		}
 	}
 

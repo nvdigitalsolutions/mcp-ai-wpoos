@@ -75,14 +75,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate OpenAI Speech', 'wp-mcp-ai' );
+		return __( 'Generate OpenAI Speech', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Converts text to speech using OpenAI and stores the audio in the Media Library.', 'wp-mcp-ai' );
+		return __( 'Converts text to speech using OpenAI and stores the audio in the Media Library.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -96,37 +96,37 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'text'      => array(
 					'type'        => 'string',
-					'description' => __( 'The text that should be converted to speech.', 'wp-mcp-ai' ),
+					'description' => __( 'The text that should be converted to speech.', 'mcp-ai-wpoos' ),
 				),
 				'voice'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional OpenAI voice to use (for example, alloy, verse, or shimmer).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional OpenAI voice to use (for example, alloy, verse, or shimmer).', 'mcp-ai-wpoos' ),
 					'default'     => $defaults['voice'],
 				),
 				'format'    => array(
 					'type'        => 'string',
-					'description' => __( 'Audio format for the generated file.', 'wp-mcp-ai' ),
+					'description' => __( 'Audio format for the generated file.', 'mcp-ai-wpoos' ),
 					'enum'        => array_keys( $this->get_allowed_formats() ),
 					'default'     => $defaults['format'],
 				),
 				'model'     => array(
 					'type'        => 'string',
-					'description' => __( 'OpenAI speech model to use.', 'wp-mcp-ai' ),
+					'description' => __( 'OpenAI speech model to use.', 'mcp-ai-wpoos' ),
 					'default'     => $defaults['model'],
 				),
 				'speed'     => array(
 					'type'        => 'number',
-					'description' => __( 'Playback speed multiplier (0.25 – 4).', 'wp-mcp-ai' ),
+					'description' => __( 'Playback speed multiplier (0.25 – 4).', 'mcp-ai-wpoos' ),
 					'minimum'     => 0.25,
 					'maximum'     => 4,
 				),
 				'file_name' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional base file name for the saved audio attachment.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional base file name for the saved audio attachment.', 'mcp-ai-wpoos' ),
 				),
 				'timeout'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Override the OpenAI request timeout in seconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Override the OpenAI request timeout in seconds.', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,
 					'maximum'     => 300,
 				),
@@ -151,21 +151,21 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		$defaults  = $this->get_configured_defaults();
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to generate speech audio.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to generate speech audio.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id ) {
 			if ( ! user_can( $user_id, 'read' ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to generate speech audio.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to generate speech audio.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
 		if ( '' === $text ) {
-			return new WP_Error( 'wp_mcp_ai_missing_text', __( 'No text was supplied for the speech request.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_text', __( 'No text was supplied for the speech request.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$format = isset( $arguments['format'] ) && '' !== $arguments['format'] ? sanitize_key( $arguments['format'] ) : $defaults['format'];
@@ -175,7 +175,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 			$format = $defaults['format'];
 
 			if ( '' === $this->normalise_audio_format( $format ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_format', __( 'The requested audio format is not supported.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_format', __( 'The requested audio format is not supported.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 		}
 
@@ -215,7 +215,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( empty( $speech['audio'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_empty_audio', __( 'OpenAI returned an empty audio response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_empty_audio', __( 'OpenAI returned an empty audio response.', 'mcp-ai-wpoos' ) );
 		}
 
 		$file_name = isset( $arguments['file_name'] ) ? $arguments['file_name'] : '';
@@ -348,7 +348,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		$meta   = $this->get_allowed_formats();
 
 		if ( '' === $audio || '' === $format || ! isset( $meta[ $format ] ) ) {
-			return new WP_Error( 'wp_mcp_ai_audio_storage_error', __( 'Unable to determine the audio format for storage.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_audio_storage_error', __( 'Unable to determine the audio format for storage.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Use job_id for filename if available, otherwise use file_name or default.
@@ -367,13 +367,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		$upload = wp_upload_bits( $file_name, null, $audio );
 
 		if ( ! empty( $upload['error'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_audio_upload_failed', __( 'Failed to save the generated audio file.', 'wp-mcp-ai' ), array( 'error' => $upload['error'] ) );
+			return new WP_Error( 'wp_mcp_ai_audio_upload_failed', __( 'Failed to save the generated audio file.', 'mcp-ai-wpoos' ), array( 'error' => $upload['error'] ) );
 		}
 
 		$file_path = isset( $upload['file'] ) ? $upload['file'] : '';
 
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_audio_upload_failed', __( 'Failed to write the generated audio file to disk.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_audio_upload_failed', __( 'Failed to write the generated audio file to disk.', 'mcp-ai-wpoos' ) );
 		}
 
 		$mime_type = $this->determine_mime_type( $file_path, $meta[ $format ]['mime_type'], $speech );
@@ -395,7 +395,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		if ( is_wp_error( $attachment_id ) ) {
 			$this->delete_file_safely( $file_path );
 
-			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register the generated audio file as an attachment.', 'wp-mcp-ai' ), array( 'error' => $attachment_id ) );
+			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register the generated audio file as an attachment.', 'mcp-ai-wpoos' ), array( 'error' => $attachment_id ) );
 		}
 
 		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
@@ -502,13 +502,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		$text = trim( $text );
 
 		if ( '' === $text ) {
-			return __( 'OpenAI Speech', 'wp-mcp-ai' );
+			return __( 'OpenAI Speech', 'mcp-ai-wpoos' );
 		}
 
 		$excerpt = wp_trim_words( $text, 12, '…' );
 
 		/* translators: %s: Short excerpt of the text used to generate speech. */
-		return sprintf( __( 'OpenAI Speech: %s', 'wp-mcp-ai' ), $excerpt );
+		return sprintf( __( 'OpenAI Speech: %s', 'mcp-ai-wpoos' ), $excerpt );
 	}
 
 	/**

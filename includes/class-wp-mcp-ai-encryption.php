@@ -214,7 +214,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 						'wp_mcp_ai_decrypt_failed',
 						sprintf(
 							/* translators: %d: meta ID */
-							__( 'Failed to decrypt secret with ID %d during key rotation. Rotation aborted and rolled back.', 'wp-mcp-ai' ),
+							__( 'Failed to decrypt secret with ID %d during key rotation. Rotation aborted and rolled back.', 'mcp-ai-wpoos' ),
 							$row->meta_id
 						),
 						array(
@@ -235,7 +235,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 						'wp_mcp_ai_encrypt_failed',
 						sprintf(
 							/* translators: %d: meta ID */
-							__( 'Failed to re-encrypt secret with ID %d during key rotation. Rotation aborted and rolled back.', 'wp-mcp-ai' ),
+							__( 'Failed to re-encrypt secret with ID %d during key rotation. Rotation aborted and rolled back.', 'mcp-ai-wpoos' ),
 							$row->meta_id
 						),
 						array(
@@ -267,7 +267,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 						'wp_mcp_ai_db_update_failed',
 						sprintf(
 							/* translators: %d: meta ID */
-							__( 'Failed to update secret with ID %d in database during key rotation. Rotation aborted and rolled back.', 'wp-mcp-ai' ),
+							__( 'Failed to update secret with ID %d in database during key rotation. Rotation aborted and rolled back.', 'mcp-ai-wpoos' ),
 							$meta_id
 						),
 						array( 'meta_id' => $meta_id )

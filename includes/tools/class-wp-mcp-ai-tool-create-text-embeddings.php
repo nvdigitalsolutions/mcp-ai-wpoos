@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Text Embeddings', 'wp-mcp-ai' );
+		return __( 'Create Text Embeddings', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates vector embeddings for text using OpenAI\'s embedding models. Use this for semantic search preparation, content similarity comparison, text classification, recommendation systems, or vector database population.', 'wp-mcp-ai' );
+		return __( 'Generates vector embeddings for text using OpenAI\'s embedding models. Use this for semantic search preparation, content similarity comparison, text classification, recommendation systems, or vector database population.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -42,7 +42,7 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 			'type'                 => 'object',
 			'properties'           => array(
 				'input'           => array(
-					'description' => __( 'Text or array of texts to embed. Maximum 8191 tokens for text-embedding-3-small/large.', 'wp-mcp-ai' ),
+					'description' => __( 'Text or array of texts to embed. Maximum 8191 tokens for text-embedding-3-small/large.', 'mcp-ai-wpoos' ),
 					'oneOf'       => array(
 						array(
 							'type' => 'string',
@@ -57,29 +57,29 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 				),
 				'model'           => array(
 					'type'        => 'string',
-					'description' => __( 'Embedding model to use.', 'wp-mcp-ai' ),
+					'description' => __( 'Embedding model to use.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002' ),
 					'default'     => 'text-embedding-3-small',
 				),
 				'encoding_format' => array(
 					'type'        => 'string',
 					'enum'        => array( 'float', 'base64' ),
-					'description' => __( 'Encoding format for embeddings.', 'wp-mcp-ai' ),
+					'description' => __( 'Encoding format for embeddings.', 'mcp-ai-wpoos' ),
 					'default'     => 'float',
 				),
 				'dimensions'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of dimensions for text-embedding-3-* models. Smaller dimensions are faster and cheaper.', 'wp-mcp-ai' ),
+					'description' => __( 'Number of dimensions for text-embedding-3-* models. Smaller dimensions are faster and cheaper.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'store_in_meta'   => array(
 					'type'        => 'boolean',
-					'description' => __( 'Save embeddings to post metadata for later retrieval.', 'wp-mcp-ai' ),
+					'description' => __( 'Save embeddings to post metadata for later retrieval.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'post_id'         => array(
 					'type'        => 'integer',
-					'description' => __( 'Post ID to attach embeddings to (required if store_in_meta is true).', 'wp-mcp-ai' ),
+					'description' => __( 'Post ID to attach embeddings to (required if store_in_meta is true).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 			),
@@ -102,19 +102,19 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to create text embeddings.', 'wp-mcp-ai' )
+				__( 'You do not have permission to create text embeddings.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate input.
 		if ( ! isset( $arguments['input'] ) || empty( $arguments['input'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_input',
-				__( 'Input text is required.', 'wp-mcp-ai' )
+				__( 'Input text is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -127,7 +127,7 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 		if ( $store_in_meta && ! $post_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_post_id',
-				__( 'Post ID is required when store_in_meta is true.', 'wp-mcp-ai' )
+				__( 'Post ID is required when store_in_meta is true.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 			if ( ! $post ) {
 				return new WP_Error(
 					'wp_mcp_ai_invalid_post_id',
-					__( 'The specified post does not exist.', 'wp-mcp-ai' )
+					__( 'The specified post does not exist.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -144,7 +144,7 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 			if ( ! user_can( $user_id, 'edit_post', $post_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_cannot_edit_post',
-					__( 'You do not have permission to edit this post.', 'wp-mcp-ai' )
+					__( 'You do not have permission to edit this post.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -207,7 +207,7 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 			'post_id'    => $post_id,
 			'summary'    => sprintf(
 				/* translators: 1: number of embeddings, 2: model name */
-				__( 'Created %1$d embeddings using model %2$s.', 'wp-mcp-ai' ),
+				__( 'Created %1$d embeddings using model %2$s.', 'mcp-ai-wpoos' ),
 				count( $embeddings ),
 				$model
 			),

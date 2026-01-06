@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Quiz Analytics', 'wp-mcp-ai' );
+		return __( 'Get Quiz Analytics', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates Chart.js visualization data for quiz analytics including score distribution, pass/fail rates, completion times, and question performance.', 'wp-mcp-ai' );
+		return __( 'Generates Chart.js visualization data for quiz analytics including score distribution, pass/fail rates, completion times, and question performance.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,12 +43,12 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'quiz_id'     => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the quiz to analyze.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the quiz to analyze.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'chart_types' => array(
 					'type'        => 'array',
-					'description' => __( 'Types of charts to generate. If not specified, all charts are generated.', 'wp-mcp-ai' ),
+					'description' => __( 'Types of charts to generate. If not specified, all charts are generated.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 						'enum' => array(
@@ -77,21 +77,21 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view quiz analytics.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view quiz analytics.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$quiz_id     = isset( $arguments['quiz_id'] ) ? absint( $arguments['quiz_id'] ) : 0;
 		$chart_types = isset( $arguments['chart_types'] ) && is_array( $arguments['chart_types'] ) ? $arguments['chart_types'] : array( 'score_distribution', 'pass_fail_rate', 'completion_times', 'question_performance', 'submission_timeline' );
 
 		if ( ! $quiz_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Verify quiz exists.
 		$quiz = get_post( $quiz_id );
 
 		if ( ! $quiz || 'mcp_ai_quiz' !== $quiz->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Check permissions: must be quiz author or have edit_others_posts capability.
@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 		$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 		if ( ! $is_author && ! $can_edit_others ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view analytics for this quiz.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view analytics for this quiz.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Get all graded submissions for this quiz.
@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 		);
 
 		if ( empty( $submissions ) ) {
-			return new WP_Error( 'wp_mcp_ai_no_data', __( 'No graded submissions found for this quiz.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_no_data', __( 'No graded submissions found for this quiz.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Get quiz metadata.
@@ -167,7 +167,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'summary'        => sprintf(
 				/* translators: 1: quiz title, 2: number of submissions */
-				__( 'Generated analytics for %1$s with %2$d submissions', 'wp-mcp-ai' ),
+				__( 'Generated analytics for %1$s with %2$d submissions', 'mcp-ai-wpoos-pro' ),
 				$quiz_title,
 				count( $submissions )
 			),
@@ -295,7 +295,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 				'labels'   => $labels,
 				'datasets' => array(
 					array(
-						'label'           => __( 'Number of Students', 'wp-mcp-ai' ),
+						'label'           => __( 'Number of Students', 'mcp-ai-wpoos-pro' ),
 						'data'            => $bins,
 						'backgroundColor' => 'rgba(54, 162, 235, 0.6)',
 						'borderColor'     => 'rgba(54, 162, 235, 1)',
@@ -308,7 +308,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 				'plugins'    => array(
 					'title' => array(
 						'display' => true,
-						'text'    => __( 'Score Distribution', 'wp-mcp-ai' ),
+						'text'    => __( 'Score Distribution', 'mcp-ai-wpoos-pro' ),
 					),
 					'legend' => array(
 						'display' => true,
@@ -319,13 +319,13 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 						'beginAtZero' => true,
 						'title'       => array(
 							'display' => true,
-							'text'    => __( 'Number of Students', 'wp-mcp-ai' ),
+							'text'    => __( 'Number of Students', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 					'x' => array(
 						'title' => array(
 							'display' => true,
-							'text'    => __( 'Score Range', 'wp-mcp-ai' ),
+							'text'    => __( 'Score Range', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),
@@ -345,8 +345,8 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 			'type' => 'doughnut',
 			'data' => array(
 				'labels'   => array(
-					__( 'Passed', 'wp-mcp-ai' ),
-					__( 'Failed', 'wp-mcp-ai' ),
+					__( 'Passed', 'mcp-ai-wpoos-pro' ),
+					__( 'Failed', 'mcp-ai-wpoos-pro' ),
 				),
 				'datasets' => array(
 					array(
@@ -373,7 +373,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 						'display' => true,
 						'text'    => sprintf(
 							/* translators: %d: passing score percentage */
-							__( 'Pass/Fail Rate (Passing Score: %d%%)', 'wp-mcp-ai' ),
+							__( 'Pass/Fail Rate (Passing Score: %d%%)', 'mcp-ai-wpoos-pro' ),
 							$passing_score
 						),
 					),
@@ -403,7 +403,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 					'plugins' => array(
 						'title' => array(
 							'display' => true,
-							'text'    => __( 'Completion Times (No Data Available)', 'wp-mcp-ai' ),
+							'text'    => __( 'Completion Times (No Data Available)', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),
@@ -434,7 +434,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 				'labels'   => $labels,
 				'datasets' => array(
 					array(
-						'label'           => __( 'Number of Submissions', 'wp-mcp-ai' ),
+						'label'           => __( 'Number of Submissions', 'mcp-ai-wpoos-pro' ),
 						'data'            => $bins,
 						'backgroundColor' => 'rgba(153, 102, 255, 0.6)',
 						'borderColor'     => 'rgba(153, 102, 255, 1)',
@@ -447,7 +447,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 				'plugins'    => array(
 					'title' => array(
 						'display' => true,
-						'text'    => __( 'Completion Times Distribution', 'wp-mcp-ai' ),
+						'text'    => __( 'Completion Times Distribution', 'mcp-ai-wpoos-pro' ),
 					),
 					'legend' => array(
 						'display' => true,
@@ -458,13 +458,13 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 						'beginAtZero' => true,
 						'title'       => array(
 							'display' => true,
-							'text'    => __( 'Number of Submissions', 'wp-mcp-ai' ),
+							'text'    => __( 'Number of Submissions', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 					'x' => array(
 						'title' => array(
 							'display' => true,
-							'text'    => __( 'Time Range (minutes)', 'wp-mcp-ai' ),
+							'text'    => __( 'Time Range (minutes)', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),
@@ -490,7 +490,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 					'plugins' => array(
 						'title' => array(
 							'display' => true,
-							'text'    => __( 'Question Performance (No Data Available)', 'wp-mcp-ai' ),
+							'text'    => __( 'Question Performance (No Data Available)', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),
@@ -502,7 +502,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 		$success_rates     = array();
 
 		foreach ( $questions as $index => $question ) {
-			$labels[] = sprintf( __( 'Q%d', 'wp-mcp-ai' ), $index + 1 );
+			$labels[] = sprintf( __( 'Q%d', 'mcp-ai-wpoos-pro' ), $index + 1 );
 
 			if ( isset( $question_stats[ $index ] ) ) {
 				$stats        = $question_stats[ $index ];
@@ -524,7 +524,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 				'labels'   => $labels,
 				'datasets' => array(
 					array(
-						'label'           => __( 'Success Rate (%)', 'wp-mcp-ai' ),
+						'label'           => __( 'Success Rate (%)', 'mcp-ai-wpoos-pro' ),
 						'data'            => $success_rates,
 						'backgroundColor' => 'rgba(255, 206, 86, 0.6)',
 						'borderColor'     => 'rgba(255, 206, 86, 1)',
@@ -537,7 +537,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 				'plugins'    => array(
 					'title' => array(
 						'display' => true,
-						'text'    => __( 'Question Performance', 'wp-mcp-ai' ),
+						'text'    => __( 'Question Performance', 'mcp-ai-wpoos-pro' ),
 					),
 					'legend' => array(
 						'display' => true,
@@ -549,13 +549,13 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 						'max'         => 100,
 						'title'       => array(
 							'display' => true,
-							'text'    => __( 'Success Rate (%)', 'wp-mcp-ai' ),
+							'text'    => __( 'Success Rate (%)', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 					'x' => array(
 						'title' => array(
 							'display' => true,
-							'text'    => __( 'Question Number', 'wp-mcp-ai' ),
+							'text'    => __( 'Question Number', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),
@@ -580,7 +580,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 					'plugins' => array(
 						'title' => array(
 							'display' => true,
-							'text'    => __( 'Submission Timeline (No Data Available)', 'wp-mcp-ai' ),
+							'text'    => __( 'Submission Timeline (No Data Available)', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),
@@ -613,7 +613,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 				'labels'   => $labels,
 				'datasets' => array(
 					array(
-						'label'           => __( 'Submissions', 'wp-mcp-ai' ),
+						'label'           => __( 'Submissions', 'mcp-ai-wpoos-pro' ),
 						'data'            => $data,
 						'borderColor'     => 'rgba(75, 192, 192, 1)',
 						'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
@@ -628,7 +628,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 				'plugins'    => array(
 					'title' => array(
 						'display' => true,
-						'text'    => __( 'Submission Timeline', 'wp-mcp-ai' ),
+						'text'    => __( 'Submission Timeline', 'mcp-ai-wpoos-pro' ),
 					),
 					'legend' => array(
 						'display' => true,
@@ -639,13 +639,13 @@ class WP_MCP_AI_Tool_Get_Quiz_Analytics implements WP_MCP_AI_Tool_Interface, WP_
 						'beginAtZero' => true,
 						'title'       => array(
 							'display' => true,
-							'text'    => __( 'Number of Submissions', 'wp-mcp-ai' ),
+							'text'    => __( 'Number of Submissions', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 					'x' => array(
 						'title' => array(
 							'display' => true,
-							'text'    => __( 'Date', 'wp-mcp-ai' ),
+							'text'    => __( 'Date', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),

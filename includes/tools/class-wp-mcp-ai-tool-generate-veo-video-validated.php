@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Generate_Veo_Video_Validated extends WP_MCP_AI_Validated_To
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Video with Veo (Validated)', 'wp-mcp-ai' );
+		return __( 'Generate Video with Veo (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Generates realistic videos from text descriptions using Google\'s Veo models with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

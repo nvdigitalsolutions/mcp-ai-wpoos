@@ -718,8 +718,8 @@ if ( is_admin() ) {
 		$diagnostic_link = admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' );
 
 		$plugin_links = array(
-			'settings'   => '<a href="' . esc_url( $settings_link ) . '">' . esc_html__( 'Settings', 'wp-mcp-ai' ) . '</a>',
-			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">' . esc_html__( 'Diagnostic', 'wp-mcp-ai' ) . '</a>',
+			'settings'   => '<a href="' . esc_url( $settings_link ) . '">' . esc_html__( 'Settings', 'mcp-ai-wpoos' ) . '</a>',
+			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">' . esc_html__( 'Diagnostic', 'mcp-ai-wpoos' ) . '</a>',
 		);
 
 		return array_merge( $plugin_links, $links );
@@ -1458,7 +1458,7 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 
 		?>
 		<div class="notice <?php echo esc_attr( $notice_class ); ?> is-dismissible">
-			<h3><?php esc_html_e( 'Open Operator System Security Warning', 'wp-mcp-ai' ); ?></h3>
+			<h3><?php esc_html_e( 'Open Operator System Security Warning', 'mcp-ai-wpoos' ); ?></h3>
 			<p><strong><?php echo esc_html( $recommendation ); ?></strong></p>
 			
 			<?php if ( ! empty( $summary ) ) : ?>
@@ -1466,7 +1466,7 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 					<?php
 					printf(
 						/* translators: 1: number of critical issues, 2: number of warnings */
-						esc_html__( 'Security Check Results: %1$d critical issue(s), %2$d warning(s)', 'wp-mcp-ai' ),
+						esc_html__( 'Security Check Results: %1$d critical issue(s), %2$d warning(s)', 'mcp-ai-wpoos' ),
 						isset( $summary['critical'] ) ? absint( $summary['critical'] ) : 0,
 						isset( $summary['warning'] ) ? absint( $summary['warning'] ) : 0
 					);
@@ -1491,14 +1491,14 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 			<?php endif; ?>
 
 			<p>
-				<?php esc_html_e( 'This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.', 'mcp-ai-wpoos' ); ?>
 			</p>
 			<p>
 				<em>
 					<?php
 					printf(
 						/* translators: %s: code snippet for wp-config.php */
-						esc_html__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'wp-mcp-ai' ),
+						esc_html__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'mcp-ai-wpoos' ),
 						'<code>define( \'WP_MCP_AI_SKIP_SECURITY_CHECK\', true );</code>'
 					);
 					?>

@@ -80,7 +80,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 			check_admin_referer( 'wp_mcp_ai_clear_shutdown', 'wp_mcp_ai_clear_shutdown_nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have permission to perform this action.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ) );
 			}
 
 			$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
@@ -106,7 +106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 			check_admin_referer( 'wp_mcp_ai_clear_violations', 'wp_mcp_ai_clear_violations_nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have permission to perform this action.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ) );
 			}
 
 			$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
@@ -132,7 +132,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 			check_admin_referer( 'wp_mcp_ai_verify_root_key', 'wp_mcp_ai_verify_root_key_nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have permission to perform this action.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ) );
 			}
 
 			$security_key = WP_MCP_AI_Root_Security_Key::get_instance();
@@ -196,20 +196,20 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 				$status = $security_key->get_status();
 				?>
 				<div class="notice notice-error is-dismissible">
-					<h3><?php esc_html_e( 'NV oOS Root Security Key Required', 'wp-mcp-ai' ); ?></h3>
-					<p><strong><?php esc_html_e( 'Plugin initialization has been blocked. A root security key is required to unlock the plugin.', 'wp-mcp-ai' ); ?></strong></p>
+					<h3><?php esc_html_e( 'NV oOS Root Security Key Required', 'mcp-ai-wpoos' ); ?></h3>
+					<p><strong><?php esc_html_e( 'Plugin initialization has been blocked. A root security key is required to unlock the plugin.', 'mcp-ai-wpoos' ); ?></strong></p>
 					
 					<?php if ( ! empty( $status['reason'] ) ) : ?>
-						<p><strong><?php esc_html_e( 'Reason:', 'wp-mcp-ai' ); ?></strong> <?php echo esc_html( $status['reason'] ); ?></p>
+						<p><strong><?php esc_html_e( 'Reason:', 'mcp-ai-wpoos' ); ?></strong> <?php echo esc_html( $status['reason'] ); ?></p>
 					<?php endif; ?>
 
 					<?php if ( ! empty( $status['enabled_at'] ) ) : ?>
-						<p><strong><?php esc_html_e( 'Enabled at:', 'wp-mcp-ai' ); ?></strong> <?php echo esc_html( $status['enabled_at'] ); ?></p>
+						<p><strong><?php esc_html_e( 'Enabled at:', 'mcp-ai-wpoos' ); ?></strong> <?php echo esc_html( $status['enabled_at'] ); ?></p>
 					<?php endif; ?>
 
 					<?php if ( $status['locked_out'] ) : ?>
 						<p class="description" style="color: #d63638;">
-							<?php esc_html_e( 'Too many failed verification attempts. Please wait 15 minutes before trying again.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Too many failed verification attempts. Please wait 15 minutes before trying again.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					<?php else : ?>
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -217,7 +217,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 							<input type="hidden" name="action" value="wp_mcp_ai_verify_root_key" />
 							<p>
 								<label for="wp_mcp_ai_root_key">
-									<?php esc_html_e( 'Enter Root Security Key:', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Enter Root Security Key:', 'mcp-ai-wpoos' ); ?>
 								</label><br>
 								<input 
 									type="password" 
@@ -229,14 +229,14 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 								/>
 							</p>
 							<p>
-								<?php submit_button( __( 'Verify and Unlock', 'wp-mcp-ai' ), 'primary', 'submit', false ); ?>
+								<?php submit_button( __( 'Verify and Unlock', 'mcp-ai-wpoos' ), 'primary', 'submit', false ); ?>
 							</p>
 						</form>
 						<p class="description">
 							<?php
 							printf(
 								/* translators: %s: Code snippet */
-								esc_html__( 'The root security key is defined in wp-config.php using: %s', 'wp-mcp-ai' ),
+								esc_html__( 'The root security key is defined in wp-config.php using: %s', 'mcp-ai-wpoos' ),
 								'<code>define( \'WP_MCP_AI_ROOT_SECURITY_KEY\', \'your-secure-key\' );</code>'
 							);
 							?>
@@ -256,7 +256,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 					case 'verified':
 						?>
 						<div class="notice notice-success is-dismissible">
-							<p><strong><?php esc_html_e( 'Success!', 'wp-mcp-ai' ); ?></strong> <?php esc_html_e( 'Root security key verified. Plugin has been unlocked.', 'wp-mcp-ai' ); ?></p>
+							<p><strong><?php esc_html_e( 'Success!', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Root security key verified. Plugin has been unlocked.', 'mcp-ai-wpoos' ); ?></p>
 						</div>
 						<?php
 						break;
@@ -264,13 +264,13 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 					case 'invalid':
 						?>
 						<div class="notice notice-error is-dismissible">
-							<p><strong><?php esc_html_e( 'Error!', 'wp-mcp-ai' ); ?></strong> 
+							<p><strong><?php esc_html_e( 'Error!', 'mcp-ai-wpoos' ); ?></strong> 
 							<?php
 							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just displaying error message from previous request.
 							if ( isset( $_GET['error'] ) ) {
 								echo esc_html( urldecode( sanitize_text_field( wp_unslash( $_GET['error'] ) ) ) );
 							} else {
-								esc_html_e( 'Invalid root security key provided.', 'wp-mcp-ai' );
+								esc_html_e( 'Invalid root security key provided.', 'mcp-ai-wpoos' );
 							}
 							?>
 							</p>
@@ -281,7 +281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 					case 'empty':
 						?>
 						<div class="notice notice-warning is-dismissible">
-							<p><?php esc_html_e( 'Please enter a root security key.', 'wp-mcp-ai' ); ?></p>
+							<p><?php esc_html_e( 'Please enter a root security key.', 'mcp-ai-wpoos' ); ?></p>
 						</div>
 						<?php
 						break;

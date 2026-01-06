@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget extends \Elementor\Wid
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Provider Quick Links', 'wp-mcp-ai' );
+		return __( 'NV oOS Provider Quick Links', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,16 +61,16 @@ class WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget extends \Elementor\Wid
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Quick Links', 'wp-mcp-ai' ),
+				'label' => __( 'Quick Links', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Provider quick links', 'wp-mcp-ai' ),
+				'default'     => __( 'Provider quick links', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -78,10 +78,10 @@ class WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget extends \Elementor\Wid
 		$this->add_control(
 			'description',
 			array(
-				'label'   => __( 'Description', 'wp-mcp-ai' ),
+				'label'   => __( 'Description', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::TEXTAREA,
 				'rows'    => 3,
-				'default' => __( 'Jump straight to billing and request logs for rapid diagnostics.', 'wp-mcp-ai' ),
+				'default' => __( 'Jump straight to billing and request logs for rapid diagnostics.', 'mcp-ai-wpoos' ),
 			)
 		);
 
@@ -131,7 +131,7 @@ class WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget extends \Elementor\Wid
 		}
 
 		if ( empty( $links ) ) {
-			echo '<p class="wp-mcp-ai-provider-links__notice">' . esc_html__( 'No quick links are available for the current user.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-provider-links__notice">' . esc_html__( 'No quick links are available for the current user.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -204,7 +204,7 @@ class WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget extends \Elementor\Wid
 		}
 
 		return array(
-			'label'       => isset( $result['label'] ) ? (string) $result['label'] : __( 'Open link', 'wp-mcp-ai' ),
+			'label'       => isset( $result['label'] ) ? (string) $result['label'] : __( 'Open link', 'mcp-ai-wpoos' ),
 			'url'         => esc_url_raw( $result['url'] ),
 			'description' => isset( $result['description'] ) ? (string) $result['description'] : '',
 			'is_external' => true,

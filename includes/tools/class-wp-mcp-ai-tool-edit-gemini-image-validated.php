@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image_Validated extends WP_MCP_AI_Validated_Too
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Edit Gemini Image (Nano Banana) (Validated)', 'wp-mcp-ai' );
+		return __( 'Edit Gemini Image (Nano Banana) (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Edits an existing image using Gemini Nano Banana (text + image-to-image) and stores the result in the Media Library with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Edits an existing image using Gemini Nano Banana (text + image-to-image) and stores the result in the Media Library with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

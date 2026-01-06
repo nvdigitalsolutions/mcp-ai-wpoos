@@ -41,14 +41,14 @@ if ( $has_analytics ) {
 		<!-- Pattern Insights -->
 		<div class="wp-mcp-ai-pattern-insights" style="margin-top: 20px; padding: 15px; background: #f7f7f7; border-radius: 4px;">
 			<div style="font-weight: 600; margin-bottom: 10px;">
-				<?php esc_html_e( 'Key Insights', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Key Insights', 'mcp-ai-wpoos' ); ?>
 			</div>
 			
 			<!-- Peak Hours -->
 			<?php if ( ! empty( $pattern_data['peak_hours'] ) ) : ?>
 				<div style="margin-bottom: 8px;">
 					<span class="dashicons dashicons-clock" style="color: #2271b1;"></span>
-					<strong><?php esc_html_e( 'Peak Hours:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Peak Hours:', 'mcp-ai-wpoos' ); ?></strong>
 					<?php
 					$peak_hours_formatted = array_map(
 						function ( $hour ) {
@@ -65,7 +65,7 @@ if ( $has_analytics ) {
 			<?php if ( ! empty( $pattern_data['peak_days'] ) ) : ?>
 				<div style="margin-bottom: 8px;">
 					<span class="dashicons dashicons-calendar-alt" style="color: #2271b1;"></span>
-					<strong><?php esc_html_e( 'Peak Days:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Peak Days:', 'mcp-ai-wpoos' ); ?></strong>
 					<?php echo esc_html( implode( ', ', $pattern_data['peak_days'] ) ); ?>
 				</div>
 			<?php endif; ?>
@@ -73,13 +73,13 @@ if ( $has_analytics ) {
 			<!-- Usage Type -->
 			<div>
 				<span class="dashicons dashicons-chart-bar" style="color: #2271b1;"></span>
-				<strong><?php esc_html_e( 'Usage Pattern:', 'wp-mcp-ai' ); ?></strong>
+				<strong><?php esc_html_e( 'Usage Pattern:', 'mcp-ai-wpoos' ); ?></strong>
 				<?php
 				$usage_type        = isset( $pattern_data['usage_type'] ) ? $pattern_data['usage_type'] : 'consistent';
 				$usage_type_labels = array(
-					'consistent' => __( 'Consistent (predictable usage)', 'wp-mcp-ai' ),
-					'sporadic'   => __( 'Sporadic (moderate variation)', 'wp-mcp-ai' ),
-					'bursty'     => __( 'Bursty (high variation)', 'wp-mcp-ai' ),
+					'consistent' => __( 'Consistent (predictable usage)', 'mcp-ai-wpoos' ),
+					'sporadic'   => __( 'Sporadic (moderate variation)', 'mcp-ai-wpoos' ),
+					'bursty'     => __( 'Bursty (high variation)', 'mcp-ai-wpoos' ),
 				);
 				echo esc_html( isset( $usage_type_labels[ $usage_type ] ) ? $usage_type_labels[ $usage_type ] : ucfirst( $usage_type ) );
 				?>
@@ -103,7 +103,7 @@ if ( $has_analytics ) {
 						data: {
 							labels: hourLabels,
 							datasets: [{
-								label: '<?php esc_attr_e( 'Tokens Used', 'wp-mcp-ai' ); ?>',
+								label: '<?php esc_attr_e( 'Tokens Used', 'mcp-ai-wpoos' ); ?>',
 								data: hourlyPattern,
 								backgroundColor: 'rgba(54, 162, 235, 0.6)',
 								borderColor: 'rgba(54, 162, 235, 1)',
@@ -119,7 +119,7 @@ if ( $has_analytics ) {
 								},
 								title: {
 									display: true,
-									text: '<?php esc_attr_e( 'Hourly Usage Pattern', 'wp-mcp-ai' ); ?>'
+									text: '<?php esc_attr_e( 'Hourly Usage Pattern', 'mcp-ai-wpoos' ); ?>'
 								},
 								tooltip: {
 									callbacks: {
@@ -150,14 +150,14 @@ if ( $has_analytics ) {
 				var dailyCtx = document.getElementById('wp-mcp-ai-daily-pattern-chart');
 				if (dailyCtx) {
 					var dailyPattern = <?php echo wp_json_encode( array_values( $pattern_data['daily_pattern'] ) ); ?>;
-					var dayLabels = ['<?php echo esc_js( __( 'Sun', 'wp-mcp-ai' ) ); ?>', '<?php echo esc_js( __( 'Mon', 'wp-mcp-ai' ) ); ?>', '<?php echo esc_js( __( 'Tue', 'wp-mcp-ai' ) ); ?>', '<?php echo esc_js( __( 'Wed', 'wp-mcp-ai' ) ); ?>', '<?php echo esc_js( __( 'Thu', 'wp-mcp-ai' ) ); ?>', '<?php echo esc_js( __( 'Fri', 'wp-mcp-ai' ) ); ?>', '<?php echo esc_js( __( 'Sat', 'wp-mcp-ai' ) ); ?>'];
+					var dayLabels = ['<?php echo esc_js( __( 'Sun', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Mon', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Tue', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Wed', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Thu', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Fri', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Sat', 'mcp-ai-wpoos' ) ); ?>'];
 					
 					new Chart(dailyCtx.getContext('2d'), {
 						type: 'bar',
 						data: {
 							labels: dayLabels,
 							datasets: [{
-								label: '<?php esc_attr_e( 'Tokens Used', 'wp-mcp-ai' ); ?>',
+								label: '<?php esc_attr_e( 'Tokens Used', 'mcp-ai-wpoos' ); ?>',
 								data: dailyPattern,
 								backgroundColor: 'rgba(75, 192, 192, 0.6)',
 								borderColor: 'rgba(75, 192, 192, 1)',
@@ -173,7 +173,7 @@ if ( $has_analytics ) {
 								},
 								title: {
 									display: true,
-									text: '<?php esc_attr_e( 'Daily Usage Pattern (by Day of Week)', 'wp-mcp-ai' ); ?>'
+									text: '<?php esc_attr_e( 'Daily Usage Pattern (by Day of Week)', 'mcp-ai-wpoos' ); ?>'
 								},
 								tooltip: {
 									callbacks: {
@@ -209,7 +209,7 @@ if ( $has_analytics ) {
 				<span class="dashicons dashicons-chart-bar" style="font-size: 48px; color: #2271b1; opacity: 0.5;"></span>
 			</div>
 			<p style="margin: 0;">
-				<?php esc_html_e( 'No usage patterns detected yet. Start using AI tools to see your usage patterns!', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'No usage patterns detected yet. Start using AI tools to see your usage patterns!', 'mcp-ai-wpoos' ); ?>
 			</p>
 		</div>
 	<?php endif; ?>
@@ -217,7 +217,7 @@ if ( $has_analytics ) {
 	<!-- Quick Actions -->
 	<div class="wp-mcp-ai-widget-actions" style="margin-top: 15px; text-align: right;">
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ); ?>" class="button">
-			<?php esc_html_e( 'View Full Analytics', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'View Full Analytics', 'mcp-ai-wpoos' ); ?>
 		</a>
 	</div>
 </div>

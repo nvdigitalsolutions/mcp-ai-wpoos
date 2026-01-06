@@ -50,7 +50,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 		 * @return string
 		 */
 		protected function get_page_title() {
-			return __( 'Test Profession', 'wp-mcp-ai' );
+			return __( 'Test Profession', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -59,7 +59,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 		 * @return string
 		 */
 		protected function get_menu_title() {
-			return __( 'Test Profession', 'wp-mcp-ai' );
+			return __( 'Test Profession', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -71,9 +71,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 			$strings = parent::get_chat_strings();
 
 			// Customize specific strings for profession context.
-			$strings['missingAssistant']        = __( 'Profession configuration was not found.', 'wp-mcp-ai' );
-			$strings['notAuthorized']           = __( 'You do not have permission to test this profession.', 'wp-mcp-ai' );
-			$strings['roleLabels']['assistant'] = __( 'Professional', 'wp-mcp-ai' );
+			$strings['missingAssistant']        = __( 'Profession configuration was not found.', 'mcp-ai-wpoos' );
+			$strings['notAuthorized']           = __( 'You do not have permission to test this profession.', 'mcp-ai-wpoos' );
+			$strings['roleLabels']['assistant'] = __( 'Professional', 'mcp-ai-wpoos' );
 
 			return $strings;
 		}
@@ -106,16 +106,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 		 */
 		public function render_page() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Safety check: Ensure the Profession CPT class is loaded.
 			if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
 				?>
 				<div class="wrap">
-					<h1><?php echo esc_html__( 'Test AI Professions', 'wp-mcp-ai' ); ?></h1>
+					<h1><?php echo esc_html__( 'Test AI Professions', 'mcp-ai-wpoos' ); ?></h1>
 					<div class="notice notice-error">
-						<p><?php echo esc_html__( 'The Profession CPT class is not loaded. Please contact support.', 'wp-mcp-ai' ); ?></p>
+						<p><?php echo esc_html__( 'The Profession CPT class is not loaded. Please contact support.', 'mcp-ai-wpoos' ); ?></p>
 					</div>
 				</div>
 				<?php
@@ -137,8 +137,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 
 			?>
 			<div class="wrap">
-				<h1><?php echo esc_html__( 'Test AI Professions', 'wp-mcp-ai' ); ?></h1>
-				<p><?php echo esc_html__( 'Test your AI professions directly from the admin dashboard. Click "Test" next to any profession to create a temporary assistant and validate its behavior.', 'wp-mcp-ai' ); ?></p>
+				<h1><?php echo esc_html__( 'Test AI Professions', 'mcp-ai-wpoos' ); ?></h1>
+				<p><?php echo esc_html__( 'Test your AI professions directly from the admin dashboard. Click "Test" next to any profession to create a temporary assistant and validate its behavior.', 'mcp-ai-wpoos' ); ?></p>
 
 				<?php if ( empty( $professions ) ) : ?>
 					<div class="notice notice-warning">
@@ -146,8 +146,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 							<?php
 							printf(
 								/* translators: %s: URL to create new profession */
-								esc_html__( 'No professions found. %s to get started.', 'wp-mcp-ai' ),
-								'<a href="' . esc_url( admin_url( 'post-new.php?post_type=' . $post_type ) ) . '">' . esc_html__( 'Create your first profession', 'wp-mcp-ai' ) . '</a>'
+								esc_html__( 'No professions found. %s to get started.', 'mcp-ai-wpoos' ),
+								'<a href="' . esc_url( admin_url( 'post-new.php?post_type=' . $post_type ) ) . '">' . esc_html__( 'Create your first profession', 'mcp-ai-wpoos' ) . '</a>'
 							);
 							?>
 						</p>
@@ -156,11 +156,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 					<table class="wp-list-table widefat fixed striped">
 						<thead>
 							<tr>
-								<th scope="col"><?php echo esc_html__( 'Profession Name', 'wp-mcp-ai' ); ?></th>
-								<th scope="col"><?php echo esc_html__( 'Category', 'wp-mcp-ai' ); ?></th>
-								<th scope="col"><?php echo esc_html__( 'Expertise Areas', 'wp-mcp-ai' ); ?></th>
-								<th scope="col"><?php echo esc_html__( 'Default Tools', 'wp-mcp-ai' ); ?></th>
-								<th scope="col" class="column-actions"><?php echo esc_html__( 'Actions', 'wp-mcp-ai' ); ?></th>
+								<th scope="col"><?php echo esc_html__( 'Profession Name', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php echo esc_html__( 'Category', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php echo esc_html__( 'Expertise Areas', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php echo esc_html__( 'Default Tools', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col" class="column-actions"><?php echo esc_html__( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -175,13 +175,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 								$edit_url             = get_edit_post_link( $profession->ID );
 
 								$category_labels = array(
-									'advisory'   => __( 'Advisory/Consulting', 'wp-mcp-ai' ),
-									'creative'   => __( 'Creative Services', 'wp-mcp-ai' ),
-									'technical'  => __( 'Technical', 'wp-mcp-ai' ),
-									'healthcare' => __( 'Healthcare', 'wp-mcp-ai' ),
-									'legal'      => __( 'Legal', 'wp-mcp-ai' ),
-									'financial'  => __( 'Financial', 'wp-mcp-ai' ),
-									'other'      => __( 'Other', 'wp-mcp-ai' ),
+									'advisory'   => __( 'Advisory/Consulting', 'mcp-ai-wpoos' ),
+									'creative'   => __( 'Creative Services', 'mcp-ai-wpoos' ),
+									'technical'  => __( 'Technical', 'mcp-ai-wpoos' ),
+									'healthcare' => __( 'Healthcare', 'mcp-ai-wpoos' ),
+									'legal'      => __( 'Legal', 'mcp-ai-wpoos' ),
+									'financial'  => __( 'Financial', 'mcp-ai-wpoos' ),
+									'other'      => __( 'Other', 'mcp-ai-wpoos' ),
 								);
 
 								$category_display = isset( $category_labels[ $category ] ) ? $category_labels[ $category ] : ( $category ? ucfirst( $category ) : '—' );
@@ -218,7 +218,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 										<div class="row-actions">
 											<span class="edit">
 												<a href="<?php echo esc_url( $edit_url ); ?>">
-													<?php echo esc_html__( 'Edit', 'wp-mcp-ai' ); ?>
+													<?php echo esc_html__( 'Edit', 'mcp-ai-wpoos' ); ?>
 												</a>
 											</span>
 										</div>
@@ -229,7 +229,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 										if ( $expertise_count > 0 ) {
 											printf(
 												/* translators: %d: number of expertise areas */
-												esc_html( _n( '%d area', '%d areas', $expertise_count, 'wp-mcp-ai' ) ),
+												esc_html( _n( '%d area', '%d areas', $expertise_count, 'mcp-ai-wpoos' ) ),
 												absint( $expertise_count )
 											);
 										} else {
@@ -242,7 +242,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 										if ( $tools_count > 0 ) {
 											printf(
 												/* translators: %d: number of default tools */
-												esc_html( _n( '%d tool', '%d tools', $tools_count, 'wp-mcp-ai' ) ),
+												esc_html( _n( '%d tool', '%d tools', $tools_count, 'mcp-ai-wpoos' ) ),
 												absint( $tools_count )
 											);
 										} else {
@@ -258,7 +258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 											data-profession-title="<?php echo esc_attr( $profession->post_title ); ?>"
 											data-profession-data="<?php echo esc_attr( wp_json_encode( $profession_data ) ); ?>"
 										>
-											<?php echo esc_html__( 'Test', 'wp-mcp-ai' ); ?>
+											<?php echo esc_html__( 'Test', 'mcp-ai-wpoos' ); ?>
 										</button>
 									</td>
 								</tr>
@@ -272,15 +272,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 					<div class="wp-mcp-ai-test-modal__backdrop"></div>
 					<div class="wp-mcp-ai-test-modal__panel">
 						<div class="wp-mcp-ai-test-modal__header">
-							<h2 id="wp-mcp-ai-test-profession-modal__title"><?php echo esc_html__( 'Test Profession', 'wp-mcp-ai' ); ?></h2>
-							<button type="button" class="wp-mcp-ai-test-modal__close" aria-label="<?php echo esc_attr__( 'Close', 'wp-mcp-ai' ); ?>">
+							<h2 id="wp-mcp-ai-test-profession-modal__title"><?php echo esc_html__( 'Test Profession', 'mcp-ai-wpoos' ); ?></h2>
+							<button type="button" class="wp-mcp-ai-test-modal__close" aria-label="<?php echo esc_attr__( 'Close', 'mcp-ai-wpoos' ); ?>">
 								<span class="dashicons dashicons-no-alt"></span>
 							</button>
 						</div>
 						<div class="wp-mcp-ai-test-modal__body">
 							<div class="wp-mcp-ai-test-profession-info">
 								<p class="description">
-									<?php echo esc_html__( 'Testing profession behavior with its configured knowledge base and tools. Review the profession details below to understand the capabilities being tested.', 'wp-mcp-ai' ); ?>
+									<?php echo esc_html__( 'Testing profession behavior with its configured knowledge base and tools. Review the profession details below to understand the capabilities being tested.', 'mcp-ai-wpoos' ); ?>
 								</p>
 							</div>
 							<!-- Profession details will be populated here -->

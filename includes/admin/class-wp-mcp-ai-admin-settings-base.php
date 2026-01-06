@@ -437,18 +437,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			// Fallback to basic definitions (this should not happen in practice).
 			return array(
 				'container-border'     => array(
-					'label'       => __( 'Container border', 'wp-mcp-ai' ),
+					'label'       => __( 'Container border', 'mcp-ai-wpoos' ),
 					'group'       => 'container',
 					'default'     => '#d5d5d5',
 					'format'      => 'hex',
-					'description' => __( 'Border surrounding the chat interface.', 'wp-mcp-ai' ),
+					'description' => __( 'Border surrounding the chat interface.', 'mcp-ai-wpoos' ),
 				),
 				'container-background' => array(
-					'label'       => __( 'Container background', 'wp-mcp-ai' ),
+					'label'       => __( 'Container background', 'mcp-ai-wpoos' ),
 					'group'       => 'container',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Main background color for the chat container.', 'wp-mcp-ai' ),
+					'description' => __( 'Main background color for the chat container.', 'mcp-ai-wpoos' ),
 				),
 			);
 		}

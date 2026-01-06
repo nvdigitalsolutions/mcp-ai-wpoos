@@ -81,14 +81,14 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_mcp_request' ),
 					'args'                => array(
 						'jsonrpc' => array(
-							'description'       => __( 'JSON-RPC version. Must be "2.0".', 'wp-mcp-ai' ),
+							'description'       => __( 'JSON-RPC version. Must be "2.0".', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'enum'              => array( '2.0' ),
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'id'      => array(
-							'description' => __( 'Request identifier. Omit for notifications.', 'wp-mcp-ai' ),
+							'description' => __( 'Request identifier. Omit for notifications.', 'mcp-ai-wpoos' ),
 							'oneOf'       => array(
 								array( 'type' => 'string' ),
 								array( 'type' => 'integer' ),
@@ -96,7 +96,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'required'    => false,
 						),
 						'method'  => array(
-							'description'       => __( 'MCP method name to invoke.', 'wp-mcp-ai' ),
+							'description'       => __( 'MCP method name to invoke.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'enum'              => array(
@@ -109,7 +109,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'params'  => array(
-							'description'       => __( 'Method parameters object.', 'wp-mcp-ai' ),
+							'description'       => __( 'Method parameters object.', 'mcp-ai-wpoos' ),
 							'type'              => 'object',
 							'required'          => false,
 							'default'           => array(),
@@ -124,7 +124,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_mcp_get_request' ),
 					'args'                => array(
 						'assistant_id' => array(
-							'description'       => __( 'Optional assistant ID for SSE stream.', 'wp-mcp-ai' ),
+							'description'       => __( 'Optional assistant ID for SSE stream.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
@@ -153,7 +153,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_no_sse_request' ),
 					'args'                => array(
 						'assistant_id' => array(
-							'description'       => __( 'ID of the assistant for directory listing.', 'wp-mcp-ai' ),
+							'description'       => __( 'ID of the assistant for directory listing.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
@@ -175,13 +175,13 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_assistants_index' ),
 					'args'                => array(
 						'search'  => array(
-							'description'       => __( 'Search term to filter assistants by title or content.', 'wp-mcp-ai' ),
+							'description'       => __( 'Search term to filter assistants by title or content.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'include' => array(
-							'description' => __( 'Limit results to specific assistant IDs.', 'wp-mcp-ai' ),
+							'description' => __( 'Limit results to specific assistant IDs.', 'mcp-ai-wpoos' ),
 							'type'        => 'array',
 							'required'    => false,
 							'items'       => array(
@@ -196,45 +196,45 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_assistant_create' ),
 					'args'                => array(
 						'title'         => array(
-							'description'       => __( 'The title for the assistant.', 'wp-mcp-ai' ),
+							'description'       => __( 'The title for the assistant.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'description'   => array(
-							'description'       => __( 'The description for the assistant.', 'wp-mcp-ai' ),
+							'description'       => __( 'The description for the assistant.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'wp_kses_post',
 						),
 						'provider'      => array(
-							'description'       => __( 'AI provider (openai, gemini, ollama).', 'wp-mcp-ai' ),
+							'description'       => __( 'AI provider (openai, gemini, ollama).', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
 							'enum'              => array( 'openai', 'gemini', 'ollama' ),
 							'sanitize_callback' => 'sanitize_key',
 						),
 						'model'         => array(
-							'description'       => __( 'Model identifier (e.g., gpt-4, gemini-pro).', 'wp-mcp-ai' ),
+							'description'       => __( 'Model identifier (e.g., gpt-4, gemini-pro).', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'temperature'   => array(
-							'description' => __( 'Temperature setting (0.0 to 2.0).', 'wp-mcp-ai' ),
+							'description' => __( 'Temperature setting (0.0 to 2.0).', 'mcp-ai-wpoos' ),
 							'type'        => 'number',
 							'required'    => false,
 							'minimum'     => 0.0,
 							'maximum'     => 2.0,
 						),
 						'system_prompt' => array(
-							'description'       => __( 'System prompt for the assistant.', 'wp-mcp-ai' ),
+							'description'       => __( 'System prompt for the assistant.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'wp_kses_post',
 						),
 						'tools'         => array(
-							'description' => __( 'Array of tool slugs to enable for this assistant.', 'wp-mcp-ai' ),
+							'description' => __( 'Array of tool slugs to enable for this assistant.', 'mcp-ai-wpoos' ),
 							'type'        => 'array',
 							'required'    => false,
 							'items'       => array(
@@ -242,7 +242,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							),
 						),
 						'status'        => array(
-							'description'       => __( 'Post status (publish, draft, private).', 'wp-mcp-ai' ),
+							'description'       => __( 'Post status (publish, draft, private).', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
 							'enum'              => array( 'publish', 'draft', 'private' ),
@@ -265,7 +265,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_assistant_delete' ),
 					'args'                => array(
 						'id' => array(
-							'description'       => __( 'Unique identifier for the assistant.', 'wp-mcp-ai' ),
+							'description'       => __( 'Unique identifier for the assistant.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => true,
 							'sanitize_callback' => 'absint',
@@ -392,7 +392,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( ! $assistant_id ) {
 			return $this->error(
 				'wp_mcp_ai_missing_assistant_id',
-				__( 'Assistant ID is required.', 'wp-mcp-ai' ),
+				__( 'Assistant ID is required.', 'mcp-ai-wpoos' ),
 				400
 			);
 		}
@@ -402,7 +402,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( ! $assistant || 'mcp_ai_assistant' !== $assistant->post_type ) {
 			return $this->error(
 				'wp_mcp_ai_assistant_not_found',
-				__( 'Assistant not found.', 'wp-mcp-ai' ),
+				__( 'Assistant not found.', 'mcp-ai-wpoos' ),
 				404
 			);
 		}
@@ -412,7 +412,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( ! $result ) {
 			return $this->error(
 				'wp_mcp_ai_delete_failed',
-				__( 'Failed to delete assistant.', 'wp-mcp-ai' ),
+				__( 'Failed to delete assistant.', 'mcp-ai-wpoos' ),
 				500
 			);
 		}
@@ -443,7 +443,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( empty( $title ) ) {
 			return $this->error(
 				'wp_mcp_ai_missing_title',
-				__( 'Assistant title is required.', 'wp-mcp-ai' ),
+				__( 'Assistant title is required.', 'mcp-ai-wpoos' ),
 				400
 			);
 		}
@@ -532,7 +532,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Self-contained fallback: Return error indicating MCP not fully configured.
 		return $this->error(
 			'wp_mcp_ai_mcp_unavailable',
-			__( 'MCP protocol handler is not available. Please ensure the plugin is properly configured.', 'wp-mcp-ai' ),
+			__( 'MCP protocol handler is not available. Please ensure the plugin is properly configured.', 'mcp-ai-wpoos' ),
 			503
 		);
 	}

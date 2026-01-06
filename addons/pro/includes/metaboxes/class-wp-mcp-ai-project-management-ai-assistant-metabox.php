@@ -43,7 +43,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		foreach ( $post_types as $post_type ) {
 			add_meta_box(
 				self::METABOX_ID,
-				__( 'AI Assistant', 'wp-mcp-ai' ),
+				__( 'AI Assistant', 'mcp-ai-wpoos-pro' ),
 				array( $this, 'render' ),
 				$post_type,
 				'side',
@@ -131,11 +131,11 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp_mcp_ai_pm_ai_actions' ),
 				'strings' => array(
-					'error'      => __( 'An error occurred. Please try again.', 'wp-mcp-ai' ),
-					'noTitle'    => __( 'Please add a title first.', 'wp-mcp-ai' ),
-					'applied'    => __( 'AI suggestion applied!', 'wp-mcp-ai' ),
-					'viewTasks'  => __( 'View suggested tasks below:', 'wp-mcp-ai' ),
-					'copyToDesc' => __( 'Copy to Description', 'wp-mcp-ai' ),
+					'error'      => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'noTitle'    => __( 'Please add a title first.', 'mcp-ai-wpoos-pro' ),
+					'applied'    => __( 'AI suggestion applied!', 'mcp-ai-wpoos-pro' ),
+					'viewTasks'  => __( 'View suggested tasks below:', 'mcp-ai-wpoos-pro' ),
+					'copyToDesc' => __( 'Copy to Description', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -235,12 +235,12 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 	 */
 	private function get_assistant_title( $context_type ) {
 		$titles = array(
-			'project' => __( 'Project Assistant', 'wp-mcp-ai' ),
-			'task'    => __( 'Task Assistant', 'wp-mcp-ai' ),
-			'event'   => __( 'Event Assistant', 'wp-mcp-ai' ),
+			'project' => __( 'Project Assistant', 'mcp-ai-wpoos-pro' ),
+			'task'    => __( 'Task Assistant', 'mcp-ai-wpoos-pro' ),
+			'event'   => __( 'Event Assistant', 'mcp-ai-wpoos-pro' ),
 		);
 
-		return isset( $titles[ $context_type ] ) ? $titles[ $context_type ] : __( 'AI Assistant', 'wp-mcp-ai' );
+		return isset( $titles[ $context_type ] ) ? $titles[ $context_type ] : __( 'AI Assistant', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -251,12 +251,12 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 	 */
 	private function get_placeholder_text( $context_type ) {
 		$placeholders = array(
-			'project' => __( 'Ask me about this project...', 'wp-mcp-ai' ),
-			'task'    => __( 'Ask me about this task...', 'wp-mcp-ai' ),
-			'event'   => __( 'Ask me about this event...', 'wp-mcp-ai' ),
+			'project' => __( 'Ask me about this project...', 'mcp-ai-wpoos-pro' ),
+			'task'    => __( 'Ask me about this task...', 'mcp-ai-wpoos-pro' ),
+			'event'   => __( 'Ask me about this event...', 'mcp-ai-wpoos-pro' ),
 		);
 
-		return isset( $placeholders[ $context_type ] ) ? $placeholders[ $context_type ] : __( 'Ask me anything...', 'wp-mcp-ai' );
+		return isset( $placeholders[ $context_type ] ) ? $placeholders[ $context_type ] : __( 'Ask me anything...', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -270,65 +270,21 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 
 		// Check permissions.
 		if ( ! current_user_can( 'edit_post', $post->ID ) ) {
-			?>
-			<div class="wp-mcp-ai-pm-assistant-wrapper">
-				<div class="notice notice-error inline">
-					<p><?php esc_html_e( 'You do not have permission to use this feature.', 'wp-mcp-ai' ); ?></p>
-				</div>
-			</div>
-			<!-- Still render modal structure for consistency -->
-			<?php
-			$this->render_ai_modal( $post, $context_type );
+			echo '<p>' . esc_html__( 'You do not have permission to use this feature.', 'mcp-ai-wpoos-pro' ) . '</p>';
 			return;
 		}
 
 		// Check if project management is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_project_management'] ) ) {
-			?>
-			<div class="wp-mcp-ai-pm-assistant-wrapper">
-				<div class="notice notice-warning inline">
-					<p>
-						<?php
-						echo wp_kses_post(
-							sprintf(
-								/* translators: %s: Settings page URL */
-								__( 'Project Management features are not enabled. <a href="%s">Enable them in Settings</a>.', 'wp-mcp-ai' ),
-								esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings' ) )
-							)
-						);
-						?>
-					</p>
-				</div>
-			</div>
-			<!-- Still render modal structure for consistency -->
-			<?php
-			$this->render_ai_modal( $post, $context_type );
+			echo '<p>' . esc_html__( 'Project Management features are not enabled.', 'mcp-ai-wpoos-pro' ) . '</p>';
 			return;
 		}
 
 		// Get available assistants.
 		$assistants = $this->get_available_assistants();
 		if ( empty( $assistants ) ) {
-			?>
-			<div class="wp-mcp-ai-pm-assistant-wrapper">
-				<div class="notice notice-warning inline">
-					<p>
-						<?php
-						echo wp_kses_post(
-							sprintf(
-								/* translators: %s: Assistants page URL */
-								__( 'No AI assistants available. <a href="%s">Create an assistant first</a>.', 'wp-mcp-ai' ),
-								esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant' ) )
-							)
-						);
-						?>
-					</p>
-				</div>
-			</div>
-			<!-- Still render modal structure for consistency -->
-			<?php
-			$this->render_ai_modal( $post, $context_type );
+			echo '<p>' . esc_html__( 'No AI assistants available. Please create an assistant first.', 'mcp-ai-wpoos-pro' ) . '</p>';
 			return;
 		}
 
@@ -337,16 +293,16 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		?>
 		<div class="wp-mcp-ai-pm-assistant-wrapper">
 			<div class="wp-mcp-ai-pm-assistant-info">
-				<p><?php esc_html_e( 'Get AI assistance with your project management tasks.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'Get AI assistance with your project management tasks.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
 
 			<!-- Assistant selector -->
 			<div class="wp-mcp-ai-pm-assistant-selector" style="margin-bottom: 15px;">
 				<label for="wp-mcp-ai-pm-assistant-select">
-					<?php esc_html_e( 'Select Assistant:', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Select Assistant:', 'mcp-ai-wpoos-pro' ); ?>
 				</label>
 				<select id="wp-mcp-ai-pm-assistant-select" class="widefat">
-					<option value=""><?php esc_html_e( '— Select Assistant —', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '— Select Assistant —', 'mcp-ai-wpoos-pro' ); ?></option>
 					<?php foreach ( $assistants as $assistant ) : ?>
 						<option value="<?php echo esc_attr( $assistant['id'] ); ?>" data-title="<?php echo esc_attr( $assistant['title'] ); ?>">
 							<?php echo esc_html( $assistant['title'] ); ?>
@@ -367,7 +323,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 				disabled
 			>
 				<span class="dashicons dashicons-format-chat"></span>
-				<?php esc_html_e( 'Open AI Assistant', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Open AI Assistant', 'mcp-ai-wpoos-pro' ); ?>
 			</button>
 		</div>
 
@@ -386,52 +342,52 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		?>
 		<div class="wp-mcp-ai-pm-ai-actions" style="margin-bottom: 15px;">
 			<p class="description">
-				<?php esc_html_e( 'Quick AI Actions:', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Quick AI Actions:', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
 
 			<?php if ( 'mcp_ai_project' === $post_type ) : ?>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
 						<span class="dashicons dashicons-edit"></span>
-						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Generate Description', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="suggest_tasks" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
 						<span class="dashicons dashicons-list-view"></span>
-						<?php esc_html_e( 'Suggest Tasks', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Suggest Tasks', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="analyze_project" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
 						<span class="dashicons dashicons-chart-bar"></span>
-						<?php esc_html_e( 'Analyze Project', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Analyze Project', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 			<?php elseif ( 'mcp_ai_task' === $post_type ) : ?>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
 						<span class="dashicons dashicons-edit"></span>
-						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Generate Description', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="estimate_time" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
 						<span class="dashicons dashicons-clock"></span>
-						<?php esc_html_e( 'Estimate Duration', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Estimate Duration', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 			<?php elseif ( 'mcp_ai_event' === $post_type ) : ?>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
 						<span class="dashicons dashicons-edit"></span>
-						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Generate Description', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 				<p>
 					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="suggest_agenda" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
 						<span class="dashicons dashicons-text-page"></span>
-						<?php esc_html_e( 'Suggest Agenda', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Suggest Agenda', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</p>
 			<?php endif; ?>
@@ -445,7 +401,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			<div class="wp-mcp-ai-pm-ai-loading" style="display: none;">
 				<p>
 					<span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span>
-					<?php esc_html_e( 'AI is thinking...', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'AI is thinking...', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 			</div>
 		</div>
@@ -465,7 +421,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			<div class="wp-mcp-ai-cpt-modal__panel">
 				<div class="wp-mcp-ai-cpt-modal__header">
 					<h2 id="wp-mcp-ai-pm-modal-title"><?php echo esc_html( $this->get_assistant_title( $context_type ) ); ?></h2>
-					<button type="button" class="wp-mcp-ai-cpt-modal__close" aria-label="<?php esc_attr_e( 'Close', 'wp-mcp-ai' ); ?>">
+					<button type="button" class="wp-mcp-ai-cpt-modal__close" aria-label="<?php esc_attr_e( 'Close', 'mcp-ai-wpoos-pro' ); ?>">
 						<span class="dashicons dashicons-no-alt"></span>
 					</button>
 				</div>
@@ -556,7 +512,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 				'showUsageCosts'      => isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false,
 				'asyncToolTimeout'    => isset( $settings['async_tool_timeout'] ) ? absint( $settings['async_tool_timeout'] ) * 1000 : 300000,
 				'strings'             => array(
-					'placeholder' => __( 'Ask something…', 'wp-mcp-ai' ),
+					'placeholder' => __( 'Ask something…', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -570,11 +526,11 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 	 */
 	private function get_intro_text( $context_type ) {
 		$texts = array(
-			'project' => __( 'Ask your AI assistant about this project, request updates, create tasks, or get recommendations.', 'wp-mcp-ai' ),
-			'task'    => __( 'Ask your AI assistant about this task, update its status, change priority, or get help with planning.', 'wp-mcp-ai' ),
-			'event'   => __( 'Ask your AI assistant about this event, schedule updates, manage attendees, or get recommendations.', 'wp-mcp-ai' ),
+			'project' => __( 'Ask your AI assistant about this project, request updates, create tasks, or get recommendations.', 'mcp-ai-wpoos-pro' ),
+			'task'    => __( 'Ask your AI assistant about this task, update its status, change priority, or get help with planning.', 'mcp-ai-wpoos-pro' ),
+			'event'   => __( 'Ask your AI assistant about this event, schedule updates, manage attendees, or get recommendations.', 'mcp-ai-wpoos-pro' ),
 		);
 
-		return isset( $texts[ $context_type ] ) ? $texts[ $context_type ] : __( 'Ask your AI assistant for help.', 'wp-mcp-ai' );
+		return isset( $texts[ $context_type ] ) ? $texts[ $context_type ] : __( 'Ask your AI assistant for help.', 'mcp-ai-wpoos-pro' );
 	}
 }

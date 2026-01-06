@@ -42,8 +42,8 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 		public function add_menu_page() {
 			$this->page_hook = add_submenu_page(
 				'wp-mcp-ai-dashboard',
-				__( 'HuggingFace Datasets', 'wp-mcp-ai' ),
-				__( 'HF Datasets', 'wp-mcp-ai' ),
+				__( 'HuggingFace Datasets', 'mcp-ai-wpoos' ),
+				__( 'HF Datasets', 'mcp-ai-wpoos' ),
 				'manage_options',
 				'wp-mcp-ai-datasets',
 				array( $this, 'render_page' )
@@ -82,13 +82,13 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'wp_mcp_ai_datasets' ),
 					'i18n'    => array(
-						'loading'           => __( 'Loading...', 'wp-mcp-ai' ),
-						'error'             => __( 'Error loading dataset', 'wp-mcp-ai' ),
-						'noResults'         => __( 'No datasets found', 'wp-mcp-ai' ),
-						'preview'           => __( 'Preview', 'wp-mcp-ai' ),
-						'download'          => __( 'Download Info', 'wp-mcp-ai' ),
-						'copied'            => __( 'Copied!', 'wp-mcp-ai' ),
-						'searchPlaceholder' => __( 'Search datasets by name or use case...', 'wp-mcp-ai' ),
+						'loading'           => __( 'Loading...', 'mcp-ai-wpoos' ),
+						'error'             => __( 'Error loading dataset', 'mcp-ai-wpoos' ),
+						'noResults'         => __( 'No datasets found', 'mcp-ai-wpoos' ),
+						'preview'           => __( 'Preview', 'mcp-ai-wpoos' ),
+						'download'          => __( 'Download Info', 'mcp-ai-wpoos' ),
+						'copied'            => __( 'Copied!', 'mcp-ai-wpoos' ),
+						'searchPlaceholder' => __( 'Search datasets by name or use case...', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -104,7 +104,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 
 			?>
 			<div class="wrap wp-mcp-ai-datasets-page">
-				<h1><?php esc_html_e( 'HuggingFace Datasets Browser', 'wp-mcp-ai' ); ?></h1>
+				<h1><?php esc_html_e( 'HuggingFace Datasets Browser', 'mcp-ai-wpoos' ); ?></h1>
 
 				<?php if ( ! $enabled ) : ?>
 					<div class="notice notice-warning">
@@ -112,8 +112,8 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 							<?php
 							printf(
 								/* translators: %s: settings page URL */
-								esc_html__( 'HuggingFace Datasets integration is not enabled. %s to activate it.', 'wp-mcp-ai' ),
-								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=huggingface_datasets' ) ) . '">' . esc_html__( 'Go to Settings', 'wp-mcp-ai' ) . '</a>'
+								esc_html__( 'HuggingFace Datasets integration is not enabled. %s to activate it.', 'mcp-ai-wpoos' ),
+								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=huggingface_datasets' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>'
 							);
 							?>
 						</p>
@@ -122,36 +122,36 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 
 				<div class="wp-mcp-ai-datasets-header">
 					<p class="description">
-						<?php esc_html_e( 'Browse and explore 50+ top free datasets from HuggingFace Hub. Use these datasets for AI assistant training, few-shot learning, and data exploration.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Browse and explore 50+ top free datasets from HuggingFace Hub. Use these datasets for AI assistant training, few-shot learning, and data exploration.', 'mcp-ai-wpoos' ); ?>
 					</p>
 					
 					<div class="wp-mcp-ai-datasets-search">
-						<input type="text" id="wp-mcp-ai-datasets-search" placeholder="<?php esc_attr_e( 'Search datasets by name, category, or use case...', 'wp-mcp-ai' ); ?>" />
+						<input type="text" id="wp-mcp-ai-datasets-search" placeholder="<?php esc_attr_e( 'Search datasets by name, category, or use case...', 'mcp-ai-wpoos' ); ?>" />
 						<button type="button" class="button" id="wp-mcp-ai-datasets-search-btn">
-							<?php esc_html_e( 'Search', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Search', 'mcp-ai-wpoos' ); ?>
 						</button>
 					</div>
 
 					<div class="wp-mcp-ai-datasets-filters">
 						<label for="wp-mcp-ai-datasets-category">
-							<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Category:', 'mcp-ai-wpoos' ); ?>
 						</label>
 						<select id="wp-mcp-ai-datasets-category">
-							<option value="all"><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
-							<option value="nlp"><?php esc_html_e( 'Natural Language Processing', 'wp-mcp-ai' ); ?></option>
-							<option value="vision"><?php esc_html_e( 'Computer Vision', 'wp-mcp-ai' ); ?></option>
-							<option value="audio"><?php esc_html_e( 'Audio & Speech', 'wp-mcp-ai' ); ?></option>
-							<option value="multimodal"><?php esc_html_e( 'Multimodal', 'wp-mcp-ai' ); ?></option>
+							<option value="all"><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos' ); ?></option>
+							<option value="nlp"><?php esc_html_e( 'Natural Language Processing', 'mcp-ai-wpoos' ); ?></option>
+							<option value="vision"><?php esc_html_e( 'Computer Vision', 'mcp-ai-wpoos' ); ?></option>
+							<option value="audio"><?php esc_html_e( 'Audio & Speech', 'mcp-ai-wpoos' ); ?></option>
+							<option value="multimodal"><?php esc_html_e( 'Multimodal', 'mcp-ai-wpoos' ); ?></option>
 						</select>
 
 						<label for="wp-mcp-ai-datasets-priority">
-							<?php esc_html_e( 'Priority:', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Priority:', 'mcp-ai-wpoos' ); ?>
 						</label>
 						<select id="wp-mcp-ai-datasets-priority">
-							<option value="all"><?php esc_html_e( 'All Priorities', 'wp-mcp-ai' ); ?></option>
-							<option value="critical"><?php esc_html_e( 'Critical (Must Have)', 'wp-mcp-ai' ); ?></option>
-							<option value="high"><?php esc_html_e( 'High (Should Have)', 'wp-mcp-ai' ); ?></option>
-							<option value="medium"><?php esc_html_e( 'Medium (Nice to Have)', 'wp-mcp-ai' ); ?></option>
+							<option value="all"><?php esc_html_e( 'All Priorities', 'mcp-ai-wpoos' ); ?></option>
+							<option value="critical"><?php esc_html_e( 'Critical (Must Have)', 'mcp-ai-wpoos' ); ?></option>
+							<option value="high"><?php esc_html_e( 'High (Should Have)', 'mcp-ai-wpoos' ); ?></option>
+							<option value="medium"><?php esc_html_e( 'Medium (Nice to Have)', 'mcp-ai-wpoos' ); ?></option>
 						</select>
 					</div>
 				</div>
@@ -165,7 +165,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 					<div class="wp-mcp-ai-modal-content">
 						<span class="wp-mcp-ai-modal-close">&times;</span>
 						<div class="wp-mcp-ai-modal-body" id="wp-mcp-ai-modal-body">
-							<div class="wp-mcp-ai-loading"><?php esc_html_e( 'Loading dataset preview...', 'wp-mcp-ai' ); ?></div>
+							<div class="wp-mcp-ai-loading"><?php esc_html_e( 'Loading dataset preview...', 'mcp-ai-wpoos' ); ?></div>
 						</div>
 					</div>
 				</div>
@@ -230,20 +230,20 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 					<button type="button" class="button button-primary wp-mcp-ai-dataset-preview" 
 							data-dataset="<?php echo esc_attr( $dataset['dataset'] ); ?>">
 						<span class="dashicons dashicons-visibility"></span>
-						<?php esc_html_e( 'Preview', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Preview', 'mcp-ai-wpoos' ); ?>
 					</button>
 					
 					<button type="button" class="button wp-mcp-ai-dataset-copy-code" 
 							data-code="<?php echo esc_attr( $dataset['example'] ); ?>">
 						<span class="dashicons dashicons-clipboard"></span>
-						<?php esc_html_e( 'Copy Code', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Copy Code', 'mcp-ai-wpoos' ); ?>
 					</button>
 
 					<a href="https://huggingface.co/datasets/<?php echo esc_attr( $dataset['dataset'] ); ?>" 
 						target="_blank" 
 						class="button">
 						<span class="dashicons dashicons-external"></span>
-						<?php esc_html_e( 'View on HF', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'View on HF', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</div>
 			</div>
@@ -379,13 +379,13 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 			check_ajax_referer( 'wp_mcp_ai_datasets', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Permission denied', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Permission denied', 'mcp-ai-wpoos' ) ) );
 			}
 
 			$dataset = isset( $_POST['dataset'] ) ? sanitize_text_field( wp_unslash( $_POST['dataset'] ) ) : '';
 
 			if ( empty( $dataset ) ) {
-				wp_send_json_error( array( 'message' => __( 'Dataset name required', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Dataset name required', 'mcp-ai-wpoos' ) ) );
 			}
 
 			try {
@@ -432,7 +432,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 
 			<?php if ( ! is_wp_error( $info ) && isset( $info['dataset_info'] ) ) : ?>
 				<div class="dataset-info-section">
-					<h3><?php esc_html_e( 'Dataset Information', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'Dataset Information', 'mcp-ai-wpoos' ); ?></h3>
 					<?php if ( isset( $info['dataset_info']['description'] ) ) : ?>
 						<p><?php echo esc_html( $info['dataset_info']['description'] ); ?></p>
 					<?php endif; ?>
@@ -441,13 +441,13 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 
 			<?php if ( ! is_wp_error( $splits ) && ! empty( $splits['splits'] ) ) : ?>
 				<div class="dataset-splits-section">
-					<h3><?php esc_html_e( 'Available Splits', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'Available Splits', 'mcp-ai-wpoos' ); ?></h3>
 					<table class="widefat">
 						<thead>
 							<tr>
-								<th><?php esc_html_e( 'Split', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Config', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Rows', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Split', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Config', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Rows', 'mcp-ai-wpoos' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -465,7 +465,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 
 			<?php if ( ! is_wp_error( $preview ) && ! empty( $preview['rows'] ) ) : ?>
 				<div class="dataset-preview-section">
-					<h3><?php esc_html_e( 'Sample Rows', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'Sample Rows', 'mcp-ai-wpoos' ); ?></h3>
 					<div class="dataset-preview-data">
 						<pre><?php echo esc_html( wp_json_encode( $preview['rows'], JSON_PRETTY_PRINT ) ); ?></pre>
 					</div>
@@ -473,8 +473,8 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 			<?php endif; ?>
 
 			<div class="dataset-usage-section">
-				<h3><?php esc_html_e( 'Usage Example', 'wp-mcp-ai' ); ?></h3>
-				<p><?php esc_html_e( 'Use this code in your AI assistant prompts:', 'wp-mcp-ai' ); ?></p>
+				<h3><?php esc_html_e( 'Usage Example', 'mcp-ai-wpoos' ); ?></h3>
+				<p><?php esc_html_e( 'Use this code in your AI assistant prompts:', 'mcp-ai-wpoos' ); ?></p>
 				<code>huggingface_dataset_preview_rows(dataset="<?php echo esc_html( $dataset ); ?>", split="train", limit=10)</code>
 			</div>
 			<?php
@@ -487,7 +487,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 			check_ajax_referer( 'wp_mcp_ai_datasets', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Permission denied', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Permission denied', 'mcp-ai-wpoos' ) ) );
 			}
 
 			$query    = isset( $_POST['query'] ) ? sanitize_text_field( wp_unslash( $_POST['query'] ) ) : '';

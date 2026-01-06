@@ -28,14 +28,14 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Crop Image', 'wp-mcp-ai' );
+		return __( 'Crop Image', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Crop an image to a specific region defined by coordinates and dimensions, or to a target aspect ratio.', 'wp-mcp-ai' );
+		return __( 'Crop an image to a specific region defined by coordinates and dimensions, or to a target aspect ratio.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,32 +49,32 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 				array(
 					'x'            => array(
 						'type'        => 'integer',
-						'description' => __( 'X coordinate of the top-left corner of the crop region (in pixels). Required for manual crop.', 'wp-mcp-ai' ),
+						'description' => __( 'X coordinate of the top-left corner of the crop region (in pixels). Required for manual crop.', 'mcp-ai-wpoos' ),
 						'minimum'     => 0,
 					),
 					'y'            => array(
 						'type'        => 'integer',
-						'description' => __( 'Y coordinate of the top-left corner of the crop region (in pixels). Required for manual crop.', 'wp-mcp-ai' ),
+						'description' => __( 'Y coordinate of the top-left corner of the crop region (in pixels). Required for manual crop.', 'mcp-ai-wpoos' ),
 						'minimum'     => 0,
 					),
 					'width'        => array(
 						'type'        => 'integer',
-						'description' => __( 'Width of the crop region in pixels. Required for manual crop.', 'wp-mcp-ai' ),
+						'description' => __( 'Width of the crop region in pixels. Required for manual crop.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 					),
 					'height'       => array(
 						'type'        => 'integer',
-						'description' => __( 'Height of the crop region in pixels. Required for manual crop.', 'wp-mcp-ai' ),
+						'description' => __( 'Height of the crop region in pixels. Required for manual crop.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 					),
 					'aspect_ratio' => array(
 						'type'        => 'string',
-						'description' => __( 'Target aspect ratio for center crop (e.g., "16:9", "4:3", "1:1"). Alternative to manual crop.', 'wp-mcp-ai' ),
+						'description' => __( 'Target aspect ratio for center crop (e.g., "16:9", "4:3", "1:1"). Alternative to manual crop.', 'mcp-ai-wpoos' ),
 						'enum'        => array( '1:1', '16:9', '4:3', '3:2', '2:3', '9:16', '3:4' ),
 					),
 					'position'     => array(
 						'type'        => 'string',
-						'description' => __( 'Crop position when using aspect ratio: center, top, bottom, left, right.', 'wp-mcp-ai' ),
+						'description' => __( 'Crop position when using aspect ratio: center, top, bottom, left, right.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'center', 'top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right' ),
 						'default'     => 'center',
 					),
@@ -111,15 +111,15 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to crop images.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to crop images.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id && ! user_can( $user_id, 'upload_files' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Enrich arguments with metadata from context messages if available.
@@ -156,7 +156,7 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 				if ( isset( $image_editor->temp_file ) ) {
 					$this->delete_temp_file( $image_editor->temp_file );
 				}
-				return new WP_Error( 'wp_mcp_ai_missing_crop_params', __( 'Either aspect_ratio or all of x, y, width, and height must be specified.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_missing_crop_params', __( 'Either aspect_ratio or all of x, y, width, and height must be specified.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
 			$crop_params = compact( 'x', 'y', 'width', 'height' );
@@ -214,7 +214,7 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 			'output_format'   => $output_format,
 			'text'            => sprintf(
 				/* translators: 1: crop dimensions, 2: original dimensions, 3: output format */
-				__( 'Successfully cropped image to %1$s from %2$s%3$s.', 'wp-mcp-ai' ),
+				__( 'Successfully cropped image to %1$s from %2$s%3$s.', 'mcp-ai-wpoos' ),
 				$new_size['width'] . 'x' . $new_size['height'],
 				$original_size['width'] . 'x' . $original_size['height'],
 				'svg' === $output_format ? ' and converted to SVG' : ''
@@ -261,7 +261,7 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 	protected function calculate_aspect_ratio_crop( $original_size, $aspect_ratio, $arguments ) {
 		// Parse aspect ratio.
 		if ( ! preg_match( '/^(\d+):(\d+)$/', $aspect_ratio, $matches ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_aspect_ratio', __( 'Invalid aspect ratio format. Use format like "16:9".', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_aspect_ratio', __( 'Invalid aspect ratio format. Use format like "16:9".', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$ratio_width  = (int) $matches[1];

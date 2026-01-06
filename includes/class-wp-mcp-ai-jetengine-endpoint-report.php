@@ -46,53 +46,53 @@ class WP_MCP_AI_JetEngine_Endpoint_Report {
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/add-post-type',
-						'description' => __( 'Create a new custom post type definition.', 'wp-mcp-ai' ),
+						'description' => __( 'Create a new custom post type definition.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/copy-post-type',
-						'description' => __( 'Duplicate an existing post type into a new definition.', 'wp-mcp-ai' ),
+						'description' => __( 'Duplicate an existing post type into a new definition.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'read'   => array(
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/get-post-type',
-						'description' => __( 'Read a single stored post type configuration.', 'wp-mcp-ai' ),
+						'description' => __( 'Read a single stored post type configuration.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/get-post-types',
-						'description' => __( 'List all stored custom post type configurations.', 'wp-mcp-ai' ),
+						'description' => __( 'List all stored custom post type configurations.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/get-built-in-post-type',
-						'description' => __( 'Read overrides applied to a built-in post type.', 'wp-mcp-ai' ),
+						'description' => __( 'Read overrides applied to a built-in post type.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'update' => array(
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/edit-post-type',
-						'description' => __( 'Update an existing custom post type definition.', 'wp-mcp-ai' ),
+						'description' => __( 'Update an existing custom post type definition.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/edit-built-in-post-type',
-						'description' => __( 'Update overrides stored for a built-in post type.', 'wp-mcp-ai' ),
+						'description' => __( 'Update overrides stored for a built-in post type.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'delete' => array(
 					array(
 						'method'      => 'DELETE',
 						'route'       => '/jet-engine/v2/delete-post-type',
-						'description' => __( 'Delete a stored custom post type definition.', 'wp-mcp-ai' ),
+						'description' => __( 'Delete a stored custom post type definition.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'DELETE',
 						'route'       => '/jet-engine/v2/reset-built-in-post-type',
-						'description' => __( 'Remove stored overrides from a built-in post type.', 'wp-mcp-ai' ),
+						'description' => __( 'Remove stored overrides from a built-in post type.', 'mcp-ai-wpoos' ),
 					),
 				),
 			),
@@ -101,53 +101,53 @@ class WP_MCP_AI_JetEngine_Endpoint_Report {
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/add-taxonomy',
-						'description' => __( 'Create a new taxonomy definition.', 'wp-mcp-ai' ),
+						'description' => __( 'Create a new taxonomy definition.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/copy-taxonomy',
-						'description' => __( 'Clone an existing taxonomy definition into a new record.', 'wp-mcp-ai' ),
+						'description' => __( 'Clone an existing taxonomy definition into a new record.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'read'   => array(
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/get-taxonomy',
-						'description' => __( 'Read a single stored taxonomy configuration.', 'wp-mcp-ai' ),
+						'description' => __( 'Read a single stored taxonomy configuration.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/get-taxonomies',
-						'description' => __( 'List all stored taxonomy definitions.', 'wp-mcp-ai' ),
+						'description' => __( 'List all stored taxonomy definitions.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/get-built-in-tax',
-						'description' => __( 'Read overrides configured for a built-in taxonomy.', 'wp-mcp-ai' ),
+						'description' => __( 'Read overrides configured for a built-in taxonomy.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'update' => array(
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/edit-taxonomy',
-						'description' => __( 'Update an existing custom taxonomy definition.', 'wp-mcp-ai' ),
+						'description' => __( 'Update an existing custom taxonomy definition.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/edit-built-in-tax',
-						'description' => __( 'Update overrides for a built-in taxonomy.', 'wp-mcp-ai' ),
+						'description' => __( 'Update overrides for a built-in taxonomy.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'delete' => array(
 					array(
 						'method'      => 'DELETE',
 						'route'       => '/jet-engine/v2/delete-taxonomy',
-						'description' => __( 'Delete a stored custom taxonomy definition.', 'wp-mcp-ai' ),
+						'description' => __( 'Delete a stored custom taxonomy definition.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'DELETE',
 						'route'       => '/jet-engine/v2/reset-built-in-tax',
-						'description' => __( 'Remove stored overrides from a built-in taxonomy.', 'wp-mcp-ai' ),
+						'description' => __( 'Remove stored overrides from a built-in taxonomy.', 'mcp-ai-wpoos' ),
 					),
 				),
 			),
@@ -156,33 +156,33 @@ class WP_MCP_AI_JetEngine_Endpoint_Report {
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/add-relation',
-						'description' => __( 'Create a new relation definition.', 'wp-mcp-ai' ),
+						'description' => __( 'Create a new relation definition.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'read'   => array(
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/get-relation',
-						'description' => __( 'Read a single relation configuration.', 'wp-mcp-ai' ),
+						'description' => __( 'Read a single relation configuration.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/get-relations',
-						'description' => __( 'List all stored relations.', 'wp-mcp-ai' ),
+						'description' => __( 'List all stored relations.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'update' => array(
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/edit-relation',
-						'description' => __( 'Update an existing relation definition.', 'wp-mcp-ai' ),
+						'description' => __( 'Update an existing relation definition.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'delete' => array(
 					array(
 						'method'      => 'DELETE',
 						'route'       => '/jet-engine/v2/delete-relation',
-						'description' => __( 'Delete a stored relation definition.', 'wp-mcp-ai' ),
+						'description' => __( 'Delete a stored relation definition.', 'mcp-ai-wpoos' ),
 					),
 				),
 			),
@@ -191,38 +191,38 @@ class WP_MCP_AI_JetEngine_Endpoint_Report {
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/add-item',
-						'description' => __( 'Create a new JetEngine item (listing/form entry).', 'wp-mcp-ai' ),
+						'description' => __( 'Create a new JetEngine item (listing/form entry).', 'mcp-ai-wpoos' ),
 					),
 				),
 				'read'   => array(
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/get-item',
-						'description' => __( 'Read a stored JetEngine item.', 'wp-mcp-ai' ),
+						'description' => __( 'Read a stored JetEngine item.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/get-items',
-						'description' => __( 'List stored JetEngine items.', 'wp-mcp-ai' ),
+						'description' => __( 'List stored JetEngine items.', 'mcp-ai-wpoos' ),
 					),
 					array(
 						'method'      => 'GET',
 						'route'       => '/jet-engine/v2/search-posts',
-						'description' => __( 'Search posts using JetEngine utilities.', 'wp-mcp-ai' ),
+						'description' => __( 'Search posts using JetEngine utilities.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'update' => array(
 					array(
 						'method'      => 'POST',
 						'route'       => '/jet-engine/v2/edit-item',
-						'description' => __( 'Update an existing JetEngine item.', 'wp-mcp-ai' ),
+						'description' => __( 'Update an existing JetEngine item.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'delete' => array(
 					array(
 						'method'      => 'DELETE',
 						'route'       => '/jet-engine/v2/delete-item',
-						'description' => __( 'Delete a stored JetEngine item.', 'wp-mcp-ai' ),
+						'description' => __( 'Delete a stored JetEngine item.', 'mcp-ai-wpoos' ),
 					),
 				),
 			),

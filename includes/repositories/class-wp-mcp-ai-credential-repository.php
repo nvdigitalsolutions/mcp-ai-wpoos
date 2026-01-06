@@ -135,7 +135,7 @@ class WP_MCP_AI_Credential_Repository {
 		if ( ! $saved ) {
 			return new WP_Error(
 				'wp_mcp_ai_credential_save_failed',
-				__( 'Failed to save credential.', 'wp-mcp-ai' )
+				__( 'Failed to save credential.', 'mcp-ai-wpoos' )
 			);
 		}
 

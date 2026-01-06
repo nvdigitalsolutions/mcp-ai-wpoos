@@ -130,8 +130,8 @@ class WP_MCP_AI_Token_Performance_Service {
 		if ( empty( $stats['optimizations_active'] ) ) {
 			$recommendations[] = array(
 				'type'        => 'warning',
-				'title'       => __( 'Database Not Optimized', 'wp-mcp-ai' ),
-				'description' => __( 'Database indexes are not created. Run optimization to improve query performance.', 'wp-mcp-ai' ),
+				'title'       => __( 'Database Not Optimized', 'mcp-ai-wpoos' ),
+				'description' => __( 'Database indexes are not created. Run optimization to improve query performance.', 'mcp-ai-wpoos' ),
 				'action'      => 'run_optimization',
 				'priority'    => 'high',
 			);
@@ -141,8 +141,8 @@ class WP_MCP_AI_Token_Performance_Service {
 		if ( empty( $stats['tier_index_exists'] ) ) {
 			$recommendations[] = array(
 				'type'        => 'warning',
-				'title'       => __( 'Missing Tier Index', 'wp-mcp-ai' ),
-				'description' => __( 'Tier lookup index is missing. This may slow down tier retrieval.', 'wp-mcp-ai' ),
+				'title'       => __( 'Missing Tier Index', 'mcp-ai-wpoos' ),
+				'description' => __( 'Tier lookup index is missing. This may slow down tier retrieval.', 'mcp-ai-wpoos' ),
 				'action'      => 'create_tier_index',
 				'priority'    => 'medium',
 			);
@@ -151,8 +151,8 @@ class WP_MCP_AI_Token_Performance_Service {
 		if ( empty( $stats['usage_index_exists'] ) ) {
 			$recommendations[] = array(
 				'type'        => 'warning',
-				'title'       => __( 'Missing Usage Index', 'wp-mcp-ai' ),
-				'description' => __( 'Usage lookup index is missing. This may slow down usage queries.', 'wp-mcp-ai' ),
+				'title'       => __( 'Missing Usage Index', 'mcp-ai-wpoos' ),
+				'description' => __( 'Usage lookup index is missing. This may slow down usage queries.', 'mcp-ai-wpoos' ),
 				'action'      => 'create_usage_index',
 				'priority'    => 'medium',
 			);
@@ -162,8 +162,8 @@ class WP_MCP_AI_Token_Performance_Service {
 		if ( empty( $cache_stats['persistent_cache'] ) ) {
 			$recommendations[] = array(
 				'type'        => 'info',
-				'title'       => __( 'No Persistent Cache', 'wp-mcp-ai' ),
-				'description' => __( 'Consider installing Redis or Memcached for improved cache persistence across requests.', 'wp-mcp-ai' ),
+				'title'       => __( 'No Persistent Cache', 'mcp-ai-wpoos' ),
+				'description' => __( 'Consider installing Redis or Memcached for improved cache persistence across requests.', 'mcp-ai-wpoos' ),
 				'action'      => 'enable_object_cache',
 				'priority'    => 'low',
 			);
@@ -176,10 +176,10 @@ class WP_MCP_AI_Token_Performance_Service {
 		if ( $tier_records > 1000 || $usage_records > 1000 ) {
 			$recommendations[] = array(
 				'type'        => 'success',
-				'title'       => __( 'Large Dataset Detected', 'wp-mcp-ai' ),
+				'title'       => __( 'Large Dataset Detected', 'mcp-ai-wpoos' ),
 				'description' => sprintf(
 					/* translators: %d: number of records */
-					__( 'You have %d records. Database optimizations are especially beneficial for large datasets.', 'wp-mcp-ai' ),
+					__( 'You have %d records. Database optimizations are especially beneficial for large datasets.', 'mcp-ai-wpoos' ),
 					$tier_records + $usage_records
 				),
 				'action'      => 'verify_performance',
@@ -278,7 +278,7 @@ class WP_MCP_AI_Token_Performance_Service {
 		if ( ! class_exists( 'WP_MCP_AI_Token_DB_Optimizer' ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Database optimizer not available.', 'wp-mcp-ai' ),
+				'message' => __( 'Database optimizer not available.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -287,7 +287,7 @@ class WP_MCP_AI_Token_Performance_Service {
 
 			return array(
 				'success' => true,
-				'message' => __( 'Database optimization completed successfully.', 'wp-mcp-ai' ),
+				'message' => __( 'Database optimization completed successfully.', 'mcp-ai-wpoos' ),
 				'stats'   => WP_MCP_AI_Token_DB_Optimizer::get_optimization_stats(),
 			);
 		} catch ( Exception $e ) {
@@ -295,7 +295,7 @@ class WP_MCP_AI_Token_Performance_Service {
 				'success' => false,
 				'message' => sprintf(
 					/* translators: %s: error message */
-					__( 'Optimization failed: %s', 'wp-mcp-ai' ),
+					__( 'Optimization failed: %s', 'mcp-ai-wpoos' ),
 					$e->getMessage()
 				),
 			);

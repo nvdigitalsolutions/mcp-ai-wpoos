@@ -97,7 +97,7 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 
 		add_meta_box(
 			'wp_mcp_ai_assistant',
-			__( 'AI Assistant', 'wp-mcp-ai' ),
+			__( 'AI Assistant', 'mcp-ai-wpoos-pro' ),
 			array( $this, 'render_ai_metabox' ),
 			$post_type,
 			'side',
@@ -197,7 +197,7 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 		?>
 		<div class="wp-mcp-ai-cpt-assistant-wrapper">
 			<div class="wp-mcp-ai-cpt-assistant-info">
-				<p><?php esc_html_e( 'Get AI assistance with content creation, editing, research, and more.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'Get AI assistance with content creation, editing, research, and more.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
 			<button 
 				type="button" 
@@ -206,7 +206,7 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 				data-post-type="<?php echo esc_attr( $post->post_type ); ?>"
 			>
 				<span class="dashicons dashicons-format-chat"></span>
-				<?php esc_html_e( 'Open AI Assistant', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Open AI Assistant', 'mcp-ai-wpoos-pro' ); ?>
 			</button>
 		</div>
 
@@ -215,8 +215,8 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			<div class="wp-mcp-ai-cpt-modal__backdrop"></div>
 			<div class="wp-mcp-ai-cpt-modal__panel">
 				<div class="wp-mcp-ai-cpt-modal__header">
-					<h2><?php esc_html_e( 'AI Assistant', 'wp-mcp-ai' ); ?></h2>
-					<button type="button" class="wp-mcp-ai-cpt-modal__close" aria-label="<?php esc_attr_e( 'Close', 'wp-mcp-ai' ); ?>">
+					<h2><?php esc_html_e( 'AI Assistant', 'mcp-ai-wpoos-pro' ); ?></h2>
+					<button type="button" class="wp-mcp-ai-cpt-modal__close" aria-label="<?php esc_attr_e( 'Close', 'mcp-ai-wpoos-pro' ); ?>">
 						<span class="dashicons dashicons-no-alt"></span>
 					</button>
 				</div>
@@ -224,19 +224,19 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 					<div class="wp-mcp-ai-cpt-assistant" data-post-id="<?php echo esc_attr( $post->ID ); ?>" data-post-type="<?php echo esc_attr( $post->post_type ); ?>">
 						<div class="wp-mcp-ai-cpt-chat-messages" id="wp-mcp-ai-cpt-chat-messages">
 							<div class="wp-mcp-ai-cpt-welcome-message">
-								<p><?php esc_html_e( '👋 Hi! I\'m your AI assistant. I can help you:', 'wp-mcp-ai' ); ?></p>
+								<p><?php esc_html_e( '👋 Hi! I\'m your AI assistant. I can help you:', 'mcp-ai-wpoos-pro' ); ?></p>
 								<ul>
-									<li><?php esc_html_e( '✍️ Write and edit content', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( '🔍 Research topics and find information', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( '📝 Generate titles and descriptions', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( '🎨 Create images and media', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( '🔧 Use any available AI tools', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '✍️ Write and edit content', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '🔍 Research topics and find information', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '📝 Generate titles and descriptions', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '🎨 Create images and media', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '🔧 Use any available AI tools', 'mcp-ai-wpoos-pro' ); ?></li>
 								</ul>
-								<p><strong><?php esc_html_e( 'Try asking me:', 'wp-mcp-ai' ); ?></strong></p>
+								<p><strong><?php esc_html_e( 'Try asking me:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
 								<ul>
-									<li><?php esc_html_e( '"Write an introduction for this post"', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( '"Generate an SEO-friendly title"', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( '"Create a featured image"', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '"Write an introduction for this post"', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '"Generate an SEO-friendly title"', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '"Create a featured image"', 'mcp-ai-wpoos-pro' ); ?></li>
 								</ul>
 							</div>
 						</div>
@@ -244,12 +244,12 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 							<textarea 
 								id="wp-mcp-ai-cpt-chat-input" 
 								class="wp-mcp-ai-cpt-chat-input" 
-								placeholder="<?php esc_attr_e( 'Ask me anything...', 'wp-mcp-ai' ); ?>"
+								placeholder="<?php esc_attr_e( 'Ask me anything...', 'mcp-ai-wpoos-pro' ); ?>"
 								rows="3"
 							></textarea>
 							<button type="button" id="wp-mcp-ai-cpt-send-button" class="button button-primary wp-mcp-ai-cpt-send-button">
 								<span class="dashicons dashicons-format-chat"></span>
-								<?php esc_html_e( 'Send', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Send', 'mcp-ai-wpoos-pro' ); ?>
 							</button>
 						</div>
 						<div class="wp-mcp-ai-cpt-chat-status" id="wp-mcp-ai-cpt-chat-status"></div>
@@ -269,9 +269,9 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	public function render_term_ai_metabox( $term, $taxonomy ) {
 		?>
 		<div class="wp-mcp-ai-cpt-term-assistant-wrapper">
-			<h2><?php esc_html_e( 'AI Assistant', 'wp-mcp-ai' ); ?></h2>
+			<h2><?php esc_html_e( 'AI Assistant', 'mcp-ai-wpoos-pro' ); ?></h2>
 			<div class="wp-mcp-ai-cpt-assistant-info">
-				<p><?php esc_html_e( 'Get AI assistance with term descriptions, SEO metadata, and content suggestions.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'Get AI assistance with term descriptions, SEO metadata, and content suggestions.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
 			<button 
 				type="button" 
@@ -280,7 +280,7 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 				data-taxonomy="<?php echo esc_attr( $taxonomy ); ?>"
 			>
 				<span class="dashicons dashicons-format-chat"></span>
-				<?php esc_html_e( 'Open AI Assistant', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Open AI Assistant', 'mcp-ai-wpoos-pro' ); ?>
 			</button>
 		</div>
 
@@ -289,8 +289,8 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			<div class="wp-mcp-ai-cpt-modal__backdrop"></div>
 			<div class="wp-mcp-ai-cpt-modal__panel">
 				<div class="wp-mcp-ai-cpt-modal__header">
-					<h2><?php esc_html_e( 'AI Assistant', 'wp-mcp-ai' ); ?></h2>
-					<button type="button" class="wp-mcp-ai-cpt-modal__close" aria-label="<?php esc_attr_e( 'Close', 'wp-mcp-ai' ); ?>">
+					<h2><?php esc_html_e( 'AI Assistant', 'mcp-ai-wpoos-pro' ); ?></h2>
+					<button type="button" class="wp-mcp-ai-cpt-modal__close" aria-label="<?php esc_attr_e( 'Close', 'mcp-ai-wpoos-pro' ); ?>">
 						<span class="dashicons dashicons-no-alt"></span>
 					</button>
 				</div>
@@ -298,12 +298,12 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 					<div class="wp-mcp-ai-cpt-assistant" data-term-id="<?php echo esc_attr( $term->term_id ); ?>" data-taxonomy="<?php echo esc_attr( $taxonomy ); ?>">
 						<div class="wp-mcp-ai-cpt-chat-messages" id="wp-mcp-ai-cpt-chat-messages-term">
 							<div class="wp-mcp-ai-cpt-welcome-message">
-								<p><?php esc_html_e( '👋 Hi! I\'m your AI assistant. I can help you:', 'wp-mcp-ai' ); ?></p>
+								<p><?php esc_html_e( '👋 Hi! I\'m your AI assistant. I can help you:', 'mcp-ai-wpoos-pro' ); ?></p>
 								<ul>
-									<li><?php esc_html_e( '✍️ Write descriptions for this term', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( '🔍 Research and suggest related content', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( '📝 Generate SEO metadata', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( '🔧 Use any available AI tools', 'wp-mcp-ai' ); ?></li>
+									<li><?php esc_html_e( '✍️ Write descriptions for this term', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '🔍 Research and suggest related content', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '📝 Generate SEO metadata', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '🔧 Use any available AI tools', 'mcp-ai-wpoos-pro' ); ?></li>
 								</ul>
 							</div>
 						</div>
@@ -311,12 +311,12 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 							<textarea 
 								id="wp-mcp-ai-cpt-chat-input-term" 
 								class="wp-mcp-ai-cpt-chat-input" 
-								placeholder="<?php esc_attr_e( 'Ask me anything...', 'wp-mcp-ai' ); ?>"
+								placeholder="<?php esc_attr_e( 'Ask me anything...', 'mcp-ai-wpoos-pro' ); ?>"
 								rows="3"
 							></textarea>
 							<button type="button" id="wp-mcp-ai-cpt-send-button-term" class="button button-primary wp-mcp-ai-cpt-send-button">
 								<span class="dashicons dashicons-format-chat"></span>
-								<?php esc_html_e( 'Send', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Send', 'mcp-ai-wpoos-pro' ); ?>
 							</button>
 						</div>
 						<div class="wp-mcp-ai-cpt-chat-status" id="wp-mcp-ai-cpt-chat-status-term"></div>
@@ -392,10 +392,10 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
 				'nonce'         => wp_create_nonce( 'wp_mcp_ai_cpt_chat' ),
 				'i18n'          => array(
-					'error'        => __( 'An error occurred. Please try again.', 'wp-mcp-ai' ),
-					'sending'      => __( 'Sending...', 'wp-mcp-ai' ),
-					'thinking'     => __( 'AI is thinking...', 'wp-mcp-ai' ),
-					'emptyMessage' => __( 'Please enter a message.', 'wp-mcp-ai' ),
+					'error'        => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'sending'      => __( 'Sending...', 'mcp-ai-wpoos-pro' ),
+					'thinking'     => __( 'AI is thinking...', 'mcp-ai-wpoos-pro' ),
+					'emptyMessage' => __( 'Please enter a message.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -410,7 +410,7 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 
 		// Check user capability.
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to use this feature.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to use this feature.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Get and sanitize input.
@@ -421,7 +421,7 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 		$taxonomy = isset( $_POST['taxonomy'] ) ? sanitize_key( wp_unslash( $_POST['taxonomy'] ) ) : '';
 
 		if ( empty( $message ) ) {
-			wp_send_json_error( array( 'message' => __( 'Message is required.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Message is required.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Build context for the AI.
@@ -470,33 +470,33 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	 * @return string
 	 */
 	private function build_system_message( $context ) {
-		$message = __( 'You are an AI assistant helping a WordPress user manage their content. ', 'wp-mcp-ai' );
+		$message = __( 'You are an AI assistant helping a WordPress user manage their content. ', 'mcp-ai-wpoos-pro' );
 
 		if ( isset( $context['post_id'] ) ) {
 			$message .= sprintf(
 				/* translators: 1: post type, 2: post title, 3: post status */
-				__( 'The user is currently editing a %1$s titled "%2$s" (status: %3$s). ', 'wp-mcp-ai' ),
+				__( 'The user is currently editing a %1$s titled "%2$s" (status: %3$s). ', 'mcp-ai-wpoos-pro' ),
 				$context['post_type'],
 				$context['post_title'],
 				$context['post_status']
 			);
 
 			if ( ! empty( $context['post_content'] ) ) {
-				$message .= __( 'You have access to the current post content. ', 'wp-mcp-ai' );
+				$message .= __( 'You have access to the current post content. ', 'mcp-ai-wpoos-pro' );
 			}
 
-			$message .= __( 'You can help them write, edit, optimize, or enhance their content. You have access to tools for content generation, image creation, SEO optimization, and more.', 'wp-mcp-ai' );
+			$message .= __( 'You can help them write, edit, optimize, or enhance their content. You have access to tools for content generation, image creation, SEO optimization, and more.', 'mcp-ai-wpoos-pro' );
 		}
 
 		if ( isset( $context['term_id'] ) ) {
 			$message .= sprintf(
 				/* translators: 1: taxonomy, 2: term name */
-				__( 'The user is currently editing a %1$s term named "%2$s". ', 'wp-mcp-ai' ),
+				__( 'The user is currently editing a %1$s term named "%2$s". ', 'mcp-ai-wpoos-pro' ),
 				$context['taxonomy'],
 				$context['term_name']
 			);
 
-			$message .= __( 'You can help them write descriptions, generate SEO metadata, and manage taxonomy terms.', 'wp-mcp-ai' );
+			$message .= __( 'You can help them write descriptions, generate SEO metadata, and manage taxonomy terms.', 'mcp-ai-wpoos-pro' );
 		}
 
 		return $message;
@@ -523,7 +523,7 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 		$assistants = get_posts( $args );
 
 		if ( empty( $assistants ) ) {
-			return new WP_Error( 'no_assistant', __( 'No AI assistant found. Please create an assistant first.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'no_assistant', __( 'No AI assistant found. Please create an assistant first.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$assistant_id = $assistants[0]->ID;
@@ -559,14 +559,14 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			$error_data = $response->get_data();
 			return new WP_Error(
 				'api_error',
-				isset( $error_data['message'] ) ? $error_data['message'] : __( 'API request failed.', 'wp-mcp-ai' )
+				isset( $error_data['message'] ) ? $error_data['message'] : __( 'API request failed.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		$data = $response->get_data();
 
 		if ( ! isset( $data['content'] ) ) {
-			return new WP_Error( 'invalid_response', __( 'Invalid response from AI assistant.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'invalid_response', __( 'Invalid response from AI assistant.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return $data['content'];

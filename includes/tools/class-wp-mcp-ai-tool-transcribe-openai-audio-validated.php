@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio_Validated extends WP_MCP_AI_Validat
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Transcribe OpenAI Audio (Validated)', 'wp-mcp-ai' );
+		return __( 'Transcribe OpenAI Audio (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Converts an uploaded audio file into English text using OpenAI transcription or translation with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Converts an uploaded audio file into English text using OpenAI transcription or translation with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Quiz', 'wp-mcp-ai' );
+		return __( 'Create Quiz', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new quiz with questions. Supports multiple choice, true/false, and short answer formats. Optionally includes a time limit.', 'wp-mcp-ai' );
+		return __( 'Creates a new quiz with questions. Supports multiple choice, true/false, and short answer formats. Optionally includes a time limit.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,45 +43,45 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'title'         => array(
 					'type'        => 'string',
-					'description' => __( 'Title of the quiz.', 'wp-mcp-ai' ),
+					'description' => __( 'Title of the quiz.', 'mcp-ai-wpoos-pro' ),
 				),
 				'description'   => array(
 					'type'        => 'string',
-					'description' => __( 'Optional description or instructions for the quiz.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional description or instructions for the quiz.', 'mcp-ai-wpoos-pro' ),
 				),
 				'time_limit'    => array(
 					'type'        => 'integer',
-					'description' => __( 'Time limit in minutes for completing the quiz. 0 for no limit.', 'wp-mcp-ai' ),
+					'description' => __( 'Time limit in minutes for completing the quiz. 0 for no limit.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 					'minimum'     => 0,
 				),
 				'questions'     => array(
 					'type'        => 'array',
-					'description' => __( 'Array of questions for the quiz.', 'wp-mcp-ai' ),
+					'description' => __( 'Array of questions for the quiz.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
 							'question'       => array(
 								'type'        => 'string',
-								'description' => __( 'The question text.', 'wp-mcp-ai' ),
+								'description' => __( 'The question text.', 'mcp-ai-wpoos-pro' ),
 							),
 							'type'           => array(
 								'type'        => 'string',
-								'description' => __( 'Question type: multiple_choice, true_false, or short_answer.', 'wp-mcp-ai' ),
+								'description' => __( 'Question type: multiple_choice, true_false, or short_answer.', 'mcp-ai-wpoos-pro' ),
 								'enum'        => array( 'multiple_choice', 'true_false', 'short_answer' ),
 							),
 							'options'        => array(
 								'type'        => 'array',
-								'description' => __( 'Answer options for multiple choice questions.', 'wp-mcp-ai' ),
+								'description' => __( 'Answer options for multiple choice questions.', 'mcp-ai-wpoos-pro' ),
 								'items'       => array( 'type' => 'string' ),
 							),
 							'correct_answer' => array(
 								'type'        => 'string',
-								'description' => __( 'The correct answer (for grading reference).', 'wp-mcp-ai' ),
+								'description' => __( 'The correct answer (for grading reference).', 'mcp-ai-wpoos-pro' ),
 							),
 							'points'         => array(
 								'type'        => 'integer',
-								'description' => __( 'Points awarded for correct answer.', 'wp-mcp-ai' ),
+								'description' => __( 'Points awarded for correct answer.', 'mcp-ai-wpoos-pro' ),
 								'default'     => 1,
 								'minimum'     => 1,
 							),
@@ -91,7 +91,7 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'passing_score' => array(
 					'type'        => 'integer',
-					'description' => __( 'Minimum percentage (0-100) required to pass the quiz.', 'wp-mcp-ai' ),
+					'description' => __( 'Minimum percentage (0-100) required to pass the quiz.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 70,
 					'minimum'     => 0,
 					'maximum'     => 100,
@@ -113,7 +113,7 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create quizzes.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create quizzes.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate and sanitize inputs.
@@ -124,11 +124,11 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$passing_score = isset( $arguments['passing_score'] ) ? absint( $arguments['passing_score'] ) : 70;
 
 		if ( '' === $title ) {
-			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Quiz title is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Quiz title is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( empty( $questions ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_questions', __( 'At least one question is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_questions', __( 'At least one question is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate questions.
@@ -137,11 +137,11 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		foreach ( $questions as $index => $question_data ) {
 			if ( ! isset( $question_data['question'] ) || '' === trim( $question_data['question'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_question', sprintf( __( 'Question %d is missing question text.', 'wp-mcp-ai' ), $index + 1 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_question', sprintf( __( 'Question %d is missing question text.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
 			}
 
 			if ( ! isset( $question_data['type'] ) || ! in_array( $question_data['type'], array( 'multiple_choice', 'true_false', 'short_answer' ), true ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_type', sprintf( __( 'Question %d has an invalid type.', 'wp-mcp-ai' ), $index + 1 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_type', sprintf( __( 'Question %d has an invalid type.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
 			}
 
 			$validated_question = array(
@@ -153,7 +153,7 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			// Validate options for multiple choice.
 			if ( 'multiple_choice' === $validated_question['type'] ) {
 				if ( empty( $question_data['options'] ) || ! is_array( $question_data['options'] ) ) {
-					return new WP_Error( 'wp_mcp_ai_missing_options', sprintf( __( 'Question %d is missing answer options.', 'wp-mcp-ai' ), $index + 1 ) );
+					return new WP_Error( 'wp_mcp_ai_missing_options', sprintf( __( 'Question %d is missing answer options.', 'mcp-ai-wpoos-pro' ), $index + 1 ) );
 				}
 				$validated_question['options'] = array_map( 'sanitize_text_field', $question_data['options'] );
 			}
@@ -193,7 +193,7 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'summary'        => sprintf(
 				/* translators: 1: quiz title, 2: quiz ID */
-				__( 'Quiz created: %1$s (ID: %2$d)', 'wp-mcp-ai' ),
+				__( 'Quiz created: %1$s (ID: %2$d)', 'mcp-ai-wpoos-pro' ),
 				$title,
 				$quiz_id
 			),

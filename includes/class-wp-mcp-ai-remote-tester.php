@@ -74,12 +74,12 @@ class WP_MCP_AI_Remote_Tester {
 		if ( is_wp_error( $response ) ) {
 			$success  = false;
 			$checks[] = array(
-				'step'      => __( 'GET /assistants', 'wp-mcp-ai' ),
+				'step'      => __( 'GET /assistants', 'mcp-ai-wpoos' ),
 				'url'       => $assistants_url,
 				'status'    => 'error',
 				'http_code' => null,
 				/* translators: %s: error message from the failed request */
-				'message'   => sprintf( __( 'Request failed: %s', 'wp-mcp-ai' ), $response->get_error_message() ),
+				'message'   => sprintf( __( 'Request failed: %s', 'mcp-ai-wpoos' ), $response->get_error_message() ),
 				'details'   => array(
 					'error_code' => $response->get_error_code(),
 				),
@@ -132,7 +132,7 @@ class WP_MCP_AI_Remote_Tester {
 		}
 
 		$checks[]  = array(
-			'step'      => __( 'GET /assistants', 'wp-mcp-ai' ),
+			'step'      => __( 'GET /assistants', 'mcp-ai-wpoos' ),
 			'url'       => $assistants_url,
 			'status'    => $status,
 			'http_code' => $code,
@@ -165,10 +165,10 @@ class WP_MCP_AI_Remote_Tester {
 		if ( ! $assistant_id ) {
 			$success = false;
 
-			$message = __( 'Unable to determine an assistant ID for the chat probe.', 'wp-mcp-ai' );
+			$message = __( 'Unable to determine an assistant ID for the chat probe.', 'mcp-ai-wpoos' );
 
 			$checks[] = array(
-				'step'      => __( 'POST /chat', 'wp-mcp-ai' ),
+				'step'      => __( 'POST /chat', 'mcp-ai-wpoos' ),
 				'url'       => $chat_url,
 				'status'    => 'error',
 				'http_code' => null,
@@ -197,7 +197,7 @@ class WP_MCP_AI_Remote_Tester {
 			'messages'     => array(
 				array(
 					'role'    => 'user',
-					'content' => __( 'Connectivity probe from NV oOS Remote Tester.', 'wp-mcp-ai' ),
+					'content' => __( 'Connectivity probe from NV oOS Remote Tester.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'options'      => array(
@@ -222,12 +222,12 @@ class WP_MCP_AI_Remote_Tester {
 			$success = false;
 
 			$checks[] = array(
-				'step'      => __( 'POST /chat', 'wp-mcp-ai' ),
+				'step'      => __( 'POST /chat', 'mcp-ai-wpoos' ),
 				'url'       => $chat_url,
 				'status'    => 'error',
 				'http_code' => null,
 				/* translators: %s: error message from the failed request */
-				'message'   => sprintf( __( 'Request failed: %s', 'wp-mcp-ai' ), $chat_response->get_error_message() ),
+				'message'   => sprintf( __( 'Request failed: %s', 'mcp-ai-wpoos' ), $chat_response->get_error_message() ),
 				'details'   => array(
 					'error_code' => $chat_response->get_error_code(),
 				),
@@ -280,16 +280,16 @@ class WP_MCP_AI_Remote_Tester {
 		if ( $chat_code >= 200 && $chat_code < 300 ) {
 			$chat_status = 'success';
 
-			$message_parts = array( __( 'Chat endpoint reachable.', 'wp-mcp-ai' ) );
+			$message_parts = array( __( 'Chat endpoint reachable.', 'mcp-ai-wpoos' ) );
 
 			if ( isset( $chat_details['probe_status'] ) ) {
 				/* translators: %s: probe status */
-				$message_parts[] = sprintf( __( 'Status: %s.', 'wp-mcp-ai' ), $chat_details['probe_status'] );
+				$message_parts[] = sprintf( __( 'Status: %s.', 'mcp-ai-wpoos' ), $chat_details['probe_status'] );
 			}
 
 			if ( isset( $chat_details['probe_checked_at'] ) ) {
 				/* translators: %s: timestamp when the check was performed */
-				$message_parts[] = sprintf( __( 'Checked at %s.', 'wp-mcp-ai' ), $chat_details['probe_checked_at'] );
+				$message_parts[] = sprintf( __( 'Checked at %s.', 'mcp-ai-wpoos' ), $chat_details['probe_checked_at'] );
 			}
 
 			$chat_message = implode( ' ', $message_parts );
@@ -305,7 +305,7 @@ class WP_MCP_AI_Remote_Tester {
 		}
 
 		$checks[] = array(
-			'step'      => __( 'POST /chat', 'wp-mcp-ai' ),
+			'step'      => __( 'POST /chat', 'mcp-ai-wpoos' ),
 			'url'       => $chat_url,
 			'status'    => $chat_status,
 			'http_code' => $chat_code,
@@ -345,7 +345,7 @@ class WP_MCP_AI_Remote_Tester {
 		if ( ! is_string( $base_url ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_remote_invalid_base_url',
-				__( 'Please provide a valid MCP REST base URL.', 'wp-mcp-ai' )
+				__( 'Please provide a valid MCP REST base URL.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -354,14 +354,14 @@ class WP_MCP_AI_Remote_Tester {
 		if ( '' === $base_url ) {
 			return new WP_Error(
 				'wp_mcp_ai_remote_invalid_base_url',
-				__( 'Please provide a valid MCP REST base URL.', 'wp-mcp-ai' )
+				__( 'Please provide a valid MCP REST base URL.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( ! preg_match( '#^https?://#i', $base_url ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_remote_invalid_base_url',
-				__( 'The base URL must include the http or https scheme.', 'wp-mcp-ai' )
+				__( 'The base URL must include the http or https scheme.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -370,7 +370,7 @@ class WP_MCP_AI_Remote_Tester {
 		if ( false === $parsed || empty( $parsed['host'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_remote_invalid_base_url',
-				__( 'The provided base URL is not a valid HTTP or HTTPS URL.', 'wp-mcp-ai' )
+				__( 'The provided base URL is not a valid HTTP or HTTPS URL.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -379,7 +379,7 @@ class WP_MCP_AI_Remote_Tester {
 		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_remote_invalid_base_url',
-				__( 'The base URL must include the http or https scheme.', 'wp-mcp-ai' )
+				__( 'The base URL must include the http or https scheme.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -388,7 +388,7 @@ class WP_MCP_AI_Remote_Tester {
 		if ( '' === $sanitised ) {
 			return new WP_Error(
 				'wp_mcp_ai_remote_invalid_base_url',
-				__( 'The provided base URL is not a valid HTTP or HTTPS URL.', 'wp-mcp-ai' )
+				__( 'The provided base URL is not a valid HTTP or HTTPS URL.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -478,7 +478,7 @@ class WP_MCP_AI_Remote_Tester {
 			$count   = count( $decoded['assistants'] );
 			$parts[] = sprintf(
 				/* translators: %d: number of assistants received */
-				_n( 'Received %d assistant.', 'Received %d assistants.', $count, 'wp-mcp-ai' ),
+				_n( 'Received %d assistant.', 'Received %d assistants.', $count, 'mcp-ai-wpoos' ),
 				$count
 			);
 		}
@@ -486,14 +486,14 @@ class WP_MCP_AI_Remote_Tester {
 		if ( is_array( $decoded ) && isset( $decoded['token_scope']['type'] ) ) {
 			$parts[] = sprintf(
 				/* translators: %s: OAuth token scope type */
-				__( 'Token scope: %s.', 'wp-mcp-ai' ),
+				__( 'Token scope: %s.', 'mcp-ai-wpoos' ),
 				$decoded['token_scope']['type']
 			);
 		}
 
 		if ( empty( $parts ) ) {
 			/* translators: %d: HTTP status code */
-			$parts[] = sprintf( __( 'Received HTTP %d.', 'wp-mcp-ai' ), $code );
+			$parts[] = sprintf( __( 'Received HTTP %d.', 'mcp-ai-wpoos' ), $code );
 		}
 
 		return implode( ' ', $parts );
@@ -514,10 +514,10 @@ class WP_MCP_AI_Remote_Tester {
 		if ( $code > 0 ) {
 			if ( $http_message ) {
 				/* translators: 1: HTTP status code, 2: HTTP status message */
-				$parts[] = sprintf( __( 'HTTP %1$d %2$s.', 'wp-mcp-ai' ), $code, $http_message );
+				$parts[] = sprintf( __( 'HTTP %1$d %2$s.', 'mcp-ai-wpoos' ), $code, $http_message );
 			} else {
 				/* translators: %d: HTTP status code */
-				$parts[] = sprintf( __( 'HTTP %d.', 'wp-mcp-ai' ), $code );
+				$parts[] = sprintf( __( 'HTTP %d.', 'mcp-ai-wpoos' ), $code );
 			}
 		}
 
@@ -532,7 +532,7 @@ class WP_MCP_AI_Remote_Tester {
 				$excerpt = function_exists( 'mb_substr' ) ? mb_substr( $raw_body, 0, 200 ) : substr( $raw_body, 0, 200 );
 				$parts[] = $excerpt;
 			} else {
-				$parts[] = __( 'Unexpected response body.', 'wp-mcp-ai' );
+				$parts[] = __( 'Unexpected response body.', 'mcp-ai-wpoos' );
 			}
 		}
 

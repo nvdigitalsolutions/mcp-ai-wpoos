@@ -50,8 +50,8 @@ class WP_MCP_AI_Admin_Token_Manager {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
-			__( 'NV oOS Token Manager', 'wp-mcp-ai' ),
-			__( 'Token Manager', 'wp-mcp-ai' ),
+			__( 'NV oOS Token Manager', 'mcp-ai-wpoos' ),
+			__( 'Token Manager', 'mcp-ai-wpoos' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
@@ -112,14 +112,14 @@ class WP_MCP_AI_Admin_Token_Manager {
 	 */
 	public function handle_revoke_token() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to manage tokens.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'You do not have permission to manage tokens.', 'mcp-ai-wpoos' ) );
 		}
 
 		$assistant_id  = isset( $_POST['assistant_id'] ) ? absint( wp_unslash( $_POST['assistant_id'] ) ) : 0;
 		$credential_id = isset( $_POST['credential_id'] ) ? sanitize_key( wp_unslash( $_POST['credential_id'] ) ) : '';
 
 		if ( 0 === $assistant_id || '' === $credential_id ) {
-			wp_die( esc_html__( 'Missing token identifier.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'Missing token identifier.', 'mcp-ai-wpoos' ) );
 		}
 
 		check_admin_referer( 'wp_mcp_ai_token_manager_revoke_' . $assistant_id . '_' . $credential_id );
@@ -143,14 +143,14 @@ class WP_MCP_AI_Admin_Token_Manager {
 	 */
 	public function handle_delete_token() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to manage tokens.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'You do not have permission to manage tokens.', 'mcp-ai-wpoos' ) );
 		}
 
 		$assistant_id  = isset( $_POST['assistant_id'] ) ? absint( wp_unslash( $_POST['assistant_id'] ) ) : 0;
 		$credential_id = isset( $_POST['credential_id'] ) ? sanitize_key( wp_unslash( $_POST['credential_id'] ) ) : '';
 
 		if ( 0 === $assistant_id || '' === $credential_id ) {
-			wp_die( esc_html__( 'Missing token identifier.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'Missing token identifier.', 'mcp-ai-wpoos' ) );
 		}
 
 		check_admin_referer( 'wp_mcp_ai_token_manager_delete_' . $assistant_id . '_' . $credential_id );
@@ -261,7 +261,7 @@ class WP_MCP_AI_Admin_Token_Manager {
 	private function get_user_display_name( $user_id ) {
 		$user_id = absint( $user_id );
 		if ( 0 === $user_id ) {
-			return __( 'System', 'wp-mcp-ai' );
+			return __( 'System', 'mcp-ai-wpoos' );
 		}
 
 		$user = get_userdata( $user_id );
@@ -269,7 +269,7 @@ class WP_MCP_AI_Admin_Token_Manager {
 			return $user->display_name;
 		}
 
-		return __( 'Unknown', 'wp-mcp-ai' );
+		return __( 'Unknown', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -284,12 +284,12 @@ class WP_MCP_AI_Admin_Token_Manager {
 		$stats       = $this->get_statistics( $credentials );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'NV oOS Token Manager', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'NV oOS Token Manager', 'mcp-ai-wpoos' ); ?></h1>
 
 			<div class="wp-mcp-ai-token-manager__intro">
-				<p><strong><?php esc_html_e( 'About Token Manager', 'wp-mcp-ai' ); ?></strong></p>
-				<p><?php esc_html_e( 'The Token Manager provides centralized control over all external agent access tokens issued for your AI Assistants. These tokens allow external applications (like Codex CLI, MCP clients, or custom integrations) to authenticate with specific assistants.', 'wp-mcp-ai' ); ?></p>
-				<p><?php esc_html_e( 'Industry best practices implemented: Tokens are shown only once upon creation, support granular revocation, and include full audit trails. Revoked tokens remain visible for security auditing but cannot be used for authentication.', 'wp-mcp-ai' ); ?></p>
+				<p><strong><?php esc_html_e( 'About Token Manager', 'mcp-ai-wpoos' ); ?></strong></p>
+				<p><?php esc_html_e( 'The Token Manager provides centralized control over all external agent access tokens issued for your AI Assistants. These tokens allow external applications (like Codex CLI, MCP clients, or custom integrations) to authenticate with specific assistants.', 'mcp-ai-wpoos' ); ?></p>
+				<p><?php esc_html_e( 'Industry best practices implemented: Tokens are shown only once upon creation, support granular revocation, and include full audit trails. Revoked tokens remain visible for security auditing but cannot be used for authentication.', 'mcp-ai-wpoos' ); ?></p>
 			</div>
 
 			<?php
@@ -302,15 +302,15 @@ class WP_MCP_AI_Admin_Token_Manager {
 				$action_notices = array(
 					'revoked' => array(
 						'type'    => 'success',
-						'message' => __( 'Token successfully revoked. It can no longer be used for authentication.', 'wp-mcp-ai' ),
+						'message' => __( 'Token successfully revoked. It can no longer be used for authentication.', 'mcp-ai-wpoos' ),
 					),
 					'deleted' => array(
 						'type'    => 'success',
-						'message' => __( 'Token permanently deleted.', 'wp-mcp-ai' ),
+						'message' => __( 'Token permanently deleted.', 'mcp-ai-wpoos' ),
 					),
 					'error'   => array(
 						'type'    => 'error',
-						'message' => __( 'The requested action could not be completed. The token may have already been modified or does not exist.', 'wp-mcp-ai' ),
+						'message' => __( 'The requested action could not be completed. The token may have already been modified or does not exist.', 'mcp-ai-wpoos' ),
 					),
 				);
 
@@ -329,19 +329,19 @@ class WP_MCP_AI_Admin_Token_Manager {
 			<?php if ( ! empty( $credentials ) ) : ?>
 				<div class="wp-mcp-ai-token-manager__stats">
 					<div class="wp-mcp-ai-token-manager__stat">
-						<div class="wp-mcp-ai-token-manager__stat-label"><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-token-manager__stat-label"><?php esc_html_e( 'Total Tokens', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-token-manager__stat-value"><?php echo esc_html( $stats['total'] ); ?></div>
 					</div>
 					<div class="wp-mcp-ai-token-manager__stat">
-						<div class="wp-mcp-ai-token-manager__stat-label"><?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-token-manager__stat-label"><?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-token-manager__stat-value"><?php echo esc_html( $stats['active'] ); ?></div>
 					</div>
 					<div class="wp-mcp-ai-token-manager__stat">
-						<div class="wp-mcp-ai-token-manager__stat-label"><?php esc_html_e( 'Revoked', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-token-manager__stat-label"><?php esc_html_e( 'Revoked', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-token-manager__stat-value"><?php echo esc_html( $stats['revoked'] ); ?></div>
 					</div>
 					<div class="wp-mcp-ai-token-manager__stat">
-						<div class="wp-mcp-ai-token-manager__stat-label"><?php esc_html_e( 'Assistants', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-token-manager__stat-label"><?php esc_html_e( 'Assistants', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-token-manager__stat-value"><?php echo esc_html( $stats['assistants'] ); ?></div>
 					</div>
 				</div>
@@ -349,35 +349,35 @@ class WP_MCP_AI_Admin_Token_Manager {
 
 			<?php if ( empty( $credentials ) ) : ?>
 				<div class="wp-mcp-ai-token-manager__empty">
-					<h3><?php esc_html_e( 'No Tokens Issued', 'wp-mcp-ai' ); ?></h3>
-					<p><?php esc_html_e( 'No external access tokens have been issued for any assistant yet. Tokens can be created from individual assistant edit screens.', 'wp-mcp-ai' ); ?></p>
-					<p><strong><?php esc_html_e( 'To create a token:', 'wp-mcp-ai' ); ?></strong></p>
+					<h3><?php esc_html_e( 'No Tokens Issued', 'mcp-ai-wpoos' ); ?></h3>
+					<p><?php esc_html_e( 'No external access tokens have been issued for any assistant yet. Tokens can be created from individual assistant edit screens.', 'mcp-ai-wpoos' ); ?></p>
+					<p><strong><?php esc_html_e( 'To create a token:', 'mcp-ai-wpoos' ); ?></strong></p>
 					<ul>
-						<li><?php esc_html_e( 'Go to AI Assistants in the WordPress admin menu', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Edit the assistant you want to enable external access for', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Scroll to the "Credentials" metabox', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Click "Generate Credential" to create a new token', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Go to AI Assistants in the WordPress admin menu', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Edit the assistant you want to enable external access for', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Scroll to the "Credentials" metabox', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Click "Generate Credential" to create a new token', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
-					<p><strong><?php esc_html_e( 'Security Note:', 'wp-mcp-ai' ); ?></strong> <?php esc_html_e( 'Tokens are only displayed once upon creation. Store them securely immediately after generation.', 'wp-mcp-ai' ); ?></p>
+					<p><strong><?php esc_html_e( 'Security Note:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Tokens are only displayed once upon creation. Store them securely immediately after generation.', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 			<?php else : ?>
 				<div class="wp-mcp-ai-token-manager__table-wrapper">
 					<table class="wp-mcp-ai-token-manager__table">
 					<thead>
 						<tr>
-							<th scope="col"><?php esc_html_e( 'Token ID', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Assistant', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Created', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Created By', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Token ID', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Assistant', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Created', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Created By', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ( $credentials as $credential ) : ?>
 							<?php
 							$is_revoked   = ! empty( $credential['revoked_at'] );
-							$created_at   = ! empty( $credential['created_at'] ) ? get_date_from_gmt( $credential['created_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) : __( 'Unknown', 'wp-mcp-ai' );
+							$created_at   = ! empty( $credential['created_at'] ) ? get_date_from_gmt( $credential['created_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) : __( 'Unknown', 'mcp-ai-wpoos' );
 							$created_by   = $this->get_user_display_name( isset( $credential['created_by'] ) ? $credential['created_by'] : 0 );
 							$assistant_id = isset( $credential['assistant_id'] ) ? absint( $credential['assistant_id'] ) : 0;
 							$edit_link    = get_edit_post_link( $assistant_id );
@@ -396,7 +396,7 @@ class WP_MCP_AI_Admin_Token_Manager {
 								<td>
 									<?php if ( $is_revoked ) : ?>
 										<span class="wp-mcp-ai-token-manager__status wp-mcp-ai-token-manager__status--revoked">
-											<?php esc_html_e( 'Revoked', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Revoked', 'mcp-ai-wpoos' ); ?>
 										</span>
 										<?php
 										$revoked_at = get_date_from_gmt( $credential['revoked_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) );
@@ -405,12 +405,12 @@ class WP_MCP_AI_Admin_Token_Manager {
 										<br><small>
 										<?php
 										/* translators: 1: revocation date, 2: user who revoked */
-										printf( esc_html__( '%1$s by %2$s', 'wp-mcp-ai' ), esc_html( $revoked_at ), esc_html( $revoked_by ) );
+										printf( esc_html__( '%1$s by %2$s', 'mcp-ai-wpoos' ), esc_html( $revoked_at ), esc_html( $revoked_by ) );
 										?>
 										</small>
 									<?php else : ?>
 										<span class="wp-mcp-ai-token-manager__status wp-mcp-ai-token-manager__status--active">
-											<?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?>
 										</span>
 									<?php endif; ?>
 								</td>
@@ -418,20 +418,20 @@ class WP_MCP_AI_Admin_Token_Manager {
 								<td><?php echo esc_html( $created_by ); ?></td>
 								<td class="wp-mcp-ai-token-manager__actions">
 									<?php if ( ! $is_revoked ) : ?>
-										<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to revoke this token? It will no longer work for authentication.', 'wp-mcp-ai' ) ); ?>');">
+										<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to revoke this token? It will no longer work for authentication.', 'mcp-ai-wpoos' ) ); ?>');">
 											<input type="hidden" name="action" value="wp_mcp_ai_token_manager_revoke" />
 											<input type="hidden" name="assistant_id" value="<?php echo esc_attr( $assistant_id ); ?>" />
 											<input type="hidden" name="credential_id" value="<?php echo esc_attr( $credential['id'] ); ?>" />
 											<?php wp_nonce_field( 'wp_mcp_ai_token_manager_revoke_' . $assistant_id . '_' . $credential['id'] ); ?>
-											<?php submit_button( __( 'Revoke', 'wp-mcp-ai' ), 'secondary', '', false ); ?>
+											<?php submit_button( __( 'Revoke', 'mcp-ai-wpoos' ), 'secondary', '', false ); ?>
 										</form>
 									<?php endif; ?>
-									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to permanently delete this token? This action cannot be undone.', 'wp-mcp-ai' ) ); ?>');">
+									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to permanently delete this token? This action cannot be undone.', 'mcp-ai-wpoos' ) ); ?>');">
 										<input type="hidden" name="action" value="wp_mcp_ai_token_manager_delete" />
 										<input type="hidden" name="assistant_id" value="<?php echo esc_attr( $assistant_id ); ?>" />
 										<input type="hidden" name="credential_id" value="<?php echo esc_attr( $credential['id'] ); ?>" />
 										<?php wp_nonce_field( 'wp_mcp_ai_token_manager_delete_' . $assistant_id . '_' . $credential['id'] ); ?>
-										<?php submit_button( __( 'Delete', 'wp-mcp-ai' ), 'delete', '', false ); ?>
+										<?php submit_button( __( 'Delete', 'mcp-ai-wpoos' ), 'delete', '', false ); ?>
 									</form>
 								</td>
 							</tr>
@@ -441,8 +441,8 @@ class WP_MCP_AI_Admin_Token_Manager {
 				</div>
 
 				<div class="wp-mcp-ai-token-manager__security-note">
-					<p><strong><?php esc_html_e( 'Security Best Practices:', 'wp-mcp-ai' ); ?></strong></p>
-					<p><?php esc_html_e( 'Regularly review active tokens and revoke any that are no longer needed. Tokens should be treated like passwords and stored securely. If you suspect a token has been compromised, revoke it immediately and generate a new one from the assistant edit screen.', 'wp-mcp-ai' ); ?></p>
+					<p><strong><?php esc_html_e( 'Security Best Practices:', 'mcp-ai-wpoos' ); ?></strong></p>
+					<p><?php esc_html_e( 'Regularly review active tokens and revoke any that are no longer needed. Tokens should be treated like passwords and stored securely. If you suspect a token has been compromised, revoke it immediately and generate a new one from the assistant edit screen.', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 			<?php endif; ?>
 		</div>

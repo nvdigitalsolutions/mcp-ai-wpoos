@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'Advanced Settings', 'wp-mcp-ai' );
+			return __( 'Advanced Settings', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -47,7 +47,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Performance tuning, debugging options, and advanced configuration.', 'wp-mcp-ai' );
+			return __( 'Performance tuning, debugging options, and advanced configuration.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -68,8 +68,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			return array(
 				'profession_default_tool_count' => array(
 					'type'        => 'number',
-					'label'       => __( 'Recommended Default Tools per Profession', 'wp-mcp-ai' ),
-					'description' => __( 'Recommended number of default tools to assign per profession. This is a guideline for profession configuration - actual tool count can vary based on profession needs. Default: 10', 'wp-mcp-ai' ),
+					'label'       => __( 'Recommended Default Tools per Profession', 'mcp-ai-wpoos' ),
+					'description' => __( 'Recommended number of default tools to assign per profession. This is a guideline for profession configuration - actual tool count can vary based on profession needs. Default: 10', 'mcp-ai-wpoos' ),
 					'default'     => 10,
 					'min'         => 3,
 					'max'         => 20,
@@ -77,44 +77,44 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				),
 				'memory_max_file_bytes'         => array(
 					'type'        => 'number',
-					'label'       => __( 'Max Memory File Size (bytes)', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum file size for memory operations. Default: 5242880 (5 MB)', 'wp-mcp-ai' ),
+					'label'       => __( 'Max Memory File Size (bytes)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum file size for memory operations. Default: 5242880 (5 MB)', 'mcp-ai-wpoos' ),
 					'default'     => 5242880,
 					'placeholder' => '5242880',
 				),
 				'enable_opcache_reset'          => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Auto OPcache Reset', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Automatically reset OPcache when needed', 'wp-mcp-ai' ),
-					'description'    => __( 'Automatically clears OPcache when plugin files are updated. Helps ensure code changes take effect immediately without manually clearing cache. Recommended for development environments.', 'wp-mcp-ai' ),
+					'label'          => __( 'Auto OPcache Reset', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically reset OPcache when needed', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Automatically clears OPcache when plugin files are updated. Helps ensure code changes take effect immediately without manually clearing cache. Recommended for development environments.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				// Federation & Mesh Settings.
 				'enable_federation_directory'   => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Federation Directory', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable federation directory service', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows this site to participate in the federation directory, making it discoverable by other sites in the network. Required for federated AI operations and resource sharing.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Federation Directory', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable federation directory service', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows this site to participate in the federation directory, making it discoverable by other sites in the network. Required for federated AI operations and resource sharing.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'federation_regions'            => array(
 					'type'        => 'text',
-					'label'       => __( 'Federation Regions', 'wp-mcp-ai' ),
-					'description' => __( 'Comma-separated list of geographic regions where this site operates (e.g., "us-east,us-west,eu-central"). Used for regional routing and data residency compliance.', 'wp-mcp-ai' ),
+					'label'       => __( 'Federation Regions', 'mcp-ai-wpoos' ),
+					'description' => __( 'Comma-separated list of geographic regions where this site operates (e.g., "us-east,us-west,eu-central"). Used for regional routing and data residency compliance.', 'mcp-ai-wpoos' ),
 					'default'     => 'global',
 					'placeholder' => 'global, us-east, eu-central',
 				),
 				'federation_data_tags'          => array(
 					'type'        => 'text',
-					'label'       => __( 'Federation Data Tags', 'wp-mcp-ai' ),
-					'description' => __( 'Comma-separated data classification tags (e.g., "public,internal,confidential"). Used for data governance and access control in federated operations.', 'wp-mcp-ai' ),
+					'label'       => __( 'Federation Data Tags', 'mcp-ai-wpoos' ),
+					'description' => __( 'Comma-separated data classification tags (e.g., "public,internal,confidential"). Used for data governance and access control in federated operations.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'public, internal',
 				),
 				'federation_qps'                => array(
 					'type'        => 'number',
-					'label'       => __( 'Federation QPS Limit', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum queries per second (QPS) allowed for federation API requests. Prevents resource exhaustion from federated queries. Default: 5 QPS.', 'wp-mcp-ai' ),
+					'label'       => __( 'Federation QPS Limit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum queries per second (QPS) allowed for federation API requests. Prevents resource exhaustion from federated queries. Default: 5 QPS.', 'mcp-ai-wpoos' ),
 					'default'     => 5,
 					'min'         => 1,
 					'max'         => 1000,
@@ -122,8 +122,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				),
 				'federation_burst'              => array(
 					'type'        => 'number',
-					'label'       => __( 'Federation Burst Capacity', 'wp-mcp-ai' ),
-					'description' => __( 'Burst capacity for federation rate limiting. Allows temporary spikes above QPS limit. Default: 10.', 'wp-mcp-ai' ),
+					'label'       => __( 'Federation Burst Capacity', 'mcp-ai-wpoos' ),
+					'description' => __( 'Burst capacity for federation rate limiting. Allows temporary spikes above QPS limit. Default: 10.', 'mcp-ai-wpoos' ),
 					'default'     => 10,
 					'min'         => 1,
 					'max'         => 10000,
@@ -131,24 +131,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				),
 				'federation_jwks_keys'          => array(
 					'type'        => 'textarea',
-					'label'       => __( 'Federation JWKS Keys', 'wp-mcp-ai' ),
-					'description' => __( 'JSON Web Key Set (JWKS) for federation authentication. Advanced setting - only modify if implementing custom federation authentication. Must be valid JSON array of JWK objects.', 'wp-mcp-ai' ),
+					'label'       => __( 'Federation JWKS Keys', 'mcp-ai-wpoos' ),
+					'description' => __( 'JSON Web Key Set (JWKS) for federation authentication. Advanced setting - only modify if implementing custom federation authentication. Must be valid JSON array of JWK objects.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '[{"kty":"RSA","use":"sig","kid":"...","n":"...","e":"AQAB"}]',
 					'rows'        => 6,
 				),
 				'federation_price_hints'        => array(
 					'type'        => 'textarea',
-					'label'       => __( 'Federation Price Hints', 'wp-mcp-ai' ),
-					'description' => __( 'JSON object with pricing information for federation services. Used for cost attribution in federated AI operations. Advanced setting. Format: {"model": "gpt-4", "cost_per_1k_tokens": 0.03}', 'wp-mcp-ai' ),
+					'label'       => __( 'Federation Price Hints', 'mcp-ai-wpoos' ),
+					'description' => __( 'JSON object with pricing information for federation services. Used for cost attribution in federated AI operations. Advanced setting. Format: {"model": "gpt-4", "cost_per_1k_tokens": 0.03}', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '{"gpt-4": {"input": 0.03, "output": 0.06}}',
 					'rows'        => 5,
 				),
 				'mesh_inbound_api_key'          => array(
 					'type'        => 'text',
-					'label'       => __( 'Mesh Inbound API Key', 'wp-mcp-ai' ),
-					'description' => __( 'Auto-generated API key for receiving mesh network requests. This key is used by peer sites to authenticate inbound connections. Copy this key to configure peer sites. Key is auto-generated when mesh networking is enabled.', 'wp-mcp-ai' ),
+					'label'       => __( 'Mesh Inbound API Key', 'mcp-ai-wpoos' ),
+					'description' => __( 'Auto-generated API key for receiving mesh network requests. This key is used by peer sites to authenticate inbound connections. Copy this key to configure peer sites. Key is auto-generated when mesh networking is enabled.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'mesh_xxxxxxxx...',
 					'readonly'    => true,
@@ -156,8 +156,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				),
 				'mesh_peer_sites'               => array(
 					'type'        => 'textarea',
-					'label'       => __( 'Mesh Peer Sites Configuration', 'wp-mcp-ai' ),
-					'description' => __( 'JSON array of mesh network peer configurations. Each peer should have: url (peer site URL), api_key (their inbound key), name (friendly name), and enabled (boolean). Example: [{"url":"https://peer1.com","api_key":"mesh_xxx","name":"Peer 1","enabled":true}]', 'wp-mcp-ai' ),
+					'label'       => __( 'Mesh Peer Sites Configuration', 'mcp-ai-wpoos' ),
+					'description' => __( 'JSON array of mesh network peer configurations. Each peer should have: url (peer site URL), api_key (their inbound key), name (friendly name), and enabled (boolean). Example: [{"url":"https://peer1.com","api_key":"mesh_xxx","name":"Peer 1","enabled":true}]', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '[{"url":"https://peer.example.com","api_key":"mesh_xxx","name":"Peer Site","enabled":true}]',
 					'rows'        => 8,
@@ -174,25 +174,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			return array(
 				'performance_monitoring' => array(
 					'id'     => 'performance_monitoring',
-					'label'  => __( 'Performance Monitoring', 'wp-mcp-ai' ),
+					'label'  => __( 'Performance Monitoring', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-chart-line',
 					'fields' => array(), // No form fields, custom content only.
 				),
 				'performance'            => array(
 					'id'     => 'performance',
-					'label'  => __( 'Performance', 'wp-mcp-ai' ),
+					'label'  => __( 'Performance', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-performance',
 					'fields' => array( 'memory_max_file_bytes' ),
 				),
 				'data_management'        => array(
 					'id'     => 'data_management',
-					'label'  => __( 'Data Management', 'wp-mcp-ai' ),
+					'label'  => __( 'Data Management', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-database',
 					'fields' => array(), // No form fields, custom content only.
 				),
 				'federation_mesh'        => array(
 					'id'     => 'federation_mesh',
-					'label'  => __( 'Federation & Mesh', 'wp-mcp-ai' ),
+					'label'  => __( 'Federation & Mesh', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-networking',
 					'fields' => array(
 						'enable_federation_directory',
@@ -208,7 +208,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				),
 				'system'                 => array(
 					'id'     => 'system',
-					'label'  => __( 'System', 'wp-mcp-ai' ),
+					'label'  => __( 'System', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-settings',
 					'fields' => array( 'enable_opcache_reset' ),
 				),
@@ -300,14 +300,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					<p class="section-documentation">
 						<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
 						<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
-							<?php esc_html_e( 'View Documentation', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
 							<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
 						</a>
 					</p>
 				<?php endif; ?>
 
 				<div class="wp-mcp-ai-provider-subtabs">
-					<nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'Advanced settings sub-tabs', 'wp-mcp-ai' ); ?>">
+					<nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'Advanced settings sub-tabs', 'mcp-ai-wpoos' ); ?>">
 						<?php foreach ( $subtab_groups as $group ) : ?>
 							<?php
 							$subtab_url = add_query_arg(
@@ -356,10 +356,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$entries = WP_MCP_AI_Logger::get_recent_error_messages();
 			?>
 			<div class="wp-mcp-ai-error-log-section" style="margin-top: 30px;">
-				<h3><?php esc_html_e( 'Recent Error & Activity Log', 'wp-mcp-ai' ); ?></h3>
-				<p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first). Expand an entry to view additional context.', 'wp-mcp-ai' ); ?></p>
+				<h3><?php esc_html_e( 'Recent Error & Activity Log', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first). Expand an entry to view additional context.', 'mcp-ai-wpoos' ); ?></p>
 				<?php if ( empty( $entries ) ) : ?>
-					<p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'wp-mcp-ai' ); ?></p>
+					<p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'mcp-ai-wpoos' ); ?></p>
 				<?php else : ?>
 					<ul class="wp-mcp-ai-log-preview" style="list-style: none; padding: 0; margin: 15px 0;">
 						<?php
@@ -404,7 +404,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<span class="wp-mcp-ai-log-preview__message"><?php echo esc_html( $message_label ); ?></span>
 								<?php if ( '' !== $context_label ) : ?>
 									<details class="wp-mcp-ai-log-preview__context" style="margin-top: 10px;">
-										<summary style="cursor: pointer; color: #0073aa;"><?php esc_html_e( 'Context details', 'wp-mcp-ai' ); ?></summary>
+										<summary style="cursor: pointer; color: #0073aa;"><?php esc_html_e( 'Context details', 'mcp-ai-wpoos' ); ?></summary>
 										<pre style="background: #fff; padding: 10px; margin-top: 10px; overflow-x: auto; border: 1px solid #ddd; border-radius: 3px; font-size: 0.85em;"><?php echo esc_html( $context_label ); ?></pre>
 									</details>
 								<?php endif; ?>
@@ -430,26 +430,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							<?php
 							if ( $log_file_exists ) {
 								if ( '' === $log_size_display ) {
-									$log_size_display = __( 'Unknown size', 'wp-mcp-ai' );
+									$log_size_display = __( 'Unknown size', 'mcp-ai-wpoos' );
 								}
 
 								printf(
 									/* translators: 1: Path to the PHP error log. 2: Human readable size. */
-									esc_html__( 'PHP error log: %1$s (%2$s).', 'wp-mcp-ai' ),
+									esc_html__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
 									'<code>' . esc_html( $log_file_path ) . '</code>',
 									esc_html( $log_size_display )
 								);
 							} else {
 								printf(
 									/* translators: %s: Path to the PHP error log. */
-									esc_html__( 'PHP error log: %s (not created yet).', 'wp-mcp-ai' ),
+									esc_html__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
 									'<code>' . esc_html( $log_file_path ) . '</code>'
 								);
 							}
 							?>
 						</p>
 					<?php else : ?>
-						<p class="description"><?php esc_html_e( 'Unable to determine the PHP error log location. Check your server configuration if you need to inspect or prune the log.', 'wp-mcp-ai' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Unable to determine the PHP error log location. Check your server configuration if you need to inspect or prune the log.', 'mcp-ai-wpoos' ); ?></p>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -473,7 +473,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					104857600
 				);
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Memory File Size must be between 1 MB (1048576 bytes) and 50 MB (52428800 bytes).', 'wp-mcp-ai' );
+					$errors[] = __( 'Max Memory File Size must be between 1 MB (1048576 bytes) and 50 MB (52428800 bytes).', 'mcp-ai-wpoos' );
 				}
 			}
 
@@ -502,7 +502,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			} else {
 				?>
 				<div class="notice notice-info inline">
-					<p><?php esc_html_e( 'Performance monitoring features require NV oOS Pro addon.', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'Performance monitoring features require NV oOS Pro addon.', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 				<?php
 			}
@@ -519,23 +519,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 			// Check if professions were seeded.
 			$is_seeded    = get_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, false );
-			$seeded_text  = $is_seeded ? __( 'Yes', 'wp-mcp-ai' ) : __( 'No', 'wp-mcp-ai' );
+			$seeded_text  = $is_seeded ? __( 'Yes', 'mcp-ai-wpoos' ) : __( 'No', 'mcp-ai-wpoos' );
 			$seeded_class = $is_seeded ? 'success' : 'warning';
 			?>
 			<div class="wp-mcp-ai-data-management-section" style="margin-top: 30px;">
-				<h3><?php esc_html_e( 'Profession Data Management', 'wp-mcp-ai' ); ?></h3>
+				<h3><?php esc_html_e( 'Profession Data Management', 'mcp-ai-wpoos' ); ?></h3>
 				<p class="description">
-					<?php esc_html_e( 'Manage the profession templates used when creating new AI assistants. You can reload the latest profession definitions from the plugin\'s knowledge base.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Manage the profession templates used when creating new AI assistants. You can reload the latest profession definitions from the plugin\'s knowledge base.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<div class="wp-mcp-ai-profession-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
-					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'wp-mcp-ai' ); ?></h4>
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></h4>
 					<ul style="margin: 10px 0; padding-left: 20px;">
-						<li><strong><?php esc_html_e( 'Published Professions:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $total_count ); ?></li>
+						<li><strong><?php esc_html_e( 'Published Professions:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $total_count ); ?></li>
 						<?php if ( $draft_count > 0 ) : ?>
-							<li><strong><?php esc_html_e( 'Draft Professions:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $draft_count ); ?></li>
+							<li><strong><?php esc_html_e( 'Draft Professions:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $draft_count ); ?></li>
 						<?php endif; ?>
-						<li><strong><?php esc_html_e( 'Initially Seeded:', 'wp-mcp-ai' ); ?></strong> 
+						<li><strong><?php esc_html_e( 'Initially Seeded:', 'mcp-ai-wpoos' ); ?></strong> 
 							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $seeded_class ); ?>">
 								<?php echo esc_html( $seeded_text ); ?>
 							</span>
@@ -543,35 +543,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</ul>
 					<p class="description" style="margin: 10px 0 0 0;">
 						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession' ) ); ?>">
-							<?php esc_html_e( 'View all professions', 'wp-mcp-ai' ); ?> &rarr;
+							<?php esc_html_e( 'View all professions', 'mcp-ai-wpoos' ); ?> &rarr;
 						</a>
 					</p>
 				</div>
 
 				<div class="wp-mcp-ai-reseed-actions" style="margin-top: 20px;">
-					<h4><?php esc_html_e( 'Reload Profession Data', 'wp-mcp-ai' ); ?></h4>
+					<h4><?php esc_html_e( 'Reload Profession Data', 'mcp-ai-wpoos' ); ?></h4>
 					<p class="description">
-						<?php esc_html_e( 'Choose how to reload profession data from the plugin\'s knowledge base:', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Choose how to reload profession data from the plugin\'s knowledge base:', 'mcp-ai-wpoos' ); ?>
 					</p>
 
 					<div style="margin: 15px 0;">
 						<p>
 							<button type="button" class="button button-secondary" id="wp-mcp-ai-reseed-update-btn">
 								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Update Professions', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Update Professions', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'Updates existing professions and adds new ones. Your custom professions will be preserved.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Updates existing professions and adds new ones. Your custom professions will be preserved.', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</p>
 
 						<p>
 							<button type="button" class="button button-secondary" id="wp-mcp-ai-reseed-replace-btn">
 								<span class="dashicons dashicons-backup" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Replace All Professions', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Replace All Professions', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'Deletes all existing professions and recreates them from the knowledge base. Use with caution!', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Deletes all existing professions and recreates them from the knowledge base. Use with caution!', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</p>
 					</div>
@@ -582,9 +582,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 				<div class="wp-mcp-ai-playbook-sync-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-					<h4><?php esc_html_e( 'Sync Profession Playbooks', 'wp-mcp-ai' ); ?></h4>
+					<h4><?php esc_html_e( 'Sync Profession Playbooks', 'mcp-ai-wpoos' ); ?></h4>
 					<p class="description">
-						<?php esc_html_e( 'Regenerate playbook attachments from the modular text files. This is useful after editing playbook content in includes/knowledge-base/profession-playbooks/', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Regenerate playbook attachments from the modular text files. This is useful after editing playbook content in includes/knowledge-base/profession-playbooks/', 'mcp-ai-wpoos' ); ?>
 					</p>
 
 					<?php
@@ -593,17 +593,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					?>
 
 					<div class="wp-mcp-ai-playbook-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
-						<h4 style="margin-top: 0;"><?php esc_html_e( 'Playbook Status', 'wp-mcp-ai' ); ?></h4>
+						<h4 style="margin-top: 0;"><?php esc_html_e( 'Playbook Status', 'mcp-ai-wpoos' ); ?></h4>
 						<ul style="margin: 10px 0; padding-left: 20px;">
-							<li><strong><?php esc_html_e( 'Total Playbook Attachments:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $playbook_stats['total_attachments'] ); ?></li>
-							<li><strong><?php esc_html_e( 'Professions with Playbooks:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $playbook_stats['professions_with_playbooks'] ); ?> / <?php echo absint( $total_count ); ?></li>
-							<li><strong><?php esc_html_e( 'Playbooks Seeded:', 'wp-mcp-ai' ); ?></strong> 
+							<li><strong><?php esc_html_e( 'Total Playbook Attachments:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $playbook_stats['total_attachments'] ); ?></li>
+							<li><strong><?php esc_html_e( 'Professions with Playbooks:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $playbook_stats['professions_with_playbooks'] ); ?> / <?php echo absint( $total_count ); ?></li>
+							<li><strong><?php esc_html_e( 'Playbooks Seeded:', 'mcp-ai-wpoos' ); ?></strong> 
 								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $playbook_stats['seeded'] ? 'success' : 'warning' ); ?>">
-									<?php echo esc_html( $playbook_stats['seeded'] ? __( 'Yes', 'wp-mcp-ai' ) : __( 'No', 'wp-mcp-ai' ) ); ?>
+									<?php echo esc_html( $playbook_stats['seeded'] ? __( 'Yes', 'mcp-ai-wpoos' ) : __( 'No', 'mcp-ai-wpoos' ) ); ?>
 								</span>
 							</li>
 							<?php if ( $playbook_stats['last_sync'] ) : ?>
-								<li><strong><?php esc_html_e( 'Last Sync:', 'wp-mcp-ai' ); ?></strong> <?php echo esc_html( $playbook_stats['last_sync'] ); ?></li>
+								<li><strong><?php esc_html_e( 'Last Sync:', 'mcp-ai-wpoos' ); ?></strong> <?php echo esc_html( $playbook_stats['last_sync'] ); ?></li>
 							<?php endif; ?>
 						</ul>
 					</div>
@@ -612,30 +612,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<p>
 							<button type="button" class="button button-secondary" id="wp-mcp-ai-sync-playbooks-btn">
 								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Sync Changed Playbooks', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Sync Changed Playbooks', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'Regenerates playbooks where content has changed and removes duplicates (fast, safe).', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Regenerates playbooks where content has changed and removes duplicates (fast, safe).', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</p>
 
 						<p>
 							<button type="button" class="button button-secondary" id="wp-mcp-ai-sync-playbooks-force-btn">
 								<span class="dashicons dashicons-backup" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Force Regenerate All Playbooks', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Force Regenerate All Playbooks', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'Regenerates all playbooks even if unchanged and removes duplicates (slower, use after major updates).', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Regenerates all playbooks even if unchanged and removes duplicates (slower, use after major updates).', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</p>
 
 						<p>
 							<button type="button" class="button button-secondary" id="wp-mcp-ai-delete-old-playbooks-btn" style="color: #a00;">
 								<span class="dashicons dashicons-trash" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Delete Old Playbooks from Media Library', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Delete Old Playbooks from Media Library', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'Permanently deletes orphaned playbook attachments that are no longer associated with any profession.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Permanently deletes orphaned playbook attachments that are no longer associated with any profession.', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</p>
 					</div>
@@ -683,7 +683,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							.addClass('disabled');
 
 						// Update button text.
-						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'mcp-ai-wpoos' ) ); ?>');
 
 						// Hide any previous messages.
 						$message.hide().removeClass('notice-success notice-error notice-warning');
@@ -712,7 +712,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning')
 										.addClass('notice-error')
-										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
 							},
@@ -720,7 +720,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning')
 									.addClass('notice-error')
-									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
 							complete: function() {
@@ -735,14 +735,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-reseed-update-btn').on('click', function(e) {
 						e.preventDefault();
-						if (confirm(<?php echo wp_json_encode( __( 'This will update existing professions and add new ones from the knowledge base. Continue?', 'wp-mcp-ai' ) ); ?>)) {
+						if (confirm(<?php echo wp_json_encode( __( 'This will update existing professions and add new ones from the knowledge base. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performReseed('update', '#wp-mcp-ai-reseed-update-btn');
 						}
 					});
 
 					$('#wp-mcp-ai-reseed-replace-btn').on('click', function(e) {
 						e.preventDefault();
-						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will DELETE all existing professions and replace them with fresh data from the knowledge base. This cannot be undone! Continue?', 'wp-mcp-ai' ) ); ?>)) {
+						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will DELETE all existing professions and replace them with fresh data from the knowledge base. This cannot be undone! Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performReseed('replace', '#wp-mcp-ai-reseed-replace-btn');
 						}
 					});
@@ -772,23 +772,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-seeder.php';
 			}
 			$team_is_seeded    = get_option( WP_MCP_AI_Team_Seeder::SEEDED_OPTION, false );
-			$team_seeded_text  = $team_is_seeded ? __( 'Yes', 'wp-mcp-ai' ) : __( 'No', 'wp-mcp-ai' );
+			$team_seeded_text  = $team_is_seeded ? __( 'Yes', 'mcp-ai-wpoos' ) : __( 'No', 'mcp-ai-wpoos' );
 			$team_seeded_class = $team_is_seeded ? 'success' : 'warning';
 			?>
 			<div class="wp-mcp-ai-team-data-management-section" style="margin-top: 50px;">
-				<h3><?php esc_html_e( 'Team Data Management', 'wp-mcp-ai' ); ?></h3>
+				<h3><?php esc_html_e( 'Team Data Management', 'mcp-ai-wpoos' ); ?></h3>
 				<p class="description">
-					<?php esc_html_e( 'Manage the team templates that group multiple professionals together. You can reload the latest team definitions from the plugin\'s knowledge base.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Manage the team templates that group multiple professionals together. You can reload the latest team definitions from the plugin\'s knowledge base.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<div class="wp-mcp-ai-team-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
-					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'wp-mcp-ai' ); ?></h4>
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></h4>
 					<ul style="margin: 10px 0; padding-left: 20px;">
-						<li><strong><?php esc_html_e( 'Published Teams:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $team_total_count ); ?></li>
+						<li><strong><?php esc_html_e( 'Published Teams:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $team_total_count ); ?></li>
 						<?php if ( $team_draft_count > 0 ) : ?>
-							<li><strong><?php esc_html_e( 'Draft Teams:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $team_draft_count ); ?></li>
+							<li><strong><?php esc_html_e( 'Draft Teams:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $team_draft_count ); ?></li>
 						<?php endif; ?>
-						<li><strong><?php esc_html_e( 'Initially Seeded:', 'wp-mcp-ai' ); ?></strong> 
+						<li><strong><?php esc_html_e( 'Initially Seeded:', 'mcp-ai-wpoos' ); ?></strong> 
 							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $team_seeded_class ); ?>">
 								<?php echo esc_html( $team_seeded_text ); ?>
 							</span>
@@ -796,35 +796,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</ul>
 					<p class="description" style="margin: 10px 0 0 0;">
 						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_team' ) ); ?>">
-							<?php esc_html_e( 'View all teams', 'wp-mcp-ai' ); ?> &rarr;
+							<?php esc_html_e( 'View all teams', 'mcp-ai-wpoos' ); ?> &rarr;
 						</a>
 					</p>
 				</div>
 
 				<div class="wp-mcp-ai-reseed-team-actions" style="margin-top: 20px;">
-					<h4><?php esc_html_e( 'Reload Team Data', 'wp-mcp-ai' ); ?></h4>
+					<h4><?php esc_html_e( 'Reload Team Data', 'mcp-ai-wpoos' ); ?></h4>
 					<p class="description">
-						<?php esc_html_e( 'Choose how to reload team data from the plugin\'s knowledge base:', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Choose how to reload team data from the plugin\'s knowledge base:', 'mcp-ai-wpoos' ); ?>
 					</p>
 
 					<div style="margin: 15px 0;">
 						<p>
 							<button type="button" class="button button-secondary" id="wp-mcp-ai-reseed-teams-update-btn">
 								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Update Teams', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Update Teams', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'Updates existing teams and adds new ones. Your custom teams will be preserved.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Updates existing teams and adds new ones. Your custom teams will be preserved.', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</p>
 
 						<p>
 							<button type="button" class="button button-secondary" id="wp-mcp-ai-reseed-teams-replace-btn">
 								<span class="dashicons dashicons-backup" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Replace All Teams', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Replace All Teams', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'Deletes all existing teams and recreates them from the knowledge base. Use with caution!', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Deletes all existing teams and recreates them from the knowledge base. Use with caution!', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</p>
 					</div>
@@ -847,7 +847,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							.addClass('disabled');
 
 						// Update button text.
-						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'mcp-ai-wpoos' ) ); ?>');
 
 						// Hide any previous messages.
 						$message.hide().removeClass('notice-success notice-error notice-warning');
@@ -876,7 +876,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning')
 										.addClass('notice-error')
-										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
 							},
@@ -884,7 +884,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning')
 									.addClass('notice-error')
-									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
 							complete: function() {
@@ -899,14 +899,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-reseed-teams-update-btn').on('click', function(e) {
 						e.preventDefault();
-						if (confirm(<?php echo wp_json_encode( __( 'This will update existing teams and add new ones from the knowledge base. Continue?', 'wp-mcp-ai' ) ); ?>)) {
+						if (confirm(<?php echo wp_json_encode( __( 'This will update existing teams and add new ones from the knowledge base. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performTeamReseed('update', '#wp-mcp-ai-reseed-teams-update-btn');
 						}
 					});
 
 					$('#wp-mcp-ai-reseed-teams-replace-btn').on('click', function(e) {
 						e.preventDefault();
-						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will DELETE all existing teams and replace them with fresh data from the knowledge base. This cannot be undone! Continue?', 'wp-mcp-ai' ) ); ?>)) {
+						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will DELETE all existing teams and replace them with fresh data from the knowledge base. This cannot be undone! Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performTeamReseed('replace', '#wp-mcp-ai-reseed-teams-replace-btn');
 						}
 					});
@@ -916,52 +916,52 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 			<!-- GEMINI COST TRACKING MIGRATION SECTION -->
 			<div class="wp-mcp-ai-gemini-migration-section" style="margin-top: 50px;">
-				<h3><?php esc_html_e( 'Gemini Cost Tracking Migration', 'wp-mcp-ai' ); ?></h3>
+				<h3><?php esc_html_e( 'Gemini Cost Tracking Migration', 'mcp-ai-wpoos' ); ?></h3>
 				<p class="description">
-					<?php esc_html_e( 'Fix historical cost tracking data where Gemini-specific tools were incorrectly attributed to OpenAI provider. This migration will identify tools that explicitly use Gemini API (tools with "gemini" in their name) and update their provider attribution and recalculate costs using correct Gemini pricing.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Fix historical cost tracking data where Gemini-specific tools were incorrectly attributed to OpenAI provider. This migration will identify tools that explicitly use Gemini API (tools with "gemini" in their name) and update their provider attribution and recalculate costs using correct Gemini pricing.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<div class="wp-mcp-ai-migration-info" style="margin: 20px 0; padding: 15px; background: #f0f6fc; border-left: 3px solid #0073aa; border-radius: 3px;">
-					<h4 style="margin-top: 0;"><?php esc_html_e( 'What This Does', 'wp-mcp-ai' ); ?></h4>
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'What This Does', 'mcp-ai-wpoos' ); ?></h4>
 					<ul style="margin: 10px 0; padding-left: 20px;">
-						<li><?php esc_html_e( 'Identifies token tracking records for Gemini-specific tools that were incorrectly attributed to OpenAI', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Updates provider from OpenAI (or other providers) to Gemini', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Recalculates costs using correct Gemini pricing (which is typically lower than OpenAI)', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Updates the "is_estimated" flag to mark the data as actual, not estimated', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Identifies token tracking records for Gemini-specific tools that were incorrectly attributed to OpenAI', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Updates provider from OpenAI (or other providers) to Gemini', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Recalculates costs using correct Gemini pricing (which is typically lower than OpenAI)', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Updates the "is_estimated" flag to mark the data as actual, not estimated', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
 					<p class="description" style="margin: 10px 0 0 0;">
-						<strong><?php esc_html_e( 'Affected Tools:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Affected Tools:', 'mcp-ai-wpoos' ); ?></strong>
 						generate_gemini_image, edit_gemini_image
 					</p>
 					<p class="description" style="margin: 10px 0 0 0;">
-						<?php esc_html_e( 'Note: Tools that can use either OpenAI or Gemini based on your settings (like analyze_comment_content) are not migrated, as they may legitimately use OpenAI.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Note: Tools that can use either OpenAI or Gemini based on your settings (like analyze_comment_content) are not migrated, as they may legitimately use OpenAI.', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
 
 				<div class="wp-mcp-ai-migration-actions" style="margin-top: 20px;">
-					<h4><?php esc_html_e( 'Run Migration', 'wp-mcp-ai' ); ?></h4>
+					<h4><?php esc_html_e( 'Run Migration', 'mcp-ai-wpoos' ); ?></h4>
 					<p class="description">
-						<?php esc_html_e( 'Preview the changes first to see what records would be updated, then run the migration to apply the fixes.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Preview the changes first to see what records would be updated, then run the migration to apply the fixes.', 'mcp-ai-wpoos' ); ?>
 					</p>
 
 					<div style="margin: 15px 0;">
 						<p>
 							<button type="button" class="button button-secondary" id="wp-mcp-ai-migrate-gemini-preview-btn">
 								<span class="dashicons dashicons-visibility" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Preview Changes', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Preview Changes', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'See what records would be updated without making any changes.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'See what records would be updated without making any changes.', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</p>
 
 						<p>
 							<button type="button" class="button button-primary" id="wp-mcp-ai-migrate-gemini-run-btn">
 								<span class="dashicons dashicons-database-import" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Run Migration', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Run Migration', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<span class="description" style="margin-left: 10px;">
-								<?php esc_html_e( 'Apply the fixes to your cost tracking data.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Apply the fixes to your cost tracking data.', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</p>
 					</div>
@@ -984,7 +984,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							.addClass('disabled');
 
 						// Update button text.
-						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'mcp-ai-wpoos' ) ); ?>');
 
 						// Hide any previous messages.
 						$message.hide().removeClass('notice-success notice-error notice-warning notice-info');
@@ -1015,7 +1015,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									// If actual migration was successful, offer to reload.
 									if (!response.data.dry_run && response.data.records_updated > 0) {
 										setTimeout(function() {
-											if (confirm(<?php echo wp_json_encode( __( 'Migration completed successfully! Would you like to reload the page to see updated statistics?', 'wp-mcp-ai' ) ); ?>)) {
+											if (confirm(<?php echo wp_json_encode( __( 'Migration completed successfully! Would you like to reload the page to see updated statistics?', 'mcp-ai-wpoos' ) ); ?>)) {
 												location.reload();
 											}
 										}, 1500);
@@ -1024,7 +1024,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning notice-info')
 										.addClass('notice-error')
-										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
 							},
@@ -1032,7 +1032,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning notice-info')
 									.addClass('notice-error')
-									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
 							complete: function() {
@@ -1052,7 +1052,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-migrate-gemini-run-btn').on('click', function(e) {
 						e.preventDefault();
-						if (confirm(<?php echo wp_json_encode( __( 'This will update historical cost tracking data to fix Gemini provider attribution. This cannot be undone, but you can preview the changes first. Continue?', 'wp-mcp-ai' ) ); ?>)) {
+						if (confirm(<?php echo wp_json_encode( __( 'This will update historical cost tracking data to fix Gemini provider attribution. This cannot be undone, but you can preview the changes first. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performGeminiMigration('migrate', '#wp-mcp-ai-migrate-gemini-run-btn');
 						}
 					});
@@ -1071,7 +1071,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							.addClass('disabled');
 
 						// Update button text.
-						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'mcp-ai-wpoos' ) ); ?>');
 
 						// Hide any previous messages.
 						$message.hide().removeClass('notice-success notice-error notice-warning');
@@ -1100,7 +1100,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning')
 										.addClass('notice-error')
-										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
 							},
@@ -1108,7 +1108,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning')
 									.addClass('notice-error')
-									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
 							complete: function() {
@@ -1128,14 +1128,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-sync-playbooks-force-btn').on('click', function(e) {
 						e.preventDefault();
-						if (confirm(<?php echo wp_json_encode( __( 'This will force regenerate all profession playbooks even if unchanged. This may take a moment. Continue?', 'wp-mcp-ai' ) ); ?>)) {
+						if (confirm(<?php echo wp_json_encode( __( 'This will force regenerate all profession playbooks even if unchanged. This may take a moment. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							syncPlaybooks(true);
 						}
 					});
 
 					$('#wp-mcp-ai-delete-old-playbooks-btn').on('click', function(e) {
 						e.preventDefault();
-						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will permanently delete all orphaned playbook attachments from the media library. This cannot be undone! Continue?', 'wp-mcp-ai' ) ); ?>)) {
+						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will permanently delete all orphaned playbook attachments from the media library. This cannot be undone! Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							deleteOldPlaybooks();
 						}
 					});
@@ -1151,7 +1151,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							.addClass('disabled');
 
 						// Update button text.
-						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Deleting...', 'wp-mcp-ai' ) ); ?>');
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Deleting...', 'mcp-ai-wpoos' ) ); ?>');
 
 						// Hide any previous messages.
 						$message.hide().removeClass('notice-success notice-error notice-warning');
@@ -1179,7 +1179,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning')
 										.addClass('notice-error')
-										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
 							},
@@ -1187,7 +1187,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning')
 									.addClass('notice-error')
-									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
 							complete: function() {
@@ -1270,7 +1270,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$last_sync_timestamp = get_option( 'wp_mcp_ai_playbooks_last_sync', 0 );
 			$last_sync           = '';
 			if ( $last_sync_timestamp ) {
-				$last_sync = human_time_diff( $last_sync_timestamp, current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'wp-mcp-ai' );
+				$last_sync = human_time_diff( $last_sync_timestamp, current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'mcp-ai-wpoos' );
 			}
 
 			return array(

@@ -102,7 +102,7 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
 
 		$defaults  = array(
 			'section_id' => 'section_theme_styles',
-			'label'      => __( 'Theme Styles', 'wp-mcp-ai' ),
+			'label'      => __( 'Theme Styles', 'mcp-ai-wpoos' ),
 			'selectors'  => array(),
 		);
 		$args      = wp_parse_args( $args, $defaults );
@@ -128,7 +128,7 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
 				$this->add_control(
 					$args['section_id'] . '_background_color',
 					array(
-						'label'     => __( 'Background Color', 'wp-mcp-ai' ),
+						'label'     => __( 'Background Color', 'mcp-ai-wpoos' ),
 						'type'      => \Elementor\Controls_Manager::COLOR,
 						'selectors' => array(
 							$container_selector => 'background-color: {{VALUE}};',
@@ -139,7 +139,7 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
 				$this->add_control(
 					$args['section_id'] . '_border_color',
 					array(
-						'label'     => __( 'Border Color', 'wp-mcp-ai' ),
+						'label'     => __( 'Border Color', 'mcp-ai-wpoos' ),
 						'type'      => \Elementor\Controls_Manager::COLOR,
 						'selectors' => array(
 							$container_selector => 'border-color: {{VALUE}};',
@@ -156,7 +156,7 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
 				$this->add_control(
 					$args['section_id'] . '_heading_color',
 					array(
-						'label'     => __( 'Heading Color', 'wp-mcp-ai' ),
+						'label'     => __( 'Heading Color', 'mcp-ai-wpoos' ),
 						'type'      => \Elementor\Controls_Manager::COLOR,
 						'selectors' => array(
 							$heading_selector => 'color: {{VALUE}};',
@@ -181,7 +181,7 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
 				$this->add_control(
 					$args['section_id'] . '_text_color',
 					array(
-						'label'     => __( 'Text Color', 'wp-mcp-ai' ),
+						'label'     => __( 'Text Color', 'mcp-ai-wpoos' ),
 						'type'      => \Elementor\Controls_Manager::COLOR,
 						'selectors' => array(
 							$text_selector => 'color: {{VALUE}};',
@@ -206,7 +206,7 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
 				$this->add_control(
 					$args['section_id'] . '_meta_color',
 					array(
-						'label'     => __( 'Meta Text Color', 'wp-mcp-ai' ),
+						'label'     => __( 'Meta Text Color', 'mcp-ai-wpoos' ),
 						'type'      => \Elementor\Controls_Manager::COLOR,
 						'selectors' => array(
 							$meta_selector => 'color: {{VALUE}};',
@@ -231,7 +231,7 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
 				$this->add_control(
 					$args['section_id'] . '_link_color',
 					array(
-						'label'     => __( 'Link Color', 'wp-mcp-ai' ),
+						'label'     => __( 'Link Color', 'mcp-ai-wpoos' ),
 						'type'      => \Elementor\Controls_Manager::COLOR,
 						'selectors' => array(
 							$link_selector => 'color: {{VALUE}};',
@@ -258,7 +258,7 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
 				$this->add_control(
 					$args['section_id'] . '_link_hover_color',
 					array(
-						'label'     => __( 'Link Hover Color', 'wp-mcp-ai' ),
+						'label'     => __( 'Link Hover Color', 'mcp-ai-wpoos' ),
 						'type'      => \Elementor\Controls_Manager::COLOR,
 						'selectors' => array(
 							$hover_selector => 'color: {{VALUE}};',

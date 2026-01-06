@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Performance Trends', 'wp-mcp-ai' );
+		return __( 'NV oOS Performance Trends', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -73,17 +73,17 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Trends Settings', 'wp-mcp-ai' ),
+				'label' => __( 'Trends Settings', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Performance Trends', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter title…', 'wp-mcp-ai' ),
+				'default'     => __( 'Performance Trends', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter title…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -91,15 +91,15 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 		$this->add_control(
 			'component',
 			array(
-				'label'       => __( 'Component', 'wp-mcp-ai' ),
+				'label'       => __( 'Component', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => array(
-					'rest_api'      => __( 'REST API', 'wp-mcp-ai' ),
-					'chat_ui'       => __( 'Chat UI', 'wp-mcp-ai' ),
-					'mcp_core'      => __( 'MCP Core', 'wp-mcp-ai' ),
-					'elementor'     => __( 'Elementor', 'wp-mcp-ai' ),
-					'cpt_ai_peer'   => __( 'CPT: AI Peer', 'wp-mcp-ai' ),
-					'cpt_assistant' => __( 'CPT: Assistant', 'wp-mcp-ai' ),
+					'rest_api'      => __( 'REST API', 'mcp-ai-wpoos' ),
+					'chat_ui'       => __( 'Chat UI', 'mcp-ai-wpoos' ),
+					'mcp_core'      => __( 'MCP Core', 'mcp-ai-wpoos' ),
+					'elementor'     => __( 'Elementor', 'mcp-ai-wpoos' ),
+					'cpt_ai_peer'   => __( 'CPT: AI Peer', 'mcp-ai-wpoos' ),
+					'cpt_assistant' => __( 'CPT: Assistant', 'mcp-ai-wpoos' ),
 				),
 				'default'     => 'rest_api',
 				'label_block' => true,
@@ -109,13 +109,13 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 		$this->add_control(
 			'time_period',
 			array(
-				'label'   => __( 'Time Period', 'wp-mcp-ai' ),
+				'label'   => __( 'Time Period', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'options' => array(
-					'-24 hours' => __( 'Last 24 Hours', 'wp-mcp-ai' ),
-					'-7 days'   => __( 'Last 7 Days', 'wp-mcp-ai' ),
-					'-30 days'  => __( 'Last 30 Days', 'wp-mcp-ai' ),
-					'-90 days'  => __( 'Last 90 Days', 'wp-mcp-ai' ),
+					'-24 hours' => __( 'Last 24 Hours', 'mcp-ai-wpoos' ),
+					'-7 days'   => __( 'Last 7 Days', 'mcp-ai-wpoos' ),
+					'-30 days'  => __( 'Last 30 Days', 'mcp-ai-wpoos' ),
+					'-90 days'  => __( 'Last 90 Days', 'mcp-ai-wpoos' ),
 				),
 				'default' => '-7 days',
 			)
@@ -124,7 +124,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 		$this->add_control(
 			'chart_height',
 			array(
-				'label'   => __( 'Chart Height (px)', 'wp-mcp-ai' ),
+				'label'   => __( 'Chart Height (px)', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::NUMBER,
 				'default' => 300,
 				'min'     => 200,
@@ -152,7 +152,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	protected function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			echo '<div class="wp-mcp-ai-performance-trends">';
-			echo '<p>' . esc_html__( 'You do not have permission to view performance trends.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p>' . esc_html__( 'You do not have permission to view performance trends.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -239,13 +239,13 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	protected function get_trend_text( $trend ) {
 		switch ( $trend ) {
 			case 'improving':
-				return __( 'Performance is improving over time', 'wp-mcp-ai' );
+				return __( 'Performance is improving over time', 'mcp-ai-wpoos' );
 			case 'degrading':
-				return __( 'Performance is degrading - attention needed', 'wp-mcp-ai' );
+				return __( 'Performance is degrading - attention needed', 'mcp-ai-wpoos' );
 			case 'stable':
-				return __( 'Performance is stable', 'wp-mcp-ai' );
+				return __( 'Performance is stable', 'mcp-ai-wpoos' );
 			default:
-				return __( 'No trend data available', 'wp-mcp-ai' );
+				return __( 'No trend data available', 'mcp-ai-wpoos' );
 		}
 	}
 
@@ -292,13 +292,13 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 				var chartData = {
 					labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
 					datasets: [{
-						label: '<?php echo esc_js( __( 'Response Time (ms)', 'wp-mcp-ai' ) ); ?>',
+						label: '<?php echo esc_js( __( 'Response Time (ms)', 'mcp-ai-wpoos' ) ); ?>',
 						data: [250, 300, 280, 320, 290, 310, 275],
 						borderColor: 'rgb(75, 192, 192)',
 						backgroundColor: 'rgba(75, 192, 192, 0.2)',
 						tension: 0.4
 					}, {
-						label: '<?php echo esc_js( __( 'Memory Usage (MB)', 'wp-mcp-ai' ) ); ?>',
+						label: '<?php echo esc_js( __( 'Memory Usage (MB)', 'mcp-ai-wpoos' ) ); ?>',
 						data: [64, 68, 66, 72, 65, 70, 63],
 						borderColor: 'rgb(255, 99, 132)',
 						backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -325,7 +325,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 								position: 'left',
 								title: {
 									display: true,
-									text: '<?php echo esc_js( __( 'Response Time (ms)', 'wp-mcp-ai' ) ); ?>'
+									text: '<?php echo esc_js( __( 'Response Time (ms)', 'mcp-ai-wpoos' ) ); ?>'
 								}
 							},
 							y1: {
@@ -334,7 +334,7 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 								position: 'right',
 								title: {
 									display: true,
-									text: '<?php echo esc_js( __( 'Memory (MB)', 'wp-mcp-ai' ) ); ?>'
+									text: '<?php echo esc_js( __( 'Memory (MB)', 'mcp-ai-wpoos' ) ); ?>'
 								},
 								grid: {
 									drawOnChartArea: false,

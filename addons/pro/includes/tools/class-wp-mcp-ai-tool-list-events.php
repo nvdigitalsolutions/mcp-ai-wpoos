@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_List_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List Events', 'wp-mcp-ai' );
+		return __( 'List Events', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists calendar events with optional filtering by date range, project, type, or attendees. Essential for calendar views and scheduling.', 'wp-mcp-ai' );
+		return __( 'Lists calendar events with optional filtering by date range, project, type, or attendees. Essential for calendar views and scheduling.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,30 +45,30 @@ class WP_MCP_AI_Tool_List_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'project_id'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by project ID (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by project ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'type'         => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by event type (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by event type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'meeting', 'deadline', 'milestone', 'reminder', 'other' ),
 				),
 				'attendee'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by attendee user ID (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by attendee user ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'start_after'  => array(
 					'type'        => 'string',
-					'description' => __( 'Filter events starting after this date (YYYY-MM-DD) - for calendar range views (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter events starting after this date (YYYY-MM-DD) - for calendar range views (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'start_before' => array(
 					'type'        => 'string',
-					'description' => __( 'Filter events starting before this date (YYYY-MM-DD) - for calendar range views (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter events starting before this date (YYYY-MM-DD) - for calendar range views (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'limit'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of events to return (default: 100, max: 500)', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of events to return (default: 100, max: 500)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 100,
 					'minimum'     => 1,
 					'maximum'     => 500,
@@ -111,7 +111,7 @@ class WP_MCP_AI_Tool_List_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to list events.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to list events.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Build query args.

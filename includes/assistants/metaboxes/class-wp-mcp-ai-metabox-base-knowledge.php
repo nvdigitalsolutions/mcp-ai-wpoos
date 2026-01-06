@@ -53,7 +53,7 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Base Knowledge', 'wp-mcp-ai' );
+		return __( 'Base Knowledge', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -76,7 +76,7 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 	 */
 	public function render( $post ) {
 		if ( ! $this->can_view() ) {
-			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
 		}
 
 		wp_nonce_field( 'wp_mcp_ai_base_knowledge_meta', 'wp_mcp_ai_base_knowledge_meta_nonce' );
@@ -129,7 +129,7 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 		$memory_size_label = size_format( $memory_size_bytes );
 
 		?>
-	<p><?php esc_html_e( 'Select Media Library items that should be preloaded as reference material for this assistant.', 'wp-mcp-ai' ); ?></p>
+	<p><?php esc_html_e( 'Select Media Library items that should be preloaded as reference material for this assistant.', 'mcp-ai-wpoos' ); ?></p>
 	<ul id="wp-mcp-ai-memory-files-list" class="wp-mcp-ai-memory-files">
 		<?php
 		foreach ( $memory_entries as $entry ) :
@@ -141,13 +141,13 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 				<span class="wp-mcp-ai-memory-file-title">
 				<?php
 				/* translators: %d: attachment ID */
-				echo esc_html( $title ? $title : sprintf( __( 'Attachment #%d', 'wp-mcp-ai' ), $file_id ) );
+				echo esc_html( $title ? $title : sprintf( __( 'Attachment #%d', 'mcp-ai-wpoos' ), $file_id ) );
 				?>
 			</span>
 				<?php if ( '' !== $size ) : ?>
 					<span class="wp-mcp-ai-memory-file-size">(<?php echo esc_html( $size ); ?>)</span>
 				<?php endif; ?>
-				<button type="button" class="button-link wp-mcp-ai-remove-memory"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button>
+				<button type="button" class="button-link wp-mcp-ai-remove-memory"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button>
 				<input type="hidden" name="wp_mcp_ai_memory_files[]" value="<?php echo esc_attr( $file_id ); ?>" />
 			</li>
 		<?php endforeach; ?>
@@ -156,20 +156,20 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 			<?php
 			printf(
 			/* translators: %s: Human-readable size of the memory payload. */
-				esc_html__( 'Total memory size sent with each request: %s.', 'wp-mcp-ai' ),
+				esc_html__( 'Total memory size sent with each request: %s.', 'mcp-ai-wpoos' ),
 				esc_html( $memory_size_label )
 			);
 			?>
 	</p>
 	<p>
 		<button type="button" class="button" id="wp-mcp-ai-memory-select">
-			<?php esc_html_e( 'Add Knowledge Files', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Add Knowledge Files', 'mcp-ai-wpoos' ); ?>
 		</button>
 	</p>
 	<p>
-		<label for="wp-mcp-ai-vector-store-id"><strong><?php esc_html_e( 'Vector Store ID', 'wp-mcp-ai' ); ?></strong></label>
+		<label for="wp-mcp-ai-vector-store-id"><strong><?php esc_html_e( 'Vector Store ID', 'mcp-ai-wpoos' ); ?></strong></label>
 		<input type="text" id="wp-mcp-ai-vector-store-id" name="wp_mcp_ai_vector_store_id" value="<?php echo esc_attr( $vector_store_id ); ?>" class="widefat" />
-		<span class="description"><?php esc_html_e( 'Optional identifier for an external vector store that should be associated with this assistant.', 'wp-mcp-ai' ); ?></span>
+		<span class="description"><?php esc_html_e( 'Optional identifier for an external vector store that should be associated with this assistant.', 'mcp-ai-wpoos' ); ?></span>
 	</p>
 	<style type="text/css">
 		.wp-mcp-ai-memory-file-size {
@@ -193,7 +193,7 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 				return;
 			}
 
-			var title = attachment.title || attachment.filename || attachment.name || '<?php echo esc_js( __( 'Attachment', 'wp-mcp-ai' ) ); ?>';
+			var title = attachment.title || attachment.filename || attachment.name || '<?php echo esc_js( __( 'Attachment', 'mcp-ai-wpoos' ) ); ?>';
 			var label = title + ' (ID: ' + id + ')';
 			var filesize = attachment.filesizeHumanReadable || '';
 
@@ -202,7 +202,7 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 			if ( filesize ) {
 				item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-size', 'text': '(' + filesize + ')' } ) );
 			}
-			item.append( $( '<button />', { 'type': 'button', 'class': 'button-link wp-mcp-ai-remove-memory', 'text': '<?php echo esc_js( __( 'Remove', 'wp-mcp-ai' ) ); ?>' } ) );
+			item.append( $( '<button />', { 'type': 'button', 'class': 'button-link wp-mcp-ai-remove-memory', 'text': '<?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?>' } ) );
 			item.append( $( '<input />', { 'type': 'hidden', 'name': 'wp_mcp_ai_memory_files[]', 'value': id } ) );
 
 			list.append( item );
@@ -217,9 +217,9 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 			}
 
 			frame = wp.media({
-				title: '<?php echo esc_js( __( 'Select knowledge files', 'wp-mcp-ai' ) ); ?>',
+				title: '<?php echo esc_js( __( 'Select knowledge files', 'mcp-ai-wpoos' ) ); ?>',
 				button: {
-					text: '<?php echo esc_js( __( 'Use files', 'wp-mcp-ai' ) ); ?>'
+					text: '<?php echo esc_js( __( 'Use files', 'mcp-ai-wpoos' ) ); ?>'
 				},
 				multiple: true
 			});

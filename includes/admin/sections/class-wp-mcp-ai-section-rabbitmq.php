@@ -36,7 +36,7 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 	 * @return string Section title.
 	 */
 	public function get_title() {
-		return __( 'RabbitMQ', 'wp-mcp-ai' );
+		return __( 'RabbitMQ', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -54,7 +54,7 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 	 * @return string Section description.
 	 */
 	public function get_description() {
-		return __( 'Configure RabbitMQ message broker integration for distributed queue-based tool execution and job orchestration.', 'wp-mcp-ai' );
+		return __( 'Configure RabbitMQ message broker integration for distributed queue-based tool execution and job orchestration.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -106,71 +106,71 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 			// Connection Settings.
 			'rabbitmq_enabled'             => array(
 				'type'        => 'checkbox',
-				'label'       => __( 'Enable RabbitMQ Integration', 'wp-mcp-ai' ),
-				'description' => __( 'Enable message queue integration for improved agentic workflow processing.', 'wp-mcp-ai' ),
+				'label'       => __( 'Enable RabbitMQ Integration', 'mcp-ai-wpoos' ),
+				'description' => __( 'Enable message queue integration for improved agentic workflow processing.', 'mcp-ai-wpoos' ),
 				'default'     => false,
 			),
 			'rabbitmq_host'                => array(
 				'type'        => 'text',
-				'label'       => __( 'RabbitMQ Host', 'wp-mcp-ai' ),
-				'description' => __( 'Hostname of the RabbitMQ server. Usually "localhost" on Cloudways.', 'wp-mcp-ai' ),
+				'label'       => __( 'RabbitMQ Host', 'mcp-ai-wpoos' ),
+				'description' => __( 'Hostname of the RabbitMQ server. Usually "localhost" on Cloudways.', 'mcp-ai-wpoos' ),
 				'default'     => 'localhost',
 				'placeholder' => 'localhost',
 			),
 			'rabbitmq_port'                => array(
 				'type'        => 'number',
-				'label'       => __( 'RabbitMQ Port', 'wp-mcp-ai' ),
-				'description' => __( 'AMQP port (default: 5672).', 'wp-mcp-ai' ),
+				'label'       => __( 'RabbitMQ Port', 'mcp-ai-wpoos' ),
+				'description' => __( 'AMQP port (default: 5672).', 'mcp-ai-wpoos' ),
 				'default'     => 5672,
 				'min'         => 1,
 				'max'         => 65535,
 			),
 			'rabbitmq_username'            => array(
 				'type'         => 'text',
-				'label'        => __( 'RabbitMQ Username', 'wp-mcp-ai' ),
-				'description'  => __( 'Username for RabbitMQ authentication.', 'wp-mcp-ai' ),
+				'label'        => __( 'RabbitMQ Username', 'mcp-ai-wpoos' ),
+				'description'  => __( 'Username for RabbitMQ authentication.', 'mcp-ai-wpoos' ),
 				'default'      => 'guest',
 				'autocomplete' => 'new-password',
 			),
 			'rabbitmq_password'            => array(
 				'type'         => 'password',
-				'label'        => __( 'RabbitMQ Password', 'wp-mcp-ai' ),
-				'description'  => __( 'Password for RabbitMQ authentication. Check Cloudways for your credentials.', 'wp-mcp-ai' ),
+				'label'        => __( 'RabbitMQ Password', 'mcp-ai-wpoos' ),
+				'description'  => __( 'Password for RabbitMQ authentication. Check Cloudways for your credentials.', 'mcp-ai-wpoos' ),
 				'default'      => '',
 				'autocomplete' => 'new-password',
 			),
 			'rabbitmq_vhost'               => array(
 				'type'        => 'text',
-				'label'       => __( 'Virtual Host', 'wp-mcp-ai' ),
-				'description' => __( 'RabbitMQ virtual host (default: /).', 'wp-mcp-ai' ),
+				'label'       => __( 'Virtual Host', 'mcp-ai-wpoos' ),
+				'description' => __( 'RabbitMQ virtual host (default: /).', 'mcp-ai-wpoos' ),
 				'default'     => '/',
 			),
 
 			// Queue Settings.
 			'rabbitmq_queue_prefix'        => array(
 				'type'        => 'text',
-				'label'       => __( 'Queue Prefix', 'wp-mcp-ai' ),
-				'description' => __( 'Prefix for queue names (useful for multisite).', 'wp-mcp-ai' ),
+				'label'       => __( 'Queue Prefix', 'mcp-ai-wpoos' ),
+				'description' => __( 'Prefix for queue names (useful for multisite).', 'mcp-ai-wpoos' ),
 				'default'     => 'wp_mcp_ai',
 			),
 			'rabbitmq_priority_queues'     => array(
 				'type'        => 'checkbox',
-				'label'       => __( 'Enable Priority Queues', 'wp-mcp-ai' ),
-				'description' => __( 'Use separate queues for high, normal, and async priority tools.', 'wp-mcp-ai' ),
+				'label'       => __( 'Enable Priority Queues', 'mcp-ai-wpoos' ),
+				'description' => __( 'Use separate queues for high, normal, and async priority tools.', 'mcp-ai-wpoos' ),
 				'default'     => true,
 			),
 
 			// Worker Settings.
 			'rabbitmq_parallel_execution'  => array(
 				'type'        => 'checkbox',
-				'label'       => __( 'Enable Parallel Tool Execution', 'wp-mcp-ai' ),
-				'description' => __( 'Allow independent tools to execute in parallel during agentic workflows.', 'wp-mcp-ai' ),
+				'label'       => __( 'Enable Parallel Tool Execution', 'mcp-ai-wpoos' ),
+				'description' => __( 'Allow independent tools to execute in parallel during agentic workflows.', 'mcp-ai-wpoos' ),
 				'default'     => false,
 			),
 			'rabbitmq_worker_timeout'      => array(
 				'type'        => 'number',
-				'label'       => __( 'Worker Timeout (seconds)', 'wp-mcp-ai' ),
-				'description' => __( 'Maximum time for a worker to process a single tool.', 'wp-mcp-ai' ),
+				'label'       => __( 'Worker Timeout (seconds)', 'mcp-ai-wpoos' ),
+				'description' => __( 'Maximum time for a worker to process a single tool.', 'mcp-ai-wpoos' ),
 				'default'     => 300,
 				'min'         => 30,
 				'max'         => 3600,
@@ -179,16 +179,16 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 			// Retry Settings.
 			'rabbitmq_max_retries'         => array(
 				'type'        => 'number',
-				'label'       => __( 'Max Retry Attempts', 'wp-mcp-ai' ),
-				'description' => __( 'Number of times to retry a failed tool execution.', 'wp-mcp-ai' ),
+				'label'       => __( 'Max Retry Attempts', 'mcp-ai-wpoos' ),
+				'description' => __( 'Number of times to retry a failed tool execution.', 'mcp-ai-wpoos' ),
 				'default'     => 3,
 				'min'         => 0,
 				'max'         => 10,
 			),
 			'rabbitmq_retry_delay'         => array(
 				'type'        => 'number',
-				'label'       => __( 'Retry Delay (ms)', 'wp-mcp-ai' ),
-				'description' => __( 'Initial delay between retries (uses exponential backoff).', 'wp-mcp-ai' ),
+				'label'       => __( 'Retry Delay (ms)', 'mcp-ai-wpoos' ),
+				'description' => __( 'Initial delay between retries (uses exponential backoff).', 'mcp-ai-wpoos' ),
 				'default'     => 1000,
 				'min'         => 100,
 				'max'         => 60000,
@@ -197,14 +197,14 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 			// Dead Letter Settings.
 			'rabbitmq_dead_letter_enabled' => array(
 				'type'        => 'checkbox',
-				'label'       => __( 'Enable Dead Letter Queue', 'wp-mcp-ai' ),
-				'description' => __( 'Store failed messages for debugging and manual processing.', 'wp-mcp-ai' ),
+				'label'       => __( 'Enable Dead Letter Queue', 'mcp-ai-wpoos' ),
+				'description' => __( 'Store failed messages for debugging and manual processing.', 'mcp-ai-wpoos' ),
 				'default'     => true,
 			),
 			'rabbitmq_dead_letter_ttl'     => array(
 				'type'        => 'number',
-				'label'       => __( 'Dead Letter TTL (seconds)', 'wp-mcp-ai' ),
-				'description' => __( 'How long to keep failed messages (default: 24 hours).', 'wp-mcp-ai' ),
+				'label'       => __( 'Dead Letter TTL (seconds)', 'mcp-ai-wpoos' ),
+				'description' => __( 'How long to keep failed messages (default: 24 hours).', 'mcp-ai-wpoos' ),
 				'default'     => 86400,
 				'min'         => 3600,
 				'max'         => 604800, // 7 days.
@@ -223,8 +223,8 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 		return array(
 			array(
 				'id'          => 'connection',
-				'title'       => __( 'Connection Settings', 'wp-mcp-ai' ),
-				'description' => __( 'Configure connection to your RabbitMQ server.', 'wp-mcp-ai' ),
+				'title'       => __( 'Connection Settings', 'mcp-ai-wpoos' ),
+				'description' => __( 'Configure connection to your RabbitMQ server.', 'mcp-ai-wpoos' ),
 				'fields'      => array(
 					'rabbitmq_enabled',
 					'rabbitmq_host',
@@ -236,8 +236,8 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 			),
 			array(
 				'id'          => 'queues',
-				'title'       => __( 'Queue Settings', 'wp-mcp-ai' ),
-				'description' => __( 'Configure queue behavior and naming.', 'wp-mcp-ai' ),
+				'title'       => __( 'Queue Settings', 'mcp-ai-wpoos' ),
+				'description' => __( 'Configure queue behavior and naming.', 'mcp-ai-wpoos' ),
 				'fields'      => array(
 					'rabbitmq_queue_prefix',
 					'rabbitmq_priority_queues',
@@ -245,8 +245,8 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 			),
 			array(
 				'id'          => 'execution',
-				'title'       => __( 'Execution Settings', 'wp-mcp-ai' ),
-				'description' => __( 'Configure how tools are executed via queues.', 'wp-mcp-ai' ),
+				'title'       => __( 'Execution Settings', 'mcp-ai-wpoos' ),
+				'description' => __( 'Configure how tools are executed via queues.', 'mcp-ai-wpoos' ),
 				'fields'      => array(
 					'rabbitmq_parallel_execution',
 					'rabbitmq_worker_timeout',
@@ -254,8 +254,8 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 			),
 			array(
 				'id'          => 'reliability',
-				'title'       => __( 'Reliability Settings', 'wp-mcp-ai' ),
-				'description' => __( 'Configure retry and dead letter handling.', 'wp-mcp-ai' ),
+				'title'       => __( 'Reliability Settings', 'mcp-ai-wpoos' ),
+				'description' => __( 'Configure retry and dead letter handling.', 'mcp-ai-wpoos' ),
 				'fields'      => array(
 					'rabbitmq_max_retries',
 					'rabbitmq_retry_delay',
@@ -284,36 +284,36 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 
 		?>
 		<div class="wp-mcp-ai-status-widget" style="background: #f9f9f9; border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
-			<h3 style="margin-top: 0;"><?php esc_html_e( 'RabbitMQ Status', 'wp-mcp-ai' ); ?></h3>
+			<h3 style="margin-top: 0;"><?php esc_html_e( 'RabbitMQ Status', 'mcp-ai-wpoos' ); ?></h3>
 
 			<table class="widefat" style="margin-bottom: 15px;">
 				<tbody>
 					<tr>
-						<td><strong><?php esc_html_e( 'PHP AMQP Extension', 'wp-mcp-ai' ); ?></strong></td>
+						<td><strong><?php esc_html_e( 'PHP AMQP Extension', 'mcp-ai-wpoos' ); ?></strong></td>
 						<td>
 							<?php if ( $extension_loaded ) : ?>
-								<span style="color: green;">✓ <?php esc_html_e( 'Loaded', 'wp-mcp-ai' ); ?></span>
+								<span style="color: green;">✓ <?php esc_html_e( 'Loaded', 'mcp-ai-wpoos' ); ?></span>
 							<?php else : ?>
-								<span style="color: red;">✗ <?php esc_html_e( 'Not Loaded', 'wp-mcp-ai' ); ?></span>
-								<br><small><?php esc_html_e( 'Enable RabbitMQ on your Cloudways server to install this extension.', 'wp-mcp-ai' ); ?></small>
+								<span style="color: red;">✗ <?php esc_html_e( 'Not Loaded', 'mcp-ai-wpoos' ); ?></span>
+								<br><small><?php esc_html_e( 'Enable RabbitMQ on your Cloudways server to install this extension.', 'mcp-ai-wpoos' ); ?></small>
 							<?php endif; ?>
 						</td>
 					</tr>
 					<tr>
-						<td><strong><?php esc_html_e( 'Integration Enabled', 'wp-mcp-ai' ); ?></strong></td>
+						<td><strong><?php esc_html_e( 'Integration Enabled', 'mcp-ai-wpoos' ); ?></strong></td>
 						<td>
 							<?php if ( $enabled ) : ?>
-								<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'wp-mcp-ai' ); ?></span>
+								<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?></span>
 							<?php else : ?>
-								<span style="color: gray;">○ <?php esc_html_e( 'Disabled', 'wp-mcp-ai' ); ?></span>
+								<span style="color: gray;">○ <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos' ); ?></span>
 							<?php endif; ?>
 						</td>
 					</tr>
 					<?php if ( $enabled && $rabbitmq_available && $extension_loaded ) : ?>
 						<tr>
-							<td><strong><?php esc_html_e( 'Connection Status', 'wp-mcp-ai' ); ?></strong></td>
+							<td><strong><?php esc_html_e( 'Connection Status', 'mcp-ai-wpoos' ); ?></strong></td>
 							<td id="rabbitmq-connection-status">
-								<span style="color: gray;">○ <?php esc_html_e( 'Checking...', 'wp-mcp-ai' ); ?></span>
+								<span style="color: gray;">○ <?php esc_html_e( 'Checking...', 'mcp-ai-wpoos' ); ?></span>
 							</td>
 						</tr>
 					<?php endif; ?>
@@ -322,27 +322,27 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 
 			<?php if ( $enabled && $extension_loaded ) : ?>
 				<button type="button" class="button" id="test-rabbitmq-connection">
-					<?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
 				</button>
 				<button type="button" class="button" id="setup-rabbitmq-infrastructure">
-					<?php esc_html_e( 'Setup Queues', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Setup Queues', 'mcp-ai-wpoos' ); ?>
 				</button>
 			<?php endif; ?>
 
 			<?php if ( ! $extension_loaded ) : ?>
 				<div class="notice notice-warning inline" style="margin: 10px 0 0 0;">
 					<p>
-						<strong><?php esc_html_e( 'How to Enable RabbitMQ on Cloudways:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'How to Enable RabbitMQ on Cloudways:', 'mcp-ai-wpoos' ); ?></strong>
 					</p>
 					<ol style="margin-left: 20px;">
-						<li><?php esc_html_e( 'Go to your Cloudways Platform', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Navigate to Server Management → Settings & Packages', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Enable RabbitMQ under Advanced Settings', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Note the credentials provided', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Go to your Cloudways Platform', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Navigate to Server Management → Settings & Packages', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Enable RabbitMQ under Advanced Settings', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Note the credentials provided', 'mcp-ai-wpoos' ); ?></li>
 					</ol>
 					<p>
 						<a href="https://support.cloudways.com/en/articles/8680154-how-to-enable-rabbitmq-on-cloudways" target="_blank" rel="noopener">
-							<?php esc_html_e( 'View Cloudways Documentation →', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'View Cloudways Documentation →', 'mcp-ai-wpoos' ); ?>
 						</a>
 					</p>
 				</div>
@@ -361,7 +361,7 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 
 				$('#setup-rabbitmq-infrastructure').on('click', function() {
 					var $button = $(this);
-					$button.prop('disabled', true).text('<?php echo esc_js( __( 'Setting up...', 'wp-mcp-ai' ) ); ?>');
+					$button.prop('disabled', true).text('<?php echo esc_js( __( 'Setting up...', 'mcp-ai-wpoos' ) ); ?>');
 
 					$.ajax({
 						url: ajaxurl,
@@ -372,23 +372,23 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 						},
 						success: function(response) {
 							if (response.success) {
-								alert('<?php echo esc_js( __( 'RabbitMQ infrastructure setup complete!', 'wp-mcp-ai' ) ); ?>');
+								alert('<?php echo esc_js( __( 'RabbitMQ infrastructure setup complete!', 'mcp-ai-wpoos' ) ); ?>');
 							} else {
-								alert('<?php echo esc_js( __( 'Setup failed: ', 'wp-mcp-ai' ) ); ?>' + (response.data.message || 'Unknown error'));
+								alert('<?php echo esc_js( __( 'Setup failed: ', 'mcp-ai-wpoos' ) ); ?>' + (response.data.message || 'Unknown error'));
 							}
 						},
 						error: function() {
-							alert('<?php echo esc_js( __( 'Request failed. Please try again.', 'wp-mcp-ai' ) ); ?>');
+							alert('<?php echo esc_js( __( 'Request failed. Please try again.', 'mcp-ai-wpoos' ) ); ?>');
 						},
 						complete: function() {
-							$button.prop('disabled', false).text('<?php echo esc_js( __( 'Setup Queues', 'wp-mcp-ai' ) ); ?>');
+							$button.prop('disabled', false).text('<?php echo esc_js( __( 'Setup Queues', 'mcp-ai-wpoos' ) ); ?>');
 						}
 					});
 				});
 
 				function checkRabbitMQConnection() {
 					var $status = $('#rabbitmq-connection-status');
-					$status.html('<span style="color: gray;">○ <?php echo esc_js( __( 'Checking...', 'wp-mcp-ai' ) ); ?></span>');
+					$status.html('<span style="color: gray;">○ <?php echo esc_js( __( 'Checking...', 'mcp-ai-wpoos' ) ); ?></span>');
 
 					$.ajax({
 						url: ajaxurl,
@@ -399,14 +399,14 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 						},
 						success: function(response) {
 							if (response.success && response.data.status === 'healthy') {
-								$status.html('<span style="color: green;">✓ <?php echo esc_js( __( 'Connected', 'wp-mcp-ai' ) ); ?></span>');
+								$status.html('<span style="color: green;">✓ <?php echo esc_js( __( 'Connected', 'mcp-ai-wpoos' ) ); ?></span>');
 							} else {
-								var error = response.data.error || response.data.message || '<?php echo esc_js( __( 'Connection failed', 'wp-mcp-ai' ) ); ?>';
+								var error = response.data.error || response.data.message || '<?php echo esc_js( __( 'Connection failed', 'mcp-ai-wpoos' ) ); ?>';
 								$status.html('<span style="color: red;">✗ ' + error + '</span>');
 							}
 						},
 						error: function() {
-							$status.html('<span style="color: red;">✗ <?php echo esc_js( __( 'Request failed', 'wp-mcp-ai' ) ); ?></span>');
+							$status.html('<span style="color: red;">✗ <?php echo esc_js( __( 'Request failed', 'mcp-ai-wpoos' ) ); ?></span>');
 						}
 					});
 				}
@@ -431,11 +431,11 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 		check_ajax_referer( 'wp_mcp_ai_admin', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
-			wp_send_json_error( array( 'message' => __( 'RabbitMQ client not loaded.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'RabbitMQ client not loaded.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
@@ -451,17 +451,17 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 		check_ajax_referer( 'wp_mcp_ai_admin', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_RabbitMQ_Client' ) ) {
-			wp_send_json_error( array( 'message' => __( 'RabbitMQ client not loaded.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'RabbitMQ client not loaded.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		try {
 			$client = WP_MCP_AI_RabbitMQ_Client::get_instance();
 			$client->setup_infrastructure();
-			wp_send_json_success( array( 'message' => __( 'Infrastructure setup complete.', 'wp-mcp-ai' ) ) );
+			wp_send_json_success( array( 'message' => __( 'Infrastructure setup complete.', 'mcp-ai-wpoos' ) ) );
 		} catch ( Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}

@@ -31,7 +31,7 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Default AI Settings', 'wp-mcp-ai' );
+		return __( 'Default AI Settings', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -76,8 +76,8 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 				array(
 					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
-					'selectModelText' => __( '— Select Model —', 'wp-mcp-ai' ),
-					'errorMessage'    => __( 'Failed to load models. Please try again.', 'wp-mcp-ai' ),
+					'selectModelText' => __( '— Select Model —', 'mcp-ai-wpoos' ),
+					'errorMessage'    => __( 'Failed to load models. Please try again.', 'mcp-ai-wpoos' ),
 				)
 			);
 		}
@@ -123,15 +123,15 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 		?>
 		<div class="wp-mcp-ai-profession-defaults">
 			<p class="description">
-				<?php esc_html_e( 'These settings will be applied to assistants created from this professional template.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'These settings will be applied to assistants created from this professional template.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<p>
 				<label for="profession_associated_assistant">
-					<strong><?php esc_html_e( 'Test Assistant', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Test Assistant', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="profession_associated_assistant" id="profession_associated_assistant" class="widefat">
-					<option value=""><?php esc_html_e( '— Use Profession Settings —', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '— Use Profession Settings —', 'mcp-ai-wpoos' ); ?></option>
 					<?php foreach ( $assistants as $assistant ) : ?>
 						<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $associated_assistant, $assistant->ID ); ?>>
 							<?php echo esc_html( $assistant->post_title ); ?>
@@ -139,29 +139,29 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 					<?php endforeach; ?>
 				</select>
 				<span class="description" style="display: block; margin-top: 5px;">
-					<?php esc_html_e( 'Associate with an existing assistant to use its configuration when testing this profession.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Associate with an existing assistant to use its configuration when testing this profession.', 'mcp-ai-wpoos' ); ?>
 				</span>
 			</p>
 
 			<p>
 				<label for="profession_default_provider">
-					<strong><?php esc_html_e( 'AI Provider', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'AI Provider', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="profession_default_provider" id="profession_default_provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#profession_default_model">
-					<option value="openai" <?php selected( $default_provider, 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'wp-mcp-ai' ); ?></option>
-					<option value="gemini" <?php selected( $default_provider, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'wp-mcp-ai' ); ?></option>
-					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'wp-mcp-ai' ); ?></option>
-					<option value="ollama" <?php selected( $default_provider, 'ollama' ); ?>><?php esc_html_e( 'Ollama (Local)', 'wp-mcp-ai' ); ?></option>
-					<option value="lm_studio" <?php selected( $default_provider, 'lm_studio' ); ?>><?php esc_html_e( 'LM Studio', 'wp-mcp-ai' ); ?></option>
+					<option value="openai" <?php selected( $default_provider, 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'mcp-ai-wpoos' ); ?></option>
+					<option value="gemini" <?php selected( $default_provider, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'mcp-ai-wpoos' ); ?></option>
+					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'mcp-ai-wpoos' ); ?></option>
+					<option value="ollama" <?php selected( $default_provider, 'ollama' ); ?>><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></option>
+					<option value="lm_studio" <?php selected( $default_provider, 'lm_studio' ); ?>><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></option>
 				</select>
 			</p>
 
 			<p>
 				<label for="profession_default_model">
-					<strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="profession_default_model" id="profession_default_model" class="widefat">
-					<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '— Select Model —', 'mcp-ai-wpoos' ); ?></option>
 					<?php if ( ! empty( $models ) ) : ?>
 						<?php foreach ( $models as $model_id => $model_name ) : ?>
 							<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $default_model, $model_id ); ?>>
@@ -179,10 +179,10 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 
 			<p>
 				<label for="profession_default_temperature">
-					<strong><?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Temperature', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<input type="number" name="profession_default_temperature" id="profession_default_temperature" class="widefat" value="<?php echo esc_attr( $default_temperature ); ?>" min="0" max="2" step="0.1">
-				<span class="description" style="display: block; margin-top: 5px;"><?php esc_html_e( '0-2. Lower is more deterministic.', 'wp-mcp-ai' ); ?></span>
+				<span class="description" style="display: block; margin-top: 5px;"><?php esc_html_e( '0-2. Lower is more deterministic.', 'mcp-ai-wpoos' ); ?></span>
 			</p>
 		</div>
 		<?php

@@ -107,7 +107,7 @@ abstract class WP_MCP_AI_Metabox_Base {
 	 */
 	protected function render_permission_denied( $message = '' ) {
 		if ( empty( $message ) ) {
-			$message = __( 'You do not have permission to access this section.', 'wp-mcp-ai' );
+			$message = __( 'You do not have permission to access this section.', 'mcp-ai-wpoos' );
 		}
 		echo '<p>' . esc_html( $message ) . '</p>';
 	}
@@ -127,7 +127,7 @@ abstract class WP_MCP_AI_Metabox_Base {
 		<p class="metabox-documentation" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dcdcde;">
 			<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
 			<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
-				<?php esc_html_e( 'View Documentation', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
 				<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
 			</a>
 		</p>

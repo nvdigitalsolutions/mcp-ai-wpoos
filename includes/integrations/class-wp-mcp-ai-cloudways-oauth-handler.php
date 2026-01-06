@@ -31,7 +31,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 		 */
 		public function handle_cloudways_connect() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_cloudways_connect' );
@@ -41,7 +41,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 			if ( empty( $settings['cloudways_email'] ) || empty( $settings['cloudways_api_key'] ) ) {
 				$this->add_settings_redirect_notice(
 					'cloudways_missing_credentials',
-					__( 'Enter your Cloudways email and API key before connecting.', 'wp-mcp-ai' ),
+					__( 'Enter your Cloudways email and API key before connecting.', 'mcp-ai-wpoos' ),
 					'error'
 				);
 				$this->redirect_to_settings_page();
@@ -62,7 +62,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 					'cloudways_connection_failed',
 					sprintf(
 						/* translators: %s: Error message. */
-						__( 'Failed to connect to Cloudways: %s', 'wp-mcp-ai' ),
+						__( 'Failed to connect to Cloudways: %s', 'mcp-ai-wpoos' ),
 						$token_response->get_error_message()
 					),
 					'error'
@@ -83,7 +83,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 				);
 				$this->add_settings_redirect_notice(
 					'cloudways_verification_failed',
-					__( 'Connected to Cloudways, but could not verify account information.', 'wp-mcp-ai' ),
+					__( 'Connected to Cloudways, but could not verify account information.', 'mcp-ai-wpoos' ),
 					'warning'
 				);
 			}
@@ -102,7 +102,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 
 			$this->add_settings_redirect_notice(
 				'cloudways_connected',
-				__( 'Successfully connected to Cloudways! Your access token has been saved.', 'wp-mcp-ai' ),
+				__( 'Successfully connected to Cloudways! Your access token has been saved.', 'mcp-ai-wpoos' ),
 				'success'
 			);
 			$this->redirect_to_settings_page();
@@ -113,7 +113,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 		 */
 		public function handle_cloudways_disconnect() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_cloudways_disconnect' );
@@ -131,7 +131,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 
 			$this->add_settings_redirect_notice(
 				'cloudways_disconnected',
-				__( 'Disconnected from Cloudways. Your credentials remain saved for future connections.', 'wp-mcp-ai' ),
+				__( 'Disconnected from Cloudways. Your credentials remain saved for future connections.', 'mcp-ai-wpoos' ),
 				'success'
 			);
 			$this->redirect_to_settings_page();
@@ -189,7 +189,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 				} else {
 					$error_message = sprintf(
 						/* translators: %d: HTTP status code. */
-						__( 'HTTP %d response', 'wp-mcp-ai' ),
+						__( 'HTTP %d response', 'mcp-ai-wpoos' ),
 						$status_code
 					);
 				}
@@ -205,14 +205,14 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 			if ( ! is_array( $decoded ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_cloudways_invalid_response',
-					__( 'Cloudways returned an invalid response.', 'wp-mcp-ai' )
+					__( 'Cloudways returned an invalid response.', 'mcp-ai-wpoos' )
 				);
 			}
 
 			if ( empty( $decoded['access_token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_cloudways_missing_token',
-					__( 'Cloudways did not return an access token.', 'wp-mcp-ai' )
+					__( 'Cloudways did not return an access token.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -257,7 +257,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 					'wp_mcp_ai_cloudways_api_error',
 					sprintf(
 						/* translators: %d: HTTP status code. */
-						__( 'Cloudways API returned HTTP %d', 'wp-mcp-ai' ),
+						__( 'Cloudways API returned HTTP %d', 'mcp-ai-wpoos' ),
 						$status_code
 					)
 				);
@@ -268,7 +268,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 			if ( ! is_array( $decoded ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_cloudways_invalid_account_response',
-					__( 'Could not parse account information.', 'wp-mcp-ai' )
+					__( 'Could not parse account information.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -276,7 +276,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 			return array(
 				'account_name' => isset( $decoded['servers'] ) ? sprintf(
 					/* translators: %d: Number of servers. */
-					__( '%d servers', 'wp-mcp-ai' ),
+					__( '%d servers', 'mcp-ai-wpoos' ),
 					count( $decoded['servers'] )
 				) : '',
 				'servers'      => isset( $decoded['servers'] ) ? $decoded['servers'] : array(),
@@ -324,7 +324,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 			if ( empty( $settings['cloudways_email'] ) || empty( $settings['cloudways_api_key'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_cloudways_no_credentials',
-					__( 'Cloudways credentials are not configured.', 'wp-mcp-ai' )
+					__( 'Cloudways credentials are not configured.', 'mcp-ai-wpoos' )
 				);
 			}
 

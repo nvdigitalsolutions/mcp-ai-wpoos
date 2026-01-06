@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Edit Gemini Image (Nano Banana)', 'wp-mcp-ai' );
+		return __( 'Edit Gemini Image (Nano Banana)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Edits an existing image using Gemini Nano Banana (text + image-to-image) and stores the result in the Media Library. IMPORTANT: When a user attaches an image in chat, extract the "url" field from the message content segments (look for type:"input_image" segments with a url field) and pass it as the "url" parameter. Can also edit images from the Media Library by attachment_id.', 'wp-mcp-ai' );
+		return __( 'Edits an existing image using Gemini Nano Banana (text + image-to-image) and stores the result in the Media Library. IMPORTANT: When a user attaches an image in chat, extract the "url" field from the message content segments (look for type:"input_image" segments with a url field) and pass it as the "url" parameter. Can also edit images from the Media Library by attachment_id.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -74,50 +74,50 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				array(
 					'prompt'           => array(
 						'type'        => 'string',
-						'description' => __( 'Text instruction describing the desired edits (e.g., "remove background", "change sky to sunset", "make brighter").', 'wp-mcp-ai' ),
+						'description' => __( 'Text instruction describing the desired edits (e.g., "remove background", "change sky to sunset", "make brighter").', 'mcp-ai-wpoos' ),
 					),
 					'attachment_id'    => array(
 						'type'        => 'integer',
-						'description' => __( 'WordPress attachment ID of the image to edit.', 'wp-mcp-ai' ),
+						'description' => __( 'WordPress attachment ID of the image to edit.', 'mcp-ai-wpoos' ),
 					),
-					'file_id'          => $this->get_file_id_parameter_schema( __( 'OpenAI or Gemini file identifier. Use this when the image was uploaded via the files endpoint.', 'wp-mcp-ai' ) ),
-					'url'              => $this->get_url_parameter_schema( 'image', __( 'URL of the image to edit. REQUIRED when user attaches an image in chat - extract the "url" field from the message content segment (look for segments with type:"input_image" that contain a url field). Can be a WordPress media URL or external URL.', 'wp-mcp-ai' ) ),
+					'file_id'          => $this->get_file_id_parameter_schema( __( 'OpenAI or Gemini file identifier. Use this when the image was uploaded via the files endpoint.', 'mcp-ai-wpoos' ) ),
+					'url'              => $this->get_url_parameter_schema( 'image', __( 'URL of the image to edit. REQUIRED when user attaches an image in chat - extract the "url" field from the message content segment (look for segments with type:"input_image" that contain a url field). Can be a WordPress media URL or external URL.', 'mcp-ai-wpoos' ) ),
 					'image_url'        => array(
 						'type'        => 'string',
-						'description' => __( 'URL of the image to edit (legacy parameter, use "url" instead).', 'wp-mcp-ai' ),
+						'description' => __( 'URL of the image to edit (legacy parameter, use "url" instead).', 'mcp-ai-wpoos' ),
 					),
 					'image_data'       => array(
 						'type'        => 'string',
-						'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id, url, or file_id). Useful for editing images created in the chat.', 'wp-mcp-ai' ),
+						'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id, url, or file_id). Useful for editing images created in the chat.', 'mcp-ai-wpoos' ),
 					),
 					'source_mime_type' => array(
 						'type'        => 'string',
-						'description' => __( 'MIME type of the source image data (required when using image_data).', 'wp-mcp-ai' ),
+						'description' => __( 'MIME type of the source image data (required when using image_data).', 'mcp-ai-wpoos' ),
 					),
 					'model'            => array(
 						'type'        => 'string',
-						'description' => __( 'Gemini image model to use.', 'wp-mcp-ai' ),
+						'description' => __( 'Gemini image model to use.', 'mcp-ai-wpoos' ),
 						'default'     => $defaults['model'],
 					),
 					'aspect_ratio'     => array(
 						'type'        => 'string',
-						'description' => __( 'Aspect ratio for the edited image.', 'wp-mcp-ai' ),
+						'description' => __( 'Aspect ratio for the edited image.', 'mcp-ai-wpoos' ),
 						'enum'        => $aspect_choices,
 						'default'     => $defaults['aspect_ratio'],
 					),
 					'mime_type'        => array(
 						'type'        => 'string',
-						'description' => __( 'Preferred MIME type for the saved image.', 'wp-mcp-ai' ),
+						'description' => __( 'Preferred MIME type for the saved image.', 'mcp-ai-wpoos' ),
 						'enum'        => $mime_choices,
 						'default'     => $defaults['mime_type'],
 					),
 					'file_name'        => array(
 						'type'        => 'string',
-						'description' => __( 'Optional base file name for the saved image attachment.', 'wp-mcp-ai' ),
+						'description' => __( 'Optional base file name for the saved image attachment.', 'mcp-ai-wpoos' ),
 					),
 					'timeout'          => array(
 						'type'        => 'integer',
-						'description' => __( 'Override the Gemini request timeout in seconds.', 'wp-mcp-ai' ),
+						'description' => __( 'Override the Gemini request timeout in seconds.', 'mcp-ai-wpoos' ),
 						'minimum'     => 5,
 						'maximum'     => 300,
 					),
@@ -135,23 +135,23 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'label'   => __( 'edit_gemini_image', 'wp-mcp-ai' ),
-				'payload' => __( 'edit_gemini_image', 'wp-mcp-ai' ),
+				'label'   => __( 'edit_gemini_image', 'mcp-ai-wpoos' ),
+				'payload' => __( 'edit_gemini_image', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Remove background', 'wp-mcp-ai' ),
+				'label'   => __( 'Remove background', 'mcp-ai-wpoos' ),
 				/* translators: %s: URL extraction instruction for LLMs */
-				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to remove the background from an image. IMPORTANT: %s Use a prompt like "remove background, make transparent".', 'wp-mcp-ai' ), self::URL_EXTRACTION_INSTRUCTION ),
+				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to remove the background from an image. IMPORTANT: %s Use a prompt like "remove background, make transparent".', 'mcp-ai-wpoos' ), self::URL_EXTRACTION_INSTRUCTION ),
 			),
 			array(
-				'label'   => __( 'Change image style', 'wp-mcp-ai' ),
+				'label'   => __( 'Change image style', 'mcp-ai-wpoos' ),
 				/* translators: %s: URL extraction instruction for LLMs */
-				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to change the style of an image. IMPORTANT: %s Create a prompt like "convert to watercolor painting style".', 'wp-mcp-ai' ), self::URL_EXTRACTION_INSTRUCTION ),
+				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to change the style of an image. IMPORTANT: %s Create a prompt like "convert to watercolor painting style".', 'mcp-ai-wpoos' ), self::URL_EXTRACTION_INSTRUCTION ),
 			),
 			array(
-				'label'   => __( 'Enhance photo', 'wp-mcp-ai' ),
+				'label'   => __( 'Enhance photo', 'mcp-ai-wpoos' ),
 				/* translators: %s: URL extraction instruction for LLMs */
-				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to enhance a photo. IMPORTANT: %s Use prompts like "enhance brightness and contrast", "sharpen details", or "improve lighting".', 'wp-mcp-ai' ), self::URL_EXTRACTION_INSTRUCTION ),
+				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to enhance a photo. IMPORTANT: %s Use prompts like "enhance brightness and contrast", "sharpen details", or "improve lighting".', 'mcp-ai-wpoos' ), self::URL_EXTRACTION_INSTRUCTION ),
 			),
 		);
 	}
@@ -168,16 +168,16 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to edit images.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to edit images.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id ) {
 			if ( ! user_can( $user_id, 'read' ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
@@ -185,7 +185,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		$prompt = trim( $prompt );
 
 		if ( '' === $prompt ) {
-			return new WP_Error( 'wp_mcp_ai_missing_prompt', __( 'No editing instruction was supplied.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_prompt', __( 'No editing instruction was supplied.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		// Enrich arguments with metadata from context messages if available.
@@ -243,7 +243,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		if ( empty( $image['image'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_image_storage_error', __( 'Gemini returned an empty image response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_image_storage_error', __( 'Gemini returned an empty image response.', 'mcp-ai-wpoos' ) );
 		}
 
 		$storage = $this->store_image_attachment( $image, $file_name, $prompt, $user_id, $context );
@@ -278,7 +278,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		// Build descriptive text message for the LLM and chat UI.
 		$text = sprintf(
 			/* translators: 1: image title, 2: attachment ID, 3: edit instruction, 4: output format */
-			__( 'Successfully edited image "%1$s" (ID: %2$d). Edit instruction: %3$s%4$s', 'wp-mcp-ai' ),
+			__( 'Successfully edited image "%1$s" (ID: %2$d). Edit instruction: %3$s%4$s', 'mcp-ai-wpoos' ),
 			$storage['title'],
 			$storage['attachment_id'],
 			$prompt,
@@ -544,17 +544,17 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$file_path = get_attached_file( $attachment_id );
 
 			if ( ! $file_path || ! file_exists( $file_path ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The specified attachment does not exist.', 'wp-mcp-ai' ), array( 'status' => 404 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The specified attachment does not exist.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
 			}
 
 			// Check if user has permission to read this attachment.
 			if ( $user_id && ! current_user_can( 'read_post', $attachment_id ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to access this attachment.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to access this attachment.', 'mcp-ai-wpoos' ), array( 'status' => 403 ) );
 			}
 
 			$image_data = file_get_contents( $file_path );
 			if ( false === $image_data ) {
-				return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read the image file.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read the image file.', 'mcp-ai-wpoos' ) );
 			}
 
 			$mime_type = get_post_mime_type( $attachment_id );
@@ -630,18 +630,18 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
 
 			if ( is_wp_error( $response ) ) {
-				return new WP_Error( 'wp_mcp_ai_download_error', __( 'Failed to download the source image.', 'wp-mcp-ai' ), array( 'error' => $response->get_error_message() ) );
+				return new WP_Error( 'wp_mcp_ai_download_error', __( 'Failed to download the source image.', 'mcp-ai-wpoos' ), array( 'error' => $response->get_error_message() ) );
 			}
 
 			$status_code = wp_remote_retrieve_response_code( $response );
 			if ( $status_code < 200 || $status_code >= 300 ) {
 				/* translators: %d: HTTP status code */
-				return new WP_Error( 'wp_mcp_ai_download_error', sprintf( __( 'Failed to download image. HTTP %d', 'wp-mcp-ai' ), $status_code ), array( 'status' => $status_code ) );
+				return new WP_Error( 'wp_mcp_ai_download_error', sprintf( __( 'Failed to download image. HTTP %d', 'mcp-ai-wpoos' ), $status_code ), array( 'status' => $status_code ) );
 			}
 
 			$image_data = wp_remote_retrieve_body( $response );
 			if ( '' === $image_data ) {
-				return new WP_Error( 'wp_mcp_ai_download_error', __( 'Downloaded image is empty.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_download_error', __( 'Downloaded image is empty.', 'mcp-ai-wpoos' ) );
 			}
 
 			$headers   = wp_remote_retrieve_headers( $response );
@@ -658,11 +658,11 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$decoded_data = base64_decode( $image_data, true );
 
 			if ( false === $decoded_data ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_image_data', __( 'The provided image data is not valid base64.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_image_data', __( 'The provided image data is not valid base64.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
 			if ( '' === $decoded_data ) {
-				return new WP_Error( 'wp_mcp_ai_empty_image_data', __( 'The decoded image data is empty.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_empty_image_data', __( 'The decoded image data is empty.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
 			// Get MIME type from argument or default to PNG.
@@ -680,7 +680,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'source'    => 'blob',
 			);
 		} else {
-			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'You must provide attachment_id, file_id, url, image_url, or image_data.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'You must provide attachment_id, file_id, url, image_url, or image_data.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 	}
 
@@ -882,7 +882,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'wp_mcp_ai_unsupported_image_type',
 				sprintf(
 					/* translators: %s: MIME type */
-					__( 'Image type "%s" is not supported for editing. Please use JPEG, PNG, GIF, WebP, or BMP formats.', 'wp-mcp-ai' ),
+					__( 'Image type "%s" is not supported for editing. Please use JPEG, PNG, GIF, WebP, or BMP formats.', 'mcp-ai-wpoos' ),
 					$mime_type
 				),
 				array( 'status' => 400 )
@@ -1002,7 +1002,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		$mime_type = isset( $image['mime_type'] ) ? $image['mime_type'] : self::DEFAULT_MIME_TYPE;
 
 		if ( '' === $data ) {
-			return new WP_Error( 'wp_mcp_ai_image_storage_error', __( 'Unable to determine the image data for storage.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_image_storage_error', __( 'Unable to determine the image data for storage.', 'mcp-ai-wpoos' ) );
 		}
 
 		$extension = $this->get_extension_from_mime_type( $mime_type );
@@ -1023,13 +1023,13 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		$upload = wp_upload_bits( $file_name, null, $data );
 
 		if ( ! empty( $upload['error'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_image_upload_failed', __( 'Failed to save the edited image file.', 'wp-mcp-ai' ), array( 'error' => $upload['error'] ) );
+			return new WP_Error( 'wp_mcp_ai_image_upload_failed', __( 'Failed to save the edited image file.', 'mcp-ai-wpoos' ), array( 'error' => $upload['error'] ) );
 		}
 
 		$file_path = isset( $upload['file'] ) ? $upload['file'] : '';
 
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_image_upload_failed', __( 'Failed to write the edited image file to disk.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_image_upload_failed', __( 'Failed to write the edited image file to disk.', 'mcp-ai-wpoos' ) );
 		}
 
 		$title = $this->generate_attachment_title( $prompt );
@@ -1049,7 +1049,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 		if ( is_wp_error( $attachment_id ) ) {
 			wp_delete_file( $file_path );
-			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register the edited image as an attachment.', 'wp-mcp-ai' ), array( 'error' => $attachment_id ) );
+			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register the edited image as an attachment.', 'mcp-ai-wpoos' ), array( 'error' => $attachment_id ) );
 		}
 
 		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
@@ -1136,13 +1136,13 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		$prompt = trim( $prompt );
 
 		if ( '' === $prompt ) {
-			return __( 'Gemini Edited Image', 'wp-mcp-ai' );
+			return __( 'Gemini Edited Image', 'mcp-ai-wpoos' );
 		}
 
 		$excerpt = wp_trim_words( $prompt, 8, '…' );
 
 		/* translators: %s: Short excerpt of the editing instruction. */
-		return sprintf( __( 'Gemini Edit: %s', 'wp-mcp-ai' ), $excerpt );
+		return sprintf( __( 'Gemini Edit: %s', 'mcp-ai-wpoos' ), $excerpt );
 	}
 
 	/**

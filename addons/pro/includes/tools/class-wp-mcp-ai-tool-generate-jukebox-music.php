@@ -30,14 +30,14 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Jukebox Music', 'wp-mcp-ai' );
+		return __( 'Generate Jukebox Music', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates music with vocals from a text description using locally-installed OpenAI Jukebox model and saves it to the Media Library. Requires Jukebox to be installed on the server. Supports artist style emulation, genre specification, and custom lyrics.', 'wp-mcp-ai' );
+		return __( 'Generates music with vocals from a text description using locally-installed OpenAI Jukebox model and saves it to the Media Library. Requires Jukebox to be installed on the server. Supports artist style emulation, genre specification, and custom lyrics.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -49,43 +49,43 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'prompt'        => array(
 					'type'        => 'string',
-					'description' => __( 'Description of the desired music (e.g., "upbeat jazz piano with vocals" or "rock ballad in the style of Queen").', 'wp-mcp-ai' ),
+					'description' => __( 'Description of the desired music (e.g., "upbeat jazz piano with vocals" or "rock ballad in the style of Queen").', 'mcp-ai-wpoos-pro' ),
 				),
 				'model'         => array(
 					'type'        => 'string',
-					'description' => __( 'Jukebox model to use: "1b_lyrics" (faster, lower quality), "5b" (no lyrics), or "5b_lyrics" (best quality with lyrics).', 'wp-mcp-ai' ),
+					'description' => __( 'Jukebox model to use: "1b_lyrics" (faster, lower quality), "5b" (no lyrics), or "5b_lyrics" (best quality with lyrics).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( '1b_lyrics', '5b', '5b_lyrics' ),
 					'default'     => WP_MCP_AI_Jukebox_Service::DEFAULT_MODEL,
 				),
 				'sample_length' => array(
 					'type'        => 'integer',
-					'description' => __( 'Duration of the music in seconds (1-60). Note: Longer samples take significantly more time to generate.', 'wp-mcp-ai' ),
+					'description' => __( 'Duration of the music in seconds (1-60). Note: Longer samples take significantly more time to generate.', 'mcp-ai-wpoos-pro' ),
 					'default'     => WP_MCP_AI_Jukebox_Service::DEFAULT_SAMPLE_LENGTH,
 					'minimum'     => 1,
 					'maximum'     => WP_MCP_AI_Jukebox_Service::MAX_SAMPLE_LENGTH,
 				),
 				'artist'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional artist style to emulate (e.g., "Ella Fitzgerald", "Frank Sinatra", "The Beatles").', 'wp-mcp-ai' ),
+					'description' => __( 'Optional artist style to emulate (e.g., "Ella Fitzgerald", "Frank Sinatra", "The Beatles").', 'mcp-ai-wpoos-pro' ),
 				),
 				'genre'         => array(
 					'type'        => 'string',
-					'description' => __( 'Optional music genre (e.g., "jazz", "rock", "classical", "pop", "country").', 'wp-mcp-ai' ),
+					'description' => __( 'Optional music genre (e.g., "jazz", "rock", "classical", "pop", "country").', 'mcp-ai-wpoos-pro' ),
 				),
 				'lyrics'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional custom lyrics for the AI to sing. Only works with models that include "_lyrics" in the name.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional custom lyrics for the AI to sing. Only works with models that include "_lyrics" in the name.', 'mcp-ai-wpoos-pro' ),
 				),
 				'temperature'   => array(
 					'type'        => 'number',
-					'description' => __( 'Optional creativity level (0.0-1.0, higher = more random). Default is 0.98.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional creativity level (0.0-1.0, higher = more random). Default is 0.98.', 'mcp-ai-wpoos-pro' ),
 					'default'     => WP_MCP_AI_Jukebox_Service::DEFAULT_TEMPERATURE,
 					'minimum'     => 0.0,
 					'maximum'     => 1.0,
 				),
 				'file_name'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional base file name for the saved audio attachment.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional base file name for the saved audio attachment.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'prompt' ),
@@ -110,7 +110,7 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		if ( ! $user_id && ! $has_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You must be authenticated to generate music with Jukebox.', 'wp-mcp-ai' ),
+				__( 'You must be authenticated to generate music with Jukebox.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
@@ -120,14 +120,14 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 			if ( ! user_can( $user_id, 'upload_files' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_forbidden',
-					__( 'You do not have permission to generate music.', 'wp-mcp-ai' )
+					__( 'You do not have permission to generate music.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_wrong_site',
-					__( 'You do not have access to this site.', 'wp-mcp-ai' )
+					__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		if ( empty( $prompt ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_prompt',
-				__( 'No prompt was supplied for music generation.', 'wp-mcp-ai' ),
+				__( 'No prompt was supplied for music generation.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -179,7 +179,7 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		if ( empty( $result['audio_file'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_audio',
-				__( 'Jukebox returned an empty audio response.', 'wp-mcp-ai' )
+				__( 'Jukebox returned an empty audio response.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -262,7 +262,7 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		if ( empty( $audio_file ) || ! file_exists( $audio_file ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_music_storage_error',
-				__( 'Unable to store music: no audio file.', 'wp-mcp-ai' )
+				__( 'Unable to store music: no audio file.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -272,7 +272,7 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		if ( false === $binary_audio ) {
 			return new WP_Error(
 				'wp_mcp_ai_music_read_error',
-				__( 'Unable to read the generated audio file.', 'wp-mcp-ai' )
+				__( 'Unable to read the generated audio file.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -306,7 +306,7 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		if ( ! empty( $upload['error'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_upload_failed',
-				__( 'Failed to save the generated music file.', 'wp-mcp-ai' ),
+				__( 'Failed to save the generated music file.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $upload['error'] )
 			);
 		}
@@ -316,7 +316,7 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_upload_failed',
-				__( 'Failed to write the music file to disk.', 'wp-mcp-ai' )
+				__( 'Failed to write the music file to disk.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -343,7 +343,7 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 
 			return new WP_Error(
 				'wp_mcp_ai_attachment_error',
-				__( 'Failed to register the music file as an attachment.', 'wp-mcp-ai' ),
+				__( 'Failed to register the music file as an attachment.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $attachment_id )
 			);
 		}
@@ -435,13 +435,13 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		$prompt = trim( $prompt );
 
 		if ( empty( $prompt ) ) {
-			return __( 'Generated Jukebox Music', 'wp-mcp-ai' );
+			return __( 'Generated Jukebox Music', 'mcp-ai-wpoos-pro' );
 		}
 
 		$excerpt = wp_trim_words( $prompt, 10, '…' );
 
 		/* translators: %s: Short excerpt of the prompt used to generate music. */
-		return sprintf( __( 'Jukebox Music: %s', 'wp-mcp-ai' ), $excerpt );
+		return sprintf( __( 'Jukebox Music: %s', 'mcp-ai-wpoos-pro' ), $excerpt );
 	}
 
 	/**

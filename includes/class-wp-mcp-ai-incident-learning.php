@@ -54,17 +54,17 @@ class WP_MCP_AI_Incident_Learning {
 			'mcp_ai_lesson',
 			array(
 				'labels'              => array(
-					'name'               => __( 'Lessons Learned', 'wp-mcp-ai' ),
-					'singular_name'      => __( 'Lesson Learned', 'wp-mcp-ai' ),
-					'add_new'            => __( 'Add New Lesson', 'wp-mcp-ai' ),
-					'add_new_item'       => __( 'Add New Lesson Learned', 'wp-mcp-ai' ),
-					'edit_item'          => __( 'Edit Lesson Learned', 'wp-mcp-ai' ),
-					'new_item'           => __( 'New Lesson Learned', 'wp-mcp-ai' ),
-					'view_item'          => __( 'View Lesson Learned', 'wp-mcp-ai' ),
-					'search_items'       => __( 'Search Lessons Learned', 'wp-mcp-ai' ),
-					'not_found'          => __( 'No lessons learned found', 'wp-mcp-ai' ),
-					'not_found_in_trash' => __( 'No lessons learned found in trash', 'wp-mcp-ai' ),
-					'menu_name'          => __( 'Lessons Learned', 'wp-mcp-ai' ),
+					'name'               => __( 'Lessons Learned', 'mcp-ai-wpoos' ),
+					'singular_name'      => __( 'Lesson Learned', 'mcp-ai-wpoos' ),
+					'add_new'            => __( 'Add New Lesson', 'mcp-ai-wpoos' ),
+					'add_new_item'       => __( 'Add New Lesson Learned', 'mcp-ai-wpoos' ),
+					'edit_item'          => __( 'Edit Lesson Learned', 'mcp-ai-wpoos' ),
+					'new_item'           => __( 'New Lesson Learned', 'mcp-ai-wpoos' ),
+					'view_item'          => __( 'View Lesson Learned', 'mcp-ai-wpoos' ),
+					'search_items'       => __( 'Search Lessons Learned', 'mcp-ai-wpoos' ),
+					'not_found'          => __( 'No lessons learned found', 'mcp-ai-wpoos' ),
+					'not_found_in_trash' => __( 'No lessons learned found in trash', 'mcp-ai-wpoos' ),
+					'menu_name'          => __( 'Lessons Learned', 'mcp-ai-wpoos' ),
 				),
 				'public'              => false,
 				'show_ui'             => true,
@@ -97,7 +97,7 @@ class WP_MCP_AI_Incident_Learning {
 	public function add_meta_boxes() {
 		add_meta_box(
 			'wp_mcp_ai_lesson_details',
-			__( 'Lesson Details', 'wp-mcp-ai' ),
+			__( 'Lesson Details', 'mcp-ai-wpoos' ),
 			array( $this, 'render_details_meta_box' ),
 			'mcp_ai_lesson',
 			'normal',
@@ -123,67 +123,67 @@ class WP_MCP_AI_Incident_Learning {
 		?>
 		<table class="form-table">
 			<tr>
-				<th><label for="incident_id"><?php esc_html_e( 'Related Incident ID', 'wp-mcp-ai' ); ?></label></th>
+				<th><label for="incident_id"><?php esc_html_e( 'Related Incident ID', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<input type="text" id="incident_id" name="incident_id" 
 						   value="<?php echo esc_attr( $incident_id ); ?>" 
 						   class="regular-text">
-					<p class="description"><?php esc_html_e( 'Reference to the security incident', 'wp-mcp-ai' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Reference to the security incident', 'mcp-ai-wpoos' ); ?></p>
 				</td>
 			</tr>
 			<tr>
-				<th><label for="incident_date"><?php esc_html_e( 'Incident Date', 'wp-mcp-ai' ); ?></label></th>
+				<th><label for="incident_date"><?php esc_html_e( 'Incident Date', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<input type="date" id="incident_date" name="incident_date" 
 						   value="<?php echo esc_attr( $incident_date ); ?>">
 				</td>
 			</tr>
 			<tr>
-				<th><label for="category"><?php esc_html_e( 'Category', 'wp-mcp-ai' ); ?></label></th>
+				<th><label for="category"><?php esc_html_e( 'Category', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<select id="category" name="category">
-						<option value=""><?php esc_html_e( 'Select Category', 'wp-mcp-ai' ); ?></option>
-						<option value="access_control" <?php selected( $category, 'access_control' ); ?>><?php esc_html_e( 'Access Control', 'wp-mcp-ai' ); ?></option>
-						<option value="data_breach" <?php selected( $category, 'data_breach' ); ?>><?php esc_html_e( 'Data Breach', 'wp-mcp-ai' ); ?></option>
-						<option value="malware" <?php selected( $category, 'malware' ); ?>><?php esc_html_e( 'Malware', 'wp-mcp-ai' ); ?></option>
-						<option value="phishing" <?php selected( $category, 'phishing' ); ?>><?php esc_html_e( 'Phishing', 'wp-mcp-ai' ); ?></option>
-						<option value="denial_of_service" <?php selected( $category, 'denial_of_service' ); ?>><?php esc_html_e( 'Denial of Service', 'wp-mcp-ai' ); ?></option>
-						<option value="vulnerability" <?php selected( $category, 'vulnerability' ); ?>><?php esc_html_e( 'Vulnerability Exploitation', 'wp-mcp-ai' ); ?></option>
-						<option value="configuration" <?php selected( $category, 'configuration' ); ?>><?php esc_html_e( 'Configuration Error', 'wp-mcp-ai' ); ?></option>
-						<option value="other" <?php selected( $category, 'other' ); ?>><?php esc_html_e( 'Other', 'wp-mcp-ai' ); ?></option>
+						<option value=""><?php esc_html_e( 'Select Category', 'mcp-ai-wpoos' ); ?></option>
+						<option value="access_control" <?php selected( $category, 'access_control' ); ?>><?php esc_html_e( 'Access Control', 'mcp-ai-wpoos' ); ?></option>
+						<option value="data_breach" <?php selected( $category, 'data_breach' ); ?>><?php esc_html_e( 'Data Breach', 'mcp-ai-wpoos' ); ?></option>
+						<option value="malware" <?php selected( $category, 'malware' ); ?>><?php esc_html_e( 'Malware', 'mcp-ai-wpoos' ); ?></option>
+						<option value="phishing" <?php selected( $category, 'phishing' ); ?>><?php esc_html_e( 'Phishing', 'mcp-ai-wpoos' ); ?></option>
+						<option value="denial_of_service" <?php selected( $category, 'denial_of_service' ); ?>><?php esc_html_e( 'Denial of Service', 'mcp-ai-wpoos' ); ?></option>
+						<option value="vulnerability" <?php selected( $category, 'vulnerability' ); ?>><?php esc_html_e( 'Vulnerability Exploitation', 'mcp-ai-wpoos' ); ?></option>
+						<option value="configuration" <?php selected( $category, 'configuration' ); ?>><?php esc_html_e( 'Configuration Error', 'mcp-ai-wpoos' ); ?></option>
+						<option value="other" <?php selected( $category, 'other' ); ?>><?php esc_html_e( 'Other', 'mcp-ai-wpoos' ); ?></option>
 					</select>
 				</td>
 			</tr>
 			<tr>
-				<th><label for="severity"><?php esc_html_e( 'Severity', 'wp-mcp-ai' ); ?></label></th>
+				<th><label for="severity"><?php esc_html_e( 'Severity', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<select id="severity" name="severity">
-						<option value="low" <?php selected( $severity, 'low' ); ?>><?php esc_html_e( 'Low', 'wp-mcp-ai' ); ?></option>
-						<option value="medium" <?php selected( $severity, 'medium' ); ?>><?php esc_html_e( 'Medium', 'wp-mcp-ai' ); ?></option>
-						<option value="high" <?php selected( $severity, 'high' ); ?>><?php esc_html_e( 'High', 'wp-mcp-ai' ); ?></option>
-						<option value="critical" <?php selected( $severity, 'critical' ); ?>><?php esc_html_e( 'Critical', 'wp-mcp-ai' ); ?></option>
+						<option value="low" <?php selected( $severity, 'low' ); ?>><?php esc_html_e( 'Low', 'mcp-ai-wpoos' ); ?></option>
+						<option value="medium" <?php selected( $severity, 'medium' ); ?>><?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></option>
+						<option value="high" <?php selected( $severity, 'high' ); ?>><?php esc_html_e( 'High', 'mcp-ai-wpoos' ); ?></option>
+						<option value="critical" <?php selected( $severity, 'critical' ); ?>><?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?></option>
 					</select>
 				</td>
 			</tr>
 			<tr>
-				<th><label for="root_cause"><?php esc_html_e( 'Root Cause Analysis', 'wp-mcp-ai' ); ?></label></th>
+				<th><label for="root_cause"><?php esc_html_e( 'Root Cause Analysis', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<textarea id="root_cause" name="root_cause" rows="4" class="large-text"><?php echo esc_textarea( $root_cause ); ?></textarea>
-					<p class="description"><?php esc_html_e( 'Underlying cause of the incident', 'wp-mcp-ai' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Underlying cause of the incident', 'mcp-ai-wpoos' ); ?></p>
 				</td>
 			</tr>
 			<tr>
-				<th><label for="corrective_action"><?php esc_html_e( 'Corrective Actions', 'wp-mcp-ai' ); ?></label></th>
+				<th><label for="corrective_action"><?php esc_html_e( 'Corrective Actions', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<textarea id="corrective_action" name="corrective_action" rows="4" class="large-text"><?php echo esc_textarea( $corrective_action ); ?></textarea>
-					<p class="description"><?php esc_html_e( 'Actions taken to resolve the incident', 'wp-mcp-ai' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Actions taken to resolve the incident', 'mcp-ai-wpoos' ); ?></p>
 				</td>
 			</tr>
 			<tr>
-				<th><label for="preventive_action"><?php esc_html_e( 'Preventive Actions', 'wp-mcp-ai' ); ?></label></th>
+				<th><label for="preventive_action"><?php esc_html_e( 'Preventive Actions', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<textarea id="preventive_action" name="preventive_action" rows="4" class="large-text"><?php echo esc_textarea( $preventive_action ); ?></textarea>
-					<p class="description"><?php esc_html_e( 'Actions to prevent recurrence', 'wp-mcp-ai' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Actions to prevent recurrence', 'mcp-ai-wpoos' ); ?></p>
 				</td>
 			</tr>
 		</table>

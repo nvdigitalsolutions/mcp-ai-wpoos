@@ -31,14 +31,14 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Vectorize Image', 'wp-mcp-ai' );
+		return __( 'Vectorize Image', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Convert a raster image (PNG, JPEG, WebP, GIF) to SVG vector format with configurable quality settings.', 'wp-mcp-ai' );
+		return __( 'Convert a raster image (PNG, JPEG, WebP, GIF) to SVG vector format with configurable quality settings.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -52,33 +52,33 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 				array(
 					'color_mode'      => array(
 						'type'        => 'string',
-						'description' => __( 'Color mode for vectorization.', 'wp-mcp-ai' ),
+						'description' => __( 'Color mode for vectorization.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'color', 'binary' ),
 						'default'     => 'color',
 					),
 					'color_precision' => array(
 						'type'        => 'integer',
-						'description' => __( 'Color quantization precision (1-8). Higher values preserve more colors but create larger files.', 'wp-mcp-ai' ),
+						'description' => __( 'Color quantization precision (1-8). Higher values preserve more colors but create larger files.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 8,
 						'default'     => 6,
 					),
 					'filter_speckle'  => array(
 						'type'        => 'integer',
-						'description' => __( 'Filter out speckles of this size in pixels. Higher values remove more noise.', 'wp-mcp-ai' ),
+						'description' => __( 'Filter out speckles of this size in pixels. Higher values remove more noise.', 'mcp-ai-wpoos' ),
 						'minimum'     => 0,
 						'maximum'     => 100,
 						'default'     => 4,
 					),
 					'mode'            => array(
 						'type'        => 'string',
-						'description' => __( 'Path simplification mode. Spline creates smooth curves, polygon creates straight lines.', 'wp-mcp-ai' ),
+						'description' => __( 'Path simplification mode. Spline creates smooth curves, polygon creates straight lines.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'spline', 'polygon', 'none' ),
 						'default'     => 'spline',
 					),
 					'hierarchical'    => array(
 						'type'        => 'string',
-						'description' => __( 'Layer stacking mode. Stacked layers overlap, cutout layers have holes.', 'wp-mcp-ai' ),
+						'description' => __( 'Layer stacking mode. Stacked layers overlap, cutout layers have holes.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'stacked', 'cutout' ),
 						'default'     => 'stacked',
 					),
@@ -115,22 +115,22 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to vectorize images.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to vectorize images.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id && ! user_can( $user_id, 'upload_files' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check if Node.js is available.
 		if ( ! $this->is_nodejs_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_nodejs_required',
-				__( 'Node.js is required for image vectorization but was not found on the system.', 'wp-mcp-ai' )
+				__( 'Node.js is required for image vectorization but was not found on the system.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -153,7 +153,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 		$temp_output = wp_tempnam( 'vectorized-' );
 		if ( ! $temp_output ) {
 			$this->cleanup_temp_file( $temp_input );
-			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary output file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary output file.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Add .svg extension to output file.
@@ -199,7 +199,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 			$this->cleanup_temp_file( $temp_output );
 			return new WP_Error(
 				'wp_mcp_ai_vectorization_failed',
-				isset( $result['error'] ) ? $result['error'] : __( 'Vectorization failed.', 'wp-mcp-ai' )
+				isset( $result['error'] ) ? $result['error'] : __( 'Vectorization failed.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -207,7 +207,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 		$svg_data = file_get_contents( $temp_output );
 		if ( false === $svg_data || '' === $svg_data ) {
 			$this->cleanup_temp_file( $temp_output );
-			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Cleanup temporary output file.
@@ -235,7 +235,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 			'options'        => $options,
 			'text'           => sprintf(
 				/* translators: 1: attachment ID, 2: file name */
-				__( 'Successfully vectorized image to SVG format. Attachment ID: %1$d, File: %2$s', 'wp-mcp-ai' ),
+				__( 'Successfully vectorized image to SVG format. Attachment ID: %1$d, File: %2$s', 'mcp-ai-wpoos' ),
 				$storage['attachment_id'],
 				$storage['file_name']
 			),
@@ -262,7 +262,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 	protected function save_to_temp_file( $image_editor ) {
 		$temp_file = wp_tempnam( 'vectorize-input-' );
 		if ( ! $temp_file ) {
-			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary file.', 'mcp-ai-wpoos' ) );
 		}
 
 		$result = $image_editor->save( $temp_file );
@@ -278,7 +278,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 		// Verify the file was actually saved.
 		if ( ! file_exists( $saved_path ) ) {
 			$this->cleanup_temp_file( $temp_file );
-			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to save temporary file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to save temporary file.', 'mcp-ai-wpoos' ) );
 		}
 
 		return $saved_path;
@@ -311,19 +311,19 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 		$upload = wp_upload_bits( $file_name, null, $svg_data );
 
 		if ( ! empty( $upload['error'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'wp-mcp-ai' ), array( 'error' => $upload['error'] ) );
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'mcp-ai-wpoos' ), array( 'error' => $upload['error'] ) );
 		}
 
 		$file_path = isset( $upload['file'] ) ? $upload['file'] : '';
 
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to write SVG file to disk.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to write SVG file to disk.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Create attachment.
 		$attachment = array(
 			'post_mime_type' => 'image/svg+xml',
-			'post_title'     => sanitize_text_field( __( 'Vectorized Image', 'wp-mcp-ai' ) ),
+			'post_title'     => sanitize_text_field( __( 'Vectorized Image', 'mcp-ai-wpoos' ) ),
 			'post_content'   => '',
 			'post_status'    => 'inherit',
 		);
@@ -336,7 +336,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 
 		if ( is_wp_error( $attachment_id ) ) {
 			wp_delete_file( $file_path );
-			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'wp-mcp-ai' ), array( 'error' => $attachment_id ) );
+			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'mcp-ai-wpoos' ), array( 'error' => $attachment_id ) );
 		}
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;

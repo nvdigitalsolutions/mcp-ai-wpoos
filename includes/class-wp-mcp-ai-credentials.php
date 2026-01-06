@@ -97,7 +97,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 			$user_id      = absint( $user_id );
 
 			if ( ! self::is_valid_assistant( $assistant_id ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_assistant', __( 'Unable to issue a credential for the requested assistant.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_assistant', __( 'Unable to issue a credential for the requested assistant.', 'mcp-ai-wpoos' ) );
 			}
 
 			$credentials = self::get_credentials( $assistant_id );
@@ -150,11 +150,11 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 			$user_id       = absint( $user_id );
 
 			if ( ! self::is_valid_assistant( $assistant_id ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_assistant', __( 'Unable to revoke the credential for the requested assistant.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_assistant', __( 'Unable to revoke the credential for the requested assistant.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( '' === $credential_id ) {
-				return new WP_Error( 'wp_mcp_ai_unknown_credential', __( 'The requested credential could not be found.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_unknown_credential', __( 'The requested credential could not be found.', 'mcp-ai-wpoos' ) );
 			}
 
 			$credentials = self::get_credentials( $assistant_id );
@@ -165,7 +165,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 				}
 
 				if ( ! empty( $credential['revoked_at'] ) ) {
-					return new WP_Error( 'wp_mcp_ai_credential_already_revoked', __( 'The credential has already been revoked.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_credential_already_revoked', __( 'The credential has already been revoked.', 'mcp-ai-wpoos' ) );
 				}
 
 				$credentials[ $index ]['revoked_at'] = current_time( 'mysql', true );
@@ -186,7 +186,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 				return $credentials[ $index ];
 			}
 
-			return new WP_Error( 'wp_mcp_ai_unknown_credential', __( 'The requested credential could not be found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_unknown_credential', __( 'The requested credential could not be found.', 'mcp-ai-wpoos' ) );
 		}
 
 		/**
@@ -203,11 +203,11 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 			$user_id       = absint( $user_id );
 
 			if ( ! self::is_valid_assistant( $assistant_id ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_assistant', __( 'Unable to delete the credential for the requested assistant.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_assistant', __( 'Unable to delete the credential for the requested assistant.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( '' === $credential_id ) {
-				return new WP_Error( 'wp_mcp_ai_unknown_credential', __( 'The requested credential could not be found.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_unknown_credential', __( 'The requested credential could not be found.', 'mcp-ai-wpoos' ) );
 			}
 
 			$credentials = self::get_credentials( $assistant_id );
@@ -236,7 +236,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 				return $deleted;
 			}
 
-			return new WP_Error( 'wp_mcp_ai_unknown_credential', __( 'The requested credential could not be found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_unknown_credential', __( 'The requested credential could not be found.', 'mcp-ai-wpoos' ) );
 		}
 
 		/**
@@ -249,7 +249,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 		public static function validate_token( $token, $assistant_hint = null ) {
 			$parsed = self::parse_token( $token );
 			if ( null === $parsed ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_token', __( 'The provided credential token is invalid.', 'wp-mcp-ai' ), array( 'status' => 401 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_token', __( 'The provided credential token is invalid.', 'mcp-ai-wpoos' ), array( 'status' => 401 ) );
 			}
 
 			list( $credential_id, $secret ) = $parsed;
@@ -268,7 +268,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 			$assistant_ids = array_values( array_unique( array_filter( $assistant_ids ) ) );
 
 			if ( empty( $assistant_ids ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_token', __( 'The provided credential token is invalid.', 'wp-mcp-ai' ), array( 'status' => 401 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_token', __( 'The provided credential token is invalid.', 'mcp-ai-wpoos' ), array( 'status' => 401 ) );
 			}
 
 			foreach ( $assistant_ids as $assistant_id ) {
@@ -279,7 +279,7 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 					}
 
 					if ( ! empty( $credential['revoked_at'] ) ) {
-						return new WP_Error( 'wp_mcp_ai_revoked_token', __( 'This credential has been revoked.', 'wp-mcp-ai' ), array( 'status' => 401 ) );
+						return new WP_Error( 'wp_mcp_ai_revoked_token', __( 'This credential has been revoked.', 'mcp-ai-wpoos' ), array( 'status' => 401 ) );
 					}
 
 					if ( wp_check_password( $secret, $credential['hash'] ) ) {
@@ -291,11 +291,11 @@ if ( ! class_exists( 'WP_MCP_AI_Credentials' ) ) {
 						);
 					}
 
-					return new WP_Error( 'wp_mcp_ai_invalid_token', __( 'The provided credential token is invalid.', 'wp-mcp-ai' ), array( 'status' => 401 ) );
+					return new WP_Error( 'wp_mcp_ai_invalid_token', __( 'The provided credential token is invalid.', 'mcp-ai-wpoos' ), array( 'status' => 401 ) );
 				}
 			}
 
-			return new WP_Error( 'wp_mcp_ai_invalid_token', __( 'The provided credential token is invalid.', 'wp-mcp-ai' ), array( 'status' => 401 ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_token', __( 'The provided credential token is invalid.', 'mcp-ai-wpoos' ), array( 'status' => 401 ) );
 		}
 
 		/**

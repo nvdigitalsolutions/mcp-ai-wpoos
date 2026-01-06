@@ -44,7 +44,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 	 * @return string Explanation message.
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Schedule Notify.lk SMS tool is disabled because the notifylk/notify-php package is not installed.', 'wp-mcp-ai' );
+		return __( 'The Schedule Notify.lk SMS tool is disabled because the notifylk/notify-php package is not installed.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -58,14 +58,14 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Schedule Notify.lk SMS', 'wp-mcp-ai' );
+		return __( 'Schedule Notify.lk SMS', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Schedules an SMS through Notify.lk to be sent at a future time using the official PHP SDK.', 'wp-mcp-ai' );
+		return __( 'Schedules an SMS through Notify.lk to be sent at a future time using the official PHP SDK.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -77,55 +77,55 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'notify_user_id'  => array(
 					'type'        => 'string',
-					'description' => __( 'Notify.lk API user ID.', 'wp-mcp-ai' ),
+					'description' => __( 'Notify.lk API user ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'notify_api_key'  => array(
 					'type'        => 'string',
-					'description' => __( 'Notify.lk API key.', 'wp-mcp-ai' ),
+					'description' => __( 'Notify.lk API key.', 'mcp-ai-wpoos-pro' ),
 				),
 				'sender_id'       => array(
 					'type'        => 'string',
-					'description' => __( 'Sender ID that will appear on the SMS.', 'wp-mcp-ai' ),
+					'description' => __( 'Sender ID that will appear on the SMS.', 'mcp-ai-wpoos-pro' ),
 				),
 				'recipient'       => array(
 					'type'        => 'string',
-					'description' => __( 'Phone number of the recipient in international format (e.g. 9471XXXXXXX).', 'wp-mcp-ai' ),
+					'description' => __( 'Phone number of the recipient in international format (e.g. 9471XXXXXXX).', 'mcp-ai-wpoos-pro' ),
 				),
 				'message'         => array(
 					'type'        => 'string',
-					'description' => __( 'Message body to deliver to the recipient.', 'wp-mcp-ai' ),
+					'description' => __( 'Message body to deliver to the recipient.', 'mcp-ai-wpoos-pro' ),
 				),
 				'schedule_time'   => array(
 					'type'        => 'string',
-					'description' => __( 'Future time when the SMS should be sent. Accepts ISO 8601 or natural language such as "2024-07-01 14:30".', 'wp-mcp-ai' ),
+					'description' => __( 'Future time when the SMS should be sent. Accepts ISO 8601 or natural language such as "2024-07-01 14:30".', 'mcp-ai-wpoos-pro' ),
 				),
 				'timezone'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional timezone identifier for the schedule time (defaults to the site timezone).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional timezone identifier for the schedule time (defaults to the site timezone).', 'mcp-ai-wpoos-pro' ),
 				),
 				'contact_fname'   => array(
 					'type'        => 'string',
-					'description' => __( 'Optional first name saved alongside the contact in Notify.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional first name saved alongside the contact in Notify.', 'mcp-ai-wpoos-pro' ),
 				),
 				'contact_lname'   => array(
 					'type'        => 'string',
-					'description' => __( 'Optional last name saved alongside the contact in Notify.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional last name saved alongside the contact in Notify.', 'mcp-ai-wpoos-pro' ),
 				),
 				'contact_email'   => array(
 					'type'        => 'string',
-					'description' => __( 'Optional email saved alongside the contact in Notify.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional email saved alongside the contact in Notify.', 'mcp-ai-wpoos-pro' ),
 				),
 				'contact_address' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional address saved alongside the contact in Notify.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional address saved alongside the contact in Notify.', 'mcp-ai-wpoos-pro' ),
 				),
 				'contact_group'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Optional Notify.lk contact group ID.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional Notify.lk contact group ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'unicode'         => array(
 					'type'        => 'boolean',
-					'description' => __( 'Send the SMS as unicode to support extended characters.', 'wp-mcp-ai' ),
+					'description' => __( 'Send the SMS as unicode to support extended characters.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'notify_user_id', 'notify_api_key', 'sender_id', 'recipient', 'message', 'schedule_time' ),
@@ -147,11 +147,11 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 		$required_capability = apply_filters( 'wp_mcp_ai_schedule_notify_sms_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to schedule Notify.lk SMS messages.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to schedule Notify.lk SMS messages.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$notify_user_id = isset( $arguments['notify_user_id'] ) ? $this->sanitize_identifier( $arguments['notify_user_id'] ) : '';
@@ -161,7 +161,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 		$message        = isset( $arguments['message'] ) ? $this->sanitize_message( $arguments['message'] ) : '';
 
 		if ( '' === $notify_user_id || '' === $notify_api_key || '' === $sender_id || '' === $recipient || '' === $message ) {
-			return new WP_Error( 'wp_mcp_ai_missing_required_field', __( 'Notify.lk credentials, sender, recipient and message must all be provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_required_field', __( 'Notify.lk credentials, sender, recipient and message must all be provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$timezone_input = isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : '';
@@ -179,7 +179,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 		$timestamp = $schedule_time->getTimestamp();
 		$now       = time();
 		if ( $timestamp <= $now ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_schedule_time', __( 'The schedule time must be in the future.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_schedule_time', __( 'The schedule time must be in the future.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 		}
 
 		$payload = array(
@@ -221,12 +221,12 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 
 		$existing = wp_next_scheduled( self::CRON_HOOK, $schedule_args );
 		if ( false !== $existing && $existing === $timestamp ) {
-			return new WP_Error( 'wp_mcp_ai_duplicate_schedule', __( 'An identical Notify.lk SMS is already scheduled for that time.', 'wp-mcp-ai' ), array( 'status' => 409 ) );
+			return new WP_Error( 'wp_mcp_ai_duplicate_schedule', __( 'An identical Notify.lk SMS is already scheduled for that time.', 'mcp-ai-wpoos-pro' ), array( 'status' => 409 ) );
 		}
 
 		$scheduled = wp_schedule_single_event( $timestamp, self::CRON_HOOK, $schedule_args );
 		if ( ! $scheduled ) {
-			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule the Notify.lk SMS in WordPress cron.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule the Notify.lk SMS in WordPress cron.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$job_id = WP_MCP_AI_Cron_Manager::record_job( self::CRON_HOOK, $payload, 'single', $timestamp, $user_id );
@@ -364,7 +364,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 	 */
 	protected function resolve_schedule_time( $input, DateTimeZone $timezone ) {
 		if ( '' === $input ) {
-			return new WP_Error( 'wp_mcp_ai_missing_schedule_time', __( 'A schedule time must be provided.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_schedule_time', __( 'A schedule time must be provided.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 		}
 
 		try {
@@ -377,7 +377,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 		if ( false === $candidate ) {
 			$timestamp = strtotime( $input );
 			if ( false === $timestamp ) {
-				return new WP_Error( 'wp_mcp_ai_unparseable_schedule_time', __( 'The provided schedule time could not be parsed.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_unparseable_schedule_time', __( 'The provided schedule time could not be parsed.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 			}
 
 			$candidate = ( new DateTimeImmutable( '@' . $timestamp ) )->setTimezone( $timezone );
@@ -418,7 +418,7 @@ class WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface
 			return new DateTimeZone( $timezone_string );
 		} catch ( \Exception $exception ) {
 			// Intentionally empty - error handled elsewhere.
-			return new WP_Error( 'wp_mcp_ai_invalid_timezone', __( 'The supplied timezone is not valid.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_timezone', __( 'The supplied timezone is not valid.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 		}
 	}
 

@@ -270,12 +270,12 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			$file_path = get_attached_file( $attachment_id );
 
 			if ( ! $file_path || ! file_exists( $file_path ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The specified attachment does not exist.', 'wp-mcp-ai' ), array( 'status' => 404 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The specified attachment does not exist.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
 			}
 
 			// Check permissions.
 			if ( $user_id && ! current_user_can( 'read_post', $attachment_id ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to access this attachment.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to access this attachment.', 'mcp-ai-wpoos' ), array( 'status' => 403 ) );
 			}
 		} elseif ( '' !== $image_url ) {
 			// Try to resolve URL to attachment ID first.
@@ -308,24 +308,24 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			if ( null === $file_path ) {
 				// Validate URL before making HTTP request.
 				if ( ! wp_http_validate_url( $image_url ) ) {
-					return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'The provided image URL is not valid.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+					return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'The provided image URL is not valid.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 				}
 
 				$response = wp_remote_get( $image_url, array( 'timeout' => 30 ) );
 
 				if ( is_wp_error( $response ) ) {
-					return new WP_Error( 'wp_mcp_ai_download_error', __( 'Failed to download the source image.', 'wp-mcp-ai' ), array( 'error' => $response->get_error_message() ) );
+					return new WP_Error( 'wp_mcp_ai_download_error', __( 'Failed to download the source image.', 'mcp-ai-wpoos' ), array( 'error' => $response->get_error_message() ) );
 				}
 
 				$status_code = wp_remote_retrieve_response_code( $response );
 				if ( $status_code < 200 || $status_code >= 300 ) {
 					/* translators: %d: HTTP status code */
-					return new WP_Error( 'wp_mcp_ai_download_error', sprintf( __( 'Failed to download image. HTTP %d', 'wp-mcp-ai' ), $status_code ), array( 'status' => $status_code ) );
+					return new WP_Error( 'wp_mcp_ai_download_error', sprintf( __( 'Failed to download image. HTTP %d', 'mcp-ai-wpoos' ), $status_code ), array( 'status' => $status_code ) );
 				}
 
 				$image_contents = wp_remote_retrieve_body( $response );
 				if ( '' === $image_contents ) {
-					return new WP_Error( 'wp_mcp_ai_download_error', __( 'Downloaded image is empty.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_download_error', __( 'Downloaded image is empty.', 'mcp-ai-wpoos' ) );
 				}
 
 				// Create temporary file from downloaded content.
@@ -339,7 +339,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			$decoded_data = base64_decode( $image_data, true );
 
 			if ( false === $decoded_data || '' === $decoded_data ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_image_data', __( 'The provided image data is not valid base64.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_image_data', __( 'The provided image data is not valid base64.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
 			// Create temporary file.
@@ -348,7 +348,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 				return $file_path;
 			}
 		} else {
-			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'Either attachment_id, image_url, or image_data must be provided.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'Either attachment_id, image_url, or image_data must be provided.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		// Load image with WordPress image editor.
@@ -387,7 +387,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		$temp_file = wp_tempnam( $filename );
 
 		if ( false === file_put_contents( $temp_file, $data ) ) {
-			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary image file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary image file.', 'mcp-ai-wpoos' ) );
 		}
 
 		return $temp_file;
@@ -628,14 +628,14 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		$file_path = isset( $saved['path'] ) ? $saved['path'] : '';
 
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_save_error', __( 'Failed to save edited image.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_save_error', __( 'Failed to save edited image.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Read file contents to re-upload with proper name.
 		$image_data = file_get_contents( $file_path );
 		if ( false === $image_data ) {
 			wp_delete_file( $file_path );
-			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read saved image file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read saved image file.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Upload with proper filename.
@@ -651,7 +651,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		$final_file_path = isset( $upload['file'] ) ? $upload['file'] : '';
 
 		if ( '' === $final_file_path || ! file_exists( $final_file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_upload_error', __( 'Failed to upload edited image.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_upload_error', __( 'Failed to upload edited image.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Create attachment.
@@ -672,7 +672,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		if ( is_wp_error( $attachment_id ) ) {
 			wp_delete_file( $final_file_path );
-			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to create attachment.', 'wp-mcp-ai' ), array( 'error' => $attachment_id ) );
+			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to create attachment.', 'mcp-ai-wpoos' ), array( 'error' => $attachment_id ) );
 		}
 
 		// Generate attachment metadata.
@@ -713,12 +713,12 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			$source_title = get_the_title( $source_id );
 			if ( $source_title ) {
 				/* translators: 1: operation name, 2: source title */
-				return sprintf( __( '%1$s: %2$s', 'wp-mcp-ai' ), ucfirst( $operation ), $source_title );
+				return sprintf( __( '%1$s: %2$s', 'mcp-ai-wpoos' ), ucfirst( $operation ), $source_title );
 			}
 		}
 
 		/* translators: %s: operation name */
-		return sprintf( __( '%s Image', 'wp-mcp-ai' ), ucfirst( $operation ) );
+		return sprintf( __( '%s Image', 'mcp-ai-wpoos' ), ucfirst( $operation ) );
 	}
 
 	/**
@@ -826,21 +826,21 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'attachment_id' => array(
 				'type'        => 'integer',
-				'description' => __( 'WordPress attachment ID of the image to process.', 'wp-mcp-ai' ),
+				'description' => __( 'WordPress attachment ID of the image to process.', 'mcp-ai-wpoos' ),
 			),
 			'file_id'       => $this->get_file_id_parameter_schema(),
 			'url'           => $this->get_url_parameter_schema( 'image' ),
 			'image_url'     => array(
 				'type'        => 'string',
-				'description' => __( 'URL of the image to process (alternative to attachment_id). Legacy parameter, use url instead.', 'wp-mcp-ai' ),
+				'description' => __( 'URL of the image to process (alternative to attachment_id). Legacy parameter, use url instead.', 'mcp-ai-wpoos' ),
 			),
 			'image_data'    => array(
 				'type'        => 'string',
-				'description' => __( 'Base64-encoded image data to process (alternative to attachment_id, file_id, or url).', 'wp-mcp-ai' ),
+				'description' => __( 'Base64-encoded image data to process (alternative to attachment_id, file_id, or url).', 'mcp-ai-wpoos' ),
 			),
 			'file_name'     => array(
 				'type'        => 'string',
-				'description' => __( 'Optional base file name for the saved image attachment.', 'wp-mcp-ai' ),
+				'description' => __( 'Optional base file name for the saved image attachment.', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -854,7 +854,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'output_format' => array(
 				'type'        => 'string',
-				'description' => __( 'Output format for the processed image. Use "svg" to vectorize the result. Default is the same as source format.', 'wp-mcp-ai' ),
+				'description' => __( 'Output format for the processed image. Use "svg" to vectorize the result. Default is the same as source format.', 'mcp-ai-wpoos' ),
 				'enum'        => array( 'default', 'svg' ),
 				'default'     => 'default',
 			),
@@ -874,14 +874,14 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $this->is_nodejs_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_nodejs_required',
-				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'wp-mcp-ai' )
+				__( 'Node.js is required for SVG vectorization but was not found on the system.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		// Save the processed raster image to a temporary file.
 		$temp_input = wp_tempnam( 'svg-convert-input-' );
 		if ( ! $temp_input ) {
-			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary file for SVG conversion.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary file for SVG conversion.', 'mcp-ai-wpoos' ) );
 		}
 
 		$result = $image_editor->save( $temp_input );
@@ -896,14 +896,14 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		// Verify the file was saved.
 		if ( ! file_exists( $saved_path ) ) {
 			wp_delete_file( $temp_input );
-			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to save temporary file for SVG conversion.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to save temporary file for SVG conversion.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Prepare SVG output file.
 		$temp_output = wp_tempnam( 'svg-convert-output-' );
 		if ( ! $temp_output ) {
 			wp_delete_file( $saved_path );
-			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary SVG output file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_temp_file_error', __( 'Failed to create temporary SVG output file.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Add .svg extension.
@@ -949,7 +949,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			wp_delete_file( $temp_output );
 			return new WP_Error(
 				'wp_mcp_ai_vectorization_failed',
-				isset( $vectorize_result['error'] ) ? $vectorize_result['error'] : __( 'SVG vectorization failed.', 'wp-mcp-ai' )
+				isset( $vectorize_result['error'] ) ? $vectorize_result['error'] : __( 'SVG vectorization failed.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -957,7 +957,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		$svg_data = file_get_contents( $temp_output );
 		if ( false === $svg_data || '' === $svg_data ) {
 			wp_delete_file( $temp_output );
-			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_read_error', __( 'Failed to read vectorized SVG file.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Cleanup temporary output file.
@@ -1005,19 +1005,19 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		$upload = wp_upload_bits( $file_name, null, $svg_data );
 
 		if ( ! empty( $upload['error'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'wp-mcp-ai' ), array( 'error' => $upload['error'] ) );
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to save SVG file.', 'mcp-ai-wpoos' ), array( 'error' => $upload['error'] ) );
 		}
 
 		$file_path = isset( $upload['file'] ) ? $upload['file'] : '';
 
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to write SVG file to disk.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_upload_failed', __( 'Failed to write SVG file to disk.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Create attachment.
 		$attachment = array(
 			'post_mime_type' => 'image/svg+xml',
-			'post_title'     => sanitize_text_field( __( 'SVG Image', 'wp-mcp-ai' ) ),
+			'post_title'     => sanitize_text_field( __( 'SVG Image', 'mcp-ai-wpoos' ) ),
 			'post_content'   => '',
 			'post_status'    => 'inherit',
 		);
@@ -1030,7 +1030,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		if ( is_wp_error( $attachment_id ) ) {
 			wp_delete_file( $file_path );
-			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'wp-mcp-ai' ), array( 'error' => $attachment_id ) );
+			return new WP_Error( 'wp_mcp_ai_attachment_error', __( 'Failed to register SVG as an attachment.', 'mcp-ai-wpoos' ), array( 'error' => $attachment_id ) );
 		}
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;

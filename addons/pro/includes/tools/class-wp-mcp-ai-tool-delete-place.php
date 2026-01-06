@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_Delete_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Delete Place', 'wp-mcp-ai' );
+		return __( 'Delete Place', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Deletes a place permanently.', 'wp-mcp-ai' );
+		return __( 'Deletes a place permanently.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,7 +45,7 @@ class WP_MCP_AI_Tool_Delete_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'place_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Place ID to delete (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Place ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'place_id' ),
@@ -85,30 +85,30 @@ class WP_MCP_AI_Tool_Delete_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'delete_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete places.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete places.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$place_id = isset( $arguments['place_id'] ) ? absint( $arguments['place_id'] ) : 0;
 
 		if ( ! $place_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Place ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Place ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$place = get_post( $place_id );
 
 		if ( ! $place || 'mcp_ai_place' !== $place->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Place not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Place not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$result = wp_delete_post( $place_id, true );
 
 		if ( ! $result ) {
-			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete place.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete place.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return array(
 			'success' => true,
-			'message' => __( 'Place deleted successfully.', 'wp-mcp-ai' ),
+			'message' => __( 'Place deleted successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

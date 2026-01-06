@@ -38,7 +38,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 					'permission_callback' => array( $this, 'check_permissions' ),
 					'args'                => array(
 						'urls'                 => array(
-							'description' => __( 'Array of URLs to crawl.', 'wp-mcp-ai' ),
+							'description' => __( 'Array of URLs to crawl.', 'mcp-ai-wpoos' ),
 							'type'        => 'array',
 							'required'    => true,
 							'items'       => array(
@@ -47,13 +47,13 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 							),
 						),
 						'word_count_threshold' => array(
-							'description' => __( 'Minimum word count for content extraction.', 'wp-mcp-ai' ),
+							'description' => __( 'Minimum word count for content extraction.', 'mcp-ai-wpoos' ),
 							'type'        => 'integer',
 							'required'    => false,
 							'default'     => 50,
 						),
 						'extraction_strategy'  => array(
-							'description' => __( 'Strategy for content extraction.', 'wp-mcp-ai' ),
+							'description' => __( 'Strategy for content extraction.', 'mcp-ai-wpoos' ),
 							'type'        => 'string',
 							'required'    => false,
 							'enum'        => array( 'NoExtractionStrategy', 'JsonCssExtractionStrategy', 'LLMExtractionStrategy' ),
@@ -71,7 +71,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 					'permission_callback' => array( $this, 'check_permissions' ),
 					'args'                => array(
 						'task_id' => array(
-							'description'       => __( 'Unique identifier for the crawl task.', 'wp-mcp-ai' ),
+							'description'       => __( 'Unique identifier for the crawl task.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
@@ -95,7 +95,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 			if ( ! $user_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_crawl4ai_unauthenticated',
-					__( 'Authentication is required to use the Crawl4AI API.', 'wp-mcp-ai' ),
+					__( 'Authentication is required to use the Crawl4AI API.', 'mcp-ai-wpoos' ),
 					array( 'status' => rest_authorization_required_code() )
 				);
 			}
@@ -103,7 +103,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 			if ( ! user_can( $user_id, 'manage_options' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_crawl4ai_forbidden',
-					__( 'You do not have permission to run Crawl4AI jobs.', 'wp-mcp-ai' ),
+					__( 'You do not have permission to run Crawl4AI jobs.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -111,7 +111,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_crawl4ai_wrong_site',
-					__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+					__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -173,7 +173,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 			if ( '' === $task_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_crawl4ai_task_invalid',
-					__( 'A valid Crawl4AI task identifier is required.', 'wp-mcp-ai' ),
+					__( 'A valid Crawl4AI task identifier is required.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -183,7 +183,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 			if ( empty( $result ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_crawl4ai_task_not_found',
-					__( 'The requested Crawl4AI task could not be found.', 'wp-mcp-ai' ),
+					__( 'The requested Crawl4AI task could not be found.', 'mcp-ai-wpoos' ),
 					array( 'status' => 404 )
 				);
 			}

@@ -48,7 +48,7 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Credentials', 'wp-mcp-ai' );
+		return __( 'Credentials', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -80,35 +80,35 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 	 */
 	public function render( $post ) {
 		if ( ! $this->can_view() ) {
-			$this->render_permission_denied( __( 'You do not have permission to manage credentials.', 'wp-mcp-ai' ) );
+			$this->render_permission_denied( __( 'You do not have permission to manage credentials.', 'mcp-ai-wpoos' ) );
 			return;
 		}
 
 		$credentials = WP_MCP_AI_Credentials::get_credentials( $post->ID );
 
-		echo '<p>' . esc_html__( 'Issue tokens for remote integrations. Store the generated token securely; it will not be shown again.', 'wp-mcp-ai' ) . '</p>';
+		echo '<p>' . esc_html__( 'Issue tokens for remote integrations. Store the generated token securely; it will not be shown again.', 'mcp-ai-wpoos' ) . '</p>';
 
 		if ( empty( $credentials ) ) {
-			echo '<p>' . esc_html__( 'No credentials have been issued for this assistant.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p>' . esc_html__( 'No credentials have been issued for this assistant.', 'mcp-ai-wpoos' ) . '</p>';
 		} else {
 			echo '<table class="widefat striped">';
 			echo '<thead><tr>';
-			echo '<th>' . esc_html__( 'Credential ID', 'wp-mcp-ai' ) . '</th>';
-			echo '<th>' . esc_html__( 'Created', 'wp-mcp-ai' ) . '</th>';
-			echo '<th>' . esc_html__( 'Status', 'wp-mcp-ai' ) . '</th>';
-			echo '<th>' . esc_html__( 'Actions', 'wp-mcp-ai' ) . '</th>';
+			echo '<th>' . esc_html__( 'Credential ID', 'mcp-ai-wpoos' ) . '</th>';
+			echo '<th>' . esc_html__( 'Created', 'mcp-ai-wpoos' ) . '</th>';
+			echo '<th>' . esc_html__( 'Status', 'mcp-ai-wpoos' ) . '</th>';
+			echo '<th>' . esc_html__( 'Actions', 'mcp-ai-wpoos' ) . '</th>';
 			echo '</tr></thead>';
 			echo '<tbody>';
 
 			foreach ( $credentials as $credential ) {
-				$created_at   = ! empty( $credential['created_at'] ) ? get_date_from_gmt( $credential['created_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) : __( 'Unknown', 'wp-mcp-ai' );
-				$status       = __( 'Active', 'wp-mcp-ai' );
+				$created_at   = ! empty( $credential['created_at'] ) ? get_date_from_gmt( $credential['created_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) : __( 'Unknown', 'mcp-ai-wpoos' );
+				$status       = __( 'Active', 'mcp-ai-wpoos' );
 				$action_links = array();
 
 				if ( ! empty( $credential['revoked_at'] ) ) {
 					$status = sprintf(
 					/* translators: %s: revocation timestamp */
-						__( 'Revoked %s', 'wp-mcp-ai' ),
+						__( 'Revoked %s', 'mcp-ai-wpoos' ),
 						get_date_from_gmt( $credential['revoked_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
 					);
 				} else {
@@ -118,8 +118,8 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 						'wp_mcp_ai_revoke_credential',
 						'wp_mcp_ai_revoke_credential_' . $post->ID . '_' . $credential['id'],
 						$this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_credential_nonce', $credential['id'] ),
-						__( 'Revoke', 'wp-mcp-ai' ),
-						__( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' )
+						__( 'Revoke', 'mcp-ai-wpoos' ),
+						__( 'Revoke this credential? This action cannot be undone.', 'mcp-ai-wpoos' )
 					);
 				}
 
@@ -129,8 +129,8 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 					'wp_mcp_ai_delete_credential',
 					'wp_mcp_ai_delete_credential_' . $post->ID . '_' . $credential['id'],
 					$this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_credential_nonce', $credential['id'] ),
-					__( 'Delete', 'wp-mcp-ai' ),
-					__( 'Delete this credential? This action cannot be undone.', 'wp-mcp-ai' ),
+					__( 'Delete', 'mcp-ai-wpoos' ),
+					__( 'Delete this credential? This action cannot be undone.', 'mcp-ai-wpoos' ),
 					'button button-secondary delete'
 				);
 
@@ -163,7 +163,7 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 		printf(
 			'<p><a class="button button-secondary" href="%1$s">%2$s</a></p>',
 			esc_url( $issue_url ),
-			esc_html__( 'Generate Credential', 'wp-mcp-ai' )
+			esc_html__( 'Generate Credential', 'mcp-ai-wpoos' )
 		);
 
 		$this->print_credential_action_script();

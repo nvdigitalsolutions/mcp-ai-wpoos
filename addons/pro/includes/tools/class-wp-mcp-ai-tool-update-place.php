@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_Update_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Update Place', 'wp-mcp-ai' );
+		return __( 'Update Place', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Updates an existing place with new information. Only provided fields will be updated.', 'wp-mcp-ai' );
+		return __( 'Updates an existing place with new information. Only provided fields will be updated.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,64 +45,64 @@ class WP_MCP_AI_Tool_Update_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'place_id'            => array(
 					'type'        => 'integer',
-					'description' => __( 'Place ID to update (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Place ID to update (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'name'                => array(
 					'type'        => 'string',
-					'description' => __( 'New place name', 'wp-mcp-ai' ),
+					'description' => __( 'New place name', 'mcp-ai-wpoos-pro' ),
 				),
 				'description'         => array(
 					'type'        => 'string',
-					'description' => __( 'New description', 'wp-mcp-ai' ),
+					'description' => __( 'New description', 'mcp-ai-wpoos-pro' ),
 				),
 				'place_type'          => array(
 					'type'        => 'string',
-					'description' => __( 'New place type', 'wp-mcp-ai' ),
+					'description' => __( 'New place type', 'mcp-ai-wpoos-pro' ),
 				),
 				'address'             => array(
 					'type'        => 'string',
-					'description' => __( 'New address', 'wp-mcp-ai' ),
+					'description' => __( 'New address', 'mcp-ai-wpoos-pro' ),
 				),
 				'latitude'            => array(
 					'type'        => 'number',
-					'description' => __( 'New latitude', 'wp-mcp-ai' ),
+					'description' => __( 'New latitude', 'mcp-ai-wpoos-pro' ),
 				),
 				'longitude'           => array(
 					'type'        => 'number',
-					'description' => __( 'New longitude', 'wp-mcp-ai' ),
+					'description' => __( 'New longitude', 'mcp-ai-wpoos-pro' ),
 				),
 				'phone'               => array(
 					'type'        => 'string',
-					'description' => __( 'New phone number', 'wp-mcp-ai' ),
+					'description' => __( 'New phone number', 'mcp-ai-wpoos-pro' ),
 				),
 				'email'               => array(
 					'type'        => 'string',
-					'description' => __( 'New email', 'wp-mcp-ai' ),
+					'description' => __( 'New email', 'mcp-ai-wpoos-pro' ),
 				),
 				'website'             => array(
 					'type'        => 'string',
-					'description' => __( 'New website', 'wp-mcp-ai' ),
+					'description' => __( 'New website', 'mcp-ai-wpoos-pro' ),
 				),
 				'rating'              => array(
 					'type'        => 'number',
-					'description' => __( 'New rating', 'wp-mcp-ai' ),
+					'description' => __( 'New rating', 'mcp-ai-wpoos-pro' ),
 				),
 				'price_level'         => array(
 					'type'        => 'integer',
-					'description' => __( 'New price level', 'wp-mcp-ai' ),
+					'description' => __( 'New price level', 'mcp-ai-wpoos-pro' ),
 				),
 				'business_hours'      => array(
 					'type'        => 'object',
-					'description' => __( 'New business hours', 'wp-mcp-ai' ),
+					'description' => __( 'New business hours', 'mcp-ai-wpoos-pro' ),
 				),
 				'amenities'           => array(
 					'type'        => 'array',
-					'description' => __( 'New amenities list', 'wp-mcp-ai' ),
+					'description' => __( 'New amenities list', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
 				'tags'                => array(
 					'type'        => 'array',
-					'description' => __( 'New tags', 'wp-mcp-ai' ),
+					'description' => __( 'New tags', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
 			),
@@ -143,19 +143,19 @@ class WP_MCP_AI_Tool_Update_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update places.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update places.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$place_id = isset( $arguments['place_id'] ) ? absint( $arguments['place_id'] ) : 0;
 
 		if ( ! $place_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Place ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Place ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$place = get_post( $place_id );
 
 		if ( ! $place || 'mcp_ai_place' !== $place->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Place not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Place not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Update post fields if provided.
@@ -221,7 +221,7 @@ class WP_MCP_AI_Tool_Update_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		return array(
 			'success'  => true,
-			'message'  => __( 'Place updated successfully.', 'wp-mcp-ai' ),
+			'message'  => __( 'Place updated successfully.', 'mcp-ai-wpoos-pro' ),
 			'place_id' => $place_id,
 		);
 	}

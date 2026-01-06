@@ -31,14 +31,14 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Semantic Content Search', 'wp-mcp-ai' );
+		return __( 'Semantic Content Search', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Performs semantic search across WordPress content using vector embeddings. Use this to find similar posts/pages, provide content recommendations, answer questions from a knowledge base, or detect duplicate content.', 'wp-mcp-ai' );
+		return __( 'Performs semantic search across WordPress content using vector embeddings. Use this to find similar posts/pages, provide content recommendations, answer questions from a knowledge base, or detect duplicate content.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -50,33 +50,33 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'query'        => array(
 					'type'        => 'string',
-					'description' => __( 'Search query text to find semantically similar content.', 'wp-mcp-ai' ),
+					'description' => __( 'Search query text to find semantically similar content.', 'mcp-ai-wpoos' ),
 				),
 				'post_types'   => array(
 					'type'        => 'array',
 					'items'       => array(
 						'type' => 'string',
 					),
-					'description' => __( 'Array of post types to search. Defaults to ["post", "page"].', 'wp-mcp-ai' ),
+					'description' => __( 'Array of post types to search. Defaults to ["post", "page"].', 'mcp-ai-wpoos' ),
 					'default'     => array( 'post', 'page' ),
 				),
 				'limit'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of results to return.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of results to return.', 'mcp-ai-wpoos' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
 				'threshold'    => array(
 					'type'        => 'number',
-					'description' => __( 'Minimum similarity score threshold (0-1). Higher values return more similar results.', 'wp-mcp-ai' ),
+					'description' => __( 'Minimum similarity score threshold (0-1). Higher values return more similar results.', 'mcp-ai-wpoos' ),
 					'default'     => 0.7,
 					'minimum'     => 0,
 					'maximum'     => 1,
 				),
 				'include_meta' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Include post metadata in results.', 'wp-mcp-ai' ),
+					'description' => __( 'Include post metadata in results.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 			),
@@ -99,18 +99,18 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to perform semantic search.', 'wp-mcp-ai' )
+				__( 'You do not have permission to perform semantic search.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 		// Validate query.
 		if ( ! isset( $arguments['query'] ) || empty( $arguments['query'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_query',
-				__( 'Search query is required.', 'wp-mcp-ai' )
+				__( 'Search query is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -144,7 +144,7 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		if ( empty( $query_embedding ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_embedding_failed',
-				__( 'Failed to generate query embedding.', 'wp-mcp-ai' )
+				__( 'Failed to generate query embedding.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -233,7 +233,7 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			'threshold'             => $threshold,
 			'summary'               => sprintf(
 				/* translators: 1: number of results, 2: search query */
-				__( 'Found %1$d semantically similar results for "%2$s".', 'wp-mcp-ai' ),
+				__( 'Found %1$d semantically similar results for "%2$s".', 'mcp-ai-wpoos' ),
 				count( $results ),
 				$query
 			),

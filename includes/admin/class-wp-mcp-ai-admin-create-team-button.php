@@ -57,11 +57,11 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'nonce'       => wp_create_nonce( 'wp_mcp_ai_create_team' ),
 				'strings'     => array(
-					'creating'       => __( 'Creating team...', 'wp-mcp-ai' ),
-					'success'        => __( 'Team created successfully!', 'wp-mcp-ai' ),
-					'error'          => __( 'Error creating team. Please try again.', 'wp-mcp-ai' ),
-					'required'       => __( 'This field is required.', 'wp-mcp-ai' ),
-					'minProfessions' => __( 'Please select at least 2 professions to create a team.', 'wp-mcp-ai' ),
+					'creating'       => __( 'Creating team...', 'mcp-ai-wpoos' ),
+					'success'        => __( 'Team created successfully!', 'mcp-ai-wpoos' ),
+					'error'          => __( 'Error creating team. Please try again.', 'mcp-ai-wpoos' ),
+					'required'       => __( 'This field is required.', 'mcp-ai-wpoos' ),
+					'minProfessions' => __( 'Please select at least 2 professions to create a team.', 'mcp-ai-wpoos' ),
 				),
 				'professions' => self::get_professions(),
 			)
@@ -85,7 +85,7 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 		<script type="text/javascript">
 			jQuery(document).ready(function($) {
 				// Add button after the Create AI Assistant button.
-				var button = '<button type="button" class="page-title-action wp-mcp-ai-create-team-btn" id="wp-mcp-ai-open-create-team-modal"><?php echo esc_js( __( 'Create AI Team', 'wp-mcp-ai' ) ); ?></button>';
+				var button = '<button type="button" class="page-title-action wp-mcp-ai-create-team-btn" id="wp-mcp-ai-open-create-team-modal"><?php echo esc_js( __( 'Create AI Team', 'mcp-ai-wpoos' ) ); ?></button>';
 				$('#wp-mcp-ai-open-create-modal').after(button);
 			});
 		</script>
@@ -107,8 +107,8 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 			<div class="wp-mcp-ai-modal-overlay"></div>
 			<div class="wp-mcp-ai-modal-content">
 				<div class="wp-mcp-ai-modal-header">
-					<h2><?php esc_html_e( 'Create AI Team', 'wp-mcp-ai' ); ?></h2>
-					<button type="button" class="button button-secondary wp-mcp-ai-modal-close" aria-label="<?php esc_attr_e( 'Close', 'wp-mcp-ai' ); ?>">&times;</button>
+					<h2><?php esc_html_e( 'Create AI Team', 'mcp-ai-wpoos' ); ?></h2>
+					<button type="button" class="button button-secondary wp-mcp-ai-modal-close" aria-label="<?php esc_attr_e( 'Close', 'mcp-ai-wpoos' ); ?>">&times;</button>
 				</div>
 				<div class="wp-mcp-ai-modal-body">
 					<form id="wp-mcp-ai-create-team-form">
@@ -117,20 +117,20 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 								<tr>
 									<th scope="row">
 										<label for="team-title">
-											<?php esc_html_e( 'Team Name', 'wp-mcp-ai' ); ?> <span class="required">*</span>
+											<?php esc_html_e( 'Team Name', 'mcp-ai-wpoos' ); ?> <span class="required">*</span>
 										</label>
 									</th>
 									<td>
 										<input type="text" id="team-title" name="title" class="regular-text" required>
 										<p class="description">
-											<?php esc_html_e( 'E.g., "Jamaica Business Advisory Team", "International Trade Team"', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'E.g., "Jamaica Business Advisory Team", "International Trade Team"', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
 										<label for="team-professions">
-											<?php esc_html_e( 'Team Members (Professions)', 'wp-mcp-ai' ); ?> <span class="required">*</span>
+											<?php esc_html_e( 'Team Members (Professions)', 'mcp-ai-wpoos' ); ?> <span class="required">*</span>
 										</label>
 									</th>
 									<td>
@@ -140,66 +140,66 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 											<?php endforeach; ?>
 										</select>
 										<p class="description">
-											<?php esc_html_e( 'Select at least 2 professions to form your team. Hold Ctrl/Cmd to select multiple.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Select at least 2 professions to form your team. Hold Ctrl/Cmd to select multiple.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
 										<label for="team-description">
-											<?php esc_html_e( 'Team Description', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Team Description', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</th>
 									<td>
 										<textarea id="team-description" name="description" class="large-text" rows="4"></textarea>
 										<p class="description">
-											<?php esc_html_e( 'Optional: Describe the purpose and focus of this team.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Optional: Describe the purpose and focus of this team.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
 										<label for="team-provider">
-											<?php esc_html_e( 'AI Provider', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'AI Provider', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</th>
 									<td>
 										<select id="team-provider" name="provider" class="regular-text">
-											<option value=""><?php esc_html_e( '-- Use Profession Defaults --', 'wp-mcp-ai' ); ?></option>
-											<option value="openai"><?php esc_html_e( 'OpenAI', 'wp-mcp-ai' ); ?></option>
-											<option value="gemini"><?php esc_html_e( 'Google Gemini', 'wp-mcp-ai' ); ?></option>
-											<option value="anthropic"><?php esc_html_e( 'Anthropic Claude', 'wp-mcp-ai' ); ?></option>
-											<option value="ollama"><?php esc_html_e( 'Ollama (Local)', 'wp-mcp-ai' ); ?></option>
-											<option value="lm_studio"><?php esc_html_e( 'LM Studio', 'wp-mcp-ai' ); ?></option>
+											<option value=""><?php esc_html_e( '-- Use Profession Defaults --', 'mcp-ai-wpoos' ); ?></option>
+											<option value="openai"><?php esc_html_e( 'OpenAI', 'mcp-ai-wpoos' ); ?></option>
+											<option value="gemini"><?php esc_html_e( 'Google Gemini', 'mcp-ai-wpoos' ); ?></option>
+											<option value="anthropic"><?php esc_html_e( 'Anthropic Claude', 'mcp-ai-wpoos' ); ?></option>
+											<option value="ollama"><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></option>
+											<option value="lm_studio"><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></option>
 										</select>
 										<p class="description">
-											<?php esc_html_e( 'Override profession defaults with a single provider for all team members.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Override profession defaults with a single provider for all team members.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
 										<label for="team-model">
-											<?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</th>
 									<td>
-										<input type="text" id="team-model" name="model" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., gpt-4, gemini-pro', 'wp-mcp-ai' ); ?>">
+										<input type="text" id="team-model" name="model" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., gpt-4, gemini-pro', 'mcp-ai-wpoos' ); ?>">
 										<p class="description">
-											<?php esc_html_e( 'Override profession defaults with a single model for all team members.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Override profession defaults with a single model for all team members.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
 								<tr>
 									<th scope="row">
 										<label for="team-temperature">
-											<?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Temperature', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</th>
 									<td>
 										<input type="number" id="team-temperature" name="temperature" class="small-text" min="0" max="2" step="0.1" placeholder="0.7">
 										<p class="description">
-											<?php esc_html_e( '0-2. Lower is more deterministic, higher is more creative. Leave empty to use profession defaults.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( '0-2. Lower is more deterministic, higher is more creative. Leave empty to use profession defaults.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
@@ -209,10 +209,10 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 				</div>
 				<div class="wp-mcp-ai-modal-footer">
 					<button type="button" class="button button-link wp-mcp-ai-modal-close">
-						<?php esc_html_e( 'Cancel', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Cancel', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<button type="submit" form="wp-mcp-ai-create-team-form" class="button button-primary" id="wp-mcp-ai-submit-create-team">
-						<?php esc_html_e( 'Create Team', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Create Team', 'mcp-ai-wpoos' ); ?>
 					</button>
 				</div>
 			</div>
@@ -227,7 +227,7 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 		check_ajax_referer( 'wp_mcp_ai_create_team', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Get form data.
@@ -240,11 +240,11 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 
 		// Validate required fields.
 		if ( empty( $title ) ) {
-			wp_send_json_error( array( 'message' => __( 'Team name is required.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Team name is required.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		if ( empty( $professions ) || count( $professions ) < 2 ) {
-			wp_send_json_error( array( 'message' => __( 'Please select at least 2 professions to create a team.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Please select at least 2 professions to create a team.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Validate that all profession IDs exist and are valid.
@@ -256,7 +256,7 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 					array(
 						'message' => sprintf(
 							/* translators: %d: profession ID */
-							__( 'Invalid profession ID: %d', 'wp-mcp-ai' ),
+							__( 'Invalid profession ID: %d', 'mcp-ai-wpoos' ),
 							$profession_id
 						),
 					)
@@ -301,7 +301,7 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 				'edit_url' => get_edit_post_link( $team_id, 'raw' ),
 				'message'  => sprintf(
 					/* translators: %d: number of team members */
-					_n( 'Team created successfully with %d member!', 'Team created successfully with %d members!', count( $valid_professions ), 'wp-mcp-ai' ),
+					_n( 'Team created successfully with %d member!', 'Team created successfully with %d members!', count( $valid_professions ), 'mcp-ai-wpoos' ),
 					count( $valid_professions )
 				),
 			)

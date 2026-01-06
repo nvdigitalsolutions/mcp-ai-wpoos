@@ -27,14 +27,14 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Post', 'wp-mcp-ai' );
+		return __( 'Create Post', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new WordPress post. For updating existing posts, use save_post instead.', 'wp-mcp-ai' );
+		return __( 'Creates a new WordPress post. For updating existing posts, use save_post instead.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -46,44 +46,44 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'title'             => array(
 					'type'        => 'string',
-					'description' => __( 'Title of the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Title of the post.', 'mcp-ai-wpoos' ),
 				),
 				'content'           => array(
 					'type'        => 'string',
-					'description' => __( 'Main content for the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Main content for the post.', 'mcp-ai-wpoos' ),
 				),
 				'post_type'         => array(
 					'type'        => 'string',
-					'description' => __( 'The post type to create.', 'wp-mcp-ai' ),
+					'description' => __( 'The post type to create.', 'mcp-ai-wpoos' ),
 					'default'     => 'post',
 				),
 				'status'            => array(
 					'type'        => 'string',
-					'description' => __( 'The status to assign to the post (publish, draft, pending, or private).', 'wp-mcp-ai' ),
+					'description' => __( 'The status to assign to the post (publish, draft, pending, or private).', 'mcp-ai-wpoos' ),
 					'default'     => 'draft',
 					'enum'        => array( 'publish', 'draft', 'pending', 'private' ),
 				),
 				'user_id'           => array(
 					'type'        => 'integer',
-					'description' => __( 'The user ID to set as the post author. Defaults to current user.', 'wp-mcp-ai' ),
+					'description' => __( 'The user ID to set as the post author. Defaults to current user.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'excerpt'           => array(
 					'type'        => 'string',
-					'description' => __( 'Optional excerpt for the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional excerpt for the post.', 'mcp-ai-wpoos' ),
 				),
 				'slug'              => array(
 					'type'        => 'string',
-					'description' => __( 'Optional slug to use for the post permalink.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional slug to use for the post permalink.', 'mcp-ai-wpoos' ),
 				),
 				'featured_image_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Attachment ID to set as the featured image.', 'wp-mcp-ai' ),
+					'description' => __( 'Attachment ID to set as the featured image.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'categories'        => array(
 					'type'        => 'array',
-					'description' => __( 'Array of category IDs or names to assign to the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Array of category IDs or names to assign to the post.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -96,7 +96,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'tags'              => array(
 					'type'        => 'array',
-					'description' => __( 'Array of tag IDs or names to assign to the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Array of tag IDs or names to assign to the post.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -109,44 +109,44 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'page_template'     => array(
 					'type'        => 'string',
-					'description' => __( 'Page template filename (e.g., "template-full-width.php"). Only applies to pages and custom post types that support page templates.', 'wp-mcp-ai' ),
+					'description' => __( 'Page template filename (e.g., "template-full-width.php"). Only applies to pages and custom post types that support page templates.', 'mcp-ai-wpoos' ),
 				),
 				'post_parent'       => array(
 					'type'        => 'integer',
-					'description' => __( 'ID of the parent post for hierarchical post types (e.g., pages).', 'wp-mcp-ai' ),
+					'description' => __( 'ID of the parent post for hierarchical post types (e.g., pages).', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 				),
 				'menu_order'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Menu order for sorting hierarchical post types.', 'wp-mcp-ai' ),
+					'description' => __( 'Menu order for sorting hierarchical post types.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 				),
 				'comment_status'    => array(
 					'type'        => 'string',
-					'description' => __( 'Whether to allow comments (open or closed).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to allow comments (open or closed).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'open', 'closed' ),
 				),
 				'ping_status'       => array(
 					'type'        => 'string',
-					'description' => __( 'Whether to allow pingbacks and trackbacks (open or closed).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to allow pingbacks and trackbacks (open or closed).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'open', 'closed' ),
 				),
 				'meta_input'        => array(
 					'type'                 => 'object',
-					'description'          => __( 'Array of custom field key-value pairs to set as post meta.', 'wp-mcp-ai' ),
+					'description'          => __( 'Array of custom field key-value pairs to set as post meta.', 'mcp-ai-wpoos' ),
 					'additionalProperties' => true,
 				),
 				'elementor_data'    => array(
 					'type'        => 'object',
-					'description' => __( 'Elementor page builder data (requires Elementor plugin).', 'wp-mcp-ai' ),
+					'description' => __( 'Elementor page builder data (requires Elementor plugin).', 'mcp-ai-wpoos' ),
 					'properties'  => array(
 						'template_type' => array(
 							'type'        => 'string',
-							'description' => __( 'Elementor template type (page, header, footer, section, etc).', 'wp-mcp-ai' ),
+							'description' => __( 'Elementor template type (page, header, footer, section, etc).', 'mcp-ai-wpoos' ),
 						),
 						'edit_mode'     => array(
 							'type'        => 'string',
-							'description' => __( 'Elementor editor mode (builder or default).', 'wp-mcp-ai' ),
+							'description' => __( 'Elementor editor mode (builder or default).', 'mcp-ai-wpoos' ),
 							'enum'        => array( 'builder', 'default' ),
 						),
 					),
@@ -168,11 +168,11 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create posts.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create posts.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $current_user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate and sanitize inputs.
@@ -180,11 +180,11 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$content = isset( $arguments['content'] ) ? $arguments['content'] : '';
 
 		if ( '' === $title ) {
-			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Post title is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Post title is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( '' === $content ) {
-			return new WP_Error( 'wp_mcp_ai_missing_content', __( 'Post content is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_content', __( 'Post content is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
@@ -192,14 +192,14 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		// Validate post type exists.
 		$post_type_object = get_post_type_object( $post_type );
 		if ( ! $post_type_object ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not exist.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not exist.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check if user can create posts of this type.
 		$create_cap = isset( $post_type_object->cap->create_posts ) ? $post_type_object->cap->create_posts : $post_type_object->cap->edit_posts;
 
 		if ( ! user_can( $current_user_id, $create_cap ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create posts of this type.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create posts of this type.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Determine the author ID.
@@ -209,11 +209,11 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( $author_id !== $current_user_id ) {
 			$author = get_userdata( $author_id );
 			if ( ! $author ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_user', __( 'The specified user does not exist.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_user', __( 'The specified user does not exist.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( ! user_can( $author_id, 'edit_posts' ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_author', __( 'The specified user does not have permission to author posts.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_author', __( 'The specified user does not have permission to author posts.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
@@ -283,7 +283,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		$created_post = get_post( $result );
 		if ( ! $created_post ) {
-			return new WP_Error( 'wp_mcp_ai_unknown_error', __( 'The post was created but could not be retrieved.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_unknown_error', __( 'The post was created but could not be retrieved.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Handle post-creation operations.
@@ -297,7 +297,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$response = array(
 			'summary'   => sprintf(
 				/* translators: 1: post title, 2: post ID */
-				__( 'Post created: %1$s (ID: %2$d)', 'wp-mcp-ai' ),
+				__( 'Post created: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
 				get_the_title( $created_post ),
 				$created_post->ID
 			),

@@ -33,14 +33,14 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Image Variation', 'wp-mcp-ai' );
+		return __( 'Create Image Variation', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates variations of an existing image using OpenAI\'s DALL-E API. Useful for generating alternative versions of an image.', 'wp-mcp-ai' );
+		return __( 'Creates variations of an existing image using OpenAI\'s DALL-E API. Useful for generating alternative versions of an image.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -53,30 +53,30 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 				array(
 					'image_id'        => array(
 						'type'        => 'integer',
-						'description' => __( 'WordPress attachment ID of the source image.', 'wp-mcp-ai' ),
+						'description' => __( 'WordPress attachment ID of the source image.', 'mcp-ai-wpoos' ),
 					),
 					'model'           => array(
 						'type'        => 'string',
-						'description' => __( 'OpenAI model to use for generating variations.', 'wp-mcp-ai' ),
+						'description' => __( 'OpenAI model to use for generating variations.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'dall-e-2' ),
 						'default'     => 'dall-e-2',
 					),
 					'n'               => array(
 						'type'        => 'integer',
-						'description' => __( 'Number of variations to generate.', 'wp-mcp-ai' ),
+						'description' => __( 'Number of variations to generate.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 10,
 						'default'     => 1,
 					),
 					'size'            => array(
 						'type'        => 'string',
-						'description' => __( 'Size of the variation images.', 'wp-mcp-ai' ),
+						'description' => __( 'Size of the variation images.', 'mcp-ai-wpoos' ),
 						'enum'        => array( '256x256', '512x512', '1024x1024' ),
 						'default'     => '1024x1024',
 					),
 					'response_format' => array(
 						'type'        => 'string',
-						'description' => __( 'Format for the response.', 'wp-mcp-ai' ),
+						'description' => __( 'Format for the response.', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'url', 'b64_json' ),
 						'default'     => 'b64_json',
 					),
@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		if ( empty( $arguments['image_id'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The image_id parameter is required.', 'wp-mcp-ai' ),
+				'error'   => __( 'The image_id parameter is required.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -103,7 +103,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		if ( ! wp_attachment_is_image( $image_id ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The specified image_id is not a valid image attachment.', 'wp-mcp-ai' ),
+				'error'   => __( 'The specified image_id is not a valid image attachment.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -112,7 +112,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		if ( ! $image_path || ! file_exists( $image_path ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The image file could not be found.', 'wp-mcp-ai' ),
+				'error'   => __( 'The image file could not be found.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -180,7 +180,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		if ( empty( $saved_images ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Failed to save variation images.', 'wp-mcp-ai' ),
+				'error'   => __( 'Failed to save variation images.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -217,7 +217,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( empty( $image_content ) ) {
-			return new WP_Error( 'no_image_content', __( 'No image content received.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'no_image_content', __( 'No image content received.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Generate filename.
@@ -235,12 +235,12 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 		if ( false === file_put_contents( $file_path, $image_content ) ) {
-			return new WP_Error( 'save_failed', __( 'Failed to save image file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'save_failed', __( 'Failed to save image file.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get original image title for variations.
 		$original_title  = get_the_title( $original_id );
-		$variation_title = $original_title ? sprintf( __( '%s - Variation', 'wp-mcp-ai' ), $original_title ) : __( 'Image Variation', 'wp-mcp-ai' );
+		$variation_title = $original_title ? sprintf( __( '%s - Variation', 'mcp-ai-wpoos' ), $original_title ) : __( 'Image Variation', 'mcp-ai-wpoos' );
 
 		// Create attachment.
 		$attachment = array(

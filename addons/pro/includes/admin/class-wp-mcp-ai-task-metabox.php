@@ -34,7 +34,7 @@ class WP_MCP_AI_Task_Metabox {
 
 		add_meta_box(
 			'wp_mcp_ai_task_details',
-			__( 'Task Details', 'wp-mcp-ai' ),
+			__( 'Task Details', 'mcp-ai-wpoos-pro' ),
 			array( __CLASS__, 'render_metabox' ),
 			'mcp_ai_task',
 			'normal',
@@ -69,35 +69,35 @@ class WP_MCP_AI_Task_Metabox {
 		<div class="wp-mcp-ai-task-details">
 			<p>
 				<label for="task_status">
-					<strong><?php esc_html_e( 'Status:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Status:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<select id="task_status" name="task_status" class="widefat">
-					<option value="todo" <?php selected( $status, 'todo' ); ?>><?php esc_html_e( 'To Do', 'wp-mcp-ai' ); ?></option>
-					<option value="in-progress" <?php selected( $status, 'in-progress' ); ?>><?php esc_html_e( 'In Progress', 'wp-mcp-ai' ); ?></option>
-					<option value="review" <?php selected( $status, 'review' ); ?>><?php esc_html_e( 'Review', 'wp-mcp-ai' ); ?></option>
-					<option value="completed" <?php selected( $status, 'completed' ); ?>><?php esc_html_e( 'Completed', 'wp-mcp-ai' ); ?></option>
-					<option value="cancelled" <?php selected( $status, 'cancelled' ); ?>><?php esc_html_e( 'Cancelled', 'wp-mcp-ai' ); ?></option>
+					<option value="todo" <?php selected( $status, 'todo' ); ?>><?php esc_html_e( 'To Do', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="in-progress" <?php selected( $status, 'in-progress' ); ?>><?php esc_html_e( 'In Progress', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="review" <?php selected( $status, 'review' ); ?>><?php esc_html_e( 'Review', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="completed" <?php selected( $status, 'completed' ); ?>><?php esc_html_e( 'Completed', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="cancelled" <?php selected( $status, 'cancelled' ); ?>><?php esc_html_e( 'Cancelled', 'mcp-ai-wpoos-pro' ); ?></option>
 				</select>
 			</p>
 
 			<p>
 				<label for="task_priority">
-					<strong><?php esc_html_e( 'Priority:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Priority:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<select id="task_priority" name="task_priority" class="widefat">
-					<option value="low" <?php selected( $priority, 'low' ); ?>><?php esc_html_e( 'Low', 'wp-mcp-ai' ); ?></option>
-					<option value="medium" <?php selected( $priority, 'medium' ); ?>><?php esc_html_e( 'Medium', 'wp-mcp-ai' ); ?></option>
-					<option value="high" <?php selected( $priority, 'high' ); ?>><?php esc_html_e( 'High', 'wp-mcp-ai' ); ?></option>
-					<option value="urgent" <?php selected( $priority, 'urgent' ); ?>><?php esc_html_e( 'Urgent', 'wp-mcp-ai' ); ?></option>
+					<option value="low" <?php selected( $priority, 'low' ); ?>><?php esc_html_e( 'Low', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="medium" <?php selected( $priority, 'medium' ); ?>><?php esc_html_e( 'Medium', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="high" <?php selected( $priority, 'high' ); ?>><?php esc_html_e( 'High', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="urgent" <?php selected( $priority, 'urgent' ); ?>><?php esc_html_e( 'Urgent', 'mcp-ai-wpoos-pro' ); ?></option>
 				</select>
 			</p>
 
 			<p>
 				<label for="task_project_id">
-					<strong><?php esc_html_e( 'Project:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Project:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<select id="task_project_id" name="task_project_id" class="widefat">
-					<option value=""><?php esc_html_e( '-- No Project --', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '-- No Project --', 'mcp-ai-wpoos-pro' ); ?></option>
 					<?php
 					$projects = get_posts(
 						array(
@@ -122,7 +122,7 @@ class WP_MCP_AI_Task_Metabox {
 
 			<p>
 				<label for="task_due_date">
-					<strong><?php esc_html_e( 'Due Date:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Due Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<input 
 					type="date" 
@@ -135,10 +135,10 @@ class WP_MCP_AI_Task_Metabox {
 
 			<p>
 				<label for="task_assigned_to">
-					<strong><?php esc_html_e( 'Assigned To:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Assigned To:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
 				<select id="task_assigned_to" name="task_assigned_to" class="widefat">
-					<option value=""><?php esc_html_e( '-- Unassigned --', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '-- Unassigned --', 'mcp-ai-wpoos-pro' ); ?></option>
 					<?php
 					$users = get_users( array( 'orderby' => 'display_name' ) );
 					foreach ( $users as $user ) {

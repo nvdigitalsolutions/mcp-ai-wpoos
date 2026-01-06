@@ -33,17 +33,17 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			array(
 				'slug'   => 'bjs',
-				'name'   => __( "BJ's", 'wp-mcp-ai' ),
+				'name'   => __( "BJ's", 'mcp-ai-wpoos' ),
 				'domain' => 'bjs.com',
 			),
 			array(
 				'slug'   => 'sams-club',
-				'name'   => __( "Sam's Club", 'wp-mcp-ai' ),
+				'name'   => __( "Sam's Club", 'mcp-ai-wpoos' ),
 				'domain' => 'samsclub.com',
 			),
 			array(
 				'slug'   => 'costco',
-				'name'   => __( 'Costco', 'wp-mcp-ai' ),
+				'name'   => __( 'Costco', 'mcp-ai-wpoos' ),
 				'domain' => 'costco.com',
 			),
 		);
@@ -80,7 +80,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The wholesale club price lookup tool requires Crawl4AI web search or the local fallback to be enabled.', 'wp-mcp-ai' );
+		return __( 'The wholesale club price lookup tool requires Crawl4AI web search or the local fallback to be enabled.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -94,14 +94,14 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Wholesale Club Price Lookup', 'wp-mcp-ai' );
+		return __( 'Wholesale Club Price Lookup', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( "Uses Crawl4AI's web search endpoint to gather the latest pricing from BJ's, Sam's Club, and Costco.", 'wp-mcp-ai' );
+		return __( "Uses Crawl4AI's web search endpoint to gather the latest pricing from BJ's, Sam's Club, and Costco.", 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -113,11 +113,11 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'product'     => array(
 					'type'        => 'string',
-					'description' => __( 'Product name or keywords to search for.', 'wp-mcp-ai' ),
+					'description' => __( 'Product name or keywords to search for.', 'mcp-ai-wpoos' ),
 				),
 				'max_results' => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of web search results to inspect per store (1-10).', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of web search results to inspect per store (1-10).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 10,
 					'default'     => self::DEFAULT_MAX_RESULTS,
@@ -137,23 +137,23 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_unavailable', __( 'Crawl4AI web search is not available on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_unavailable', __( 'Crawl4AI web search is not available on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to search wholesale club pricing.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to search wholesale club pricing.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$product = isset( $arguments['product'] ) ? trim( sanitize_text_field( $arguments['product'] ) ) : '';
 
 		if ( '' === $product ) {
-			return new WP_Error( 'wp_mcp_ai_missing_product', __( 'A product name or keyword is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_product', __( 'A product name or keyword is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : self::DEFAULT_MAX_RESULTS;
@@ -250,7 +250,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 			$result['currency']  = 'USD';
 			$result['source']    = $price['source'];
 		} else {
-			$result['note'] = __( 'No price was detected in the top results.', 'wp-mcp-ai' );
+			$result['note'] = __( 'No price was detected in the top results.', 'mcp-ai-wpoos' );
 		}
 
 		return $result;
@@ -308,7 +308,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 			$result['currency']  = 'USD';
 			$result['source']    = $price['source'];
 		} else {
-			$result['note'] = __( 'No price was detected in the top results.', 'wp-mcp-ai' );
+			$result['note'] = __( 'No price was detected in the top results.', 'mcp-ai-wpoos' );
 		}
 
 		return $result;
@@ -348,7 +348,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 		$encoded  = wp_json_encode( $payload );
 
 		if ( false === $encoded ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_encoding_error', __( 'Failed to encode the Crawl4AI web search payload.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_encoding_error', __( 'Failed to encode the Crawl4AI web search payload.', 'mcp-ai-wpoos' ) );
 		}
 
 		$response = wp_remote_post(
@@ -363,7 +363,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_crawl4ai_http_error',
-				__( 'The Crawl4AI web search request failed.', 'wp-mcp-ai' ),
+				__( 'The Crawl4AI web search request failed.', 'mcp-ai-wpoos' ),
 				array( 'error' => $response )
 			);
 		}
@@ -373,7 +373,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error(
 				'wp_mcp_ai_crawl4ai_http_status',
 				/* translators: %d: HTTP status code */
-				sprintf( __( 'The Crawl4AI web search service returned HTTP %d.', 'wp-mcp-ai' ), $status ),
+				sprintf( __( 'The Crawl4AI web search service returned HTTP %d.', 'mcp-ai-wpoos' ), $status ),
 				array(
 					'status' => $status,
 					'body'   => wp_remote_retrieve_body( $response ),
@@ -387,7 +387,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		if ( isset( $decoded['error'] ) && ! empty( $decoded['error'] ) ) {
-			$message = is_string( $decoded['error'] ) ? $decoded['error'] : __( 'Crawl4AI web search reported an error.', 'wp-mcp-ai' );
+			$message = is_string( $decoded['error'] ) ? $decoded['error'] : __( 'Crawl4AI web search reported an error.', 'mcp-ai-wpoos' );
 
 			return new WP_Error( 'wp_mcp_ai_crawl4ai_api_error', $message, $decoded );
 		}
@@ -404,17 +404,17 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected function decode_response_body( $body ) {
 		if ( '' === trim( (string) $body ) ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_empty_response', __( 'Crawl4AI returned an empty response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_empty_response', __( 'Crawl4AI returned an empty response.', 'mcp-ai-wpoos' ) );
 		}
 
 		$decoded = json_decode( $body, true );
 
 		if ( null === $decoded && JSON_ERROR_NONE !== json_last_error() ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_bad_json', __( 'Crawl4AI returned malformed JSON.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_bad_json', __( 'Crawl4AI returned malformed JSON.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! is_array( $decoded ) ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_invalid_response', __( 'Crawl4AI returned an unexpected response structure.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_invalid_response', __( 'Crawl4AI returned an unexpected response structure.', 'mcp-ai-wpoos' ) );
 		}
 
 		return $decoded;
@@ -477,7 +477,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		if ( ! is_array( $result ) ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_local_invalid_response', __( 'The local web search returned an unexpected response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_local_invalid_response', __( 'The local web search returned an unexpected response.', 'mcp-ai-wpoos' ) );
 		}
 
 		$results = isset( $result['results'] ) && is_array( $result['results'] ) ? $result['results'] : array();

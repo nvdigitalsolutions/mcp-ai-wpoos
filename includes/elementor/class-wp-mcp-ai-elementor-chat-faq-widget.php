@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Chat FAQ', 'wp-mcp-ai' );
+		return __( 'NV oOS Chat FAQ', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,17 +61,17 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'FAQ Content', 'wp-mcp-ai' ),
+				'label' => __( 'FAQ Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'How the chat works', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'How the chat works', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -81,9 +81,9 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
 		$repeater->add_control(
 			'question',
 			array(
-				'label'       => __( 'Question', 'wp-mcp-ai' ),
+				'label'       => __( 'Question', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'What can I ask the assistant?', 'wp-mcp-ai' ),
+				'default'     => __( 'What can I ask the assistant?', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -91,9 +91,9 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
 		$repeater->add_control(
 			'answer',
 			array(
-				'label'   => __( 'Answer', 'wp-mcp-ai' ),
+				'label'   => __( 'Answer', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::TEXTAREA,
-				'default' => __( 'The assistant can draft plans, generate summaries, and connect to MCP tools you have enabled.', 'wp-mcp-ai' ),
+				'default' => __( 'The assistant can draft plans, generate summaries, and connect to MCP tools you have enabled.', 'mcp-ai-wpoos' ),
 				'rows'    => 4,
 			)
 		);
@@ -101,17 +101,17 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'faq_items',
 			array(
-				'label'       => __( 'FAQ Items', 'wp-mcp-ai' ),
+				'label'       => __( 'FAQ Items', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::REPEATER,
 				'fields'      => $repeater->get_controls(),
 				'default'     => array(
 					array(
-						'question' => __( 'Do I need to sign in to chat?', 'wp-mcp-ai' ),
-						'answer'   => __( 'Guests can start chatting when temporary tokens are allowed, or you can require authenticated users only.', 'wp-mcp-ai' ),
+						'question' => __( 'Do I need to sign in to chat?', 'mcp-ai-wpoos' ),
+						'answer'   => __( 'Guests can start chatting when temporary tokens are allowed, or you can require authenticated users only.', 'mcp-ai-wpoos' ),
 					),
 					array(
-						'question' => __( 'How do I provide more context?', 'wp-mcp-ai' ),
-						'answer'   => __( 'Upload files or paste notes directly into the conversation to give the assistant additional detail.', 'wp-mcp-ai' ),
+						'question' => __( 'How do I provide more context?', 'mcp-ai-wpoos' ),
+						'answer'   => __( 'Upload files or paste notes directly into the conversation to give the assistant additional detail.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'title_field' => '{{{ question }}}',

@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_Get_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Place', 'wp-mcp-ai' );
+		return __( 'Get Place', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves detailed information about a specific place.', 'wp-mcp-ai' );
+		return __( 'Retrieves detailed information about a specific place.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,7 +45,7 @@ class WP_MCP_AI_Tool_Get_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			'properties'           => array(
 				'place_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Place ID to retrieve (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Place ID to retrieve (required)', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'place_id' ),
@@ -85,19 +85,19 @@ class WP_MCP_AI_Tool_Get_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view places.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view places.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$place_id = isset( $arguments['place_id'] ) ? absint( $arguments['place_id'] ) : 0;
 
 		if ( ! $place_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Place ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Place ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$place = get_post( $place_id );
 
 		if ( ! $place || 'mcp_ai_place' !== $place->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Place not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Place not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$types = wp_get_object_terms( $place_id, 'mcp_ai_place_type', array( 'fields' => 'slugs' ) );

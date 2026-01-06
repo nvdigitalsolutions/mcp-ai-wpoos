@@ -185,7 +185,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 			return new WP_REST_Response(
 				array(
 					'error'   => 'analytics_unavailable',
-					'message' => __( 'Analytics engine is not available.', 'wp-mcp-ai' ),
+					'message' => __( 'Analytics engine is not available.', 'mcp-ai-wpoos' ),
 				),
 				500
 			);
@@ -217,7 +217,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 			return new WP_REST_Response(
 				array(
 					'error'   => 'analytics_unavailable',
-					'message' => __( 'Analytics engine is not available.', 'wp-mcp-ai' ),
+					'message' => __( 'Analytics engine is not available.', 'mcp-ai-wpoos' ),
 				),
 				500
 			);
@@ -252,7 +252,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 			return new WP_REST_Response(
 				array(
 					'error'   => 'invalid_params',
-					'message' => __( 'Exactly two user IDs are required for comparison.', 'wp-mcp-ai' ),
+					'message' => __( 'Exactly two user IDs are required for comparison.', 'mcp-ai-wpoos' ),
 				),
 				400
 			);
@@ -262,7 +262,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 			return new WP_REST_Response(
 				array(
 					'error'   => 'analytics_unavailable',
-					'message' => __( 'Analytics engine is not available.', 'wp-mcp-ai' ),
+					'message' => __( 'Analytics engine is not available.', 'mcp-ai-wpoos' ),
 				),
 				500
 			);
@@ -297,7 +297,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 			return new WP_REST_Response(
 				array(
 					'error'   => 'analytics_unavailable',
-					'message' => __( 'Analytics engine is not available.', 'wp-mcp-ai' ),
+					'message' => __( 'Analytics engine is not available.', 'mcp-ai-wpoos' ),
 				),
 				500
 			);
@@ -390,7 +390,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 			return new WP_REST_Response(
 				array(
 					'error'   => 'invalid_params',
-					'message' => __( 'Exactly two tool slugs are required for comparison.', 'wp-mcp-ai' ),
+					'message' => __( 'Exactly two tool slugs are required for comparison.', 'mcp-ai-wpoos' ),
 				),
 				400
 			);
@@ -400,7 +400,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 			return new WP_REST_Response(
 				array(
 					'error'   => 'analytics_unavailable',
-					'message' => __( 'Analytics engine is not available.', 'wp-mcp-ai' ),
+					'message' => __( 'Analytics engine is not available.', 'mcp-ai-wpoos' ),
 				),
 				500
 			);

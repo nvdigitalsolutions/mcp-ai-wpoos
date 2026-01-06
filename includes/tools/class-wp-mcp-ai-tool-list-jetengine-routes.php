@@ -35,7 +35,7 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The JetEngine REST routes tool is disabled because JetEngine is not active.', 'wp-mcp-ai' );
+		return __( 'The JetEngine REST routes tool is disabled because JetEngine is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List JetEngine REST Routes', 'wp-mcp-ai' );
+		return __( 'List JetEngine REST Routes', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns metadata about the REST API routes bundled with JetEngine.', 'wp-mcp-ai' );
+		return __( 'Returns metadata about the REST API routes bundled with JetEngine.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -68,7 +68,7 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'route' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional path fragment (for example, "get-item") to filter the results.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional path fragment (for example, "get-item") to filter the results.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'additionalProperties' => false,
@@ -84,17 +84,17 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_jetengine_missing', __( 'JetEngine is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_jetengine_missing', __( 'JetEngine is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetEngine REST API details.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetEngine REST API details.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 		$routes = $this->get_routes();
 
@@ -127,12 +127,12 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 	 */
 	private function format_routes_as_text( array $routes, $namespace ) {
 		if ( empty( $routes ) ) {
-			return __( 'No JetEngine REST routes found.', 'wp-mcp-ai' );
+			return __( 'No JetEngine REST routes found.', 'mcp-ai-wpoos' );
 		}
 
 		$lines = array();
 		/* translators: %s: API namespace */
-		$lines[] = sprintf( __( 'Available JetEngine REST API Routes (%s):', 'wp-mcp-ai' ), $namespace );
+		$lines[] = sprintf( __( 'Available JetEngine REST API Routes (%s):', 'mcp-ai-wpoos' ), $namespace );
 		$lines[] = '';
 
 		foreach ( $routes as $index => $route ) {
@@ -180,9 +180,9 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 				'methods'                 => array( 'GET' ),
 				'callback'                => 'Jet_Engine_Rest_Search_Posts::callback',
 				'permission_callback'     => 'Jet_Engine_Rest_Search_Posts::permission_callback',
-				'description'             => __( 'Searches published posts or taxonomy terms registered with JetEngine. Accepts optional "query", "ids", "post_type", "tax", "search_terms", and "query_context" parameters.', 'wp-mcp-ai' ),
+				'description'             => __( 'Searches published posts or taxonomy terms registered with JetEngine. Accepts optional "query", "ids", "post_type", "tax", "search_terms", and "query_context" parameters.', 'mcp-ai-wpoos' ),
 				'additional_requirements' => array(
-					__( 'Requires a user who can manage options.', 'wp-mcp-ai' ),
+					__( 'Requires a user who can manage options.', 'mcp-ai-wpoos' ),
 				),
 			),
 			array(
@@ -190,10 +190,10 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 				'methods'                 => array( 'POST' ),
 				'callback'                => 'Jet_Engine_Rest_Add_Item::callback',
 				'permission_callback'     => 'Jet_Engine_Rest_Add_Item::permission_callback',
-				'description'             => __( 'Creates a new JetEngine item through filters hooked to "jet-engine/rest-api/add-item/{instance}".', 'wp-mcp-ai' ),
+				'description'             => __( 'Creates a new JetEngine item through filters hooked to "jet-engine/rest-api/add-item/{instance}".', 'mcp-ai-wpoos' ),
 				'additional_requirements' => array(
-					__( 'Requests must provide an "instance" parameter so instance-specific filters can persist the item.', 'wp-mcp-ai' ),
-					__( 'Requires a user who can manage options.', 'wp-mcp-ai' ),
+					__( 'Requests must provide an "instance" parameter so instance-specific filters can persist the item.', 'mcp-ai-wpoos' ),
+					__( 'Requires a user who can manage options.', 'mcp-ai-wpoos' ),
 				),
 			),
 			array(
@@ -201,11 +201,11 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 				'methods'                 => array( 'POST' ),
 				'callback'                => 'Jet_Engine_Rest_Edit_Item::callback',
 				'permission_callback'     => 'Jet_Engine_Rest_Edit_Item::permission_callback',
-				'description'             => __( 'Updates an existing JetEngine item by forwarding data to "jet-engine/rest-api/edit-item/{instance}" filters.', 'wp-mcp-ai' ),
+				'description'             => __( 'Updates an existing JetEngine item by forwarding data to "jet-engine/rest-api/edit-item/{instance}" filters.', 'mcp-ai-wpoos' ),
 				'additional_requirements' => array(
-					__( 'Provide the item ID in the request URL.', 'wp-mcp-ai' ),
-					__( 'Requests must include an "instance" parameter.', 'wp-mcp-ai' ),
-					__( 'Requires a user who can manage options.', 'wp-mcp-ai' ),
+					__( 'Provide the item ID in the request URL.', 'mcp-ai-wpoos' ),
+					__( 'Requests must include an "instance" parameter.', 'mcp-ai-wpoos' ),
+					__( 'Requires a user who can manage options.', 'mcp-ai-wpoos' ),
 				),
 			),
 			array(
@@ -213,11 +213,11 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 				'methods'                 => array( 'DELETE' ),
 				'callback'                => 'Jet_Engine_Rest_Delete_Item::callback',
 				'permission_callback'     => 'Jet_Engine_Rest_Delete_Item::permission_callback',
-				'description'             => __( 'Deletes an existing JetEngine item through "jet-engine/rest-api/delete-item/{instance}" filters.', 'wp-mcp-ai' ),
+				'description'             => __( 'Deletes an existing JetEngine item through "jet-engine/rest-api/delete-item/{instance}" filters.', 'mcp-ai-wpoos' ),
 				'additional_requirements' => array(
-					__( 'Provide the item ID in the request URL.', 'wp-mcp-ai' ),
-					__( 'Requests must include an "instance" parameter.', 'wp-mcp-ai' ),
-					__( 'Requires a user who can manage options.', 'wp-mcp-ai' ),
+					__( 'Provide the item ID in the request URL.', 'mcp-ai-wpoos' ),
+					__( 'Requests must include an "instance" parameter.', 'mcp-ai-wpoos' ),
+					__( 'Requires a user who can manage options.', 'mcp-ai-wpoos' ),
 				),
 			),
 			array(
@@ -225,11 +225,11 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 				'methods'                 => array( 'GET' ),
 				'callback'                => 'Jet_Engine_Rest_Get_Item::callback',
 				'permission_callback'     => 'Jet_Engine_Rest_Get_Item::permission_callback',
-				'description'             => __( 'Fetches a single JetEngine item using the "jet-engine/rest-api/get-item/{instance}" filter.', 'wp-mcp-ai' ),
+				'description'             => __( 'Fetches a single JetEngine item using the "jet-engine/rest-api/get-item/{instance}" filter.', 'mcp-ai-wpoos' ),
 				'additional_requirements' => array(
-					__( 'Provide the item ID in the request URL.', 'wp-mcp-ai' ),
-					__( 'Requests must include an "instance" parameter.', 'wp-mcp-ai' ),
-					__( 'Requires a user who can manage options.', 'wp-mcp-ai' ),
+					__( 'Provide the item ID in the request URL.', 'mcp-ai-wpoos' ),
+					__( 'Requests must include an "instance" parameter.', 'mcp-ai-wpoos' ),
+					__( 'Requires a user who can manage options.', 'mcp-ai-wpoos' ),
 				),
 			),
 			array(
@@ -237,10 +237,10 @@ class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, 
 				'methods'                 => array( 'GET' ),
 				'callback'                => 'Jet_Engine_Rest_Get_Items::callback',
 				'permission_callback'     => 'Jet_Engine_Rest_Get_Items::permission_callback',
-				'description'             => __( 'Retrieves JetEngine items via "jet-engine/rest-api/get-items/{instance}" filters and normalises stored arguments.', 'wp-mcp-ai' ),
+				'description'             => __( 'Retrieves JetEngine items via "jet-engine/rest-api/get-items/{instance}" filters and normalises stored arguments.', 'mcp-ai-wpoos' ),
 				'additional_requirements' => array(
-					__( 'Requests must include an "instance" parameter.', 'wp-mcp-ai' ),
-					__( 'Requires a user who can manage options.', 'wp-mcp-ai' ),
+					__( 'Requests must include an "instance" parameter.', 'mcp-ai-wpoos' ),
+					__( 'Requires a user who can manage options.', 'mcp-ai-wpoos' ),
 				),
 			),
 		);

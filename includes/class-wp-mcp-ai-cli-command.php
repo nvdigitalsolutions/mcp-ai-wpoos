@@ -21,16 +21,16 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		function wp_mcp_ai_get_supported_plugins() {
 			$plugins = array(
 				'woocommerce' => array(
-					'name'        => __( 'WooCommerce', 'wp-mcp-ai' ),
+					'name'        => __( 'WooCommerce', 'mcp-ai-wpoos' ),
 					'slug'        => 'woocommerce',
 					'plugin_file' => 'woocommerce/woocommerce.php',
-					'description' => __( 'Enables WooCommerce aware NV oOS tools.', 'wp-mcp-ai' ),
+					'description' => __( 'Enables WooCommerce aware NV oOS tools.', 'mcp-ai-wpoos' ),
 				),
 				'jet-engine'  => array(
-					'name'        => __( 'JetEngine', 'wp-mcp-ai' ),
+					'name'        => __( 'JetEngine', 'mcp-ai-wpoos' ),
 					'slug'        => 'jet-engine',
 					'plugin_file' => 'jet-engine/jet-engine.php',
-					'description' => __( 'Unlocks JetEngine powered NV oOS tools.', 'wp-mcp-ai' ),
+					'description' => __( 'Unlocks JetEngine powered NV oOS tools.', 'mcp-ai-wpoos' ),
 				),
 			);
 
@@ -257,11 +257,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			public function remote( $args, $assoc_args ) {
 				// Remote tester may not be available in production builds.
 				if ( ! class_exists( 'WP_MCP_AI_Remote_Tester' ) ) {
-					WP_CLI::error( __( 'Remote tester utility is not available in this build.', 'wp-mcp-ai' ) );
+					WP_CLI::error( __( 'Remote tester utility is not available in this build.', 'mcp-ai-wpoos' ) );
 				}
 
 				if ( empty( $args ) || ! isset( $args[0] ) ) {
-					WP_CLI::error( __( 'Please provide the remote MCP REST base URL.', 'wp-mcp-ai' ) );
+					WP_CLI::error( __( 'Please provide the remote MCP REST base URL.', 'mcp-ai-wpoos' ) );
 				}
 
 				$base   = $args[0];
@@ -271,7 +271,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				$timeout     = absint( $timeout_arg );
 
 				if ( $timeout <= 0 ) {
-					WP_CLI::error( __( 'Timeout must be a positive integer.', 'wp-mcp-ai' ) );
+					WP_CLI::error( __( 'Timeout must be a positive integer.', 'mcp-ai-wpoos' ) );
 				}
 
 				$verify_flag = \WP_CLI\Utils\get_flag_value( $assoc_args, 'verify-ssl', true );
@@ -280,7 +280,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 					$parsed_verify = filter_var( $verify_flag, FILTER_VALIDATE_BOOLEAN, array( 'flags' => FILTER_NULL_ON_FAILURE ) );
 
 					if ( null === $parsed_verify ) {
-						WP_CLI::error( __( 'Invalid value for --verify-ssl. Use true or false.', 'wp-mcp-ai' ) );
+						WP_CLI::error( __( 'Invalid value for --verify-ssl. Use true or false.', 'mcp-ai-wpoos' ) );
 					}
 
 					$verify_ssl = $parsed_verify;
@@ -361,19 +361,19 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				if ( $result['success'] ) {
 					if ( $token_scope ) {
 						/* translators: %s: OAuth token scope */
-						WP_CLI::line( sprintf( __( 'Token scope: %s', 'wp-mcp-ai' ), $token_scope ) );
+						WP_CLI::line( sprintf( __( 'Token scope: %s', 'mcp-ai-wpoos' ), $token_scope ) );
 					}
 
 					if ( null !== $assistant_count ) {
 						WP_CLI::success(
 							sprintf(
 								/* translators: %d: number of assistants found */
-								_n( 'Remote MCP API reachable (%d assistant).', 'Remote MCP API reachable (%d assistants).', $assistant_count, 'wp-mcp-ai' ),
+								_n( 'Remote MCP API reachable (%d assistant).', 'Remote MCP API reachable (%d assistants).', $assistant_count, 'mcp-ai-wpoos' ),
 								$assistant_count
 							)
 						);
 					} else {
-						WP_CLI::success( __( 'Remote MCP API reachable.', 'wp-mcp-ai' ) );
+						WP_CLI::success( __( 'Remote MCP API reachable.', 'mcp-ai-wpoos' ) );
 					}
 
 					return;
@@ -382,11 +382,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				if ( ! empty( $rest_errors ) ) {
 					foreach ( array_unique( $rest_errors ) as $error_code ) {
 						/* translators: %s: REST API error code */
-						WP_CLI::warning( sprintf( __( 'REST error code: %s', 'wp-mcp-ai' ), $error_code ) );
+						WP_CLI::warning( sprintf( __( 'REST error code: %s', 'mcp-ai-wpoos' ), $error_code ) );
 					}
 				}
 
-				WP_CLI::error( __( 'Remote MCP API check failed.', 'wp-mcp-ai' ) );
+				WP_CLI::error( __( 'Remote MCP API check failed.', 'mcp-ai-wpoos' ) );
 			}
 		}
 	}
@@ -473,7 +473,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				$plugins = self::get_supported_plugins_with_status();
 
 				if ( empty( $plugins ) ) {
-					WP_CLI::warning( __( 'No supported plugins are registered.', 'wp-mcp-ai' ) );
+					WP_CLI::warning( __( 'No supported plugins are registered.', 'mcp-ai-wpoos' ) );
 					return;
 				}
 
@@ -516,7 +516,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 */
 			public function activate( $args, $assoc_args ) {
 				if ( empty( $args ) ) {
-					WP_CLI::error( __( 'Please provide a plugin slug.', 'wp-mcp-ai' ) );
+					WP_CLI::error( __( 'Please provide a plugin slug.', 'mcp-ai-wpoos' ) );
 				}
 
 				$slug   = $args[0];
@@ -524,7 +524,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				if ( ! $plugin ) {
 					/* translators: %s: plugin slug */
-					WP_CLI::error( sprintf( __( 'Unsupported plugin slug: %s', 'wp-mcp-ai' ), $slug ) );
+					WP_CLI::error( sprintf( __( 'Unsupported plugin slug: %s', 'mcp-ai-wpoos' ), $slug ) );
 				}
 
 				$network = \WP_CLI\Utils\get_flag_value( $assoc_args, 'network', false );
@@ -536,12 +536,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				if ( ! file_exists( $plugin_path ) ) {
 					/* translators: 1: plugin name, 2: plugin slug */
-					WP_CLI::error( sprintf( __( '%1$s is not installed. Install it with `wp plugin install %2$s`.', 'wp-mcp-ai' ), $plugin['name'], $plugin['slug'] ) );
+					WP_CLI::error( sprintf( __( '%1$s is not installed. Install it with `wp plugin install %2$s`.', 'mcp-ai-wpoos' ), $plugin['name'], $plugin['slug'] ) );
 				}
 
 				if ( is_plugin_active( $plugin_file ) ) {
 					/* translators: %s: plugin name */
-					WP_CLI::success( sprintf( __( '%s is already active.', 'wp-mcp-ai' ), $plugin['name'] ) );
+					WP_CLI::success( sprintf( __( '%s is already active.', 'mcp-ai-wpoos' ), $plugin['name'] ) );
 					return;
 				}
 
@@ -552,7 +552,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				}
 
 				/* translators: %s: plugin name */
-				WP_CLI::success( sprintf( __( '%s activated.', 'wp-mcp-ai' ), $plugin['name'] ) );
+				WP_CLI::success( sprintf( __( '%s activated.', 'mcp-ai-wpoos' ), $plugin['name'] ) );
 			}
 
 			/**
@@ -578,7 +578,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 */
 			public function deactivate( $args, $assoc_args ) {
 				if ( empty( $args ) ) {
-					WP_CLI::error( __( 'Please provide a plugin slug.', 'wp-mcp-ai' ) );
+					WP_CLI::error( __( 'Please provide a plugin slug.', 'mcp-ai-wpoos' ) );
 				}
 
 				$slug   = $args[0];
@@ -586,7 +586,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				if ( ! $plugin ) {
 					/* translators: %s: plugin slug */
-					WP_CLI::error( sprintf( __( 'Unsupported plugin slug: %s', 'wp-mcp-ai' ), $slug ) );
+					WP_CLI::error( sprintf( __( 'Unsupported plugin slug: %s', 'mcp-ai-wpoos' ), $slug ) );
 				}
 
 				$network = \WP_CLI\Utils\get_flag_value( $assoc_args, 'network', false );
@@ -597,7 +597,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				if ( ! is_plugin_active( $plugin_file ) && ! is_plugin_active_for_network( $plugin_file ) ) {
 					/* translators: %s: plugin name */
-					WP_CLI::success( sprintf( __( '%s is already inactive.', 'wp-mcp-ai' ), $plugin['name'] ) );
+					WP_CLI::success( sprintf( __( '%s is already inactive.', 'mcp-ai-wpoos' ), $plugin['name'] ) );
 					return;
 				}
 
@@ -605,11 +605,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				if ( is_plugin_active( $plugin_file ) || is_plugin_active_for_network( $plugin_file ) ) {
 					/* translators: %s: plugin name */
-					WP_CLI::error( sprintf( __( 'Failed to deactivate %s.', 'wp-mcp-ai' ), $plugin['name'] ) );
+					WP_CLI::error( sprintf( __( 'Failed to deactivate %s.', 'mcp-ai-wpoos' ), $plugin['name'] ) );
 				}
 
 				/* translators: %s: plugin name */
-				WP_CLI::success( sprintf( __( '%s deactivated.', 'wp-mcp-ai' ), $plugin['name'] ) );
+				WP_CLI::success( sprintf( __( '%s deactivated.', 'mcp-ai-wpoos' ), $plugin['name'] ) );
 			}
 
 			/**
@@ -1248,7 +1248,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 						WP_CLI::error(
 							sprintf(
 								/* translators: %d: assistant ID */
-								__( 'Assistant not found: %d', 'wp-mcp-ai' ),
+								__( 'Assistant not found: %d', 'mcp-ai-wpoos' ),
 								$assistant_id
 							)
 						);
@@ -1259,7 +1259,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 						WP_CLI::error(
 							sprintf(
 								/* translators: %d: assistant ID */
-								__( 'Assistant %d is not published.', 'wp-mcp-ai' ),
+								__( 'Assistant %d is not published.', 'mcp-ai-wpoos' ),
 								$assistant_id
 							)
 						);

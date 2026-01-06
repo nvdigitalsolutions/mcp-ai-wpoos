@@ -51,7 +51,7 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Performance Monitoring', 'wp-mcp-ai' );
+		return __( 'Performance Monitoring', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -72,7 +72,7 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Monitor plugin performance, run tests, and view diagnostics.', 'wp-mcp-ai' );
+		return __( 'Monitor plugin performance, run tests, and view diagnostics.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -98,7 +98,7 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 	 */
 	public function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Load performance reporter.
@@ -118,28 +118,28 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 
 		?>
 		<div class="wrap wp-mcp-ai-performance-section">
-			<h1><?php esc_html_e( 'Performance Monitoring', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'Performance Monitoring', 'mcp-ai-wpoos-pro' ); ?></h1>
 			<p class="description">
-				<?php esc_html_e( 'Monitor plugin performance, run diagnostic tests, and view historical trends.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Monitor plugin performance, run diagnostic tests, and view historical trends.', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
 
 			<!-- Overall Health Status -->
 			<div class="wp-mcp-ai-performance-dashboard">
-				<h2><?php esc_html_e( 'System Health', 'wp-mcp-ai' ); ?></h2>
+				<h2><?php esc_html_e( 'System Health', 'mcp-ai-wpoos-pro' ); ?></h2>
 				<?php $this->render_orchestration_health_status( $orchestration_health ); ?>
 
 				<!-- Summary Stats -->
 				<div class="performance-summary">
 					<div class="stat-card">
-						<h3><?php esc_html_e( 'Components', 'wp-mcp-ai' ); ?></h3>
+						<h3><?php esc_html_e( 'Components', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<div class="stat-value"><?php echo esc_html( $report['summary']['total_components'] ); ?></div>
 					</div>
 					<div class="stat-card">
-						<h3><?php esc_html_e( 'Alerts', 'wp-mcp-ai' ); ?></h3>
+						<h3><?php esc_html_e( 'Alerts', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<div class="stat-value"><?php echo esc_html( $report['summary']['total_alerts'] ); ?></div>
 					</div>
 					<div class="stat-card">
-						<h3><?php esc_html_e( 'Recommendations', 'wp-mcp-ai' ); ?></h3>
+						<h3><?php esc_html_e( 'Recommendations', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<div class="stat-value"><?php echo esc_html( $report['summary']['total_recommendations'] ); ?></div>
 					</div>
 				</div>
@@ -147,9 +147,9 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 
 			<!-- Test Execution Interface -->
 			<div class="wp-mcp-ai-test-execution">
-				<h2><?php esc_html_e( 'Run Performance Tests', 'wp-mcp-ai' ); ?></h2>
+				<h2><?php esc_html_e( 'Run Performance Tests', 'mcp-ai-wpoos-pro' ); ?></h2>
 				<p class="description">
-					<?php esc_html_e( 'Execute comprehensive performance tests to identify issues and measure improvements.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Execute comprehensive performance tests to identify issues and measure improvements.', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 
 				<?php
@@ -159,83 +159,83 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 					?>
 					<div class="notice notice-info inline">
 						<p>
-							<strong><?php esc_html_e( 'Test Mode: Lightweight Checks', 'wp-mcp-ai' ); ?></strong><br>
-							<?php esc_html_e( 'Running production-safe performance checks. These work on all hosting platforms including Cloudways.', 'wp-mcp-ai' ); ?>
+							<strong><?php esc_html_e( 'Test Mode: Lightweight Checks', 'mcp-ai-wpoos-pro' ); ?></strong><br>
+							<?php esc_html_e( 'Running production-safe performance checks. These work on all hosting platforms including Cloudways.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 						<p>
-							<strong><?php esc_html_e( 'Want Full PHPUnit Test Suites?', 'wp-mcp-ai' ); ?></strong><br>
-							<?php esc_html_e( 'For comprehensive testing with PHPUnit, you need to install development dependencies. This is recommended for local development environments only.', 'wp-mcp-ai' ); ?>
+							<strong><?php esc_html_e( 'Want Full PHPUnit Test Suites?', 'mcp-ai-wpoos-pro' ); ?></strong><br>
+							<?php esc_html_e( 'For comprehensive testing with PHPUnit, you need to install development dependencies. This is recommended for local development environments only.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 						<p>
 							<button type="button" class="button button-secondary" id="show-phpunit-instructions">
 								<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'How to Enable Full Tests', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'How to Enable Full Tests', 'mcp-ai-wpoos-pro' ); ?>
 							</button>
 						</p>
 						<div id="phpunit-instructions" style="display:none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-left: 4px solid #2271b1;">
-							<h4><?php esc_html_e( 'Install PHPUnit Test Suite', 'wp-mcp-ai' ); ?></h4>
-							<p><?php esc_html_e( 'Option 1: Via Composer (Local Development)', 'wp-mcp-ai' ); ?></p>
+							<h4><?php esc_html_e( 'Install PHPUnit Test Suite', 'mcp-ai-wpoos-pro' ); ?></h4>
+							<p><?php esc_html_e( 'Option 1: Via Composer (Local Development)', 'mcp-ai-wpoos-pro' ); ?></p>
 							<pre style="background: #23282d; color: #f0f0f1; padding: 10px; border-radius: 3px; overflow-x: auto;">cd <?php echo esc_html( WP_MCP_AI_PATH ); ?>
 
 composer install</pre>
-							<p><?php esc_html_e( 'Option 2: Download Pre-packaged Tests', 'wp-mcp-ai' ); ?></p>
+							<p><?php esc_html_e( 'Option 2: Download Pre-packaged Tests', 'mcp-ai-wpoos-pro' ); ?></p>
 							<p>
 								<a href="https://github.com/nvdigitalsolutions/wp-mcp-ai/releases" class="button" target="_blank">
 									<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
-									<?php esc_html_e( 'Download from GitHub Releases', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Download from GitHub Releases', 'mcp-ai-wpoos-pro' ); ?>
 								</a>
 								<span class="description" style="margin-left: 10px;">
-									<?php esc_html_e( '(~140 MB - includes PHPUnit test framework)', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( '(~140 MB - includes PHPUnit test framework)', 'mcp-ai-wpoos-pro' ); ?>
 								</span>
 							</p>
 							<p class="description">
-								<strong><?php esc_html_e( 'Note:', 'wp-mcp-ai' ); ?></strong>
-								<?php esc_html_e( 'PHPUnit is not recommended for production servers. The lightweight checks above are optimized for production use.', 'wp-mcp-ai' ); ?>
+								<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'PHPUnit is not recommended for production servers. The lightweight checks above are optimized for production use.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 						</div>
 					</div>
 				<?php else : ?>
 					<div class="notice notice-success inline">
 						<p>
-							<strong><?php esc_html_e( 'Test Mode: Full PHPUnit Suite', 'wp-mcp-ai' ); ?></strong><br>
-							<?php esc_html_e( 'PHPUnit is installed. Running comprehensive test suites with detailed assertions.', 'wp-mcp-ai' ); ?>
+							<strong><?php esc_html_e( 'Test Mode: Full PHPUnit Suite', 'mcp-ai-wpoos-pro' ); ?></strong><br>
+							<?php esc_html_e( 'PHPUnit is installed. Running comprehensive test suites with detailed assertions.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</div>
 				<?php endif; ?>
 
 				<div class="test-controls">
 					<button type="button" class="button button-primary" data-test-type="stress">
-						<?php esc_html_e( 'Run Stress Test', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Run Stress Test', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 					<button type="button" class="button button-primary" data-test-type="security">
-						<?php esc_html_e( 'Run Security Test', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Run Security Test', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 					<button type="button" class="button button-primary" data-test-type="speed">
-						<?php esc_html_e( 'Run Speed Benchmark', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Run Speed Benchmark', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 					<button type="button" class="button button-primary" data-test-type="optimization">
-						<?php esc_html_e( 'Run Optimization Test', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Run Optimization Test', 'mcp-ai-wpoos-pro' ); ?>
 					</button>
 				</div>
 
 				<div class="test-results-container" style="display:none;">
-					<h3><?php esc_html_e( 'Test Results', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'Test Results', 'mcp-ai-wpoos-pro' ); ?></h3>
 					<div class="test-results"></div>
 				</div>
 			</div>
 
 			<!-- Component Performance -->
 			<div class="wp-mcp-ai-component-performance">
-				<h2><?php esc_html_e( 'Component Performance', 'wp-mcp-ai' ); ?></h2>
+				<h2><?php esc_html_e( 'Component Performance', 'mcp-ai-wpoos-pro' ); ?></h2>
 
 				<table class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
-							<th><?php esc_html_e( 'Component', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Health', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Avg Response Time', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Trend', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Component', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Health', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Avg Response Time', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Trend', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -270,7 +270,7 @@ composer install</pre>
 								</td>
 								<td>
 									<button type="button" class="button button-small view-details" data-component="<?php echo esc_attr( $component_id ); ?>">
-										<?php esc_html_e( 'View Details', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'View Details', 'mcp-ai-wpoos-pro' ); ?>
 									</button>
 								</td>
 							</tr>
@@ -282,7 +282,7 @@ composer install</pre>
 			<!-- Performance Alerts -->
 			<?php if ( ! empty( $report['alerts'] ) ) : ?>
 				<div class="wp-mcp-ai-performance-alerts">
-					<h2><?php esc_html_e( 'Performance Alerts', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( 'Performance Alerts', 'mcp-ai-wpoos-pro' ); ?></h2>
 
 					<div class="alerts-list">
 						<?php foreach ( $report['alerts'] as $alert ) : ?>
@@ -301,7 +301,7 @@ composer install</pre>
 			<!-- Recommendations -->
 			<?php if ( ! empty( $report['recommendations'] ) ) : ?>
 				<div class="wp-mcp-ai-performance-recommendations">
-					<h2><?php esc_html_e( 'Optimization Recommendations', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( 'Optimization Recommendations', 'mcp-ai-wpoos-pro' ); ?></h2>
 
 					<div class="recommendations-list">
 						<?php foreach ( $report['recommendations'] as $recommendation ) : ?>
@@ -319,16 +319,16 @@ composer install</pre>
 
 			<!-- Export Options -->
 			<div class="wp-mcp-ai-export-options">
-				<h2><?php esc_html_e( 'Export Test Results', 'wp-mcp-ai' ); ?></h2>
+				<h2><?php esc_html_e( 'Export Test Results', 'mcp-ai-wpoos-pro' ); ?></h2>
 				<p class="description">
-					<?php esc_html_e( 'Download performance test results for external analysis.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Download performance test results for external analysis.', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 
 				<button type="button" class="button" id="export-results-json">
-					<?php esc_html_e( 'Export as JSON', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Export as JSON', 'mcp-ai-wpoos-pro' ); ?>
 				</button>
 				<button type="button" class="button" id="export-results-csv">
-					<?php esc_html_e( 'Export as CSV', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Export as CSV', 'mcp-ai-wpoos-pro' ); ?>
 				</button>
 			</div>
 		</div>
@@ -541,7 +541,7 @@ composer install</pre>
 	 */
 	public function enqueue_assets( $hook ) {
 		// Only load on settings page.
-		if ( strpos( $hook, 'wp-mcp-ai' ) === false ) {
+		if ( strpos( $hook, 'mcp-ai-wpoos-pro' ) === false ) {
 			return;
 		}
 
@@ -559,7 +559,7 @@ composer install</pre>
 			array(
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'nonce'       => wp_create_nonce( 'wp_mcp_ai_performance' ),
-				'runningText' => __( 'Running...', 'wp-mcp-ai' ),
+				'runningText' => __( 'Running...', 'mcp-ai-wpoos-pro' ),
 			)
 		);
 	}
@@ -572,13 +572,13 @@ composer install</pre>
 			check_ajax_referer( 'wp_mcp_ai_performance', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 			}
 
 			$test_type = isset( $_POST['test_type'] ) ? sanitize_key( $_POST['test_type'] ) : '';
 
 			if ( empty( $test_type ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid test type.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid test type.', 'mcp-ai-wpoos-pro' ) ) );
 			}
 
 			// Try to run the test programmatically.
@@ -600,7 +600,7 @@ composer install</pre>
 				array(
 					'message' => sprintf(
 						/* translators: %s: error message */
-						__( 'Test execution failed: %s', 'wp-mcp-ai' ),
+						__( 'Test execution failed: %s', 'mcp-ai-wpoos-pro' ),
 						$e->getMessage()
 					),
 				)
@@ -619,8 +619,8 @@ composer install</pre>
 		if ( ! function_exists( 'exec' ) ) {
 			return array(
 				'success'     => false,
-				'message'     => __( 'Shell execution is disabled on this server.', 'wp-mcp-ai' ),
-				'details'     => __( 'The exec() function is disabled in your PHP configuration. Performance tests requiring PHPUnit cannot run from the admin interface. You can still use the lightweight checks below, or run tests via CLI if you have command-line access.', 'wp-mcp-ai' ),
+				'message'     => __( 'Shell execution is disabled on this server.', 'mcp-ai-wpoos-pro' ),
+				'details'     => __( 'The exec() function is disabled in your PHP configuration. Performance tests requiring PHPUnit cannot run from the admin interface. You can still use the lightweight checks below, or run tests via CLI if you have command-line access.', 'mcp-ai-wpoos-pro' ),
 				'cli_command' => './bin/run-performance-tests.sh --suite=' . $test_type,
 			);
 		}
@@ -647,7 +647,7 @@ composer install</pre>
 				'success' => false,
 				'message' => sprintf(
 					/* translators: %s: test type */
-					__( 'Unknown test type: %s', 'wp-mcp-ai' ),
+					__( 'Unknown test type: %s', 'mcp-ai-wpoos-pro' ),
 					$test_type
 				),
 			);
@@ -660,7 +660,7 @@ composer install</pre>
 				'success' => false,
 				'message' => sprintf(
 					/* translators: %s: file path */
-					__( 'Test file not found: %s', 'wp-mcp-ai' ),
+					__( 'Test file not found: %s', 'mcp-ai-wpoos-pro' ),
 					basename( $test_file )
 				),
 			);
@@ -671,8 +671,8 @@ composer install</pre>
 		if ( ! file_exists( $phpunit_bin ) ) {
 			return array(
 				'success'       => false,
-				'message'       => __( 'Performance tests require development dependencies.', 'wp-mcp-ai' ),
-				'details'       => __( 'These tests are designed for local development environments. On production or managed hosting (like Cloudways), performance monitoring is available through the dashboard metrics above.', 'wp-mcp-ai' ),
+				'message'       => __( 'Performance tests require development dependencies.', 'mcp-ai-wpoos-pro' ),
+				'details'       => __( 'These tests are designed for local development environments. On production or managed hosting (like Cloudways), performance monitoring is available through the dashboard metrics above.', 'mcp-ai-wpoos-pro' ),
 				'setup_command' => 'composer install',
 				'cli_command'   => './bin/run-performance-tests.sh --suite=' . $test_type,
 			);
@@ -704,8 +704,8 @@ composer install</pre>
 		if ( strpos( $output_text, 'WP_UnitTestCase' ) !== false || strpos( $output_text, 'WP_TESTS_DIR' ) !== false ) {
 			return array(
 				'success'       => false,
-				'message'       => __( 'WordPress test environment not configured. Use CLI command below or run setup first.', 'wp-mcp-ai' ),
-				'details'       => __( 'The performance tests require the WordPress test framework. Please run the setup script or use the CLI command.', 'wp-mcp-ai' ),
+				'message'       => __( 'WordPress test environment not configured. Use CLI command below or run setup first.', 'mcp-ai-wpoos-pro' ),
+				'details'       => __( 'The performance tests require the WordPress test framework. Please run the setup script or use the CLI command.', 'mcp-ai-wpoos-pro' ),
 				'cli_command'   => './bin/run-performance-tests.sh --suite=' . $test_type,
 				'setup_command' => 'composer run test:install',
 			);
@@ -719,7 +719,7 @@ composer install</pre>
 				'success' => true,
 				'message' => sprintf(
 					/* translators: %1$s: test type, %2$s: test summary */
-					__( '%1$s tests completed successfully. %2$s', 'wp-mcp-ai' ),
+					__( '%1$s tests completed successfully. %2$s', 'mcp-ai-wpoos-pro' ),
 					ucfirst( $test_type ),
 					$summary
 				),
@@ -731,7 +731,7 @@ composer install</pre>
 				'success'     => false,
 				'message'     => sprintf(
 					/* translators: %s: test type */
-					__( '%s tests failed. See details below.', 'wp-mcp-ai' ),
+					__( '%s tests failed. See details below.', 'mcp-ai-wpoos-pro' ),
 					ucfirst( $test_type )
 				),
 				'output'      => $output_text,
@@ -769,7 +769,7 @@ composer install</pre>
 		if ( preg_match( '/OK \((\d+) tests?, (\d+) assertions?\)/', $output, $matches ) ) {
 			return sprintf(
 				/* translators: %1$d: number of tests, %2$d: number of assertions */
-				__( 'Passed: %1$d tests, %2$d assertions', 'wp-mcp-ai' ),
+				__( 'Passed: %1$d tests, %2$d assertions', 'mcp-ai-wpoos-pro' ),
 				absint( $matches[1] ),
 				absint( $matches[2] )
 			);
@@ -778,7 +778,7 @@ composer install</pre>
 		if ( preg_match( '/Tests: (\d+), Assertions: (\d+)/', $output, $matches ) ) {
 			return sprintf(
 				/* translators: %1$d: number of tests, %2$d: number of assertions */
-				__( 'Tests: %1$d, Assertions: %2$d', 'wp-mcp-ai' ),
+				__( 'Tests: %1$d, Assertions: %2$d', 'mcp-ai-wpoos-pro' ),
 				absint( $matches[1] ),
 				absint( $matches[2] )
 			);
@@ -788,14 +788,14 @@ composer install</pre>
 			if ( preg_match( '/Tests: (\d+), Assertions: (\d+), Failures: (\d+)/', $output, $matches ) ) {
 				return sprintf(
 					/* translators: %1$d: total tests, %2$d: failed tests */
-					__( 'Tests: %1$d, Failures: %2$d', 'wp-mcp-ai' ),
+					__( 'Tests: %1$d, Failures: %2$d', 'mcp-ai-wpoos-pro' ),
 					absint( $matches[1] ),
 					absint( $matches[3] )
 				);
 			}
 		}
 
-		return __( 'Test execution completed. Check details for results.', 'wp-mcp-ai' );
+		return __( 'Test execution completed. Check details for results.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -805,11 +805,11 @@ composer install</pre>
 		check_ajax_referer( 'wp_mcp_ai_performance', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Performance monitoring not available in base version mode.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Performance monitoring not available in base version mode.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		$component = isset( $_POST['component'] ) ? sanitize_key( $_POST['component'] ) : 'rest_api';
@@ -828,7 +828,7 @@ composer install</pre>
 				array(
 					'message' => sprintf(
 						/* translators: %s: error message */
-						__( 'Failed to get performance metrics: %s', 'wp-mcp-ai' ),
+						__( 'Failed to get performance metrics: %s', 'mcp-ai-wpoos-pro' ),
 						$e->getMessage()
 					),
 				)
@@ -843,7 +843,7 @@ composer install</pre>
 		check_ajax_referer( 'wp_mcp_ai_performance', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Load Performance Reporter if not already loaded.
@@ -859,7 +859,7 @@ composer install</pre>
 			wp_send_json_success( $report );
 		} else {
 			// CSV export would be implemented here.
-			wp_send_json_success( array( 'message' => __( 'CSV export coming soon.', 'wp-mcp-ai' ) ) );
+			wp_send_json_success( array( 'message' => __( 'CSV export coming soon.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 	}
 
@@ -907,10 +907,10 @@ composer install</pre>
 	 */
 	protected function format_trend( $trend ) {
 		$icons = array(
-			'improving' => '↗️ ' . __( 'Improving', 'wp-mcp-ai' ),
-			'stable'    => '→ ' . __( 'Stable', 'wp-mcp-ai' ),
-			'degrading' => '↘️ ' . __( 'Degrading', 'wp-mcp-ai' ),
-			'no_data'   => '— ' . __( 'No Data', 'wp-mcp-ai' ),
+			'improving' => '↗️ ' . __( 'Improving', 'mcp-ai-wpoos-pro' ),
+			'stable'    => '→ ' . __( 'Stable', 'mcp-ai-wpoos-pro' ),
+			'degrading' => '↘️ ' . __( 'Degrading', 'mcp-ai-wpoos-pro' ),
+			'no_data'   => '— ' . __( 'No Data', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return isset( $icons[ $trend ] ) ? $icons[ $trend ] : $trend;
@@ -925,7 +925,7 @@ composer install</pre>
 		// Default fallback health status.
 		$default_health = array(
 			'status'  => 'unknown',
-			'label'   => __( 'Unknown', 'wp-mcp-ai' ),
+			'label'   => __( 'Unknown', 'mcp-ai-wpoos-pro' ),
 			'icon'    => '○',
 			'metrics' => array(
 				'memory'       => array(
@@ -983,7 +983,7 @@ composer install</pre>
 	 */
 	protected function render_orchestration_health_status( $health ) {
 		$status  = isset( $health['status'] ) ? sanitize_key( $health['status'] ) : 'unknown';
-		$label   = isset( $health['label'] ) ? sanitize_text_field( $health['label'] ) : __( 'Unknown', 'wp-mcp-ai' );
+		$label   = isset( $health['label'] ) ? sanitize_text_field( $health['label'] ) : __( 'Unknown', 'mcp-ai-wpoos-pro' );
 		$icon    = isset( $health['icon'] ) ? sanitize_text_field( $health['icon'] ) : '○';
 		$metrics = isset( $health['metrics'] ) && is_array( $health['metrics'] ) ? $health['metrics'] : array();
 
@@ -1011,21 +1011,21 @@ composer install</pre>
 					<span class="dashicons dashicons-performance"></span>
 					<?php
 					/* translators: %s: memory usage percentage */
-					printf( esc_html__( 'Memory: %s%%', 'wp-mcp-ai' ), esc_html( number_format( $memory_percent, 1 ) ) );
+					printf( esc_html__( 'Memory: %s%%', 'mcp-ai-wpoos-pro' ), esc_html( number_format( $memory_percent, 1 ) ) );
 					?>
 				</span>
 				<span class="metric">
 					<span class="dashicons dashicons-warning"></span>
 					<?php
 					/* translators: %s: error rate percentage */
-					printf( esc_html__( 'Errors: %s%%', 'wp-mcp-ai' ), esc_html( number_format( $error_rate, 1 ) ) );
+					printf( esc_html__( 'Errors: %s%%', 'mcp-ai-wpoos-pro' ), esc_html( number_format( $error_rate, 1 ) ) );
 					?>
 				</span>
 				<span class="metric">
 					<span class="dashicons dashicons-clock"></span>
 					<?php
 					/* translators: %s: average response time in seconds */
-					printf( esc_html__( 'Avg Response: %ss', 'wp-mcp-ai' ), esc_html( number_format( $avg_response, 1 ) ) );
+					printf( esc_html__( 'Avg Response: %ss', 'mcp-ai-wpoos-pro' ), esc_html( number_format( $avg_response, 1 ) ) );
 					?>
 				</span>
 			</div>
@@ -1068,7 +1068,7 @@ composer install</pre>
 			default:
 				return array(
 					'success' => false,
-					'message' => __( 'Unknown test type', 'wp-mcp-ai' ),
+					'message' => __( 'Unknown test type', 'mcp-ai-wpoos-pro' ),
 				);
 		}
 
@@ -1082,7 +1082,7 @@ composer install</pre>
 					$checks[] = array(
 						'name'    => ucwords( str_replace( '_', ' ', str_replace( 'check_', '', $method ) ) ),
 						'status'  => 'fail',
-						'message' => __( 'Check method not available', 'wp-mcp-ai' ),
+						'message' => __( 'Check method not available', 'mcp-ai-wpoos-pro' ),
 					);
 				}
 			} catch ( Throwable $e ) {
@@ -1097,7 +1097,7 @@ composer install</pre>
 					'status'  => 'fail',
 					'message' => sprintf(
 						/* translators: %s: error message */
-						__( 'Check failed: %s', 'wp-mcp-ai' ),
+						__( 'Check failed: %s', 'mcp-ai-wpoos-pro' ),
 						$e->getMessage()
 					),
 				);
@@ -1129,7 +1129,7 @@ composer install</pre>
 			'success' => 0 === $failed,
 			'message' => sprintf(
 				/* translators: %1$s: test type, %2$d: passed checks, %3$d: failed checks */
-				__( '%1$s check completed: %2$d passed, %3$d failed, %4$d warnings', 'wp-mcp-ai' ),
+				__( '%1$s check completed: %2$d passed, %3$d failed, %4$d warnings', 'mcp-ai-wpoos-pro' ),
 				ucfirst( $test_type ),
 				$passed,
 				$failed,
@@ -1137,7 +1137,7 @@ composer install</pre>
 			),
 			'summary' => sprintf(
 				/* translators: %1$s: duration, %2$s: memory */
-				__( 'Duration: %1$sms | Memory: %2$sMB', 'wp-mcp-ai' ),
+				__( 'Duration: %1$sms | Memory: %2$sMB', 'mcp-ai-wpoos-pro' ),
 				$duration,
 				$memory_used
 			),
@@ -1183,11 +1183,11 @@ composer install</pre>
 			// wp_upload_dir() may return an error in the 'error' key.
 			if ( ! empty( $upload_dir['error'] ) ) {
 				return array(
-					'name'    => __( 'File Permissions', 'wp-mcp-ai' ),
+					'name'    => __( 'File Permissions', 'mcp-ai-wpoos-pro' ),
 					'status'  => 'fail',
 					'message' => sprintf(
 						/* translators: %s: error message */
-						__( 'Upload directory error: %s', 'wp-mcp-ai' ),
+						__( 'Upload directory error: %s', 'mcp-ai-wpoos-pro' ),
 						$upload_dir['error']
 					),
 				);
@@ -1196,20 +1196,20 @@ composer install</pre>
 			$writable = isset( $upload_dir['basedir'] ) && is_writable( $upload_dir['basedir'] );
 
 			return array(
-				'name'    => __( 'File Permissions', 'wp-mcp-ai' ),
+				'name'    => __( 'File Permissions', 'mcp-ai-wpoos-pro' ),
 				'status'  => $writable ? 'pass' : 'fail',
 				'message' => $writable
-					? __( 'Upload directory is writable', 'wp-mcp-ai' )
-					: __( 'Upload directory is not writable', 'wp-mcp-ai' ),
+					? __( 'Upload directory is writable', 'mcp-ai-wpoos-pro' )
+					: __( 'Upload directory is not writable', 'mcp-ai-wpoos-pro' ),
 			);
 		} catch ( Throwable $e ) {
 			// Intentionally empty - error handled elsewhere.
 			return array(
-				'name'    => __( 'File Permissions', 'wp-mcp-ai' ),
+				'name'    => __( 'File Permissions', 'mcp-ai-wpoos-pro' ),
 				'status'  => 'fail',
 				'message' => sprintf(
 					/* translators: %s: error message */
-					__( 'Could not check file permissions: %s', 'wp-mcp-ai' ),
+					__( 'Could not check file permissions: %s', 'mcp-ai-wpoos-pro' ),
 					$e->getMessage()
 				),
 			);
@@ -1225,11 +1225,11 @@ composer install</pre>
 		$is_https = is_ssl();
 
 		return array(
-			'name'    => __( 'HTTPS Status', 'wp-mcp-ai' ),
+			'name'    => __( 'HTTPS Status', 'mcp-ai-wpoos-pro' ),
 			'status'  => $is_https ? 'pass' : 'warning',
 			'message' => $is_https
-				? __( 'Site is using HTTPS', 'wp-mcp-ai' )
-				: __( 'Site is not using HTTPS (recommended for security)', 'wp-mcp-ai' ),
+				? __( 'Site is using HTTPS', 'mcp-ai-wpoos-pro' )
+				: __( 'Site is not using HTTPS (recommended for security)', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -1254,11 +1254,11 @@ composer install</pre>
 		$configured = $has_openai || $has_gemini;
 
 		return array(
-			'name'    => __( 'API Keys', 'wp-mcp-ai' ),
+			'name'    => __( 'API Keys', 'mcp-ai-wpoos-pro' ),
 			'status'  => $configured ? 'pass' : 'warning',
 			'message' => $configured
-				? __( 'AI API keys are configured', 'wp-mcp-ai' )
-				: __( 'No AI API keys configured', 'wp-mcp-ai' ),
+				? __( 'AI API keys are configured', 'mcp-ai-wpoos-pro' )
+				: __( 'No AI API keys configured', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -1280,11 +1280,11 @@ composer install</pre>
 		$query_count   = $queries_after - $queries_before;
 
 		return array(
-			'name'    => __( 'Database Connectivity', 'wp-mcp-ai' ),
+			'name'    => __( 'Database Connectivity', 'mcp-ai-wpoos-pro' ),
 			'status'  => $query_count > 0 ? 'pass' : 'fail',
 			'message' => sprintf(
 				/* translators: %d: query count */
-				__( 'Database is responsive (%d test queries)', 'wp-mcp-ai' ),
+				__( 'Database is responsive (%d test queries)', 'mcp-ai-wpoos-pro' ),
 				$query_count
 			),
 		);
@@ -1299,11 +1299,11 @@ composer install</pre>
 		$has_object_cache = wp_using_ext_object_cache();
 
 		return array(
-			'name'    => __( 'Object Cache', 'wp-mcp-ai' ),
+			'name'    => __( 'Object Cache', 'mcp-ai-wpoos-pro' ),
 			'status'  => $has_object_cache ? 'pass' : 'warning',
 			'message' => $has_object_cache
-				? __( 'External object cache is active', 'wp-mcp-ai' )
-				: __( 'No external object cache (consider Redis/Memcached)', 'wp-mcp-ai' ),
+				? __( 'External object cache is active', 'mcp-ai-wpoos-pro' )
+				: __( 'No external object cache (consider Redis/Memcached)', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -1320,11 +1320,11 @@ composer install</pre>
 		// Guard against WP_Error objects.
 		if ( is_wp_error( $response ) ) {
 			return array(
-				'name'    => __( 'REST API Speed', 'wp-mcp-ai' ),
+				'name'    => __( 'REST API Speed', 'mcp-ai-wpoos-pro' ),
 				'status'  => 'warning',
 				'message' => sprintf(
 					/* translators: %s: error message */
-					__( 'REST API unavailable: %s', 'wp-mcp-ai' ),
+					__( 'REST API unavailable: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				),
 			);
@@ -1333,15 +1333,15 @@ composer install</pre>
 		$success = ! $response->is_error();
 
 		return array(
-			'name'    => __( 'REST API Speed', 'wp-mcp-ai' ),
+			'name'    => __( 'REST API Speed', 'mcp-ai-wpoos-pro' ),
 			'status'  => $success ? 'pass' : 'fail',
 			'message' => $success
 				? sprintf(
 					/* translators: %s: response time */
-					__( 'REST API responding in %sms', 'wp-mcp-ai' ),
+					__( 'REST API responding in %sms', 'mcp-ai-wpoos-pro' ),
 					$duration
 				)
-				: __( 'REST API error', 'wp-mcp-ai' ),
+				: __( 'REST API error', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -1363,11 +1363,11 @@ composer install</pre>
 		}
 
 		return array(
-			'name'    => __( 'Memory Limit', 'wp-mcp-ai' ),
+			'name'    => __( 'Memory Limit', 'mcp-ai-wpoos-pro' ),
 			'status'  => $status,
 			'message' => sprintf(
 				/* translators: %s: memory limit */
-				__( 'PHP memory limit: %s (recommended: 256M+)', 'wp-mcp-ai' ),
+				__( 'PHP memory limit: %s (recommended: 256M+)', 'mcp-ai-wpoos-pro' ),
 				$memory_limit
 			),
 		);
@@ -1387,11 +1387,11 @@ composer install</pre>
 		}
 
 		return array(
-			'name'    => __( 'Max Execution Time', 'wp-mcp-ai' ),
+			'name'    => __( 'Max Execution Time', 'mcp-ai-wpoos-pro' ),
 			'status'  => $status,
 			'message' => sprintf(
 				/* translators: %s: execution time */
-				__( 'Max execution time: %ss', 'wp-mcp-ai' ),
+				__( 'Max execution time: %ss', 'mcp-ai-wpoos-pro' ),
 				$max_execution === '0' ? 'unlimited' : $max_execution
 			),
 		);
@@ -1413,11 +1413,11 @@ composer install</pre>
 		}
 
 		return array(
-			'name'    => __( 'Concurrent Operations', 'wp-mcp-ai' ),
+			'name'    => __( 'Concurrent Operations', 'mcp-ai-wpoos-pro' ),
 			'status'  => $operations >= 8 ? 'pass' : 'warning',
 			'message' => sprintf(
 				/* translators: %d: successful operations */
-				__( 'Handled %d/10 concurrent cache operations', 'wp-mcp-ai' ),
+				__( 'Handled %d/10 concurrent cache operations', 'mcp-ai-wpoos-pro' ),
 				$operations
 			),
 		);
@@ -1458,11 +1458,11 @@ composer install</pre>
 		}
 
 		return array(
-			'name'    => __( 'Autoload Size', 'wp-mcp-ai' ),
+			'name'    => __( 'Autoload Size', 'mcp-ai-wpoos-pro' ),
 			'status'  => $status,
 			'message' => sprintf(
 				/* translators: %s: autoload size */
-				__( 'Autoloaded options: %sMB (recommended: <1MB)', 'wp-mcp-ai' ),
+				__( 'Autoloaded options: %sMB (recommended: <1MB)', 'mcp-ai-wpoos-pro' ),
 				$size_mb
 			),
 		);
@@ -1489,11 +1489,11 @@ composer install</pre>
 		}
 
 		return array(
-			'name'    => __( 'Transients', 'wp-mcp-ai' ),
+			'name'    => __( 'Transients', 'mcp-ai-wpoos-pro' ),
 			'status'  => $status,
 			'message' => sprintf(
 				/* translators: %d: transient count */
-				__( 'Transient count: %d', 'wp-mcp-ai' ),
+				__( 'Transient count: %d', 'mcp-ai-wpoos-pro' ),
 				$transient_count
 			),
 		);

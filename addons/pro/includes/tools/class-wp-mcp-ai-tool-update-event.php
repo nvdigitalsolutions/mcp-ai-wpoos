@@ -18,11 +18,11 @@ class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	}
 
 	public function get_name() {
-		return __( 'Update Event', 'wp-mcp-ai' );
+		return __( 'Update Event', 'mcp-ai-wpoos-pro' );
 	}
 
 	public function get_description() {
-		return __( 'Updates an existing calendar event. Provide only the fields you want to update.', 'wp-mcp-ai' );
+		return __( 'Updates an existing calendar event. Provide only the fields you want to update.', 'mcp-ai-wpoos-pro' );
 	}
 
 	public function get_parameters_schema() {
@@ -31,48 +31,48 @@ class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'event_id'    => array(
 					'type'        => 'integer',
-					'description' => __( 'Event ID to update (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Event ID to update (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'title'       => array(
 					'type'        => 'string',
-					'description' => __( 'New event title (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New event title (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'description' => array(
 					'type'        => 'string',
-					'description' => __( 'New event description (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New event description (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'start_date'  => array(
 					'type'        => 'string',
-					'description' => __( 'New start date (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New start date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'start_time'  => array(
 					'type'        => 'string',
-					'description' => __( 'New start time (HH:MM) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New start time (HH:MM) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
 				'end_date'    => array(
 					'type'        => 'string',
-					'description' => __( 'New end date (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New end date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'end_time'    => array(
 					'type'        => 'string',
-					'description' => __( 'New end time (HH:MM) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New end time (HH:MM) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
 				'location'    => array(
 					'type'        => 'string',
-					'description' => __( 'New event location (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New event location (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'type'        => array(
 					'type'        => 'string',
-					'description' => __( 'New event type (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New event type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'meeting', 'deadline', 'milestone', 'reminder', 'other' ),
 				),
 				'attendees'   => array(
 					'type'        => 'array',
-					'description' => __( 'New array of attendee user IDs (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New array of attendee user IDs (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
 			),
@@ -99,18 +99,18 @@ class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update events.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update events.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$event_id = isset( $arguments['event_id'] ) ? absint( $arguments['event_id'] ) : 0;
 
 		if ( ! $event_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Event ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Event ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$event = get_post( $event_id );
 		if ( ! $event || 'mcp_ai_event' !== $event->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_event', __( 'Invalid event ID.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_event', __( 'Invalid event ID.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$post_data = array( 'ID' => $event_id );
@@ -157,7 +157,7 @@ class WP_MCP_AI_Tool_Update_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		return array(
 			'success'  => true,
-			'message'  => __( 'Event updated successfully.', 'wp-mcp-ai' ),
+			'message'  => __( 'Event updated successfully.', 'mcp-ai-wpoos-pro' ),
 			'event_id' => $event_id,
 		);
 	}

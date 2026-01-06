@@ -71,7 +71,7 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 	 * @return array Modified columns.
 	 */
 	public function add_usage_column( $columns ) {
-		$columns['wp_mcp_ai_usage'] = __( 'AI Usage', 'wp-mcp-ai' );
+		$columns['wp_mcp_ai_usage'] = __( 'AI Usage', 'mcp-ai-wpoos' );
 		return $columns;
 	}
 
@@ -121,7 +121,7 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 				esc_attr(
 					sprintf(
 						/* translators: %s: formatted number of tokens */
-						__( '%s tokens used', 'wp-mcp-ai' ),
+						__( '%s tokens used', 'mcp-ai-wpoos' ),
 						number_format_i18n( $total_tokens )
 					)
 				),
@@ -137,7 +137,7 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 				esc_attr(
 					sprintf(
 						/* translators: %s: formatted cost */
-						__( 'AI cost: %s', 'wp-mcp-ai' ),
+						__( 'AI cost: %s', 'mcp-ai-wpoos' ),
 						$cost_display
 					)
 				),
@@ -152,14 +152,14 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 				esc_attr(
 					sprintf(
 						/* translators: %d: number of AI operations */
-						_n( '%d AI operation', '%d AI operations', $tool_count, 'wp-mcp-ai' ),
+						_n( '%d AI operation', '%d AI operations', $tool_count, 'mcp-ai-wpoos' ),
 						$tool_count
 					)
 				),
 				esc_html(
 					sprintf(
 						/* translators: %d: number of AI operations */
-						_n( '%d op', '%d ops', $tool_count, 'wp-mcp-ai' ),
+						_n( '%d op', '%d ops', $tool_count, 'mcp-ai-wpoos' ),
 						$tool_count
 					)
 				)
@@ -178,13 +178,13 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 	private function format_token_count( $tokens ) {
 		if ( $tokens >= 1000000 ) {
 			/* translators: %s: number of millions */
-			return sprintf( __( '%sM tok', 'wp-mcp-ai' ), number_format_i18n( $tokens / 1000000, 1 ) );
+			return sprintf( __( '%sM tok', 'mcp-ai-wpoos' ), number_format_i18n( $tokens / 1000000, 1 ) );
 		} elseif ( $tokens >= 1000 ) {
 			/* translators: %s: number of thousands */
-			return sprintf( __( '%sk tok', 'wp-mcp-ai' ), number_format_i18n( $tokens / 1000, 1 ) );
+			return sprintf( __( '%sk tok', 'mcp-ai-wpoos' ), number_format_i18n( $tokens / 1000, 1 ) );
 		}
 		/* translators: %s: number of tokens */
-		return sprintf( __( '%s tok', 'wp-mcp-ai' ), number_format_i18n( $tokens ) );
+		return sprintf( __( '%s tok', 'mcp-ai-wpoos' ), number_format_i18n( $tokens ) );
 	}
 
 	/**

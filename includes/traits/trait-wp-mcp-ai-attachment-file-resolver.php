@@ -55,7 +55,7 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 					'wp_mcp_ai_invalid_attachment',
 					sprintf(
 						/* translators: %d: attachment ID */
-						__( 'Attachment ID %d does not exist or is not an attachment.', 'wp-mcp-ai' ),
+						__( 'Attachment ID %d does not exist or is not an attachment.', 'mcp-ai-wpoos' ),
 						$attachment_id
 					),
 					array( 'status' => 404 )
@@ -99,7 +99,7 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 		if ( '' === $file_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_file_id',
-				__( 'File ID cannot be empty.', 'wp-mcp-ai' ),
+				__( 'File ID cannot be empty.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -117,7 +117,7 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 				'wp_mcp_ai_file_not_found',
 				sprintf(
 					/* translators: %s: file ID */
-					__( 'No attachment found for file ID: %s', 'wp-mcp-ai' ),
+					__( 'No attachment found for file ID: %s', 'mcp-ai-wpoos' ),
 					$file_id
 				),
 				array( 'status' => 404 )
@@ -130,7 +130,7 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 				'wp_mcp_ai_attachment_invalid',
 				sprintf(
 					/* translators: %s: file ID */
-					__( 'File ID %s resolved to an invalid attachment.', 'wp-mcp-ai' ),
+					__( 'File ID %s resolved to an invalid attachment.', 'mcp-ai-wpoos' ),
 					$file_id
 				),
 				array( 'status' => 404 )
@@ -155,7 +155,7 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 		if ( '' === $url ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_url',
-				__( 'URL cannot be empty.', 'wp-mcp-ai' ),
+				__( 'URL cannot be empty.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -194,7 +194,7 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 	 */
 	protected function get_file_id_parameter_schema( $description = '' ) {
 		if ( empty( $description ) ) {
-			$description = __( 'OpenAI or Gemini file identifier. Alternative to attachment_id for files already uploaded to the AI provider.', 'wp-mcp-ai' );
+			$description = __( 'OpenAI or Gemini file identifier. Alternative to attachment_id for files already uploaded to the AI provider.', 'mcp-ai-wpoos' );
 		}
 
 		return array(
@@ -217,7 +217,7 @@ trait WP_MCP_AI_Attachment_File_Resolver {
 		if ( empty( $description ) ) {
 			$description = sprintf(
 				/* translators: %s: media type (image, video, audio, file) */
-				__( 'URL to the %s. Can be a WordPress media URL or external URL.', 'wp-mcp-ai' ),
+				__( 'URL to the %s. Can be a WordPress media URL or external URL.', 'mcp-ai-wpoos' ),
 				$media_type
 			);
 		}

@@ -29,7 +29,7 @@ class WP_MCP_AI_Place_Metabox_Contact extends WP_MCP_AI_Place_Metabox_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Contact Information', 'wp-mcp-ai' );
+		return __( 'Contact Information', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -61,15 +61,15 @@ class WP_MCP_AI_Place_Metabox_Contact extends WP_MCP_AI_Place_Metabox_Base {
 		?>
 		<div class="wp-mcp-ai-place-contact">
 			<p>
-				<label for="place_phone"><strong><?php esc_html_e( 'Phone', 'wp-mcp-ai' ); ?></strong></label>
+				<label for="place_phone"><strong><?php esc_html_e( 'Phone', 'mcp-ai-wpoos-pro' ); ?></strong></label>
 				<input type="tel" id="place_phone" name="place_phone" value="<?php echo esc_attr( $phone ); ?>" class="widefat" placeholder="+1 (555) 123-4567" />
 			</p>
 			<p>
-				<label for="place_email"><strong><?php esc_html_e( 'Email', 'wp-mcp-ai' ); ?></strong></label>
+				<label for="place_email"><strong><?php esc_html_e( 'Email', 'mcp-ai-wpoos-pro' ); ?></strong></label>
 				<input type="email" id="place_email" name="place_email" value="<?php echo esc_attr( $email ); ?>" class="widefat" placeholder="contact@example.com" />
 			</p>
 			<p>
-				<label for="place_website"><strong><?php esc_html_e( 'Website', 'wp-mcp-ai' ); ?></strong></label>
+				<label for="place_website"><strong><?php esc_html_e( 'Website', 'mcp-ai-wpoos-pro' ); ?></strong></label>
 				<input type="url" id="place_website" name="place_website" value="<?php echo esc_attr( $website ); ?>" class="widefat" placeholder="https://example.com" />
 			</p>
 		</div>

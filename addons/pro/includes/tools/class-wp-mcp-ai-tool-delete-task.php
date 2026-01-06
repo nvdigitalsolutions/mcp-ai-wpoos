@@ -28,7 +28,7 @@ class WP_MCP_AI_Tool_Delete_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * @return string Tool name.
 	 */
 	public function get_name() {
-		return __( 'Delete Task', 'wp-mcp-ai' );
+		return __( 'Delete Task', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -37,7 +37,7 @@ class WP_MCP_AI_Tool_Delete_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * @return string Tool description.
 	 */
 	public function get_description() {
-		return __( 'Deletes a task permanently.', 'wp-mcp-ai' );
+		return __( 'Deletes a task permanently.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,7 +51,7 @@ class WP_MCP_AI_Tool_Delete_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'task_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Task ID to delete (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Task ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'task_id' ),
@@ -94,29 +94,29 @@ class WP_MCP_AI_Tool_Delete_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'delete_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete tasks.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete tasks.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$task_id = isset( $arguments['task_id'] ) ? absint( $arguments['task_id'] ) : 0;
 
 		if ( ! $task_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Task ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Task ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$task = get_post( $task_id );
 		if ( ! $task || 'mcp_ai_task' !== $task->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_task', __( 'Invalid task ID.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_task', __( 'Invalid task ID.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$result = wp_delete_post( $task_id, true );
 
 		if ( ! $result ) {
-			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete task.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete task.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return array(
 			'success' => true,
-			'message' => __( 'Task deleted successfully.', 'wp-mcp-ai' ),
+			'message' => __( 'Task deleted successfully.', 'mcp-ai-wpoos-pro' ),
 			'task_id' => $task_id,
 		);
 	}

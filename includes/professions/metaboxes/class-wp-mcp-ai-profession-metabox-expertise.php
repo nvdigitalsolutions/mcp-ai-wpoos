@@ -31,7 +31,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Expertise & Knowledge', 'wp-mcp-ai' );
+		return __( 'Expertise & Knowledge', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -64,7 +64,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 				<tr>
 					<th scope="row">
 						<label for="profession_expertise">
-							<?php esc_html_e( 'Expertise Areas', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Expertise Areas', 'mcp-ai-wpoos' ); ?>
 						</label>
 					</th>
 					<td>
@@ -72,22 +72,22 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 							<?php foreach ( $expertise as $index => $area ) : ?>
 								<div class="profession-expertise-item" style="margin-bottom: 10px;">
 									<input type="text" name="profession_expertise[]" value="<?php echo esc_attr( $area ); ?>" class="large-text" />
-									<button type="button" class="button button-small remove-expertise"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button>
+									<button type="button" class="button button-small remove-expertise"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button>
 								</div>
 							<?php endforeach; ?>
 						</div>
 						<button type="button" id="add-profession-expertise" class="button button-secondary">
-							<?php esc_html_e( 'Add Expertise Area', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Add Expertise Area', 'mcp-ai-wpoos' ); ?>
 						</button>
 						<p class="description">
-							<?php esc_html_e( 'List specific areas of expertise for this profession.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'List specific areas of expertise for this profession.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</td>
 				</tr>
 				<tr>
 					<th scope="row">
 						<label for="profession_default_tools">
-							<?php esc_html_e( 'Default Tools', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Default Tools', 'mcp-ai-wpoos' ); ?>
 						</label>
 					</th>
 					<td>
@@ -99,23 +99,23 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 										type="text" 
 										id="profession-tools-search" 
 										class="regular-text" 
-										placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>"
-										aria-label="<?php esc_attr_e( 'Search tools', 'wp-mcp-ai' ); ?>"
+										placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
+										aria-label="<?php esc_attr_e( 'Search tools', 'mcp-ai-wpoos' ); ?>"
 										style="flex: 1; min-width: 200px;"
 									/>
 									<button type="button" class="button" id="clear-tools-search">
-										<?php esc_html_e( 'Clear Search', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Clear Search', 'mcp-ai-wpoos' ); ?>
 									</button>
 								</div>
 								<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
 									<button type="button" class="button button-secondary" id="select-all-tools">
-										<?php esc_html_e( 'Select All', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Select All', 'mcp-ai-wpoos' ); ?>
 									</button>
 									<button type="button" class="button button-secondary" id="deselect-all-tools">
-										<?php esc_html_e( 'Deselect All', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Deselect All', 'mcp-ai-wpoos' ); ?>
 									</button>
 									<button type="button" class="button" id="reset-tools">
-										<?php esc_html_e( 'Reset to Initial', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Reset to Initial', 'mcp-ai-wpoos' ); ?>
 									</button>
 									<span id="tools-selected-count" style="margin-left: 10px; color: #666;">
 										<?php
@@ -134,12 +134,12 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 										}
 										?>
 										<strong style="color: <?php echo esc_attr( $count_color ); ?>;" id="tools-count-number"><?php echo esc_html( $current_count ); ?></strong> 
-										<span id="tools-count-label"><?php esc_html_e( 'selected', 'wp-mcp-ai' ); ?></span>
+										<span id="tools-count-label"><?php esc_html_e( 'selected', 'mcp-ai-wpoos' ); ?></span>
 										<small style="color: #999; margin-left: 5px;">
 											(
 											<?php
 											/* translators: %d: Recommended tool count */
-											printf( esc_html__( 'recommended: %d', 'wp-mcp-ai' ), $recommended_count );
+											printf( esc_html__( 'recommended: %d', 'mcp-ai-wpoos' ), $recommended_count );
 											?>
 											)
 										</small>
@@ -184,7 +184,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 
 							<!-- No Results Message (Hidden by default) -->
 							<div id="no-tools-found" style="display: none; padding: 20px; text-align: center; color: #666;">
-								<?php esc_html_e( 'No tools found matching your search.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'No tools found matching your search.', 'mcp-ai-wpoos' ); ?>
 							</div>
 
 							<p class="description" style="margin-top: 10px;">
@@ -193,14 +193,14 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 								$recommended_count = isset( $settings['profession_default_tool_count'] ) ? absint( $settings['profession_default_tool_count'] ) : 10;
 								printf(
 									/* translators: %d: Recommended tool count from settings */
-									esc_html__( 'Select the default tools that should be pre-selected when creating assistants with this profession. Recommended: %d tools (configurable in Settings → Advanced). Aim for tools that align with this profession\'s expertise.', 'wp-mcp-ai' ),
+									esc_html__( 'Select the default tools that should be pre-selected when creating assistants with this profession. Recommended: %d tools (configurable in Settings → Advanced). Aim for tools that align with this profession\'s expertise.', 'mcp-ai-wpoos' ),
 									$recommended_count
 								);
 								?>
 							</p>
 						<?php else : ?>
 							<p class="description">
-								<?php esc_html_e( 'No tools available. Tools will be loaded after the tool registry is initialized.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'No tools available. Tools will be loaded after the tool registry is initialized.', 'mcp-ai-wpoos' ); ?>
 							</p>
 						<?php endif; ?>
 					</td>
@@ -208,7 +208,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 				<tr>
 					<th scope="row">
 						<label for="profession_knowledge_base">
-							<?php esc_html_e( 'Knowledge Base Content', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Knowledge Base Content', 'mcp-ai-wpoos' ); ?>
 						</label>
 					</th>
 					<td>
@@ -226,7 +226,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 						);
 						?>
 						<p class="description">
-							<?php esc_html_e( 'Knowledge base content that will be included in AI assistant instructions. Use markdown formatting.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Knowledge base content that will be included in AI assistant instructions. Use markdown formatting.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -239,7 +239,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 			$('#add-profession-expertise').on('click', function() {
 				var expertiseHtml = '<div class="profession-expertise-item" style="margin-bottom: 10px;">' +
 					'<input type="text" name="profession_expertise[]" value="" class="large-text" />' +
-					'<button type="button" class="button button-small remove-expertise"><?php echo esc_js( __( 'Remove', 'wp-mcp-ai' ) ); ?></button>' +
+					'<button type="button" class="button button-small remove-expertise"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?></button>' +
 					'</div>';
 				$('#profession-expertise-list').append(expertiseHtml);
 			});
@@ -258,7 +258,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 			// Update selected count.
 			function updateSelectedCount() {
 				var count = $('.profession-tool-checkbox:checked').length;
-				$selectedCount.html('<strong>' + count + '</strong> <?php echo esc_js( __( 'selected', 'wp-mcp-ai' ) ); ?>');
+				$selectedCount.html('<strong>' + count + '</strong> <?php echo esc_js( __( 'selected', 'mcp-ai-wpoos' ) ); ?>');
 			}
 
 			// Filter tools based on search term.
@@ -326,7 +326,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 			// Reset to initial state.
 			$('#reset-tools').on('click', function() {
 				// Use native confirm as it's consistent with WordPress admin UX patterns.
-				if (!confirm('<?php echo esc_js( __( 'Are you sure you want to reset the tools selection to the initial state?', 'wp-mcp-ai' ) ); ?>')) {
+				if (!confirm('<?php echo esc_js( __( 'Are you sure you want to reset the tools selection to the initial state?', 'mcp-ai-wpoos' ) ); ?>')) {
 					return;
 				}
 

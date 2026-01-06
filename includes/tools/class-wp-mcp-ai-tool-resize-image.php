@@ -28,14 +28,14 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Resize Image', 'wp-mcp-ai' );
+		return __( 'Resize Image', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Resize an image to specific dimensions or scale proportionally while maintaining aspect ratio.', 'wp-mcp-ai' );
+		return __( 'Resize an image to specific dimensions or scale proportionally while maintaining aspect ratio.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,24 +49,24 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 				array(
 					'width'          => array(
 						'type'        => 'integer',
-						'description' => __( 'Target width in pixels. Required if height is not specified.', 'wp-mcp-ai' ),
+						'description' => __( 'Target width in pixels. Required if height is not specified.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 10000,
 					),
 					'height'         => array(
 						'type'        => 'integer',
-						'description' => __( 'Target height in pixels. Required if width is not specified.', 'wp-mcp-ai' ),
+						'description' => __( 'Target height in pixels. Required if width is not specified.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 10000,
 					),
 					'maintain_ratio' => array(
 						'type'        => 'boolean',
-						'description' => __( 'Whether to maintain aspect ratio. If true and both width and height are specified, the image will fit within those dimensions.', 'wp-mcp-ai' ),
+						'description' => __( 'Whether to maintain aspect ratio. If true and both width and height are specified, the image will fit within those dimensions.', 'mcp-ai-wpoos' ),
 						'default'     => true,
 					),
 					'crop'           => array(
 						'type'        => 'boolean',
-						'description' => __( 'Whether to crop the image to exact dimensions. Only applies when both width and height are specified.', 'wp-mcp-ai' ),
+						'description' => __( 'Whether to crop the image to exact dimensions. Only applies when both width and height are specified.', 'mcp-ai-wpoos' ),
 						'default'     => false,
 					),
 				),
@@ -102,15 +102,15 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to resize images.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to resize images.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id && ! user_can( $user_id, 'upload_files' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get dimensions.
@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 		$height = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : 0;
 
 		if ( ! $width && ! $height ) {
-			return new WP_Error( 'wp_mcp_ai_missing_dimensions', __( 'Either width or height must be specified.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_dimensions', __( 'Either width or height must be specified.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$maintain_ratio = isset( $arguments['maintain_ratio'] ) ? (bool) $arguments['maintain_ratio'] : true;
@@ -213,7 +213,7 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 			'output_format'   => $output_format,
 			'text'            => sprintf(
 				/* translators: 1: original dimensions, 2: new dimensions, 3: output format */
-				__( 'Successfully resized image from %1$s to %2$s%3$s.', 'wp-mcp-ai' ),
+				__( 'Successfully resized image from %1$s to %2$s%3$s.', 'mcp-ai-wpoos' ),
 				$original_size['width'] . 'x' . $original_size['height'],
 				$new_size['width'] . 'x' . $new_size['height'],
 				'svg' === $output_format ? ' and converted to SVG' : ''

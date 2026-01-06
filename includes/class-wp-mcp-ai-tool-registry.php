@@ -230,7 +230,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 					'wp_mcp_ai_tool_not_found',
 					sprintf(
 						/* translators: %s: tool slug */
-						__( 'Tool "%s" not found.', 'wp-mcp-ai' ),
+						__( 'Tool "%s" not found.', 'mcp-ai-wpoos' ),
 						$slug
 					)
 				);
@@ -550,11 +550,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$this->init();
 
 			$default_labels = array(
-				'wordpress-core'     => __( 'WordPress Core', 'wp-mcp-ai' ),
-				'wordpress-plugins'  => __( 'WordPress Plugins', 'wp-mcp-ai' ),
-				'project-management' => __( 'Project Management', 'wp-mcp-ai' ),
-				'external-tools'     => __( 'External Tools', 'wp-mcp-ai' ),
-				'other'              => __( 'Other tools', 'wp-mcp-ai' ),
+				'wordpress-core'     => __( 'WordPress Core', 'mcp-ai-wpoos' ),
+				'wordpress-plugins'  => __( 'WordPress Plugins', 'mcp-ai-wpoos' ),
+				'project-management' => __( 'Project Management', 'mcp-ai-wpoos' ),
+				'external-tools'     => __( 'External Tools', 'mcp-ai-wpoos' ),
+				'other'              => __( 'Other tools', 'mcp-ai-wpoos' ),
 			);
 
 			/**

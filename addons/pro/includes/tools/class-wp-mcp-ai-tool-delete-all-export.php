@@ -33,7 +33,7 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Export implements WP_MCP_AI_Tool_Interface, 
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The WP All Export Pro tool is disabled because WP All Export plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The WP All Export Pro tool is disabled because WP All Export plugin is not active.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -47,14 +47,14 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Export implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Delete WP All Export Template', 'wp-mcp-ai' );
+		return __( 'Delete WP All Export Template', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Deletes a WP All Export template and its associated files (Pro feature). Requires WP All Export plugin.', 'wp-mcp-ai' );
+		return __( 'Deletes a WP All Export template and its associated files (Pro feature). Requires WP All Export plugin.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -66,7 +66,7 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Export implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'export_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the export template to delete.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the export template to delete.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 			),
@@ -84,21 +84,21 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Export implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_all_export_missing', __( 'WP All Export is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_all_export_missing', __( 'WP All Export is not active on this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to delete exports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to delete exports.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete exports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete exports.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( empty( $arguments['export_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Export ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Export ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$export_id = absint( $arguments['export_id'] );
@@ -106,7 +106,7 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Export implements WP_MCP_AI_Tool_Interface, 
 		// Verify export exists.
 		$export = get_post( $export_id );
 		if ( ! $export || 'pmxe_exports' !== $export->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_export', __( 'Invalid export ID.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_export', __( 'Invalid export ID.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$export_name = $export->post_title;
@@ -130,12 +130,12 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Export implements WP_MCP_AI_Tool_Interface, 
 		$deleted = wp_delete_post( $export_id, true );
 
 		if ( ! $deleted ) {
-			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete export template.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete export template.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return array(
 			'success'     => true,
-			'message'     => __( 'Export template deleted successfully.', 'wp-mcp-ai' ),
+			'message'     => __( 'Export template deleted successfully.', 'mcp-ai-wpoos-pro' ),
 			'export_id'   => $export_id,
 			'export_name' => $export_name,
 		);

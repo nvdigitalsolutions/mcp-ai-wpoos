@@ -52,11 +52,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_anthropic_api_key',
-					__( 'No Anthropic API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No Anthropic API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_anthropic_api_key' => __( 'Add an Anthropic API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_anthropic_api_key' => __( 'Add an Anthropic API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -67,11 +67,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( empty( $model ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_anthropic_model',
-					__( 'No Anthropic model has been configured.', 'wp-mcp-ai' ),
+					__( 'No Anthropic model has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_anthropic_model' => __( 'Choose an Anthropic model in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_anthropic_model' => __( 'Choose an Anthropic model in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -105,8 +105,8 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The Anthropic API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'Anthropic', 'wp-mcp-ai' )
+					__( 'The Anthropic API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'Anthropic', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -118,11 +118,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( JSON_ERROR_NONE !== $json_err ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode Anthropic response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Anthropic API returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Anthropic API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Anthropic.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Anthropic.', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
 					'Anthropic returned an error response.',
@@ -164,7 +164,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_anthropic_api_key',
-					__( 'No Anthropic API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No Anthropic API key has been configured.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -191,7 +191,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			return array(
 				'success' => true,
-				'message' => __( 'Successfully connected to Anthropic.', 'wp-mcp-ai' ),
+				'message' => __( 'Successfully connected to Anthropic.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -226,11 +226,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( empty( $messages ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_messages',
-					__( 'No chat messages were provided for the request.', 'wp-mcp-ai' ),
+					__( 'No chat messages were provided for the request.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'wp-mcp-ai' ),
+							'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -277,7 +277,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( empty( $anthropic_messages ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_no_valid_messages',
-					__( 'No valid messages found for the Anthropic request.', 'wp-mcp-ai' ),
+					__( 'No valid messages found for the Anthropic request.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}

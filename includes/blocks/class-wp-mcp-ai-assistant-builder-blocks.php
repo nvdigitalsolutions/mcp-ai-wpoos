@@ -94,8 +94,8 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 		return array_merge(
 			array(
 				array(
-					'slug'  => 'wp-mcp-ai',
-					'title' => __( 'NV oOS - AI Assistant', 'wp-mcp-ai' ),
+					'slug'  => 'mcp-ai-wpoos',
+					'title' => __( 'NV oOS - AI Assistant', 'mcp-ai-wpoos' ),
 					'icon'  => 'admin-generic',
 				),
 			),
@@ -134,27 +134,27 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 				'maxUploadSize'    => wp_max_upload_size(),
 				'allowedFileTypes' => $allowed_types,
 				'i18n'             => array(
-					'selectAssistant'   => __( '— Select an assistant —', 'wp-mcp-ai' ),
-					'noAssistants'      => __( 'No assistants found.', 'wp-mcp-ai' ),
-					'startChat'         => __( 'Start Chat', 'wp-mcp-ai' ),
-					'selectAll'         => __( 'Select All', 'wp-mcp-ai' ),
-					'deselectAll'       => __( 'Deselect All', 'wp-mcp-ai' ),
-					'toolsSelected'     => __( 'tools selected', 'wp-mcp-ai' ),
-					'availableTools'    => __( 'Available Tools', 'wp-mcp-ai' ),
-					'buildAssistant'    => __( 'Build', 'wp-mcp-ai' ),
-					'chatPlaceholder'   => __( 'Describe the assistant you want to create...', 'wp-mcp-ai' ),
-					'noPermission'      => __( 'You do not have permission to use this feature.', 'wp-mcp-ai' ),
-					'assistantSelector' => __( 'Select an Assistant:', 'wp-mcp-ai' ),
-					'knowledgeBase'     => __( 'Knowledge Base', 'wp-mcp-ai' ),
-					'uploadFiles'       => __( 'Upload Files', 'wp-mcp-ai' ),
-					'dropFilesHere'     => __( 'Drop files here or click to upload', 'wp-mcp-ai' ),
-					'filesUploaded'     => __( 'files uploaded', 'wp-mcp-ai' ),
-					'removeFile'        => __( 'Remove', 'wp-mcp-ai' ),
-					'uploading'         => __( 'Uploading...', 'wp-mcp-ai' ),
-					'uploadError'       => __( 'Upload failed', 'wp-mcp-ai' ),
-					'maxFilesReached'   => __( 'Maximum number of files reached', 'wp-mcp-ai' ),
-					'fileTooLarge'      => __( 'File is too large', 'wp-mcp-ai' ),
-					'invalidFileType'   => __( 'Invalid file type', 'wp-mcp-ai' ),
+					'selectAssistant'   => __( '— Select an assistant —', 'mcp-ai-wpoos' ),
+					'noAssistants'      => __( 'No assistants found.', 'mcp-ai-wpoos' ),
+					'startChat'         => __( 'Start Chat', 'mcp-ai-wpoos' ),
+					'selectAll'         => __( 'Select All', 'mcp-ai-wpoos' ),
+					'deselectAll'       => __( 'Deselect All', 'mcp-ai-wpoos' ),
+					'toolsSelected'     => __( 'tools selected', 'mcp-ai-wpoos' ),
+					'availableTools'    => __( 'Available Tools', 'mcp-ai-wpoos' ),
+					'buildAssistant'    => __( 'Build', 'mcp-ai-wpoos' ),
+					'chatPlaceholder'   => __( 'Describe the assistant you want to create...', 'mcp-ai-wpoos' ),
+					'noPermission'      => __( 'You do not have permission to use this feature.', 'mcp-ai-wpoos' ),
+					'assistantSelector' => __( 'Select an Assistant:', 'mcp-ai-wpoos' ),
+					'knowledgeBase'     => __( 'Knowledge Base', 'mcp-ai-wpoos' ),
+					'uploadFiles'       => __( 'Upload Files', 'mcp-ai-wpoos' ),
+					'dropFilesHere'     => __( 'Drop files here or click to upload', 'mcp-ai-wpoos' ),
+					'filesUploaded'     => __( 'files uploaded', 'mcp-ai-wpoos' ),
+					'removeFile'        => __( 'Remove', 'mcp-ai-wpoos' ),
+					'uploading'         => __( 'Uploading...', 'mcp-ai-wpoos' ),
+					'uploadError'       => __( 'Upload failed', 'mcp-ai-wpoos' ),
+					'maxFilesReached'   => __( 'Maximum number of files reached', 'mcp-ai-wpoos' ),
+					'fileTooLarge'      => __( 'File is too large', 'mcp-ai-wpoos' ),
+					'invalidFileType'   => __( 'Invalid file type', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -295,7 +295,7 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 			$group_labels = array();
 		}
 		if ( ! isset( $group_labels['other'] ) ) {
-			$group_labels['other'] = __( 'Other tools', 'wp-mcp-ai' );
+			$group_labels['other'] = __( 'Other tools', 'mcp-ai-wpoos' );
 		}
 
 		$grouped = array();

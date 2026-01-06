@@ -116,7 +116,7 @@ class WP_MCP_AI_SSE_Handler {
 			// Send a simplified error response that can be JSON encoded.
 			$error_data = array(
 				'error'   => true,
-				'message' => __( 'Failed to encode response data. The data may contain invalid characters or unsupported types.', 'wp-mcp-ai' ),
+				'message' => __( 'Failed to encode response data. The data may contain invalid characters or unsupported types.', 'mcp-ai-wpoos' ),
 				'event'   => $event,
 			);
 

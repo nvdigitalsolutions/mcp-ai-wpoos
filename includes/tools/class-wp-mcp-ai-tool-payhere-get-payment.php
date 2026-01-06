@@ -35,14 +35,14 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'PayHere Get Payment', 'wp-mcp-ai' );
+		return __( 'PayHere Get Payment', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieve payment transaction details from PayHere payment gateway by order ID. Returns payment status, customer details, amounts, fees, and payment method information.', 'wp-mcp-ai' );
+		return __( 'Retrieve payment transaction details from PayHere payment gateway by order ID. Returns payment status, customer details, amounts, fees, and payment method information.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -54,11 +54,11 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 			'properties'           => array(
 				'order_id' => array(
 					'type'        => 'string',
-					'description' => __( 'The PayHere order ID to retrieve payment details for (e.g., "LP8006126139").', 'wp-mcp-ai' ),
+					'description' => __( 'The PayHere order ID to retrieve payment details for (e.g., "LP8006126139").', 'mcp-ai-wpoos' ),
 				),
 				'timeout'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Request timeout in seconds (5-60).', 'wp-mcp-ai' ),
+					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,
 					'maximum'     => 60,
 				),
@@ -80,24 +80,24 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to retrieve PayHere payment details.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to retrieve PayHere payment details.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id ) {
 			// Require manage_woocommerce or manage_options capability for payment data access.
 			if ( ! user_can( $user_id, 'manage_woocommerce' ) && ! user_can( $user_id, 'manage_options' ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to retrieve payment details.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to retrieve payment details.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
 		if ( empty( $arguments['order_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_order_id',
-				__( 'An order_id parameter is required.', 'wp-mcp-ai' ),
+				__( 'An order_id parameter is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 		// Add summary for frontend display.
 		$summary = sprintf(
 			/* translators: %s: order ID */
-			__( 'Retrieved payment details for order: %s', 'wp-mcp-ai' ),
+			__( 'Retrieved payment details for order: %s', 'mcp-ai-wpoos' ),
 			$order_id
 		);
 

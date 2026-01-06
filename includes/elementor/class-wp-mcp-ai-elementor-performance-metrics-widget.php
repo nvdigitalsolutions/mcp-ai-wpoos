@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Performance Metrics', 'wp-mcp-ai' );
+		return __( 'NV oOS Performance Metrics', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -64,17 +64,17 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Dashboard Settings', 'wp-mcp-ai' ),
+				'label' => __( 'Dashboard Settings', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Current Performance Metrics', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter title…', 'wp-mcp-ai' ),
+				'default'     => __( 'Current Performance Metrics', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter title…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -82,16 +82,16 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 		$this->add_control(
 			'component_filter',
 			array(
-				'label'       => __( 'Filter by Component', 'wp-mcp-ai' ),
+				'label'       => __( 'Filter by Component', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => array(
-					''              => __( 'All Components', 'wp-mcp-ai' ),
-					'rest_api'      => __( 'REST API', 'wp-mcp-ai' ),
-					'chat_ui'       => __( 'Chat UI', 'wp-mcp-ai' ),
-					'mcp_core'      => __( 'MCP Core', 'wp-mcp-ai' ),
-					'elementor'     => __( 'Elementor', 'wp-mcp-ai' ),
-					'cpt_ai_peer'   => __( 'CPT: AI Peer', 'wp-mcp-ai' ),
-					'cpt_assistant' => __( 'CPT: Assistant', 'wp-mcp-ai' ),
+					''              => __( 'All Components', 'mcp-ai-wpoos' ),
+					'rest_api'      => __( 'REST API', 'mcp-ai-wpoos' ),
+					'chat_ui'       => __( 'Chat UI', 'mcp-ai-wpoos' ),
+					'mcp_core'      => __( 'MCP Core', 'mcp-ai-wpoos' ),
+					'elementor'     => __( 'Elementor', 'mcp-ai-wpoos' ),
+					'cpt_ai_peer'   => __( 'CPT: AI Peer', 'mcp-ai-wpoos' ),
+					'cpt_assistant' => __( 'CPT: Assistant', 'mcp-ai-wpoos' ),
 				),
 				'default'     => '',
 				'label_block' => true,
@@ -101,13 +101,13 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 		$this->add_control(
 			'time_period',
 			array(
-				'label'   => __( 'Time Period', 'wp-mcp-ai' ),
+				'label'   => __( 'Time Period', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'options' => array(
-					'-1 hour'   => __( 'Last Hour', 'wp-mcp-ai' ),
-					'-24 hours' => __( 'Last 24 Hours', 'wp-mcp-ai' ),
-					'-7 days'   => __( 'Last 7 Days', 'wp-mcp-ai' ),
-					'-30 days'  => __( 'Last 30 Days', 'wp-mcp-ai' ),
+					'-1 hour'   => __( 'Last Hour', 'mcp-ai-wpoos' ),
+					'-24 hours' => __( 'Last 24 Hours', 'mcp-ai-wpoos' ),
+					'-7 days'   => __( 'Last 7 Days', 'mcp-ai-wpoos' ),
+					'-30 days'  => __( 'Last 30 Days', 'mcp-ai-wpoos' ),
 				),
 				'default' => '-24 hours',
 			)
@@ -116,10 +116,10 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 		$this->add_control(
 			'show_status_indicators',
 			array(
-				'label'        => __( 'Show Status Indicators', 'wp-mcp-ai' ),
+				'label'        => __( 'Show Status Indicators', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -128,13 +128,13 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 		$this->add_control(
 			'auto_refresh',
 			array(
-				'label'        => __( 'Auto Refresh', 'wp-mcp-ai' ),
+				'label'        => __( 'Auto Refresh', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'no',
-				'description'  => __( 'Refresh metrics every 30 seconds.', 'wp-mcp-ai' ),
+				'description'  => __( 'Refresh metrics every 30 seconds.', 'mcp-ai-wpoos' ),
 			)
 		);
 
@@ -159,7 +159,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 	protected function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			echo '<div class="wp-mcp-ai-performance-metrics">';
-			echo '<p>' . esc_html__( 'You do not have permission to view performance metrics.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p>' . esc_html__( 'You do not have permission to view performance metrics.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -185,7 +185,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 
 		// Response Time.
 		echo '<div class="wp-mcp-ai-performance-metrics__metric">';
-		echo '<div class="wp-mcp-ai-performance-metrics__label">' . esc_html__( 'Avg Response Time', 'wp-mcp-ai' ) . '</div>';
+		echo '<div class="wp-mcp-ai-performance-metrics__label">' . esc_html__( 'Avg Response Time', 'mcp-ai-wpoos' ) . '</div>';
 		echo '<div class="wp-mcp-ai-performance-metrics__value">' . esc_html( number_format( $metrics['avg_response_time'], 2 ) ) . ' ms</div>';
 		if ( $show_status ) {
 			echo '<div class="wp-mcp-ai-performance-metrics__status ' . esc_attr( $this->get_response_time_status( $metrics['avg_response_time'] ) ) . '"></div>';
@@ -194,7 +194,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 
 		// Memory Usage.
 		echo '<div class="wp-mcp-ai-performance-metrics__metric">';
-		echo '<div class="wp-mcp-ai-performance-metrics__label">' . esc_html__( 'Avg Memory Usage', 'wp-mcp-ai' ) . '</div>';
+		echo '<div class="wp-mcp-ai-performance-metrics__label">' . esc_html__( 'Avg Memory Usage', 'mcp-ai-wpoos' ) . '</div>';
 		echo '<div class="wp-mcp-ai-performance-metrics__value">' . esc_html( number_format( $metrics['avg_memory_usage'], 2 ) ) . ' MB</div>';
 		if ( $show_status ) {
 			echo '<div class="wp-mcp-ai-performance-metrics__status ' . esc_attr( $this->get_memory_status( $metrics['avg_memory_usage'] ) ) . '"></div>';
@@ -203,7 +203,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 
 		// DB Queries.
 		echo '<div class="wp-mcp-ai-performance-metrics__metric">';
-		echo '<div class="wp-mcp-ai-performance-metrics__label">' . esc_html__( 'Avg DB Queries', 'wp-mcp-ai' ) . '</div>';
+		echo '<div class="wp-mcp-ai-performance-metrics__label">' . esc_html__( 'Avg DB Queries', 'mcp-ai-wpoos' ) . '</div>';
 		echo '<div class="wp-mcp-ai-performance-metrics__value">' . esc_html( number_format( $metrics['avg_db_queries'], 0 ) ) . '</div>';
 		if ( $show_status ) {
 			echo '<div class="wp-mcp-ai-performance-metrics__status ' . esc_attr( $this->get_db_queries_status( $metrics['avg_db_queries'] ) ) . '"></div>';
@@ -212,7 +212,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 
 		// Total Tests.
 		echo '<div class="wp-mcp-ai-performance-metrics__metric">';
-		echo '<div class="wp-mcp-ai-performance-metrics__label">' . esc_html__( 'Total Tests', 'wp-mcp-ai' ) . '</div>';
+		echo '<div class="wp-mcp-ai-performance-metrics__label">' . esc_html__( 'Total Tests', 'mcp-ai-wpoos' ) . '</div>';
 		echo '<div class="wp-mcp-ai-performance-metrics__value">' . esc_html( $metrics['total_tests'] ) . '</div>';
 		echo '</div>';
 
@@ -221,7 +221,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 		// Status Distribution.
 		if ( ! empty( $metrics['status_distribution'] ) ) {
 			echo '<div class="wp-mcp-ai-performance-metrics__status-distribution">';
-			echo '<h4>' . esc_html__( 'Test Results Distribution', 'wp-mcp-ai' ) . '</h4>';
+			echo '<h4>' . esc_html__( 'Test Results Distribution', 'mcp-ai-wpoos' ) . '</h4>';
 			echo '<div class="wp-mcp-ai-performance-metrics__distribution-grid">';
 			foreach ( $metrics['status_distribution'] as $status => $count ) {
 				echo '<div class="wp-mcp-ai-performance-metrics__distribution-item">';

@@ -85,11 +85,11 @@ if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 			if ( empty( $app_id ) || empty( $app_secret ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_payhere_credentials',
-					__( 'PayHere App ID and App Secret must be configured.', 'wp-mcp-ai' ),
+					__( 'PayHere App ID and App Secret must be configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_payhere_credentials' => __( 'Add PayHere credentials in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_payhere_credentials' => __( 'Add PayHere credentials in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -127,8 +127,8 @@ if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The PayHere authentication request failed to complete.', 'wp-mcp-ai' ),
-					__( 'PayHere', 'wp-mcp-ai' )
+					__( 'The PayHere authentication request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'PayHere', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -139,11 +139,11 @@ if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode PayHere token response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'PayHere returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'PayHere returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error_description'] ) ? $decoded['error_description'] : __( 'Unexpected response from PayHere.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['error_description'] ) ? $decoded['error_description'] : __( 'Unexpected response from PayHere.', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
 					'PayHere returned an error response for token request.',
@@ -166,7 +166,7 @@ if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 			if ( ! isset( $decoded['access_token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_token',
-					__( 'No access token in PayHere response.', 'wp-mcp-ai' ),
+					__( 'No access token in PayHere response.', 'mcp-ai-wpoos' ),
 					array( 'body' => $decoded )
 				);
 			}
@@ -189,7 +189,7 @@ if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 			if ( empty( $order_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_order_id',
-					__( 'An order ID must be supplied to retrieve payment details.', 'wp-mcp-ai' ),
+					__( 'An order ID must be supplied to retrieve payment details.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -224,8 +224,8 @@ if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The PayHere API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'PayHere', 'wp-mcp-ai' )
+					__( 'The PayHere API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'PayHere', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -236,11 +236,11 @@ if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode PayHere payment response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'PayHere returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'PayHere returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['msg'] ) ? $decoded['msg'] : __( 'Unexpected response from PayHere.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['msg'] ) ? $decoded['msg'] : __( 'Unexpected response from PayHere.', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
 					'PayHere returned an error response for payment retrieval.',
@@ -262,7 +262,7 @@ if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 
 			// Check PayHere API status field.
 			if ( ! isset( $decoded['status'] ) || 1 !== $decoded['status'] ) {
-				$error_message = isset( $decoded['msg'] ) ? $decoded['msg'] : __( 'PayHere API returned unsuccessful status.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['msg'] ) ? $decoded['msg'] : __( 'PayHere API returned unsuccessful status.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_payment_retrieval_failed',

@@ -40,7 +40,7 @@ class Test_ChatKit_Integration extends WP_UnitTestCase {
 
 		$addon = $addons[ WP_MCP_AI_ChatKit_Integration::ADDON_ID ];
 
-		$this->assertSame( 'wp-mcp-ai', $addon['id'] );
+		$this->assertSame( 'mcp-ai-wpoos', $addon['id'] );
 		$this->assertArrayHasKey( 'rest_namespace', $addon );
 		$this->assertSame( WP_MCP_AI_REST::REST_NAMESPACE, $addon['rest_namespace'] );
 		$this->assertArrayHasKey( 'rest_routes', $addon );
@@ -110,7 +110,7 @@ class Test_ChatKit_Integration extends WP_UnitTestCase {
 		do_action( 'chatkit/register_addons', $manager );
 
 		$this->assertIsArray( $manager->received );
-		$this->assertSame( 'wp-mcp-ai', $manager->received['id'] );
+		$this->assertSame( 'mcp-ai-wpoos', $manager->received['id'] );
 	}
 
 	/**

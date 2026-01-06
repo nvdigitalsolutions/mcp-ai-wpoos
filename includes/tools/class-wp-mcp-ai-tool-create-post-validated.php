@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Create_Post_Validated extends WP_MCP_AI_Validated_Tool impl
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Post (Validated)', 'wp-mcp-ai' );
+		return __( 'Create Post (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new WordPress post with Symfony Validator for argument validation. For updating existing posts, use save_post instead.', 'wp-mcp-ai' );
+		return __( 'Creates a new WordPress post with Symfony Validator for argument validation. For updating existing posts, use save_post instead.', 'mcp-ai-wpoos' );
 	}
 
 	/**

@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_MCP_AI_Validated_Tool
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Run Crawl4AI Job (Validated)', 'wp-mcp-ai' );
+		return __( 'Run Crawl4AI Job (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Submits a Crawl4AI crawl request and optionally waits for the results with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Submits a Crawl4AI crawl request and optionally waits for the results with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

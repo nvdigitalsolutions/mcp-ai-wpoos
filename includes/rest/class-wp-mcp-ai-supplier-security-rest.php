@@ -58,7 +58,7 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'check_permission' ),
 					'args'                => array(
 						'id' => array(
-							'description' => __( 'Supplier ID', 'wp-mcp-ai' ),
+							'description' => __( 'Supplier ID', 'mcp-ai-wpoos' ),
 							'type'        => 'string',
 							'required'    => true,
 						),
@@ -89,7 +89,7 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'check_permission' ),
 					'args'                => array(
 						'category' => array(
-							'description' => __( 'Supplier category', 'wp-mcp-ai' ),
+							'description' => __( 'Supplier category', 'mcp-ai-wpoos' ),
 							'type'        => 'string',
 							'required'    => true,
 							'enum'        => array( 'critical', 'important', 'low_risk' ),
@@ -110,7 +110,7 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'check_permission' ),
 					'args'                => array(
 						'risk' => array(
-							'description' => __( 'Risk level', 'wp-mcp-ai' ),
+							'description' => __( 'Risk level', 'mcp-ai-wpoos' ),
 							'type'        => 'string',
 							'required'    => true,
 							'enum'        => array( 'low', 'medium', 'high', 'critical' ),
@@ -157,22 +157,22 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 					'permission_callback' => array( $this, 'check_permission' ),
 					'args'                => array(
 						'id'          => array(
-							'description' => __( 'Supplier ID', 'wp-mcp-ai' ),
+							'description' => __( 'Supplier ID', 'mcp-ai-wpoos' ),
 							'type'        => 'string',
 							'required'    => true,
 						),
 						'title'       => array(
-							'description' => __( 'Incident title', 'wp-mcp-ai' ),
+							'description' => __( 'Incident title', 'mcp-ai-wpoos' ),
 							'type'        => 'string',
 							'required'    => true,
 						),
 						'description' => array(
-							'description' => __( 'Incident description', 'wp-mcp-ai' ),
+							'description' => __( 'Incident description', 'mcp-ai-wpoos' ),
 							'type'        => 'string',
 							'required'    => true,
 						),
 						'severity'    => array(
-							'description' => __( 'Incident severity', 'wp-mcp-ai' ),
+							'description' => __( 'Incident severity', 'mcp-ai-wpoos' ),
 							'type'        => 'string',
 							'required'    => true,
 							'enum'        => array( 'low', 'medium', 'high', 'critical' ),
@@ -249,7 +249,7 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 		if ( ! $supplier ) {
 			return new WP_Error(
 				'supplier_not_found',
-				__( 'Supplier not found', 'wp-mcp-ai' ),
+				__( 'Supplier not found', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -299,7 +299,7 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 		if ( ! $success ) {
 			return new WP_Error(
 				'update_failed',
-				__( 'Failed to update supplier', 'wp-mcp-ai' ),
+				__( 'Failed to update supplier', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -307,7 +307,7 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 		return rest_ensure_response( array(
 			'success'  => true,
 			'supplier' => $supplier_security->get_supplier( $supplier_id ),
-			'message'  => __( 'Supplier updated successfully', 'wp-mcp-ai' ),
+			'message'  => __( 'Supplier updated successfully', 'mcp-ai-wpoos' ),
 		) );
 	}
 
@@ -326,14 +326,14 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 		if ( ! $success ) {
 			return new WP_Error(
 				'delete_failed',
-				__( 'Failed to delete supplier', 'wp-mcp-ai' ),
+				__( 'Failed to delete supplier', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
 
 		return rest_ensure_response( array(
 			'success' => true,
-			'message' => __( 'Supplier deleted successfully', 'wp-mcp-ai' ),
+			'message' => __( 'Supplier deleted successfully', 'mcp-ai-wpoos' ),
 		) );
 	}
 
@@ -429,14 +429,14 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 		if ( ! $success ) {
 			return new WP_Error(
 				'incident_record_failed',
-				__( 'Failed to record incident', 'wp-mcp-ai' ),
+				__( 'Failed to record incident', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
 
 		return rest_ensure_response( array(
 			'success'  => true,
-			'message'  => __( 'Incident recorded successfully', 'wp-mcp-ai' ),
+			'message'  => __( 'Incident recorded successfully', 'mcp-ai-wpoos' ),
 			'incident' => $incident,
 		) );
 	}
@@ -481,30 +481,30 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 	protected function get_supplier_schema() {
 		return array(
 			'name'        => array(
-				'description' => __( 'Supplier name', 'wp-mcp-ai' ),
+				'description' => __( 'Supplier name', 'mcp-ai-wpoos' ),
 				'type'        => 'string',
 			),
 			'service'     => array(
-				'description' => __( 'Service provided', 'wp-mcp-ai' ),
+				'description' => __( 'Service provided', 'mcp-ai-wpoos' ),
 				'type'        => 'string',
 			),
 			'category'    => array(
-				'description' => __( 'Supplier category', 'wp-mcp-ai' ),
+				'description' => __( 'Supplier category', 'mcp-ai-wpoos' ),
 				'type'        => 'string',
 				'enum'        => array( 'critical', 'important', 'low_risk' ),
 			),
 			'risk_level'  => array(
-				'description' => __( 'Risk level', 'wp-mcp-ai' ),
+				'description' => __( 'Risk level', 'mcp-ai-wpoos' ),
 				'type'        => 'string',
 				'enum'        => array( 'low', 'medium', 'high', 'critical' ),
 			),
 			'status'      => array(
-				'description' => __( 'Assessment status', 'wp-mcp-ai' ),
+				'description' => __( 'Assessment status', 'mcp-ai-wpoos' ),
 				'type'        => 'string',
 				'enum'        => array( 'pending', 'approved', 'rejected', 'reviewing' ),
 			),
 			'next_review' => array(
-				'description' => __( 'Next review date (YYYY-MM-DD)', 'wp-mcp-ai' ),
+				'description' => __( 'Next review date (YYYY-MM-DD)', 'mcp-ai-wpoos' ),
 				'type'        => 'string',
 				'format'      => 'date',
 			),

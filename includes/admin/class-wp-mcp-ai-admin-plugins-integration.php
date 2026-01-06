@@ -37,8 +37,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 		public function register_page() {
 			$this->page_hook = add_submenu_page(
 				'wp-mcp-ai-dashboard',
-				__( 'Plugins - NV oOS', 'wp-mcp-ai' ),
-				__( 'Plugins', 'wp-mcp-ai' ),
+				__( 'Plugins - NV oOS', 'mcp-ai-wpoos' ),
+				__( 'Plugins', 'mcp-ai-wpoos' ),
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_page' )
@@ -50,7 +50,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 		 */
 		public function handle_save_settings() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_save_plugins_settings' );
@@ -105,15 +105,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 			$newsletter_active  = class_exists( 'Newsletter' ) || class_exists( 'NewsletterSubscription' );
 			?>
 			<div class="wrap">
-				<h1><?php esc_html_e( 'Plugins Integration', 'wp-mcp-ai' ); ?></h1>
+				<h1><?php esc_html_e( 'Plugins Integration', 'mcp-ai-wpoos' ); ?></h1>
 
 				<?php if ( isset( $_GET['updated'] ) && 'true' === $_GET['updated'] ) : ?>
 					<div class="notice notice-success is-dismissible">
-						<p><?php esc_html_e( 'Settings saved successfully.', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'Settings saved successfully.', 'mcp-ai-wpoos' ); ?></p>
 					</div>
 				<?php endif; ?>
 
-				<p><?php esc_html_e( 'Configure WordPress plugin integrations including JetEngine, WooCommerce, Elementor, and Newsletter.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'Configure WordPress plugin integrations including JetEngine, WooCommerce, Elementor, and Newsletter.', 'mcp-ai-wpoos' ); ?></p>
 
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<input type="hidden" name="action" value="wp_mcp_ai_save_plugins_settings" />
@@ -125,9 +125,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 							<td colspan="2">
 								<h2 style="margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px;">
 									<span class="dashicons dashicons-admin-plugins"></span>
-									<?php esc_html_e( 'JetEngine', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'JetEngine', 'mcp-ai-wpoos' ); ?>
 									<?php if ( ! $jetengine_active ) : ?>
-										<span class="dashicons dashicons-warning" style="color: #d63638;" title="<?php esc_attr_e( 'JetEngine plugin is not active', 'wp-mcp-ai' ); ?>"></span>
+										<span class="dashicons dashicons-warning" style="color: #d63638;" title="<?php esc_attr_e( 'JetEngine plugin is not active', 'mcp-ai-wpoos' ); ?>"></span>
 									<?php endif; ?>
 								</h2>
 								<hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
@@ -137,33 +137,33 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 							<tr>
 								<td colspan="2">
 									<div class="notice notice-warning inline">
-										<p><?php esc_html_e( 'JetEngine plugin is not active. Please install and activate JetEngine to use these features.', 'wp-mcp-ai' ); ?></p>
+										<p><?php esc_html_e( 'JetEngine plugin is not active. Please install and activate JetEngine to use these features.', 'mcp-ai-wpoos' ); ?></p>
 									</div>
 								</td>
 							</tr>
 						<?php endif; ?>
 						<tr>
 							<th scope="row">
-								<?php esc_html_e( 'Enable JetEngine CCT', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Enable JetEngine CCT', 'mcp-ai-wpoos' ); ?>
 							</th>
 							<td>
 								<label>
 									<input type="checkbox" name="enable_jetengine_cct" value="1" <?php checked( $enable_jetengine_cct ); ?> <?php disabled( ! $jetengine_active ); ?> />
-									<?php esc_html_e( 'Enable Custom Content Types integration', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Enable Custom Content Types integration', 'mcp-ai-wpoos' ); ?>
 								</label>
-								<p class="description"><?php esc_html_e( 'Allow AI to interact with JetEngine Custom Content Types.', 'wp-mcp-ai' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Allow AI to interact with JetEngine Custom Content Types.', 'mcp-ai-wpoos' ); ?></p>
 							</td>
 						</tr>
 						<tr>
 							<th scope="row">
-								<?php esc_html_e( 'Enable JetEngine Tools', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Enable JetEngine Tools', 'mcp-ai-wpoos' ); ?>
 							</th>
 							<td>
 								<label>
 									<input type="checkbox" name="enable_jetengine_tools" value="1" <?php checked( $enable_jetengine_tools ); ?> <?php disabled( ! $jetengine_active ); ?> />
-									<?php esc_html_e( 'Enable JetEngine-specific tools', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Enable JetEngine-specific tools', 'mcp-ai-wpoos' ); ?>
 								</label>
-								<p class="description"><?php esc_html_e( 'Provides AI tools for managing JetEngine content.', 'wp-mcp-ai' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Provides AI tools for managing JetEngine content.', 'mcp-ai-wpoos' ); ?></p>
 							</td>
 						</tr>
 
@@ -172,9 +172,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 							<td colspan="2">
 								<h2 style="margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px;">
 									<span class="dashicons dashicons-cart"></span>
-									<?php esc_html_e( 'WooCommerce', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'WooCommerce', 'mcp-ai-wpoos' ); ?>
 									<?php if ( ! $woocommerce_active ) : ?>
-										<span class="dashicons dashicons-warning" style="color: #d63638;" title="<?php esc_attr_e( 'WooCommerce plugin is not active', 'wp-mcp-ai' ); ?>"></span>
+										<span class="dashicons dashicons-warning" style="color: #d63638;" title="<?php esc_attr_e( 'WooCommerce plugin is not active', 'mcp-ai-wpoos' ); ?>"></span>
 									<?php endif; ?>
 								</h2>
 								<hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
@@ -184,21 +184,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 							<tr>
 								<td colspan="2">
 									<div class="notice notice-warning inline">
-										<p><?php esc_html_e( 'WooCommerce plugin is not active. Please install and activate WooCommerce to use these features.', 'wp-mcp-ai' ); ?></p>
+										<p><?php esc_html_e( 'WooCommerce plugin is not active. Please install and activate WooCommerce to use these features.', 'mcp-ai-wpoos' ); ?></p>
 									</div>
 								</td>
 							</tr>
 						<?php endif; ?>
 						<tr>
 							<th scope="row">
-								<?php esc_html_e( 'Enable WooCommerce Tools', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Enable WooCommerce Tools', 'mcp-ai-wpoos' ); ?>
 							</th>
 							<td>
 								<label>
 									<input type="checkbox" name="enable_woocommerce_tools" value="1" <?php checked( $enable_woocommerce_tools ); ?> <?php disabled( ! $woocommerce_active ); ?> />
-									<?php esc_html_e( 'Enable WooCommerce-specific tools', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Enable WooCommerce-specific tools', 'mcp-ai-wpoos' ); ?>
 								</label>
-								<p class="description"><?php esc_html_e( 'Provides AI tools for managing products, orders, and customers.', 'wp-mcp-ai' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Provides AI tools for managing products, orders, and customers.', 'mcp-ai-wpoos' ); ?></p>
 							</td>
 						</tr>
 
@@ -207,9 +207,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 							<td colspan="2">
 								<h2 style="margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px;">
 									<span class="dashicons dashicons-editor-table"></span>
-									<?php esc_html_e( 'Elementor', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Elementor', 'mcp-ai-wpoos' ); ?>
 									<?php if ( ! $elementor_active ) : ?>
-										<span class="dashicons dashicons-warning" style="color: #d63638;" title="<?php esc_attr_e( 'Elementor plugin is not active', 'wp-mcp-ai' ); ?>"></span>
+										<span class="dashicons dashicons-warning" style="color: #d63638;" title="<?php esc_attr_e( 'Elementor plugin is not active', 'mcp-ai-wpoos' ); ?>"></span>
 									<?php endif; ?>
 								</h2>
 								<hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
@@ -219,21 +219,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 							<tr>
 								<td colspan="2">
 									<div class="notice notice-warning inline">
-										<p><?php esc_html_e( 'Elementor plugin is not active. Please install and activate Elementor to use these features.', 'wp-mcp-ai' ); ?></p>
+										<p><?php esc_html_e( 'Elementor plugin is not active. Please install and activate Elementor to use these features.', 'mcp-ai-wpoos' ); ?></p>
 									</div>
 								</td>
 							</tr>
 						<?php endif; ?>
 						<tr>
 							<th scope="row">
-								<?php esc_html_e( 'Enable Elementor Widgets', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Enable Elementor Widgets', 'mcp-ai-wpoos' ); ?>
 							</th>
 							<td>
 								<label>
 									<input type="checkbox" name="enable_elementor_widgets" value="1" <?php checked( $enable_elementor_widgets ); ?> <?php disabled( ! $elementor_active ); ?> />
-									<?php esc_html_e( 'Enable AI-powered Elementor widgets', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Enable AI-powered Elementor widgets', 'mcp-ai-wpoos' ); ?>
 								</label>
-								<p class="description"><?php esc_html_e( 'Adds AI chat widgets and other AI-powered elements to Elementor.', 'wp-mcp-ai' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Adds AI chat widgets and other AI-powered elements to Elementor.', 'mcp-ai-wpoos' ); ?></p>
 							</td>
 						</tr>
 
@@ -242,9 +242,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 							<td colspan="2">
 								<h2 style="margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px;">
 									<span class="dashicons dashicons-email"></span>
-									<?php esc_html_e( 'Newsletter', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Newsletter', 'mcp-ai-wpoos' ); ?>
 									<?php if ( ! $newsletter_active ) : ?>
-										<span class="dashicons dashicons-warning" style="color: #d63638;" title="<?php esc_attr_e( 'Newsletter plugin is not active', 'wp-mcp-ai' ); ?>"></span>
+										<span class="dashicons dashicons-warning" style="color: #d63638;" title="<?php esc_attr_e( 'Newsletter plugin is not active', 'mcp-ai-wpoos' ); ?>"></span>
 									<?php endif; ?>
 								</h2>
 								<hr style="margin: 10px 0; border: none; border-top: 1px solid #ddd;">
@@ -254,26 +254,26 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Plugins_Integration' ) ) {
 							<tr>
 								<td colspan="2">
 									<div class="notice notice-warning inline">
-										<p><?php esc_html_e( 'Newsletter plugin is not active. Please install and activate Newsletter to use these features.', 'wp-mcp-ai' ); ?></p>
+										<p><?php esc_html_e( 'Newsletter plugin is not active. Please install and activate Newsletter to use these features.', 'mcp-ai-wpoos' ); ?></p>
 									</div>
 								</td>
 							</tr>
 						<?php endif; ?>
 						<tr>
 							<th scope="row">
-								<?php esc_html_e( 'Enable Newsletter Tools', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Enable Newsletter Tools', 'mcp-ai-wpoos' ); ?>
 							</th>
 							<td>
 								<label>
 									<input type="checkbox" name="enable_newsletter_tools" value="1" <?php checked( $enable_newsletter_tools ); ?> <?php disabled( ! $newsletter_active ); ?> />
-									<?php esc_html_e( 'Enable Newsletter-specific tools', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Enable Newsletter-specific tools', 'mcp-ai-wpoos' ); ?>
 								</label>
-								<p class="description"><?php esc_html_e( 'Provides AI tools for managing newsletter subscribers, campaigns, and statistics. Includes 6 tools: add subscriber, get subscribers, unsubscribe, get stats, create email, and get emails.', 'wp-mcp-ai' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Provides AI tools for managing newsletter subscribers, campaigns, and statistics. Includes 6 tools: add subscriber, get subscribers, unsubscribe, get stats, create email, and get emails.', 'mcp-ai-wpoos' ); ?></p>
 							</td>
 						</tr>
 					</table>
 
-					<?php submit_button( __( 'Save Settings', 'wp-mcp-ai' ) ); ?>
+					<?php submit_button( __( 'Save Settings', 'mcp-ai-wpoos' ) ); ?>
 				</form>
 			</div>
 			<?php

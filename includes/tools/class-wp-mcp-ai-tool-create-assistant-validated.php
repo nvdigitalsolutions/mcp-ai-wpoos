@@ -50,14 +50,14 @@ class WP_MCP_AI_Tool_Create_Assistant_Validated extends WP_MCP_AI_Validated_Tool
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create AI Assistant (Validated)', 'wp-mcp-ai' );
+		return __( 'Create AI Assistant (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new AI assistant using Symfony Validator for argument validation. Can be used in two modes: (1) Manual mode - select from predefined professions and regions, or (2) Prompt mode - provide a free-form description and optional custom system prompt. Supports attachment IDs for knowledge base files. The assistant will be saved as a draft.', 'wp-mcp-ai' );
+		return __( 'Creates a new AI assistant using Symfony Validator for argument validation. Can be used in two modes: (1) Manual mode - select from predefined professions and regions, or (2) Prompt mode - provide a free-form description and optional custom system prompt. Supports attachment IDs for knowledge base files. The assistant will be saved as a draft.', 'mcp-ai-wpoos' );
 	}
 
 	/**

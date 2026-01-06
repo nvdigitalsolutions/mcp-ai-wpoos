@@ -32,14 +32,14 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Batch Job', 'wp-mcp-ai' );
+		return __( 'Create Batch Job', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a batch processing job for asynchronous operations with 50% cost reduction. Use for bulk content generation, embeddings creation, or mass content moderation. Supports chat completions, embeddings, and moderations endpoints.', 'wp-mcp-ai' );
+		return __( 'Creates a batch processing job for asynchronous operations with 50% cost reduction. Use for bulk content generation, embeddings creation, or mass content moderation. Supports chat completions, embeddings, and moderations endpoints.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -51,22 +51,22 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'input_file_id'     => array(
 					'type'        => 'string',
-					'description' => __( 'The ID of the uploaded input file containing batch requests in JSONL format. Each line must be a valid JSON object with custom_id, method, url, and body fields.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the uploaded input file containing batch requests in JSONL format. Each line must be a valid JSON object with custom_id, method, url, and body fields.', 'mcp-ai-wpoos' ),
 				),
 				'endpoint'          => array(
 					'type'        => 'string',
 					'enum'        => array( '/v1/chat/completions', '/v1/embeddings', '/v1/moderations' ),
-					'description' => __( 'The OpenAI API endpoint to use for the batch.', 'wp-mcp-ai' ),
+					'description' => __( 'The OpenAI API endpoint to use for the batch.', 'mcp-ai-wpoos' ),
 				),
 				'completion_window' => array(
 					'type'        => 'string',
 					'enum'        => array( '24h' ),
-					'description' => __( 'Time frame for batch completion. Currently only "24h" is supported.', 'wp-mcp-ai' ),
+					'description' => __( 'Time frame for batch completion. Currently only "24h" is supported.', 'mcp-ai-wpoos' ),
 					'default'     => '24h',
 				),
 				'metadata'          => array(
 					'type'        => 'object',
-					'description' => __( 'Custom metadata as key-value pairs (up to 16 pairs).', 'wp-mcp-ai' ),
+					'description' => __( 'Custom metadata as key-value pairs (up to 16 pairs).', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'input_file_id', 'endpoint' ),
@@ -106,7 +106,7 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to create batch jobs.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to create batch jobs.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -114,7 +114,7 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -123,7 +123,7 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! isset( $arguments['input_file_id'] ) || '' === trim( $arguments['input_file_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_input_file_id',
-				__( 'Input file ID is required.', 'wp-mcp-ai' ),
+				__( 'Input file ID is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -131,7 +131,7 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! isset( $arguments['endpoint'] ) || '' === trim( $arguments['endpoint'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_endpoint',
-				__( 'Endpoint is required.', 'wp-mcp-ai' ),
+				__( 'Endpoint is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -186,17 +186,17 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		$summary = sprintf(
 			/* translators: 1: batch ID, 2: status, 3: endpoint */
-			__( 'Batch job created successfully. ID: %1$s, Status: %2$s, Endpoint: %3$s', 'wp-mcp-ai' ),
+			__( 'Batch job created successfully. ID: %1$s, Status: %2$s, Endpoint: %3$s', 'mcp-ai-wpoos' ),
 			$batch_id,
 			$status,
 			$endpoint
 		);
 
 		$summary .= "\n\n";
-		$summary .= __( 'The batch job is now processing. Use the get_batch_status tool to check progress. Results will be available within 24 hours.', 'wp-mcp-ai' );
+		$summary .= __( 'The batch job is now processing. Use the get_batch_status tool to check progress. Results will be available within 24 hours.', 'mcp-ai-wpoos' );
 
 		$summary .= "\n\n";
-		$summary .= __( 'Cost Savings: Batch API provides 50% cost reduction compared to synchronous API calls.', 'wp-mcp-ai' );
+		$summary .= __( 'Cost Savings: Batch API provides 50% cost reduction compared to synchronous API calls.', 'mcp-ai-wpoos' );
 
 		return $summary;
 	}

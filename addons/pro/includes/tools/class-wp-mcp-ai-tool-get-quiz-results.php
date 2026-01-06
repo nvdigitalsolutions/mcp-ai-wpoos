@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Quiz Results', 'wp-mcp-ai' );
+		return __( 'Get Quiz Results', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves detailed results for a graded quiz submission, including answers, grades, and feedback.', 'wp-mcp-ai' );
+		return __( 'Retrieves detailed results for a graded quiz submission, including answers, grades, and feedback.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'submission_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the submission to retrieve results for.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the submission to retrieve results for.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 			),
@@ -63,19 +63,19 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view results.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view results.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$submission_id = isset( $arguments['submission_id'] ) ? absint( $arguments['submission_id'] ) : 0;
 
 		if ( ! $submission_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_submission_id', __( 'Submission ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_submission_id', __( 'Submission ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$submission = get_post( $submission_id );
 
 		if ( ! $submission || 'mcp_ai_submission' !== $submission->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_submission_not_found', __( 'Submission not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_submission_not_found', __( 'Submission not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Get quiz details.
@@ -83,7 +83,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 		$quiz    = get_post( $quiz_id );
 
 		if ( ! $quiz || 'mcp_ai_quiz' !== $quiz->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Associated quiz not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Associated quiz not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Check permissions: student can view own results, quiz author can view all.
@@ -91,7 +91,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 		$quiz_author = absint( $quiz->post_author );
 
 		if ( $student_id !== $current_user_id && $quiz_author !== $current_user_id && ! user_can( $current_user_id, 'edit_others_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view these results.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view these results.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Get submission data.
@@ -160,7 +160,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 		$response = array(
 			'summary'          => sprintf(
 				/* translators: 1: quiz title, 2: student name */
-				__( 'Results for %1$s - %2$s', 'wp-mcp-ai' ),
+				__( 'Results for %1$s - %2$s', 'mcp-ai-wpoos-pro' ),
 				get_the_title( $quiz ),
 				get_userdata( $student_id )->display_name
 			),
@@ -224,7 +224,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		foreach ( $detailed_results as $result ) {
 			$q_num = $result['question_number'];
-			$labels[] = sprintf( __( 'Q%d', 'wp-mcp-ai' ), $q_num );
+			$labels[] = sprintf( __( 'Q%d', 'mcp-ai-wpoos-pro' ), $q_num );
 
 			$earned = isset( $result['points_earned'] ) ? floatval( $result['points_earned'] ) : 0;
 			$max    = isset( $result['points_possible'] ) ? floatval( $result['points_possible'] ) : 1;
@@ -239,14 +239,14 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 				'labels'   => $labels,
 				'datasets' => array(
 					array(
-						'label'           => __( 'Points Earned', 'wp-mcp-ai' ),
+						'label'           => __( 'Points Earned', 'mcp-ai-wpoos-pro' ),
 						'data'            => $points_earned,
 						'backgroundColor' => 'rgba(75, 192, 192, 0.6)',
 						'borderColor'     => 'rgba(75, 192, 192, 1)',
 						'borderWidth'     => 1,
 					),
 					array(
-						'label'           => __( 'Points Possible', 'wp-mcp-ai' ),
+						'label'           => __( 'Points Possible', 'mcp-ai-wpoos-pro' ),
 						'data'            => $points_max,
 						'backgroundColor' => 'rgba(201, 203, 207, 0.6)',
 						'borderColor'     => 'rgba(201, 203, 207, 1)',
@@ -259,7 +259,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 				'plugins'    => array(
 					'title' => array(
 						'display' => true,
-						'text'    => __( 'Your Performance by Question', 'wp-mcp-ai' ),
+						'text'    => __( 'Your Performance by Question', 'mcp-ai-wpoos-pro' ),
 					),
 					'legend' => array(
 						'display' => true,
@@ -270,13 +270,13 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 						'beginAtZero' => true,
 						'title'       => array(
 							'display' => true,
-							'text'    => __( 'Points', 'wp-mcp-ai' ),
+							'text'    => __( 'Points', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 					'x' => array(
 						'title' => array(
 							'display' => true,
-							'text'    => __( 'Question', 'wp-mcp-ai' ),
+							'text'    => __( 'Question', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),

@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'System Overview', 'wp-mcp-ai' );
+			return __( 'System Overview', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -56,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Quick overview of your Open Operator System configuration and status.', 'wp-mcp-ai' );
+			return __( 'Quick overview of your Open Operator System configuration and status.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -107,7 +107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 				<p class="section-documentation">
 					<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
 					<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
-						<?php esc_html_e( 'View Documentation', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
 						<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
 					</a>
 				</p>
@@ -131,42 +131,42 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 
 				<!-- Quick Links -->
 				<div class="wp-mcp-ai-quick-links">
-					<h3><?php esc_html_e( 'Quick Links', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'Quick Links', 'mcp-ai-wpoos' ); ?></h3>
 					<div class="wp-mcp-ai-links-grid">
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=authentication' ) ); ?>" class="wp-mcp-ai-link-card">
 							<span class="dashicons dashicons-lock"></span>
-							<strong><?php esc_html_e( 'Authentication Settings', 'wp-mcp-ai' ); ?></strong>
-							<span class="description"><?php esc_html_e( 'Configure Auth0, JWT, and guest tokens', 'wp-mcp-ai' ); ?></span>
+							<strong><?php esc_html_e( 'Authentication Settings', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="description"><?php esc_html_e( 'Configure Auth0, JWT, and guest tokens', 'mcp-ai-wpoos' ); ?></span>
 						</a>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-auth0-setup' ) ); ?>" class="wp-mcp-ai-link-card">
 							<span class="dashicons dashicons-admin-tools"></span>
-							<strong><?php esc_html_e( 'Auth0 Setup Wizard', 'wp-mcp-ai' ); ?></strong>
-							<span class="description"><?php esc_html_e( '1-click Auth0 configuration', 'wp-mcp-ai' ); ?></span>
+							<strong><?php esc_html_e( 'Auth0 Setup Wizard', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="description"><?php esc_html_e( '1-click Auth0 configuration', 'mcp-ai-wpoos' ); ?></span>
 						</a>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>" class="wp-mcp-ai-link-card">
 							<span class="dashicons dashicons-admin-generic"></span>
-							<strong><?php esc_html_e( 'AI Providers', 'wp-mcp-ai' ); ?></strong>
-							<span class="description"><?php esc_html_e( 'Configure OpenAI, Gemini, Ollama', 'wp-mcp-ai' ); ?></span>
+							<strong><?php esc_html_e( 'AI Providers', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="description"><?php esc_html_e( 'Configure OpenAI, Gemini, Ollama', 'mcp-ai-wpoos' ); ?></span>
 						</a>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools' ) ); ?>" class="wp-mcp-ai-link-card">
 							<span class="dashicons dashicons-admin-tools"></span>
-							<strong><?php esc_html_e( 'Tools & Features', 'wp-mcp-ai' ); ?></strong>
-							<span class="description"><?php esc_html_e( 'Enable and configure tools', 'wp-mcp-ai' ); ?></span>
+							<strong><?php esc_html_e( 'Tools & Features', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="description"><?php esc_html_e( 'Enable and configure tools', 'mcp-ai-wpoos' ); ?></span>
 						</a>
 						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant' ) ); ?>" class="wp-mcp-ai-link-card">
 							<span class="dashicons dashicons-admin-users"></span>
-							<strong><?php esc_html_e( 'Manage Assistants', 'wp-mcp-ai' ); ?></strong>
-							<span class="description"><?php esc_html_e( 'Create and configure AI assistants', 'wp-mcp-ai' ); ?></span>
+							<strong><?php esc_html_e( 'Manage Assistants', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="description"><?php esc_html_e( 'Create and configure AI assistants', 'mcp-ai-wpoos' ); ?></span>
 						</a>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ); ?>" class="wp-mcp-ai-link-card">
 							<span class="dashicons dashicons-shield"></span>
-							<strong><?php esc_html_e( 'Security Settings', 'wp-mcp-ai' ); ?></strong>
-							<span class="description"><?php esc_html_e( 'Monitor and configure security', 'wp-mcp-ai' ); ?></span>
+							<strong><?php esc_html_e( 'Security Settings', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="description"><?php esc_html_e( 'Monitor and configure security', 'mcp-ai-wpoos' ); ?></span>
 						</a>
 						<a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-mcp-ai-mcp-diagnostic' ) ); ?>" class="wp-mcp-ai-link-card">
 							<span class="dashicons dashicons-admin-tools"></span>
-							<strong><?php esc_html_e( 'MCP Server Diagnostic', 'wp-mcp-ai' ); ?></strong>
-							<span class="description"><?php esc_html_e( 'Test MCP methods and server functionality', 'wp-mcp-ai' ); ?></span>
+							<strong><?php esc_html_e( 'MCP Server Diagnostic', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="description"><?php esc_html_e( 'Test MCP methods and server functionality', 'mcp-ai-wpoos' ); ?></span>
 						</a>
 					</div>
 				</div>
@@ -295,36 +295,36 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 			<div class="wp-mcp-ai-status-card">
 				<h3>
 					<span class="dashicons dashicons-lock"></span>
-					<?php esc_html_e( 'Auth0 Authentication', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Auth0 Authentication', 'mcp-ai-wpoos' ); ?>
 				</h3>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'Domain', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'Domain', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $auth0_domain ? 'configured' : 'not-configured' ); ?>">
-						<?php echo $auth0_domain ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
+						<?php echo $auth0_domain ? esc_html__( 'Configured', 'mcp-ai-wpoos' ) : esc_html__( 'Not Set', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'API Audience', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'API Audience', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $auth0_audience ? 'configured' : 'not-configured' ); ?>">
-						<?php echo $auth0_audience ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
+						<?php echo $auth0_audience ? esc_html__( 'Configured', 'mcp-ai-wpoos' ) : esc_html__( 'Not Set', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'GitHub Bridge', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'GitHub Bridge', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $github_bridge ? 'enabled' : 'not-configured' ); ?>">
-						<?php echo $github_bridge ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
+						<?php echo $github_bridge ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'Management API', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'Management API', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $has_mgmt_creds ? 'configured' : 'not-configured' ); ?>">
-						<?php echo $has_mgmt_creds ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
+						<?php echo $has_mgmt_creds ? esc_html__( 'Configured', 'mcp-ai-wpoos' ) : esc_html__( 'Not Set', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<?php if ( ! $auth0_domain || ! $auth0_audience ) : ?>
 					<p style="margin-top: 15px; margin-bottom: 0;">
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-auth0-setup' ) ); ?>" class="button button-primary">
-							<?php esc_html_e( 'Setup Auth0', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Setup Auth0', 'mcp-ai-wpoos' ); ?>
 						</a>
 					</p>
 				<?php endif; ?>
@@ -348,34 +348,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 			<div class="wp-mcp-ai-status-card">
 				<h3>
 					<span class="dashicons dashicons-admin-generic"></span>
-					<?php esc_html_e( 'AI Providers', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'AI Providers', 'mcp-ai-wpoos' ); ?>
 				</h3>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'OpenAI', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'OpenAI', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $has_openai ? 'configured' : 'not-configured' ); ?>">
-						<?php echo $has_openai ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
+						<?php echo $has_openai ? esc_html__( 'Configured', 'mcp-ai-wpoos' ) : esc_html__( 'Not Set', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'Google Gemini', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'Google Gemini', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $has_gemini ? 'configured' : 'not-configured' ); ?>">
-						<?php echo $has_gemini ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
+						<?php echo $has_gemini ? esc_html__( 'Configured', 'mcp-ai-wpoos' ) : esc_html__( 'Not Set', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'Ollama (Local)', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $has_ollama ? 'configured' : 'not-configured' ); ?>">
-						<?php echo $has_ollama ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
+						<?php echo $has_ollama ? esc_html__( 'Configured', 'mcp-ai-wpoos' ) : esc_html__( 'Not Set', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'LM Studio', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $has_lm_studio ? 'configured' : 'not-configured' ); ?>">
-						<?php echo $has_lm_studio ? esc_html__( 'Configured', 'wp-mcp-ai' ) : esc_html__( 'Not Set', 'wp-mcp-ai' ); ?>
+						<?php echo $has_lm_studio ? esc_html__( 'Configured', 'mcp-ai-wpoos' ) : esc_html__( 'Not Set', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item" style="border-top: 1px solid #ddd; margin-top: 10px; padding-top: 15px;">
-					<span><?php esc_html_e( 'Default Provider', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'Default Provider', 'mcp-ai-wpoos' ); ?></span>
 					<strong><?php echo esc_html( ucfirst( str_replace( '_', ' ', $default_provider ) ) ); ?></strong>
 				</div>
 			</div>
@@ -422,45 +422,45 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 			<div class="wp-mcp-ai-status-card">
 				<h3>
 					<span class="dashicons dashicons-admin-tools"></span>
-					<?php esc_html_e( 'Features & Integrations', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Features & Integrations', 'mcp-ai-wpoos' ); ?>
 				</h3>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'Debug Logging', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'Debug Logging', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $logging_enabled ? 'enabled' : 'not-configured' ); ?>">
-						<?php echo $logging_enabled ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
+						<?php echo $logging_enabled ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'Federation', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'Federation', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $federation ? 'enabled' : 'not-configured' ); ?>">
-						<?php echo $federation ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
+						<?php echo $federation ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'Mesh Network', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'Mesh Network', 'mcp-ai-wpoos' ); ?></span>
 					<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $mesh_enabled ? 'enabled' : 'not-configured' ); ?>">
-						<?php echo $mesh_enabled ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
+						<?php echo $mesh_enabled ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-status-item" style="border-top: 1px solid #ddd; margin-top: 10px; padding-top: 15px;">
-					<span><?php esc_html_e( 'Available Tools', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos' ); ?></span>
 					<strong>
 						<?php
 						printf(
 							/* translators: %d: number of available tools */
-							esc_html__( '%d tools loaded', 'wp-mcp-ai' ),
+							esc_html__( '%d tools loaded', 'mcp-ai-wpoos' ),
 							absint( $available_tools )
 						);
 						?>
 					</strong>
 				</div>
 				<div class="wp-mcp-ai-status-item">
-					<span><?php esc_html_e( 'Service Connectors', 'wp-mcp-ai' ); ?></span>
+					<span><?php esc_html_e( 'Service Connectors', 'mcp-ai-wpoos' ); ?></span>
 					<strong>
 						<?php
 						printf(
 							/* translators: 1: configured count, 2: total count */
-							esc_html__( '%1$d of %2$d configured', 'wp-mcp-ai' ),
+							esc_html__( '%1$d of %2$d configured', 'mcp-ai-wpoos' ),
 							esc_html( $configured_count ),
 							esc_html( $total_count )
 						);
@@ -505,24 +505,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 			?>
 		<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
 			<p style="margin: 0 0 10px 0; font-size: 14px;">
-				<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
+				<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'mcp-ai-wpoos' ); ?></strong>
 			</p>
 			<p style="margin: 0 0 10px 0;">
 				<?php
 				echo wp_kses_post(
 					__(
 						'Enable AI assistants to automatically install themes, plugins, update options, and create content. More powerful features available in the Pro addon.',
-						'wp-mcp-ai'
+						'mcp-ai-wpoos'
 					)
 				);
 				?>
 			</p>
 			<p style="margin: 0;">
 				<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
-					<?php esc_html_e( 'Get NV oOS Pro', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 				</a>
 				<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
-					<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Learn More About Pro Tools', 'mcp-ai-wpoos' ); ?>
 				</a>
 			</p>
 		</div>
