@@ -1,0 +1,41 @@
+--- includes/admin/class-wp-mcp-ai-pro-dashboard.php
++++ includes/admin/class-wp-mcp-ai-pro-dashboard.php
+@@ -487,10 +487,24 @@ class WP_MCP_AI_Pro_Dashboard {
+ return;
+ }
+ 
+-// Use the centralized Chart.js helper (same as Token Manager).
+-if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+-WP_MCP_AI_Chart_JS_Helper::enqueue_chart_js();
+-}
++// Enqueue Chart.js first - directly register and enqueue it.
++$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
++$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
++
++// Register Chart.js library.
++wp_register_script(
++'chartjs',
++$chart_js_url,
++array(),
++file_exists( $chart_js_path ) ? filemtime( $chart_js_path ) : '4.4.1',
++true
++);
++
++// Enqueue Chart.js.
++wp_enqueue_script( 'chartjs' );
++
++// Get chart data - ensure it's properly structured.
++$chart_data = $this->get_chart_data();
+ 
+ wp_enqueue_style(
+ 'wp-mcp-ai-pro-dashboard',
+@@ -515,7 +529,8 @@ class WP_MCP_AI_Pro_Dashboard {
+ 'restNonce'   => wp_create_nonce( 'wp_rest' ),
+ 'nonce'       => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
+ 'isProActive' => $this->is_pro_active(),
+-'chartData'   => $this->get_chart_data(),
++'chartData'   => $chart_data,
++'debug'       => defined( 'WP_DEBUG' ) && WP_DEBUG,
+ )
+ );
+ }
