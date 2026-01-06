@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-job-notification-system',
-        'version' => 'dev-copilot/review-job-notification-system',
-        'reference' => '5e28245a41d23755c94ab3683d2032f1133105f7',
+        'pretty_version' => 'dev-copilot/fix-overview-page-default-setting',
+        'version' => 'dev-copilot/fix-overview-page-default-setting',
+        'reference' => '3ac47ebeaebac1c5fe5912a49b3f2b39dcabfc9f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-job-notification-system',
-            'version' => 'dev-copilot/review-job-notification-system',
-            'reference' => '5e28245a41d23755c94ab3683d2032f1133105f7',
+            'pretty_version' => 'dev-copilot/fix-overview-page-default-setting',
+            'version' => 'dev-copilot/fix-overview-page-default-setting',
+            'reference' => '3ac47ebeaebac1c5fe5912a49b3f2b39dcabfc9f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
