@@ -144,6 +144,20 @@
 	min-height: 250px;
 }
 
+/* Pro Dashboard specific chart container with fixed dimensions */
+.wp-mcp-ai-pro-chart-container {
+	position: relative;
+	height: 250px;
+	min-height: 250px;
+}
+
+.wp-mcp-ai-pro-chart-container canvas {
+	max-width: 100%;
+	max-height: 100%;
+	width: 100% !important;
+	height: 250px !important;
+}
+
 /* Chart loading and error states */
 .wp-mcp-ai-chart-loading,
 .wp-mcp-ai-chart-error {

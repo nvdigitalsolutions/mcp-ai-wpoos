@@ -50,7 +50,7 @@
 		 * Show error message when charts fail to load.
 		 */
 		showChartError: function() {
-			$('.wp-mcp-ai-chart-container').each(function() {
+			$('.wp-mcp-ai-chart-container, .wp-mcp-ai-pro-chart-container').each(function() {
 				const $container = $(this);
 				const $card = $container.closest('.wp-mcp-ai-chart-card');
 				const $fallback = $card.find('.wp-mcp-ai-chart-fallback');
@@ -95,7 +95,7 @@
 		 * Show loading state for charts.
 		 */
 		showChartLoading: function() {
-			$('.wp-mcp-ai-chart-container').each(function() {
+			$('.wp-mcp-ai-chart-container, .wp-mcp-ai-pro-chart-container').each(function() {
 				if ($(this).children('canvas').length > 0) {
 					$(this).prepend('<div class="wp-mcp-ai-chart-loading"><span class="dashicons dashicons-update"></span><p>Loading chart...</p></div>');
 				}

@@ -104,10 +104,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		private function init_hooks() {
 			add_action( 'admin_menu', array( $this, 'register_menu' ), 25 );
+			add_action( 'admin_menu', array( $this, 'reorder_pro_dashboard_menu' ), 999 );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 			add_action( 'admin_init', array( $this, 'lazy_init_delegates' ), 1 );
-			add_filter( 'custom_menu_order', '__return_true' );
-			add_filter( 'menu_order', array( $this, 'reorder_pro_dashboard_menu' ), 999 );
 		}
 
 		/**
@@ -441,16 +440,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 *
 		 * WordPress adds CPT menu items before manually registered submenu pages.
 		 * This filter ensures the Overview page appears as the first submenu item.
+		 * Runs on admin_menu hook at priority 999 to ensure all submenus are registered.
 		 *
-		 * @param array $menu_order Current menu order.
-		 * @return array Modified menu order.
+		 * @return void
 		 */
-		public function reorder_pro_dashboard_menu( $menu_order ) {
+		public function reorder_pro_dashboard_menu() {
 			global $submenu;
 
 			// Only reorder if the Pro Dashboard submenu exists.
-			if ( ! isset( $submenu[ self::PAGE_SLUG ] ) ) {
-				return $menu_order;
+			if ( ! isset( $submenu[ self::PAGE_SLUG ] ) || ! is_array( $submenu[ self::PAGE_SLUG ] ) ) {
+				return;
 			}
 
 			$pro_submenu = $submenu[ self::PAGE_SLUG ];
@@ -458,7 +457,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Find the Overview page (it has the same slug as the parent).
 			$overview_key = null;
 			foreach ( $pro_submenu as $key => $item ) {
-				if ( $item[2] === self::PAGE_SLUG ) {
+				if ( isset( $item[2] ) && $item[2] === self::PAGE_SLUG ) {
 					$overview_key = $key;
 					break;
 				}
@@ -472,11 +471,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				// Insert Overview at the beginning.
 				array_unshift( $pro_submenu, $overview_item );
 				
-				// Re-index the array to maintain proper order.
-				$submenu[ self::PAGE_SLUG ] = array_values( $pro_submenu );
+				// Update the global submenu array.
+				$submenu[ self::PAGE_SLUG ] = $pro_submenu;
 			}
-
-			return $menu_order;
 		}
 
 		/**
@@ -490,14 +487,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return;
 			}
 
-			// Enqueue Chart.js (local fallback for cloned repos where CDN may be blocked)
-			wp_enqueue_script(
-				'chartjs',
-				plugins_url( 'assets/js/vendor/chart.min.js', dirname( dirname( __FILE__ ) ) ),
-				array(),
-				'4.4.0',
-				true
-			);
+			// Use the centralized Chart.js helper (same as Token Manager).
+			if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+				WP_MCP_AI_Chart_JS_Helper::enqueue_chart_js();
+			}
 
 			wp_enqueue_style(
 				'wp-mcp-ai-pro-dashboard',
@@ -518,12 +511,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				'wp-mcp-ai-pro-dashboard',
 				'wpMcpAiProDashboard',
 				array(
-					'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-					'restUrl'    => esc_url_raw( rest_url() ),
-					'restNonce'  => wp_create_nonce( 'wp_rest' ),
-					'nonce'      => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
+					'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+					'restUrl'     => esc_url_raw( rest_url() ),
+					'restNonce'   => wp_create_nonce( 'wp_rest' ),
+					'nonce'       => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
 					'isProActive' => $this->is_pro_active(),
-					'chartData'  => $this->get_chart_data(),
+					'chartData'   => $this->get_chart_data(),
 				)
 			);
 		}
@@ -652,7 +645,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<div class="wp-mcp-ai-charts-row">
 					<div class="wp-mcp-ai-chart-card">
 						<h3><?php esc_html_e( 'Control Implementation', 'mcp-ai-wpoos' ); ?></h3>
-						<div class="wp-mcp-ai-chart-container">
+						<div class="wp-mcp-ai-pro-chart-container">
 							<canvas id="wpMcpAiControlsChart"></canvas>
 						</div>
 						<div class="wp-mcp-ai-chart-fallback" style="display:none;">
@@ -678,7 +671,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					</div>
 					<div class="wp-mcp-ai-chart-card">
 						<h3><?php esc_html_e( 'Security Metrics', 'mcp-ai-wpoos' ); ?></h3>
-						<div class="wp-mcp-ai-chart-container">
+						<div class="wp-mcp-ai-pro-chart-container">
 							<canvas id="wpMcpAiMetricsChart"></canvas>
 						</div>
 						<div class="wp-mcp-ai-chart-fallback" style="display:none;">
@@ -691,7 +684,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					</div>
 					<div class="wp-mcp-ai-chart-card">
 						<h3><?php esc_html_e( 'Risk Distribution', 'mcp-ai-wpoos' ); ?></h3>
-						<div class="wp-mcp-ai-chart-container">
+						<div class="wp-mcp-ai-pro-chart-container">
 							<canvas id="wpMcpAiRiskChart"></canvas>
 						</div>
 						<div class="wp-mcp-ai-chart-fallback" style="display:none;">
