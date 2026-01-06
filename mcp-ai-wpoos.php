@@ -527,6 +527,12 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-peer-verifier
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 
+// Load ISO 27001 Asset Inventory REST API.
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-asset-inventory-rest.php';
+
+// Load ISO 27001 Security Training REST API.
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-rest.php';
+
 // Load third-party plugin integrations only when not in base version mode.
 if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
@@ -578,6 +584,18 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
+
+	// Load ISO 27001 Asset Inventory System (Control A.5.9).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-asset-inventory-admin.php';
+	// Initialize Asset Inventory singleton.
+	WP_MCP_AI_Asset_Inventory::get_instance();
+
+	// Load ISO 27001 Security Training System (Control A.6.3).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-training.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-training-admin.php';
+	// Initialize Security Training singleton.
+	WP_MCP_AI_Security_Training::get_instance();
 
 	// Load diagnostic pages (always available under Tools menu).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
