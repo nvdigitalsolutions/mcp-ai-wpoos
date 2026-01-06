@@ -12,33 +12,33 @@
 class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 
 	/**
-	 * Verify that plugin action links hook is registered on init.
+	 * Verify that plugin action links hook is registered on admin_init.
 	 *
 	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
 	 * Plugin action links use translation functions, so the filter should be
-	 * registered via the init action.
+	 * registered via the admin_init action (which runs after init).
 	 */
-	public function test_plugin_action_links_registered_on_init() {
+	public function test_plugin_action_links_registered_on_admin_init() {
 		global $wp_filter;
 
-		// Check that the registration function is hooked to init.
+		// Check that the registration function is hooked to admin_init.
 		$this->assertTrue(
-			has_action( 'init', 'wp_mcp_ai_register_plugin_action_links' ),
-			'Plugin action links should be registered via init action'
+			has_action( 'admin_init', 'wp_mcp_ai_register_plugin_action_links' ),
+			'Plugin action links should be registered via admin_init action'
 		);
 	}
 
 	/**
-	 * Verify that activation security notice hook is registered on init.
+	 * Verify that activation security notice hook is registered on admin_init.
 	 *
 	 * The activation security notice uses translation functions, so it should
-	 * be registered via the init action.
+	 * be registered via the admin_init action (which runs after init).
 	 */
-	public function test_activation_security_notice_registered_on_init() {
-		// Check that the registration function is hooked to init.
+	public function test_activation_security_notice_registered_on_admin_init() {
+		// Check that the registration function is hooked to admin_init.
 		$this->assertTrue(
-			has_action( 'init', 'wp_mcp_ai_register_activation_security_notice' ),
-			'Activation security notice should be registered via init action'
+			has_action( 'admin_init', 'wp_mcp_ai_register_activation_security_notice' ),
+			'Activation security notice should be registered via admin_init action'
 		);
 	}
 
@@ -112,11 +112,11 @@ class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 
 		// At this point, admin_notices should not have translation-using handlers.
 		// We can't easily test this directly, but we can verify the registration.
-		// functions are hooked to init.
+		// functions are hooked to admin_init (which runs after init).
 		$this->assertTrue(
-			has_action( 'init', 'wp_mcp_ai_register_plugin_action_links' ) ||
-			has_action( 'init', 'wp_mcp_ai_register_activation_security_notice' ),
-			'At least one registration function should be hooked to init'
+			has_action( 'admin_init', 'wp_mcp_ai_register_plugin_action_links' ) ||
+			has_action( 'admin_init', 'wp_mcp_ai_register_activation_security_notice' ),
+			'At least one registration function should be hooked to admin_init'
 		);
 	}
 }
