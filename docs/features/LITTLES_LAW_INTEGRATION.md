@@ -138,6 +138,60 @@ foreach ($peer_sites as $peer) {
 }
 ```
 
+### Dead Letter Queue Integration
+
+Failed mesh queries that exhaust all retry attempts are automatically moved to the Dead Letter Queue for manual intervention.
+
+**Automatic DLQ Integration:**
+```php
+// After 3 failed attempts, mesh queries are moved to DLQ
+$result = WP_MCP_AI_Mesh_Router::query_with_retry($assistant_id, $prompt, $context);
+
+if (is_wp_error($result)) {
+    // Query failed and has been logged to DLQ
+    // Check DLQ for failed mesh queries
+}
+```
+
+**View Failed Mesh Queries:**
+- **Admin UI:** `wp-admin/admin.php?page=wp-mcp-ai-dlq-manager`
+- **Filter by type:** `mesh_query`
+- **Actions:** Retry, Dismiss, Delete
+
+**WP-CLI Management:**
+```bash
+# List all failed mesh queries
+wp mcp-ai dlq list --type=mesh_query
+
+# Retry a specific failed query
+wp mcp-ai dlq retry <item-id>
+
+# View detailed statistics
+wp mcp-ai dlq stats --format=json
+```
+
+**DLQ Item Structure:**
+```json
+{
+  "id": "abc123",
+  "type": "mesh_query",
+  "identifier": "unique-query-hash",
+  "failure_reason": "Mesh query failed after 3 attempts: Connection timeout",
+  "data": {
+    "assistant_id": 123,
+    "peer_name": "peer1",
+    "peer_url": "https://peer1.example.com",
+    "prompt": "Query text...",
+    "context": {}
+  },
+  "retry_history": [
+    {"attempt": 1, "timestamp": "...", "result": "failed"},
+    {"attempt": 2, "timestamp": "...", "result": "failed"},
+    {"attempt": 3, "timestamp": "...", "result": "failed"}
+  ]
+}
+```
+
 ## 2. Job Notifier Integration
 
 ### Real-Time Completion Prediction

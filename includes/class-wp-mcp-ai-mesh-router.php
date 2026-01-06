@@ -386,7 +386,7 @@ class WP_MCP_AI_Mesh_Router {
 			return $result;
 		}
 
-		// If we've exhausted retries, return the error.
+		// If we've exhausted retries, move to dead letter queue and return error.
 		if ( $attempt >= self::MAX_RETRY_ATTEMPTS ) {
 			WP_MCP_AI_Logger::log_event(
 				'mesh_routing_retry_exhausted',
@@ -397,6 +397,41 @@ class WP_MCP_AI_Mesh_Router {
 					'error'    => $result->get_error_message(),
 				)
 			);
+
+			// Move to dead letter queue if available.
+			if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+				// Build retry history.
+				$retry_history = array();
+				for ( $i = 1; $i <= $attempt; $i++ ) {
+					$retry_history[] = array(
+						'attempt'   => $i,
+						'timestamp' => time() - ( ( $attempt - $i ) * 5 ), // Approximate timing.
+						'result'    => 'failed',
+					);
+				}
+
+				// Generate unique identifier for this failed mesh query.
+				$identifier = md5( $peer['name'] . $prompt . time() );
+
+				WP_MCP_AI_Dead_Letter_Queue::add(
+					WP_MCP_AI_Dead_Letter_Queue::TYPE_MESH_QUERY,
+					$identifier,
+					array(
+						'assistant_id' => $assistant_id,
+						'peer_name'    => $peer['name'],
+						'peer_url'     => isset( $peer['url'] ) ? $peer['url'] : '',
+						'prompt'       => $prompt,
+						'context'      => $context,
+					),
+					sprintf(
+						'Mesh query failed after %d attempts: %s',
+						$attempt,
+						$result->get_error_message()
+					),
+					$retry_history
+				);
+			}
+
 			return $result;
 		}
 
