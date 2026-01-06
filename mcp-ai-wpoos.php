@@ -533,6 +533,9 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-asset-inventory-res
 // Load ISO 27001 Security Training REST API.
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-rest.php';
 
+// Load ISO 27001 Supplier Security REST API (Controls A.5.19-A.5.22).
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
+
 // Load third-party plugin integrations only when not in base version mode.
 if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
@@ -596,6 +599,13 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-training-admin.php';
 	// Initialize Security Training singleton.
 	WP_MCP_AI_Security_Training::get_instance();
+
+	// Load ISO 27001 Supplier Security Management (Controls A.5.19-A.5.22).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-supplier-security.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-supplier-security-admin.php';
+	// Initialize Supplier Security singleton.
+	WP_MCP_AI_Supplier_Security::get_instance();
+	new WP_MCP_AI_Supplier_Security_Admin();
 
 	// Load diagnostic pages (always available under Tools menu).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
