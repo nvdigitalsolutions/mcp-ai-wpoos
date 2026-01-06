@@ -289,6 +289,59 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that chat localization is available for the modal.
+	 *
+	 * Verifies that the wpMcpAiChat global is localized to provide REST endpoints,
+	 * nonce, and configuration required by the chat-bundle.min.js script.
+	 */
+	public function test_chat_localization_is_available() {
+		// Skip if Pro addon is not available.
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			$this->markTestSkipped( 'Pro addon not available' );
+		}
+
+		// Enable project management.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_project_management'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Create a test task.
+		$task_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_task',
+				'post_title'  => 'Test Task',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Set global post to the task.
+		global $post;
+		$post = get_post( $task_id );
+
+		// Load the metabox class.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php';
+
+		// Create metabox instance.
+		$metabox = new WP_MCP_AI_Project_Management_AI_Assistant_Metabox();
+
+		// Simulate the enqueue_assets method.
+		$metabox->enqueue_assets( 'post.php' );
+
+		// Get the chat script to check localization.
+		global $wp_scripts;
+		$chat_script = $wp_scripts->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ];
+
+		// Verify script is enqueued.
+		$this->assertTrue( wp_script_is( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'enqueued' ), 'Chat script should be enqueued' );
+
+		// Verify localization data is attached.
+		$this->assertArrayHasKey( 'data', $chat_script->extra, 'Chat script should have localization data' );
+		$this->assertStringContainsString( 'wpMcpAiChat', $chat_script->extra['data'], 'Localization should include wpMcpAiChat global' );
+		$this->assertStringContainsString( 'restUrl', $chat_script->extra['data'], 'Localization should include restUrl' );
+		$this->assertStringContainsString( 'nonce', $chat_script->extra['data'], 'Localization should include nonce for authentication' );
+	}
+
+	/**
 	 * Test that PM assistant script includes wp-dom-ready dependency when available.
 	 *
 	 * This ensures block editor compatibility by including the wp-dom-ready dependency
