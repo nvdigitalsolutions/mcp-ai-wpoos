@@ -106,6 +106,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			add_action( 'admin_menu', array( $this, 'register_menu' ), 25 );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 			add_action( 'admin_init', array( $this, 'lazy_init_delegates' ), 1 );
+			add_filter( 'custom_menu_order', '__return_true' );
+			add_filter( 'menu_order', array( $this, 'reorder_pro_dashboard_menu' ), 999 );
 		}
 
 		/**
@@ -435,6 +437,49 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		}
 
 		/**
+		 * Reorder Pro Dashboard submenu to ensure Overview appears first.
+		 *
+		 * WordPress adds CPT menu items before manually registered submenu pages.
+		 * This filter ensures the Overview page appears as the first submenu item.
+		 *
+		 * @param array $menu_order Current menu order.
+		 * @return array Modified menu order.
+		 */
+		public function reorder_pro_dashboard_menu( $menu_order ) {
+			global $submenu;
+
+			// Only reorder if the Pro Dashboard submenu exists.
+			if ( ! isset( $submenu[ self::PAGE_SLUG ] ) ) {
+				return $menu_order;
+			}
+
+			$pro_submenu = $submenu[ self::PAGE_SLUG ];
+
+			// Find the Overview page (it has the same slug as the parent).
+			$overview_key = null;
+			foreach ( $pro_submenu as $key => $item ) {
+				if ( $item[2] === self::PAGE_SLUG ) {
+					$overview_key = $key;
+					break;
+				}
+			}
+
+			// If Overview is found and it's not already first, move it to position 0.
+			if ( null !== $overview_key && 0 !== $overview_key ) {
+				$overview_item = $pro_submenu[ $overview_key ];
+				unset( $pro_submenu[ $overview_key ] );
+				
+				// Insert Overview at the beginning.
+				array_unshift( $pro_submenu, $overview_item );
+				
+				// Re-index the array to maintain proper order.
+				$submenu[ self::PAGE_SLUG ] = array_values( $pro_submenu );
+			}
+
+			return $menu_order;
+		}
+
+		/**
 		 * Enqueue Pro Dashboard assets.
 		 *
 		 * @param string $hook Current admin page hook.
@@ -478,7 +523,38 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'restNonce'  => wp_create_nonce( 'wp_rest' ),
 					'nonce'      => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
 					'isProActive' => $this->is_pro_active(),
+					'chartData'  => $this->get_chart_data(),
 				)
+			);
+		}
+
+		/**
+		 * Get chart data for JavaScript initialization.
+		 *
+		 * @return array Chart data.
+		 */
+		private function get_chart_data() {
+			$controls = $this->get_iso27001_controls();
+			$stats    = $this->calculate_controls_stats( $controls );
+
+			return array(
+				'controls' => array(
+					'implemented'    => $stats['implemented'],
+					'partial'        => $stats['partial'],
+					'planned'        => $stats['planned'],
+					'not_applicable' => $stats['not_applicable'],
+					'total'          => $stats['total'],
+				),
+				'risks'    => array(
+					'critical' => 0,
+					'high'     => 3,
+					'medium'   => 12,
+					'low'      => 8,
+				),
+				'metrics'  => array(
+					'incidents'            => array( 5, 3, 2, 4, 1, 2 ),
+					'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
+				),
 			);
 		}
 
@@ -592,6 +668,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 							<canvas id="wpMcpAiRiskChart"></canvas>
 						</div>
 					</div>
+				</div>
+
+				<!-- Multi-Framework Compliance Status -->
+				<div class="wp-mcp-ai-frameworks-section">
+					<h2><?php esc_html_e( 'Multi-Framework Compliance', 'mcp-ai-wpoos' ); ?></h2>
+					<?php $this->render_framework_badges(); ?>
 				</div>
 
 				<div class="wp-mcp-ai-dashboard-grid">
@@ -914,6 +996,47 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						</a>
 					</li>
 				</ul>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render multi-framework compliance badges.
+		 */
+		private function render_framework_badges() {
+			$frameworks = $this->get_framework_status();
+			?>
+			<div class="wp-mcp-ai-frameworks-grid">
+				<?php foreach ( $frameworks as $framework ) : ?>
+					<div class="wp-mcp-ai-framework-card">
+						<h3><?php echo esc_html( $framework['name'] ); ?></h3>
+						<div class="wp-mcp-ai-framework-status <?php echo esc_attr( $framework['status'] ); ?>">
+							<?php echo esc_html( ucfirst( $framework['status'] ) ); ?>
+						</div>
+						<div class="wp-mcp-ai-framework-progress">
+							<div class="wp-mcp-ai-progress" style="width: <?php echo esc_attr( $framework['percentage'] ); ?>%;">
+								<span class="wp-mcp-ai-progress-text"><?php echo esc_html( $framework['percentage'] ); ?>%</span>
+							</div>
+						</div>
+						<p class="wp-mcp-ai-framework-info">
+							<?php
+							echo wp_kses_post(
+								sprintf(
+									/* translators: %1$d: Completed items, %2$d: Total items */
+									__( '<strong>%1$d of %2$d</strong> requirements met', 'mcp-ai-wpoos' ),
+									$framework['completed'],
+									$framework['total']
+								)
+							);
+							?>
+						</p>
+						<?php if ( isset( $framework['link'] ) ) : ?>
+							<a href="<?php echo esc_url( admin_url( $framework['link'] ) ); ?>" class="button button-small">
+								<?php esc_html_e( 'View Details', 'mcp-ai-wpoos' ); ?>
+							</a>
+						<?php endif; ?>
+					</div>
+				<?php endforeach; ?>
 			</div>
 			<?php
 		}
@@ -1390,9 +1513,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		}
 
 		/**
-		 * Render framework status.
+		 * Get framework compliance status data.
+		 *
+		 * @return array Framework status data.
 		 */
-		private function render_framework_status() {
+		private function get_framework_status() {
 			// Calculate ISO 27001 compliance dynamically from Statement of Applicability.
 			$iso_controls = $this->get_iso27001_controls();
 			$iso_stats = $this->calculate_controls_stats( $iso_controls );
@@ -1405,28 +1530,51 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Calculate HIPAA compliance from Security Rule safeguards.
 			$hipaa_compliance = $this->get_hipaa_compliance();
 			
-			$frameworks = array(
+			return array(
 				array(
-					'name'   => 'ISO 27001:2022',
-					'status' => 'compliant',
-					'progress' => $iso_compliance,
+					'name'       => 'ISO 27001:2022',
+					'status'     => 'compliant',
+					'percentage' => $iso_compliance,
+					'completed'  => $iso_stats['implemented'],
+					'total'      => $iso_total_applicable,
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-iso27001',
 				),
 				array(
-					'name'   => 'SOC 2',
-					'status' => $soc2_compliance >= 95 ? 'compliant' : 'in_progress',
-					'progress' => $soc2_compliance,
+					'name'       => 'SOC 2',
+					'status'     => $soc2_compliance >= 95 ? 'compliant' : 'pending',
+					'percentage' => $soc2_compliance,
+					// SOC 2 has 54 Trust Services Criteria. Convert percentage to completed count.
+					// Formula: percentage / 100 * 54 = percentage * 0.54
+					'completed'  => round( $soc2_compliance * 0.54 ),
+					'total'      => 54,
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
 				),
 				array(
-					'name'   => 'HIPAA',
-					'status' => $hipaa_compliance >= 95 ? 'compliant' : 'in_progress',
-					'progress' => $hipaa_compliance,
+					'name'       => 'HIPAA',
+					'status'     => $hipaa_compliance >= 95 ? 'compliant' : 'pending',
+					'percentage' => $hipaa_compliance,
+					// HIPAA has 43 applicable safeguards. Convert percentage to completed count.
+					// Formula: percentage / 100 * 43 = percentage * 0.43
+					'completed'  => round( $hipaa_compliance * 0.43 ),
+					'total'      => 43,
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
 				),
 				array(
-					'name'   => 'GDPR',
-					'status' => 'compliant',
-					'progress' => 95,
+					'name'       => 'GDPR',
+					'status'     => 'compliant',
+					'percentage' => 95,
+					'completed'  => 6,
+					'total'      => 7,
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
 				),
 			);
+		}
+
+		/**
+		 * Render framework status.
+		 */
+		private function render_framework_status() {
+			$frameworks = $this->get_framework_status();
 			?>
 			<div class="wp-mcp-ai-frameworks-grid">
 				<?php foreach ( $frameworks as $framework ) : ?>
@@ -1435,10 +1583,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<div class="wp-mcp-ai-framework-status <?php echo esc_attr( $framework['status'] ); ?>">
 							<?php echo esc_html( ucfirst( $framework['status'] ) ); ?>
 						</div>
-						<?php if ( $framework['progress'] > 0 ) : ?>
+						<?php if ( $framework['percentage'] > 0 ) : ?>
 							<div class="wp-mcp-ai-framework-progress">
-								<div class="wp-mcp-ai-progress" style="width: <?php echo esc_attr( $framework['progress'] ); ?>%;">
-									<?php echo esc_html( $framework['progress'] ); ?>%
+								<div class="wp-mcp-ai-progress" style="width: <?php echo esc_attr( $framework['percentage'] ); ?>%;">
+									<?php echo esc_html( $framework['percentage'] ); ?>%
 								</div>
 							</div>
 						<?php endif; ?>

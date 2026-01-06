@@ -19,8 +19,30 @@
 			this.setupEventListeners();
 			this.initializeComponents();
 			this.loadComplianceData();
-			this.initializeCharts();
+			this.waitForChartJS();
 			this.startAutoRefresh();
+		},
+
+		/**
+		 * Wait for Chart.js to be loaded before initializing charts.
+		 */
+		waitForChartJS: function() {
+			const self = this;
+			let attempts = 0;
+			const maxAttempts = 50; // 5 seconds max wait time
+
+			const checkChartJS = function() {
+				if (typeof Chart !== 'undefined') {
+					self.initializeCharts();
+				} else if (attempts < maxAttempts) {
+					attempts++;
+					setTimeout(checkChartJS, 100);
+				} else {
+					console.warn('Chart.js failed to load after 5 seconds. Charts will not be displayed.');
+				}
+			};
+
+			checkChartJS();
 		},
 
 		/**
@@ -131,13 +153,22 @@
 				return;
 			}
 
+			// Get data from PHP if available
+			const chartData = wpMcpAiProDashboard.chartData || {};
+			const controlsData = chartData.controls || {};
+
 			const ctx = canvas.getContext('2d');
 			this.charts.controls = new Chart(ctx, {
 				type: 'doughnut',
 				data: {
 					labels: ['Implemented', 'Partial', 'Planned', 'N/A'],
 					datasets: [{
-						data: [55, 24, 3, 11],
+						data: [
+							controlsData.implemented || 55,
+							controlsData.partial || 24,
+							controlsData.planned || 3,
+							controlsData.not_applicable || 11
+						],
 						backgroundColor: [
 							'#4caf50',
 							'#ff9800',
@@ -222,6 +253,10 @@
 				return;
 			}
 
+			// Get data from PHP if available
+			const chartData = wpMcpAiProDashboard.chartData || {};
+			const risksData = chartData.risks || {};
+
 			const ctx = canvas.getContext('2d');
 			this.charts.risk = new Chart(ctx, {
 				type: 'bar',
@@ -229,7 +264,12 @@
 					labels: ['Critical', 'High', 'Medium', 'Low'],
 					datasets: [{
 						label: 'Open Risks',
-						data: [0, 3, 12, 8],
+						data: [
+							risksData.critical || 0,
+							risksData.high || 3,
+							risksData.medium || 12,
+							risksData.low || 8
+						],
 						backgroundColor: [
 							'#f44336',
 							'#ff9800',
