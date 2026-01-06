@@ -349,7 +349,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * @return string
 		 */
 		private function get_intro_content() {
-			$doc_path   = WP_MCP_AI_PATH . 'docs/ORCHESTRATION-LAYER-ARCHITECTURE.md';
+			$doc_path   = WP_MCP_AI_PATH . 'docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md';
 			$doc_exists = file_exists( $doc_path );
 
 			$content  = '<div class="wp-mcp-ai-orchestration-intro">';

@@ -540,7 +540,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 						<p class="description">
 							<span class="dashicons dashicons-info"></span>
 							<?php
-							$doc_path = WP_MCP_AI_PATH . 'docs/TOKEN-CONTEXT-WINDOW-EXPLAINED.md';
+							$doc_path = WP_MCP_AI_PATH . 'docs/reference/technical/TOKEN-CONTEXT-WINDOW-EXPLAINED.md';
 							if ( file_exists( $doc_path ) ) {
 								printf(
 									/* translators: 1: Documentation link opening tag, 2: closing link tag, 3: Token Manager link opening tag, 4: closing link tag */

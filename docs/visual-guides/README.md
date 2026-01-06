@@ -37,6 +37,16 @@ Other visual guides:
 - [Development History](misc/DEVELOPMENT-HISTORY.md)
 - [Quick Reference Dec 2025](misc/QUICK_REFERENCE_DEC_2025.md)
 
+### ISO/IEC 27001 Compliance Visuals
+Visual guides for ISO 27001 compliance implementation:
+- [ISO27001 Dashboard Visual Guide](ISO27001_DASHBOARD_VISUAL_GUIDE.md) - Dashboard UI walkthrough
+- [ISO27001 Phase 5 Visual Guide](ISO27001_PHASE5_VISUAL_GUIDE.md) - Phase 5 implementation visuals
+
+### Project Management Assistant Visuals
+Visual guides for PM Assistant features:
+- [PM AI Assistant Modal Visual Guide](PM_AI_ASSISTANT_MODAL_VISUAL_GUIDE.md) - Modal UI walkthrough
+- [PM AI Modal Fix Visual Guide](PM_AI_MODAL_FIX_VISUAL_GUIDE.md) - Modal fix before/after visuals
+
 ## 🔗 Related Documentation
 - [Getting Started](../getting-started/)
 - [Architecture](../architecture/)
