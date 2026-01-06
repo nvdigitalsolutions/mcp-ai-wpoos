@@ -463,6 +463,94 @@
 	margin: 0 auto 10px;
 }
 
+/* System Health */
+.wp-mcp-ai-health-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.wp-mcp-ai-health-item {
+	display: flex;
+	align-items: center;
+	padding: 12px 0;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.wp-mcp-ai-health-item:last-child {
+	border-bottom: none;
+}
+
+.wp-mcp-ai-health-item .dashicons:first-child {
+	margin-right: 10px;
+	color: #1565c0;
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+}
+
+.wp-mcp-ai-health-label {
+	flex: 1;
+	font-size: 14px;
+}
+
+.wp-mcp-ai-health-status {
+	font-size: 20px;
+}
+
+.wp-mcp-ai-health-good .dashicons {
+	color: #4caf50;
+}
+
+.wp-mcp-ai-health-warning .dashicons {
+	color: #ff9800;
+}
+
+.wp-mcp-ai-health-error .dashicons {
+	color: #f44336;
+}
+
+/* Compliance Summary Widget */
+.wp-mcp-ai-framework-status-list {
+	list-style: none;
+	margin: 15px 0;
+	padding: 0;
+}
+
+.wp-mcp-ai-framework-status-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 0;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.wp-mcp-ai-framework-status-item:last-child {
+	border-bottom: none;
+}
+
+.wp-mcp-ai-framework-name {
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-framework-badge {
+	padding: 4px 12px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.wp-mcp-ai-framework-badge.wp-mcp-ai-status-compliant {
+	background: #e8f5e9;
+	color: #2e7d32;
+}
+
+.wp-mcp-ai-framework-badge.wp-mcp-ai-status-pending {
+	background: #fff3e0;
+	color: #ef6c00;
+}
+
 /* Controls Overview */
 .wp-mcp-ai-controls-overview {
 	margin: 20px 0;
