@@ -11,6 +11,118 @@
 	margin: 20px 0;
 }
 
+/* Dashboard Header */
+.wp-mcp-ai-dashboard-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-dashboard-header h1 {
+	margin: 0;
+}
+
+.wp-mcp-ai-refresh-dashboard {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.wp-mcp-ai-refresh-dashboard.spinning .dashicons {
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+
+/* Metrics Summary */
+.wp-mcp-ai-metrics-summary {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 20px;
+	margin-bottom: 30px;
+}
+
+.wp-mcp-ai-metric-card {
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	padding: 20px;
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.wp-mcp-ai-metric-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wp-mcp-ai-metric-icon {
+	font-size: 48px;
+	color: #1565c0;
+	line-height: 1;
+}
+
+.wp-mcp-ai-metric-icon .dashicons {
+	font-size: 48px;
+	width: 48px;
+	height: 48px;
+}
+
+.wp-mcp-ai-metric-content {
+	flex: 1;
+}
+
+.wp-mcp-ai-metric-value {
+	font-size: 32px;
+	font-weight: 700;
+	color: #1565c0;
+	line-height: 1;
+	margin-bottom: 5px;
+}
+
+.wp-mcp-ai-metric-label {
+	font-size: 14px;
+	color: #666;
+	line-height: 1.3;
+}
+
+/* Charts Row */
+.wp-mcp-ai-charts-row {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 20px;
+	margin-bottom: 30px;
+}
+
+.wp-mcp-ai-chart-card {
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.wp-mcp-ai-chart-card h3 {
+	margin: 0 0 15px 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: #333;
+	border-bottom: 2px solid #f0f0f0;
+	padding-bottom: 10px;
+}
+
+.wp-mcp-ai-chart-container {
+	position: relative;
+	height: 250px;
+}
+
 /* Pro Badge */
 .wp-mcp-ai-pro-badge {
 	display: inline-block;
@@ -340,7 +452,17 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+	.wp-mcp-ai-charts-row {
+		grid-template-columns: 1fr;
+	}
+}
+
 @media (max-width: 768px) {
+	.wp-mcp-ai-metrics-summary {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
 	.wp-mcp-ai-dashboard-grid {
 		grid-template-columns: 1fr;
 	}
@@ -350,6 +472,22 @@
 	}
 
 	.wp-mcp-ai-frameworks-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.wp-mcp-ai-dashboard-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 15px;
+	}
+}
+
+@media (max-width: 480px) {
+	.wp-mcp-ai-metrics-summary {
+		grid-template-columns: 1fr;
+	}
+
+	.wp-mcp-ai-controls-summary {
 		grid-template-columns: 1fr;
 	}
 }
