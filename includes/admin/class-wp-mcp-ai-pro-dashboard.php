@@ -161,6 +161,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return;
 			}
 
+			// Enqueue Chart.js from CDN
+			wp_enqueue_script(
+				'chartjs',
+				'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+				array(),
+				'4.4.0',
+				true
+			);
+
 			wp_enqueue_style(
 				'wp-mcp-ai-pro-dashboard',
 				plugins_url( 'assets/css/pro-dashboard.css', dirname( dirname( __FILE__ ) ) ),
@@ -171,7 +180,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			wp_enqueue_script(
 				'wp-mcp-ai-pro-dashboard',
 				plugins_url( 'assets/js/pro-dashboard.js', dirname( dirname( __FILE__ ) ) ),
-				array( 'jquery' ),
+				array( 'jquery', 'chartjs' ),
 				WP_MCP_AI_VERSION,
 				true
 			);
@@ -180,8 +189,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				'wp-mcp-ai-pro-dashboard',
 				'wpMcpAiProDashboard',
 				array(
-					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
+					'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+					'restUrl'    => esc_url_raw( rest_url() ),
+					'restNonce'  => wp_create_nonce( 'wp_rest' ),
+					'nonce'      => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
 					'isProActive' => $this->is_pro_active(),
 				)
 			);
@@ -193,12 +204,80 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		public function render_overview() {
 			?>
 			<div class="wrap wp-mcp-ai-pro-dashboard">
-				<h1>
-					<?php esc_html_e( 'NV oOS Pro Dashboard', 'wp-mcp-ai' ); ?>
-					<span class="wp-mcp-ai-pro-badge"><?php esc_html_e( 'PRO', 'wp-mcp-ai' ); ?></span>
-				</h1>
+				<div class="wp-mcp-ai-dashboard-header">
+					<h1>
+						<?php esc_html_e( 'NV oOS Pro Dashboard', 'wp-mcp-ai' ); ?>
+						<span class="wp-mcp-ai-pro-badge"><?php esc_html_e( 'PRO', 'wp-mcp-ai' ); ?></span>
+					</h1>
+					<button type="button" class="button wp-mcp-ai-refresh-dashboard">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Refresh', 'wp-mcp-ai' ); ?>
+					</button>
+				</div>
 
 				<?php $this->render_pro_status_notice(); ?>
+
+				<!-- Key Metrics Summary -->
+				<div class="wp-mcp-ai-metrics-summary">
+					<div class="wp-mcp-ai-metric-card">
+						<div class="wp-mcp-ai-metric-icon">
+							<span class="dashicons dashicons-yes-alt"></span>
+						</div>
+						<div class="wp-mcp-ai-metric-content">
+							<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-implemented">55</div>
+							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Controls Implemented', 'wp-mcp-ai' ); ?></div>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-metric-card">
+						<div class="wp-mcp-ai-metric-icon">
+							<span class="dashicons dashicons-clock"></span>
+						</div>
+						<div class="wp-mcp-ai-metric-content">
+							<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-partial">24</div>
+							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'In Progress', 'wp-mcp-ai' ); ?></div>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-metric-card">
+						<div class="wp-mcp-ai-metric-icon">
+							<span class="dashicons dashicons-warning"></span>
+						</div>
+						<div class="wp-mcp-ai-metric-content">
+							<div class="wp-mcp-ai-metric-value">0</div>
+							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Critical Risks', 'wp-mcp-ai' ); ?></div>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-metric-card">
+						<div class="wp-mcp-ai-metric-icon">
+							<span class="dashicons dashicons-chart-line"></span>
+						</div>
+						<div class="wp-mcp-ai-metric-content">
+							<div class="wp-mcp-ai-metric-value">59%</div>
+							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Overall Compliance', 'wp-mcp-ai' ); ?></div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Charts Row -->
+				<div class="wp-mcp-ai-charts-row">
+					<div class="wp-mcp-ai-chart-card">
+						<h3><?php esc_html_e( 'Control Implementation', 'wp-mcp-ai' ); ?></h3>
+						<div class="wp-mcp-ai-chart-container">
+							<canvas id="wpMcpAiControlsChart"></canvas>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-chart-card">
+						<h3><?php esc_html_e( 'Security Metrics', 'wp-mcp-ai' ); ?></h3>
+						<div class="wp-mcp-ai-chart-container">
+							<canvas id="wpMcpAiMetricsChart"></canvas>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-chart-card">
+						<h3><?php esc_html_e( 'Risk Distribution', 'wp-mcp-ai' ); ?></h3>
+						<div class="wp-mcp-ai-chart-container">
+							<canvas id="wpMcpAiRiskChart"></canvas>
+						</div>
+					</div>
+				</div>
 
 				<div class="wp-mcp-ai-dashboard-grid">
 					<!-- Compliance Status Card -->
