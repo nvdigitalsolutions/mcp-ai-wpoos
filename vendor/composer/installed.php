@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-ai-assistant-metabox',
+        'version' => 'dev-copilot/fix-ai-assistant-metabox',
+        'reference' => '398caa48ef8902d1fb3db7d94bf725329261c698',
         'pretty_version' => 'dev-copilot/move-onto-next-phase-iso-27001',
         'version' => 'dev-copilot/move-onto-next-phase-iso-27001',
         'reference' => 'a258b1e46cd03797cf45d83da5960bd0e0d39647',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-ai-assistant-metabox',
+            'version' => 'dev-copilot/fix-ai-assistant-metabox',
+            'reference' => '398caa48ef8902d1fb3db7d94bf725329261c698',
             'pretty_version' => 'dev-copilot/move-onto-next-phase-iso-27001',
             'version' => 'dev-copilot/move-onto-next-phase-iso-27001',
             'reference' => 'a258b1e46cd03797cf45d83da5960bd0e0d39647',
