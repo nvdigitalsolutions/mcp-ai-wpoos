@@ -110,6 +110,34 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			WP_MCP_AI_PRO_VERSION
 		);
 
+		// Also enqueue AI actions script (consolidated functionality).
+		$actions_script_url = WP_MCP_AI_PRO_URL . 'assets/js/admin-pm-ai-actions.js';
+
+		wp_enqueue_script(
+			'wp-mcp-ai-pm-ai-actions',
+			$actions_script_url,
+			$script_dependencies,
+			WP_MCP_AI_PRO_VERSION,
+			true
+		);
+
+		// Localize script for AI actions.
+		wp_localize_script(
+			'wp-mcp-ai-pm-ai-actions',
+			'wpMcpAiPmAi',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_pm_ai_actions' ),
+				'strings' => array(
+					'error'      => __( 'An error occurred. Please try again.', 'wp-mcp-ai' ),
+					'noTitle'    => __( 'Please add a title first.', 'wp-mcp-ai' ),
+					'applied'    => __( 'AI suggestion applied!', 'wp-mcp-ai' ),
+					'viewTasks'  => __( 'View suggested tasks below:', 'wp-mcp-ai' ),
+					'copyToDesc' => __( 'Copy to Description', 'wp-mcp-ai' ),
+				),
+			)
+		);
+
 		// Localize script with post context.
 		$this->localize_script( $post );
 	}
@@ -255,9 +283,93 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			return;
 		}
 
+		// Add nonce for AI actions.
+		wp_nonce_field( 'wp_mcp_ai_pm_ai_actions', 'wp_mcp_ai_pm_ai_actions_nonce' );
+
+		// Render AI quick actions (consolidated from AI Actions metabox).
+		$this->render_ai_quick_actions( $post );
+
 		// Render assistant selector and inline chat container.
 		$this->render_assistant_selector( $assistants );
 		$this->render_inline_chat_container( $post );
+	}
+
+	/**
+	 * Render AI quick actions based on post type.
+	 *
+	 * Consolidated from WP_MCP_AI_Project_Management_AI_Actions.
+	 *
+	 * @param WP_Post $post Post object.
+	 */
+	private function render_ai_quick_actions( $post ) {
+		$post_type = get_post_type( $post );
+		?>
+		<div class="wp-mcp-ai-pm-ai-actions" style="margin-bottom: 15px;">
+			<p class="description">
+				<?php esc_html_e( 'Use AI to enhance your project management:', 'wp-mcp-ai' ); ?>
+			</p>
+
+			<?php if ( 'mcp_ai_project' === $post_type ) : ?>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
+						<span class="dashicons dashicons-edit"></span>
+						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="suggest_tasks" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
+						<span class="dashicons dashicons-list-view"></span>
+						<?php esc_html_e( 'Suggest Tasks', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="analyze_project" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
+						<span class="dashicons dashicons-chart-bar"></span>
+						<?php esc_html_e( 'Analyze Project', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+			<?php elseif ( 'mcp_ai_task' === $post_type ) : ?>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
+						<span class="dashicons dashicons-edit"></span>
+						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="estimate_time" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
+						<span class="dashicons dashicons-clock"></span>
+						<?php esc_html_e( 'Estimate Duration', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+			<?php elseif ( 'mcp_ai_event' === $post_type ) : ?>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
+						<span class="dashicons dashicons-edit"></span>
+						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="suggest_agenda" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
+						<span class="dashicons dashicons-text-page"></span>
+						<?php esc_html_e( 'Suggest Agenda', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+			<?php endif; ?>
+
+			<div class="wp-mcp-ai-pm-ai-result" style="margin-top: 15px; display: none;">
+				<div class="notice notice-info inline">
+					<p class="wp-mcp-ai-pm-ai-result-content"></p>
+				</div>
+			</div>
+
+			<div class="wp-mcp-ai-pm-ai-loading" style="display: none;">
+				<p>
+					<span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span>
+					<?php esc_html_e( 'AI is thinking...', 'wp-mcp-ai' ); ?>
+				</p>
+			</div>
+		</div>
+		<?php
 	}
 
 	/**
