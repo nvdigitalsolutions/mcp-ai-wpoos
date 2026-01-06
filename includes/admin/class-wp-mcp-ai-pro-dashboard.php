@@ -1566,20 +1566,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			$content = file_get_contents( $soc2_file );
-			if ( empty( $content ) ) {
+			if ( false === $content || empty( $content ) ) {
 				return 0;
 			}
 
 			// Count total criteria and implemented criteria.
 			// SOC 2 SoA uses "✅ Implemented" status markers.
-			$total = preg_match_all( '/^\*\*Status:\*\*/m', $content );
-			$implemented = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content );
+			$total_matches = array();
+			$impl_matches = array();
+			$total = preg_match_all( '/^\*\*Status:\*\*/m', $content, $total_matches );
+			$implemented = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content, $impl_matches );
 			
-			if ( $total > 0 ) {
-				return round( ( $implemented / $total ) * 100 );
+			if ( false === $total || false === $implemented || $total <= 0 ) {
+				return 0;
 			}
 			
-			return 0;
+			return round( ( $implemented / $total ) * 100 );
 		}
 
 		/**
@@ -1598,15 +1600,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			$content = file_get_contents( $hipaa_file );
-			if ( empty( $content ) ) {
+			if ( false === $content || empty( $content ) ) {
 				return 0;
 			}
 
 			// Count total safeguards and implemented safeguards.
 			// HIPAA SoA uses "✅ Implemented" and "❌ Not Applicable" status markers.
-			$total = preg_match_all( '/^\*\*Status:\*\*/m', $content );
-			$implemented = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content );
-			$not_applicable = preg_match_all( '/^\*\*Status:\*\*.*❌.*Not Applicable/m', $content );
+			$total_matches = array();
+			$impl_matches = array();
+			$na_matches = array();
+			$total = preg_match_all( '/^\*\*Status:\*\*/m', $content, $total_matches );
+			$implemented = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content, $impl_matches );
+			$not_applicable = preg_match_all( '/^\*\*Status:\*\*.*❌.*Not Applicable/m', $content, $na_matches );
+			
+			if ( false === $total || false === $implemented || false === $not_applicable ) {
+				return 0;
+			}
 			
 			$applicable_total = $total - $not_applicable;
 			
