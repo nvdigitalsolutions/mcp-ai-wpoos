@@ -645,7 +645,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<div class="wp-mcp-ai-charts-row">
 					<div class="wp-mcp-ai-chart-card">
 						<h3><?php esc_html_e( 'Control Implementation', 'mcp-ai-wpoos' ); ?></h3>
-						<div class="wp-mcp-ai-chart-container">
+						<div class="wp-mcp-ai-pro-chart-container">
 							<canvas id="wpMcpAiControlsChart"></canvas>
 						</div>
 						<div class="wp-mcp-ai-chart-fallback" style="display:none;">
@@ -671,7 +671,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					</div>
 					<div class="wp-mcp-ai-chart-card">
 						<h3><?php esc_html_e( 'Security Metrics', 'mcp-ai-wpoos' ); ?></h3>
-						<div class="wp-mcp-ai-chart-container">
+						<div class="wp-mcp-ai-pro-chart-container">
 							<canvas id="wpMcpAiMetricsChart"></canvas>
 						</div>
 						<div class="wp-mcp-ai-chart-fallback" style="display:none;">
@@ -684,7 +684,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					</div>
 					<div class="wp-mcp-ai-chart-card">
 						<h3><?php esc_html_e( 'Risk Distribution', 'mcp-ai-wpoos' ); ?></h3>
-						<div class="wp-mcp-ai-chart-container">
+						<div class="wp-mcp-ai-pro-chart-container">
 							<canvas id="wpMcpAiRiskChart"></canvas>
 						</div>
 						<div class="wp-mcp-ai-chart-fallback" style="display:none;">
