@@ -195,7 +195,7 @@ class WP_MCP_AI_Security_Training {
 	/**
 	 * Create default training modules.
 	 */
-	protected function create_default_modules() {
+	public function create_default_modules() {
 		// Only create once.
 		if ( get_option( 'wp_mcp_ai_training_modules_created' ) ) {
 			return;
