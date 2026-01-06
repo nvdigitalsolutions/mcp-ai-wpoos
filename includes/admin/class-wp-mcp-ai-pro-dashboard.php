@@ -487,14 +487,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return;
 			}
 
-			// Enqueue Chart.js (local fallback for cloned repos where CDN may be blocked)
-			wp_enqueue_script(
-				'chartjs',
-				plugins_url( 'assets/js/vendor/chart.min.js', dirname( dirname( __FILE__ ) ) ),
-				array(),
-				'4.4.0',
-				true
-			);
+			// Use the centralized Chart.js helper (same as Token Manager).
+			if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+				WP_MCP_AI_Chart_JS_Helper::enqueue_chart_js();
+			}
 
 			wp_enqueue_style(
 				'wp-mcp-ai-pro-dashboard',
@@ -515,12 +511,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				'wp-mcp-ai-pro-dashboard',
 				'wpMcpAiProDashboard',
 				array(
-					'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-					'restUrl'    => esc_url_raw( rest_url() ),
-					'restNonce'  => wp_create_nonce( 'wp_rest' ),
-					'nonce'      => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
+					'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+					'restUrl'     => esc_url_raw( rest_url() ),
+					'restNonce'   => wp_create_nonce( 'wp_rest' ),
+					'nonce'       => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
 					'isProActive' => $this->is_pro_active(),
-					'chartData'  => $this->get_chart_data(),
+					'chartData'   => $this->get_chart_data(),
 				)
 			);
 		}
