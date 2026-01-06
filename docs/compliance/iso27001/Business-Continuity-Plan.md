@@ -469,6 +469,465 @@ Thank you for your patience.
 - Regulatory requirement changes
 - Test failures
 
+## 10a. Information Security During Disruption (ISO 27001 A.5.29)
+
+### 10a.1 Security Principles During Disruption
+
+**Objective:** Maintain information security controls during and after business disruptions.
+
+**Core Principles:**
+
+1. **Security Cannot Be Compromised:** Even during emergencies, security controls remain mandatory
+2. **Controlled Exceptions:** Any security exceptions must be documented and approved
+3. **Heightened Vigilance:** Disruptions may be security incidents; maintain awareness
+4. **Rapid Response:** Implement security measures quickly to prevent exploitation
+5. **Evidence Preservation:** Maintain audit trails and evidence during disruptions
+
+### 10a.2 Security Measures by Disruption Type
+
+#### Type 1: Service Provider Outage (OpenAI, Gemini, GitHub)
+
+**Security Measures:**
+
+- **Before Failover:**
+  - Verify outage is not a security incident (compromise, DDoS)
+  - Check vendor status pages for official confirmation
+  - Review security logs for anomalies
+  - Alert security team of failover activation
+
+- **During Failover:**
+  - Activate only pre-approved failover providers
+  - Maintain encryption for all API communications
+  - Continue logging all AI interactions
+  - Monitor for service impersonation attempts
+  - Validate SSL/TLS certificates of backup services
+
+- **After Restoration:**
+  - Validate service identity before reconnection
+  - Review logs for suspicious activity during outage
+  - Update incident timeline
+  - Document lessons learned
+
+**Code Example:**
+```php
+// Secure failover with security checks
+function wp_mcp_ai_secure_provider_failover( $primary_provider, $backup_provider ) {
+    // Log failover initiation
+    wp_mcp_ai_log_security_event( 'provider_failover_initiated', array(
+        'primary'   => $primary_provider,
+        'backup'    => $backup_provider,
+        'timestamp' => current_time( 'mysql' ),
+        'reason'    => 'primary_unavailable',
+    ) );
+    
+    // Verify backup provider is authorized
+    $authorized_backups = get_option( 'wp_mcp_ai_authorized_backup_providers', array() );
+    if ( ! in_array( $backup_provider, $authorized_backups, true ) ) {
+        wp_mcp_ai_log_security_event( 'unauthorized_failover_attempt', array(
+            'provider' => $backup_provider,
+        ) );
+        return new WP_Error( 'unauthorized_backup', 'Backup provider not authorized' );
+    }
+    
+    // Verify SSL certificate of backup provider
+    $ssl_verified = wp_mcp_ai_verify_ssl_certificate( $backup_provider );
+    if ( ! $ssl_verified ) {
+        return new WP_Error( 'ssl_verification_failed', 'Could not verify backup provider SSL certificate' );
+    }
+    
+    // Switch to backup provider
+    update_option( 'wp_mcp_ai_active_provider', $backup_provider );
+    update_option( 'wp_mcp_ai_failover_timestamp', current_time( 'mysql' ) );
+    
+    // Send alert to security team
+    wp_mcp_ai_send_security_alert( 'Provider failover activated', array(
+        'from' => $primary_provider,
+        'to'   => $backup_provider,
+    ) );
+    
+    return true;
+}
+```
+
+#### Type 2: Infrastructure Failure (Hosting, Database, Network)
+
+**Security Measures:**
+
+- **Immediate Actions:**
+  - Isolate affected systems to prevent spread
+  - Verify it's not a security breach or ransomware
+  - Activate incident response team
+  - Preserve system state and logs for forensics
+  - Secure access to backup systems
+
+- **During Recovery:**
+  - Use secured backup locations only
+  - Verify backup integrity before restoration
+  - Scan restored systems for malware
+  - Rotate credentials that may have been compromised
+  - Maintain segregation of environments during recovery
+  - Monitor for unauthorized access attempts
+
+- **Data Restoration Security:**
+  - Verify backup authenticity (checksums, signatures)
+  - Restore to isolated environment first
+  - Run security scans before production deployment
+  - Test authentication and access controls
+  - Verify no unauthorized changes in restored data
+
+**Recovery Security Checklist:**
+```
+☐ Backup integrity verified (checksums match)
+☐ Malware scan completed (clean)
+☐ Authentication systems tested (functioning)
+☐ Access controls validated (proper restrictions)
+☐ Encryption verified (keys intact, data encrypted)
+☐ Audit logging enabled (capturing events)
+☐ Network segmentation verified (isolation maintained)
+☐ Credentials rotated (if compromise suspected)
+☐ Security monitoring active (IDS/IPS operational)
+☐ Incident response team notified (if applicable)
+```
+
+#### Type 3: Security Incident (Breach, Attack, Malware)
+
+**Security Measures:**
+
+- **Containment Phase:**
+  - Immediately isolate compromised systems
+  - Suspend suspected compromised accounts
+  - Block malicious IP addresses/domains
+  - Preserve forensic evidence
+  - Activate incident response team
+  - Notify CISO and management
+
+- **Eradication Phase:**
+  - Remove malware/backdoors
+  - Close security vulnerabilities
+  - Reset compromised credentials
+  - Review and strengthen access controls
+  - Update security rules and signatures
+
+- **Recovery Phase:**
+  - Restore from known-good backups
+  - Rebuild compromised systems from scratch
+  - Implement additional monitoring
+  - Test all security controls
+  - Gradual restoration with validation
+
+- **Post-Incident Phase:**
+  - Conduct forensic analysis
+  - Document attack timeline and methods
+  - Update security controls
+  - Notify affected parties if required (breach notification)
+  - Implement preventive measures
+
+#### Type 4: Personnel Unavailability (Key Person Loss)
+
+**Security Measures:**
+
+- **Immediate Actions:**
+  - Verify reason for unavailability (not a security incident)
+  - Activate backup personnel per continuity plan
+  - Review access logs for any suspicious pre-absence activity
+  - Consider temporary access restrictions if suspicious
+
+- **Access Management:**
+  - Do NOT share departed person's credentials
+  - Provision new accounts for backup personnel
+  - Grant least-privilege access needed for recovery
+  - Enable enhanced monitoring for new access
+  - Set access expiration for temporary assignments
+
+- **Knowledge Transfer Security:**
+  - Use secured communication channels for handover
+  - Transfer only necessary information
+  - Document what was transferred and to whom
+  - Update access control lists
+  - Maintain audit trail of knowledge transfer
+
+- **If Departure is Permanent:**
+  - Execute Asset Return procedures (A.5.11)
+  - Execute Termination procedures (A.6.5)
+  - Revoke all access within 24 hours
+  - Review all systems accessed for anomalies
+  - Reset shared credentials or systems accessed
+
+#### Type 5: Natural Disaster or Facility Damage
+
+**Security Measures:**
+
+- **Physical Security:**
+  - Secure physical assets (devices, documents, storage media)
+  - Protect against theft during evacuation
+  - Control access to temporary facilities
+  - Maintain visitor logs and access controls
+  - Protect against "helper" social engineering
+
+- **Remote Work Security:**
+  - Enforce VPN usage for all remote access
+  - Verify remote worker identity (MFA mandatory)
+  - Provide secure communication channels
+  - Monitor for unauthorized access from unusual locations
+  - Issue security reminders about heightened risk
+
+- **Temporary Facility Security:**
+  - Conduct security assessment of alternate location
+  - Implement physical access controls
+  - Set up secure network (separate from public Wi-Fi)
+  - Deploy security monitoring
+  - Maintain clear desk/clear screen policies
+
+- **Data Protection:**
+  - Ensure backups are geographically distributed
+  - Verify off-site backup accessibility
+  - Protect data in transit to alternate location
+  - Maintain encryption at rest in temporary storage
+  - Secure destruction of temporary copies after recovery
+
+### 10a.3 Emergency Access Procedures
+
+**Scenario:** Critical system down, normal access procedures not available
+
+**Emergency Access Protocol:**
+
+1. **Authorization:**
+   - Emergency access requires CISO approval (or designated backup)
+   - If CISO unavailable: two members of management must approve
+   - Document approval: email, SMS, recorded call (preserved as evidence)
+
+2. **Break-Glass Accounts:**
+   - Emergency admin accounts stored in sealed envelope (physical)
+   - Or in secured password manager with dual custody
+   - Accounts disabled except during emergencies
+   - Credentials rotated after each use
+
+3. **Temporary Privilege Elevation:**
+   - Grant minimum privileges needed to resolve issue
+   - Time-limited (4-24 hours maximum)
+   - Enhanced logging of all activities
+   - Mandatory review after use
+   - Immediate revocation after incident resolution
+
+4. **Post-Emergency Review:**
+   - Review all emergency access activity within 48 hours
+   - Verify actions were appropriate and necessary
+   - Document justification for each access
+   - Investigate any inappropriate usage
+   - Update procedures based on lessons learned
+
+**Emergency Access Audit Log:**
+```
+Date: __________
+Time: __________
+User: __________
+Reason: __________
+Approved By: __________
+Systems Accessed: __________
+Actions Taken: __________
+Access Revoked: __________ (time)
+Reviewed By: __________ (CISO signature)
+Findings: __________
+```
+
+### 10a.4 Security Monitoring During Disruption
+
+**Enhanced Monitoring Requirements:**
+
+**Before Disruption (Preparation):**
+- Verify backup monitoring systems operational
+- Test alternate alerting channels (SMS, phone)
+- Ensure 24/7 monitoring coverage
+- Pre-position security team contacts
+- Test emergency communication procedures
+
+**During Disruption:**
+- **Increase Monitoring Frequency:** From hourly to every 15 minutes
+- **Activate On-Call Security Team:** 24/7 coverage during major incidents
+- **Enhanced Log Analysis:** Real-time review of security logs
+- **Threat Intelligence:** Monitor for exploitation of incident
+- **Access Anomaly Detection:** Flag unusual access patterns
+- **Network Traffic Analysis:** Identify suspicious connections
+
+**Security Monitoring Checklist:**
+```
+☐ Failed login attempts (monitor for brute force)
+☐ Privilege escalation attempts (detect exploitation)
+☐ Unusual data access patterns (identify data exfiltration)
+☐ New user account creation (unauthorized access)
+☐ Configuration changes (backdoor installation)
+☐ Unusual network traffic (C&C communication)
+☐ File integrity changes (malware detection)
+☐ API key usage patterns (credential theft)
+☐ Geographic anomalies (access from unusual locations)
+☐ Time anomalies (access during unusual hours)
+```
+
+**Incident Escalation:**
+- Security alerts during disruption: immediate escalation to CISO
+- Suspicious activity: treat as potential security incident
+- Multiple failed security events: activate incident response team
+
+### 10a.5 Communication Security During Disruption
+
+**Secure Communication Channels:**
+
+**Primary Channel: Encrypted Email**
+- Use PGP/GPG encryption for sensitive communications
+- Verify recipient public keys
+- Include security classification in subject
+
+**Secondary Channel: Secure Messaging (Signal, Wire)**
+- End-to-end encrypted messaging app
+- Verify contacts through separate channel
+- Use for time-sensitive alerts
+
+**Tertiary Channel: Phone/SMS**
+- Use for urgent notifications only
+- Do NOT transmit sensitive technical details
+- Use pre-arranged code words for verification
+- Follow up with encrypted email
+
+**Emergency Communication Protocol:**
+1. Verify identity of recipient (callback to known number)
+2. Use appropriate channel for sensitivity level
+3. Limit information to need-to-know basis
+4. Document all critical communications
+5. Avoid public channels (Twitter, Slack, public forums)
+
+**Social Engineering Prevention:**
+- Be extra vigilant during disruptions (attackers may exploit chaos)
+- Verify all unusual requests, even from known contacts
+- Do not bypass security procedures "just this once"
+- Report suspicious communication attempts immediately
+- Use out-of-band verification for critical requests
+
+### 10a.6 Compliance and Legal Considerations
+
+**During Disruption, Maintain:**
+
+**Data Protection Compliance:**
+- GDPR/CCPA requirements remain in effect
+- Personal data must remain protected
+- Data breach notification timelines still apply
+- Data subject rights must be honored
+
+**Audit Trail Requirements:**
+- Maintain logs even during disruptions
+- Document all emergency actions taken
+- Preserve evidence for post-incident review
+- Meet regulatory record-keeping requirements
+
+**Contractual Obligations:**
+- Customer SLAs still apply (or invoke force majeure)
+- Vendor obligations must be met
+- Insurance requirements maintained
+- Notify affected parties per contracts
+
+**Regulatory Reporting:**
+- Notify regulators if required (e.g., data breaches)
+- Meet reporting deadlines
+- Provide accurate information
+- Maintain regulatory compliance
+
+### 10a.7 Post-Disruption Security Review
+
+**Within 7 Days of Disruption Resolution:**
+
+**Security Assessment:**
+1. **Review all security logs during disruption**
+   - Identify any security incidents or anomalies
+   - Analyze access patterns
+   - Verify no unauthorized access occurred
+   - Check for data exfiltration attempts
+
+2. **Validate security controls**
+   - Test all authentication mechanisms
+   - Verify encryption functioning
+   - Check access control integrity
+   - Test monitoring and alerting
+
+3. **Review emergency actions**
+   - Assess appropriateness of emergency access
+   - Verify all temporary privileges revoked
+   - Check for any security shortcuts taken
+   - Validate exception approvals documented
+
+4. **Identify vulnerabilities exposed**
+   - Single points of failure
+   - Security gaps revealed
+   - Process weaknesses
+   - Training deficiencies
+
+**Corrective Actions:**
+- Implement security improvements identified
+- Update security procedures
+- Address any vulnerabilities found
+- Provide additional training
+- Update business continuity plan
+
+**Security Lessons Learned Report:**
+```
+Disruption: __________
+Date: __________
+Duration: __________
+
+Security Measures Effective:
+- __________
+- __________
+
+Security Gaps Identified:
+- __________
+- __________
+
+Security Incidents During Disruption:
+- __________
+
+Emergency Access Used:
+- __________
+- Justification: __________
+- Appropriate: Yes / No
+
+Recommendations:
+1. __________
+2. __________
+3. __________
+
+Prepared By: __________
+Reviewed By: __________ (CISO)
+Date: __________
+```
+
+### 10a.8 Security Training for Business Continuity
+
+**All Personnel Must Be Trained On:**
+
+1. **Security During Emergencies**
+   - Security remains mandatory even in crisis
+   - How to request emergency access
+   - Reporting security concerns during incidents
+   - Social engineering awareness during disruptions
+
+2. **Communication Security**
+   - Secure communication channels
+   - Identity verification procedures
+   - Information classification during crisis
+   - Avoiding public disclosure
+
+3. **Access Control**
+   - No password sharing, even in emergencies
+   - Proper emergency access procedures
+   - Logging requirements during incident response
+   - Immediate reporting of suspicious activity
+
+4. **Incident Response**
+   - Their role in security incident response
+   - Security containment procedures
+   - Evidence preservation
+   - Communication protocols
+
+**Training Frequency:** Annual + incident response drills quarterly
+
 ## 11. Training and Awareness
 
 ### 11.1 Training Requirements
