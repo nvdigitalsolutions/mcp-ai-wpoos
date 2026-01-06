@@ -425,7 +425,7 @@ All changes this week were:
 ### Related Documentation
 - [Documentation Index](../DOCUMENTATION_INDEX.md)
 - [Changelog](../../CHANGELOG.md)
-- [Multi-Framework Compliance Summary](../../MULTI-FRAMEWORK-COMPLIANCE-SUMMARY.md)
+- [Multi-Framework Compliance Summary](../../compliance/MULTI-FRAMEWORK-COMPLIANCE-SUMMARY.md)
 - [Previous Week Summary](../2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md)
 
 ---
