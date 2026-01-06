@@ -106,6 +106,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			add_action( 'admin_menu', array( $this, 'register_menu' ), 25 );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 			add_action( 'admin_init', array( $this, 'lazy_init_delegates' ), 1 );
+			add_filter( 'custom_menu_order', '__return_true' );
+			add_filter( 'menu_order', array( $this, 'reorder_pro_dashboard_menu' ), 999 );
 		}
 
 		/**
@@ -432,6 +434,49 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'callback'   => 'render_multi_framework',
 				),
 			);
+		}
+
+		/**
+		 * Reorder Pro Dashboard submenu to ensure Overview appears first.
+		 *
+		 * WordPress adds CPT menu items before manually registered submenu pages.
+		 * This filter ensures the Overview page appears as the first submenu item.
+		 *
+		 * @param array $menu_order Current menu order.
+		 * @return array Modified menu order.
+		 */
+		public function reorder_pro_dashboard_menu( $menu_order ) {
+			global $submenu;
+
+			// Only reorder if the Pro Dashboard submenu exists.
+			if ( ! isset( $submenu[ self::PAGE_SLUG ] ) ) {
+				return $menu_order;
+			}
+
+			$pro_submenu = $submenu[ self::PAGE_SLUG ];
+
+			// Find the Overview page (it has the same slug as the parent).
+			$overview_key = null;
+			foreach ( $pro_submenu as $key => $item ) {
+				if ( $item[2] === self::PAGE_SLUG ) {
+					$overview_key = $key;
+					break;
+				}
+			}
+
+			// If Overview is found and it's not already first, move it to position 0.
+			if ( null !== $overview_key && 0 !== $overview_key ) {
+				$overview_item = $pro_submenu[ $overview_key ];
+				unset( $pro_submenu[ $overview_key ] );
+				
+				// Insert Overview at the beginning.
+				array_unshift( $pro_submenu, $overview_item );
+				
+				// Re-index the array to maintain proper order.
+				$submenu[ self::PAGE_SLUG ] = array_values( $pro_submenu );
+			}
+
+			return $menu_order;
 		}
 
 		/**
