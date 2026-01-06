@@ -138,6 +138,45 @@
 .wp-mcp-ai-chart-container {
 	position: relative;
 	height: 250px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 250px;
+}
+
+/* Chart loading and error states */
+.wp-mcp-ai-chart-loading,
+.wp-mcp-ai-chart-error {
+	text-align: center;
+	color: #666;
+	padding: 40px 20px;
+}
+
+.wp-mcp-ai-chart-loading .dashicons,
+.wp-mcp-ai-chart-error .dashicons {
+	font-size: 48px;
+	display: block;
+	margin: 0 auto 15px;
+	animation: pulse 2s ease-in-out infinite;
+}
+
+.wp-mcp-ai-chart-loading .dashicons {
+	color: #1565c0;
+}
+
+.wp-mcp-ai-chart-error .dashicons {
+	color: #f44336;
+}
+
+.wp-mcp-ai-chart-loading p,
+.wp-mcp-ai-chart-error p {
+	margin: 0;
+	font-size: 14px;
+}
+
+@keyframes pulse {
+	0%, 100% { opacity: 0.6; }
+	50% { opacity: 1; }
 }
 
 /* Pro Badge */
