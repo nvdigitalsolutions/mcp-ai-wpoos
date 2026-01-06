@@ -24,39 +24,19 @@ class Test_Pro_Textdomain_Loading extends WP_UnitTestCase {
 	 * Test that Pro addon text domain loading is registered on init hook.
 	 */
 	public function test_pro_textdomain_registered_on_init() {
-		global $wp_filter;
+		// Check if wp_mcp_ai_pro_load_textdomain is hooked to init.
+		$priority = has_action( 'init', 'wp_mcp_ai_pro_load_textdomain' );
 
-		$this->assertArrayHasKey(
-			'init',
-			$wp_filter,
-			'init hook should exist'
+		$this->assertNotFalse(
+			$priority,
+			'wp_mcp_ai_pro_load_textdomain should be hooked to init action'
 		);
 
-		// Check if wp_mcp_ai_pro_load_textdomain is hooked to init.
-		$has_textdomain_hook = false;
-		if ( isset( $wp_filter['init'] ) ) {
-			foreach ( $wp_filter['init'] as $priority => $callbacks ) {
-				foreach ( $callbacks as $callback ) {
-					if ( isset( $callback['function'] ) ) {
-						$function = $callback['function'];
-						if ( is_string( $function ) && 'wp_mcp_ai_pro_load_textdomain' === $function ) {
-							$has_textdomain_hook = true;
-							// Should be priority 1 (before CPT registration at priority 10).
-							$this->assertEquals(
-								1,
-								$priority,
-								'Pro textdomain loading should be at priority 1 on init hook'
-							);
-							break 2;
-						}
-					}
-				}
-			}
-		}
-
-		$this->assertTrue(
-			$has_textdomain_hook,
-			'wp_mcp_ai_pro_load_textdomain should be hooked to init action'
+		// Should be priority 1 (before CPT registration at priority 10).
+		$this->assertEquals(
+			1,
+			$priority,
+			'Pro textdomain loading should be at priority 1 on init hook'
 		);
 	}
 

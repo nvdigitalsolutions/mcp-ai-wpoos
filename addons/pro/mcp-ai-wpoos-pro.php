@@ -140,13 +140,26 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_textdomain' ) ) {
 	function wp_mcp_ai_pro_load_textdomain() {
 		// Only load if Pro is bundled (no plugin header).
 		// If Pro is installed as separate plugin, WordPress handles this automatically.
-		if ( ! is_plugin_active( plugin_basename( WP_MCP_AI_PRO_FILE ) ) ) {
-			// Check if languages directory exists.
-			$languages_dir = WP_MCP_AI_PRO_PATH . 'languages';
+		// Check if the Pro addon is loaded as a separate active plugin by checking
+		// if it's in the active_plugins option. This works in all contexts (admin/frontend).
+		$active_plugins = (array) get_option( 'active_plugins', array() );
+		$pro_plugin     = plugin_basename( WP_MCP_AI_PRO_FILE );
+		$is_pro_active  = in_array( $pro_plugin, $active_plugins, true );
+		
+		// For multisite, also check network active plugins.
+		if ( is_multisite() ) {
+			$network_active = (array) get_site_option( 'active_sitewide_plugins', array() );
+			$is_pro_active  = $is_pro_active || isset( $network_active[ $pro_plugin ] );
+		}
+		
+		if ( ! $is_pro_active ) {
+			// Pro is bundled, not a separate plugin - load text domain manually.
+			// Use wp_normalize_path for cross-platform compatibility.
+			$languages_dir = wp_normalize_path( WP_MCP_AI_PRO_PATH . 'languages' );
+			$plugin_dir    = wp_normalize_path( WP_PLUGIN_DIR );
 			
-			// Load plugin text domain.
-			// Use relative path from WP_PLUGIN_DIR for load_plugin_textdomain.
-			$relative_path = str_replace( WP_PLUGIN_DIR . '/', '', $languages_dir );
+			// Calculate relative path for load_plugin_textdomain.
+			$relative_path = str_replace( trailingslashit( $plugin_dir ), '', $languages_dir );
 			
 			load_plugin_textdomain(
 				'mcp-ai-wpoos-pro',
