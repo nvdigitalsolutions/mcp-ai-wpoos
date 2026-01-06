@@ -122,11 +122,11 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		// Verify output contains expected elements.
 		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-select', $output, 'Output should contain assistant selector' );
 		$this->assertStringContainsString( 'Test Assistant', $output, 'Output should contain assistant name' );
-		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-modal', $output, 'Output should contain modal' );
+		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-inline-container', $output, 'Output should contain inline container' );
 		$this->assertStringContainsString( 'wp-mcp-ai-pm-assistant-chat-container', $output, 'Output should contain chat container' );
 
-		// Verify modal starts hidden.
-		$this->assertStringContainsString( 'style="display: none;"', $output, 'Modal should have display: none style on render' );
+		// Verify inline container starts hidden.
+		$this->assertStringContainsString( 'style="display: none;"', $output, 'Inline container should have display: none style on render' );
 	}
 
 	/**
@@ -216,108 +216,22 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test AJAX handler security checks.
+	 * 
+	 * Note: AJAX handler was removed in favor of inline rendering.
+	 * This test is kept for reference but marked as skipped.
 	 */
 	public function test_ajax_handler_security() {
-		// Skip if Pro addon is not available.
-		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			$this->markTestSkipped( 'Pro addon not available' );
-		}
-
-		// Load the metabox class.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php';
-
-		// Create metabox instance.
-		$metabox = new WP_MCP_AI_Project_Management_AI_Assistant_Metabox();
-
-		// Test without nonce - should fail.
-		$_POST['assistant_id'] = 1;
-		$_POST['post_id']      = 1;
-
-		ob_start();
-		$metabox->ajax_render_chat();
-		$output = ob_get_clean();
-
-		$response = json_decode( $output, true );
-		$this->assertFalse( $response['success'], 'AJAX should fail without valid nonce' );
+		$this->markTestSkipped( 'AJAX handler removed - inline rendering used instead' );
 	}
 
 	/**
 	 * Test AJAX handler returns config and instance ID.
+	 * 
+	 * Note: AJAX handler was removed in favor of inline rendering.
+	 * This test is kept for reference but marked as skipped.
 	 */
 	public function test_ajax_handler_returns_config() {
-		// Skip if Pro addon is not available.
-		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-			$this->markTestSkipped( 'Pro addon not available' );
-		}
-
-		// Skip if shortcode class is not available.
-		if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
-			$this->markTestSkipped( 'Shortcode class not available' );
-		}
-
-		// Enable project management.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_project_management'] = true;
-		update_option( 'wp_mcp_ai_settings', $settings );
-
-		// Create a test assistant.
-		$assistant_id = $this->factory->post->create(
-			array(
-				'post_type'   => 'mcp_ai_assistant',
-				'post_title'  => 'Test Assistant',
-				'post_status' => 'publish',
-			)
-		);
-
-		// Create a test task.
-		$task_id = $this->factory->post->create(
-			array(
-				'post_type'    => 'mcp_ai_task',
-				'post_title'   => 'Test Task',
-				'post_content' => 'Test task description',
-				'post_status'  => 'publish',
-			)
-		);
-
-		// Set up as admin user.
-		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $admin_user );
-
-		// Load the metabox class.
-		require_once WP_MCP_AI_PRO_PATH . 'includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php';
-
-		// Create metabox instance.
-		$metabox = new WP_MCP_AI_Project_Management_AI_Assistant_Metabox();
-
-		// Set up $_POST with valid data.
-		$_POST['assistant_id'] = $assistant_id;
-		$_POST['post_id']      = $task_id;
-		$_POST['nonce']        = wp_create_nonce( 'wp_mcp_ai_pm_assistant' );
-
-		// Call AJAX handler.
-		ob_start();
-		$metabox->ajax_render_chat();
-		$output = ob_get_clean();
-
-		$response = json_decode( $output, true );
-
-		// Verify response structure.
-		$this->assertTrue( $response['success'], 'AJAX should succeed with valid credentials' );
-		$this->assertArrayHasKey( 'html', $response['data'], 'Response should contain HTML' );
-		$this->assertArrayHasKey( 'config', $response['data'], 'Response should contain config' );
-		$this->assertArrayHasKey( 'instance_id', $response['data'], 'Response should contain instance_id' );
-
-		// Verify config is not null/empty.
-		$this->assertNotEmpty( $response['data']['config'], 'Config should not be empty' );
-		$this->assertNotEmpty( $response['data']['instance_id'], 'Instance ID should not be empty' );
-
-		// Verify config structure.
-		$config = $response['data']['config'];
-		$this->assertArrayHasKey( 'assistantId', $config, 'Config should have assistantId' );
-		$this->assertEquals( $assistant_id, $config['assistantId'], 'Config should have correct assistant ID' );
-
-		// Verify instance ID is in the HTML.
-		$this->assertStringContainsString( $response['data']['instance_id'], $response['data']['html'], 'Instance ID should be in HTML' );
+		$this->markTestSkipped( 'AJAX handler removed - inline rendering used instead' );
 	}
 
 	/**
