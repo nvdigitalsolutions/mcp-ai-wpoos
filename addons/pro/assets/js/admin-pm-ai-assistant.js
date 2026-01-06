@@ -96,14 +96,24 @@ const baseConfig = window.wpMcpAiChat || {};
 // Warn if base configuration is missing
 if (!window.wpMcpAiChat) {
 console.warn('[PM AI Assistant] wpMcpAiChat global not found, using defaults');
+console.warn('[PM AI Assistant] Available globals:', Object.keys(window).filter(function(k) { return k.toLowerCase().includes('mcp'); }));
 }
 
 // Warn if critical fields are missing
 if (!baseConfig.nonce) {
-console.warn('[PM AI Assistant] REST nonce is missing, authentication may fail');
+console.error('[PM AI Assistant] REST nonce is missing! Authentication will fail.');
+console.error('[PM AI Assistant] wpMcpAiChat contents:', baseConfig);
 }
 
 const restUrl = baseConfig.restUrl || '/wp-json/mcp-ai/v1';
+
+console.log('[PM AI Assistant] Base configuration:', {
+hasGlobal: !!window.wpMcpAiChat,
+hasNonce: !!baseConfig.nonce,
+hasRestUrl: !!baseConfig.restUrl,
+nonce: baseConfig.nonce ? baseConfig.nonce.substring(0, 10) + '...' : 'MISSING',
+restUrl: restUrl
+});
 
 window.wpMcpAiChatInstances[instanceId] = {
 id: instanceId,
@@ -157,7 +167,7 @@ initializeChatInstance(instanceId);
 function buildChatHTML(instanceId, assistantTitle) {
 // Using template literals would be cleaner but not supported in IE11
 // So we use string concatenation for maximum compatibility
-var html = '';
+let html = '';
 html += '<div class="wp-mcp-ai-chat wp-mcp-ai-chat--template-compact" id="' + esc(instanceId) + '" data-wp-mcp-ai-chat data-template="compact">';
 html += '<div class="wp-mcp-ai-chat__assistant">';
 html += '<label class="wp-mcp-ai-chat__label" for="' + esc(instanceId + '-input') + '">' + esc(assistantTitle) + '</label>';
@@ -228,7 +238,7 @@ return html;
  * @return {string} Escaped text.
  */
 function esc(text) {
-var div = document.createElement('div');
+const div = document.createElement('div');
 div.textContent = text;
 return div.innerHTML;
 }
@@ -252,10 +262,10 @@ function initializeChatInstance(instanceId, retryCount) {
 console.log('[PM AI Assistant] Initializing chat instance:', instanceId);
 
 retryCount = retryCount || 0;
-var maxRetries = 10;
-var retryDelay = 100;
+const maxRetries = 10;
+const retryDelay = 100;
 
-var container = document.getElementById(instanceId);
+const container = document.getElementById(instanceId);
 
 if (!container) {
 console.error('[PM AI Assistant] Container not found:', instanceId);
@@ -281,7 +291,7 @@ window.wpMcpAiChatInit.init();
 console.log('[PM AI Assistant] ✓ Chat initialized successfully');
 
 setTimeout(function() {
-var textarea = container.querySelector('.wp-mcp-ai-chat__input');
+const textarea = container.querySelector('.wp-mcp-ai-chat__input');
 if (textarea) {
 textarea.focus();
 }
@@ -315,14 +325,14 @@ return false;
  */
 function waitForMetabox(callback, maxAttempts) {
 maxAttempts = maxAttempts || 50;
-var attempts = 0;
-var delay = 100;
+let attempts = 0;
+let delay = 100;
 
 function checkElements() {
 attempts++;
 
-var $selector = $('#wp-mcp-ai-pm-assistant-select');
-var $container = $('#wp-mcp-ai-pm-assistant-inline-container');
+const $selector = $('#wp-mcp-ai-pm-assistant-select');
+const $container = $('#wp-mcp-ai-pm-assistant-inline-container');
 
 if ($selector.length && $container.length) {
 console.log('[PM AI Assistant] ✓ Elements found after ' + attempts + ' attempts');
@@ -361,7 +371,7 @@ waitForMetabox(initPmAiAssistant);
 console.log('[PM AI Assistant] Classic editor');
 
 $(document).ready(function () {
-var $selector = $('#wp-mcp-ai-pm-assistant-select');
+const $selector = $('#wp-mcp-ai-pm-assistant-select');
 
 if ($selector.length) {
 initPmAiAssistant();
