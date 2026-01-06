@@ -37,7 +37,7 @@
 ### Core Functionality
 - [🧠 Memory & Tool Stack Overview](#memory-tool-stack-overview)
 - [🛠 Built-in tools & automations](#built-in-tools-automations)
-- [🗨️ Front-end chat surfaces](#front-end-chat-surfaces)
+- [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
 - [💬 Frontend Shortcode](#frontend-shortcode)
 
 ### AI Providers & Integration
