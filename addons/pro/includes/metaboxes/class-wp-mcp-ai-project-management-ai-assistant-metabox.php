@@ -477,15 +477,21 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		$wp_scripts = wp_scripts();
 		if ( isset( $wp_scripts->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ] ) ) {
 			$script_data = $wp_scripts->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ];
-			// Check if localization is already attached.
-			if ( isset( $script_data->extra['data'] ) && strpos( $script_data->extra['data'], 'wpMcpAiChat' ) !== false ) {
+			// Check if localization is already attached by looking for the JavaScript variable declaration.
+			// WordPress outputs localization as: var wpMcpAiChat = {...};
+			if ( isset( $script_data->extra['data'] ) && false !== strpos( $script_data->extra['data'], 'var wpMcpAiChat' ) ) {
 				// Localization already exists, no need to add it again.
 				return;
 			}
 		}
 
-		// Add localization to ensure wpMcpAiChat global is available.
+		// Verify required classes are available before attempting localization.
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) || ! class_exists( 'WP_MCP_AI_REST' ) || ! class_exists( 'WP_MCP_AI_Request_Context' ) ) {
+			// Log error if debugging is enabled.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'PM AI Assistant: Required classes not available for chat localization' );
+			}
 			return;
 		}
 

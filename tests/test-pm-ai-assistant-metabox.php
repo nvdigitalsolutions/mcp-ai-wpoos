@@ -329,10 +329,14 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 
 		// Get the chat script to check localization.
 		global $wp_scripts;
-		$chat_script = $wp_scripts->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ];
 
 		// Verify script is enqueued.
 		$this->assertTrue( wp_script_is( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'enqueued' ), 'Chat script should be enqueued' );
+
+		// Verify script is registered.
+		$this->assertArrayHasKey( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, $wp_scripts->registered, 'Chat script should be registered' );
+
+		$chat_script = $wp_scripts->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ];
 
 		// Verify localization data is attached.
 		$this->assertArrayHasKey( 'data', $chat_script->extra, 'Chat script should have localization data' );
