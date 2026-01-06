@@ -275,29 +275,39 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 /**
  * Get compliance status.
  *
- * @return WP_REST_Response Response object.
+ * @return WP_REST_Response|WP_Error Response object or error.
  */
 public function get_compliance_status() {
-// Get actual controls data from Statement of Applicability.
-$controls = $this->get_iso27001_controls();
-$stats    = $this->calculate_controls_stats( $controls );
+	// Get actual controls data from Statement of Applicability.
+	$controls = $this->get_iso27001_controls();
+	
+	// Check if controls were loaded successfully.
+	if ( empty( $controls ) ) {
+		return new WP_Error(
+			'soa_not_found',
+			__( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'wp-mcp-ai' ),
+			array( 'status' => 500 )
+		);
+	}
+	
+	$stats = $this->calculate_controls_stats( $controls );
 
-// Calculate overall percentage.
-$total_applicable = $stats['total'] - $stats['not_applicable'];
-$percentage       = $total_applicable > 0 ? round( ( $stats['implemented'] / $total_applicable ) * 100 ) : 0;
+	// Calculate overall percentage.
+	$total_applicable = $stats['total'] - $stats['not_applicable'];
+	$percentage       = $total_applicable > 0 ? round( ( $stats['implemented'] / $total_applicable ) * 100 ) : 0;
 
-$status = array(
-'iso27001'     => array(
-'status'      => get_option( 'wp_mcp_ai_iso27001_certified', false ) ? 'certified' : 'compliant',
-'implemented' => $stats['implemented'],
-'partial'     => $stats['partial'],
-'planned'     => $stats['planned'],
-'na'          => $stats['not_applicable'],
-'total'       => $stats['total'],
-'percentage'  => $percentage,
-'cert_date'   => get_option( 'wp_mcp_ai_iso27001_cert_date', '' ),
-),
-'controls'     => array(
+	$status = array(
+		'iso27001'     => array(
+			'status'      => get_option( 'wp_mcp_ai_iso27001_certified', false ) ? 'certified' : 'compliant',
+			'implemented' => $stats['implemented'],
+			'partial'     => $stats['partial'],
+			'planned'     => $stats['planned'],
+			'na'          => $stats['not_applicable'],
+			'total'       => $stats['total'],
+			'percentage'  => $percentage,
+			'cert_date'   => get_option( 'wp_mcp_ai_iso27001_cert_date', '' ),
+		),
+		'controls'     => array(
 'implemented'    => $stats['implemented'],
 'partial'        => $stats['partial'],
 'planned'        => $stats['planned'],
