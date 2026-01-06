@@ -94,6 +94,7 @@ The tool validates Simple JWT Login configuration (plugin active, authentication
 - **Generate Veo Video** (`generate_veo_video`) generates realistic videos from text descriptions using Google's Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached. Supports async mode for long-running video generation tasks.【F:includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php†L17-L300】
 - **Check Video Status** (`check_video_status`) checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video in async mode.【F:includes/tools/class-wp-mcp-ai-tool-check-video-status.php†L17-L150】
 - **Generate Music** (`generate_music`) generates instrumental music from a text description using Google Gemini Lyria model with controls for genre, mood, duration, and tempo, and saves the result to the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-music.php†L17-L200】
+- **Generate Architectural Drawing** (`generate_architectural_drawing`) **[PRO]** creates professional architectural drawings for construction and design projects. Supports 10 drawing types (floor_plan, elevation, section, detail, site_plan, reflected_ceiling_plan, roof_plan, 3d_axonometric, isometric, construction_detail) and 6 presentation styles (technical, sketched, rendered, line_drawing, annotated, schematic). Includes dimensional specifications (width, depth, height), architectural scale notation (1/4"=1'-0", 1:100, 1:50), material lists and callouts, and building code compliance (IBC, IRC, NBC, Eurocode). Dual AI providers (OpenAI DALL-E/GPT-Image-1.5 and Gemini) with automatic SVG vectorization using the vectorize_image tool. Perfect for architects, structural engineers, and construction professionals needing technical drawings with accurate dimensions and material specifications.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-architectural-drawing.php†L1-L1136】
 
 ## Content Safety & Moderation
 
@@ -131,6 +132,41 @@ The following tools require the **Pro addon** and external executables to be ins
 - **Rotate Image** (`rotate_image`) rotates an image by degrees or flips it horizontally/vertically.【F:includes/tools/class-wp-mcp-ai-tool-rotate-image.php†L17-L150】
 - **Convert Image Format** (`convert_image_format`) converts an image to a different format (PNG, JPEG, WebP, GIF) with optional quality control.【F:includes/tools/class-wp-mcp-ai-tool-convert-image-format.php†L17-L150】
 - **Remove Background** (`remove_background`) removes the background from an image, making it transparent. Supports two methods: free (Python rembg library, requires `pip3 install rembg pillow`) and paid (remove.bg API, requires API key from https://www.remove.bg/api). The `method` parameter allows selection: "auto" (default, tries free first then paid), "free" (rembg only), or "paid" (remove.bg API only). Automatically detects Python availability and rembg installation status. When using the free method, requires Python 3.x and the rembg package installed on the server. The paid method requires a remove.bg API key configured in Settings → NV oOS → Tools → External Tools.【F:includes/tools/class-wp-mcp-ai-tool-remove-background.php†L17-L370】
+
+## Architectural & Construction Tools
+
+### Professional Drawing Generation
+
+**Generate Architectural Drawing** (`generate_architectural_drawing`) **[PRO]** is a comprehensive tool for creating professional architectural and construction drawings using AI. Designed specifically for architects, structural engineers, construction managers, and design professionals.
+
+**Key Features:**
+- **10 Drawing Types**: floor_plan, elevation, section, detail, site_plan, reflected_ceiling_plan, roof_plan, 3d_axonometric, isometric, construction_detail
+- **6 Presentation Styles**: technical (precise line weights, architectural symbols), sketched (hand-drawn style), rendered (realistic with materials/lighting), line_drawing (clean uniform lines), annotated (extensive dimensions and callouts), schematic (simplified diagrams)
+- **Dimensional Specifications**: Width, depth, height with units (feet, meters, inches, centimeters)
+- **Architectural Scale Notation**: 1/4"=1'-0", 1:100, 1:50, and custom scales
+- **Material Lists**: Specify materials and finishes for automatic callouts
+- **Building Code Compliance**: IBC (International Building Code), IRC (International Residential Code), NBC (National Building Code), Eurocode standards
+- **Annotation Controls**: Dimension lines, measurement annotations, material callouts
+- **Dual AI Providers**: OpenAI (DALL-E, GPT-Image-1.5) or Gemini (gemini-2.5-flash-image)
+- **Output Formats**: PNG (raster) or SVG (vector) with automatic vectorization via `vectorize_image` tool
+- **Quality Controls**: High-quality output optimized for architectural documentation
+
+**Use Cases:**
+- Residential floor plans with room layouts and square footage
+- Commercial building elevations with material specifications
+- Construction details showing assembly methods and connections
+- Site plans with property boundaries and landscaping
+- Reflected ceiling plans for lighting and HVAC coordination
+- Isometric views for client presentations
+- Technical sections for building permit submissions
+
+**Integration:**
+- Automatically uses `vectorize_image` for SVG output when requested
+- Follows same pattern as `graphic_editor_plus` for consistency
+- Supports both raster and vector outputs for different use cases
+- Professional metadata storage for project documentation
+
+Perfect for construction workflows where accurate dimensions, code compliance, and professional presentation are essential.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-architectural-drawing.php†L1-L1136】
 
 ## AI-powered media analysis
 
