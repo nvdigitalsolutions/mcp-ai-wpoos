@@ -10299,7 +10299,8 @@
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
             
             // Handle form submission (for proper <form> elements)
-            if (form.tagName === 'FORM') {
+            // Use toUpperCase() for reliable tag name comparison across browsers
+            if (form.tagName && form.tagName.toUpperCase() === 'FORM') {
                 form.addEventListener('submit', function (event) {
                     handleSubmit(event, state);
                 });

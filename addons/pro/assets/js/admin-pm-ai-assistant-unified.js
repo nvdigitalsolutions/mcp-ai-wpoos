@@ -269,6 +269,7 @@
 			'<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden>' +
 			'<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="Transcribe audio"><svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path></svg><span class="screen-reader-text">Transcribe audio</span></button>' +
 			'<button type="button" class="wp-mcp-ai-chat__attach">Attach file</button>' +
+			// Use type="button" (not "submit") to prevent triggering parent WordPress form submission
 			'<button type="button" class="wp-mcp-ai-chat__submit">Send</button>' +
 			'</div>' +
 			'</div>' +

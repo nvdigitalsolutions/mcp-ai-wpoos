@@ -204,6 +204,7 @@ html += '<button type="button" class="wp-mcp-ai-chat__voice-chat" aria-label="Vo
 html += '<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="Transcribe audio"><svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path><path d="M12 16a7 7 0 0 0 6.93-6H17a5 5 0 0 1-10 0H5.07A7 7 0 0 0 12 16zm-1 2.05V21h2v-2.95A9 9 0 0 0 20.95 11H19a7 7 0 0 1-14 0H3.05A9 9 0 0 0 11 18.05z"></path></svg><span class="screen-reader-text">Transcribe audio</span></button>';
 html += '<button type="button" class="wp-mcp-ai-chat__attach">Attach file</button>';
 html += '<button type="button" class="wp-mcp-ai-chat__build" hidden>Build</button>';
+// Use type="button" (not "submit") to prevent triggering parent WordPress form submission
 html += '<button type="button" class="wp-mcp-ai-chat__submit">Send</button>';
 html += '</div>';
 html += '</div>';
