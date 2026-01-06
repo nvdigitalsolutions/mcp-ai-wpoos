@@ -51,7 +51,19 @@
 		 */
 		showChartError: function() {
 			$('.wp-mcp-ai-chart-container').each(function() {
-				$(this).html('<div class="wp-mcp-ai-chart-error"><span class="dashicons dashicons-warning"></span><p>Charts could not be loaded. Please refresh the page.</p></div>');
+				const $container = $(this);
+				const $card = $container.closest('.wp-mcp-ai-chart-card');
+				const $fallback = $card.find('.wp-mcp-ai-chart-fallback');
+				
+				// Hide the chart container
+				$container.hide();
+				
+				// Show fallback if available, otherwise show error message
+				if ($fallback.length > 0) {
+					$fallback.show();
+				} else {
+					$container.html('<div class="wp-mcp-ai-chart-error"><span class="dashicons dashicons-warning"></span><p>Charts could not be loaded. Please refresh the page.</p></div>').show();
+				}
 			});
 		},
 

@@ -655,17 +655,64 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<div class="wp-mcp-ai-chart-container">
 							<canvas id="wpMcpAiControlsChart"></canvas>
 						</div>
+						<div class="wp-mcp-ai-chart-fallback" style="display:none;">
+							<table class="wp-mcp-ai-chart-data-table">
+								<tr>
+									<td><span class="wp-mcp-ai-legend-dot" style="background: #4caf50;"></span> <?php esc_html_e( 'Implemented', 'mcp-ai-wpoos' ); ?></td>
+									<td><strong><?php echo esc_html( $stats['implemented'] ); ?></strong></td>
+								</tr>
+								<tr>
+									<td><span class="wp-mcp-ai-legend-dot" style="background: #ff9800;"></span> <?php esc_html_e( 'Partial', 'mcp-ai-wpoos' ); ?></td>
+									<td><strong><?php echo esc_html( $stats['partial'] ); ?></strong></td>
+								</tr>
+								<tr>
+									<td><span class="wp-mcp-ai-legend-dot" style="background: #2196f3;"></span> <?php esc_html_e( 'Planned', 'mcp-ai-wpoos' ); ?></td>
+									<td><strong><?php echo esc_html( $stats['planned'] ); ?></strong></td>
+								</tr>
+								<tr>
+									<td><span class="wp-mcp-ai-legend-dot" style="background: #9e9e9e;"></span> <?php esc_html_e( 'N/A', 'mcp-ai-wpoos' ); ?></td>
+									<td><strong><?php echo esc_html( $stats['not_applicable'] ); ?></strong></td>
+								</tr>
+							</table>
+						</div>
 					</div>
 					<div class="wp-mcp-ai-chart-card">
 						<h3><?php esc_html_e( 'Security Metrics', 'mcp-ai-wpoos' ); ?></h3>
 						<div class="wp-mcp-ai-chart-container">
 							<canvas id="wpMcpAiMetricsChart"></canvas>
 						</div>
+						<div class="wp-mcp-ai-chart-fallback" style="display:none;">
+							<p class="description"><?php esc_html_e( 'Tracking security incidents and vulnerability remediation over the last 6 months.', 'mcp-ai-wpoos' ); ?></p>
+							<div class="wp-mcp-ai-metrics-summary-mini">
+								<div><strong>2</strong> <?php esc_html_e( 'Recent Incidents', 'mcp-ai-wpoos' ); ?></div>
+								<div><strong>12</strong> <?php esc_html_e( 'Vulnerabilities Fixed', 'mcp-ai-wpoos' ); ?></div>
+							</div>
+						</div>
 					</div>
 					<div class="wp-mcp-ai-chart-card">
 						<h3><?php esc_html_e( 'Risk Distribution', 'mcp-ai-wpoos' ); ?></h3>
 						<div class="wp-mcp-ai-chart-container">
 							<canvas id="wpMcpAiRiskChart"></canvas>
+						</div>
+						<div class="wp-mcp-ai-chart-fallback" style="display:none;">
+							<table class="wp-mcp-ai-chart-data-table">
+								<tr>
+									<td><span class="wp-mcp-ai-legend-dot" style="background: #f44336;"></span> <?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?></td>
+									<td><strong>0</strong></td>
+								</tr>
+								<tr>
+									<td><span class="wp-mcp-ai-legend-dot" style="background: #ff9800;"></span> <?php esc_html_e( 'High', 'mcp-ai-wpoos' ); ?></td>
+									<td><strong>3</strong></td>
+								</tr>
+								<tr>
+									<td><span class="wp-mcp-ai-legend-dot" style="background: #ffc107;"></span> <?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></td>
+									<td><strong>12</strong></td>
+								</tr>
+								<tr>
+									<td><span class="wp-mcp-ai-legend-dot" style="background: #8bc34a;"></span> <?php esc_html_e( 'Low', 'mcp-ai-wpoos' ); ?></td>
+									<td><strong>8</strong></td>
+								</tr>
+							</table>
 						</div>
 					</div>
 				</div>
