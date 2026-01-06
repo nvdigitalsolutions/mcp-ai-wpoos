@@ -479,10 +479,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render compliance status widget.
 		 */
 		private function render_compliance_status() {
-			$controls_implemented = 52;
-			$controls_total       = 93;
-			$compliance_percentage = round( ( $controls_implemented / $controls_total ) * 100 );
-			$is_certified = get_option( 'wp_mcp_ai_iso27001_certified', false );
+			// Get actual data from Statement of Applicability.
+			$controls = $this->get_iso27001_controls();
+			$stats    = $this->calculate_controls_stats( $controls );
+			
+			$controls_implemented  = $stats['implemented'];
+			$controls_total        = $stats['total'];
+			$total_applicable      = $controls_total - $stats['not_applicable'];
+			$compliance_percentage = $total_applicable > 0 ? round( ( $controls_implemented / $total_applicable ) * 100 ) : 0;
+			$is_certified          = get_option( 'wp_mcp_ai_iso27001_certified', false );
 			?>
 			<div class="wp-mcp-ai-compliance-status">
 				<div class="wp-mcp-ai-status-badge <?php echo $is_certified ? 'certified' : 'compliant'; ?>">
