@@ -24,7 +24,7 @@
 
 ### Getting Started
 - [🆕 Latest Updates (January 2026)](#-latest-updates-january-2026)
-- [🧩 Overview](#overview)
+- [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
 - [🛡️ Active Security Monitoring](#-active-security-monitoring)
 - [🏗 System Architecture](#-system-architecture)
