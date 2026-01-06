@@ -490,10 +490,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return;
 			}
 
-			// Enqueue Chart.js from CDN
+			// Enqueue Chart.js (local fallback for cloned repos where CDN may be blocked)
 			wp_enqueue_script(
 				'chartjs',
-				'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+				plugins_url( 'assets/js/vendor/chart.min.js', dirname( dirname( __FILE__ ) ) ),
 				array(),
 				'4.4.0',
 				true
