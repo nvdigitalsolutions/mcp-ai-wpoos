@@ -1396,11 +1396,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render framework status.
 		 */
 		private function render_framework_status() {
+			// Calculate ISO 27001 compliance dynamically from Statement of Applicability.
+			$iso_controls = $this->get_iso27001_controls();
+			$iso_stats = $this->calculate_controls_stats( $iso_controls );
+			$iso_total_applicable = $iso_stats['total'] - $iso_stats['not_applicable'];
+			$iso_compliance = $iso_total_applicable > 0 ? round( ( $iso_stats['implemented'] / $iso_total_applicable ) * 100 ) : 0;
+			
 			$frameworks = array(
 				array(
 					'name'   => 'ISO 27001:2022',
 					'status' => 'compliant',
-					'progress' => 56,
+					'progress' => $iso_compliance,
 				),
 				array(
 					'name'   => 'SOC 2',
