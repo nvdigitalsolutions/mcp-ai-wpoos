@@ -28,11 +28,15 @@
 		 */
 		waitForChartJS: function() {
 			const self = this;
+		const restEndpoint = wpMcpAiProDashboard.restUrl + 'mcp-ai/v1/pro/compliance/status';
+		
+		console.log('Loading compliance data from:', restEndpoint);
 			let attempts = 0;
 			const maxAttempts = 50; // 5 seconds max wait time
 
 			const checkChartJS = function() {
 				if (typeof Chart !== 'undefined') {
+				console.log('Chart.js loaded successfully');
 					self.initializeCharts();
 				} else if (attempts < maxAttempts) {
 					attempts++;
@@ -116,10 +120,14 @@
 		 */
 		loadComplianceData: function() {
 			if (!wpMcpAiProDashboard.restUrl) {
+			console.warn('REST URL not configured');
 				return;
 			}
 
 			const self = this;
+		const restEndpoint = wpMcpAiProDashboard.restUrl + 'mcp-ai/v1/pro/compliance/status';
+		
+		console.log('Loading compliance data from:', restEndpoint);
 
 			$.ajax({
 				url: wpMcpAiProDashboard.restUrl + 'mcp-ai/v1/pro/compliance/status',
@@ -128,11 +136,16 @@
 					xhr.setRequestHeader('X-WP-Nonce', wpMcpAiProDashboard.restNonce);
 				},
 				success: function(data) {
+				console.log('Compliance data loaded successfully:', data);
 					self.updateDashboardMetrics(data);
 				},
-				error: function(xhr, status, error) {
-					console.error('Failed to load compliance data:', error);
-				}
+			error: function(xhr, status, error) {
+				console.error('Failed to load compliance data:', {
+					status: status,
+					error: error,
+					response: xhr.responseText
+				});
+			}
 			});
 		},
 
@@ -180,7 +193,9 @@
 		 * Initialize Chart.js charts.
 		 */
 		initializeCharts: function() {
-			console.log('Initializing charts with data:', wpMcpAiProDashboard.chartData);
+		console.log('Initializing charts...');
+		console.log('Chart.js version:', Chart.version);
+		console.log('Chart data available:', wpMcpAiProDashboard.chartData);
 			// Controls implementation pie chart
 			this.initControlsChart();
 			// Security metrics line chart
@@ -189,6 +204,8 @@
 			this.initRiskChart();
 			// Hide loading indicators
 			this.hideChartLoading();
+		
+		console.log('All charts initialized');
 		},
 
 		/**
@@ -432,13 +449,15 @@
 				e.preventDefault();
 			}
 
+		console.log('Refreshing dashboard...');
 			const $button = $('.wp-mcp-ai-refresh-dashboard');
-			$button.addClass('spinning');
+		$button.addClass('spinning').prop('disabled', true);
 
 			this.loadComplianceData();
 
 			setTimeout(function() {
-				$button.removeClass('spinning');
+			$button.removeClass('spinning').prop('disabled', false);
+			console.log('Dashboard refresh complete');
 			}, 1000);
 		},
 
@@ -469,6 +488,9 @@
 		 */
 		startAutoRefresh: function() {
 			const self = this;
+		const restEndpoint = wpMcpAiProDashboard.restUrl + 'mcp-ai/v1/pro/compliance/status';
+		
+		console.log('Loading compliance data from:', restEndpoint);
 			// Refresh every 5 minutes
 			this.refreshInterval = setInterval(function() {
 				self.loadComplianceData();
