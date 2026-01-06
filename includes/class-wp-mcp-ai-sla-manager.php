@@ -395,7 +395,7 @@ class WP_MCP_AI_SLA_Manager {
 
 		// Keep only last 1000 entries.
 		if ( count( $compliance_data ) >= 1000 ) {
-			$compliance_data = array_slice( $compliance_data, -999, 999, true );
+			$compliance_data = array_slice( $compliance_data, -999 );
 		}
 
 		$compliance_data[] = array(
