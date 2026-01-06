@@ -85,9 +85,9 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
 		wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 
-		// Enqueue custom metabox assets.
-		$script_url = WP_MCP_AI_PRO_URL . 'assets/js/admin-pm-ai-assistant.js';
-		$style_url  = WP_MCP_AI_PRO_URL . 'assets/css/admin-pm-ai-assistant.css';
+		// Enqueue unified PM AI assistant script (replaces both ai-assistant.js and ai-actions.js).
+		$unified_script_url = WP_MCP_AI_PRO_URL . 'assets/js/admin-pm-ai-assistant-unified.js';
+		$style_url          = WP_MCP_AI_PRO_URL . 'assets/css/admin-pm-ai-assistant.css';
 
 		// Build dependencies array - include wp-dom-ready if available for block editor support.
 		$script_dependencies = array( 'jquery', WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
@@ -96,8 +96,8 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		}
 
 		wp_enqueue_script(
-			'wp-mcp-ai-pm-ai-assistant',
-			$script_url,
+			'wp-mcp-ai-pm-ai-assistant-unified',
+			$unified_script_url,
 			$script_dependencies,
 			WP_MCP_AI_PRO_VERSION,
 			true
@@ -110,20 +110,9 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			WP_MCP_AI_PRO_VERSION
 		);
 
-		// Also enqueue AI actions script (consolidated functionality).
-		$actions_script_url = WP_MCP_AI_PRO_URL . 'assets/js/admin-pm-ai-actions.js';
-
-		wp_enqueue_script(
-			'wp-mcp-ai-pm-ai-actions',
-			$actions_script_url,
-			$script_dependencies,
-			WP_MCP_AI_PRO_VERSION,
-			true
-		);
-
 		// Localize script for AI actions.
 		wp_localize_script(
-			'wp-mcp-ai-pm-ai-actions',
+			'wp-mcp-ai-pm-ai-assistant-unified',
 			'wpMcpAiPmAi',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
