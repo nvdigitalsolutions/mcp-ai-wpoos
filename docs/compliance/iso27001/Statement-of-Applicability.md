@@ -454,15 +454,23 @@ This Statement of Applicability (SoA) documents the implementation status of all
 **Evidence:** Contributor License Agreement (CLA), employment contracts
 
 ### A.6.3 Information Security Awareness, Education and Training
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
-**Justification:** Human firewall  
+**Justification:** Human firewall - Essential for maintaining security culture  
 **Implementation:**
-- Security documentation available
-- Code review feedback and learning
-- **In Progress:** Formal security training program
-- **In Progress:** Annual refresher training
-**Evidence:** Documentation, training materials (to be developed)
+- Comprehensive security training system with role-based training paths
+- Five mandatory training modules covering ISO 27001, secure coding, WordPress security, incident response, and data protection
+- Training completion tracking via user metadata
+- Annual refresher training with automated email reminders
+- Training statistics dashboard for administrators
+- User training dashboard for viewing and completing modules
+- Training modules stored as custom post type (mcp_ai_training)
+- REST API for programmatic training management (mcp-ai/v1/training/*)
+- Security awareness content for all users
+- Technical security training for developers
+- Policy and compliance training
+- Incident response procedures training
+**Evidence:** `includes/class-wp-mcp-ai-security-training.php`, `includes/rest/class-wp-mcp-ai-security-training-rest.php`, `includes/admin/class-wp-mcp-ai-security-training-admin.php`, Training dashboard at NV oOS Pro → Security Training
 
 ### A.6.4 Disciplinary Process
 **Status:** 📋 Planned  
