@@ -216,46 +216,56 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</div>
 
 				<?php $this->render_pro_status_notice(); ?>
+<?php $this->render_pro_status_notice(); ?>
 
-				<!-- Key Metrics Summary -->
-				<div class="wp-mcp-ai-metrics-summary">
-					<div class="wp-mcp-ai-metric-card">
-						<div class="wp-mcp-ai-metric-icon">
-							<span class="dashicons dashicons-yes-alt"></span>
-						</div>
-						<div class="wp-mcp-ai-metric-content">
-							<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-implemented">55</div>
-							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Controls Implemented', 'wp-mcp-ai' ); ?></div>
-						</div>
-					</div>
-					<div class="wp-mcp-ai-metric-card">
-						<div class="wp-mcp-ai-metric-icon">
-							<span class="dashicons dashicons-clock"></span>
-						</div>
-						<div class="wp-mcp-ai-metric-content">
-							<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-partial">24</div>
-							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'In Progress', 'wp-mcp-ai' ); ?></div>
-						</div>
-					</div>
-					<div class="wp-mcp-ai-metric-card">
-						<div class="wp-mcp-ai-metric-icon">
-							<span class="dashicons dashicons-warning"></span>
-						</div>
-						<div class="wp-mcp-ai-metric-content">
-							<div class="wp-mcp-ai-metric-value">0</div>
-							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Critical Risks', 'wp-mcp-ai' ); ?></div>
-						</div>
-					</div>
-					<div class="wp-mcp-ai-metric-card">
-						<div class="wp-mcp-ai-metric-icon">
-							<span class="dashicons dashicons-chart-line"></span>
-						</div>
-						<div class="wp-mcp-ai-metric-content">
-							<div class="wp-mcp-ai-metric-value">59%</div>
-							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Overall Compliance', 'wp-mcp-ai' ); ?></div>
-						</div>
-					</div>
-				</div>
+<?php
+// Get actual compliance data from Statement of Applicability.
+$controls         = $this->get_iso27001_controls();
+$stats            = $this->calculate_controls_stats( $controls );
+$total_applicable = $stats['total'] - $stats['not_applicable'];
+$compliance_pct   = $total_applicable > 0 ? round( ( $stats['implemented'] / $total_applicable ) * 100 ) : 0;
+?>
+
+<!-- Key Metrics Summary -->
+<div class="wp-mcp-ai-metrics-summary">
+<div class="wp-mcp-ai-metric-card">
+<div class="wp-mcp-ai-metric-icon">
+<span class="dashicons dashicons-yes-alt"></span>
+</div>
+<div class="wp-mcp-ai-metric-content">
+<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-implemented"><?php echo esc_html( $stats['implemented'] ); ?></div>
+<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Controls Implemented', 'wp-mcp-ai' ); ?></div>
+</div>
+</div>
+<div class="wp-mcp-ai-metric-card">
+<div class="wp-mcp-ai-metric-icon">
+<span class="dashicons dashicons-clock"></span>
+</div>
+<div class="wp-mcp-ai-metric-content">
+<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-partial"><?php echo esc_html( $stats['partial'] ); ?></div>
+<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'In Progress', 'wp-mcp-ai' ); ?></div>
+</div>
+</div>
+<div class="wp-mcp-ai-metric-card">
+<div class="wp-mcp-ai-metric-icon">
+<span class="dashicons dashicons-warning"></span>
+</div>
+<div class="wp-mcp-ai-metric-content">
+<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-critical">0</div>
+<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Critical Risks', 'wp-mcp-ai' ); ?></div>
+</div>
+</div>
+<div class="wp-mcp-ai-metric-card">
+<div class="wp-mcp-ai-metric-icon">
+<span class="dashicons dashicons-chart-line"></span>
+</div>
+<div class="wp-mcp-ai-metric-content">
+<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-compliance"><?php echo esc_html( $compliance_pct ); ?>%</div>
+<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Overall Compliance', 'wp-mcp-ai' ); ?></div>
+</div>
+</div>
+</div>
+
 
 				<!-- Charts Row -->
 				<div class="wp-mcp-ai-charts-row">

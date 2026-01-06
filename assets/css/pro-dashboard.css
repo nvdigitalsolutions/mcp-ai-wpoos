@@ -87,6 +87,23 @@
 	margin-bottom: 5px;
 }
 
+/* Metric status colors */
+.wp-mcp-ai-metric-value.wp-mcp-ai-stat-implemented {
+	color: #4caf50;
+}
+
+.wp-mcp-ai-metric-value.wp-mcp-ai-stat-partial {
+	color: #ff9800;
+}
+
+.wp-mcp-ai-metric-value.wp-mcp-ai-stat-critical {
+	color: #f44336;
+}
+
+.wp-mcp-ai-metric-value.wp-mcp-ai-stat-compliance {
+	color: #2196f3;
+}
+
 .wp-mcp-ai-metric-label {
 	font-size: 14px;
 	color: #666;

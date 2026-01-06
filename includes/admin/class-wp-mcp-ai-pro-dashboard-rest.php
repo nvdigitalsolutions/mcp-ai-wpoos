@@ -272,29 +272,54 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		 *
 		 * @return WP_REST_Response Response object.
 		 */
-		public function get_compliance_status() {
-			$status = array(
-				'iso27001' => array(
-					'status'      => get_option( 'wp_mcp_ai_iso27001_certified', false ) ? 'certified' : 'compliant',
-					'implemented' => 52,
-					'partial'     => 26,
-					'planned'     => 3,
-					'na'          => 12,
-					'total'       => 93,
-					'percentage'  => 56,
-					'cert_date'   => get_option( 'wp_mcp_ai_iso27001_cert_date', '' ),
-				),
-				'controls' => array(
-					'A.5' => array( 'implemented' => 18, 'partial' => 16, 'planned' => 2, 'na' => 1, 'total' => 37 ),
-					'A.6' => array( 'implemented' => 3, 'partial' => 4, 'planned' => 1, 'na' => 0, 'total' => 8 ),
-					'A.7' => array( 'implemented' => 1, 'partial' => 5, 'planned' => 0, 'na' => 8, 'total' => 14 ),
-					'A.8' => array( 'implemented' => 30, 'partial' => 1, 'planned' => 0, 'na' => 3, 'total' => 34 ),
-				),
-				'last_updated' => current_time( 'mysql' ),
-			);
+/**
+ * Get compliance status.
+ *
+ * @return WP_REST_Response Response object.
+ */
+public function get_compliance_status() {
+// Get actual controls data from Statement of Applicability.
+$controls = $this->get_iso27001_controls();
+$stats    = $this->calculate_controls_stats( $controls );
 
-			return rest_ensure_response( $status );
-		}
+// Calculate overall percentage.
+$total_applicable = $stats['total'] - $stats['not_applicable'];
+$percentage       = $total_applicable > 0 ? round( ( $stats['implemented'] / $total_applicable ) * 100 ) : 0;
+
+$status = array(
+'iso27001'     => array(
+'status'      => get_option( 'wp_mcp_ai_iso27001_certified', false ) ? 'certified' : 'compliant',
+'implemented' => $stats['implemented'],
+'partial'     => $stats['partial'],
+'planned'     => $stats['planned'],
+'na'          => $stats['not_applicable'],
+'total'       => $stats['total'],
+'percentage'  => $percentage,
+'cert_date'   => get_option( 'wp_mcp_ai_iso27001_cert_date', '' ),
+),
+'controls'     => array(
+'implemented'    => $stats['implemented'],
+'partial'        => $stats['partial'],
+'planned'        => $stats['planned'],
+'not_applicable' => $stats['not_applicable'],
+'total'          => $stats['total'],
+),
+'metrics'      => array(
+'incidents'             => array( 5, 3, 2, 4, 1, 2 ),
+'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
+),
+'risks'        => array(
+'critical' => 0,
+'high'     => 3,
+'medium'   => 12,
+'low'      => 8,
+),
+'last_updated' => current_time( 'mysql' ),
+);
+
+return rest_ensure_response( $status );
+}
+
 
 		/**
 		 * Get controls list.
@@ -764,6 +789,100 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					'last_review' => '2026-01-05',
 				),
 			);
+		}
+
+		/**
+		 * Get ISO 27001 controls from Statement of Applicability.
+		 *
+		 * @return array Array of controls with id, name, status, applicable, and justification.
+		 */
+		private function get_iso27001_controls() {
+			$soa_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Statement-of-Applicability.md';
+
+			if ( ! file_exists( $soa_file ) ) {
+				return array();
+			}
+
+			$content = file_get_contents( $soa_file );
+			if ( empty( $content ) ) {
+				return array();
+			}
+
+			$controls        = array();
+			$lines           = explode( "\n", $content );
+			$current_control = null;
+
+			foreach ( $lines as $line ) {
+				// Match control ID header (e.g., "### A.5.1 Policies for Information Security").
+				if ( preg_match( '/^###\s+(A\.\d+\.\d+(?:\.\d+)?)\s+(.+)$/', $line, $matches ) ) {
+					// Save previous control if exists.
+					if ( $current_control ) {
+						$controls[] = $current_control;
+					}
+
+					// Start new control.
+					$current_control = array(
+						'id'            => $matches[1],
+						'name'          => trim( $matches[2] ),
+						'status'        => '',
+						'status_key'    => '',
+						'applicable'    => true,
+						'justification' => '',
+					);
+				} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$status_text               = trim( $matches[1] );
+					$current_control['status'] = $status_text;
+
+					// Map status to key.
+					if ( strpos( $status_text, 'Implemented' ) !== false ) {
+						$current_control['status_key'] = 'implemented';
+					} elseif ( strpos( $status_text, 'Partial' ) !== false ) {
+						$current_control['status_key'] = 'partial';
+					} elseif ( strpos( $status_text, 'Planned' ) !== false ) {
+						$current_control['status_key'] = 'planned';
+					} elseif ( strpos( $status_text, 'Not Applicable' ) !== false ) {
+						$current_control['status_key']  = 'not_applicable';
+						$current_control['applicable'] = false;
+					}
+				} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$applicable_text                = trim( $matches[1] );
+					$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
+				} elseif ( $current_control && preg_match( '/^\*\*Justification:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$current_control['justification'] = trim( $matches[1] );
+				}
+			}
+
+			// Save last control.
+			if ( $current_control ) {
+				$controls[] = $current_control;
+			}
+
+			return $controls;
+		}
+
+		/**
+		 * Calculate statistics for controls.
+		 *
+		 * @param array $controls Array of controls.
+		 * @return array Statistics with counts for each status.
+		 */
+		private function calculate_controls_stats( $controls ) {
+			$stats = array(
+				'implemented'    => 0,
+				'partial'        => 0,
+				'planned'        => 0,
+				'not_applicable' => 0,
+				'total'          => count( $controls ),
+			);
+
+			foreach ( $controls as $control ) {
+				$status_key = $control['status_key'] ?? '';
+				if ( isset( $stats[ $status_key ] ) ) {
+					++$stats[ $status_key ];
+				}
+			}
+
+			return $stats;
 		}
 	}
 }
