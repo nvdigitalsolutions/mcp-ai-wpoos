@@ -85,6 +85,14 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
 		wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 
+		// Enqueue modal styles (required for popup overlay).
+		wp_enqueue_style(
+			'wp-mcp-ai-cpt-assistant',
+			WP_MCP_AI_PRO_URL . 'assets/css/cpt-assistant.css',
+			array(),
+			WP_MCP_AI_PRO_VERSION
+		);
+
 		// Enqueue unified PM AI assistant script (replaces both ai-assistant.js and ai-actions.js).
 		$unified_script_url = WP_MCP_AI_PRO_URL . 'assets/js/admin-pm-ai-assistant-unified.js';
 		$style_url          = WP_MCP_AI_PRO_URL . 'assets/css/admin-pm-ai-assistant.css';
