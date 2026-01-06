@@ -6,7 +6,9 @@
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 659+ files (640+ in docs/ folder, 7 essential files in root)
+**Total Documentation:** 659+ files (640+ in docs/ folder, 5 essential files in root)
+
+> **📌 JANUARY 6, 2026 UPDATE**: Root Directory Organization completed - Moved 25 markdown files from root to appropriate docs/ subdirectories. Root now contains only 5 essential files (README, CHANGELOG, BUILD, CONTRIBUTING, SECURITY). Files organized into implementation-summaries/, fixes/, visual-guides/, and troubleshooting/ for better discoverability.
 
 > **📌 JANUARY 3, 2026 UPDATE**: Gap Documentation Review completed - 100% high-priority completion achieved! All 10 critical items complete including Code Coverage Dashboard. Overall quality score: 98/100 (up from 95/100). Production ready with A+ grade. See [Gap Documentation Review Summary](GAP_DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Status Update](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md) for details.
 
@@ -718,20 +720,20 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 ## 📊 Documentation Statistics
 
 ### Coverage
-- **Total Documentation Files:** 659+ files (652+ in docs/, 7 in root)
+- **Total Documentation Files:** 659+ files (654+ in docs/, 5 in root)
 - **Total Documentation Size:** ~408KB+
 - **Main README Size:** 1,400+ lines
 - **Average Doc Size:** ~8.8KB
 
-### Root Directory (Cleaned January 2, 2026)
-Essential files only (reduced from 16 to 7 files):
+### Root Directory (Cleaned January 6, 2026)
+Essential files only (reduced from 30 to 5 files):
 1. README.md - Main plugin documentation
 2. CHANGELOG.md - Version history
 3. CONTRIBUTING.md - Contributor guidelines
 4. SECURITY.md - Security policy
 5. BUILD.md - Build instructions
-6. readme.txt - WordPress.org readme
-7. tool-status.txt - Tool status labels
+
+**Note:** Previously had readme.txt and tool-status.txt in root, but core MD files are the essentials.
 
 ### Categories
 - **Setup & Installation:** 4 documents
