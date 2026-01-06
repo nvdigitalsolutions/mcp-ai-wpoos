@@ -105,15 +105,23 @@ This Statement of Applicability (SoA) documents the implementation status of all
 **Evidence:** Dependabot configuration, security alert integrations
 
 ### A.5.8 Information Security in Project Management
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Security by design  
 **Implementation:**
-- Security requirements in project planning
-- Security milestones in roadmap
-- Security testing in development cycle
-- **In Progress:** Formal security architecture reviews
-**Evidence:** [ROADMAP.md](../../docs/ROADMAP.md), GitHub project boards
+- Comprehensive security project management framework
+- Security requirements template for all projects
+- Mandatory security gates (Design, Code Review, Pre-Release)
+- GitHub integration with security labels and branch protection
+- Security review process with 3 levels (Standard, Enhanced, Critical)
+- Security risk register and assessment matrix
+- Security milestones and sign-off procedures
+- Security metrics and dashboard reporting
+**Evidence:**
+- Security Project Management procedure: `docs/compliance/iso27001/procedures/Security-Project-Management.md`
+- GitHub security labels and branch protection rules
+- CodeQL automated security scanning on all PRs
+- Security review checklists and templates
 
 ### A.5.9 Inventory of Information and Other Associated Assets
 **Status:** ✅ Implemented  
@@ -144,14 +152,21 @@ This Statement of Applicability (SoA) documents the implementation status of all
 **Evidence:** To be created - Acceptable Use Policy document
 
 ### A.5.11 Return of Assets
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Offboarding procedures  
 **Implementation:**
-- Access revocation procedures
-- **In Progress:** Asset return checklist
-- **In Progress:** Knowledge transfer procedures
-**Evidence:** Access management procedures
+- Comprehensive asset return procedures for physical, digital, and intellectual property
+- Asset return checklist with physical assets, digital access, and data confirmation
+- Automated access revocation procedures for WordPress, GitHub, and third-party services
+- Asset return form with required signatures
+- 24-hour access revocation timeline
+- Asset inventory updates upon termination
+**Evidence:**
+- HR Security Procedures: `docs/compliance/iso27001/procedures/HR-Security-Procedures.md` (Section 4)
+- Asset return checklist and form templates
+- Automated user deactivation code
+- Asset inventory tracking system
 
 ### A.5.12 Classification of Information
 **Status:** ✅ Implemented  
@@ -465,24 +480,39 @@ This Statement of Applicability (SoA) documents the implementation status of all
 ## 3. Annex A.6: People Controls (8 controls)
 
 ### A.6.1 Screening
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Trusted personnel  
 **Implementation:**
-- Background verification for core team members
-- **In Progress:** Formal screening procedures
-- **In Progress:** Screening levels based on access
-**Evidence:** HR procedures, employment verification
+- Three-level screening framework (Basic, Standard, Enhanced)
+- Role-based screening matrix for all positions
+- Comprehensive background screening procedure (identity, references, employment history)
+- Screening documentation requirements
+- Periodic re-screening every 3 years for sensitive roles
+- Security questionnaire and consent forms
+**Evidence:**
+- HR Security Procedures: `docs/compliance/iso27001/procedures/HR-Security-Procedures.md` (Section 2)
+- Background screening authorization forms
+- Screening results documentation
+- Role-based screening requirements matrix
 
 ### A.6.2 Terms and Conditions of Employment
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Contractual security obligations  
 **Implementation:**
-- Contributor agreements
-- **In Progress:** Security responsibilities in employment contracts
-- **In Progress:** Confidentiality agreements
-**Evidence:** Contributor License Agreement (CLA), employment contracts
+- Mandatory security clauses in all employment agreements (7 clauses)
+- Comprehensive non-disclosure agreements (NDA) with defined scope and duration
+- Security responsibilities documented by role (All Employees, Developers, Administrators, Security Team)
+- Required acknowledgment and acceptance signatures
+- Annual security policy acknowledgment
+- Confidentiality, acceptable use, data protection, and IP rights clauses
+**Evidence:**
+- HR Security Procedures: `docs/compliance/iso27001/procedures/HR-Security-Procedures.md` (Section 3)
+- Employment agreement security clause templates
+- NDA templates with 3-year confidentiality duration
+- Security responsibilities by role documentation
+- Signed acknowledgment forms
 
 ### A.6.3 Information Security Awareness, Education and Training
 **Status:** ✅ Implemented  
@@ -514,14 +544,24 @@ This Statement of Applicability (SoA) documents the implementation status of all
 **Evidence:** To be created - disciplinary procedures document
 
 ### A.6.5 Responsibilities After Termination or Change of Employment
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Post-employment security  
 **Implementation:**
-- Access revocation upon departure
-- **In Progress:** Knowledge transfer procedures
-- **In Progress:** Return of assets checklist
-**Evidence:** Offboarding checklist, access management logs
+- Comprehensive post-termination obligations (3-year confidentiality minimum)
+- Non-compete and non-solicitation agreements where legally enforceable
+- Knowledge transfer requirements with detailed handover checklist
+- Exit interview with security focus (7 security questions)
+- Post-termination monitoring (30-day and 90-day reviews)
+- Legal remedies for breaches documented
+- Continuing confidentiality and non-disclosure obligations
+**Evidence:**
+- HR Security Procedures: `docs/compliance/iso27001/procedures/HR-Security-Procedures.md` (Section 5)
+- Post-termination obligations notice
+- Knowledge transfer checklist
+- Exit interview form with security questions
+- Post-termination monitoring procedures
+- Legal breach response procedures
 
 ### A.6.6 Confidentiality or Non-Disclosure Agreements
 **Status:** 🔄 Partial  
