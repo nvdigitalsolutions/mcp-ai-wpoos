@@ -34,21 +34,93 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		const PAGE_SLUG = 'nvoos-pro-dashboard';
 
 		/**
+		 * Delegate page keys as constants for type safety.
+		 */
+		const DELEGATE_SECURITY_AUDITS = 'security_audits';
+		const DELEGATE_SECURITY_TRAINING = 'security_training';
+		const DELEGATE_SUPPLIER_SECURITY = 'supplier_security';
+		const DELEGATE_ASSET_INVENTORY = 'asset_inventory';
+
+		/**
+		 * Singleton instance.
+		 *
+		 * @var WP_MCP_AI_Pro_Dashboard|null
+		 */
+		private static $instance = null;
+
+		/**
 		 * Delegate admin pages.
 		 *
-		 * @var array
+		 * @var array<string, object>
 		 */
 		private $delegate_pages = array();
 
 		/**
-		 * Constructor.
+		 * Whether delegates have been initialized.
+		 *
+		 * @var bool
 		 */
-		public function __construct() {
+		private $delegates_initialized = false;
+
+		/**
+		 * Get singleton instance.
+		 *
+		 * @return WP_MCP_AI_Pro_Dashboard
+		 */
+		public static function get_instance() {
+			if ( null === self::$instance ) {
+				self::$instance = new self();
+			}
+			return self::$instance;
+		}
+
+		/**
+		 * Constructor (private for singleton pattern).
+		 */
+		private function __construct() {
+			$this->init_hooks();
+		}
+
+		/**
+		 * Prevent cloning of singleton.
+		 */
+		private function __clone() {}
+
+		/**
+		 * Prevent unserialization of singleton.
+		 *
+		 * @throws Exception When attempting to unserialize.
+		 */
+		public function __wakeup() {
+			throw new Exception( 'Cannot unserialize singleton' );
+		}
+
+		/**
+		 * Initialize WordPress hooks.
+		 *
+		 * Separates hook registration from initialization for better testability.
+		 *
+		 * @return void
+		 */
+		private function init_hooks() {
 			add_action( 'admin_menu', array( $this, 'register_menu' ), 25 );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
-			
-			// Initialize delegate pages if their classes are loaded.
-			$this->init_delegate_pages();
+			add_action( 'admin_init', array( $this, 'lazy_init_delegates' ), 1 );
+		}
+
+		/**
+		 * Lazy initialization of delegate pages.
+		 *
+		 * Defers delegate instantiation until admin_init for better performance
+		 * and to ensure all plugins are loaded.
+		 *
+		 * @return void
+		 */
+		public function lazy_init_delegates() {
+			if ( ! $this->delegates_initialized ) {
+				$this->init_delegate_pages();
+				$this->delegates_initialized = true;
+			}
 		}
 
 		/**
@@ -68,32 +140,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return void
 		 */
 		private function init_delegate_pages() {
-			$delegates = array(
-				'security_audits'   => 'WP_MCP_AI_Security_Audit_Admin',
-				'security_training' => 'WP_MCP_AI_Security_Training_Admin',
-				'supplier_security' => 'WP_MCP_AI_Supplier_Security_Admin',
-				'asset_inventory'   => 'WP_MCP_AI_Asset_Inventory_Admin',
-			);
+			$delegates = $this->get_delegate_config();
 
 			foreach ( $delegates as $key => $class_name ) {
-				if ( class_exists( $class_name ) ) {
-					try {
-						$this->delegate_pages[ $key ] = new $class_name();
-					} catch ( Exception $e ) {
-						// Log initialization error but don't break the page.
-						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-							WP_MCP_AI_Logger::log_event(
-								'error',
-								sprintf( 'Failed to initialize Pro Dashboard delegate: %s', $class_name ),
-								array(
-									'delegate'  => $key,
-									'error'     => $e->getMessage(),
-									'trace'     => $e->getTraceAsString(),
-								)
-							);
-						}
-					}
-				}
+				$this->register_delegate( $key, $class_name );
 			}
 
 			/**
@@ -106,6 +156,116 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			 * @param array $delegate_pages Array of initialized delegate page instances.
 			 */
 			do_action( 'wp_mcp_ai_pro_dashboard_delegates_initialized', $this->delegate_pages );
+		}
+
+		/**
+		 * Get delegate configuration.
+		 *
+		 * Centralized configuration using class constants for type safety.
+		 * Can be filtered to allow plugins to add custom delegates.
+		 *
+		 * @return array<string, string> Array of delegate key => class name pairs.
+		 */
+		private function get_delegate_config() {
+			$config = array(
+				self::DELEGATE_SECURITY_AUDITS   => 'WP_MCP_AI_Security_Audit_Admin',
+				self::DELEGATE_SECURITY_TRAINING => 'WP_MCP_AI_Security_Training_Admin',
+				self::DELEGATE_SUPPLIER_SECURITY => 'WP_MCP_AI_Supplier_Security_Admin',
+				self::DELEGATE_ASSET_INVENTORY   => 'WP_MCP_AI_Asset_Inventory_Admin',
+			);
+
+			/**
+			 * Filter delegate page configuration.
+			 *
+			 * Allows plugins/themes to add or remove delegate pages.
+			 *
+			 * @since 1.5.0
+			 *
+			 * @param array $config Array of delegate key => class name pairs.
+			 */
+			return apply_filters( 'wp_mcp_ai_pro_dashboard_delegate_config', $config );
+		}
+
+		/**
+		 * Register a single delegate page.
+		 *
+		 * Validates class exists and handles instantiation with error recovery.
+		 *
+		 * @param string $key Delegate identifier key.
+		 * @param string $class_name Fully qualified class name.
+		 * @return bool True if registered successfully, false otherwise.
+		 */
+		private function register_delegate( $key, $class_name ) {
+			// Validate inputs.
+			if ( empty( $key ) || empty( $class_name ) ) {
+				return false;
+			}
+
+			// Skip if class doesn't exist.
+			if ( ! class_exists( $class_name ) ) {
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log(
+						sprintf(
+							'[WP_MCP_AI] Pro Dashboard delegate class not found: %s (key: %s)',
+							$class_name,
+							$key
+						)
+					);
+				}
+				return false;
+			}
+
+			try {
+				$this->delegate_pages[ $key ] = new $class_name();
+
+				// Log successful initialization if logging enabled.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'info',
+						sprintf( 'Pro Dashboard delegate initialized: %s', $key ),
+						array(
+							'delegate' => $key,
+							'class'    => $class_name,
+						)
+					);
+				}
+
+				return true;
+
+			} catch ( Exception $e ) {
+				// Log initialization error but don't break the page.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'error',
+						sprintf( 'Failed to initialize Pro Dashboard delegate: %s', $class_name ),
+						array(
+							'delegate'  => $key,
+							'class'     => $class_name,
+							'error'     => $e->getMessage(),
+							'trace'     => $e->getTraceAsString(),
+						)
+					);
+				}
+
+				// Show admin notice in debug mode.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					add_action(
+						'admin_notices',
+						function () use ( $key, $class_name, $e ) {
+							printf(
+								'<div class="notice notice-error"><p><strong>%s:</strong> %s (%s: %s)</p></div>',
+								esc_html__( 'Pro Dashboard Error', 'mcp-ai-wpoos' ),
+								esc_html( sprintf( 'Failed to initialize %s', $key ) ),
+								esc_html( $class_name ),
+								esc_html( $e->getMessage() )
+							);
+						}
+					);
+				}
+
+				return false;
+			}
 		}
 
 		/**

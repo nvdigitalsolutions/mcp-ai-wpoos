@@ -708,7 +708,7 @@ if ( is_admin() ) {
 	// Initialize Pro Dashboard components.
 	new WP_MCP_AI_Pro_Database();
 	new WP_MCP_AI_Pro_License();
-	new WP_MCP_AI_Pro_Dashboard();
+	WP_MCP_AI_Pro_Dashboard::get_instance(); // Use singleton pattern.
 	new WP_MCP_AI_Pro_Dashboard_REST();
 
 	/**

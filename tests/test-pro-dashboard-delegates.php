@@ -50,8 +50,41 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 			}
 		}
 
-		// Initialize Pro Dashboard.
-		$this->dashboard = new WP_MCP_AI_Pro_Dashboard();
+		// Get singleton instance and trigger lazy initialization.
+		$this->dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+		$this->dashboard->lazy_init_delegates();
+	}
+
+	/**
+	 * Test singleton pattern implementation.
+	 */
+	public function test_singleton_pattern() {
+		$instance1 = WP_MCP_AI_Pro_Dashboard::get_instance();
+		$instance2 = WP_MCP_AI_Pro_Dashboard::get_instance();
+
+		$this->assertSame( $instance1, $instance2, 'Singleton should return same instance' );
+	}
+
+	/**
+	 * Test delegate constants are defined.
+	 */
+	public function test_delegate_constants() {
+		$this->assertTrue(
+			defined( 'WP_MCP_AI_Pro_Dashboard::DELEGATE_SECURITY_AUDITS' ),
+			'Security audits constant should be defined'
+		);
+		$this->assertTrue(
+			defined( 'WP_MCP_AI_Pro_Dashboard::DELEGATE_SECURITY_TRAINING' ),
+			'Security training constant should be defined'
+		);
+		$this->assertTrue(
+			defined( 'WP_MCP_AI_Pro_Dashboard::DELEGATE_SUPPLIER_SECURITY' ),
+			'Supplier security constant should be defined'
+		);
+		$this->assertTrue(
+			defined( 'WP_MCP_AI_Pro_Dashboard::DELEGATE_ASSET_INVENTORY' ),
+			'Asset inventory constant should be defined'
+		);
 	}
 
 	/**
@@ -69,10 +102,10 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 	 */
 	public function test_expected_delegates_registered() {
 		$expected_delegates = array(
-			'security_audits',
-			'security_training',
-			'supplier_security',
-			'asset_inventory',
+			WP_MCP_AI_Pro_Dashboard::DELEGATE_SECURITY_AUDITS,
+			WP_MCP_AI_Pro_Dashboard::DELEGATE_SECURITY_TRAINING,
+			WP_MCP_AI_Pro_Dashboard::DELEGATE_SUPPLIER_SECURITY,
+			WP_MCP_AI_Pro_Dashboard::DELEGATE_ASSET_INVENTORY,
 		);
 
 		foreach ( $expected_delegates as $key ) {
@@ -88,10 +121,10 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 	 */
 	public function test_delegate_instances() {
 		$expected_classes = array(
-			'security_audits'   => 'WP_MCP_AI_Security_Audit_Admin',
-			'security_training' => 'WP_MCP_AI_Security_Training_Admin',
-			'supplier_security' => 'WP_MCP_AI_Supplier_Security_Admin',
-			'asset_inventory'   => 'WP_MCP_AI_Asset_Inventory_Admin',
+			WP_MCP_AI_Pro_Dashboard::DELEGATE_SECURITY_AUDITS   => 'WP_MCP_AI_Security_Audit_Admin',
+			WP_MCP_AI_Pro_Dashboard::DELEGATE_SECURITY_TRAINING => 'WP_MCP_AI_Security_Training_Admin',
+			WP_MCP_AI_Pro_Dashboard::DELEGATE_SUPPLIER_SECURITY => 'WP_MCP_AI_Supplier_Security_Admin',
+			WP_MCP_AI_Pro_Dashboard::DELEGATE_ASSET_INVENTORY   => 'WP_MCP_AI_Asset_Inventory_Admin',
 		);
 
 		foreach ( $expected_classes as $key => $class_name ) {
@@ -111,8 +144,8 @@ class Test_Pro_Dashboard_Delegates extends WP_UnitTestCase {
 	 * Test get_delegate method.
 	 */
 	public function test_get_delegate() {
-		// Test valid delegate.
-		$audit_delegate = $this->dashboard->get_delegate( 'security_audits' );
+		// Test valid delegate using constant.
+		$audit_delegate = $this->dashboard->get_delegate( WP_MCP_AI_Pro_Dashboard::DELEGATE_SECURITY_AUDITS );
 		if ( class_exists( 'WP_MCP_AI_Security_Audit_Admin' ) ) {
 			$this->assertNotNull( $audit_delegate, 'Should return delegate instance' );
 		}
