@@ -85,6 +85,11 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
 		wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 
+		// Ensure chat script localization is available in admin context.
+		// The shortcode's register_assets() may have been called during init hook,
+		// but we need to ensure wpMcpAiChat global is available for the modal.
+		$this->ensure_chat_localization();
+
 		// Enqueue modal styles (required for popup overlay).
 		wp_enqueue_style(
 			'wp-mcp-ai-cpt-assistant',
@@ -459,6 +464,58 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		}
 
 		return $assistants;
+	}
+
+	/**
+	 * Ensure chat script localization is available.
+	 *
+	 * The shortcode's register_assets() method should handle this, but we ensure
+	 * it's available in the admin context for the modal-based chat interface.
+	 */
+	private function ensure_chat_localization() {
+		// Check if localization was already done by checking if wpMcpAiChat is attached to the script.
+		$wp_scripts = wp_scripts();
+		if ( isset( $wp_scripts->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ] ) ) {
+			$script_data = $wp_scripts->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ];
+			// Check if localization is already attached by looking for the JavaScript variable declaration.
+			// WordPress outputs localization as: var wpMcpAiChat = {...};
+			if ( isset( $script_data->extra['data'] ) && false !== strpos( $script_data->extra['data'], 'var wpMcpAiChat' ) ) {
+				// Localization already exists, no need to add it again.
+				return;
+			}
+		}
+
+		// Verify required classes are available before attempting localization.
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) || ! class_exists( 'WP_MCP_AI_REST' ) || ! class_exists( 'WP_MCP_AI_Request_Context' ) ) {
+			// Log error if debugging is enabled.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'PM AI Assistant: Required classes not available for chat localization' );
+			}
+			return;
+		}
+
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+		wp_localize_script(
+			WP_MCP_AI_Shortcode::SCRIPT_HANDLE,
+			'wpMcpAiChat',
+			array(
+				'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
+				'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+				'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
+				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
+				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'historyPerPage'      => 20,
+				'currentUserId'       => get_current_user_id(),
+				'nonce'               => wp_create_nonce( 'wp_rest' ),
+				'showUsageCosts'      => isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false,
+				'asyncToolTimeout'    => isset( $settings['async_tool_timeout'] ) ? absint( $settings['async_tool_timeout'] ) * 1000 : 300000,
+				'strings'             => array(
+					'placeholder' => __( 'Ask something…', 'wp-mcp-ai' ),
+				),
+			)
+		);
 	}
 
 	/**
