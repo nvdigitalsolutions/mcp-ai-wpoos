@@ -38,11 +38,33 @@
 					attempts++;
 					setTimeout(checkChartJS, 100);
 				} else {
-					console.warn('Chart.js failed to load after 5 seconds. Charts will not be displayed.');
+					console.error('Chart.js failed to load after 5 seconds. Charts will not be displayed.');
+					self.showChartError();
 				}
 			};
 
 			checkChartJS();
+		},
+
+		/**
+		 * Show error message when charts fail to load.
+		 */
+		showChartError: function() {
+			$('.wp-mcp-ai-chart-container').each(function() {
+				const $container = $(this);
+				const $card = $container.closest('.wp-mcp-ai-chart-card');
+				const $fallback = $card.find('.wp-mcp-ai-chart-fallback');
+				
+				// Hide the chart container
+				$container.hide();
+				
+				// Show fallback if available, otherwise show error message
+				if ($fallback.length > 0) {
+					$fallback.show();
+				} else {
+					$container.html('<div class="wp-mcp-ai-chart-error"><span class="dashicons dashicons-warning"></span><p>Charts could not be loaded. Please refresh the page.</p></div>').show();
+				}
+			});
 		},
 
 		/**
@@ -59,12 +81,34 @@
 		 * Initialize dashboard components.
 		 */
 		initializeComponents: function() {
+			// Add loading indicators to charts
+			this.showChartLoading();
 			// Animate progress bars on load
 			this.animateProgressBars();
 			// Initialize tooltips if available
 			if (typeof $.fn.tooltip !== 'undefined') {
 				$('[data-toggle="tooltip"]').tooltip();
 			}
+		},
+
+		/**
+		 * Show loading state for charts.
+		 */
+		showChartLoading: function() {
+			$('.wp-mcp-ai-chart-container').each(function() {
+				if ($(this).children('canvas').length > 0) {
+					$(this).prepend('<div class="wp-mcp-ai-chart-loading"><span class="dashicons dashicons-update"></span><p>Loading chart...</p></div>');
+				}
+			});
+		},
+
+		/**
+		 * Hide chart loading indicators.
+		 */
+		hideChartLoading: function() {
+			$('.wp-mcp-ai-chart-loading').fadeOut(300, function() {
+				$(this).remove();
+			});
 		},
 
 		/**
@@ -136,12 +180,15 @@
 		 * Initialize Chart.js charts.
 		 */
 		initializeCharts: function() {
+			console.log('Initializing charts with data:', wpMcpAiProDashboard.chartData);
 			// Controls implementation pie chart
 			this.initControlsChart();
 			// Security metrics line chart
 			this.initMetricsChart();
 			// Risk distribution chart
 			this.initRiskChart();
+			// Hide loading indicators
+			this.hideChartLoading();
 		},
 
 		/**
@@ -149,13 +196,20 @@
 		 */
 		initControlsChart: function() {
 			const canvas = document.getElementById('wpMcpAiControlsChart');
-			if (!canvas || typeof Chart === 'undefined') {
+			if (!canvas) {
+				console.error('Controls chart canvas not found');
+				return;
+			}
+			if (typeof Chart === 'undefined') {
+				console.error('Chart.js is not loaded');
 				return;
 			}
 
 			// Get data from PHP if available
 			const chartData = wpMcpAiProDashboard.chartData || {};
 			const controlsData = chartData.controls || {};
+
+			console.log('Initializing controls chart with data:', controlsData);
 
 			const ctx = canvas.getContext('2d');
 			this.charts.controls = new Chart(ctx, {
@@ -193,6 +247,8 @@
 					}
 				}
 			});
+
+			console.log('Controls chart initialized successfully');
 		},
 
 		/**
@@ -200,9 +256,19 @@
 		 */
 		initMetricsChart: function() {
 			const canvas = document.getElementById('wpMcpAiMetricsChart');
-			if (!canvas || typeof Chart === 'undefined') {
+			if (!canvas) {
+				console.error('Metrics chart canvas not found');
 				return;
 			}
+			if (typeof Chart === 'undefined') {
+				console.error('Chart.js is not loaded');
+				return;
+			}
+
+			const chartData = wpMcpAiProDashboard.chartData || {};
+			const metricsData = chartData.metrics || {};
+
+			console.log('Initializing metrics chart with data:', metricsData);
 
 			const ctx = canvas.getContext('2d');
 			this.charts.metrics = new Chart(ctx, {
@@ -211,13 +277,13 @@
 					labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
 					datasets: [{
 						label: 'Security Incidents',
-						data: [5, 3, 2, 4, 1, 2],
+						data: metricsData.incidents || [5, 3, 2, 4, 1, 2],
 						borderColor: '#f44336',
 						backgroundColor: 'rgba(244, 67, 54, 0.1)',
 						tension: 0.4
 					}, {
 						label: 'Vulnerabilities Fixed',
-						data: [8, 12, 10, 15, 14, 12],
+						data: metricsData.vulnerabilities_fixed || [8, 12, 10, 15, 14, 12],
 						borderColor: '#4caf50',
 						backgroundColor: 'rgba(76, 175, 80, 0.1)',
 						tension: 0.4
@@ -242,6 +308,8 @@
 					}
 				}
 			});
+
+			console.log('Metrics chart initialized successfully');
 		},
 
 		/**
@@ -249,13 +317,20 @@
 		 */
 		initRiskChart: function() {
 			const canvas = document.getElementById('wpMcpAiRiskChart');
-			if (!canvas || typeof Chart === 'undefined') {
+			if (!canvas) {
+				console.error('Risk chart canvas not found');
+				return;
+			}
+			if (typeof Chart === 'undefined') {
+				console.error('Chart.js is not loaded');
 				return;
 			}
 
 			// Get data from PHP if available
 			const chartData = wpMcpAiProDashboard.chartData || {};
 			const risksData = chartData.risks || {};
+
+			console.log('Initializing risk chart with data:', risksData);
 
 			const ctx = canvas.getContext('2d');
 			this.charts.risk = new Chart(ctx, {
@@ -300,6 +375,8 @@
 					}
 				}
 			});
+
+			console.log('Risk chart initialized successfully');
 		},
 
 		/**
