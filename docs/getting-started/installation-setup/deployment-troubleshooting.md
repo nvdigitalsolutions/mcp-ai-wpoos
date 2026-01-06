@@ -245,7 +245,7 @@ This error occurs when:
 **Option 1: Use Lightweight Checks (Recommended for Production)**
 
 The plugin automatically falls back to lightweight performance checks when `exec()` is unavailable:
-1. Navigate to **Settings → WP oOS → Performance Monitoring**
+1. Navigate to **Settings → NV oOS → Performance Monitoring**
 2. When you run tests, the plugin will detect that `exec()` is disabled
 3. It will automatically use built-in lightweight checks instead
 4. These checks cover:
@@ -573,7 +573,7 @@ curl -I -L "https://yoursite.com/wp-json/wp/v2/types?context=edit" \
    connectivity problems.
 6. **JetEngine API compatibility (v3.3+)** – If you encounter the error
    `Call to undefined method Jet_Engine\...\Item_Handler::query_items()`,
-   ensure you're using WP oOS version 1.0.0+ which includes the compatibility
+   ensure you're using NV oOS version 1.0.0+ which includes the compatibility
    layer for JetEngine 3.3+. The plugin automatically detects and uses the
    correct API. See [jetengine-api-compatibility.md](../../architecture/integrations/jetengine-api-compatibility.md)
    for details.

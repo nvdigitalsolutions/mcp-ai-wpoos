@@ -121,7 +121,7 @@ const evtSource = new EventSource(sseUrl);
 ### Discovery Response Format
 ```json
 {
-  "name": "WP oOS MCP Server",
+  "name": "NV oOS MCP Server",
   "protocolVersion": "2024-11-05",
   "capabilities": {
     "sse": {

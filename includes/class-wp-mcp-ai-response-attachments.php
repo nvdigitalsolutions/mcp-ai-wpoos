@@ -316,7 +316,7 @@ if ( ! class_exists( 'WP_MCP_AI_Response_Attachments' ) ) {
 			$data = isset( $download['body'] ) ? $download['body'] : '';
 
 			if ( '' === $data ) {
-				return new WP_Error( 'wp_mcp_ai_response_file_empty', __( 'The downloaded response file was empty.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_response_file_empty', __( 'The downloaded response file was empty.', 'mcp-ai-wpoos' ) );
 			}
 
 			$filename = '';
@@ -349,7 +349,7 @@ if ( ! class_exists( 'WP_MCP_AI_Response_Attachments' ) ) {
 			$file_path = isset( $upload['file'] ) ? $upload['file'] : '';
 
 			if ( '' === $file_path || ! file_exists( $file_path ) ) {
-				return new WP_Error( 'wp_mcp_ai_response_file_missing', __( 'The response file could not be written to disk.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_response_file_missing', __( 'The response file could not be written to disk.', 'mcp-ai-wpoos' ) );
 			}
 
 			$mime_type = self::normalise_mime_type( $content_type, $file_path );
@@ -545,7 +545,7 @@ if ( ! class_exists( 'WP_MCP_AI_Response_Attachments' ) ) {
 			$title    = str_replace( array( '-', '_' ), ' ', $title );
 			$title    = trim( $title );
 
-			return $title ? ucwords( $title ) : __( 'Assistant file', 'wp-mcp-ai' );
+			return $title ? ucwords( $title ) : __( 'Assistant file', 'mcp-ai-wpoos' );
 		}
 
 		/**

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS profession system uses **three interconnected knowledge base directories** to provide AI assistants with comprehensive professional guidance. This document explains how each directory works, what it contains, and how they integrate together.
+The NV oOS profession system uses **three interconnected knowledge base directories** to provide AI assistants with comprehensive professional guidance. This document explains how each directory works, what it contains, and how they integrate together.
 
 **Important:** This system has been recently corrected. profession-documents now properly populates the Knowledge Base Content field instead of creating attachments.
 
@@ -343,7 +343,7 @@ Usage: Document financial processes, create audit trails...
 ...
 ---
 
-This playbook is assembled from authorable text files in the WP oOS plugin.
+This playbook is assembled from authorable text files in the NV oOS plugin.
 To update this content, edit the relevant txt files in includes/knowledge-base/profession-playbooks/
 ```
 
@@ -490,7 +490,7 @@ Assistant has:
 **Option 2: Via TXT Files (Recommended for major updates)**
 1. Navigate to `includes/knowledge-base/profession-documents/`
 2. Edit `{slug}.txt` file
-3. Go to WP Admin → Settings → WP oOS → Advanced
+3. Go to WP Admin → Settings → NV oOS → Advanced
 4. Click "Update Professions" (this triggers base knowledge sync)
 5. Profession's `META_KNOWLEDGE_BASE` will be updated from file
 
@@ -502,7 +502,7 @@ Assistant has:
    - **Category-wide:** Edit `categories/{category}.txt`
    - **Single profession:** Edit `professions/{slug}.txt`
 3. Test locally (optional)
-4. Go to WP Admin → Settings → WP oOS → Advanced
+4. Go to WP Admin → Settings → NV oOS → Advanced
 5. Scroll to "Sync Profession Playbooks" section
 6. Click "Sync Changed Playbooks" (fast) or "Force Regenerate All Playbooks" (thorough)
 7. Wait for completion
@@ -514,7 +514,7 @@ Assistant has:
 2. Add new profession object with all required fields
 3. Create `profession-documents/{slug}.txt` with detailed reference content
 4. Create `profession-playbooks/professions/{slug}.txt` with actionable instructions
-5. Go to WP Admin → Settings → WP oOS → Advanced
+5. Go to WP Admin → Settings → NV oOS → Advanced
 6. Click "Update Professions" (preserves existing) or "Replace All" (clean slate)
 7. System will:
    - Create profession CPT post with metadata
@@ -534,7 +534,7 @@ Assistant has:
 
 **After editing multiple playbook files:**
 
-1. Go to WP Admin → Settings → WP oOS → Advanced
+1. Go to WP Admin → Settings → NV oOS → Advanced
 2. Scroll to "Sync Profession Playbooks" section
 3. Choose:
    - **"Sync Changed Playbooks"** - Only updates files where content changed (uses hash detection, fast)
@@ -611,7 +611,7 @@ WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
 **Problem:** Edited a profession-documents/*.txt file but changes aren't in the profession CPT.
 
 **Solution:**
-1. Go to Settings → WP oOS → Advanced
+1. Go to Settings → NV oOS → Advanced
 2. Click "Update Professions" (this triggers base knowledge sync)
 3. Check profession edit screen → "Knowledge Base Content" field
 4. Verify file exists at `includes/knowledge-base/profession-documents/{slug}.txt`
@@ -622,7 +622,7 @@ WP_MCP_AI_Profession_Playbook_Seeder::sync_all( true );
 **Problem:** Edited a playbook file but changes aren't reflected.
 
 **Solution:**
-1. Go to Settings → WP oOS → Advanced
+1. Go to Settings → NV oOS → Advanced
 2. Scroll to "Sync Profession Playbooks"
 3. Click "Sync Changed Playbooks"
 4. If still not updated, try "Force Regenerate All Playbooks"

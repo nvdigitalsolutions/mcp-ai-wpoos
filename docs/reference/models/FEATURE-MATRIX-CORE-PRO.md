@@ -1,4 +1,4 @@
-# WP oOS - Feature Matrix (Core vs Pro)
+# NV oOS - Feature Matrix (Core vs Pro)
 
 This document outlines the features available in the Core plugin versus the Pro addon.
 
@@ -129,7 +129,7 @@ Require Pro addon but no external APIs:
 
 ## Core Tools (71 - Included in Base Plugin)
 
-These tools are available in the base WP oOS plugin without any addons:
+These tools are available in the base NV oOS plugin without any addons:
 
 ### Content Management
 | Tool | Description |
@@ -307,7 +307,7 @@ rembg --help
 **remove.bg API (Paid Option):**
 - Sign up at https://remove.bg/api
 - Get API key
-- Add to WP oOS settings
+- Add to NV oOS settings
 - No local installation needed
 
 ### WordPress Management (WP-CLI Required)
@@ -355,7 +355,7 @@ public function get_capability_flags() {
 ## Installation & Activation
 
 ### Core Plugin
-1. Install WP oOS from WordPress.org or GitHub
+1. Install NV oOS from WordPress.org or GitHub
 2. Activate plugin
 3. Configure OpenAI/Gemini API keys
 4. **71 tools ready to use**
@@ -379,7 +379,7 @@ public function get_capability_flags() {
    - JetEngine (for JetEngine tools)
    - Elementor (for Elementor tools)
    - WPCode (for code snippet tools)
-6. Configure tools in WP oOS → Tools & Features
+6. Configure tools in NV oOS → Tools & Features
 7. **38 additional Pro tools available (109 total)**
 
 ## Feature Comparison Summary

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide ensures all WP oOS tools return responses that can be properly displayed in the chat widget/shortcode interface.
+This guide ensures all NV oOS tools return responses that can be properly displayed in the chat widget/shortcode interface.
 
 ## Problem
 

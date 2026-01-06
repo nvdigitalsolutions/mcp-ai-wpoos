@@ -100,7 +100,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_chat_request' ),
 					'args'                => array(
 						'assistant_id' => array(
-							'description'       => __( 'ID of the assistant to use for SSE handshake.', 'wp-mcp-ai' ),
+							'description'       => __( 'ID of the assistant to use for SSE handshake.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
@@ -128,7 +128,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_chat_client_request' ),
 					'args'                => array(
 						'assistant_id' => array(
-							'description'       => __( 'ID of the assistant to use for SSE handshake.', 'wp-mcp-ai' ),
+							'description'       => __( 'ID of the assistant to use for SSE handshake.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
@@ -155,19 +155,19 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 					'args'                => array(
 						'assistant_id'      => array(
-							'description'       => __( 'ID of the assistant for this chat transcript.', 'wp-mcp-ai' ),
+							'description'       => __( 'ID of the assistant for this chat transcript.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => true,
 							'sanitize_callback' => 'absint',
 						),
 						'session_key'       => array(
-							'description'       => __( 'Session key for this conversation.', 'wp-mcp-ai' ),
+							'description'       => __( 'Session key for this conversation.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'messages'          => array(
-							'description'       => __( 'Array of conversation messages.', 'wp-mcp-ai' ),
+							'description'       => __( 'Array of conversation messages.', 'mcp-ai-wpoos' ),
 							'type'              => 'array',
 							'required'          => true,
 							'validate_callback' => array( $this->validator, 'validate_messages_array' ),
@@ -179,7 +179,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 										'enum' => array( 'system', 'user', 'assistant', 'tool' ),
 									),
 									'content' => array(
-										'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'wp-mcp-ai' ),
+										'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'mcp-ai-wpoos' ),
 										'oneOf'       => array(
 											array( 'type' => 'null' ),
 											array( 'type' => 'string' ),
@@ -192,7 +192,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 										),
 									),
 									'display' => array(
-										'description' => __( 'Display metadata for UI restoration (video attachments, bubble type, usage/cost badges).', 'wp-mcp-ai' ),
+										'description' => __( 'Display metadata for UI restoration (video attachments, bubble type, usage/cost badges).', 'mcp-ai-wpoos' ),
 										'type'        => 'object',
 										'required'    => false,
 									),
@@ -200,7 +200,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							),
 						),
 						'response_metadata' => array(
-							'description' => __( 'Optional response metadata to preserve (usage data, provider info, etc.). If provided, this will be merged into the response payload and metadata fields.', 'wp-mcp-ai' ),
+							'description' => __( 'Optional response metadata to preserve (usage data, provider info, etc.). If provided, this will be merged into the response payload and metadata fields.', 'mcp-ai-wpoos' ),
 							'type'        => 'object',
 							'required'    => false,
 						),
@@ -220,19 +220,19 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 					'args'                => array(
 						'session_key'  => array(
-							'description'       => __( 'Session key for the transcript.', 'wp-mcp-ai' ),
+							'description'       => __( 'Session key for the transcript.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
 						),
 						'user_id'      => array(
-							'description'       => __( 'User ID to filter transcripts by. Defaults to current user.', 'wp-mcp-ai' ),
+							'description'       => __( 'User ID to filter transcripts by. Defaults to current user.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
 						),
 						'assistant_id' => array(
-							'description'       => __( 'Assistant ID to filter transcripts by.', 'wp-mcp-ai' ),
+							'description'       => __( 'Assistant ID to filter transcripts by.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
@@ -245,7 +245,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 					'args'                => array(
 						'session_key' => array(
-							'description'       => __( 'Session key for the transcript.', 'wp-mcp-ai' ),
+							'description'       => __( 'Session key for the transcript.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
@@ -264,13 +264,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	private function get_chat_endpoint_args() {
 		return array(
 			'assistant_id'        => array(
-				'description'       => __( 'ID of the assistant to use for this chat. Can be an integer assistant ID or a string like "profession_123" for profession testing. Defaults to the site default assistant.', 'wp-mcp-ai' ),
+				'description'       => __( 'ID of the assistant to use for this chat. Can be an integer assistant ID or a string like "profession_123" for profession testing. Defaults to the site default assistant.', 'mcp-ai-wpoos' ),
 				'type'              => array( 'integer', 'string' ),
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_text_field',
 			),
 			'messages'            => array(
-				'description'       => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
+				'description'       => __( 'Array of message objects with role and content.', 'mcp-ai-wpoos' ),
 				'type'              => 'array',
 				'required'          => true,
 				'validate_callback' => array( $this->validator, 'validate_messages_array' ),
@@ -282,7 +282,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'enum' => array( 'system', 'user', 'assistant', 'tool' ),
 						),
 						'content' => array(
-							'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'wp-mcp-ai' ),
+							'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'mcp-ai-wpoos' ),
 							'oneOf'       => array(
 								array( 'type' => 'null' ),
 								array( 'type' => 'string' ),
@@ -298,7 +298,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				),
 			),
 			'attachments'         => array(
-				'description'       => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
+				'description'       => __( 'Optional array of file attachments to include with the request.', 'mcp-ai-wpoos' ),
 				'type'              => 'array',
 				'required'          => false,
 				'validate_callback' => array( $this->validator, 'validate_attachments_array' ),
@@ -316,7 +316,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				),
 			),
 			'options'             => array(
-				'description' => __( 'Optional request options to override assistant defaults.', 'wp-mcp-ai' ),
+				'description' => __( 'Optional request options to override assistant defaults.', 'mcp-ai-wpoos' ),
 				'type'        => 'object',
 				'required'    => false,
 				'properties'  => array(
@@ -335,7 +335,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 						'type' => 'boolean',
 					),
 					'response_format' => array(
-						'description' => __( 'Response format configuration (e.g., for JSON mode).', 'wp-mcp-ai' ),
+						'description' => __( 'Response format configuration (e.g., for JSON mode).', 'mcp-ai-wpoos' ),
 						'type'        => 'object',
 						'properties'  => array(
 							'type'        => array(
@@ -350,7 +350,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				),
 			),
 			'professional_prompt' => array(
-				'description'       => __( 'Optional professional role prompt to prepend to the system prompt. Used when a professional is dynamically selected via professional selector.', 'wp-mcp-ai' ),
+				'description'       => __( 'Optional professional role prompt to prepend to the system prompt. Used when a professional is dynamically selected via professional selector.', 'mcp-ai-wpoos' ),
 				'type'              => 'string',
 				'required'          => false,
 				'sanitize_callback' => 'sanitize_textarea_field',
@@ -436,7 +436,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		return $this->error(
 			'wp_mcp_ai_chat_unavailable',
-			__( 'Chat service is not available. Please ensure the plugin is properly configured.', 'wp-mcp-ai' ),
+			__( 'Chat service is not available. Please ensure the plugin is properly configured.', 'mcp-ai-wpoos' ),
 			503
 		);
 	}
@@ -521,7 +521,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 			return new WP_Error(
 				'wp_mcp_ai_internal_error',
-				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				__( 'Internal server error. Please try again later.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -545,7 +545,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_missing_user',
-				__( 'A valid user is required to query chat transcripts. Please log in to view your chat history.', 'wp-mcp-ai' ),
+				__( 'A valid user is required to query chat transcripts. Please log in to view your chat history.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -663,7 +663,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 			return new WP_Error(
 				'wp_mcp_ai_internal_error',
-				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				__( 'Internal server error. Please try again later.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -677,7 +677,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( ! $assistant_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_missing_assistant',
-				__( 'Assistant ID is required to save a transcript.', 'wp-mcp-ai' ),
+				__( 'Assistant ID is required to save a transcript.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -685,7 +685,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( '' === $session_key ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_missing_session',
-				__( 'Session key is required to save a transcript.', 'wp-mcp-ai' ),
+				__( 'Session key is required to save a transcript.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -693,7 +693,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( empty( $messages ) || ! is_array( $messages ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_missing_messages',
-				__( 'Messages array is required to save a transcript.', 'wp-mcp-ai' ),
+				__( 'Messages array is required to save a transcript.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -715,7 +715,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( empty( $clean_messages ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_invalid_messages',
-				__( 'No valid messages to save.', 'wp-mcp-ai' ),
+				__( 'No valid messages to save.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -817,7 +817,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'saved_to_database'   => false,
 					'saved_to_browser'    => true,
 					'warning'             => $warning_message,
-					'message'             => __( 'Transcript saved to browser only. Permanent storage unavailable.', 'wp-mcp-ai' ),
+					'message'             => __( 'Transcript saved to browser only. Permanent storage unavailable.', 'mcp-ai-wpoos' ),
 					'persistence_details' => $diagnostic_info,
 				)
 			);
@@ -838,7 +838,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			array(
 				'success'     => true,
 				'session_key' => $recorded_session_key,
-				'message'     => __( 'Transcript saved successfully.', 'wp-mcp-ai' ),
+				'message'     => __( 'Transcript saved successfully.', 'mcp-ai-wpoos' ),
 			)
 		);
 	}
@@ -866,7 +866,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 			return new WP_Error(
 				'wp_mcp_ai_internal_error',
-				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				__( 'Internal server error. Please try again later.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -878,7 +878,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( '' === $session_key ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_invalid_session',
-				__( 'A valid session key is required to retrieve a transcript.', 'wp-mcp-ai' ),
+				__( 'A valid session key is required to retrieve a transcript.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -901,7 +901,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_missing_user',
-				__( 'A valid user is required to retrieve chat transcripts. Please log in to view your chat history.', 'wp-mcp-ai' ),
+				__( 'A valid user is required to retrieve chat transcripts. Please log in to view your chat history.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -969,7 +969,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 			return new WP_Error(
 				'wp_mcp_ai_internal_error',
-				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				__( 'Internal server error. Please try again later.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -979,7 +979,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( '' === $session_key ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_invalid_session',
-				__( 'A valid session key is required to delete a transcript.', 'wp-mcp-ai' ),
+				__( 'A valid session key is required to delete a transcript.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -989,7 +989,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( ! $user_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_missing_user',
-				__( 'You must be logged in to delete a transcript.', 'wp-mcp-ai' ),
+				__( 'You must be logged in to delete a transcript.', 'mcp-ai-wpoos' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -1010,7 +1010,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( '' === $table ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_unavailable',
-				__( 'Chat transcripts are not configured or available.', 'wp-mcp-ai' ),
+				__( 'Chat transcripts are not configured or available.', 'mcp-ai-wpoos' ),
 				array( 'status' => 503 )
 			);
 		}
@@ -1018,7 +1018,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( ! $repository->table_exists() ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_unavailable',
-				__( 'The transcript storage table does not exist.', 'wp-mcp-ai' ),
+				__( 'The transcript storage table does not exist.', 'mcp-ai-wpoos' ),
 				array( 'status' => 503 )
 			);
 		}
@@ -1038,7 +1038,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_delete_failed',
-				__( 'Failed to delete the transcript.', 'wp-mcp-ai' ),
+				__( 'Failed to delete the transcript.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -1057,7 +1057,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			array(
 				'success' => true,
 				'deleted' => $deleted,
-				'message' => __( 'Transcript deleted successfully.', 'wp-mcp-ai' ),
+				'message' => __( 'Transcript deleted successfully.', 'mcp-ai-wpoos' ),
 			)
 		);
 	}
@@ -1278,34 +1278,34 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	private function build_transcript_save_warning_message( array $diagnostic_info ) {
 		// Check if base version mode is active.
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
-			return __( 'Transcript persistence requires the full version with JetEngine integration. Currently running in base version mode.', 'wp-mcp-ai' );
+			return __( 'Transcript persistence requires the full version with JetEngine integration. Currently running in base version mode.', 'mcp-ai-wpoos' );
 		}
 
 		// Add specific guidance based on diagnostics.
 		if ( empty( $diagnostic_info['jetengine_active'] ) ) {
 			return sprintf(
 				/* translators: %s: Link to JetEngine plugin */
-				__( 'Permanent transcript storage requires JetEngine plugin. Install and activate %s to enable database persistence.', 'wp-mcp-ai' ),
+				__( 'Permanent transcript storage requires JetEngine plugin. Install and activate %s to enable database persistence.', 'mcp-ai-wpoos' ),
 				'JetEngine (https://crocoblock.com/plugins/jetengine/)'
 			);
 		}
 
 		if ( ! empty( $diagnostic_info['jetengine_active'] ) && empty( $diagnostic_info['cct_module_active'] ) ) {
-			return __( 'JetEngine Custom Content Types module is not active. Enable it in JetEngine → Settings → Modules to enable transcript storage.', 'wp-mcp-ai' );
+			return __( 'JetEngine Custom Content Types module is not active. Enable it in JetEngine → Settings → Modules to enable transcript storage.', 'mcp-ai-wpoos' );
 		}
 
 		if ( ! empty( $diagnostic_info['jetengine_active'] ) && empty( $diagnostic_info['data_stores_module_active'] ) ) {
-			return __( 'JetEngine Data Stores module is not active. Enable it in JetEngine → Settings → Modules to enable transcript storage.', 'wp-mcp-ai' );
+			return __( 'JetEngine Data Stores module is not active. Enable it in JetEngine → Settings → Modules to enable transcript storage.', 'mcp-ai-wpoos' );
 		}
 
 		if ( empty( $diagnostic_info['table_exists'] ) && ! empty( $diagnostic_info['table_name'] ) ) {
 			/* translators: %s: Database table name */
 			return sprintf(
-				__( 'Transcript database table (%s) does not exist. Try deactivating and reactivating the plugin to recreate it.', 'wp-mcp-ai' ),
+				__( 'Transcript database table (%s) does not exist. Try deactivating and reactivating the plugin to recreate it.', 'mcp-ai-wpoos' ),
 				esc_html( $diagnostic_info['table_name'] )
 			);
 		}
 
-		return __( 'Transcript persistence is unavailable. Transcripts will be stored in browser only (24 hours). Check the error logs for more details.', 'wp-mcp-ai' );
+		return __( 'Transcript persistence is unavailable. Transcripts will be stored in browser only (24 hours). Check the error logs for more details.', 'mcp-ai-wpoos' );
 	}
 }

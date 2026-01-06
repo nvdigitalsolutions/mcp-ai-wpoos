@@ -1,6 +1,7 @@
 # NV Digital Open Operator System (NV oOS)
 
 [![PHPUnit](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml)
+[![codecov](https://codecov.io/gh/nvdigitalsolutions/mcp-ai-wpoos/branch/main/graph/badge.svg)](https://codecov.io/gh/nvdigitalsolutions/mcp-ai-wpoos)
 [![JavaScript Tests](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml)
 [![PHP Linting](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml)
 [![Security Checks](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/security.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/security.yml)
@@ -23,74 +24,74 @@
 
 ### Getting Started
 - [🆕 Latest Updates (December 2025)](#-latest-updates-december-2025)
-- [🧩 Overview](#-overview)
-- [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
-- [🛡️ Active Security Monitoring](#%EF%B8%8F-active-security-monitoring)
-- [🏗 System Architecture](#-system-architecture)
-- [🚀 Features](#-features)
-- [📦 Installation](#-installation)
-- [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
+- [🧩 Overview](#overview)
+- [🎯 Our Mission](#mission-modernizing-small-to-medium-business-websites)
+- [🛡️ Active Security Monitoring](#active-security-monitoring)
+- [🏗 System Architecture](#system-architecture)
+- [🚀 Features](#features)
+- [📦 Installation](#installation)
+- [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
+- [⚙️ Configuration Checklist](#configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
 ### Core Functionality
-- [🧠 Memory & Tool Stack Overview](#-memory--tool-stack-overview)
-- [🛠 Built-in tools & automations](#-built-in-tools--automations)
-- [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
-- [💬 Frontend Shortcode](#-frontend-shortcode)
+- [🧠 Memory & Tool Stack Overview](#memory-tool-stack-overview)
+- [🛠 Built-in tools & automations](#built-in-tools-automations)
+- [🗨️ Front-end chat surfaces](#front-end-chat-surfaces)
+- [💬 Frontend Shortcode](#frontend-shortcode)
 
 ### AI Providers & Integration
-- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-ollama--lm-studio)
-- [🧱 ChatKit Integration](#-chatkit-integration)
-- [🌐 Crawl4AI Integration](#-crawl4ai-integration)
+- [🧠 Language Model Providers](#language-model-providers-openai-gemini-ollama-lm-studio)
+- [🧱 ChatKit Integration](#chatkit-integration)
+- [🌐 Crawl4AI Integration](#crawl4ai-integration)
 - [📡 Job Notification System](#-job-notification-system)
-- [🧊 Elementor Widgets](#-elementor-widgets)
+- [🧊 Elementor Widgets](#elementor-widgets)
 
 ### Performance & Optimization
-- [⚡ Message Bundling](#-message-bundling)
-- [🎯 Agentic Loop Token Management](#-agentic-loop-token-management)
-- [🔄 Chat Performance Optimizations](#-chat-performance-optimizations)
-- [🌐 Mesh Compute Routing](#-mesh-compute-routing)
-- [🔗 Federation & Discovery System](#-federation--discovery-system)
+- [⚡ Message Bundling](#message-bundling)
+- [🎯 Agentic Loop Token Management](#agentic-loop-token-management)
+- [🔄 Chat Performance Optimizations](#chat-performance-optimizations)
+- [🌐 Mesh Compute Routing](#mesh-compute-routing)
+- [🔗 Federation & Discovery System](#federation-discovery-system)
 
 ### Remote MCP Setup
-- [🔒 MCP Server Authentication](#-mcp-server-authentication)
-- [🌐 Connecting Remote MCP Clients](#-connecting-remote-mcp-clients)
-- [🛰 REST API Endpoints](#-rest-api-endpoints)
-- [🌊 SSE Streaming Support](#-sse-streaming-support)
-- [📝 MCP JSON-RPC 2.0 Endpoint](#-mcp-json-rpc-2-0-endpoint)
-- [🔑 Assistant API Credentials](#-assistant-api-credentials)
-- [🎫 Token Management UI](#-token-management-ui)
+- [🔒 MCP Server Authentication](#mcp-server-authentication)
+- [🌐 Connecting Remote MCP Clients](#connecting-remote-mcp-clients)
+- [🛰 REST API Endpoints](#rest-api-endpoints)
+- [🌊 SSE Streaming Support](#sse-streaming-support)
+- [📝 MCP JSON-RPC 2.0 Endpoint](#mcp-json-rpc-20-endpoint)
+- [🔑 Assistant API Credentials](#assistant-api-credentials)
+- [🎫 Token Management UI](#token-management-ui)
 
 ### Assistant Management
-- [🛠 Assistant Editor Overview](#-assistant-editor-overview)
-- [📊 Assistant Storage: CPT vs CCT](#-assistant-storage-cpt-vs-cct)
-- [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
-- [👔 Professional & Team Layers](#-professional--team-layers)
-- [🧵 REST Chat Payloads & Attachments](#-rest-chat-payloads--attachments)
+- [🛠 Assistant Editor Overview](#assistant-editor-overview)
+- [📊 Assistant Storage: CPT vs CCT](#assistant-storage-cpt-vs-cct)
+- [⚡ Assistant Tool Shortcuts](#assistant-tool-shortcuts)
+- [👔 Professional & Team Layers](#professional-team-layers)
+- [🧵 REST Chat Payloads & Attachments](#rest-chat-payloads-attachments)
 
 ### Development
-- [🐳 Local Development with Docker](#-local-development-with-docker)
-- [🧑‍💻 Development Tooling](#--development-tooling)
-- [🧪 Testing & QA](#-testing--qa)
-- [🧩 Hooks & Filters](#-hooks--filters)
-- [🧰 WP-CLI Commands](#-wp-cli-commands)
+- [🐳 Local Development with Docker](#local-development-with-docker)
+- [🧑‍💻 Development Tooling](#development-tooling)
+- [🧪 Testing & QA](#testing-qa)
+- [🧩 Hooks & Filters](#hooks-filters)
+- [🧰 WP-CLI Commands](#wp-cli-commands)
 
 ### Reference
-- [🔐 JetEngine Capability Reference](#-jetengine-capability-reference)
-- [🛰 JetEngine REST API Reference](#-jetengine-rest-api-reference)
-- [🧮 Usage Tracking](#-usage-tracking)
-- [🧷 Attachment MIME Controls](#-attachment-mime-controls)
-- [🧾 Logging](#-logging)
-- [🧾 JetEngine REST Endpoint Report Helper](#-jetengine-rest-endpoint-report-helper)
-- [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies)
-- [✅ Manual QA Scenarios](#-manual-qa-scenarios)
+- [🔐 JetEngine Capability Reference](#jetengine-capability-reference)
+- [🛰 JetEngine REST API Reference](#jetengine-rest-api-reference)
+- [🧮 Usage Tracking](#usage-tracking)
+- [🧷 Attachment MIME Controls](#attachment-mime-controls)
+- [🧾 Logging](#logging)
+- [🧾 JetEngine REST Endpoint Report Helper](#jetengine-rest-endpoint-report-helper)
+- [🔌 Optional Tools & Dependencies](#optional-tools-dependencies)
+- [✅ Manual QA Scenarios](#manual-qa-scenarios)
 
 ---
 
 ## 🧩 Overview
 
-Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular (Object-Oriented) AI framework (Object-Oriented Systems) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
+Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
 
 The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **66 Pro tools** including advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **193 built-in tools**.
 
@@ -134,7 +135,7 @@ The patent covers NV oOS's innovative approach to implementing sophisticated AI 
 - Metrics-driven budget adjustment for real-time optimization
 - Persistent-behavior illusion in request-based architectures
 
-The orchestration layer makes NV oOS unique in the WordPress ecosystem by solving fundamental architectural limitations that prevent traditional WordPress plugins from supporting advanced AI features. See the [System Architecture](#-system-architecture) section below for technical details on how these innovations work together.
+The orchestration layer makes NV oOS unique in the WordPress ecosystem by solving fundamental architectural limitations that prevent traditional WordPress plugins from supporting advanced AI features. See the [System Architecture](#system-architecture) section below for technical details on how these innovations work together.
 
 ## 🏗 System Architecture
 
@@ -269,7 +270,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🚀 Features
 
-> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details.
+> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details.
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
@@ -686,7 +687,7 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 
 **What requires JetEngine:**
 - ❌ Server-side chat transcript storage (chat history only in browser without it)
-- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#-optional-tools-dependencies))
+- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#optional-tools-dependencies))
 
 ---
 
@@ -829,7 +830,7 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - Google Maps Platform tools
 
 **Base Version excludes 31 tools requiring third-party plugins or external APIs:**
-- **Third-party WordPress plugins** (13 tools) - See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details
+- **Third-party WordPress plugins** (13 tools) - See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details
   - WooCommerce tools (3)
   - JetEngine/JetFormBuilder tools (5)
   - Elementor tools (2)
@@ -863,7 +864,7 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 - Advanced workflows requiring external APIs
 - Need server-side chat transcript storage (requires JetEngine)
 
-📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
+📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
 
 
 ---
@@ -940,6 +941,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Configure Mailjet credentials** in **Settings → NV oOS → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
 - [ ] **Enable Federation & Discovery** (Optional) in **Settings → NV oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/root-security-key.md†L1-L511】
+- [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
 
 ## 🧠 Language Model Providers (OpenAI, Gemini, Ollama & LM Studio)
 
@@ -1362,7 +1364,7 @@ Sites that enable the Simple JWT Login integration can now reuse those bearer to
 
 NV oOS works seamlessly with popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors. Each client connects to your WordPress site via the MCP REST API at `/wp-json/mcp-ai/v1` and can access assistants, execute tools, and interact with your WordPress data remotely.
 
-**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#-sse-streaming-support) section for details.
+**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#sse-streaming-support) section for details.
 
 ### Quick Start
 
@@ -2080,8 +2082,8 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 - Validate cross-version compatibility (PHP 7.4–8.3) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
 
 ### Manual smoke tests
-- Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
-- For logging-centric debugging, enable logging in the NV oOS settings and reference the retrieval commands in [🪵 Logging](#-logging).
+- Follow the scenarios in [## ✅ Manual QA Scenarios](#manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
+- For logging-centric debugging, enable logging in the NV oOS settings and reference the retrieval commands in [🪵 Logging](#logging).
 
 ---
 

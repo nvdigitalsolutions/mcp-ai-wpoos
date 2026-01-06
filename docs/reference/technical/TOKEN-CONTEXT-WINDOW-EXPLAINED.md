@@ -81,7 +81,7 @@ Requesting extensive WordPress data (many posts, users, etc.) consumes tokens. R
 
 ### 4. Monitor Workload Tier
 
-Check your current tier in **Settings → WP oOS → Orchestration Layer**:
+Check your current tier in **Settings → NV oOS → Orchestration Layer**:
 
 - **Low Tier** (< 128MB memory): 2,000 token context window
 - **Medium Tier** (128-512MB memory): 8,000 token context window  
@@ -89,13 +89,13 @@ Check your current tier in **Settings → WP oOS → Orchestration Layer**:
 
 ### 5. Use Token Manager
 
-Visit **Settings → WP oOS → Token Manager** for detailed token usage analytics and insights.
+Visit **Settings → NV oOS → Token Manager** for detailed token usage analytics and insights.
 
 ## Configuring Context Windows
 
 ### Per-Tier Settings
 
-Navigate to **Settings → WP oOS → Orchestration Layer → Thresholds** to adjust:
+Navigate to **Settings → NV oOS → Orchestration Layer → Thresholds** to adjust:
 
 - **Low Tier Context Window**: 500-5,000 tokens (default: 2,000)
 - **Medium Tier Context Window**: 2,000-10,000 tokens (default: 8,000)
@@ -108,7 +108,7 @@ Additional limits can be configured to prevent runaway costs:
 - **Per-Call Token Limit**: Maximum tokens for a single tool call
 - **Per-Session Token Limit**: Maximum cumulative tokens across an entire chat session
 
-Enable these in **Settings → WP oOS → Orchestration Layer → Thresholds → Per-Call and Per-Session Limits**.
+Enable these in **Settings → NV oOS → Orchestration Layer → Thresholds → Per-Call and Per-Session Limits**.
 
 ## Frequently Asked Questions
 

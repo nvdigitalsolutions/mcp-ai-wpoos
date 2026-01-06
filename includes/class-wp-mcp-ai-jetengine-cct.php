@@ -246,7 +246,7 @@ class WP_MCP_AI_JetEngine_CCT {
 	 * @return array
 	 */
 	protected static function get_registration_request() {
-		$label = __( 'AI Chat Transcripts', 'wp-mcp-ai' );
+		$label = __( 'AI Chat Transcripts', 'mcp-ai-wpoos' );
 
 		return array(
 			'name'        => $label,
@@ -324,101 +324,101 @@ class WP_MCP_AI_JetEngine_CCT {
 			self::build_field(
 				10001,
 				'session_key',
-				__( 'Session Key', 'wp-mcp-ai' ),
+				__( 'Session Key', 'mcp-ai-wpoos' ),
 				'text',
 				array(
 					'is_required' => true,
-					'description' => __( 'Correlation key that groups related messages or turns.', 'wp-mcp-ai' ),
+					'description' => __( 'Correlation key that groups related messages or turns.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10002,
 				'user_id',
-				__( 'User ID', 'wp-mcp-ai' ),
+				__( 'User ID', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
 					'step'        => 1,
-					'description' => __( 'Numeric WordPress user ID associated with the session.', 'wp-mcp-ai' ),
+					'description' => __( 'Numeric WordPress user ID associated with the session.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10003,
 				'assistant_id',
-				__( 'Assistant ID', 'wp-mcp-ai' ),
+				__( 'Assistant ID', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'Internal assistant identifier handling the request.', 'wp-mcp-ai' ),
+					'description' => __( 'Internal assistant identifier handling the request.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10004,
 				'assistant_model',
-				__( 'Assistant Model', 'wp-mcp-ai' ),
+				__( 'Assistant Model', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'Model string reported by the assistant response.', 'wp-mcp-ai' ),
+					'description' => __( 'Model string reported by the assistant response.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10005,
 				'request_payload',
-				__( 'Request Payload', 'wp-mcp-ai' ),
+				__( 'Request Payload', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'Full request payload stored as JSON.', 'wp-mcp-ai' ),
+					'description' => __( 'Full request payload stored as JSON.', 'mcp-ai-wpoos' ),
 					'rows'        => 8,
 				)
 			),
 			self::build_field(
 				10006,
 				'response_payload',
-				__( 'Response Payload', 'wp-mcp-ai' ),
+				__( 'Response Payload', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'Assistant response payload stored as JSON.', 'wp-mcp-ai' ),
+					'description' => __( 'Assistant response payload stored as JSON.', 'mcp-ai-wpoos' ),
 					'rows'        => 8,
 				)
 			),
 			self::build_field(
 				10007,
 				'metadata',
-				__( 'Metadata', 'wp-mcp-ai' ),
+				__( 'Metadata', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'Serialized metadata such as token usage, cost, and latency details.', 'wp-mcp-ai' ),
+					'description' => __( 'Serialized metadata such as token usage, cost, and latency details.', 'mcp-ai-wpoos' ),
 					'rows'        => 4,
 				)
 			),
 			self::build_field(
 				10008,
 				'latency_ms',
-				__( 'Latency (ms)', 'wp-mcp-ai' ),
+				__( 'Latency (ms)', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
 					'step'        => 1,
-					'description' => __( 'End-to-end response time measured in milliseconds.', 'wp-mcp-ai' ),
+					'description' => __( 'End-to-end response time measured in milliseconds.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10009,
 				'request_started_at',
-				__( 'Request Started', 'wp-mcp-ai' ),
+				__( 'Request Started', 'mcp-ai-wpoos' ),
 				'datetime-local',
 				array(
 					'is_timestamp' => true,
-					'description'  => __( 'Timestamp for when the request processing began.', 'wp-mcp-ai' ),
+					'description'  => __( 'Timestamp for when the request processing began.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				10010,
 				'response_completed_at',
-				__( 'Response Completed', 'wp-mcp-ai' ),
+				__( 'Response Completed', 'mcp-ai-wpoos' ),
 				'datetime-local',
 				array(
 					'is_timestamp' => true,
-					'description'  => __( 'Timestamp for when the assistant finished responding.', 'wp-mcp-ai' ),
+					'description'  => __( 'Timestamp for when the assistant finished responding.', 'mcp-ai-wpoos' ),
 				)
 			),
 		);

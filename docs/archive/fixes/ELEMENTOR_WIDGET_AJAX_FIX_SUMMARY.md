@@ -137,10 +137,10 @@ To verify the fix works:
 2. **Create a new page** in WordPress
 3. **Edit with Elementor**
 4. **Add Performance Test Runner widget**:
-   - Search for "WP oOS Performance Test Runner"
+   - Search for "NV oOS Performance Test Runner"
    - Drag to canvas
 5. **Add Performance Metrics widget**:
-   - Search for "WP oOS Performance Metrics"
+   - Search for "NV oOS Performance Metrics"
    - Drag to canvas
 6. **Publish the page**
 7. **View the page on frontend** (logged in as Administrator)

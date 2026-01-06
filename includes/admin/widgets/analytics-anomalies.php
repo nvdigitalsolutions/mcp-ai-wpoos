@@ -73,14 +73,14 @@ $severity_colors = array(
 			<table class="widefat" style="margin-top: 10px; background: white;">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Date', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Date', 'mcp-ai-wpoos' ); ?></th>
 						<?php if ( 0 === $user_id ) : ?>
-							<th><?php esc_html_e( 'User', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'User', 'mcp-ai-wpoos' ); ?></th>
 						<?php endif; ?>
-						<th><?php esc_html_e( 'Tokens', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Expected', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Z-Score', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Severity', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Tokens', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Expected', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Z-Score', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Severity', 'mcp-ai-wpoos' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -113,7 +113,7 @@ $severity_colors = array(
 
 		<!-- Anomaly Chart -->
 		<div class="wp-mcp-ai-chart-container" style="margin-top: 20px;">
-			<canvas id="wp-mcp-ai-anomaly-scatter-chart" width="400" height="250"></canvas>
+			<canvas id="wp-mcp-ai-anomaly-scatter-chart"></canvas>
 		</div>
 
 		<script type="text/javascript">
@@ -144,14 +144,14 @@ $severity_colors = array(
 						type: 'scatter',
 						data: {
 							datasets: [{
-								label: '<?php esc_attr_e( 'Anomalies', 'wp-mcp-ai' ); ?>',
+								label: '<?php esc_attr_e( 'Anomalies', 'mcp-ai-wpoos' ); ?>',
 								data: scatterData,
 								backgroundColor: pointColors,
 								borderColor: pointColors,
 								pointRadius: 6,
 								pointHoverRadius: 8
 							}, {
-								label: '<?php esc_attr_e( 'Threshold (±3σ)', 'wp-mcp-ai' ); ?>',
+								label: '<?php esc_attr_e( 'Threshold (±3σ)', 'mcp-ai-wpoos' ); ?>',
 								data: [
 									{x: 0, y: <?php echo esc_js( $threshold ); ?>},
 									{x: scatterData.length - 1, y: <?php echo esc_js( $threshold ); ?>}
@@ -163,7 +163,7 @@ $severity_colors = array(
 								showLine: true,
 								fill: false
 							}, {
-								label: '<?php esc_attr_e( 'Threshold (-3σ)', 'wp-mcp-ai' ); ?>',
+								label: '<?php esc_attr_e( 'Threshold (-3σ)', 'mcp-ai-wpoos' ); ?>',
 								data: [
 									{x: 0, y: <?php echo esc_js( -$threshold ); ?>},
 									{x: scatterData.length - 1, y: <?php echo esc_js( -$threshold ); ?>}
@@ -186,7 +186,7 @@ $severity_colors = array(
 								},
 								title: {
 									display: true,
-									text: '<?php esc_attr_e( 'Anomaly Detection (Z-Score Analysis)', 'wp-mcp-ai' ); ?>'
+									text: '<?php esc_attr_e( 'Anomaly Detection (Z-Score Analysis)', 'mcp-ai-wpoos' ); ?>'
 								},
 								tooltip: {
 									callbacks: {
@@ -209,13 +209,13 @@ $severity_colors = array(
 								y: {
 									title: {
 										display: true,
-										text: '<?php esc_attr_e( 'Z-Score (Standard Deviations)', 'wp-mcp-ai' ); ?>'
+										text: '<?php esc_attr_e( 'Z-Score (Standard Deviations)', 'mcp-ai-wpoos' ); ?>'
 									}
 								},
 								x: {
 									title: {
 										display: true,
-										text: '<?php esc_attr_e( 'Anomaly Index', 'wp-mcp-ai' ); ?>'
+										text: '<?php esc_attr_e( 'Anomaly Index', 'mcp-ai-wpoos' ); ?>'
 									},
 									ticks: {
 										display: false
@@ -235,13 +235,13 @@ $severity_colors = array(
 				<span class="dashicons dashicons-yes-alt" style="font-size: 48px; color: #00a32a; opacity: 0.5;"></span>
 			</div>
 			<p style="margin: 0; font-weight: 600; color: #00a32a;">
-				<?php esc_html_e( 'No Anomalies Detected', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'No Anomalies Detected', 'mcp-ai-wpoos' ); ?>
 			</p>
 			<p style="margin: 8px 0 0 0; color: #666;">
 				<?php
 				printf(
 					/* translators: %s: Z-score threshold */
-					esc_html__( 'All usage patterns are within normal range (Z-score < ±%s)', 'wp-mcp-ai' ),
+					esc_html__( 'All usage patterns are within normal range (Z-score < ±%s)', 'mcp-ai-wpoos' ),
 					esc_html( number_format_i18n( $threshold, 1 ) )
 				);
 				?>
@@ -252,7 +252,7 @@ $severity_colors = array(
 	<!-- Quick Actions -->
 	<div class="wp-mcp-ai-widget-actions" style="margin-top: 15px; text-align: right;">
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ); ?>" class="button">
-			<?php esc_html_e( 'View All Analytics', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'View All Analytics', 'mcp-ai-wpoos' ); ?>
 		</a>
 	</div>
 </div>

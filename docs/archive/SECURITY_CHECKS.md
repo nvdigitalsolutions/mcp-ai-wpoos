@@ -1,6 +1,6 @@
-# Security Checks Implementation - WP oOS
+# Security Checks Implementation - NV oOS
 
-This document describes the security checks implemented for Open Operator System (WP oOS) as requested in the problem statement.
+This document describes the security checks implemented for Open Operator System (NV oOS) as requested in the problem statement.
 
 ## Overview
 
@@ -132,7 +132,7 @@ Tests:
 
 ```bash
 # Enable rate limiting in WordPress admin:
-# Settings → WP oOS → Security → Enable Rate Limiting
+# Settings → NV oOS → Security → Enable Rate Limiting
 # Set limit to 5 requests per minute
 
 # Burst test script:
@@ -144,7 +144,7 @@ for i in {1..20}; do
 done
 
 # Check logs:
-# WordPress admin → Settings → WP oOS → Logs
+# WordPress admin → Settings → NV oOS → Logs
 # Look for rate limit entries and audit trail
 ```
 
@@ -186,7 +186,7 @@ Tests:
 define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-random-key-minimum-32-chars' );
 
 # Step 2: Trigger emergency shutdown
-# WordPress admin → Settings → WP oOS → Security Monitor
+# WordPress admin → Settings → NV oOS → Security Monitor
 # Click "Trigger Emergency Shutdown"
 
 # Step 3: Try to re-enable without key (should FAIL)
@@ -257,7 +257,7 @@ Tests:
 # Expected: Success (or API error if not fully configured)
 
 # Review OAuth scopes:
-# WordPress admin → Settings → WP oOS → Gmail Settings
+# WordPress admin → Settings → NV oOS → Gmail Settings
 # Verify scopes are minimal:
 # - Gmail: gmail.readonly or gmail.metadata
 # - Calendar: calendar.events (NOT full calendar)

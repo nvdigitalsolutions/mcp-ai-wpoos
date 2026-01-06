@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Tool Matrix', 'wp-mcp-ai' );
+		return __( 'NV oOS Tool Matrix', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,17 +61,17 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Matrix Content', 'wp-mcp-ai' ),
+				'label' => __( 'Matrix Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Assistant tool matrix', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Assistant tool matrix', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -79,21 +79,21 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 		$this->add_control(
 			'description',
 			array(
-				'label'       => __( 'Description', 'wp-mcp-ai' ),
+				'label'       => __( 'Description', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXTAREA,
-				'placeholder' => __( 'Provide context for the tool list.', 'wp-mcp-ai' ),
+				'placeholder' => __( 'Provide context for the tool list.', 'mcp-ai-wpoos' ),
 				'rows'        => 4,
-				'default'     => __( 'Review each bundled MCP tool, its slug, and the capability required before enabling it for assistants.', 'wp-mcp-ai' ),
+				'default'     => __( 'Review each bundled MCP tool, its slug, and the capability required before enabling it for assistants.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_capability_notes',
 			array(
-				'label'        => __( 'Show capability notes', 'wp-mcp-ai' ),
+				'label'        => __( 'Show capability notes', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -140,7 +140,7 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 			if ( ! empty( $title ) ) {
 				echo '<h3 class="wp-mcp-ai-tool-matrix__title">' . esc_html( $title ) . '</h3>';
 			}
-			echo '<p class="wp-mcp-ai-tool-matrix__notice">' . esc_html__( 'The tool registry is unavailable.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-tool-matrix__notice">' . esc_html__( 'The tool registry is unavailable.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -185,7 +185,7 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 			if ( ! empty( $title ) ) {
 				echo '<h3 class="wp-mcp-ai-tool-matrix__title">' . esc_html( $title ) . '</h3>';
 			}
-			echo '<p class="wp-mcp-ai-tool-matrix__notice">' . esc_html__( 'No tools are currently registered.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-tool-matrix__notice">' . esc_html__( 'No tools are currently registered.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -245,15 +245,15 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 			echo '<table class="wp-mcp-ai-tool-matrix__table-grid">';
 			echo '<thead>';
 			echo '<tr class="wp-mcp-ai-tool-matrix__table-row wp-mcp-ai-tool-matrix__table-row--head">';
-			echo '<th scope="col" class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--name">' . esc_html__( 'Tool', 'wp-mcp-ai' ) . '</th>';
-			echo '<th scope="col" class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--slug">' . esc_html__( 'Slug', 'wp-mcp-ai' ) . '</th>';
+			echo '<th scope="col" class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--name">' . esc_html__( 'Tool', 'mcp-ai-wpoos' ) . '</th>';
+			echo '<th scope="col" class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--slug">' . esc_html__( 'Slug', 'mcp-ai-wpoos' ) . '</th>';
 
 			if ( $has_capability_notes ) {
-				echo '<th scope="col" class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--capability">' . esc_html__( 'Required capability', 'wp-mcp-ai' ) . '</th>';
+				echo '<th scope="col" class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--capability">' . esc_html__( 'Required capability', 'mcp-ai-wpoos' ) . '</th>';
 			}
 
 			if ( $has_descriptions ) {
-				echo '<th scope="col" class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--description">' . esc_html__( 'Description', 'wp-mcp-ai' ) . '</th>';
+				echo '<th scope="col" class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--description">' . esc_html__( 'Description', 'mcp-ai-wpoos' ) . '</th>';
 			}
 
 			echo '</tr>';
@@ -369,15 +369,15 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 		}
 
 		return array(
-			'content'       => __( 'Content ingestion & search', 'wp-mcp-ai' ),
-			'media'         => __( 'Media generation & transcription', 'wp-mcp-ai' ),
-			'automation'    => __( 'Automations & workflows', 'wp-mcp-ai' ),
-			'jetengine'     => __( 'JetEngine REST utilities', 'wp-mcp-ai' ),
-			'commerce'      => __( 'Commerce & finance', 'wp-mcp-ai' ),
-			'communication' => __( 'Communications & outreach', 'wp-mcp-ai' ),
-			'external-data' => __( 'External data sources', 'wp-mcp-ai' ),
-			'operations'    => __( 'Site operations & maintenance', 'wp-mcp-ai' ),
-			'other'         => __( 'Other tools', 'wp-mcp-ai' ),
+			'content'       => __( 'Content ingestion & search', 'mcp-ai-wpoos' ),
+			'media'         => __( 'Media generation & transcription', 'mcp-ai-wpoos' ),
+			'automation'    => __( 'Automations & workflows', 'mcp-ai-wpoos' ),
+			'jetengine'     => __( 'JetEngine REST utilities', 'mcp-ai-wpoos' ),
+			'commerce'      => __( 'Commerce & finance', 'mcp-ai-wpoos' ),
+			'communication' => __( 'Communications & outreach', 'mcp-ai-wpoos' ),
+			'external-data' => __( 'External data sources', 'mcp-ai-wpoos' ),
+			'operations'    => __( 'Site operations & maintenance', 'mcp-ai-wpoos' ),
+			'other'         => __( 'Other tools', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -394,11 +394,11 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 		}
 
 		if ( '' === $group_email['capability'] ) {
-			$group_capability_note = __( 'Allows any logged-in user to send group emails.', 'wp-mcp-ai' );
+			$group_capability_note = __( 'Allows any logged-in user to send group emails.', 'mcp-ai-wpoos' );
 		} else {
 			$group_capability_note = sprintf(
 				/* translators: %s: capability label. */
-				__( 'Requires the %s capability configured in the settings.', 'wp-mcp-ai' ),
+				__( 'Requires the %s capability configured in the settings.', 'mcp-ai-wpoos' ),
 				$group_email['label']
 			);
 		}
@@ -406,34 +406,34 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 		if ( $group_email['limit'] > 0 ) {
 			$group_limit_note = sprintf(
 				/* translators: %d: maximum recipients per request. */
-				__( 'Limited to %d recipients per request.', 'wp-mcp-ai' ),
+				__( 'Limited to %d recipients per request.', 'mcp-ai-wpoos' ),
 				$group_email['limit']
 			);
 		} else {
-			$group_limit_note = __( 'No recipient limit is enforced.', 'wp-mcp-ai' );
+			$group_limit_note = __( 'No recipient limit is enforced.', 'mcp-ai-wpoos' );
 		}
 
 		return array(
-			'default'                    => __( 'Requires authenticated access.', 'wp-mcp-ai' ),
-			'submit_document_prompt'     => __( 'Requires upload permissions matching attachment handling.', 'wp-mcp-ai' ),
-			'get_recent_posts'           => __( 'Requires the "read" capability.', 'wp-mcp-ai' ),
-			'get_user_info'              => __( 'Requires login; "list_users" or "manage_options" to inspect other profiles.', 'wp-mcp-ai' ),
-			'get_site_summary'           => __( 'Requires the "manage_options" capability.', 'wp-mcp-ai' ),
-			'get_jetengine_items'        => __( 'Requires access to the JetEngine post type (typically "edit_posts").', 'wp-mcp-ai' ),
-			'get_woo_recent_orders'      => __( 'Requires "manage_woocommerce" or "view_woocommerce_reports".', 'wp-mcp-ai' ),
-			'get_woo_products'           => __( 'Requires "manage_woocommerce" or "view_woocommerce_reports".', 'wp-mcp-ai' ),
-			'generate_openai_image'      => __( 'Requires the "upload_files" capability for media storage.', 'wp-mcp-ai' ),
-			'generate_openai_speech'     => __( 'Requires the "upload_files" capability for media storage.', 'wp-mcp-ai' ),
-			'transcribe_openai_audio'    => __( 'Requires the "upload_files" capability for media storage.', 'wp-mcp-ai' ),
-			'run_openai_external_action' => __( 'Requires the "manage_options" capability.', 'wp-mcp-ai' ),
-			'run_crawl4ai_job'           => __( 'Requires the "manage_options" capability.', 'wp-mcp-ai' ),
-			'web_search'                 => __( 'Requires the "read" capability.', 'wp-mcp-ai' ),
-			'list_jetengine_rest_routes' => __( 'Requires the "manage_options" capability and JetEngine.', 'wp-mcp-ai' ),
-			'invoke_jetengine_route'     => __( 'Requires JetEngine access for the requested operation.', 'wp-mcp-ai' ),
-			'create_cron_job'            => __( 'Requires the "manage_options" capability.', 'wp-mcp-ai' ),
+			'default'                    => __( 'Requires authenticated access.', 'mcp-ai-wpoos' ),
+			'submit_document_prompt'     => __( 'Requires upload permissions matching attachment handling.', 'mcp-ai-wpoos' ),
+			'get_recent_posts'           => __( 'Requires the "read" capability.', 'mcp-ai-wpoos' ),
+			'get_user_info'              => __( 'Requires login; "list_users" or "manage_options" to inspect other profiles.', 'mcp-ai-wpoos' ),
+			'get_site_summary'           => __( 'Requires the "manage_options" capability.', 'mcp-ai-wpoos' ),
+			'get_jetengine_items'        => __( 'Requires access to the JetEngine post type (typically "edit_posts").', 'mcp-ai-wpoos' ),
+			'get_woo_recent_orders'      => __( 'Requires "manage_woocommerce" or "view_woocommerce_reports".', 'mcp-ai-wpoos' ),
+			'get_woo_products'           => __( 'Requires "manage_woocommerce" or "view_woocommerce_reports".', 'mcp-ai-wpoos' ),
+			'generate_openai_image'      => __( 'Requires the "upload_files" capability for media storage.', 'mcp-ai-wpoos' ),
+			'generate_openai_speech'     => __( 'Requires the "upload_files" capability for media storage.', 'mcp-ai-wpoos' ),
+			'transcribe_openai_audio'    => __( 'Requires the "upload_files" capability for media storage.', 'mcp-ai-wpoos' ),
+			'run_openai_external_action' => __( 'Requires the "manage_options" capability.', 'mcp-ai-wpoos' ),
+			'run_crawl4ai_job'           => __( 'Requires the "manage_options" capability.', 'mcp-ai-wpoos' ),
+			'web_search'                 => __( 'Requires the "read" capability.', 'mcp-ai-wpoos' ),
+			'list_jetengine_rest_routes' => __( 'Requires the "manage_options" capability and JetEngine.', 'mcp-ai-wpoos' ),
+			'invoke_jetengine_route'     => __( 'Requires JetEngine access for the requested operation.', 'mcp-ai-wpoos' ),
+			'create_cron_job'            => __( 'Requires the "manage_options" capability.', 'mcp-ai-wpoos' ),
 			'send_group_email'           => trim( $group_capability_note . ' ' . $group_limit_note ),
-			'open_openai_usage'          => __( 'Requires the "manage_options" capability.', 'wp-mcp-ai' ),
-			'open_openai_logs'           => __( 'Requires the "manage_options" capability.', 'wp-mcp-ai' ),
+			'open_openai_usage'          => __( 'Requires the "manage_options" capability.', 'mcp-ai-wpoos' ),
+			'open_openai_logs'           => __( 'Requires the "manage_options" capability.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -481,7 +481,7 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 		$label = '';
 
 		if ( '' === $capability ) {
-			$label = __( 'Any logged-in user', 'wp-mcp-ai' );
+			$label = __( 'Any logged-in user', 'mcp-ai-wpoos' );
 		} else {
 			$label = $this->format_capability_label( $capability );
 		}

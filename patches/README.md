@@ -12,7 +12,7 @@ This directory contains patches applied to vendor packages via the `cweagans/com
 The wp-phpunit package's `includes/bootstrap.php` unconditionally defines the `WP_LANG_DIR` constant without checking if it's already defined. This causes PHP warnings in scenarios where:
 
 1. WordPress core has already loaded and defined `WP_LANG_DIR` in `wp-includes/default-constants.php`
-2. Performance tests run via the WP oOS admin interface, which executes PHPUnit in an already-bootstrapped WordPress environment
+2. Performance tests run via the NV oOS admin interface, which executes PHPUnit in an already-bootstrapped WordPress environment
 3. The plugin is activated via WP-CLI during provisioning/startup scripts
 
 ### Solution

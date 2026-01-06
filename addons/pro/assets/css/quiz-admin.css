@@ -1,0 +1,205 @@
+/**
+ * Quiz Admin Styles
+ *
+ * Styles for the quiz management interface in WordPress admin.
+ *
+ * @package WP_MCP_AI
+ */
+
+/* Quiz Questions Container */
+.wp-mcp-ai-quiz-questions-wrapper {
+	margin: 20px 0;
+}
+
+.quiz-questions-container {
+	margin-bottom: 20px;
+}
+
+/* Question Row */
+.quiz-question-row {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	margin-bottom: 15px;
+	padding: 15px;
+	position: relative;
+}
+
+.quiz-question-row:hover {
+	border-color: #2271b1;
+}
+
+/* Question Header */
+.question-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 15px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.question-number {
+	font-weight: 600;
+	font-size: 14px;
+	color: #1d2327;
+}
+
+.question-handle {
+	cursor: move;
+	color: #8c8f94;
+	margin-left: auto;
+	margin-right: 10px;
+}
+
+.question-handle:hover {
+	color: #2271b1;
+}
+
+.remove-question {
+	color: #d63638;
+	padding: 0;
+	margin: 0;
+	background: none;
+	border: none;
+	cursor: pointer;
+}
+
+.remove-question:hover {
+	color: #b32d2e;
+}
+
+/* Question Fields */
+.question-fields {
+	margin-top: 15px;
+}
+
+.question-text {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.question-meta-row {
+	display: flex;
+	gap: 15px;
+	align-items: flex-end;
+}
+
+.question-type-field {
+	flex: 1;
+}
+
+.question-points-field {
+	width: 120px;
+}
+
+/* Multiple Choice Options */
+.question-options {
+	margin-top: 15px;
+	padding: 15px;
+	background: #f6f7f7;
+	border-radius: 4px;
+}
+
+.question-options label {
+	display: block;
+	margin-bottom: 10px;
+}
+
+.options-list {
+	margin-bottom: 10px;
+}
+
+.option-row {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.option-row input {
+	flex: 1;
+}
+
+.remove-option {
+	color: #d63638;
+	padding: 0;
+	margin: 0;
+	background: none;
+	border: none;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.remove-option:hover {
+	color: #b32d2e;
+}
+
+.add-option {
+	margin-top: 5px;
+}
+
+/* Correct Answer Field */
+.correct-answer-field {
+	margin-top: 15px;
+}
+
+.correct-answer-field .description {
+	display: block;
+	margin-top: 5px;
+}
+
+/* Sortable Placeholder */
+.quiz-question-placeholder {
+	background: #f0f0f1;
+	border: 2px dashed #8c8f94;
+	border-radius: 4px;
+	height: 100px;
+	margin-bottom: 15px;
+}
+
+/* Quiz Details Metabox */
+.wp-mcp-ai-quiz-details p {
+	margin-bottom: 15px;
+}
+
+.wp-mcp-ai-quiz-details label {
+	display: block;
+	margin-bottom: 5px;
+}
+
+.wp-mcp-ai-quiz-details .description {
+	display: block;
+	margin-top: 5px;
+	font-size: 12px;
+	color: #646970;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+	.question-meta-row {
+		flex-direction: column;
+		gap: 0;
+	}
+
+	.question-points-field {
+		width: 100%;
+	}
+}
+
+/* Info Notice */
+.quiz-info-notice {
+	background: #e7f5fe;
+	border-left: 4px solid #2271b1;
+	padding: 12px;
+	margin: 15px 0;
+	border-radius: 4px;
+}
+
+.quiz-info-notice p {
+	margin: 0.5em 0;
+	font-size: 13px;
+}
+
+.quiz-info-notice strong {
+	color: #1d2327;
+}

@@ -18,11 +18,11 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	}
 
 	public function get_name() {
-		return __( 'Delete Project', 'wp-mcp-ai' );
+		return __( 'Delete Project', 'mcp-ai-wpoos-pro' );
 	}
 
 	public function get_description() {
-		return __( 'Deletes a project. Note: This does not delete associated tasks or events.', 'wp-mcp-ai' );
+		return __( 'Deletes a project. Note: This does not delete associated tasks or events.', 'mcp-ai-wpoos-pro' );
 	}
 
 	public function get_parameters_schema() {
@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'project_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Project ID to delete (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Project ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'project_id' ),
@@ -40,7 +40,8 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	}
 
 	public function get_capability_flags() {
-		return array( 'database-write', 'destructive' );
+		return array(
+			'pro', 'database-write', 'destructive' );
 	}
 
 	public static function is_available() {
@@ -56,29 +57,29 @@ class WP_MCP_AI_Tool_Delete_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'delete_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete projects.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete projects.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$project_id = isset( $arguments['project_id'] ) ? absint( $arguments['project_id'] ) : 0;
 
 		if ( ! $project_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Project ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Project ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$project = get_post( $project_id );
 		if ( ! $project || 'mcp_ai_project' !== $project->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_project', __( 'Invalid project ID.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_project', __( 'Invalid project ID.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$result = wp_delete_post( $project_id, true );
 
 		if ( ! $result ) {
-			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete project.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete project.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return array(
 			'success'    => true,
-			'message'    => __( 'Project deleted successfully.', 'wp-mcp-ai' ),
+			'message'    => __( 'Project deleted successfully.', 'mcp-ai-wpoos-pro' ),
 			'project_id' => $project_id,
 		);
 	}

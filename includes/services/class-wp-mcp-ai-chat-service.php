@@ -594,7 +594,7 @@ class WP_MCP_AI_Chat_Service {
 						'error'   => true,
 						'message' => sprintf(
 							/* translators: %s: tool name */
-							__( 'Tool "%s" completed but the result could not be encoded for transmission. This may indicate invalid characters in the data.', 'wp-mcp-ai' ),
+							__( 'Tool "%s" completed but the result could not be encoded for transmission. This may indicate invalid characters in the data.', 'mcp-ai-wpoos' ),
 							$safe_tool_name
 						),
 					)
@@ -734,7 +734,7 @@ class WP_MCP_AI_Chat_Service {
 					'wp_mcp_ai_async_tool_failed',
 					sprintf(
 						/* translators: 1: tool name, 2: error message */
-						__( '%1$s failed: %2$s', 'wp-mcp-ai' ),
+						__( '%1$s failed: %2$s', 'mcp-ai-wpoos' ),
 						$tool_name,
 						$job_status->get_error_message()
 					)
@@ -769,7 +769,7 @@ class WP_MCP_AI_Chat_Service {
 
 			if ( 'failed' === $status ) {
 				// Job failed.
-				$error_msg = isset( $job_status['error'] ) ? $job_status['error'] : __( 'Unknown error', 'wp-mcp-ai' );
+				$error_msg = isset( $job_status['error'] ) ? $job_status['error'] : __( 'Unknown error', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
 					'Async tool wait failed - job failed',
@@ -784,7 +784,7 @@ class WP_MCP_AI_Chat_Service {
 					'wp_mcp_ai_async_tool_failed',
 					sprintf(
 						/* translators: 1: tool name, 2: error message */
-						__( '%1$s failed: %2$s', 'wp-mcp-ai' ),
+						__( '%1$s failed: %2$s', 'mcp-ai-wpoos' ),
 						$tool_name,
 						$error_msg
 					)
@@ -827,7 +827,7 @@ class WP_MCP_AI_Chat_Service {
 			'wp_mcp_ai_async_tool_timeout',
 			sprintf(
 				/* translators: 1: tool name, 2: timeout in minutes */
-				__( '%1$s timed out after %2$d minutes. The job may still be processing in the background.', 'wp-mcp-ai' ),
+				__( '%1$s timed out after %2$d minutes. The job may still be processing in the background.', 'mcp-ai-wpoos' ),
 				$tool_name,
 				$timeout_minutes
 			)
@@ -880,7 +880,7 @@ class WP_MCP_AI_Chat_Service {
 				$image_content,
 				array(
 					'type' => 'text',
-					'text' => __( 'Here are the generated images from the tool execution:', 'wp-mcp-ai' ),
+					'text' => __( 'Here are the generated images from the tool execution:', 'mcp-ai-wpoos' ),
 				)
 			);
 
@@ -904,7 +904,7 @@ class WP_MCP_AI_Chat_Service {
 		if ( isset( $response['error'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_chat_error',
-				$response['error']['message'] ?? __( 'Chat request failed', 'wp-mcp-ai' ),
+				$response['error']['message'] ?? __( 'Chat request failed', 'mcp-ai-wpoos' ),
 				array(
 					'status'              => 500,
 					'provider_error'      => $response['error'],

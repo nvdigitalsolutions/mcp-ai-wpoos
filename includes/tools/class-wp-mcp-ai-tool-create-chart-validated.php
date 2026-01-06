@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Create_Chart_Validated extends WP_MCP_AI_Validated_Tool imp
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Chart (Validated)', 'wp-mcp-ai' );
+		return __( 'Create Chart (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates interactive charts using Chart.js with Symfony Validator for argument validation. Supports bar, line, pie, doughnut, radar, and polar area charts.', 'wp-mcp-ai' );
+		return __( 'Creates interactive charts using Chart.js with Symfony Validator for argument validation. Supports bar, line, pie, doughnut, radar, and polar area charts.', 'mcp-ai-wpoos' );
 	}
 
 	/**

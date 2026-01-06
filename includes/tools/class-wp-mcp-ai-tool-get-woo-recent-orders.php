@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The WooCommerce Orders tool is disabled because WooCommerce is not active.', 'wp-mcp-ai' );
+		return __( 'The WooCommerce Orders tool is disabled because WooCommerce is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -47,14 +47,14 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Recent WooCommerce Orders', 'wp-mcp-ai' );
+		return __( 'Get Recent WooCommerce Orders', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns recent WooCommerce orders with totals and statuses. Requires WooCommerce.', 'wp-mcp-ai' );
+		return __( 'Returns recent WooCommerce orders with totals and statuses. Requires WooCommerce.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -66,14 +66,14 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'limit'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of orders to retrieve.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of orders to retrieve.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 20,
 					'default'     => 5,
 				),
 				'status' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional order status to filter by (e.g. completed).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional order status to filter by (e.g. completed).', 'mcp-ai-wpoos' ),
 				),
 			),
 			'additionalProperties' => false,
@@ -89,21 +89,21 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view WooCommerce orders.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view WooCommerce orders.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! user_can( $user_id, 'manage_woocommerce' ) && ! user_can( $user_id, 'view_woocommerce_reports' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view WooCommerce orders.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view WooCommerce orders.', 'mcp-ai-wpoos' ) );
 		}
 
 		$limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
@@ -138,7 +138,7 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'summary' => sprintf(
 				/* translators: %d: number of orders */
-				__( 'Found %d recent order(s)', 'wp-mcp-ai' ),
+				__( 'Found %d recent order(s)', 'mcp-ai-wpoos' ),
 				count( $results )
 			),
 			'orders'  => $results,

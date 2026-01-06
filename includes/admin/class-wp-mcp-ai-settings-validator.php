@@ -28,7 +28,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Validator' ) ) {
 			}
 
 			if ( ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
-				return new WP_Error( 'invalid_url', __( 'Invalid URL format.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'invalid_url', __( 'Invalid URL format.', 'mcp-ai-wpoos' ) );
 			}
 
 			return true;
@@ -46,7 +46,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Validator' ) ) {
 			}
 
 			if ( ! is_email( $email ) ) {
-				return new WP_Error( 'invalid_email', __( 'Invalid email address.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'invalid_email', __( 'Invalid email address.', 'mcp-ai-wpoos' ) );
 			}
 
 			return true;
@@ -64,10 +64,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Validator' ) ) {
 				$message = $field_name
 					? sprintf(
 						/* translators: %s: field name */
-						__( '%s is required.', 'wp-mcp-ai' ),
+						__( '%s is required.', 'mcp-ai-wpoos' ),
 						$field_name
 					)
-					: __( 'This field is required.', 'wp-mcp-ai' );
+					: __( 'This field is required.', 'mcp-ai-wpoos' );
 
 				return new WP_Error( 'required_field', $message );
 			}
@@ -89,7 +89,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Validator' ) ) {
 			}
 
 			if ( ! is_numeric( $value ) ) {
-				return new WP_Error( 'invalid_number', __( 'Value must be a number.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'invalid_number', __( 'Value must be a number.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( null !== $min && $value < $min ) {
@@ -97,7 +97,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Validator' ) ) {
 					'number_too_small',
 					sprintf(
 						/* translators: %d: minimum value */
-						__( 'Value must be at least %d.', 'wp-mcp-ai' ),
+						__( 'Value must be at least %d.', 'mcp-ai-wpoos' ),
 						$min
 					)
 				);
@@ -108,7 +108,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Validator' ) ) {
 					'number_too_large',
 					sprintf(
 						/* translators: %d: maximum value */
-						__( 'Value must be no more than %d.', 'wp-mcp-ai' ),
+						__( 'Value must be no more than %d.', 'mcp-ai-wpoos' ),
 						$max
 					)
 				);
@@ -130,7 +130,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Validator' ) ) {
 			}
 
 			if ( ! in_array( $value, $allowed_values, true ) ) {
-				return new WP_Error( 'invalid_option', __( 'Invalid option selected.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'invalid_option', __( 'Invalid option selected.', 'mcp-ai-wpoos' ) );
 			}
 
 			return true;
@@ -150,7 +150,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Validator' ) ) {
 			if ( ! preg_match( '/^[a-zA-Z0-9_-]+$/', $key ) ) {
 				return new WP_Error(
 					'invalid_api_key',
-					__( 'API key contains invalid characters.', 'wp-mcp-ai' )
+					__( 'API key contains invalid characters.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -174,7 +174,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Validator' ) ) {
 					'invalid_json',
 					sprintf(
 						/* translators: %s: JSON error message */
-						__( 'Invalid JSON: %s', 'wp-mcp-ai' ),
+						__( 'Invalid JSON: %s', 'mcp-ai-wpoos' ),
 						json_last_error_msg()
 					)
 				);

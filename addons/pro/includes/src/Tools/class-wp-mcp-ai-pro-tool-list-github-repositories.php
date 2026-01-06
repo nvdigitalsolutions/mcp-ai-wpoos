@@ -27,14 +27,14 @@ class WP_MCP_AI_Pro_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Inte
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List GitHub Repositories', 'wp-mcp-ai' );
+		return __( 'List GitHub Repositories', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists GitHub repositories for the authenticated user.', 'wp-mcp-ai' );
+		return __( 'Lists GitHub repositories for the authenticated user.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -46,32 +46,32 @@ class WP_MCP_AI_Pro_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Inte
 			'properties'           => array(
 				'type'      => array(
 					'type'        => 'string',
-					'description' => __( 'Repository type filter: all, owner, public, private, or member.', 'wp-mcp-ai' ),
+					'description' => __( 'Repository type filter: all, owner, public, private, or member.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'all', 'owner', 'public', 'private', 'member' ),
 					'default'     => 'all',
 				),
 				'sort'      => array(
 					'type'        => 'string',
-					'description' => __( 'Sort repositories by: created, updated, pushed, or full_name.', 'wp-mcp-ai' ),
+					'description' => __( 'Sort repositories by: created, updated, pushed, or full_name.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'created', 'updated', 'pushed', 'full_name' ),
 					'default'     => 'updated',
 				),
 				'direction' => array(
 					'type'        => 'string',
-					'description' => __( 'Sort direction: asc or desc.', 'wp-mcp-ai' ),
+					'description' => __( 'Sort direction: asc or desc.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'asc', 'desc' ),
 					'default'     => 'desc',
 				),
 				'per_page'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of repositories to return (1-100).', 'wp-mcp-ai' ),
+					'description' => __( 'Number of repositories to return (1-100).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 30,
 				),
 				'page'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination.', 'wp-mcp-ai' ),
+					'description' => __( 'Page number for pagination.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'default'     => 1,
 				),
@@ -93,7 +93,7 @@ class WP_MCP_AI_Pro_Tool_List_Github_Repositories implements WP_MCP_AI_Tool_Inte
 		$required_capability = apply_filters( 'wp_mcp_ai_github_repos_capability', 'manage_options', $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_github_forbidden', __( 'You do not have permission to access GitHub repositories.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_github_forbidden', __( 'You do not have permission to access GitHub repositories.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$client = new WP_MCP_AI_Github_Client();

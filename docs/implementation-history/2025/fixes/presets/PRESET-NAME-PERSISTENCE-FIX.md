@@ -189,7 +189,7 @@ All 5 tests should pass:
 ### Manual Testing
 
 1. **Basic Preset Application:**
-   - Go to Settings → WP oOS → Orchestration Layer
+   - Go to Settings → NV oOS → Orchestration Layer
    - Click "Apply" on any preset (e.g., "Balanced")
    - Wait for page reload
    - Verify "Currently Active:" shows "Balanced" (not "Custom")

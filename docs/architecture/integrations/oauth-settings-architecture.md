@@ -1,4 +1,4 @@
-# WP oOS Settings Architecture - OAuth Integration
+# NV oOS Settings Architecture - OAuth Integration
 
 ## Overview
 
@@ -179,7 +179,7 @@ var_dump($wp_filter['admin_post_wp_mcp_ai_gmail_oauth_callback']);
 ```
 
 ### Test OAuth Flow
-1. Go to: **WP oOS Dashboard** → **Tools** → **Connections** → **Gmail**
+1. Go to: **NV oOS Dashboard** → **Tools** → **Connections** → **Gmail**
 2. Enter Client ID and Client Secret
 3. Click **Save Settings**
 4. Click **Connect Gmail Account**

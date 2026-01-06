@@ -28,7 +28,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		 */
 		public function handle_gmail_oauth_start() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_gmail_oauth_start' );
@@ -38,7 +38,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			if ( empty( $settings['gmail_client_id'] ) || empty( $settings['gmail_client_secret'] ) ) {
 				$this->add_settings_redirect_notice(
 					'gmail_oauth_missing_client',
-					__( 'Enter a Gmail OAuth client ID and secret before connecting the account.', 'wp-mcp-ai' )
+					__( 'Enter a Gmail OAuth client ID and secret before connecting the account.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -98,7 +98,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		 */
 		public function handle_gmail_oauth_callback() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			// OAuth callback parameters from Google. No nonce verification required as state parameter provides CSRF protection.
@@ -114,7 +114,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 					'gmail_oauth_error',
 					sprintf(
 						/* translators: %s: Google error message. */
-						__( 'Google returned an error during authorisation: %s', 'wp-mcp-ai' ),
+						__( 'Google returned an error during authorisation: %s', 'mcp-ai-wpoos' ),
 						$error
 					)
 				);
@@ -129,7 +129,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
 				$this->add_settings_redirect_notice(
 					'gmail_oauth_state_mismatch',
-					__( 'The Google authorisation request could not be verified. Please try again.', 'wp-mcp-ai' )
+					__( 'The Google authorisation request could not be verified. Please try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -137,7 +137,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			if ( empty( $code ) ) {
 				$this->add_settings_redirect_notice(
 					'gmail_oauth_missing_code',
-					__( 'Google did not return an authorisation code. Please try again.', 'wp-mcp-ai' )
+					__( 'Google did not return an authorisation code. Please try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -147,7 +147,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			if ( empty( $settings['gmail_client_id'] ) || empty( $settings['gmail_client_secret'] ) ) {
 				$this->add_settings_redirect_notice(
 					'gmail_oauth_missing_client',
-					__( 'Enter a Gmail OAuth client ID and secret before connecting the account.', 'wp-mcp-ai' )
+					__( 'Enter a Gmail OAuth client ID and secret before connecting the account.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -182,7 +182,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'Gmail OAuth token exchange failed.', array( 'error' => $response->get_error_message() ) );
 				$this->add_settings_redirect_notice(
 					'gmail_oauth_token_request_failed',
-					__( 'Google could not exchange the authorisation code. Check the client credentials and try again.', 'wp-mcp-ai' )
+					__( 'Google could not exchange the authorisation code. Check the client credentials and try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -200,7 +200,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				);
 				$this->add_settings_redirect_notice(
 					'gmail_oauth_token_request_error',
-					__( 'Google rejected the authorisation code. Review the OAuth consent configuration and try again.', 'wp-mcp-ai' )
+					__( 'Google rejected the authorisation code. Review the OAuth consent configuration and try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -211,7 +211,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'Gmail OAuth token response was not valid JSON.', array( 'body' => $body ) );
 				$this->add_settings_redirect_notice(
 					'gmail_oauth_token_invalid_json',
-					__( 'Google returned an unexpected response while exchanging the authorisation code.', 'wp-mcp-ai' )
+					__( 'Google returned an unexpected response while exchanging the authorisation code.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -227,7 +227,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 					WP_MCP_AI_Admin_Settings::log( 'Gmail OAuth callback omitted a refresh token.', array( 'response' => $decoded ) );
 					$this->add_settings_redirect_notice(
 						'gmail_oauth_missing_refresh_token',
-						__( 'Google did not return a refresh token. Remove any previous grants for this client and try again.', 'wp-mcp-ai' )
+						__( 'Google did not return a refresh token. Remove any previous grants for this client and try again.', 'mcp-ai-wpoos' )
 					);
 					$this->redirect_to_settings_page();
 				}
@@ -301,16 +301,16 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			if ( $used_existing ) {
 				$this->add_settings_redirect_notice(
 					'gmail_oauth_success_existing_refresh',
-					__( 'Google reconnected successfully. The previous refresh token is still valid, so it has been kept.', 'wp-mcp-ai' ),
+					__( 'Google reconnected successfully. The previous refresh token is still valid, so it has been kept.', 'mcp-ai-wpoos' ),
 					'updated'
 				);
 			} else {
-				$notice_message = __( 'Gmail authorisation complete. A new refresh token has been stored.', 'wp-mcp-ai' );
+				$notice_message = __( 'Gmail authorisation complete. A new refresh token has been stored.', 'mcp-ai-wpoos' );
 
 				if ( $email_address ) {
 					$notice_message = sprintf(
 						/* translators: %s: Gmail email address. */
-						__( 'Gmail authorisation complete for %s.', 'wp-mcp-ai' ),
+						__( 'Gmail authorisation complete for %s.', 'mcp-ai-wpoos' ),
 						$email_address
 					);
 				}

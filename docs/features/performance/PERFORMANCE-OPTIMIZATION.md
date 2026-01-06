@@ -1,6 +1,6 @@
 # Performance Optimization Guide
 
-This document describes the performance optimizations implemented in Open Operator System (WP oOS) as part of Phase 1: Performance Optimization.
+This document describes the performance optimizations implemented in Open Operator System (NV oOS) as part of Phase 1: Performance Optimization.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ This document describes the performance optimizations implemented in Open Operat
 
 ### Overview
 
-WP oOS implements a centralized caching system using the WordPress Transients API. This provides consistent, performant caching across all plugin components.
+NV oOS implements a centralized caching system using the WordPress Transients API. This provides consistent, performant caching across all plugin components.
 
 ### Cache Helper Class
 
@@ -323,7 +323,7 @@ public function render_shortcode() {
 ```
 
 **Benefits**:
-- Reduces page load time on pages without WP oOS features
+- Reduces page load time on pages without NV oOS features
 - Minimizes HTTP requests
 - Prevents JavaScript conflicts
 - Improves overall WordPress admin performance

@@ -41,11 +41,11 @@ Streaming text is not visible in the chat bubble during response generation. The
 Open browser DevTools console and send a message. You should see:
 
 ```
-[WP oOS] Created streaming message element
-[WP oOS] SSE message event received: {hasChoices: true, hasDelta: true, hasContent: true}
-[WP oOS] Content chunk extracted: "Jamaica is located in the Caribbean Sea, sou..."
-[WP oOS] updateStreamingMessage called: {contentLength: 50, contentSample: "Jamaica is located in the Caribbean Sea, sou...", elementExists: true, elementInDOM: true}
-[WP oOS] After setting textContent: {elementTextContent: "Jamaica is located in the Caribbean Sea, sou...", elementInnerHTML: "Jamaica is located in the Caribbean Sea, sou...", elementOuterHTML: "<div class=\"wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant wp-mcp-ai-chat__bubble--streaming\">Jamaica is located in the Caribbean Sea, sou...</div>"}
+[NV oOS] Created streaming message element
+[NV oOS] SSE message event received: {hasChoices: true, hasDelta: true, hasContent: true}
+[NV oOS] Content chunk extracted: "Jamaica is located in the Caribbean Sea, sou..."
+[NV oOS] updateStreamingMessage called: {contentLength: 50, contentSample: "Jamaica is located in the Caribbean Sea, sou...", elementExists: true, elementInDOM: true}
+[NV oOS] After setting textContent: {elementTextContent: "Jamaica is located in the Caribbean Sea, sou...", elementInnerHTML: "Jamaica is located in the Caribbean Sea, sou...", elementOuterHTML: "<div class=\"wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant wp-mcp-ai-chat__bubble--streaming\">Jamaica is located in the Caribbean Sea, sou...</div>"}
 ```
 
 ### Failure Scenarios
@@ -63,7 +63,7 @@ Open browser DevTools console and send a message. You should see:
 
 #### Scenario 2: Events Received, No Chunks
 ```
-[WP oOS] SSE message event received: {hasChoices: false, hasDelta: false, hasContent: false}
+[NV oOS] SSE message event received: {hasChoices: false, hasDelta: false, hasContent: false}
 ```
 **Problem**: Server sending wrong format
 **Possible Causes**:
@@ -73,7 +73,7 @@ Open browser DevTools console and send a message. You should see:
 
 #### Scenario 3: Chunks Extracted, Callback Not Called
 ```
-[WP oOS] Content chunk extracted: "text here"
+[NV oOS] Content chunk extracted: "text here"
 // But NO "updateStreamingMessage called" log
 ```
 **Problem**: `updateCallback` not working
@@ -84,7 +84,7 @@ Open browser DevTools console and send a message. You should see:
 
 #### Scenario 4: Everything Logged, Text Not Visible
 ```
-[WP oOS] After setting textContent: {elementTextContent: "text here", ...}
+[NV oOS] After setting textContent: {elementTextContent: "text here", ...}
 // But inspecting element shows empty: <div class="..."></div>
 ```
 **Problem**: DOM update overridden or text hidden

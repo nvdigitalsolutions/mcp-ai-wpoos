@@ -92,7 +92,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		if ( ! $registry ) {
 			return new WP_Error(
 				'wp_mcp_ai_registry_unavailable',
-				__( 'Tool registry is not available.', 'wp-mcp-ai' ),
+				__( 'Tool registry is not available.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -103,7 +103,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 				'wp_mcp_ai_tool_not_found',
 				sprintf(
 					/* translators: %s: tool slug */
-					__( 'Tool "%s" not found.', 'wp-mcp-ai' ),
+					__( 'Tool "%s" not found.', 'mcp-ai-wpoos' ),
 					$tool_slug
 				),
 				array( 'status' => 404 )
@@ -220,7 +220,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 			if ( ! $registry ) {
 				return new WP_Error(
 					'wp_mcp_ai_registry_unavailable',
-					__( 'Tool registry is not available.', 'wp-mcp-ai' ),
+					__( 'Tool registry is not available.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -242,7 +242,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 			'status'  => 'pending',
 			'message' => sprintf(
 				/* translators: %s: tool name */
-				__( '%s started in background. Use the job_id to check status.', 'wp-mcp-ai' ),
+				__( '%s started in background. Use the job_id to check status.', 'mcp-ai-wpoos' ),
 				$tool_slug
 			),
 		);

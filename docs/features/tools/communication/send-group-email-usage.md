@@ -30,7 +30,7 @@ The `send_group_email` tool enables AI assistants to send email campaigns to mul
 
 ### Admin Settings
 
-Navigate to **Settings → WP oOS** to configure:
+Navigate to **Settings → NV oOS** to configure:
 
 1. **Group Email Capability** (default: `publish_posts`)
    - Controls who can send group emails
@@ -402,7 +402,7 @@ const result = await assistant.callTool('send_group_email', {
   headers: [
     "Reply-To: support@example.com",
     "X-Priority: 1",
-    "X-Mailer: WP oOS AI Assistant"
+    "X-Mailer: NV oOS AI Assistant"
   ]
 });
 ```
@@ -820,4 +820,4 @@ For issues or questions:
 
 ## License
 
-This tool is part of Open Operator System (WP oOS) and is licensed under GPLv3 or later.
+This tool is part of Open Operator System (NV oOS) and is licensed under GPLv3 or later.

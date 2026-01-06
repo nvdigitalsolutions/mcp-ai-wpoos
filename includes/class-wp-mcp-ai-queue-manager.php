@@ -283,7 +283,7 @@ class WP_MCP_AI_Queue_Manager {
 			'status'    => 'queued',
 			'message'   => sprintf(
 				/* translators: %s: tool name */
-				__( 'Tool %s has been queued for execution.', 'wp-mcp-ai' ),
+				__( 'Tool %s has been queued for execution.', 'mcp-ai-wpoos' ),
 				$tool_name
 			),
 		);
@@ -426,7 +426,7 @@ class WP_MCP_AI_Queue_Manager {
 					if ( ! isset( $results[ $call_id ] ) ) {
 						$results[ $call_id ] = array(
 							'error'   => 'timeout',
-							'message' => __( 'Tool execution timed out.', 'wp-mcp-ai' ),
+							'message' => __( 'Tool execution timed out.', 'mcp-ai-wpoos' ),
 						);
 					}
 				}
@@ -500,7 +500,7 @@ class WP_MCP_AI_Queue_Manager {
 		if ( null === $rabbitmq || ! $rabbitmq->is_available() ) {
 			return array(
 				'available' => false,
-				'message'   => __( 'RabbitMQ is not available.', 'wp-mcp-ai' ),
+				'message'   => __( 'RabbitMQ is not available.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -514,7 +514,7 @@ class WP_MCP_AI_Queue_Manager {
 		check_ajax_referer( 'wp_mcp_ai_admin', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		$stats = $this->get_queue_stats();

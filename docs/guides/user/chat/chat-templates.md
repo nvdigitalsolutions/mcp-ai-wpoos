@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS chat interface supports multiple visual templates (layouts) that change the appearance and structure of the chat interface. Templates are purely CSS-driven and do not affect functionality.
+The NV oOS chat interface supports multiple visual templates (layouts) that change the appearance and structure of the chat interface. Templates are purely CSS-driven and do not affect functionality.
 
 ## Available Templates
 
@@ -102,7 +102,7 @@ A ChatGPT-inspired layout with conversation history displayed in a persistent si
 
 ### Block Editor
 
-When using the WP oOS Chat block in the WordPress block editor:
+When using the NV oOS Chat block in the WordPress block editor:
 
 1. Select the Chat block
 2. In the block settings sidebar, locate the "Template" dropdown
@@ -149,7 +149,7 @@ echo do_shortcode( '[mcp_ai_chat assistant="123" template="compact"]' );
 
 ### Custom CSS Variables
 
-All templates respect the existing WP oOS CSS custom properties (CSS variables) for colors and theming:
+All templates respect the existing NV oOS CSS custom properties (CSS variables) for colors and theming:
 
 ```css
 --wp-mcp-ai-color-bubble-user-background

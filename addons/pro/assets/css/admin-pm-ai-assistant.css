@@ -1,0 +1,199 @@
+/**
+ * Project Management AI Assistant Metabox Styles
+ *
+ * Styles for the inline AI assistant chat interface within project/task/event edit screens.
+ *
+ * @package WP_MCP_AI
+ */
+
+/* Assistant Selector */
+.wp-mcp-ai-pm-assistant-selector {
+	margin-bottom: 15px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.wp-mcp-ai-pm-assistant-selector label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 8px;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-pm-assistant-selector select {
+	width: 100%;
+	max-width: 100%;
+}
+
+/* Inline Container */
+.wp-mcp-ai-pm-assistant-inline-container {
+	margin-top: 15px;
+	padding-top: 15px;
+	border-top: 1px solid #dcdcde;
+}
+
+.wp-mcp-ai-pm-assistant-inline-header {
+	margin-bottom: 15px;
+}
+
+.wp-mcp-ai-pm-assistant-inline-header h3 {
+	margin: 0 0 8px 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-pm-assistant-inline-header .description {
+	margin: 0;
+	padding: 10px;
+	background: #f0f6fc;
+	border-left: 3px solid #0073aa;
+	border-radius: 3px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #50575e;
+}
+
+/* Chat Container */
+.wp-mcp-ai-pm-assistant-chat-container {
+	position: relative;
+}
+
+/* Isolated chat form - prevent interaction with page form */
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-isolated-form,
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__form[data-isolated-form] {
+	/* 
+	 * CSS isolation creates a new stacking context (visual separation).
+	 * JavaScript event handlers (stopPropagation) provide actual form isolation.
+	 * This CSS serves as a visual marker and provides additional rendering isolation.
+	 */
+	isolation: isolate;
+}
+
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat {
+	max-width: 100%;
+	margin: 0;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+	padding: 15px;
+}
+
+.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__messages {
+	min-height: 300px;
+	max-height: 400px;
+	overflow-y: auto;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+	padding: 10px;
+	background: #f9f9f9;
+}
+
+/* Error Messages */
+.wp-mcp-ai-pm-assistant-chat-container .notice {
+	margin: 15px 0;
+	padding: 12px;
+}
+
+.wp-mcp-ai-pm-assistant-chat-container .notice p {
+	margin: 0;
+	font-size: 13px;
+}
+
+/* Loading State */
+.wp-mcp-ai-pm-assistant-loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 200px;
+	color: #646970;
+}
+
+.wp-mcp-ai-pm-assistant-loading p {
+	margin: 0;
+	display: flex;
+	align-items: center;
+}
+
+.wp-mcp-ai-pm-assistant-loading .spinner {
+	margin-right: 10px;
+}
+
+/* Responsive adjustments for smaller screens */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat {
+		padding: 12px;
+	}
+
+	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__messages {
+		min-height: 250px;
+		max-height: 300px;
+	}
+
+	.wp-mcp-ai-pm-assistant-inline-header .description {
+		font-size: 14px;
+	}
+}
+
+@media screen and (max-width: 600px) {
+	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat {
+		padding: 10px;
+	}
+
+	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__messages {
+		min-height: 200px;
+		max-height: 250px;
+	}
+}
+
+/* Dark mode support (WordPress 5.7+) */
+@media (prefers-color-scheme: dark) {
+	.wp-mcp-ai-pm-assistant-inline-header .description {
+		background: #1e1e1e;
+		border-left-color: #4f94d4;
+		color: #ddd;
+	}
+
+	.wp-mcp-ai-pm-assistant-inline-header h3 {
+		color: #ddd;
+	}
+
+	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat {
+		background: #1e1e1e;
+		border-color: #3c3c3c;
+	}
+
+	.wp-mcp-ai-pm-assistant-chat-container .wp-mcp-ai-chat__messages {
+		background: #2c2c2c;
+		border-color: #3c3c3c;
+	}
+}
+
+/* Integration with WordPress admin color schemes */
+body.admin-color-light .wp-mcp-ai-pm-assistant-inline-header .description {
+	border-left-color: #04a4cc;
+}
+
+body.admin-color-blue .wp-mcp-ai-pm-assistant-inline-header .description {
+	border-left-color: #096484;
+}
+
+body.admin-color-coffee .wp-mcp-ai-pm-assistant-inline-header .description {
+	border-left-color: #c7a589;
+}
+
+body.admin-color-ectoplasm .wp-mcp-ai-pm-assistant-inline-header .description {
+	border-left-color: #a3b745;
+}
+
+body.admin-color-midnight .wp-mcp-ai-pm-assistant-inline-header .description {
+	border-left-color: #e14d43;
+}
+
+body.admin-color-ocean .wp-mcp-ai-pm-assistant-inline-header .description {
+	border-left-color: #9ebaa0;
+}
+
+body.admin-color-sunrise .wp-mcp-ai-pm-assistant-inline-header .description {
+	border-left-color: #dd823b;
+}

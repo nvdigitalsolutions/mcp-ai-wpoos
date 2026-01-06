@@ -57,7 +57,7 @@
 			const forceSync = $row.find('.wp-mcp-ai-force-sync-checkbox').is(':checked');
 			
 			// Disable button and show loading state
-			$button.prop('disabled', true).text(wp.i18n.__('Saving...', 'wp-mcp-ai'));
+			$button.prop('disabled', true).text(wp.i18n.__('Saving...', 'mcp-ai-wpoos'));
 			
 			// Send AJAX request
 			$.ajax({
@@ -73,7 +73,7 @@
 				success: function(response) {
 					if (response.success) {
 						// Show success message
-						showNotice('success', response.data.message || wp.i18n.__('Tool settings saved successfully.', 'wp-mcp-ai'));
+						showNotice('success', response.data.message || wp.i18n.__('Tool settings saved successfully.', 'mcp-ai-wpoos'));
 						
 						// Reload page to show updated settings
 						setTimeout(function() {
@@ -81,13 +81,13 @@
 						}, 500);
 					} else {
 						// Show error message
-						showNotice('error', response.data.message || wp.i18n.__('Failed to save tool settings.', 'wp-mcp-ai'));
-						$button.prop('disabled', false).text(wp.i18n.__('Save', 'wp-mcp-ai'));
+						showNotice('error', response.data.message || wp.i18n.__('Failed to save tool settings.', 'mcp-ai-wpoos'));
+						$button.prop('disabled', false).text(wp.i18n.__('Save', 'mcp-ai-wpoos'));
 					}
 				},
 				error: function(xhr, status, error) {
-					showNotice('error', wp.i18n.__('An error occurred while saving tool settings.', 'wp-mcp-ai'));
-					$button.prop('disabled', false).text(wp.i18n.__('Save', 'wp-mcp-ai'));
+					showNotice('error', wp.i18n.__('An error occurred while saving tool settings.', 'mcp-ai-wpoos'));
+					$button.prop('disabled', false).text(wp.i18n.__('Save', 'mcp-ai-wpoos'));
 				}
 			});
 		});
@@ -98,12 +98,12 @@
 			const toolSlug = $(this).data('tool-slug');
 			const $button = $(this);
 			
-			if (!confirm(wp.i18n.__('Are you sure you want to reset this tool to default settings? This will remove all custom capability flags and force-sync settings.', 'wp-mcp-ai'))) {
+			if (!confirm(wp.i18n.__('Are you sure you want to reset this tool to default settings? This will remove all custom capability flags and force-sync settings.', 'mcp-ai-wpoos'))) {
 				return;
 			}
 			
 			// Disable button and show loading state
-			$button.prop('disabled', true).text(wp.i18n.__('Resetting...', 'wp-mcp-ai'));
+			$button.prop('disabled', true).text(wp.i18n.__('Resetting...', 'mcp-ai-wpoos'));
 			
 			// Send AJAX request with empty flags to reset
 			$.ajax({
@@ -119,7 +119,7 @@
 				success: function(response) {
 					if (response.success) {
 						// Show success message
-						showNotice('success', wp.i18n.__('Tool reset to default settings.', 'wp-mcp-ai'));
+						showNotice('success', wp.i18n.__('Tool reset to default settings.', 'mcp-ai-wpoos'));
 						
 						// Reload page to show updated settings
 						setTimeout(function() {
@@ -127,13 +127,13 @@
 						}, 500);
 					} else {
 						// Show error message
-						showNotice('error', response.data.message || wp.i18n.__('Failed to reset tool settings.', 'wp-mcp-ai'));
-						$button.prop('disabled', false).text(wp.i18n.__('Reset to Default', 'wp-mcp-ai'));
+						showNotice('error', response.data.message || wp.i18n.__('Failed to reset tool settings.', 'mcp-ai-wpoos'));
+						$button.prop('disabled', false).text(wp.i18n.__('Reset to Default', 'mcp-ai-wpoos'));
 					}
 				},
 				error: function(xhr, status, error) {
-					showNotice('error', wp.i18n.__('An error occurred while resetting tool settings.', 'wp-mcp-ai'));
-					$button.prop('disabled', false).text(wp.i18n.__('Reset to Default', 'wp-mcp-ai'));
+					showNotice('error', wp.i18n.__('An error occurred while resetting tool settings.', 'mcp-ai-wpoos'));
+					$button.prop('disabled', false).text(wp.i18n.__('Reset to Default', 'mcp-ai-wpoos'));
 				}
 			});
 		});

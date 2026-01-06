@@ -76,7 +76,7 @@ $results = WP_MCP_AI_Tool_Token_Limits::bulk_set_user_tiers(
 );
 
 // Via Admin UI (planned)
-// Navigate to: WP oOS → Token Manager → Bulk Actions
+// Navigate to: NV oOS → Token Manager → Bulk Actions
 ```
 
 #### Export Usage Reports
@@ -307,5 +307,5 @@ if ( WP_MCP_AI_Tool_Token_Limits::detect_usage_anomaly( $user_id, 'tool_slug', $
 ---
 
 **Quick Reference Version:** 1.0  
-**Compatible With:** WP oOS v1.1.0+  
+**Compatible With:** NV oOS v1.1.0+  
 **Last Updated:** 2025-11-11

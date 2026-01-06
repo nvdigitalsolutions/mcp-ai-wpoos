@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Check user permissions.
 if ( ! current_user_can( 'edit_posts' ) ) {
 	echo '<div class="wp-block-wp-mcp-ai-assistant-builder__notice">';
-	echo '<p>' . esc_html__( 'You do not have permission to use the Assistant Builder.', 'wp-mcp-ai' ) . '</p>';
+	echo '<p>' . esc_html__( 'You do not have permission to use the Assistant Builder.', 'mcp-ai-wpoos' ) . '</p>';
 	echo '</div>';
 	return;
 }
@@ -29,7 +29,7 @@ $show_tool_descriptions  = isset( $attributes['showToolDescriptions'] ) ? $attri
 $enable_streaming        = isset( $attributes['enableStreaming'] ) ? $attributes['enableStreaming'] : true;
 $chat_placeholder        = isset( $attributes['chatPlaceholder'] ) && '' !== $attributes['chatPlaceholder']
 	? $attributes['chatPlaceholder']
-	: __( 'Describe the assistant you want to create...', 'wp-mcp-ai' );
+	: __( 'Describe the assistant you want to create...', 'mcp-ai-wpoos' );
 $allowed_file_types      = isset( $attributes['allowedFileTypes'] ) ? $attributes['allowedFileTypes'] : '.pdf,.txt,.md,.doc,.docx,.csv,.json';
 $max_files               = isset( $attributes['maxFiles'] ) ? absint( $attributes['maxFiles'] ) : 10;
 $max_file_size_mb        = isset( $attributes['maxFileSizeMB'] ) ? absint( $attributes['maxFileSizeMB'] ) : 10;
@@ -123,10 +123,10 @@ $config = array(
 		?>
 		<div class="wp-block-wp-mcp-ai-assistant-selector" data-block-id="<?php echo esc_attr( $unique_id ); ?>-selector">
 			<label for="<?php echo esc_attr( $unique_id ); ?>-select">
-				<?php esc_html_e( 'Select an Assistant:', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Select an Assistant:', 'mcp-ai-wpoos' ); ?>
 			</label>
 			<select id="<?php echo esc_attr( $unique_id ); ?>-select" class="wp-mcp-ai-assistant-selector__select">
-				<option value=""><?php esc_html_e( '— Select an assistant —', 'wp-mcp-ai' ); ?></option>
+				<option value=""><?php esc_html_e( '— Select an assistant —', 'mcp-ai-wpoos' ); ?></option>
 				<?php foreach ( $assistants as $assistant ) : ?>
 					<option 
 						value="<?php echo esc_attr( $assistant['id'] ); ?>"
@@ -139,7 +139,7 @@ $config = array(
 				<?php endforeach; ?>
 			</select>
 			<button type="button" class="wp-mcp-ai-assistant-selector__start button button-primary" disabled>
-				<?php esc_html_e( 'Start Chat', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Start Chat', 'mcp-ai-wpoos' ); ?>
 			</button>
 		</div>
 	<?php endif; ?>

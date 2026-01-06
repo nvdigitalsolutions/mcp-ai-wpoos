@@ -7,7 +7,7 @@
 
 ## Overview
 
-This document describes the Chart.js integration added to WP oOS as preparation for Phase 3 of the Token Manager Enhancement Plan. Chart.js provides the visualization foundation for implementing token usage analytics, tier distribution charts, and usage forecasting displays.
+This document describes the Chart.js integration added to NV oOS as preparation for Phase 3 of the Token Manager Enhancement Plan. Chart.js provides the visualization foundation for implementing token usage analytics, tier distribution charts, and usage forecasting displays.
 
 ## Purpose
 
@@ -160,7 +160,7 @@ wp_enqueue_script(
 
 Chart.js only loads when:
 - User is on admin page (`is_admin()`)
-- Page is WP oOS settings page
+- Page is NV oOS settings page
 - Tab is `token_manager` OR no tab specified (general settings)
 
 This prevents unnecessary script loading on other admin pages.
@@ -286,7 +286,7 @@ Create `assets/css/token-manager-charts.css`:
    - No PHP errors on plugin activation
 
 3. **Check Admin Enqueue:**
-   - Navigate to WP oOS → Token Manager
+   - Navigate to NV oOS → Token Manager
    - Inspect page source
    - Verify Chart.js script tag exists
 
@@ -427,11 +427,11 @@ Planned for future phases:
 ## License
 
 - **Chart.js:** MIT License
-- **WP oOS Integration:** GPLv3 or later
+- **NV oOS Integration:** GPLv3 or later
 
 ---
 
 **Document Version:** 1.0  
 **Last Updated:** 2025-11-11  
-**Maintainer:** WP oOS Development Team  
+**Maintainer:** NV oOS Development Team  
 **Status:** Phase 3 Preparation Complete

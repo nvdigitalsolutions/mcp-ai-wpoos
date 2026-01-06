@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Recent Posts', 'wp-mcp-ai' );
+		return __( 'Get Recent Posts', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns the most recent published posts, including titles and permalinks.', 'wp-mcp-ai' );
+		return __( 'Returns the most recent published posts, including titles and permalinks.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -43,14 +43,14 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'limit'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of posts to return.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of posts to return.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 5,
 				),
 				'post_type' => array(
 					'type'        => 'string',
-					'description' => __( 'The post type to query.', 'wp-mcp-ai' ),
+					'description' => __( 'The post type to query.', 'mcp-ai-wpoos' ),
 					'default'     => 'post',
 				),
 			),
@@ -69,11 +69,11 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view recent posts.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view recent posts.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$limit     = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'summary' => sprintf(
 				/* translators: 1: number of posts, 2: post type */
-				__( 'Found %1$d recent %2$s', 'wp-mcp-ai' ),
+				__( 'Found %1$d recent %2$s', 'mcp-ai-wpoos' ),
 				count( $results ),
 				$post_type
 			),

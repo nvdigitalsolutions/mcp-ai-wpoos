@@ -38,6 +38,7 @@ General problems:
 - [WP Language Directory Fix](common/WP_LANG_DIR_FIX.md)
 - [Build Artifacts Clarification](common/BUILD-ARTIFACTS-CLARIFICATION.md)
 - [Repository Rename Guide](common/REPOSITORY_RENAME_GUIDE.md)
+- [PM Assistant Debug Guide](PM_ASSISTANT_DEBUG_GUIDE.md) - Project Management Assistant debugging
 
 ## 🔗 Related Documentation
 - [Getting Started](../getting-started/)

@@ -1,10 +1,10 @@
-# Quick Start: Connect Claude Desktop to WordPress WP oOS
+# Quick Start: Connect Claude Desktop to WordPress NV oOS
 
-Get your WordPress WP oOS server connected to Claude Desktop in 5 minutes.
+Get your WordPress NV oOS server connected to Claude Desktop in 5 minutes.
 
 ## Prerequisites
 
-- WordPress site with WP oOS plugin installed and activated
+- WordPress site with NV oOS plugin installed and activated
 - At least one published AI Assistant
 - Claude Desktop installed on your computer
 
@@ -86,7 +86,7 @@ If connected successfully, Claude will:
 ### "Assistant not responding"
 
 **Fix**: Check your WordPress
-- Visit **Settings → WP oOS** in WordPress
+- Visit **Settings → NV oOS** in WordPress
 - Verify OpenAI API key is configured
 - Ensure the assistant is published (not draft)
 

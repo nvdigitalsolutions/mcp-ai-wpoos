@@ -1,6 +1,6 @@
 # Multisite Support
 
-WP oOS fully supports WordPress multisite installations as of version 1.0.0.
+NV oOS fully supports WordPress multisite installations as of version 1.0.0.
 
 ## Features
 
@@ -31,14 +31,14 @@ WP oOS fully supports WordPress multisite installations as of version 1.0.0.
 ### Network Activation
 1. Upload the plugin to `/wp-content/plugins/` directory
 2. Go to Network Admin > Plugins
-3. Click "Network Activate" for WP oOS
-4. Configure settings on each site individually via Settings > WP oOS
+3. Click "Network Activate" for NV oOS
+4. Configure settings on each site individually via Settings > NV oOS
 
 ### Individual Site Activation
 1. Upload the plugin to `/wp-content/plugins/` directory
 2. Go to the individual site's Admin > Plugins
-3. Click "Activate" for WP oOS
-4. Configure settings via Settings > WP oOS
+3. Click "Activate" for NV oOS
+4. Configure settings via Settings > NV oOS
 
 ## Technical Implementation
 

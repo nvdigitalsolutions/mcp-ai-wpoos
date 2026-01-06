@@ -412,12 +412,12 @@ class WP_MCP_AI_Orchestration_Health_Service {
 					'severity'   => $projected_usage > 85 ? 'critical' : 'warning',
 					'message'    => sprintf(
 						/* translators: 1: Projected memory percentage, 2: Hours ahead */
-						__( 'Memory usage trending upward. Projected to reach %1$d%% in %2$d hours.', 'wp-mcp-ai' ),
+						__( 'Memory usage trending upward. Projected to reach %1$d%% in %2$d hours.', 'mcp-ai-wpoos' ),
 						round( $projected_usage ),
 						3
 					),
 					'confidence' => round( $confidence ),
-					'action'     => __( 'Consider increasing PHP memory limit or reducing concurrent operations.', 'wp-mcp-ai' ),
+					'action'     => __( 'Consider increasing PHP memory limit or reducing concurrent operations.', 'mcp-ai-wpoos' ),
 				);
 			}
 		}
@@ -482,11 +482,11 @@ class WP_MCP_AI_Orchestration_Health_Service {
 					'severity'   => 'critical',
 					'message'    => sprintf(
 						/* translators: %d: Projected error count */
-						__( 'Error rate increasing. Projected %d errors in next hour.', 'wp-mcp-ai' ),
+						__( 'Error rate increasing. Projected %d errors in next hour.', 'mcp-ai-wpoos' ),
 						round( $projected_errors )
 					),
 					'confidence' => round( $confidence ),
-					'action'     => __( 'Review recent error logs and consider temporarily reducing load.', 'wp-mcp-ai' ),
+					'action'     => __( 'Review recent error logs and consider temporarily reducing load.', 'mcp-ai-wpoos' ),
 				);
 			}
 		}
@@ -542,12 +542,12 @@ class WP_MCP_AI_Orchestration_Health_Service {
 				'severity'   => $degradation_pct > 50 ? 'warning' : 'info',
 				'message'    => sprintf(
 					/* translators: 1: Percentage degradation, 2: Average response time */
-					__( 'Response times degrading by %1$d%%. Current average: %2$.2fs.', 'wp-mcp-ai' ),
+					__( 'Response times degrading by %1$d%%. Current average: %2$.2fs.', 'mcp-ai-wpoos' ),
 					round( $degradation_pct ),
 					$recent_avg
 				),
 				'confidence' => round( $confidence ),
-				'action'     => __( 'Check system resources and consider optimizing slow operations.', 'wp-mcp-ai' ),
+				'action'     => __( 'Check system resources and consider optimizing slow operations.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -588,11 +588,11 @@ class WP_MCP_AI_Orchestration_Health_Service {
 				'severity'   => 'warning',
 				'message'    => sprintf(
 					/* translators: %d: Number of stress indicators */
-					__( 'System showing %d stress indicators. Performance may degrade soon.', 'wp-mcp-ai' ),
+					__( 'System showing %d stress indicators. Performance may degrade soon.', 'mcp-ai-wpoos' ),
 					$stress_indicators
 				),
 				'confidence' => 75,
-				'action'     => __( 'Consider reducing concurrent operations or increasing system resources.', 'wp-mcp-ai' ),
+				'action'     => __( 'Consider reducing concurrent operations or increasing system resources.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -715,10 +715,10 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 */
 	private static function get_translated_label( $level ) {
 		$labels = array(
-			'critical' => __( 'Critical', 'wp-mcp-ai' ),
-			'warning'  => __( 'Warning', 'wp-mcp-ai' ),
-			'healthy'  => __( 'Healthy', 'wp-mcp-ai' ),
-			'unknown'  => __( 'Unknown', 'wp-mcp-ai' ),
+			'critical' => __( 'Critical', 'mcp-ai-wpoos' ),
+			'warning'  => __( 'Warning', 'mcp-ai-wpoos' ),
+			'healthy'  => __( 'Healthy', 'mcp-ai-wpoos' ),
+			'unknown'  => __( 'Unknown', 'mcp-ai-wpoos' ),
 		);
 
 		return isset( $labels[ $level ] ) ? $labels[ $level ] : $labels['unknown'];

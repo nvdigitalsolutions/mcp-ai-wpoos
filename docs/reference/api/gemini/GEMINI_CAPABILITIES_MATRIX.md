@@ -6,13 +6,13 @@
 
 ## Quick Reference: What's Implemented vs. Available
 
-This document provides a quick reference matrix of Gemini API capabilities and their implementation status in WP oOS.
+This document provides a quick reference matrix of Gemini API capabilities and their implementation status in NV oOS.
 
 ---
 
 ## API Endpoints
 
-| Endpoint | Gemini API | WP oOS Status | Class/Method | Notes |
+| Endpoint | Gemini API | NV oOS Status | Class/Method | Notes |
 |----------|------------|---------------|--------------|-------|
 | **Chat & Generation** |
 | generateContent | ✅ Available | ✅ Implemented | `WP_MCP_AI_Gemini_Client::create_chat_completion()` | Full support |
@@ -47,7 +47,7 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 
 ## Generation Features
 
-| Feature | Gemini API | WP oOS Status | Implementation Location | Notes |
+| Feature | Gemini API | NV oOS Status | Implementation Location | Notes |
 |---------|------------|---------------|------------------------|-------|
 | **Content Types** |
 | Text generation | ✅ Available | ✅ Implemented | `create_chat_completion()` | Full support |
@@ -123,7 +123,7 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 
 ## Models Support
 
-| Model Family | Purpose | WP oOS Support | Notes |
+| Model Family | Purpose | NV oOS Support | Notes |
 |-------------|---------|----------------|-------|
 | **Gemini 2.0 Flash** | Fast, efficient, multimodal | ✅ Supported | Latest model |
 | Gemini 2.0 Flash Thinking | Reasoning & problem-solving | ⚠️ Partial | Streaming only |
@@ -188,7 +188,7 @@ This document provides a quick reference matrix of Gemini API capabilities and t
 
 ---
 
-**Maintained by:** WP oOS Development Team  
+**Maintained by:** NV oOS Development Team  
 **Version:** 1.1  
 **Last Updated:** December 21, 2025  
 **Changes in v1.1:**

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document consolidates all commits and changes from the week of December 16-23, 2025, in the WP oOS (Open Operator System) WordPress plugin repository. The primary focus this week was PR #2364: **"Update profession default model from GPT-4 to GPT-4.1 with auto-resync"**, which included significant architectural improvements to professional model handling and extensive codebase organization.
+This document consolidates all commits and changes from the week of December 16-23, 2025, in the NV oOS (Open Operator System) WordPress plugin repository. The primary focus this week was PR #2364: **"Update profession default model from GPT-4 to GPT-4.1 with auto-resync"**, which included significant architectural improvements to professional model handling and extensive codebase organization.
 
 **Commits Reviewed:**
 - **Total Commits:** 2
@@ -1115,7 +1115,7 @@ if ( null !== $value && '' !== $value && false !== $value ) {
 
 ## Conclusion
 
-This week's changes represent a significant milestone in the WP oOS project, with major improvements to profession model architecture, extensive new AI provider integrations, comprehensive bug fixes, and substantial documentation updates.
+This week's changes represent a significant milestone in the NV oOS project, with major improvements to profession model architecture, extensive new AI provider integrations, comprehensive bug fixes, and substantial documentation updates.
 
 **Key Achievements:**
 

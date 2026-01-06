@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Assistant Prompt Shortcuts', 'wp-mcp-ai' );
+		return __( 'NV oOS Assistant Prompt Shortcuts', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,17 +61,17 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Content', 'wp-mcp-ai' ),
+				'label' => __( 'Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Prompt shortcuts', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Prompt shortcuts', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -79,22 +79,22 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		$this->add_control(
 			'assistant_id',
 			array(
-				'label'       => __( 'Assistant', 'wp-mcp-ai' ),
+				'label'       => __( 'Assistant', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $this->get_assistant_options(),
 				'default'     => '',
 				'label_block' => true,
-				'description' => __( 'Choose which assistant to display shortcuts for. Only published assistants appear in this list.', 'wp-mcp-ai' ),
+				'description' => __( 'Choose which assistant to display shortcuts for. Only published assistants appear in this list.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_descriptions',
 			array(
-				'label'        => __( 'Show descriptions', 'wp-mcp-ai' ),
+				'label'        => __( 'Show descriptions', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -103,10 +103,10 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		$this->add_control(
 			'show_prompt_text',
 			array(
-				'label'        => __( 'Show prompt text', 'wp-mcp-ai' ),
+				'label'        => __( 'Show prompt text', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -115,10 +115,10 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		$this->add_control(
 			'show_tool_context',
 			array(
-				'label'        => __( 'Show associated tool', 'wp-mcp-ai' ),
+				'label'        => __( 'Show associated tool', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -127,10 +127,10 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		$this->add_control(
 			'empty_message',
 			array(
-				'label'       => __( 'Empty state message', 'wp-mcp-ai' ),
+				'label'       => __( 'Empty state message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Select an assistant in the widget settings to view its prompt shortcuts.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'wp-mcp-ai' ),
+				'default'     => __( 'Select an assistant in the widget settings to view its prompt shortcuts.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -138,10 +138,10 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		$this->add_control(
 			'no_shortcuts_message',
 			array(
-				'label'       => __( 'No shortcuts message', 'wp-mcp-ai' ),
+				'label'       => __( 'No shortcuts message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'No prompt shortcuts have been saved for this assistant yet.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no shortcuts are available…', 'wp-mcp-ai' ),
+				'default'     => __( 'No prompt shortcuts have been saved for this assistant yet.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no shortcuts are available…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -244,7 +244,7 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 				$tool_label = $this->format_tool_label( $tool, $tool_names );
 
 				if ( '' !== $tool_label ) {
-					echo '<span class="wp-mcp-ai-assistant-prompt-shortcuts__tool">' . esc_html__( 'Tool:', 'wp-mcp-ai' ) . ' ' . esc_html( $tool_label ) . '</span>';
+					echo '<span class="wp-mcp-ai-assistant-prompt-shortcuts__tool">' . esc_html__( 'Tool:', 'mcp-ai-wpoos' ) . ' ' . esc_html( $tool_label ) . '</span>';
 				}
 			}
 
@@ -299,7 +299,7 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 	 * @return array
 	 */
 	protected function get_assistant_options() {
-		$options = array( '' => __( 'Select an assistant', 'wp-mcp-ai' ) );
+		$options = array( '' => __( 'Select an assistant', 'mcp-ai-wpoos' ) );
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			return $options;

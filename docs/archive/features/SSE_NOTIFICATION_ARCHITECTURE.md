@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes how Server-Sent Events (SSE) are used to provide real-time notifications during both synchronous and asynchronous tool execution in the WP oOS plugin.
+This document describes how Server-Sent Events (SSE) are used to provide real-time notifications during both synchronous and asynchronous tool execution in the NV oOS plugin.
 
 ## Two-Stream Architecture
 

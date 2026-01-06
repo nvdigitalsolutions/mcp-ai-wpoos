@@ -29,9 +29,9 @@ class WP_MCP_AI_Profession_Search_Helper {
 	public static function render_search_field( $args = array() ) {
 		$defaults = array(
 			'id'          => 'wp-mcp-ai-profession-search',
-			'placeholder' => __( 'Search professions...', 'wp-mcp-ai' ),
-			'aria_label'  => __( 'Search professions', 'wp-mcp-ai' ),
-			'help_text'   => __( 'Type to filter the profession list below', 'wp-mcp-ai' ),
+			'placeholder' => __( 'Search professions...', 'mcp-ai-wpoos' ),
+			'aria_label'  => __( 'Search professions', 'mcp-ai-wpoos' ),
+			'help_text'   => __( 'Type to filter the profession list below', 'mcp-ai-wpoos' ),
 			'class'       => 'regular-text',
 		);
 
@@ -169,11 +169,11 @@ class WP_MCP_AI_Profession_Search_Helper {
 				if ( searchTerm === '' ) {
 					resultsDiv.textContent = '';
 				} else if ( visibleCount === 0 ) {
-					resultsDiv.textContent = '<?php esc_html_e( 'No professions found matching your search.', 'wp-mcp-ai' ); ?>';
+					resultsDiv.textContent = '<?php esc_html_e( 'No professions found matching your search.', 'mcp-ai-wpoos' ); ?>';
 				} else if ( visibleCount === 1 ) {
-					resultsDiv.textContent = '<?php esc_html_e( '1 profession found.', 'wp-mcp-ai' ); ?>';
+					resultsDiv.textContent = '<?php esc_html_e( '1 profession found.', 'mcp-ai-wpoos' ); ?>';
 				} else {
-					resultsDiv.textContent = visibleCount + ' <?php esc_html_e( 'professions found.', 'wp-mcp-ai' ); ?>';
+					resultsDiv.textContent = visibleCount + ' <?php esc_html_e( 'professions found.', 'mcp-ai-wpoos' ); ?>';
 				}
 			}
 		} )();

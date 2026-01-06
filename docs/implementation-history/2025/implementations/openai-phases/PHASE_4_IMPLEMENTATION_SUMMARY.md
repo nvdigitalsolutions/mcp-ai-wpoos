@@ -245,7 +245,7 @@ Code follows WordPress Coding Standards:
 
 #### Activity Logging
 - OpenAI API calls logged for analytics
-- Usage tracking integrated with WP oOS logger
+- Usage tracking integrated with NV oOS logger
 - Token usage recorded for cost calculation
 
 ### Next Steps

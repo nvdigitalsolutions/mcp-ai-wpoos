@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_List_Available_Models implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List Available Models', 'wp-mcp-ai' );
+		return __( 'List Available Models', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists all OpenAI models available to the configured API key. Use this to discover new models, check model availability, compare model capabilities, or perform dynamic model selection based on task requirements.', 'wp-mcp-ai' );
+		return __( 'Lists all OpenAI models available to the configured API key. Use this to discover new models, check model availability, compare model capabilities, or perform dynamic model selection based on task requirements.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -44,11 +44,11 @@ class WP_MCP_AI_Tool_List_Available_Models implements WP_MCP_AI_Tool_Interface, 
 				'filter_by_capability' => array(
 					'type'        => 'string',
 					'enum'        => array( 'chat', 'embeddings', 'images', 'audio', 'moderation' ),
-					'description' => __( 'Filter models by capability type.', 'wp-mcp-ai' ),
+					'description' => __( 'Filter models by capability type.', 'mcp-ai-wpoos' ),
 				),
 				'include_deprecated'   => array(
 					'type'        => 'boolean',
-					'description' => __( 'Include deprecated models in the results.', 'wp-mcp-ai' ),
+					'description' => __( 'Include deprecated models in the results.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 			),
@@ -70,12 +70,12 @@ class WP_MCP_AI_Tool_List_Available_Models implements WP_MCP_AI_Tool_Interface, 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to list available models.', 'wp-mcp-ai' )
+				__( 'You do not have permission to list available models.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 		// Call OpenAI API.
 		$client = new WP_MCP_AI_OpenAI_Client();
@@ -128,7 +128,7 @@ class WP_MCP_AI_Tool_List_Available_Models implements WP_MCP_AI_Tool_Interface, 
 			'total_count' => count( $models ),
 			'summary'     => sprintf(
 				/* translators: %d: number of models */
-				__( 'Found %d available OpenAI models.', 'wp-mcp-ai' ),
+				__( 'Found %d available OpenAI models.', 'mcp-ai-wpoos' ),
 				count( $models )
 			),
 		);

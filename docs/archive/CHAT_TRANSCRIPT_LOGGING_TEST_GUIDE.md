@@ -4,7 +4,7 @@ This guide provides step-by-step instructions to manually test and verify that s
 
 ## How localStorage and CCT Work Together
 
-The WP oOS system uses **two storage mechanisms** that work in parallel:
+The NV oOS system uses **two storage mechanisms** that work in parallel:
 
 ### 1. localStorage (Browser Storage)
 - **Purpose**: Quick, temporary storage for conversation continuity within a browser
@@ -41,11 +41,11 @@ The WP oOS system uses **two storage mechanisms** that work in parallel:
 - ✅ Save to localStorage operations now logged
 - ✅ Load from localStorage operations now logged  
 - ✅ Clear localStorage operations now logged
-- ✅ All localStorage operations use the `[WP oOS]` prefix for consistency
+- ✅ All localStorage operations use the `[NV oOS]` prefix for consistency
 
 ## Prerequisites
 
-1. WordPress site with WP oOS plugin installed
+1. WordPress site with NV oOS plugin installed
 2. At least one assistant configured
 3. Browser with DevTools (Chrome, Firefox, Edge, Safari)
 4. Access to server logs or WP-CLI
@@ -55,7 +55,7 @@ The WP oOS system uses **two storage mechanisms** that work in parallel:
 ### 1. Enable Logging
 
 **Method A: Via WordPress Admin**
-1. Navigate to **Settings → WP oOS**
+1. Navigate to **Settings → NV oOS**
 2. Find the **Enable Logging** option
 3. Check the box to enable it
 4. Click **Save Changes**
@@ -96,25 +96,25 @@ wp option delete wp_mcp_ai_recent_activity
 
 **Client-Side (Browser Console):**
 ```javascript
-[WP oOS] Saving conversation to localStorage: {
+[NV oOS] Saving conversation to localStorage: {
     assistant_id: 372,
     session_key: "d28ff0cd-0d82-4d6d-b733-cc318b71ac9a",
     message_count: 2,
     storage_key: "wp_mcp_ai_chat_372"
 }
 
-[WP oOS] Conversation saved successfully to localStorage
+[NV oOS] Conversation saved successfully to localStorage
 ```
 
 **If Quota Exceeded (after cleanup):**
 ```javascript
-[WP oOS] Retrying localStorage save after cleanup (cleaned 3 entries)
-[WP oOS] Conversation saved successfully to localStorage after cleanup
+[NV oOS] Retrying localStorage save after cleanup (cleaned 3 entries)
+[NV oOS] Conversation saved successfully to localStorage after cleanup
 ```
 
 **If Save Fails:**
 ```javascript
-[WP oOS] Error saving conversation to localStorage: QuotaExceededError
+[NV oOS] Error saving conversation to localStorage: QuotaExceededError
 ```
 
 ---
@@ -135,12 +135,12 @@ wp option delete wp_mcp_ai_recent_activity
 
 **Client-Side (Browser Console) - Success:**
 ```javascript
-[WP oOS] Loading conversation from localStorage: {
+[NV oOS] Loading conversation from localStorage: {
     assistant_id: 372,
     storage_key: "wp_mcp_ai_chat_372"
 }
 
-[WP oOS] Conversation loaded successfully from localStorage: {
+[NV oOS] Conversation loaded successfully from localStorage: {
     session_key: "d28ff0cd-0d82-4d6d-b733-cc318b71ac9a",
     message_count: 2,
     age_minutes: 5
@@ -149,27 +149,27 @@ wp option delete wp_mcp_ai_recent_activity
 
 **If No Data Found:**
 ```javascript
-[WP oOS] Loading conversation from localStorage: {
+[NV oOS] Loading conversation from localStorage: {
     assistant_id: 372,
     storage_key: "wp_mcp_ai_chat_372"
 }
 
-[WP oOS] No conversation found in localStorage
+[NV oOS] No conversation found in localStorage
 ```
 
 **If Data Expired:**
 ```javascript
-[WP oOS] Conversation expired in localStorage (age: 1450 minutes)
+[NV oOS] Conversation expired in localStorage (age: 1450 minutes)
 ```
 
 **If Data Invalid:**
 ```javascript
-[WP oOS] Invalid conversation data in localStorage
+[NV oOS] Invalid conversation data in localStorage
 ```
 
 **If Parse Error:**
 ```javascript
-[WP oOS] Error loading conversation from localStorage: SyntaxError
+[NV oOS] Error loading conversation from localStorage: SyntaxError
 ```
 
 ---
@@ -191,23 +191,23 @@ wp option delete wp_mcp_ai_recent_activity
 
 **Client-Side (Browser Console):**
 ```javascript
-[WP oOS] Clearing conversation: {
+[NV oOS] Clearing conversation: {
     session_key: "d28ff0cd-0d82-4d6d-b733-cc318b71ac9a",
     message_count: 2
 }
 
-[WP oOS] Clearing conversation from localStorage: {
+[NV oOS] Clearing conversation from localStorage: {
     assistant_id: 372,
     session_key: "d28ff0cd-0d82-4d6d-b733-cc318b71ac9a",
     storage_key: "wp_mcp_ai_chat_372"
 }
 
-[WP oOS] Conversation cleared successfully from localStorage
+[NV oOS] Conversation cleared successfully from localStorage
 ```
 
 **If Error:**
 ```javascript
-[WP oOS] Error clearing conversation from localStorage: DOMException
+[NV oOS] Error clearing conversation from localStorage: DOMException
 ```
 
 ---
@@ -253,25 +253,25 @@ wp option delete wp_mcp_ai_recent_activity
 **Client-Side (Browser Console):**
 ```javascript
 // First, localStorage save happens automatically
-[WP oOS] Saving conversation to localStorage: {...}
-[WP oOS] Conversation saved successfully to localStorage
+[NV oOS] Saving conversation to localStorage: {...}
+[NV oOS] Conversation saved successfully to localStorage
 
 // Then, CCT save happens when you click Save button
-[WP oOS] Saving conversation to CCT: {
+[NV oOS] Saving conversation to CCT: {
     session_key: "d28ff0cd-0d82-4d6d-b733-cc318b71ac9a",
     assistant_id: 372,
     message_count: 2,
     attempt: 1
 }
 
-[WP oOS] Conversation saved successfully to CCT
+[NV oOS] Conversation saved successfully to CCT
 ```
 
 **Server-Side (PHP Error Log):**
 ```
-[WP oOS] DEBUG: handle_chat_transcript_save: Saving transcript {"session_key":"d28ff0cd-...","assistant_id":372,"user_id":1,"message_count":2,"source":"chat_client"}
+[NV oOS] DEBUG: handle_chat_transcript_save: Saving transcript {"session_key":"d28ff0cd-...","assistant_id":372,"user_id":1,"message_count":2,"source":"chat_client"}
 
-[WP oOS] INFO: handle_chat_transcript_save: Transcript saved successfully {"session_key":"d28ff0cd-...","assistant_id":372,"user_id":1,"message_count":2}
+[NV oOS] INFO: handle_chat_transcript_save: Transcript saved successfully {"session_key":"d28ff0cd-...","assistant_id":372,"user_id":1,"message_count":2}
 ```
 
 ### Verification Commands
@@ -283,7 +283,7 @@ wp option get wp_mcp_ai_recent_activity --format=json | jq '.'
 
 **Check PHP Error Log:**
 ```bash
-tail -f /var/log/php-error.log | grep "WP oOS"
+tail -f /var/log/php-error.log | grep "NV oOS"
 ```
 
 Or find your PHP error log location:
@@ -310,7 +310,7 @@ php -i | grep error_log
 
 **Client-Side (Browser Console):**
 ```javascript
-[WP oOS] Loading conversation history: {
+[NV oOS] Loading conversation history: {
     user_id: 1,
     per_page: 20,
     endpoint: "https://example.com/wp-json/mcp-ai/v1/chat-transcripts"
@@ -319,7 +319,7 @@ php -i | grep error_log
 
 **Server-Side (PHP Error Log):**
 ```
-[WP oOS] DEBUG: handle_chat_transcripts: Request parameters {"raw_session_key":"","normalized_session_key":"","user_id":1,"assistant_id":372}
+[NV oOS] DEBUG: handle_chat_transcripts: Request parameters {"raw_session_key":"","normalized_session_key":"","user_id":1,"assistant_id":372}
 ```
 
 ## Test 5: Load Conversation History Logging
@@ -338,14 +338,14 @@ php -i | grep error_log
 
 **Client-Side (Browser Console):**
 ```javascript
-[WP oOS] Loading conversation details: {
+[NV oOS] Loading conversation details: {
     session_key: "d28ff0cd-0d82-4d6d-b733-cc318b71ac9a"
 }
 ```
 
 **Server-Side (PHP Error Log):**
 ```
-[WP oOS] DEBUG: handle_chat_transcripts: Request parameters {"raw_session_key":"d28ff0cd-...","normalized_session_key":"d28ff0cd-...","user_id":1,"assistant_id":372}
+[NV oOS] DEBUG: handle_chat_transcripts: Request parameters {"raw_session_key":"d28ff0cd-...","normalized_session_key":"d28ff0cd-...","user_id":1,"assistant_id":372}
 ```
 
 ## Test 6: Load Specific Conversation Logging
@@ -365,7 +365,7 @@ php -i | grep error_log
 
 **Client-Side (Browser Console):**
 ```javascript
-[WP oOS] Clearing conversation: {
+[NV oOS] Clearing conversation: {
     session_key: "d28ff0cd-0d82-4d6d-b733-cc318b71ac9a",
     message_count: 2
 }
@@ -389,20 +389,20 @@ php -i | grep error_log
 
 **Client-Side (Browser Console):**
 ```javascript
-[WP oOS] Deleting conversation: {
+[NV oOS] Deleting conversation: {
     session_key: "d28ff0cd-0d82-4d6d-b733-cc318b71ac9a"
 }
 
-[WP oOS] Conversation deleted successfully: {
+[NV oOS] Conversation deleted successfully: {
     session_key: "d28ff0cd-0d82-4d6d-b733-cc318b71ac9a"
 }
 ```
 
 **Server-Side (PHP Error Log):**
 ```
-[WP oOS] DEBUG: handle_chat_transcript_delete: Deleting transcript {"session_key":"d28ff0cd-...","user_id":1,"source":"chat_client"}
+[NV oOS] DEBUG: handle_chat_transcript_delete: Deleting transcript {"session_key":"d28ff0cd-...","user_id":1,"source":"chat_client"}
 
-[WP oOS] INFO: handle_chat_transcript_delete: Transcript deleted successfully {"session_key":"d28ff0cd-...","user_id":1,"deleted_rows":3}
+[NV oOS] INFO: handle_chat_transcript_delete: Transcript deleted successfully {"session_key":"d28ff0cd-...","user_id":1,"deleted_rows":3}
 ```
 
 ## Test 8: Delete Failure Logging
@@ -421,7 +421,7 @@ This test requires special setup to simulate a failure.
 
 **Server-Side (PHP Error Log):**
 ```
-[WP oOS] ERROR: handle_chat_transcript_delete: Failed to delete transcript {"session_key":"d28ff0cd-...","user_id":1}
+[NV oOS] ERROR: handle_chat_transcript_delete: Failed to delete transcript {"session_key":"d28ff0cd-...","user_id":1}
 ```
 
 ## Test 9: Logging Disabled Test
@@ -429,7 +429,7 @@ This test requires special setup to simulate a failure.
 ### Test Steps
 
 1. **Disable Logging**
-   - Go to **Settings → WP oOS**
+   - Go to **Settings → NV oOS**
    - Uncheck **Enable Logging**
    - Save changes
 
@@ -447,7 +447,7 @@ This test requires special setup to simulate a failure.
 
 1. **Check Browser Console Filters**
    - Make sure console is not filtered
-   - Search for "WP oOS" in the filter box
+   - Search for "NV oOS" in the filter box
 
 2. **Check for JavaScript Errors**
    - Look for any JavaScript errors that might prevent execution
@@ -491,7 +491,7 @@ This test requires special setup to simulate a failure.
 ✅ Save to localStorage logs attempt with assistant_id, session_key, message_count, storage_key  
 ✅ Save to localStorage logs successful save  
 ✅ Save to localStorage logs retry attempts after cleanup  
-✅ Save to localStorage logs errors with `[WP oOS]` prefix  
+✅ Save to localStorage logs errors with `[NV oOS]` prefix  
 ✅ Load from localStorage logs attempt with assistant_id, storage_key  
 ✅ Load from localStorage logs when no data found  
 ✅ Load from localStorage logs when data expired (with age in minutes)  
@@ -503,7 +503,7 @@ This test requires special setup to simulate a failure.
 ✅ Clear localStorage logs errors  
 
 ### CCT Operations (Existing)
-✅ All client-side console logs appear with `[WP oOS]` prefix  
+✅ All client-side console logs appear with `[NV oOS]` prefix  
 ✅ All logs include relevant context (session_key, user_id, etc.)  
 ✅ Server-side logs appear in PHP error log when logging is enabled  
 ✅ Server-side logs respect the logging enabled setting  

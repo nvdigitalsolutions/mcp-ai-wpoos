@@ -233,7 +233,7 @@ class WP_MCP_AI_Cost_Tracking_Service {
 			'labels'   => $labels,
 			'datasets' => array(
 				array(
-					'label'           => __( 'Daily Cost ($)', 'wp-mcp-ai' ),
+					'label'           => __( 'Daily Cost ($)', 'mcp-ai-wpoos' ),
 					'data'            => $costs,
 					'backgroundColor' => 'rgba(54, 162, 235, 0.2)',
 					'borderColor'     => 'rgba(54, 162, 235, 1)',

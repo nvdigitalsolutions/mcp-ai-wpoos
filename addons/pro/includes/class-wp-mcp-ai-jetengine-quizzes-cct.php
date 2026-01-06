@@ -214,7 +214,7 @@ class WP_MCP_AI_JetEngine_Quizzes_CCT {
 	 * @return array
 	 */
 	protected static function get_registration_request() {
-		$label = __( 'Quizzes', 'wp-mcp-ai' );
+		$label = __( 'Quizzes', 'mcp-ai-wpoos-pro' );
 
 		return array(
 			'name'        => $label,
@@ -292,80 +292,80 @@ class WP_MCP_AI_JetEngine_Quizzes_CCT {
 			self::build_field(
 				++$base_id,
 				'title',
-				__( 'Title', 'wp-mcp-ai' ),
+				__( 'Title', 'mcp-ai-wpoos-pro' ),
 				'text',
 				array(
 					'is_required' => true,
-					'description' => __( 'Quiz title.', 'wp-mcp-ai' ),
+					'description' => __( 'Quiz title.', 'mcp-ai-wpoos-pro' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'description',
-				__( 'Description', 'wp-mcp-ai' ),
+				__( 'Description', 'mcp-ai-wpoos-pro' ),
 				'textarea',
 				array(
-					'description' => __( 'Quiz description or instructions.', 'wp-mcp-ai' ),
+					'description' => __( 'Quiz description or instructions.', 'mcp-ai-wpoos-pro' ),
 					'rows'        => 4,
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'author_id',
-				__( 'Author ID', 'wp-mcp-ai' ),
+				__( 'Author ID', 'mcp-ai-wpoos-pro' ),
 				'number',
 				array(
-					'description' => __( 'Quiz author user ID.', 'wp-mcp-ai' ),
+					'description' => __( 'Quiz author user ID.', 'mcp-ai-wpoos-pro' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'time_limit',
-				__( 'Time Limit', 'wp-mcp-ai' ),
+				__( 'Time Limit', 'mcp-ai-wpoos-pro' ),
 				'number',
 				array(
 					'min'         => 0,
-					'description' => __( 'Time limit in minutes (0 = no limit).', 'wp-mcp-ai' ),
+					'description' => __( 'Time limit in minutes (0 = no limit).', 'mcp-ai-wpoos-pro' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'question_count',
-				__( 'Question Count', 'wp-mcp-ai' ),
+				__( 'Question Count', 'mcp-ai-wpoos-pro' ),
 				'number',
 				array(
 					'min'         => 0,
-					'description' => __( 'Number of questions.', 'wp-mcp-ai' ),
+					'description' => __( 'Number of questions.', 'mcp-ai-wpoos-pro' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'total_points',
-				__( 'Total Points', 'wp-mcp-ai' ),
+				__( 'Total Points', 'mcp-ai-wpoos-pro' ),
 				'number',
 				array(
 					'min'         => 0,
-					'description' => __( 'Total possible points.', 'wp-mcp-ai' ),
+					'description' => __( 'Total possible points.', 'mcp-ai-wpoos-pro' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'passing_score',
-				__( 'Passing Score', 'wp-mcp-ai' ),
+				__( 'Passing Score', 'mcp-ai-wpoos-pro' ),
 				'number',
 				array(
 					'min'         => 0,
 					'max'         => 100,
-					'description' => __( 'Passing score percentage (0-100).', 'wp-mcp-ai' ),
+					'description' => __( 'Passing score percentage (0-100).', 'mcp-ai-wpoos-pro' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'cpt_post_id',
-				__( 'CPT Post ID', 'wp-mcp-ai' ),
+				__( 'CPT Post ID', 'mcp-ai-wpoos-pro' ),
 				'number',
 				array(
-					'description' => __( 'Linked CPT post ID.', 'wp-mcp-ai' ),
+					'description' => __( 'Linked CPT post ID.', 'mcp-ai-wpoos-pro' ),
 				)
 			),
 		);

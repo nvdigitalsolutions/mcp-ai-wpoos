@@ -1,6 +1,6 @@
 # Profession Dataset Assignment Methodology
 
-This document describes how HuggingFace datasets are assigned to professions in the WP oOS plugin.
+This document describes how HuggingFace datasets are assigned to professions in the NV oOS plugin.
 
 ## Overview
 
@@ -224,5 +224,5 @@ Potential improvements:
 ## References
 
 - [HuggingFace Datasets Hub](https://huggingface.co/datasets)
-- [WP oOS Tool Reference](reference/tools/tool-reference.md)
+- [NV oOS Tool Reference](reference/tools/tool-reference.md)
 - [Profession CPT Documentation](../README.md)

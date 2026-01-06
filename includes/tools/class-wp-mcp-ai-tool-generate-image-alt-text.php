@@ -29,14 +29,14 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Image Alt Text', 'wp-mcp-ai' );
+		return __( 'Generate Image Alt Text', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates descriptive alt text for images to improve accessibility and SEO using AI vision capabilities.', 'wp-mcp-ai' );
+		return __( 'Generates descriptive alt text for images to improve accessibility and SEO using AI vision capabilities.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -48,22 +48,22 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'image_url'     => array(
 					'type'        => 'string',
-					'description' => __( 'URL of the image to analyze.', 'wp-mcp-ai' ),
+					'description' => __( 'URL of the image to analyze.', 'mcp-ai-wpoos' ),
 				),
-				'url'           => $this->get_url_parameter_schema( 'image', __( 'URL of the image to analyze. Alternative to image_url.', 'wp-mcp-ai' ) ),
+				'url'           => $this->get_url_parameter_schema( 'image', __( 'URL of the image to analyze. Alternative to image_url.', 'mcp-ai-wpoos' ) ),
 				'image_content' => array(
 					'type'        => 'string',
-					'description' => __( 'Base64-encoded image content as an alternative to image_url.', 'wp-mcp-ai' ),
+					'description' => __( 'Base64-encoded image content as an alternative to image_url.', 'mcp-ai-wpoos' ),
 				),
 				'attachment_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'WordPress attachment ID to analyze.', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress attachment ID to analyze.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'file_id'       => $this->get_file_id_parameter_schema(),
 				'context'       => array(
 					'type'        => 'string',
-					'description' => __( 'Optional context about the image to help generate more relevant alt text.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional context about the image to help generate more relevant alt text.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array(),
@@ -85,7 +85,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to generate image alt text.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to generate image alt text.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -93,7 +93,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 				if ( ! $image_url ) {
 					return new WP_Error(
 						'wp_mcp_ai_invalid_attachment',
-						__( 'Could not get URL for attachment.', 'wp-mcp-ai' ),
+						__( 'Could not get URL for attachment.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -140,7 +140,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		if ( '' === $image_url && '' === $image_content ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_image',
-				__( 'You must provide image_url, url, attachment_id, file_id, or image_content.', 'wp-mcp-ai' ),
+				__( 'You must provide image_url, url, attachment_id, file_id, or image_content.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -236,7 +236,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_api_key',
-				__( 'OpenAI API key is not configured.', 'wp-mcp-ai' ),
+				__( 'OpenAI API key is not configured.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -298,7 +298,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 				'wp_mcp_ai_api_error',
 				sprintf(
 					/* translators: %d: HTTP response code */
-					__( 'OpenAI API returned error code %d.', 'wp-mcp-ai' ),
+					__( 'OpenAI API returned error code %d.', 'mcp-ai-wpoos' ),
 					$response_code
 				),
 				array( 'status' => $response_code )
@@ -310,7 +310,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		if ( ! isset( $body['choices'][0]['message']['content'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from OpenAI API.', 'wp-mcp-ai' ),
+				__( 'Invalid response from OpenAI API.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -343,7 +343,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_api_key',
-				__( 'Gemini API key is not configured.', 'wp-mcp-ai' ),
+				__( 'Gemini API key is not configured.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -399,7 +399,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 				'wp_mcp_ai_api_error',
 				sprintf(
 					/* translators: %d: HTTP response code */
-					__( 'Gemini API returned error code %d.', 'wp-mcp-ai' ),
+					__( 'Gemini API returned error code %d.', 'mcp-ai-wpoos' ),
 					$response_code
 				),
 				array( 'status' => $response_code )
@@ -411,7 +411,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		if ( ! isset( $body['candidates'][0]['content']['parts'][0]['text'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from Gemini API.', 'wp-mcp-ai' ),
+				__( 'Invalid response from Gemini API.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}

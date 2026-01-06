@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS Performance Testing Suite provides comprehensive testing capabilities to measure, analyze, and optimize plugin performance. This guide covers all aspects of performance testing, from running basic tests to interpreting complex results.
+The NV oOS Performance Testing Suite provides comprehensive testing capabilities to measure, analyze, and optimize plugin performance. This guide covers all aspects of performance testing, from running basic tests to interpreting complex results.
 
 ## Table of Contents
 
@@ -200,7 +200,7 @@ vendor/bin/phpunit --filter test_concurrent_api_requests tests/performance/test-
 
 **NEW: Test Execution in Admin UI** (as of this update)
 
-1. Navigate to **Settings → WP oOS → Advanced → Performance Monitoring**
+1. Navigate to **Settings → NV oOS → Advanced → Performance Monitoring**
 2. Scroll to the "Run Performance Tests" section
 3. Click any test button:
    - **Run Stress Test** - Executes concurrent load testing
@@ -556,7 +556,7 @@ wrk -t4 -c100 -d30s http://example.com/wp-json/mcp-ai/v1/assistants
 - [WordPress Performance Best Practices](https://developer.wordpress.org/advanced-administration/performance/)
 - [PHPUnit Documentation](https://phpunit.de/documentation.html)
 - [Performance Monitoring Guide](../../admin/monitoring/performance-monitoring.md)
-- [WP oOS Documentation Index](../../../DOCUMENTATION_INDEX.md)
+- [NV oOS Documentation Index](../../../DOCUMENTATION_INDEX.md)
 
 ## Support
 

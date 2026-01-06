@@ -197,7 +197,7 @@ However, this will re-introduce the inflated count issue.
 
 To verify the fix is working correctly:
 
-1. Navigate to **Settings → WP oOS → Advanced**
+1. Navigate to **Settings → NV oOS → Advanced**
 2. Scroll to **Playbook Management** section
 3. Check that:
    - "Total Playbook Attachments" ≈ "Professions with Playbooks"

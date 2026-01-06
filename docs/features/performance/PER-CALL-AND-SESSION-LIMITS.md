@@ -20,7 +20,7 @@ Per-call limits prevent individual tool executions from consuming excessive toke
 
 ### Configuration
 
-Navigate to **Settings → WP oOS → Orchestration → Thresholds**
+Navigate to **Settings → NV oOS → Orchestration → Thresholds**
 
 - **Enable Per-Call Token Limits**: Toggle to enable/disable
 - **Per-Call Token Limit**: Slider (0-100,000 tokens)
@@ -81,7 +81,7 @@ Per-session limits control the total token budget for an entire chat session, pr
 
 ### Configuration
 
-Navigate to **Settings → WP oOS → Orchestration → Thresholds**
+Navigate to **Settings → NV oOS → Orchestration → Thresholds**
 
 - **Enable Per-Session Token Limits**: Toggle to enable/disable
 - **Per-Session Token Limit**: Slider (0-500,000 tokens)
@@ -292,7 +292,7 @@ add_filter( 'wp_mcp_ai_enforce_per_session_limits', function( $enforce, $user_id
 
 ## Logging
 
-All limit-related events are logged when logging is enabled (**Settings → WP oOS → Enable Logging**).
+All limit-related events are logged when logging is enabled (**Settings → NV oOS → Enable Logging**).
 
 ### Per-Call Limit Exceeded
 

@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Get_Recent_Posts_Validated extends WP_MCP_AI_Validated_Tool
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Recent Posts (Validated)', 'wp-mcp-ai' );
+		return __( 'Get Recent Posts (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves a list of recent posts using Symfony Validator for argument validation. Allows filtering by post type and limiting the number of results.', 'wp-mcp-ai' );
+		return __( 'Retrieves a list of recent posts using Symfony Validator for argument validation. Allows filtering by post type and limiting the number of results.', 'mcp-ai-wpoos' );
 	}
 
 	/**

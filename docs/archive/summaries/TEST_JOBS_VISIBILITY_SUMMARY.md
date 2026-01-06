@@ -1,7 +1,7 @@
 # Test Cron Jobs Visibility Enhancement - Summary
 
 ## Issue
-User wanted to ensure that test cron jobs created through WP oOS tools would show up in the Cron Manager admin page at `/admin.php?page=wp-mcp-ai-cron-manager`.
+User wanted to ensure that test cron jobs created through NV oOS tools would show up in the Cron Manager admin page at `/admin.php?page=wp-mcp-ai-cron-manager`.
 
 ## Investigation
 

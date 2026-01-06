@@ -29,14 +29,14 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Manage Vector Store Files', 'wp-mcp-ai' );
+		return __( 'Manage Vector Store Files', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Add, remove, or list files in an OpenAI vector store. Manages the knowledge base contents for RAG applications.', 'wp-mcp-ai' );
+		return __( 'Add, remove, or list files in an OpenAI vector store. Manages the knowledge base contents for RAG applications.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -48,30 +48,30 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			'properties' => array(
 				'vector_store_id' => array(
 					'type'        => 'string',
-					'description' => __( 'The ID of the vector store to manage.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the vector store to manage.', 'mcp-ai-wpoos' ),
 				),
 				'action'          => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: add, remove, or list.', 'wp-mcp-ai' ),
+					'description' => __( 'The action to perform: add, remove, or list.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'add', 'remove', 'list' ),
 				),
 				'file_ids'        => array(
 					'type'        => 'array',
-					'description' => __( 'Array of OpenAI file IDs (required for add/remove actions).', 'wp-mcp-ai' ),
+					'description' => __( 'Array of OpenAI file IDs (required for add/remove actions).', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
 				'limit'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of files to return when listing (1-100, default 20).', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of files to return when listing (1-100, default 20).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
 				'order'           => array(
 					'type'        => 'string',
-					'description' => __( 'Sort order when listing (asc or desc).', 'wp-mcp-ai' ),
+					'description' => __( 'Sort order when listing (asc or desc).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'asc', 'desc' ),
 					'default'     => 'desc',
 				),
@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 		if ( empty( $arguments['vector_store_id'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The vector_store_id parameter is required.', 'wp-mcp-ai' ),
+				'error'   => __( 'The vector_store_id parameter is required.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -96,7 +96,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 		if ( empty( $arguments['action'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The action parameter is required.', 'wp-mcp-ai' ),
+				'error'   => __( 'The action parameter is required.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			default:
 				return array(
 					'success' => false,
-					'error'   => __( 'Invalid action. Must be add, remove, or list.', 'wp-mcp-ai' ),
+					'error'   => __( 'Invalid action. Must be add, remove, or list.', 'mcp-ai-wpoos' ),
 				);
 		}
 	}
@@ -135,7 +135,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 		if ( empty( $arguments['file_ids'] ) || ! is_array( $arguments['file_ids'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The file_ids parameter is required for add action.', 'wp-mcp-ai' ),
+				'error'   => __( 'The file_ids parameter is required for add action.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -182,7 +182,7 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 		if ( empty( $arguments['file_ids'] ) || ! is_array( $arguments['file_ids'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'The file_ids parameter is required for remove action.', 'wp-mcp-ai' ),
+				'error'   => __( 'The file_ids parameter is required for remove action.', 'mcp-ai-wpoos' ),
 			);
 		}
 

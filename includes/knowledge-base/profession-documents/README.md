@@ -1,6 +1,6 @@
 # Profession Base Knowledge Documents
 
-This directory contains **reference material documents** that populate the Knowledge Base Content field for each profession in the WP oOS system. These documents provide foundational knowledge that AI assistants use to understand their professional role.
+This directory contains **reference material documents** that populate the Knowledge Base Content field for each profession in the NV oOS system. These documents provide foundational knowledge that AI assistants use to understand their professional role.
 
 ## Purpose
 
@@ -16,7 +16,7 @@ This content is **informational and descriptive** in nature, answering "What doe
 
 ## Relationship with Profession Playbooks
 
-The WP oOS profession system uses **two complementary knowledge systems**:
+The NV oOS profession system uses **two complementary knowledge systems**:
 
 ### 1. profession-documents/ (THIS DIRECTORY) - "WHAT"
 - **Content Type**: Reference material and foundational knowledge
@@ -235,7 +235,7 @@ The system is **idempotent** and **non-destructive**:
 1. Navigate to `includes/knowledge-base/profession-documents/`
 2. Edit `{slug}.txt` file with your preferred text editor
 3. Commit changes to version control
-4. Go to WP Admin → Settings → WP oOS → Advanced
+4. Go to WP Admin → Settings → NV oOS → Advanced
 5. Click "Update Professions" button
 6. System automatically calls `seed_base_knowledge(true)` to sync changes
 
@@ -414,7 +414,7 @@ file -i profession-documents/accountant.txt
 **Symptom**: Edited TXT file but content not reflected in WordPress
 
 **Solution**:
-1. Go to WP Admin → Settings → WP oOS → Advanced
+1. Go to WP Admin → Settings → NV oOS → Advanced
 2. Click "Update Professions" button
 3. This triggers force refresh of base knowledge from files
 4. Verify in profession edit screen
@@ -521,5 +521,5 @@ Potential improvements:
 ---
 
 **Last Updated**: December 2024
-**Maintained By**: WP oOS Development Team
+**Maintained By**: NV oOS Development Team
 **Questions?** See `../../docs/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md` or open an issue.

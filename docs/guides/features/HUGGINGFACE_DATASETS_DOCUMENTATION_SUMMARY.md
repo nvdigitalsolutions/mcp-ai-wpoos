@@ -6,7 +6,7 @@
 
 ## What Was Created
 
-This documentation effort created comprehensive, production-ready guides for using the HuggingFace datasets feature in WP oOS.
+This documentation effort created comprehensive, production-ready guides for using the HuggingFace datasets feature in NV oOS.
 
 ### 1. Complete How-To Guide
 **File:** `docs/guides/features/HUGGINGFACE_DATASETS_HOW_TO.md`  

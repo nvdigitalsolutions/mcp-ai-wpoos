@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document details the performance optimizations made to eliminate setTimeout handler violations in the WP oOS chat interface, specifically addressing browser console warnings like:
+This document details the performance optimizations made to eliminate setTimeout handler violations in the NV oOS chat interface, specifically addressing browser console warnings like:
 - `[Violation] 'setTimeout' handler took 71ms`
 - `[Violation] 'setTimeout' handler took 103ms`  
 - `[Violation] Forced reflow while executing JavaScript took 33ms`

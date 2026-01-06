@@ -1,6 +1,6 @@
 # New Settings Guide - December 2025
 
-This guide documents the 27 new settings added to the WP oOS admin UI in December 2025 (PR #2072).
+This guide documents the 27 new settings added to the NV oOS admin UI in December 2025 (PR #2072).
 
 ## Overview
 
@@ -12,7 +12,7 @@ Previously, these settings were defined in the codebase but not visible in the W
 
 ### MIME Type Allowlists
 
-**Location:** Settings → WP oOS → Media
+**Location:** Settings → NV oOS → Media
 
 #### `allowed_file_mimes`
 - **Type:** Textarea
@@ -43,7 +43,7 @@ Previously, these settings were defined in the codebase but not visible in the W
 
 ## OpenAI Provider Settings
 
-**Location:** Settings → WP oOS → Providers → OpenAI
+**Location:** Settings → NV oOS → Providers → OpenAI
 
 ### Text-to-Speech (TTS) Configuration
 
@@ -99,7 +99,7 @@ Previously, these settings were defined in the codebase but not visible in the W
 
 ## Tool Configuration Settings
 
-**Location:** Settings → WP oOS → Tools → Configuration (New Subtab)
+**Location:** Settings → NV oOS → Tools → Configuration (New Subtab)
 
 ### Web Search
 
@@ -140,7 +140,7 @@ Previously, these settings were defined in the codebase but not visible in the W
 
 ## Cloudways Integration Settings
 
-**Location:** Settings → WP oOS → Integrations → Cloudways
+**Location:** Settings → NV oOS → Integrations → Cloudways
 
 #### `cloudways_app_id`
 - **Type:** Text
@@ -160,7 +160,7 @@ Previously, these settings were defined in the codebase but not visible in the W
 
 ## Analytics Settings
 
-**Location:** Settings → WP oOS → Integrations
+**Location:** Settings → NV oOS → Integrations
 
 ### Google Analytics 4
 
@@ -196,13 +196,13 @@ Previously, these settings were defined in the codebase but not visible in the W
 
 ## Federation & Mesh Networking Settings
 
-**Location:** Settings → WP oOS → Advanced → Federation & Mesh (New Subtab)
+**Location:** Settings → NV oOS → Advanced → Federation & Mesh (New Subtab)
 
 ### Federation Directory
 
 #### `enable_federation_directory`
 - **Type:** Checkbox
-- **Description:** Participate in the WP oOS federation directory
+- **Description:** Participate in the NV oOS federation directory
 - **Default:** Disabled
 - **Use Case:** Allow site discovery for distributed AI workloads
 

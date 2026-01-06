@@ -360,7 +360,7 @@ class WP_MCP_AI_REST_Cost_Manager {
 		if ( ! $current_user_id ) {
 			return new WP_Error(
 				'rest_forbidden',
-				__( 'You must be logged in to access cost data.', 'wp-mcp-ai' ),
+				__( 'You must be logged in to access cost data.', 'mcp-ai-wpoos' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -377,7 +377,7 @@ class WP_MCP_AI_REST_Cost_Manager {
 
 		return new WP_Error(
 			'rest_forbidden',
-			__( 'You do not have permission to access this cost data.', 'wp-mcp-ai' ),
+			__( 'You do not have permission to access this cost data.', 'mcp-ai-wpoos' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -391,7 +391,7 @@ class WP_MCP_AI_REST_Cost_Manager {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
-				__( 'You do not have permission to access site-wide cost data.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to access site-wide cost data.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}

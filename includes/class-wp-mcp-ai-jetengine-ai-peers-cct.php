@@ -220,7 +220,7 @@ class WP_MCP_AI_JetEngine_AI_Peers_CCT {
 	 * @return array
 	 */
 	protected static function get_registration_request() {
-		$label = __( 'AI Peers', 'wp-mcp-ai' );
+		$label = __( 'AI Peers', 'mcp-ai-wpoos' );
 
 		return array(
 			'name'        => $label,
@@ -297,96 +297,96 @@ class WP_MCP_AI_JetEngine_AI_Peers_CCT {
 			self::build_field(
 				++$base_id,
 				'site_name',
-				__( 'Site Name', 'wp-mcp-ai' ),
+				__( 'Site Name', 'mcp-ai-wpoos' ),
 				'text',
 				array(
 					'is_required' => true,
-					'description' => __( 'Name of the peer site.', 'wp-mcp-ai' ),
+					'description' => __( 'Name of the peer site.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'site_url',
-				__( 'Site URL', 'wp-mcp-ai' ),
+				__( 'Site URL', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'URL of the peer site.', 'wp-mcp-ai' ),
+					'description' => __( 'URL of the peer site.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'mcp_url',
-				__( 'MCP Endpoint', 'wp-mcp-ai' ),
+				__( 'MCP Endpoint', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'MCP protocol endpoint URL.', 'wp-mcp-ai' ),
+					'description' => __( 'MCP protocol endpoint URL.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'jwks_uri',
-				__( 'JWKS URI', 'wp-mcp-ai' ),
+				__( 'JWKS URI', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'JSON Web Key Set URI for authentication.', 'wp-mcp-ai' ),
+					'description' => __( 'JSON Web Key Set URI for authentication.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'capabilities',
-				__( 'Capabilities', 'wp-mcp-ai' ),
+				__( 'Capabilities', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'JSON array of peer capabilities.', 'wp-mcp-ai' ),
+					'description' => __( 'JSON array of peer capabilities.', 'mcp-ai-wpoos' ),
 					'rows'        => 4,
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'regions',
-				__( 'Regions', 'wp-mcp-ai' ),
+				__( 'Regions', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'JSON array of supported regions.', 'wp-mcp-ai' ),
+					'description' => __( 'JSON array of supported regions.', 'mcp-ai-wpoos' ),
 					'rows'        => 2,
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'data_tags',
-				__( 'Data Tags', 'wp-mcp-ai' ),
+				__( 'Data Tags', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'JSON array of data policy tags.', 'wp-mcp-ai' ),
+					'description' => __( 'JSON array of data policy tags.', 'mcp-ai-wpoos' ),
 					'rows'        => 2,
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'health_status',
-				__( 'Health Status', 'wp-mcp-ai' ),
+				__( 'Health Status', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'Current health status (healthy, degraded, down).', 'wp-mcp-ai' ),
+					'description' => __( 'Current health status (healthy, degraded, down).', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'latency_p50',
-				__( 'Latency P50 (ms)', 'wp-mcp-ai' ),
+				__( 'Latency P50 (ms)', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
-					'description' => __( 'P50 latency in milliseconds.', 'wp-mcp-ai' ),
+					'description' => __( 'P50 latency in milliseconds.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'last_verified',
-				__( 'Last Verified', 'wp-mcp-ai' ),
+				__( 'Last Verified', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'Timestamp of last verification.', 'wp-mcp-ai' ),
+					'description' => __( 'Timestamp of last verification.', 'mcp-ai-wpoos' ),
 				)
 			),
 		);

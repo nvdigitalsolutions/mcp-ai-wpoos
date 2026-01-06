@@ -5,7 +5,7 @@ December 8, 2025
 
 ## Executive Summary
 
-This report analyzes the performance impact of migrating from manual validation to Symfony Validator pattern in the WP oOS plugin tools.
+This report analyzes the performance impact of migrating from manual validation to Symfony Validator pattern in the NV oOS plugin tools.
 
 ## Methodology
 

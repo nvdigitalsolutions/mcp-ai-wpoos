@@ -1,10 +1,10 @@
 # Token Management and Parallelization Controls
 
-This document describes the token payload reduction and parallelization features implemented in WP oOS.
+This document describes the token payload reduction and parallelization features implemented in NV oOS.
 
 ## Overview
 
-To optimize API usage, reduce costs, and prevent rate limiting, WP oOS now includes:
+To optimize API usage, reduce costs, and prevent rate limiting, NV oOS now includes:
 
 1. **Pre-flight token counting** - Estimate and validate token usage before API calls
 2. **Input chunking** - Split large documents into manageable pieces
@@ -16,7 +16,7 @@ To optimize API usage, reduce costs, and prevent rate limiting, WP oOS now inclu
 
 ### 1. Pre-flight Token Counting
 
-Before sending requests to AI providers, WP oOS estimates the token count to prevent exceeding limits.
+Before sending requests to AI providers, NV oOS estimates the token count to prevent exceeding limits.
 
 **OpenAI**: Uses a character-based heuristic (~4 characters per token)
 ```php

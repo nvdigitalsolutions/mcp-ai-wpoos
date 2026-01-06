@@ -4,7 +4,7 @@ This guide covers manual testing procedures for the chat performance optimizatio
 
 ## Prerequisites
 
-1. WordPress site with WP oOS plugin active
+1. WordPress site with NV oOS plugin active
 2. At least one published AI Assistant
 3. Browser with DevTools (Chrome, Firefox, or Edge)
 4. (Optional) Elementor plugin for widget testing
@@ -35,7 +35,7 @@ This guide covers manual testing procedures for the chat performance optimizatio
 
 1. Create a new page with Elementor
 2. Title: "Chat Widget Test"
-3. Add the **WP oOS Chat** widget
+3. Add the **NV oOS Chat** widget
 4. Configure:
    - Select your test assistant
    - Enable/disable guest access as needed

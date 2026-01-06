@@ -65,7 +65,7 @@ Once installed, the tool will automatically use the free rembg method when:
 ### Setup
 1. Sign up at https://www.remove.bg/api
 2. Get your API key
-3. In WordPress Admin, go to **Settings → WP oOS → Tools → External Tools**
+3. In WordPress Admin, go to **Settings → NV oOS → Tools → External Tools**
 4. Enter your API key in the "remove.bg API Key" field
 5. Save settings
 
@@ -183,7 +183,7 @@ Install rembg with: `pip3 install rembg pillow`
 Install Python 3 or use the paid method instead.
 
 ### "remove.bg API key is not configured"
-Add your API key in Settings → WP oOS → Tools → External Tools
+Add your API key in Settings → NV oOS → Tools → External Tools
 
 ### "remove.bg API returned error 403"
 Your API key is invalid. Check your key or sign up at https://www.remove.bg/api

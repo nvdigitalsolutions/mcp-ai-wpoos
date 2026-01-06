@@ -28,7 +28,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 		 */
 		public function handle_meta_oauth_start() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_meta_oauth_start' );
@@ -38,7 +38,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 			if ( empty( $settings['meta_app_id'] ) || empty( $settings['meta_app_secret'] ) ) {
 				$this->add_settings_redirect_notice(
 					'meta_oauth_missing_client',
-					__( 'Enter a Meta App ID and App Secret before connecting the account.', 'wp-mcp-ai' )
+					__( 'Enter a Meta App ID and App Secret before connecting the account.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -91,7 +91,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 		 */
 		public function handle_meta_oauth_callback() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			// OAuth callback parameters from Meta. No nonce verification required as state parameter provides CSRF protection.
@@ -111,7 +111,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 					'meta_oauth_error',
 					sprintf(
 						/* translators: %s: Meta error message. */
-						__( 'Meta returned an error during authorisation: %s', 'wp-mcp-ai' ),
+						__( 'Meta returned an error during authorisation: %s', 'mcp-ai-wpoos' ),
 						$error_message
 					)
 				);
@@ -126,7 +126,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 			if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
 				$this->add_settings_redirect_notice(
 					'meta_oauth_state_mismatch',
-					__( 'The Meta authorisation request could not be verified. Please try again.', 'wp-mcp-ai' )
+					__( 'The Meta authorisation request could not be verified. Please try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -134,7 +134,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 			if ( empty( $code ) ) {
 				$this->add_settings_redirect_notice(
 					'meta_oauth_missing_code',
-					__( 'Meta did not return an authorisation code. Please try again.', 'wp-mcp-ai' )
+					__( 'Meta did not return an authorisation code. Please try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -144,7 +144,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 			if ( empty( $settings['meta_app_id'] ) || empty( $settings['meta_app_secret'] ) ) {
 				$this->add_settings_redirect_notice(
 					'meta_oauth_missing_client',
-					__( 'Enter a Meta App ID and App Secret before connecting the account.', 'wp-mcp-ai' )
+					__( 'Enter a Meta App ID and App Secret before connecting the account.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -180,7 +180,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'Meta OAuth token exchange failed.', array( 'error' => $response->get_error_message() ) );
 				$this->add_settings_redirect_notice(
 					'meta_oauth_token_request_failed',
-					__( 'Meta could not exchange the authorisation code. Check the app credentials and try again.', 'wp-mcp-ai' )
+					__( 'Meta could not exchange the authorisation code. Check the app credentials and try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -198,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 				);
 				$this->add_settings_redirect_notice(
 					'meta_oauth_token_request_error',
-					__( 'Meta rejected the authorisation code. Review the OAuth application configuration and try again.', 'wp-mcp-ai' )
+					__( 'Meta rejected the authorisation code. Review the OAuth application configuration and try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -209,7 +209,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'Meta OAuth token response was not valid JSON.', array( 'body' => $body ) );
 				$this->add_settings_redirect_notice(
 					'meta_oauth_token_invalid_json',
-					__( 'Meta returned an unexpected response while exchanging the authorisation code.', 'wp-mcp-ai' )
+					__( 'Meta returned an unexpected response while exchanging the authorisation code.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -220,7 +220,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'Meta OAuth callback omitted an access token.', array( 'response' => $decoded ) );
 				$this->add_settings_redirect_notice(
 					'meta_oauth_missing_access_token',
-					__( 'Meta did not return an access token. Please try again.', 'wp-mcp-ai' )
+					__( 'Meta did not return an access token. Please try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -273,12 +273,12 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 			$sanitized     = $settings_base->sanitize_settings( $updated_settings );
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $sanitized );
 
-			$notice_message = __( 'Meta authorisation complete. Access token has been stored.', 'wp-mcp-ai' );
+			$notice_message = __( 'Meta authorisation complete. Access token has been stored.', 'mcp-ai-wpoos' );
 
 			if ( $user_name ) {
 				$notice_message = sprintf(
 					/* translators: %s: Meta user name. */
-					__( 'Meta authorisation complete for %s.', 'wp-mcp-ai' ),
+					__( 'Meta authorisation complete for %s.', 'mcp-ai-wpoos' ),
 					$user_name
 				);
 			}

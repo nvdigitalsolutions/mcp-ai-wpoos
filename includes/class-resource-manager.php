@@ -288,7 +288,7 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 					'wp_mcp_ai_insufficient_resources',
 					sprintf(
 						/* translators: 1: Requested tokens, 2: Maximum tokens, 3: Workload tier */
-						__( 'The requested operation requires %1$d tokens, but the server is configured for a maximum of %2$d tokens (workload tier: %3$s).', 'wp-mcp-ai' ),
+						__( 'The requested operation requires %1$d tokens, but the server is configured for a maximum of %2$d tokens (workload tier: %3$s).', 'mcp-ai-wpoos' ),
 						$requirements['max_tokens'],
 						$max_tokens,
 						$tier
@@ -389,7 +389,7 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 					'wp_mcp_ai_token_budget_exceeded',
 					sprintf(
 						/* translators: 1: Token count, 2: Maximum allowed tokens */
-						__( 'Request token count (%1$d) exceeds maximum allowed (%2$d).', 'wp-mcp-ai' ),
+						__( 'Request token count (%1$d) exceeds maximum allowed (%2$d).', 'mcp-ai-wpoos' ),
 						$token_count,
 						$max_tokens
 					),

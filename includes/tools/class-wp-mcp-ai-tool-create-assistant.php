@@ -58,14 +58,14 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create AI Assistant', 'wp-mcp-ai' );
+		return __( 'Create AI Assistant', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new AI assistant. Can be used in two modes: (1) Manual mode - select from predefined professions and regions, or (2) Prompt mode - provide a free-form description and optional custom system prompt. Supports attachment IDs for knowledge base files. The assistant will be saved as a draft.', 'wp-mcp-ai' );
+		return __( 'Creates a new AI assistant. Can be used in two modes: (1) Manual mode - select from predefined professions and regions, or (2) Prompt mode - provide a free-form description and optional custom system prompt. Supports attachment IDs for knowledge base files. The assistant will be saved as a draft.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -77,23 +77,23 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'title'             => array(
 					'type'        => 'string',
-					'description' => __( 'The name/title for the AI assistant (e.g., "Jamaica Tax Assistant", "Sri Lanka Customs Broker - Perfumes").', 'wp-mcp-ai' ),
+					'description' => __( 'The name/title for the AI assistant (e.g., "Jamaica Tax Assistant", "Sri Lanka Customs Broker - Perfumes").', 'mcp-ai-wpoos' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
 				'description'       => array(
 					'type'        => 'string',
-					'description' => __( 'Free-form description of what the assistant should do, its purpose, expertise, and target audience. Used in Prompt mode when professions/regions are not specified.', 'wp-mcp-ai' ),
+					'description' => __( 'Free-form description of what the assistant should do, its purpose, expertise, and target audience. Used in Prompt mode when professions/regions are not specified.', 'mcp-ai-wpoos' ),
 					'maxLength'   => 5000,
 				),
 				'system_prompt'     => array(
 					'type'        => 'string',
-					'description' => __( 'Custom system prompt/instructions for the assistant. If not provided, will be auto-generated based on professions/regions or description.', 'wp-mcp-ai' ),
+					'description' => __( 'Custom system prompt/instructions for the assistant. If not provided, will be auto-generated based on professions/regions or description.', 'mcp-ai-wpoos' ),
 					'maxLength'   => 32000,
 				),
 				'professions'       => array(
 					'type'        => 'array',
-					'description' => __( 'Select up to 3 professions/specializations for this assistant. Optional if description is provided.', 'wp-mcp-ai' ),
+					'description' => __( 'Select up to 3 professions/specializations for this assistant. Optional if description is provided.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 						'enum' => array(
@@ -120,7 +120,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'regions'           => array(
 					'type'        => 'array',
-					'description' => __( 'Select up to 2 countries/regions where this assistant will operate. Optional if description is provided.', 'wp-mcp-ai' ),
+					'description' => __( 'Select up to 2 countries/regions where this assistant will operate. Optional if description is provided.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 						'enum' => array(
@@ -154,12 +154,12 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'industry_focus'    => array(
 					'type'        => 'string',
-					'description' => __( 'Optional specific industry or product focus (e.g., "perfumes", "technology", "restaurants", "retail").', 'wp-mcp-ai' ),
+					'description' => __( 'Optional specific industry or product focus (e.g., "perfumes", "technology", "restaurants", "retail").', 'mcp-ai-wpoos' ),
 					'maxLength'   => 200,
 				),
 				'attachment_ids'    => array(
 					'type'        => 'array',
-					'description' => __( 'Array of WordPress media attachment IDs to include in the assistant\'s knowledge base.', 'wp-mcp-ai' ),
+					'description' => __( 'Array of WordPress media attachment IDs to include in the assistant\'s knowledge base.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'integer',
 					),
@@ -167,25 +167,25 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'provider'          => array(
 					'type'        => 'string',
-					'description' => __( 'Optional AI provider (openai, gemini, ollama, anthropic, lm_studio). Defaults to openai.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional AI provider (openai, gemini, ollama, anthropic, lm_studio). Defaults to openai.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'openai', 'gemini', 'ollama', 'anthropic', 'lm_studio' ),
 					'default'     => 'openai',
 				),
 				'model'             => array(
 					'type'        => 'string',
-					'description' => __( 'Optional model name (e.g., "gpt-4", "gpt-4-turbo", "gemini-pro"). Defaults to gpt-4.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional model name (e.g., "gpt-4", "gpt-4-turbo", "gemini-pro"). Defaults to gpt-4.', 'mcp-ai-wpoos' ),
 					'maxLength'   => 100,
 				),
 				'temperature'       => array(
 					'type'        => 'number',
-					'description' => __( 'Optional temperature setting (0-2). Lower is more deterministic. Defaults to 0.7.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional temperature setting (0-2). Lower is more deterministic. Defaults to 0.7.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 2,
 					'default'     => 0.7,
 				),
 				'tools'             => array(
 					'type'        => 'array',
-					'description' => __( 'Optional array of tool slugs to enable for this assistant. If not provided, appropriate tools will be selected automatically.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional array of tool slugs to enable for this assistant. If not provided, appropriate tools will be selected automatically.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
@@ -193,23 +193,23 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'async'             => array(
 					'type'        => 'boolean',
-					'description' => __( 'If true, schedules assistant creation via cron and returns immediately. Recommended for complex assistants.', 'wp-mcp-ai' ),
+					'description' => __( 'If true, schedules assistant creation via cron and returns immediately. Recommended for complex assistants.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'notify_email'      => array(
 					'type'        => 'string',
-					'description' => __( 'Email address to notify when async creation completes. Uses current user email if not specified.', 'wp-mcp-ai' ),
+					'description' => __( 'Email address to notify when async creation completes. Uses current user email if not specified.', 'mcp-ai-wpoos' ),
 					'format'      => 'email',
 				),
 				// Enhanced parameters for comprehensive assistant creation.
 				'featured_image_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Attachment ID to set as the featured image/avatar for the assistant.', 'wp-mcp-ai' ),
+					'description' => __( 'Attachment ID to set as the featured image/avatar for the assistant.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'categories'        => array(
 					'type'        => 'array',
-					'description' => __( 'Array of assistant category IDs or names. Categories will be auto-created if they don\'t exist (requires custom taxonomy support).', 'wp-mcp-ai' ),
+					'description' => __( 'Array of assistant category IDs or names. Categories will be auto-created if they don\'t exist (requires custom taxonomy support).', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -222,7 +222,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'tags'              => array(
 					'type'        => 'array',
-					'description' => __( 'Array of assistant tag IDs or names. Tags will be auto-created if they don\'t exist (requires custom taxonomy support).', 'wp-mcp-ai' ),
+					'description' => __( 'Array of assistant tag IDs or names. Tags will be auto-created if they don\'t exist (requires custom taxonomy support).', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -235,7 +235,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'meta_input'        => array(
 					'type'                 => 'object',
-					'description'          => __( 'Array of custom field key-value pairs to set as assistant meta.', 'wp-mcp-ai' ),
+					'description'          => __( 'Array of custom field key-value pairs to set as assistant meta.', 'mcp-ai-wpoos' ),
 					'additionalProperties' => true,
 				),
 			),
@@ -255,11 +255,11 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create assistants.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create assistants.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check if async execution is requested.
@@ -313,7 +313,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		if ( false === $scheduled ) {
 			delete_transient( $transient );
-			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule assistant creation.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule assistant creation.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Record the job.
@@ -327,7 +327,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			'job_id'        => $job_id,
 			'status'        => 'scheduled',
 			'scheduled_for' => wp_date( DATE_ATOM, $timestamp ),
-			'message'       => __( 'Assistant creation has been scheduled. You will be notified when complete.', 'wp-mcp-ai' ),
+			'message'       => __( 'Assistant creation has been scheduled. You will be notified when complete.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -383,7 +383,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		$attachment_ids = isset( $arguments['attachment_ids'] ) && is_array( $arguments['attachment_ids'] ) ? array_map( 'absint', $arguments['attachment_ids'] ) : array();
 
 		if ( '' === $title ) {
-			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Title is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Title is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Try to infer professions/regions if not explicitly provided.
@@ -444,7 +444,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( strlen( $instructions ) > 32000 ) {
 			return new WP_Error(
 				'wp_mcp_ai_instructions_too_long',
-				__( 'Generated instructions exceed OpenAI\'s 32,000 character limit.', 'wp-mcp-ai' )
+				__( 'Generated instructions exceed OpenAI\'s 32,000 character limit.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -461,7 +461,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 			$post_content = sprintf(
 				/* translators: 1: profession list, 2: region list */
-				__( 'AI Assistant for: %1$s in %2$s', 'wp-mcp-ai' ),
+				__( 'AI Assistant for: %1$s in %2$s', 'mcp-ai-wpoos' ),
 				implode( ', ', $profession_names ),
 				implode( ' and ', $region_names )
 			);
@@ -469,7 +469,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			if ( '' !== $industry_focus ) {
 				$post_content .= "\n\n" . sprintf(
 					/* translators: 1: industry focus */
-					__( 'Industry Focus: %s', 'wp-mcp-ai' ),
+					__( 'Industry Focus: %s', 'mcp-ai-wpoos' ),
 					$industry_focus
 				);
 			}
@@ -478,7 +478,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		} else {
 			$post_content = sprintf(
 				/* translators: %s: assistant title */
-				__( 'AI Assistant: %s', 'wp-mcp-ai' ),
+				__( 'AI Assistant: %s', 'mcp-ai-wpoos' ),
 				$title
 			);
 		}
@@ -585,7 +585,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			'inferred_regions'     => $inferred_regions,
 			'message'              => sprintf(
 				/* translators: %s: assistant title */
-				__( 'AI assistant "%s" created successfully as draft.', 'wp-mcp-ai' ),
+				__( 'AI assistant "%s" created successfully as draft.', 'mcp-ai-wpoos' ),
 				$title
 			),
 		);
@@ -613,21 +613,21 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Fallback to hardcoded names for backward compatibility.
 		$professions = array(
-			'tax_advisor'              => __( 'Tax Advisor', 'wp-mcp-ai' ),
-			'accountant'               => __( 'Accountant', 'wp-mcp-ai' ),
-			'bookkeeper'               => __( 'Bookkeeper', 'wp-mcp-ai' ),
-			'lawyer'                   => __( 'Lawyer', 'wp-mcp-ai' ),
-			'legal_advisor'            => __( 'Legal Advisor', 'wp-mcp-ai' ),
-			'customs_broker'           => __( 'Customs Broker', 'wp-mcp-ai' ),
-			'import_export_specialist' => __( 'Import/Export Specialist', 'wp-mcp-ai' ),
-			'financial_advisor'        => __( 'Financial Advisor', 'wp-mcp-ai' ),
-			'business_consultant'      => __( 'Business Consultant', 'wp-mcp-ai' ),
-			'real_estate_agent'        => __( 'Real Estate Agent', 'wp-mcp-ai' ),
-			'healthcare_advisor'       => __( 'Healthcare Advisor', 'wp-mcp-ai' ),
-			'marketing_consultant'     => __( 'Marketing Consultant', 'wp-mcp-ai' ),
-			'hr_consultant'            => __( 'HR Consultant', 'wp-mcp-ai' ),
-			'it_consultant'            => __( 'IT Consultant', 'wp-mcp-ai' ),
-			'restaurant_consultant'    => __( 'Restaurant Consultant', 'wp-mcp-ai' ),
+			'tax_advisor'              => __( 'Tax Advisor', 'mcp-ai-wpoos' ),
+			'accountant'               => __( 'Accountant', 'mcp-ai-wpoos' ),
+			'bookkeeper'               => __( 'Bookkeeper', 'mcp-ai-wpoos' ),
+			'lawyer'                   => __( 'Lawyer', 'mcp-ai-wpoos' ),
+			'legal_advisor'            => __( 'Legal Advisor', 'mcp-ai-wpoos' ),
+			'customs_broker'           => __( 'Customs Broker', 'mcp-ai-wpoos' ),
+			'import_export_specialist' => __( 'Import/Export Specialist', 'mcp-ai-wpoos' ),
+			'financial_advisor'        => __( 'Financial Advisor', 'mcp-ai-wpoos' ),
+			'business_consultant'      => __( 'Business Consultant', 'mcp-ai-wpoos' ),
+			'real_estate_agent'        => __( 'Real Estate Agent', 'mcp-ai-wpoos' ),
+			'healthcare_advisor'       => __( 'Healthcare Advisor', 'mcp-ai-wpoos' ),
+			'marketing_consultant'     => __( 'Marketing Consultant', 'mcp-ai-wpoos' ),
+			'hr_consultant'            => __( 'HR Consultant', 'mcp-ai-wpoos' ),
+			'it_consultant'            => __( 'IT Consultant', 'mcp-ai-wpoos' ),
+			'restaurant_consultant'    => __( 'Restaurant Consultant', 'mcp-ai-wpoos' ),
 		);
 
 		return isset( $professions[ $profession_key ] ) ? $professions[ $profession_key ] : $profession_key;
@@ -641,28 +641,28 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	protected function get_region_name( $region_key ) {
 		$regions = array(
-			'united_states'        => __( 'United States', 'wp-mcp-ai' ),
-			'canada'               => __( 'Canada', 'wp-mcp-ai' ),
-			'united_kingdom'       => __( 'United Kingdom', 'wp-mcp-ai' ),
-			'australia'            => __( 'Australia', 'wp-mcp-ai' ),
-			'jamaica'              => __( 'Jamaica', 'wp-mcp-ai' ),
-			'sri_lanka'            => __( 'Sri Lanka', 'wp-mcp-ai' ),
-			'india'                => __( 'India', 'wp-mcp-ai' ),
-			'singapore'            => __( 'Singapore', 'wp-mcp-ai' ),
-			'united_arab_emirates' => __( 'United Arab Emirates', 'wp-mcp-ai' ),
-			'germany'              => __( 'Germany', 'wp-mcp-ai' ),
-			'france'               => __( 'France', 'wp-mcp-ai' ),
-			'spain'                => __( 'Spain', 'wp-mcp-ai' ),
-			'italy'                => __( 'Italy', 'wp-mcp-ai' ),
-			'netherlands'          => __( 'Netherlands', 'wp-mcp-ai' ),
-			'brazil'               => __( 'Brazil', 'wp-mcp-ai' ),
-			'mexico'               => __( 'Mexico', 'wp-mcp-ai' ),
-			'south_africa'         => __( 'South Africa', 'wp-mcp-ai' ),
-			'new_zealand'          => __( 'New Zealand', 'wp-mcp-ai' ),
-			'ireland'              => __( 'Ireland', 'wp-mcp-ai' ),
-			'japan'                => __( 'Japan', 'wp-mcp-ai' ),
-			'china'                => __( 'China', 'wp-mcp-ai' ),
-			'global'               => __( 'Global', 'wp-mcp-ai' ),
+			'united_states'        => __( 'United States', 'mcp-ai-wpoos' ),
+			'canada'               => __( 'Canada', 'mcp-ai-wpoos' ),
+			'united_kingdom'       => __( 'United Kingdom', 'mcp-ai-wpoos' ),
+			'australia'            => __( 'Australia', 'mcp-ai-wpoos' ),
+			'jamaica'              => __( 'Jamaica', 'mcp-ai-wpoos' ),
+			'sri_lanka'            => __( 'Sri Lanka', 'mcp-ai-wpoos' ),
+			'india'                => __( 'India', 'mcp-ai-wpoos' ),
+			'singapore'            => __( 'Singapore', 'mcp-ai-wpoos' ),
+			'united_arab_emirates' => __( 'United Arab Emirates', 'mcp-ai-wpoos' ),
+			'germany'              => __( 'Germany', 'mcp-ai-wpoos' ),
+			'france'               => __( 'France', 'mcp-ai-wpoos' ),
+			'spain'                => __( 'Spain', 'mcp-ai-wpoos' ),
+			'italy'                => __( 'Italy', 'mcp-ai-wpoos' ),
+			'netherlands'          => __( 'Netherlands', 'mcp-ai-wpoos' ),
+			'brazil'               => __( 'Brazil', 'mcp-ai-wpoos' ),
+			'mexico'               => __( 'Mexico', 'mcp-ai-wpoos' ),
+			'south_africa'         => __( 'South Africa', 'mcp-ai-wpoos' ),
+			'new_zealand'          => __( 'New Zealand', 'mcp-ai-wpoos' ),
+			'ireland'              => __( 'Ireland', 'mcp-ai-wpoos' ),
+			'japan'                => __( 'Japan', 'mcp-ai-wpoos' ),
+			'china'                => __( 'China', 'mcp-ai-wpoos' ),
+			'global'               => __( 'Global', 'mcp-ai-wpoos' ),
 		);
 
 		return isset( $regions[ $region_key ] ) ? $regions[ $region_key ] : $region_key;
@@ -1755,7 +1755,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_too_many_documents',
 				sprintf(
 					/* translators: %d: maximum number of documents */
-					__( 'Too many documents. Maximum is %d.', 'wp-mcp-ai' ),
+					__( 'Too many documents. Maximum is %d.', 'mcp-ai-wpoos' ),
 					self::MAX_DOCUMENTS
 				)
 			);
@@ -1781,7 +1781,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'wp_mcp_ai_invalid_filename',
 					sprintf(
 						/* translators: %s: filename */
-						__( 'Invalid filename: %s. Only .txt, .md, .pdf, .doc, .docx files are allowed.', 'wp-mcp-ai' ),
+						__( 'Invalid filename: %s. Only .txt, .md, .pdf, .doc, .docx files are allowed.', 'mcp-ai-wpoos' ),
 						$filename
 					)
 				);
@@ -1794,7 +1794,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'wp_mcp_ai_document_too_large',
 					sprintf(
 						/* translators: 1: filename, 2: max size in MB */
-						__( 'Document "%1$s" is too large. Maximum size is %2$d MB.', 'wp-mcp-ai' ),
+						__( 'Document "%1$s" is too large. Maximum size is %2$d MB.', 'mcp-ai-wpoos' ),
 						$filename,
 						self::MAX_DOCUMENT_SIZE / 1048576
 					)
@@ -1807,7 +1807,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			if ( false === file_put_contents( $temp_file, $content ) ) {
-				return new WP_Error( 'wp_mcp_ai_file_write_failed', __( 'Failed to write document file.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_file_write_failed', __( 'Failed to write document file.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Create attachment.
@@ -1860,20 +1860,20 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			return;
 		}
 
-		$title     = isset( $result['title'] ) ? $result['title'] : __( 'Your Assistant', 'wp-mcp-ai' );
+		$title     = isset( $result['title'] ) ? $result['title'] : __( 'Your Assistant', 'mcp-ai-wpoos' );
 		$edit_link = isset( $result['edit_link'] ) ? $result['edit_link'] : '';
 
 		$subject = sprintf(
 			/* translators: %s: site name */
-			__( '[%s] AI Assistant Created Successfully', 'wp-mcp-ai' ),
+			__( '[%s] AI Assistant Created Successfully', 'mcp-ai-wpoos' ),
 			get_bloginfo( 'name' )
 		);
 
 		$message = sprintf(
 			/* translators: 1: assistant title, 2: edit link */
-			__( 'Your AI assistant "%1$s" has been created successfully and saved as a draft.%2$s', 'wp-mcp-ai' ),
+			__( 'Your AI assistant "%1$s" has been created successfully and saved as a draft.%2$s', 'mcp-ai-wpoos' ),
 			$title,
-			$edit_link ? "\n\n" . __( 'Edit assistant:', 'wp-mcp-ai' ) . ' ' . $edit_link : ''
+			$edit_link ? "\n\n" . __( 'Edit assistant:', 'mcp-ai-wpoos' ) . ' ' . $edit_link : ''
 		);
 
 		wp_mail( $notify_email, $subject, $message );
@@ -1912,13 +1912,13 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$subject = sprintf(
 			/* translators: %s: site name */
-			__( '[%s] AI Assistant Creation Failed', 'wp-mcp-ai' ),
+			__( '[%s] AI Assistant Creation Failed', 'mcp-ai-wpoos' ),
 			get_bloginfo( 'name' )
 		);
 
 		$message = sprintf(
 			/* translators: %s: error message */
-			__( 'Failed to create AI assistant: %s', 'wp-mcp-ai' ),
+			__( 'Failed to create AI assistant: %s', 'mcp-ai-wpoos' ),
 			$error->get_error_message()
 		);
 

@@ -1,6 +1,6 @@
 # Quick Start: Testing MCP Endpoints
 
-If you're unable to run tests from the WP oOS MCP Diagnostic page, follow these steps:
+If you're unable to run tests from the NV oOS MCP Diagnostic page, follow these steps:
 
 ## 1. Verify System Requirements
 
@@ -45,7 +45,7 @@ fetch('/wp-json/mcp-ai/v1/mcp', {
 ```
 ✅ MCP Endpoint Working!
 Protocol Version: 2024-11-05
-Server: WP oOS
+Server: NV oOS
 ```
 
 ## 3. Run Automated Tests
@@ -159,13 +159,13 @@ For comprehensive troubleshooting, see:
 ## 7. Still Having Issues?
 
 1. Enable debug logging:
-   - Go to Settings → WP oOS
+   - Go to Settings → NV oOS
    - Enable "Logging"
    - Reproduce the issue
    - Check logs for error messages
 
 2. Check system info on diagnostic page:
-   - Go to Tools → WP oOS MCP Test
+   - Go to Tools → NV oOS MCP Test
    - Review "System Requirements" section
    - Review "Recent MCP Activity" section
 

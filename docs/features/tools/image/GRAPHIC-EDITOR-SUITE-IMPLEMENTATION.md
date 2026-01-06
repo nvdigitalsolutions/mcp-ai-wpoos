@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully enhanced the WP oOS plugin with a comprehensive **Graphic Editor Suite** consisting of 4 new image manipulation tools that follow strict separation of concerns (SOC) principles.
+Successfully enhanced the NV oOS plugin with a comprehensive **Graphic Editor Suite** consisting of 4 new image manipulation tools that follow strict separation of concerns (SOC) principles.
 
 ## What Was Built
 

@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List Projects', 'wp-mcp-ai' );
+		return __( 'List Projects', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists projects with optional filtering by status, date range, or assigned user. Useful for project management and calendar views.', 'wp-mcp-ai' );
+		return __( 'Lists projects with optional filtering by status, date range, or assigned user. Useful for project management and calendar views.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,26 +45,26 @@ class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties'           => array(
 				'status'      => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by project status (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by project status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'planning', 'active', 'on-hold', 'completed', 'cancelled' ),
 				),
 				'assigned_to' => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by assigned user ID (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by assigned user ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'start_after' => array(
 					'type'        => 'string',
-					'description' => __( 'Filter projects starting after this date (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter projects starting after this date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'end_before'  => array(
 					'type'        => 'string',
-					'description' => __( 'Filter projects ending before this date (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter projects ending before this date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'limit'       => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of projects to return (default: 20, max: 100)', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of projects to return (default: 20, max: 100)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
 					'minimum'     => 1,
 					'maximum'     => 100,
@@ -78,7 +78,8 @@ class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'read-only' );
+		return array(
+			'pro', 'read-only' );
 	}
 
 	/**
@@ -106,7 +107,7 @@ class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to list projects.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to list projects.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Build query args.

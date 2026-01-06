@@ -5,7 +5,7 @@
 
 ## Overview
 
-The WP oOS Federation & Discovery system enables WordPress sites to publish their AI capabilities and discover other peer sites in a decentralized AI network. This creates an "npm for AI tools" ecosystem where sites can find and consume capabilities from other trusted peers.
+The NV oOS Federation & Discovery system enables WordPress sites to publish their AI capabilities and discover other peer sites in a decentralized AI network. This creates an "npm for AI tools" ecosystem where sites can find and consume capabilities from other trusted peers.
 
 ---
 
@@ -28,7 +28,7 @@ The WP oOS Federation & Discovery system enables WordPress sites to publish thei
 
 ### Enable Federation on Your Site
 
-1. Navigate to **Settings → WP oOS → Federation & Discovery**
+1. Navigate to **Settings → NV oOS → Federation & Discovery**
 2. Check **Enable federation**
 3. Configure your regions and data tags
 4. Save changes
@@ -117,7 +117,7 @@ Site C (Consumer)
 
 ### Settings Location
 
-**Settings → WP oOS → Federation & Discovery**
+**Settings → NV oOS → Federation & Discovery**
 
 ### Available Settings
 

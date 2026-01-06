@@ -169,7 +169,7 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 		if ( ! $team_id ) {
 			return new WP_Error(
 				'invalid_team_id',
-				__( 'Invalid team ID provided.', 'wp-mcp-ai' ),
+				__( 'Invalid team ID provided.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -182,7 +182,7 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 			);
 			return new WP_Error(
 				'team_cpt_not_loaded',
-				__( 'Team system is not available.', 'wp-mcp-ai' ),
+				__( 'Team system is not available.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -222,13 +222,13 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 			$tools     = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
 
 			$category_labels = array(
-				'advisory'   => __( 'Advisory/Consulting', 'wp-mcp-ai' ),
-				'creative'   => __( 'Creative Services', 'wp-mcp-ai' ),
-				'technical'  => __( 'Technical', 'wp-mcp-ai' ),
-				'healthcare' => __( 'Healthcare', 'wp-mcp-ai' ),
-				'legal'      => __( 'Legal', 'wp-mcp-ai' ),
-				'financial'  => __( 'Financial', 'wp-mcp-ai' ),
-				'other'      => __( 'Other', 'wp-mcp-ai' ),
+				'advisory'   => __( 'Advisory/Consulting', 'mcp-ai-wpoos' ),
+				'creative'   => __( 'Creative Services', 'mcp-ai-wpoos' ),
+				'technical'  => __( 'Technical', 'mcp-ai-wpoos' ),
+				'healthcare' => __( 'Healthcare', 'mcp-ai-wpoos' ),
+				'legal'      => __( 'Legal', 'mcp-ai-wpoos' ),
+				'financial'  => __( 'Financial', 'mcp-ai-wpoos' ),
+				'other'      => __( 'Other', 'mcp-ai-wpoos' ),
 			);
 
 			$category_display = isset( $category_labels[ $category ] ) ? $category_labels[ $category ] : ( $category ? ucfirst( $category ) : '' );

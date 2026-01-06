@@ -30,14 +30,14 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Search Content (Validated)', 'wp-mcp-ai' );
+		return __( 'Search Content (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Search published posts by keyword, post type, taxonomy terms, and metadata. Uses Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Search published posts by keyword, post type, taxonomy terms, and metadata. Uses Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,30 +49,30 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 			'properties'           => array(
 				'search_term'       => array(
 					'type'        => 'string',
-					'description' => __( 'Keyword or phrase to search for.', 'wp-mcp-ai' ),
+					'description' => __( 'Keyword or phrase to search for.', 'mcp-ai-wpoos' ),
 				),
 				'post_type'         => array(
 					'type'        => 'string',
-					'description' => __( 'Limit results to a specific post type. Use "any" to search across public types.', 'wp-mcp-ai' ),
+					'description' => __( 'Limit results to a specific post type. Use "any" to search across public types.', 'mcp-ai-wpoos' ),
 					'default'     => 'any',
 				),
 				'limit'             => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of results to return.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of results to return.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 10,
 				),
 				'taxonomy_filters'  => array(
 					'type'        => 'array',
-					'description' => __( 'Optional taxonomy filters. Each filter requires a taxonomy name and one or more terms.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional taxonomy filters. Each filter requires a taxonomy name and one or more terms.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'                 => 'object',
 						'required'             => array( 'taxonomy', 'terms' ),
 						'properties'           => array(
 							'taxonomy' => array(
 								'type'        => 'string',
-								'description' => __( 'Taxonomy to filter by (e.g. category, post_tag).', 'wp-mcp-ai' ),
+								'description' => __( 'Taxonomy to filter by (e.g. category, post_tag).', 'mcp-ai-wpoos' ),
 							),
 							'terms'    => array(
 								'type'        => 'array',
@@ -80,18 +80,18 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 									'type' => 'string',
 								),
 								'minItems'    => 1,
-								'description' => __( 'List of terms to match. Accepts slugs by default.', 'wp-mcp-ai' ),
+								'description' => __( 'List of terms to match. Accepts slugs by default.', 'mcp-ai-wpoos' ),
 							),
 							'operator' => array(
 								'type'        => 'string',
 								'enum'        => array( 'IN', 'NOT IN', 'AND', 'EXISTS', 'NOT EXISTS' ),
-								'description' => __( 'Comparison operator.', 'wp-mcp-ai' ),
+								'description' => __( 'Comparison operator.', 'mcp-ai-wpoos' ),
 								'default'     => 'IN',
 							),
 							'field'    => array(
 								'type'        => 'string',
 								'enum'        => array( 'slug', 'name', 'term_id', 'term_taxonomy_id' ),
-								'description' => __( 'Term field to query against.', 'wp-mcp-ai' ),
+								'description' => __( 'Term field to query against.', 'mcp-ai-wpoos' ),
 								'default'     => 'slug',
 							),
 						),
@@ -101,34 +101,34 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 				'taxonomy_relation' => array(
 					'type'        => 'string',
 					'enum'        => array( 'AND', 'OR' ),
-					'description' => __( 'Logical relation between multiple taxonomy filters.', 'wp-mcp-ai' ),
+					'description' => __( 'Logical relation between multiple taxonomy filters.', 'mcp-ai-wpoos' ),
 					'default'     => 'AND',
 				),
 				'meta_filters'      => array(
 					'type'        => 'array',
-					'description' => __( 'Optional post meta filters.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional post meta filters.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'                 => 'object',
 						'required'             => array( 'key', 'value' ),
 						'properties'           => array(
 							'key'     => array(
 								'type'        => 'string',
-								'description' => __( 'Meta key to compare.', 'wp-mcp-ai' ),
+								'description' => __( 'Meta key to compare.', 'mcp-ai-wpoos' ),
 							),
 							'value'   => array(
 								'type'        => 'string',
-								'description' => __( 'Meta value to compare. Can be a string or JSON-encoded array for IN/NOT IN comparisons.', 'wp-mcp-ai' ),
+								'description' => __( 'Meta value to compare. Can be a string or JSON-encoded array for IN/NOT IN comparisons.', 'mcp-ai-wpoos' ),
 							),
 							'compare' => array(
 								'type'        => 'string',
 								'enum'        => array( '=', '!=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS' ),
-								'description' => __( 'Meta comparison operator.', 'wp-mcp-ai' ),
+								'description' => __( 'Meta comparison operator.', 'mcp-ai-wpoos' ),
 								'default'     => '=',
 							),
 							'type'    => array(
 								'type'        => 'string',
 								'enum'        => array( 'NUMERIC', 'BINARY', 'CHAR', 'DATE', 'DATETIME', 'DECIMAL', 'SIGNED', 'TIME', 'UNSIGNED' ),
-								'description' => __( 'Data type to cast the meta value for comparisons.', 'wp-mcp-ai' ),
+								'description' => __( 'Data type to cast the meta value for comparisons.', 'mcp-ai-wpoos' ),
 							),
 						),
 						'additionalProperties' => false,
@@ -137,7 +137,7 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 				'meta_relation'     => array(
 					'type'        => 'string',
 					'enum'        => array( 'AND', 'OR' ),
-					'description' => __( 'Logical relation between multiple meta filters.', 'wp-mcp-ai' ),
+					'description' => __( 'Logical relation between multiple meta filters.', 'mcp-ai-wpoos' ),
 					'default'     => 'AND',
 				),
 			),
@@ -163,11 +163,11 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to search content.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to search content.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$search_term = sanitize_text_field( $validated_args->search_term );
@@ -178,7 +178,7 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 		$meta_filters     = $this->prepare_meta_filters( $validated_args );
 
 		if ( '' === $search_term && empty( $taxonomy_filters ) && empty( $meta_filters ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_criteria', __( 'Provide a search term, taxonomy filter, or meta filter to narrow the results.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_criteria', __( 'Provide a search term, taxonomy filter, or meta filter to narrow the results.', 'mcp-ai-wpoos' ) );
 		}
 
 		$query_args = array(
@@ -225,7 +225,7 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 		return array(
 			'summary' => sprintf(
 				/* translators: 1: number of results, 2: search term */
-				__( 'Found %1$d result(s) for "%2$s"', 'wp-mcp-ai' ),
+				__( 'Found %1$d result(s) for "%2$s"', 'mcp-ai-wpoos' ),
 				count( $results ),
 				$search_term
 			),

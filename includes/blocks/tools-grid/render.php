@@ -11,16 +11,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Check user permissions.
 if ( ! current_user_can( 'edit_posts' ) ) {
-	echo '<p class="wp-block-wp-mcp-ai-tools-grid__notice">' . esc_html__( 'You do not have permission to view tools.', 'wp-mcp-ai' ) . '</p>';
+	echo '<p class="wp-block-wp-mcp-ai-tools-grid__notice">' . esc_html__( 'You do not have permission to view tools.', 'mcp-ai-wpoos' ) . '</p>';
 	return;
 }
 
 $title             = isset( $attributes['title'] ) && '' !== $attributes['title']
 	? $attributes['title']
-	: __( 'Available Tools', 'wp-mcp-ai' );
+	: __( 'Available Tools', 'mcp-ai-wpoos' );
 $description       = isset( $attributes['description'] ) && '' !== $attributes['description']
 	? $attributes['description']
-	: __( 'Select or deselect tools to customize what capabilities the assistant can use.', 'wp-mcp-ai' );
+	: __( 'Select or deselect tools to customize what capabilities the assistant can use.', 'mcp-ai-wpoos' );
 $show_descriptions = isset( $attributes['showDescriptions'] ) ? $attributes['showDescriptions'] : true;
 $start_collapsed   = isset( $attributes['startCollapsed'] ) ? $attributes['startCollapsed'] : true;
 $show_actions      = isset( $attributes['showActions'] ) ? $attributes['showActions'] : true;
@@ -49,7 +49,7 @@ if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		$group_labels = array();
 	}
 	if ( ! isset( $group_labels['other'] ) ) {
-		$group_labels['other'] = __( 'Other tools', 'wp-mcp-ai' );
+		$group_labels['other'] = __( 'Other tools', 'mcp-ai-wpoos' );
 	}
 
 	$grouped = array();
@@ -99,7 +99,7 @@ if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 $unique_id = wp_unique_id( 'wp-mcp-ai-tools-grid-' );
 
 if ( empty( $groups ) ) {
-	echo '<p class="wp-block-wp-mcp-ai-tools-grid__notice">' . esc_html__( 'No tools are currently registered.', 'wp-mcp-ai' ) . '</p>';
+	echo '<p class="wp-block-wp-mcp-ai-tools-grid__notice">' . esc_html__( 'No tools are currently registered.', 'mcp-ai-wpoos' ) . '</p>';
 	return;
 }
 
@@ -131,16 +131,64 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	<?php endif; ?>
 
 	<?php if ( $show_actions ) : ?>
+		<?php
+		// Render tool presets if helper class is available.
+		if ( class_exists( 'WP_MCP_AI_Tool_Presets_Helper' ) && class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+			$available_tools = array();
+			foreach ( $registry->get_tools() as $tool ) {
+				if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
+					$available_tools[] = $tool->get_slug();
+				}
+			}
+
+			WP_MCP_AI_Tool_Presets_Helper::render_presets(
+				array(
+					'available_tools'   => $available_tools,
+					'container_class'   => 'wp-block-wp-mcp-ai-tools-grid__presets',
+					'checkbox_selector' => '.wp-mcp-ai-tools-grid__checkbox',
+				)
+			);
+		}
+		?>
+
+		<div class="wp-block-wp-mcp-ai-tools-grid__filter-bar">
+			<label for="<?php echo esc_attr( $unique_id . '-search' ); ?>" class="wp-block-wp-mcp-ai-tools-grid__filter-label">
+				<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
+			</label>
+			<input 
+				type="search" 
+				id="<?php echo esc_attr( $unique_id . '-search' ); ?>"
+				class="wp-mcp-ai-tools-grid__search-input" 
+				placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
+				aria-label="<?php esc_attr_e( 'Search tools', 'mcp-ai-wpoos' ); ?>"
+			>
+			<label for="<?php echo esc_attr( $unique_id . '-group' ); ?>" class="wp-block-wp-mcp-ai-tools-grid__filter-label">
+				<?php esc_html_e( 'Category:', 'mcp-ai-wpoos' ); ?>
+			</label>
+			<select id="<?php echo esc_attr( $unique_id . '-group' ); ?>" class="wp-mcp-ai-tools-grid__group-select" aria-label="<?php esc_attr_e( 'Filter by group', 'mcp-ai-wpoos' ); ?>">
+				<option value=""><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos' ); ?></option>
+				<?php foreach ( $groups as $group ) : ?>
+					<option value="<?php echo esc_attr( $group['id'] ); ?>"><?php echo esc_html( $group['label'] ); ?></option>
+				<?php endforeach; ?>
+			</select>
+			<button type="button" class="button wp-mcp-ai-tools-grid__clear-filters" style="display: none;">
+				<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
+			</button>
+		</div>
 		<div class="wp-block-wp-mcp-ai-tools-grid__actions">
 			<button type="button" class="button wp-mcp-ai-tools-grid__select-all">
-				<?php esc_html_e( 'Select All', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Select All', 'mcp-ai-wpoos' ); ?>
 			</button>
 			<button type="button" class="button wp-mcp-ai-tools-grid__deselect-all">
-				<?php esc_html_e( 'Deselect All', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Deselect All', 'mcp-ai-wpoos' ); ?>
 			</button>
 			<span class="wp-mcp-ai-tools-grid__count">
 				<strong class="wp-mcp-ai-tools-grid__selected-count">0</strong>
-				<?php esc_html_e( 'tools selected', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'tools selected', 'mcp-ai-wpoos' ); ?>
+			</span>
+			<span class="wp-mcp-ai-tools-grid__visible-count" style="display: none;">
+				<span class="wp-mcp-ai-tools-grid__visible-count-text"></span>
 			</span>
 		</div>
 	<?php endif; ?>

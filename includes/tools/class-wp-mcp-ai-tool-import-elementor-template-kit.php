@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Import Elementor Template Kit tool is disabled because Elementor is not active.', 'wp-mcp-ai' );
+		return __( 'The Import Elementor Template Kit tool is disabled because Elementor is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -47,14 +47,14 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Import Elementor Template Kit', 'wp-mcp-ai' );
+		return __( 'Import Elementor Template Kit', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Imports an Elementor template kit ZIP file from the Media Library and creates pages. Requires Elementor to be active.', 'wp-mcp-ai' );
+		return __( 'Imports an Elementor template kit ZIP file from the Media Library and creates pages. Requires Elementor to be active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -66,36 +66,36 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 			'properties'           => array(
 				'attachment_id'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Media Library attachment ID of the template kit ZIP file.', 'wp-mcp-ai' ),
+					'description' => __( 'Media Library attachment ID of the template kit ZIP file.', 'mcp-ai-wpoos' ),
 				),
 				'file_id'            => $this->get_file_id_parameter_schema(),
-				'url'                => $this->get_url_parameter_schema( 'file', __( 'URL to template kit ZIP file.', 'wp-mcp-ai' ) ),
+				'url'                => $this->get_url_parameter_schema( 'file', __( 'URL to template kit ZIP file.', 'mcp-ai-wpoos' ) ),
 				'max_pages'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of pages to create (1-5).', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of pages to create (1-5).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 5,
 					'default'     => 5,
 				),
 				'page_status'        => array(
 					'type'        => 'string',
-					'description' => __( 'Status for created pages (draft or publish).', 'wp-mcp-ai' ),
+					'description' => __( 'Status for created pages (draft or publish).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'draft', 'publish' ),
 					'default'     => 'draft',
 				),
 				'set_front_page'     => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to set the Home page as the static front page.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to set the Home page as the static front page.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'overwrite_existing' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to overwrite existing pages with the same title.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to overwrite existing pages with the same title.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'dry_run'            => array(
 					'type'        => 'boolean',
-					'description' => __( 'If true, simulates the import without creating pages.', 'wp-mcp-ai' ),
+					'description' => __( 'If true, simulates the import without creating pages.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 			),
@@ -115,7 +115,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_elementor_missing',
-				__( 'Elementor is not active on this site.', 'wp-mcp-ai' )
+				__( 'Elementor is not active on this site.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -124,12 +124,12 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to import Elementor template kits.', 'wp-mcp-ai' )
+				__( 'You do not have permission to import Elementor template kits.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check site creator settings.
@@ -137,7 +137,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_elementor_kit_import'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The Elementor Kit Import tool is disabled. Enable it in NV oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai' )
+				__( 'The Elementor Kit Import tool is disabled. Enable it in NV oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -148,7 +148,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( is_array( $resolved ) && isset( $resolved['url'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_remote_url_not_supported',
-				__( 'Remote URLs are not yet supported for template kits. Please upload to Media Library first.', 'wp-mcp-ai' ),
+				__( 'Remote URLs are not yet supported for template kits. Please upload to Media Library first.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -160,7 +160,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( ! $resolved ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_attachment',
-				__( 'You must provide attachment_id, file_id, or url.', 'wp-mcp-ai' ),
+				__( 'You must provide attachment_id, file_id, or url.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -171,7 +171,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_attachment',
-				__( 'Invalid attachment ID provided.', 'wp-mcp-ai' )
+				__( 'Invalid attachment ID provided.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -180,7 +180,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_not_found',
-				__( 'Attachment file not found.', 'wp-mcp-ai' )
+				__( 'Attachment file not found.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -188,7 +188,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( 'application/zip' !== $mime_type && 'application/x-zip-compressed' !== $mime_type ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_file_type',
-				__( 'The attachment must be a ZIP file.', 'wp-mcp-ai' )
+				__( 'The attachment must be a ZIP file.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -247,7 +247,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( ! $wp_filesystem ) {
 			return new WP_Error(
 				'wp_mcp_ai_filesystem_error',
-				__( 'Unable to initialize WordPress filesystem.', 'wp-mcp-ai' )
+				__( 'Unable to initialize WordPress filesystem.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -264,7 +264,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 				'wp_mcp_ai_unzip_failed',
 				sprintf(
 					/* translators: %s: Error message */
-					__( 'Failed to extract ZIP file: %s', 'wp-mcp-ai' ),
+					__( 'Failed to extract ZIP file: %s', 'mcp-ai-wpoos' ),
 					$unzip_result->get_error_message()
 				)
 			);
@@ -276,7 +276,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 			$this->cleanup_temp_dir( $temp_dir );
 			return new WP_Error(
 				'wp_mcp_ai_manifest_not_found',
-				__( 'manifest.json not found in the template kit.', 'wp-mcp-ai' )
+				__( 'manifest.json not found in the template kit.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -286,7 +286,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 			$this->cleanup_temp_dir( $temp_dir );
 			return new WP_Error(
 				'wp_mcp_ai_manifest_read_error',
-				__( 'Unable to read manifest.json.', 'wp-mcp-ai' )
+				__( 'Unable to read manifest.json.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -297,7 +297,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 				'wp_mcp_ai_manifest_parse_error',
 				sprintf(
 					/* translators: %s: JSON error message */
-					__( 'Invalid manifest.json: %s', 'wp-mcp-ai' ),
+					__( 'Invalid manifest.json: %s', 'mcp-ai-wpoos' ),
 					json_last_error_msg()
 				)
 			);
@@ -361,7 +361,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		// Get templates from manifest.
 		$templates = $this->get_prioritized_templates( $manifest );
 		if ( empty( $templates ) ) {
-			$results['errors'][] = __( 'No valid templates found in manifest.', 'wp-mcp-ai' );
+			$results['errors'][] = __( 'No valid templates found in manifest.', 'mcp-ai-wpoos' );
 			$results['success']  = false;
 			return $results;
 		}
@@ -503,7 +503,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( empty( $title ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_title',
-				__( 'Template has no title.', 'wp-mcp-ai' )
+				__( 'Template has no title.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -522,7 +522,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 				'action'  => 'skipped',
 				'page_id' => $existing_page->ID,
 				'title'   => $title,
-				'reason'  => __( 'Page already exists and overwrite is disabled.', 'wp-mcp-ai' ),
+				'reason'  => __( 'Page already exists and overwrite is disabled.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -638,8 +638,8 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 			'wp_mcp_ai_template_file_not_found',
 			sprintf(
 				/* translators: %s: Template title */
-				__( 'Template file not found for: %s', 'wp-mcp-ai' ),
-				isset( $template['title'] ) ? $template['title'] : __( 'Unknown', 'wp-mcp-ai' )
+				__( 'Template file not found for: %s', 'mcp-ai-wpoos' ),
+				isset( $template['title'] ) ? $template['title'] : __( 'Unknown', 'mcp-ai-wpoos' )
 			)
 		);
 	}
@@ -716,7 +716,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		$parts = array();
 
 		if ( $results['dry_run'] ) {
-			$parts[] = __( '[DRY RUN]', 'wp-mcp-ai' );
+			$parts[] = __( '[DRY RUN]', 'mcp-ai-wpoos' );
 		}
 
 		$created_count = count( $results['pages_created'] );
@@ -727,7 +727,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( $created_count > 0 ) {
 			$parts[] = sprintf(
 				/* translators: %d: Number of pages */
-				_n( '%d page created', '%d pages created', $created_count, 'wp-mcp-ai' ),
+				_n( '%d page created', '%d pages created', $created_count, 'mcp-ai-wpoos' ),
 				$created_count
 			);
 		}
@@ -735,7 +735,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( $updated_count > 0 ) {
 			$parts[] = sprintf(
 				/* translators: %d: Number of pages */
-				_n( '%d page updated', '%d pages updated', $updated_count, 'wp-mcp-ai' ),
+				_n( '%d page updated', '%d pages updated', $updated_count, 'mcp-ai-wpoos' ),
 				$updated_count
 			);
 		}
@@ -743,7 +743,7 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( $skipped_count > 0 ) {
 			$parts[] = sprintf(
 				/* translators: %d: Number of pages */
-				_n( '%d page skipped', '%d pages skipped', $skipped_count, 'wp-mcp-ai' ),
+				_n( '%d page skipped', '%d pages skipped', $skipped_count, 'mcp-ai-wpoos' ),
 				$skipped_count
 			);
 		}
@@ -751,17 +751,17 @@ class WP_MCP_AI_Tool_Import_Elementor_Template_Kit implements WP_MCP_AI_Tool_Int
 		if ( $error_count > 0 ) {
 			$parts[] = sprintf(
 				/* translators: %d: Number of errors */
-				_n( '%d error', '%d errors', $error_count, 'wp-mcp-ai' ),
+				_n( '%d error', '%d errors', $error_count, 'mcp-ai-wpoos' ),
 				$error_count
 			);
 		}
 
 		if ( $results['front_page'] ) {
-			$parts[] = __( 'front page set', 'wp-mcp-ai' );
+			$parts[] = __( 'front page set', 'mcp-ai-wpoos' );
 		}
 
 		if ( empty( $parts ) ) {
-			return __( 'No changes made.', 'wp-mcp-ai' );
+			return __( 'No changes made.', 'mcp-ai-wpoos' );
 		}
 
 		return implode( ', ', $parts ) . '.';

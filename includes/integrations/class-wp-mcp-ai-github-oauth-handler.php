@@ -28,7 +28,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 		 */
 		public function handle_github_oauth_start() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_github_oauth_start' );
@@ -38,7 +38,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 			if ( empty( $settings['github_client_id'] ) || empty( $settings['github_client_secret'] ) ) {
 				$this->add_settings_redirect_notice(
 					'github_oauth_missing_client',
-					__( 'Enter a GitHub OAuth client ID and secret before connecting the account.', 'wp-mcp-ai' )
+					__( 'Enter a GitHub OAuth client ID and secret before connecting the account.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -90,7 +90,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 		 */
 		public function handle_github_oauth_callback() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			// OAuth callback parameters from GitHub. No nonce verification required as state parameter provides CSRF protection.
@@ -106,7 +106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 					'github_oauth_error',
 					sprintf(
 						/* translators: %s: GitHub error message. */
-						__( 'GitHub returned an error during authorisation: %s', 'wp-mcp-ai' ),
+						__( 'GitHub returned an error during authorisation: %s', 'mcp-ai-wpoos' ),
 						$error
 					)
 				);
@@ -121,7 +121,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 			if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
 				$this->add_settings_redirect_notice(
 					'github_oauth_state_mismatch',
-					__( 'The GitHub authorisation request could not be verified. Please try again.', 'wp-mcp-ai' )
+					__( 'The GitHub authorisation request could not be verified. Please try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -129,7 +129,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 			if ( empty( $code ) ) {
 				$this->add_settings_redirect_notice(
 					'github_oauth_missing_code',
-					__( 'GitHub did not return an authorisation code. Please try again.', 'wp-mcp-ai' )
+					__( 'GitHub did not return an authorisation code. Please try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -139,7 +139,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 			if ( empty( $settings['github_client_id'] ) || empty( $settings['github_client_secret'] ) ) {
 				$this->add_settings_redirect_notice(
 					'github_oauth_missing_client',
-					__( 'Enter a GitHub OAuth client ID and secret before connecting the account.', 'wp-mcp-ai' )
+					__( 'Enter a GitHub OAuth client ID and secret before connecting the account.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -173,7 +173,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'GitHub OAuth token exchange failed.', array( 'error' => $response->get_error_message() ) );
 				$this->add_settings_redirect_notice(
 					'github_oauth_token_request_failed',
-					__( 'GitHub could not exchange the authorisation code. Check the client credentials and try again.', 'wp-mcp-ai' )
+					__( 'GitHub could not exchange the authorisation code. Check the client credentials and try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -191,7 +191,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 				);
 				$this->add_settings_redirect_notice(
 					'github_oauth_token_request_error',
-					__( 'GitHub rejected the authorisation code. Review the OAuth application configuration and try again.', 'wp-mcp-ai' )
+					__( 'GitHub rejected the authorisation code. Review the OAuth application configuration and try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -202,7 +202,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'GitHub OAuth token response was not valid JSON.', array( 'body' => $body ) );
 				$this->add_settings_redirect_notice(
 					'github_oauth_token_invalid_json',
-					__( 'GitHub returned an unexpected response while exchanging the authorisation code.', 'wp-mcp-ai' )
+					__( 'GitHub returned an unexpected response while exchanging the authorisation code.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -213,7 +213,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 				WP_MCP_AI_Admin_Settings::log( 'GitHub OAuth callback omitted an access token.', array( 'response' => $decoded ) );
 				$this->add_settings_redirect_notice(
 					'github_oauth_missing_access_token',
-					__( 'GitHub did not return an access token. Please try again.', 'wp-mcp-ai' )
+					__( 'GitHub did not return an access token. Please try again.', 'mcp-ai-wpoos' )
 				);
 				$this->redirect_to_settings_page();
 			}
@@ -258,12 +258,12 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 			$sanitized     = $settings_base->sanitize_settings( $updated_settings );
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $sanitized );
 
-			$notice_message = __( 'GitHub authorisation complete. Access token has been stored.', 'wp-mcp-ai' );
+			$notice_message = __( 'GitHub authorisation complete. Access token has been stored.', 'mcp-ai-wpoos' );
 
 			if ( $username ) {
 				$notice_message = sprintf(
 					/* translators: %s: GitHub username. */
-					__( 'GitHub authorisation complete for %s.', 'wp-mcp-ai' ),
+					__( 'GitHub authorisation complete for %s.', 'mcp-ai-wpoos' ),
 					$username
 				);
 			}

@@ -1,6 +1,6 @@
 # Testing Guide - Open Operator System
 
-This document describes how to set up and run tests for the Open Operator System (WP oOS) plugin.
+This document describes how to set up and run tests for the Open Operator System (NV oOS) plugin.
 
 ## Overview
 

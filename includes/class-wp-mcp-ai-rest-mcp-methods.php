@@ -124,14 +124,14 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					'wp_mcp_ai_method_not_found',
 					sprintf(
 						/* translators: %s: method name */
-						__( 'MCP method not found: %s', 'wp-mcp-ai' ),
+						__( 'MCP method not found: %s', 'mcp-ai-wpoos' ),
 						$method
 					),
 					array(
 						'status'  => 404,
 						'actions' => array(
-							'check_method' => __( 'Verify the method name is spelled correctly and supported by this server.', 'wp-mcp-ai' ),
-							'list_methods' => __( 'Supported methods: initialize, tools/list, tools/call, resources/list, prompts/list', 'wp-mcp-ai' ),
+							'check_method' => __( 'Verify the method name is spelled correctly and supported by this server.', 'mcp-ai-wpoos' ),
+							'list_methods' => __( 'Supported methods: initialize, tools/list, tools/call, resources/list, prompts/list', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -153,14 +153,14 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		if ( ! empty( $site_desc ) ) {
 			$instructions = sprintf(
 				/* translators: 1: site name, 2: site description */
-				__( 'This is a WordPress site (%1$s). %2$s. You can use the available tools to interact with WordPress content, users, and functionality.', 'wp-mcp-ai' ),
+				__( 'This is a WordPress site (%1$s). %2$s. You can use the available tools to interact with WordPress content, users, and functionality.', 'mcp-ai-wpoos' ),
 				$site_name,
 				$site_desc
 			);
 		} else {
 			$instructions = sprintf(
 				/* translators: %s: site name */
-				__( 'This is a WordPress site (%s). You can use the available tools to interact with WordPress content, users, and functionality.', 'wp-mcp-ai' ),
+				__( 'This is a WordPress site (%s). You can use the available tools to interact with WordPress content, users, and functionality.', 'mcp-ai-wpoos' ),
 				$site_name
 			);
 		}
@@ -322,12 +322,12 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		if ( ! isset( $params['name'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_params',
-				__( 'Missing required parameter: name. MCP tools/call requires a tool name to execute.', 'wp-mcp-ai' ),
+				__( 'Missing required parameter: name. MCP tools/call requires a tool name to execute.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'provide_tool_name' => __( 'Include the "name" parameter in your tools/call request params with the slug of the tool you want to execute.', 'wp-mcp-ai' ),
-						'list_available'    => __( 'Call the tools/list method first to see available tools and their names.', 'wp-mcp-ai' ),
+						'provide_tool_name' => __( 'Include the "name" parameter in your tools/call request params with the slug of the tool you want to execute.', 'mcp-ai-wpoos' ),
+						'list_available'    => __( 'Call the tools/list method first to see available tools and their names.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -339,11 +339,11 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		if ( isset( $params['arguments'] ) && ! is_array( $params['arguments'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_params',
-				__( 'The "arguments" parameter must be an object/array.', 'wp-mcp-ai' ),
+				__( 'The "arguments" parameter must be an object/array.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'fix_arguments_type' => __( 'Ensure the "arguments" field contains a JSON object with key-value pairs for the tool parameters.', 'wp-mcp-ai' ),
+						'fix_arguments_type' => __( 'Ensure the "arguments" field contains a JSON object with key-value pairs for the tool parameters.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -372,11 +372,11 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		if ( ! isset( $data['result'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_tool_response',
-				__( 'Tool response missing required "result" key. This is an internal error.', 'wp-mcp-ai' ),
+				__( 'Tool response missing required "result" key. This is an internal error.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 500,
 					'actions' => array(
-						'report_issue' => __( 'This is likely a bug in the tool implementation. Please report this to the plugin administrator.', 'wp-mcp-ai' ),
+						'report_issue' => __( 'This is likely a bug in the tool implementation. Please report this to the plugin administrator.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -498,13 +498,13 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					'wp_mcp_ai_encoding_failed',
 					sprintf(
 						/* translators: %s: data type */
-						__( 'Failed to encode scalar tool result of type: %s', 'wp-mcp-ai' ),
+						__( 'Failed to encode scalar tool result of type: %s', 'mcp-ai-wpoos' ),
 						gettype( $tool_result )
 					),
 					array(
 						'status'  => 500,
 						'actions' => array(
-							'check_result' => __( 'This is an internal error. The tool returned data that could not be encoded.', 'wp-mcp-ai' ),
+							'check_result' => __( 'This is an internal error. The tool returned data that could not be encoded.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -536,12 +536,12 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 					return new WP_Error(
 						'wp_mcp_ai_encoding_failed',
-						__( 'Unable to encode tool result to JSON. The tool may have returned circular references or invalid data.', 'wp-mcp-ai' ),
+						__( 'Unable to encode tool result to JSON. The tool may have returned circular references or invalid data.', 'mcp-ai-wpoos' ),
 						array(
 							'status'  => 500,
 							'actions' => array(
-								'check_tool'   => __( 'This is likely a bug in the tool implementation. Check if the tool is returning circular references or non-serializable data.', 'wp-mcp-ai' ),
-								'report_issue' => __( 'Please report this to the plugin administrator with the tool name you were trying to execute.', 'wp-mcp-ai' ),
+								'check_tool'   => __( 'This is likely a bug in the tool implementation. Check if the tool is returning circular references or non-serializable data.', 'mcp-ai-wpoos' ),
+								'report_issue' => __( 'Please report this to the plugin administrator with the tool name you were trying to execute.', 'mcp-ai-wpoos' ),
 							),
 						)
 					);
@@ -556,13 +556,13 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			'wp_mcp_ai_invalid_result_type',
 			sprintf(
 				/* translators: %s: data type */
-				__( 'Tool result has unexpected type: %s', 'wp-mcp-ai' ),
+				__( 'Tool result has unexpected type: %s', 'mcp-ai-wpoos' ),
 				gettype( $tool_result )
 			),
 			array(
 				'status'  => 500,
 				'actions' => array(
-					'report_issue' => __( 'This is an internal error. The tool returned an unexpected data type. Please report this to the plugin administrator.', 'wp-mcp-ai' ),
+					'report_issue' => __( 'This is an internal error. The tool returned an unexpected data type. Please report this to the plugin administrator.', 'mcp-ai-wpoos' ),
 				),
 			)
 		);

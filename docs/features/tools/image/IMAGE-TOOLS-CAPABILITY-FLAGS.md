@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the capability flags enhancement for the WP oOS image manipulation tools (Graphic Editor Suite). These flags provide metadata to the orchestration layer and AI assistants for better workflow planning and resource management.
+This document describes the capability flags enhancement for the NV oOS image manipulation tools (Graphic Editor Suite). These flags provide metadata to the orchestration layer and AI assistants for better workflow planning and resource management.
 
 ## Enhanced Tools
 

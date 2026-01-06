@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the localStorage quota monitoring and conversation export features added to Open Operator System (WP oOS).
+This document describes the localStorage quota monitoring and conversation export features added to Open Operator System (NV oOS).
 
 ## Features
 
@@ -29,12 +29,12 @@ The quota monitor automatically displays when the following element exists in th
   - Green (OK): 0-74% used
   - Orange (Warning): 75-89% used
   - Red (Critical): 90-100% used
-- **Detailed Tooltip**: Hover for breakdown of WP oOS vs. total storage
+- **Detailed Tooltip**: Hover for breakdown of NV oOS vs. total storage
 
 #### Storage Calculation
 - Estimates total quota at 5MB (conservative browser standard)
 - Tracks total localStorage usage
-- Separates WP oOS chat data from other localStorage data
+- Separates NV oOS chat data from other localStorage data
 - Uses prefix `wp_mcp_ai_chat_` for identification
 
 ### 2. Conversation Export
@@ -138,7 +138,7 @@ Returns object with localStorage usage statistics:
 ```javascript
 {
   used: 12345,              // Total bytes used
-  wpMcpAiUsed: 5678,       // Bytes used by WP oOS
+  wpMcpAiUsed: 5678,       // Bytes used by NV oOS
   total: 5242880,          // Total estimated quota (5MB)
   percentage: 25.5,        // Percentage used
   available: true,         // Whether localStorage is available

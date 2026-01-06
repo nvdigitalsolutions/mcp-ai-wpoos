@@ -508,4 +508,629 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertEquals( 'wp_mcp_ai_points_exceed_max', $result->get_error_code() );
 	}
+
+	/**
+	 * Test update_quiz tool updates title.
+	 */
+	public function test_update_quiz_title() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		// Create a quiz first.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Original Title',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'What is 2+2?',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', 1 );
+
+		// Update the quiz title.
+		$tool   = new WP_MCP_AI_Tool_Update_Quiz();
+		$result = $tool->execute(
+			array(
+				'quiz_id' => $quiz_id,
+				'title'   => 'Updated Title',
+			),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertArrayHasKey( 'quiz_id', $result );
+		$this->assertEquals( 'Updated Title', $result['title'] );
+		$this->assertContains( 'title', $result['updated_fields'] );
+
+		// Verify in database.
+		$quiz = get_post( $quiz_id );
+		$this->assertEquals( 'Updated Title', $quiz->post_title );
+	}
+
+	/**
+	 * Test update_quiz tool updates questions.
+	 */
+	public function test_update_quiz_questions() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		// Create a quiz first.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Math Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$old_questions = array(
+			array(
+				'question' => 'What is 1+1?',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $old_questions );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', 1 );
+
+		// Update with new questions.
+		$new_questions = array(
+			array(
+				'question' => 'What is 2+2?',
+				'type'     => 'multiple_choice',
+				'options'  => array( '3', '4', '5' ),
+				'points'   => 2,
+			),
+			array(
+				'question' => 'Is 3+3=6?',
+				'type'     => 'true_false',
+				'points'   => 1,
+			),
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Update_Quiz();
+		$result = $tool->execute(
+			array(
+				'quiz_id'   => $quiz_id,
+				'questions' => $new_questions,
+			),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 2, $result['question_count'] );
+		$this->assertEquals( 3, $result['total_points'] );
+		$this->assertContains( 'questions', $result['updated_fields'] );
+	}
+
+	/**
+	 * Test update_quiz requires permission.
+	 */
+	public function test_update_quiz_requires_permission() {
+		$admin_user  = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$other_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Create a quiz as admin.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Admin Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Test?',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+
+		// Try to update as different user without permission.
+		$tool   = new WP_MCP_AI_Tool_Update_Quiz();
+		$result = $tool->execute(
+			array(
+				'quiz_id' => $quiz_id,
+				'title'   => 'Hacked Title',
+			),
+			array( 'user_id' => $other_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+	}
+
+	/**
+	 * Test update_quiz allows author to update.
+	 */
+	public function test_update_quiz_author_can_update() {
+		$author_user = $this->factory->user->create( array( 'role' => 'author' ) );
+
+		// Create a quiz as author.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Author Quiz',
+				'post_status' => 'publish',
+				'post_author' => $author_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Test?',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+
+		// Author should be able to update their own quiz.
+		$tool   = new WP_MCP_AI_Tool_Update_Quiz();
+		$result = $tool->execute(
+			array(
+				'quiz_id'    => $quiz_id,
+				'time_limit' => 45,
+			),
+			array( 'user_id' => $author_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 45, $result['time_limit'] );
+	}
+
+	/**
+	 * Test update_quiz validates quiz_id is required.
+	 */
+	public function test_update_quiz_requires_quiz_id() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		$tool   = new WP_MCP_AI_Tool_Update_Quiz();
+		$result = $tool->execute(
+			array(
+				'title' => 'New Title',
+			),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_missing_quiz_id', $result->get_error_code() );
+	}
+
+	/**
+	 * Test permission boundaries - subscriber trying to grade.
+	 */
+	public function test_subscriber_cannot_grade_quiz() {
+		$admin_user      = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$subscriber_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Create a quiz and submission as admin.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Test Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'What is 2+2?',
+				'type'     => 'short_answer',
+				'points'   => 5,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', 5 );
+
+		// Create a submission.
+		$submission_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_submission',
+				'post_status' => 'pending',
+				'post_author' => $subscriber_user,
+			)
+		);
+
+		update_post_meta( $submission_id, '_mcp_ai_submission_quiz_id', $quiz_id );
+		update_post_meta( $submission_id, '_mcp_ai_submission_status', 'pending' );
+		update_post_meta( $submission_id, '_mcp_ai_submission_total_points', 5 );
+
+		// Try to grade as subscriber (should fail).
+		$tool   = new WP_MCP_AI_Tool_Grade_Quiz();
+		$result = $tool->execute(
+			array(
+				'submission_id' => $submission_id,
+				'grades'        => array(
+					array(
+						'question_index' => 0,
+						'points_earned'  => 5,
+					),
+				),
+			),
+			array( 'user_id' => $subscriber_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+	}
+
+	/**
+	 * Test cascade deletion - submissions deleted when quiz deleted.
+	 */
+	public function test_cascade_deletion_of_submissions() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		// Create a quiz.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Quiz to Delete',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Test question',
+				'type'     => 'short_answer',
+				'points'   => 1,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+
+		// Create multiple submissions for this quiz.
+		$submission_ids = array();
+		for ( $i = 0; $i < 3; $i++ ) {
+			$submission_id = wp_insert_post(
+				array(
+					'post_type'   => 'mcp_ai_submission',
+					'post_status' => 'pending',
+					'post_author' => $admin_user,
+				)
+			);
+
+			update_post_meta( $submission_id, '_mcp_ai_submission_quiz_id', $quiz_id );
+			$submission_ids[] = $submission_id;
+		}
+
+		// Verify submissions exist.
+		foreach ( $submission_ids as $submission_id ) {
+			$this->assertNotNull( get_post( $submission_id ) );
+		}
+
+		// Delete the quiz.
+		wp_delete_post( $quiz_id, true );
+
+		// Verify submissions are also deleted (cascade deletion).
+		foreach ( $submission_ids as $submission_id ) {
+			$this->assertNull( get_post( $submission_id ) );
+		}
+	}
+
+	/**
+	 * Test full workflow integration: create → submit → grade → results.
+	 */
+	public function test_full_quiz_workflow_integration() {
+		$tutor_user   = $this->factory->user->create( array( 'role' => 'editor' ) );
+		$student_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Step 1: Create a quiz.
+		$create_tool = new WP_MCP_AI_Tool_Create_Quiz();
+		$quiz_result = $create_tool->execute(
+			array(
+				'title'         => 'Integration Test Quiz',
+				'description'   => 'A comprehensive test',
+				'time_limit'    => 30,
+				'passing_score' => 70,
+				'questions'     => array(
+					array(
+						'question'       => 'What is 5+5?',
+						'type'           => 'multiple_choice',
+						'options'        => array( '8', '10', '12' ),
+						'correct_answer' => '10',
+						'points'         => 5,
+					),
+					array(
+						'question'       => 'Is the sky blue?',
+						'type'           => 'true_false',
+						'correct_answer' => 'true',
+						'points'         => 5,
+					),
+				),
+			),
+			array( 'user_id' => $tutor_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $quiz_result );
+		$quiz_id = $quiz_result['quiz_id'];
+
+		// Step 2: Student submits answers.
+		$submit_tool      = new WP_MCP_AI_Tool_Submit_Quiz_Answer();
+		$submission_result = $submit_tool->execute(
+			array(
+				'quiz_id' => $quiz_id,
+				'answers' => array(
+					array(
+						'question_index' => 0,
+						'answer'         => '10',
+					),
+					array(
+						'question_index' => 1,
+						'answer'         => 'true',
+					),
+				),
+			),
+			array( 'user_id' => $student_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $submission_result );
+		$submission_id = $submission_result['submission_id'];
+		$this->assertEquals( 'pending', $submission_result['status'] );
+
+		// Step 3: Tutor grades the submission.
+		$grade_tool   = new WP_MCP_AI_Tool_Grade_Quiz();
+		$grade_result = $grade_tool->execute(
+			array(
+				'submission_id'    => $submission_id,
+				'grades'           => array(
+					array(
+						'question_index' => 0,
+						'points_earned'  => 5,
+						'feedback'       => 'Correct!',
+					),
+					array(
+						'question_index' => 1,
+						'points_earned'  => 5,
+						'feedback'       => 'Well done!',
+					),
+				),
+				'overall_feedback' => 'Perfect score!',
+			),
+			array( 'user_id' => $tutor_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $grade_result );
+		$this->assertEquals( 10, $grade_result['earned_points'] );
+		$this->assertEquals( 10, $grade_result['total_points'] );
+		$this->assertEquals( 100, $grade_result['percentage'] );
+		$this->assertTrue( $grade_result['passed'] );
+
+		// Step 4: Student views results.
+		$results_tool   = new WP_MCP_AI_Tool_Get_Quiz_Results();
+		$results_result = $results_tool->execute(
+			array(
+				'submission_id' => $submission_id,
+			),
+			array( 'user_id' => $student_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $results_result );
+		$this->assertEquals( $submission_id, $results_result['submission_id'] );
+		$this->assertEquals( $quiz_id, $results_result['quiz_id'] );
+		$this->assertEquals( 'graded', $results_result['status'] );
+		$this->assertEquals( 100, $results_result['percentage'] );
+		$this->assertTrue( $results_result['passed'] );
+		$this->assertEquals( 'Perfect score!', $results_result['overall_feedback'] );
+		$this->assertCount( 2, $results_result['detailed_results'] );
+	}
+
+	/**
+	 * Test permission boundary - editor can grade any quiz.
+	 */
+	public function test_editor_can_grade_any_quiz() {
+		$author_user = $this->factory->user->create( array( 'role' => 'author' ) );
+		$editor_user = $this->factory->user->create( array( 'role' => 'editor' ) );
+
+		// Create a quiz by author.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Author Quiz',
+				'post_status' => 'publish',
+				'post_author' => $author_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Test question?',
+				'type'     => 'short_answer',
+				'points'   => 3,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', 3 );
+
+		// Create a submission.
+		$submission_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_submission',
+				'post_status' => 'pending',
+				'post_author' => $author_user,
+			)
+		);
+
+		update_post_meta( $submission_id, '_mcp_ai_submission_quiz_id', $quiz_id );
+		update_post_meta( $submission_id, '_mcp_ai_submission_status', 'pending' );
+		update_post_meta( $submission_id, '_mcp_ai_submission_total_points', 3 );
+
+		// Editor (not the author) should be able to grade.
+		$tool   = new WP_MCP_AI_Tool_Grade_Quiz();
+		$result = $tool->execute(
+			array(
+				'submission_id' => $submission_id,
+				'grades'        => array(
+					array(
+						'question_index' => 0,
+						'points_earned'  => 3,
+					),
+				),
+			),
+			array( 'user_id' => $editor_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 3, $result['earned_points'] );
+	}
+
+	/**
+	 * Test get_quiz_analytics tool with Chart.js data.
+	 */
+	public function test_get_quiz_analytics() {
+		$admin_user   = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$student_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Create a quiz.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Analytics Test Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		$questions = array(
+			array(
+				'question' => 'Question 1',
+				'type'     => 'short_answer',
+				'points'   => 5,
+			),
+			array(
+				'question' => 'Question 2',
+				'type'     => 'short_answer',
+				'points'   => 5,
+			),
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $questions );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', 10 );
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', 70 );
+
+		// Create several graded submissions.
+		for ( $i = 0; $i < 5; $i++ ) {
+			$submission_id = wp_insert_post(
+				array(
+					'post_type'   => 'mcp_ai_submission',
+					'post_status' => 'publish',
+					'post_author' => $student_user,
+				)
+			);
+
+			$earned_points = 5 + $i; // Varying scores: 5, 6, 7, 8, 9.
+			$percentage    = ( $earned_points / 10 ) * 100;
+
+			update_post_meta( $submission_id, '_mcp_ai_submission_quiz_id', $quiz_id );
+			update_post_meta( $submission_id, '_mcp_ai_submission_status', 'graded' );
+			update_post_meta( $submission_id, '_mcp_ai_submission_earned_points', $earned_points );
+			update_post_meta( $submission_id, '_mcp_ai_submission_total_points', 10 );
+			update_post_meta( $submission_id, '_mcp_ai_submission_percentage', $percentage );
+			update_post_meta( $submission_id, '_mcp_ai_submission_passed', $percentage >= 70 );
+			update_post_meta( $submission_id, '_mcp_ai_submission_completion_time', 10 + $i );
+			update_post_meta( $submission_id, '_mcp_ai_submission_submitted_at', current_time( 'mysql' ) );
+			update_post_meta(
+				$submission_id,
+				'_mcp_ai_submission_grades',
+				array(
+					array(
+						'question_index' => 0,
+						'points_earned'  => 2 + $i,
+					),
+					array(
+						'question_index' => 1,
+						'points_earned'  => 3,
+					),
+				)
+			);
+		}
+
+		// Test analytics generation.
+		$tool   = new WP_MCP_AI_Tool_Get_Quiz_Analytics();
+		$result = $tool->execute(
+			array(
+				'quiz_id' => $quiz_id,
+			),
+			array( 'user_id' => $admin_user )
+		);
+
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertArrayHasKey( 'charts', $result );
+		$this->assertArrayHasKey( 'stats', $result );
+		$this->assertEquals( 5, $result['total_submissions'] );
+
+		// Check that all default charts are generated.
+		$this->assertArrayHasKey( 'score_distribution', $result['charts'] );
+		$this->assertArrayHasKey( 'pass_fail_rate', $result['charts'] );
+		$this->assertArrayHasKey( 'completion_times', $result['charts'] );
+		$this->assertArrayHasKey( 'question_performance', $result['charts'] );
+		$this->assertArrayHasKey( 'submission_timeline', $result['charts'] );
+
+		// Verify Chart.js structure.
+		$score_dist = $result['charts']['score_distribution'];
+		$this->assertEquals( 'bar', $score_dist['type'] );
+		$this->assertArrayHasKey( 'data', $score_dist );
+		$this->assertArrayHasKey( 'options', $score_dist );
+
+		// Verify pass/fail chart.
+		$pass_fail = $result['charts']['pass_fail_rate'];
+		$this->assertEquals( 'doughnut', $pass_fail['type'] );
+		$this->assertCount( 2, $pass_fail['data']['labels'] );
+
+		// Verify stats.
+		$this->assertGreaterThan( 0, $result['stats']['average_score'] );
+		$this->assertGreaterThan( 0, $result['stats']['pass_rate'] );
+	}
+
+	/**
+	 * Test analytics requires permission.
+	 */
+	public function test_quiz_analytics_requires_permission() {
+		$admin_user  = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$other_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Create a quiz as admin.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Private Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', array() );
+
+		// Try to view analytics as non-author subscriber.
+		$tool   = new WP_MCP_AI_Tool_Get_Quiz_Analytics();
+		$result = $tool->execute(
+			array(
+				'quiz_id' => $quiz_id,
+			),
+			array( 'user_id' => $other_user )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+	}
 }

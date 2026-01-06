@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Scrape Product', 'wp-mcp-ai' );
+		return __( 'Scrape Product', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Scrapes product information (title, subtitle, description, images, price, availability) from a product URL or saved HTML file. Supports Schema.org JSON-LD parsing for structured product data. Downloads highest resolution images to WordPress media library.', 'wp-mcp-ai' );
+		return __( 'Scrapes product information (title, subtitle, description, images, price, availability) from a product URL or saved HTML file. Supports Schema.org JSON-LD parsing for structured product data. Downloads highest resolution images to WordPress media library.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -43,45 +43,45 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'url'                     => array(
 					'type'        => 'string',
-					'description' => __( 'The product page URL to scrape. Either url or html_file is required.', 'wp-mcp-ai' ),
+					'description' => __( 'The product page URL to scrape. Either url or html_file is required.', 'mcp-ai-wpoos' ),
 					'format'      => 'uri',
 				),
 				'html_file'               => array(
 					'type'        => 'string',
-					'description' => __( 'Path to a saved HTML file to parse instead of fetching from URL. Either url or html_file is required.', 'wp-mcp-ai' ),
+					'description' => __( 'Path to a saved HTML file to parse instead of fetching from URL. Either url or html_file is required.', 'mcp-ai-wpoos' ),
 				),
 				'title_selector'          => array(
 					'type'        => 'string',
-					'description' => __( 'CSS selector for product title (default: .swa-product-information__title.swa-label-sans--default-strong).', 'wp-mcp-ai' ),
+					'description' => __( 'CSS selector for product title (default: .swa-product-information__title.swa-label-sans--default-strong).', 'mcp-ai-wpoos' ),
 					'default'     => '.swa-product-information__title.swa-label-sans--default-strong',
 				),
 				'subtitle_selector'       => array(
 					'type'        => 'string',
-					'description' => __( 'CSS selector for product subtitle (default: .swa-product-information__subtitle.swa-label-sans--default).', 'wp-mcp-ai' ),
+					'description' => __( 'CSS selector for product subtitle (default: .swa-product-information__subtitle.swa-label-sans--default).', 'mcp-ai-wpoos' ),
 					'default'     => '.swa-product-information__subtitle.swa-label-sans--default',
 				),
 				'description_selector'    => array(
 					'type'        => 'string',
-					'description' => __( 'CSS selector for product description (default: .swa-cms-copy__body.swa-content-accordion__copy-body.swa-content-accordion__panel-inner.js-swa-content-accordion-panel-inner p).', 'wp-mcp-ai' ),
+					'description' => __( 'CSS selector for product description (default: .swa-cms-copy__body.swa-content-accordion__copy-body.swa-content-accordion__panel-inner.js-swa-content-accordion-panel-inner p).', 'mcp-ai-wpoos' ),
 					'default'     => '.swa-cms-copy__body.swa-content-accordion__copy-body.swa-content-accordion__panel-inner.js-swa-content-accordion-panel-inner p',
 				),
 				'images_selector'         => array(
 					'type'        => 'string',
-					'description' => __( 'CSS selector or pattern for product images containers. Use "splide-slides" to match all div[id^="splide"] slide containers (default), or provide a custom selector.', 'wp-mcp-ai' ),
+					'description' => __( 'CSS selector or pattern for product images containers. Use "splide-slides" to match all div[id^="splide"] slide containers (default), or provide a custom selector.', 'mcp-ai-wpoos' ),
 					'default'     => 'splide-slides',
 				),
 				'download_images'         => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to download images to WordPress media library (default: true).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to download images to WordPress media library (default: true).', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'price_selector'          => array(
 					'type'        => 'string',
-					'description' => __( 'CSS selector for product price. If not provided, will attempt to extract from Schema.org JSON-LD or common price patterns.', 'wp-mcp-ai' ),
+					'description' => __( 'CSS selector for product price. If not provided, will attempt to extract from Schema.org JSON-LD or common price patterns.', 'mcp-ai-wpoos' ),
 				),
 				'extract_structured_data' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to extract Schema.org JSON-LD structured data (default: true).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to extract Schema.org JSON-LD structured data (default: true).', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 			),
@@ -101,11 +101,11 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to scrape products and upload files.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to scrape products and upload files.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$url       = isset( $arguments['url'] ) ? esc_url_raw( trim( $arguments['url'] ) ) : '';
@@ -113,7 +113,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Validate that at least one input method is provided.
 		if ( empty( $url ) && empty( $html_file ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Either a product URL or HTML file path is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Either a product URL or HTML file path is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get selectors with defaults.
@@ -132,7 +132,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			// Validate URL scheme.
 			$parts = wp_parse_url( $url );
 			if ( false === $parts || empty( $parts['scheme'] ) || ! in_array( strtolower( $parts['scheme'] ), array( 'http', 'https' ), true ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'Invalid URL provided. Only HTTP and HTTPS URLs are supported.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'Invalid URL provided. Only HTTP and HTTPS URLs are supported.', 'mcp-ai-wpoos' ) );
 			}
 			$html = $this->fetch_url_content( $url );
 		}
@@ -172,8 +172,8 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Add summary for frontend display.
 		$summary = sprintf(
 			/* translators: %s: product title */
-			__( 'Product scraped: %s', 'wp-mcp-ai' ),
-			isset( $product_data['title'] ) ? $product_data['title'] : __( 'Unknown product', 'wp-mcp-ai' )
+			__( 'Product scraped: %s', 'mcp-ai-wpoos' ),
+			isset( $product_data['title'] ) ? $product_data['title'] : __( 'Unknown product', 'mcp-ai-wpoos' )
 		);
 
 		$product_data = array_merge(
@@ -206,7 +206,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_fetch_failed',
-				__( 'Failed to fetch the product page.', 'wp-mcp-ai' ),
+				__( 'Failed to fetch the product page.', 'mcp-ai-wpoos' ),
 				array( 'error' => $response->get_error_message() )
 			);
 		}
@@ -218,7 +218,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'wp_mcp_ai_http_error',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'The product page returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+					__( 'The product page returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos' ),
 					$status_code
 				)
 			);
@@ -227,7 +227,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$html = wp_remote_retrieve_body( $response );
 
 		if ( empty( $html ) ) {
-			return new WP_Error( 'wp_mcp_ai_empty_response', __( 'The product page returned an empty response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_empty_response', __( 'The product page returned an empty response.', 'mcp-ai-wpoos' ) );
 		}
 
 		return $html;
@@ -244,7 +244,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$file_path = realpath( $file_path );
 
 		if ( false === $file_path ) {
-			return new WP_Error( 'wp_mcp_ai_file_not_found', __( 'The specified HTML file does not exist.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_file_not_found', __( 'The specified HTML file does not exist.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Security: Restrict file access to safe directories.
@@ -255,7 +255,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Security: Ensure file is readable.
 		if ( ! is_readable( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_file_not_readable', __( 'The specified HTML file is not readable.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_file_not_readable', __( 'The specified HTML file is not readable.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Security: Validate file extension.
@@ -263,18 +263,18 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$file_extension     = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
 
 		if ( ! in_array( $file_extension, $allowed_extensions, true ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_file_type', __( 'Only HTML files (.html, .htm) are allowed.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_file_type', __( 'Only HTML files (.html, .htm) are allowed.', 'mcp-ai-wpoos' ) );
 		}
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for local file reading.
 		$html = file_get_contents( $file_path );
 
 		if ( false === $html ) {
-			return new WP_Error( 'wp_mcp_ai_file_read_failed', __( 'Failed to read the HTML file.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_file_read_failed', __( 'Failed to read the HTML file.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $html ) ) {
-			return new WP_Error( 'wp_mcp_ai_empty_file', __( 'The HTML file is empty.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_empty_file', __( 'The HTML file is empty.', 'mcp-ai-wpoos' ) );
 		}
 
 		return $html;
@@ -317,7 +317,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Path is not in any safe directory.
 		return new WP_Error(
 			'wp_mcp_ai_unsafe_file_path',
-			__( 'File path is not within allowed directories. Files must be in the WordPress uploads or content directory.', 'wp-mcp-ai' )
+			__( 'File path is not within allowed directories. Files must be in the WordPress uploads or content directory.', 'mcp-ai-wpoos' )
 		);
 	}
 
@@ -336,7 +336,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	protected function parse_product_data( $html, $title_selector, $subtitle_selector, $description_selector, $images_selector, $price_selector = '', $extract_structured = true, $source_url = '' ) {
 		if ( ! class_exists( 'DOMDocument' ) ) {
-			return new WP_Error( 'wp_mcp_ai_no_dom', __( 'DOMDocument class is not available for HTML parsing.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_no_dom', __( 'DOMDocument class is not available for HTML parsing.', 'mcp-ai-wpoos' ) );
 		}
 
 		$dom = new DOMDocument();
@@ -345,7 +345,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		libxml_clear_errors();
 
 		if ( ! $loaded ) {
-			return new WP_Error( 'wp_mcp_ai_parse_failed', __( 'Failed to parse the product page HTML.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_parse_failed', __( 'Failed to parse the product page HTML.', 'mcp-ai-wpoos' ) );
 		}
 
 		$xpath = new DOMXPath( $dom );
@@ -959,7 +959,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			if ( is_wp_error( $attachment_id ) ) {
 				$errors[] = sprintf(
 					/* translators: 1: Image URL, 2: Error message */
-					__( 'Failed to download image %1$s: %2$s', 'wp-mcp-ai' ),
+					__( 'Failed to download image %1$s: %2$s', 'mcp-ai-wpoos' ),
 					$url,
 					$attachment_id->get_error_message()
 				);
@@ -972,7 +972,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $attachment_ids ) && ! empty( $errors ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_download_failed',
-				__( 'Failed to download any images.', 'wp-mcp-ai' ),
+				__( 'Failed to download any images.', 'mcp-ai-wpoos' ),
 				array( 'errors' => $errors )
 			);
 		}

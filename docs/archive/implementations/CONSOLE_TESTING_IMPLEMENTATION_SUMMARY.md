@@ -152,7 +152,7 @@ All requests and responses logged to console with prefix `[wpMcpAiTestGetTranscr
 
 ## Usage Instructions for Users
 
-1. Open WordPress page with WP oOS chat widget
+1. Open WordPress page with NV oOS chat widget
 2. Press F12 to open Developer Console
 3. Switch to Console tab
 4. Type: `wpMcpAiTestGetTranscript('your-session-key')`

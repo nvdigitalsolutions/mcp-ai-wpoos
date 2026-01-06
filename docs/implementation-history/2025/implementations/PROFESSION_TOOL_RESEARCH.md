@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document presents extensive research on optimizing default tool assignments for all 70 professions in the WP oOS (Open Operator System). The research focuses on determining the optimal number of tools per profession and enhancing tool selections to improve professional assistant creation processes.
+This document presents extensive research on optimizing default tool assignments for all 70 professions in the NV oOS (Open Operator System). The research focuses on determining the optimal number of tools per profession and enhancing tool selections to improve professional assistant creation processes.
 
 ### Key Findings
 

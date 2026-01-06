@@ -156,7 +156,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_jetformbuilder_missing',
-				__( 'JetFormBuilder is not active on this site.', 'wp-mcp-ai' )
+				__( 'JetFormBuilder is not active on this site.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -164,7 +164,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 		if ( null === $config ) {
 			return new WP_Error(
 				'wp_mcp_ai_jetformbuilder_unknown_operation',
-				__( 'The requested JetFormBuilder operation is not supported.', 'wp-mcp-ai' )
+				__( 'The requested JetFormBuilder operation is not supported.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -179,7 +179,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 		if ( ! empty( $config['requires_id'] ) && empty( $form_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_jetformbuilder_missing_id',
-				__( 'JetFormBuilder requests for this operation must include a form ID.', 'wp-mcp-ai' )
+				__( 'JetFormBuilder requests for this operation must include a form ID.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -202,7 +202,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 				return self::normalise_wp_error(
 					new WP_Error(
 						'wp_mcp_ai_jetformbuilder_route_unavailable',
-						__( 'The JetFormBuilder REST route is not registered.', 'wp-mcp-ai' )
+						__( 'The JetFormBuilder REST route is not registered.', 'mcp-ai-wpoos' )
 					),
 					'rest'
 				);
@@ -224,14 +224,14 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 		if ( ! $user_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_anonymous_user',
-				__( 'A valid user is required to execute JetFormBuilder tools.', 'wp-mcp-ai' )
+				__( 'A valid user is required to execute JetFormBuilder tools.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'The authenticated user does not have access to this site.', 'wp-mcp-ai' )
+				__( 'The authenticated user does not have access to this site.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -596,7 +596,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 		$code     = ! empty( $codes ) ? $codes[0] : 'wp_error';
 		$data     = $error->get_error_data( $code );
 		$messages = $error->get_error_messages( $code );
-		$message  = ! empty( $messages ) ? $messages[0] : __( 'An unexpected error occurred.', 'wp-mcp-ai' );
+		$message  = ! empty( $messages ) ? $messages[0] : __( 'An unexpected error occurred.', 'mcp-ai-wpoos' );
 
 		$status = 500;
 		if ( is_array( $data ) && isset( $data['status'] ) ) {
@@ -641,7 +641,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 
 		if ( empty( $message ) ) {
 			/* translators: %d: HTTP status code. */
-			$message = sprintf( __( 'JetFormBuilder request returned HTTP %d.', 'wp-mcp-ai' ), (int) $status );
+			$message = sprintf( __( 'JetFormBuilder request returned HTTP %d.', 'mcp-ai-wpoos' ), (int) $status );
 		}
 
 		return array(

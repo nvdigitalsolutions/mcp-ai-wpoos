@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Web_Search_Validated extends WP_MCP_AI_Validated_Tool imple
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Web Search (Validated)', 'wp-mcp-ai' );
+		return __( 'Web Search (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Searches the public web via the configured provider and returns the top results with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Searches the public web via the configured provider and returns the top results with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**
