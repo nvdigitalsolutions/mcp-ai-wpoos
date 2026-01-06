@@ -49,7 +49,7 @@
 
 ### Performance & Optimization
 - [⚡ Message Bundling](#message-bundling)
-- [🎯 Agentic Loop Token Management](#agentic-loop-token-management)
+- [🎯 Agentic Loop Token Management](#-agentic-loop-token-management)
 - [🔄 Chat Performance Optimizations](#chat-performance-optimizations)
 - [🌐 Mesh Compute Routing](#mesh-compute-routing)
 - [🔗 Federation & Discovery System](#federation-discovery-system)
