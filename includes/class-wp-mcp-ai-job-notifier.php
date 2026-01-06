@@ -295,7 +295,7 @@ class WP_MCP_AI_Job_Notifier {
 	 * @return string SLA tier (realtime, near_realtime, batch).
 	 */
 	protected static function infer_sla_tier_from_tool( $tool_name ) {
-		// Map common tool names to SLA tiers.
+		// Default tool-to-tier mapping.
 		$tier_map = array(
 			'web_search'           => 'near_realtime',
 			'generate_veo_video'   => 'batch',
@@ -307,9 +307,21 @@ class WP_MCP_AI_Job_Notifier {
 			'get_user_info'        => 'realtime',
 		);
 
+		/**
+		 * Filter the tool-to-tier mapping for SLA classification.
+		 *
+		 * Allows customization of which SLA tier is assigned to each tool
+		 * without modifying code.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array $tier_map Associative array of tool_name => tier.
+		 */
+		$tier_map = apply_filters( 'wp_mcp_ai_tool_sla_tier_map', $tier_map );
+
 		// Check if tool is in our map.
 		if ( isset( $tier_map[ $tool_name ] ) ) {
-			return $tier_map[ $tool_name ];
+			return sanitize_key( $tier_map[ $tool_name ] );
 		}
 
 		// Default to batch for unknown tools.

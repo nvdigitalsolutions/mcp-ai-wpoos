@@ -53,6 +53,36 @@ class WP_MCP_AI_Mesh_Router {
 	const LOAD_ESTIMATION_DIVISOR = 20;
 
 	/**
+	 * Time window for arrival rate estimation (seconds).
+	 */
+	const ARRIVAL_RATE_TIME_WINDOW = 60.0;
+
+	/**
+	 * Default arrival rate when no data available (jobs per second).
+	 */
+	const DEFAULT_ARRIVAL_RATE = 0.01;
+
+	/**
+	 * Weight for utilization score in capacity calculation.
+	 */
+	const CAPACITY_UTILIZATION_WEIGHT = 0.6;
+
+	/**
+	 * Weight for queue score in capacity calculation.
+	 */
+	const CAPACITY_QUEUE_WEIGHT = 0.4;
+
+	/**
+	 * Multiplier for utilization to percentage conversion.
+	 */
+	const UTILIZATION_TO_PERCENTAGE = 100;
+
+	/**
+	 * Multiplier for queue length scoring.
+	 */
+	const QUEUE_LENGTH_MULTIPLIER = 20;
+
+	/**
 	 * Get the optimal peer for a given request using AI-powered analysis.
 	 *
 	 * Analyzes:
@@ -679,8 +709,8 @@ class WP_MCP_AI_Mesh_Router {
 
 		// Estimate arrival rate (λ) based on recent activity.
 		// Assume requests are spread over last 60 seconds.
-		$time_window  = 60.0; // seconds.
-		$arrival_rate = $total_requests > 0 ? ( $current_load / $time_window ) : 0.01;
+		$time_window  = self::ARRIVAL_RATE_TIME_WINDOW;
+		$arrival_rate = $total_requests > 0 ? ( $current_load / $time_window ) : self::DEFAULT_ARRIVAL_RATE;
 
 		// Calculate utilization (ρ = λ × service_time).
 		$utilization = $arrival_rate * $avg_response_time;
@@ -692,11 +722,11 @@ class WP_MCP_AI_Mesh_Router {
 
 		// Score based on utilization and queue depth.
 		// Perfect score when utilization < 50% and no queue.
-		$utilization_score = max( 0, 100 - ( $utilization * 100 ) );
-		$queue_score       = max( 0, 100 - ( $queue_length * 20 ) );
+		$utilization_score = max( 0, 100 - ( $utilization * self::UTILIZATION_TO_PERCENTAGE ) );
+		$queue_score       = max( 0, 100 - ( $queue_length * self::QUEUE_LENGTH_MULTIPLIER ) );
 
 		// Combined capacity score (weighted average).
-		$capacity_score = ( $utilization_score * 0.6 ) + ( $queue_score * 0.4 );
+		$capacity_score = ( $utilization_score * self::CAPACITY_UTILIZATION_WEIGHT ) + ( $queue_score * self::CAPACITY_QUEUE_WEIGHT );
 
 		return max( 0, min( 100, $capacity_score ) );
 	}
@@ -716,13 +746,13 @@ class WP_MCP_AI_Mesh_Router {
 		$total_requests    = isset( $health['total_requests'] ) ? intval( $health['total_requests'] ) : 0;
 
 		// Estimate arrival rate.
-		$time_window  = 60.0;
-		$arrival_rate = $total_requests > 0 ? ( $current_load / $time_window ) : 0.01;
+		$time_window  = self::ARRIVAL_RATE_TIME_WINDOW;
+		$arrival_rate = $total_requests > 0 ? ( $current_load / $time_window ) : self::DEFAULT_ARRIVAL_RATE;
 
 		// Little's Law: L = λ × W.
 		// Solve for W (wait time): W = L / λ.
 		$queue_length = $arrival_rate * ( $avg_response_time - $service_time );
-		$wait_time    = $queue_length > 0 ? ( $queue_length / max( 0.01, $arrival_rate ) ) : 0;
+		$wait_time    = $queue_length > 0 ? ( $queue_length / max( self::DEFAULT_ARRIVAL_RATE, $arrival_rate ) ) : 0;
 
 		return max( 0, $wait_time );
 	}
