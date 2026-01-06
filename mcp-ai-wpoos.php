@@ -76,14 +76,15 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	}
 
 	/**
-	 * Register PHP version notice on init to avoid early translation loading.
+	 * Register PHP version notice on admin_init to avoid early translation loading.
 	 *
 	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+	 * Using admin_init ensures notices are registered after init completes.
 	 */
 	function wp_mcp_ai_register_php_version_notice() {
 		add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
 	}
-	add_action( 'init', 'wp_mcp_ai_register_php_version_notice' );
+	add_action( 'admin_init', 'wp_mcp_ai_register_php_version_notice' );
 
 	/**
 	 * Prevent plugin activation on incompatible PHP versions.
@@ -126,14 +127,15 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 			}
 
 			/**
-			 * Register dev deps error notice on init to avoid early translation loading.
+			 * Register dev deps error notice on admin_init to avoid early translation loading.
 			 *
 			 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+			 * Using admin_init ensures notices are registered after init completes.
 			 */
 			function wp_mcp_ai_register_dev_deps_error_notice() {
 				add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
 			}
-			add_action( 'init', 'wp_mcp_ai_register_dev_deps_error_notice' );
+			add_action( 'admin_init', 'wp_mcp_ai_register_dev_deps_error_notice' );
 		}
 
 		// Log the issue.
@@ -726,14 +728,15 @@ if ( is_admin() ) {
 	}
 
 	/**
-	 * Register plugin action links on init to avoid early translation loading.
+	 * Register plugin action links on admin_init to avoid early translation loading.
 	 *
 	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+	 * Using admin_init ensures translations are available before the plugins page renders.
 	 */
 	function wp_mcp_ai_register_plugin_action_links() {
 		add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
 	}
-	add_action( 'init', 'wp_mcp_ai_register_plugin_action_links' );
+	add_action( 'admin_init', 'wp_mcp_ai_register_plugin_action_links' );
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -1510,14 +1513,15 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 }
 
 /**
- * Register activation security notice on init to avoid early translation loading.
+ * Register activation security notice on admin_init to avoid early translation loading.
  *
  * WordPress 6.7.0+ requires translations to be loaded at init or later.
+ * Using admin_init ensures translations are available before admin notices are displayed.
  */
 function wp_mcp_ai_register_activation_security_notice() {
 	add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
 }
-add_action( 'init', 'wp_mcp_ai_register_activation_security_notice' );
+add_action( 'admin_init', 'wp_mcp_ai_register_activation_security_notice' );
 
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**
