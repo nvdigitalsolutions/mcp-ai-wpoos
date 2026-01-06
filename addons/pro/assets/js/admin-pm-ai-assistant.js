@@ -167,6 +167,8 @@ initializeChatInstance(instanceId);
 function buildChatHTML(instanceId, assistantTitle) {
 // Using template literals would be cleaner but not supported in IE11
 // So we use string concatenation for maximum compatibility
+// IMPORTANT: Use <div> instead of <form> because the modal is rendered inside the WordPress
+// post edit form, and nested forms are invalid HTML (browsers strip nested form tags).
 let html = '';
 html += '<div class="wp-mcp-ai-chat wp-mcp-ai-chat--template-compact" id="' + esc(instanceId) + '" data-wp-mcp-ai-chat data-template="compact">';
 html += '<div class="wp-mcp-ai-chat__assistant">';
@@ -181,7 +183,7 @@ html += '<span class="screen-reader-text">Expand conversation</span>';
 html += '</button>';
 html += '</div>';
 html += '<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>';
-html += '<form class="wp-mcp-ai-chat__form" data-instance-id="' + esc(instanceId) + '">';
+html += '<div class="wp-mcp-ai-chat__form" data-instance-id="' + esc(instanceId) + '">';
 html += '<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden><span class="wp-mcp-ai-chat__status-text"></span></div>';
 html += '<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>';
 html += '<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed" aria-expanded="false">';
@@ -202,9 +204,10 @@ html += '<button type="button" class="wp-mcp-ai-chat__voice-chat" aria-label="Vo
 html += '<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="Transcribe audio"><svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path><path d="M12 16a7 7 0 0 0 6.93-6H17a5 5 0 0 1-10 0H5.07A7 7 0 0 0 12 16zm-1 2.05V21h2v-2.95A9 9 0 0 0 20.95 11H19a7 7 0 0 1-14 0H3.05A9 9 0 0 0 11 18.05z"></path></svg><span class="screen-reader-text">Transcribe audio</span></button>';
 html += '<button type="button" class="wp-mcp-ai-chat__attach">Attach file</button>';
 html += '<button type="button" class="wp-mcp-ai-chat__build" hidden>Build</button>';
-html += '<button type="submit" class="wp-mcp-ai-chat__submit">Send</button>';
+// Use type="button" (not "submit") to prevent triggering parent WordPress form submission
+html += '<button type="button" class="wp-mcp-ai-chat__submit">Send</button>';
 html += '</div>';
-html += '</form>';
+html += '</div>';
 html += '<div class="wp-mcp-ai-chat__controls">';
 html += '<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite" aria-atomic="true"></div>';
 html += '<div class="wp-mcp-ai-chat__cron-status" role="status" aria-live="polite" aria-atomic="true" hidden>';
