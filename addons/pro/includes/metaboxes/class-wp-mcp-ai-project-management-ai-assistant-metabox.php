@@ -141,7 +141,7 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		$context_data = $this->get_context_data( $post );
 
 		wp_localize_script(
-			'wp-mcp-ai-pm-ai-assistant',
+			'wp-mcp-ai-pm-ai-assistant-unified',
 			'wpMcpAiPmAssistant',
 			array(
 				'contextType' => $context_type,
