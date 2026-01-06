@@ -153,12 +153,10 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			$post_types[] = 'mcp_ai_place';
 		}
 
-		// Add Project Management CPTs if project management is enabled.
-		if ( ! empty( $settings['enable_project_management'] ) ) {
-			$post_types[] = 'mcp_ai_project';
-			$post_types[] = 'mcp_ai_task';
-			$post_types[] = 'mcp_ai_event';
-		}
+		// NOTE: Project Management CPTs (mcp_ai_project, mcp_ai_task, mcp_ai_event) are NOT included here
+		// because they have their own specialized AI Assistant metabox that includes quick action buttons
+		// and context-aware features specific to project management. See:
+		// - WP_MCP_AI_Project_Management_AI_Assistant_Metabox (includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php)
 
 		/**
 		 * Filter the supported post types for AI assistant integration.

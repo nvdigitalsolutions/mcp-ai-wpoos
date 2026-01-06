@@ -85,9 +85,9 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
 		wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 
-		// Enqueue custom metabox assets.
-		$script_url = WP_MCP_AI_PRO_URL . 'assets/js/admin-pm-ai-assistant.js';
-		$style_url  = WP_MCP_AI_PRO_URL . 'assets/css/admin-pm-ai-assistant.css';
+		// Enqueue unified PM AI assistant script (replaces both ai-assistant.js and ai-actions.js).
+		$unified_script_url = WP_MCP_AI_PRO_URL . 'assets/js/admin-pm-ai-assistant-unified.js';
+		$style_url          = WP_MCP_AI_PRO_URL . 'assets/css/admin-pm-ai-assistant.css';
 
 		// Build dependencies array - include wp-dom-ready if available for block editor support.
 		$script_dependencies = array( 'jquery', WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
@@ -96,8 +96,8 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		}
 
 		wp_enqueue_script(
-			'wp-mcp-ai-pm-ai-assistant',
-			$script_url,
+			'wp-mcp-ai-pm-ai-assistant-unified',
+			$unified_script_url,
 			$script_dependencies,
 			WP_MCP_AI_PRO_VERSION,
 			true
@@ -108,6 +108,23 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			$style_url,
 			array( WP_MCP_AI_Shortcode::STYLE_HANDLE ),
 			WP_MCP_AI_PRO_VERSION
+		);
+
+		// Localize script for AI actions.
+		wp_localize_script(
+			'wp-mcp-ai-pm-ai-assistant-unified',
+			'wpMcpAiPmAi',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_pm_ai_actions' ),
+				'strings' => array(
+					'error'      => __( 'An error occurred. Please try again.', 'wp-mcp-ai' ),
+					'noTitle'    => __( 'Please add a title first.', 'wp-mcp-ai' ),
+					'applied'    => __( 'AI suggestion applied!', 'wp-mcp-ai' ),
+					'viewTasks'  => __( 'View suggested tasks below:', 'wp-mcp-ai' ),
+					'copyToDesc' => __( 'Copy to Description', 'wp-mcp-ai' ),
+				),
+			)
 		);
 
 		// Localize script with post context.
@@ -255,9 +272,154 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			return;
 		}
 
-		// Render assistant selector and inline chat container.
-		$this->render_assistant_selector( $assistants );
-		$this->render_inline_chat_container( $post );
+		// Add nonce for AI actions.
+		wp_nonce_field( 'wp_mcp_ai_pm_ai_actions', 'wp_mcp_ai_pm_ai_actions_nonce' );
+
+		$post_type = get_post_type( $post );
+		$context_type = $this->get_context_type( $post_type );
+		?>
+		<div class="wp-mcp-ai-pm-assistant-wrapper">
+			<div class="wp-mcp-ai-pm-assistant-info">
+				<p><?php esc_html_e( 'Get AI assistance with your project management tasks.', 'wp-mcp-ai' ); ?></p>
+			</div>
+
+			<!-- Assistant selector -->
+			<div class="wp-mcp-ai-pm-assistant-selector" style="margin-bottom: 15px;">
+				<label for="wp-mcp-ai-pm-assistant-select">
+					<?php esc_html_e( 'Select Assistant:', 'wp-mcp-ai' ); ?>
+				</label>
+				<select id="wp-mcp-ai-pm-assistant-select" class="widefat">
+					<option value=""><?php esc_html_e( '— Select Assistant —', 'wp-mcp-ai' ); ?></option>
+					<?php foreach ( $assistants as $assistant ) : ?>
+						<option value="<?php echo esc_attr( $assistant['id'] ); ?>" data-title="<?php echo esc_attr( $assistant['title'] ); ?>">
+							<?php echo esc_html( $assistant['title'] ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+			</div>
+
+			<!-- Quick action buttons (disabled until assistant selected) -->
+			<?php $this->render_ai_quick_actions( $post ); ?>
+
+			<!-- Open Assistant button -->
+			<button 
+				type="button" 
+				class="button button-primary button-large wp-mcp-ai-pm-open-assistant" 
+				data-post-id="<?php echo esc_attr( $post->ID ); ?>" 
+				data-post-type="<?php echo esc_attr( $post->post_type ); ?>"
+				disabled
+			>
+				<span class="dashicons dashicons-format-chat"></span>
+				<?php esc_html_e( 'Open AI Assistant', 'wp-mcp-ai' ); ?>
+			</button>
+		</div>
+
+		<!-- Modal container for AI Assistant -->
+		<?php $this->render_ai_modal( $post, $context_type ); ?>
+		<?php
+	}
+
+	/**
+	 * Render AI quick actions based on post type.
+	 *
+	 * @param WP_Post $post Post object.
+	 */
+	private function render_ai_quick_actions( $post ) {
+		$post_type = get_post_type( $post );
+		?>
+		<div class="wp-mcp-ai-pm-ai-actions" style="margin-bottom: 15px;">
+			<p class="description">
+				<?php esc_html_e( 'Quick AI Actions:', 'wp-mcp-ai' ); ?>
+			</p>
+
+			<?php if ( 'mcp_ai_project' === $post_type ) : ?>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
+						<span class="dashicons dashicons-edit"></span>
+						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="suggest_tasks" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
+						<span class="dashicons dashicons-list-view"></span>
+						<?php esc_html_e( 'Suggest Tasks', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="analyze_project" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
+						<span class="dashicons dashicons-chart-bar"></span>
+						<?php esc_html_e( 'Analyze Project', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+			<?php elseif ( 'mcp_ai_task' === $post_type ) : ?>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
+						<span class="dashicons dashicons-edit"></span>
+						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="estimate_time" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
+						<span class="dashicons dashicons-clock"></span>
+						<?php esc_html_e( 'Estimate Duration', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+			<?php elseif ( 'mcp_ai_event' === $post_type ) : ?>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="generate_description" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
+						<span class="dashicons dashicons-edit"></span>
+						<?php esc_html_e( 'Generate Description', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+				<p>
+					<button type="button" class="button button-secondary wp-mcp-ai-pm-ai-btn" data-action="suggest_agenda" data-post-id="<?php echo esc_attr( $post->ID ); ?>" disabled>
+						<span class="dashicons dashicons-text-page"></span>
+						<?php esc_html_e( 'Suggest Agenda', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+			<?php endif; ?>
+
+			<div class="wp-mcp-ai-pm-ai-result" style="margin-top: 15px; display: none;">
+				<div class="notice notice-info inline">
+					<p class="wp-mcp-ai-pm-ai-result-content"></p>
+				</div>
+			</div>
+
+			<div class="wp-mcp-ai-pm-ai-loading" style="display: none;">
+				<p>
+					<span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span>
+					<?php esc_html_e( 'AI is thinking...', 'wp-mcp-ai' ); ?>
+				</p>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render AI modal.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @param string  $context_type Context type (project, task, or event).
+	 */
+	private function render_ai_modal( $post, $context_type ) {
+		?>
+		<div id="wp-mcp-ai-pm-assistant-modal" class="wp-mcp-ai-cpt-modal" style="display: none;">
+			<div class="wp-mcp-ai-cpt-modal__backdrop"></div>
+			<div class="wp-mcp-ai-cpt-modal__panel">
+				<div class="wp-mcp-ai-cpt-modal__header">
+					<h2 id="wp-mcp-ai-pm-modal-title"><?php echo esc_html( $this->get_assistant_title( $context_type ) ); ?></h2>
+					<button type="button" class="wp-mcp-ai-cpt-modal__close" aria-label="<?php esc_attr_e( 'Close', 'wp-mcp-ai' ); ?>">
+						<span class="dashicons dashicons-no-alt"></span>
+					</button>
+				</div>
+				<div class="wp-mcp-ai-cpt-modal__body">
+					<div id="wp-mcp-ai-pm-assistant-chat-container" class="wp-mcp-ai-pm-assistant-chat-container">
+						<!-- Chat interface will be rendered here when modal opens -->
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 
 	/**
@@ -289,50 +451,6 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 		}
 
 		return $assistants;
-	}
-
-	/**
-	 * Render assistant selector dropdown.
-	 *
-	 * @param array $assistants List of assistants.
-	 */
-	private function render_assistant_selector( $assistants ) {
-		?>
-		<div class="wp-mcp-ai-pm-assistant-selector">
-			<label for="wp-mcp-ai-pm-assistant-select">
-				<?php esc_html_e( 'Select Assistant:', 'wp-mcp-ai' ); ?>
-			</label>
-			<select id="wp-mcp-ai-pm-assistant-select" class="widefat">
-				<option value=""><?php esc_html_e( '— Select Assistant —', 'wp-mcp-ai' ); ?></option>
-				<?php foreach ( $assistants as $assistant ) : ?>
-					<option value="<?php echo esc_attr( $assistant['id'] ); ?>" data-title="<?php echo esc_attr( $assistant['title'] ); ?>">
-						<?php echo esc_html( $assistant['title'] ); ?>
-					</option>
-				<?php endforeach; ?>
-			</select>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Render inline chat container.
-	 * Chat will be rendered inline when an assistant is selected.
-	 *
-	 * @param WP_Post $post Post object.
-	 */
-	private function render_inline_chat_container( $post ) {
-		$context_type = $this->get_context_type( $post->post_type );
-		?>
-		<!-- Inline container for chat interface -->
-		<div id="wp-mcp-ai-pm-assistant-inline-container" class="wp-mcp-ai-pm-assistant-inline-container" style="display: none; margin-top: 15px;">
-			<div class="wp-mcp-ai-pm-assistant-inline-header">
-				<h3 id="wp-mcp-ai-pm-assistant-inline-title"><?php echo esc_html( $this->get_assistant_title( $context_type ) ); ?></h3>
-				<p class="description"><?php echo esc_html( $this->get_intro_text( $context_type ) ); ?></p>
-			</div>
-			<!-- Chat interface will be rendered here when assistant is selected -->
-			<div id="wp-mcp-ai-pm-assistant-chat-container" class="wp-mcp-ai-pm-assistant-chat-container"></div>
-		</div>
-		<?php
 	}
 
 	/**

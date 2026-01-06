@@ -45,6 +45,8 @@ function wp_mcp_ai_init_project_management_admin() {
 	WP_MCP_AI_Project_Management_Admin_Columns::init();
 
 	// Initialize AI-enhanced features.
+	// NOTE: AI Actions metabox registration is disabled - functionality consolidated into AI Assistant metabox.
+	// However, AJAX handlers are still needed for the quick action buttons.
 	WP_MCP_AI_Project_Management_AI_Actions::init();
 	WP_MCP_AI_Project_Management_Bulk_AI::init();
 }
