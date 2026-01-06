@@ -1,6 +1,6 @@
 # Fixes Documentation
 
-This directory contains detailed documentation for bug fixes and issue resolutions in the WP oOS plugin.
+This directory contains detailed documentation for bug fixes and issue resolutions in the NV oOS plugin.
 
 ## Chart Rendering and Display Fixes
 

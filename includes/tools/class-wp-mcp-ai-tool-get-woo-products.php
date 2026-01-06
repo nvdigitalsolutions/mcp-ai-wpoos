@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The WooCommerce Products tool is disabled because WooCommerce is not active.', 'wp-mcp-ai' );
+		return __( 'The WooCommerce Products tool is disabled because WooCommerce is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -47,14 +47,14 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get WooCommerce Products', 'wp-mcp-ai' );
+		return __( 'Get WooCommerce Products', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns WooCommerce catalog products with pricing and stock details. Requires WooCommerce.', 'wp-mcp-ai' );
+		return __( 'Returns WooCommerce catalog products with pricing and stock details. Requires WooCommerce.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -66,22 +66,22 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'limit'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of products to retrieve.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of products to retrieve.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 20,
 					'default'     => 5,
 				),
 				'sku'          => array(
 					'type'        => 'string',
-					'description' => __( 'Optional product SKU to filter by.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional product SKU to filter by.', 'mcp-ai-wpoos' ),
 				),
 				'status'       => array(
 					'type'        => 'string',
-					'description' => __( 'Optional product status to filter by (e.g. publish, draft).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional product status to filter by (e.g. publish, draft).', 'mcp-ai-wpoos' ),
 				),
 				'stock_status' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional stock status to filter by (e.g. instock, outofstock).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional stock status to filter by (e.g. instock, outofstock).', 'mcp-ai-wpoos' ),
 				),
 			),
 			'additionalProperties' => false,
@@ -97,21 +97,21 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view WooCommerce products.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view WooCommerce products.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! user_can( $user_id, 'manage_woocommerce' ) && ! user_can( $user_id, 'view_woocommerce_reports' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view WooCommerce products.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view WooCommerce products.', 'mcp-ai-wpoos' ) );
 		}
 
 		$limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
@@ -173,7 +173,7 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'summary'  => sprintf(
 				/* translators: %d: number of products */
-				__( 'Found %d product(s)', 'wp-mcp-ai' ),
+				__( 'Found %d product(s)', 'mcp-ai-wpoos' ),
 				count( $results )
 			),
 			'products' => $results,

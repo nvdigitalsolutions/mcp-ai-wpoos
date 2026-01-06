@@ -65,25 +65,41 @@
 
 /* Tools manager table improvements */
 .wp-mcp-ai-tools-manager table.wp-list-table {
-	border: 1px solid #c3c4c7;
+	border: 1px solid var(--wp-mcp-ai-table-border-color, #c3c4c7);
 }
 
 .wp-mcp-ai-tools-manager table.wp-list-table th {
 	font-weight: 600;
-	background: #f6f7f7;
+	background: var(--wp-mcp-ai-table-header-bg, #f6f7f7);
 }
 
 .wp-mcp-ai-tools-manager table.wp-list-table tr[data-tool-slug] {
-	transition: background-color 0.2s;
+	transition: background-color var(--wp-mcp-ai-transition-normal, 0.2s ease);
 }
 
 .wp-mcp-ai-tools-manager table.wp-list-table tr[data-tool-slug]:hover {
-	background-color: #f9f9f9;
+	background-color: var(--wp-mcp-ai-table-hover-bg, #f9f9f9);
+}
+
+/* Zebra striping for tools table */
+.wp-mcp-ai-tools-manager table.wp-list-table tr[data-tool-slug]:nth-child(4n+2) {
+	background-color: var(--wp-mcp-ai-table-zebra-bg, #fafafa);
+}
+
+.wp-mcp-ai-tools-manager table.wp-list-table tr[data-tool-slug]:nth-child(4n+2):hover {
+	background-color: var(--wp-mcp-ai-table-hover-bg, #f9f9f9);
 }
 
 /* Status badge animation */
 .wp-mcp-ai-tool-status {
-	transition: background-color 0.3s, color 0.3s;
+	transition: background-color var(--wp-mcp-ai-transition-slow, 0.3s ease), 
+				color var(--wp-mcp-ai-transition-slow, 0.3s ease),
+				transform var(--wp-mcp-ai-transition-fast, 0.15s ease);
+}
+
+.wp-mcp-ai-tool-status:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Badge row styling */
@@ -97,4 +113,152 @@
 
 .wp-mcp-ai-tools-manager table.wp-list-table tr.wp-mcp-ai-tool-badges-row td {
 	padding-left: 12px;
+}
+
+/* Mobile responsive enhancements */
+@media screen and (max-width: 782px) {
+	/* Wrap tools table in scrollable container */
+	.wp-mcp-ai-tools-manager {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table {
+		min-width: 600px;
+	}
+
+	/* Adjust toggle switch for touch */
+	.wp-mcp-ai-toggle-switch {
+		width: 60px;
+		height: 30px;
+	}
+
+	.wp-mcp-ai-toggle-slider:before {
+		height: 24px;
+		width: 24px;
+	}
+
+	.wp-mcp-ai-tool-toggle:checked + .wp-mcp-ai-toggle-slider:before {
+		transform: translateX(30px);
+	}
+}
+
+/* Mobile card layout for better readability below 600px */
+@media screen and (max-width: 600px) {
+	/* Hide table headers */
+	.wp-mcp-ai-tools-manager table.wp-list-table thead {
+		display: none;
+	}
+
+	/* Convert table rows to cards */
+	.wp-mcp-ai-tools-manager table.wp-list-table,
+	.wp-mcp-ai-tools-manager table.wp-list-table tbody,
+	.wp-mcp-ai-tools-manager table.wp-list-table tr {
+		display: block;
+		width: 100%;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table {
+		border: none;
+		min-width: 0;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table tr[data-tool-slug] {
+		background: #fff;
+		border: 1px solid #dcdcde;
+		border-radius: 8px;
+		margin-bottom: 16px;
+		padding: 16px;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table tr[data-tool-slug]:hover {
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+		transform: translateY(-1px);
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table td {
+		display: block;
+		width: 100% !important;
+		padding: 8px 0;
+		border: none;
+		text-align: left;
+	}
+
+	/* Add labels before content for context */
+	.wp-mcp-ai-tools-manager table.wp-list-table td:nth-child(1)::before {
+		content: "Tool: ";
+		font-weight: 600;
+		color: #646970;
+		display: inline;
+		margin-right: 6px;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table td:nth-child(2)::before {
+		content: "Slug: ";
+		font-weight: 600;
+		color: #646970;
+		display: inline;
+		margin-right: 6px;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table td:nth-child(3)::before {
+		content: "Description: ";
+		font-weight: 600;
+		color: #646970;
+		display: block;
+		margin-bottom: 4px;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table td:nth-child(4) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-top: 12px;
+		margin-top: 12px;
+		border-top: 1px solid #f0f0f1;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table td:nth-child(4)::before {
+		content: "Toggle: ";
+		font-weight: 600;
+		color: #646970;
+		margin-right: 8px;
+	}
+
+	/* Badge row in card layout */
+	.wp-mcp-ai-tools-manager table.wp-list-table tr.wp-mcp-ai-tool-badges-row {
+		padding: 0;
+		margin-top: -12px;
+		margin-bottom: 4px;
+		border: none;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table tr.wp-mcp-ai-tool-badges-row td {
+		padding: 0 16px 16px 16px;
+	}
+
+	.wp-mcp-ai-tools-manager table.wp-list-table tr.wp-mcp-ai-tool-badges-row:hover {
+		transform: none;
+		box-shadow: none;
+	}
+
+	/* Larger touch targets for mobile */
+	.wp-mcp-ai-toggle-switch {
+		width: 64px;
+		height: 36px;
+	}
+
+	.wp-mcp-ai-toggle-slider:before {
+		height: 28px;
+		width: 28px;
+		left: 4px;
+		bottom: 4px;
+	}
+
+	.wp-mcp-ai-tool-toggle:checked + .wp-mcp-ai-toggle-slider:before {
+		transform: translateX(28px);
+	}
 }

@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document summarizes the systematic fix of broken documentation links throughout the WP oOS repository. The documentation was previously reorganized into subdirectories, but many internal links were not updated to reflect the new structure.
+This document summarizes the systematic fix of broken documentation links throughout the NV oOS repository. The documentation was previously reorganized into subdirectories, but many internal links were not updated to reflect the new structure.
 
 ## Results
 

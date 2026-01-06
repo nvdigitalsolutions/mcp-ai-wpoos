@@ -47,7 +47,7 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 		if ( empty( $json_files ) ) {
 			return new WP_Error(
 				'no_json_files',
-				__( 'No profession knowledge base JSON files found.', 'wp-mcp-ai' )
+				__( 'No profession knowledge base JSON files found.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -78,7 +78,7 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 		if ( ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'file_not_found',
-				sprintf( __( 'File not found: %s', 'wp-mcp-ai' ), $file_path )
+				sprintf( __( 'File not found: %s', 'mcp-ai-wpoos' ), $file_path )
 			);
 		}
 
@@ -88,7 +88,7 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 		if ( false === $json_content ) {
 			return new WP_Error(
 				'file_read_error',
-				sprintf( __( 'Could not read file: %s', 'wp-mcp-ai' ), $file_path )
+				sprintf( __( 'Could not read file: %s', 'mcp-ai-wpoos' ), $file_path )
 			);
 		}
 
@@ -97,7 +97,7 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 		if ( null === $data ) {
 			return new WP_Error(
 				'json_decode_error',
-				sprintf( __( 'Invalid JSON in file: %s', 'wp-mcp-ai' ), $file_path )
+				sprintf( __( 'Invalid JSON in file: %s', 'mcp-ai-wpoos' ), $file_path )
 			);
 		}
 
@@ -105,7 +105,7 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 		if ( ! isset( $data['professions'] ) || ! is_array( $data['professions'] ) ) {
 			return new WP_Error(
 				'invalid_structure',
-				sprintf( __( 'Invalid JSON structure in file: %s. Missing "professions" array.', 'wp-mcp-ai' ), $file_path )
+				sprintf( __( 'Invalid JSON structure in file: %s. Missing "professions" array.', 'mcp-ai-wpoos' ), $file_path )
 			);
 		}
 
@@ -134,7 +134,7 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 			if ( ! isset( $profession[ $field ] ) || empty( $profession[ $field ] ) ) {
 				return new WP_Error(
 					'missing_required_field',
-					sprintf( __( 'Missing required field: %s', 'wp-mcp-ai' ), $field )
+					sprintf( __( 'Missing required field: %s', 'mcp-ai-wpoos' ), $field )
 				);
 			}
 		}

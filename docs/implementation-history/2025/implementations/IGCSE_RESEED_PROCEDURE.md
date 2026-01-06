@@ -12,7 +12,7 @@ After initial plugin setup or team resync, IGCSE teams may show "No members" in 
 
 ### Step 1: Reseed Professions FIRST
 
-Navigate to: **WP Admin → Settings → WP oOS → Advanced → Data Management**
+Navigate to: **WP Admin → Settings → NV oOS → Advanced → Data Management**
 
 1. Scroll to **"Reload Profession Data"** section
 2. Click **"Update Professions"** button (or "Replace All Professions" for clean slate)
@@ -177,7 +177,7 @@ If professions don't exist when teams are saved, the `get_posts()` query returns
 
 After deploying this fix:
 
-- [ ] Go to **Settings → WP oOS → Advanced → Data Management**
+- [ ] Go to **Settings → NV oOS → Advanced → Data Management**
 - [ ] Click **"Update Professions"** (or "Replace All Professions")
 - [ ] Verify success message shows professions created/updated
 - [ ] Go to **Professions** admin page

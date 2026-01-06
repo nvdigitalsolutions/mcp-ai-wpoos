@@ -1,7 +1,7 @@
 # Gmail OAuth Fix Summary
 
 ## Problem
-The Gmail "Connect" button in WP oOS was returning a **400 Bad Request** error when clicked.
+The Gmail "Connect" button in NV oOS was returning a **400 Bad Request** error when clicked.
 
 **Error URL:** 
 ```
@@ -52,8 +52,8 @@ https://bots.nvdigital.solutions/wp-admin/admin-post.php?action=wp_mcp_ai_gmail_
    - Add the JavaScript origins and redirect URIs shown above
    - Copy the Client ID and Client Secret
 
-2. **WP oOS Configuration:**
-   - Go to **WP oOS Dashboard** → **Tools** → **Connections** → **Gmail** tab
+2. **NV oOS Configuration:**
+   - Go to **NV oOS Dashboard** → **Tools** → **Connections** → **Gmail** tab
    - Enter your Client ID and Client Secret
    - Click **Save Settings**
    - Click **Connect Gmail Account** button
@@ -95,7 +95,7 @@ All other OAuth integrations that depend on `WP_MCP_AI_Admin_Settings` are now a
 ## Next Steps
 
 1. **Configure Google Cloud Console** with the URIs provided above
-2. **Enter credentials** in WP oOS settings
+2. **Enter credentials** in NV oOS settings
 3. **Test the OAuth flow** by clicking "Connect Gmail Account"
 4. **Verify** the connection shows as successful
 

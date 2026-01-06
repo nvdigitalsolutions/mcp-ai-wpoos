@@ -258,7 +258,7 @@ class WP_MCP_AI_STDIO_Transport {
 					'wp_mcp_ai_method_not_found',
 					sprintf(
 						/* translators: %s: method name */
-						__( 'Method not found: %s', 'wp-mcp-ai' ),
+						__( 'Method not found: %s', 'mcp-ai-wpoos' ),
 						$method
 					)
 				);
@@ -278,14 +278,14 @@ class WP_MCP_AI_STDIO_Transport {
 		if ( ! empty( $site_desc ) ) {
 			$instructions = sprintf(
 				/* translators: 1: site name, 2: site description */
-				__( 'This is a WordPress site (%1$s). %2$s. You can use the available tools to interact with WordPress content, users, and functionality.', 'wp-mcp-ai' ),
+				__( 'This is a WordPress site (%1$s). %2$s. You can use the available tools to interact with WordPress content, users, and functionality.', 'mcp-ai-wpoos' ),
 				$site_name,
 				$site_desc
 			);
 		} else {
 			$instructions = sprintf(
 				/* translators: %s: site name */
-				__( 'This is a WordPress site (%s). You can use the available tools to interact with WordPress content, users, and functionality.', 'wp-mcp-ai' ),
+				__( 'This is a WordPress site (%s). You can use the available tools to interact with WordPress content, users, and functionality.', 'mcp-ai-wpoos' ),
 				$site_name
 			);
 		}
@@ -380,7 +380,7 @@ class WP_MCP_AI_STDIO_Transport {
 		if ( ! isset( $params['name'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_params',
-				__( 'Missing required parameter: name', 'wp-mcp-ai' )
+				__( 'Missing required parameter: name', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -394,7 +394,7 @@ class WP_MCP_AI_STDIO_Transport {
 				'wp_mcp_ai_tool_not_found',
 				sprintf(
 					/* translators: %s: tool name */
-					__( 'Tool not found: %s', 'wp-mcp-ai' ),
+					__( 'Tool not found: %s', 'mcp-ai-wpoos' ),
 					$tool_name
 				)
 			);
@@ -410,7 +410,7 @@ class WP_MCP_AI_STDIO_Transport {
 					'wp_mcp_ai_tool_not_allowed',
 					sprintf(
 						/* translators: %s: tool name */
-						__( 'Tool not allowed for this assistant: %s', 'wp-mcp-ai' ),
+						__( 'Tool not allowed for this assistant: %s', 'mcp-ai-wpoos' ),
 						$tool_name
 					)
 				);
@@ -444,7 +444,7 @@ class WP_MCP_AI_STDIO_Transport {
 				'wp_mcp_ai_tool_execution_failed',
 				sprintf(
 					/* translators: 1: tool name, 2: error message */
-					__( 'Tool execution failed (%1$s): %2$s', 'wp-mcp-ai' ),
+					__( 'Tool execution failed (%1$s): %2$s', 'mcp-ai-wpoos' ),
 					$tool_name,
 					$e->getMessage()
 				)

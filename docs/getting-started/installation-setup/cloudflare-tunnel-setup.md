@@ -254,7 +254,7 @@ Once your tunnel is running, configure WordPress to use the tunnel endpoints.
 
 ### Option 1: Using Ollama via Tunnel
 
-**Navigate to:** Settings → WP oOS → Providers → Ollama
+**Navigate to:** Settings → NV oOS → Providers → Ollama
 
 1. **Ollama Endpoint URL:** `https://ollama.yourdomain.com`
 2. **Ollama Model:** Select or enter model name
@@ -263,7 +263,7 @@ Once your tunnel is running, configure WordPress to use the tunnel endpoints.
 
 ### Option 2: Using LM Studio via Tunnel
 
-**Navigate to:** Settings → WP oOS → Providers → LM Studio
+**Navigate to:** Settings → NV oOS → Providers → LM Studio
 
 1. **LM Studio Endpoint URL:** `https://lmstudio.yourdomain.com/v1`
 2. **LM Studio Model:** Select or enter model name
@@ -387,7 +387,7 @@ See [NETWORK_INTERFACE_BINDING.md](../../features/federation/NETWORK_INTERFACE_B
    ```
 
 3. **Check WordPress SSL settings:**
-   - Settings → WP oOS → Security
+   - Settings → NV oOS → Security
    - **Disable** "Enable Loopback/Private Network SSL Bypass" (not needed for public HTTPS)
 
 4. **Review cloudflared logs:**
@@ -586,7 +586,7 @@ If you encounter issues:
 1. **Test tunnel independently** of WordPress
 2. **Check Cloudflare Dashboard** for tunnel status
 3. **Review cloudflared logs** for error messages
-4. **Enable WordPress debug logging** in Settings → WP oOS
+4. **Enable WordPress debug logging** in Settings → NV oOS
 5. **Compare with direct local access** to isolate tunnel issues
 6. **Consult Cloudflare Community** for tunnel-specific problems
 

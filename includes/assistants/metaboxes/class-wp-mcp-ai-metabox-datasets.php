@@ -53,7 +53,7 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Preferred Datasets', 'wp-mcp-ai' );
+		return __( 'Preferred Datasets', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -76,7 +76,7 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 	 */
 	public function render( $post ) {
 		if ( ! $this->can_view() ) {
-			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
 		}
 
 		// Check if HuggingFace Datasets integration is enabled.
@@ -87,8 +87,8 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 				<?php
 				printf(
 					/* translators: %s: URL to settings page */
-					esc_html__( 'HuggingFace Datasets integration is not enabled. Please enable it in %s.', 'wp-mcp-ai' ),
-					'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings' ) ) . '">' . esc_html__( 'NV oOS Settings', 'wp-mcp-ai' ) . '</a>'
+					esc_html__( 'HuggingFace Datasets integration is not enabled. Please enable it in %s.', 'mcp-ai-wpoos' ),
+					'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings' ) ) . '">' . esc_html__( 'NV oOS Settings', 'mcp-ai-wpoos' ) . '</a>'
 				);
 				?>
 			</p>
@@ -110,23 +110,23 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 		?>
 		<div class="wp-mcp-ai-datasets">
 			<p class="description">
-				<?php esc_html_e( 'Select up to 10 HuggingFace datasets that this assistant should prefer when making recommendations. These datasets will be prioritized in the huggingface_recommended_datasets tool.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Select up to 10 HuggingFace datasets that this assistant should prefer when making recommendations. These datasets will be prioritized in the huggingface_recommended_datasets tool.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<div class="wp-mcp-ai-datasets-filters" style="margin: 15px 0;">
 				<label>
-					<?php esc_html_e( 'Filter by category:', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Filter by category:', 'mcp-ai-wpoos' ); ?>
 					<select id="wp-mcp-ai-dataset-category-filter" style="margin-left: 5px;">
-						<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
-						<option value="nlp"><?php esc_html_e( 'NLP', 'wp-mcp-ai' ); ?></option>
-						<option value="vision"><?php esc_html_e( 'Vision', 'wp-mcp-ai' ); ?></option>
-						<option value="audio"><?php esc_html_e( 'Audio', 'wp-mcp-ai' ); ?></option>
-						<option value="multimodal"><?php esc_html_e( 'Multimodal', 'wp-mcp-ai' ); ?></option>
+						<option value=""><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos' ); ?></option>
+						<option value="nlp"><?php esc_html_e( 'NLP', 'mcp-ai-wpoos' ); ?></option>
+						<option value="vision"><?php esc_html_e( 'Vision', 'mcp-ai-wpoos' ); ?></option>
+						<option value="audio"><?php esc_html_e( 'Audio', 'mcp-ai-wpoos' ); ?></option>
+						<option value="multimodal"><?php esc_html_e( 'Multimodal', 'mcp-ai-wpoos' ); ?></option>
 					</select>
 				</label>
 				<label style="margin-left: 15px;">
-					<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
-					<input type="text" id="wp-mcp-ai-dataset-search" placeholder="<?php esc_attr_e( 'Search datasets...', 'wp-mcp-ai' ); ?>" style="width: 250px; margin-left: 5px;" />
+					<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
+					<input type="text" id="wp-mcp-ai-dataset-search" placeholder="<?php esc_attr_e( 'Search datasets...', 'mcp-ai-wpoos' ); ?>" style="width: 250px; margin-left: 5px;" />
 				</label>
 			</div>
 
@@ -134,10 +134,10 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 				<thead>
 					<tr>
 						<th style="width: 40px;"></th>
-						<th><?php esc_html_e( 'Dataset', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Category', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Priority', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Dataset', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Category', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Priority', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -197,7 +197,7 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 								<small style="color: #666;">
 									<?php
 									/* translators: %s: dataset size */
-									printf( esc_html__( 'Size: %s', 'wp-mcp-ai' ), esc_html( $dataset_info['size'] ) );
+									printf( esc_html__( 'Size: %s', 'mcp-ai-wpoos' ), esc_html( $dataset_info['size'] ) );
 									?>
 								</small>
 							</td>
@@ -207,7 +207,7 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 			</table>
 
 			<p class="description" style="margin-top: 10px;">
-				<?php esc_html_e( 'Maximum 10 datasets can be selected. Additional selections will uncheck earlier selections.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Maximum 10 datasets can be selected. Additional selections will uncheck earlier selections.', 'mcp-ai-wpoos' ); ?>
 			</p>
 		</div>
 

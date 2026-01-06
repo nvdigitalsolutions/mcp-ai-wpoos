@@ -47,7 +47,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 		if ( empty( $json_files ) ) {
 			return new WP_Error(
 				'no_json_files',
-				__( 'No team knowledge base JSON files found.', 'wp-mcp-ai' )
+				__( 'No team knowledge base JSON files found.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -78,7 +78,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 		if ( ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'file_not_found',
-				sprintf( __( 'File not found: %s', 'wp-mcp-ai' ), $file_path )
+				sprintf( __( 'File not found: %s', 'mcp-ai-wpoos' ), $file_path )
 			);
 		}
 
@@ -88,7 +88,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 		if ( false === $json_content ) {
 			return new WP_Error(
 				'file_read_error',
-				sprintf( __( 'Could not read file: %s', 'wp-mcp-ai' ), $file_path )
+				sprintf( __( 'Could not read file: %s', 'mcp-ai-wpoos' ), $file_path )
 			);
 		}
 
@@ -97,7 +97,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 		if ( null === $data ) {
 			return new WP_Error(
 				'json_decode_error',
-				sprintf( __( 'Invalid JSON in file: %s', 'wp-mcp-ai' ), $file_path )
+				sprintf( __( 'Invalid JSON in file: %s', 'mcp-ai-wpoos' ), $file_path )
 			);
 		}
 
@@ -105,7 +105,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 		if ( ! isset( $data['teams'] ) || ! is_array( $data['teams'] ) ) {
 			return new WP_Error(
 				'invalid_structure',
-				sprintf( __( 'Invalid JSON structure in file: %s. Missing "teams" array.', 'wp-mcp-ai' ), $file_path )
+				sprintf( __( 'Invalid JSON structure in file: %s. Missing "teams" array.', 'mcp-ai-wpoos' ), $file_path )
 			);
 		}
 
@@ -134,7 +134,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 			if ( ! isset( $team[ $field ] ) || empty( $team[ $field ] ) ) {
 				return new WP_Error(
 					'missing_required_field',
-					sprintf( __( 'Missing required field: %s', 'wp-mcp-ai' ), $field )
+					sprintf( __( 'Missing required field: %s', 'mcp-ai-wpoos' ), $field )
 				);
 			}
 		}
@@ -143,7 +143,7 @@ class WP_MCP_AI_Team_Knowledge_Base_Loader {
 		if ( ! is_array( $team['members'] ) || count( $team['members'] ) < 2 ) {
 			return new WP_Error(
 				'invalid_members',
-				__( 'Team must have at least 2 members.', 'wp-mcp-ai' )
+				__( 'Team must have at least 2 members.', 'mcp-ai-wpoos' )
 			);
 		}
 

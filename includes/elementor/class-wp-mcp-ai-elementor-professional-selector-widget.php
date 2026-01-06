@@ -28,7 +28,7 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Professional Selector', 'wp-mcp-ai' );
+		return __( 'NV oOS Professional Selector', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -83,67 +83,67 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 		$this->start_controls_section(
 			'section_settings',
 			array(
-				'label' => __( 'Professional Selector Settings', 'wp-mcp-ai' ),
+				'label' => __( 'Professional Selector Settings', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'assistant',
 			array(
-				'label'       => __( 'Assistant', 'wp-mcp-ai' ),
+				'label'       => __( 'Assistant', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $this->get_assistant_options(),
 				'default'     => '',
 				'label_block' => true,
-				'description' => __( 'Select the assistant that will be used for the chat. Leave empty to use the default assistant.', 'wp-mcp-ai' ),
+				'description' => __( 'Select the assistant that will be used for the chat. Leave empty to use the default assistant.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'default_professional',
 			array(
-				'label'       => __( 'Default Professional', 'wp-mcp-ai' ),
+				'label'       => __( 'Default Professional', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $this->get_professional_options(),
 				'default'     => '',
 				'label_block' => true,
-				'description' => __( 'Pre-select a professional. Leave empty for no default.', 'wp-mcp-ai' ),
+				'description' => __( 'Pre-select a professional. Leave empty for no default.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'default_provider',
 			array(
-				'label'       => __( 'Default Provider', 'wp-mcp-ai' ),
+				'label'       => __( 'Default Provider', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $this->get_provider_options(),
 				'default'     => '',
 				'label_block' => true,
-				'description' => __( 'Pre-select an AI provider. Leave empty for no default.', 'wp-mcp-ai' ),
+				'description' => __( 'Pre-select an AI provider. Leave empty for no default.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'default_model',
 			array(
-				'label'       => __( 'Default Model', 'wp-mcp-ai' ),
+				'label'       => __( 'Default Model', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
 				'default'     => '',
 				'label_block' => true,
-				'description' => __( 'Pre-select a model ID. Leave empty for no default.', 'wp-mcp-ai' ),
+				'description' => __( 'Pre-select a model ID. Leave empty for no default.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_temperature',
 			array(
-				'label'        => __( 'Show Temperature Control', 'wp-mcp-ai' ),
+				'label'        => __( 'Show Temperature Control', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'true',
 				'default'      => 'false',
-				'description'  => __( 'Allow users to adjust the temperature setting.', 'wp-mcp-ai' ),
+				'description'  => __( 'Allow users to adjust the temperature setting.', 'mcp-ai-wpoos' ),
 			)
 		);
 
@@ -152,76 +152,76 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 		$this->start_controls_section(
 			'section_chat_settings',
 			array(
-				'label' => __( 'Chat Settings', 'wp-mcp-ai' ),
+				'label' => __( 'Chat Settings', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'allow_guests',
 			array(
-				'label'        => __( 'Allow Guests', 'wp-mcp-ai' ),
+				'label'        => __( 'Allow Guests', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'true',
 				'default'      => 'false',
-				'description'  => __( 'Enable guest access using temporary tokens.', 'wp-mcp-ai' ),
+				'description'  => __( 'Enable guest access using temporary tokens.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'save_transcript',
 			array(
-				'label'        => __( 'Save transcripts to JetEngine', 'wp-mcp-ai' ),
+				'label'        => __( 'Save transcripts to JetEngine', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'true',
 				'default'      => 'true',
-				'description'  => __( 'Store chat requests and responses in the ai_chat_transcripts Custom Content Type.', 'wp-mcp-ai' ),
+				'description'  => __( 'Store chat requests and responses in the ai_chat_transcripts Custom Content Type.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'enable_streaming',
 			array(
-				'label'        => __( 'Enable SSE Streaming', 'wp-mcp-ai' ),
+				'label'        => __( 'Enable SSE Streaming', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'true',
 				'default'      => 'true',
-				'description'  => __( 'Enable Server-Sent Events (SSE) streaming for faster perceived response times.', 'wp-mcp-ai' ),
+				'description'  => __( 'Enable Server-Sent Events (SSE) streaming for faster perceived response times.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'allow_sensitive_tools',
 			array(
-				'label'        => __( 'Allow Sensitive Tools', 'wp-mcp-ai' ),
+				'label'        => __( 'Allow Sensitive Tools', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'true',
 				'default'      => 'false',
-				'description'  => __( 'Allow the assistant to use sensitive tools that may modify site content or settings.', 'wp-mcp-ai' ),
+				'description'  => __( 'Allow the assistant to use sensitive tools that may modify site content or settings.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'template',
 			array(
-				'label'       => __( 'Chat Template', 'wp-mcp-ai' ),
+				'label'       => __( 'Chat Template', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => array(
-					'classic'        => __( 'Classic', 'wp-mcp-ai' ),
-					'speech-bubbles' => __( 'Speech Bubbles', 'wp-mcp-ai' ),
-					'compact'        => __( 'Compact', 'wp-mcp-ai' ),
-					'sidebar'        => __( 'Sidebar', 'wp-mcp-ai' ),
+					'classic'        => __( 'Classic', 'mcp-ai-wpoos' ),
+					'speech-bubbles' => __( 'Speech Bubbles', 'mcp-ai-wpoos' ),
+					'compact'        => __( 'Compact', 'mcp-ai-wpoos' ),
+					'sidebar'        => __( 'Sidebar', 'mcp-ai-wpoos' ),
 				),
 				'default'     => 'classic',
 				'label_block' => true,
-				'description' => __( 'Select the visual template for the chat interface.', 'wp-mcp-ai' ),
+				'description' => __( 'Select the visual template for the chat interface.', 'mcp-ai-wpoos' ),
 			)
 		);
 
@@ -234,7 +234,7 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 	 * @return array
 	 */
 	protected function get_assistant_options() {
-		$options = array( '' => __( 'Default Assistant', 'wp-mcp-ai' ) );
+		$options = array( '' => __( 'Default Assistant', 'mcp-ai-wpoos' ) );
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			return $options;
@@ -278,7 +278,7 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 	 * @return array
 	 */
 	protected function get_professional_options() {
-		$options = array( '' => __( 'No Default', 'wp-mcp-ai' ) );
+		$options = array( '' => __( 'No Default', 'mcp-ai-wpoos' ) );
 
 		if ( ! post_type_exists( 'mcp_ai_profession' ) ) {
 			return $options;
@@ -324,15 +324,15 @@ class WP_MCP_AI_Elementor_Professional_Selector_Widget extends \Elementor\Widget
 		);
 
 		$labels = array(
-			'openai'      => __( 'OpenAI', 'wp-mcp-ai' ),
-			'anthropic'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-			'gemini'      => __( 'Google Gemini', 'wp-mcp-ai' ),
-			'huggingface' => __( 'Hugging Face', 'wp-mcp-ai' ),
-			'ollama'      => __( 'Ollama (Local)', 'wp-mcp-ai' ),
-			'lm_studio'   => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
+			'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
+			'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+			'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+			'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+			'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
+			'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 		);
 
-		$options = array( '' => __( 'No Default', 'wp-mcp-ai' ) );
+		$options = array( '' => __( 'No Default', 'mcp-ai-wpoos' ) );
 
 		foreach ( $providers as $provider ) {
 			$provider             = sanitize_key( $provider );

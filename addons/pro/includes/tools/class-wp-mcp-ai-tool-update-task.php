@@ -28,7 +28,7 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * @return string Tool name.
 	 */
 	public function get_name() {
-		return __( 'Update Task', 'wp-mcp-ai' );
+		return __( 'Update Task', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -37,7 +37,7 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * @return string Tool description.
 	 */
 	public function get_description() {
-		return __( 'Updates an existing task. Provide only the fields you want to update.', 'wp-mcp-ai' );
+		return __( 'Updates an existing task. Provide only the fields you want to update.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -51,34 +51,34 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'task_id'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Task ID to update (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Task ID to update (required)', 'mcp-ai-wpoos-pro' ),
 				),
 				'title'       => array(
 					'type'        => 'string',
-					'description' => __( 'New task title (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New task title (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'description' => array(
 					'type'        => 'string',
-					'description' => __( 'New task description (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New task description (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'status'      => array(
 					'type'        => 'string',
-					'description' => __( 'New task status (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New task status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' ),
 				),
 				'priority'    => array(
 					'type'        => 'string',
-					'description' => __( 'New task priority (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New task priority (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'low', 'medium', 'high', 'urgent' ),
 				),
 				'due_date'    => array(
 					'type'        => 'string',
-					'description' => __( 'New due date (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New due date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'assigned_to' => array(
 					'type'        => 'integer',
-					'description' => __( 'New assigned user ID (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'New assigned user ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'task_id' ),
@@ -92,7 +92,8 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * @return array Array of capability flag strings.
 	 */
 	public function get_capability_flags() {
-		return array( 'database-write' );
+		return array(
+			'pro', 'database-write' );
 	}
 
 	/**
@@ -120,18 +121,18 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update tasks.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update tasks.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$task_id = isset( $arguments['task_id'] ) ? absint( $arguments['task_id'] ) : 0;
 
 		if ( ! $task_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Task ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Task ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$task = get_post( $task_id );
 		if ( ! $task || 'mcp_ai_task' !== $task->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_task', __( 'Invalid task ID.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_task', __( 'Invalid task ID.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$post_data = array( 'ID' => $task_id );
@@ -166,7 +167,7 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		return array(
 			'success' => true,
-			'message' => __( 'Task updated successfully.', 'wp-mcp-ai' ),
+			'message' => __( 'Task updated successfully.', 'mcp-ai-wpoos-pro' ),
 			'task_id' => $task_id,
 		);
 	}

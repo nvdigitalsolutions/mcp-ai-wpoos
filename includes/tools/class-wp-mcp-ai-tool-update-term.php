@@ -27,14 +27,14 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Update Taxonomy Term', 'wp-mcp-ai' );
+		return __( 'Update Taxonomy Term', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Updates an existing taxonomy term (category, tag, or custom taxonomy) with new properties, parent relationships, and metadata.', 'wp-mcp-ai' );
+		return __( 'Updates an existing taxonomy term (category, tag, or custom taxonomy) with new properties, parent relationships, and metadata.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -46,34 +46,34 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'term_id'     => array(
 					'type'        => 'integer',
-					'description' => __( 'ID of the term to update.', 'wp-mcp-ai' ),
+					'description' => __( 'ID of the term to update.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'taxonomy'    => array(
 					'type'        => 'string',
-					'description' => __( 'Taxonomy name (e.g., "category", "post_tag", or custom taxonomy).', 'wp-mcp-ai' ),
+					'description' => __( 'Taxonomy name (e.g., "category", "post_tag", or custom taxonomy).', 'mcp-ai-wpoos' ),
 				),
 				'name'        => array(
 					'type'        => 'string',
-					'description' => __( 'New name for the term (optional).', 'wp-mcp-ai' ),
+					'description' => __( 'New name for the term (optional).', 'mcp-ai-wpoos' ),
 					'minLength'   => 1,
 				),
 				'slug'        => array(
 					'type'        => 'string',
-					'description' => __( 'New slug for the term (optional).', 'wp-mcp-ai' ),
+					'description' => __( 'New slug for the term (optional).', 'mcp-ai-wpoos' ),
 				),
 				'description' => array(
 					'type'        => 'string',
-					'description' => __( 'New description for the term (optional).', 'wp-mcp-ai' ),
+					'description' => __( 'New description for the term (optional).', 'mcp-ai-wpoos' ),
 				),
 				'parent'      => array(
 					'type'        => 'integer',
-					'description' => __( 'New parent term ID for hierarchical taxonomies. Use 0 to make it a top-level term (optional).', 'wp-mcp-ai' ),
+					'description' => __( 'New parent term ID for hierarchical taxonomies. Use 0 to make it a top-level term (optional).', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 				),
 				'meta_input'  => array(
 					'type'                 => 'object',
-					'description'          => __( 'Array of term meta key-value pairs to update or add.', 'wp-mcp-ai' ),
+					'description'          => __( 'Array of term meta key-value pairs to update or add.', 'mcp-ai-wpoos' ),
 					'additionalProperties' => true,
 				),
 			),
@@ -93,11 +93,11 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update terms.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update terms.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $current_user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate required inputs.
@@ -105,16 +105,16 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$taxonomy = isset( $arguments['taxonomy'] ) ? sanitize_key( $arguments['taxonomy'] ) : '';
 
 		if ( 0 === $term_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_term_id', __( 'Term ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_term_id', __( 'Term ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( '' === $taxonomy ) {
-			return new WP_Error( 'wp_mcp_ai_missing_taxonomy', __( 'Taxonomy name is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_taxonomy', __( 'Taxonomy name is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate taxonomy exists.
 		if ( ! taxonomy_exists( $taxonomy ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_taxonomy', __( 'The specified taxonomy does not exist.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_taxonomy', __( 'The specified taxonomy does not exist.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Verify term exists.
@@ -124,20 +124,20 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		if ( ! $term || ! isset( $term->term_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_term_not_found', __( 'The specified term does not exist.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_term_not_found', __( 'The specified term does not exist.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get taxonomy object to check capabilities.
 		$tax_object = get_taxonomy( $taxonomy );
 		if ( ! $tax_object ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_taxonomy', __( 'The taxonomy could not be loaded.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_taxonomy', __( 'The taxonomy could not be loaded.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check if user can edit terms in this taxonomy.
 		$edit_cap = isset( $tax_object->cap->edit_terms ) ? $tax_object->cap->edit_terms : 'manage_categories';
 
 		if ( ! user_can( $current_user_id, $edit_cap ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit terms in this taxonomy.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit terms in this taxonomy.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Prepare term update arguments.
@@ -161,14 +161,14 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			if ( $parent_id > 0 ) {
 				// Validate parent term exists and isn't the same term.
 				if ( $parent_id === $term_id ) {
-					return new WP_Error( 'wp_mcp_ai_invalid_parent', __( 'A term cannot be its own parent.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_invalid_parent', __( 'A term cannot be its own parent.', 'mcp-ai-wpoos' ) );
 				}
 
 				$parent_term = get_term( $parent_id, $taxonomy );
 				if ( ! is_wp_error( $parent_term ) && $parent_term ) {
 					$update_args['parent'] = $parent_id;
 				} else {
-					return new WP_Error( 'wp_mcp_ai_invalid_parent', __( 'The specified parent term does not exist.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_invalid_parent', __( 'The specified parent term does not exist.', 'mcp-ai-wpoos' ) );
 				}
 			} elseif ( 0 === $parent_id ) {
 				// Explicitly set to top-level.
@@ -188,7 +188,7 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$term = get_term( $term_id, $taxonomy );
 
 			if ( ! $term || is_wp_error( $term ) ) {
-				return new WP_Error( 'wp_mcp_ai_unknown_error', __( 'The term was updated but could not be retrieved.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_unknown_error', __( 'The term was updated but could not be retrieved.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
@@ -201,7 +201,7 @@ class WP_MCP_AI_Tool_Update_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$response = array(
 			'summary'     => sprintf(
 				/* translators: 1: term name, 2: taxonomy name, 3: term ID */
-				__( 'Term updated: %1$s in %2$s (ID: %3$d)', 'wp-mcp-ai' ),
+				__( 'Term updated: %1$s in %2$s (ID: %3$d)', 'mcp-ai-wpoos' ),
 				$term->name,
 				$taxonomy,
 				$term->term_id

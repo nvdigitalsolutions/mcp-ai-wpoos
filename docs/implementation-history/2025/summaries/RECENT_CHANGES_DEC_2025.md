@@ -14,7 +14,7 @@ This document consolidates all significant changes made to Open Operator System 
 
 A centralized UI for managing all external agent access tokens across assistants.
 
-**Location:** `WP oOS → Token Manager` admin menu
+**Location:** `NV oOS → Token Manager` admin menu
 
 **Features:**
 - Centralized token lifecycle management (create, view, revoke, delete)
@@ -423,4 +423,4 @@ A thorough code review was performed covering all aspects of the codebase:
 
 **Conclusion:** ✅ **APPROVED FOR PRODUCTION**
 
-The WP oOS codebase demonstrates excellent quality with professional security practices, clean architecture, comprehensive documentation, and strong WordPress standards compliance.
+The NV oOS codebase demonstrates excellent quality with professional security practices, clean architecture, comprehensive documentation, and strong WordPress standards compliance.

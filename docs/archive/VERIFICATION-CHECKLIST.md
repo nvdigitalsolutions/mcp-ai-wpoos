@@ -2,13 +2,13 @@
 
 **Purpose:** Manual testing checklist for verifying Token Manager Phase 7 implementation  
 **Time Required:** 30-45 minutes  
-**Prerequisites:** Local WordPress environment with WP oOS plugin active
+**Prerequisites:** Local WordPress environment with NV oOS plugin active
 
 ## Pre-Test Setup
 
 ### Environment Setup
 - [ ] WordPress 6.0+ installed locally
-- [ ] WP oOS plugin activated
+- [ ] NV oOS plugin activated
 - [ ] Admin user logged in
 - [ ] Browser console open (F12)
 - [ ] Clear browser cache
@@ -23,7 +23,7 @@
 
 ### Step 1: Widget Display
 1. Navigate to WordPress Dashboard (wp-admin)
-2. Look for three WP oOS widgets:
+2. Look for three NV oOS widgets:
    - **AI Token Usage Overview**
    - **AI Cost Breakdown**
    - **AI Usage Forecast**
@@ -36,7 +36,7 @@
 
 **Troubleshooting:**
 - If widgets don't appear: Check Settings → Screen Options (top-right)
-- Enable WP oOS widgets if hidden
+- Enable NV oOS widgets if hidden
 - Check PHP error log: `/wp-content/debug.log`
 
 ### Step 2: AI Token Usage Overview Widget

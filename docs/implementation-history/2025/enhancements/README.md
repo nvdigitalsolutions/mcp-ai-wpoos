@@ -148,7 +148,7 @@ create_post({
 - [2025 Implementation History Index](../INDEX.md)
 - [Implementation History README](../../README.md)
 - [Main Documentation Index](../../../DOCUMENTATION_INDEX.md)
-- [Tool Reference](../../../reference/tool-reference.md)
+- [Tool Reference](../../../reference/tools/tool-reference.md)
 
 ---
 

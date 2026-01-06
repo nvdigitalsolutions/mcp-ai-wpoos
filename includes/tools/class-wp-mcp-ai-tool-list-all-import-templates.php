@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_List_All_Import_Templates implements WP_MCP_AI_Tool_Interfa
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The WP All Import tool is disabled because WP All Import plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The WP All Import tool is disabled because WP All Import plugin is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -47,14 +47,14 @@ class WP_MCP_AI_Tool_List_All_Import_Templates implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List WP All Import Templates', 'wp-mcp-ai' );
+		return __( 'List WP All Import Templates', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns a list of WP All Import templates configured on the site. Requires WP All Import plugin.', 'wp-mcp-ai' );
+		return __( 'Returns a list of WP All Import templates configured on the site. Requires WP All Import plugin.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -66,7 +66,7 @@ class WP_MCP_AI_Tool_List_All_Import_Templates implements WP_MCP_AI_Tool_Interfa
 			'properties'           => array(
 				'limit' => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of import templates to retrieve.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of import templates to retrieve.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 20,
@@ -85,21 +85,21 @@ class WP_MCP_AI_Tool_List_All_Import_Templates implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_all_import_missing', __( 'WP All Import is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_all_import_missing', __( 'WP All Import is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view import templates.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view import templates.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view import templates.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view import templates.', 'mcp-ai-wpoos' ) );
 		}
 
 		$limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 20;
@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_List_All_Import_Templates implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'summary' => sprintf(
 				/* translators: %d: number of import templates */
-				__( 'Found %d import template(s)', 'wp-mcp-ai' ),
+				__( 'Found %d import template(s)', 'mcp-ai-wpoos' ),
 				count( $results )
 			),
 			'imports' => $results,

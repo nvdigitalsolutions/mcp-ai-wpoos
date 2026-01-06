@@ -1,6 +1,6 @@
-# WP oOS Release Checklist
+# NV oOS Release Checklist
 
-This document outlines the complete process for releasing Open Operator System (WP oOS) to GitHub and the WordPress.org Plugin Directory.
+This document outlines the complete process for releasing Open Operator System (NV oOS) to GitHub and the WordPress.org Plugin Directory.
 
 ## Table of Contents
 
@@ -266,7 +266,7 @@ git push origin develop
 
 ## Version Numbering
 
-WP oOS follows [Semantic Versioning](https://semver.org/):
+NV oOS follows [Semantic Versioning](https://semver.org/):
 
 - **MAJOR.MINOR.PATCH** (e.g., 1.2.3)
 - **MAJOR**: Breaking changes

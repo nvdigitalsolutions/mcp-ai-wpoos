@@ -2,7 +2,7 @@
 
 ## Overview
 
-OpenAI released major updates to the GPT-4o Realtime API in December 2024 and continues with 2025 snapshots, bringing significant improvements in pricing, features, and capabilities. The WP oOS plugin now supports all realtime model families including the new GPT Realtime Mini.
+OpenAI released major updates to the GPT-4o Realtime API in December 2024 and continues with 2025 snapshots, bringing significant improvements in pricing, features, and capabilities. The NV oOS plugin now supports all realtime model families including the new GPT Realtime Mini.
 
 ## Model Families
 
@@ -122,7 +122,7 @@ The December 2024 update introduced WebRTC support, making it easier to build re
 6. **Deterministic Tool Calling**: JSON-based function calling
 7. **Configurable Speech Rate**: Control speaking speed
 
-## Using Realtime Models in WP oOS
+## Using Realtime Models in NV oOS
 
 ### Model Selection
 The new realtime models are available in:
@@ -185,7 +185,7 @@ Use cases for caching:
 - **gpt-4o-audio-preview-2024-12-17**: Transcription and audio analysis
 
 ### 4. Monitor Token Usage
-Track audio token consumption using WP oOS's built-in analytics:
+Track audio token consumption using NV oOS's built-in analytics:
 - Settings → Performance → Token Usage
 - Cost Calculator integration
 - Real-time cost tracking
@@ -251,7 +251,7 @@ Example monthly cost for 1,000 hours of audio:
 
 ## WebRTC Integration (Future)
 
-WebRTC support is a major addition to the Realtime API. While WP oOS doesn't yet have native WebRTC integration, we're planning to add this capability.
+WebRTC support is a major addition to the Realtime API. While NV oOS doesn't yet have native WebRTC integration, we're planning to add this capability.
 
 ### Planned Features
 - [ ] WebRTC client library integration
@@ -292,7 +292,7 @@ Until native WebRTC support is added, you can:
 - [OpenAI Realtime API Documentation](https://platform.openai.com/docs/models/gpt-4o-realtime-preview)
 - [OpenAI WebRTC Guide](https://platform.openai.com/docs/guides/realtime-webrtc)
 - [OpenAI Community Forum - Realtime API Updates](https://community.openai.com/t/realtime-api-updates-webrtc-cheaper-prices-4o-mini-and-more/1059962)
-- [WP oOS Audio Tools Documentation](../../tools/audio-tools.md)
+- [NV oOS Tool Reference](../../../reference/tools/tool-reference.md)
 
 ## Version History
 
@@ -322,7 +322,7 @@ Until native WebRTC support is added, you can:
 
 ### Support
 For questions or issues related to GPT-4o Realtime API:
-- Check WP oOS documentation
+- Check NV oOS documentation
 - Visit OpenAI's support resources
 - Report bugs via GitHub issues
 

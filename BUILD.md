@@ -1,10 +1,10 @@
 # Open Operator System - Build Process
 
-This document describes the build process for the Open Operator System (WP oOS) plugin, including both asset compilation and PHP dependency management.
+This document describes the build process for the Open Operator System (NV oOS) plugin, including both asset compilation and PHP dependency management.
 
 ## Overview
 
-WP oOS uses a modern development toolchain including:
+NV oOS uses a modern development toolchain including:
 
 - Manage PHP dependencies via Composer (including Symfony components)
 - Package development dependencies for offline use
@@ -367,7 +367,7 @@ git add assets/css/*.min.css assets/js/*.min.js
 
 ### Plugin Versions
 
-WP oOS is available in three distribution formats:
+NV oOS is available in three distribution formats:
 
 | Version | File | Description |
 |---------|------|-------------|

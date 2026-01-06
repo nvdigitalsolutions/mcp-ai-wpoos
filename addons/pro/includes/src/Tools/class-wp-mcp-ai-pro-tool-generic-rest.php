@@ -50,14 +50,14 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generic REST API', 'wp-mcp-ai' );
+		return __( 'Generic REST API', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Make HTTP requests to REST API endpoints for plugins or external services not explicitly integrated. Supports GET, POST, PUT, PATCH, and DELETE methods with custom headers and request bodies.', 'wp-mcp-ai' );
+		return __( 'Make HTTP requests to REST API endpoints for plugins or external services not explicitly integrated. Supports GET, POST, PUT, PATCH, and DELETE methods with custom headers and request bodies.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -69,23 +69,23 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'url'          => array(
 					'type'        => 'string',
-					'description' => __( 'The full URL of the REST API endpoint to call. Must be a valid HTTP or HTTPS URL.', 'wp-mcp-ai' ),
+					'description' => __( 'The full URL of the REST API endpoint to call. Must be a valid HTTP or HTTPS URL.', 'mcp-ai-wpoos-pro' ),
 				),
 				'method'       => array(
 					'type'        => 'string',
 					'enum'        => self::ALLOWED_METHODS,
-					'description' => __( 'HTTP method to use for the request. Defaults to GET.', 'wp-mcp-ai' ),
+					'description' => __( 'HTTP method to use for the request. Defaults to GET.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'GET',
 				),
 				'headers'      => array(
 					'type'                 => 'object',
-					'description'          => __( 'Optional HTTP headers to include in the request. Common headers like Authorization, Content-Type, and Accept are supported.', 'wp-mcp-ai' ),
+					'description'          => __( 'Optional HTTP headers to include in the request. Common headers like Authorization, Content-Type, and Accept are supported.', 'mcp-ai-wpoos-pro' ),
 					'additionalProperties' => array(
 						'type' => 'string',
 					),
 				),
 				'body'         => array(
-					'description' => __( 'Optional request body for POST, PUT, or PATCH requests. Can be a JSON object, string, or form data.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional request body for POST, PUT, or PATCH requests. Can be a JSON object, string, or form data.', 'mcp-ai-wpoos-pro' ),
 					'oneOf'       => array(
 						array(
 							'type'                 => 'object',
@@ -104,14 +104,14 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'query_params' => array(
 					'type'                 => 'object',
-					'description'          => __( 'Optional query parameters to append to the URL.', 'wp-mcp-ai' ),
+					'description'          => __( 'Optional query parameters to append to the URL.', 'mcp-ai-wpoos-pro' ),
 					'additionalProperties' => array(
 						'type' => array( 'string', 'number', 'boolean' ),
 					),
 				),
 				'timeout'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Request timeout in seconds. Defaults to 30 seconds, maximum 120 seconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Request timeout in seconds. Defaults to 30 seconds, maximum 120 seconds.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 120,
 					'default'     => 30,
@@ -119,16 +119,16 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 				'auth_type'    => array(
 					'type'        => 'string',
 					'enum'        => array( 'none', 'basic', 'bearer', 'header' ),
-					'description' => __( 'Authentication type. Use "bearer" for OAuth tokens, "basic" for username/password, "header" for custom header auth, or "none" for no auth.', 'wp-mcp-ai' ),
+					'description' => __( 'Authentication type. Use "bearer" for OAuth tokens, "basic" for username/password, "header" for custom header auth, or "none" for no auth.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'none',
 				),
 				'auth_value'   => array(
 					'type'        => 'string',
-					'description' => __( 'Authentication credentials. For bearer: the token. For basic: "username:password". For header: the header value.', 'wp-mcp-ai' ),
+					'description' => __( 'Authentication credentials. For bearer: the token. For basic: "username:password". For header: the header value.', 'mcp-ai-wpoos-pro' ),
 				),
 				'auth_header'  => array(
 					'type'        => 'string',
-					'description' => __( 'Custom authentication header name when auth_type is "header". Defaults to "X-API-Key".', 'wp-mcp-ai' ),
+					'description' => __( 'Custom authentication header name when auth_type is "header". Defaults to "X-API-Key".', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'X-API-Key',
 				),
 			),
@@ -151,14 +151,14 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to make generic REST API requests.', 'wp-mcp-ai' )
+				__( 'You do not have permission to make generic REST API requests.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' )
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -168,7 +168,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( '' === $url ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_url',
-				__( 'A URL is required for the REST API request.', 'wp-mcp-ai' )
+				__( 'A URL is required for the REST API request.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -186,7 +186,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_invalid_method',
 				sprintf(
 					/* translators: %s: comma-separated list of allowed methods */
-					__( 'Invalid HTTP method. Allowed methods are: %s.', 'wp-mcp-ai' ),
+					__( 'Invalid HTTP method. Allowed methods are: %s.', 'mcp-ai-wpoos-pro' ),
 					implode( ', ', self::ALLOWED_METHODS )
 				)
 			);
@@ -265,7 +265,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_request_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'The REST API request failed: %s', 'wp-mcp-ai' ),
+					__( 'The REST API request failed: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				)
 			);
@@ -288,7 +288,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( false === $parsed || empty( $parsed['scheme'] ) || empty( $parsed['host'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_url',
-				__( 'The provided URL is not valid. Please provide a complete URL with scheme (http:// or https://).', 'wp-mcp-ai' )
+				__( 'The provided URL is not valid. Please provide a complete URL with scheme (http:// or https://).', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -296,7 +296,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! in_array( strtolower( $parsed['scheme'] ), array( 'http', 'https' ), true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_scheme',
-				__( 'Only HTTP and HTTPS URLs are allowed.', 'wp-mcp-ai' )
+				__( 'Only HTTP and HTTPS URLs are allowed.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -324,7 +324,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 				if ( $host === $pattern || 0 === strpos( $host, $pattern . ':' ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_blocked_host',
-						__( 'Requests to localhost or internal addresses are not allowed.', 'wp-mcp-ai' )
+						__( 'Requests to localhost or internal addresses are not allowed.', 'mcp-ai-wpoos-pro' )
 					);
 				}
 			}
@@ -337,7 +337,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 				if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
 					return new WP_Error(
 						'wp_mcp_ai_blocked_ip',
-						__( 'Requests to private or reserved IP addresses are not allowed.', 'wp-mcp-ai' )
+						__( 'Requests to private or reserved IP addresses are not allowed.', 'mcp-ai-wpoos-pro' )
 					);
 				}
 			}
@@ -406,7 +406,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 			if ( '' === $auth_value ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_auth',
-					__( 'Authentication value is required when auth_type is specified.', 'wp-mcp-ai' )
+					__( 'Authentication value is required when auth_type is specified.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -514,7 +514,7 @@ class WP_MCP_AI_Pro_Tool_Generic_REST implements WP_MCP_AI_Tool_Interface, WP_MC
 			return array(
 				'success'     => false,
 				'status_code' => $status_code,
-				'error'       => __( 'Response body exceeds maximum allowed size (5MB).', 'wp-mcp-ai' ),
+				'error'       => __( 'Response body exceeds maximum allowed size (5MB).', 'mcp-ai-wpoos-pro' ),
 				'url'         => $url,
 				'method'      => $method,
 				'truncated'   => true,

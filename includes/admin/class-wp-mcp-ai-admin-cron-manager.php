@@ -48,8 +48,8 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
-			__( 'NV oOS Cron Manager', 'wp-mcp-ai' ),
-			__( 'Cron Manager', 'wp-mcp-ai' ),
+			__( 'NV oOS Cron Manager', 'mcp-ai-wpoos' ),
+			__( 'Cron Manager', 'mcp-ai-wpoos' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
@@ -99,13 +99,13 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	 */
 	public function handle_delete_cron() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to manage cron events.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'You do not have permission to manage cron events.', 'mcp-ai-wpoos' ) );
 		}
 
 		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
 
 		if ( '' === $job_id ) {
-			wp_die( esc_html__( 'Missing cron identifier.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'Missing cron identifier.', 'mcp-ai-wpoos' ) );
 		}
 
 		check_admin_referer( 'wp_mcp_ai_delete_cron_' . $job_id );
@@ -176,11 +176,11 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		$stats = $this->get_statistics( $jobs );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'NV oOS Cron Manager', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'NV oOS Cron Manager', 'mcp-ai-wpoos' ); ?></h1>
 
 			<div class="wp-mcp-ai-cron-manager__intro">
-				<p><strong><?php esc_html_e( 'About Cron Manager', 'wp-mcp-ai' ); ?></strong></p>
-				<p><?php esc_html_e( 'The Cron Manager displays and manages scheduled tasks created through NV oOS AI Assistant tools. Cron events allow the assistant to schedule automated tasks to run at specific times or on recurring schedules.', 'wp-mcp-ai' ); ?></p>
+				<p><strong><?php esc_html_e( 'About Cron Manager', 'mcp-ai-wpoos' ); ?></strong></p>
+				<p><?php esc_html_e( 'The Cron Manager displays and manages scheduled tasks created through NV oOS AI Assistant tools. Cron events allow the assistant to schedule automated tasks to run at specific times or on recurring schedules.', 'mcp-ai-wpoos' ); ?></p>
 				<p>
 				<?php
 					/* translators: %s: retention period in hours */
@@ -199,7 +199,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 									'Test jobs and completed one-time events remain visible for %d hour after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
 									'Test jobs and completed one-time events remain visible for %d hours after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
 									$retention_hours,
-									'wp-mcp-ai'
+									'mcp-ai-wpoos'
 								),
 								$retention_hours
 							)
@@ -213,7 +213,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 									'Test jobs and completed one-time events remain visible for %d day after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
 									'Test jobs and completed one-time events remain visible for %d days after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
 									$retention_days,
-									'wp-mcp-ai'
+									'mcp-ai-wpoos'
 								),
 								$retention_days
 							)
@@ -223,13 +223,13 @@ class WP_MCP_AI_Admin_Cron_Manager {
 						echo esc_html(
 							sprintf(
 								/* translators: %d: number of days */
-								__( 'Test jobs and completed one-time events remain visible for %d days after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.', 'wp-mcp-ai' ),
+								__( 'Test jobs and completed one-time events remain visible for %d days after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.', 'mcp-ai-wpoos' ),
 								$retention_days
 							)
 						);
 					}
 				} else {
-					esc_html_e( 'Completed one-time events are removed immediately after execution. You can enable job retention in Settings → Orchestration Layer to keep them visible for testing and verification.', 'wp-mcp-ai' );
+					esc_html_e( 'Completed one-time events are removed immediately after execution. You can enable job retention in Settings → Orchestration Layer to keep them visible for testing and verification.', 'mcp-ai-wpoos' );
 				}
 				?>
 				</p>
@@ -244,13 +244,13 @@ class WP_MCP_AI_Admin_Cron_Manager {
 				if ( '1' === $updated ) :
 					?>
 					<div class="notice notice-success is-dismissible">
-						<p><?php esc_html_e( 'Cron event successfully removed and unscheduled from WordPress Cron.', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'Cron event successfully removed and unscheduled from WordPress Cron.', 'mcp-ai-wpoos' ); ?></p>
 					</div>
 					<?php
 				elseif ( '0' === $updated ) :
 					?>
 					<div class="notice notice-error is-dismissible">
-						<p><?php esc_html_e( 'The cron event could not be removed. It may have already completed and been removed automatically, or it may not exist.', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'The cron event could not be removed. It may have already completed and been removed automatically, or it may not exist.', 'mcp-ai-wpoos' ); ?></p>
 					</div>
 					<?php
 				endif;
@@ -260,48 +260,55 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			<?php if ( ! empty( $jobs ) ) : ?>
 				<div class="wp-mcp-ai-cron-manager__stats">
 					<div class="wp-mcp-ai-cron-manager__stat">
-						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'Total Events', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'Total Events', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-cron-manager__stat-value"><?php echo esc_html( $stats['total'] ); ?></div>
 					</div>
 					<div class="wp-mcp-ai-cron-manager__stat">
-						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-cron-manager__stat-value"><?php echo esc_html( $stats['active'] ); ?></div>
 					</div>
 					<div class="wp-mcp-ai-cron-manager__stat">
-						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'Recurring', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'Recurring', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-cron-manager__stat-value"><?php echo esc_html( $stats['recurring'] ); ?></div>
 					</div>
 					<div class="wp-mcp-ai-cron-manager__stat">
-						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'One-off', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'One-off', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-cron-manager__stat-value"><?php echo esc_html( $stats['one_off'] ); ?></div>
 					</div>
 				</div>
 			<?php endif; ?>
 
+			<?php
+			// Show DLQ and SLA statistics if classes are available.
+			if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) || class_exists( 'WP_MCP_AI_SLA_Manager' ) ) :
+				$this->render_dlq_sla_stats();
+			endif;
+			?>
+
 			<?php if ( empty( $jobs ) ) : ?>
 				<div class="wp-mcp-ai-cron-manager__empty">
-					<h3><?php esc_html_e( 'No Scheduled Events', 'wp-mcp-ai' ); ?></h3>
-					<p><?php esc_html_e( 'No cron events have been scheduled through NV oOS yet. The AI Assistant can create scheduled tasks using the following tools:', 'wp-mcp-ai' ); ?></p>
+					<h3><?php esc_html_e( 'No Scheduled Events', 'mcp-ai-wpoos' ); ?></h3>
+					<p><?php esc_html_e( 'No cron events have been scheduled through NV oOS yet. The AI Assistant can create scheduled tasks using the following tools:', 'mcp-ai-wpoos' ); ?></p>
 					<ul>
-						<li><strong>create_cron_job</strong> - <?php esc_html_e( 'Schedule a new one-time or recurring task', 'wp-mcp-ai' ); ?></li>
-						<li><strong>list_cron_jobs</strong> - <?php esc_html_e( 'View all scheduled tasks', 'wp-mcp-ai' ); ?></li>
-						<li><strong>get_cron_job</strong> - <?php esc_html_e( 'Get details about a specific scheduled task', 'wp-mcp-ai' ); ?></li>
-						<li><strong>delete_cron_job</strong> - <?php esc_html_e( 'Remove a scheduled task', 'wp-mcp-ai' ); ?></li>
+						<li><strong>create_cron_job</strong> - <?php esc_html_e( 'Schedule a new one-time or recurring task', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>list_cron_jobs</strong> - <?php esc_html_e( 'View all scheduled tasks', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>get_cron_job</strong> - <?php esc_html_e( 'Get details about a specific scheduled task', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>delete_cron_job</strong> - <?php esc_html_e( 'Remove a scheduled task', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
-					<p><?php esc_html_e( 'Once the assistant creates scheduled events, they will appear here immediately for monitoring and management. Test jobs and completed one-time events will remain visible for the configured retention period, allowing you to verify successful execution.', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'Once the assistant creates scheduled events, they will appear here immediately for monitoring and management. Test jobs and completed one-time events will remain visible for the configured retention period, allowing you to verify successful execution.', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 			<?php else : ?>
 				<table class="wp-mcp-ai-cron-manager__table">
 					<thead>
 						<tr>
-							<th scope="col"><?php esc_html_e( 'Hook', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Next Run', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Schedule Type', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Arguments', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Created By', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Created At', 'wp-mcp-ai' ); ?></th>
-							<th scope="col"><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Hook', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Next Run', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Schedule Type', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Arguments', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Created By', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Created At', 'mcp-ai-wpoos' ); ?></th>
+							<th scope="col"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -328,21 +335,21 @@ class WP_MCP_AI_Admin_Cron_Manager {
 							}
 
 							if ( '' === $creator ) {
-								$creator = __( 'System', 'wp-mcp-ai' );
+								$creator = __( 'System', 'mcp-ai-wpoos' );
 							}
 
-							$created_at   = isset( $job['created_at'] ) && $job['created_at'] ? wp_date( 'Y-m-d H:i:s T', (int) $job['created_at'] ) : __( 'Unknown', 'wp-mcp-ai' );
+							$created_at   = isset( $job['created_at'] ) && $job['created_at'] ? wp_date( 'Y-m-d H:i:s T', (int) $job['created_at'] ) : __( 'Unknown', 'mcp-ai-wpoos' );
 							$args_display = wp_json_encode( $job['args'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 							?>
 							<tr>
 								<td><code><?php echo esc_html( $job['hook'] ); ?></code></td>
 								<td>
 									<?php if ( $is_active ) : ?>
-										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--active"><?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></span>
+										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--active"><?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
 									<?php elseif ( $was_executed ) : ?>
-										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--executed"><?php esc_html_e( 'Executed', 'wp-mcp-ai' ); ?></span>
+										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--executed"><?php esc_html_e( 'Executed', 'mcp-ai-wpoos' ); ?></span>
 									<?php else : ?>
-										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--inactive"><?php esc_html_e( 'Inactive', 'wp-mcp-ai' ); ?></span>
+										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--inactive"><?php esc_html_e( 'Inactive', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
 								</td>
 								<td>
@@ -351,35 +358,35 @@ class WP_MCP_AI_Admin_Cron_Manager {
 										$time_diff = human_time_diff( time(), $next_run );
 										if ( $next_run > time() ) {
 											/* translators: %s: human-readable time difference */
-											echo esc_html( sprintf( __( 'In %s', 'wp-mcp-ai' ), $time_diff ) );
+											echo esc_html( sprintf( __( 'In %s', 'mcp-ai-wpoos' ), $time_diff ) );
 										} else {
 											/* translators: %s: human-readable time difference */
-											echo esc_html( sprintf( __( '%s ago', 'wp-mcp-ai' ), $time_diff ) );
+											echo esc_html( sprintf( __( '%s ago', 'mcp-ai-wpoos' ), $time_diff ) );
 										}
 										echo '<br><small>' . esc_html( wp_date( 'Y-m-d H:i:s T', $next_run ) ) . '</small>';
 									} elseif ( $was_executed && $first_timestamp > 0 ) {
 										// Show when the job was scheduled to run for executed jobs.
 										$time_diff = human_time_diff( $first_timestamp, time() );
 										/* translators: %s: human-readable time difference */
-										echo esc_html( sprintf( __( 'Ran %s ago', 'wp-mcp-ai' ), $time_diff ) );
+										echo esc_html( sprintf( __( 'Ran %s ago', 'mcp-ai-wpoos' ), $time_diff ) );
 										echo '<br><small>' . esc_html( wp_date( 'Y-m-d H:i:s T', $first_timestamp ) ) . '</small>';
 									} else {
-										esc_html_e( 'Not scheduled', 'wp-mcp-ai' );
+										esc_html_e( 'Not scheduled', 'mcp-ai-wpoos' );
 									}
 									?>
 								</td>
 								<td>
 									<?php if ( $is_recurring ) : ?>
-										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--recurring"><?php esc_html_e( 'Recurring', 'wp-mcp-ai' ); ?></span>
+										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--recurring"><?php esc_html_e( 'Recurring', 'mcp-ai-wpoos' ); ?></span>
 										<br><small><?php echo esc_html( $schedule ); ?></small>
 									<?php else : ?>
-										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--oneoff"><?php esc_html_e( 'One-off', 'wp-mcp-ai' ); ?></span>
+										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--oneoff"><?php esc_html_e( 'One-off', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
 								</td>
 								<td class="wp-mcp-ai-cron-manager__args">
 									<?php
 									if ( empty( $job['args'] ) ) {
-										echo '<em>' . esc_html__( 'None', 'wp-mcp-ai' ) . '</em>';
+										echo '<em>' . esc_html__( 'None', 'mcp-ai-wpoos' ) . '</em>';
 									} else {
 										echo esc_html( $args_display );
 									}
@@ -388,17 +395,137 @@ class WP_MCP_AI_Admin_Cron_Manager {
 								<td><?php echo esc_html( $creator ); ?></td>
 								<td><?php echo esc_html( $created_at ); ?></td>
 								<td class="wp-mcp-ai-cron-manager__actions">
-									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to delete this cron event? This action cannot be undone.', 'wp-mcp-ai' ) ); ?>');">
+									<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Are you sure you want to delete this cron event? This action cannot be undone.', 'mcp-ai-wpoos' ) ); ?>');">
 										<input type="hidden" name="action" value="wp_mcp_ai_delete_cron" />
 										<input type="hidden" name="job_id" value="<?php echo esc_attr( $job['job_id'] ); ?>" />
 										<?php wp_nonce_field( 'wp_mcp_ai_delete_cron_' . $job['job_id'] ); ?>
-										<?php submit_button( __( 'Delete', 'wp-mcp-ai' ), 'delete', '', false ); ?>
+										<?php submit_button( __( 'Delete', 'mcp-ai-wpoos' ), 'delete', '', false ); ?>
 									</form>
 								</td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render DLQ and SLA statistics section.
+	 */
+	private function render_dlq_sla_stats() {
+		?>
+		<div class="wp-mcp-ai-cron-manager__intro" style="margin-top:2rem;">
+			<h2 style="margin-top:0;"><?php esc_html_e( 'Job Queue Health', 'mcp-ai-wpoos' ); ?></h2>
+
+			<?php if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) : ?>
+				<?php
+				$dlq_stats = WP_MCP_AI_Dead_Letter_Queue::get_stats();
+				if ( $dlq_stats['total'] > 0 ) :
+					?>
+					<div style="padding:1rem;background:#fff3cd;border-left:4px solid #ffc107;margin-bottom:1rem;">
+						<strong><?php esc_html_e( 'Dead Letter Queue', 'mcp-ai-wpoos' ); ?></strong>
+						<p style="margin:0.5rem 0 0 0;">
+							<?php
+							printf(
+								/* translators: 1: total items, 2: active items */
+								esc_html__( '%1$d failed items in queue (%2$d active, %3$d dismissed)', 'mcp-ai-wpoos' ),
+								(int) $dlq_stats['total'],
+								(int) $dlq_stats['active'],
+								(int) $dlq_stats['dismissed']
+							);
+							?>
+							<?php if ( ! empty( $dlq_stats['by_type'] ) ) : ?>
+								<br>
+								<?php
+								$type_labels = array(
+									'webhook'    => __( 'Webhooks', 'mcp-ai-wpoos' ),
+									'cron_job'   => __( 'Cron Jobs', 'mcp-ai-wpoos' ),
+									'async_tool' => __( 'Async Tools', 'mcp-ai-wpoos' ),
+									'job_queue'  => __( 'Queue Jobs', 'mcp-ai-wpoos' ),
+								);
+								$type_parts  = array();
+								foreach ( $dlq_stats['by_type'] as $type => $count ) {
+									$label        = isset( $type_labels[ $type ] ) ? $type_labels[ $type ] : $type;
+									$type_parts[] = sprintf( '%s: %d', esc_html( $label ), $count );
+								}
+								echo esc_html( implode( ', ', $type_parts ) );
+								?>
+							<?php endif; ?>
+						</p>
+						<p style="margin:0.5rem 0 0 0;">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dlq-manager' ) ); ?>" class="button button-secondary">
+								<?php esc_html_e( 'View Dead Letter Queue →', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					</div>
+				<?php else : ?>
+					<div style="padding:1rem;background:#d4edda;border-left:4px solid #28a745;margin-bottom:1rem;">
+						<strong><?php esc_html_e( 'Dead Letter Queue', 'mcp-ai-wpoos' ); ?></strong>
+						<p style="margin:0.5rem 0 0 0;">
+							✓ <?php esc_html_e( 'No failed items - all jobs completing successfully', 'mcp-ai-wpoos' ); ?>
+						</p>
+					</div>
+				<?php endif; ?>
+			<?php endif; ?>
+
+			<?php if ( class_exists( 'WP_MCP_AI_SLA_Manager' ) && WP_MCP_AI_SLA_Manager::is_enabled() ) : ?>
+				<div style="padding:1rem;background:#e7f3ff;border-left:4px solid #2271b1;margin-bottom:1rem;">
+					<strong><?php esc_html_e( 'SLA Prioritization', 'mcp-ai-wpoos' ); ?></strong>
+					<p style="margin:0.5rem 0;">
+						<?php esc_html_e( 'Jobs are automatically prioritized into tiers based on latency requirements:', 'mcp-ai-wpoos' ); ?>
+					</p>
+					<?php
+					$tiers_info = WP_MCP_AI_SLA_Manager::get_all_tiers_info();
+					?>
+					<table style="width:100%;margin-top:0.5rem;border-collapse:collapse;">
+						<tr style="background:#f0f6fc;">
+							<th style="padding:0.5rem;text-align:left;border:1px solid #ddd;"><?php esc_html_e( 'Tier', 'mcp-ai-wpoos' ); ?></th>
+							<th style="padding:0.5rem;text-align:left;border:1px solid #ddd;"><?php esc_html_e( 'Priority', 'mcp-ai-wpoos' ); ?></th>
+							<th style="padding:0.5rem;text-align:left;border:1px solid #ddd;"><?php esc_html_e( 'SLA Target', 'mcp-ai-wpoos' ); ?></th>
+							<th style="padding:0.5rem;text-align:left;border:1px solid #ddd;"><?php esc_html_e( 'Max Concurrent', 'mcp-ai-wpoos' ); ?></th>
+						</tr>
+						<?php foreach ( $tiers_info as $tier => $info ) : ?>
+							<tr>
+								<td style="padding:0.5rem;border:1px solid #ddd;">
+									<strong><?php echo esc_html( ucfirst( str_replace( '_', ' ', $tier ) ) ); ?></strong>
+								</td>
+								<td style="padding:0.5rem;border:1px solid #ddd;"><?php echo esc_html( $info['priority'] ); ?></td>
+								<td style="padding:0.5rem;border:1px solid #ddd;"><?php echo esc_html( $info['sla_target'] ); ?>s</td>
+								<td style="padding:0.5rem;border:1px solid #ddd;"><?php echo esc_html( $info['concurrent'] ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</table>
+
+					<?php
+					// Show tuning recommendations if there are issues.
+					$recommendations = WP_MCP_AI_SLA_Manager::get_tuning_recommendations();
+					$has_issues      = false;
+					foreach ( $recommendations as $rec ) {
+						if ( 'ok' !== $rec['status'] ) {
+							$has_issues = true;
+							break;
+						}
+					}
+					?>
+
+					<?php if ( $has_issues ) : ?>
+						<div style="margin-top:1rem;padding:0.75rem;background:#fff3cd;border:1px solid #ffc107;border-radius:4px;">
+							<strong><?php esc_html_e( '⚠️ Tuning Recommendations:', 'mcp-ai-wpoos' ); ?></strong>
+							<ul style="margin:0.5rem 0 0 1.5rem;padding:0;">
+								<?php foreach ( $recommendations as $rec ) : ?>
+									<?php if ( 'ok' !== $rec['status'] ) : ?>
+										<li>
+											<strong><?php echo esc_html( ucfirst( $rec['tier'] ) ); ?>:</strong>
+											<?php echo esc_html( $rec['message'] ); ?>
+										</li>
+									<?php endif; ?>
+								<?php endforeach; ?>
+							</ul>
+						</div>
+					<?php endif; ?>
+				</div>
 			<?php endif; ?>
 		</div>
 		<?php

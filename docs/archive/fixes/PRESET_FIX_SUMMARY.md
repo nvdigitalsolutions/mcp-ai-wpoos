@@ -101,7 +101,7 @@ vendor/bin/phpunit tests/test-preset-application-fix.php
 ```
 
 ### Manual Testing
-1. Go to **Settings → WP oOS → Tool Recommendations**
+1. Go to **Settings → NV oOS → Tool Recommendations**
 2. Click any preset button (Conservative, Balanced, Performance, or Aggressive)
 3. Should see success message without errors
 4. All 64+ tools should have settings applied

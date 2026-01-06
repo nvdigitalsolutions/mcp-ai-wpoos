@@ -37,14 +37,14 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Purge Cache', 'wp-mcp-ai' );
+		return __( 'Purge Cache', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Purges all configured caching layers (Cloudflare, Varnish, etc.) in the correct order to ensure content updates are properly reflected.', 'wp-mcp-ai' );
+		return __( 'Purges all configured caching layers (Cloudflare, Varnish, etc.) in the correct order to ensure content updates are properly reflected.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -56,12 +56,12 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'properties'           => array(
 				'purge_everything' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to purge the entire cache for all configured layers.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to purge the entire cache for all configured layers.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'urls'             => array(
 					'type'        => 'array',
-					'description' => __( 'Specific URLs to purge from all configured cache layers. Provide absolute URLs.', 'wp-mcp-ai' ),
+					'description' => __( 'Specific URLs to purge from all configured cache layers. Provide absolute URLs.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'   => 'string',
 						'format' => 'uri',
@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'timeout'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Optional timeout in seconds for cache purge requests.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional timeout in seconds for cache purge requests.', 'mcp-ai-wpoos' ),
 					'minimum'     => self::MIN_TIMEOUT,
 					'maximum'     => self::MAX_TIMEOUT,
 				),
@@ -89,15 +89,15 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to purge the cache.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to purge the cache.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_settings', __( 'The admin settings component is not available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_settings', __( 'The admin settings component is not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -106,7 +106,7 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$urls             = isset( $arguments['urls'] ) && is_array( $arguments['urls'] ) ? $arguments['urls'] : array();
 
 		if ( ! $purge_everything && empty( $urls ) ) {
-			return new WP_Error( 'wp_mcp_ai_empty_purge', __( 'Provide purge_everything or at least one URL to purge.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_empty_purge', __( 'Provide purge_everything or at least one URL to purge.', 'mcp-ai-wpoos' ) );
 		}
 
 		$layers_purged = array();
@@ -145,18 +145,18 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( empty( $layers_purged ) && empty( $errors ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_cache_layers',
-				__( 'No cache layers are currently configured. Enable Cloudflare or Varnish purge in the plugin settings.', 'wp-mcp-ai' ),
+				__( 'No cache layers are currently configured. Enable Cloudflare or Varnish purge in the plugin settings.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_cache' => __( 'Configure cache settings in NV oOS settings.', 'wp-mcp-ai' ),
+						'configure_cache' => __( 'Configure cache settings in NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
 		}
 
 		$summary = array(
-			'message'       => __( 'Cache purge operation completed.', 'wp-mcp-ai' ),
+			'message'       => __( 'Cache purge operation completed.', 'mcp-ai-wpoos' ),
 			'layers_purged' => array_keys( $layers_purged ),
 			'results'       => $layers_purged,
 		);
@@ -165,9 +165,9 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$summary['errors'] = $errors;
 
 			if ( empty( $layers_purged ) ) {
-				$summary['message'] = __( 'Cache purge operation failed for all layers.', 'wp-mcp-ai' );
+				$summary['message'] = __( 'Cache purge operation failed for all layers.', 'mcp-ai-wpoos' );
 			} else {
-				$summary['message'] = __( 'Cache purge operation completed with some errors.', 'wp-mcp-ai' );
+				$summary['message'] = __( 'Cache purge operation completed with some errors.', 'mcp-ai-wpoos' );
 			}
 		}
 
@@ -211,7 +211,7 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( ! $varnish_tool ) {
 			return new WP_Error(
 				'wp_mcp_ai_varnish_tool_missing',
-				__( 'The Varnish purge tool is not available.', 'wp-mcp-ai' )
+				__( 'The Varnish purge tool is not available.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -241,7 +241,7 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( ! $cloudflare_tool ) {
 			return new WP_Error(
 				'wp_mcp_ai_cloudflare_tool_missing',
-				__( 'The Cloudflare purge tool is not available.', 'wp-mcp-ai' )
+				__( 'The Cloudflare purge tool is not available.', 'mcp-ai-wpoos' )
 			);
 		}
 

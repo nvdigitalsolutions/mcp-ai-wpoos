@@ -140,7 +140,7 @@ After deploying this branch, attach a file and check console for these logs:
 
 **A. Upload normalization:**
 ```javascript
-[WP oOS] normaliseUploadResponse - created record: {
+[NV oOS] normaliseUploadResponse - created record: {
   id: 2360,  // ← Should be a number
   from_data_id: 2360,
   from_data_data_id: 'N/A'
@@ -149,7 +149,7 @@ After deploying this branch, attach a file and check console for these logs:
 
 **B. Pending attachments rendering:**
 ```javascript
-[WP oOS] renderPendingAttachments - attachment data: {
+[NV oOS] renderPendingAttachments - attachment data: {
   id: 2360,  // ← Should match upload
   metaText: '219.3 KB • image/jpeg • ID: 2360'  // ← Should include ID
 }
@@ -157,7 +157,7 @@ After deploying this branch, attach a file and check console for these logs:
 
 **C. Display attachment creation:**
 ```javascript
-[WP oOS] buildDisplayAttachment - creating display attachment: {
+[NV oOS] buildDisplayAttachment - creating display attachment: {
   record_id: 2360,  // ← Should be present
   found_in_library: true,  // ← Should be true
   meta: '219.3 KB • image/jpeg • ID: 2360'  // ← Should include ID
@@ -166,7 +166,7 @@ After deploying this branch, attach a file and check console for these logs:
 
 **D. ID resolution:**
 ```javascript
-[WP oOS] buildAttachmentMeta - ID resolution: {
+[NV oOS] buildAttachmentMeta - ID resolution: {
   record_id: 2360,
   record_id_type: 'number',
   resolved_attachmentId: 2360,
@@ -221,7 +221,7 @@ If logs show ID is included but UI doesn't show it:
 
 If none of the above helps, gather this information:
 
-1. **Browser console logs** - Copy all `[WP oOS]` messages
+1. **Browser console logs** - Copy all `[NV oOS]` messages
 2. **Network tab** - Screenshot of /wp/v2/media response
 3. **Inspect element** - HTML of the attachment metadata div
 4. **WordPress info**:

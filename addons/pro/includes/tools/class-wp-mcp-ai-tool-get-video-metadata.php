@@ -29,14 +29,14 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Video Metadata', 'wp-mcp-ai' );
+		return __( 'Get Video Metadata', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves detailed technical metadata about a video file including duration, dimensions, format, codecs, bitrate, and frame rate.', 'wp-mcp-ai' );
+		return __( 'Retrieves detailed technical metadata about a video file including duration, dimensions, format, codecs, bitrate, and frame rate.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -48,18 +48,18 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'video_url'       => array(
 					'type'        => 'string',
-					'description' => __( 'URL of the video file to analyze.', 'wp-mcp-ai' ),
+					'description' => __( 'URL of the video file to analyze.', 'mcp-ai-wpoos-pro' ),
 				),
 				'url'             => $this->get_url_parameter_schema( 'video' ),
 				'attachment_id'   => array(
 					'type'        => 'integer',
-					'description' => __( 'WordPress attachment ID of the video to analyze.', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress attachment ID of the video to analyze.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'file_id'         => $this->get_file_id_parameter_schema(),
 				'include_streams' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Include detailed stream information (audio/video tracks). Default is true.', 'wp-mcp-ai' ),
+					'description' => __( 'Include detailed stream information (audio/video tracks). Default is true.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
 			),
@@ -82,7 +82,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to access video metadata.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to access video metadata.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -90,7 +90,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -116,11 +116,11 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 
 			return new WP_Error(
 				'wp_mcp_ai_ffprobe_not_available',
-				__( 'FFprobe is not installed on this server. Video metadata extraction requires FFprobe (part of FFmpeg).', 'wp-mcp-ai' ),
+				__( 'FFprobe is not installed on this server. Video metadata extraction requires FFprobe (part of FFmpeg).', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 500,
 					'actions' => array(
-						'install_ffmpeg' => __( 'Install FFmpeg (includes FFprobe): https://ffmpeg.org/download.html', 'wp-mcp-ai' ),
+						'install_ffmpeg' => __( 'Install FFmpeg (includes FFprobe): https://ffmpeg.org/download.html', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -197,7 +197,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 			if ( ! $file_path || ! file_exists( $file_path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_file_not_found',
-					__( 'Video file not found on server.', 'wp-mcp-ai' ),
+					__( 'Video file not found on server.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 404 )
 				);
 			}
@@ -206,7 +206,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 			if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_not_video',
-					__( 'The provided attachment is not a video file.', 'wp-mcp-ai' ),
+					__( 'The provided attachment is not a video file.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -223,7 +223,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 
 		return new WP_Error(
 			'wp_mcp_ai_missing_video',
-			__( 'You must provide video_url, url, attachment_id, or file_id.', 'wp-mcp-ai' ),
+			__( 'You must provide video_url, url, attachment_id, or file_id.', 'mcp-ai-wpoos-pro' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -250,7 +250,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 				'wp_mcp_ai_download_failed',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'Failed to download video. HTTP status: %d', 'wp-mcp-ai' ),
+					__( 'Failed to download video. HTTP status: %d', 'mcp-ai-wpoos-pro' ),
 					$code
 				),
 				array( 'status' => $code )
@@ -263,7 +263,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_not_video',
-				__( 'Downloaded file is not a video.', 'wp-mcp-ai' ),
+				__( 'Downloaded file is not a video.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -275,7 +275,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		if ( false === $written ) {
 			return new WP_Error(
 				'wp_mcp_ai_temp_file_failed',
-				__( 'Failed to write video to temporary file.', 'wp-mcp-ai' ),
+				__( 'Failed to write video to temporary file.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -326,7 +326,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_ffprobe_failed',
-				__( 'Failed to extract video metadata. FFprobe returned an error.', 'wp-mcp-ai' ),
+				__( 'Failed to extract video metadata. FFprobe returned an error.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'   => 500,
 					'original' => $result,
@@ -337,7 +337,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		if ( empty( $result['output'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_ffprobe_failed',
-				__( 'Failed to extract video metadata. FFprobe returned an error.', 'wp-mcp-ai' ),
+				__( 'Failed to extract video metadata. FFprobe returned an error.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -348,7 +348,7 @@ class WP_MCP_AI_Tool_Get_Video_Metadata implements WP_MCP_AI_Tool_Interface, WP_
 		if ( json_last_error() !== JSON_ERROR_NONE || ! isset( $data['format'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_metadata_parse_failed',
-				__( 'Failed to parse video metadata.', 'wp-mcp-ai' ),
+				__( 'Failed to parse video metadata.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 500 )
 			);
 		}

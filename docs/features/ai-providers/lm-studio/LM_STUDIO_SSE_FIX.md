@@ -2,7 +2,7 @@
 
 ## Issue Description
 
-LM Studio users were experiencing connection errors when trying to connect to the WP oOS MCP server:
+LM Studio users were experiencing connection errors when trying to connect to the NV oOS MCP server:
 
 ```javascript
 [Error]: SSE error: undefined
@@ -122,7 +122,7 @@ Authorization: Bearer cred_xxxxx.SECRET
 **Response (JSON, not SSE):**
 ```json
 {
-  "name": "WP oOS MCP Server",
+  "name": "NV oOS MCP Server",
   "version": "1.0.0",
   "protocolVersion": "2024-11-05",
   "capabilities": {
@@ -246,7 +246,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 - [LM Studio MCP Documentation](https://lmstudio.ai/docs/app/mcp)
 - [MCP 2024-11-05 Specification](https://spec.modelcontextprotocol.io/)
 - [Streamable HTTP Transport](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)
-- [WP oOS MCP Endpoint Documentation](../../../reference/api/mcp-endpoint.md)
+- [NV oOS MCP Endpoint Documentation](../../../reference/api/mcp-endpoint.md)
 
 ## Related Issues
 

@@ -83,8 +83,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 */
 		public function register_menu() {
 			add_menu_page(
-				__( 'NV oOS Settings', 'wp-mcp-ai' ),
-				__( 'NV oOS', 'wp-mcp-ai' ),
+				__( 'NV oOS Settings', 'mcp-ai-wpoos' ),
+				__( 'NV oOS', 'mcp-ai-wpoos' ),
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' ),
@@ -98,8 +98,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Add submenu item for General Settings with proper label.
 			add_submenu_page(
 				self::PAGE_SLUG,
-				__( 'General Settings', 'wp-mcp-ai' ),
-				__( 'General Settings', 'wp-mcp-ai' ),
+				__( 'General Settings', 'mcp-ai-wpoos' ),
+				__( 'General Settings', 'mcp-ai-wpoos' ),
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' )
@@ -165,7 +165,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 */
 		public function handle_save_settings() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_save_settings' );
@@ -327,15 +327,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Get asset files (automatically uses minified in production, unminified in debug mode).
+			$responsive_css = $this->get_asset_file( 'assets/css/admin-responsive-utilities.css' );
 			$dashboard_css = $this->get_asset_file( 'assets/css/settings-dashboard.css' );
 			$ajax_error_js = $this->get_asset_file( 'assets/js/ajax-error-service.js' );
 			$dashboard_js  = $this->get_asset_file( 'assets/js/settings-dashboard.js' );
+
+			// Enqueue responsive utilities first (base styles).
+			wp_enqueue_style(
+				'wp-mcp-ai-responsive-utilities',
+				$responsive_css['url'],
+				array(),
+				$responsive_css['version']
+			);
 
 			// Enqueue dashboard styles with file modification time for cache busting.
 			wp_enqueue_style(
 				'wp-mcp-ai-dashboard',
 				$dashboard_css['url'],
-				array(),
+				array( 'wp-mcp-ai-responsive-utilities' ),
 				$dashboard_css['version']
 			);
 
@@ -393,7 +402,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					$orchestration_js['version'],
 					true
 				);
-				wp_set_script_translations( 'wp-mcp-ai-tool-orchestration', 'wp-mcp-ai' );
+				wp_set_script_translations( 'wp-mcp-ai-tool-orchestration', 'mcp-ai-wpoos' );
 			}
 
 			// Enqueue performance admin scripts if on advanced tab with performance_monitoring subtab.
@@ -414,7 +423,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					array(
 						'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 						'nonce'       => wp_create_nonce( 'wp_mcp_ai_performance' ),
-						'runningText' => __( 'Running...', 'wp-mcp-ai' ),
+						'runningText' => __( 'Running...', 'mcp-ai-wpoos' ),
 					)
 				);
 			}
@@ -438,8 +447,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'wp-mcp-ai-settings' ),
 					'i18n'    => array(
-						'enabled'  => __( 'Enabled', 'wp-mcp-ai' ),
-						'disabled' => __( 'Disabled', 'wp-mcp-ai' ),
+						'enabled'  => __( 'Enabled', 'mcp-ai-wpoos' ),
+						'disabled' => __( 'Disabled', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -466,7 +475,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 */
 		public function render_dashboard() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
 			$active_tab = $this->get_active_tab();
@@ -484,11 +493,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				if ( isset( $_GET['updated'] ) && 'true' === sanitize_key( wp_unslash( $_GET['updated'] ) ) ) :
 					?>
 					<div class="notice notice-success is-dismissible">
-						<p><?php esc_html_e( 'Settings saved successfully.', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'Settings saved successfully.', 'mcp-ai-wpoos' ); ?></p>
 					</div>
 				<?php endif; ?>
 
-				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Settings tabs', 'wp-mcp-ai' ); ?>">
+				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Settings tabs', 'mcp-ai-wpoos' ); ?>">
 					<?php foreach ( $tabs as $tab_id => $tab ) : ?>
 						<?php
 						$tab_url = add_query_arg(
@@ -515,7 +524,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					<div class="tab-content">
 						<?php if ( empty( $sections ) ) : ?>
 							<div class="notice notice-info">
-								<p><?php esc_html_e( 'No settings available for this tab.', 'wp-mcp-ai' ); ?></p>
+								<p><?php esc_html_e( 'No settings available for this tab.', 'mcp-ai-wpoos' ); ?></p>
 							</div>
 						<?php else : ?>
 							<?php foreach ( $sections as $section ) : ?>

@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Save Profession', 'wp-mcp-ai' );
+		return __( 'Save Profession', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new profession or updates an existing one. Professions define roles that can be used when creating AI assistants, including their expertise areas, default tools, and knowledge base.', 'wp-mcp-ai' );
+		return __( 'Creates a new profession or updates an existing one. Professions define roles that can be used when creating AI assistants, including their expertise areas, default tools, and knowledge base.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -45,35 +45,35 @@ class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'properties'           => array(
 				'title'            => array(
 					'type'        => 'string',
-					'description' => __( 'Display name of the profession (e.g., "Data Scientist", "Marine Biologist")', 'wp-mcp-ai' ),
+					'description' => __( 'Display name of the profession (e.g., "Data Scientist", "Marine Biologist")', 'mcp-ai-wpoos' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
 				'slug'             => array(
 					'type'        => 'string',
-					'description' => __( 'Unique identifier (e.g., "data_scientist"). If updating, provide existing slug.', 'wp-mcp-ai' ),
+					'description' => __( 'Unique identifier (e.g., "data_scientist"). If updating, provide existing slug.', 'mcp-ai-wpoos' ),
 					'pattern'     => '^[a-z0-9_-]+$',
 					'minLength'   => 1,
 					'maxLength'   => 100,
 				),
 				'description'      => array(
 					'type'        => 'string',
-					'description' => __( 'Brief description of the profession', 'wp-mcp-ai' ),
+					'description' => __( 'Brief description of the profession', 'mcp-ai-wpoos' ),
 					'maxLength'   => 500,
 				),
 				'category'         => array(
 					'type'        => 'string',
-					'description' => __( 'Category: advisory, creative, technical, healthcare, legal, financial, or other', 'wp-mcp-ai' ),
+					'description' => __( 'Category: advisory, creative, technical, healthcare, legal, financial, or other', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'advisory', 'creative', 'technical', 'healthcare', 'legal', 'financial', 'other' ),
 				),
 				'role_description' => array(
 					'type'        => 'string',
-					'description' => __( 'Role description for AI instructions (what the assistant helps with)', 'wp-mcp-ai' ),
+					'description' => __( 'Role description for AI instructions (what the assistant helps with)', 'mcp-ai-wpoos' ),
 					'maxLength'   => 1000,
 				),
 				'expertise'        => array(
 					'type'        => 'array',
-					'description' => __( 'Array of expertise areas (e.g., ["Machine learning", "Data visualization"])', 'wp-mcp-ai' ),
+					'description' => __( 'Array of expertise areas (e.g., ["Machine learning", "Data visualization"])', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'      => 'string',
 						'maxLength' => 200,
@@ -82,7 +82,7 @@ class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'warnings'         => array(
 					'type'        => 'array',
-					'description' => __( 'Array of disclaimers/warnings the AI should communicate', 'wp-mcp-ai' ),
+					'description' => __( 'Array of disclaimers/warnings the AI should communicate', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'      => 'string',
 						'maxLength' => 300,
@@ -91,12 +91,12 @@ class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'knowledge_base'   => array(
 					'type'        => 'string',
-					'description' => __( 'Knowledge base content (supports markdown)', 'wp-mcp-ai' ),
+					'description' => __( 'Knowledge base content (supports markdown)', 'mcp-ai-wpoos' ),
 					'maxLength'   => 10000,
 				),
 				'default_tools'    => array(
 					'type'        => 'array',
-					'description' => __( 'Array of default tool slugs to enable for this profession', 'wp-mcp-ai' ),
+					'description' => __( 'Array of default tool slugs to enable for this profession', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
@@ -120,15 +120,15 @@ class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'forbidden', __( 'You do not have permission to manage professions.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'forbidden', __( 'You do not have permission to manage professions.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 		// Validate required fields.
 		if ( empty( $arguments['title'] ) || empty( $arguments['slug'] ) ) {
-			return new WP_Error( 'missing_required', __( 'Title and slug are required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'missing_required', __( 'Title and slug are required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get profession repository.
@@ -192,12 +192,12 @@ class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'message'    => $existing
 				? sprintf(
 					/* translators: %s: profession name */
-					__( 'Profession "%s" updated successfully.', 'wp-mcp-ai' ),
+					__( 'Profession "%s" updated successfully.', 'mcp-ai-wpoos' ),
 					$data['title']
 				)
 				: sprintf(
 					/* translators: %s: profession name */
-					__( 'Profession "%s" created successfully.', 'wp-mcp-ai' ),
+					__( 'Profession "%s" created successfully.', 'mcp-ai-wpoos' ),
 					$data['title']
 				),
 		);

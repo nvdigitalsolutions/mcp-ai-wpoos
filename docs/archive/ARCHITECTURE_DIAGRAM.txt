@@ -1,7 +1,7 @@
-# WP oOS Performance Monitoring & Error Tracking Architecture
+# NV oOS Performance Monitoring & Error Tracking Architecture
 
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         WordPress Plugin: WP oOS                            │
+│                         WordPress Plugin: NV oOS                            │
 └─────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────────────┐

@@ -86,7 +86,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		if ( ! file_exists( $video_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_video_not_found',
-				__( 'Video file not found.', 'wp-mcp-ai' ),
+				__( 'Video file not found.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -111,7 +111,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		if ( is_wp_error( $result ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_ffprobe_failed',
-				__( 'Failed to determine video duration. FFprobe returned an error.', 'wp-mcp-ai' ),
+				__( 'Failed to determine video duration. FFprobe returned an error.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'   => 500,
 					'original' => $result,
@@ -122,7 +122,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		if ( empty( $result['output'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_ffprobe_failed',
-				__( 'Failed to determine video duration. FFprobe returned an error.', 'wp-mcp-ai' ),
+				__( 'Failed to determine video duration. FFprobe returned an error.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -132,7 +132,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		if ( $duration <= 0 ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_duration',
-				__( 'Invalid video duration detected.', 'wp-mcp-ai' ),
+				__( 'Invalid video duration detected.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -152,11 +152,11 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		if ( ! $this->is_ffmpeg_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_ffmpeg_not_found',
-				__( 'FFmpeg is not installed or not available. Please install FFmpeg to enable video frame extraction for OpenAI.', 'wp-mcp-ai' ),
+				__( 'FFmpeg is not installed or not available. Please install FFmpeg to enable video frame extraction for OpenAI.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 500,
 					'actions' => array(
-						'install_ffmpeg' => __( 'Install FFmpeg on your server: https://ffmpeg.org/download.html', 'wp-mcp-ai' ),
+						'install_ffmpeg' => __( 'Install FFmpeg on your server: https://ffmpeg.org/download.html', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -165,7 +165,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		if ( ! file_exists( $video_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_video_not_found',
-				__( 'Video file not found.', 'wp-mcp-ai' ),
+				__( 'Video file not found.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -223,7 +223,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 
 			return new WP_Error(
 				'wp_mcp_ai_frame_extraction_failed',
-				__( 'Failed to extract any frames from video.', 'wp-mcp-ai' ),
+				__( 'Failed to extract any frames from video.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status' => 500,
 					'errors' => $errors,
@@ -286,7 +286,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 				'wp_mcp_ai_ffmpeg_extraction_failed',
 				sprintf(
 					/* translators: %s: timestamp in seconds */
-					__( 'FFmpeg failed to extract frame at timestamp %s', 'wp-mcp-ai' ),
+					__( 'FFmpeg failed to extract frame at timestamp %s', 'mcp-ai-wpoos-pro' ),
 					$timestamp_formatted
 				),
 				array(
@@ -314,7 +314,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 			if ( ! mkdir( $base_dir, 0755, true ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_temp_dir_failed',
-					__( 'Failed to create temporary directory for video frames.', 'wp-mcp-ai' ),
+					__( 'Failed to create temporary directory for video frames.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -328,7 +328,7 @@ class WP_MCP_AI_Video_Frame_Extractor_Service {
 		if ( ! mkdir( $temp_dir, 0755, true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_temp_subdir_failed',
-				__( 'Failed to create unique temporary directory for video frames.', 'wp-mcp-ai' ),
+				__( 'Failed to create unique temporary directory for video frames.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 500 )
 			);
 		}

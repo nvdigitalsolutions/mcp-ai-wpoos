@@ -207,7 +207,7 @@ This implementation delivers Phase 1 of the AI feature implementation plan, addi
 
 ### Enabling AI Media Library
 
-1. Navigate to **WordPress Admin → Settings → WP oOS → Tools & Features**
+1. Navigate to **WordPress Admin → Settings → NV oOS → Tools & Features**
 2. Find **AI Media Library** section
 3. Check **Enable AI Media Library**
 4. Configure options:
@@ -219,7 +219,7 @@ This implementation delivers Phase 1 of the AI feature implementation plan, addi
 
 ### Enabling AI Comments Moderation
 
-1. Navigate to **WordPress Admin → Settings → WP oOS → Tools & Features**
+1. Navigate to **WordPress Admin → Settings → NV oOS → Tools & Features**
 2. Find **AI Comments Moderation** section
 3. Check **Enable AI Comments Moderation**
 4. Configure moderation:

@@ -48,7 +48,7 @@ trait WP_MCP_AI_Tool_Restrict_From_Chat_Client {
 				'tool_restricted_from_chat_client',
 				sprintf(
 					/* translators: %s: tool name */
-					__( 'Tool "%s" is not available via chat interface for security reasons. Use the MCP endpoint or enable sensitive tools in shortcode/widget settings.', 'wp-mcp-ai' ),
+					__( 'Tool "%s" is not available via chat interface for security reasons. Use the MCP endpoint or enable sensitive tools in shortcode/widget settings.', 'mcp-ai-wpoos' ),
 					method_exists( $this, 'get_name' ) ? $this->get_name() : 'Unknown'
 				),
 				array(

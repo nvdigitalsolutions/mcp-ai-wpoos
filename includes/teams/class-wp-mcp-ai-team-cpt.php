@@ -65,19 +65,19 @@ class WP_MCP_AI_Team_CPT {
 	 */
 	public function register_post_type() {
 		$labels = array(
-			'name'               => _x( 'Teams', 'Post type general name', 'wp-mcp-ai' ),
-			'singular_name'      => _x( 'Team', 'Post type singular name', 'wp-mcp-ai' ),
-			'menu_name'          => _x( 'Teams', 'Admin Menu text', 'wp-mcp-ai' ),
-			'name_admin_bar'     => _x( 'Team', 'Add New on Toolbar', 'wp-mcp-ai' ),
-			'add_new'            => __( 'Add New', 'wp-mcp-ai' ),
-			'add_new_item'       => __( 'Add New Team', 'wp-mcp-ai' ),
-			'new_item'           => __( 'New Team', 'wp-mcp-ai' ),
-			'edit_item'          => __( 'Edit Team', 'wp-mcp-ai' ),
-			'view_item'          => __( 'View Team', 'wp-mcp-ai' ),
-			'all_items'          => __( 'Teams', 'wp-mcp-ai' ),
-			'search_items'       => __( 'Search Teams', 'wp-mcp-ai' ),
-			'not_found'          => __( 'No teams found.', 'wp-mcp-ai' ),
-			'not_found_in_trash' => __( 'No teams found in Trash.', 'wp-mcp-ai' ),
+			'name'               => _x( 'Teams', 'Post type general name', 'mcp-ai-wpoos' ),
+			'singular_name'      => _x( 'Team', 'Post type singular name', 'mcp-ai-wpoos' ),
+			'menu_name'          => _x( 'Teams', 'Admin Menu text', 'mcp-ai-wpoos' ),
+			'name_admin_bar'     => _x( 'Team', 'Add New on Toolbar', 'mcp-ai-wpoos' ),
+			'add_new'            => __( 'Add New', 'mcp-ai-wpoos' ),
+			'add_new_item'       => __( 'Add New Team', 'mcp-ai-wpoos' ),
+			'new_item'           => __( 'New Team', 'mcp-ai-wpoos' ),
+			'edit_item'          => __( 'Edit Team', 'mcp-ai-wpoos' ),
+			'view_item'          => __( 'View Team', 'mcp-ai-wpoos' ),
+			'all_items'          => __( 'Teams', 'mcp-ai-wpoos' ),
+			'search_items'       => __( 'Search Teams', 'mcp-ai-wpoos' ),
+			'not_found'          => __( 'No teams found.', 'mcp-ai-wpoos' ),
+			'not_found_in_trash' => __( 'No teams found in Trash.', 'mcp-ai-wpoos' ),
 		);
 
 		$args = array(
@@ -110,7 +110,7 @@ class WP_MCP_AI_Team_CPT {
 			self::META_TEAM_MEMBERS,
 			array(
 				'type'              => 'array',
-				'description'       => __( 'Team member profession IDs', 'wp-mcp-ai' ),
+				'description'       => __( 'Team member profession IDs', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_team_members' ),
 				'auth_callback'     => '__return_true',
@@ -124,7 +124,7 @@ class WP_MCP_AI_Team_CPT {
 			self::META_TEAM_DESCRIPTION,
 			array(
 				'type'              => 'string',
-				'description'       => __( 'Team description', 'wp-mcp-ai' ),
+				'description'       => __( 'Team description', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => 'wp_kses_post',
 				'auth_callback'     => '__return_true',
@@ -138,7 +138,7 @@ class WP_MCP_AI_Team_CPT {
 			self::META_DEFAULT_PROVIDER,
 			array(
 				'type'              => 'string',
-				'description'       => __( 'Default AI provider for team members', 'wp-mcp-ai' ),
+				'description'       => __( 'Default AI provider for team members', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => 'sanitize_key',
 				'auth_callback'     => '__return_true',
@@ -152,7 +152,7 @@ class WP_MCP_AI_Team_CPT {
 			self::META_DEFAULT_MODEL,
 			array(
 				'type'              => 'string',
-				'description'       => __( 'Default model for team members', 'wp-mcp-ai' ),
+				'description'       => __( 'Default model for team members', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => 'sanitize_text_field',
 				'auth_callback'     => '__return_true',
@@ -166,7 +166,7 @@ class WP_MCP_AI_Team_CPT {
 			self::META_DEFAULT_TEMPERATURE,
 			array(
 				'type'              => 'number',
-				'description'       => __( 'Default temperature for team members', 'wp-mcp-ai' ),
+				'description'       => __( 'Default temperature for team members', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_temperature' ),
 				'auth_callback'     => '__return_true',
@@ -248,7 +248,7 @@ class WP_MCP_AI_Team_CPT {
 
 		add_meta_box(
 			'wp-mcp-ai-team-members',
-			__( 'Team Members', 'wp-mcp-ai' ),
+			__( 'Team Members', 'mcp-ai-wpoos' ),
 			array( $this, 'render_team_members_meta_box' ),
 			self::POST_TYPE,
 			'normal',
@@ -257,7 +257,7 @@ class WP_MCP_AI_Team_CPT {
 
 		add_meta_box(
 			'wp-mcp-ai-team-defaults',
-			__( 'Default Settings', 'wp-mcp-ai' ),
+			__( 'Default Settings', 'mcp-ai-wpoos' ),
 			array( $this, 'render_defaults_meta_box' ),
 			self::POST_TYPE,
 			'side',
@@ -292,7 +292,7 @@ class WP_MCP_AI_Team_CPT {
 		?>
 		<div class="wp-mcp-ai-team-members">
 			<p class="description">
-				<?php esc_html_e( 'Select the professionals that make up this team. When you deploy this team, an assistant will be created for each selected professional.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Select the professionals that make up this team. When you deploy this team, an assistant will be created for each selected professional.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<?php if ( empty( $professions ) ) : ?>
@@ -300,8 +300,8 @@ class WP_MCP_AI_Team_CPT {
 					<?php
 					printf(
 						/* translators: %s: URL to create profession */
-						esc_html__( 'No professions found. Please %s first.', 'wp-mcp-ai' ),
-						'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'create a profession', 'wp-mcp-ai' ) . '</a>'
+						esc_html__( 'No professions found. Please %s first.', 'mcp-ai-wpoos' ),
+						'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'create a profession', 'mcp-ai-wpoos' ) . '</a>'
 					);
 					?>
 				</p>
@@ -326,7 +326,7 @@ class WP_MCP_AI_Team_CPT {
 					<?php
 					printf(
 						/* translators: %d: number of selected members */
-						esc_html( _n( '%d professional selected', '%d professionals selected', count( $team_members ), 'wp-mcp-ai' ) ),
+						esc_html( _n( '%d professional selected', '%d professionals selected', count( $team_members ), 'mcp-ai-wpoos' ) ),
 						absint( count( $team_members ) )
 					);
 					?>
@@ -359,8 +359,8 @@ class WP_MCP_AI_Team_CPT {
 				array(
 					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
-					'selectModelText' => __( '— Select Model —', 'wp-mcp-ai' ),
-					'errorMessage'    => __( 'Failed to load models. Please try again.', 'wp-mcp-ai' ),
+					'selectModelText' => __( '— Select Model —', 'mcp-ai-wpoos' ),
+					'errorMessage'    => __( 'Failed to load models. Please try again.', 'mcp-ai-wpoos' ),
 				)
 			);
 		}
@@ -386,29 +386,29 @@ class WP_MCP_AI_Team_CPT {
 		?>
 		<div class="wp-mcp-ai-team-defaults">
 			<p class="description">
-				<?php esc_html_e( 'These settings will be applied to all assistants created from this team.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'These settings will be applied to all assistants created from this team.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<p>
 				<label for="wp-mcp-ai-default-provider">
-					<strong><?php esc_html_e( 'AI Provider', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'AI Provider', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="wp_mcp_ai_default_provider" id="wp-mcp-ai-default-provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#wp-mcp-ai-default-model">
-					<option value=""><?php esc_html_e( '-- Use Professional Default --', 'wp-mcp-ai' ); ?></option>
-					<option value="openai" <?php selected( $default_provider, 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'wp-mcp-ai' ); ?></option>
-					<option value="gemini" <?php selected( $default_provider, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'wp-mcp-ai' ); ?></option>
-					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'wp-mcp-ai' ); ?></option>
-					<option value="ollama" <?php selected( $default_provider, 'ollama' ); ?>><?php esc_html_e( 'Ollama (Local)', 'wp-mcp-ai' ); ?></option>
-					<option value="lm_studio" <?php selected( $default_provider, 'lm_studio' ); ?>><?php esc_html_e( 'LM Studio', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '-- Use Professional Default --', 'mcp-ai-wpoos' ); ?></option>
+					<option value="openai" <?php selected( $default_provider, 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'mcp-ai-wpoos' ); ?></option>
+					<option value="gemini" <?php selected( $default_provider, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'mcp-ai-wpoos' ); ?></option>
+					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'mcp-ai-wpoos' ); ?></option>
+					<option value="ollama" <?php selected( $default_provider, 'ollama' ); ?>><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></option>
+					<option value="lm_studio" <?php selected( $default_provider, 'lm_studio' ); ?>><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></option>
 				</select>
 			</p>
 
 			<p>
 				<label for="wp-mcp-ai-default-model">
-					<strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="wp_mcp_ai_default_model" id="wp-mcp-ai-default-model" class="widefat">
-					<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '— Select Model —', 'mcp-ai-wpoos' ); ?></option>
 					<?php if ( ! empty( $models ) ) : ?>
 						<?php foreach ( $models as $model_id => $model_name ) : ?>
 							<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $default_model, $model_id ); ?>>
@@ -422,15 +422,15 @@ class WP_MCP_AI_Team_CPT {
 						</option>
 					<?php endif; ?>
 				</select>
-				<span class="description"><?php esc_html_e( 'Leave empty to use professional default', 'wp-mcp-ai' ); ?></span>
+				<span class="description"><?php esc_html_e( 'Leave empty to use professional default', 'mcp-ai-wpoos' ); ?></span>
 			</p>
 
 			<p>
 				<label for="wp-mcp-ai-default-temperature">
-					<strong><?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Temperature', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<input type="number" name="wp_mcp_ai_default_temperature" id="wp-mcp-ai-default-temperature" class="widefat" value="<?php echo esc_attr( $default_temperature ); ?>" min="0" max="2" step="0.1" placeholder="0.7">
-				<span class="description"><?php esc_html_e( '0-2. Leave empty to use professional default', 'wp-mcp-ai' ); ?></span>
+				<span class="description"><?php esc_html_e( '0-2. Leave empty to use professional default', 'mcp-ai-wpoos' ); ?></span>
 			</p>
 		</div>
 		<?php
@@ -506,8 +506,8 @@ class WP_MCP_AI_Team_CPT {
 		foreach ( $columns as $key => $label ) {
 			$new_columns[ $key ] = $label;
 			if ( 'title' === $key ) {
-				$new_columns['team_members'] = __( 'Team Members', 'wp-mcp-ai' );
-				$new_columns['provider']     = __( 'Provider', 'wp-mcp-ai' );
+				$new_columns['team_members'] = __( 'Team Members', 'mcp-ai-wpoos' );
+				$new_columns['provider']     = __( 'Provider', 'mcp-ai-wpoos' );
 			}
 		}
 		return $new_columns;
@@ -523,9 +523,9 @@ class WP_MCP_AI_Team_CPT {
 		if ( 'team_members' === $column ) {
 			$team_members = get_post_meta( $post_id, self::META_TEAM_MEMBERS, true );
 			if ( is_array( $team_members ) && ! empty( $team_members ) ) {
-				echo esc_html( count( $team_members ) ) . ' ' . esc_html( _n( 'professional', 'professionals', count( $team_members ), 'wp-mcp-ai' ) );
+				echo esc_html( count( $team_members ) ) . ' ' . esc_html( _n( 'professional', 'professionals', count( $team_members ), 'mcp-ai-wpoos' ) );
 			} else {
-				echo '<span class="description">' . esc_html__( 'No members', 'wp-mcp-ai' ) . '</span>';
+				echo '<span class="description">' . esc_html__( 'No members', 'mcp-ai-wpoos' ) . '</span>';
 			}
 		} elseif ( 'provider' === $column ) {
 			$provider = get_post_meta( $post_id, self::META_DEFAULT_PROVIDER, true );
@@ -539,7 +539,7 @@ class WP_MCP_AI_Team_CPT {
 				);
 				echo esc_html( isset( $provider_labels[ $provider ] ) ? $provider_labels[ $provider ] : $provider );
 			} else {
-				echo '<span class="description">' . esc_html__( 'Default', 'wp-mcp-ai' ) . '</span>';
+				echo '<span class="description">' . esc_html__( 'Default', 'mcp-ai-wpoos' ) . '</span>';
 			}
 		}
 	}

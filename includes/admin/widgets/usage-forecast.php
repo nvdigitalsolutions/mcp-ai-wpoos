@@ -40,7 +40,7 @@ if ( 'increasing' === $trend ) {
 				<?php
 				printf(
 					/* translators: %s: forecast date */
-					esc_html__( 'Projected for %s', 'wp-mcp-ai' ),
+					esc_html__( 'Projected for %s', 'mcp-ai-wpoos' ),
 					esc_html( gmdate( 'M j, Y', strtotime( $projected_date ) ) )
 				);
 				?>
@@ -50,7 +50,7 @@ if ( 'increasing' === $trend ) {
 					<?php
 					printf(
 						/* translators: %d: confidence percentage */
-						esc_html__( 'Confidence: %d%%', 'wp-mcp-ai' ),
+						esc_html__( 'Confidence: %d%%', 'mcp-ai-wpoos' ),
 						absint( $confidence )
 					);
 					?>
@@ -62,7 +62,7 @@ if ( 'increasing' === $trend ) {
 	<!-- Trend Indicator -->
 	<div class="wp-mcp-ai-forecast-trend" style="margin-top: 20px; padding: 15px; background: #f7f7f7; border-radius: 4px;">
 		<div class="wp-mcp-ai-trend-label" style="font-weight: 600; margin-bottom: 8px;">
-			<?php esc_html_e( 'Usage Trend', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Usage Trend', 'mcp-ai-wpoos' ); ?>
 		</div>
 		<div class="wp-mcp-ai-trend-status">
 			<?php
@@ -70,19 +70,19 @@ if ( 'increasing' === $trend ) {
 				case 'increasing':
 					?>
 					<span class="dashicons dashicons-arrow-up-alt" style="color: <?php echo esc_attr( $trend_color ); ?>;"></span>
-					<?php esc_html_e( 'Usage is trending upward. Consider reviewing tier limits.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Usage is trending upward. Consider reviewing tier limits.', 'mcp-ai-wpoos' ); ?>
 					<?php
 					break;
 				case 'decreasing':
 					?>
 					<span class="dashicons dashicons-arrow-down-alt" style="color: <?php echo esc_attr( $trend_color ); ?>;"></span>
-					<?php esc_html_e( 'Usage is trending downward. Current capacity is sufficient.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Usage is trending downward. Current capacity is sufficient.', 'mcp-ai-wpoos' ); ?>
 					<?php
 					break;
 				default:
 					?>
 					<span class="dashicons dashicons-minus" style="color: <?php echo esc_attr( $trend_color ); ?>;"></span>
-					<?php esc_html_e( 'Usage is stable. No action required.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Usage is stable. No action required.', 'mcp-ai-wpoos' ); ?>
 					<?php
 					break;
 			}
@@ -94,7 +94,7 @@ if ( 'increasing' === $trend ) {
 	<?php if ( 0 === $projected_usage && 0 === $confidence ) : ?>
 		<div class="wp-mcp-ai-widget-notice" style="margin-top: 20px; padding: 15px; background: #f7f7f7; border-left: 4px solid #2271b1;">
 			<p style="margin: 0;">
-				<?php esc_html_e( 'Advanced forecasting is currently being implemented. Basic trend analysis will be available soon!', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Advanced forecasting is currently being implemented. Basic trend analysis will be available soon!', 'mcp-ai-wpoos' ); ?>
 			</p>
 		</div>
 	<?php endif; ?>
@@ -102,7 +102,7 @@ if ( 'increasing' === $trend ) {
 	<!-- Quick Actions -->
 	<div class="wp-mcp-ai-widget-actions" style="margin-top: 15px; text-align: right;">
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ); ?>" class="button">
-			<?php esc_html_e( 'View Analytics', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'View Analytics', 'mcp-ai-wpoos' ); ?>
 		</a>
 	</div>
 </div>

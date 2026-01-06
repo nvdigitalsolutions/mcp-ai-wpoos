@@ -30,14 +30,14 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Music', 'wp-mcp-ai' );
+		return __( 'Generate Music', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates instrumental music from a text description using Google Gemini Lyria model and saves it to the Media Library.', 'wp-mcp-ai' );
+		return __( 'Generates instrumental music from a text description using Google Gemini Lyria model and saves it to the Media Library.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,48 +49,48 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'prompt'          => array(
 					'type'        => 'string',
-					'description' => __( 'Description of the desired music (e.g., "upbeat jazz piano trio" or "cinematic orchestral soundtrack").', 'wp-mcp-ai' ),
+					'description' => __( 'Description of the desired music (e.g., "upbeat jazz piano trio" or "cinematic orchestral soundtrack").', 'mcp-ai-wpoos' ),
 				),
 				'duration'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Duration of the music in seconds (1-300).', 'wp-mcp-ai' ),
+					'description' => __( 'Duration of the music in seconds (1-300).', 'mcp-ai-wpoos' ),
 					'default'     => WP_MCP_AI_Gemini_Music_Service::DEFAULT_DURATION,
 					'minimum'     => 1,
 					'maximum'     => WP_MCP_AI_Gemini_Music_Service::MAX_DURATION,
 				),
 				'genre'           => array(
 					'type'        => 'string',
-					'description' => __( 'Optional music genre (e.g., "jazz", "rock", "classical", "electronic").', 'wp-mcp-ai' ),
+					'description' => __( 'Optional music genre (e.g., "jazz", "rock", "classical", "electronic").', 'mcp-ai-wpoos' ),
 				),
 				'mood'            => array(
 					'type'        => 'string',
-					'description' => __( 'Optional mood or atmosphere (e.g., "upbeat", "calm", "dramatic", "mysterious").', 'wp-mcp-ai' ),
+					'description' => __( 'Optional mood or atmosphere (e.g., "upbeat", "calm", "dramatic", "mysterious").', 'mcp-ai-wpoos' ),
 				),
 				'instrumentation' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional instruments to feature (e.g., "piano and strings", "acoustic guitar", "synthesizers").', 'wp-mcp-ai' ),
+					'description' => __( 'Optional instruments to feature (e.g., "piano and strings", "acoustic guitar", "synthesizers").', 'mcp-ai-wpoos' ),
 				),
 				'bpm'             => array(
 					'type'        => 'integer',
-					'description' => __( 'Optional tempo in beats per minute (20-300).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional tempo in beats per minute (20-300).', 'mcp-ai-wpoos' ),
 					'default'     => WP_MCP_AI_Gemini_Music_Service::DEFAULT_BPM,
 					'minimum'     => 20,
 					'maximum'     => 300,
 				),
 				'key'             => array(
 					'type'        => 'string',
-					'description' => __( 'Optional musical key (e.g., "C major", "A minor", "D major").', 'wp-mcp-ai' ),
+					'description' => __( 'Optional musical key (e.g., "C major", "A minor", "D major").', 'mcp-ai-wpoos' ),
 				),
 				'temperature'     => array(
 					'type'        => 'number',
-					'description' => __( 'Optional creativity level (0.0-2.0, higher = more random).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional creativity level (0.0-2.0, higher = more random).', 'mcp-ai-wpoos' ),
 					'default'     => WP_MCP_AI_Gemini_Music_Service::DEFAULT_TEMPERATURE,
 					'minimum'     => 0.0,
 					'maximum'     => 2.0,
 				),
 				'file_name'       => array(
 					'type'        => 'string',
-					'description' => __( 'Optional base file name for the saved audio attachment.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional base file name for the saved audio attachment.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'prompt' ),
@@ -115,7 +115,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! $user_id && ! $has_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You must be authenticated to generate music.', 'wp-mcp-ai' ),
+				__( 'You must be authenticated to generate music.', 'mcp-ai-wpoos' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
@@ -125,14 +125,14 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			if ( ! user_can( $user_id, 'upload_files' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_forbidden',
-					__( 'You do not have permission to generate music.', 'wp-mcp-ai' )
+					__( 'You do not have permission to generate music.', 'mcp-ai-wpoos' )
 				);
 			}
 
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_wrong_site',
-					__( 'You do not have access to this site.', 'wp-mcp-ai' )
+					__( 'You do not have access to this site.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -141,7 +141,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $prompt ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_prompt',
-				__( 'No prompt was supplied for music generation.', 'wp-mcp-ai' ),
+				__( 'No prompt was supplied for music generation.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -188,7 +188,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $result['audio'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_audio',
-				__( 'Gemini returned an empty audio response.', 'wp-mcp-ai' )
+				__( 'Gemini returned an empty audio response.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -274,7 +274,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $audio ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_music_storage_error',
-				__( 'Unable to store music: no audio data.', 'wp-mcp-ai' )
+				__( 'Unable to store music: no audio data.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -315,7 +315,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! empty( $upload['error'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_upload_failed',
-				__( 'Failed to save the generated music file.', 'wp-mcp-ai' ),
+				__( 'Failed to save the generated music file.', 'mcp-ai-wpoos' ),
 				array( 'error' => $upload['error'] )
 			);
 		}
@@ -325,7 +325,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_upload_failed',
-				__( 'Failed to write the music file to disk.', 'wp-mcp-ai' )
+				__( 'Failed to write the music file to disk.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -352,7 +352,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 			return new WP_Error(
 				'wp_mcp_ai_attachment_error',
-				__( 'Failed to register the music file as an attachment.', 'wp-mcp-ai' ),
+				__( 'Failed to register the music file as an attachment.', 'mcp-ai-wpoos' ),
 				array( 'error' => $attachment_id )
 			);
 		}
@@ -387,7 +387,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'summary'            => sprintf(
 				/* translators: %s: music file name */
-				__( 'Generated music file: %s', 'wp-mcp-ai' ),
+				__( 'Generated music file: %s', 'mcp-ai-wpoos' ),
 				$title
 			),
 			'attachment_id'      => (int) $attachment_id,
@@ -438,13 +438,13 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$prompt = trim( $prompt );
 
 		if ( empty( $prompt ) ) {
-			return __( 'Generated Music', 'wp-mcp-ai' );
+			return __( 'Generated Music', 'mcp-ai-wpoos' );
 		}
 
 		$excerpt = wp_trim_words( $prompt, 10, '…' );
 
 		/* translators: %s: Short excerpt of the prompt used to generate music. */
-		return sprintf( __( 'Generated Music: %s', 'wp-mcp-ai' ), $excerpt );
+		return sprintf( __( 'Generated Music: %s', 'mcp-ai-wpoos' ), $excerpt );
 	}
 
 	/**

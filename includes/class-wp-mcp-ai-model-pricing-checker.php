@@ -133,13 +133,13 @@ class WP_MCP_AI_Model_Pricing_Checker {
 		?>
 		<div class="notice notice-warning is-dismissible wp-mcp-ai-price-notice">
 			<p>
-				<strong><?php esc_html_e( 'NV oOS: AI Model Pricing Updates Detected', 'wp-mcp-ai' ); ?></strong>
+				<strong><?php esc_html_e( 'NV oOS: AI Model Pricing Updates Detected', 'mcp-ai-wpoos' ); ?></strong>
 			</p>
 			<p>
 				<?php
 				printf(
 					/* translators: %d: number of pricing changes */
-					esc_html__( '%d AI model pricing changes have been detected. Please review the Model Rate Limits CCT to update your cost estimates.', 'wp-mcp-ai' ),
+					esc_html__( '%d AI model pricing changes have been detected. Please review the Model Rate Limits CCT to update your cost estimates.', 'mcp-ai-wpoos' ),
 					count( $price_changes )
 				);
 				?>
@@ -154,7 +154,7 @@ class WP_MCP_AI_Model_Pricing_Checker {
 				<?php endforeach; ?>
 			</ul>
 			<?php if ( count( $price_changes ) > 5 ) : ?>
-				<p><em><?php esc_html_e( '(Showing last 5 changes)', 'wp-mcp-ai' ); ?></em></p>
+				<p><em><?php esc_html_e( '(Showing last 5 changes)', 'mcp-ai-wpoos' ); ?></em></p>
 			<?php endif; ?>
 		</div>
 		<script>
@@ -180,7 +180,7 @@ class WP_MCP_AI_Model_Pricing_Checker {
 
 		// Check if user is logged in.
 		if ( ! is_user_logged_in() ) {
-			wp_send_json_error( array( 'message' => __( 'You must be logged in to dismiss notices.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'You must be logged in to dismiss notices.', 'mcp-ai-wpoos' ) ) );
 			return;
 		}
 

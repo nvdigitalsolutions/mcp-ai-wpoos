@@ -33,7 +33,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 		 * @return string
 		 */
 		public static function get_unavailable_reason() {
-			return __( 'The HuggingFace Dataset Filter tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' );
+			return __( 'The HuggingFace Dataset Filter tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -51,7 +51,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 		 * @return string
 		 */
 		public function get_name() {
-			return __( 'HuggingFace Dataset Filter', 'wp-mcp-ai' );
+			return __( 'HuggingFace Dataset Filter', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -60,7 +60,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Filter rows in a HuggingFace dataset based on conditions', 'wp-mcp-ai' );
+			return __( 'Filter rows in a HuggingFace dataset based on conditions', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -205,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 			if ( empty( $settings['enable_huggingface_datasets'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_disabled',
-					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' )
+					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -222,7 +222,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 			if ( empty( $dataset ) || empty( $split ) || empty( $where ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_missing_params',
-					__( 'Dataset, split, and where clause are required.', 'wp-mcp-ai' )
+					__( 'Dataset, split, and where clause are required.', 'mcp-ai-wpoos' )
 				);
 			}
 

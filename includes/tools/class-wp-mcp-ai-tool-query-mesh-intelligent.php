@@ -28,14 +28,14 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Query Mesh (Intelligent Routing)', 'wp-mcp-ai' );
+		return __( 'Query Mesh (Intelligent Routing)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Send a prompt to the mesh network with AI-powered peer selection and automatic failover. The system intelligently routes your request to the optimal peer site based on current load, response times, and task complexity.', 'wp-mcp-ai' );
+		return __( 'Send a prompt to the mesh network with AI-powered peer selection and automatic failover. The system intelligently routes your request to the optimal peer site based on current load, response times, and task complexity.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -47,7 +47,7 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'prompt' => array(
 					'type'        => 'string',
-					'description' => __( 'The message or question to send to the mesh network. The system will automatically select the best peer site to handle your request.', 'wp-mcp-ai' ),
+					'description' => __( 'The message or question to send to the mesh network. The system will automatically select the best peer site to handle your request.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'prompt' ),
@@ -68,12 +68,12 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface,
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to query the mesh network.', 'wp-mcp-ai' )
+				__( 'You do not have permission to query the mesh network.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
@@ -81,7 +81,7 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface,
 		if ( empty( $settings['enable_mesh'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mesh_disabled',
-				__( 'Mesh networking is not enabled. Please enable it in Settings → NV oOS → Mesh Network.', 'wp-mcp-ai' )
+				__( 'Mesh networking is not enabled. Please enable it in Settings → NV oOS → Mesh Network.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -91,7 +91,7 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface,
 		if ( '' === $prompt ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_prompt',
-				__( 'Please provide a prompt to send to the mesh network.', 'wp-mcp-ai' )
+				__( 'Please provide a prompt to send to the mesh network.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -101,7 +101,7 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface,
 		if ( ! $assistant_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_assistant_id',
-				__( 'Assistant ID is required for intelligent mesh routing.', 'wp-mcp-ai' )
+				__( 'Assistant ID is required for intelligent mesh routing.', 'mcp-ai-wpoos' )
 			);
 		}
 

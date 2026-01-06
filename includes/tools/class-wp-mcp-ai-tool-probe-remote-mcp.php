@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Probe Remote MCP REST', 'wp-mcp-ai' );
+		return __( 'Probe Remote MCP REST', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Runs the remote MCP connectivity tester against a live REST namespace to validate authentication and chat access.', 'wp-mcp-ai' );
+		return __( 'Runs the remote MCP connectivity tester against a live REST namespace to validate authentication and chat access.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -43,37 +43,37 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'base_url'     => array(
 					'type'        => 'string',
-					'description' => __( 'Base URL to the remote MCP REST namespace (for example https://example.com/wp-json/mcp-ai/v1).', 'wp-mcp-ai' ),
+					'description' => __( 'Base URL to the remote MCP REST namespace (for example https://example.com/wp-json/mcp-ai/v1).', 'mcp-ai-wpoos' ),
 				),
 				'token'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional bearer token sent via the Authorization header.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional bearer token sent via the Authorization header.', 'mcp-ai-wpoos' ),
 				),
 				'guest_token'  => array(
 					'type'        => 'string',
-					'description' => __( 'Optional guest token forwarded via the X-WP-MCP-AI-Guest header.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional guest token forwarded via the X-WP-MCP-AI-Guest header.', 'mcp-ai-wpoos' ),
 				),
 				'nonce'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional WordPress REST nonce passed through the X-WP-Nonce header.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional WordPress REST nonce passed through the X-WP-Nonce header.', 'mcp-ai-wpoos' ),
 				),
 				'assistant_id' => array(
 					'type'        => 'integer',
 					'minimum'     => 0,
-					'description' => __( 'Assistant ID hint appended to the /assistants probe.', 'wp-mcp-ai' ),
+					'description' => __( 'Assistant ID hint appended to the /assistants probe.', 'mcp-ai-wpoos' ),
 				),
 				'timeout'      => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
-					'description' => __( 'Request timeout in seconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Request timeout in seconds.', 'mcp-ai-wpoos' ),
 				),
 				'verify_ssl'   => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to verify the remote SSL certificate.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to verify the remote SSL certificate.', 'mcp-ai-wpoos' ),
 				),
 				'user_agent'   => array(
 					'type'        => 'string',
-					'description' => __( 'Override the default user agent string.', 'wp-mcp-ai' ),
+					'description' => __( 'Override the default user agent string.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'base_url' ),
@@ -87,8 +87,8 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'title'       => __( 'Probe a remote MCP deployment', 'wp-mcp-ai' ),
-				'description' => __( 'Validate the /assistants and /chat endpoints for a live MCP REST namespace.', 'wp-mcp-ai' ),
+				'title'       => __( 'Probe a remote MCP deployment', 'mcp-ai-wpoos' ),
+				'description' => __( 'Validate the /assistants and /chat endpoints for a live MCP REST namespace.', 'mcp-ai-wpoos' ),
 				'arguments'   => new stdClass(),
 			),
 		);
@@ -104,22 +104,22 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Remote tester may not be available in production builds.
 		if ( ! class_exists( 'WP_MCP_AI_Remote_Tester' ) ) {
-			return new WP_Error( 'wp_mcp_ai_remote_tester_unavailable', __( 'Remote tester utility is not available in this build.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_remote_tester_unavailable', __( 'Remote tester utility is not available in this build.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to run remote MCP probes.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to run remote MCP probes.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 		$base_url = isset( $arguments['base_url'] ) ? trim( (string) $arguments['base_url'] ) : '';
 
 		if ( '' === $base_url ) {
-			return new WP_Error( 'wp_mcp_ai_remote_missing_url', __( 'Provide the base REST URL for the remote MCP deployment.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_remote_missing_url', __( 'Provide the base REST URL for the remote MCP deployment.', 'mcp-ai-wpoos' ) );
 		}
 
 		$probe_args = array();
@@ -172,11 +172,11 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string
 	 */
 	protected function build_summary( array $result ) {
-		$status = ! empty( $result['success'] ) ? __( 'success', 'wp-mcp-ai' ) : __( 'failure', 'wp-mcp-ai' );
+		$status = ! empty( $result['success'] ) ? __( 'success', 'mcp-ai-wpoos' ) : __( 'failure', 'mcp-ai-wpoos' );
 
 		if ( empty( $result['checks'] ) || ! is_array( $result['checks'] ) ) {
 			/* translators: %s: Overall probe status word. */
-			return sprintf( __( 'Probe completed with %s.', 'wp-mcp-ai' ), $status );
+			return sprintf( __( 'Probe completed with %s.', 'mcp-ai-wpoos' ), $status );
 		}
 
 		$messages = array();
@@ -192,13 +192,13 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		if ( empty( $messages ) ) {
 			/* translators: %s: Overall probe status word. */
-			return sprintf( __( 'Probe completed with %s.', 'wp-mcp-ai' ), $status );
+			return sprintf( __( 'Probe completed with %s.', 'mcp-ai-wpoos' ), $status );
 		}
 
 		$step_summary = implode( '; ', $messages );
 
 		/* translators: 1: Overall probe status word, 2: List of per-step status summaries. */
-		return sprintf( __( 'Probe completed with %1$s (%2$s).', 'wp-mcp-ai' ), $status, $step_summary );
+		return sprintf( __( 'Probe completed with %1$s (%2$s).', 'mcp-ai-wpoos' ), $status, $step_summary );
 	}
 
 	/**

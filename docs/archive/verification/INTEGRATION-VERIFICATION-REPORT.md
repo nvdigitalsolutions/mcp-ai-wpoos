@@ -100,7 +100,7 @@ wp_enqueue_style(
 - ✅ `admin_enqueue_scripts` hook registered
 - ✅ Chart.js library bundled locally: `assets/js/vendor/chart.min.js` (exists, valid)
 - ✅ Version pinned: v4.4.1
-- ✅ Conditional loading: Only on WP oOS pages and token manager tab
+- ✅ Conditional loading: Only on NV oOS pages and token manager tab
 - ✅ Analytics dashboard CSS also enqueued via helper
 
 **Chart.js Enqueuing:**
@@ -116,7 +116,7 @@ wp_enqueue_script(
 
 **Conditional Logic:**
 ```php
-// Only load on WP oOS settings pages
+// Only load on NV oOS settings pages
 if ( false === strpos( $hook, 'wp-mcp-ai' ) ) {
     return;
 }

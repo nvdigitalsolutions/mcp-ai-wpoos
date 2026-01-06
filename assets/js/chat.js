@@ -10297,9 +10297,30 @@
             }
 
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
-            form.addEventListener('submit', function (event) {
-                handleSubmit(event, state);
-            });
+            
+            // Handle form submission (for proper <form> elements)
+            // Use toUpperCase() for reliable tag name comparison across browsers
+            if (form.tagName && form.tagName.toUpperCase() === 'FORM') {
+                form.addEventListener('submit', function (event) {
+                    handleSubmit(event, state);
+                });
+            } else {
+                // Handle submit button click for div-based forms (e.g., in modals inside other forms)
+                const submitButton = container.querySelector('.wp-mcp-ai-chat__submit');
+                if (submitButton) {
+                    submitButton.addEventListener('click', function (event) {
+                        handleSubmit(event, state);
+                    });
+                }
+                
+                // Also handle Enter key in textarea for div-based forms
+                textarea.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        handleSubmit(event, state);
+                    }
+                });
+            }
 
             if (attachmentsHeader) {
                 attachmentsHeader.textContent = getString('attachmentsLabel', attachmentsHeader.textContent);

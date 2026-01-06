@@ -41,7 +41,7 @@ These appear in search results and plugin cards:
 - Clear, recognizable design
 - Works at small sizes
 - Consistent with banner branding
-- Use the WP oOS favicon as the base
+- Use the NV oOS favicon as the base
 
 ### Screenshots
 
@@ -134,7 +134,7 @@ svn commit -m "Update plugin assets"
 - **ImageMagick** - Command-line image processing
 - **Screenshot tools** - macOS/Windows built-in
 
-### WP oOS Brand Guidelines
+### NV oOS Brand Guidelines
 
 - **Primary Color:** #1e3a5f (Deep Blue)
 - **Accent Color:** #0073aa (WordPress Blue)

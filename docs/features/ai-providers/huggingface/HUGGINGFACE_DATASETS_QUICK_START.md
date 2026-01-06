@@ -6,7 +6,7 @@ Access 50+ top free HuggingFace datasets directly from WordPress. No downloads r
 
 ## Enabling Datasets
 
-1. Go to **WP oOS → Settings → Providers**
+1. Go to **NV oOS → Settings → Providers**
 2. Scroll to **HuggingFace Dataset Viewer** section
 3. Check **"Enable tools for querying HuggingFace datasets"**
 4. (Optional) Add API token for private datasets
@@ -14,7 +14,7 @@ Access 50+ top free HuggingFace datasets directly from WordPress. No downloads r
 
 ## Browse Datasets
 
-1. Go to **WP oOS → HF Datasets** in WordPress admin
+1. Go to **NV oOS → HF Datasets** in WordPress admin
 2. Browse the visual dataset catalog
 3. Filter by:
    - **Category**: NLP, Vision, Audio, Multimodal
@@ -350,7 +350,7 @@ Create a workflow that:
 - **Full Catalog**: See `docs/HUGGINGFACE_TOP_DATASETS.md`
 - **HuggingFace Hub**: https://huggingface.co/datasets
 - **Dataset Viewer API**: https://huggingface.co/docs/dataset-viewer
-- **WP oOS Docs**: `/docs/DOCUMENTATION_INDEX.md`
+- **NV oOS Docs**: `/docs/DOCUMENTATION_INDEX.md`
 
 ## Support
 
@@ -358,7 +358,7 @@ Need help? Check:
 1. Dataset preview in admin UI
 2. Example code on each card
 3. HuggingFace dataset page
-4. WP oOS documentation
+4. NV oOS documentation
 
 ---
 

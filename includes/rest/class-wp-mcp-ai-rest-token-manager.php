@@ -62,7 +62,7 @@ class WP_MCP_AI_REST_Token_Manager {
 					'id' => array(
 						'required'    => true,
 						'type'        => 'integer',
-						'description' => __( 'User ID.', 'wp-mcp-ai' ),
+						'description' => __( 'User ID.', 'mcp-ai-wpoos' ),
 					),
 				),
 			)
@@ -80,18 +80,18 @@ class WP_MCP_AI_REST_Token_Manager {
 					'id'     => array(
 						'required'    => true,
 						'type'        => 'integer',
-						'description' => __( 'User ID.', 'wp-mcp-ai' ),
+						'description' => __( 'User ID.', 'mcp-ai-wpoos' ),
 					),
 					'tier'   => array(
 						'required'    => true,
 						'type'        => 'string',
 						'enum'        => array( 'free', 'pro', 'enterprise' ),
-						'description' => __( 'Token tier to assign.', 'wp-mcp-ai' ),
+						'description' => __( 'Token tier to assign.', 'mcp-ai-wpoos' ),
 					),
 					'expiry' => array(
 						'type'        => 'string',
 						'format'      => 'date',
-						'description' => __( 'Optional expiry date (YYYY-MM-DD).', 'wp-mcp-ai' ),
+						'description' => __( 'Optional expiry date (YYYY-MM-DD).', 'mcp-ai-wpoos' ),
 					),
 				),
 			)
@@ -109,17 +109,17 @@ class WP_MCP_AI_REST_Token_Manager {
 					'id'        => array(
 						'required'    => true,
 						'type'        => 'integer',
-						'description' => __( 'User ID.', 'wp-mcp-ai' ),
+						'description' => __( 'User ID.', 'mcp-ai-wpoos' ),
 					),
 					'tool'      => array(
 						'type'        => 'string',
-						'description' => __( 'Optional tool slug to filter by.', 'wp-mcp-ai' ),
+						'description' => __( 'Optional tool slug to filter by.', 'mcp-ai-wpoos' ),
 					),
 					'timeframe' => array(
 						'type'        => 'string',
 						'enum'        => array( 'hourly', 'daily', 'weekly', 'monthly' ),
 						'default'     => 'daily',
-						'description' => __( 'Timeframe for usage data.', 'wp-mcp-ai' ),
+						'description' => __( 'Timeframe for usage data.', 'mcp-ai-wpoos' ),
 					),
 				),
 			)
@@ -137,12 +137,12 @@ class WP_MCP_AI_REST_Token_Manager {
 					'id'   => array(
 						'required'    => true,
 						'type'        => 'integer',
-						'description' => __( 'User ID.', 'wp-mcp-ai' ),
+						'description' => __( 'User ID.', 'mcp-ai-wpoos' ),
 					),
 					'tool' => array(
 						'required'    => true,
 						'type'        => 'string',
-						'description' => __( 'Tool slug to forecast.', 'wp-mcp-ai' ),
+						'description' => __( 'Tool slug to forecast.', 'mcp-ai-wpoos' ),
 					),
 				),
 			)
@@ -161,7 +161,7 @@ class WP_MCP_AI_REST_Token_Manager {
 		if ( ! $user_id || ! get_userdata( $user_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_user',
-				__( 'Invalid user ID.', 'wp-mcp-ai' ),
+				__( 'Invalid user ID.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -200,7 +200,7 @@ class WP_MCP_AI_REST_Token_Manager {
 		if ( ! $user_id || ! get_userdata( $user_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_user',
-				__( 'Invalid user ID.', 'wp-mcp-ai' ),
+				__( 'Invalid user ID.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -211,7 +211,7 @@ class WP_MCP_AI_REST_Token_Manager {
 			if ( ! $expiry_timestamp ) {
 				return new WP_Error(
 					'wp_mcp_ai_invalid_expiry',
-					__( 'Invalid expiry date format. Use YYYY-MM-DD.', 'wp-mcp-ai' ),
+					__( 'Invalid expiry date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -222,7 +222,7 @@ class WP_MCP_AI_REST_Token_Manager {
 		if ( ! $success ) {
 			return new WP_Error(
 				'wp_mcp_ai_tier_update_failed',
-				__( 'Failed to update user tier.', 'wp-mcp-ai' ),
+				__( 'Failed to update user tier.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -233,7 +233,7 @@ class WP_MCP_AI_REST_Token_Manager {
 				'user_id'      => $user_id,
 				'tier'         => $tier,
 				'tier_expires' => $expiry_timestamp ? gmdate( 'Y-m-d H:i:s', $expiry_timestamp ) : null,
-				'message'      => __( 'User tier updated successfully.', 'wp-mcp-ai' ),
+				'message'      => __( 'User tier updated successfully.', 'mcp-ai-wpoos' ),
 			)
 		);
 	}
@@ -252,7 +252,7 @@ class WP_MCP_AI_REST_Token_Manager {
 		if ( ! $user_id || ! get_userdata( $user_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_user',
-				__( 'Invalid user ID.', 'wp-mcp-ai' ),
+				__( 'Invalid user ID.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -315,7 +315,7 @@ class WP_MCP_AI_REST_Token_Manager {
 		if ( ! $user_id || ! get_userdata( $user_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_user',
-				__( 'Invalid user ID.', 'wp-mcp-ai' ),
+				__( 'Invalid user ID.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -328,7 +328,7 @@ class WP_MCP_AI_REST_Token_Manager {
 					'user_id'  => $user_id,
 					'tool'     => $tool_slug,
 					'forecast' => null,
-					'message'  => __( 'Insufficient data to generate forecast. Need at least 24 hours of usage history.', 'wp-mcp-ai' ),
+					'message'  => __( 'Insufficient data to generate forecast. Need at least 24 hours of usage history.', 'mcp-ai-wpoos' ),
 				)
 			);
 		}
@@ -359,7 +359,7 @@ class WP_MCP_AI_REST_Token_Manager {
 			if ( empty( $nonce ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_nonce',
-					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'wp-mcp-ai' ),
+					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -367,7 +367,7 @@ class WP_MCP_AI_REST_Token_Manager {
 			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 				return new WP_Error(
 					'rest_invalid_nonce',
-					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					__( 'Could not verify the request nonce.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -382,7 +382,7 @@ class WP_MCP_AI_REST_Token_Manager {
 
 		return new WP_Error(
 			'rest_forbidden',
-			__( 'You do not have permission to access this resource.', 'wp-mcp-ai' ),
+			__( 'You do not have permission to access this resource.', 'mcp-ai-wpoos' ),
 			array( 'status' => 403 )
 		);
 	}
@@ -401,7 +401,7 @@ class WP_MCP_AI_REST_Token_Manager {
 			if ( empty( $nonce ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_nonce',
-					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'wp-mcp-ai' ),
+					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -409,7 +409,7 @@ class WP_MCP_AI_REST_Token_Manager {
 			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 				return new WP_Error(
 					'rest_invalid_nonce',
-					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					__( 'Could not verify the request nonce.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -418,7 +418,7 @@ class WP_MCP_AI_REST_Token_Manager {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
-				__( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}

@@ -3,7 +3,7 @@
 ## Quick Test Guide
 
 ### Prerequisites
-- WordPress installation with WP oOS plugin active
+- WordPress installation with NV oOS plugin active
 - At least one profession created
 - Optional: One or more assistants created
 
@@ -12,7 +12,7 @@
 ### Scenario 1: Profession Standalone (No Associated Assistant, No Default)
 
 **Setup:**
-1. Go to Settings → WP oOS
+1. Go to Settings → NV oOS
 2. Ensure "Default Assistant" is NOT set (or set to "None")
 3. Create a profession:
    - Title: "Tax Advisor Test"
@@ -72,7 +72,7 @@
 ### Scenario 3: Test Default Assistant Still Works
 
 **Setup:**
-1. Go to Settings → WP oOS
+1. Go to Settings → NV oOS
 2. Set a "Default Assistant"
 3. Go to regular chat interface (not profession testing)
 
@@ -286,7 +286,7 @@ If issues are discovered:
 ## Support
 
 For issues or questions:
-- Check logs: Settings → WP oOS → View Logs
+- Check logs: Settings → NV oOS → View Logs
 - Enable debug mode: `define('WP_DEBUG', true);`
 - Check browser console for JavaScript errors
 - Review backend error logs in PHP error log

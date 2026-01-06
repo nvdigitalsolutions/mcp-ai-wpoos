@@ -1,4 +1,4 @@
-# Understanding Agentic Workflows in WP oOS
+# Understanding Agentic Workflows in NV oOS
 
 **Start Here** to understand how assistants and processing work together in Open Operator System!
 
@@ -84,7 +84,7 @@ All automatically in ~5 seconds!
 
 **Configurable:** 1-50 iterations via:
 - Per-assistant settings
-- Admin panel (Settings → WP oOS)
+- Admin panel (Settings → NV oOS)
 - Code filters
 - Safety bounds prevent infinite loops
 
@@ -172,7 +172,7 @@ Want to try it? Here's the fastest path:
 
 2. **Add Chat Widget**
    ```
-   Elementor → Add WP oOS Chat Widget
+   Elementor → Add NV oOS Chat Widget
    - Select assistant: "My Helper"
    - Enable tool indicators
    ```
@@ -189,7 +189,7 @@ Want to try it? Here's the fastest path:
 
 4. **Monitor**
    ```
-   Settings → WP oOS → Enable Logging
+   Settings → NV oOS → Enable Logging
    View performance metrics and tool usage
    ```
 

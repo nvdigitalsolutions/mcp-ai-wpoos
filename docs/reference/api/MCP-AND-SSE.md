@@ -7,7 +7,7 @@
 
 **Yes and No** - It depends on the MCP transport layer being used:
 
-- ✅ **YES** if using HTTP/REST transport (which WP oOS uses)
+- ✅ **YES** if using HTTP/REST transport (which NV oOS uses)
 - ❌ **NO** if using stdio transport (command-line pipes)
 - ⚠️ **PARTIAL** if using WebSocket transport
 - ✅ **BETTER** with new Streamable HTTP transport (MCP 2024-11-05)
@@ -63,11 +63,11 @@ MCP can run on different "transport layers":
             (Legacy)                        (2024-11-05)
 ```
 
-**WP oOS supports:**
+**NV oOS supports:**
 - ✅ HTTP + SSE (legacy, still supported)
 - ✅ Streamable HTTP (new in 2024-11-05)
 
-## How WP oOS Implements MCP
+## How NV oOS Implements MCP
 
 ### Current Implementation
 
@@ -83,7 +83,7 @@ JSON-RPC 2.0 Message:
   "params": {...}
 }
     ↓
-WP oOS processes tool
+NV oOS processes tool
     ↓
 JSON-RPC 2.0 Response:
 {
@@ -104,7 +104,7 @@ Client (Claude Desktop, etc.)
 HTTP POST /wp-json/mcp-ai/v1/mcp
 Mcp-Session-Id: sess_abc123
     ↓
-WP oOS starts processing
+NV oOS starts processing
     ↓
 Progress: {"message": "Starting tool...", "progress": 0.1}
     ↓
@@ -123,7 +123,7 @@ Connection maintained for reconnection
 
 ### For Standard MCP Calls ✅ IMPROVED
 
-**Current WP oOS Implementation (2024-11-05):**
+**Current NV oOS Implementation (2024-11-05):**
 - MCP methods: `initialize`, `tools/list`, `resources/list` = **INSTANT**
 - Now with **session support** for state preservation
 - **Progress notifications** with descriptive messages (new!)
@@ -143,7 +143,7 @@ Mcp-Session-Id: sess_abc123
 
 ### For Tool Execution ✅ SIGNIFICANTLY IMPROVED (2024-11-05)
 
-**Current WP oOS Implementation:**
+**Current NV oOS Implementation:**
 - `tools/call` with `run_crawl4ai_job` = **30-60 seconds**
 - **NEW:** Progress notifications with descriptive messages
 - **NEW:** Session-based reconnection if network drops
@@ -178,9 +178,9 @@ Mcp-Session-Id: sess_abc123
 - Client to manage session IDs via `Mcp-Session-Id` header
 - Streamable HTTP transport support
 
-**Fallback:** WP oOS maintains backward compatibility with older clients.
+**Fallback:** NV oOS maintains backward compatibility with older clients.
 
-## What Actually Benefits from SSE in WP oOS?
+## What Actually Benefits from SSE in NV oOS?
 
 ### 1. Direct Chat Endpoint ✅ WORKS TODAY
 
@@ -247,12 +247,12 @@ This is the SSE handshake endpoint that:
 
 **Do SSE benefits apply to MCP?**
 
-**In WP oOS today:**
+**In NV oOS today:**
 1. **Chat API** (not MCP) = ✅ YES, SSE works and helps
 2. **MCP protocol calls** = ❌ NO, SSE not implemented
 3. **MCP could benefit** = ⚠️ YES, but requires custom implementation
 
-### Why MCP Doesn't Use SSE in WP oOS
+### Why MCP Doesn't Use SSE in NV oOS
 
 1. **JSON-RPC Standard**: MCP uses JSON-RPC 2.0, which is request/response
 2. **Client Compatibility**: Most MCP clients don't support streaming JSON-RPC
@@ -366,7 +366,7 @@ The MCP specification might add streaming support in the future. Watch:
 - Or implement a custom polling mechanism
 - Or wait for MCP spec to add streaming
 
-### For WP oOS Development
+### For NV oOS Development
 
 **Priority 1: Enable SSE in Chat UI** ✅
 - Already possible
@@ -385,7 +385,7 @@ The MCP specification might add streaming support in the future. Watch:
 
 ## Conclusion
 
-**SSE benefits in WP oOS:**
+**SSE benefits in NV oOS:**
 
 ✅ **Chat API** - SSE is available and beneficial (just enable it)
 ⚠️ **MCP Protocol (2024-11-05)** - Streamable HTTP with progress notifications (enhanced!)
@@ -428,7 +428,7 @@ Both benefit from the automatic model switching and message truncation!
 - Old: Basic tool descriptions
 - New: Annotations (read-only, destructive, permissions)
 
-### Implementation Status in WP oOS
+### Implementation Status in NV oOS
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -460,7 +460,7 @@ Both benefit from the automatic model switching and message truncation!
 
 ### For Developers
 
-**If you're building on WP oOS:**
+**If you're building on NV oOS:**
 1. Use protocol version `2024-11-05` in your clients
 2. Prepare to handle progress notifications
 3. Implement session ID management for reconnection
@@ -470,7 +470,7 @@ Both benefit from the automatic model switching and message truncation!
 **Official Resources:**
 - [MCP Specification 2024-11-05](https://modelcontextprotocol.info/specification/2024-11-05/)
 - [MCP Changelog](https://modelcontextprotocol.io/specification/2025-03-26/changelog)
-- [WP oOS MCP Endpoint Documentation](mcp-endpoint.md)
+- [NV oOS MCP Endpoint Documentation](mcp-endpoint.md)
 
 ---
 

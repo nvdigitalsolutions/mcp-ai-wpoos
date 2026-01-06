@@ -33,7 +33,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Search' ) ) {
 		 * @return string
 		 */
 		public static function get_unavailable_reason() {
-			return __( 'The HuggingFace Dataset Search tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' );
+			return __( 'The HuggingFace Dataset Search tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -51,7 +51,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Search' ) ) {
 		 * @return string
 		 */
 		public function get_name() {
-			return __( 'HuggingFace Dataset Search', 'wp-mcp-ai' );
+			return __( 'HuggingFace Dataset Search', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -60,7 +60,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Search' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Full-text search within a HuggingFace dataset split', 'wp-mcp-ai' );
+			return __( 'Full-text search within a HuggingFace dataset split', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -196,7 +196,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Search' ) ) {
 			if ( empty( $settings['enable_huggingface_datasets'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_disabled',
-					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' )
+					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -212,7 +212,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Search' ) ) {
 			if ( empty( $dataset ) || empty( $split ) || empty( $query ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_missing_params',
-					__( 'Dataset, split, and query are required.', 'wp-mcp-ai' )
+					__( 'Dataset, split, and query are required.', 'mcp-ai-wpoos' )
 				);
 			}
 

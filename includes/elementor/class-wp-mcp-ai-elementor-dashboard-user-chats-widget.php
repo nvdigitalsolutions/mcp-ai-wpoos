@@ -52,7 +52,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS User Chat History', 'wp-mcp-ai' );
+		return __( 'NV oOS User Chat History', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -152,16 +152,16 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Chat History', 'wp-mcp-ai' ),
+				'label' => __( 'Chat History', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Conversation history', 'wp-mcp-ai' ),
+				'default'     => __( 'Conversation history', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -169,22 +169,22 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'description',
 			array(
-				'label'   => __( 'Description', 'wp-mcp-ai' ),
+				'label'   => __( 'Description', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::TEXTAREA,
 				'rows'    => 3,
-				'default' => __( 'Review the stored chat transcripts for this operator. Select a session to inspect the full conversation.', 'wp-mcp-ai' ),
+				'default' => __( 'Review the stored chat transcripts for this operator. Select a session to inspect the full conversation.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'user_mode',
 			array(
-				'label'   => __( 'User Source', 'wp-mcp-ai' ),
+				'label'   => __( 'User Source', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => 'current',
 				'options' => array(
-					'current'  => __( 'Current user', 'wp-mcp-ai' ),
-					'specific' => __( 'Specific user ID', 'wp-mcp-ai' ),
+					'current'  => __( 'Current user', 'mcp-ai-wpoos' ),
+					'specific' => __( 'Specific user ID', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -192,7 +192,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'user_id',
 			array(
-				'label'       => __( 'User ID', 'wp-mcp-ai' ),
+				'label'       => __( 'User ID', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::NUMBER,
 				'min'         => 1,
 				'label_block' => true,
@@ -205,12 +205,12 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'assistant_mode',
 			array(
-				'label'   => __( 'Assistant Filter', 'wp-mcp-ai' ),
+				'label'   => __( 'Assistant Filter', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => 'all',
 				'options' => array(
-					'all'      => __( 'All assistants', 'wp-mcp-ai' ),
-					'specific' => __( 'Specific assistant ID', 'wp-mcp-ai' ),
+					'all'      => __( 'All assistants', 'mcp-ai-wpoos' ),
+					'specific' => __( 'Specific assistant ID', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -218,11 +218,11 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'assistant_id',
 			array(
-				'label'       => __( 'Assistant ID', 'wp-mcp-ai' ),
+				'label'       => __( 'Assistant ID', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::NUMBER,
 				'min'         => 1,
 				'label_block' => true,
-				'description' => __( 'Filter chats by a specific assistant.', 'wp-mcp-ai' ),
+				'description' => __( 'Filter chats by a specific assistant.', 'mcp-ai-wpoos' ),
 				'condition'   => array(
 					'assistant_mode' => 'specific',
 				),
@@ -232,20 +232,20 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'max_sessions',
 			array(
-				'label'       => __( 'Maximum chats to show', 'wp-mcp-ai' ),
+				'label'       => __( 'Maximum chats to show', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::NUMBER,
 				'min'         => 1,
 				'default'     => 20,
-				'description' => __( 'Limit the number of chat sessions displayed. Leave empty to show every available session.', 'wp-mcp-ai' ),
+				'description' => __( 'Limit the number of chat sessions displayed. Leave empty to show every available session.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'empty_message',
 			array(
-				'label'       => __( 'Empty state message', 'wp-mcp-ai' ),
+				'label'       => __( 'Empty state message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'No chat transcripts are stored for this user yet.', 'wp-mcp-ai' ),
+				'default'     => __( 'No chat transcripts are stored for this user yet.', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -253,9 +253,9 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'no_user_message',
 			array(
-				'label'       => __( 'Missing user message', 'wp-mcp-ai' ),
+				'label'       => __( 'Missing user message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Select a user to view their chat transcripts.', 'wp-mcp-ai' ),
+				'default'     => __( 'Select a user to view their chat transcripts.', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -263,9 +263,9 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'empty_session_message',
 			array(
-				'label'       => __( 'Empty session message', 'wp-mcp-ai' ),
+				'label'       => __( 'Empty session message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'This chat does not contain any messages yet.', 'wp-mcp-ai' ),
+				'default'     => __( 'This chat does not contain any messages yet.', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -273,9 +273,9 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'select_prompt_message',
 			array(
-				'label'       => __( 'Selection prompt', 'wp-mcp-ai' ),
+				'label'       => __( 'Selection prompt', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Select a chat session to review the conversation.', 'wp-mcp-ai' ),
+				'default'     => __( 'Select a chat session to review the conversation.', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -283,9 +283,9 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'target_chat_widget',
 			array(
-				'label'       => __( 'Target Chat Widget', 'wp-mcp-ai' ),
+				'label'       => __( 'Target Chat Widget', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'description' => __( 'CSS selector for the target chat widget (e.g., #my-chat-widget). Leave empty to auto-detect the closest chat widget.', 'wp-mcp-ai' ),
+				'description' => __( 'CSS selector for the target chat widget (e.g., #my-chat-widget). Leave empty to auto-detect the closest chat widget.', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -366,7 +366,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		// Show placeholder in Elementor editor mode to prevent JavaScript conflicts.
 		if ( $this->is_elementor_editor() ) {
 			echo '<div class="wp-mcp-ai-user-chats__editor-placeholder" style="padding: 20px; background: #f0f0f1; border: 2px dashed #c3c4c7; text-align: center;">';
-			echo '<p style="margin: 0;">' . esc_html__( 'Chat history will be displayed here on the live page.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p style="margin: 0;">' . esc_html__( 'Chat history will be displayed here on the live page.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			echo '</div>';
 			return;
@@ -395,11 +395,11 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 				'emptySession'         => $empty_session_message,
 				'selectPrompt'         => $select_prompt_message,
 				'noUserMessage'        => $no_user_message,
-				'loadIntoChat'         => __( 'Load into chat', 'wp-mcp-ai' ),
-				'loadIntoChatLabel'    => __( 'Load this conversation into the chat window', 'wp-mcp-ai' ),
-				'loadingIntoChat'      => __( 'Loading into chat…', 'wp-mcp-ai' ),
-				'loadedIntoChat'       => __( 'Conversation loaded into chat.', 'wp-mcp-ai' ),
-				'errorLoadingIntoChat' => __( 'Unable to load into chat.', 'wp-mcp-ai' ),
+				'loadIntoChat'         => __( 'Load into chat', 'mcp-ai-wpoos' ),
+				'loadIntoChatLabel'    => __( 'Load this conversation into the chat window', 'mcp-ai-wpoos' ),
+				'loadingIntoChat'      => __( 'Loading into chat…', 'mcp-ai-wpoos' ),
+				'loadedIntoChat'       => __( 'Conversation loaded into chat.', 'mcp-ai-wpoos' ),
+				'errorLoadingIntoChat' => __( 'Unable to load into chat.', 'mcp-ai-wpoos' ),
 			),
 		);
 
@@ -408,11 +408,11 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		echo '<div class="wp-mcp-ai-user-chats__wrapper" data-wp-mcp-ai-user-chats="' . esc_attr( $config_json ) . '">';
 		echo '<div class="wp-mcp-ai-user-chats__status" aria-live="polite"></div>';
 		echo '<div class="wp-mcp-ai-user-chats__list" hidden>';
-		echo '<input type="search" class="wp-mcp-ai-user-chats__search" placeholder="' . esc_attr__( 'Search sessions...', 'wp-mcp-ai' ) . '" aria-label="' . esc_attr__( 'Search chat sessions', 'wp-mcp-ai' ) . '" />';
+		echo '<input type="search" class="wp-mcp-ai-user-chats__search" placeholder="' . esc_attr__( 'Search sessions...', 'mcp-ai-wpoos' ) . '" aria-label="' . esc_attr__( 'Search chat sessions', 'mcp-ai-wpoos' ) . '" />';
 		echo '<ul class="wp-mcp-ai-user-chats__sessions"></ul>';
 		echo '</div>';
 		echo '<div class="wp-mcp-ai-user-chats__conversation" hidden>';
-		echo '<button type="button" class="wp-mcp-ai-user-chats__back">' . esc_html__( 'Back to chats', 'wp-mcp-ai' ) . '</button>';
+		echo '<button type="button" class="wp-mcp-ai-user-chats__back">' . esc_html__( 'Back to chats', 'mcp-ai-wpoos' ) . '</button>';
 		echo '<div class="wp-mcp-ai-user-chats__conversation-header">';
 		echo '<h4 class="wp-mcp-ai-user-chats__conversation-title"></h4>';
 		echo '<div class="wp-mcp-ai-user-chats__conversation-meta"></div>';
@@ -434,28 +434,28 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		// Localize script if not already done.
 		if ( ! self::$script_localized ) {
 			$localised_strings = array(
-				'loadingList'                    => __( 'Loading chats…', 'wp-mcp-ai' ),
-				'loadingConversation'            => __( 'Loading chat…', 'wp-mcp-ai' ),
-				'errorLoadingList'               => __( 'Unable to load chats right now.', 'wp-mcp-ai' ),
-				'errorLoadingSession'            => __( 'Unable to load the selected chat.', 'wp-mcp-ai' ),
-				'back'                           => __( 'Back to chats', 'wp-mcp-ai' ),
+				'loadingList'                    => __( 'Loading chats…', 'mcp-ai-wpoos' ),
+				'loadingConversation'            => __( 'Loading chat…', 'mcp-ai-wpoos' ),
+				'errorLoadingList'               => __( 'Unable to load chats right now.', 'mcp-ai-wpoos' ),
+				'errorLoadingSession'            => __( 'Unable to load the selected chat.', 'mcp-ai-wpoos' ),
+				'back'                           => __( 'Back to chats', 'mcp-ai-wpoos' ),
 				/* translators: %s: chat session identifier */
-								'sessionLabel'   => __( 'Chat session %s', 'wp-mcp-ai' ),
-				'assistantLabel'                 => __( 'Assistant', 'wp-mcp-ai' ),
-				'startedLabel'                   => __( 'Started', 'wp-mcp-ai' ),
-				'updatedLabel'                   => __( 'Last activity', 'wp-mcp-ai' ),
+								'sessionLabel'   => __( 'Chat session %s', 'mcp-ai-wpoos' ),
+				'assistantLabel'                 => __( 'Assistant', 'mcp-ai-wpoos' ),
+				'startedLabel'                   => __( 'Started', 'mcp-ai-wpoos' ),
+				'updatedLabel'                   => __( 'Last activity', 'mcp-ai-wpoos' ),
 				/* translators: %d: number of messages */
-								'turnCountLabel' => __( '%d messages', 'wp-mcp-ai' ),
+								'turnCountLabel' => __( '%d messages', 'mcp-ai-wpoos' ),
 				'roleLabels'                     => array(
-					'system'    => __( 'System', 'wp-mcp-ai' ),
-					'user'      => __( 'User', 'wp-mcp-ai' ),
-					'assistant' => __( 'Assistant', 'wp-mcp-ai' ),
-					'tool'      => __( 'Tool', 'wp-mcp-ai' ),
+					'system'    => __( 'System', 'mcp-ai-wpoos' ),
+					'user'      => __( 'User', 'mcp-ai-wpoos' ),
+					'assistant' => __( 'Assistant', 'mcp-ai-wpoos' ),
+					'tool'      => __( 'Tool', 'mcp-ai-wpoos' ),
 				),
 			);
 
 			if ( ! isset( $localised_strings['roleLabels']['assistant'] ) ) {
-				$localised_strings['roleLabels']['assistant'] = __( 'Assistant', 'wp-mcp-ai' );
+				$localised_strings['roleLabels']['assistant'] = __( 'Assistant', 'mcp-ai-wpoos' );
 			}
 
 			wp_localize_script(

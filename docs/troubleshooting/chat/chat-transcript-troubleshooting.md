@@ -41,7 +41,7 @@
    // In wp-config.php or via WordPress admin
    define( 'WP_MCP_AI_DEBUG', true );
    ```
-   Or via WordPress admin: **Settings → WP oOS → Enable Logging**
+   Or via WordPress admin: **Settings → NV oOS → Enable Logging**
 
 2. **Check Logs**:
    ```bash

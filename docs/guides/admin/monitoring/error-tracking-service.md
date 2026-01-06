@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Error Tracking Service provides centralized error monitoring and analysis capabilities for the WP oOS plugin. It tracks errors across all components, calculates error rates, and integrates with the Performance Monitor CCT for comprehensive diagnostics.
+The Error Tracking Service provides centralized error monitoring and analysis capabilities for the NV oOS plugin. It tracks errors across all components, calculates error rates, and integrates with the Performance Monitor CCT for comprehensive diagnostics.
 
 ## Features
 
@@ -388,4 +388,4 @@ Track error and optionally store in Performance Monitor CCT.
 - [Performance Monitoring Guide](performance-monitoring.md)
 - [Performance Testing Guide](../../developer/testing/performance-testing-guide.md)
 - [Performance Monitor CCT Documentation](../../../architecture/integrations/jetengine-api-compatibility.md)
-- [WP oOS Documentation Index](../../../DOCUMENTATION_INDEX.md)
+- [NV oOS Documentation Index](../../../DOCUMENTATION_INDEX.md)

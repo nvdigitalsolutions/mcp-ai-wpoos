@@ -111,7 +111,7 @@ All 13 files exist (10-40KB each) ✅
 1. **Pull latest code** (commit 11da743)
 
 2. **Go to WordPress Admin**
-   - Navigate to: Settings → WP oOS → Advanced → Data Management
+   - Navigate to: Settings → NV oOS → Advanced → Data Management
    - URL: `/wp-admin/admin.php?page=wp-mcp-ai-dashboard&tab=advanced&subtab=data_management`
 
 3. **Reseed Professions FIRST**
@@ -125,7 +125,7 @@ All 13 files exist (10-40KB each) ✅
    - Should see all 13 IGCSE professions listed
 
 5. **Reseed Teams SECOND**
-   - Go back to: Settings → WP oOS → Advanced → Data Management
+   - Go back to: Settings → NV oOS → Advanced → Data Management
    - Click **"Update Teams"** button
    - Confirm the action
    - Wait for success: "Teams reloaded successfully. Created: X, Updated: Y"

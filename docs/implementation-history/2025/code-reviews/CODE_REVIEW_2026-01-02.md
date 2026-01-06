@@ -306,7 +306,7 @@ Comprehensive security scan using automated tools and manual code review found *
 
 **Core Architecture**:
 ```
-WP oOS Core
+NV oOS Core
 ├── Tool Registry & Execution
 ├── AI Provider Clients (OpenAI, Gemini, Ollama)
 ├── REST API Endpoints

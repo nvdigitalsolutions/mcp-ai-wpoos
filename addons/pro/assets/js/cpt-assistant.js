@@ -1,0 +1,393 @@
+/**
+ * AI CPT Assistant JavaScript
+ *
+ * Handles modal and chat interface interactions for the AI assistant metabox.
+ * Uses modern WordPress data store subscription for block editor compatibility.
+ */
+
+(function ($) {
+	'use strict';
+
+	/**
+	 * Check if the block editor (Gutenberg) is active.
+	 *
+	 * @return {boolean} True if block editor is active.
+	 */
+	function isBlockEditorActive() {
+		try {
+			return typeof wp !== 'undefined' && 
+				   wp.data && 
+				   typeof wp.data.select === 'function' &&
+				   wp.data.select('core/editor') !== undefined;
+		} catch (error) {
+			return false;
+		}
+	}
+
+	/**
+	 * Wait for modal elements using WordPress data store subscription (modern approach).
+	 * Falls back to polling for classic editor or when data store is not available.
+	 *
+	 * @param {Function} callback - Function to call when elements are ready.
+	 */
+	function waitForElements(callback) {
+		const $modal = $('#wp-mcp-ai-cpt-assistant-modal, #wp-mcp-ai-cpt-assistant-modal-term');
+
+		// If elements already exist, initialize immediately
+		if ($modal.length) {
+			callback();
+			return;
+		}
+
+		// For block editor, use data store subscription if available
+		if (isBlockEditorActive() && typeof wp !== 'undefined' && wp.data && wp.data.subscribe) {
+			let unsubscribe = null;
+			let initialized = false;
+
+			// Subscribe to data store changes
+			unsubscribe = wp.data.subscribe(function() {
+				if (initialized) {
+					return;
+				}
+
+				const $modal = $('#wp-mcp-ai-cpt-assistant-modal, #wp-mcp-ai-cpt-assistant-modal-term');
+
+				if ($modal.length) {
+					initialized = true;
+					
+					if (unsubscribe) {
+						unsubscribe();
+					}
+					
+					callback();
+				}
+			});
+
+			// Fallback timeout (10 seconds)
+			setTimeout(function() {
+				if (!initialized && unsubscribe) {
+					unsubscribe();
+				}
+			}, 10000);
+		} else {
+			// Fallback: Simple polling for classic editor
+			let attempts = 0;
+			const maxAttempts = 30;
+			const pollInterval = 200;
+
+			const pollTimer = setInterval(function() {
+				attempts++;
+				
+				const $modal = $('#wp-mcp-ai-cpt-assistant-modal, #wp-mcp-ai-cpt-assistant-modal-term');
+
+				if ($modal.length) {
+					clearInterval(pollTimer);
+					callback();
+				} else if (attempts >= maxAttempts) {
+					clearInterval(pollTimer);
+				}
+			}, pollInterval);
+		}
+	}
+
+	/**
+	 * AI CPT Assistant Handler
+	 */
+	const WpMcpAiCptAssistant = {
+		/**
+		 * Initialize the assistant
+		 */
+		init: function () {
+			// Move modals to body to ensure position: fixed works correctly.
+			// Modals rendered inside metaboxes may not display as overlays due to CSS positioning contexts.
+			$('#wp-mcp-ai-cpt-assistant-modal').appendTo('body');
+			$('#wp-mcp-ai-cpt-assistant-modal-term').appendTo('body');
+			
+			this.bindEvents();
+		},
+
+		/**
+		 * Bind event handlers
+		 */
+		bindEvents: function () {
+			// Open modal button click
+			$(document).on('click', '.wp-mcp-ai-cpt-open-assistant', function (e) {
+				e.preventDefault();
+				const $button = $(this);
+				const isTermScreen = $button.data('term-id') !== undefined;
+				WpMcpAiCptAssistant.openModal(isTermScreen);
+			});
+
+			// Close modal button click
+			$(document).on('click', '.wp-mcp-ai-cpt-modal__close', function (e) {
+				e.preventDefault();
+				WpMcpAiCptAssistant.closeModal();
+			});
+
+			// Close modal on backdrop click
+			$(document).on('click', '.wp-mcp-ai-cpt-modal', function (e) {
+				if ($(e.target).hasClass('wp-mcp-ai-cpt-modal') || $(e.target).hasClass('wp-mcp-ai-cpt-modal__backdrop')) {
+					WpMcpAiCptAssistant.closeModal();
+				}
+			});
+
+			// Close modal on Escape key
+			$(document).on('keydown', function (e) {
+				if (e.key === 'Escape' && $('.wp-mcp-ai-cpt-modal').is(':visible')) {
+					WpMcpAiCptAssistant.closeModal();
+				}
+			});
+
+			// Send button click
+			$(document).on('click', '.wp-mcp-ai-cpt-send-button', function (e) {
+				e.preventDefault();
+				const $button = $(this);
+				const isTermScreen = $button.attr('id') === 'wp-mcp-ai-cpt-send-button-term';
+				WpMcpAiCptAssistant.sendMessage(isTermScreen);
+			});
+
+			// Enter key to send (with Shift+Enter for new line)
+			$(document).on('keydown', '.wp-mcp-ai-cpt-chat-input', function (e) {
+				if (e.key === 'Enter' && !e.shiftKey) {
+					e.preventDefault();
+					const isTermScreen = $(this).attr('id') === 'wp-mcp-ai-cpt-chat-input-term';
+					WpMcpAiCptAssistant.sendMessage(isTermScreen);
+				}
+			});
+		},
+
+		/**
+		 * Open the AI assistant modal
+		 *
+		 * @param {boolean} isTermScreen Whether this is a term edit screen
+		 */
+		openModal: function (isTermScreen) {
+			const modalId = isTermScreen ? '#wp-mcp-ai-cpt-assistant-modal-term' : '#wp-mcp-ai-cpt-assistant-modal';
+			const $modal = $(modalId);
+
+			if ($modal.length === 0) {
+				return;
+			}
+
+			// Show modal
+			$modal.show();
+			$('body').addClass('wp-mcp-ai-cpt-modal-open');
+
+			// Focus on the input field
+			setTimeout(function () {
+				const inputId = isTermScreen ? '#wp-mcp-ai-cpt-chat-input-term' : '#wp-mcp-ai-cpt-chat-input';
+				$(inputId).focus();
+			}, 100);
+		},
+
+		/**
+		 * Close the AI assistant modal
+		 */
+		closeModal: function () {
+			$('.wp-mcp-ai-cpt-modal').hide();
+			$('body').removeClass('wp-mcp-ai-cpt-modal-open');
+		},
+
+		/**
+		 * Send message to AI assistant
+		 *
+		 * @param {boolean} isTermScreen Whether this is a term edit screen
+		 */
+		sendMessage: function (isTermScreen) {
+			const inputId = isTermScreen ? '#wp-mcp-ai-cpt-chat-input-term' : '#wp-mcp-ai-cpt-chat-input';
+			const messagesId = isTermScreen ? '#wp-mcp-ai-cpt-chat-messages-term' : '#wp-mcp-ai-cpt-chat-messages';
+			const statusId = isTermScreen ? '#wp-mcp-ai-cpt-chat-status-term' : '#wp-mcp-ai-cpt-chat-status';
+			const buttonId = isTermScreen ? '#wp-mcp-ai-cpt-send-button-term' : '#wp-mcp-ai-cpt-send-button';
+
+			const $input = $(inputId);
+			const $messages = $(messagesId);
+			const $status = $(statusId);
+			const $button = $(buttonId);
+
+			const message = $input.val().trim();
+
+			if (!message) {
+				this.showStatus(statusId, wpMcpAiCpt.i18n.emptyMessage, 'error');
+				return;
+			}
+
+			// Get context data
+			const $assistant = $input.closest('.wp-mcp-ai-cpt-assistant');
+			const postId = $assistant.data('post-id') || 0;
+			const postType = $assistant.data('post-type') || '';
+			const termId = $assistant.data('term-id') || 0;
+			const taxonomy = $assistant.data('taxonomy') || '';
+
+			// Clear welcome message if it exists
+			$messages.find('.wp-mcp-ai-cpt-welcome-message').remove();
+
+			// Add user message to chat
+			this.addMessage(messagesId, 'user', message);
+
+			// Clear input and disable button
+			$input.val('');
+			$button.prop('disabled', true);
+			this.showStatus(statusId, wpMcpAiCpt.i18n.sending, 'sending');
+
+			// Prepare AJAX data
+			const data = {
+				action: 'wp_mcp_ai_cpt_chat',
+				nonce: wpMcpAiCpt.nonce,
+				message: message,
+				post_id: postId,
+				post_type: postType,
+				term_id: termId,
+				taxonomy: taxonomy
+			};
+
+			// Send AJAX request
+			$.ajax({
+				url: wpMcpAiCpt.ajaxUrl,
+				type: 'POST',
+				data: data,
+				success: function (response) {
+					$button.prop('disabled', false);
+					$status.text('').removeClass('is-error is-sending');
+
+					if (response.success && response.data && response.data.response) {
+						// Add AI response to chat
+						WpMcpAiCptAssistant.addMessage(messagesId, 'assistant', response.data.response);
+					} else {
+						const errorMsg = response.data && response.data.message ? response.data.message : wpMcpAiCpt.i18n.error;
+						WpMcpAiCptAssistant.showStatus(statusId, errorMsg, 'error');
+						WpMcpAiCptAssistant.addMessage(messagesId, 'error', errorMsg);
+					}
+				},
+				error: function () {
+					$button.prop('disabled', false);
+					const errorMsg = wpMcpAiCpt.i18n.error;
+					WpMcpAiCptAssistant.showStatus(statusId, errorMsg, 'error');
+					WpMcpAiCptAssistant.addMessage(messagesId, 'error', errorMsg);
+				}
+			});
+		},
+
+		/**
+		 * Add a message to the chat
+		 *
+		 * @param {string} messagesId ID of messages container
+		 * @param {string} role       Message role (user, assistant, error)
+		 * @param {string} content    Message content
+		 */
+		addMessage: function (messagesId, role, content) {
+			const $messages = $(messagesId);
+			
+			let roleLabel = '';
+			let messageClass = '';
+			
+			if (role === 'user') {
+				roleLabel = 'You';
+				messageClass = 'wp-mcp-ai-cpt-message-user';
+			} else if (role === 'assistant') {
+				roleLabel = 'AI Assistant';
+				messageClass = 'wp-mcp-ai-cpt-message-assistant';
+			} else if (role === 'error') {
+				roleLabel = 'Error';
+				messageClass = 'wp-mcp-ai-cpt-message-error';
+			}
+
+			// Convert markdown-style formatting to HTML
+			const formattedContent = this.formatContent(content);
+
+			const $message = $('<div>')
+				.addClass('wp-mcp-ai-cpt-message')
+				.addClass(messageClass)
+				.html(
+					'<div class="wp-mcp-ai-cpt-message-role">' + this.escapeHtml(roleLabel) + '</div>' +
+					'<div class="wp-mcp-ai-cpt-message-content">' + formattedContent + '</div>'
+				);
+
+			$messages.append($message);
+			
+			// Scroll to bottom
+			$messages.scrollTop($messages[0].scrollHeight);
+		},
+
+		/**
+		 * Format message content (convert markdown-like syntax to HTML)
+		 *
+		 * @param {string} content Raw content
+		 * @return {string} Formatted HTML content
+		 */
+		formatContent: function (content) {
+			// Escape HTML first
+			let formatted = this.escapeHtml(content);
+
+			// Convert **bold** to <strong>
+			formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+			// Convert *italic* to <em>
+			formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+			// Convert `code` to <code>
+			formatted = formatted.replace(/`(.+?)`/g, '<code>$1</code>');
+
+			// Convert line breaks to <br>
+			formatted = formatted.replace(/\n/g, '<br>');
+
+			// Convert URLs to links
+			formatted = formatted.replace(
+				/(https?:\/\/[^\s<]+)/g,
+				'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+			);
+
+			return formatted;
+		},
+
+		/**
+		 * Escape HTML special characters
+		 *
+		 * @param {string} text Text to escape
+		 * @return {string} Escaped text
+		 */
+		escapeHtml: function (text) {
+			const div = document.createElement('div');
+			div.textContent = text;
+			return div.innerHTML;
+		},
+
+		/**
+		 * Show status message
+		 *
+		 * @param {string} statusId ID of status container
+		 * @param {string} message  Status message
+		 * @param {string} type     Status type (error, sending, etc)
+		 */
+		showStatus: function (statusId, message, type) {
+			const $status = $(statusId);
+			$status
+				.text(message)
+				.removeClass('is-error is-sending')
+				.addClass('is-' + type);
+
+			// Auto-clear non-error statuses after 3 seconds
+			if (type !== 'error') {
+				setTimeout(function () {
+					$status.text('').removeClass('is-' + type);
+				}, 3000);
+			}
+		}
+	};
+
+	// Initialize using modern approach
+	if (typeof wp !== 'undefined' && wp.domReady) {
+		wp.domReady(function() {
+			waitForElements(function() {
+				WpMcpAiCptAssistant.init();
+			});
+		});
+	} else {
+		// Fallback for classic editor or older WordPress
+		$(document).ready(function () {
+			waitForElements(function() {
+				WpMcpAiCptAssistant.init();
+			});
+		});
+	}
+
+})(jQuery);

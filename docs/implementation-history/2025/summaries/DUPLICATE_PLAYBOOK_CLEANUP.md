@@ -208,7 +208,7 @@ When you save a profession in the admin, deduplication runs automatically:
 - Duplicates are automatically removed after save
 
 #### 2. Via Sync Buttons (Admin UI)
-Navigate to **Settings → WP oOS → Advanced → Playbook Management**:
+Navigate to **Settings → NV oOS → Advanced → Playbook Management**:
 
 1. **Sync Changed Playbooks** - Updates only changed playbooks and removes duplicates (fast, safe)
 2. **Force Regenerate All Playbooks** - Regenerates all playbooks and removes duplicates (slower, use after major updates)
@@ -317,7 +317,7 @@ wp eval "WP_MCP_AI_Profession_Playbook_Seeder::cleanup_all_duplicates();"
 
 ### Monitoring
 
-Check playbook statistics in **Settings → WP oOS → Advanced → Playbook Management**:
+Check playbook statistics in **Settings → NV oOS → Advanced → Playbook Management**:
 - **Total Playbook Attachments** - Shows only active attachments (those currently referenced in profession's memory_files)
 - **Professions with Playbooks** - Shows count of professions with at least one active playbook
 

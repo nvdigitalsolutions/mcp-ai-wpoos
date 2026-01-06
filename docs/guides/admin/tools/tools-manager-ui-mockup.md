@@ -161,4 +161,4 @@
 - Table uses WordPress core `.wp-list-table` class
 - Follows WordPress admin styling conventions
 - Mobile-friendly with horizontal scroll if needed
-- Consistent with other WP oOS admin pages
+- Consistent with other NV oOS admin pages

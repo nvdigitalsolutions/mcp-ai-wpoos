@@ -179,7 +179,7 @@ Operations for taxonomies and terms.
 
 Commercial add-ons are available for advanced features:
 
-- **WP oOS Pro** - WooCommerce, JetEngine, advanced permissions, rate limiting, analytics
+- **NV oOS Pro** - WooCommerce, JetEngine, advanced permissions, rate limiting, analytics
 
 See [nvdigitalsolutions.com](https://nvdigitalsolutions.com) for details.
 

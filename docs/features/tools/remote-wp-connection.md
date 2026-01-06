@@ -39,7 +39,7 @@ The Remote WordPress/WooCommerce Connection Tool enables AI assistants to access
 3. Enter an application name (e.g., "AI Assistant")
 4. Click **Add New Application Password**
 5. Copy the generated password
-6. In WP oOS, enter the username and paste the application password
+6. In NV oOS, enter the username and paste the application password
 
 #### Basic Auth
 
@@ -362,7 +362,7 @@ Get WooCommerce product categories.
 
 ## Related Documentation
 
-- [Tool Reference](../tool-reference.md)
-- [Tool Grouping](../tool-grouping.md)
-- [Security Best Practices](../../security/best-practices.md)
-- [WooCommerce Integration](../../integrations/woocommerce.md)
+- [Tool Reference](../../reference/tools/tool-reference.md)
+- [Tool Grouping](../../reference/tools/tool-grouping.md)
+- [Security Best Practices](../security/SECURITY_HARDENING.md)
+- [WP All Import/Export Integration](../integrations/WP_ALL_IMPORT_EXPORT_INTEGRATION.md)

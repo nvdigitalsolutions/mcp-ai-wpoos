@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS User Capability Snapshot', 'wp-mcp-ai' );
+		return __( 'NV oOS User Capability Snapshot', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,16 +61,16 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Snapshot Content', 'wp-mcp-ai' ),
+				'label' => __( 'Snapshot Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Current operator snapshot', 'wp-mcp-ai' ),
+				'default'     => __( 'Current operator snapshot', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -78,20 +78,20 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		$this->add_control(
 			'description',
 			array(
-				'label'   => __( 'Description', 'wp-mcp-ai' ),
+				'label'   => __( 'Description', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::TEXTAREA,
 				'rows'    => 3,
-				'default' => __( 'Review the signed-in user’s roles, elevated capabilities, JetEngine access, and multisite membership.', 'wp-mcp-ai' ),
+				'default' => __( 'Review the signed-in user’s roles, elevated capabilities, JetEngine access, and multisite membership.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_capability_grid',
 			array(
-				'label'        => __( 'Show common capabilities', 'wp-mcp-ai' ),
+				'label'        => __( 'Show common capabilities', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -156,7 +156,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		}
 
 		if ( ! $user_id ) {
-			echo '<p class="wp-mcp-ai-user-capabilities__notice">' . esc_html__( 'Log in to view capability details.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-user-capabilities__notice">' . esc_html__( 'Log in to view capability details.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -180,35 +180,35 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 
 		if ( ! empty( $user_info['display_name'] ) ) {
 			$summary_items[] = array(
-				'label' => __( 'Name', 'wp-mcp-ai' ),
+				'label' => __( 'Name', 'mcp-ai-wpoos' ),
 				'value' => $user_info['display_name'],
 			);
 		}
 
 		if ( ! empty( $user_info['user_email'] ) ) {
 			$summary_items[] = array(
-				'label' => __( 'Email', 'wp-mcp-ai' ),
+				'label' => __( 'Email', 'mcp-ai-wpoos' ),
 				'value' => $user_info['user_email'],
 			);
 		}
 
 		if ( ! empty( $roles ) ) {
 			$summary_items[] = array(
-				'label' => __( 'Roles', 'wp-mcp-ai' ),
+				'label' => __( 'Roles', 'mcp-ai-wpoos' ),
 				'value' => implode( ', ', $roles ),
 			);
 		}
 
 		if ( ! empty( $user_info['user_login'] ) ) {
 			$summary_items[] = array(
-				'label' => __( 'Username', 'wp-mcp-ai' ),
+				'label' => __( 'Username', 'mcp-ai-wpoos' ),
 				'value' => $user_info['user_login'],
 			);
 		}
 
 		if ( ! empty( $user_info['registered'] ) ) {
 			$summary_items[] = array(
-				'label' => __( 'Registered', 'wp-mcp-ai' ),
+				'label' => __( 'Registered', 'mcp-ai-wpoos' ),
 				'value' => $this->format_timestamp( $user_info['registered'] ),
 			);
 		}
@@ -236,16 +236,16 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		$group_email_settings = $this->get_group_email_configuration();
 
 		echo '<div class="wp-mcp-ai-user-capabilities__section">';
-		echo '<h4 class="wp-mcp-ai-user-capabilities__section-title">' . esc_html__( 'Send Group Email requirements', 'wp-mcp-ai' ) . '</h4>';
+		echo '<h4 class="wp-mcp-ai-user-capabilities__section-title">' . esc_html__( 'Send Group Email requirements', 'mcp-ai-wpoos' ) . '</h4>';
 
 		if ( '' === $group_email_settings['capability'] ) {
-			echo '<p class="wp-mcp-ai-user-capabilities__section-body">' . esc_html__( 'Any logged-in user can run the Send Group Email tool when attachments pass validation.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-user-capabilities__section-body">' . esc_html__( 'Any logged-in user can run the Send Group Email tool when attachments pass validation.', 'mcp-ai-wpoos' ) . '</p>';
 		} elseif ( '' !== $group_email_settings['label'] ) {
 			printf(
 				'<p class="wp-mcp-ai-user-capabilities__section-body">%s</p>',
 				sprintf(
 					/* translators: %s: capability label. */
-					esc_html__( 'Required capability: %s', 'wp-mcp-ai' ),
+					esc_html__( 'Required capability: %s', 'mcp-ai-wpoos' ),
 					esc_html( $group_email_settings['label'] )
 				)
 			);
@@ -254,7 +254,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 				'<p class="wp-mcp-ai-user-capabilities__section-body">%s</p>',
 				sprintf(
 					/* translators: %s: capability slug. */
-					esc_html__( 'Required capability: %s', 'wp-mcp-ai' ),
+					esc_html__( 'Required capability: %s', 'mcp-ai-wpoos' ),
 					esc_html( $group_email_settings['capability'] )
 				)
 			);
@@ -265,12 +265,12 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 				'<p class="wp-mcp-ai-user-capabilities__section-body">%s</p>',
 				sprintf(
 					/* translators: %d: maximum recipients allowed. */
-					esc_html__( 'Recipient limit: %d per request.', 'wp-mcp-ai' ),
+					esc_html__( 'Recipient limit: %d per request.', 'mcp-ai-wpoos' ),
 					esc_html( $group_email_settings['limit'] )
 				)
 			);
 		} else {
-			echo '<p class="wp-mcp-ai-user-capabilities__section-body">' . esc_html__( 'Recipient limit: No limit enforced.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-user-capabilities__section-body">' . esc_html__( 'Recipient limit: No limit enforced.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
 		echo '</div>';
@@ -278,7 +278,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		$jetengine_details = $this->get_jetengine_details( $user_id );
 
 		echo '<div class="wp-mcp-ai-user-capabilities__section">';
-		echo '<h4 class="wp-mcp-ai-user-capabilities__section-title">' . esc_html__( 'JetEngine access', 'wp-mcp-ai' ) . '</h4>';
+		echo '<h4 class="wp-mcp-ai-user-capabilities__section-title">' . esc_html__( 'JetEngine access', 'mcp-ai-wpoos' ) . '</h4>';
 		$jetengine_summary = '';
 
 		if ( isset( $jetengine_details['summary'] ) ) {
@@ -292,7 +292,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		if ( ! empty( $jetengine_details['capability'] ) ) {
 			printf(
 				'<p class="wp-mcp-ai-user-capabilities__section-note">%1$s <code>%2$s</code></p>',
-				esc_html__( 'Capability checked:', 'wp-mcp-ai' ),
+				esc_html__( 'Capability checked:', 'mcp-ai-wpoos' ),
 				esc_html( $jetengine_details['capability'] )
 			);
 		}
@@ -301,11 +301,11 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		if ( $show_capabilities ) {
 			$capability_checks = $this->get_capability_checks( $user_id );
 			echo '<div class="wp-mcp-ai-user-capabilities__section">';
-			echo '<h4 class="wp-mcp-ai-user-capabilities__section-title">' . esc_html__( 'Key capabilities', 'wp-mcp-ai' ) . '</h4>';
+			echo '<h4 class="wp-mcp-ai-user-capabilities__section-title">' . esc_html__( 'Key capabilities', 'mcp-ai-wpoos' ) . '</h4>';
 			echo '<ul class="wp-mcp-ai-user-capabilities__capability-list">';
 			foreach ( $capability_checks as $capability => $granted ) {
 				$status_class = $granted ? 'granted' : 'denied';
-				$label        = $granted ? __( 'Granted', 'wp-mcp-ai' ) : __( 'Not granted', 'wp-mcp-ai' );
+				$label        = $granted ? __( 'Granted', 'mcp-ai-wpoos' ) : __( 'Not granted', 'mcp-ai-wpoos' );
 				echo '<li class="wp-mcp-ai-user-capabilities__capability-item wp-mcp-ai-user-capabilities__capability-item--' . esc_attr( $status_class ) . '">';
 				echo '<span class="wp-mcp-ai-user-capabilities__capability-name"><code>' . esc_html( $capability ) . '</code></span> ';
 				echo '<span class="wp-mcp-ai-user-capabilities__capability-status">' . esc_html( $label ) . '</span>';
@@ -317,9 +317,9 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 
 		$memberships = $this->get_site_memberships( $user_id );
 		echo '<div class="wp-mcp-ai-user-capabilities__section">';
-		echo '<h4 class="wp-mcp-ai-user-capabilities__section-title">' . esc_html__( 'Site memberships', 'wp-mcp-ai' ) . '</h4>';
+		echo '<h4 class="wp-mcp-ai-user-capabilities__section-title">' . esc_html__( 'Site memberships', 'mcp-ai-wpoos' ) . '</h4>';
 		if ( empty( $memberships ) ) {
-			echo '<p class="wp-mcp-ai-user-capabilities__section-body">' . esc_html__( 'The user belongs to the current site only.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-user-capabilities__section-body">' . esc_html__( 'The user belongs to the current site only.', 'mcp-ai-wpoos' ) . '</p>';
 		} else {
 			echo '<ul class="wp-mcp-ai-user-capabilities__membership-list">';
 			foreach ( $memberships as $site ) {
@@ -351,7 +351,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
-			return new WP_Error( 'wp_mcp_ai_user_missing', __( 'Unable to load user information.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_user_missing', __( 'Unable to load user information.', 'mcp-ai-wpoos' ) );
 		}
 
 		return array(
@@ -380,7 +380,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 
 		if ( ! $available ) {
 			return array(
-				'summary'    => __( 'JetEngine is not active on this site.', 'wp-mcp-ai' ),
+				'summary'    => __( 'JetEngine is not active on this site.', 'mcp-ai-wpoos' ),
 				'capability' => $capability,
 			);
 		}
@@ -388,8 +388,8 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		$has_access = user_can( $user_id, $capability );
 
 		$summary = $has_access
-			? __( 'The user can reach JetEngine dashboards and REST integrations.', 'wp-mcp-ai' )
-			: __( 'The user cannot reach JetEngine dashboards with the current permissions.', 'wp-mcp-ai' );
+			? __( 'The user can reach JetEngine dashboards and REST integrations.', 'mcp-ai-wpoos' )
+			: __( 'The user cannot reach JetEngine dashboards with the current permissions.', 'mcp-ai-wpoos' );
 
 		return array(
 			'summary'    => $summary,
@@ -441,7 +441,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		$label = '';
 
 		if ( '' === $capability ) {
-			$label = __( 'Any logged-in user', 'wp-mcp-ai' );
+			$label = __( 'Any logged-in user', 'mcp-ai-wpoos' );
 		} else {
 			$label = $this->format_capability_label( $capability );
 		}

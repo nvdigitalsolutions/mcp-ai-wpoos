@@ -27,7 +27,7 @@ This causes issues in scenarios where WordPress core has already loaded and defi
 5. wp-phpunit bootstrap tries to define `WP_LANG_DIR` again → **WARNING**
 
 ### Scenario 2: Performance Tests via Admin UI
-1. Admin user clicks "Run Performance Tests" in WP oOS admin
+1. Admin user clicks "Run Performance Tests" in NV oOS admin
 2. WordPress is already fully bootstrapped
 3. The performance test runner (`includes/admin/sections/class-wp-mcp-ai-section-performance.php`) executes PHPUnit with `--no-configuration` on specific test files
 4. Test files extend `WP_UnitTestCase`, requiring wp-phpunit bootstrap

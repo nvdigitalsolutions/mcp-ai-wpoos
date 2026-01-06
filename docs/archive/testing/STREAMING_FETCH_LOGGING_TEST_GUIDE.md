@@ -4,7 +4,7 @@
 This guide helps verify that the enhanced streaming fetch logging is working correctly.
 
 ## Prerequisites
-- WordPress site with WP oOS plugin installed
+- WordPress site with NV oOS plugin installed
 - Browser with DevTools (Chrome, Firefox, Edge, or Safari)
 - At least one configured assistant with streaming enabled
 
@@ -25,15 +25,15 @@ This guide helps verify that the enhanced streaming fetch logging is working cor
 
 **Expected Logs (in order):**
 ```
-[WP oOS] User clicked send: {message_length: 18, has_attachments: false, ...}
-[WP oOS] Starting streaming request: {endpoint: "https://...", assistantId: 123, messageCount: 1, streamEnabled: true, hasSessionKey: true}
-[WP oOS] Created streaming message element
-[WP oOS] Streaming response received: {status: 200, statusText: "OK", ok: true, headers: {...}}
-[WP oOS] Starting SSE stream processing
-[WP oOS] SSE message event received: {hasChoices: true, hasDelta: true, hasContent: true}
-[WP oOS] Content chunk extracted: "Hello! I'm doing well..."
-[WP oOS] updateStreamingMessage called: {contentLength: 50, ...}
-[WP oOS] SSE stream completed: {totalContentLength: 234, ...}
+[NV oOS] User clicked send: {message_length: 18, has_attachments: false, ...}
+[NV oOS] Starting streaming request: {endpoint: "https://...", assistantId: 123, messageCount: 1, streamEnabled: true, hasSessionKey: true}
+[NV oOS] Created streaming message element
+[NV oOS] Streaming response received: {status: 200, statusText: "OK", ok: true, headers: {...}}
+[NV oOS] Starting SSE stream processing
+[NV oOS] SSE message event received: {hasChoices: true, hasDelta: true, hasContent: true}
+[NV oOS] Content chunk extracted: "Hello! I'm doing well..."
+[NV oOS] updateStreamingMessage called: {contentLength: 50, ...}
+[NV oOS] SSE stream completed: {totalContentLength: 234, ...}
 ```
 
 **Pass Criteria:**
@@ -56,10 +56,10 @@ This guide helps verify that the enhanced streaming fetch logging is working cor
 
 **Expected Logs:**
 ```
-[WP oOS] User clicked send: {...}
-[WP oOS] Starting streaming request: {...}
-[WP oOS] Created streaming message element
-[WP oOS] Streaming request failed: {
+[NV oOS] User clicked send: {...}
+[NV oOS] Starting streaming request: {...}
+[NV oOS] Created streaming message element
+[NV oOS] Streaming request failed: {
     errorType: "TypeError",
     errorMessage: "Failed to fetch",
     errorStatus: "N/A",
@@ -90,19 +90,19 @@ This guide helps verify that the enhanced streaming fetch logging is working cor
 
 **Expected Logs:**
 ```
-[WP oOS] User clicked send: {...}
-[WP oOS] Starting streaming request: {...}
-[WP oOS] Created streaming message element
-[WP oOS] Streaming response received: {status: 403, statusText: "Forbidden", ok: false, ...}
-[WP oOS] HTTP error response: {status: 403, statusText: "Forbidden", url: "..."}
-[WP oOS] Streaming request failed: {
+[NV oOS] User clicked send: {...}
+[NV oOS] Starting streaming request: {...}
+[NV oOS] Created streaming message element
+[NV oOS] Streaming response received: {status: 403, statusText: "Forbidden", ok: false, ...}
+[NV oOS] HTTP error response: {status: 403, statusText: "Forbidden", url: "..."}
+[NV oOS] Streaming request failed: {
     errorType: "Response",
     errorMessage: undefined,
     errorStatus: 403,
     errorStatusText: "Forbidden",
     ...
 }
-[WP oOS] Server response text: "{"code":"rest_forbidden","message":"Sorry, you are not allowed to do that.",...}"
+[NV oOS] Server response text: "{"code":"rest_forbidden","message":"Sorry, you are not allowed to do that.",...}"
 ```
 
 **Pass Criteria:**
@@ -120,8 +120,8 @@ This test requires server-side modification to send malformed JSON. Skip if not 
 
 **Expected Logs:**
 ```
-[WP oOS] Starting SSE stream processing
-[WP oOS] Failed to parse SSE event data: {
+[NV oOS] Starting SSE stream processing
+[NV oOS] Failed to parse SSE event data: {
     eventType: "message",
     eventData: "data: {broken json...",
     error: "Unexpected token..."
@@ -144,8 +144,8 @@ This test requires server-side modification to send malformed JSON. Skip if not 
 
 **Expected Logs:**
 ```
-[WP oOS] Starting SSE stream processing
-[WP oOS] Error reading SSE stream chunk: {
+[NV oOS] Starting SSE stream processing
+[NV oOS] Error reading SSE stream chunk: {
     error: "Stream closed unexpectedly",
     errorType: "DOMException"
 }
@@ -160,7 +160,7 @@ This test requires server-side modification to send malformed JSON. Skip if not 
 
 For each test, verify:
 
-- [ ] Console shows "[WP oOS]" prefixed logs
+- [ ] Console shows "[NV oOS]" prefixed logs
 - [ ] Logs appear in chronological order
 - [ ] Error objects have type and message
 - [ ] No "undefined" or "null" in error logs
@@ -203,7 +203,7 @@ This is expected for error scenarios. The last log shows where failure occurred.
 - Rapid message sending
 
 **Fix:**
-1. Filter by "[WP oOS]"
+1. Filter by "[NV oOS]"
 2. Collapse log groups
 3. Use console.clear() between tests
 
@@ -245,7 +245,7 @@ While manual testing is recommended for console logging, you can also:
 1. **Use Playwright/Puppeteer:**
    ```javascript
    page.on('console', msg => {
-       if (msg.text().includes('[WP oOS]')) {
+       if (msg.text().includes('[NV oOS]')) {
            console.log(msg.text());
        }
    });

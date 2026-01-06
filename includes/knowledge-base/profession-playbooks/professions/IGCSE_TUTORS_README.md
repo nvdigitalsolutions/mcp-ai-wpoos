@@ -156,7 +156,7 @@ Each tutor profession includes:
 - Session notes
 - Assessment feedback
 
-## Usage in WP oOS
+## Usage in NV oOS
 
 These professions integrate with the existing profession playbook system:
 
@@ -232,7 +232,7 @@ These IGCSE tutors follow the established profession playbook patterns:
 To update IGCSE tutor content:
 
 1. Edit the relevant `.txt` file in this directory
-2. Go to **WP Admin → Settings → WP oOS → Advanced**
+2. Go to **WP Admin → Settings → NV oOS → Advanced**
 3. Click **"Reseed Professions"**
 4. Choose **"Update"** (not "Replace")
 5. Wait for completion

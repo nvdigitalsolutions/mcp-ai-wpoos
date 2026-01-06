@@ -30,14 +30,14 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Lookup Import Duty', 'wp-mcp-ai' );
+		return __( 'Lookup Import Duty', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Finds the most recent import duty rate for an HS code or product description when importing into the United States, Jamaica, or Sri Lanka.', 'wp-mcp-ai' );
+		return __( 'Finds the most recent import duty rate for an HS code or product description when importing into the United States, Jamaica, or Sri Lanka.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -49,20 +49,20 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 			'properties'           => array(
 				'country'     => array(
 					'type'        => 'string',
-					'description' => __( 'Destination country the goods are being imported into.', 'wp-mcp-ai' ),
+					'description' => __( 'Destination country the goods are being imported into.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'united_states', 'jamaica', 'sri_lanka' ),
 				),
 				'hs_code'     => array(
 					'type'        => 'string',
-					'description' => __( 'HS or HTS code (6-10 digits) for the product.', 'wp-mcp-ai' ),
+					'description' => __( 'HS or HTS code (6-10 digits) for the product.', 'mcp-ai-wpoos-pro' ),
 				),
 				'description' => array(
 					'type'        => 'string',
-					'description' => __( 'Free-form description of the goods to help locate a tariff line when an HS code is not available.', 'wp-mcp-ai' ),
+					'description' => __( 'Free-form description of the goods to help locate a tariff line when an HS code is not available.', 'mcp-ai-wpoos-pro' ),
 				),
 				'max_results' => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of duty records to return.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of duty records to return.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 10,
 					'default'     => 5,
@@ -96,25 +96,25 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to look up import duties.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to look up import duties.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$country_key = isset( $arguments['country'] ) ? sanitize_key( $arguments['country'] ) : '';
 		$country_map = $this->get_supported_countries();
 
 		if ( empty( $country_key ) || ! isset( $country_map[ $country_key ] ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_country', __( 'Please choose a supported destination country (United States, Jamaica, or Sri Lanka).', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_country', __( 'Please choose a supported destination country (United States, Jamaica, or Sri Lanka).', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$hs_code     = isset( $arguments['hs_code'] ) ? $this->sanitize_hs_code( $arguments['hs_code'] ) : '';
 		$description = isset( $arguments['description'] ) ? sanitize_textarea_field( $arguments['description'] ) : '';
 
 		if ( '' === $hs_code && '' === $description ) {
-			return new WP_Error( 'wp_mcp_ai_missing_identifier', __( 'Provide an HS code or a description of the item to look up duty rates.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_identifier', __( 'Provide an HS code or a description of the item to look up duty rates.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
@@ -160,7 +160,7 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_duty_lookup_failed',
-				__( 'The import duty lookup request failed.', 'wp-mcp-ai' ),
+				__( 'The import duty lookup request failed.', 'mcp-ai-wpoos-pro' ),
 				$response->get_error_message()
 			);
 		}
@@ -173,7 +173,7 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 			if ( false !== strpos( $location, 'developer.trade.gov' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_duty_api_redirect',
-					__( 'The tariff service redirected the request. Verify that your Trade.gov API key is valid and stored in the settings.', 'wp-mcp-ai' )
+					__( 'The tariff service redirected the request. Verify that your Trade.gov API key is valid and stored in the settings.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -183,7 +183,7 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 				'wp_mcp_ai_duty_http_error',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'The tariff service returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+					__( 'The tariff service returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ),
 					$status_code
 				)
 			);
@@ -193,7 +193,7 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 		$data = json_decode( $body, true );
 
 		if ( null === $data ) {
-			return new WP_Error( 'wp_mcp_ai_duty_bad_json', __( 'The tariff service response could not be decoded.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_duty_bad_json', __( 'The tariff service response could not be decoded.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$results = array();
@@ -205,7 +205,7 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		if ( empty( $results ) ) {
-			return new WP_Error( 'wp_mcp_ai_duty_no_results', __( 'No duty entries were returned for the supplied criteria.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_duty_no_results', __( 'No duty entries were returned for the supplied criteria.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$normalized = array();
@@ -223,12 +223,12 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		if ( empty( $normalized ) ) {
-			return new WP_Error( 'wp_mcp_ai_duty_unusable_results', __( 'The tariff service returned data in an unexpected format.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_duty_unusable_results', __( 'The tariff service returned data in an unexpected format.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return array(
 			/* translators: %d: Number of import duty results found */
-			'summary' => sprintf( __( 'Found %d import duty results', 'wp-mcp-ai' ), count( $normalized ) ),
+			'summary' => sprintf( __( 'Found %d import duty results', 'mcp-ai-wpoos-pro' ), count( $normalized ) ),
 			'query'   => array(
 				'country'     => $country_map[ $country_key ],
 				'hs_code'     => $hs_code,

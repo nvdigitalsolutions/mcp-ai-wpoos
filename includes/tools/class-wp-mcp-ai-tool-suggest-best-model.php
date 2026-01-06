@@ -45,14 +45,14 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Suggest Best Model', 'wp-mcp-ai' );
+		return __( 'Suggest Best Model', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Recommends the best OpenAI model for a given task based on requirements. Use this for dynamic model selection, cost optimization, performance optimization, or task-appropriate model matching.', 'wp-mcp-ai' );
+		return __( 'Recommends the best OpenAI model for a given task based on requirements. Use this for dynamic model selection, cost optimization, performance optimization, or task-appropriate model matching.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 				'task_type'         => array(
 					'type'        => 'string',
 					'enum'        => array( 'chat', 'embeddings', 'images', 'audio-transcription', 'audio-tts', 'moderation' ),
-					'description' => __( 'Type of task to perform.', 'wp-mcp-ai' ),
+					'description' => __( 'Type of task to perform.', 'mcp-ai-wpoos' ),
 				),
 				'requirements'      => array(
 					'type'        => 'array',
@@ -73,23 +73,23 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 						'type' => 'string',
 						'enum' => array( 'speed', 'quality', 'cost', 'vision', 'function_calling' ),
 					),
-					'description' => __( 'Array of requirements (speed, quality, cost, vision, function_calling).', 'wp-mcp-ai' ),
+					'description' => __( 'Array of requirements (speed, quality, cost, vision, function_calling).', 'mcp-ai-wpoos' ),
 					'default'     => array( 'quality' ),
 				),
 				'context_length'    => array(
 					'type'        => 'integer',
-					'description' => __( 'Required context length in tokens.', 'wp-mcp-ai' ),
+					'description' => __( 'Required context length in tokens.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'multimodal'        => array(
 					'type'        => 'boolean',
-					'description' => __( 'Requires vision or audio capabilities.', 'wp-mcp-ai' ),
+					'description' => __( 'Requires vision or audio capabilities.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'budget_preference' => array(
 					'type'        => 'string',
 					'enum'        => array( 'low', 'medium', 'high' ),
-					'description' => __( 'Budget preference level.', 'wp-mcp-ai' ),
+					'description' => __( 'Budget preference level.', 'mcp-ai-wpoos' ),
 					'default'     => 'medium',
 				),
 			),
@@ -112,18 +112,18 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to get model suggestions.', 'wp-mcp-ai' )
+				__( 'You do not have permission to get model suggestions.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 		// Validate task_type.
 		if ( ! isset( $arguments['task_type'] ) || empty( $arguments['task_type'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_task_type',
-				__( 'Task type is required.', 'wp-mcp-ai' )
+				__( 'Task type is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -156,7 +156,7 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 			'capabilities'      => $recommendation['capabilities'],
 			'summary'           => sprintf(
 				/* translators: %s: model name */
-				__( 'Recommended model: %s', 'wp-mcp-ai' ),
+				__( 'Recommended model: %s', 'mcp-ai-wpoos' ),
 				$recommendation['model']
 			),
 		);
@@ -198,7 +198,7 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 		if ( empty( $candidates ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_suitable_model',
-				__( 'No suitable model found for the given requirements.', 'wp-mcp-ai' )
+				__( 'No suitable model found for the given requirements.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -303,29 +303,29 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 		$reasons = array();
 
 		if ( in_array( 'speed', $requirements, true ) ) {
-			$reasons[] = __( 'optimized for fast response times', 'wp-mcp-ai' );
+			$reasons[] = __( 'optimized for fast response times', 'mcp-ai-wpoos' );
 		}
 
 		if ( in_array( 'quality', $requirements, true ) ) {
-			$reasons[] = __( 'provides highest quality outputs', 'wp-mcp-ai' );
+			$reasons[] = __( 'provides highest quality outputs', 'mcp-ai-wpoos' );
 		}
 
 		if ( in_array( 'cost', $requirements, true ) || 'low' === $budget_preference ) {
-			$reasons[] = __( 'cost-effective choice', 'wp-mcp-ai' );
+			$reasons[] = __( 'cost-effective choice', 'mcp-ai-wpoos' );
 		}
 
 		if ( in_array( 'vision', $requirements, true ) && in_array( 'vision', $model['capabilities'], true ) ) {
-			$reasons[] = __( 'supports vision capabilities', 'wp-mcp-ai' );
+			$reasons[] = __( 'supports vision capabilities', 'mcp-ai-wpoos' );
 		}
 
 		if ( in_array( 'function_calling', $requirements, true ) && in_array( 'function_calling', $model['capabilities'], true ) ) {
-			$reasons[] = __( 'supports function calling', 'wp-mcp-ai' );
+			$reasons[] = __( 'supports function calling', 'mcp-ai-wpoos' );
 		}
 
 		if ( empty( $reasons ) ) {
 			$reasons[] = sprintf(
 				/* translators: %s: task type */
-				__( 'well-suited for %s tasks', 'wp-mcp-ai' ),
+				__( 'well-suited for %s tasks', 'mcp-ai-wpoos' ),
 				$task_type
 			);
 		}

@@ -1,6 +1,6 @@
 # OpenAI Sora Video Generation
 
-This document describes the OpenAI Sora video generation tools added to WP oOS.
+This document describes the OpenAI Sora video generation tools added to NV oOS.
 
 ## Overview
 
@@ -75,7 +75,7 @@ Video generation costs are calculated per second of generated video:
 ### Admin Settings
 
 Configure default Sora settings in WordPress Admin:
-1. Navigate to **Settings → WP oOS**
+1. Navigate to **Settings → NV oOS**
 2. Find the **OpenAI Video** section
 3. Set defaults for:
    - Model (sora-2 or sora-2-pro)
@@ -86,7 +86,7 @@ Configure default Sora settings in WordPress Admin:
 ### API Key
 
 An OpenAI API key is required. Configure it in:
-**Settings → WP oOS → OpenAI API Key**
+**Settings → NV oOS → OpenAI API Key**
 
 ## Async Execution
 
@@ -168,7 +168,7 @@ cinematic composition"
 ## Troubleshooting
 
 ### "No OpenAI API key configured"
-- Add your OpenAI API key in Settings → WP oOS
+- Add your OpenAI API key in Settings → NV oOS
 - Ensure the key has video generation permissions
 - Verify the key is valid and active
 

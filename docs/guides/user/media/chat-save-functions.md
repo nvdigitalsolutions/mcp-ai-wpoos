@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the enhanced chat save functions added to the WP oOS plugin to improve reliability, error handling, and user experience when saving data from the chat interface.
+This document describes the enhanced chat save functions added to the NV oOS plugin to improve reliability, error handling, and user experience when saving data from the chat interface.
 
 ## New Functions
 

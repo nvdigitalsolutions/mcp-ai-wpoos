@@ -43,7 +43,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		<script type="text/javascript">
 			jQuery(document).ready(function($) {
 				// Add link button after the page title that navigates to the Build Assistant page.
-				var button = '<a href="<?php echo esc_url( $build_assistant_url ); ?>" class="page-title-action wp-mcp-ai-create-assistant-btn"><?php echo esc_js( __( 'Build AI Assistant', 'wp-mcp-ai' ) ); ?></a>';
+				var button = '<a href="<?php echo esc_url( $build_assistant_url ); ?>" class="page-title-action wp-mcp-ai-create-assistant-btn"><?php echo esc_js( __( 'Build AI Assistant', 'mcp-ai-wpoos' ) ); ?></a>';
 				$('.wrap h1.wp-heading-inline').after(button);
 			});
 		</script>
@@ -58,7 +58,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		check_ajax_referer( 'wp_mcp_ai_create_assistant', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Get form data.
@@ -73,7 +73,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 
 		// Validate required fields.
 		if ( empty( $title ) || empty( $professions ) || empty( $regions ) ) {
-			wp_send_json_error( array( 'message' => __( 'Title, professions, and regions are required.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Title, professions, and regions are required.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Use the create_assistant tool.
@@ -82,7 +82,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 
 		$tool = $registry->get_tool( 'create_assistant' );
 		if ( ! $tool ) {
-			wp_send_json_error( array( 'message' => __( 'Create assistant tool not available.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Create assistant tool not available.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		$arguments = array(
@@ -116,7 +116,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		check_ajax_referer( 'wp_mcp_ai_create_assistant', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Get conversation data.
@@ -124,20 +124,20 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		$attachment_ids    = isset( $_POST['attachment_ids'] ) && is_array( $_POST['attachment_ids'] ) ? array_map( 'absint', wp_unslash( $_POST['attachment_ids'] ) ) : array();
 
 		if ( empty( $conversation_json ) ) {
-			wp_send_json_error( array( 'message' => __( 'No conversation data provided.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'No conversation data provided.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		$conversation = json_decode( $conversation_json, true );
 
 		if ( ! is_array( $conversation ) || empty( $conversation['messages'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid conversation data.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid conversation data.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Extract assistant details from conversation.
 		$assistant_config = self::extract_assistant_config_from_conversation( $conversation['messages'] );
 
 		if ( empty( $assistant_config['title'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'Could not determine a title for the assistant. Please describe what you want the assistant to be called.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Could not determine a title for the assistant. Please describe what you want the assistant to be called.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Use the create_assistant tool.
@@ -146,7 +146,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 
 		$tool = $registry->get_tool( 'create_assistant' );
 		if ( ! $tool ) {
-			wp_send_json_error( array( 'message' => __( 'Create assistant tool not available.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Create assistant tool not available.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		$arguments = array(
@@ -268,11 +268,11 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		check_ajax_referer( 'wp_mcp_ai_create_assistant', 'nonce' );
 
 		if ( ! current_user_can( 'upload_files' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions to upload files.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions to upload files.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		if ( empty( $_FILES['file'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'No file provided.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'No file provided.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -285,7 +285,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		$file_ext      = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
 
 		if ( ! in_array( $file_ext, $allowed_types, true ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid file type. Allowed types: txt, md, pdf, doc, docx.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid file type. Allowed types: txt, md, pdf, doc, docx.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Upload the file.

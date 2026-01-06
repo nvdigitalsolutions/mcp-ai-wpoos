@@ -92,7 +92,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 		if ( empty( $prompt ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_music_prompt',
-				__( 'Music generation prompt cannot be empty.', 'wp-mcp-ai' ),
+				__( 'Music generation prompt cannot be empty.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -102,7 +102,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_gemini_api_key',
-				__( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+				__( 'No Gemini API key has been configured.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -173,7 +173,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 			WP_MCP_AI_Logger::log_error( 'Gemini music generation request failed.', array( 'error' => $response->get_error_message() ) );
 			return new WP_Error(
 				'wp_mcp_ai_http_error',
-				__( 'The music generation request failed to complete.', 'wp-mcp-ai' ),
+				__( 'The music generation request failed to complete.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -194,7 +194,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 				'wp_mcp_ai_api_error',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'Music generation failed with status %d.', 'wp-mcp-ai' ),
+					__( 'Music generation failed with status %d.', 'mcp-ai-wpoos' ),
 					$status_code
 				),
 				array( 'status' => $status_code )
@@ -205,7 +205,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 		if ( empty( $data ) || ! is_array( $data ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
-				__( 'Music generation returned an invalid response.', 'wp-mcp-ai' ),
+				__( 'Music generation returned an invalid response.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -312,7 +312,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 
 		return new WP_Error(
 			'wp_mcp_ai_missing_audio_data',
-			__( 'No audio data found in the API response.', 'wp-mcp-ai' ),
+			__( 'No audio data found in the API response.', 'mcp-ai-wpoos' ),
 			array( 'status' => 500 )
 		);
 	}

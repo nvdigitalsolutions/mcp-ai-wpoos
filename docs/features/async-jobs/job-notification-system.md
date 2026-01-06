@@ -144,6 +144,88 @@ Your webhook endpoint will receive:
 }
 ```
 
+## Webhook Resilience & Retry (v1.1.0+)
+
+### Automatic Retry with Exponential Backoff
+
+All webhook deliveries now include automatic retry handling with intelligent backoff:
+
+**Retry Configuration:**
+- **Initial delay:** 10 seconds
+- **Multiplier:** 2.0 (doubles each attempt)
+- **Max delay:** 5 minutes
+- **Max attempts:** 3
+- **Jitter:** ±20% randomness (prevents thundering herd)
+
+**Example Timeline:**
+```
+Attempt 1: Immediate                 (fails)
+Attempt 2: ~10s later (8-12s)       (fails)
+Attempt 3: ~20s later (16-24s)      (fails)
+Attempt 4: ~40s later (32-48s)      (fails)
+→ Moved to Dead Letter Queue
+```
+
+### Dead Letter Queue (DLQ)
+
+Failed webhooks after max retries are automatically stored in the DLQ for manual intervention.
+
+**View Failed Webhooks:**
+- **Admin UI:** `wp-admin/admin.php?page=wp-mcp-ai-dlq-manager`
+- **Filter:** Type = `webhook`
+- **Actions:** Retry, Dismiss, Delete
+
+**WP-CLI Management:**
+```bash
+# List all failed webhooks
+wp mcp-ai dlq list --type=webhook
+
+# View detailed statistics
+wp mcp-ai dlq stats --format=json
+
+# Retry a specific webhook
+wp mcp-ai dlq retry abc123def456
+
+# Purge old failed webhooks (older than 7 days)
+wp mcp-ai dlq purge --days=7 --yes
+```
+
+**DLQ Item Structure:**
+```json
+{
+  "id": "abc123def456",
+  "type": "webhook",
+  "identifier": "https://example.com/webhook",
+  "failure_reason": "HTTP 500: Internal Server Error",
+  "retry_count": 3,
+  "added_at": "2026-01-03T20:00:00Z",
+  "data": {
+    "payload": {...},
+    "job_id": "crawl_abc123"
+  },
+  "retry_history": [
+    {"attempt": 1, "timestamp": "...", "error": "Connection timeout"},
+    {"attempt": 2, "timestamp": "...", "error": "HTTP 500"},
+    {"attempt": 3, "timestamp": "...", "error": "HTTP 500"}
+  ],
+  "dismissed": false
+}
+```
+
+### Monitoring Webhook Health
+
+**Dashboard Widget:**
+The WordPress admin dashboard now includes a "Job Queue Health" widget showing:
+- DLQ size and failure counts
+- Recent webhook delivery failures
+- Quick link to DLQ Manager
+
+**Cron Manager Integration:**
+The Cron Manager page (`wp-admin/admin.php?page=wp-mcp-ai-cron-manager`) displays:
+- DLQ statistics by type (webhooks, cron jobs, etc.)
+- Failed webhook count and breakdown
+- Quick actions to retry or dismiss items
+
 ## REST API Endpoints
 
 ### GET /wp-json/mcp-ai/v1/jobs/{job_id}/stream

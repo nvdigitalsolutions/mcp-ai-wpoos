@@ -158,7 +158,7 @@ class WP_MCP_AI_Shortcode {
 					'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
 					'isElementorEditor'   => true,
 					'strings'             => array(
-						'placeholder' => __( 'Ask something…', 'wp-mcp-ai' ),
+						'placeholder' => __( 'Ask something…', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -187,125 +187,125 @@ class WP_MCP_AI_Shortcode {
 				'showUsageCosts'      => $show_usage_costs,
 				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
 				'strings'             => array(
-					'placeholder'                   => __( 'Ask something…', 'wp-mcp-ai' ),
-					'send'                          => __( 'Send', 'wp-mcp-ai' ),
-					'build'                         => __( 'Build', 'wp-mcp-ai' ),
-					'building'                      => __( 'Building assistant…', 'wp-mcp-ai' ),
-					'buildSuccess'                  => __( 'Assistant created successfully!', 'wp-mcp-ai' ),
-					'buildError'                    => __( 'Failed to create assistant. Please try again.', 'wp-mcp-ai' ),
-					'bundlingMessages'              => __( 'Preparing to send…', 'wp-mcp-ai' ),
-					'sending'                       => __( 'Sending message…', 'wp-mcp-ai' ),
-					'waiting'                       => __( 'Waiting for the assistant…', 'wp-mcp-ai' ),
-					'error'                         => __( 'Something went wrong. Please try again.', 'wp-mcp-ai' ),
-					'missingAssistant'              => __( 'Assistant configuration was not found.', 'wp-mcp-ai' ),
-					'notAuthorized'                 => __( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ),
+					'placeholder'                   => __( 'Ask something…', 'mcp-ai-wpoos' ),
+					'send'                          => __( 'Send', 'mcp-ai-wpoos' ),
+					'build'                         => __( 'Build', 'mcp-ai-wpoos' ),
+					'building'                      => __( 'Building assistant…', 'mcp-ai-wpoos' ),
+					'buildSuccess'                  => __( 'Assistant created successfully!', 'mcp-ai-wpoos' ),
+					'buildError'                    => __( 'Failed to create assistant. Please try again.', 'mcp-ai-wpoos' ),
+					'bundlingMessages'              => __( 'Preparing to send…', 'mcp-ai-wpoos' ),
+					'sending'                       => __( 'Sending message…', 'mcp-ai-wpoos' ),
+					'waiting'                       => __( 'Waiting for the assistant…', 'mcp-ai-wpoos' ),
+					'error'                         => __( 'Something went wrong. Please try again.', 'mcp-ai-wpoos' ),
+					'missingAssistant'              => __( 'Assistant configuration was not found.', 'mcp-ai-wpoos' ),
+					'notAuthorized'                 => __( 'You do not have permission to chat with this assistant.', 'mcp-ai-wpoos' ),
 					/* translators: %s: tool name being executed */
-																'toolExecuting' => __( 'Running tool: %s', 'wp-mcp-ai' ),
-					'toolSuccess'                   => __( 'Tool completed successfully.', 'wp-mcp-ai' ),
-					'toolError'                     => __( 'The tool request failed.', 'wp-mcp-ai' ),
-					'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'wp-mcp-ai' ),
-					'toolPolling'                   => __( 'Tool is processing…', 'wp-mcp-ai' ),
-					'toolTimeout'                   => __( 'Tool timed out before completing.', 'wp-mcp-ai' ),
+																'toolExecuting' => __( 'Running tool: %s', 'mcp-ai-wpoos' ),
+					'toolSuccess'                   => __( 'Tool completed successfully.', 'mcp-ai-wpoos' ),
+					'toolError'                     => __( 'The tool request failed.', 'mcp-ai-wpoos' ),
+					'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'mcp-ai-wpoos' ),
+					'toolPolling'                   => __( 'Tool is processing…', 'mcp-ai-wpoos' ),
+					'toolTimeout'                   => __( 'Tool timed out before completing.', 'mcp-ai-wpoos' ),
 					/* translators: %s: tool failure error message */
-					'toolFailed'                    => __( 'Tool failed: %s', 'wp-mcp-ai' ),
-					'speechToolSuccess'             => __( 'Speech audio saved to the Media Library.', 'wp-mcp-ai' ),
-					'imageToolSuccess'              => __( 'Image saved to the Media Library.', 'wp-mcp-ai' ),
+					'toolFailed'                    => __( 'Tool failed: %s', 'mcp-ai-wpoos' ),
+					'speechToolSuccess'             => __( 'Speech audio saved to the Media Library.', 'mcp-ai-wpoos' ),
+					'imageToolSuccess'              => __( 'Image saved to the Media Library.', 'mcp-ai-wpoos' ),
 					/* translators: %s: task name */
-																'toolShortcutLabel' => __( 'Insert task: %s', 'wp-mcp-ai' ),
-					'emptyMessage'                  => __( 'Enter a message before sending.', 'wp-mcp-ai' ),
-					'attachFile'                    => __( 'Attach file', 'wp-mcp-ai' ),
-					'transcribe'                    => __( 'Transcribe', 'wp-mcp-ai' ),
-					'transcribeAudio'               => __( 'Transcribe audio', 'wp-mcp-ai' ),
-					'transcribing'                  => __( 'Transcribing audio…', 'wp-mcp-ai' ),
-					'recording'                     => __( 'Recording… tap to stop.', 'wp-mcp-ai' ),
-					'stopRecording'                 => __( 'Stop recording', 'wp-mcp-ai' ),
-					'recordingError'                => __( 'Could not access your microphone. Please allow access or upload an audio file instead.', 'wp-mcp-ai' ),
-					'transcriptionError'            => __( 'The transcription request failed. Please try again.', 'wp-mcp-ai' ),
+																'toolShortcutLabel' => __( 'Insert task: %s', 'mcp-ai-wpoos' ),
+					'emptyMessage'                  => __( 'Enter a message before sending.', 'mcp-ai-wpoos' ),
+					'attachFile'                    => __( 'Attach file', 'mcp-ai-wpoos' ),
+					'transcribe'                    => __( 'Transcribe', 'mcp-ai-wpoos' ),
+					'transcribeAudio'               => __( 'Transcribe audio', 'mcp-ai-wpoos' ),
+					'transcribing'                  => __( 'Transcribing audio…', 'mcp-ai-wpoos' ),
+					'recording'                     => __( 'Recording… tap to stop.', 'mcp-ai-wpoos' ),
+					'stopRecording'                 => __( 'Stop recording', 'mcp-ai-wpoos' ),
+					'recordingError'                => __( 'Could not access your microphone. Please allow access or upload an audio file instead.', 'mcp-ai-wpoos' ),
+					'transcriptionError'            => __( 'The transcription request failed. Please try again.', 'mcp-ai-wpoos' ),
 					/* translators: %s: file name */
-																'transcriptionSuccess' => __( 'Inserted transcription from “%s”.', 'wp-mcp-ai' ),
-					'transcriptionFileTooLarge'     => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'wp-mcp-ai' ),
-					'transcribeChooseSource'        => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'wp-mcp-ai' ),
-					'transcriptionEndpointNotFound' => __( 'Transcription service is temporarily unavailable. Please try again later.', 'wp-mcp-ai' ),
-					'transcriptionNotConfigured'    => __( 'Transcription is not properly configured. Please contact support.', 'wp-mcp-ai' ),
-					'voiceChatError'                => __( 'Voice chat failed. Please try again or type your message.', 'wp-mcp-ai' ),
-					'voiceChatEndpointNotFound'     => __( 'Voice chat service is temporarily unavailable. Please type your message instead.', 'wp-mcp-ai' ),
-					'voiceChatNotConfigured'        => __( 'Voice chat is not properly configured. Please type your message instead.', 'wp-mcp-ai' ),
-					'voiceChatProcessing'           => __( 'Processing your voice message…', 'wp-mcp-ai' ),
-					'voiceChatNoData'               => __( 'No audio was recorded.', 'wp-mcp-ai' ),
-					'voiceChatFileTooLarge'         => __( 'The recorded audio is too large. Please try a shorter message.', 'wp-mcp-ai' ),
-					'voiceChatPermissionDenied'     => __( 'Microphone access was denied.', 'wp-mcp-ai' ),
-					'attachmentsLabel'              => __( 'Attachments', 'wp-mcp-ai' ),
-					'removeAttachment'              => __( 'Remove', 'wp-mcp-ai' ),
+																'transcriptionSuccess' => __( 'Inserted transcription from “%s”.', 'mcp-ai-wpoos' ),
+					'transcriptionFileTooLarge'     => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
+					'transcribeChooseSource'        => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
+					'transcriptionEndpointNotFound' => __( 'Transcription service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
+					'transcriptionNotConfigured'    => __( 'Transcription is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
+					'voiceChatError'                => __( 'Voice chat failed. Please try again or type your message.', 'mcp-ai-wpoos' ),
+					'voiceChatEndpointNotFound'     => __( 'Voice chat service is temporarily unavailable. Please type your message instead.', 'mcp-ai-wpoos' ),
+					'voiceChatNotConfigured'        => __( 'Voice chat is not properly configured. Please type your message instead.', 'mcp-ai-wpoos' ),
+					'voiceChatProcessing'           => __( 'Processing your voice message…', 'mcp-ai-wpoos' ),
+					'voiceChatNoData'               => __( 'No audio was recorded.', 'mcp-ai-wpoos' ),
+					'voiceChatFileTooLarge'         => __( 'The recorded audio is too large. Please try a shorter message.', 'mcp-ai-wpoos' ),
+					'voiceChatPermissionDenied'     => __( 'Microphone access was denied.', 'mcp-ai-wpoos' ),
+					'attachmentsLabel'              => __( 'Attachments', 'mcp-ai-wpoos' ),
+					'removeAttachment'              => __( 'Remove', 'mcp-ai-wpoos' ),
 					/* translators: %s: file name being uploaded */
-																'uploadingFile' => __( 'Uploading “%s”…', 'wp-mcp-ai' ),
-					'uploadError'                   => __( 'The file could not be uploaded. Please try again.', 'wp-mcp-ai' ),
-					'uploadInProgress'              => __( 'Please wait for uploads to finish before sending.', 'wp-mcp-ai' ),
-					'downloadAttachment'            => __( 'Download attachment', 'wp-mcp-ai' ),
+																'uploadingFile' => __( 'Uploading “%s”…', 'mcp-ai-wpoos' ),
+					'uploadError'                   => __( 'The file could not be uploaded. Please try again.', 'mcp-ai-wpoos' ),
+					'uploadInProgress'              => __( 'Please wait for uploads to finish before sending.', 'mcp-ai-wpoos' ),
+					'downloadAttachment'            => __( 'Download attachment', 'mcp-ai-wpoos' ),
 					/* translators: %s: file name with unsupported type */
-																'unsupportedFileType' => __( '“%s” is not a supported file type. Please choose a different file.', 'wp-mcp-ai' ),
-					'unsupportedMultipleFiles'      => __( 'Some selected files are not supported. Please try different files.', 'wp-mcp-ai' ),
-					'unsupportedFileLabel'          => __( 'This file', 'wp-mcp-ai' ),
-					'expandTranscript'              => __( 'Expand conversation', 'wp-mcp-ai' ),
-					'collapseTranscript'            => __( 'Collapse conversation', 'wp-mcp-ai' ),
-					'newConversation'               => __( 'Start new conversation', 'wp-mcp-ai' ),
-					'loadConversation'              => __( 'Load conversation', 'wp-mcp-ai' ),
-					'jsonResponse'                  => __( 'JSON response', 'wp-mcp-ai' ),
-					'historyToggleShow'             => __( 'Show previous conversations', 'wp-mcp-ai' ),
-					'historyToggleHide'             => __( 'Hide previous conversations', 'wp-mcp-ai' ),
-					'historyLoading'                => __( 'Loading conversations…', 'wp-mcp-ai' ),
-					'historyEmpty'                  => __( 'No previous conversations yet.', 'wp-mcp-ai' ),
-					'historyError'                  => __( 'Unable to load conversation history.', 'wp-mcp-ai' ),
+																'unsupportedFileType' => __( '“%s” is not a supported file type. Please choose a different file.', 'mcp-ai-wpoos' ),
+					'unsupportedMultipleFiles'      => __( 'Some selected files are not supported. Please try different files.', 'mcp-ai-wpoos' ),
+					'unsupportedFileLabel'          => __( 'This file', 'mcp-ai-wpoos' ),
+					'expandTranscript'              => __( 'Expand conversation', 'mcp-ai-wpoos' ),
+					'collapseTranscript'            => __( 'Collapse conversation', 'mcp-ai-wpoos' ),
+					'newConversation'               => __( 'Start new conversation', 'mcp-ai-wpoos' ),
+					'loadConversation'              => __( 'Load conversation', 'mcp-ai-wpoos' ),
+					'jsonResponse'                  => __( 'JSON response', 'mcp-ai-wpoos' ),
+					'historyToggleShow'             => __( 'Show previous conversations', 'mcp-ai-wpoos' ),
+					'historyToggleHide'             => __( 'Hide previous conversations', 'mcp-ai-wpoos' ),
+					'historyLoading'                => __( 'Loading conversations…', 'mcp-ai-wpoos' ),
+					'historyEmpty'                  => __( 'No previous conversations yet.', 'mcp-ai-wpoos' ),
+					'historyError'                  => __( 'Unable to load conversation history.', 'mcp-ai-wpoos' ),
 					/* translators: %d: number of messages in chat history */
-																'historyMessageCount' => __( '%d messages', 'wp-mcp-ai' ),
-					'historySingleMessage'          => __( '1 message', 'wp-mcp-ai' ),
+																'historyMessageCount' => __( '%d messages', 'mcp-ai-wpoos' ),
+					'historySingleMessage'          => __( '1 message', 'mcp-ai-wpoos' ),
 					/* translators: %s: conversation identifier */
-					'historyPreviewFallback'        => __( 'Conversation %s', 'wp-mcp-ai' ),
-					'historySessionLoading'         => __( 'Loading conversation…', 'wp-mcp-ai' ),
-					'historySessionError'           => __( 'Unable to load this conversation. Please try again.', 'wp-mcp-ai' ),
-					'historyNoMessages'             => __( 'No messages were saved for this conversation.', 'wp-mcp-ai' ),
-					'savingPost'                    => __( 'Saving post…', 'wp-mcp-ai' ),
-					'saveConversation'              => __( 'Save conversation', 'wp-mcp-ai' ),
-					'savingConversation'            => __( 'Saving current conversation...', 'wp-mcp-ai' ),
-					'conversationSaved'             => __( 'Conversation saved successfully.', 'wp-mcp-ai' ),
-					'saveFailed'                    => __( 'Failed to save conversation. See console for details.', 'wp-mcp-ai' ),
-					'saveFailedProceed'             => __( 'Failed to save conversation: ', 'wp-mcp-ai' ),
-					'proceedAnyway'                 => __( 'Do you want to proceed anyway? Your current conversation will be lost.', 'wp-mcp-ai' ),
-					'saveFailedKeepingConversation' => __( 'Conversation not cleared. You can try again later.', 'wp-mcp-ai' ),
-					'noConversationToSave'          => __( 'No conversation to save. Start chatting first!', 'wp-mcp-ai' ),
-					'saveSkipped'                   => __( 'Save not available for this conversation.', 'wp-mcp-ai' ),
-					'confirmClearConversation'      => __( 'Start a new conversation? Your current conversation will be saved automatically.', 'wp-mcp-ai' ),
-					'noConversationToExport'        => __( 'No conversation to export. Start chatting first!', 'wp-mcp-ai' ),
-					'exportFormatPrompt'            => __( 'Choose export format:\n- json\n- markdown\n- text', 'wp-mcp-ai' ),
-					'invalidExportFormat'           => __( 'Invalid format. Please choose json, markdown, or text.', 'wp-mcp-ai' ),
-					'exportFailed'                  => __( 'Export failed: ', 'wp-mcp-ai' ),
-					'exportSuccess'                 => __( 'Conversation exported successfully as ', 'wp-mcp-ai' ),
-					'deleteConversation'            => __( 'Delete this conversation', 'wp-mcp-ai' ),
-					'confirmDeleteConversation'     => __( 'Are you sure you want to delete this conversation? This action cannot be undone.', 'wp-mcp-ai' ),
-					'veoVideoToolSuccess'           => __( 'Video generated successfully and saved to the Media Library.', 'wp-mcp-ai' ),
-					'videoNotSupported'             => __( 'Your browser does not support video playback.', 'wp-mcp-ai' ),
-					'downloadVideo'                 => __( 'Download video', 'wp-mcp-ai' ),
-					'videoGenerating'               => __( 'Video generation started. Your video will be available within approximately 5 minutes.', 'wp-mcp-ai' ),
-					'videoPending'                  => __( 'Pending • ~5 min', 'wp-mcp-ai' ),
-					'geminiImageToolSuccess'        => __( 'Gemini image saved to the Media Library.', 'wp-mcp-ai' ),
-					'editGeminiImageToolSuccess'    => __( 'Gemini image edited and saved to the Media Library.', 'wp-mcp-ai' ),
-					'tokensLabel'                   => __( 'Tokens', 'wp-mcp-ai' ),
-					'costLabel'                     => __( 'Cost', 'wp-mcp-ai' ),
-					'estimatedCostLabel'            => __( 'Est. Cost', 'wp-mcp-ai' ),
+					'historyPreviewFallback'        => __( 'Conversation %s', 'mcp-ai-wpoos' ),
+					'historySessionLoading'         => __( 'Loading conversation…', 'mcp-ai-wpoos' ),
+					'historySessionError'           => __( 'Unable to load this conversation. Please try again.', 'mcp-ai-wpoos' ),
+					'historyNoMessages'             => __( 'No messages were saved for this conversation.', 'mcp-ai-wpoos' ),
+					'savingPost'                    => __( 'Saving post…', 'mcp-ai-wpoos' ),
+					'saveConversation'              => __( 'Save conversation', 'mcp-ai-wpoos' ),
+					'savingConversation'            => __( 'Saving current conversation...', 'mcp-ai-wpoos' ),
+					'conversationSaved'             => __( 'Conversation saved successfully.', 'mcp-ai-wpoos' ),
+					'saveFailed'                    => __( 'Failed to save conversation. See console for details.', 'mcp-ai-wpoos' ),
+					'saveFailedProceed'             => __( 'Failed to save conversation: ', 'mcp-ai-wpoos' ),
+					'proceedAnyway'                 => __( 'Do you want to proceed anyway? Your current conversation will be lost.', 'mcp-ai-wpoos' ),
+					'saveFailedKeepingConversation' => __( 'Conversation not cleared. You can try again later.', 'mcp-ai-wpoos' ),
+					'noConversationToSave'          => __( 'No conversation to save. Start chatting first!', 'mcp-ai-wpoos' ),
+					'saveSkipped'                   => __( 'Save not available for this conversation.', 'mcp-ai-wpoos' ),
+					'confirmClearConversation'      => __( 'Start a new conversation? Your current conversation will be saved automatically.', 'mcp-ai-wpoos' ),
+					'noConversationToExport'        => __( 'No conversation to export. Start chatting first!', 'mcp-ai-wpoos' ),
+					'exportFormatPrompt'            => __( 'Choose export format:\n- json\n- markdown\n- text', 'mcp-ai-wpoos' ),
+					'invalidExportFormat'           => __( 'Invalid format. Please choose json, markdown, or text.', 'mcp-ai-wpoos' ),
+					'exportFailed'                  => __( 'Export failed: ', 'mcp-ai-wpoos' ),
+					'exportSuccess'                 => __( 'Conversation exported successfully as ', 'mcp-ai-wpoos' ),
+					'deleteConversation'            => __( 'Delete this conversation', 'mcp-ai-wpoos' ),
+					'confirmDeleteConversation'     => __( 'Are you sure you want to delete this conversation? This action cannot be undone.', 'mcp-ai-wpoos' ),
+					'veoVideoToolSuccess'           => __( 'Video generated successfully and saved to the Media Library.', 'mcp-ai-wpoos' ),
+					'videoNotSupported'             => __( 'Your browser does not support video playback.', 'mcp-ai-wpoos' ),
+					'downloadVideo'                 => __( 'Download video', 'mcp-ai-wpoos' ),
+					'videoGenerating'               => __( 'Video generation started. Your video will be available within approximately 5 minutes.', 'mcp-ai-wpoos' ),
+					'videoPending'                  => __( 'Pending • ~5 min', 'mcp-ai-wpoos' ),
+					'geminiImageToolSuccess'        => __( 'Gemini image saved to the Media Library.', 'mcp-ai-wpoos' ),
+					'editGeminiImageToolSuccess'    => __( 'Gemini image edited and saved to the Media Library.', 'mcp-ai-wpoos' ),
+					'tokensLabel'                   => __( 'Tokens', 'mcp-ai-wpoos' ),
+					'costLabel'                     => __( 'Cost', 'mcp-ai-wpoos' ),
+					'estimatedCostLabel'            => __( 'Est. Cost', 'mcp-ai-wpoos' ),
 					/* translators: %d: number of tokens used */
-					'tokensUsed'                    => __( '%d tokens', 'wp-mcp-ai' ),
+					'tokensUsed'                    => __( '%d tokens', 'mcp-ai-wpoos' ),
 					/* translators: %d: total tokens, %d: input tokens, %d: output tokens */
-					'tokensBreakdown'               => __( '%1$d total (%2$d in / %3$d out)', 'wp-mcp-ai' ),
+					'tokensBreakdown'               => __( '%1$d total (%2$d in / %3$d out)', 'mcp-ai-wpoos' ),
 					/* translators: %s: cost in USD */
-					'costAmount'                    => __( '$%s', 'wp-mcp-ai' ),
+					'costAmount'                    => __( '$%s', 'mcp-ai-wpoos' ),
 					/* translators: %s: tool name that is processing */
-					'toolProcessing'                => __( '%s is temporarily processing your request. The assistant will continue using available information.', 'wp-mcp-ai' ),
+					'toolProcessing'                => __( '%s is temporarily processing your request. The assistant will continue using available information.', 'mcp-ai-wpoos' ),
 					/* translators: %s: tool name that is temporarily unavailable */
-					'toolTemporarilyUnavailable'    => __( '%s temporarily unavailable', 'wp-mcp-ai' ),
+					'toolTemporarilyUnavailable'    => __( '%s temporarily unavailable', 'mcp-ai-wpoos' ),
 					'roleLabels'                    => array(
-						'assistant' => __( 'Assistant', 'wp-mcp-ai' ),
-						'user'      => __( 'You', 'wp-mcp-ai' ),
-						'system'    => __( 'System', 'wp-mcp-ai' ),
-						'tool'      => __( 'Tool', 'wp-mcp-ai' ),
+						'assistant' => __( 'Assistant', 'mcp-ai-wpoos' ),
+						'user'      => __( 'You', 'mcp-ai-wpoos' ),
+						'system'    => __( 'System', 'mcp-ai-wpoos' ),
+						'tool'      => __( 'Tool', 'mcp-ai-wpoos' ),
 					),
 				),
 			)
@@ -387,8 +387,8 @@ class WP_MCP_AI_Shortcode {
 		ob_start();
 		?>
 		<div class="wp-mcp-ai-chat__editor-notice">
-			<strong><?php esc_html_e( 'Editor Preview:', 'wp-mcp-ai' ); ?></strong>
-			<?php esc_html_e( 'This is a preview of the chat widget. Full functionality will be available on the published page.', 'wp-mcp-ai' ); ?>
+			<strong><?php esc_html_e( 'Editor Preview:', 'mcp-ai-wpoos' ); ?></strong>
+			<?php esc_html_e( 'This is a preview of the chat widget. Full functionality will be available on the published page.', 'mcp-ai-wpoos' ); ?>
 		</div>
 		<?php
 		return ob_get_clean();
@@ -458,7 +458,7 @@ class WP_MCP_AI_Shortcode {
 						'context'    => 'shortcode_rendering',
 					)
 				);
-				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'No assistant has been selected. Please provide an assistant attribute or configure a default.', 'wp-mcp-ai' ) . '</div>';
+				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'No assistant has been selected. Please provide an assistant attribute or configure a default.', 'mcp-ai-wpoos' ) . '</div>';
 			}
 
 			// For profession tests, validate the profession and get associated assistant for permissions.
@@ -477,7 +477,7 @@ class WP_MCP_AI_Shortcode {
 							'attributes'        => $atts,
 						)
 					);
-					return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested profession is not available.', 'wp-mcp-ai' ) . '</div>';
+					return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested profession is not available.', 'mcp-ai-wpoos' ) . '</div>';
 				}
 
 				// For permissions check, use the profession's associated assistant or default assistant.
@@ -507,7 +507,7 @@ class WP_MCP_AI_Shortcode {
 							'attributes'               => $atts,
 						)
 					);
-					return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested assistant is not available.', 'wp-mcp-ai' ) . '</div>';
+					return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested assistant is not available.', 'mcp-ai-wpoos' ) . '</div>';
 				}
 			}
 
@@ -542,7 +542,7 @@ class WP_MCP_AI_Shortcode {
 						'user_capabilities'   => $user_capabilities,
 					)
 				);
-				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';
+				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'mcp-ai-wpoos' ) . '</div>';
 			}
 
 			// Render the actual widget in Elementor editor for better preview.
@@ -685,6 +685,15 @@ class WP_MCP_AI_Shortcode {
 				$GLOBALS['wp_mcp_ai_chat_configs'] = array();
 			}
 			$GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] = $config;
+			
+			// Log for debugging PM assistant issues.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( sprintf(
+					'[WP_MCP_AI] Shortcode stored config for instance: %s (assistant_id: %s)',
+					$instance_id,
+					isset( $config['assistantId'] ) ? $config['assistantId'] : 'N/A'
+				) );
+			}
 
 			$inline_config  = 'window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};';
 			$inline_config .= 'window.wpMcpAiChatInstances[' . wp_json_encode( $instance_id ) . '] = ' . wp_json_encode( $config ) . ';';
@@ -728,12 +737,12 @@ class WP_MCP_AI_Shortcode {
 					type="button"
 					class="wp-mcp-ai-chat__transcript-toggle"
 					aria-expanded="false"
-					aria-label="<?php echo esc_attr__( 'Expand conversation', 'wp-mcp-ai' ); ?>"
+					aria-label="<?php echo esc_attr__( 'Expand conversation', 'mcp-ai-wpoos' ); ?>"
 				>
 					<svg class="wp-mcp-ai-chat__transcript-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 						<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />
 					</svg>
-					<span class="screen-reader-text"><?php esc_html_e( 'Expand conversation', 'wp-mcp-ai' ); ?></span>
+					<span class="screen-reader-text"><?php esc_html_e( 'Expand conversation', 'mcp-ai-wpoos' ); ?></span>
 				</button>
 			</div>
 			<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
@@ -741,54 +750,54 @@ class WP_MCP_AI_Shortcode {
 				<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
 				<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>
 					<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed" aria-expanded="false" aria-controls="<?php echo esc_attr( $instance_id . '-tool-shortcuts' ); ?>">
-						<span class="wp-mcp-ai-chat__tool-shortcuts-toggle-text"><?php esc_html_e( 'Quick Tasks', 'wp-mcp-ai' ); ?></span>
+						<span class="wp-mcp-ai-chat__tool-shortcuts-toggle-text"><?php esc_html_e( 'Quick Tasks', 'mcp-ai-wpoos' ); ?></span>
 						<svg class="wp-mcp-ai-chat__tool-shortcuts-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />
 						</svg>
 					</button>
-					<div id="<?php echo esc_attr( $instance_id . '-tool-shortcuts' ); ?>" class="wp-mcp-ai-chat__tool-shortcuts wp-mcp-ai-chat__tool-shortcuts--collapsed" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'wp-mcp-ai' ); ?>" hidden></div>
+					<div id="<?php echo esc_attr( $instance_id . '-tool-shortcuts' ); ?>" class="wp-mcp-ai-chat__tool-shortcuts wp-mcp-ai-chat__tool-shortcuts--collapsed" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'mcp-ai-wpoos' ); ?>" hidden></div>
 				</div>
-				<textarea id="<?php echo esc_attr( $textarea_id ); ?>" class="wp-mcp-ai-chat__input" rows="4" placeholder="<?php echo esc_attr__( 'Ask something…', 'wp-mcp-ai' ); ?>" required></textarea>
+				<textarea id="<?php echo esc_attr( $textarea_id ); ?>" class="wp-mcp-ai-chat__input" rows="4" placeholder="<?php echo esc_attr__( 'Ask something…', 'mcp-ai-wpoos' ); ?>" required></textarea>
 				<div class="wp-mcp-ai-chat__attachments" hidden>
-					<div class="wp-mcp-ai-chat__attachments-header"><?php esc_html_e( 'Attachments', 'wp-mcp-ai' ); ?></div>
+					<div class="wp-mcp-ai-chat__attachments-header"><?php esc_html_e( 'Attachments', 'mcp-ai-wpoos' ); ?></div>
 					<ul class="wp-mcp-ai-chat__attachments-list"></ul>
 				</div>
 				<div class="wp-mcp-ai-chat__actions">
 					<input type="file" class="wp-mcp-ai-chat__file-input" multiple hidden />
 					<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled' ); ?> />
-					<button type="button" class="wp-mcp-ai-chat__voice-chat" aria-label="<?php echo esc_attr__( 'Voice chat', 'wp-mcp-ai' ); ?>"<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled hidden' ); ?>>
+					<button type="button" class="wp-mcp-ai-chat__voice-chat" aria-label="<?php echo esc_attr__( 'Voice chat', 'mcp-ai-wpoos' ); ?>"<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled hidden' ); ?>>
 						<svg class="wp-mcp-ai-chat__voice-chat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>
 							<circle cx="12" cy="12" r="1.5" fill="currentColor"/>
 						</svg>
-						<span class="screen-reader-text"><?php esc_html_e( 'Voice chat', 'wp-mcp-ai' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Voice chat', 'mcp-ai-wpoos' ); ?></span>
 					</button>
-					<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="<?php echo esc_attr__( 'Transcribe audio', 'wp-mcp-ai' ); ?>"<?php echo $can_upload_attachments ? '' : ' disabled hidden'; ?>>
+					<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="<?php echo esc_attr__( 'Transcribe audio', 'mcp-ai-wpoos' ); ?>"<?php echo $can_upload_attachments ? '' : ' disabled hidden'; ?>>
 						<svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>
 							<path d="M12 16a7 7 0 0 0 6.93-6H17a5 5 0 0 1-10 0H5.07A7 7 0 0 0 12 16zm-1 2.05V21h2v-2.95A9 9 0 0 0 20.95 11H19a7 7 0 0 1-14 0H3.05A9 9 0 0 0 11 18.05z"></path>
 						</svg>
-						<span class="screen-reader-text"><?php esc_html_e( 'Transcribe audio', 'wp-mcp-ai' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Transcribe audio', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 					<button type="button" class="wp-mcp-ai-chat__attach">
-						<?php esc_html_e( 'Attach file', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Attach file', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<button type="button" class="wp-mcp-ai-chat__build" hidden>
-						<?php esc_html_e( 'Build', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Build', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<button type="submit" class="wp-mcp-ai-chat__submit">
-						<?php esc_html_e( 'Send', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Send', 'mcp-ai-wpoos' ); ?>
 					</button>
 				</div>
 			</form>
 			<div class="wp-mcp-ai-chat__controls">
 				<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite" aria-atomic="true"></div>
 				<div class="wp-mcp-ai-chat__cron-status" role="status" aria-live="polite" aria-atomic="true" hidden>
-					<span class="wp-mcp-ai-chat__cron-status-label"><?php esc_html_e( 'Jobs:', 'wp-mcp-ai' ); ?></span>
-					<span class="wp-mcp-ai-chat__cron-status-pending" title="<?php esc_attr_e( 'Pending jobs', 'wp-mcp-ai' ); ?>">
+					<span class="wp-mcp-ai-chat__cron-status-label"><?php esc_html_e( 'Jobs:', 'mcp-ai-wpoos' ); ?></span>
+					<span class="wp-mcp-ai-chat__cron-status-pending" title="<?php esc_attr_e( 'Pending jobs', 'mcp-ai-wpoos' ); ?>">
 						<span class="wp-mcp-ai-chat__cron-status-count">0</span>
 					</span>
-					<span class="wp-mcp-ai-chat__cron-status-completed" title="<?php esc_attr_e( 'Completed jobs', 'wp-mcp-ai' ); ?>">
+					<span class="wp-mcp-ai-chat__cron-status-completed" title="<?php esc_attr_e( 'Completed jobs', 'mcp-ai-wpoos' ); ?>">
 						<span class="wp-mcp-ai-chat__cron-status-count">0</span>
 					</span>
 				</div>
@@ -796,66 +805,66 @@ class WP_MCP_AI_Shortcode {
 					<button
 						type="button"
 						class="wp-mcp-ai-chat__save"
-						aria-label="<?php echo esc_attr__( 'Save conversation', 'wp-mcp-ai' ); ?>"
-						title="<?php echo esc_attr__( 'Save conversation', 'wp-mcp-ai' ); ?>"
+						aria-label="<?php echo esc_attr__( 'Save conversation', 'mcp-ai-wpoos' ); ?>"
+						title="<?php echo esc_attr__( 'Save conversation', 'mcp-ai-wpoos' ); ?>"
 					>
 						<svg class="wp-mcp-ai-chat__save-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM5 5v14h14V9h-4V5H5z" />
 							<path d="M7 5h6v3H7V5zm5 9a2 2 0 11-4 0 2 2 0 014 0z" />
 						</svg>
-						<span class="screen-reader-text"><?php esc_html_e( 'Save conversation', 'wp-mcp-ai' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Save conversation', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 					<button
 						type="button"
 						class="wp-mcp-ai-chat__export"
-						aria-label="<?php echo esc_attr__( 'Export conversation', 'wp-mcp-ai' ); ?>"
-						title="<?php echo esc_attr__( 'Export conversation', 'wp-mcp-ai' ); ?>"
+						aria-label="<?php echo esc_attr__( 'Export conversation', 'mcp-ai-wpoos' ); ?>"
+						title="<?php echo esc_attr__( 'Export conversation', 'mcp-ai-wpoos' ); ?>"
 					>
 						<svg class="wp-mcp-ai-chat__export-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12 16a1 1 0 01-1-1V5a1 1 0 012 0v10a1 1 0 01-1 1z" />
 							<path d="M12 16a1 1 0 01-.707-.293l-4-4a1 1 0 011.414-1.414L12 13.586l3.293-3.293a1 1 0 011.414 1.414l-4 4A1 1 0 0112 16z" />
 							<path d="M5 19a1 1 0 010-2h14a1 1 0 010 2H5z" />
 						</svg>
-						<span class="screen-reader-text"><?php esc_html_e( 'Export conversation', 'wp-mcp-ai' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Export conversation', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 					<button
 						type="button"
 						class="wp-mcp-ai-chat__history-toggle"
 						aria-expanded="false"
 						aria-controls="<?php echo esc_attr( $instance_id ); ?>-history"
-						aria-label="<?php echo esc_attr__( 'Show previous conversations', 'wp-mcp-ai' ); ?>"
+						aria-label="<?php echo esc_attr__( 'Show previous conversations', 'mcp-ai-wpoos' ); ?>"
 					>
 						<svg class="wp-mcp-ai-chat__history-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M6 5.5a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h7a1 1 0 010 2H7a1 1 0 01-1-1z" />
 							<path d="M5 9a1 1 0 012 0 1 1 0 11-2 0zm0 6a1 1 0 012 0 1 1 0 11-2 0zm0-12a1 1 0 012 0 1 1 0 11-2 0z" />
 						</svg>
-						<span class="screen-reader-text"><?php esc_html_e( 'Show previous conversations', 'wp-mcp-ai' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Show previous conversations', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 					<button
 						type="button"
 						class="wp-mcp-ai-chat__new-chat"
-						aria-label="<?php echo esc_attr__( 'Start new conversation', 'wp-mcp-ai' ); ?>"
+						aria-label="<?php echo esc_attr__( 'Start new conversation', 'mcp-ai-wpoos' ); ?>"
 					>
 						<svg class="wp-mcp-ai-chat__new-chat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12 4a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H5a1 1 0 110-2h6V5a1 1 0 011-1z" />
 						</svg>
-						<span class="screen-reader-text"><?php esc_html_e( 'Start new conversation', 'wp-mcp-ai' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Start new conversation', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 				</div>
 			</div>
-			<section class="wp-mcp-ai-chat__history" id="<?php echo esc_attr( $instance_id ); ?>-history" hidden aria-label="<?php esc_attr_e( 'Previous conversations', 'wp-mcp-ai' ); ?>">
+			<section class="wp-mcp-ai-chat__history" id="<?php echo esc_attr( $instance_id ); ?>-history" hidden aria-label="<?php esc_attr_e( 'Previous conversations', 'mcp-ai-wpoos' ); ?>">
 				<div class="wp-mcp-ai-chat__history-header">
-					<button type="button" class="wp-mcp-ai-chat__history-refresh" aria-label="<?php echo esc_attr__( 'Refresh conversation history', 'wp-mcp-ai' ); ?>" title="<?php echo esc_attr__( 'Refresh conversation history', 'wp-mcp-ai' ); ?>">
+					<button type="button" class="wp-mcp-ai-chat__history-refresh" aria-label="<?php echo esc_attr__( 'Refresh conversation history', 'mcp-ai-wpoos' ); ?>" title="<?php echo esc_attr__( 'Refresh conversation history', 'mcp-ai-wpoos' ); ?>">
 						<svg class="wp-mcp-ai-chat__history-refresh-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M4 12a8 8 0 018-8V3c-1.105 0-2.165.21-3.13.594l1.42 1.42A6.004 6.004 0 0112 5a7 7 0 110 14 7 7 0 01-6.93-6H3a8 8 0 008 8 8 8 0 000-16V3l-3 3 3 3v-1.078z"/>
 						</svg>
-						<span class="screen-reader-text"><?php esc_html_e( 'Refresh conversation history', 'wp-mcp-ai' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Refresh conversation history', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 				</div>
 				<div class="wp-mcp-ai-chat__history-status" role="status" aria-live="polite" hidden></div>
 				<?php if ( 'sidebar' === $template && ! empty( $assistant_tools ) ) : ?>
 					<div class="wp-mcp-ai-chat__tools-list">
-						<h3 class="wp-mcp-ai-chat__tools-list-header"><?php esc_html_e( 'Available Tools', 'wp-mcp-ai' ); ?></h3>
+						<h3 class="wp-mcp-ai-chat__tools-list-header"><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos' ); ?></h3>
 						<ul class="wp-mcp-ai-chat__tools-items">
 							<?php foreach ( $assistant_tools as $tool_slug ) : ?>
 								<li class="wp-mcp-ai-chat__tools-item">
@@ -872,7 +881,7 @@ class WP_MCP_AI_Shortcode {
 				<?php endif; ?>
 				<ul class="wp-mcp-ai-chat__history-list" role="list"></ul>
 				<button type="button" class="wp-mcp-ai-chat__history-load-more" hidden>
-					<?php esc_html_e( 'Load More', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Load More', 'mcp-ai-wpoos' ); ?>
 				</button>
 			</section>
 		</div>
@@ -894,7 +903,7 @@ class WP_MCP_AI_Shortcode {
 
 			// Return user-friendly error message.
 			return '<div class="wp-mcp-ai-chat__notice wp-mcp-ai-chat__error">' .
-				esc_html__( 'Unable to load the chat interface. Please try refreshing the page or contact support if the problem persists.', 'wp-mcp-ai' ) .
+				esc_html__( 'Unable to load the chat interface. Please try refreshing the page or contact support if the problem persists.', 'mcp-ai-wpoos' ) .
 				'</div>';
 		}
 	}
@@ -1315,7 +1324,7 @@ class WP_MCP_AI_Shortcode {
 
 		$default_shortcut = array(
 			'tool'    => 'default',
-			'label'   => sanitize_text_field( __( 'What can you do?', 'wp-mcp-ai' ) ),
+			'label'   => sanitize_text_field( __( 'What can you do?', 'mcp-ai-wpoos' ) ),
 			'payload' => sanitize_textarea_field( 'what are some things you can do' ),
 		);
 
@@ -1366,7 +1375,7 @@ class WP_MCP_AI_Shortcode {
 		if ( empty( $shortcuts ) ) {
 			$fallback_shortcut = array(
 				'tool'    => 'default',
-				'label'   => sanitize_text_field( __( 'What are some things you can do?', 'wp-mcp-ai' ) ),
+				'label'   => sanitize_text_field( __( 'What are some things you can do?', 'mcp-ai-wpoos' ) ),
 				'payload' => sanitize_textarea_field( 'what are some things you can do' ),
 			);
 

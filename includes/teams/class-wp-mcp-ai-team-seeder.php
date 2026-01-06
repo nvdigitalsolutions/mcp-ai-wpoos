@@ -81,9 +81,9 @@ class WP_MCP_AI_Team_Seeder {
 		return array(
 			// BUSINESS OPERATIONS TEAM.
 			array(
-				'title'               => __( 'Business Operations Team', 'wp-mcp-ai' ),
+				'title'               => __( 'Business Operations Team', 'mcp-ai-wpoos' ),
 				'slug'                => 'business_operations_team',
-				'description'         => __( 'A comprehensive team for managing business operations including accounting, tax, legal, and consulting services.', 'wp-mcp-ai' ),
+				'description'         => __( 'A comprehensive team for managing business operations including accounting, tax, legal, and consulting services.', 'mcp-ai-wpoos' ),
 				'members'             => array( 'accountant', 'tax_advisor', 'legal_advisor', 'business_consultant' ),
 				'default_provider'    => 'openai',
 				'default_model'       => 'gpt-4',
@@ -91,9 +91,9 @@ class WP_MCP_AI_Team_Seeder {
 			),
 			// CREATIVE PRODUCTION TEAM.
 			array(
-				'title'               => __( 'Creative Production Team', 'wp-mcp-ai' ),
+				'title'               => __( 'Creative Production Team', 'mcp-ai-wpoos' ),
 				'slug'                => 'creative_production_team',
-				'description'         => __( 'A team of creative professionals for design, content creation, and multimedia production.', 'wp-mcp-ai' ),
+				'description'         => __( 'A team of creative professionals for design, content creation, and multimedia production.', 'mcp-ai-wpoos' ),
 				'members'             => array( 'graphic_designer', 'content_creator', 'video_producer', 'web_designer' ),
 				'default_provider'    => 'openai',
 				'default_model'       => 'gpt-4',
@@ -101,9 +101,9 @@ class WP_MCP_AI_Team_Seeder {
 			),
 			// FILM PRODUCTION TEAM.
 			array(
-				'title'               => __( 'Film Production Team', 'wp-mcp-ai' ),
+				'title'               => __( 'Film Production Team', 'mcp-ai-wpoos' ),
 				'slug'                => 'film_production_team',
-				'description'         => __( 'A complete film production team including director, producer, screenwriter, cinematographer, and editor.', 'wp-mcp-ai' ),
+				'description'         => __( 'A complete film production team including director, producer, screenwriter, cinematographer, and editor.', 'mcp-ai-wpoos' ),
 				'members'             => array( 'film_director', 'film_producer', 'screenwriter', 'cinematographer', 'film_editor' ),
 				'default_provider'    => 'openai',
 				'default_model'       => 'gpt-4',
@@ -111,9 +111,9 @@ class WP_MCP_AI_Team_Seeder {
 			),
 			// HEALTHCARE ADVISORY TEAM.
 			array(
-				'title'               => __( 'Healthcare Advisory Team', 'wp-mcp-ai' ),
+				'title'               => __( 'Healthcare Advisory Team', 'mcp-ai-wpoos' ),
 				'slug'                => 'healthcare_advisory_team',
-				'description'         => __( 'Healthcare professionals providing guidance on public health, epidemiology, and medical research.', 'wp-mcp-ai' ),
+				'description'         => __( 'Healthcare professionals providing guidance on public health, epidemiology, and medical research.', 'mcp-ai-wpoos' ),
 				'members'             => array( 'healthcare_advisor', 'epidemiologist', 'public_health_advisor', 'medical_researcher' ),
 				'default_provider'    => 'openai',
 				'default_model'       => 'gpt-4',
@@ -121,9 +121,9 @@ class WP_MCP_AI_Team_Seeder {
 			),
 			// EMERGENCY MANAGEMENT TEAM.
 			array(
-				'title'               => __( 'Emergency Management Team', 'wp-mcp-ai' ),
+				'title'               => __( 'Emergency Management Team', 'mcp-ai-wpoos' ),
 				'slug'                => 'emergency_management_team',
-				'description'         => __( 'Emergency response and disaster management professionals for crisis situations.', 'wp-mcp-ai' ),
+				'description'         => __( 'Emergency response and disaster management professionals for crisis situations.', 'mcp-ai-wpoos' ),
 				'members'             => array( 'emergency_management_director', 'disaster_response_coordinator', 'crisis_communications_manager', 'hazard_mitigation_specialist' ),
 				'default_provider'    => 'openai',
 				'default_model'       => 'gpt-4',
@@ -131,9 +131,9 @@ class WP_MCP_AI_Team_Seeder {
 			),
 			// ENVIRONMENTAL SCIENCE TEAM.
 			array(
-				'title'               => __( 'Environmental Science Team', 'wp-mcp-ai' ),
+				'title'               => __( 'Environmental Science Team', 'mcp-ai-wpoos' ),
 				'slug'                => 'environmental_science_team',
-				'description'         => __( 'Environmental and marine science professionals for conservation and research.', 'wp-mcp-ai' ),
+				'description'         => __( 'Environmental and marine science professionals for conservation and research.', 'mcp-ai-wpoos' ),
 				'members'             => array( 'marine_biologist', 'oceanographer', 'wildlife_conservationist', 'environmental_scientist' ),
 				'default_provider'    => 'openai',
 				'default_model'       => 'gpt-4',
@@ -141,9 +141,9 @@ class WP_MCP_AI_Team_Seeder {
 			),
 			// ENGINEERING TEAM.
 			array(
-				'title'               => __( 'Engineering Team', 'wp-mcp-ai' ),
+				'title'               => __( 'Engineering Team', 'mcp-ai-wpoos' ),
 				'slug'                => 'engineering_team',
-				'description'         => __( 'Multi-disciplinary engineering team covering software, mechanical, electrical, and civil engineering.', 'wp-mcp-ai' ),
+				'description'         => __( 'Multi-disciplinary engineering team covering software, mechanical, electrical, and civil engineering.', 'mcp-ai-wpoos' ),
 				'members'             => array( 'software_engineer', 'mechanical_engineer', 'electrical_engineer', 'civil_engineer' ),
 				'default_provider'    => 'openai',
 				'default_model'       => 'gpt-4',
@@ -151,9 +151,9 @@ class WP_MCP_AI_Team_Seeder {
 			),
 			// PHARMACEUTICAL DEVELOPMENT TEAM.
 			array(
-				'title'               => __( 'Pharmaceutical Development Team', 'wp-mcp-ai' ),
+				'title'               => __( 'Pharmaceutical Development Team', 'mcp-ai-wpoos' ),
 				'slug'                => 'pharmaceutical_development_team',
-				'description'         => __( 'Pharmaceutical professionals for drug development, research, and regulatory compliance.', 'wp-mcp-ai' ),
+				'description'         => __( 'Pharmaceutical professionals for drug development, research, and regulatory compliance.', 'mcp-ai-wpoos' ),
 				'members'             => array( 'pharmacist', 'pharmaceutical_researcher', 'clinical_pharmacologist', 'regulatory_affairs_specialist' ),
 				'default_provider'    => 'openai',
 				'default_model'       => 'gpt-4',
@@ -161,9 +161,9 @@ class WP_MCP_AI_Team_Seeder {
 			),
 			// RESEARCH & DATA SCIENCE TEAM.
 			array(
-				'title'               => __( 'Research & Data Science Team', 'wp-mcp-ai' ),
+				'title'               => __( 'Research & Data Science Team', 'mcp-ai-wpoos' ),
 				'slug'                => 'research_data_science_team',
-				'description'         => __( 'Research and data analysis team for scientific investigation and statistical analysis.', 'wp-mcp-ai' ),
+				'description'         => __( 'Research and data analysis team for scientific investigation and statistical analysis.', 'mcp-ai-wpoos' ),
 				'members'             => array( 'data_scientist', 'research_scientist', 'statistician', 'computer_scientist' ),
 				'default_provider'    => 'openai',
 				'default_model'       => 'gpt-4',
@@ -171,9 +171,9 @@ class WP_MCP_AI_Team_Seeder {
 			),
 			// MARKETING & GROWTH TEAM.
 			array(
-				'title'               => __( 'Marketing & Growth Team', 'wp-mcp-ai' ),
+				'title'               => __( 'Marketing & Growth Team', 'mcp-ai-wpoos' ),
 				'slug'                => 'marketing_growth_team',
-				'description'         => __( 'Marketing professionals for strategy, content, design, and business growth.', 'wp-mcp-ai' ),
+				'description'         => __( 'Marketing professionals for strategy, content, design, and business growth.', 'mcp-ai-wpoos' ),
 				'members'             => array( 'marketing_consultant', 'content_creator', 'graphic_designer', 'business_consultant' ),
 				'default_provider'    => 'openai',
 				'default_model'       => 'gpt-4',

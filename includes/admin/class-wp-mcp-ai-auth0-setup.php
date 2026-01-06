@@ -39,8 +39,8 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 		public function register_page() {
 			$this->page_hook = add_submenu_page(
 				'wp-mcp-ai-dashboard',
-				__( 'Auth0 Setup', 'wp-mcp-ai' ),
-				__( 'Auth0 Setup', 'wp-mcp-ai' ),
+				__( 'Auth0 Setup', 'mcp-ai-wpoos' ),
+				__( 'Auth0 Setup', 'mcp-ai-wpoos' ),
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_page' )
@@ -92,27 +92,27 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 			$bridge_enabled = ! empty( $settings['enable_auth0_github_bridge'] );
 			?>
 			<div class="wrap">
-				<h1><?php esc_html_e( 'Auth0 GitHub Bridge - 1-Click Setup', 'wp-mcp-ai' ); ?></h1>
+				<h1><?php esc_html_e( 'Auth0 GitHub Bridge - 1-Click Setup', 'mcp-ai-wpoos' ); ?></h1>
 
 				<div class="wp-mcp-ai-setup-wizard">
 					<!-- Current Status -->
 					<div class="card">
-						<h2><?php esc_html_e( 'Current Configuration', 'wp-mcp-ai' ); ?></h2>
+						<h2><?php esc_html_e( 'Current Configuration', 'mcp-ai-wpoos' ); ?></h2>
 						<table class="form-table">
 							<tr>
-								<th><?php esc_html_e( 'Auth0 Domain', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Auth0 Domain', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<code id="current-domain"><?php echo $domain ? esc_html( $domain ) : esc_html__( 'Not configured', 'wp-mcp-ai' ); ?></code>
+									<code id="current-domain"><?php echo $domain ? esc_html( $domain ) : esc_html__( 'Not configured', 'mcp-ai-wpoos' ); ?></code>
 								</td>
 							</tr>
 							<tr>
-								<th><?php esc_html_e( 'Audience', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Audience', 'mcp-ai-wpoos' ); ?></th>
 								<td>
-									<code id="current-audience"><?php echo $audience ? esc_html( $audience ) : esc_html__( 'Not configured', 'wp-mcp-ai' ); ?></code>
+									<code id="current-audience"><?php echo $audience ? esc_html( $audience ) : esc_html__( 'Not configured', 'mcp-ai-wpoos' ); ?></code>
 								</td>
 							</tr>
 							<tr>
-								<th><?php esc_html_e( 'Enable Auth0 GitHub Bridge', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Enable Auth0 GitHub Bridge', 'mcp-ai-wpoos' ); ?></th>
 								<td>
 									<label for="enable-auth0-github-bridge">
 										<input 
@@ -122,10 +122,10 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 											value="1" 
 											<?php checked( $bridge_enabled ); ?>
 										/>
-										<?php esc_html_e( 'Resolve Auth0 GitHub identities into WordPress users', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Resolve Auth0 GitHub identities into WordPress users', 'mcp-ai-wpoos' ); ?>
 									</label>
 									<p class="description">
-										<?php esc_html_e( 'Maps Auth0 GitHub identities to WordPress users for REST auditing and assistant scoping.', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Maps Auth0 GitHub identities to WordPress users for REST auditing and assistant scoping.', 'mcp-ai-wpoos' ); ?>
 									</p>
 								</td>
 							</tr>
@@ -134,12 +134,12 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 
 					<!-- Step 1: Auto-Configure from Token -->
 					<div class="card">
-						<h2><?php esc_html_e( 'Step 1: Auto-Configure from Auth0 Token', 'wp-mcp-ai' ); ?></h2>
-						<p><?php esc_html_e( 'Paste an Auth0 bearer token to automatically extract and configure your Auth0 domain and audience.', 'wp-mcp-ai' ); ?></p>
+						<h2><?php esc_html_e( 'Step 1: Auto-Configure from Auth0 Token', 'mcp-ai-wpoos' ); ?></h2>
+						<p><?php esc_html_e( 'Paste an Auth0 bearer token to automatically extract and configure your Auth0 domain and audience.', 'mcp-ai-wpoos' ); ?></p>
 						
 						<div class="setup-step">
 							<label for="auth0-token">
-								<?php esc_html_e( 'Auth0 Bearer Token', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Auth0 Bearer Token', 'mcp-ai-wpoos' ); ?>
 							</label>
 							<textarea 
 								id="auth0-token" 
@@ -148,12 +148,12 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 								placeholder="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
 							></textarea>
 							<p class="description">
-								<?php esc_html_e( 'Get a token from your Auth0 application for testing. The token will be decoded (not verified) to extract configuration.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Get a token from your Auth0 application for testing. The token will be decoded (not verified) to extract configuration.', 'mcp-ai-wpoos' ); ?>
 							</p>
 
 							<p>
 								<button type="button" id="auto-configure-btn" class="button button-primary">
-									<?php esc_html_e( 'Auto-Configure', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Auto-Configure', 'mcp-ai-wpoos' ); ?>
 								</button>
 								<span class="spinner"></span>
 							</p>
@@ -164,51 +164,51 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 
 					<!-- Step 2: Next Steps -->
 					<div class="card">
-						<h2><?php esc_html_e( 'Step 2: Complete Setup', 'wp-mcp-ai' ); ?></h2>
-						<p><?php esc_html_e( 'After auto-configuring the domain, complete these additional steps:', 'wp-mcp-ai' ); ?></p>
+						<h2><?php esc_html_e( 'Step 2: Complete Setup', 'mcp-ai-wpoos' ); ?></h2>
+						<p><?php esc_html_e( 'After auto-configuring the domain, complete these additional steps:', 'mcp-ai-wpoos' ); ?></p>
 
 						<ol class="setup-checklist">
 							<li>
-								<strong><?php esc_html_e( 'Create Auth0 Management API Application', 'wp-mcp-ai' ); ?></strong>
-								<p><?php esc_html_e( 'In your Auth0 dashboard, create a Machine-to-Machine application with access to the Management API.', 'wp-mcp-ai' ); ?></p>
+								<strong><?php esc_html_e( 'Create Auth0 Management API Application', 'mcp-ai-wpoos' ); ?></strong>
+								<p><?php esc_html_e( 'In your Auth0 dashboard, create a Machine-to-Machine application with access to the Management API.', 'mcp-ai-wpoos' ); ?></p>
 								<p>
 									<a href="#" id="open-auth0-dashboard" class="button button-secondary" target="_blank">
-										<?php esc_html_e( 'Open Auth0 Dashboard', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Open Auth0 Dashboard', 'mcp-ai-wpoos' ); ?>
 									</a>
 								</p>
 							</li>
 							<li>
-								<strong><?php esc_html_e( 'Grant Required Permissions', 'wp-mcp-ai' ); ?></strong>
-								<p><?php esc_html_e( 'Grant the application at least the following scopes:', 'wp-mcp-ai' ); ?></p>
+								<strong><?php esc_html_e( 'Grant Required Permissions', 'mcp-ai-wpoos' ); ?></strong>
+								<p><?php esc_html_e( 'Grant the application at least the following scopes:', 'mcp-ai-wpoos' ); ?></p>
 								<ul>
 									<li><code>read:users</code></li>
 									<li><code>read:user_idp_tokens</code> (optional)</li>
 								</ul>
 							</li>
 							<li>
-								<strong><?php esc_html_e( 'Configure Credentials in Settings', 'wp-mcp-ai' ); ?></strong>
-								<p><?php esc_html_e( 'Copy the Client ID and Client Secret to:', 'wp-mcp-ai' ); ?></p>
+								<strong><?php esc_html_e( 'Configure Credentials in Settings', 'mcp-ai-wpoos' ); ?></strong>
+								<p><?php esc_html_e( 'Copy the Client ID and Client Secret to:', 'mcp-ai-wpoos' ); ?></p>
 								<p>
 									<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=authentication' ) ); ?>" class="button button-secondary">
-										<?php esc_html_e( 'Go to NV oOS Settings', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Go to NV oOS Settings', 'mcp-ai-wpoos' ); ?>
 									</a>
 								</p>
 							</li>
 							<li>
-								<strong><?php esc_html_e( 'Enable the Bridge', 'wp-mcp-ai' ); ?></strong>
-								<p><?php esc_html_e( 'Check "Enable Auth0 GitHub bridge" in the settings to activate the integration.', 'wp-mcp-ai' ); ?></p>
+								<strong><?php esc_html_e( 'Enable the Bridge', 'mcp-ai-wpoos' ); ?></strong>
+								<p><?php esc_html_e( 'Check "Enable Auth0 GitHub bridge" in the settings to activate the integration.', 'mcp-ai-wpoos' ); ?></p>
 							</li>
 						</ol>
 					</div>
 
 					<!-- Documentation -->
 					<div class="card">
-						<h2><?php esc_html_e( 'Documentation', 'wp-mcp-ai' ); ?></h2>
+						<h2><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos' ); ?></h2>
 						<p>
 							<?php
 							printf(
 								/* translators: %s: documentation URL */
-								wp_kses_post( __( 'For complete setup instructions, see the <a href="%s" target="_blank">Auth0 GitHub Bridge documentation</a>.', 'wp-mcp-ai' ) ),
+								wp_kses_post( __( 'For complete setup instructions, see the <a href="%s" target="_blank">Auth0 GitHub Bridge documentation</a>.', 'mcp-ai-wpoos' ) ),
 								esc_url( 'https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/mcp-server-authentication.md#bridging-github-identities-via-auth0' )
 							);
 							?>
@@ -271,13 +271,13 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 		public function handle_auto_configure() {
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp-mcp-ai-auth0-setup', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -286,7 +286,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 			$token = isset( $_POST['token'] ) ? trim( wp_unslash( $_POST['token'] ) ) : '';
 
 			if ( empty( $token ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please provide an Auth0 bearer token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Please provide an Auth0 bearer token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -298,7 +298,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: error message */
-							__( 'Failed to decode token: %s', 'wp-mcp-ai' ),
+							__( 'Failed to decode token: %s', 'mcp-ai-wpoos' ),
 							$payload->get_error_message()
 						),
 					)
@@ -308,7 +308,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 
 			// Extract Auth0 domain from issuer.
 			if ( empty( $payload['iss'] ) ) {
-				wp_send_json_error( array( 'message' => __( 'Token does not contain an issuer (iss) claim.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Token does not contain an issuer (iss) claim.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -320,7 +320,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: issuer URL */
-							__( 'Could not extract Auth0 domain from issuer: %s', 'wp-mcp-ai' ),
+							__( 'Could not extract Auth0 domain from issuer: %s', 'mcp-ai-wpoos' ),
 							esc_html( $issuer )
 						),
 					)
@@ -342,7 +342,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 
 			wp_send_json_success(
 				array(
-					'message'  => __( 'Auth0 domain configured successfully!', 'wp-mcp-ai' ),
+					'message'  => __( 'Auth0 domain configured successfully!', 'mcp-ai-wpoos' ),
 					'domain'   => $domain,
 					'audience' => ! empty( $settings['auth0_audience'] ) ? $settings['auth0_audience'] : '',
 				)
@@ -355,13 +355,13 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 		public function handle_toggle_bridge() {
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp-mcp-ai-auth0-setup', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -376,8 +376,8 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 			wp_send_json_success(
 				array(
 					'message' => $enabled
-						? __( 'Auth0 GitHub bridge enabled successfully!', 'wp-mcp-ai' )
-						: __( 'Auth0 GitHub bridge disabled successfully!', 'wp-mcp-ai' ),
+						? __( 'Auth0 GitHub bridge enabled successfully!', 'mcp-ai-wpoos' )
+						: __( 'Auth0 GitHub bridge disabled successfully!', 'mcp-ai-wpoos' ),
 					'enabled' => $enabled,
 				)
 			);
@@ -393,7 +393,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 			$parts = explode( '.', $token );
 
 			if ( count( $parts ) !== 3 ) {
-				return new WP_Error( 'invalid_token', __( 'Invalid JWT format. Expected 3 parts separated by dots.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'invalid_token', __( 'Invalid JWT format. Expected 3 parts separated by dots.', 'mcp-ai-wpoos' ) );
 			}
 
 			$payload_encoded = $parts[1];
@@ -408,13 +408,13 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 			$payload_json = base64_decode( strtr( $payload_encoded, '-_', '+/' ), true );
 
 			if ( false === $payload_json ) {
-				return new WP_Error( 'decode_failed', __( 'Failed to base64 decode JWT payload.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'decode_failed', __( 'Failed to base64 decode JWT payload.', 'mcp-ai-wpoos' ) );
 			}
 
 			$payload = json_decode( $payload_json, true );
 
 			if ( ! is_array( $payload ) ) {
-				return new WP_Error( 'invalid_json', __( 'JWT payload is not valid JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'invalid_json', __( 'JWT payload is not valid JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			return $payload;

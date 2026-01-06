@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the performance optimizations applied to the WP oOS chat flow to make it as fast as possible while maintaining code quality and introducing minimal changes.
+This document summarizes the performance optimizations applied to the NV oOS chat flow to make it as fast as possible while maintaining code quality and introducing minimal changes.
 
 ## Implemented Optimizations
 

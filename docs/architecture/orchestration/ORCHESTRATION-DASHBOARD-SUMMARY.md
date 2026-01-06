@@ -8,7 +8,7 @@
 
 ## What is the Orchestration Dashboard?
 
-The Orchestration Dashboard is your control center for managing AI resource allocation and monitoring system health in the WP oOS plugin. It provides a user-friendly interface to configure how the plugin manages AI operations, budgets tokens, and schedules background tasks.
+The Orchestration Dashboard is your control center for managing AI resource allocation and monitoring system health in the NV oOS plugin. It provides a user-friendly interface to configure how the plugin manages AI operations, budgets tokens, and schedules background tasks.
 
 ---
 
@@ -62,17 +62,17 @@ The Orchestration Dashboard is your control center for managing AI resource allo
 1. **Manage Cron Jobs**
    - View and manage all scheduled AI tasks
    - Cancel, reschedule, or monitor background operations
-   - **Access:** Settings → WP oOS → Cron Manager
+   - **Access:** Settings → NV oOS → Cron Manager
 
 2. **View Token Manager**
    - Monitor token usage across all users and assistants
    - Track consumption trends and identify heavy users
-   - **Access:** Settings → WP oOS → Token Manager
+   - **Access:** Settings → NV oOS → Token Manager
 
 3. **Run Diagnostics**
    - Check system health and configuration
    - Identify and fix common issues
-   - **Access:** Tools → WP oOS Diagnostic
+   - **Access:** Tools → NV oOS Diagnostic
 
 ---
 
@@ -178,7 +178,7 @@ Choose from 12 pre-configured profiles:
 ### WordPress Admin Menu
 
 1. Log into WordPress admin dashboard
-2. Navigate to **Settings → WP oOS**
+2. Navigate to **Settings → NV oOS**
 3. Click the **Orchestration** tab
 
 ### Direct URL
@@ -371,7 +371,7 @@ Number of background AI tasks currently scheduled.
 ### 5-Minute Setup
 
 1. **Access Dashboard**
-   - Go to Settings → WP oOS → Orchestration
+   - Go to Settings → NV oOS → Orchestration
 
 2. **Choose Preset**
    - Click **Auto** preset (recommended)
@@ -404,7 +404,7 @@ Number of background AI tasks currently scheduled.
 ### Get Help
 
 - **Documentation**: Check the `docs/` folder for guides
-- **Diagnostics**: Use Tools → WP oOS Diagnostic
+- **Diagnostics**: Use Tools → NV oOS Diagnostic
 - **Support**: Visit https://github.com/nvdigitalsolutions/mcp-ai-wpoos
 
 ### Advanced Usage

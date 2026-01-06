@@ -146,7 +146,7 @@ if ( ! class_exists( 'WP_MCP_AI_Root_Security_Key' ) ) {
 			if ( $this->is_locked_out() ) {
 				return new WP_Error(
 					'locked_out',
-					__( 'Too many failed attempts. Please try again later.', 'wp-mcp-ai' )
+					__( 'Too many failed attempts. Please try again later.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -179,7 +179,7 @@ if ( ! class_exists( 'WP_MCP_AI_Root_Security_Key' ) ) {
 			if ( ! $this->is_key_configured() ) {
 				return new WP_Error(
 					'key_not_configured',
-					__( 'Root security key is not configured.', 'wp-mcp-ai' )
+					__( 'Root security key is not configured.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -200,7 +200,7 @@ if ( ! class_exists( 'WP_MCP_AI_Root_Security_Key' ) ) {
 
 				return new WP_Error(
 					'invalid_key',
-					__( 'Invalid security key provided.', 'wp-mcp-ai' )
+					__( 'Invalid security key provided.', 'mcp-ai-wpoos' )
 				);
 			}
 

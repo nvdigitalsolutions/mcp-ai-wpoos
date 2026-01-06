@@ -1,10 +1,10 @@
 # Hugging Face Provider Setup Guide
 
-This guide explains how to configure and use Hugging Face Inference API as an AI provider in WP oOS.
+This guide explains how to configure and use Hugging Face Inference API as an AI provider in NV oOS.
 
 ## Overview
 
-Hugging Face Inference API provides access to thousands of open-source language models through an OpenAI-compatible interface. WP oOS integrates seamlessly with Hugging Face, allowing you to use models like:
+Hugging Face Inference API provides access to thousands of open-source language models through an OpenAI-compatible interface. NV oOS integrates seamlessly with Hugging Face, allowing you to use models like:
 
 - **Llama models**: `meta-llama/Llama-3.3-70B-Instruct`, `meta-llama/Llama-3.1-8B-Instruct`
 - **Mistral models**: `mistralai/Mistral-7B-Instruct-v0.3`, `mistralai/Mixtral-8x7B-Instruct-v0.1`
@@ -20,14 +20,14 @@ Hugging Face Inference API provides access to thousands of open-source language 
 2. **Navigate to Settings** → [Access Tokens](https://huggingface.co/settings/tokens)
 3. **Create a new token**:
    - Click "New token"
-   - Give it a descriptive name (e.g., "WP oOS")
+   - Give it a descriptive name (e.g., "NV oOS")
    - Select "Inference" permission
    - Click "Generate token"
 4. **Copy the token** - it will start with `hf_`
 
-### Step 2: Configure WP oOS
+### Step 2: Configure NV oOS
 
-1. **Navigate to** WordPress Admin → **WP oOS** → **Providers**
+1. **Navigate to** WordPress Admin → **NV oOS** → **Providers**
 2. **Click on the "Hugging Face" subtab**
 3. **Configure the settings**:
 
@@ -112,7 +112,7 @@ Hugging Face can be used as:
 3. **Cost-Effective Alternative**: Use when you need open-source models
 
 To configure priority:
-1. Go to **WP oOS** → **Providers** → **Priority Order**
+1. Go to **NV oOS** → **Providers** → **Priority Order**
 2. Drag and drop providers to reorder
 3. The system tries providers in order when one fails
 
@@ -150,7 +150,7 @@ For production workloads, consider using Hugging Face Inference Endpoints:
 ### Setup
 1. **Deploy an endpoint** at https://ui.endpoints.huggingface.co/
 2. **Get the endpoint URL** (e.g., `https://xxxxx.us-east-1.aws.endpoints.huggingface.cloud/v1`)
-3. **Update WP oOS settings**:
+3. **Update NV oOS settings**:
    - Endpoint URL: Your custom endpoint URL
    - Model: Your deployed model name
    - API Key: Same Hugging Face token
@@ -186,7 +186,7 @@ For production workloads, consider using Hugging Face Inference Endpoints:
 
 ### Checking Logs
 
-Enable logging in **WP oOS** → **Settings** → **Enable Logging**, then:
+Enable logging in **NV oOS** → **Settings** → **Enable Logging**, then:
 
 ```bash
 # View recent errors
@@ -251,7 +251,7 @@ wp option get wp_mcp_ai_recent_activity --format=json | jq '.[] | select(.event 
 ### Community
 - **Hugging Face Forums**: https://discuss.huggingface.co/
 - **Discord**: https://hf.co/join/discord
-- **WP oOS Support**: Via GitHub issues
+- **NV oOS Support**: Via GitHub issues
 
 ### Getting Help
 
@@ -259,7 +259,7 @@ If you encounter issues:
 1. Check this documentation
 2. Review the troubleshooting section
 3. Enable logging and check error messages
-4. Search the WP oOS GitHub issues
+4. Search the NV oOS GitHub issues
 5. Open a new issue with:
    - Error messages from logs
    - Model identifier used
@@ -300,4 +300,4 @@ If you encounter issues:
 4. **Monitor usage** and adjust as needed
 5. **Consider Inference Endpoints** for production
 
-For more information, see the main WP oOS documentation at `/docs/README.md`.
+For more information, see the main NV oOS documentation at `/docs/README.md`.

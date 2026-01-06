@@ -176,7 +176,7 @@ GROUP BY p.ID;
 ✅ Pull this commit with education.json changes
 
 ### Step 2: Reseed Professions
-1. Go to: **Settings → WP oOS → Advanced → Data Management**
+1. Go to: **Settings → NV oOS → Advanced → Data Management**
 2. Click **"Update Professions"** button
 3. Wait for success message
 4. Verify: Should show "Created: ~13" (if first time) or "Updated: ~13"
@@ -187,7 +187,7 @@ GROUP BY p.ID;
 3. Should see all 13 IGCSE professions listed
 
 ### Step 4: Reseed Teams
-1. Go back to: **Settings → WP oOS → Advanced → Data Management**
+1. Go back to: **Settings → NV oOS → Advanced → Data Management**
 2. Click **"Update Teams"** button
 3. Wait for success message
 4. Should show: "Created: X, Updated: Y" with **NO warnings**

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation Link Rendering - Visual Mockup</title>
+    <!-- WordPress Admin Dashicons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dashicons/0.9.0/dashicons.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            background: #f0f0f1;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .settings-section {
+            background: #fff;
+            border: 1px solid #c3c4c7;
+            border-radius: 4px;
+            padding: 20px;
+            max-width: 900px;
+            margin: 20px auto;
+            box-shadow: 0 1px 1px rgba(0,0,0,.04);
+        }
+        h2 {
+            margin: 0 0 15px 0;
+            font-size: 23px;
+            font-weight: 400;
+            line-height: 1.3;
+        }
+        .section-description {
+            color: #646970;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .section-documentation {
+            margin: 10px 0 15px 0;
+            padding: 10px;
+            background: #f6f7f7;
+            border-left: 4px solid #2271b1;
+            border-radius: 3px;
+        }
+        .section-documentation a {
+            color: #2271b1;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .section-documentation a:hover {
+            color: #135e96;
+        }
+        .dashicons {
+            font-family: 'dashicons';
+            display: inline-block;
+            line-height: 1;
+            font-weight: 400;
+            font-style: normal;
+            speak: never;
+            text-decoration: inherit;
+            text-transform: none;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            width: 20px;
+            height: 20px;
+            font-size: 20px;
+            vertical-align: top;
+        }
+        .dashicons-book-alt:before {
+            content: "\f331";
+        }
+        .dashicons-external:before {
+            content: "\f504";
+        }
+        .comparison-box {
+            border: 2px solid #dc3232;
+            background: #fee;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 900px;
+            border-radius: 4px;
+        }
+        .comparison-box h3 {
+            margin-top: 0;
+            color: #dc3232;
+        }
+        .success-box {
+            border: 2px solid #00a32a;
+            background: #efe;
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 900px;
+            border-radius: 4px;
+        }
+        .success-box h3 {
+            margin-top: 0;
+            color: #00a32a;
+        }
+        .header {
+            background: #fff;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #c3c4c7;
+            margin: -20px -20px 20px -20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Documentation Link Rendering Fix - Visual Mockup</h1>
+        <p>This mockup demonstrates how documentation links now appear in the NV oOS settings UI</p>
+    </div>
+
+    <div class="comparison-box">
+        <h3>❌ Before Fix (Documentation Link Missing)</h3>
+        <div class="settings-section">
+            <h2>General Settings</h2>
+            <p class="section-description">Configure basic plugin settings and operational parameters.</p>
+            <!-- No documentation link shown -->
+            <div style="padding: 20px; text-align: center; color: #999; font-style: italic;">
+                (Documentation link was defined in code but not rendered in UI)
+            </div>
+        </div>
+    </div>
+
+    <div class="success-box">
+        <h3>✅ After Fix (Documentation Link Visible)</h3>
+        <div class="settings-section">
+            <h2>General Settings</h2>
+            <p class="section-description">Configure basic plugin settings and operational parameters.</p>
+            <p class="section-documentation">
+                <span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+                <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/getting-started/QUICK_START_5_MINUTES.md" target="_blank" rel="noopener noreferrer">
+                    View Documentation
+                    <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <h2 style="max-width: 900px; margin: 40px auto 20px;">Examples from Multiple Sections</h2>
+
+    <!-- Authentication Section -->
+    <div class="settings-section">
+        <h2>Authentication Settings</h2>
+        <p class="section-description">Configure authentication methods for REST API access (Auth0, JWT, Guest tokens).</p>
+        <p class="section-documentation">
+            <span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+            <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/authentication.md" target="_blank" rel="noopener noreferrer">
+                View Documentation
+                <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+            </a>
+        </p>
+    </div>
+
+    <!-- Providers Section -->
+    <div class="settings-section">
+        <h2>AI Provider Settings</h2>
+        <p class="section-description">Configure AI provider credentials and connection settings for OpenAI, Gemini, Ollama, and LM Studio.</p>
+        <p class="section-documentation">
+            <span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+            <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#providers-tab" target="_blank" rel="noopener noreferrer">
+                View Documentation
+                <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+            </a>
+        </p>
+    </div>
+
+    <!-- Tools Section -->
+    <div class="settings-section">
+        <h2>Tools & Features Configuration</h2>
+        <p class="section-description">Enable and configure available MCP AI tools and integrations.</p>
+        <p class="section-documentation">
+            <span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+            <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/tools/tool-reference.md" target="_blank" rel="noopener noreferrer">
+                View Documentation
+                <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+            </a>
+        </p>
+    </div>
+
+    <!-- Orchestration Section -->
+    <div class="settings-section">
+        <h2>Orchestration Settings</h2>
+        <p class="section-description">Configure orchestration layer behavior, token management, and workload distribution.</p>
+        <p class="section-documentation">
+            <span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+            <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md" target="_blank" rel="noopener noreferrer">
+                View Documentation
+                <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+            </a>
+        </p>
+    </div>
+
+    <div style="max-width: 900px; margin: 40px auto; padding: 20px; background: #fff; border: 1px solid #c3c4c7; border-radius: 4px;">
+        <h3>Key Features of the Fix:</h3>
+        <ul>
+            <li>✅ Documentation links are now visible in all 10 affected settings sections</li>
+            <li>✅ Styled with WordPress admin colors (#2271b1) for consistency</li>
+            <li>✅ Book icon (dashicons-book-alt) clearly indicates documentation</li>
+            <li>✅ External link icon shows that the link opens in a new tab</li>
+            <li>✅ Highlighted background helps the link stand out</li>
+            <li>✅ Security attributes (<code>rel="noopener noreferrer"</code>) included</li>
+            <li>✅ All URLs properly escaped for security</li>
+        </ul>
+    </div>
+
+    <div style="max-width: 900px; margin: 40px auto; padding: 20px; background: #f0f6fc; border-left: 4px solid #2271b1; border-radius: 4px;">
+        <h3>Sections Now Showing Documentation Links:</h3>
+        <ol>
+            <li><strong>General Settings</strong> - Core settings and logging options</li>
+            <li><strong>Authentication</strong> - Auth0, JWT, and guest token configuration</li>
+            <li><strong>Chat Client</strong> - Chat interface customization</li>
+            <li><strong>Advanced</strong> - Advanced configuration options</li>
+            <li><strong>Providers</strong> - AI provider credentials</li>
+            <li><strong>Orchestration</strong> - Workload distribution and token management</li>
+            <li><strong>Overview</strong> - System dashboard and status</li>
+            <li><strong>Tools</strong> - Tool management and configuration</li>
+            <li><strong>Token Manager</strong> - Token usage tracking and budgets</li>
+            <li><strong>Integrations</strong> - OAuth connections and third-party integrations</li>
+        </ol>
+    </div>
+</body>
+</html>

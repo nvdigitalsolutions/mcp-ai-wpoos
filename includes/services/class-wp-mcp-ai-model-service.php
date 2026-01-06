@@ -388,7 +388,7 @@ class WP_MCP_AI_Model_Service {
 				'wp_mcp_ai_no_models',
 				sprintf(
 					/* translators: %s: Provider name */
-					__( 'No models available for provider: %s', 'wp-mcp-ai' ),
+					__( 'No models available for provider: %s', 'mcp-ai-wpoos' ),
 					$provider
 				)
 			);
@@ -408,7 +408,7 @@ class WP_MCP_AI_Model_Service {
 				'wp_mcp_ai_invalid_model',
 				sprintf(
 					/* translators: 1: Model ID, 2: Provider name */
-					__( 'Invalid model "%1$s" for provider "%2$s"', 'wp-mcp-ai' ),
+					__( 'Invalid model "%1$s" for provider "%2$s"', 'mcp-ai-wpoos' ),
 					$model,
 					$provider
 				)

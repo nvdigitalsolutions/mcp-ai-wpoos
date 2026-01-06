@@ -33,7 +33,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Test Results Table', 'wp-mcp-ai' );
+		return __( 'NV oOS Test Results Table', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -64,17 +64,17 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Table Settings', 'wp-mcp-ai' ),
+				'label' => __( 'Table Settings', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Recent Test Results', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter title…', 'wp-mcp-ai' ),
+				'default'     => __( 'Recent Test Results', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter title…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -82,14 +82,14 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 		$this->add_control(
 			'test_type_filter',
 			array(
-				'label'       => __( 'Filter by Test Type', 'wp-mcp-ai' ),
+				'label'       => __( 'Filter by Test Type', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => array(
-					''             => __( 'All Tests', 'wp-mcp-ai' ),
-					'stress'       => __( 'Stress Tests', 'wp-mcp-ai' ),
-					'security'     => __( 'Security Tests', 'wp-mcp-ai' ),
-					'speed'        => __( 'Speed Benchmarks', 'wp-mcp-ai' ),
-					'optimization' => __( 'Optimization Tests', 'wp-mcp-ai' ),
+					''             => __( 'All Tests', 'mcp-ai-wpoos' ),
+					'stress'       => __( 'Stress Tests', 'mcp-ai-wpoos' ),
+					'security'     => __( 'Security Tests', 'mcp-ai-wpoos' ),
+					'speed'        => __( 'Speed Benchmarks', 'mcp-ai-wpoos' ),
+					'optimization' => __( 'Optimization Tests', 'mcp-ai-wpoos' ),
 				),
 				'default'     => '',
 				'label_block' => true,
@@ -99,13 +99,13 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 		$this->add_control(
 			'status_filter',
 			array(
-				'label'   => __( 'Filter by Status', 'wp-mcp-ai' ),
+				'label'   => __( 'Filter by Status', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'options' => array(
-					''        => __( 'All Statuses', 'wp-mcp-ai' ),
-					'passed'  => __( 'Passed', 'wp-mcp-ai' ),
-					'warning' => __( 'Warning', 'wp-mcp-ai' ),
-					'failed'  => __( 'Failed', 'wp-mcp-ai' ),
+					''        => __( 'All Statuses', 'mcp-ai-wpoos' ),
+					'passed'  => __( 'Passed', 'mcp-ai-wpoos' ),
+					'warning' => __( 'Warning', 'mcp-ai-wpoos' ),
+					'failed'  => __( 'Failed', 'mcp-ai-wpoos' ),
 				),
 				'default' => '',
 			)
@@ -114,7 +114,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 		$this->add_control(
 			'limit',
 			array(
-				'label'   => __( 'Number of Results', 'wp-mcp-ai' ),
+				'label'   => __( 'Number of Results', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::NUMBER,
 				'default' => 10,
 				'min'     => 5,
@@ -125,10 +125,10 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 		$this->add_control(
 			'show_details_button',
 			array(
-				'label'        => __( 'Show Details Button', 'wp-mcp-ai' ),
+				'label'        => __( 'Show Details Button', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -154,7 +154,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 	protected function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			echo '<div class="wp-mcp-ai-test-results">';
-			echo '<p>' . esc_html__( 'You do not have permission to view test results.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p>' . esc_html__( 'You do not have permission to view test results.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -177,21 +177,21 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 		}
 
 		if ( empty( $results ) ) {
-			echo '<p class="wp-mcp-ai-test-results__empty">' . esc_html__( 'No test results found.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-test-results__empty">' . esc_html__( 'No test results found.', 'mcp-ai-wpoos' ) . '</p>';
 		} else {
 			echo '<div class="wp-mcp-ai-test-results__table-container">';
 			echo '<table class="wp-mcp-ai-test-results__table">';
 			echo '<thead>';
 			echo '<tr>';
-			echo '<th>' . esc_html__( 'Test Type', 'wp-mcp-ai' ) . '</th>';
-			echo '<th>' . esc_html__( 'Component', 'wp-mcp-ai' ) . '</th>';
-			echo '<th>' . esc_html__( 'Status', 'wp-mcp-ai' ) . '</th>';
-			echo '<th>' . esc_html__( 'Response Time', 'wp-mcp-ai' ) . '</th>';
-			echo '<th>' . esc_html__( 'Memory', 'wp-mcp-ai' ) . '</th>';
-			echo '<th>' . esc_html__( 'DB Queries', 'wp-mcp-ai' ) . '</th>';
-			echo '<th>' . esc_html__( 'Tested At', 'wp-mcp-ai' ) . '</th>';
+			echo '<th>' . esc_html__( 'Test Type', 'mcp-ai-wpoos' ) . '</th>';
+			echo '<th>' . esc_html__( 'Component', 'mcp-ai-wpoos' ) . '</th>';
+			echo '<th>' . esc_html__( 'Status', 'mcp-ai-wpoos' ) . '</th>';
+			echo '<th>' . esc_html__( 'Response Time', 'mcp-ai-wpoos' ) . '</th>';
+			echo '<th>' . esc_html__( 'Memory', 'mcp-ai-wpoos' ) . '</th>';
+			echo '<th>' . esc_html__( 'DB Queries', 'mcp-ai-wpoos' ) . '</th>';
+			echo '<th>' . esc_html__( 'Tested At', 'mcp-ai-wpoos' ) . '</th>';
 			if ( $show_details ) {
-				echo '<th>' . esc_html__( 'Actions', 'wp-mcp-ai' ) . '</th>';
+				echo '<th>' . esc_html__( 'Actions', 'mcp-ai-wpoos' ) . '</th>';
 			}
 			echo '</tr>';
 			echo '</thead>';
@@ -210,7 +210,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 				echo '<td class="wp-mcp-ai-test-results__cell">' . esc_html( $result['tested_at'] ) . '</td>';
 				if ( $show_details ) {
 					echo '<td class="wp-mcp-ai-test-results__cell">';
-					echo '<button class="wp-mcp-ai-test-results__details-btn" data-test-id="' . esc_attr( $result['_ID'] ) . '">' . esc_html__( 'View', 'wp-mcp-ai' ) . '</button>';
+					echo '<button class="wp-mcp-ai-test-results__details-btn" data-test-id="' . esc_attr( $result['_ID'] ) . '">' . esc_html__( 'View', 'mcp-ai-wpoos' ) . '</button>';
 					echo '</td>';
 				}
 				echo '</tr>';
@@ -312,7 +312,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 					var testId = $(this).data('test-id');
 					
 					// In a real implementation, this would fetch and display full test details.
-					alert('<?php echo esc_js( __( 'Test ID:', 'wp-mcp-ai' ) ); ?> ' + testId);
+					alert('<?php echo esc_js( __( 'Test ID:', 'mcp-ai-wpoos' ) ); ?> ' + testId);
 				});
 			});
 		})(jQuery);

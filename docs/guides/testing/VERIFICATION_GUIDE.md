@@ -46,7 +46,7 @@ The sync buttons now:
 6. **Verification:** Check the playbook metabox - should show only one playbook
 
 ### Test Scenario 2: Sync Buttons
-1. Navigate to **Settings → WP oOS → Advanced → Data Management**
+1. Navigate to **Settings → NV oOS → Advanced → Data Management**
 2. Scroll to the **Playbook Management** section
 3. Observe the button descriptions:
    - "Sync Changed Playbooks" should say: "Regenerates playbooks where content has changed **and removes duplicates**"

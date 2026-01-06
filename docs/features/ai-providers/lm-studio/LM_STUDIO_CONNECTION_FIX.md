@@ -10,7 +10,7 @@
 
 ## Previous Issue Description (2024)
 
-LM Studio clients were unable to connect to the WP oOS MCP server, receiving SSE errors with undefined content type:
+LM Studio clients were unable to connect to the NV oOS MCP server, receiving SSE errors with undefined content type:
 
 ```javascript
 {
@@ -166,7 +166,7 @@ This configuration now works without errors:
 
 ## Related Issues
 
-This fix resolves the issue where LM Studio and similar MCP clients could not properly discover and connect to the WP oOS MCP server.
+This fix resolves the issue where LM Studio and similar MCP clients could not properly discover and connect to the NV oOS MCP server.
 
 ## Future Considerations
 
@@ -178,4 +178,4 @@ This fix resolves the issue where LM Studio and similar MCP clients could not pr
 
 - MCP Specification: https://spec.modelcontextprotocol.io/
 - LM Studio MCP Documentation: https://lmstudio.ai/docs/app/mcp
-- WP oOS MCP Endpoint Docs: docs/mcp-endpoint.md
+- NV oOS MCP Endpoint Docs: docs/mcp-endpoint.md

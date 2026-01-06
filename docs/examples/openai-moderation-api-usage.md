@@ -1,6 +1,6 @@
 # OpenAI Moderation API - Usage Examples
 
-This document provides practical examples of using the OpenAI Moderation API through the `moderate_content` tool in WP oOS.
+This document provides practical examples of using the OpenAI Moderation API through the `moderate_content` tool in NV oOS.
 
 ## Table of Contents
 

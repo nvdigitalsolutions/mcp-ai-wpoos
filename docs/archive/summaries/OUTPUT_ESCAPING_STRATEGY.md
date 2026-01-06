@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document outlines the strategy for systematically addressing ~500 instances of missing output escaping across the WP oOS codebase, identified as a high-priority gap in code review.
+This document outlines the strategy for systematically addressing ~500 instances of missing output escaping across the NV oOS codebase, identified as a high-priority gap in code review.
 
 ## Scope
 

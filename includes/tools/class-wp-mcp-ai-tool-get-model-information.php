@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Get_Model_Information implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Model Information', 'wp-mcp-ai' );
+		return __( 'Get Model Information', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves detailed information about a specific OpenAI model. Use this to check model specifications, verify model exists before use, get model context length, or understand model capabilities.', 'wp-mcp-ai' );
+		return __( 'Retrieves detailed information about a specific OpenAI model. Use this to check model specifications, verify model exists before use, get model context length, or understand model capabilities.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Get_Model_Information implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'model_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Model identifier (e.g., gpt-4o, gpt-4o-mini, text-embedding-3-small).', 'wp-mcp-ai' ),
+					'description' => __( 'Model identifier (e.g., gpt-4o, gpt-4o-mini, text-embedding-3-small).', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'model_id' ),
@@ -65,19 +65,19 @@ class WP_MCP_AI_Tool_Get_Model_Information implements WP_MCP_AI_Tool_Interface, 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to retrieve model information.', 'wp-mcp-ai' )
+				__( 'You do not have permission to retrieve model information.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate model_id.
 		if ( ! isset( $arguments['model_id'] ) || '' === $arguments['model_id'] ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_model_id',
-				__( 'Model ID is required.', 'wp-mcp-ai' )
+				__( 'Model ID is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -120,7 +120,7 @@ class WP_MCP_AI_Tool_Get_Model_Information implements WP_MCP_AI_Tool_Interface, 
 			'model'   => $model_info,
 			'summary' => sprintf(
 				/* translators: 1: model ID, 2: owner */
-				__( 'Retrieved information for model "%1$s" owned by %2$s.', 'wp-mcp-ai' ),
+				__( 'Retrieved information for model "%1$s" owned by %2$s.', 'mcp-ai-wpoos' ),
 				$model_info['id'],
 				$model_info['owned_by']
 			),

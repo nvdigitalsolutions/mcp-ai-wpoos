@@ -88,7 +88,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$handler_method = isset( $action_map[ $action ] ) ? $action_map[ $action ] : '';
 
 			if ( ! $handler_method || ! method_exists( $this, $handler_method ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid action.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid action.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -118,14 +118,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			$endpoint_url = isset( $_POST['endpoint_url'] ) ? esc_url_raw( wp_unslash( $_POST['endpoint_url'] ) ) : '';
 
 			if ( empty( $endpoint_url ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -151,7 +151,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: error message */
-							__( 'Connection failed: %s', 'wp-mcp-ai' ),
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
 							$response->get_error_message()
 						),
 					)
@@ -162,11 +162,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$response_code = wp_remote_retrieve_response_code( $response );
 
 			if ( 200 !== $response_code ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid endpoint or connection failed.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid endpoint or connection failed.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
-			wp_send_json_success( array( 'message' => __( 'Successfully connected to Ollama!', 'wp-mcp-ai' ) ) );
+			wp_send_json_success( array( 'message' => __( 'Successfully connected to Ollama!', 'mcp-ai-wpoos' ) ) );
 		}
 
 		/**
@@ -176,14 +176,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			$endpoint_url = isset( $_POST['endpoint_url'] ) ? esc_url_raw( wp_unslash( $_POST['endpoint_url'] ) ) : '';
 
 			if ( empty( $endpoint_url ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -205,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
-				wp_send_json_error( array( 'message' => __( 'Failed to fetch models.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Failed to fetch models.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -213,7 +213,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$data = json_decode( $body, true );
 
 			if ( ! isset( $data['models'] ) || ! is_array( $data['models'] ) ) {
-				wp_send_json_error( array( 'message' => __( 'No models found or invalid response.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'No models found or invalid response.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -234,14 +234,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			$endpoint_url = isset( $_POST['endpoint_url'] ) ? esc_url_raw( wp_unslash( $_POST['endpoint_url'] ) ) : '';
 
 			if ( empty( $endpoint_url ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -267,7 +267,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: error message */
-							__( 'Connection failed: %s', 'wp-mcp-ai' ),
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
 							$response->get_error_message()
 						),
 					)
@@ -278,11 +278,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$response_code = wp_remote_retrieve_response_code( $response );
 
 			if ( 200 !== $response_code ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid endpoint or connection failed.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid endpoint or connection failed.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
-			wp_send_json_success( array( 'message' => __( 'Successfully connected to LM Studio!', 'wp-mcp-ai' ) ) );
+			wp_send_json_success( array( 'message' => __( 'Successfully connected to LM Studio!', 'mcp-ai-wpoos' ) ) );
 		}
 
 		/**
@@ -292,14 +292,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			$endpoint_url = isset( $_POST['endpoint_url'] ) ? esc_url_raw( wp_unslash( $_POST['endpoint_url'] ) ) : '';
 
 			if ( empty( $endpoint_url ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -321,7 +321,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
-				wp_send_json_error( array( 'message' => __( 'Failed to fetch models.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Failed to fetch models.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -329,7 +329,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$data = json_decode( $body, true );
 
 			if ( ! isset( $data['data'] ) || ! is_array( $data['data'] ) ) {
-				wp_send_json_error( array( 'message' => __( 'No models found or invalid response.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'No models found or invalid response.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -350,7 +350,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -358,7 +358,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
 			if ( empty( $email ) || empty( $api_key ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please provide both email and API key.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Please provide both email and API key.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -387,7 +387,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 
 			if ( is_wp_error( $oauth_response ) ) {
-				wp_send_json_error( array( 'message' => __( 'Failed to connect to Cloudways API: ', 'wp-mcp-ai' ) . $oauth_response->get_error_message() ) );
+				wp_send_json_error( array( 'message' => __( 'Failed to connect to Cloudways API: ', 'mcp-ai-wpoos' ) . $oauth_response->get_error_message() ) );
 				return;
 			}
 
@@ -395,7 +395,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$oauth_data = json_decode( wp_remote_retrieve_body( $oauth_response ), true );
 
 			if ( 200 !== $oauth_code || empty( $oauth_data['access_token'] ) ) {
-				$error_message = ! empty( $oauth_data['message'] ) ? $oauth_data['message'] : __( 'Invalid credentials.', 'wp-mcp-ai' );
+				$error_message = ! empty( $oauth_data['message'] ) ? $oauth_data['message'] : __( 'Invalid credentials.', 'mcp-ai-wpoos' );
 				wp_send_json_error( array( 'message' => $error_message ) );
 				return;
 			}
@@ -416,7 +416,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 
 			if ( is_wp_error( $servers_response ) ) {
-				wp_send_json_error( array( 'message' => __( 'Failed to fetch servers: ', 'wp-mcp-ai' ) . $servers_response->get_error_message() ) );
+				wp_send_json_error( array( 'message' => __( 'Failed to fetch servers: ', 'mcp-ai-wpoos' ) . $servers_response->get_error_message() ) );
 				return;
 			}
 
@@ -424,7 +424,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$servers_data = json_decode( wp_remote_retrieve_body( $servers_response ), true );
 
 			if ( 200 !== $servers_code || empty( $servers_data['servers'] ) ) {
-				wp_send_json_error( array( 'message' => __( 'No servers found or failed to fetch servers.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'No servers found or failed to fetch servers.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -494,7 +494,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -502,13 +502,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$api_token = isset( $_POST['api_token'] ) ? sanitize_text_field( wp_unslash( $_POST['api_token'] ) ) : '';
 
 			if ( empty( $zone_id ) || empty( $api_token ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please provide both Zone ID and API Token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Please provide both Zone ID and API Token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Validate Zone ID format (should be 32 hexadecimal characters).
 			if ( ! preg_match( '/^[a-f0-9]{32}$/i', $zone_id ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid Zone ID format. Zone ID should be a 32-character hexadecimal string.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid Zone ID format. Zone ID should be a 32-character hexadecimal string.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -537,7 +537,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: error message */
-							__( 'Connection failed: %s', 'wp-mcp-ai' ),
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
 							$response->get_error_message()
 						),
 					)
@@ -550,7 +550,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$data          = json_decode( $response_body, true );
 
 			if ( 200 !== $response_code ) {
-				$error_message = __( 'Invalid credentials or zone not found.', 'wp-mcp-ai' );
+				$error_message = __( 'Invalid credentials or zone not found.', 'mcp-ai-wpoos' );
 				if ( isset( $data['errors'][0]['message'] ) ) {
 					$error_message = sanitize_text_field( $data['errors'][0]['message'] );
 				}
@@ -559,7 +559,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			if ( ! isset( $data['success'] ) || ! $data['success'] || ! isset( $data['result'] ) ) {
-				wp_send_json_error( array( 'message' => __( 'Unexpected response from Cloudflare API.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Unexpected response from Cloudflare API.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -574,7 +574,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			wp_send_json_success(
 				array(
-					'message'   => __( 'Successfully connected to Cloudflare!', 'wp-mcp-ai' ),
+					'message'   => __( 'Successfully connected to Cloudflare!', 'mcp-ai-wpoos' ),
 					'zone_info' => $zone_info,
 				)
 			);
@@ -587,7 +587,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -595,7 +595,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
 			if ( empty( $email ) || empty( $api_key ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please provide both email and API key.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Please provide both email and API key.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -628,7 +628,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: error message */
-							__( 'Connection failed: %s', 'wp-mcp-ai' ),
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
 							$oauth_response->get_error_message()
 						),
 					)
@@ -641,7 +641,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$oauth_data = json_decode( $oauth_body, true );
 
 			if ( 200 !== $oauth_code ) {
-				$error_message = __( 'Invalid credentials.', 'wp-mcp-ai' );
+				$error_message = __( 'Invalid credentials.', 'mcp-ai-wpoos' );
 				if ( ! empty( $oauth_data['message'] ) ) {
 					$error_message = sanitize_text_field( $oauth_data['message'] );
 				}
@@ -650,7 +650,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			if ( empty( $oauth_data['access_token'] ) ) {
-				wp_send_json_error( array( 'message' => __( 'Failed to obtain access token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Failed to obtain access token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -674,7 +674,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: error message */
-							__( 'Token obtained but failed to verify account: %s', 'wp-mcp-ai' ),
+							__( 'Token obtained but failed to verify account: %s', 'mcp-ai-wpoos' ),
 							$servers_response->get_error_message()
 						),
 					)
@@ -687,7 +687,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$servers_data = json_decode( $servers_body, true );
 
 			if ( 200 !== $servers_code ) {
-				wp_send_json_error( array( 'message' => __( 'Token obtained but failed to verify account access.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Token obtained but failed to verify account access.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -704,7 +704,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			wp_send_json_success(
 				array(
-					'message'      => __( 'Successfully connected to Cloudways!', 'wp-mcp-ai' ),
+					'message'      => __( 'Successfully connected to Cloudways!', 'mcp-ai-wpoos' ),
 					'account_info' => $account_info,
 				)
 			);
@@ -717,14 +717,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
 			if ( empty( $api_key ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please provide a Brave Search API key.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Please provide a Brave Search API key.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -760,7 +760,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: error message */
-							__( 'Connection failed: %s', 'wp-mcp-ai' ),
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
 							$response->get_error_message()
 						),
 					)
@@ -773,12 +773,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$data          = json_decode( $response_body, true );
 
 			if ( 401 === $response_code ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid API key. Please check your Brave Search API key.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid API key. Please check your Brave Search API key.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			if ( 429 === $response_code ) {
-				wp_send_json_error( array( 'message' => __( 'Rate limit exceeded. Your API key is valid but you have exceeded your rate limit.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Rate limit exceeded. Your API key is valid but you have exceeded your rate limit.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -787,14 +787,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( 202 === $response_code ) {
 				wp_send_json_success(
 					array(
-						'message' => __( 'Successfully connected to Brave Search API! (Search processing asynchronously)', 'wp-mcp-ai' ),
+						'message' => __( 'Successfully connected to Brave Search API! (Search processing asynchronously)', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
 			}
 
 			if ( 200 !== $response_code ) {
-				$error_message = __( 'Invalid API key or connection failed.', 'wp-mcp-ai' );
+				$error_message = __( 'Invalid API key or connection failed.', 'mcp-ai-wpoos' );
 				if ( isset( $data['message'] ) ) {
 					$error_message = sanitize_text_field( $data['message'] );
 				}
@@ -804,7 +804,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			wp_send_json_success(
 				array(
-					'message' => __( 'Successfully connected to Brave Search API!', 'wp-mcp-ai' ),
+					'message' => __( 'Successfully connected to Brave Search API!', 'mcp-ai-wpoos' ),
 				)
 			);
 		}
@@ -815,13 +815,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_reset_user_token_usage() {
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -829,13 +829,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : get_current_user_id();
 
 			if ( ! $user_id ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid user ID.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid user ID.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify user exists.
 			if ( ! get_userdata( $user_id ) ) {
-				wp_send_json_error( array( 'message' => __( 'User not found.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'User not found.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -844,7 +844,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Reset tool-specific token usage data.
 			WP_MCP_AI_Tool_Token_Limits::reset_user_tool_usage( $user_id );
 
-			wp_send_json_success( array( 'message' => __( 'Token usage data has been reset.', 'wp-mcp-ai' ) ) );
+			wp_send_json_success( array( 'message' => __( 'Token usage data has been reset.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		/**
@@ -855,13 +855,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -885,7 +885,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 
 			if ( false === $deleted ) {
-				wp_send_json_error( array( 'message' => __( 'Failed to reset token usage data.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Failed to reset token usage data.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -907,7 +907,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				array(
 					'message' => sprintf(
 						/* translators: %d: number of records deleted */
-						__( 'Token usage data has been reset for all users. %d records deleted.', 'wp-mcp-ai' ),
+						__( 'Token usage data has been reset for all users. %d records deleted.', 'mcp-ai-wpoos' ),
 						$deleted
 					),
 				)
@@ -920,13 +920,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_save_tool_limits() {
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -936,7 +936,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$model_preferences = isset( $_POST['model_preferences'] ) ? (array) wp_unslash( $_POST['model_preferences'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 			if ( empty( $limits ) && empty( $multipliers ) && empty( $model_preferences ) ) {
-				wp_send_json_error( array( 'message' => __( 'No limits, multipliers, or model preferences provided.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'No limits, multipliers, or model preferences provided.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -981,7 +981,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( 0 === $changed_count ) {
 				wp_send_json_success(
 					array(
-						'message'    => __( 'No changes detected. All tool settings are already set to the specified values.', 'wp-mcp-ai' ),
+						'message'    => __( 'No changes detected. All tool settings are already set to the specified values.', 'mcp-ai-wpoos' ),
 						'no_changes' => true,
 					)
 				);
@@ -1030,13 +1030,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %d: number of settings saved */
-							__( 'Tool settings saved successfully. %d settings updated.', 'wp-mcp-ai' ),
+							__( 'Tool settings saved successfully. %d settings updated.', 'mcp-ai-wpoos' ),
 							$saved_count
 						),
 					)
 				);
 			} else {
-				wp_send_json_error( array( 'message' => __( 'Failed to save tool settings.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Failed to save tool settings.', 'mcp-ai-wpoos' ) ) );
 			}
 		}
 
@@ -1049,7 +1049,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Check user permissions.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1057,13 +1057,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$preset_id = isset( $_POST['preset_id'] ) ? sanitize_key( $_POST['preset_id'] ) : '';
 
 			if ( empty( $preset_id ) ) {
-				wp_send_json_error( array( 'message' => __( 'Missing preset ID.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Missing preset ID.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Check if preset service exists.
 			if ( ! class_exists( 'WP_MCP_AI_Orchestration_Preset_Service' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Preset service not available.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Preset service not available.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1077,7 +1077,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			wp_send_json_success(
 				array(
-					'message'   => __( 'Preset applied successfully.', 'wp-mcp-ai' ),
+					'message'   => __( 'Preset applied successfully.', 'mcp-ai-wpoos' ),
 					'preset_id' => $preset_id,
 				)
 			);
@@ -1091,12 +1091,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_export_token_usage_csv() {
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Insufficient permissions.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Insufficient permissions.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
-				wp_die( esc_html__( 'Invalid security token.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Invalid security token.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Get filters from request.
@@ -1112,7 +1112,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$csv = WP_MCP_AI_Tool_Token_Limits::export_usage_report( $filters );
 
 			if ( empty( $csv ) ) {
-				wp_die( esc_html__( 'Failed to generate CSV export.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Failed to generate CSV export.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Set headers for file download.
@@ -1135,13 +1135,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_bulk_assign_tier() {
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1149,7 +1149,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$user_ids = isset( $_POST['user_ids'] ) ? array_map( 'absint', (array) $_POST['user_ids'] ) : array();
 
 			if ( empty( $user_ids ) ) {
-				wp_send_json_error( array( 'message' => __( 'No users selected.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'No users selected.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1157,7 +1157,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$tier = isset( $_POST['tier'] ) ? sanitize_key( $_POST['tier'] ) : '';
 
 			if ( empty( $tier ) ) {
-				wp_send_json_error( array( 'message' => __( 'No tier specified.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'No tier specified.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1178,7 +1178,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				array(
 					'message' => sprintf(
 						/* translators: 1: Number of users updated, 2: Tier name */
-						__( 'Successfully updated %1$d users to %2$s tier.', 'wp-mcp-ai' ),
+						__( 'Successfully updated %1$d users to %2$s tier.', 'mcp-ai-wpoos' ),
 						$results['success'],
 						$tier
 					),
@@ -1193,13 +1193,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_apply_all_recommendations() {
 			// Check permissions.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1211,7 +1211,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: 1: Number of successful updates, 2: Number of failed updates, 3: Number skipped */
-							__( 'Applied recommendations: %1$d succeeded, %2$d failed, %3$d skipped (already optimal).', 'wp-mcp-ai' ),
+							__( 'Applied recommendations: %1$d succeeded, %2$d failed, %3$d skipped (already optimal).', 'mcp-ai-wpoos' ),
 							$results['success'],
 							$results['failed'],
 							$results['skipped']
@@ -1226,7 +1226,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				array(
 					'message' => sprintf(
 						/* translators: 1: Number of tools updated, 2: Number skipped */
-						__( 'Successfully applied recommended settings to %1$d tools. %2$d tools were already using recommended settings.', 'wp-mcp-ai' ),
+						__( 'Successfully applied recommended settings to %1$d tools. %2$d tools were already using recommended settings.', 'mcp-ai-wpoos' ),
 						$results['success'],
 						$results['skipped']
 					),
@@ -1241,13 +1241,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_apply_preset() {
 			// Check permissions.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1267,7 +1267,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: 1: Number of successful updates, 2: Number of failed updates */
-							__( 'Preset applied with some errors: %1$d succeeded, %2$d failed.', 'wp-mcp-ai' ),
+							__( 'Preset applied with some errors: %1$d succeeded, %2$d failed.', 'mcp-ai-wpoos' ),
 							$results['success'],
 							$results['failed']
 						),
@@ -1278,17 +1278,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			$preset_names = array(
-				'conservative' => __( 'Conservative', 'wp-mcp-ai' ),
-				'balanced'     => __( 'Balanced', 'wp-mcp-ai' ),
-				'performance'  => __( 'Performance', 'wp-mcp-ai' ),
-				'aggressive'   => __( 'Aggressive', 'wp-mcp-ai' ),
+				'conservative' => __( 'Conservative', 'mcp-ai-wpoos' ),
+				'balanced'     => __( 'Balanced', 'mcp-ai-wpoos' ),
+				'performance'  => __( 'Performance', 'mcp-ai-wpoos' ),
+				'aggressive'   => __( 'Aggressive', 'mcp-ai-wpoos' ),
 			);
 
 			wp_send_json_success(
 				array(
 					'message' => sprintf(
 						/* translators: 1: Preset name, 2: Number of tools updated */
-						__( 'Successfully applied %1$s preset to %2$d tools!', 'wp-mcp-ai' ),
+						__( 'Successfully applied %1$s preset to %2$d tools!', 'mcp-ai-wpoos' ),
 						isset( $preset_names[ $preset ] ) ? $preset_names[ $preset ] : $preset,
 						$results['success']
 					),
@@ -1303,13 +1303,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_get_usage_trend() {
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_token_charts', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1318,7 +1318,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Get chart data.
 			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1333,19 +1333,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_get_tier_distribution() {
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_token_charts', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Get chart data.
 			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1360,19 +1360,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_get_tool_breakdown() {
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_token_charts', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Get chart data.
 			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1398,19 +1398,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_get_provider_distribution() {
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_token_charts', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Get chart data.
 			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1432,19 +1432,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		public function handle_get_model_distribution() {
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_token_charts', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Get chart data.
 			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1480,13 +1480,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			if ( ! $nonce_valid ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1502,13 +1502,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 
 			if ( ! in_array( $chart_id, $valid_charts, true ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid chart ID.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid chart ID.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Get updated data based on chart type (following SoC - delegate to helper).
 			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1546,13 +1546,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			if ( ! $nonce_valid ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1569,13 +1569,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			);
 
 			if ( ! in_array( $chart_id, $valid_charts, true ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid chart ID.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid chart ID.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Get fresh data based on chart type (following SoC - delegate to helper).
 			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1611,7 +1611,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'You do not have permission to manage tools.', 'wp-mcp-ai' ),
+						'message' => __( 'You do not have permission to manage tools.', 'mcp-ai-wpoos' ),
 					)
 				);
 			}
@@ -1625,7 +1625,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( empty( $tool_slug ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Tool slug is required.', 'wp-mcp-ai' ),
+						'message' => __( 'Tool slug is required.', 'mcp-ai-wpoos' ),
 					)
 				);
 			}
@@ -1633,7 +1633,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! in_array( $action, array( 'enable', 'disable' ), true ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Invalid action.', 'wp-mcp-ai' ),
+						'message' => __( 'Invalid action.', 'mcp-ai-wpoos' ),
 					)
 				);
 			}
@@ -1645,7 +1645,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! $registry->is_tool_registered( $tool_slug ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Tool not found.', 'wp-mcp-ai' ),
+						'message' => __( 'Tool not found.', 'mcp-ai-wpoos' ),
 					)
 				);
 			}
@@ -1662,15 +1662,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				wp_send_json_success(
 					array(
 						'message' => 'enable' === $action
-							? __( 'Tool enabled successfully.', 'wp-mcp-ai' )
-							: __( 'Tool disabled successfully.', 'wp-mcp-ai' ),
+							? __( 'Tool enabled successfully.', 'mcp-ai-wpoos' )
+							: __( 'Tool disabled successfully.', 'mcp-ai-wpoos' ),
 						'enabled' => 'enable' === $action,
 					)
 				);
 			} else {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Failed to update tool status.', 'wp-mcp-ai' ),
+						'message' => __( 'Failed to update tool status.', 'mcp-ai-wpoos' ),
 					)
 				);
 			}
@@ -1685,7 +1685,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -1698,7 +1698,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! in_array( $action, array( 'update', 'replace' ), true ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Invalid action type.', 'wp-mcp-ai' ),
+						'message' => __( 'Invalid action type.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -1761,7 +1761,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: Error message */
-							__( 'Failed to load profession data: %s', 'wp-mcp-ai' ),
+							__( 'Failed to load profession data: %s', 'mcp-ai-wpoos' ),
 							$professions->get_error_message()
 						),
 					)
@@ -1831,7 +1831,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			$message = sprintf(
 				/* translators: 1: Number of professions created, 2: Number of professions updated */
-				__( 'Professions reloaded successfully. Created: %1$d, Updated: %2$d', 'wp-mcp-ai' ),
+				__( 'Professions reloaded successfully. Created: %1$d, Updated: %2$d', 'mcp-ai-wpoos' ),
 				$saved,
 				$updated
 			);
@@ -1839,7 +1839,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! empty( $errors ) ) {
 				$message .= ' ' . sprintf(
 					/* translators: %d: Number of errors */
-					__( 'Errors: %d', 'wp-mcp-ai' ),
+					__( 'Errors: %d', 'mcp-ai-wpoos' ),
 					count( $errors )
 				);
 			}
@@ -1865,7 +1865,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -1878,7 +1878,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! in_array( $action, array( 'update', 'replace' ), true ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Invalid action type.', 'wp-mcp-ai' ),
+						'message' => __( 'Invalid action type.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -1906,7 +1906,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %d: Number of professions found */
-							__( 'Not enough professions found in database (%d). Please reseed professions first using "Update Professions" or "Replace All Professions" button above before reseeding teams.', 'wp-mcp-ai' ),
+							__( 'Not enough professions found in database (%d). Please reseed professions first using "Update Professions" or "Replace All Professions" button above before reseeding teams.', 'mcp-ai-wpoos' ),
 							$published_professions
 						),
 					)
@@ -1942,7 +1942,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: Error message */
-							__( 'Failed to load team data: %s', 'wp-mcp-ai' ),
+							__( 'Failed to load team data: %s', 'mcp-ai-wpoos' ),
 							$teams->get_error_message()
 						),
 					)
@@ -1976,7 +1976,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 						if ( empty( $member_ids ) && ! empty( $team_data['members'] ) ) {
 							$warnings[] = sprintf(
 								/* translators: %s: Team slug */
-								__( 'Team "%s" has no members - profession posts may not exist', 'wp-mcp-ai' ),
+								__( 'Team "%s" has no members - profession posts may not exist', 'mcp-ai-wpoos' ),
 								$team_data['slug']
 							);
 						}
@@ -1994,7 +1994,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 						if ( empty( $member_ids ) && ! empty( $team_data['members'] ) ) {
 							$warnings[] = sprintf(
 								/* translators: %s: Team slug */
-								__( 'Team "%s" has no members - profession posts may not exist', 'wp-mcp-ai' ),
+								__( 'Team "%s" has no members - profession posts may not exist', 'mcp-ai-wpoos' ),
 								$team_data['slug']
 							);
 						}
@@ -2012,7 +2012,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			$message = sprintf(
 			/* translators: 1: Number of teams created, 2: Number of teams updated */
-				__( 'Teams reloaded successfully. Created: %1$d, Updated: %2$d', 'wp-mcp-ai' ),
+				__( 'Teams reloaded successfully. Created: %1$d, Updated: %2$d', 'mcp-ai-wpoos' ),
 				$saved,
 				$updated
 			);
@@ -2020,7 +2020,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! empty( $errors ) ) {
 				$message .= ' ' . sprintf(
 				/* translators: %d: Number of errors */
-					__( 'Errors: %d', 'wp-mcp-ai' ),
+					__( 'Errors: %d', 'mcp-ai-wpoos' ),
 					count( $errors )
 				);
 			}
@@ -2028,7 +2028,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! empty( $warnings ) ) {
 				$message .= ' ' . sprintf(
 				/* translators: %d: Number of warnings */
-					__( 'Warnings: %d teams have no members. Try reseeding professions first.', 'wp-mcp-ai' ),
+					__( 'Warnings: %d teams have no members. Try reseeding professions first.', 'mcp-ai-wpoos' ),
 					count( $warnings )
 				);
 				// Log the warnings for debugging.
@@ -2061,7 +2061,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2074,7 +2074,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! in_array( $action, array( 'preview', 'migrate' ), true ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Invalid action type.', 'wp-mcp-ai' ),
+						'message' => __( 'Invalid action type.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2084,7 +2084,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! class_exists( 'WP_MCP_AI_Enhanced_Token_Tracking' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Enhanced token tracking is not available.', 'wp-mcp-ai' ),
+						'message' => __( 'Enhanced token tracking is not available.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2101,19 +2101,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( $dry_run ) {
 				if ( 0 === $results['total_gemini_records'] ) {
 					// No Gemini tool records exist at all.
-					$message = __( 'No Gemini tool usage records found in the database. This is expected if you haven\'t used any Gemini tools yet.', 'wp-mcp-ai' );
+					$message = __( 'No Gemini tool usage records found in the database. This is expected if you haven\'t used any Gemini tools yet.', 'mcp-ai-wpoos' );
 				} elseif ( 0 === $results['total_needing_migration'] ) {
 					// All Gemini records are correctly attributed.
 					$message = sprintf(
 					/* translators: %d: Number of correctly attributed Gemini records */
-						__( 'Found %d Gemini tool records, all correctly attributed to Gemini provider. No migration needed.', 'wp-mcp-ai' ),
+						__( 'Found %d Gemini tool records, all correctly attributed to Gemini provider. No migration needed.', 'mcp-ai-wpoos' ),
 						$results['correctly_attributed']
 					);
 				} elseif ( $results['total_needing_migration'] > $limit ) {
 					// More records than batch limit - warn user.
 					$message = sprintf(
 					/* translators: 1: Total records needing migration, 2: Batch size that will be processed, 3: Total Gemini records, 4: Already correct records */
-						__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). This migration will process the first %3$d records. %4$d records are already correctly attributed to Gemini. You may need to run the migration multiple times to update all records.', 'wp-mcp-ai' ),
+						__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). This migration will process the first %3$d records. %4$d records are already correctly attributed to Gemini. You may need to run the migration multiple times to update all records.', 'mcp-ai-wpoos' ),
 						$results['total_needing_migration'],
 						$results['total_gemini_records'],
 						$limit,
@@ -2122,7 +2122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				} else {
 					$message = sprintf(
 					/* translators: 1: Number of records that would be updated, 2: Total Gemini records, 3: Already correct records */
-						__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). %3$d records are already correctly attributed to Gemini.', 'wp-mcp-ai' ),
+						__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). %3$d records are already correctly attributed to Gemini.', 'mcp-ai-wpoos' ),
 						$results['total_needing_migration'],
 						$results['total_gemini_records'],
 						$results['correctly_attributed']
@@ -2130,11 +2130,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				}
 			} elseif ( 0 === $results['records_updated'] ) {
 				if ( 0 === $results['total_gemini_records'] ) {
-					$message = __( 'No Gemini tool usage records found in the database.', 'wp-mcp-ai' );
+					$message = __( 'No Gemini tool usage records found in the database.', 'mcp-ai-wpoos' );
 				} else {
 					$message = sprintf(
 					/* translators: %d: Number of correctly attributed records */
-						__( 'No records were updated. All %d Gemini tool records are already correctly attributed.', 'wp-mcp-ai' ),
+						__( 'No records were updated. All %d Gemini tool records are already correctly attributed.', 'mcp-ai-wpoos' ),
 						$results['correctly_attributed']
 					);
 				}
@@ -2144,7 +2144,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				if ( $remaining > 0 ) {
 					$message = sprintf(
 					/* translators: 1: Number of records updated, 2: Total records needing migration, 3: Remaining records */
-						__( 'Migration complete! Successfully updated %1$d records with corrected Gemini provider attribution and costs. %2$d records still need migration. Please run the migration again to process the remaining records.', 'wp-mcp-ai' ),
+						__( 'Migration complete! Successfully updated %1$d records with corrected Gemini provider attribution and costs. %2$d records still need migration. Please run the migration again to process the remaining records.', 'mcp-ai-wpoos' ),
 						$results['records_updated'],
 						$results['total_needing_migration'],
 						$remaining
@@ -2152,7 +2152,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				} else {
 					$message = sprintf(
 					/* translators: 1: Number of records updated, 2: Total Gemini records */
-						__( 'Migration complete! Successfully updated %1$d records with corrected Gemini provider attribution and costs. All Gemini tool records are now correctly attributed. Total Gemini tool records: %2$d', 'wp-mcp-ai' ),
+						__( 'Migration complete! Successfully updated %1$d records with corrected Gemini provider attribution and costs. All Gemini tool records are now correctly attributed. Total Gemini tool records: %2$d', 'mcp-ai-wpoos' ),
 						$results['records_updated'],
 						$results['total_gemini_records']
 					);
@@ -2185,21 +2185,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 			// Check permissions.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( __( 'Insufficient permissions.', 'wp-mcp-ai' ) );
+				wp_send_json_error( __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Get model ID.
 			$model = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '';
 
 			if ( empty( $model ) ) {
-				wp_send_json_error( __( 'Model ID is required.', 'wp-mcp-ai' ) );
+				wp_send_json_error( __( 'Model ID is required.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Get config data.
 			$config = isset( $_POST['config'] ) ? (array) wp_unslash( $_POST['config'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 			if ( empty( $config ) ) {
-				wp_send_json_error( __( 'Configuration data is required.', 'wp-mcp-ai' ) );
+				wp_send_json_error( __( 'Configuration data is required.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Load model config class if not already loaded.
@@ -2223,13 +2223,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( $result ) {
 				wp_send_json_success(
 					array(
-						'message' => __( 'Model configuration saved successfully.', 'wp-mcp-ai' ),
+						'message' => __( 'Model configuration saved successfully.', 'mcp-ai-wpoos' ),
 						'model'   => $model,
 						'config'  => $updated_config,
 					)
 				);
 			} else {
-				wp_send_json_error( __( 'Failed to save model configuration.', 'wp-mcp-ai' ) );
+				wp_send_json_error( __( 'Failed to save model configuration.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
@@ -2241,13 +2241,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		private function handle_save_tool_settings() {
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify nonce.
 			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -2256,14 +2256,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$tool_slug = isset( $_POST['tool_slug'] ) ? sanitize_key( wp_unslash( $_POST['tool_slug'] ) ) : '';
 
 			if ( empty( $tool_slug ) ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid tool slug.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid tool slug.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			// Verify tool exists.
 			$registry = WP_MCP_AI_Tool_Registry::get_instance();
 			if ( ! $registry->is_tool_registered( $tool_slug ) ) {
-				wp_send_json_error( array( 'message' => __( 'Tool not found.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Tool not found.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -2293,13 +2293,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 				wp_send_json_success(
 					array(
-						'message' => __( 'Tool settings saved successfully.', 'wp-mcp-ai' ),
+						'message' => __( 'Tool settings saved successfully.', 'mcp-ai-wpoos' ),
 					)
 				);
 			} else {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Failed to save tool settings.', 'wp-mcp-ai' ),
+						'message' => __( 'Failed to save tool settings.', 'mcp-ai-wpoos' ),
 					)
 				);
 			}
@@ -2316,7 +2316,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! current_user_can( 'edit_posts' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2329,7 +2329,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! $profession_id ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Invalid profession ID.', 'wp-mcp-ai' ),
+						'message' => __( 'Invalid profession ID.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2340,7 +2340,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! $profession || WP_MCP_AI_Profession_CPT::POST_TYPE !== $profession->post_type ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Profession not found.', 'wp-mcp-ai' ),
+						'message' => __( 'Profession not found.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2368,7 +2368,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: Profession title */
-							__( 'Playbook for "%s" regenerated successfully!', 'wp-mcp-ai' ),
+							__( 'Playbook for "%s" regenerated successfully!', 'mcp-ai-wpoos' ),
 							$profession->post_title
 						),
 					)
@@ -2378,7 +2378,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: Error message */
-							__( 'Failed to regenerate playbook: %s', 'wp-mcp-ai' ),
+							__( 'Failed to regenerate playbook: %s', 'mcp-ai-wpoos' ),
 							$e->getMessage()
 						),
 					)
@@ -2397,7 +2397,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2419,8 +2419,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			update_option( 'wp_mcp_ai_playbooks_last_sync', current_time( 'timestamp' ) );
 
 			$message = $force
-				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'wp-mcp-ai' )
-				: __( 'Profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.', 'wp-mcp-ai' );
+				? __( 'All profession playbooks regenerated successfully! Duplicates removed.', 'mcp-ai-wpoos' )
+				: __( 'Profession playbooks synced successfully! Only changed playbooks were updated and duplicates removed.', 'mcp-ai-wpoos' );
 
 			wp_send_json_success(
 				array(
@@ -2442,7 +2442,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2469,7 +2469,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( empty( $orphaned_attachments ) ) {
 				wp_send_json_success(
 					array(
-						'message' => __( 'No orphaned playbook attachments found to delete.', 'wp-mcp-ai' ),
+						'message' => __( 'No orphaned playbook attachments found to delete.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2491,7 +2491,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'Successfully deleted %d orphaned playbook attachment from media library.',
 					'Successfully deleted %d orphaned playbook attachments from media library.',
 					$deleted_count,
-					'wp-mcp-ai'
+					'mcp-ai-wpoos'
 				),
 				$deleted_count
 			);
@@ -2522,14 +2522,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			if ( ! $nonce_valid ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 			// Check user capabilities.
 			if ( ! current_user_can( 'edit_posts' ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ),
+						'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2541,7 +2541,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( empty( $provider ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Provider is required.', 'wp-mcp-ai' ),
+						'message' => __( 'Provider is required.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2552,7 +2552,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			if ( ! in_array( $provider, $allowed_providers, true ) ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Invalid provider.', 'wp-mcp-ai' ),
+						'message' => __( 'Invalid provider.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -2572,7 +2572,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: provider name */
-							__( 'No models available for provider: %s. Please configure API keys in settings.', 'wp-mcp-ai' ),
+							__( 'No models available for provider: %s. Please configure API keys in settings.', 'mcp-ai-wpoos' ),
 							ucfirst( str_replace( '_', ' ', $provider ) )
 						),
 					)

@@ -352,7 +352,7 @@ if ( ! class_exists( 'WP_MCP_AI_Error_Handler' ) ) {
 		public static function format_error_for_display( $error ) {
 			if ( ! is_wp_error( $error ) ) {
 				return array(
-					'message'     => __( 'An unknown error occurred.', 'wp-mcp-ai' ),
+					'message'     => __( 'An unknown error occurred.', 'mcp-ai-wpoos' ),
 					'suggestions' => array(),
 				);
 			}

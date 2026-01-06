@@ -185,7 +185,7 @@ class Test_Assistant_Builder_Blocks extends WP_UnitTestCase {
 		// Should have NV oOS category first.
 		$this->assertIsArray( $result );
 		$this->assertGreaterThan( count( $existing_categories ), count( $result ) );
-		$this->assertEquals( 'wp-mcp-ai', $result[0]['slug'] );
+		$this->assertEquals( 'mcp-ai-wpoos', $result[0]['slug'] );
 		$this->assertStringContainsString( 'NV oOS', $result[0]['title'] );
 	}
 }

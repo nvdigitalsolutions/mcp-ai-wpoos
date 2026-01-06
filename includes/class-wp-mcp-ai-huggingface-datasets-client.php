@@ -292,7 +292,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 			if ( empty( $query ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_empty_query',
-					__( 'Search query cannot be empty.', 'wp-mcp-ai' )
+					__( 'Search query cannot be empty.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -348,7 +348,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 			if ( empty( $where ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_empty_where',
-					__( 'Filter expression (where clause) cannot be empty.', 'wp-mcp-ai' )
+					__( 'Filter expression (where clause) cannot be empty.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -511,7 +511,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_connection_failed',
-					__( 'Failed to connect to HuggingFace Dataset Viewer API.', 'wp-mcp-ai' ),
+					__( 'Failed to connect to HuggingFace Dataset Viewer API.', 'mcp-ai-wpoos' ),
 					array( 'error' => $response->get_error_message() )
 				);
 			}
@@ -536,7 +536,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 					$dataset       = $params['dataset'];
 					$error_message = sprintf(
 						/* translators: %s: Dataset name */
-						__( 'Dataset "%s" not found on HuggingFace Hub.', 'wp-mcp-ai' ),
+						__( 'Dataset "%s" not found on HuggingFace Hub.', 'mcp-ai-wpoos' ),
 						$dataset
 					);
 
@@ -551,11 +551,11 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 
 						$error_message .= ' ' . sprintf(
 							/* translators: %s: Suggested dataset name */
-							__( 'Did you mean: %s?', 'wp-mcp-ai' ),
+							__( 'Did you mean: %s?', 'mcp-ai-wpoos' ),
 							implode( ', ', $formatted_suggestions )
 						);
 					} else {
-						$error_message .= ' ' . __( 'Please verify the dataset name at https://huggingface.co/datasets', 'wp-mcp-ai' );
+						$error_message .= ' ' . __( 'Please verify the dataset name at https://huggingface.co/datasets', 'mcp-ai-wpoos' );
 					}
 
 					return new WP_Error(
@@ -574,7 +574,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 					'wp_mcp_ai_hf_datasets_api_error',
 					sprintf(
 						/* translators: %d: HTTP status code */
-						__( 'HuggingFace Dataset Viewer API returned error: %d', 'wp-mcp-ai' ),
+						__( 'HuggingFace Dataset Viewer API returned error: %d', 'mcp-ai-wpoos' ),
 						$status_code
 					),
 					array(
@@ -598,7 +598,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_invalid_json',
-					__( 'Invalid JSON response from HuggingFace Dataset Viewer API.', 'wp-mcp-ai' ),
+					__( 'Invalid JSON response from HuggingFace Dataset Viewer API.', 'mcp-ai-wpoos' ),
 					array( 'body' => $body )
 				);
 			}
@@ -626,7 +626,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 			if ( $count >= $max_requests ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_rate_limited',
-					__( 'Rate limit exceeded. Please try again later.', 'wp-mcp-ai' ),
+					__( 'Rate limit exceeded. Please try again later.', 'mcp-ai-wpoos' ),
 					array( 'retry_after' => 60 )
 				);
 			}
@@ -705,7 +705,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 
 			return array(
 				'status'  => 'success',
-				'message' => __( 'Successfully connected to HuggingFace Dataset Viewer API.', 'wp-mcp-ai' ),
+				'message' => __( 'Successfully connected to HuggingFace Dataset Viewer API.', 'mcp-ai-wpoos' ),
 			);
 		}
 

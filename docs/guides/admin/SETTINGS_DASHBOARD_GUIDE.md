@@ -462,7 +462,7 @@ Configure AI model orchestration, tool recommendations, and queue profiles.
 
 ## Tab 7: Token Manager
 
-Covered in detail in the [Token Management User Guide](TOKEN_MANAGEMENT_GUIDE.md).
+Covered in detail in the [Token Management User Guide](../../features/performance/TOKEN_MANAGEMENT_GUIDE.md).
 
 ### Quick Summary
 
@@ -875,12 +875,12 @@ Click **Save All** (top right) to force-save all tabs.
 
 ## Related Documentation
 
-- [Token Management User Guide](TOKEN_MANAGEMENT_GUIDE.md) - Deep dive on token limits
+- [Token Management User Guide](../../features/performance/TOKEN_MANAGEMENT_GUIDE.md) - Deep dive on token limits
 - [Quick Reference Guide](../../QUICK_REFERENCE.md) - Fast access to common tasks
 - [Architecture Guide](../../architecture/core/COPILOT_ARCHITECTURE_GUIDE.md) - Technical implementation
 - [Settings Registry](../../architecture/core/ARCHITECTURE_QUICK_REFERENCE.md#settings-registry) - Developer reference
-- [Federation Guide](../federation/federation-discovery.md) - Mesh networking details
-- [Security Hardening](../security/SECURITY_HARDENING.md) - Security best practices
+- [Federation Guide](../../features/federation/federation-discovery.md) - Mesh networking details
+- [Security Hardening](../../features/security/SECURITY_HARDENING.md) - Security best practices
 
 ---
 

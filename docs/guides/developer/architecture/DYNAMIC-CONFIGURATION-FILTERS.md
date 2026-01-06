@@ -1,6 +1,6 @@
 # Dynamic Configuration Filters
 
-This document describes all WordPress filters available in WP oOS that allow dynamic configuration of previously hardcoded values. These filters enable advanced customization without modifying core plugin files.
+This document describes all WordPress filters available in NV oOS that allow dynamic configuration of previously hardcoded values. These filters enable advanced customization without modifying core plugin files.
 
 ## Overview
 
@@ -33,7 +33,7 @@ All hardcoded constants, timeouts, delays, and default URLs in the plugin can no
 
 **NEW in 1.0.0:** The plugin provides an admin UI for configuring filters without writing code.
 
-Navigate to **Settings → WP oOS → General Settings → Custom AI Settings (Filters)** to configure these filters through a user-friendly interface. This section allows you to override default values for the most commonly needed filters without writing any PHP code.
+Navigate to **Settings → NV oOS → General Settings → Custom AI Settings (Filters)** to configure these filters through a user-friendly interface. This section allows you to override default values for the most commonly needed filters without writing any PHP code.
 
 ### Supported Admin UI Filters
 
@@ -653,7 +653,7 @@ add_filter( 'wp_mcp_ai_federation_peer_verification_delay', function( $delay ) {
 
 ### Using the Admin UI (Recommended for Non-Developers)
 
-Navigate to **Settings → WP oOS → General Settings → Custom AI Settings (Filters)** and configure:
+Navigate to **Settings → NV oOS → General Settings → Custom AI Settings (Filters)** and configure:
 - AI model selection (light/advanced)
 - Agentic iterations limit
 - Resource management (tokens, timeouts)

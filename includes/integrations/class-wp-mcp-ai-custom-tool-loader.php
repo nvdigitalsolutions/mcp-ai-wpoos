@@ -153,7 +153,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 					'Rejected unsafe custom tool file.',
 					array( 'file' => $file_path )
 				);
-				return new WP_Error( 'wp_mcp_ai_unsafe_tool', __( 'Tool file failed safety validation.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_unsafe_tool', __( 'Tool file failed safety validation.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Include the tool file.
@@ -172,7 +172,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 						'output' => $output,
 					)
 				);
-				return new WP_Error( 'wp_mcp_ai_tool_include_failed', __( 'Failed to include tool file.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_tool_include_failed', __( 'Failed to include tool file.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Extract the class name from the filename.
@@ -186,7 +186,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 						'class_name' => $class_name,
 					)
 				);
-				return new WP_Error( 'wp_mcp_ai_tool_class_not_found', __( 'Tool class not found in file.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_tool_class_not_found', __( 'Tool class not found in file.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Instantiate the tool.
@@ -202,7 +202,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 							'class' => $class_name,
 						)
 					);
-					return new WP_Error( 'wp_mcp_ai_invalid_tool', __( 'Tool does not implement WP_MCP_AI_Tool_Interface.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_invalid_tool', __( 'Tool does not implement WP_MCP_AI_Tool_Interface.', 'mcp-ai-wpoos' ) );
 				}
 
 				WP_MCP_AI_Admin_Settings::log(
@@ -285,7 +285,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 			$tool_name = sanitize_key( $tool_name );
 
 			if ( empty( $tool_name ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_tool_name', __( 'Invalid tool name.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_tool_name', __( 'Invalid tool name.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Generate filename.
@@ -293,7 +293,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 			$filepath = $this->custom_tools_dir . '/' . $filename;
 
 			if ( file_exists( $filepath ) ) {
-				return new WP_Error( 'wp_mcp_ai_tool_exists', __( 'A tool with this name already exists.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_tool_exists', __( 'A tool with this name already exists.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Generate class name.
@@ -308,7 +308,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 			$result = file_put_contents( $filepath, $template ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
 			if ( false === $result ) {
-				return new WP_Error( 'wp_mcp_ai_file_write_failed', __( 'Failed to create tool file.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_file_write_failed', __( 'Failed to create tool file.', 'mcp-ai-wpoos' ) );
 			}
 
 			return $filepath;
@@ -351,14 +351,14 @@ class {$class_name} implements WP_MCP_AI_Tool_Interface {
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Custom Tool: {$tool_slug}', 'wp-mcp-ai' );
+		return __( 'Custom Tool: {$tool_slug}', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Description of your custom tool.', 'wp-mcp-ai' );
+		return __( 'Description of your custom tool.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -370,7 +370,7 @@ class {$class_name} implements WP_MCP_AI_Tool_Interface {
 			'properties'           => array(
 				'example_param' => array(
 					'type'        => 'string',
-					'description' => __( 'Example parameter description.', 'wp-mcp-ai' ),
+					'description' => __( 'Example parameter description.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array(),
@@ -389,7 +389,7 @@ class {$class_name} implements WP_MCP_AI_Tool_Interface {
 		// Implement your tool logic here.
 		return array(
 			'success' => true,
-			'message' => __( 'Tool executed successfully.', 'wp-mcp-ai' ),
+			'message' => __( 'Tool executed successfully.', 'mcp-ai-wpoos' ),
 		);
 	}
 }
@@ -411,17 +411,17 @@ PHP;
 			$filepath  = $this->custom_tools_dir . '/' . $filename;
 
 			if ( ! file_exists( $filepath ) ) {
-				return new WP_Error( 'wp_mcp_ai_tool_not_found', __( 'Tool file not found.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_tool_not_found', __( 'Tool file not found.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( ! $this->is_safe_tool_file( $filepath ) ) {
-				return new WP_Error( 'wp_mcp_ai_unsafe_delete', __( 'Cannot delete this file for safety reasons.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_unsafe_delete', __( 'Cannot delete this file for safety reasons.', 'mcp-ai-wpoos' ) );
 			}
 
 			$result = unlink( $filepath );
 
 			if ( ! $result ) {
-				return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete tool file.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete tool file.', 'mcp-ai-wpoos' ) );
 			}
 
 			return true;

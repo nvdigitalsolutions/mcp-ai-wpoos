@@ -85,7 +85,7 @@ Added comprehensive console logging to trace the attachment ID through every ste
 
 3. **Test attachment upload:**
    - Attach a file using the attach button
-   - Look for console logs starting with `[WP oOS]`
+   - Look for console logs starting with `[NV oOS]`
    - Verify metadata shows "ID: XXX"
 
 ### Reading Debug Logs
@@ -94,7 +94,7 @@ When you attach a file, you should see 4 console log entries:
 
 ```javascript
 // 1. Upload response normalization
-[WP oOS] normaliseUploadResponse - created record: {
+[NV oOS] normaliseUploadResponse - created record: {
   id: 2360,  // ← Should be a number
   fileId: 'wp-attachment-2360',
   name: '81R4xIDAR1L._SL1500_',
@@ -105,7 +105,7 @@ When you attach a file, you should see 4 console log entries:
 }
 
 // 2. Pending attachments rendering
-[WP oOS] renderPendingAttachments - attachment data: {
+[NV oOS] renderPendingAttachments - attachment data: {
   id: 2360,
   fileId: 'wp-attachment-2360',
   name: '81R4xIDAR1L._SL1500_',
@@ -115,7 +115,7 @@ When you attach a file, you should see 4 console log entries:
 }
 
 // 3. Display attachment creation (when sending)
-[WP oOS] buildDisplayAttachment - creating display attachment: {
+[NV oOS] buildDisplayAttachment - creating display attachment: {
   attachment_id: 2360,
   attachment_fileId: 'wp-attachment-2360',
   record_id: 2360,
@@ -125,7 +125,7 @@ When you attach a file, you should see 4 console log entries:
 }
 
 // 4. ID resolution in buildAttachmentMeta
-[WP oOS] buildAttachmentMeta - ID resolution: {
+[NV oOS] buildAttachmentMeta - ID resolution: {
   record_id: 2360,
   record_id_type: 'number',
   record_attachment_id: undefined,
@@ -267,7 +267,7 @@ No database changes were made, so rollback is safe and immediate.
 
 If you need help interpreting the logs or debugging further:
 
-1. Copy all console logs starting with `[WP oOS]`
+1. Copy all console logs starting with `[NV oOS]`
 2. Screenshot the Network tab showing the upload response
 3. Export the attachment metadata HTML from browser inspector
 4. Open an issue with this information

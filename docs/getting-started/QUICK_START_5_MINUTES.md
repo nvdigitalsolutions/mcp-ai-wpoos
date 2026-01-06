@@ -84,7 +84,7 @@ You just:
 **Add More Tools**
 - **Settings → NV oOS → Tools**
 - Enable image generation, web search
-- [See all 159 tools →](../../reference/tools/README.md)
+- [See all 159 tools →](../reference/tools/tool-reference.md)
 
 **Use Templates**
 - **Professions → Browse**
@@ -94,7 +94,7 @@ You just:
 **Set Token Limits**
 - **Settings → Token Manager**
 - Free/Pro/Enterprise tiers
-- [Token Guide →](../../features/performance/TOKEN_MANAGEMENT_GUIDE.md)
+- [Token Guide →](../features/performance/TOKEN_MANAGEMENT_GUIDE.md)
 
 **Add Gemini**
 - **Settings → AI Providers**
@@ -138,18 +138,18 @@ You just:
 
 ## Learn More
 
-- **[Full Quick Reference](../../QUICK_REFERENCE.md)** - Common tasks
-- **[Settings Dashboard Guide](../../guides/admin/SETTINGS_DASHBOARD_GUIDE.md)** - All 9 tabs explained
-- **[Token Management Guide](../../features/performance/TOKEN_MANAGEMENT_GUIDE.md)** - Control costs
-- **[Documentation Index](../../DOCUMENTATION_INDEX.md)** - 659 guides
+- **[Full Quick Reference](../QUICK_REFERENCE.md)** - Common tasks
+- **[Settings Dashboard Guide](../guides/admin/SETTINGS_DASHBOARD_GUIDE.md)** - All 9 tabs explained
+- **[Token Management Guide](../features/performance/TOKEN_MANAGEMENT_GUIDE.md)** - Control costs
+- **[Documentation Index](../DOCUMENTATION_INDEX.md)** - 659 guides
 
 ---
 
 ## Need Help?
 
 - **GitHub:** https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues
-- **Docs:** [Complete Index](../../DOCUMENTATION_INDEX.md)
-- **Troubleshooting:** [Common Issues](../../troubleshooting/)
+- **Docs:** [Complete Index](../DOCUMENTATION_INDEX.md)
+- **Troubleshooting:** [Common Issues](../troubleshooting/)
 
 ---
 

@@ -30,14 +30,14 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Send Mailjet Email', 'wp-mcp-ai' );
+		return __( 'Send Mailjet Email', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Sends an email using the configured Mailjet credentials.', 'wp-mcp-ai' );
+		return __( 'Sends an email using the configured Mailjet credentials.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -49,19 +49,19 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'subject'        => array(
 					'type'        => 'string',
-					'description' => __( 'Subject line for the outgoing message.', 'wp-mcp-ai' ),
+					'description' => __( 'Subject line for the outgoing message.', 'mcp-ai-wpoos-pro' ),
 				),
 				'text'           => array(
 					'type'        => 'string',
-					'description' => __( 'Optional plain-text body for the message.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional plain-text body for the message.', 'mcp-ai-wpoos-pro' ),
 				),
 				'html'           => array(
 					'type'        => 'string',
-					'description' => __( 'Optional HTML body for the message.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional HTML body for the message.', 'mcp-ai-wpoos-pro' ),
 				),
 				'to'             => array(
 					'type'        => 'array',
-					'description' => __( 'List of primary recipients. Each entry may be an email string or an object with email and name fields.', 'wp-mcp-ai' ),
+					'description' => __( 'List of primary recipients. Each entry may be an email string or an object with email and name fields.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -86,7 +86,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 				),
 				'cc'             => array(
 					'type'        => 'array',
-					'description' => __( 'Optional CC recipients formatted like the "to" field.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional CC recipients formatted like the "to" field.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -110,7 +110,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 				),
 				'bcc'            => array(
 					'type'        => 'array',
-					'description' => __( 'Optional BCC recipients formatted like the "to" field.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional BCC recipients formatted like the "to" field.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -134,23 +134,23 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 				),
 				'from_email'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional sender email override. Defaults to the Mailjet From Email in settings.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional sender email override. Defaults to the Mailjet From Email in settings.', 'mcp-ai-wpoos-pro' ),
 				),
 				'from_name'      => array(
 					'type'        => 'string',
-					'description' => __( 'Optional sender name override.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional sender name override.', 'mcp-ai-wpoos-pro' ),
 				),
 				'reply_to_email' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional reply-to email address.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional reply-to email address.', 'mcp-ai-wpoos-pro' ),
 				),
 				'reply_to_name'  => array(
 					'type'        => 'string',
-					'description' => __( 'Optional reply-to display name.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional reply-to display name.', 'mcp-ai-wpoos-pro' ),
 				),
 				'custom_id'      => array(
 					'type'        => 'string',
-					'description' => __( 'Optional custom identifier to attach to the Mailjet message.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional custom identifier to attach to the Mailjet message.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'subject', 'to' ),
@@ -172,11 +172,11 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		$required_capability = apply_filters( 'wp_mcp_ai_send_mailjet_email_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send Mailjet emails.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send Mailjet emails.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -187,11 +187,11 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		if ( '' === $api_key || '' === $api_secret ) {
 			return new WP_Error(
 				'wp_mcp_ai_mailjet_missing_credentials',
-				__( 'Mailjet API credentials have not been configured.', 'wp-mcp-ai' ),
+				__( 'Mailjet API credentials have not been configured.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_mailjet_credentials' => __( 'Add a Mailjet API key and secret in the WP oOS settings.', 'wp-mcp-ai' ),
+						'configure_mailjet_credentials' => __( 'Add a Mailjet API key and secret in the WP oOS settings.', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -200,13 +200,13 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		$subject = isset( $arguments['subject'] ) ? sanitize_text_field( $arguments['subject'] ) : '';
 
 		if ( '' === $subject ) {
-			return new WP_Error( 'wp_mcp_ai_mailjet_missing_subject', __( 'An email subject must be provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_mailjet_missing_subject', __( 'An email subject must be provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$to = isset( $arguments['to'] ) ? $this->normalise_address_list( $arguments['to'] ) : array();
 
 		if ( empty( $to ) ) {
-			return new WP_Error( 'wp_mcp_ai_mailjet_missing_recipients', __( 'At least one valid recipient must be supplied.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_mailjet_missing_recipients', __( 'At least one valid recipient must be supplied.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$cc  = isset( $arguments['cc'] ) ? $this->normalise_address_list( $arguments['cc'] ) : array();
@@ -216,7 +216,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		$html_part = isset( $arguments['html'] ) ? $this->sanitize_html_part( $arguments['html'] ) : '';
 
 		if ( '' === $text_part && '' === $html_part ) {
-			return new WP_Error( 'wp_mcp_ai_mailjet_missing_body', __( 'Provide either a text or HTML message body.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_mailjet_missing_body', __( 'Provide either a text or HTML message body.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$from_email = '';
@@ -229,11 +229,11 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		if ( '' === $from_email ) {
 			return new WP_Error(
 				'wp_mcp_ai_mailjet_missing_sender',
-				__( 'A from email address must be configured before sending Mailjet messages.', 'wp-mcp-ai' ),
+				__( 'A from email address must be configured before sending Mailjet messages.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_mailjet_sender' => __( 'Set the Mailjet From Email in the WP oOS settings.', 'wp-mcp-ai' ),
+						'configure_mailjet_sender' => __( 'Set the Mailjet From Email in the WP oOS settings.', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -298,7 +298,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		$encoded_body = wp_json_encode( $payload );
 
 		if ( false === $encoded_body ) {
-			return new WP_Error( 'wp_mcp_ai_mailjet_encoding_error', __( 'Failed to encode the Mailjet request payload.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_mailjet_encoding_error', __( 'Failed to encode the Mailjet request payload.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$timeout = $this->resolve_timeout( $settings );
@@ -338,7 +338,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 
 			return new WP_Error(
 				'wp_mcp_ai_mailjet_http_error',
-				__( 'The Mailjet API request failed to complete.', 'wp-mcp-ai' ),
+				__( 'The Mailjet API request failed to complete.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $response )
 			);
 		}
@@ -348,7 +348,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		$decoded     = json_decode( $body, true );
 
 		if ( 200 !== (int) $status_code ) {
-			$message_text = __( 'The Mailjet API returned an unexpected status code.', 'wp-mcp-ai' );
+			$message_text = __( 'The Mailjet API returned an unexpected status code.', 'mcp-ai-wpoos-pro' );
 
 			if ( is_array( $decoded ) && isset( $decoded['ErrorMessage'] ) ) {
 				$message_text .= ' ' . $decoded['ErrorMessage'];
@@ -367,7 +367,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		if ( ! is_array( $decoded ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mailjet_invalid_response',
-				__( 'Mailjet returned an invalid response payload.', 'wp-mcp-ai' ),
+				__( 'Mailjet returned an invalid response payload.', 'mcp-ai-wpoos-pro' ),
 				array( 'body' => $body )
 			);
 		}
@@ -375,7 +375,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 		if ( empty( $decoded['Messages'] ) || ! is_array( $decoded['Messages'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mailjet_missing_messages',
-				__( 'Mailjet did not return any message status information.', 'wp-mcp-ai' ),
+				__( 'Mailjet did not return any message status information.', 'mcp-ai-wpoos-pro' ),
 				array( 'response' => $decoded )
 			);
 		}
@@ -391,7 +391,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 
 			return new WP_Error(
 				'wp_mcp_ai_mailjet_failed',
-				__( 'Mailjet reported a failure when sending the email.', 'wp-mcp-ai' ) . ( $error_details ? ' ' . $error_details : '' ),
+				__( 'Mailjet reported a failure when sending the email.', 'mcp-ai-wpoos-pro' ) . ( $error_details ? ' ' . $error_details : '' ),
 				array( 'response' => $decoded )
 			);
 		}

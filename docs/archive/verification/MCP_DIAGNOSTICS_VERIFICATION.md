@@ -42,7 +42,7 @@ add_action( 'wp_ajax_wp_mcp_ai_test_mcp_method', array( __CLASS__, 'handle_test_
 
 ### ✅ WordPress Admin Menu
 - [x] Registered under **Tools** menu
-- [x] Menu label: "WP oOS MCP Test"
+- [x] Menu label: "NV oOS MCP Test"
 - [x] Page title: "MCP Server Diagnostic"
 - [x] Menu slug: `wp-mcp-ai-mcp-diagnostic`
 - [x] Capability required: `manage_options`
@@ -186,7 +186,7 @@ To verify the page in a live WordPress environment:
 
 1. **Access the Page:**
    ```
-   WordPress Admin → Tools → WP oOS MCP Test
+   WordPress Admin → Tools → NV oOS MCP Test
    ```
 
 2. **Test Endpoint Connectivity:**

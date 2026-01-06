@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project creates a comprehensive enhancement plan for the WP oOS Token Usage Manager, upgrading from the current fixed 100,000 token limit to an intelligent, tiered system with forecasting, automation, and enhanced analytics.
+This project creates a comprehensive enhancement plan for the NV oOS Token Usage Manager, upgrading from the current fixed 100,000 token limit to an intelligent, tiered system with forecasting, automation, and enhanced analytics.
 
 ## Problem Statement
 

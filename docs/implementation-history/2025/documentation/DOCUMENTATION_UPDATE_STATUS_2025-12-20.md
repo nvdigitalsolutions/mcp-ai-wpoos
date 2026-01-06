@@ -239,7 +239,7 @@ Systematically review all 549+ markdown files in the repository to:
     - Remaining phases planned
 
 31. **docs/ADVANCED-SSE-BUDGET-MANAGEMENT.md** ⚠️ NOT YET IMPLEMENTED (Planning Document)
-    - STATUS: Features DO NOT currently exist in WP oOS
+    - STATUS: Features DO NOT currently exist in NV oOS
     - Architecture design document for future implementation
     - Describes advanced per-stream budget management
     - Note: This is a planning/architecture document, not implementation tracking
@@ -340,7 +340,7 @@ Systematically review all 549+ markdown files in the repository to:
 47. **docs/TOKEN-MANAGER-ENHANCEMENT-PLAN.md** ⚠️ PLANNING (Enhancement Plan)
     - Version: 1.0
     - Status: Planning Phase
-    - Target: WP oOS v1.1.0
+    - Target: NV oOS v1.1.0
     - Comprehensive enhancement plan for token management
     - Note: This is a planning document for future work
 
@@ -352,7 +352,7 @@ Systematically review all 549+ markdown files in the repository to:
 
 49. **docs/PHASE-7-ANALYTICS-PLAN.md** ⚠️ PLANNING (Enhancement Plan)
     - Version: 1.0, Status: Planning Phase
-    - Target: WP oOS v1.2.0
+    - Target: NV oOS v1.2.0
     - Prerequisites: Phases 1-6 Complete
     - Advanced Analytics & Visualization plan
     - Note: Planning document for future implementation
@@ -1811,7 +1811,7 @@ To reach 13% completion target (72 documents total), next session should focus o
 
 **High Token Tool Handling:**
 - ✅ Version 1.2.0 COMPLETE (Enhanced)
-- NEW: Per-model fallback configuration UI in Settings → WP oOS
+- NEW: Per-model fallback configuration UI in Settings → NV oOS
 - NEW: Support for common OpenAI models (gpt-4o-mini, gpt-4o, etc.)
 - Three-tier strategy: Model switching → Truncation → Error handling
 - Fallback resolution: Settings per-model → CCT per-model → Global → Default
@@ -2470,7 +2470,7 @@ To reach 25% completion target (138 documents total), next session should focus 
 
 137. **docs/CUSTOM-AI-SETTINGS-FILTERS.md** ✅ (Admin UI Feature)
     - Custom AI Settings (Filters) feature for code-free configuration
-    - Location: Settings → WP oOS → General Settings → Custom AI Settings
+    - Location: Settings → NV oOS → General Settings → Custom AI Settings
     - Purpose: Applies settings to real filters, works and not redundant
     - Architecture: Admin UI → Settings Registry → Filters Applicator → WordPress Filters
     - 11 available settings documented:
@@ -3238,7 +3238,7 @@ To reach 29% completion target (160 documents total), next session should focus 
     - Quick Reference Guide, Last Updated: 2024-11-13, Version: 1.1
     - 3 new AI-powered tools from PR #1080
     - Tools: generate_image_alt_text, generate_image_caption, analyze_comment_content
-    - Quick start: Enable in Settings → WP oOS → Tools & Features
+    - Quick start: Enable in Settings → NV oOS → Tools & Features
     - Tool overview table with purpose, use case, average cost
     - All tools support: OpenAI GPT-4o-mini, Gemini 1.5-flash
     - Detailed reference: Parameters, returns, requirements for each tool
@@ -3445,13 +3445,13 @@ To reach 33% completion target (182 documents total), next session should focus 
 
 175. **docs/ORCHESTRATION-LAYER-ARCHITECTURE.md** ✅ (Architecture Documentation)
     - Last Updated: November 5, 2024, Plugin Version: 1.0.0
-    - Novel differentiators of WP oOS orchestration layer vs standard SSE/MCP
+    - Novel differentiators of NV oOS orchestration layer vs standard SSE/MCP
     - Critical innovation: Overcoming PHP's architectural limitations for real-time AI streaming
     - Why Node.js typically used: Non-blocking I/O, long-lived connections, persistent event loops, high concurrency, async/await patterns
     - PHP challenges: Request-based lifecycle, blocking I/O, state-ephemeral, process-per-request, no native event loop
-    - WP oOS innovation: "Persistent-behavior illusion" within WordPress/PHP's synchronous architecture
-    - 7-point comparison table: PHP limitation → Node.js solution → WP oOS workaround
-    - How WP oOS compensates: Registry & Policy Engine, Predictive Budget Allocator, SSE Controller, Cron Manager, Budget & Capability Managers, Token-based authentication, Resource Manager
+    - NV oOS innovation: "Persistent-behavior illusion" within WordPress/PHP's synchronous architecture
+    - 7-point comparison table: PHP limitation → Node.js solution → NV oOS workaround
+    - How NV oOS compensates: Registry & Policy Engine, Predictive Budget Allocator, SSE Controller, Cron Manager, Budget & Capability Managers, Token-based authentication, Resource Manager
     - Creates appearance of persistence: Budget tracking, tool registry, cron scheduler, SSE streaming, policy enforcement
     - Achieves distributed orchestration with deterministic resource gating in environment not designed for it
     - Current and accurate
@@ -3459,7 +3459,7 @@ To reach 33% completion target (182 documents total), next session should focus 
 176. **docs/tools-manager.md** ✅ (Feature Documentation)
     - Status: ✅ COMPLETE
     - Comprehensive interface for viewing and managing 65+ AI tools
-    - Location: Settings → WP oOS → Tools & Features → Tools Manager subtab
+    - Location: Settings → NV oOS → Tools & Features → Tools Manager subtab
     - Features: Categorized tool display (WordPress Core 25+, WordPress Plugins 12+, External Tools 28+)
     - Tool information: Name, slug, description, status (available/unavailable), actions
     - Automatic dependency checking for 7 integrations: Elementor, WooCommerce, JetEngine, JetFormBuilder, Rank Math, WPCode, Simple JWT Login
@@ -3689,7 +3689,7 @@ To reach 33% completion target (182 documents total), next session should focus 
 - ✅ ORCHESTRATION-LAYER-ARCHITECTURE.md: Novel innovation documented (November 2024)
   - Critical innovation: PHP workaround for real-time AI streaming
   - "Persistent-behavior illusion" architecture
-  - 7-point comparison: PHP limitations → Node.js solutions → WP oOS workarounds
+  - 7-point comparison: PHP limitations → Node.js solutions → NV oOS workarounds
   - Patent-relevant technical novelty explained
   - Achieves distributed orchestration in request-based environment
 - ✅ tools-manager.md: Tool management interface complete
@@ -4069,7 +4069,7 @@ To reach 36% completion target (198 documents total), next session should focus 
     - Troubleshooting common issues
     - Security notes: Audit trail, anomaly detection
     - Support resources linked
-    - Note: This is a PLANNING document - features DO NOT currently exist in WP oOS
+    - Note: This is a PLANNING document - features DO NOT currently exist in NV oOS
     - Current and accurate as planning document
 
 **Chat Communication Documentation (4 documents):**
@@ -4157,7 +4157,7 @@ To reach 36% completion target (198 documents total), next session should focus 
     - Status: ✅ COMPLETE (Feature Documentation)
     - LM Studio provider fully implemented and working
     - What was fixed: Endpoint URL configuration bug (http://localhost:1234/v1 → http://localhost:1234)
-    - Quick setup: 3 steps (Start LM Studio, Configure WP oOS, Use it)
+    - Quick setup: 3 steps (Start LM Studio, Configure NV oOS, Use it)
     - Network configurations: Same machine, local network, remote with Cloudflare Tunnel
     - Troubleshooting: Connection refused, model not found, timeout issues
     - Benefits: Free (no API costs), private, fast, unlimited, flexible
@@ -4177,7 +4177,7 @@ To reach 36% completion target (198 documents total), next session should focus 
     - Quick examples: Basic usage, with all parameters, async/await, promises
     - Console output examples: Request log, success response, error response
     - Common errors table with causes and solutions
-    - Where to use: Developer Console on page with WP oOS chat widget
+    - Where to use: Developer Console on page with NV oOS chat widget
     - Full documentation links provided
     - Tip: Type function name in console to see definition
     - Current and accurate
@@ -4361,7 +4361,7 @@ To reach 33% completion target (182 documents total), next session should focus 
 **Quick Reference Guides (3 documents):**
 161. **docs/QUICK-REFERENCE-PHASE-7.md** ⚠️ PLANNING (Phase 7)
     - Version: 1.0, Status: Planning Phase
-    - Target: WP oOS v1.2.0
+    - Target: NV oOS v1.2.0
     - Advanced Analytics & Visualization plan
     - 6 key features: Chart.js dashboards, cost attribution, trend analysis, automated reports, advanced anomalies, tier recommendations
     - Quick start examples: View dashboard, cost breakdown, usage trends, automated reports, anomaly detection, tier recommendations
@@ -4375,7 +4375,7 @@ To reach 33% completion target (182 documents total), next session should focus 
     - Troubleshooting: Charts not rendering, reports not sending, cost calculations incorrect
     - Migration notes: No breaking changes, backward compatible, optional features
     - Security considerations: Cost data access, anomaly logs GDPR, opt-in reports, API permissions, cache key isolation
-    - Note: This is a PLANNING document - features DO NOT currently exist in WP oOS
+    - Note: This is a PLANNING document - features DO NOT currently exist in NV oOS
     - Current and accurate as planning document
 
 162. **docs/PHP_74_COMPATIBILITY_QUICK_REF.md** ✅ (Compatibility Reference)
@@ -4505,7 +4505,7 @@ To reach 33% completion target (182 documents total), next session should focus 
 
 168. **docs/assistant-storage-cpt-vs-cct.md** ✅ (Storage Architecture)
     - Status: ✅ COMPLETE (CPT is MCP server source, CCT is sync target)
-    - MCP server context: WP oOS functions as MCP server at /wp-json/mcp-ai/v1/
+    - MCP server context: NV oOS functions as MCP server at /wp-json/mcp-ai/v1/
     - For MCP client developers: ALWAYS use /wp-json/mcp-ai/v1/ (MCP server endpoint), NOT /wp-json/jet-cct/assistants
     - Overview: Two methods - CPT (WordPress native, MCP server source) and CCT (JetEngine, optional sync target)
     - CPT (Custom Post Type): Default implementation & MCP server source
@@ -4826,7 +4826,7 @@ To reach 33% completion target (182 documents total), next session should focus 
     - ASCII art diagrams for UI elements
     - Function parameters documented (sessionKey required, userId/assistantId optional)
     - Real output examples with detailed response structure
-    - Where to use: Developer Console on page with WP oOS chat widget
+    - Where to use: Developer Console on page with NV oOS chat widget
     - Tips included for quick access
     - Current and accurate
 
@@ -4881,7 +4881,7 @@ To reach 33% completion target (182 documents total), next session should focus 
 
 197. **docs/CRON_JOB_VISIBILITY_FLOW.md** ✅ (Flow Documentation)
     - Status: ✅ COMPLETE
-    - Complete flow of how test jobs show up in WP oOS Cron Manager
+    - Complete flow of how test jobs show up in NV oOS Cron Manager
     - Visual flow diagram: 4 stages (user creates job → tool execution → cron manager UI → job status check)
     - Job lifecycle states: 3 states documented (Created, Active, Executed)
     - Key feature: Executed jobs STILL VISIBLE in manager (configurable retention period)
@@ -4900,7 +4900,7 @@ To reach 33% completion target (182 documents total), next session should focus 
     - Status: ✅ COMPLETE
     - Complete guide for testing cron job creation and visibility
     - Overview: 4 main topics (create, verify, confirm visibility, adjust retention)
-    - Accessing Cron Manager: WP Admin → WP oOS → Cron Manager
+    - Accessing Cron Manager: WP Admin → NV oOS → Cron Manager
     - Job statuses: 3 status badges (Active, Executed, Inactive) with explanations
     - Retention period: Default 24 hours, configurable, allows verification and debugging
     - Creating test cron jobs: 3 methods documented
@@ -5113,7 +5113,7 @@ To reach 38% completion target (209 documents total), next session should focus 
     - Status: ✅ COMPLETE
     - Repository rename: wp-mcp-ai → mcp-ai-wpoos
     - Pre-rename preparation: 57 files updated, 89 total replacements in commit cbab909
-    - Rationale: Better alignment with plugin branding (WP oOS), avoids WordPress-first naming, more memorable, future-proof
+    - Rationale: Better alignment with plugin branding (NV oOS), avoids WordPress-first naming, more memorable, future-proof
     - Files updated: Main documentation (README, readme.txt, BUILD, RELEASE_CHECKLIST, SECURITY), GitHub config (workflows, issue templates), all docs
     - GitHub automatic redirects: Repository URL, Git clone URLs, API endpoints, badge URLs, issue/PR links
     - No breaking changes: Plugin files, text domain, constants, functions, classes unchanged
@@ -5144,7 +5144,7 @@ To reach 38% completion target (209 documents total), next session should focus 
     - Tool normalization: Accepts tools in various formats, normalizes to OpenAI-compatible structure
     - Streaming disabled: Explicitly disabled (stream: false) when tools present for reliable tool execution
     - Compatible models tested: qwen/qwen3-coder-30b
-    - Configuration: 3 steps (start LM Studio, configure WP oOS, test connection)
+    - Configuration: 3 steps (start LM Studio, configure NV oOS, test connection)
     - Backward compatible: Without tools works exactly as before, with tools uses new structure
     - Implementation details: 2 files modified (client +137 lines, tests +243 lines)
     - Test coverage: 4 comprehensive tests (tool normalization, tools in payload, streaming disabled, message preservation)
@@ -5618,7 +5618,7 @@ To reach 40% completion target (220 documents total), next session should focus 
 **Configuration Systems (2 documents):**
 - ✅ Dynamic filters: All hardcoded values now filterable, admin UI support
 - ✅ 50+ filters documented across 12 categories (model selection, agentic loop, resources, etc.)
-- ✅ Admin UI configuration for non-developers at Settings → WP oOS → Custom AI Settings
+- ✅ Admin UI configuration for non-developers at Settings → NV oOS → Custom AI Settings
 
 **UI and Feature Fixes (2 documents):**
 - ✅ Elementor widget activation: Checkbox now properly controls widget loading
@@ -5795,7 +5795,7 @@ To reach 40% completion target (220 documents total), next session should focus 
     - Quick start guide for LM Studio provider
     - Bug fixed: Default endpoint http://localhost:1234/v1 caused malformed URLs (v1/v1/models)
     - Fix: Changed to http://localhost:1234 (base URL without API suffix)
-    - Setup: 3 steps (start LM Studio, configure WP oOS, use it)
+    - Setup: 3 steps (start LM Studio, configure NV oOS, use it)
     - Network configurations: Same machine (localhost), local network (192.168.x.x), remote via Cloudflare Tunnel
     - Troubleshooting: Connection refused, model not found, timeout solutions
     - Benefits: Free (no API costs), private (local data), fast (no network latency), unlimited (no rate limits)
@@ -5840,7 +5840,7 @@ To reach 40% completion target (220 documents total), next session should focus 
     - Gemini 2.x series: gemini-2.0-flash-exp, gemini-2.5-flash, gemini-exp-1206 (native video understanding)
     - Gemini 1.5 series: gemini-1.5-pro, gemini-1.5-flash (stable production)
     - Experimental vs stable: -exp suffix for latest features, 1.5 series for production
-    - Configuration: Settings → WP oOS → AI Provider Configuration, per-assistant overrides
+    - Configuration: Settings → NV oOS → AI Provider Configuration, per-assistant overrides
     - Current and accurate
 
 268. **docs/NEW_AI_TOOLS_USAGE.md** ✅ (Tool Usage Guide)
@@ -6066,7 +6066,7 @@ To reach 51% completion target (281 documents total), next session should focus 
     - Novel differentiators vs standard SSE/MCP implementations
     - Core innovation: Overcoming PHP's architectural limitations for real-time AI streaming
     - PHP challenges: Request-based lifecycle, blocking I/O, state-ephemeral, process-per-request, no native event loop
-    - WP oOS innovation: Orchestration layer creates "persistent-behavior illusion" in synchronous PHP
+    - NV oOS innovation: Orchestration layer creates "persistent-behavior illusion" in synchronous PHP
     - 7 PHP limitations with workarounds: No persistent state (Registry & Policy Engine), blocking I/O (Predictive Budget Allocator), no event loop (SSE Controller), request dies (Cron Manager), no concurrent coordination (Budget & Capability Managers), no persistent connections (Token-based auth), resource limits (Resource Manager)
     - Patent-worthy: Distributed orchestration with deterministic resource gating in environment not designed for it
     - Comprehensive architecture documentation with detailed comparisons
@@ -6088,7 +6088,7 @@ To reach 51% completion target (281 documents total), next session should focus 
 275. **docs/PER-CALL-SESSION-LIMITS-UI-GUIDE.md** ✅ (UI Guide)
     - Status: ✅ COMPLETE
     - Visual UI guide for per-call and per-session token limits
-    - Settings location: WordPress Admin → Settings → WP oOS → Orchestration → Thresholds
+    - Settings location: WordPress Admin → Settings → NV oOS → Orchestration → Thresholds
     - 2 UI sections: Per-call token limits (checkbox + slider 0-100k tokens, default 10k), per-session token limits (checkbox + slider 0-500k tokens, default 50k)
     - Integration: Added after "Token Limits by Workload Tier" section in Thresholds tab
     - Configuration examples: Conservative (5k per-call, 25k per-session), Moderate (10k, 50k), Aggressive (25k, 150k), Development (50k, 250k)
@@ -6355,7 +6355,7 @@ To reach 53% completion target (292 documents total), next session should focus 
 **Quick Reference Documents (3 documents):**
 283. **docs/QUICK-REFERENCE-PHASE-7.md** ⚠️ PLANNING (Quick Reference)
     - Status: Planning Phase
-    - Version: 1.0, Target: WP oOS v1.2.0
+    - Version: 1.0, Target: NV oOS v1.2.0
     - Advanced Analytics & Visualization for Token Manager
     - 6 key features: Chart.js dashboards, cost attribution, trend analysis, automated reports, advanced anomalies, tier recommendations
     - New REST API endpoints: Cost endpoints, analytics endpoints, recommendation endpoints
@@ -6422,7 +6422,7 @@ To reach 53% completion target (292 documents total), next session should focus 
 287. **docs/RELEASE_CHECKLIST.md** ✅ (Release Process)
     - Status: ✅ COMPLETE
     - Last updated: December 2025
-    - Complete WP oOS release process for GitHub and WordPress.org
+    - Complete NV oOS release process for GitHub and WordPress.org
     - Pre-release preparation: Code quality checks, version number updates, changelog updates, documentation review, build production assets, final testing
     - GitHub release: Automatic via GitHub Actions (recommended) or manual
     - WordPress.org submission: First-time submission (Step 1-4), deploying updates (Option A: Manual SVN, Option B: Automated), deploying assets
@@ -6439,7 +6439,7 @@ To reach 53% completion target (292 documents total), next session should focus 
 288. **docs/RABBITMQ-CLOUDWAYS-INTEGRATION-PLAN.md** ⚠️ PLANNING (Integration Plan)
     - Status: Planning Document
     - Version: 1.0.0, Last Updated: November 27, 2025
-    - RabbitMQ integration plan for WP oOS on Cloudways hosting
+    - RabbitMQ integration plan for NV oOS on Cloudways hosting
     - Key benefits: Async tool execution (non-blocking), long-running tasks (background processing), parallel execution, retry queues, scaling (multiple workers), monitoring
     - Current limitations: PHP execution timeouts, sequential processing, resource contention, limited retry logic, WP-Cron unreliability
     - RabbitMQ on Cloudways: Enabling steps, CLI commands, credentials
@@ -6460,7 +6460,7 @@ To reach 53% completion target (292 documents total), next session should focus 
 **Workflow Documentation (1 document):**
 289. **docs/README-AGENTIC-WORKFLOW.md** ✅ (Workflow Guide)
     - Status: ✅ COMPLETE
-    - Start here guide for understanding agentic workflows in WP oOS
+    - Start here guide for understanding agentic workflows in NV oOS
     - 3 paths: Basics (visual diagrams, 15min), Complete details (60min comprehensive), Developer code
     - Document navigation:
       - New users → AGENTIC-WORKFLOW-VISUAL-SUMMARY.md (quick visual diagrams)
@@ -7328,7 +7328,7 @@ To reach 59% completion target (325 documents total), next session should focus 
 329. **docs/SYMFONY_UTILITIES_RECOMMENDATIONS.md** ✅ (Recommendations)
     - Date: December 8, 2025
     - Status: Analysis Complete - Implementation Roadmap Provided
-    - Purpose: Comprehensive analysis of Symfony utility components for WP oOS
+    - Purpose: Comprehensive analysis of Symfony utility components for NV oOS
     - Recommendation status: ✅ High Priority (3 components), ⚠️ Medium Priority (2 components), ❌ Not Recommended (3 components)
     - High Priority #1: Symfony Validator (HIGHEST) - 65 tools with manual validation, 360 cache instances, 223 serialize instances
     - Benefits: Declarative validation rules, 50+ built-in constraints, custom WordPress constraints
@@ -7425,7 +7425,7 @@ To reach 59% completion target (325 documents total), next session should focus 
     - Three tools: generate_image_alt_text, generate_image_caption, analyze_comment_content
     - Tool overview: Cost ($0.00015-$0.00038 per request), primary use cases
     - All tools support: OpenAI GPT-4o-mini, Gemini 1.5-flash
-    - WordPress integration: Settings → WP oOS → Tools & Features
+    - WordPress integration: Settings → NV oOS → Tools & Features
     - generate_image_alt_text: Accessibility-focused alt text, ~100 tokens per request
     - generate_image_caption: Engaging descriptions for content/social, ~150 tokens per request
     - analyze_comment_content: Spam & toxicity detection, ~250 tokens per request
@@ -8040,7 +8040,7 @@ To reach 59% completion target (325 documents total), next session should focus 
 
 **Integration Documentation (3 documents):**
 347. **docs/SYMFONY_INTEGRATION_GUIDE.md** ✅ (Integration Guide)
-    - Purpose: Guide for using Symfony components in WP oOS
+    - Purpose: Guide for using Symfony components in NV oOS
     - Integrated components:
       1. Symfony Validator (v6.4.30) - Declarative validation
       2. Symfony Cache (v6.4.30) - High-performance caching
@@ -8655,7 +8655,7 @@ To reach 65% completion target (358 documents total), next session should focus 
 367. **docs/CUSTOM-AI-SETTINGS-FILTERS.md** ✅ (Admin UI Feature)
     - Status: ✅ WORKS - NOT REDUNDANT
     - Custom AI Settings (Filters) admin UI feature
-    - Location: Settings → WP oOS → General Settings → Custom AI Settings (Filters)
+    - Location: Settings → NV oOS → General Settings → Custom AI Settings (Filters)
     - Purpose: Code-free configuration for non-developers
     - Architecture: Admin UI → Settings Registry → Filters Applicator → WordPress Filters → Plugin Behavior
     - Available settings: AI model selection (2), resource management (3), retry/error handling (2), file/attachment limits (1), local AI endpoint URLs
@@ -8925,7 +8925,7 @@ To reach 67% completion target (369 documents total), next session should focus 
     - Current and accurate
 
 377. **docs/ENABLE-SSE-STREAMING.md** ✅ (Feature Guide)
-    - Status: ✅ COMPLETE - SSE streaming built-in to WP oOS
+    - Status: ✅ COMPLETE - SSE streaming built-in to NV oOS
     - Quick start: `[mcp_ai_chat enable_streaming="true"]` or Elementor widget toggle
     - Three enablement methods: Shortcode attribute, Elementor widget, JavaScript client (advanced)
     - SSE benefits: 10x faster perceived speed (1-3s first token vs 30s full response)
@@ -9059,7 +9059,7 @@ To reach 67% completion target (369 documents total), next session should focus 
 - ✅ Production ready status documented
 
 **SSE Documentation:**
-- ✅ Implementation verified (built-in to WP oOS)
+- ✅ Implementation verified (built-in to NV oOS)
 - ✅ Deployment zero-configuration confirmed
 - ✅ Performance benefits documented (10x perceived speed)
 - ✅ Compatibility verified (attachments, tools, transcripts)
@@ -9155,7 +9155,7 @@ To reach 68% completion target (375 documents total), next session should focus 
 382. **docs/LM_STUDIO_QUICKSTART.md** ✅ (Quick Start Guide)
     - Status: ✅ COMPLETE
     - What Was Fixed: Endpoint URL bug (http://localhost:1234/v1 → http://localhost:1234)
-    - Quick Setup: 3 steps (Start LM Studio, Configure WP oOS, Use It)
+    - Quick Setup: 3 steps (Start LM Studio, Configure NV oOS, Use It)
     - Network configurations: Same machine, local network, remote + Cloudflare tunnel
     - Comprehensive troubleshooting guide
     - Benefits: Free, private, fast, unlimited, flexible
@@ -9245,7 +9245,7 @@ To reach 68% completion target (375 documents total), next session should focus 
     - Quick Reference Guide for 3 AI-powered tools (PR #1080)
     - Last Updated: 2024-11-13, Version: 1.1
     - Tools: generate_image_alt_text, generate_image_caption, analyze_comment_content
-    - Quick Start: Enable in WordPress Admin (Settings → WP oOS → Tools & Features)
+    - Quick Start: Enable in WordPress Admin (Settings → NV oOS → Tools & Features)
     - Tool overview table with purpose, use case, avg cost
     - All tools support: OpenAI GPT-4o-mini, Gemini 1.5-flash
     - Detailed tool reference with parameters, returns, requirements for each tool
@@ -9301,7 +9301,7 @@ To reach 68% completion target (375 documents total), next session should focus 
 
 389. **docs/QUICK-REFERENCE-PHASE-7.md** ⚠️ PLANNING (Phase 7 Plan)
     - Version: 1.0, Status: Planning Phase
-    - Target: WP oOS v1.2.0
+    - Target: NV oOS v1.2.0
     - Prerequisites: Phases 1-6 Complete
     - Purpose: Advanced Analytics & Visualization for Token Manager
     - Key features: Chart.js dashboards, cost attribution, trend analysis, automated reports, advanced anomalies, tier recommendations
@@ -10107,7 +10107,7 @@ To reach 74% completion target (408 documents total), next session should focus 
 420. **docs/remote-client-quickstart.md** ✅ (Quick Start Guide)
     - Status: ✅ COMPLETE
     - 5-minute quick start for connecting Claude Desktop to WordPress
-    - Prerequisites: WordPress with WP oOS, published assistant, Claude Desktop installed
+    - Prerequisites: WordPress with NV oOS, published assistant, Claude Desktop installed
     - Step 1: Generate credential in WordPress (2 minutes)
     - Step 2: Configure Claude Desktop config file (2 minutes)
       - Config file locations: macOS, Windows, Linux
@@ -10249,7 +10249,7 @@ To reach 76% completion target (419 documents total), next session should focus 
     - Markdown: Human-readable format with formatting
     - Text: Plain text without metadata
     - Implementation: `getLocalStorageQuota()`, `updateQuotaMonitor()`, `exportConversation()`
-    - Storage calculation: Separates WP oOS data from other localStorage
+    - Storage calculation: Separates NV oOS data from other localStorage
     - Uses prefix `wp_mcp_ai_chat_` for identification
     - Comprehensive feature documentation
     - Current and accurate
@@ -10409,7 +10409,7 @@ To reach 76% completion target (419 documents total), next session should focus 
 431. **docs/mcp-diagnostic-troubleshooting.md** ✅ (Troubleshooting Guide)
     - Status: ✅ COMPLETE
     - MCP Server Diagnostic page troubleshooting
-    - Access: /wp-admin/tools.php?page=wp-mcp-ai-mcp-diagnostic or Tools → WP oOS MCP Test
+    - Access: /wp-admin/tools.php?page=wp-mcp-ai-mcp-diagnostic or Tools → NV oOS MCP Test
     - Available tests:
       1. REST Endpoint Connectivity - Tests basic connectivity to /wp-json/mcp-ai/v1/mcp
       2. MCP Methods Testing - initialize, tools/list, resources/list, prompts/list
@@ -11183,7 +11183,7 @@ To reach 82% completion target (452 documents total), next session should focus 
 492. **docs/archive/PROFESSION_RESEEDING_SUMMARY.md** ✅ (Archive - Feature)
     - Status: ✅ COMPLETE (Profession re-seeding feature)
     - Problem: Need way to update/refresh profession templates from settings area
-    - Solution: Comprehensive profession management system (WordPress Admin → WP oOS → General Settings → Advanced → Data Management)
+    - Solution: Comprehensive profession management system (WordPress Admin → NV oOS → General Settings → Advanced → Data Management)
     - Implementation:
       1. Backend AJAX Handler (142 lines) - Two modes: Update (preserves custom) and Replace (deletes all)
       2. Settings UI (203 lines) - Status display, action buttons, real-time feedback
@@ -11358,9 +11358,9 @@ To reach 85% completion target (468 documents total), next session should focus 
     - Status: ✅ COMPLETE (December 8, 2025)
     - Purpose: Evaluate Symfony AI components integration feasibility
     - Recommendation: Selective integration (not full migration)
-    - Key Finding: WP oOS already implements most Symfony AI features natively
-    - Unified AI Platform: ❌ No action needed - WP oOS WordPress-native approach superior
-    - AI Agents & Chat: ❌ No action needed - WP oOS has comprehensive agent management
+    - Key Finding: NV oOS already implements most Symfony AI features natively
+    - Unified AI Platform: ❌ No action needed - NV oOS WordPress-native approach superior
+    - AI Agents & Chat: ❌ No action needed - NV oOS has comprehensive agent management
     - MCP Support: ⚠️ Potential enhancement (official PHP MCP SDK could be beneficial)
     - Tool Calling: ⚠️ Potential enhancement (PHP attributes for tool registration)
     - Current Implementation: Native clients for OpenAI, Gemini, Ollama, LM Studio, Anthropic
@@ -11377,7 +11377,7 @@ To reach 85% completion target (468 documents total), next session should focus 
     - Before: "189.8 KB • image/jpeg" (basic metadata)
     - After: "189.8 KB • image/jpeg • ID: 123" (complete metadata with attachment_id)
     - Testing Provider: OpenAI with vision-capable models (gpt-4o, gpt-4-turbo)
-    - Prerequisites: WordPress 6.0+, PHP 7.4+, WP oOS activated, valid OpenAI API key
+    - Prerequisites: WordPress 6.0+, PHP 7.4+, NV oOS activated, valid OpenAI API key
     - Test Steps: Configure OpenAI assistant → Attach file → Verify metadata display → Send message → Compare with tool result
     - File Types: Images (JPG, PNG, GIF, WebP), Documents (PDF, DOCX), Videos (MP4, WebM)
     - Verification: Attachment metadata format consistent with image tool results
@@ -11562,7 +11562,7 @@ To reach 85% completion target (468 documents total), next session should focus 
 464. **docs/CUSTOM-AI-SETTINGS-FILTERS.md** ✅ (Feature Documentation)
     - Status: ✅ COMPLETE (Feature implemented)
     - Overview: Admin UI for configuring WordPress filter values
-    - Location: Settings → WP oOS → General Settings → Custom AI Settings (Filters)
+    - Location: Settings → NV oOS → General Settings → Custom AI Settings (Filters)
     - Purpose: Code-free configuration method for non-developers
     - Architecture: Admin UI → Settings Registry → Filters Applicator → WordPress Filters → Plugin Behavior
     - Execution flow: 7-step process from admin save to production code
@@ -11675,7 +11675,7 @@ To reach 85% completion target (468 documents total), next session should focus 
 472. **docs/GEMINI_CAPABILITIES_MATRIX.md** ✅ (Reference Documentation)
     - Status: ✅ COMPLETE (Capabilities matrix reference)
     - Last updated: December 20, 2025, Version 1.0
-    - Overview: Quick reference of Gemini API capabilities vs WP oOS implementation status
+    - Overview: Quick reference of Gemini API capabilities vs NV oOS implementation status
     - API endpoints: 30+ endpoints across 6 categories
     - Chat & Generation: 2/2 implemented (generateContent, streamGenerateContent)
     - Models: 1/2 implemented (list models, get model gap)
@@ -11946,7 +11946,7 @@ To reach 85% completion target (468 documents total), next session should focus 
 
 450. **docs/ARCHITECTURE_VERIFICATION_REPORT.md** ✅ (Verification Report)
     - Status: ✅ COMPLETE (November 11, 2025)
-    - Complete code structure audit of WP oOS plugin architecture
+    - Complete code structure audit of NV oOS plugin architecture
     - Verification Status: ✅ PASSED - All components verified successfully
     - File Structure Verification:
       - Core Files: mcp-ai-wpoos.php, composer.json, package.json, phpunit.xml.dist ✓
@@ -12568,7 +12568,7 @@ To reach 80% completion milestone (440 documents total), next session should foc
     - Overview: Real-time token usage and cost display in chat interface
     - Integration: Logging layer, Enhanced Token Tracking, Transient/Caching, AJAX compatibility
     - Features: Token count, cost in USD, provider/model info, token breakdown tooltips
-    - Enabling: Via admin (Settings → WP oOS) or code filter (wp_mcp_ai_show_usage_costs)
+    - Enabling: Via admin (Settings → NV oOS) or code filter (wp_mcp_ai_show_usage_costs)
     - Cost Calculation: WP_MCP_AI_Cost_Calculator with provider-specific pricing
     - Supported Providers: OpenAI, Google Gemini, Anthropic Claude, Ollama/LM Studio ($0.00)
     - Cost Accuracy: Actual (confirmed) vs Estimated (inferred) labeled accordingly
@@ -12648,7 +12648,7 @@ To reach 80% completion milestone (440 documents total), next session should foc
 
 506. **docs/profession-reseeding.md** ✅ (Feature Documentation)
     - Status: ✅ COMPLETE (Profession re-seeding feature)
-    - Location: WordPress Admin → WP oOS → General Settings → Advanced → Data Management
+    - Location: WordPress Admin → NV oOS → General Settings → Advanced → Data Management
     - Current Status Display: Published/draft counts, initially seeded status
     - Update Professions: Safely update existing + add new (preserves custom)
     - Replace All Professions: Complete refresh (deletes ALL including custom)
@@ -12871,7 +12871,7 @@ To reach 90% completion target (496 documents total), next session should focus 
 **Settings and Configuration Documentation (3 documents):**
 511. **docs/new-settings-december-2025.md** ✅ (Settings Guide)
     - Status: ✅ COMPLETE (December 2025 settings documentation)
-    - Overview: 27 new settings added to WP oOS admin UI in PR #2072
+    - Overview: 27 new settings added to NV oOS admin UI in PR #2072
     - Settings Categories: Media (MIME type allowlists), OpenAI Provider (TTS, high token switching), Tool Configuration (web search, group email, cache), Cloudways Integration, Analytics (Google Analytics 4, ITA tariff), Federation & Mesh Networking
     - Media Settings: allowed_file_mimes, allowed_image_mimes
     - OpenAI TTS Configuration: openai_speech_model (tts-1, tts-1-hd), openai_speech_voice (6 voices: alloy, echo, fable, onyx, nova, shimmer), openai_speech_format (mp3, opus, aac, flac)
@@ -13230,7 +13230,7 @@ To reach 92% completion target (507 documents total), next session should focus 
 523. **docs/tools-manager.md** ✅ (UI Documentation)
     - Status: ✅ COMPLETE (Tools Manager admin interface)
     - Overview: Comprehensive interface for viewing and managing 65+ AI tools
-    - Location: Settings → WP oOS → Tools & Features tab → Tools Manager subtab
+    - Location: Settings → NV oOS → Tools & Features tab → Tools Manager subtab
     - Features: Categorized tool display (3 categories), tool information table, dependency checking, search & filter
     - Tool Categories: WordPress Core (25+ tools, no dependencies), WordPress Plugins (12+ tools, specific plugins), External Tools (28+ tools, API credentials)
     - Tool Information: Name, slug, description, status (Available green/Unavailable red), actions
@@ -13266,7 +13266,7 @@ To reach 92% completion target (507 documents total), next session should focus 
 525. **docs/CRON_TESTING_GUIDE.md** ✅ (Testing Guide)
     - Status: ✅ COMPLETE (Cron job testing and verification)
     - Overview: Test cron job creation and verify appearance in Cron Manager admin interface
-    - Accessing: WP Admin → WP oOS → Cron Manager or /wp-admin/admin.php?page=wp-mcp-ai-cron-manager
+    - Accessing: WP Admin → NV oOS → Cron Manager or /wp-admin/admin.php?page=wp-mcp-ai-cron-manager
     - Test Job Visibility: Job statuses (Active green, Executed blue, Inactive gray), retention period (default 24h)
     - Creating Test Cron Jobs: Method 1 (AI Assistant tools), Method 2 (REST API), Method 3 (WP-CLI)
     - Verification Steps: Create job → Verify in Cron Manager (Active) → Wait for execution → Verify after execution (Executed)
@@ -13323,7 +13323,7 @@ To reach 92% completion target (507 documents total), next session should focus 
 528. **docs/CUSTOM-AI-SETTINGS-FILTERS.md** ✅ (Admin UI Feature)
     - Status: ✅ COMPLETE (Custom AI Settings filters admin UI)
     - Overview: User-friendly admin interface for configuring WordPress filter values controlling AI behavior
-    - Location: Settings → WP oOS → General Settings → Custom AI Settings (Filters)
+    - Location: Settings → NV oOS → General Settings → Custom AI Settings (Filters)
     - Purpose: Code-free configuration for non-developers, applies to real filters used in codebase
     - How It Works: Admin UI → Settings Registry → Filters Applicator (priority 5) → WordPress Filters → Plugin Behavior
     - Available Settings: AI model selection (2 settings), resource management (3 settings), retry/error handling (2 settings), file/attachment limits (1 setting), local AI endpoints (3 settings including LM Studio fallback model)
@@ -13340,7 +13340,7 @@ To reach 92% completion target (507 documents total), next session should focus 
 
 529. **docs/DEPENDENCY_INJECTION.md** ✅ (Developer Guide)
     - Status: ✅ COMPLETE (Dependency injection container guide)
-    - Overview: WP oOS uses DI container to manage service instantiation, eliminates hard-coded dependencies, makes codebase testable
+    - Overview: NV oOS uses DI container to manage service instantiation, eliminates hard-coded dependencies, makes codebase testable
     - Quick Start: Getting services from container (wp_mcp_ai_container() or wp_mcp_ai()), creating instances with dependency resolution
     - Registered Services: Language model clients (5), core components (7), admin components (13), settings sections (13), services (4), repositories (3)
     - Writing Testable Code: Before (hard-coded) vs After (dependency injection), testing with mocks

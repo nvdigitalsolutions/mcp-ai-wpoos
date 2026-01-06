@@ -5,7 +5,7 @@
 Videos generated asynchronously by the `generate_veo_video` tool were not being properly extracted and displayed in the chat client. Users experienced timeout errors:
 
 ```
-[WP oOS] Async tool polling failed: Error: timeout
+[NV oOS] Async tool polling failed: Error: timeout
 Fetch failed loading: POST "https://bots.nvdigital.solutions/wp-json/mcp-ai/v1/chat-client"
 ```
 

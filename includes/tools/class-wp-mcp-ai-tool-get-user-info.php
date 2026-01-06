@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get User Information', 'wp-mcp-ai' );
+		return __( 'Get User Information', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns profile details for the specified WordPress user.', 'wp-mcp-ai' );
+		return __( 'Returns profile details for the specified WordPress user.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties' => array(
 				'user_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the user to inspect. Defaults to the current user.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the user to inspect. Defaults to the current user.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 			),
@@ -61,11 +61,11 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$acting_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $acting_user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to inspect users.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to inspect users.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $acting_user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $arguments['user_id'] ) ? absint( $arguments['user_id'] ) : 0;
@@ -78,20 +78,20 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_no_user', __( 'Unable to determine which user to load.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_no_user', __( 'Unable to determine which user to load.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $user_id !== $acting_user_id && ! user_can( $acting_user_id, 'list_users' ) && ! user_can( $acting_user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view other user profiles.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view other user profiles.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'The requested user does not belong to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'The requested user does not belong to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
-			return new WP_Error( 'wp_mcp_ai_user_not_found', __( 'The requested user could not be found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_user_not_found', __( 'The requested user could not be found.', 'mcp-ai-wpoos' ) );
 		}
 
 		$first_name = get_user_meta( $user_id, 'first_name', true );
@@ -101,7 +101,7 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$text_parts   = array();
 		$text_parts[] = sprintf(
 			/* translators: 1: display name, 2: user ID */
-			__( 'User: %1$s (ID: %2$d)', 'wp-mcp-ai' ),
+			__( 'User: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
 			$user->display_name,
 			$user->ID
 		);
@@ -111,7 +111,7 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			if ( '' !== $full_name ) {
 				$text_parts[] = sprintf(
 					/* translators: %s: user's full name */
-					__( 'Name: %s', 'wp-mcp-ai' ),
+					__( 'Name: %s', 'mcp-ai-wpoos' ),
 					$full_name
 				);
 			}
@@ -119,14 +119,14 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		$text_parts[] = sprintf(
 			/* translators: %s: user email */
-			__( 'Email: %s', 'wp-mcp-ai' ),
+			__( 'Email: %s', 'mcp-ai-wpoos' ),
 			$user->user_email
 		);
 
 		if ( ! empty( $user->roles ) ) {
 			$text_parts[] = sprintf(
 				/* translators: %s: comma-separated list of roles */
-				__( 'Roles: %s', 'wp-mcp-ai' ),
+				__( 'Roles: %s', 'mcp-ai-wpoos' ),
 				implode( ', ', $user->roles )
 			);
 		}

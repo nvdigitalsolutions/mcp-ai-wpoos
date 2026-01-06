@@ -28,14 +28,14 @@ class WP_MCP_AI_Tool_Check_Jukebox_Status implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Check Jukebox Status', 'wp-mcp-ai' );
+		return __( 'Check Jukebox Status', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Checks if OpenAI Jukebox is installed and properly configured on the server. Returns installation status, Python path, and Jukebox installation path.', 'wp-mcp-ai' );
+		return __( 'Checks if OpenAI Jukebox is installed and properly configured on the server. Returns installation status, Python path, and Jukebox installation path.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Check_Jukebox_Status implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $user_id && ! $has_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You must be authenticated to check Jukebox status.', 'wp-mcp-ai' ),
+				__( 'You must be authenticated to check Jukebox status.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
@@ -74,7 +74,7 @@ class WP_MCP_AI_Tool_Check_Jukebox_Status implements WP_MCP_AI_Tool_Interface, W
 		if ( $user_id && ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to check Jukebox status.', 'wp-mcp-ai' )
+				__( 'You do not have permission to check Jukebox status.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -102,18 +102,18 @@ class WP_MCP_AI_Tool_Check_Jukebox_Status implements WP_MCP_AI_Tool_Interface, W
 		// Add setup instructions if not installed.
 		if ( ! $status['installed'] ) {
 			$output['setup_instructions'] = array(
-				'step_1' => __( 'Install Python 3.7+ on your server.', 'wp-mcp-ai' ),
-				'step_2' => __( 'Clone the Jukebox repository: git clone https://github.com/openai/jukebox.git', 'wp-mcp-ai' ),
-				'step_3' => __( 'Install Jukebox dependencies: pip install -r jukebox/requirements.txt', 'wp-mcp-ai' ),
-				'step_4' => __( 'Install additional dependencies: pip install mpi4py av', 'wp-mcp-ai' ),
-				'step_5' => __( 'Configure the installation path in WP oOS settings (Settings → WP oOS → Tools → Jukebox).', 'wp-mcp-ai' ),
-				'note'   => __( 'Jukebox requires significant GPU resources (CUDA-capable GPU with 16GB+ VRAM recommended).', 'wp-mcp-ai' ),
+				'step_1' => __( 'Install Python 3.7+ on your server.', 'mcp-ai-wpoos-pro' ),
+				'step_2' => __( 'Clone the Jukebox repository: git clone https://github.com/openai/jukebox.git', 'mcp-ai-wpoos-pro' ),
+				'step_3' => __( 'Install Jukebox dependencies: pip install -r jukebox/requirements.txt', 'mcp-ai-wpoos-pro' ),
+				'step_4' => __( 'Install additional dependencies: pip install mpi4py av', 'mcp-ai-wpoos-pro' ),
+				'step_5' => __( 'Configure the installation path in WP oOS settings (Settings → WP oOS → Tools → Jukebox).', 'mcp-ai-wpoos-pro' ),
+				'note'   => __( 'Jukebox requires significant GPU resources (CUDA-capable GPU with 16GB+ VRAM recommended).', 'mcp-ai-wpoos-pro' ),
 			);
 		} else {
 			$output['available_models'] = array(
-				'1b_lyrics' => __( 'Small model with lyrics support (faster, lower quality)', 'wp-mcp-ai' ),
-				'5b'        => __( 'Large model without lyrics support (better quality)', 'wp-mcp-ai' ),
-				'5b_lyrics' => __( 'Large model with lyrics support (best quality, slowest)', 'wp-mcp-ai' ),
+				'1b_lyrics' => __( 'Small model with lyrics support (faster, lower quality)', 'mcp-ai-wpoos-pro' ),
+				'5b'        => __( 'Large model without lyrics support (better quality)', 'mcp-ai-wpoos-pro' ),
+				'5b_lyrics' => __( 'Large model with lyrics support (best quality, slowest)', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

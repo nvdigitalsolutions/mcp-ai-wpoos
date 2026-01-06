@@ -319,7 +319,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 					if ( isset( $definition['ready_message'] ) ) {
 						$status['message'] = $definition['ready_message'];
 					} else {
-						$status['message'] = __( 'Connected', 'wp-mcp-ai' );
+						$status['message'] = __( 'Connected', 'mcp-ai-wpoos' );
 					}
 					$status['status_class'] = 'active';
 				} elseif ( isset( $definition['empty_status'] ) ) {
@@ -335,7 +335,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 							isset( $definition['inactive_message'] ) ? $definition['inactive_message'] : ''
 						);
 					} else {
-						$status['message'] = __( 'Not configured', 'wp-mcp-ai' );
+						$status['message'] = __( 'Not configured', 'mcp-ai-wpoos' );
 					}
 					$status['status_class'] = 'inactive';
 				}
@@ -423,7 +423,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 
 			return sprintf(
 			/* translators: %s: list of missing fields */
-				__( 'Missing required fields: %s', 'wp-mcp-ai' ),
+				__( 'Missing required fields: %s', 'mcp-ai-wpoos' ),
 				implode( ', ', $missing_labels )
 			);
 		}

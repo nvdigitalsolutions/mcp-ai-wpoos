@@ -55,14 +55,14 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Count Tokens', 'wp-mcp-ai' );
+		return __( 'Count Tokens', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Estimates token counts for text or messages. Supports two methods: accurate tiktoken tokenizer (default) or fast heuristic estimation (~4 chars/token). Useful for planning requests and managing token budgets.', 'wp-mcp-ai' );
+		return __( 'Estimates token counts for text or messages. Supports two methods: accurate tiktoken tokenizer (default) or fast heuristic estimation (~4 chars/token). Useful for planning requests and managing token budgets.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -74,33 +74,33 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'text'     => array(
 					'type'        => 'string',
-					'description' => __( 'Plain text to count tokens for. Mutually exclusive with messages parameter.', 'wp-mcp-ai' ),
+					'description' => __( 'Plain text to count tokens for. Mutually exclusive with messages parameter.', 'mcp-ai-wpoos' ),
 				),
 				'messages' => array(
 					'type'        => 'array',
-					'description' => __( 'Array of chat messages to count tokens for. Each message should have role and content properties. Mutually exclusive with text parameter.', 'wp-mcp-ai' ),
+					'description' => __( 'Array of chat messages to count tokens for. Each message should have role and content properties. Mutually exclusive with text parameter.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
 							'role'    => array(
 								'type'        => 'string',
-								'description' => __( 'Message role (system, user, assistant, tool).', 'wp-mcp-ai' ),
+								'description' => __( 'Message role (system, user, assistant, tool).', 'mcp-ai-wpoos' ),
 							),
 							'content' => array(
 								'type'        => 'string',
-								'description' => __( 'Message content text.', 'wp-mcp-ai' ),
+								'description' => __( 'Message content text.', 'mcp-ai-wpoos' ),
 							),
 						),
 					),
 				),
 				'model'    => array(
 					'type'        => 'string',
-					'description' => __( 'Optional model identifier to get context limit information (e.g., gpt-4o, gpt-4o-mini, gemini-1.5-pro).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional model identifier to get context limit information (e.g., gpt-4o, gpt-4o-mini, gemini-1.5-pro).', 'mcp-ai-wpoos' ),
 				),
 				'method'   => array(
 					'type'        => 'string',
 					'enum'        => array( 'heuristic', 'tiktoken', 'auto' ),
-					'description' => __( 'Token counting method: "heuristic" uses ~4 chars/token estimate (fast), "tiktoken" uses OpenAI\'s tokenizer (accurate), "auto" tries tiktoken and falls back to heuristic. Default: auto.', 'wp-mcp-ai' ),
+					'description' => __( 'Token counting method: "heuristic" uses ~4 chars/token estimate (fast), "tiktoken" uses OpenAI\'s tokenizer (accurate), "auto" tries tiktoken and falls back to heuristic. Default: auto.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'additionalProperties' => false,
@@ -134,12 +134,12 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! $user_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_unauthorized',
-				__( 'You must be logged in to use the token counting tool.', 'wp-mcp-ai' )
+				__( 'You must be logged in to use the token counting tool.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate that either text or messages is provided, but not both.
@@ -149,14 +149,14 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! $has_text && ! $has_messages ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_arguments',
-				__( 'Either text or messages parameter must be provided.', 'wp-mcp-ai' )
+				__( 'Either text or messages parameter must be provided.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( $has_text && $has_messages ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_arguments',
-				__( 'Only one of text or messages parameter should be provided, not both.', 'wp-mcp-ai' )
+				__( 'Only one of text or messages parameter should be provided, not both.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -256,11 +256,11 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		// Build the response.
 		$summary_parts = array(
 			/* translators: %d: number of tokens */
-			sprintf( __( 'Estimated tokens: %d', 'wp-mcp-ai' ), $estimated_tokens ),
+			sprintf( __( 'Estimated tokens: %d', 'mcp-ai-wpoos' ), $estimated_tokens ),
 		);
 		if ( $has_messages ) {
 			/* translators: %d: number of messages */
-			$summary_parts[] = sprintf( __( '(%d messages)', 'wp-mcp-ai' ), $details['message_count'] );
+			$summary_parts[] = sprintf( __( '(%d messages)', 'mcp-ai-wpoos' ), $details['message_count'] );
 		}
 
 		$response = array(
@@ -294,8 +294,8 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				'remaining_tokens'   => $remaining_tokens,
 				'exceeds_safe_limit' => $estimated_tokens > $safe_limit,
 				'recommendation'     => $estimated_tokens > $safe_limit
-					? __( 'Token count exceeds safe limit. Consider truncating messages or switching to a model with a larger context window.', 'wp-mcp-ai' )
-					: __( 'Token count is within safe limits.', 'wp-mcp-ai' ),
+					? __( 'Token count exceeds safe limit. Consider truncating messages or switching to a model with a larger context window.', 'mcp-ai-wpoos' )
+					: __( 'Token count is within safe limits.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -303,12 +303,12 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( 'heuristic' === $counting_method ) {
 			$response['disclaimer'] = __(
 				'This is a heuristic estimation (~4 chars per token). For more accurate counts, use method="tiktoken" or ensure the tiktoken-php library is installed.',
-				'wp-mcp-ai'
+				'mcp-ai-wpoos'
 			);
 		} else {
 			$response['disclaimer'] = __(
 				'Token count calculated using OpenAI\'s tiktoken tokenizer for accurate results.',
-				'wp-mcp-ai'
+				'mcp-ai-wpoos'
 			);
 		}
 
@@ -327,7 +327,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! class_exists( self::TIKTOKEN_CLASS ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_tiktoken_unavailable',
-				__( 'The tiktoken-php library is not installed. Run "composer install" to enable accurate token counting.', 'wp-mcp-ai' )
+				__( 'The tiktoken-php library is not installed. Run "composer install" to enable accurate token counting.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -390,7 +390,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 			return new WP_Error(
 				'wp_mcp_ai_invalid_input',
-				__( 'Invalid input type for tiktoken counting.', 'wp-mcp-ai' )
+				__( 'Invalid input type for tiktoken counting.', 'mcp-ai-wpoos' )
 			);
 
 		} catch ( Exception $e ) {
@@ -398,7 +398,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				'wp_mcp_ai_tiktoken_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Tiktoken error: %s', 'wp-mcp-ai' ),
+					__( 'Tiktoken error: %s', 'mcp-ai-wpoos' ),
 					$e->getMessage()
 				)
 			);

@@ -399,10 +399,10 @@ if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
 				$message = self::build_connection_refused_message( $service_label );
 
 				$actions = array(
-					'check_service_running'   => __( 'Ensure the service is running and accepting connections.', 'wp-mcp-ai' ),
-					'verify_endpoint_url'     => __( 'Verify the endpoint URL and port number are correct in Settings → NV oOS.', 'wp-mcp-ai' ),
-					'check_firewall'          => __( 'Check that no firewall is blocking connections to the service.', 'wp-mcp-ai' ),
-					'check_service_listening' => __( 'Confirm the service is listening on the correct interface (0.0.0.0 or the specific IP).', 'wp-mcp-ai' ),
+					'check_service_running'   => __( 'Ensure the service is running and accepting connections.', 'mcp-ai-wpoos' ),
+					'verify_endpoint_url'     => __( 'Verify the endpoint URL and port number are correct in Settings → NV oOS.', 'mcp-ai-wpoos' ),
+					'check_firewall'          => __( 'Check that no firewall is blocking connections to the service.', 'mcp-ai-wpoos' ),
+					'check_service_listening' => __( 'Confirm the service is listening on the correct interface (0.0.0.0 or the specific IP).', 'mcp-ai-wpoos' ),
 				);
 
 				if ( isset( $data['actions'] ) && is_array( $data['actions'] ) ) {
@@ -422,8 +422,8 @@ if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
 				$message = self::build_timeout_message( $service_label );
 
 				$actions = array(
-					'configure_request_timeout' => __( 'Increase the request timeout under Settings → NV oOS.', 'wp-mcp-ai' ),
-					'check_server_connectivity' => __( 'Confirm your server can reach the remote service without firewall or network blocks.', 'wp-mcp-ai' ),
+					'configure_request_timeout' => __( 'Increase the request timeout under Settings → NV oOS.', 'mcp-ai-wpoos' ),
+					'check_server_connectivity' => __( 'Confirm your server can reach the remote service without firewall or network blocks.', 'mcp-ai-wpoos' ),
 				);
 
 				if ( isset( $data['actions'] ) && is_array( $data['actions'] ) ) {
@@ -499,10 +499,10 @@ if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
 
 			if ( '' !== $service_label ) {
 				/* translators: %s: Human readable remote service label. */
-				return sprintf( __( 'WordPress timed out waiting for a response from %s.', 'wp-mcp-ai' ), $service_label );
+				return sprintf( __( 'WordPress timed out waiting for a response from %s.', 'mcp-ai-wpoos' ), $service_label );
 			}
 
-			return __( 'WordPress timed out waiting for a response.', 'wp-mcp-ai' );
+			return __( 'WordPress timed out waiting for a response.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -647,10 +647,10 @@ if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
 
 			if ( '' !== $service_label ) {
 				/* translators: %s: Human readable remote service label. */
-				return sprintf( __( 'Could not connect to %s. The service may not be running or is refusing connections.', 'wp-mcp-ai' ), $service_label );
+				return sprintf( __( 'Could not connect to %s. The service may not be running or is refusing connections.', 'mcp-ai-wpoos' ), $service_label );
 			}
 
-			return __( 'Could not connect to the service. It may not be running or is refusing connections.', 'wp-mcp-ai' );
+			return __( 'Could not connect to the service. It may not be running or is refusing connections.', 'mcp-ai-wpoos' );
 		}
 	}
 }

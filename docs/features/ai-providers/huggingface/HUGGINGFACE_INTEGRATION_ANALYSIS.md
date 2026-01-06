@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document analyzes two potential HuggingFace integrations for WP oOS:
+This document analyzes two potential HuggingFace integrations for NV oOS:
 1. **HuggingFace Dataset Viewer API** (Server-side REST API)
 2. **HuggingFace.js Library** (Client-side JavaScript/TypeScript)
 

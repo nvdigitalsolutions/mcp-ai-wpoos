@@ -28,7 +28,7 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The JetEngine REST proxy tool is disabled because JetEngine is not active.', 'wp-mcp-ai' );
+		return __( 'The JetEngine REST proxy tool is disabled because JetEngine is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
@@ -38,12 +38,12 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 
 	/** {@inheritdoc} */
 	public function get_name() {
-		return __( 'Invoke JetEngine REST Route', 'wp-mcp-ai' );
+		return __( 'Invoke JetEngine REST Route', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
 	public function get_description() {
-		return __( 'Executes JetEngine REST API routes using the authenticated WordPress user context.', 'wp-mcp-ai' );
+		return __( 'Executes JetEngine REST API routes using the authenticated WordPress user context.', 'mcp-ai-wpoos' );
 	}
 
 	/** {@inheritdoc} */
@@ -54,19 +54,19 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 				'operation'   => array(
 					'type'        => 'string',
 					'enum'        => WP_MCP_AI_JetEngine_Tool_Handlers::get_supported_operations(),
-					'description' => __( 'JetEngine operation to execute (for example `get_items` or `add_item`).', 'wp-mcp-ai' ),
+					'description' => __( 'JetEngine operation to execute (for example `get_items` or `add_item`).', 'mcp-ai-wpoos' ),
 				),
 				'id'          => array(
 					'type'        => 'string',
-					'description' => __( 'Item identifier required for operations targeting a single entry.', 'wp-mcp-ai' ),
+					'description' => __( 'Item identifier required for operations targeting a single entry.', 'mcp-ai-wpoos' ),
 				),
 				'instance'    => array(
 					'type'        => 'string',
-					'description' => __( 'JetEngine instance key used to route the request.', 'wp-mcp-ai' ),
+					'description' => __( 'JetEngine instance key used to route the request.', 'mcp-ai-wpoos' ),
 				),
 				'params'      => array(
 					'type'                 => 'object',
-					'description'          => __( 'Additional parameters forwarded to JetEngine.', 'wp-mcp-ai' ),
+					'description'          => __( 'Additional parameters forwarded to JetEngine.', 'mcp-ai-wpoos' ),
 					'additionalProperties' => true,
 				),
 				'path_params' => array(
@@ -74,12 +74,12 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 					'items'       => array(
 						'type' => 'string',
 					),
-					'description' => __( 'Ordered path parameters that should replace dynamic segments in the selected route.', 'wp-mcp-ai' ),
+					'description' => __( 'Ordered path parameters that should replace dynamic segments in the selected route.', 'mcp-ai-wpoos' ),
 				),
 				'transport'   => array(
 					'type'        => 'string',
 					'enum'        => array( 'auto', 'rest', 'http' ),
-					'description' => __( 'Optional transport hint. Use `rest` to require internal controller dispatch or `http` to force wp_remote_request.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional transport hint. Use `rest` to require internal controller dispatch or `http` to force wp_remote_request.', 'mcp-ai-wpoos' ),
 					'default'     => 'auto',
 				),
 			),
@@ -97,17 +97,17 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_jetengine_missing', __( 'JetEngine is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_jetengine_missing', __( 'JetEngine is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$operation = isset( $arguments['operation'] ) ? sanitize_key( $arguments['operation'] ) : '';
 		if ( empty( $operation ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_operation', __( 'A JetEngine operation must be provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_operation', __( 'A JetEngine operation must be provided.', 'mcp-ai-wpoos' ) );
 		}
 
 		$config = WP_MCP_AI_JetEngine_Tool_Handlers::get_operation_config( $operation );
 		if ( null === $config ) {
-			return new WP_Error( 'wp_mcp_ai_jetengine_unknown_operation', __( 'The requested JetEngine operation is not supported.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_jetengine_unknown_operation', __( 'The requested JetEngine operation is not supported.', 'mcp-ai-wpoos' ) );
 		}
 
 		$params = isset( $arguments['params'] ) && is_array( $arguments['params'] ) ? $arguments['params'] : array();
@@ -117,7 +117,7 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( ! empty( $config['requires_instance'] ) && empty( $params['instance'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_jetengine_missing_instance', __( 'This operation requires a JetEngine instance identifier.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_jetengine_missing_instance', __( 'This operation requires a JetEngine instance identifier.', 'mcp-ai-wpoos' ) );
 		}
 
 		$transport = isset( $arguments['transport'] ) ? sanitize_key( $arguments['transport'] ) : 'auto';
@@ -151,7 +151,7 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'summary' => sprintf(
 				/* translators: %s: JetEngine operation */
-				__( 'Executed JetEngine operation: %s', 'wp-mcp-ai' ),
+				__( 'Executed JetEngine operation: %s', 'mcp-ai-wpoos' ),
 				$operation
 			),
 			'result'  => $result,

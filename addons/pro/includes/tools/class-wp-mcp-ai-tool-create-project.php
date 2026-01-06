@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Project', 'wp-mcp-ai' );
+		return __( 'Create Project', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new project for managing tasks and events. Projects can have a name, description, start/end dates, status, and assigned members.', 'wp-mcp-ai' );
+		return __( 'Creates a new project for managing tasks and events. Projects can have a name, description, start/end dates, status, and assigned members.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,34 +45,34 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'name'        => array(
 					'type'        => 'string',
-					'description' => __( 'Project name (required)', 'wp-mcp-ai' ),
+					'description' => __( 'Project name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
 				'description' => array(
 					'type'        => 'string',
-					'description' => __( 'Project description (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Project description (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
 				'status'      => array(
 					'type'        => 'string',
-					'description' => __( 'Project status (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Project status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'planning', 'active', 'on-hold', 'completed', 'cancelled' ),
 					'default'     => 'planning',
 				),
 				'start_date'  => array(
 					'type'        => 'string',
-					'description' => __( 'Project start date in ISO 8601 format (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Project start date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'end_date'    => array(
 					'type'        => 'string',
-					'description' => __( 'Project end date in ISO 8601 format (YYYY-MM-DD) (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Project end date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'assigned_to' => array(
 					'type'        => 'array',
-					'description' => __( 'Array of user IDs assigned to this project (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Array of user IDs assigned to this project (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'integer',
 					),
@@ -87,7 +87,8 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'database-write' );
+		return array(
+			'pro', 'database-write' );
 	}
 
 	/**
@@ -115,11 +116,11 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'edit_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create projects.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create projects.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $current_user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate and sanitize inputs.
@@ -131,7 +132,7 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$assigned_to = isset( $arguments['assigned_to'] ) && is_array( $arguments['assigned_to'] ) ? array_map( 'absint', $arguments['assigned_to'] ) : array();
 
 		if ( '' === $name ) {
-			return new WP_Error( 'wp_mcp_ai_missing_name', __( 'Project name is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_name', __( 'Project name is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate status.
@@ -142,17 +143,17 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Validate dates.
 		if ( $start_date && ! $this->validate_date( $start_date ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_start_date', __( 'Invalid start date format. Use YYYY-MM-DD.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_start_date', __( 'Invalid start date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( $end_date && ! $this->validate_date( $end_date ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_end_date', __( 'Invalid end date format. Use YYYY-MM-DD.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_end_date', __( 'Invalid end date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate assigned users.
 		foreach ( $assigned_to as $user_id ) {
 			if ( ! get_user_by( 'id', $user_id ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_user', sprintf( __( 'User ID %d does not exist.', 'wp-mcp-ai' ), $user_id ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_user', sprintf( __( 'User ID %d does not exist.', 'mcp-ai-wpoos-pro' ), $user_id ) );
 			}
 		}
 
@@ -188,7 +189,7 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		return array(
 			'success'    => true,
-			'message'    => __( 'Project created successfully.', 'wp-mcp-ai' ),
+			'message'    => __( 'Project created successfully.', 'mcp-ai-wpoos-pro' ),
 			'project_id' => $project_id,
 			'project'    => array(
 				'id'          => $project_id,

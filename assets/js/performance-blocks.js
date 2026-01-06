@@ -16,7 +16,7 @@
 	/**
 	 * Register Performance Test Runner Block.
 	 */
-	registerBlockType( 'wp-mcp-ai/performance-test-runner', {
+	registerBlockType( 'mcp-ai-wpoos/performance-test-runner', {
 		title: 'Performance Test Runner',
 		icon: 'performance',
 		category: 'widgets',
@@ -46,7 +46,7 @@
 	/**
 	 * Register Performance Metrics Block.
 	 */
-	registerBlockType( 'wp-mcp-ai/performance-metrics', {
+	registerBlockType( 'mcp-ai-wpoos/performance-metrics', {
 		title: 'Performance Metrics',
 		icon: 'dashboard',
 		category: 'widgets',
@@ -80,7 +80,7 @@
 	/**
 	 * Register System Health Status Block.
 	 */
-	registerBlockType( 'wp-mcp-ai/system-health-status', {
+	registerBlockType( 'mcp-ai-wpoos/system-health-status', {
 		title: 'System Health Status',
 		icon: 'heart',
 		category: 'widgets',
@@ -110,7 +110,7 @@
 	/**
 	 * Register Test Results Table Block.
 	 */
-	registerBlockType( 'wp-mcp-ai/test-results-table', {
+	registerBlockType( 'mcp-ai-wpoos/test-results-table', {
 		title: 'Test Results Table',
 		icon: 'list-view',
 		category: 'widgets',
@@ -144,7 +144,7 @@
 	/**
 	 * Register Performance Recommendations Block.
 	 */
-	registerBlockType( 'wp-mcp-ai/performance-recommendations', {
+	registerBlockType( 'mcp-ai-wpoos/performance-recommendations', {
 		title: 'Performance Recommendations',
 		icon: 'lightbulb',
 		category: 'widgets',
@@ -178,7 +178,7 @@
 	/**
 	 * Register Performance Trends Block.
 	 */
-	registerBlockType( 'wp-mcp-ai/performance-trends', {
+	registerBlockType( 'mcp-ai-wpoos/performance-trends', {
 		title: 'Performance Trends',
 		icon: 'chart-line',
 		category: 'widgets',

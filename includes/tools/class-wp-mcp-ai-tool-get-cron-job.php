@@ -28,14 +28,14 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Cron Job', 'wp-mcp-ai' );
+		return __( 'Get Cron Job', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves detailed information about a specific WordPress cron job by its job ID.', 'wp-mcp-ai' );
+		return __( 'Retrieves detailed information about a specific WordPress cron job by its job ID.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -47,7 +47,7 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'job_id' => array(
 					'type'        => 'string',
-					'description' => __( 'The unique identifier of the cron job to retrieve.', 'wp-mcp-ai' ),
+					'description' => __( 'The unique identifier of the cron job to retrieve.', 'mcp-ai-wpoos' ),
 					'minLength'   => 1,
 				),
 			),
@@ -67,30 +67,30 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		// Check if cron orchestration is enabled.
 		if ( class_exists( 'WP_MCP_AI_Orchestration_Budget_Enforcement_Service' ) ) {
 			if ( ! WP_MCP_AI_Orchestration_Budget_Enforcement_Service::is_cron_orchestration_enabled() ) {
-				return new WP_Error( 'wp_mcp_ai_cron_disabled', __( 'Cron-based task orchestration is currently disabled. Enable it in Settings → Orchestration Layer → Settings.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_cron_disabled', __( 'Cron-based task orchestration is currently disabled. Enable it in Settings → Orchestration Layer → Settings.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view cron jobs.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view cron jobs.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$job_id = isset( $arguments['job_id'] ) ? sanitize_text_field( (string) $arguments['job_id'] ) : '';
 
 		if ( '' === $job_id ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_job_id', __( 'A valid job ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_job_id', __( 'A valid job ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		$job = WP_MCP_AI_Cron_Manager::get_job( $job_id );
 
 		if ( ! $job ) {
-			return new WP_Error( 'wp_mcp_ai_job_not_found', __( 'The specified cron job was not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_job_not_found', __( 'The specified cron job was not found.', 'mcp-ai-wpoos' ) );
 		}
 
 		$hook  = isset( $job['hook'] ) ? (string) $job['hook'] : '';
@@ -110,13 +110,13 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		if ( '' === $creator ) {
-			$creator = __( 'System', 'wp-mcp-ai' );
+			$creator = __( 'System', 'mcp-ai-wpoos' );
 		}
 
 		$result = array(
 			'summary'  => sprintf(
 				/* translators: 1: cron hook name, 2: job ID */
-				__( 'Cron job: %1$s (ID: %2$s)', 'wp-mcp-ai' ),
+				__( 'Cron job: %1$s (ID: %2$s)', 'mcp-ai-wpoos' ),
 				$hook,
 				$job_id
 			),
@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$result['status']             = 'scheduled';
 		} else {
 			$result['next_run']           = null;
-			$result['next_run_formatted'] = __( 'Not scheduled', 'wp-mcp-ai' );
+			$result['next_run_formatted'] = __( 'Not scheduled', 'mcp-ai-wpoos' );
 			$result['status']             = 'not_scheduled';
 		}
 

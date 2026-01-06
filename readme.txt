@@ -79,7 +79,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 
 = Third-Party Plugin Support (Optional) =
 
-WP oOS works perfectly standalone. Optional integrations add enhanced functionality:
+NV oOS works perfectly standalone. Optional integrations add enhanced functionality:
 
 * **JetEngine** (paid) - Server-side chat transcript storage, CCT integration
 * **WooCommerce** (free) - E-commerce automation tools
@@ -105,7 +105,7 @@ Comprehensive documentation is available in the plugin's `/docs/` directory:
 
 = Open Source =
 
-WP oOS is 100% open source and licensed under GPLv3. We welcome contributions:
+NV oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 
 * [GitHub Repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos)
 * [Issue Tracker](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
@@ -118,7 +118,7 @@ WP oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 1. Go to Plugins → Add New in your WordPress admin
 2. Search for "Open Operator System"
 3. Click "Install Now" and then "Activate"
-4. Navigate to Settings → WP oOS to configure your API key
+4. Navigate to Settings → NV oOS to configure your API key
 
 = Manual Installation =
 
@@ -129,7 +129,7 @@ WP oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 
 = Configuration =
 
-1. Go to **Settings → WP oOS**
+1. Go to **Settings → NV oOS**
 2. Enter your OpenAI API key (get one at [platform.openai.com](https://platform.openai.com))
 3. (Optional) Configure Gemini API key for Google AI support
 4. (Optional) Configure Ollama endpoint for local AI
@@ -145,7 +145,7 @@ WP oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 
 = Multisite Installation =
 
-WP oOS supports WordPress multisite:
+NV oOS supports WordPress multisite:
 
 * **Network Activation** - Activate network-wide from Network Admin → Plugins
 * **Individual Activation** - Activate on specific sites as needed
@@ -162,7 +162,7 @@ Yes, you need an API key from at least one AI provider. OpenAI is recommended fo
 
 = How much does it cost to use the AI features? =
 
-WP oOS itself is free. AI provider costs depend on usage:
+NV oOS itself is free. AI provider costs depend on usage:
 * OpenAI charges per token (~$0.002 per 1K tokens for GPT-4o-mini)
 * Gemini has a generous free tier
 * Ollama is completely free (runs on your hardware)
@@ -173,11 +173,11 @@ Yes, when you use cloud AI providers, your chat messages are sent to their APIs.
 
 = Can I use this without JetEngine? =
 
-Absolutely! WP oOS works perfectly with vanilla WordPress. JetEngine integration is optional and adds server-side chat transcript storage. Without it, chat history is stored in browser localStorage (24 hours).
+Absolutely! NV oOS works perfectly with vanilla WordPress. JetEngine integration is optional and adds server-side chat transcript storage. Without it, chat history is stored in browser localStorage (24 hours).
 
 = How do I connect Claude Desktop or LM Studio? =
 
-WP oOS includes a full MCP server:
+NV oOS includes a full MCP server:
 1. Generate API credentials from the assistant editor
 2. Configure your MCP client with the credentials
 3. Use endpoint: `https://yoursite.com/wp-json/mcp-ai/v1/`
@@ -186,7 +186,7 @@ See our [MCP Server Documentation](https://github.com/nvdigitalsolutions/mcp-ai-
 
 = Is this plugin GDPR compliant? =
 
-WP oOS includes features to help with GDPR compliance:
+NV oOS includes features to help with GDPR compliance:
 * No tracking scripts or cookies
 * Optional logging (can be disabled)
 * API keys are never stored in plain text
@@ -194,9 +194,9 @@ WP oOS includes features to help with GDPR compliance:
 
 You are responsible for reviewing your AI provider's data processing agreements and informing users about AI processing.
 
-= How do I extend WP oOS with custom tools? =
+= How do I extend NV oOS with custom tools? =
 
-WP oOS has a developer-friendly tool registry:
+NV oOS has a developer-friendly tool registry:
 
 `add_action( 'wp_mcp_ai_register_tools', function( $registry ) {
     require_once 'path/to/class-my-custom-tool.php';
@@ -213,7 +213,7 @@ See our [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob
 
 = Is this plugin patented? =
 
-Yes. WP oOS is the subject of a pending patent application (Application #19/410,504) for "System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting."
+Yes. NV oOS is the subject of a pending patent application (Application #19/410,504) for "System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting."
 
 **Your Rights:** The patent will not be used to restrict your GPL rights. This plugin is licensed under GPLv3 or later, and you have all the freedoms granted by that license:
 

@@ -287,7 +287,7 @@ class WP_MCP_AI_Tool_Recommendations {
 			'description'     => 'Auto-detected category',
 			'reason'          => sprintf(
 				/* translators: %s: reasoning for the suggestion */
-				__( 'This is a new/uncategorized tool. Suggested settings: %s', 'wp-mcp-ai' ),
+				__( 'This is a new/uncategorized tool. Suggested settings: %s', 'mcp-ai-wpoos' ),
 				$suggestion['reasoning']
 			),
 		);
@@ -329,20 +329,20 @@ class WP_MCP_AI_Tool_Recommendations {
 	 */
 	protected static function get_recommendation_reason( $category, $tool_slug ) {
 		$reasons = array(
-			'high_resource'     => __( 'This tool performs complex operations or generates large outputs, requiring higher token limits for optimal performance.', 'wp-mcp-ai' ),
-			'medium_resource'   => __( 'This tool handles moderate complexity operations. A balanced token limit provides good performance without excessive resource usage.', 'wp-mcp-ai' ),
-			'low_resource'      => __( 'This tool performs simple operations with minimal token requirements. Standard limits are sufficient.', 'wp-mcp-ai' ),
-			'image_generation'  => __( 'Image generation tools have specialized requirements. Let the assistant choose the best model for image tasks.', 'wp-mcp-ai' ),
-			'audio_processing'  => __( 'Audio processing tools benefit from specialized models. Token usage varies based on audio length.', 'wp-mcp-ai' ),
-			'content_creation'  => __( 'Content creation requires high-quality language models for best results. Moderate token limits ensure quality output.', 'wp-mcp-ai' ),
-			'api_operations'    => __( 'External API operations have moderate complexity. Slightly elevated limits account for API response processing.', 'wp-mcp-ai' ),
-			'messaging'         => __( 'Messaging operations are typically lightweight and don\'t require elevated token limits.', 'wp-mcp-ai' ),
-			'security_auth'     => __( 'Security and authentication operations are critical but lightweight, using standard token limits.', 'wp-mcp-ai' ),
-			'cache_performance' => __( 'Cache operations are simple and fast, requiring minimal token processing.', 'wp-mcp-ai' ),
-			'scheduling'        => __( 'Scheduling operations have standard complexity and work well with default token limits.', 'wp-mcp-ai' ),
+			'high_resource'     => __( 'This tool performs complex operations or generates large outputs, requiring higher token limits for optimal performance.', 'mcp-ai-wpoos' ),
+			'medium_resource'   => __( 'This tool handles moderate complexity operations. A balanced token limit provides good performance without excessive resource usage.', 'mcp-ai-wpoos' ),
+			'low_resource'      => __( 'This tool performs simple operations with minimal token requirements. Standard limits are sufficient.', 'mcp-ai-wpoos' ),
+			'image_generation'  => __( 'Image generation tools have specialized requirements. Let the assistant choose the best model for image tasks.', 'mcp-ai-wpoos' ),
+			'audio_processing'  => __( 'Audio processing tools benefit from specialized models. Token usage varies based on audio length.', 'mcp-ai-wpoos' ),
+			'content_creation'  => __( 'Content creation requires high-quality language models for best results. Moderate token limits ensure quality output.', 'mcp-ai-wpoos' ),
+			'api_operations'    => __( 'External API operations have moderate complexity. Slightly elevated limits account for API response processing.', 'mcp-ai-wpoos' ),
+			'messaging'         => __( 'Messaging operations are typically lightweight and don\'t require elevated token limits.', 'mcp-ai-wpoos' ),
+			'security_auth'     => __( 'Security and authentication operations are critical but lightweight, using standard token limits.', 'mcp-ai-wpoos' ),
+			'cache_performance' => __( 'Cache operations are simple and fast, requiring minimal token processing.', 'mcp-ai-wpoos' ),
+			'scheduling'        => __( 'Scheduling operations have standard complexity and work well with default token limits.', 'mcp-ai-wpoos' ),
 		);
 
-		return isset( $reasons[ $category ] ) ? $reasons[ $category ] : __( 'Recommended settings based on tool analysis.', 'wp-mcp-ai' );
+		return isset( $reasons[ $category ] ) ? $reasons[ $category ] : __( 'Recommended settings based on tool analysis.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -585,7 +585,7 @@ class WP_MCP_AI_Tool_Recommendations {
 				'success' => 0,
 				'failed'  => 0,
 				'skipped' => 0,
-				'error'   => __( 'Invalid preset specified.', 'wp-mcp-ai' ),
+				'error'   => __( 'Invalid preset specified.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -774,7 +774,7 @@ class WP_MCP_AI_Tool_Recommendations {
 				'multiplier' => 1.0,
 				'model'      => 'gpt-4o-mini',
 				'confidence' => 0,
-				'reasoning'  => __( 'Invalid tool slug.', 'wp-mcp-ai' ),
+				'reasoning'  => __( 'Invalid tool slug.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -786,7 +786,7 @@ class WP_MCP_AI_Tool_Recommendations {
 				'multiplier' => 1.0,
 				'model'      => 'gpt-4o-mini',
 				'confidence' => 0,
-				'reasoning'  => __( 'Tool registry not available.', 'wp-mcp-ai' ),
+				'reasoning'  => __( 'Tool registry not available.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -799,7 +799,7 @@ class WP_MCP_AI_Tool_Recommendations {
 				'multiplier' => 1.0,
 				'model'      => 'gpt-4o-mini',
 				'confidence' => 0,
-				'reasoning'  => __( 'Tool not found in registry.', 'wp-mcp-ai' ),
+				'reasoning'  => __( 'Tool not found in registry.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -812,39 +812,39 @@ class WP_MCP_AI_Tool_Recommendations {
 		if ( strpos( $tool_slug, 'crawl' ) !== false || strpos( $tool_slug, 'search' ) !== false ) {
 			$suggested_category = 'high_resource';
 			$confidence         = 70;
-			$reasoning          = __( 'Tool involves crawling or searching, which typically requires high resources.', 'wp-mcp-ai' );
+			$reasoning          = __( 'Tool involves crawling or searching, which typically requires high resources.', 'mcp-ai-wpoos' );
 		} elseif ( strpos( $tool_slug, 'image' ) !== false || strpos( $tool_slug, 'vision' ) !== false || strpos( $tool_slug, 'generate' ) !== false ) {
 			$suggested_category = 'image_generation';
 			$confidence         = 80;
-			$reasoning          = __( 'Tool involves image generation or vision processing.', 'wp-mcp-ai' );
+			$reasoning          = __( 'Tool involves image generation or vision processing.', 'mcp-ai-wpoos' );
 		} elseif ( strpos( $tool_slug, 'audio' ) !== false || strpos( $tool_slug, 'speech' ) !== false || strpos( $tool_slug, 'transcribe' ) !== false ) {
 			$suggested_category = 'audio_processing';
 			$confidence         = 80;
-			$reasoning          = __( 'Tool involves audio or speech processing.', 'wp-mcp-ai' );
+			$reasoning          = __( 'Tool involves audio or speech processing.', 'mcp-ai-wpoos' );
 		} elseif ( strpos( $tool_slug, 'post' ) !== false || strpos( $tool_slug, 'save' ) !== false || strpos( $tool_slug, 'create' ) !== false || strpos( $tool_slug, 'send' ) !== false ) {
 			$suggested_category = 'content_creation';
 			$confidence         = 65;
-			$reasoning          = __( 'Tool involves content creation or posting.', 'wp-mcp-ai' );
+			$reasoning          = __( 'Tool involves content creation or posting.', 'mcp-ai-wpoos' );
 		} elseif ( strpos( $tool_slug, 'cache' ) !== false || strpos( $tool_slug, 'purge' ) !== false ) {
 			$suggested_category = 'cache_performance';
 			$confidence         = 85;
-			$reasoning          = __( 'Tool involves cache management.', 'wp-mcp-ai' );
+			$reasoning          = __( 'Tool involves cache management.', 'mcp-ai-wpoos' );
 		} elseif ( strpos( $tool_slug, 'cron' ) !== false || strpos( $tool_slug, 'schedule' ) !== false ) {
 			$suggested_category = 'scheduling';
 			$confidence         = 75;
-			$reasoning          = __( 'Tool involves scheduling or automation.', 'wp-mcp-ai' );
+			$reasoning          = __( 'Tool involves scheduling or automation.', 'mcp-ai-wpoos' );
 		} elseif ( strpos( $tool_slug, 'message' ) !== false || strpos( $tool_slug, 'sms' ) !== false || strpos( $tool_slug, 'notify' ) !== false ) {
 			$suggested_category = 'messaging';
 			$confidence         = 75;
-			$reasoning          = __( 'Tool involves messaging or notifications.', 'wp-mcp-ai' );
+			$reasoning          = __( 'Tool involves messaging or notifications.', 'mcp-ai-wpoos' );
 		} elseif ( strpos( $tool_slug, 'auth' ) !== false || strpos( $tool_slug, 'token' ) !== false || strpos( $tool_slug, 'jwt' ) !== false ) {
 			$suggested_category = 'security_auth';
 			$confidence         = 80;
-			$reasoning          = __( 'Tool involves authentication or security.', 'wp-mcp-ai' );
+			$reasoning          = __( 'Tool involves authentication or security.', 'mcp-ai-wpoos' );
 		} elseif ( strpos( $tool_slug, 'get' ) !== false || strpos( $tool_slug, 'list' ) !== false || strpos( $tool_slug, 'query' ) !== false ) {
 			$suggested_category = 'medium_resource';
 			$confidence         = 60;
-			$reasoning          = __( 'Tool involves data retrieval, typically medium resource usage.', 'wp-mcp-ai' );
+			$reasoning          = __( 'Tool involves data retrieval, typically medium resource usage.', 'mcp-ai-wpoos' );
 		}
 
 		// Get category data.

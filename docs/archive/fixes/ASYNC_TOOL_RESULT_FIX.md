@@ -7,7 +7,7 @@ When async tools like `generate_veo_video` complete, the final SSE message with 
 ### Error Observed
 
 ```javascript
-[WP oOS] SSE message event received: {
+[NV oOS] SSE message event received: {
   hasChoices: false,
   hasDelta: false,
   hasContent: false,

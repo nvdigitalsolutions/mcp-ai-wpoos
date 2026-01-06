@@ -1,8 +1,8 @@
-# Symfony Integration Guide for WP oOS
+# Symfony Integration Guide for NV oOS
 
 ## Overview
 
-WP oOS has integrated selective Symfony components to improve code quality, performance, and developer experience. This document provides a guide for using these components.
+NV oOS has integrated selective Symfony components to improve code quality, performance, and developer experience. This document provides a guide for using these components.
 
 ## Integrated Components
 
@@ -428,7 +428,7 @@ vendor/bin/phpunit tests/test-*-service.php
 - **Symfony Validator Docs:** https://symfony.com/doc/current/validation.html
 - **Symfony Cache Docs:** https://symfony.com/doc/current/cache.html
 - **Symfony Filesystem Docs:** https://symfony.com/doc/current/components/filesystem.html
-- **WP oOS Architecture:** See `docs/ARCHITECTURE.md`
+- **NV oOS Architecture:** See `docs/ARCHITECTURE.md`
 
 ---
 
