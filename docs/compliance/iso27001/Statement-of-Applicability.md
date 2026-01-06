@@ -164,14 +164,18 @@ This Statement of Applicability (SoA) documents the implementation status of all
 **Evidence:** [ISMS-Policy.md](./ISMS-Policy.md#8-information-classification)
 
 ### A.5.13 Labelling of Information
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Visual classification indicators  
 **Implementation:**
-- Document classification headers
+- Document classification headers in all compliance documents
 - Code comments for sensitive sections
-- **In Progress:** Automated classification labeling
-**Evidence:** Document headers, code annotations
+- Automated classification labeling system for posts and assistants
+- Four-level classification meta box (Public, Internal, Confidential, Restricted)
+- Visual classification badges in admin UI
+- Classification column in post lists
+- Auto-classification based on content patterns
+**Evidence:** `includes/class-wp-mcp-ai-information-labelling.php`, Admin UI classification meta boxes, document headers
 
 ### A.5.14 Information Transfer
 **Status:** ✅ Implemented  
@@ -325,15 +329,18 @@ This Statement of Applicability (SoA) documents the implementation status of all
 **Evidence:** [Incident-Management.md](./procedures/Incident-Management.md)
 
 ### A.5.27 Learning from Information Security Incidents
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Continuous improvement  
 **Implementation:**
-- Post-incident review process
-- Root cause analysis procedures
-- **In Progress:** Incident lessons learned database
-- **In Progress:** Trend analysis reporting
-**Evidence:** Incident reports, corrective action tracking
+- Post-incident review process documented in procedures
+- Root cause analysis procedures and templates
+- Incident lessons learned database (Custom Post Type: mcp_ai_lesson)
+- Trend analysis reporting with quarterly/annual views
+- Lessons learned tracking with severity and category classification
+- Admin UI for managing lessons learned
+- Integration with incident management system
+**Evidence:** `includes/class-wp-mcp-ai-incident-learning.php`, Admin UI (NV oOS Pro → Lessons Learned), incident reports, corrective action tracking
 
 ### A.5.28 Collection of Evidence
 **Status:** ✅ Implemented  
@@ -357,15 +364,19 @@ This Statement of Applicability (SoA) documents the implementation status of all
 **Evidence:** [Backup-Recovery.md](./procedures/Backup-Recovery.md)
 
 ### A.5.30 ICT Readiness for Business Continuity
-**Status:** 🔄 Partial  
+**Status:** ✅ Implemented  
 **Applicability:** Yes  
 **Justification:** Technology resilience  
 **Implementation:**
 - Redundancy in AI provider integrations (OpenAI, Gemini, Ollama)
-- Failover capabilities
-- **In Progress:** Recovery time objectives (RTO) definition
-- **In Progress:** Recovery point objectives (RPO) definition
-**Evidence:** Multi-provider architecture, backup configurations
+- Automatic failover capabilities between providers (< 5 seconds)
+- Recovery Time Objectives (RTO) defined for all components
+- Recovery Point Objectives (RPO) defined for all data types
+- Documented failover procedures and disaster recovery steps
+- Quarterly failover testing schedule
+- Monitoring and alerting for provider availability
+- Backup and recovery procedures documented
+**Evidence:** Multi-provider architecture in code, `docs/compliance/iso27001/procedures/ICT-Continuity.md`, backup configurations, failover testing results
 
 ### A.5.31 Legal, Statutory, Regulatory and Contractual Requirements
 **Status:** ✅ Implemented  

@@ -607,6 +607,16 @@ if ( is_admin() ) {
 	WP_MCP_AI_Supplier_Security::get_instance();
 	new WP_MCP_AI_Supplier_Security_Admin();
 
+	// Load ISO 27001 Information Labelling System (Control A.5.13).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-information-labelling.php';
+	// Initialize Information Labelling singleton.
+	WP_MCP_AI_Information_Labelling::get_instance();
+
+	// Load ISO 27001 Incident Learning System (Control A.5.27).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-incident-learning.php';
+	// Initialize Incident Learning singleton.
+	WP_MCP_AI_Incident_Learning::get_instance();
+
 	// Load diagnostic pages (always available under Tools menu).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';

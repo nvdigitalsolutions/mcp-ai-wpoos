@@ -44,7 +44,7 @@ class WP_MCP_AI_Supplier_Security_Admin {
 	 * @param string $hook_suffix Current admin page.
 	 */
 	public function enqueue_assets( $hook_suffix ) {
-		if ( 'nv-oos-pro_page_nvoos-pro-dashboard-suppliers' !== $hook_suffix ) {
+		if ( 'nvoos-pro-dashboard_page_nvoos-pro-dashboard-suppliers' !== $hook_suffix ) {
 			return;
 		}
 
