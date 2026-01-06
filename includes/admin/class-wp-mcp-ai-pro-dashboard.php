@@ -848,7 +848,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<span class="dashicons dashicons-warning"></span>
 					<?php esc_html_e( 'Manage Risks', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="<?php echo esc_url( plugins_url( 'docs/compliance/iso27001/README.md', WP_MCP_AI_FILE ) ); ?>" class="button" target="_blank">
+				<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/README.md' ); ?>" class="button" target="_blank">
 					<span class="dashicons dashicons-book"></span>
 					<?php esc_html_e( 'View ISMS Documentation', 'mcp-ai-wpoos' ); ?>
 				</a>
@@ -888,34 +888,31 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render documentation links widget.
 		 */
 		private function render_documentation_links() {
-			$docs_path = WP_MCP_AI_PATH . 'docs/compliance/iso27001/';
-			$docs = array(
-				'ISMS-Policy.md'                  => __( 'ISMS Policy', 'mcp-ai-wpoos' ),
-				'Statement-of-Applicability.md'   => __( 'Statement of Applicability', 'mcp-ai-wpoos' ),
-				'Risk-Assessment.md'              => __( 'Risk Assessment', 'mcp-ai-wpoos' ),
-				'Business-Continuity-Plan.md'     => __( 'Business Continuity Plan', 'mcp-ai-wpoos' ),
+			// Link to GitHub repository documentation (always up-to-date).
+			$github_base = 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/';
+			$docs        = array(
+				'ISMS-Policy.md'                => __( 'ISMS Policy', 'mcp-ai-wpoos' ),
+				'Statement-of-Applicability.md' => __( 'Statement of Applicability', 'mcp-ai-wpoos' ),
+				'Risk-Assessment.md'            => __( 'Risk Assessment', 'mcp-ai-wpoos' ),
+				'Business-Continuity-Plan.md'   => __( 'Business Continuity Plan', 'mcp-ai-wpoos' ),
 			);
 			?>
 			<div class="wp-mcp-ai-documentation-links">
 				<ul>
 					<?php foreach ( $docs as $file => $label ) : ?>
-						<?php if ( file_exists( $docs_path . $file ) ) : ?>
-							<li>
-								<a href="<?php echo esc_url( plugins_url( 'docs/compliance/iso27001/' . $file, WP_MCP_AI_FILE ) ); ?>" target="_blank">
-									<span class="dashicons dashicons-media-document"></span>
-									<?php echo esc_html( $label ); ?>
-								</a>
-							</li>
-						<?php endif; ?>
-					<?php endforeach; ?>
-					<?php if ( is_dir( $docs_path . 'procedures' ) ) : ?>
 						<li>
-							<a href="<?php echo esc_url( plugins_url( 'docs/compliance/iso27001/procedures/', WP_MCP_AI_FILE ) ); ?>" target="_blank">
-								<span class="dashicons dashicons-admin-tools"></span>
-								<?php esc_html_e( 'All Procedures', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( $github_base . $file ); ?>" target="_blank">
+								<span class="dashicons dashicons-media-document"></span>
+								<?php echo esc_html( $label ); ?>
 							</a>
 						</li>
-					<?php endif; ?>
+					<?php endforeach; ?>
+					<li>
+						<a href="<?php echo esc_url( $github_base . 'procedures/' ); ?>" target="_blank">
+							<span class="dashicons dashicons-admin-tools"></span>
+							<?php esc_html_e( 'All Procedures', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</li>
 				</ul>
 			</div>
 			<?php
@@ -1131,7 +1128,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						</td>
 						<td><span class="wp-mcp-ai-status-badge wp-mcp-ai-status-implemented"><?php esc_html_e( 'Complete', 'mcp-ai-wpoos' ); ?></span></td>
 						<td>
-							<a href="<?php echo esc_url( plugins_url( 'docs/compliance/iso27001/Statement-of-Applicability.md', WP_MCP_AI_FILE ) ); ?>" 
+							<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>" 
 							   class="button button-small" target="_blank">
 								<?php esc_html_e( 'View Report', 'mcp-ai-wpoos' ); ?>
 							</a>
@@ -1385,7 +1382,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				printf(
 					/* translators: %s: Link to risk assessment document */
 					esc_html__( 'See the full %s for detailed risk analysis and treatment plans.', 'mcp-ai-wpoos' ),
-					'<a href="' . esc_url( plugins_url( 'docs/compliance/iso27001/Risk-Assessment.md', WP_MCP_AI_FILE ) ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'
+					'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Risk-Assessment.md' ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'
 				);
 				?>
 			</p>

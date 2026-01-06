@@ -53,11 +53,7 @@ docker-compose.yml
 Dockerfile
 
 # Documentation (keep only readme.txt and essential files)
-# Exclude most docs but keep compliance docs and key reference files
 docs
-!docs/compliance
-!docs/reference/technical/TOKEN-CONTEXT-WINDOW-EXPLAINED.md
-!docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md
 *.md
 !readme.txt
 !CHANGELOG.md
