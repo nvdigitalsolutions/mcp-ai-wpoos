@@ -25,67 +25,67 @@
 ### Getting Started
 - [🆕 Latest Updates (December 2025)](#-latest-updates-december-2025)
 - [🧩 Overview](#overview)
-- [🎯 Our Mission](#mission-modernizing-small-to-medium-business-websites)
-- [🛡️ Active Security Monitoring](#active-security-monitoring)
-- [🏗 System Architecture](#system-architecture)
+- [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
+- [🛡️ Active Security Monitoring](#-active-security-monitoring)
+- [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#features)
-- [📦 Installation](#installation)
-- [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](#configuration-checklist-action-items)
+- [📦 Installation](#-installation)
+- [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
+- [⚙️ Configuration Checklist](#%EF%B8%8F-configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
 ### Core Functionality
-- [🧠 Memory & Tool Stack Overview](#memory-tool-stack-overview)
-- [🛠 Built-in tools & automations](#built-in-tools-automations)
-- [🗨️ Front-end chat surfaces](#front-end-chat-surfaces)
-- [💬 Frontend Shortcode](#frontend-shortcode)
+- [🧠 Memory & Tool Stack Overview](#-memory-tool-stack-overview)
+- [🛠 Built-in tools & automations](#-built-in-tools-automations)
+- [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
+- [💬 Frontend Shortcode](#-frontend-shortcode)
 
 ### AI Providers & Integration
-- [🧠 Language Model Providers](#language-model-providers-openai-gemini-ollama-lm-studio)
-- [🧱 ChatKit Integration](#chatkit-integration)
-- [🌐 Crawl4AI Integration](#crawl4ai-integration)
+- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-ollama-lm-studio)
+- [🧱 ChatKit Integration](#-chatkit-integration)
+- [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [📡 Job Notification System](#-job-notification-system)
-- [🧊 Elementor Widgets](#elementor-widgets)
+- [🧊 Elementor Widgets](#-elementor-widgets)
 
 ### Performance & Optimization
-- [⚡ Message Bundling](#message-bundling)
-- [🎯 Agentic Loop Token Management](#agentic-loop-token-management)
-- [🔄 Chat Performance Optimizations](#chat-performance-optimizations)
-- [🌐 Mesh Compute Routing](#mesh-compute-routing)
-- [🔗 Federation & Discovery System](#federation-discovery-system)
+- [⚡ Message Bundling](#-message-bundling)
+- [🎯 Agentic Loop Token Management](#-agentic-loop-token-management)
+- [🔄 Chat Performance Optimizations](#-chat-performance-optimizations)
+- [🌐 Mesh Compute Routing](#-mesh-compute-routing)
+- [🔗 Federation & Discovery System](#-federation-discovery-system)
 
 ### Remote MCP Setup
-- [🔒 MCP Server Authentication](#mcp-server-authentication)
-- [🌐 Connecting Remote MCP Clients](#connecting-remote-mcp-clients)
-- [🛰 REST API Endpoints](#rest-api-endpoints)
-- [🌊 SSE Streaming Support](#sse-streaming-support)
-- [📝 MCP JSON-RPC 2.0 Endpoint](#mcp-json-rpc-20-endpoint)
-- [🔑 Assistant API Credentials](#assistant-api-credentials)
-- [🎫 Token Management UI](#token-management-ui)
+- [🔒 MCP Server Authentication](#-mcp-server-authentication)
+- [🌐 Connecting Remote MCP Clients](#-connecting-remote-mcp-clients)
+- [🛰 REST API Endpoints](#-rest-api-endpoints)
+- [🌊 SSE Streaming Support](#-sse-streaming-support)
+- [📝 MCP JSON-RPC 2.0 Endpoint](#-mcp-json-rpc-20-endpoint)
+- [🔑 Assistant API Credentials](#-assistant-api-credentials)
+- [🎫 Token Management UI](#-token-management-ui)
 
 ### Assistant Management
-- [🛠 Assistant Editor Overview](#assistant-editor-overview)
-- [📊 Assistant Storage: CPT vs CCT](#assistant-storage-cpt-vs-cct)
-- [⚡ Assistant Tool Shortcuts](#assistant-tool-shortcuts)
-- [👔 Professional & Team Layers](#professional-team-layers)
-- [🧵 REST Chat Payloads & Attachments](#rest-chat-payloads-attachments)
+- [🛠 Assistant Editor Overview](#-assistant-editor-overview)
+- [📊 Assistant Storage: CPT vs CCT](#-assistant-storage-cpt-vs-cct)
+- [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
+- [👔 Professional & Team Layers](#-professional-team-layers)
+- [🧵 REST Chat Payloads & Attachments](#-rest-chat-payloads-attachments)
 
 ### Development
-- [🐳 Local Development with Docker](#local-development-with-docker)
-- [🧑‍💻 Development Tooling](#development-tooling)
-- [🧪 Testing & QA](#testing-qa)
-- [🧩 Hooks & Filters](#hooks-filters)
-- [🧰 WP-CLI Commands](#wp-cli-commands)
+- [🐳 Local Development with Docker](#-local-development-with-docker)
+- [🧑‍💻 Development Tooling](#-development-tooling)
+- [🧪 Testing & QA](#-testing-qa)
+- [🧩 Hooks & Filters](#-hooks-filters)
+- [🧰 WP-CLI Commands](#-wp-cli-commands)
 
 ### Reference
-- [🔐 JetEngine Capability Reference](#jetengine-capability-reference)
-- [🛰 JetEngine REST API Reference](#jetengine-rest-api-reference)
-- [🧮 Usage Tracking](#usage-tracking)
-- [🧷 Attachment MIME Controls](#attachment-mime-controls)
-- [🧾 Logging](#logging)
-- [🧾 JetEngine REST Endpoint Report Helper](#jetengine-rest-endpoint-report-helper)
-- [🔌 Optional Tools & Dependencies](#optional-tools-dependencies)
-- [✅ Manual QA Scenarios](#manual-qa-scenarios)
+- [🔐 JetEngine Capability Reference](#-jetengine-capability-reference)
+- [🛰 JetEngine REST API Reference](#-jetengine-rest-api-reference)
+- [🧮 Usage Tracking](#-usage-tracking)
+- [🧷 Attachment MIME Controls](#-attachment-mime-controls)
+- [🧾 Logging](#-logging)
+- [🧾 JetEngine REST Endpoint Report Helper](#-jetengine-rest-endpoint-report-helper)
+- [🔌 Optional Tools & Dependencies](#-optional-tools-dependencies)
+- [✅ Manual QA Scenarios](#-manual-qa-scenarios)
 
 ---
 
@@ -93,7 +93,7 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
 
-The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **66 Pro tools** including advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **193 built-in tools**.
+The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **66 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **193 built-in tools**.
 
 > **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 66 Pro tools (total 217 tool files across base and Pro).
 
@@ -211,13 +211,37 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (December 2025)
+## 🆕 Latest Updates (January 2026)
 
-> **📌 DECEMBER 23 UPDATE:** [Weekly Commits Summary (Dec 16-23)](docs/implementation-history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md) - Complete consolidation of all changes from the past week with zero information loss.
+> **📌 JANUARY 6, 2026 UPDATE (WEEK 2):** [Weekly Summary (Dec 30 - Jan 6)](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md) - **100% ISO 27001:2022 Compliance Achieved** + SOC 2 (100%) and HIPAA (98%) frameworks, Pro Dashboard modernization, PM Assistant fixes, WordPress 6.7+ compatibility, and production-ready deployment.
+
+> **📌 DECEMBER 23, 2025 UPDATE:** [Weekly Commits Summary (Dec 16-23)](docs/implementation-history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md) - Complete consolidation of all changes from the past week with zero information loss.
 
 > **For complete implementation details, see [Consolidated Implementation Summaries 2025](docs/implementation-history/2025/summaries/CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md)**
 
-### 📅 Weekly Summary (Dec 16-23, 2025)
+### 📅 Weekly Summary (Dec 30 - Jan 6, 2026) ⭐ **LATEST**
+- **100% ISO 27001:2022 Compliance** - 83 of 83 applicable controls implemented (was 56%)
+- **SOC 2 Framework** - 100% compliant (54 of 54 Trust Services Criteria)
+- **HIPAA Framework** - 98% compliant (42 of 43 Security Rule safeguards)
+- **Pro Dashboard Modernization** - Singleton pattern with industry standards (lazy loading, type-safe constants)
+- **PM Assistant Fixes** - 6 critical modal and chat fixes (rendering, localization, validation, diagnostics)
+- **WordPress 6.7+ Compatibility** - Translation loading timing fixes
+- **Text Domain Migration** - Complete migration to mcp-ai-wpoos (12,773 instances)
+- **Production Ready** - Dev dependencies removed from vendor, repository ready for production clones
+- **Documentation Organization** - 25 files moved to organized subdirectories
+- [Full Weekly Summary →](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md)
+
+### 🏆 ISO 27001/SOC 2/HIPAA Multi-Framework Compliance (Jan 6, 2026)
+- **ISO 27001:2022** - 100% compliance achieved (83 of 83 applicable controls)
+  - Phase 6 & 7 implementation: 15 controls (82% → 100%)
+  - Comprehensive procedures: Acceptable Use, NDA templates, Data Masking, Equipment disposal, etc.
+  - Dynamic dashboard calculations replacing hardcoded values
+- **SOC 2** - 100% compliant (54 Trust Services Criteria across 5 categories)
+- **HIPAA** - 98% compliant (42 of 43 Security Rule safeguards)
+- **Documentation** - ~90KB across 14 comprehensive procedures with complete control mappings
+- [Compliance Documentation →](docs/compliance/)
+
+### 📅 Weekly Summary (Dec 16 - 23, 2025)
 - **PR #2364:** Profession model architecture improvements - Major re-architecture for proper knowledge layering
 - **2 Commits Reviewed:** 300+ files changed, ~100,000 lines added
 - **6 New AI Integrations:** Gemini Geospatial, OpenAI Batch API, Moderation API, GPT-5.2, GPT-Image-1.5, Symfony Process

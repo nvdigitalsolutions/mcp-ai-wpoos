@@ -165,7 +165,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 						<?php esc_html_e( 'The system also adds intelligent tool recommendations and region-specific context automatically.', 'mcp-ai-wpoos' ); ?>
 					</p>
 					<p style="margin: 0;">
-						<a href="<?php echo esc_url( WP_MCP_AI_URL . 'includes/knowledge-base/profession-playbooks/README.md' ); ?>" target="_blank">
+						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/includes/knowledge-base/profession-playbooks/README.md' ); ?>" target="_blank">
 							<?php esc_html_e( 'Learn more about playbooks', 'mcp-ai-wpoos' ); ?> →
 						</a>
 					</p>
