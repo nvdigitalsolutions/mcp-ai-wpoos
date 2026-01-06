@@ -523,7 +523,38 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'restNonce'  => wp_create_nonce( 'wp_rest' ),
 					'nonce'      => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
 					'isProActive' => $this->is_pro_active(),
+					'chartData'  => $this->get_chart_data(),
 				)
+			);
+		}
+
+		/**
+		 * Get chart data for JavaScript initialization.
+		 *
+		 * @return array Chart data.
+		 */
+		private function get_chart_data() {
+			$controls = $this->get_iso27001_controls();
+			$stats    = $this->calculate_controls_stats( $controls );
+
+			return array(
+				'controls' => array(
+					'implemented'    => $stats['implemented'],
+					'partial'        => $stats['partial'],
+					'planned'        => $stats['planned'],
+					'not_applicable' => $stats['not_applicable'],
+					'total'          => $stats['total'],
+				),
+				'risks'    => array(
+					'critical' => 0,
+					'high'     => 3,
+					'medium'   => 12,
+					'low'      => 8,
+				),
+				'metrics'  => array(
+					'incidents'            => array( 5, 3, 2, 4, 1, 2 ),
+					'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
+				),
 			);
 		}
 
