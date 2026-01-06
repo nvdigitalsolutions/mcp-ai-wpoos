@@ -256,7 +256,7 @@
 			'<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>' +
 			'<form class="wp-mcp-ai-chat__form">' +
 			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>' +
-			'<textarea class="wp-mcp-ai-chat__input" rows="4" placeholder="Ask something…" required></textarea>' +
+			'<textarea class="wp-mcp-ai-chat__input" rows="4" placeholder="Ask something…"></textarea>' +
 			'<div class="wp-mcp-ai-chat__attachments" hidden>' +
 			'<div class="wp-mcp-ai-chat__attachments-header">Attachments</div>' +
 			'<ul class="wp-mcp-ai-chat__attachments-list"></ul>' +
