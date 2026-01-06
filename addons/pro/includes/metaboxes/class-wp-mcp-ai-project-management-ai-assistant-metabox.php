@@ -265,6 +265,9 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 	 * @param WP_Post $post Post object.
 	 */
 	public function render( $post ) {
+		$post_type    = get_post_type( $post );
+		$context_type = $this->get_context_type( $post_type );
+
 		// Check permissions.
 		if ( ! current_user_can( 'edit_post', $post->ID ) ) {
 			echo '<p>' . esc_html__( 'You do not have permission to use this feature.', 'mcp-ai-wpoos-pro' ) . '</p>';
@@ -287,9 +290,6 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 
 		// Add nonce for AI actions.
 		wp_nonce_field( 'wp_mcp_ai_pm_ai_actions', 'wp_mcp_ai_pm_ai_actions_nonce' );
-
-		$post_type = get_post_type( $post );
-		$context_type = $this->get_context_type( $post_type );
 		?>
 		<div class="wp-mcp-ai-pm-assistant-wrapper">
 			<div class="wp-mcp-ai-pm-assistant-info">
