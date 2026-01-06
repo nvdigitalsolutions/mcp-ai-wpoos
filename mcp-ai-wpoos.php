@@ -617,6 +617,13 @@ if ( is_admin() ) {
 	// Initialize Incident Learning singleton.
 	WP_MCP_AI_Incident_Learning::get_instance();
 
+	// Load ISO 27001 Security Audit System (Control A.5.35).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-audit.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-audit-admin.php';
+	// Initialize Security Audit singleton.
+	WP_MCP_AI_Security_Audit::get_instance();
+	new WP_MCP_AI_Security_Audit_Admin();
+
 	// Load diagnostic pages (always available under Tools menu).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
