@@ -807,6 +807,15 @@ return rest_ensure_response( $status );
 		 * @return array Array of controls with id, name, status, applicable, and justification.
 		 */
 		private function get_iso27001_controls() {
+			// Try embedded data first (always available in production).
+			if ( class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
+				$controls = WP_MCP_AI_Compliance_Data::get_iso27001_controls();
+				if ( ! empty( $controls ) ) {
+					return $controls;
+				}
+			}
+
+			// Fallback to parsing markdown file (development/debugging).
 			$soa_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Statement-of-Applicability.md';
 
 			if ( ! file_exists( $soa_file ) ) {

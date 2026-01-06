@@ -3,6 +3,64 @@
 ## [Unreleased]
 
 ### Added
+- **ISO 27001/SOC 2/HIPAA Compliance - January 6, 2026**: Achieved 100% ISO 27001:2022 compliance (PR #2645, #2631, #2630)
+  - ISO 27001: 100% (83 of 83 applicable controls) - up from 56%
+  - SOC 2: 100% (54 of 54 Trust Services Criteria)
+  - HIPAA: 98% (42 of 43 Security Rule safeguards)
+  - ~90KB documentation across 14 comprehensive procedures
+  - Dynamic compliance dashboard calculations
+  - Complete control mappings for all three frameworks
+  - See [Weekly Summary](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md)
+
+- **Pro CPT Documentation - January 6, 2026**: Created comprehensive documentation for Pro custom post types
+  - Events, Quizzes, and Places CPT overview (21 tools total)
+  - Events: 5 tools including Google Calendar integration
+  - Quizzes: 9 tools with JetEngine CCT integration
+  - Places: 7 tools with Google Places API integration
+  - See [PRO_CPT_OVERVIEW.md](docs/features/pro-cpt/PRO_CPT_OVERVIEW.md)
+
+### Changed
+- **Pro Dashboard Modernization - January 6, 2026**: Refactored Pro Dashboard with industry-standard patterns (PR #2641)
+  - Implemented Singleton pattern with lazy initialization
+  - Added type-safe class constants for delegates
+  - Centralized delegate management with configuration-driven approach
+  - Enhanced error handling and observability
+  - Public API for delegate access
+  - 100% backward compatible
+  - See [INDUSTRY_STANDARDS_ENHANCEMENTS.md](docs/implementation-summaries/INDUSTRY_STANDARDS_ENHANCEMENTS.md)
+
+- **Text Domain Migration - January 6, 2026**: Complete migration from wp-mcp-ai to mcp-ai-wpoos (PR #2635)
+  - Updated 12,773 instances across PHP and JavaScript
+  - Separate text domains: mcp-ai-wpoos (main), mcp-ai-wpoos-pro, mcp-ai-wpoos-core, mcp-ai-wpoos-base
+  - Zero references to old domain remain
+  - Enables proper POT file generation
+
+- **Documentation Organization - January 6, 2026**: Root directory cleanup (PR #2644)
+  - Moved 25 markdown files to organized subdirectories
+  - Root now contains only 5 essential files (83% reduction)
+  - Files organized into: implementation-summaries/, fixes/, visual-guides/, troubleshooting/
+  - Fixed 2 incorrect local file paths in plugin code
+  - Zero broken links
+
+- **Production Deployment - January 6, 2026**: Removed dev dependencies from vendor (PR #2638)
+  - Executed `composer install --no-dev`
+  - Repository ready for production cloning
+  - Dev tools reinstallable via `composer install` when needed
+
+### Fixed
+- **PM Assistant Fixes - January 6, 2026**: Six critical modal and chat fixes (PRs #2629, #2632, #2633, #2636, #2637, #2626)
+  - Modal Rendering: Added missing CSS for proper overlay display
+  - Chat Localization: Ensured wpMcpAiChat global availability
+  - Nested Form Fix: Changed form structure for WordPress compatibility
+  - Validation Blocking: Always render modal HTML with error messages
+  - Diagnostics: Added version tracking and debug logging
+  - HTML5 Validation: Removed conflicting required attributes
+
+- **WordPress 6.7+ Translation Compatibility - January 6, 2026**: Fixed translation loading timing (PRs #2640, #2639)
+  - Moved 4 registration functions from `init` to `admin_init`
+  - Removed translation functions from plugin action links
+  - Eliminated WordPress 6.7+ timing warnings
+
 - **Code Review - January 2, 2026**: Comprehensive code review of all features and tools
   - Overall grade: A- (92/100) - Production ready
   - Security: 10/10 - Zero vulnerabilities found
