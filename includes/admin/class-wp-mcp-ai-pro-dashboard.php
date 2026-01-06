@@ -5,6 +5,10 @@
  * Manages the dedicated Pro Dashboard top-level admin menu for ISO/IEC 27001
  * compliance monitoring, reporting, and management tools.
  *
+ * Uses singleton pattern and centralized delegate page management for better
+ * architecture and maintainability. All ISO 27001 compliance admin pages are
+ * coordinated through this controller to ensure consistency and prevent conflicts.
+ *
  * @package WP_MCP_AI
  * @since 1.5.0
  */
@@ -16,6 +20,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 	/**
 	 * Pro Dashboard controller for compliance and enterprise features.
+	 *
+	 * Implements centralized management of ISO 27001 compliance modules.
+	 * Delegate pages are instantiated and coordinated to prevent duplicate
+	 * menu registrations and ensure consistent behavior.
+	 *
+	 * @since 1.5.0
 	 */
 	class WP_MCP_AI_Pro_Dashboard {
 		/**
@@ -44,29 +54,96 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		/**
 		 * Initialize delegate admin pages.
 		 *
-		 * These pages are instantiated here instead of auto-initializing
-		 * at file bottom to ensure proper coordination with Pro Dashboard.
+		 * Centralizes instantiation of ISO 27001 compliance admin pages.
+		 * These pages register themselves under the Pro Dashboard menu but are
+		 * instantiated here to ensure proper coordination and prevent duplicate
+		 * menu registrations.
+		 *
+		 * Each delegate corresponds to a specific ISO 27001 control or control group:
+		 * - Security Audits: Control A.5.35 (Independent Review)
+		 * - Security Training: Control A.6.3 (Awareness, Education & Training)
+		 * - Supplier Security: Controls A.5.19-A.5.22 (Supplier Relationships)
+		 * - Asset Inventory: Control A.5.9 (Inventory of Assets)
+		 *
+		 * @return void
 		 */
 		private function init_delegate_pages() {
-			// Security Audits - removed from standalone initialization.
-			if ( class_exists( 'WP_MCP_AI_Security_Audit_Admin' ) ) {
-				$this->delegate_pages['security_audits'] = new WP_MCP_AI_Security_Audit_Admin();
+			$delegates = array(
+				'security_audits'   => 'WP_MCP_AI_Security_Audit_Admin',
+				'security_training' => 'WP_MCP_AI_Security_Training_Admin',
+				'supplier_security' => 'WP_MCP_AI_Supplier_Security_Admin',
+				'asset_inventory'   => 'WP_MCP_AI_Asset_Inventory_Admin',
+			);
+
+			foreach ( $delegates as $key => $class_name ) {
+				if ( class_exists( $class_name ) ) {
+					try {
+						$this->delegate_pages[ $key ] = new $class_name();
+					} catch ( Exception $e ) {
+						// Log initialization error but don't break the page.
+						if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+							WP_MCP_AI_Logger::log_event(
+								'error',
+								sprintf( 'Failed to initialize Pro Dashboard delegate: %s', $class_name ),
+								array(
+									'delegate'  => $key,
+									'error'     => $e->getMessage(),
+									'trace'     => $e->getTraceAsString(),
+								)
+							);
+						}
+					}
+				}
 			}
-			
-			// Security Training - removed from standalone initialization.
-			if ( class_exists( 'WP_MCP_AI_Security_Training_Admin' ) ) {
-				$this->delegate_pages['security_training'] = new WP_MCP_AI_Security_Training_Admin();
-			}
-			
-			// Supplier Security - removed from standalone initialization.
-			if ( class_exists( 'WP_MCP_AI_Supplier_Security_Admin' ) ) {
-				$this->delegate_pages['supplier_security'] = new WP_MCP_AI_Supplier_Security_Admin();
-			}
-			
-			// Asset Inventory - removed from standalone initialization.
-			if ( class_exists( 'WP_MCP_AI_Asset_Inventory_Admin' ) ) {
-				$this->delegate_pages['asset_inventory'] = new WP_MCP_AI_Asset_Inventory_Admin();
-			}
+
+			/**
+			 * Fires after delegate pages are initialized.
+			 *
+			 * Allows plugins to hook into the delegate initialization process.
+			 *
+			 * @since 1.5.0
+			 *
+			 * @param array $delegate_pages Array of initialized delegate page instances.
+			 */
+			do_action( 'wp_mcp_ai_pro_dashboard_delegates_initialized', $this->delegate_pages );
+		}
+
+		/**
+		 * Get registered delegate page instance.
+		 *
+		 * Provides access to individual delegate page instances for testing
+		 * or integration purposes.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string $key Delegate page key (e.g., 'security_audits', 'security_training').
+		 * @return object|null Delegate page instance or null if not found.
+		 */
+		public function get_delegate( $key ) {
+			return isset( $this->delegate_pages[ $key ] ) ? $this->delegate_pages[ $key ] : null;
+		}
+
+		/**
+		 * Get all registered delegate pages.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @return array Array of delegate page instances keyed by delegate key.
+		 */
+		public function get_delegates() {
+			return $this->delegate_pages;
+		}
+
+		/**
+		 * Check if a delegate page is registered.
+		 *
+		 * @since 1.5.0
+		 *
+		 * @param string $key Delegate page key.
+		 * @return bool True if delegate is registered, false otherwise.
+		 */
+		public function has_delegate( $key ) {
+			return isset( $this->delegate_pages[ $key ] );
 		}
 
 		/**
