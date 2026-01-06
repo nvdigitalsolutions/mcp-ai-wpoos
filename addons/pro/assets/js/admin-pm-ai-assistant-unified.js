@@ -174,6 +174,21 @@
 		const baseConfig = window.wpMcpAiChat || {};
 		const baseRestUrl = baseConfig.restUrl || '/wp-json/mcp-ai/v1';
 
+		// Debug: Log base configuration
+		console.log('[PM AI Assistant Unified] Base configuration:', {
+			hasWpMcpAiChat: !!window.wpMcpAiChat,
+			hasNonce: !!baseConfig.nonce,
+			hasRestUrl: !!baseConfig.restUrl,
+			restUrl: baseRestUrl,
+			nonce: baseConfig.nonce ? baseConfig.nonce.substring(0, 10) + '...' : 'MISSING'
+		});
+
+		if (!baseConfig.nonce) {
+			console.error('[PM AI Assistant Unified] ❌ CRITICAL: REST nonce is missing!');
+			console.error('[PM AI Assistant Unified] wpMcpAiChat contents:', window.wpMcpAiChat);
+			console.error('[PM AI Assistant Unified] Chat will fail authentication without a nonce');
+		}
+
 		// Get context data for the current post
 		const contextData = wpMcpAiPmAssistant && wpMcpAiPmAssistant.contextData ? wpMcpAiPmAssistant.contextData : {};
 
@@ -209,7 +224,22 @@
 			postType: postType
 		};
 
-		console.log('[PM AI Assistant Unified] ✓ Configuration created');
+		console.log('[PM AI Assistant Unified] ✓ Configuration created for instance:', instanceId);
+		console.log('[PM AI Assistant Unified] Configuration details:', {
+			instanceId: instanceId,
+			assistantId: assistantId,
+			hasNonce: !!baseConfig.nonce,
+			nonce: baseConfig.nonce ? baseConfig.nonce.substring(0, 10) + '...' : 'MISSING',
+			restUrl: baseRestUrl,
+			userId: baseConfig.currentUserId || 0,
+			postId: postId,
+			postType: postType
+		});
+
+		// Store reference globally for debugging
+		if (!window.wpMcpAiChatInstances[instanceId]) {
+			console.error('[PM AI Assistant Unified] ❌ Failed to store instance configuration!');
+		}
 
 		// Show modal
 		modal.style.display = 'block';
@@ -300,20 +330,68 @@
 				return;
 			}
 
+			// Debug: Log element presence for validation
+			console.log('[PM AI Assistant Unified] Validating required elements...');
+			const form = container.querySelector('.wp-mcp-ai-chat__form');
+			const textarea = container.querySelector('.wp-mcp-ai-chat__input');
+			const messagesEl = container.querySelector('.wp-mcp-ai-chat__messages');
+			const statusEl = container.querySelector('.wp-mcp-ai-chat__status');
+
+			console.log('[PM AI Assistant Unified] Element check:', {
+				container: !!container,
+				form: !!form,
+				textarea: !!textarea,
+				messagesEl: !!messagesEl,
+				statusEl: !!statusEl,
+				hasDataAttr: container.hasAttribute('data-wp-mcp-ai-chat'),
+				instanceId: container.getAttribute('id')
+			});
+
+			// Debug: Log instance configuration
+			const config = window.wpMcpAiChatInstances ? window.wpMcpAiChatInstances[instanceId] : null;
+			console.log('[PM AI Assistant Unified] Instance config:', {
+				hasGlobal: !!window.wpMcpAiChatInstances,
+				hasConfig: !!config,
+				hasNonce: config && !!config.restNonce,
+				hasAssistantId: config && !!config.assistantId,
+				nonce: config && config.restNonce ? config.restNonce.substring(0, 10) + '...' : 'MISSING'
+			});
+
+			// Debug: Log localStorage availability
+			console.log('[PM AI Assistant Unified] Storage check:', {
+				hasLocalStorage: typeof window.localStorage !== 'undefined',
+				hasStorageService: typeof window.wpMcpAiChatStorage !== 'undefined'
+			});
+
 			// Trigger chat initialization
 			if (window.wpMcpAiChatInit && typeof window.wpMcpAiChatInit.init === 'function') {
+				console.log('[PM AI Assistant Unified] Calling wpMcpAiChatInit.init()...');
 				window.wpMcpAiChatInit.init();
-				console.log('[PM AI Assistant Unified] ✓ Chat initialized');
+				console.log('[PM AI Assistant Unified] ✓ Chat initialization called');
 
-				// Focus textarea
+				// Verify initialization success by checking for the initialized attribute
 				setTimeout(function () {
-					const textarea = container.querySelector('.wp-mcp-ai-chat__input');
-					if (textarea) {
-						textarea.focus();
+					const initialized = container.hasAttribute('data-wp-mcp-ai-initialized');
+					console.log('[PM AI Assistant Unified] Initialization result:', {
+						initialized: initialized,
+						hasAttribute: container.hasAttribute('data-wp-mcp-ai-initialized')
+					});
+
+					if (!initialized) {
+						console.error('[PM AI Assistant Unified] ❌ Chat initialization failed - container not marked as initialized');
+						console.error('[PM AI Assistant Unified] This usually means validation failed in chat.js init()');
 					}
-				}, 200);
+
+					// Focus textarea if initialized
+					const textarea = container.querySelector('.wp-mcp-ai-chat__input');
+					if (textarea && initialized) {
+						textarea.focus();
+						console.log('[PM AI Assistant Unified] ✓ Textarea focused');
+					}
+				}, 300);
 			} else {
 				console.error('[PM AI Assistant Unified] Chat init function not available');
+				console.error('[PM AI Assistant Unified] window.wpMcpAiChatInit:', window.wpMcpAiChatInit);
 			}
 		}, 100);
 	}
