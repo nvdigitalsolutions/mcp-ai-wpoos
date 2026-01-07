@@ -19,7 +19,8 @@ The ISMS framework ensures that the NV oOS plugin:
 2. **[Security-Objectives.md](./Security-Objectives.md)** - Information Security Objectives
 3. **[ISMS-Scope.md](./ISMS-Scope.md)** - Scope of the ISMS
 4. **[Risk-Assessment.md](./Risk-Assessment.md)** - Risk Assessment and Treatment Methodology
-5. **[Statement-of-Applicability.md](./Statement-of-Applicability.md)** - SoA covering all 93 controls
+5. **[Risk-Register.md](./Risk-Register.md)** - Comprehensive Risk Register (65 identified risks)
+6. **[Statement-of-Applicability.md](./Statement-of-Applicability.md)** - SoA covering all 93 controls
 
 ### Control Categories (Annex A)
 
