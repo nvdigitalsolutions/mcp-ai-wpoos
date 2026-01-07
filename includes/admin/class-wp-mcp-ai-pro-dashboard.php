@@ -538,21 +538,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 		/**
 		 * Render Compliance Overview page.
+		 *
+		 * Note: This is a legacy method used primarily for testing.
+		 * The production dashboard uses render_dashboard_with_tabs() which includes its own header.
+		 * This method renders content without the header to avoid duplication.
 		 */
 		public function render_overview() {
 			?>
 			<div class="wrap wp-mcp-ai-pro-dashboard">
-				<div class="wp-mcp-ai-dashboard-header">
-					<h1>
-						<?php esc_html_e( 'NV oOS Pro Dashboard', 'mcp-ai-wpoos' ); ?>
-						<span class="wp-mcp-ai-pro-badge"><?php esc_html_e( 'PRO', 'mcp-ai-wpoos' ); ?></span>
-					</h1>
-					<button type="button" class="button wp-mcp-ai-refresh-dashboard">
-						<span class="dashicons dashicons-update"></span>
-						<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?>
-					</button>
-				</div>
-
 				<?php $this->render_pro_status_notice(); ?>
 
 			<?php
