@@ -22,18 +22,137 @@
 	const ProDashboard = {
 		charts: {},
 		refreshInterval: null,
+		lastTabKey: 'wp_mcp_ai_last_dashboard_tab',
 
 		/**
 		 * Initialize Pro Dashboard functionality.
 		 */
 		init: function() {
 			console.log('Initializing Pro Dashboard...');
+			this.initTabStatePersistence();
+			this.initKeyboardShortcuts();
 			this.setupEventListeners();
 			this.initializeComponents();
 			this.loadComplianceData();
 			this.waitForChartJS();
 			this.startAutoRefresh();
 			console.log('Pro Dashboard initialization complete');
+		},
+
+		/**
+		 * Initialize tab state persistence using localStorage.
+		 */
+		initTabStatePersistence: function() {
+			// Save current tab to localStorage when tab changes
+			const self = this;
+			$('.nav-tab-wrapper .nav-tab').on('click', function() {
+				const href = $(this).attr('href');
+				const match = href.match(/[?&]tab=([^&]+)/);
+				if (match && match[1]) {
+					try {
+						localStorage.setItem(self.lastTabKey, match[1]);
+					} catch (e) {
+						console.warn('Failed to save tab state:', e);
+					}
+				}
+			});
+
+			// Show indicator for previously active tab
+			this.highlightLastTab();
+		},
+
+		/**
+		 * Highlight the last active tab with a subtle indicator.
+		 */
+		highlightLastTab: function() {
+			try {
+				const lastTab = localStorage.getItem(this.lastTabKey);
+				if (lastTab) {
+					const currentUrl = window.location.href;
+					const currentTab = currentUrl.match(/[?&]tab=([^&]+)/);
+					const isCurrentTab = currentTab && currentTab[1] === lastTab;
+					
+					if (!isCurrentTab) {
+						$('.nav-tab[href*="tab=' + lastTab + '"]').addClass('wp-mcp-ai-recently-visited');
+					}
+				}
+			} catch (e) {
+				console.warn('Failed to retrieve last tab:', e);
+			}
+		},
+
+		/**
+		 * Initialize keyboard shortcuts for tab navigation.
+		 */
+		initKeyboardShortcuts: function() {
+			const self = this;
+			const tabs = ['overview', 'iso27001', 'reports', 'monitoring', 'risk', 'multi-framework'];
+			
+			$(document).on('keydown', function(e) {
+				// Only activate on Alt+Number (1-6)
+				if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+					const num = parseInt(String.fromCharCode(e.keyCode));
+					if (num >= 1 && num <= tabs.length) {
+						e.preventDefault();
+						const tabName = tabs[num - 1];
+						const url = wpMcpAiProDashboard.restUrl.replace('/wp-json/', '/wp-admin/admin.php?page=nvoos-pro-dashboard&tab=' + tabName);
+						window.location.href = url;
+					}
+				}
+				
+				// Alt+H for help overlay
+				if (e.altKey && e.keyCode === 72) { // 'H' key
+					e.preventDefault();
+					self.showKeyboardShortcutsHelp();
+				}
+			});
+		},
+
+		/**
+		 * Show keyboard shortcuts help overlay.
+		 */
+		showKeyboardShortcutsHelp: function() {
+			if ($('#wp-mcp-ai-shortcuts-help').length > 0) {
+				$('#wp-mcp-ai-shortcuts-help').fadeIn();
+				return;
+			}
+
+			const helpHtml = `
+				<div id="wp-mcp-ai-shortcuts-help" class="wp-mcp-ai-modal-overlay">
+					<div class="wp-mcp-ai-modal-content">
+						<button class="wp-mcp-ai-modal-close" aria-label="Close">×</button>
+						<h2>Keyboard Shortcuts</h2>
+						<table class="wp-mcp-ai-shortcuts-table">
+							<tr><th>Alt + 1</th><td>Overview Tab</td></tr>
+							<tr><th>Alt + 2</th><td>ISO 27001 Tab</td></tr>
+							<tr><th>Alt + 3</th><td>Reports Tab</td></tr>
+							<tr><th>Alt + 4</th><td>Monitoring Tab</td></tr>
+							<tr><th>Alt + 5</th><td>Risk Management Tab</td></tr>
+							<tr><th>Alt + 6</th><td>Multi-Framework Tab</td></tr>
+							<tr><th>Alt + H</th><td>Show this help</td></tr>
+							<tr><th>Esc</th><td>Close dialogs</td></tr>
+						</table>
+					</div>
+				</div>
+			`;
+			
+			$('body').append(helpHtml);
+			$('#wp-mcp-ai-shortcuts-help').fadeIn();
+			
+			// Close on click outside or close button
+			$('#wp-mcp-ai-shortcuts-help').on('click', function(e) {
+				if (e.target === this || $(e.target).hasClass('wp-mcp-ai-modal-close')) {
+					$(this).fadeOut();
+				}
+			});
+			
+			// Close on Escape key
+			$(document).on('keydown.shortcuts-help', function(e) {
+				if (e.keyCode === 27) { // Escape
+					$('#wp-mcp-ai-shortcuts-help').fadeOut();
+					$(document).off('keydown.shortcuts-help');
+				}
+			});
 		},
 
 		/**
@@ -89,6 +208,206 @@
 			$(document).on('click', '.wp-mcp-ai-pro-notice .notice-dismiss', this.dismissProNotice);
 			$(document).on('click', '.wp-mcp-ai-refresh-dashboard', this.refreshDashboard.bind(this));
 			$(document).on('click', '.wp-mcp-ai-control-filter', this.filterControls.bind(this));
+			
+			// Interactive metric cards
+			$(document).on('click', '.wp-mcp-ai-metric-card.interactive', this.handleMetricCardClick.bind(this));
+			$(document).on('keypress', '.wp-mcp-ai-metric-card.interactive', function(e) {
+				if (e.which === 13 || e.which === 32) { // Enter or Space
+					e.preventDefault();
+					$(this).click();
+				}
+			});
+			
+			// Export functionality
+			$(document).on('click', '.wp-mcp-ai-export-dashboard', this.exportDashboard.bind(this));
+			$(document).on('click', '.wp-mcp-ai-export-controls', this.exportControls.bind(this));
+			$(document).on('click', '.wp-mcp-ai-export-risks', this.exportRisks.bind(this));
+			
+			// Help indicator
+			$(document).on('click', '.wp-mcp-ai-help-indicator', this.showKeyboardShortcutsHelp.bind(this));
+		},
+
+		/**
+		 * Handle metric card click for drill-down navigation.
+		 */
+		handleMetricCardClick: function(e) {
+			const $card = $(e.currentTarget);
+			const metric = $card.data('metric');
+			
+			// Add visual feedback
+			$card.addClass('clicked');
+			setTimeout(function() {
+				$card.removeClass('clicked');
+			}, 200);
+			
+			// Navigate based on metric type
+			switch (metric) {
+				case 'implemented':
+				case 'partial':
+					// Navigate to ISO 27001 tab with filter
+					window.location.href = wpMcpAiProDashboard.restUrl.replace('/wp-json/', '/wp-admin/admin.php?page=nvoos-pro-dashboard&tab=iso27001&filter=' + metric);
+					break;
+				case 'critical':
+					// Navigate to Risk Management tab
+					window.location.href = wpMcpAiProDashboard.restUrl.replace('/wp-json/', '/wp-admin/admin.php?page=nvoos-pro-dashboard&tab=risk');
+					break;
+				case 'compliance':
+					// Navigate to ISO 27001 tab
+					window.location.href = wpMcpAiProDashboard.restUrl.replace('/wp-json/', '/wp-admin/admin.php?page=nvoos-pro-dashboard&tab=iso27001');
+					break;
+			}
+		},
+
+		/**
+		 * Export dashboard snapshot.
+		 */
+		exportDashboard: function(e) {
+			e.preventDefault();
+			console.log('Exporting dashboard snapshot...');
+			
+			const $button = $(e.currentTarget);
+			$button.prop('disabled', true).addClass('loading');
+			
+			// Show export options dialog
+			this.showExportDialog('dashboard');
+			
+			$button.prop('disabled', false).removeClass('loading');
+		},
+
+		/**
+		 * Export controls table to CSV.
+		 */
+		exportControls: function(e) {
+			e.preventDefault();
+			console.log('Exporting controls to CSV...');
+			
+			const $button = $(e.currentTarget);
+			$button.prop('disabled', true).addClass('loading');
+			
+			// Gather controls data from table
+			const controls = [];
+			$('.wp-mcp-ai-controls-table tbody tr').each(function() {
+				const $row = $(this);
+				controls.push({
+					id: $row.find('td:eq(0)').text().trim(),
+					name: $row.find('td:eq(1) strong').text().trim(),
+					status: $row.find('td:eq(2)').text().trim(),
+					applicable: $row.find('td:eq(3) .dashicons-yes-alt').length > 0 ? 'Yes' : 'No'
+				});
+			});
+			
+			// Convert to CSV
+			const csv = this.generateCSV(controls);
+			this.downloadFile(csv, 'iso27001-controls-' + this.getDateString() + '.csv', 'text/csv');
+			
+			$button.prop('disabled', false).removeClass('loading');
+			this.showSuccessMessage('Controls exported successfully!');
+		},
+
+		/**
+		 * Export risk register.
+		 */
+		exportRisks: function(e) {
+			e.preventDefault();
+			console.log('Exporting risk register...');
+			
+			const $button = $(e.currentTarget);
+			$button.prop('disabled', true).addClass('loading');
+			
+			// Gather risks data from table
+			const risks = [];
+			$('.wp-mcp-ai-risk-register table tbody tr').each(function() {
+				const $row = $(this);
+				if ($row.find('td').length >= 4) {
+					risks.push({
+						id: $row.find('td:eq(0)').text().trim(),
+						description: $row.find('td:eq(1) strong').text().trim(),
+						likelihood: $row.find('td:eq(2)').text().trim(),
+						impact: $row.find('td:eq(3)').text().trim(),
+						level: $row.find('td:eq(4)').text().trim(),
+						treatment: $row.find('td:eq(5)').text().trim()
+					});
+				}
+			});
+			
+			// Convert to CSV
+			const csv = this.generateCSV(risks);
+			this.downloadFile(csv, 'risk-register-' + this.getDateString() + '.csv', 'text/csv');
+			
+			$button.prop('disabled', false).removeClass('loading');
+			this.showSuccessMessage('Risk register exported successfully!');
+		},
+
+		/**
+		 * Generate CSV from array of objects.
+		 */
+		generateCSV: function(data) {
+			if (data.length === 0) return '';
+			
+			// Get headers from first object
+			const headers = Object.keys(data[0]);
+			
+			// Create CSV string
+			let csv = headers.join(',') + '\n';
+			
+			data.forEach(function(row) {
+				const values = headers.map(function(header) {
+					const value = row[header] || '';
+					// Escape quotes and wrap in quotes if contains comma
+					return value.toString().indexOf(',') > -1 ? '"' + value.replace(/"/g, '""') + '"' : value;
+				});
+				csv += values.join(',') + '\n';
+			});
+			
+			return csv;
+		},
+
+		/**
+		 * Download file to user's computer.
+		 */
+		downloadFile: function(content, filename, mimeType) {
+			const blob = new Blob([content], { type: mimeType });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = filename;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		},
+
+		/**
+		 * Get date string for filenames.
+		 */
+		getDateString: function() {
+			const now = new Date();
+			return now.getFullYear() + '-' + 
+				String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+				String(now.getDate()).padStart(2, '0');
+		},
+
+		/**
+		 * Show export dialog.
+		 */
+		showExportDialog: function(type) {
+			// Placeholder for future export dialog implementation
+			console.log('Export dialog for:', type);
+			alert('Dashboard export feature coming soon!\n\nUse the individual tab export buttons for now.');
+		},
+
+		/**
+		 * Show success message.
+		 */
+		showSuccessMessage: function(message) {
+			const $notice = $('<div class="notice notice-success is-dismissible"><p>' + message + '</p></div>');
+			$('.wp-mcp-ai-pro-dashboard h1').first().after($notice);
+			
+			setTimeout(function() {
+				$notice.fadeOut(function() {
+					$(this).remove();
+				});
+			}, 3000);
 		},
 
 		/**

@@ -832,12 +832,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 			?>
 			<div class="wrap wp-mcp-ai-pro-dashboard">
-				<h1>
-					<?php esc_html_e( 'NV oOS Pro Dashboard', 'mcp-ai-wpoos' ); ?>
-					<span class="wp-mcp-ai-pro-badge"><?php esc_html_e( 'PRO', 'mcp-ai-wpoos' ); ?></span>
-				</h1>
+				<div class="wp-mcp-ai-dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+					<h1 style="margin: 0;">
+						<?php esc_html_e( 'NV oOS Pro Dashboard', 'mcp-ai-wpoos' ); ?>
+						<span class="wp-mcp-ai-pro-badge"><?php esc_html_e( 'PRO', 'mcp-ai-wpoos' ); ?></span>
+					</h1>
+					<div class="wp-mcp-ai-dashboard-actions" style="display: flex; gap: 10px; align-items: center;">
+						<?php $this->render_dashboard_actions( $current_tab ); ?>
+					</div>
+				</div>
 
 				<?php $this->render_pro_status_notice(); ?>
+				<?php $this->render_keyboard_shortcuts_help_button(); ?>
 
 				<!-- Tab Navigation -->
 				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Pro Dashboard tabs', 'mcp-ai-wpoos' ); ?>">
@@ -936,42 +942,66 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 			?>
 
-			<!-- Key Metrics Summary -->
+			<!-- Key Metrics Summary with Interactive Cards -->
 			<div class="wp-mcp-ai-metrics-summary">
-				<div class="wp-mcp-ai-metric-card">
+				<div class="wp-mcp-ai-metric-card interactive" data-metric="implemented" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'View implemented controls', 'mcp-ai-wpoos' ); ?>">
 					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-yes-alt"></span>
 					</div>
 					<div class="wp-mcp-ai-metric-content">
 						<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-implemented"><?php echo esc_html( $stats['implemented'] ); ?></div>
-						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Controls Implemented', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-label">
+							<?php esc_html_e( 'Controls Implemented', 'mcp-ai-wpoos' ); ?>
+							<span class="wp-mcp-ai-tooltip">
+								<span class="dashicons dashicons-info"></span>
+								<span class="wp-mcp-ai-tooltip-text"><?php esc_html_e( 'Number of ISO 27001 controls that are fully implemented and operational.', 'mcp-ai-wpoos' ); ?></span>
+							</span>
+						</div>
 					</div>
 				</div>
-				<div class="wp-mcp-ai-metric-card">
+				<div class="wp-mcp-ai-metric-card interactive" data-metric="partial" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'View controls in progress', 'mcp-ai-wpoos' ); ?>">
 					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-clock"></span>
 					</div>
 					<div class="wp-mcp-ai-metric-content">
 						<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-partial"><?php echo esc_html( $stats['partial'] ); ?></div>
-						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'In Progress', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-label">
+							<?php esc_html_e( 'In Progress', 'mcp-ai-wpoos' ); ?>
+							<span class="wp-mcp-ai-tooltip">
+								<span class="dashicons dashicons-info"></span>
+								<span class="wp-mcp-ai-tooltip-text"><?php esc_html_e( 'Controls that are partially implemented and require additional work.', 'mcp-ai-wpoos' ); ?></span>
+							</span>
+						</div>
 					</div>
 				</div>
-				<div class="wp-mcp-ai-metric-card">
+				<div class="wp-mcp-ai-metric-card interactive" data-metric="critical" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'View critical risks', 'mcp-ai-wpoos' ); ?>">
 					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-warning"></span>
 					</div>
 					<div class="wp-mcp-ai-metric-content">
 						<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-critical">0</div>
-						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Critical Risks', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-label">
+							<?php esc_html_e( 'Critical Risks', 'mcp-ai-wpoos' ); ?>
+							<span class="wp-mcp-ai-tooltip">
+								<span class="dashicons dashicons-info"></span>
+								<span class="wp-mcp-ai-tooltip-text"><?php esc_html_e( 'High-priority risks that require immediate attention and mitigation.', 'mcp-ai-wpoos' ); ?></span>
+							</span>
+						</div>
 					</div>
 				</div>
-				<div class="wp-mcp-ai-metric-card">
+				<div class="wp-mcp-ai-metric-card interactive" data-metric="compliance" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'View compliance details', 'mcp-ai-wpoos' ); ?>">
 					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-chart-line"></span>
 					</div>
 					<div class="wp-mcp-ai-metric-content">
 						<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-compliance"><?php echo esc_html( $compliance_pct ); ?>%</div>
-						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Overall Compliance', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-label">
+							<?php esc_html_e( 'Overall Compliance', 'mcp-ai-wpoos' ); ?>
+							<span class="wp-mcp-ai-tooltip">
+								<span class="dashicons dashicons-info"></span>
+								<span class="wp-mcp-ai-tooltip-text"><?php esc_html_e( 'Percentage of applicable controls that are fully implemented.', 'mcp-ai-wpoos' ); ?></span>
+							</span>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -1298,6 +1328,58 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</div>
 				<?php
 			}
+		}
+
+		/**
+		 * Render keyboard shortcuts help button.
+		 *
+		 * @since 1.5.2
+		 */
+		private function render_keyboard_shortcuts_help_button() {
+			?>
+			<div class="wp-mcp-ai-help-indicator" role="button" aria-label="<?php esc_attr_e( 'Show keyboard shortcuts', 'mcp-ai-wpoos' ); ?>" title="<?php esc_attr_e( 'Keyboard Shortcuts (Alt+H)', 'mcp-ai-wpoos' ); ?>">
+				<span class="dashicons dashicons-editor-help"></span>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render dashboard action buttons.
+		 *
+		 * @since 1.5.2
+		 *
+		 * @param string $current_tab Current active tab.
+		 */
+		private function render_dashboard_actions( $current_tab ) {
+			?>
+			<div class="wp-mcp-ai-export-buttons">
+				<?php if ( 'overview' === $current_tab ) : ?>
+					<button class="wp-mcp-ai-export-button wp-mcp-ai-export-dashboard" title="<?php esc_attr_e( 'Export dashboard snapshot', 'mcp-ai-wpoos' ); ?>">
+						<span class="dashicons dashicons-download"></span>
+						<span><?php esc_html_e( 'Export', 'mcp-ai-wpoos' ); ?></span>
+					</button>
+				<?php endif; ?>
+				
+				<button class="button wp-mcp-ai-refresh-dashboard" title="<?php esc_attr_e( 'Refresh data', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-update"></span>
+					<span><?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?></span>
+				</button>
+
+				<?php if ( 'iso27001' === $current_tab ) : ?>
+					<button class="wp-mcp-ai-export-button wp-mcp-ai-export-controls" title="<?php esc_attr_e( 'Export controls to CSV', 'mcp-ai-wpoos' ); ?>">
+						<span class="dashicons dashicons-media-spreadsheet"></span>
+						<span><?php esc_html_e( 'Export CSV', 'mcp-ai-wpoos' ); ?></span>
+					</button>
+				<?php endif; ?>
+
+				<?php if ( 'risk' === $current_tab ) : ?>
+					<button class="wp-mcp-ai-export-button wp-mcp-ai-export-risks" title="<?php esc_attr_e( 'Export risk register', 'mcp-ai-wpoos' ); ?>">
+						<span class="dashicons dashicons-media-spreadsheet"></span>
+						<span><?php esc_html_e( 'Export Risks', 'mcp-ai-wpoos' ); ?></span>
+					</button>
+				<?php endif; ?>
+			</div>
+			<?php
 		}
 
 		/**
