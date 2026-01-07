@@ -240,4 +240,114 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'wpMcpAiProDashboard', $data );
 		$this->assertStringContainsString( 'chartData', $data );
 	}
+	
+	/**
+	 * Test that get_risk_data returns proper structure.
+	 */
+	public function test_get_risk_data() {
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_risk_data' );
+		$method->setAccessible( true );
+
+		$risk_data = $method->invoke( $dashboard );
+
+		// Verify structure.
+		$this->assertIsArray( $risk_data );
+		$this->assertArrayHasKey( 'critical', $risk_data );
+		$this->assertArrayHasKey( 'high', $risk_data );
+		$this->assertArrayHasKey( 'medium', $risk_data );
+		$this->assertArrayHasKey( 'low', $risk_data );
+
+		// Verify data types.
+		$this->assertIsInt( $risk_data['critical'] );
+		$this->assertIsInt( $risk_data['high'] );
+		$this->assertIsInt( $risk_data['medium'] );
+		$this->assertIsInt( $risk_data['low'] );
+	}
+	
+	/**
+	 * Test that get_metrics_data returns proper structure.
+	 */
+	public function test_get_metrics_data() {
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_metrics_data' );
+		$method->setAccessible( true );
+
+		$metrics_data = $method->invoke( $dashboard );
+
+		// Verify structure.
+		$this->assertIsArray( $metrics_data );
+		$this->assertArrayHasKey( 'incidents', $metrics_data );
+		$this->assertArrayHasKey( 'vulnerabilities_fixed', $metrics_data );
+
+		// Verify data types.
+		$this->assertIsArray( $metrics_data['incidents'] );
+		$this->assertIsArray( $metrics_data['vulnerabilities_fixed'] );
+
+		// Verify array lengths.
+		$this->assertCount( 6, $metrics_data['incidents'] );
+		$this->assertCount( 6, $metrics_data['vulnerabilities_fixed'] );
+	}
+	
+	/**
+	 * Test that helper methods can use stored options.
+	 */
+	public function test_helper_methods_use_stored_options() {
+		// Set custom risk data in options.
+		$custom_risks = array(
+			'critical' => 5,
+			'high'     => 10,
+			'medium'   => 15,
+			'low'      => 20,
+		);
+		update_option( 'wp_mcp_ai_risk_data', $custom_risks );
+
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_risk_data' );
+		$method->setAccessible( true );
+
+		$risk_data = $method->invoke( $dashboard );
+
+		// Should return custom data from options.
+		$this->assertEquals( 5, $risk_data['critical'] );
+		$this->assertEquals( 10, $risk_data['high'] );
+		$this->assertEquals( 15, $risk_data['medium'] );
+		$this->assertEquals( 20, $risk_data['low'] );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_risk_data' );
+	}
+	
+	/**
+	 * Test that chart data uses helper methods.
+	 */
+	public function test_chart_data_uses_helper_methods() {
+		// Set custom data in options.
+		$custom_metrics = array(
+			'incidents'             => array( 1, 2, 3, 4, 5, 6 ),
+			'vulnerabilities_fixed' => array( 10, 20, 30, 40, 50, 60 ),
+		);
+		update_option( 'wp_mcp_ai_metrics_data', $custom_metrics );
+
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_chart_data' );
+		$method->setAccessible( true );
+
+		$chart_data = $method->invoke( $dashboard );
+
+		// Chart data should contain custom metrics from options.
+		$this->assertEquals( array( 1, 2, 3, 4, 5, 6 ), $chart_data['metrics']['incidents'] );
+		$this->assertEquals( array( 10, 20, 30, 40, 50, 60 ), $chart_data['metrics']['vulnerabilities_fixed'] );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_metrics_data' );
+	}
 }
