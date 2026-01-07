@@ -1335,15 +1335,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<!-- Tab Content -->
 				<div class="wp-mcp-ai-framework-detail-content">
 					<div class="wp-mcp-ai-framework-detail-panel active" id="iso27001-details">
-						<p class="description">
-							<?php
-							printf(
-								/* translators: %s: Link to ISO 27001 tab */
-								esc_html__( 'For detailed ISO 27001 controls, visit the %s.', 'mcp-ai-wpoos' ),
-								'<a href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ) . '">' . esc_html__( 'ISO 27001 tab', 'mcp-ai-wpoos' ) . '</a>'
-							);
-							?>
-						</p>
+						<?php $this->render_framework_controls_table( 'iso27001' ); ?>
 					</div>
 					<div class="wp-mcp-ai-framework-detail-panel" id="soc2-details">
 						<?php $this->render_framework_controls_table( 'soc2' ); ?>
@@ -2894,11 +2886,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 *
 		 * Displays detailed controls/requirements table for a specific framework.
 		 *
-		 * @param string $framework Framework identifier (soc2, hipaa, gdpr).
+		 * @param string $framework Framework identifier (iso27001, soc2, hipaa, gdpr).
 		 */
 		private function render_framework_controls_table( $framework ) {
 			// Get controls based on framework.
 			switch ( $framework ) {
+				case 'iso27001':
+					$controls      = $this->get_iso27001_controls();
+					$framework_name = 'ISO 27001:2022';
+					$control_label  = 'Controls';
+					break;
 				case 'soc2':
 					$controls      = $this->get_soc2_controls();
 					$framework_name = 'SOC 2';
