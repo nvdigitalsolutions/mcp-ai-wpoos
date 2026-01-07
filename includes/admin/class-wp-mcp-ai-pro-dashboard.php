@@ -4149,21 +4149,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return string Uptime display.
 		 */
 		private function get_system_uptime() {
-			// Try to get actual system uptime if available.
-			if ( function_exists( 'sys_getloadavg' ) && file_exists( '/proc/uptime' ) ) {
-				$uptime_data = @file_get_contents( '/proc/uptime' );
-				if ( $uptime_data ) {
-					$uptime_seconds = (int) explode( ' ', $uptime_data )[0];
-					$days = floor( $uptime_seconds / 86400 );
-					$hours = floor( ( $uptime_seconds % 86400 ) / 3600 );
-					return sprintf( '%dd %dh', $days, $hours );
+			// Try to get actual system uptime if available (Linux only).
+			if ( function_exists( 'sys_getloadavg' ) && is_readable( '/proc/uptime' ) ) {
+				$uptime_data = file_get_contents( '/proc/uptime' );
+				if ( false !== $uptime_data ) {
+					$uptime_parts = explode( ' ', $uptime_data );
+					if ( isset( $uptime_parts[0] ) && is_numeric( $uptime_parts[0] ) ) {
+						$uptime_seconds = (int) $uptime_parts[0];
+						$days           = floor( $uptime_seconds / 86400 );
+						$hours          = floor( ( $uptime_seconds % 86400 ) / 3600 );
+						return sprintf( '%dd %dh', $days, $hours );
+					}
 				}
 			}
 
 			// Fallback: Use WordPress installation time.
 			$wp_install_time = get_option( 'wp_mcp_ai_install_time', current_time( 'timestamp' ) );
-			$uptime_seconds = current_time( 'timestamp' ) - $wp_install_time;
-			$days = floor( $uptime_seconds / 86400 );
+			$uptime_seconds  = current_time( 'timestamp' ) - $wp_install_time;
+			$days            = floor( $uptime_seconds / 86400 );
 			return sprintf( '%d days', $days );
 		}
 
@@ -4325,9 +4328,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Sort by timestamp descending (newest first).
-			usort( $enriched, function( $a, $b ) {
-				return $b['timestamp'] - $a['timestamp'];
-			});
+			usort(
+				$enriched,
+				function ( $a, $b ) {
+					// Use spaceship operator for safe comparison without overflow risk.
+					return $b['timestamp'] <=> $a['timestamp'];
+				}
+			);
 
 			return $enriched;
 		}

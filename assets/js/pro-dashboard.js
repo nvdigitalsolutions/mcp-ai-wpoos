@@ -626,10 +626,19 @@
 		 * Clear dismissed events.
 		 */
 		clearDismissedEvents: function() {
-			if (confirm('Are you sure you want to clear all dismissed events?')) {
-				// In a real implementation, this would make an AJAX call
-				console.log('Clearing dismissed events');
-				alert('Dismissed events cleared successfully.');
+			if (confirm('Are you sure you want to clear all dismissed events? This action cannot be undone.')) {
+				// TODO: Implement AJAX call to clear dismissed events on server
+				// For now, remove dismissed events from current view only
+				const $dismissedRows = $('.wp-mcp-ai-event-row.dismissed');
+				
+				if ($dismissedRows.length > 0) {
+					$dismissedRows.fadeOut(300, function() {
+						$(this).remove();
+						// Update count
+						const visibleCount = $('.wp-mcp-ai-event-row:visible').length;
+						$('.wp-mcp-ai-event-count').text('Showing ' + visibleCount + ' events');
+					});
+				}
 			}
 		},
 		
@@ -680,8 +689,14 @@
 		 * Load more events.
 		 */
 		loadMoreEvents: function() {
-			// In a real implementation, this would make an AJAX call
-			alert('Loading more events...');
+			// TODO: Implement AJAX pagination for loading additional events
+			// For now, this is a placeholder that will be implemented in a future update
+			const $button = $('#wp-mcp-ai-load-more-events');
+			$button.prop('disabled', true).text('Feature coming soon...');
+			
+			setTimeout(function() {
+				$button.prop('disabled', false).text('Load More');
+			}, 2000);
 		},
 		
 		/**
@@ -693,7 +708,8 @@
 				return;
 			}
 			
-			// Sample data - in real implementation, this would come from PHP
+			// TODO: Replace with actual event data from PHP via wpMcpAiProDashboard.chartData
+			// Sample data for demonstration - in production, this comes from server
 			const hours = [];
 			const eventCounts = [];
 			
@@ -701,6 +717,7 @@
 				const hour = new Date();
 				hour.setHours(hour.getHours() - i);
 				hours.push(hour.getHours() + ':00');
+				// Temporary placeholder data - replace with real data
 				eventCounts.push(Math.floor(Math.random() * 10));
 			}
 			
