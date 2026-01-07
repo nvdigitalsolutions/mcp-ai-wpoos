@@ -584,6 +584,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				),
 				'risks'    => $this->get_risk_data(),
 				'metrics'  => $this->get_metrics_data(),
+				'chatData' => $this->get_chat_data(),
 			);
 		}
 
@@ -1078,6 +1079,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			<div class="wp-mcp-ai-frameworks-section">
 				<h2><?php esc_html_e( 'Multi-Framework Compliance', 'mcp-ai-wpoos' ); ?></h2>
 				<?php $this->render_framework_badges(); ?>
+			</div>
+
+			<!-- Chat Statistics Section -->
+			<div class="wp-mcp-ai-chat-statistics-section">
+				<h2><?php esc_html_e( 'Chat & Conversation Analytics', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_chat_statistics(); ?>
 			</div>
 
 			<div class="wp-mcp-ai-dashboard-grid">
@@ -1814,6 +1821,140 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					</div>
 				<?php endforeach; ?>
 			</div>
+			<?php
+		}
+
+		/**
+		 * Render chat statistics section.
+		 *
+		 * Displays conversation analytics including total conversations,
+		 * active users, and recent activity trends.
+		 *
+		 * @since 1.5.3
+		 */
+		private function render_chat_statistics() {
+			$chat_data = $this->get_chat_data();
+			?>
+			<div class="wp-mcp-ai-chat-stats-grid">
+				<div class="wp-mcp-ai-chat-stat-card">
+					<div class="wp-mcp-ai-stat-icon">
+						<span class="dashicons dashicons-format-chat"></span>
+					</div>
+					<div class="wp-mcp-ai-stat-content">
+						<div class="wp-mcp-ai-stat-value wp-mcp-ai-chat-total"><?php echo esc_html( number_format_i18n( $chat_data['total_conversations'] ) ); ?></div>
+						<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Total Conversations', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-chat-stat-card">
+					<div class="wp-mcp-ai-stat-icon">
+						<span class="dashicons dashicons-groups"></span>
+					</div>
+					<div class="wp-mcp-ai-stat-content">
+						<div class="wp-mcp-ai-stat-value wp-mcp-ai-chat-users"><?php echo esc_html( number_format_i18n( $chat_data['active_users'] ) ); ?></div>
+						<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Active Users', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-chat-stat-card">
+					<div class="wp-mcp-ai-stat-icon">
+						<span class="dashicons dashicons-calendar-alt"></span>
+					</div>
+					<div class="wp-mcp-ai-stat-content">
+						<div class="wp-mcp-ai-stat-value wp-mcp-ai-chat-today"><?php echo esc_html( number_format_i18n( $chat_data['today_conversations'] ) ); ?></div>
+						<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Today', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-chat-stat-card">
+					<div class="wp-mcp-ai-stat-icon">
+						<span class="dashicons dashicons-chart-area"></span>
+					</div>
+					<div class="wp-mcp-ai-stat-content">
+						<div class="wp-mcp-ai-stat-value wp-mcp-ai-chat-week"><?php echo esc_html( number_format_i18n( $chat_data['this_week_conversations'] ) ); ?></div>
+						<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'This Week', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+			</div>
+			<?php
+			if ( 0 === $chat_data['total_conversations'] ) :
+				?>
+				<p class="wp-mcp-ai-chat-empty-state">
+					<span class="dashicons dashicons-info"></span>
+					<?php esc_html_e( 'No chat conversations recorded yet. Chat statistics will appear here once users start interacting with AI assistants.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<?php
+			endif;
+			?>
+			<style>
+				.wp-mcp-ai-chat-statistics-section {
+					background: #fff;
+					border: 1px solid #dcdcde;
+					border-radius: 4px;
+					padding: 20px;
+					margin: 20px 0;
+				}
+				.wp-mcp-ai-chat-statistics-section h2 {
+					margin-top: 0;
+					font-size: 1.3em;
+					color: #1d2327;
+				}
+				.wp-mcp-ai-chat-stats-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+					gap: 15px;
+					margin-bottom: 15px;
+				}
+				.wp-mcp-ai-chat-stat-card {
+					display: flex;
+					align-items: center;
+					gap: 15px;
+					padding: 15px;
+					background: #f6f7f7;
+					border-radius: 4px;
+					border: 1px solid #e0e0e0;
+				}
+				.wp-mcp-ai-stat-icon {
+					width: 48px;
+					height: 48px;
+					background: #2271b1;
+					border-radius: 50%;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					color: #fff;
+					font-size: 24px;
+				}
+				.wp-mcp-ai-stat-content {
+					flex: 1;
+				}
+				.wp-mcp-ai-stat-value {
+					font-size: 2em;
+					font-weight: bold;
+					color: #1d2327;
+					line-height: 1;
+				}
+				.wp-mcp-ai-stat-label {
+					font-size: 0.9em;
+					color: #646970;
+					margin-top: 5px;
+				}
+				.wp-mcp-ai-chat-empty-state {
+					padding: 20px;
+					background: #f0f6fc;
+					border: 1px solid #d0e4f5;
+					border-radius: 4px;
+					color: #3c434a;
+					display: flex;
+					align-items: center;
+					gap: 10px;
+				}
+				.wp-mcp-ai-chat-empty-state .dashicons {
+					color: #2271b1;
+				}
+				@media screen and (max-width: 782px) {
+					.wp-mcp-ai-chat-stats-grid {
+						grid-template-columns: 1fr;
+					}
+				}
+			</style>
 			<?php
 		}
 
@@ -2721,6 +2862,79 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				'incidents'             => array( 5, 3, 2, 4, 1, 2 ),
 				'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
 			);
+		}
+
+		/**
+		 * Get chat data for dashboard.
+		 *
+		 * Returns chat/conversation statistics including total conversations,
+		 * active users, and recent activity.
+		 *
+		 * @return array Chat data statistics.
+		 */
+		private function get_chat_data() {
+			global $wpdb;
+
+			$chat_data = array(
+				'total_conversations' => 0,
+				'active_users'        => 0,
+				'today_conversations' => 0,
+				'this_week_conversations' => 0,
+			);
+
+			// Try to get data from transcript repository if available.
+			if ( class_exists( 'WP_MCP_AI_Transcript_Repository' ) ) {
+				$repository = new WP_MCP_AI_Transcript_Repository();
+
+				if ( $repository->table_exists() ) {
+					$table = esc_sql( $repository->get_table_name() );
+
+					// Get total conversations (unique session keys).
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$total = $wpdb->get_var( "SELECT COUNT(DISTINCT session_key) FROM {$table}" );
+					$chat_data['total_conversations'] = absint( $total );
+
+					// Get active users (unique user IDs).
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$active_users = $wpdb->get_var( "SELECT COUNT(DISTINCT user_id) FROM {$table}" );
+					$chat_data['active_users'] = absint( $active_users );
+
+					// Get today's conversations.
+					$today_start = gmdate( 'Y-m-d 00:00:00' );
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$today_count = $wpdb->get_var(
+						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+							"SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE cct_created >= %s",
+							$today_start
+						)
+					);
+					$chat_data['today_conversations'] = absint( $today_count );
+
+					// Get this week's conversations.
+					$week_start = gmdate( 'Y-m-d 00:00:00', strtotime( '-7 days' ) );
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$week_count = $wpdb->get_var(
+						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+							"SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE cct_created >= %s",
+							$week_start
+						)
+					);
+					$chat_data['this_week_conversations'] = absint( $week_count );
+				}
+			}
+
+			/**
+			 * Filter chat data for the Pro Dashboard.
+			 *
+			 * Allows plugins/themes to modify or enhance chat statistics.
+			 *
+			 * @since 1.5.3
+			 *
+			 * @param array $chat_data Chat statistics data.
+			 */
+			return apply_filters( 'wp_mcp_ai_pro_dashboard_chat_data', $chat_data );
 		}
 	}
 }

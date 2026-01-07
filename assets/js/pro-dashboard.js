@@ -864,6 +864,14 @@
 				$('.wp-mcp-ai-stat-total').text(data.controls.total || 93);
 			}
 
+			// Update chat statistics if present
+			if (data.chatData) {
+				$('.wp-mcp-ai-chat-total').text(data.chatData.total_conversations || 0);
+				$('.wp-mcp-ai-chat-users').text(data.chatData.active_users || 0);
+				$('.wp-mcp-ai-chat-today').text(data.chatData.today_conversations || 0);
+				$('.wp-mcp-ai-chat-week').text(data.chatData.this_week_conversations || 0);
+			}
+
 			// Update recent activity if present
 			if (data.recent_events && data.recent_events.length > 0) {
 				this.updateRecentActivity(data.recent_events);
