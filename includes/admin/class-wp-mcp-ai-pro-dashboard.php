@@ -2684,90 +2684,75 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Render risk register.
 		 */
 		private function render_risk_register() {
+			// Get risks from the Risk Register file.
+			$risks = $this->get_risk_register_entries();
+
 			?>
 			<p class="description">
 				<?php esc_html_e( 'The risk register documents all identified risks, their assessment, and treatment plans.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
-			<table class="wp-list-table widefat fixed striped">
-				<thead>
-					<tr>
-						<th style="width: 80px;"><?php esc_html_e( 'Risk ID', 'mcp-ai-wpoos' ); ?></th>
-						<th><?php esc_html_e( 'Risk Description', 'mcp-ai-wpoos' ); ?></th>
-						<th style="width: 100px;"><?php esc_html_e( 'Likelihood', 'mcp-ai-wpoos' ); ?></th>
-						<th style="width: 100px;"><?php esc_html_e( 'Impact', 'mcp-ai-wpoos' ); ?></th>
-						<th style="width: 100px;"><?php esc_html_e( 'Risk Level', 'mcp-ai-wpoos' ); ?></th>
-						<th style="width: 120px;"><?php esc_html_e( 'Treatment', 'mcp-ai-wpoos' ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>R-001</td>
-						<td>
-							<strong><?php esc_html_e( 'Unauthorized API Access', 'mcp-ai-wpoos' ); ?></strong>
-							<p class="description"><?php esc_html_e( 'Unauthorized users gaining access to AI API endpoints', 'mcp-ai-wpoos' ); ?></p>
-						</td>
-						<td><?php esc_html_e( 'Possible', 'mcp-ai-wpoos' ); ?></td>
-						<td><?php esc_html_e( 'High', 'mcp-ai-wpoos' ); ?></td>
-						<td><span class="risk-badge risk-medium"><?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></span></td>
-						<td><?php esc_html_e( 'Reduce', 'mcp-ai-wpoos' ); ?></td>
-					</tr>
-					<tr>
-						<td>R-002</td>
-						<td>
-							<strong><?php esc_html_e( 'Data Exposure via Logs', 'mcp-ai-wpoos' ); ?></strong>
-							<p class="description"><?php esc_html_e( 'Sensitive data exposure through debug logs', 'mcp-ai-wpoos' ); ?></p>
-						</td>
-						<td><?php esc_html_e( 'Unlikely', 'mcp-ai-wpoos' ); ?></td>
-						<td><?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></td>
-						<td><span class="risk-badge risk-low"><?php esc_html_e( 'Low', 'mcp-ai-wpoos' ); ?></span></td>
-						<td><?php esc_html_e( 'Reduce', 'mcp-ai-wpoos' ); ?></td>
-					</tr>
-					<tr>
-						<td>R-003</td>
-						<td>
-							<strong><?php esc_html_e( 'Third-Party API Outage', 'mcp-ai-wpoos' ); ?></strong>
-							<p class="description"><?php esc_html_e( 'OpenAI/Gemini API unavailability affecting service', 'mcp-ai-wpoos' ); ?></p>
-						</td>
-						<td><?php esc_html_e( 'Possible', 'mcp-ai-wpoos' ); ?></td>
-						<td><?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></td>
-						<td><span class="risk-badge risk-medium"><?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></span></td>
-						<td><?php esc_html_e( 'Accept', 'mcp-ai-wpoos' ); ?></td>
-					</tr>
-					<tr>
-						<td>R-004</td>
-						<td>
-							<strong><?php esc_html_e( 'Injection Attacks', 'mcp-ai-wpoos' ); ?></strong>
-							<p class="description"><?php esc_html_e( 'SQL/XSS injection through user inputs', 'mcp-ai-wpoos' ); ?></p>
-						</td>
-						<td><?php esc_html_e( 'Unlikely', 'mcp-ai-wpoos' ); ?></td>
-						<td><?php esc_html_e( 'Very High', 'mcp-ai-wpoos' ); ?></td>
-						<td><span class="risk-badge risk-medium"><?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></span></td>
-						<td><?php esc_html_e( 'Reduce', 'mcp-ai-wpoos' ); ?></td>
-					</tr>
-					<tr>
-						<td>R-005</td>
-						<td>
-							<strong><?php esc_html_e( 'Credential Compromise', 'mcp-ai-wpoos' ); ?></strong>
-							<p class="description"><?php esc_html_e( 'API keys or credentials being exposed or stolen', 'mcp-ai-wpoos' ); ?></p>
-						</td>
-						<td><?php esc_html_e( 'Unlikely', 'mcp-ai-wpoos' ); ?></td>
-						<td><?php esc_html_e( 'Very High', 'mcp-ai-wpoos' ); ?></td>
-						<td><span class="risk-badge risk-medium"><?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></span></td>
-						<td><?php esc_html_e( 'Reduce', 'mcp-ai-wpoos' ); ?></td>
-					</tr>
-				</tbody>
-			</table>
+			<?php if ( empty( $risks ) ) : ?>
+				<p class="wp-mcp-ai-empty-state">
+					<?php esc_html_e( 'Unable to load risk register. Please check that the Risk-Register.md file is available.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			<?php else : ?>
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th style="width: 80px;"><?php esc_html_e( 'Risk ID', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Risk Description', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 100px;"><?php esc_html_e( 'Likelihood', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 100px;"><?php esc_html_e( 'Impact', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 100px;"><?php esc_html_e( 'Risk Level', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 120px;"><?php esc_html_e( 'Treatment', 'mcp-ai-wpoos' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $risks as $risk ) : ?>
+							<?php
+							// Determine risk badge class based on risk level.
+							$risk_level_lower = strtolower( $risk['risk_level'] );
+							$badge_class      = 'risk-medium'; // Default.
+							if ( 'critical' === $risk_level_lower ) {
+								$badge_class = 'risk-critical';
+							} elseif ( 'high' === $risk_level_lower ) {
+								$badge_class = 'risk-high';
+							} elseif ( 'low' === $risk_level_lower ) {
+								$badge_class = 'risk-low';
+							}
+							?>
+							<tr>
+								<td><?php echo esc_html( $risk['id'] ); ?></td>
+								<td>
+									<strong><?php echo esc_html( $risk['name'] ); ?></strong>
+									<?php if ( ! empty( $risk['description'] ) ) : ?>
+										<p class="description"><?php echo esc_html( $risk['description'] ); ?></p>
+									<?php endif; ?>
+									<?php if ( ! empty( $risk['category'] ) ) : ?>
+										<p class="description"><em><?php echo esc_html( $risk['category'] ); ?></em></p>
+									<?php endif; ?>
+								</td>
+								<td><?php echo esc_html( $risk['likelihood'] ); ?></td>
+								<td><?php echo esc_html( $risk['impact'] ); ?></td>
+								<td><span class="risk-badge <?php echo esc_attr( $badge_class ); ?>"><?php echo esc_html( $risk['risk_level'] ); ?></span></td>
+								<td><?php echo esc_html( $risk['treatment'] ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
 
-			<p class="description" style="margin-top: 20px;">
-				<?php
-				printf(
-					/* translators: %s: Link to risk assessment document */
-					esc_html__( 'See the full %s for detailed risk analysis and treatment plans.', 'mcp-ai-wpoos' ),
-					'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Risk-Assessment.md' ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'
-				);
-				?>
-			</p>
+				<p class="description" style="margin-top: 20px;">
+					<?php
+					printf(
+						/* translators: 1: Total risks count, 2: Link to risk assessment document */
+						esc_html__( 'Showing %1$d risks. See the full %2$s for detailed risk analysis and treatment plans.', 'mcp-ai-wpoos' ),
+						count( $risks ),
+						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Risk-Assessment.md' ) . '" target="_blank">' . esc_html__( 'Risk Assessment document', 'mcp-ai-wpoos' ) . '</a>'
+					);
+					?>
+				</p>
+			<?php endif; ?>
 			<?php
 		}
 
@@ -3632,6 +3617,119 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				'incidents'             => array( 5, 3, 2, 4, 1, 2 ),
 				'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
 			);
+		}
+
+		/**
+		 * Get risk register entries from Risk Register markdown file.
+		 *
+		 * Parses the Risk-Register.md file and extracts risk information.
+		 *
+		 * @since 1.5.3
+		 * @return array Array of risks with id, name, description, category, likelihood, impact, risk_score, risk_level, treatment, and status.
+		 */
+		private function get_risk_register_entries() {
+			$risk_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Risk-Register.md';
+
+			if ( ! file_exists( $risk_file ) ) {
+				return array();
+			}
+
+			$content = file_get_contents( $risk_file );
+			if ( empty( $content ) ) {
+				return array();
+			}
+
+			$risks            = array();
+			$lines            = explode( "\n", $content );
+			$current_risk     = null;
+			$current_category = 'General';
+			$in_table         = false;
+
+			foreach ( $lines as $line ) {
+				// Track category (e.g., "## 4. Category 1: Authentication & Authorization Risks").
+				if ( preg_match( '/^##\s+\d+\.\s+Category\s+\d+:\s+(.+)$/i', $line, $matches ) ) {
+					$current_category = trim( $matches[1] );
+				}
+
+				// Match risk ID header (e.g., "### RISK-001: API Key Exposure in Database").
+				if ( preg_match( '/^###\s+(RISK-\d+):\s+(.+)$/', $line, $matches ) ) {
+					// Save previous risk if exists.
+					if ( $current_risk ) {
+						$risks[] = $current_risk;
+					}
+
+					// Start new risk.
+					$current_risk = array(
+						'id'          => $matches[1],
+						'name'        => trim( $matches[2] ),
+						'description' => '',
+						'category'    => $current_category,
+						'likelihood'  => '',
+						'impact'      => '',
+						'risk_score'  => '',
+						'risk_level'  => '',
+						'treatment'   => '',
+						'status'      => '',
+					);
+					$in_table = false;
+				} elseif ( $current_risk ) {
+					// Detect start of table.
+					if ( preg_match( '/^\|\s*Field\s*\|\s*Value\s*\|$/', $line ) ) {
+						$in_table = true;
+					} elseif ( $in_table && preg_match( '/^\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|$/', $line, $matches ) ) {
+						// Parse table rows.
+						$field = trim( $matches[1] );
+						$value = trim( $matches[2] );
+
+						// Remove HTML <br> tags from value.
+						$value = str_replace( array( '<br>', '<br/>', '<br />' ), ' ', $value );
+
+						switch ( $field ) {
+							case 'Description':
+								$current_risk['description'] = $value;
+								break;
+							case 'Residual Likelihood':
+								// Extract the number and level from format "2 (Low)".
+								if ( preg_match( '/(\d+)\s*\(([^)]+)\)/', $value, $likelihood_matches ) ) {
+									$current_risk['likelihood'] = trim( $likelihood_matches[2] );
+								}
+								break;
+							case 'Residual Impact':
+								// Extract the level from format "4 (High)".
+								if ( preg_match( '/(\d+)\s*\(([^)]+)\)/', $value, $impact_matches ) ) {
+									$current_risk['impact'] = trim( $impact_matches[2] );
+								}
+								break;
+							case 'Residual Risk Score':
+								// Extract the score and level from format "8 (Medium)".
+								if ( preg_match( '/(\d+)\s*\(([^)]+)\)/', $value, $score_matches ) ) {
+									$current_risk['risk_score'] = trim( $score_matches[1] );
+									$current_risk['risk_level'] = trim( $score_matches[2] );
+								}
+								break;
+							case 'Treatment Option':
+								// Extract the treatment type (e.g., "Reduce - Implement automated key rotation").
+								if ( preg_match( '/^([A-Za-z]+)/', $value, $treatment_matches ) ) {
+									$current_risk['treatment'] = trim( $treatment_matches[1] );
+								}
+								break;
+							case 'Status':
+								$current_risk['status'] = $value;
+								break;
+						}
+					} elseif ( ! $in_table && preg_match( '/^\|\s*-+\s*\|\s*-+\s*\|$/', $line ) ) {
+						// This is the table separator, next lines will be table rows.
+						$in_table = true;
+					}
+				}
+			}
+
+			// Save last risk.
+			if ( $current_risk ) {
+				$risks[] = $current_risk;
+			}
+
+			return $risks;
 		}
 
 		/**
