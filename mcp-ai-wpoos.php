@@ -1513,12 +1513,20 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 }
 
 /**
- * Register activation security notice on admin_init to avoid early translation loading.
+ * Register activation security notice on admin_init and run deferred security check.
  *
  * WordPress 6.7.0+ requires translations to be loaded at init or later.
- * Using admin_init ensures translations are available before admin notices are displayed.
+ * Using admin_init ensures translations are available before running the security check
+ * and displaying admin notices. This prevents the "_load_textdomain_just_in_time was
+ * called incorrectly" warning that would occur if the security check ran during activation.
  */
 function wp_mcp_ai_register_activation_security_notice() {
+	// Check if we need to run the deferred activation security check.
+	if ( get_transient( 'wp_mcp_ai_run_activation_security_check' ) ) {
+		delete_transient( 'wp_mcp_ai_run_activation_security_check' );
+		wp_mcp_ai_check_activation_security();
+	}
+
 	add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
 }
 add_action( 'admin_init', 'wp_mcp_ai_register_activation_security_notice' );
@@ -1552,8 +1560,11 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		// Check site security and store result for display in admin notice.
-		wp_mcp_ai_check_activation_security();
+		// Set a flag to run security check on next admin_init instead of during activation.
+		// This avoids triggering translation loading before the init action (WordPress 6.7+ requirement).
+		// The security check tool uses translation functions, which would trigger the
+		// "_load_textdomain_just_in_time was called incorrectly" warning if called during activation.
+		set_transient( 'wp_mcp_ai_run_activation_security_check', true, HOUR_IN_SECONDS );
 
 		// Schedule file cleanup cron job (daily).
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_gemini_files' ) ) {

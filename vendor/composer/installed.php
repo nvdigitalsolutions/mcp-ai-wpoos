@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-chartjs-registration-issue',
-        'version' => 'dev-copilot/fix-chartjs-registration-issue',
-        'reference' => 'ceb76341719ec5c7df6c4cb8280b746b9c141438',
+        'pretty_version' => 'dev-copilot/fix-translation-loading-error-please-work',
+        'version' => 'dev-copilot/fix-translation-loading-error-please-work',
+        'reference' => '4630766b130f6844ba2b972e04780f54307f2dfc',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-chartjs-registration-issue',
-            'version' => 'dev-copilot/fix-chartjs-registration-issue',
-            'reference' => 'ceb76341719ec5c7df6c4cb8280b746b9c141438',
+            'pretty_version' => 'dev-copilot/fix-translation-loading-error-please-work',
+            'version' => 'dev-copilot/fix-translation-loading-error-please-work',
+            'reference' => '4630766b130f6844ba2b972e04780f54307f2dfc',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
