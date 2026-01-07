@@ -785,10 +785,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<?php esc_html_e( 'NV oOS Pro Dashboard', 'mcp-ai-wpoos' ); ?>
 						<span class="wp-mcp-ai-pro-badge"><?php esc_html_e( 'PRO', 'mcp-ai-wpoos' ); ?></span>
 					</h1>
-					<button type="button" class="button wp-mcp-ai-refresh-dashboard">
-						<span class="dashicons dashicons-update"></span>
-						<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?>
-					</button>
 				</div>
 
 				<?php $this->render_pro_status_notice(); ?>
