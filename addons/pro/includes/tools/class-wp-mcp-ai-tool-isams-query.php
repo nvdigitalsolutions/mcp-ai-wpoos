@@ -106,10 +106,13 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	/**
 	 * Get unavailable reason message.
 	 *
+	 * This is only called when is_available() returns false (i.e., in Base version mode).
+	 * In Pro mode, the tool is always available and credential validation happens in execute().
+	 *
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'iSAMS Query tool requires API credentials to be configured in settings.', 'mcp-ai-wpoos-pro' );
+		return __( 'iSAMS Query tool is only available in the Pro version.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**

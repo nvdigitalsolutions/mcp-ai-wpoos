@@ -183,6 +183,6 @@ class Test_ISAMS_Query_Tool extends WP_UnitTestCase {
 
 		$this->assertNotEmpty( $reason );
 		$this->assertStringContainsString( 'iSAMS', $reason );
-		$this->assertStringContainsString( 'credentials', $reason );
+		$this->assertStringContainsString( 'Pro', $reason );
 	}
 }
