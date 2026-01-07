@@ -67,7 +67,7 @@ function parse_iso27001_controls( $file ) {
 				'justification' => '',
 				'description'   => '',
 			);
-			$in_implementation = false;
+			$in_implementation    = false;
 			$implementation_lines = array();
 		} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
 			$status_text               = trim( $matches[1] );
@@ -81,12 +81,12 @@ function parse_iso27001_controls( $file ) {
 			} elseif ( strpos( $status_text, 'Planned' ) !== false ) {
 				$current_control['status_key'] = 'planned';
 			} elseif ( strpos( $status_text, 'Not Applicable' ) !== false ) {
-				$current_control['status_key']  = 'not_applicable';
+				$current_control['status_key'] = 'not_applicable';
 				$current_control['applicable'] = false;
 			}
 		} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
-			$applicable_text                 = trim( $matches[1] );
-			$current_control['applicable']  = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
+			$applicable_text                = trim( $matches[1] );
+			$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
 		} elseif ( $current_control && preg_match( '/^\*\*Justification:\*\*\s+(.+)$/', $line, $matches ) ) {
 			$current_control['justification'] = trim( $matches[1] );
 		} elseif ( $current_control && preg_match( '/^\*\*Implementation:\*\*\s*$/', $line ) ) {
@@ -247,7 +247,8 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
 PHP_CLASS;
 
 	// Replace placeholders with actual data.
-	$iso27001_data_export = var_export( $iso27001_controls, true );
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- Legitimate use in code generator.
+	$iso27001_data_export  = var_export( $iso27001_controls, true );
 	$iso27001_stats_export = var_export( $iso27001_stats, true );
 
 	$class_content = str_replace(
