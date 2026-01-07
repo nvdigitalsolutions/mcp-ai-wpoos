@@ -501,13 +501,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return;
 			}
 
-			// Use Chart.js Helper for consistent registration across the plugin.
+			// Use Chart.js Helper for consistent registration and enqueueing across the plugin.
 			// This ensures Chart.js is registered only once and prevents conflicts.
 			if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
-				WP_MCP_AI_Chart_JS_Helper::register_chart_js();
-				wp_enqueue_script( 'chartjs' );
+				// Use enqueue_chart_js() which handles both registration and enqueueing.
+				WP_MCP_AI_Chart_JS_Helper::enqueue_chart_js();
 			} else {
-				// Fallback: Register Chart.js directly if helper class not available.
+				// Fallback: Register and enqueue Chart.js directly if helper class not available.
 				$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
 				$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
 
