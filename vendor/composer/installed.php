@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-description-iso-27001-controls',
-        'version' => 'dev-copilot/add-description-iso-27001-controls',
-        'reference' => '24c4880b9d4edf36765eb8603a9c66f112cf471d',
+        'pretty_version' => 'dev-copilot/enhance-pro-dashboard-monitoring',
+        'version' => 'dev-copilot/enhance-pro-dashboard-monitoring',
+        'reference' => '8b30aaed86543e60002d0ca30b92548e6fee4bb8',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-description-iso-27001-controls',
-            'version' => 'dev-copilot/add-description-iso-27001-controls',
-            'reference' => '24c4880b9d4edf36765eb8603a9c66f112cf471d',
+            'pretty_version' => 'dev-copilot/enhance-pro-dashboard-monitoring',
+            'version' => 'dev-copilot/enhance-pro-dashboard-monitoring',
+            'reference' => '8b30aaed86543e60002d0ca30b92548e6fee4bb8',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
