@@ -183,7 +183,18 @@ class WP_MCP_AI_Token_Usage_Service {
 							$unregistered_tools[ $slug ] = $name;
 						}
 					}
-				} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+				} catch ( Throwable $e ) {
+					// Log the error if debugging is enabled for troubleshooting.
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only.
+						error_log(
+							sprintf(
+								'WP_MCP_AI: Failed to instantiate tool %s: %s',
+								$class,
+								$e->getMessage()
+							)
+						);
+					}
 					// Silently skip tools that can't be instantiated due to missing dependencies.
 					// This is expected for tools that require plugins like WooCommerce, JetEngine, etc.
 				}
