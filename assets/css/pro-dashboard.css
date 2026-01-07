@@ -76,6 +76,12 @@
 	margin-top: -1px;
 }
 
+/* Tab Content Containers */
+.wp-mcp-ai-overview,
+.wp-mcp-ai-frameworks {
+	/* Ensure content containers don't add extra spacing */
+}
+
 /* Metrics Summary */
 .wp-mcp-ai-metrics-summary {
 	display: grid;
