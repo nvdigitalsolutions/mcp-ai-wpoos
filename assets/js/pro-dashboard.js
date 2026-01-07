@@ -8,6 +8,17 @@
 (function($) {
 	'use strict';
 
+	// Debug: Check if script is loading
+	console.log('Pro Dashboard script loaded');
+	console.log('jQuery version:', $.fn.jquery);
+	console.log('Dashboard config:', window.wpMcpAiProDashboard);
+
+	// Safety check for configuration object
+	if (typeof window.wpMcpAiProDashboard === 'undefined') {
+		console.error('wpMcpAiProDashboard configuration object not found!');
+		return;
+	}
+
 	const ProDashboard = {
 		charts: {},
 		refreshInterval: null,
@@ -16,11 +27,13 @@
 		 * Initialize Pro Dashboard functionality.
 		 */
 		init: function() {
+			console.log('Initializing Pro Dashboard...');
 			this.setupEventListeners();
 			this.initializeComponents();
 			this.loadComplianceData();
 			this.waitForChartJS();
 			this.startAutoRefresh();
+			console.log('Pro Dashboard initialization complete');
 		},
 
 		/**
@@ -28,9 +41,6 @@
 		 */
 		waitForChartJS: function() {
 			const self = this;
-		const restEndpoint = wpMcpAiProDashboard.restUrl + 'mcp-ai/v1/pro/compliance/status';
-		
-		console.log('Loading compliance data from:', restEndpoint);
 			let attempts = 0;
 			const maxAttempts = 50; // 5 seconds max wait time
 
@@ -125,9 +135,6 @@
 			}
 
 			const self = this;
-		const restEndpoint = wpMcpAiProDashboard.restUrl + 'mcp-ai/v1/pro/compliance/status';
-		
-		console.log('Loading compliance data from:', restEndpoint);
 
 			$.ajax({
 				url: wpMcpAiProDashboard.restUrl + 'mcp-ai/v1/pro/compliance/status',
@@ -573,9 +580,6 @@
 		 */
 		startAutoRefresh: function() {
 			const self = this;
-		const restEndpoint = wpMcpAiProDashboard.restUrl + 'mcp-ai/v1/pro/compliance/status';
-		
-		console.log('Loading compliance data from:', restEndpoint);
 			// Refresh every 5 minutes
 			this.refreshInterval = setInterval(function() {
 				self.loadComplianceData();
@@ -602,7 +606,12 @@
 
 	// Initialize when document is ready
 	$(document).ready(function() {
-		ProDashboard.init();
+		try {
+			console.log('Document ready, initializing Pro Dashboard...');
+			ProDashboard.init();
+		} catch (error) {
+			console.error('Failed to initialize Pro Dashboard:', error);
+		}
 	});
 
 	// Cleanup on page unload
