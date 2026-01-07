@@ -36,10 +36,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		/**
 		 * Delegate page keys as constants for type safety.
 		 */
-		const DELEGATE_SECURITY_AUDITS = 'security_audits';
+		const DELEGATE_SECURITY_AUDITS    = 'security_audits';
 		const DELEGATE_SECURITY_TRAINING = 'security_training';
 		const DELEGATE_SUPPLIER_SECURITY = 'supplier_security';
-		const DELEGATE_ASSET_INVENTORY = 'asset_inventory';
+		const DELEGATE_ASSET_INVENTORY    = 'asset_inventory';
 
 		/**
 		 * Singleton instance.
@@ -241,10 +241,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						'error',
 						sprintf( 'Failed to initialize Pro Dashboard delegate: %s', $class_name ),
 						array(
-							'delegate'  => $key,
-							'class'     => $class_name,
-							'error'     => $e->getMessage(),
-							'trace'     => $e->getTraceAsString(),
+							'delegate' => $key,
+							'class'    => $class_name,
+							'error'    => $e->getMessage(),
+							'trace'    => $e->getTraceAsString(),
 						)
 					);
 				}
@@ -577,7 +577,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'not_applicable' => 0,
 					'total'          => 0,
 				);
-				$compliance_pct = 0;
+				$compliance_pct   = 0;
 			} else {
 				$stats            = $this->calculate_controls_stats( $controls );
 				$total_applicable = $stats['total'] - $stats['not_applicable'];
@@ -886,7 +886,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'not_applicable' => 0,
 					'total'          => 0,
 				);
-				$compliance_pct = 0;
+				$compliance_pct   = 0;
 			} else {
 				$stats            = $this->calculate_controls_stats( $controls );
 				$total_applicable = $stats['total'] - $stats['not_applicable'];
@@ -1808,7 +1808,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<td><span class="wp-mcp-ai-status-badge wp-mcp-ai-status-implemented"><?php esc_html_e( 'Complete', 'mcp-ai-wpoos' ); ?></span></td>
 						<td>
 							<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>"
-							   class="button button-small" target="_blank">
+						<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>" class="button button-small" target="_blank">
 								<?php esc_html_e( 'View Report', 'mcp-ai-wpoos' ); ?>
 							</a>
 						</td>
@@ -2075,10 +2075,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		private function get_framework_status() {
 			// Calculate ISO 27001 compliance dynamically from Statement of Applicability.
-			$iso_controls = $this->get_iso27001_controls();
-			$iso_stats = $this->calculate_controls_stats( $iso_controls );
+			$iso_controls         = $this->get_iso27001_controls();
+			$iso_stats            = $this->calculate_controls_stats( $iso_controls );
 			$iso_total_applicable = $iso_stats['total'] - $iso_stats['not_applicable'];
-			$iso_compliance = $iso_total_applicable > 0 ? round( ( $iso_stats['implemented'] / $iso_total_applicable ) * 100 ) : 0;
+			$iso_compliance       = $iso_total_applicable > 0 ? round( ( $iso_stats['implemented'] / $iso_total_applicable ) * 100 ) : 0;
 
 			// Calculate SOC 2 compliance from Trust Services Criteria.
 			$soc2_compliance = $this->get_soc2_compliance();
@@ -2220,7 +2220,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						$current_control['applicable'] = false;
 					}
 				} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
-					$applicable_text = trim( $matches[1] );
+					$applicable_text         = trim( $matches[1] );
 					$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
 				} elseif ( $current_control && preg_match( '/^\*\*Justification:\*\*\s+(.+)$/', $line, $matches ) ) {
 					$current_control['justification'] = trim( $matches[1] );
