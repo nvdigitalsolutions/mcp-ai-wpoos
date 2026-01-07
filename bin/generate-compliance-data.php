@@ -36,12 +36,18 @@ function parse_iso27001_controls( $file ) {
 	$lines           = explode( "\n", $content );
 	$controls        = array();
 	$current_control = null;
+	$in_implementation = false;
+	$implementation_lines = array();
 
 	foreach ( $lines as $line ) {
 		// Match control ID header (e.g., "### A.5.1 Policies for Information Security").
 		if ( preg_match( '/^###\s+(A\.\d+\.\d+(?:\.\d+)?)\s+(.+)$/', $line, $matches ) ) {
 			// Save previous control if exists.
 			if ( $current_control ) {
+				// Process collected implementation lines.
+				if ( ! empty( $implementation_lines ) ) {
+					$current_control['description'] = implode( "\n", $implementation_lines );
+				}
 				$controls[] = $current_control;
 			}
 
@@ -53,7 +59,10 @@ function parse_iso27001_controls( $file ) {
 				'status_key'    => '',
 				'applicable'    => true,
 				'justification' => '',
+				'description'   => '',
 			);
+			$in_implementation = false;
+			$implementation_lines = array();
 		} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
 			$status_text               = trim( $matches[1] );
 			$current_control['status'] = $status_text;
@@ -74,11 +83,28 @@ function parse_iso27001_controls( $file ) {
 			$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
 		} elseif ( $current_control && preg_match( '/^\*\*Justification:\*\*\s+(.+)$/', $line, $matches ) ) {
 			$current_control['justification'] = trim( $matches[1] );
+		} elseif ( $current_control && preg_match( '/^\*\*Implementation:\*\*\s*$/', $line ) ) {
+			// Start collecting implementation lines.
+			$in_implementation = true;
+		} elseif ( $current_control && preg_match( '/^\*\*Evidence:\*\*/', $line ) ) {
+			// Stop collecting implementation lines when we hit Evidence section.
+			$in_implementation = false;
+		} elseif ( $in_implementation && ! empty( trim( $line ) ) && ! preg_match( '/^\*\*/', $line ) ) {
+			// Collect implementation bullet points and text.
+			$line = trim( $line );
+			if ( preg_match( '/^-\s+(.+)$/', $line, $matches ) ) {
+				// Bullet point - extract the text.
+				$implementation_lines[] = trim( $matches[1] );
+			}
 		}
 	}
 
 	// Save last control.
 	if ( $current_control ) {
+		// Process collected implementation lines for the last control.
+		if ( ! empty( $implementation_lines ) ) {
+			$current_control['description'] = implode( "\n", $implementation_lines );
+		}
 		$controls[] = $current_control;
 	}
 
@@ -151,9 +177,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
 		 * Get ISO 27001:2022 controls.
 		 *
 		 * Returns all 93 controls from Annex A with their implementation status,
-		 * applicability, and justification.
+		 * applicability, justification, and descriptions.
 		 *
-		 * @return array Array of controls with id, name, status, status_key, applicable, and justification.
+		 * @return array Array of controls with id, name, status, status_key, applicable, justification, and description.
 		 */
 		public static function get_iso27001_controls() {
 			return %ISO27001_DATA%;
