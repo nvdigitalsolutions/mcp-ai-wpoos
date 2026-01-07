@@ -1395,6 +1395,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					</p>
 				</td>
 			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div style="margin: 1rem 0;">
+						<h4><?php esc_html_e( 'Available iSAMS Tools', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description" style="margin-bottom: 10px;">
+							<?php esc_html_e( 'The following AI tools are available when iSAMS is properly configured:', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<ul style="margin-left: 1.5rem;">
+							<li><strong>isams_query</strong> - <?php esc_html_e( 'Query iSAMS for pupils, employees, departments, houses, terms, subjects, year groups, and admission applicants', 'mcp-ai-wpoos' ); ?></li>
+						</ul>
+						<p class="description" style="margin-top: 1rem;">
+							<strong><?php esc_html_e( 'About iSAMS Integration:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ul style="list-style: disc; margin-left: 20px;">
+							<li><?php esc_html_e( 'API credentials are obtained from your iSAMS administrator', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Supports read-only access to school management data', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Access tokens are automatically cached for 55 minutes', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Requires Pro addon to be active', 'mcp-ai-wpoos' ); ?></li>
+						</ul>
+						<p class="description" style="margin-top: 1rem;">
+							<strong><?php esc_html_e( 'Setup Instructions:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ol style="margin-left: 20px;">
+							<li><?php esc_html_e( 'Contact your iSAMS administrator to obtain API credentials', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Enter the iSAMS instance URL (e.g., https://yourschool.isams.cloud/)', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Enter your API Key and API Secret in the fields above', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Save your settings', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Click "Test Connection" to verify credentials work', 'mcp-ai-wpoos' ); ?></li>
+						</ol>
+					</div>
+				</td>
+			</tr>
 			<?php
 		}
 
