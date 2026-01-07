@@ -58,6 +58,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
+				'wp_ajax_wp_mcp_ai_test_isams_connection'  => 'handle_test_isams_connection',
 				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
 				'wp_ajax_wp_mcp_ai_reset_all_token_usage'  => 'handle_reset_all_token_usage',
 				'wp_ajax_wp_mcp_ai_save_tool_limits'       => 'handle_save_tool_limits',
@@ -807,6 +808,133 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'message' => __( 'Successfully connected to Brave Search API!', 'mcp-ai-wpoos' ),
 				)
 			);
+		}
+
+		/**
+		 * Handle AJAX request to test iSAMS connection.
+		 */
+		public function handle_test_isams_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_url    = isset( $_POST['api_url'] ) ? esc_url_raw( wp_unslash( $_POST['api_url'] ) ) : '';
+			$api_key    = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+			$api_secret = isset( $_POST['api_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['api_secret'] ) ) : '';
+
+			if ( empty( $api_url ) || empty( $api_key ) || empty( $api_secret ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide all required iSAMS credentials (URL, API Key, and API Secret).', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Ensure URL has trailing slash.
+			$api_url = trailingslashit( $api_url );
+
+			// Get timeout from settings.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, $timeout );
+
+			// Test authentication by requesting a token.
+			$auth_url = $api_url . 'api/authentication/token';
+
+			$response = wp_remote_post(
+				$auth_url,
+				array(
+					'headers' => array(
+						'Content-Type' => 'application/json',
+					),
+					'body'    => wp_json_encode(
+						array(
+							'apiKey'    => $api_key,
+							'apiSecret' => $api_secret,
+						)
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+
+			if ( 200 !== $response_code ) {
+				$error_message = __( 'Invalid credentials or connection failed.', 'mcp-ai-wpoos' );
+				
+				// Try to get error from response.
+				$data = json_decode( $response_body, true );
+				if ( isset( $data['message'] ) ) {
+					$error_message = sanitize_text_field( $data['message'] );
+				} elseif ( 401 === $response_code ) {
+					$error_message = __( 'Authentication failed. Please check your API Key and Secret.', 'mcp-ai-wpoos' );
+				} elseif ( 404 === $response_code ) {
+					$error_message = __( 'API endpoint not found. Please check your iSAMS URL.', 'mcp-ai-wpoos' );
+				}
+
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			$data = json_decode( $response_body, true );
+
+			if ( empty( $data['token'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid response from iSAMS API.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Test a simple API call with the token to verify it works.
+			$test_url = $api_url . 'api/school/terms';
+			$test_response = wp_remote_get(
+				add_query_arg( array( 'page' => 1, 'pageSize' => 1 ), $test_url ),
+				array(
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $data['token'],
+						'Accept'        => 'application/json',
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $test_response ) ) {
+				wp_send_json_success(
+					array(
+						'message' => __( 'Successfully authenticated with iSAMS! (Warning: Test query failed, but credentials are valid)', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			$test_code = wp_remote_retrieve_response_code( $test_response );
+
+			if ( 200 === $test_code ) {
+				wp_send_json_success(
+					array(
+						'message' => __( 'Successfully connected to iSAMS! All credentials are working correctly.', 'mcp-ai-wpoos' ),
+					)
+				);
+			} else {
+				wp_send_json_success(
+					array(
+						'message' => __( 'Successfully authenticated with iSAMS! (Note: Some API endpoints may require additional permissions)', 'mcp-ai-wpoos' ),
+					)
+				);
+			}
 		}
 
 		/**

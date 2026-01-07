@@ -385,6 +385,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
+
+				// iSAMS School Management System.
+				'isams_api_url'                     => array(
+					'type'        => 'text',
+					'label'       => __( 'iSAMS API URL', 'mcp-ai-wpoos' ),
+					'description' => sprintf(
+						/* translators: %s: URL to iSAMS documentation */
+						__( 'Your iSAMS instance URL (e.g., https://yourschool.isams.cloud/). Get your credentials from your iSAMS administrator. %s', 'mcp-ai-wpoos' ),
+						'<a href="https://developer.isams.com/" target="_blank">' . __( 'iSAMS API Documentation', 'mcp-ai-wpoos' ) . '</a>'
+					) . $pro_notice,
+					'placeholder' => 'https://yourschool.isams.cloud/',
+					'disabled'    => ! $is_pro_active,
+				),
+				'isams_api_key'                     => array(
+					'type'         => 'text',
+					'label'        => __( 'iSAMS API Key', 'mcp-ai-wpoos' ),
+					'description'  => __( 'API key provided by your iSAMS administrator.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+					'disabled'     => ! $is_pro_active,
+				),
+				'isams_api_secret'                  => array(
+					'type'         => 'password',
+					'label'        => __( 'iSAMS API Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'API secret provided by your iSAMS administrator. Keep this secure.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
 			);
 		}
 
@@ -472,6 +501,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'  => __( 'TikTok', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
+				),
+				'isams'            => array(
+					'id'     => 'isams',
+					'label'  => $is_pro_active ? __( 'iSAMS', 'mcp-ai-wpoos' ) : __( 'iSAMS (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-welcome-learn-more',
+					'fields' => array( 'isams_api_url', 'isams_api_key', 'isams_api_secret' ),
+					'pro'    => true,
 				),
 			);
 		}
@@ -575,6 +611,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					break;
 				case 'mailjet':
 					$this->render_mailjet_footer();
+					break;
+				case 'isams':
+					$this->render_isams_footer();
 					break;
 			}
 		}
@@ -1334,6 +1373,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					</div>
 				</div>
 			</div>
+			<?php
+		}
+
+		/**
+		 * Render iSAMS footer content.
+		 */
+		private function render_isams_footer() {
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'iSAMS Connection', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-isams-connection" class="button button-secondary">
+							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span id="wp-mcp-ai-isams-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Enter your iSAMS API credentials in the fields above, then click "Test Connection" to verify they work. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
 			<?php
 		}
 
