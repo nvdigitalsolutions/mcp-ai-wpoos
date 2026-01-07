@@ -460,8 +460,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @param string $hook Current admin page hook.
 		 */
 		public function enqueue_assets( $hook ) {
-			// Only load on Pro Dashboard pages.
-			if ( 'toplevel_page_' . self::PAGE_SLUG !== $hook ) {
+			// Only load on Pro Dashboard pages (including diagnostic page).
+			$allowed_pages = array(
+				'toplevel_page_' . self::PAGE_SLUG,
+				'nv-oos-pro_page_nvoos-pro-dashboard-diagnostic',
+			);
+
+			if ( ! in_array( $hook, $allowed_pages, true ) ) {
 				return;
 			}
 
