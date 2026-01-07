@@ -502,13 +502,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Use Chart.js Helper for consistent registration across the plugin.
-			// This ensures Chart.js is registered only once and prevents conflicts.
-			// We use register_chart_js() instead of enqueue_chart_js() to avoid
-			// loading token manager specific files (analytics-dashboard.css, token-manager-charts.js).
+			// Calling register_chart_js() + wp_enqueue_script('chartjs') instead of
+			// enqueue_chart_js() avoids loading unnecessary Token Manager files
+			// (analytics-dashboard.css, token-manager-charts.js) on the Pro Dashboard.
 			if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
-				// Register Chart.js using the helper (consistent versioning and path).
 				WP_MCP_AI_Chart_JS_Helper::register_chart_js();
-				// Then enqueue it directly without extra token manager files.
 				wp_enqueue_script( 'chartjs' );
 			} else {
 				// Fallback: Register and enqueue Chart.js directly if helper class not available.
