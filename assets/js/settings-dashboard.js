@@ -1100,6 +1100,56 @@
 		});
 	}
 
+	/**
+	 * Initialize iSAMS connection test handlers.
+	 */
+	function initISAMSHandlers() {
+		// Test iSAMS connection
+		$('#wp-mcp-ai-test-isams-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-isams-test-result');
+			const apiUrl = $('input[name="wp_mcp_ai_settings[isams_api_url]"]').val();
+			const apiKey = $('input[name="wp_mcp_ai_settings[isams_api_key]"]').val();
+			const apiSecret = $('input[name="wp_mcp_ai_settings[isams_api_secret]"]').val();
+
+			if (!apiUrl || !apiKey || !apiSecret) {
+				$result.html('<span style="color: #d63638;">Please enter all credentials (URL, API Key, and API Secret) first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to iSAMS...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_isams_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_url: apiUrl,
+					api_key: apiKey,
+					api_secret: apiSecret
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
 	// Initialize when DOM is ready.
 	$(document).ready(function() {
 		// eslint-disable-next-line camelcase
@@ -1110,6 +1160,7 @@
 			initBraveSearchHandlers();
 			initCloudflareHandlers();
 			initCloudwaysHandlers();
+			initISAMSHandlers();
 			initChatClientPresetsHandlers();
 		}
 	});

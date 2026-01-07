@@ -1,8 +1,8 @@
 # Built-in tool reference
 
-**Status:** ✅ VERIFIED - December 24, 2025  
-**Tool Count:** 144 unique tools (118 base + 26 Pro addon)  
-**Last Updated:** December 24, 2025
+**Status:** ✅ VERIFIED - January 7, 2025  
+**Tool Count:** 145 unique tools (118 base + 27 Pro addon)  
+**Last Updated:** January 7, 2025
 
 NV oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 
@@ -206,6 +206,7 @@ Perfect for construction workflows where accurate dimensions, code compliance, a
 - **Publish LinkedIn Update 🌟** (`post_linkedin_update`) submits LinkedIn UGC posts on behalf of members or organisations with optional share URLs, capability filters, and structured error messages from the Marketing API. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-post-linkedin-update.php†L15-L160】
 - **Publish TikTok Video 🌟** (`post_tiktok_video`) uploads externally hosted video assets to TikTok’s Open API share endpoint with optional captions, returning publish identifiers and status metadata for follow-up actions. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-post-tiktok-video.php†L15-L152】
 - **Generic REST API** 🌟 (`generic_rest`) provides a flexible HTTP client for AI assistants to integrate with any REST API endpoint, including plugins without explicit integrations. Supports all standard HTTP methods (GET, POST, PUT, PATCH, DELETE), custom headers, JSON or form-data request bodies, query parameters, and multiple authentication types (bearer token, basic auth, custom header auth). Enforces security controls including `manage_options` capability requirement, URL validation, blocking of localhost and private IP addresses (configurable via filter), and response size limits. Use this tool when you need to call external APIs, third-party services, or WordPress plugin REST endpoints that do not have dedicated tools. **Pro tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-generic-rest.php†L17-L560】
+- **Query iSAMS** 🌟 (`isams_query`) provides access to iSAMS School Management System data through authenticated REST API requests. Supports querying pupils, employees, departments, houses, terms, subjects, year groups, and admission applicants with pagination controls. The tool automatically handles authentication token management with caching (55-minute TTL) and enforces read-only access with `read` capability requirement. Requires iSAMS API credentials (URL, key, secret) to be configured in plugin settings. Returns structured school data including student records, staff information, organizational structures, and academic terms. **Pro addon tool**.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-isams-query.php†L1-L400】
 
 ## JetEngine REST utilities
 

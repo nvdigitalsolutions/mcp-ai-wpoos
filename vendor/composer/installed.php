@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/create-new-pro-tool-isams',
+        'version' => 'dev-copilot/create-new-pro-tool-isams',
+        'reference' => '89f4a91893b54b3052a3092e32297b472b9d234a',
         'pretty_version' => 'dev-copilot/optimize-pro-dashboard-navigation',
         'version' => 'dev-copilot/optimize-pro-dashboard-navigation',
         'reference' => '1b61e52a51f43be3e4a68088d4149436816faea5',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/create-new-pro-tool-isams',
+            'version' => 'dev-copilot/create-new-pro-tool-isams',
+            'reference' => '89f4a91893b54b3052a3092e32297b472b9d234a',
             'pretty_version' => 'dev-copilot/optimize-pro-dashboard-navigation',
             'version' => 'dev-copilot/optimize-pro-dashboard-navigation',
             'reference' => '1b61e52a51f43be3e4a68088d4149436816faea5',
