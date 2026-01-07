@@ -54,18 +54,31 @@ class Test_Pro_Dashboard_Chat_Data extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'active_users', $chat_data, 'chatData should have active_users' );
 		$this->assertArrayHasKey( 'today_conversations', $chat_data, 'chatData should have today_conversations' );
 		$this->assertArrayHasKey( 'this_week_conversations', $chat_data, 'chatData should have this_week_conversations' );
+		$this->assertArrayHasKey( 'top_tools', $chat_data, 'chatData should have top_tools' );
+		$this->assertArrayHasKey( 'top_providers', $chat_data, 'chatData should have top_providers' );
+		$this->assertArrayHasKey( 'top_models', $chat_data, 'chatData should have top_models' );
+		$this->assertArrayHasKey( 'total_tokens_used', $chat_data, 'chatData should have total_tokens_used' );
+		$this->assertArrayHasKey( 'total_cost', $chat_data, 'chatData should have total_cost' );
 
 		// Assert that values are integers.
 		$this->assertIsInt( $chat_data['total_conversations'], 'total_conversations should be an integer' );
 		$this->assertIsInt( $chat_data['active_users'], 'active_users should be an integer' );
 		$this->assertIsInt( $chat_data['today_conversations'], 'today_conversations should be an integer' );
 		$this->assertIsInt( $chat_data['this_week_conversations'], 'this_week_conversations should be an integer' );
+		$this->assertIsInt( $chat_data['total_tokens_used'], 'total_tokens_used should be an integer' );
+
+		// Assert that arrays are arrays.
+		$this->assertIsArray( $chat_data['top_tools'], 'top_tools should be an array' );
+		$this->assertIsArray( $chat_data['top_providers'], 'top_providers should be an array' );
+		$this->assertIsArray( $chat_data['top_models'], 'top_models should be an array' );
 
 		// Assert that values are non-negative.
 		$this->assertGreaterThanOrEqual( 0, $chat_data['total_conversations'], 'total_conversations should be non-negative' );
 		$this->assertGreaterThanOrEqual( 0, $chat_data['active_users'], 'active_users should be non-negative' );
 		$this->assertGreaterThanOrEqual( 0, $chat_data['today_conversations'], 'today_conversations should be non-negative' );
 		$this->assertGreaterThanOrEqual( 0, $chat_data['this_week_conversations'], 'this_week_conversations should be non-negative' );
+		$this->assertGreaterThanOrEqual( 0, $chat_data['total_tokens_used'], 'total_tokens_used should be non-negative' );
+		$this->assertGreaterThanOrEqual( 0, $chat_data['total_cost'], 'total_cost should be non-negative' );
 	}
 
 	/**
@@ -85,6 +98,11 @@ class Test_Pro_Dashboard_Chat_Data extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'active_users', $chat_data );
 		$this->assertArrayHasKey( 'today_conversations', $chat_data );
 		$this->assertArrayHasKey( 'this_week_conversations', $chat_data );
+		$this->assertArrayHasKey( 'top_tools', $chat_data );
+		$this->assertArrayHasKey( 'top_providers', $chat_data );
+		$this->assertArrayHasKey( 'top_models', $chat_data );
+		$this->assertArrayHasKey( 'total_tokens_used', $chat_data );
+		$this->assertArrayHasKey( 'total_cost', $chat_data );
 
 		// Without a transcript table, all values should be 0.
 		$this->assertEquals( 0, $chat_data['total_conversations'], 'Should be 0 without transcript table' );
