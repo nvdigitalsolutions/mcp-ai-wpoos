@@ -18,6 +18,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 	 */
 	class WP_MCP_AI_Pro_Dashboard_Diagnostic {
 		/**
+		 * Parent page slug (Pro Dashboard).
+		 */
+		const PARENT_SLUG = 'nvoos-pro-dashboard';
+
+		/**
+		 * Diagnostic page slug.
+		 */
+		const PAGE_SLUG = 'nvoos-pro-dashboard-diagnostic';
+
+		/**
 		 * Run comprehensive diagnostics.
 		 *
 		 * @return array Diagnostic results.
@@ -283,11 +293,11 @@ Pro Dashboard initialization complete
 		 */
 		public static function add_diagnostic_page() {
 			add_submenu_page(
-				'nvoos-pro-dashboard',
+				self::PARENT_SLUG,
 				__( 'Charts Diagnostic', 'mcp-ai-wpoos' ),
 				__( 'Charts Diagnostic', 'mcp-ai-wpoos' ),
 				'manage_options',
-				'nvoos-pro-dashboard-diagnostic',
+				self::PAGE_SLUG,
 				array( __CLASS__, 'render_diagnostic_page' )
 			);
 		}

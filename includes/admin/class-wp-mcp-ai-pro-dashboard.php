@@ -455,6 +455,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		}
 
 		/**
+		 * Get the admin page hook for the diagnostic page.
+		 *
+		 * WordPress generates submenu page hooks using the pattern:
+		 * {parent-title-sanitized}_page_{menu-slug}
+		 *
+		 * For our diagnostic page under "NV oOS Pro" parent:
+		 * - Parent title "NV oOS Pro" → sanitized to "nv-oos-pro"
+		 * - Menu slug: "nvoos-pro-dashboard-diagnostic"
+		 * - Result: "nv-oos-pro_page_nvoos-pro-dashboard-diagnostic"
+		 *
+		 * @return string The admin page hook for the diagnostic page.
+		 */
+		private function get_diagnostic_page_hook() {
+			// WordPress sanitizes "NV oOS Pro" to "nv-oos-pro" for the hook prefix.
+			// This is derived from the menu title, not the slug.
+			return 'nv-oos-pro_page_nvoos-pro-dashboard-diagnostic';
+		}
+
+		/**
 		 * Enqueue Pro Dashboard assets.
 		 *
 		 * @param string $hook Current admin page hook.
@@ -463,7 +482,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Only load on Pro Dashboard pages (including diagnostic page).
 			$allowed_pages = array(
 				'toplevel_page_' . self::PAGE_SLUG,
-				'nv-oos-pro_page_nvoos-pro-dashboard-diagnostic',
+				$this->get_diagnostic_page_hook(),
 			);
 
 			if ( ! in_array( $hook, $allowed_pages, true ) ) {
