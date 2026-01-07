@@ -17,16 +17,16 @@ class Test_ISAMS_Tool_Visibility extends WP_UnitTestCase {
 	 * Test that isams_query tool appears in get_all_available_tools() even when not available.
 	 */
 	public function test_isams_query_appears_when_not_configured() {
-		// Ensure iSAMS is not configured (tool should not be available/registered).
+		// Ensure iSAMS is not configured.
 		delete_option( 'wp_mcp_ai_settings' );
 
-		// Verify the tool is not available.
-		$this->assertFalse(
+		// Verify the tool is still available (credentials checked in execute()).
+		$this->assertTrue(
 			WP_MCP_AI_Tool_ISAMS_Query::is_available(),
-			'isams_query should not be available without configuration'
+			'isams_query should be available even without configuration'
 		);
 
-		// Get all available tools (should include unregistered tools).
+		// Get all available tools (should include the tool).
 		$all_tools = WP_MCP_AI_Token_Usage_Service::get_all_available_tools();
 
 		// Verify isams_query is in the list.

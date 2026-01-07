@@ -98,18 +98,21 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			return false;
 		}
 
-		// Check if iSAMS is configured.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		return ! empty( $settings['isams_api_url'] ) && ! empty( $settings['isams_api_key'] ) && ! empty( $settings['isams_api_secret'] );
+		// Tool is always available in Pro mode.
+		// Credential validation happens in execute() method.
+		return true;
 	}
 
 	/**
 	 * Get unavailable reason message.
 	 *
+	 * This is only called when is_available() returns false (i.e., in Base version mode).
+	 * In Pro mode, the tool is always available and credential validation happens in execute().
+	 *
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'iSAMS Query tool requires API credentials to be configured in settings.', 'mcp-ai-wpoos-pro' );
+		return __( 'iSAMS Query tool is only available in the Pro version.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**

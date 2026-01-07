@@ -94,8 +94,8 @@ class Test_ISAMS_Query_Tool extends WP_UnitTestCase {
 	 * Test tool availability check.
 	 */
 	public function test_is_available() {
-		// Without credentials, tool should not be available.
-		$this->assertFalse( WP_MCP_AI_Tool_ISAMS_Query::is_available() );
+		// Tool should always be available (credentials checked in execute()).
+		$this->assertTrue( WP_MCP_AI_Tool_ISAMS_Query::is_available() );
 
 		// Set credentials.
 		update_option(
@@ -107,7 +107,7 @@ class Test_ISAMS_Query_Tool extends WP_UnitTestCase {
 			)
 		);
 
-		// Tool should now be available.
+		// Tool should still be available.
 		$this->assertTrue( WP_MCP_AI_Tool_ISAMS_Query::is_available() );
 
 		// Clean up.
@@ -183,6 +183,6 @@ class Test_ISAMS_Query_Tool extends WP_UnitTestCase {
 
 		$this->assertNotEmpty( $reason );
 		$this->assertStringContainsString( 'iSAMS', $reason );
-		$this->assertStringContainsString( 'credentials', $reason );
+		$this->assertStringContainsString( 'Pro', $reason );
 	}
 }
