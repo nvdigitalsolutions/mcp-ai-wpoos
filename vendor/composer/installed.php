@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-missing-charts-dashboard',
-        'version' => 'dev-copilot/fix-missing-charts-dashboard',
-        'reference' => 'fe7c030bb790737e5e876f073987380238d16466',
+        'pretty_version' => 'dev-copilot/create-new-pro-tool-isams',
+        'version' => 'dev-copilot/create-new-pro-tool-isams',
+        'reference' => '89f4a91893b54b3052a3092e32297b472b9d234a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-missing-charts-dashboard',
-            'version' => 'dev-copilot/fix-missing-charts-dashboard',
-            'reference' => 'fe7c030bb790737e5e876f073987380238d16466',
+            'pretty_version' => 'dev-copilot/create-new-pro-tool-isams',
+            'version' => 'dev-copilot/create-new-pro-tool-isams',
+            'reference' => '89f4a91893b54b3052a3092e32297b472b9d234a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
