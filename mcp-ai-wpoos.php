@@ -76,15 +76,13 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	}
 
 	/**
-	 * Register PHP version notice on admin_init to avoid early translation loading.
+	 * Register PHP version notice directly on admin_notices.
 	 *
-	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-	 * Using admin_init ensures notices are registered after init completes.
+	 * This notice doesn't use translation functions, so there's no risk of
+	 * early translation loading. However, we follow the same direct hook pattern
+	 * as other admin notices for consistency.
 	 */
-	function wp_mcp_ai_register_php_version_notice() {
-		add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
-	}
-	add_action( 'admin_init', 'wp_mcp_ai_register_php_version_notice' );
+	add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
 
 	/**
 	 * Prevent plugin activation on incompatible PHP versions.
@@ -127,15 +125,13 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 			}
 
 			/**
-			 * Register dev deps error notice on admin_init to avoid early translation loading.
+			 * Register dev deps error notice directly on admin_notices.
 			 *
-			 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-			 * Using admin_init ensures notices are registered after init completes.
+			 * This notice doesn't use translation functions, so there's no risk of
+			 * early translation loading. However, we follow the same direct hook pattern
+			 * as other admin notices for consistency.
 			 */
-			function wp_mcp_ai_register_dev_deps_error_notice() {
-				add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
-			}
-			add_action( 'admin_init', 'wp_mcp_ai_register_dev_deps_error_notice' );
+			add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
 		}
 
 		// Log the issue.
