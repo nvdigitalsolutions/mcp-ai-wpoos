@@ -6,8 +6,14 @@
  * This script parses the Statement of Applicability markdown files
  * and generates a PHP data class with embedded compliance data.
  *
+ * This is a CLI script, not WordPress plugin code. PHPCS rules for
+ * escaping output and using WordPress functions don't apply here.
+ *
  * @package WP_MCP_AI
  * @since 1.5.0
+ *
+ * phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+ * phpcs:disable WordPress.WP.AlternativeFunctions
  */
 
 // Define paths.
@@ -33,10 +39,10 @@ function parse_iso27001_controls( $file ) {
 		return array();
 	}
 
-	$lines           = explode( "\n", $content );
-	$controls        = array();
-	$current_control = null;
-	$in_implementation = false;
+	$lines                = explode( "\n", $content );
+	$controls             = array();
+	$current_control      = null;
+	$in_implementation    = false;
 	$implementation_lines = array();
 
 	foreach ( $lines as $line ) {
@@ -79,8 +85,8 @@ function parse_iso27001_controls( $file ) {
 				$current_control['applicable'] = false;
 			}
 		} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
-			$applicable_text                = trim( $matches[1] );
-			$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
+			$applicable_text                 = trim( $matches[1] );
+			$current_control['applicable']  = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
 		} elseif ( $current_control && preg_match( '/^\*\*Justification:\*\*\s+(.+)$/', $line, $matches ) ) {
 			$current_control['justification'] = trim( $matches[1] );
 		} elseif ( $current_control && preg_match( '/^\*\*Implementation:\*\*\s*$/', $line ) ) {
