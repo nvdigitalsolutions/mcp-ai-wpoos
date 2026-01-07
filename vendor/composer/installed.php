@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-translation-loading-error-please-work',
-        'version' => 'dev-copilot/fix-translation-loading-error-please-work',
-        'reference' => '4630766b130f6844ba2b972e04780f54307f2dfc',
+        'pretty_version' => 'dev-copilot/fix-early-translation-loading-yet-again',
+        'version' => 'dev-copilot/fix-early-translation-loading-yet-again',
+        'reference' => 'fca7560cffae259f0185c58b0d3afbb5bcc60548',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-translation-loading-error-please-work',
-            'version' => 'dev-copilot/fix-translation-loading-error-please-work',
-            'reference' => '4630766b130f6844ba2b972e04780f54307f2dfc',
+            'pretty_version' => 'dev-copilot/fix-early-translation-loading-yet-again',
+            'version' => 'dev-copilot/fix-early-translation-loading-yet-again',
+            'reference' => 'fca7560cffae259f0185c58b0d3afbb5bcc60548',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

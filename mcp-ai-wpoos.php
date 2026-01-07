@@ -76,15 +76,13 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	}
 
 	/**
-	 * Register PHP version notice on admin_init to avoid early translation loading.
+	 * Register PHP version notice directly on admin_notices.
 	 *
-	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-	 * Using admin_init ensures notices are registered after init completes.
+	 * This notice doesn't use translation functions, so there's no risk of
+	 * early translation loading. However, we follow the same direct hook pattern
+	 * as other admin notices for consistency.
 	 */
-	function wp_mcp_ai_register_php_version_notice() {
-		add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
-	}
-	add_action( 'admin_init', 'wp_mcp_ai_register_php_version_notice' );
+	add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
 
 	/**
 	 * Prevent plugin activation on incompatible PHP versions.
@@ -127,15 +125,13 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 			}
 
 			/**
-			 * Register dev deps error notice on admin_init to avoid early translation loading.
+			 * Register dev deps error notice directly on admin_notices.
 			 *
-			 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-			 * Using admin_init ensures notices are registered after init completes.
+			 * This notice doesn't use translation functions, so there's no risk of
+			 * early translation loading. However, we follow the same direct hook pattern
+			 * as other admin notices for consistency.
 			 */
-			function wp_mcp_ai_register_dev_deps_error_notice() {
-				add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
-			}
-			add_action( 'admin_init', 'wp_mcp_ai_register_dev_deps_error_notice' );
+			add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
 		}
 
 		// Log the issue.
@@ -1513,23 +1509,31 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 }
 
 /**
- * Register activation security notice on admin_init and run deferred security check.
+ * Run deferred activation security check.
  *
  * WordPress 6.7.0+ requires translations to be loaded at init or later.
- * Using admin_init ensures translations are available before running the security check
- * and displaying admin notices. This prevents the "_load_textdomain_just_in_time was
- * called incorrectly" warning that would occur if the security check ran during activation.
+ * This function runs the security check on admin_init (after init completes)
+ * and stores results for display in admin_notices.
  */
-function wp_mcp_ai_register_activation_security_notice() {
+function wp_mcp_ai_run_deferred_activation_security_check() {
 	// Check if we need to run the deferred activation security check.
 	if ( get_transient( 'wp_mcp_ai_run_activation_security_check' ) ) {
 		delete_transient( 'wp_mcp_ai_run_activation_security_check' );
 		wp_mcp_ai_check_activation_security();
 	}
-
-	add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
 }
-add_action( 'admin_init', 'wp_mcp_ai_register_activation_security_notice' );
+add_action( 'admin_init', 'wp_mcp_ai_run_deferred_activation_security_check' );
+
+/**
+ * Register activation security notice directly on admin_notices.
+ *
+ * WordPress 6.7.0+ requires translations to be loaded at init or later.
+ * By hooking directly to admin_notices instead of using admin_init as an intermediary,
+ * we ensure translation functions are only called when the notice is actually rendered,
+ * which happens after init completes. This prevents the "_load_textdomain_just_in_time
+ * was called incorrectly" warning.
+ */
+add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
 
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**
