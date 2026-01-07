@@ -223,6 +223,73 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					),
 				)
 			);
+
+			// Update chart data endpoints.
+			register_rest_route(
+				self::NAMESPACE,
+				'/chart-data/risks',
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => array( $this, 'get_risk_chart_data' ),
+						'permission_callback' => array( $this, 'check_permission' ),
+					),
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'update_risk_chart_data' ),
+						'permission_callback' => array( $this, 'check_pro_permission' ),
+						'args'                => array(
+							'critical' => array(
+								'required'          => true,
+								'sanitize_callback' => 'absint',
+							),
+							'high'     => array(
+								'required'          => true,
+								'sanitize_callback' => 'absint',
+							),
+							'medium'   => array(
+								'required'          => true,
+								'sanitize_callback' => 'absint',
+							),
+							'low'      => array(
+								'required'          => true,
+								'sanitize_callback' => 'absint',
+							),
+						),
+					),
+				)
+			);
+
+			register_rest_route(
+				self::NAMESPACE,
+				'/chart-data/metrics',
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => array( $this, 'get_metrics_chart_data' ),
+						'permission_callback' => array( $this, 'check_permission' ),
+					),
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'update_metrics_chart_data' ),
+						'permission_callback' => array( $this, 'check_pro_permission' ),
+						'args'                => array(
+							'incidents'             => array(
+								'required'          => true,
+								'validate_callback' => function ( $param ) {
+									return is_array( $param ) && count( $param ) === 6;
+								},
+							),
+							'vulnerabilities_fixed' => array(
+								'required'          => true,
+								'validate_callback' => function ( $param ) {
+									return is_array( $param ) && count( $param ) === 6;
+								},
+							),
+						),
+					),
+				)
+			);
 		}
 
 		/**
@@ -889,6 +956,109 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			}
 
 			return $stats;
+		}
+
+		/**
+		 * Get risk chart data.
+		 *
+		 * @return WP_REST_Response Response object.
+		 */
+		public function get_risk_chart_data() {
+			$risk_data = $this->get_risk_data();
+			
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'data'    => $risk_data,
+				)
+			);
+		}
+
+		/**
+		 * Update risk chart data.
+		 *
+		 * @param WP_REST_Request $request Request object.
+		 * @return WP_REST_Response|WP_Error Response object or error.
+		 */
+		public function update_risk_chart_data( $request ) {
+			$risk_data = array(
+				'critical' => $request->get_param( 'critical' ),
+				'high'     => $request->get_param( 'high' ),
+				'medium'   => $request->get_param( 'medium' ),
+				'low'      => $request->get_param( 'low' ),
+			);
+
+			$updated = update_option( 'wp_mcp_ai_risk_data', $risk_data );
+
+			if ( ! $updated ) {
+				return new WP_Error(
+					'update_failed',
+					__( 'Failed to update risk data.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'message' => __( 'Risk data updated successfully.', 'mcp-ai-wpoos' ),
+					'data'    => $risk_data,
+				)
+			);
+		}
+
+		/**
+		 * Get metrics chart data.
+		 *
+		 * @return WP_REST_Response Response object.
+		 */
+		public function get_metrics_chart_data() {
+			$metrics_data = $this->get_metrics_data();
+			
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'data'    => $metrics_data,
+				)
+			);
+		}
+
+		/**
+		 * Update metrics chart data.
+		 *
+		 * @param WP_REST_Request $request Request object.
+		 * @return WP_REST_Response|WP_Error Response object or error.
+		 */
+		public function update_metrics_chart_data( $request ) {
+			$incidents             = $request->get_param( 'incidents' );
+			$vulnerabilities_fixed = $request->get_param( 'vulnerabilities_fixed' );
+
+			// Sanitize array values.
+			$incidents             = array_map( 'absint', $incidents );
+			$vulnerabilities_fixed = array_map( 'absint', $vulnerabilities_fixed );
+
+			$metrics_data = array(
+				'incidents'             => $incidents,
+				'vulnerabilities_fixed' => $vulnerabilities_fixed,
+			);
+
+			$updated = update_option( 'wp_mcp_ai_metrics_data', $metrics_data );
+
+			if ( ! $updated ) {
+				return new WP_Error(
+					'update_failed',
+					__( 'Failed to update metrics data.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'message' => __( 'Metrics data updated successfully.', 'mcp-ai-wpoos' ),
+					'data'    => $metrics_data,
+				)
+			);
 		}
 
 		/**

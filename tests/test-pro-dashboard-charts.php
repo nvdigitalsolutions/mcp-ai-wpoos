@@ -350,4 +350,126 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		// Clean up.
 		delete_option( 'wp_mcp_ai_metrics_data' );
 	}
+	
+	/**
+	 * Test REST API endpoint for getting risk chart data.
+	 */
+	public function test_rest_api_get_risk_chart_data() {
+		// Create an admin user and set as current.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Make REST API request.
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/pro/chart-data/risks' );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		// Verify structure.
+		$this->assertTrue( $data['success'] );
+		$this->assertArrayHasKey( 'data', $data );
+		$this->assertArrayHasKey( 'critical', $data['data'] );
+		$this->assertArrayHasKey( 'high', $data['data'] );
+		$this->assertArrayHasKey( 'medium', $data['data'] );
+		$this->assertArrayHasKey( 'low', $data['data'] );
+	}
+	
+	/**
+	 * Test REST API endpoint for updating risk chart data.
+	 */
+	public function test_rest_api_update_risk_chart_data() {
+		// Create an admin user and set as current.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Make REST API request to update risk data.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/pro/chart-data/risks' );
+		$request->set_param( 'critical', 5 );
+		$request->set_param( 'high', 10 );
+		$request->set_param( 'medium', 15 );
+		$request->set_param( 'low', 20 );
+
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		// Verify response structure.
+		$this->assertTrue( $data['success'] );
+		$this->assertArrayHasKey( 'message', $data );
+		$this->assertArrayHasKey( 'data', $data );
+
+		// Verify data was actually saved.
+		$stored_data = get_option( 'wp_mcp_ai_risk_data' );
+		$this->assertEquals( 5, $stored_data['critical'] );
+		$this->assertEquals( 10, $stored_data['high'] );
+		$this->assertEquals( 15, $stored_data['medium'] );
+		$this->assertEquals( 20, $stored_data['low'] );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_risk_data' );
+	}
+	
+	/**
+	 * Test REST API endpoint for getting metrics chart data.
+	 */
+	public function test_rest_api_get_metrics_chart_data() {
+		// Create an admin user and set as current.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Make REST API request.
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/pro/chart-data/metrics' );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		// Verify structure.
+		$this->assertTrue( $data['success'] );
+		$this->assertArrayHasKey( 'data', $data );
+		$this->assertArrayHasKey( 'incidents', $data['data'] );
+		$this->assertArrayHasKey( 'vulnerabilities_fixed', $data['data'] );
+		$this->assertIsArray( $data['data']['incidents'] );
+		$this->assertIsArray( $data['data']['vulnerabilities_fixed'] );
+		$this->assertCount( 6, $data['data']['incidents'] );
+		$this->assertCount( 6, $data['data']['vulnerabilities_fixed'] );
+	}
+	
+	/**
+	 * Test REST API endpoint for updating metrics chart data.
+	 */
+	public function test_rest_api_update_metrics_chart_data() {
+		// Create an admin user and set as current.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Make REST API request to update metrics data.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/pro/chart-data/metrics' );
+		$request->set_param( 'incidents', array( 1, 2, 3, 4, 5, 6 ) );
+		$request->set_param( 'vulnerabilities_fixed', array( 10, 20, 30, 40, 50, 60 ) );
+
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		// Verify response structure.
+		$this->assertTrue( $data['success'] );
+		$this->assertArrayHasKey( 'message', $data );
+		$this->assertArrayHasKey( 'data', $data );
+
+		// Verify data was actually saved.
+		$stored_data = get_option( 'wp_mcp_ai_metrics_data' );
+		$this->assertEquals( array( 1, 2, 3, 4, 5, 6 ), $stored_data['incidents'] );
+		$this->assertEquals( array( 10, 20, 30, 40, 50, 60 ), $stored_data['vulnerabilities_fixed'] );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_metrics_data' );
+	}
 }
