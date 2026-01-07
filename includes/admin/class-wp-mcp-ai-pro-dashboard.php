@@ -461,7 +461,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		public function enqueue_assets( $hook ) {
 			// Only load on Pro Dashboard pages.
-			if ( false === strpos( $hook, self::PAGE_SLUG ) ) {
+			if ( 'toplevel_page_' . self::PAGE_SLUG !== $hook ) {
 				return;
 			}
 
