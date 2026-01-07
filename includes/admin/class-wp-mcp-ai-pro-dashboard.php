@@ -1488,10 +1488,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @return array Sample security events.
 		 */
 		private function get_sample_security_events() {
-			$now = current_time( 'mysql' );
-			$hour_ago = date( 'Y-m-d H:i:s', strtotime( '-1 hour', strtotime( $now ) ) );
-			$day_ago = date( 'Y-m-d H:i:s', strtotime( '-1 day', strtotime( $now ) ) );
-			$week_ago = date( 'Y-m-d H:i:s', strtotime( '-7 days', strtotime( $now ) ) );
+			$now      = current_time( 'mysql' );
+			$hour_ago = gmdate( 'Y-m-d H:i:s', strtotime( '-1 hour', strtotime( $now ) ) );
+			$day_ago  = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day', strtotime( $now ) ) );
+			$week_ago = gmdate( 'Y-m-d H:i:s', strtotime( '-7 days', strtotime( $now ) ) );
 
 			return array(
 				array(
@@ -2183,8 +2183,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$controls = array();
-			$lines    = explode( "\n", $content );
+			$controls      = array();
+			$lines         = explode( "\n", $content );
 			$current_control = null;
 
 			foreach ( $lines as $line ) {
