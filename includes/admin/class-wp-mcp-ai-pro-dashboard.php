@@ -2711,16 +2711,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<tbody>
 						<?php foreach ( $risks as $risk ) : ?>
 							<?php
-							// Determine risk badge class based on risk level.
+							// Map risk level to badge class.
+							$badge_classes = array(
+								'critical' => 'risk-critical',
+								'high'     => 'risk-high',
+								'medium'   => 'risk-medium',
+								'low'      => 'risk-low',
+							);
 							$risk_level_lower = strtolower( $risk['risk_level'] );
-							$badge_class      = 'risk-medium'; // Default.
-							if ( 'critical' === $risk_level_lower ) {
-								$badge_class = 'risk-critical';
-							} elseif ( 'high' === $risk_level_lower ) {
-								$badge_class = 'risk-high';
-							} elseif ( 'low' === $risk_level_lower ) {
-								$badge_class = 'risk-low';
-							}
+							$badge_class      = isset( $badge_classes[ $risk_level_lower ] ) ? $badge_classes[ $risk_level_lower ] : 'risk-medium';
 							?>
 							<tr>
 								<td><?php echo esc_html( $risk['id'] ); ?></td>
@@ -3673,53 +3672,53 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					);
 					$in_table = false;
 				} elseif ( $current_risk ) {
-					// Detect start of table.
-					if ( preg_match( '/^\|\s*Field\s*\|\s*Value\s*\|$/', $line ) ) {
+					// Detect start of table (more flexible to handle whitespace variations).
+					if ( preg_match( '/^\|\s*Field\s*\|\s*Value\s*\|/i', $line ) ) {
+						$in_table = true;
+					} elseif ( ! $in_table && preg_match( '/^\|\s*-+\s*\|\s*-+\s*\|/', $line ) ) {
+						// Detect table separator as a fallback.
 						$in_table = true;
 					} elseif ( $in_table && preg_match( '/^\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|$/', $line, $matches ) ) {
 						// Parse table rows.
 						$field = trim( $matches[1] );
 						$value = trim( $matches[2] );
 
-						// Remove HTML <br> tags from value.
-						$value = str_replace( array( '<br>', '<br/>', '<br />' ), ' ', $value );
+						// Remove HTML tags and entities from value.
+						$value = wp_strip_all_tags( $value );
+						$value = html_entity_decode( $value, ENT_QUOTES, 'UTF-8' );
 
 						switch ( $field ) {
 							case 'Description':
 								$current_risk['description'] = $value;
 								break;
 							case 'Residual Likelihood':
-								// Extract the number and level from format "2 (Low)".
-								if ( preg_match( '/(\d+)\s*\(([^)]+)\)/', $value, $likelihood_matches ) ) {
-									$current_risk['likelihood'] = trim( $likelihood_matches[2] );
-								}
-								break;
 							case 'Residual Impact':
-								// Extract the level from format "4 (High)".
-								if ( preg_match( '/(\d+)\s*\(([^)]+)\)/', $value, $impact_matches ) ) {
-									$current_risk['impact'] = trim( $impact_matches[2] );
-								}
-								break;
 							case 'Residual Risk Score':
-								// Extract the score and level from format "8 (Medium)".
-								if ( preg_match( '/(\d+)\s*\(([^)]+)\)/', $value, $score_matches ) ) {
-									$current_risk['risk_score'] = trim( $score_matches[1] );
-									$current_risk['risk_level'] = trim( $score_matches[2] );
+								// Extract numeric and text values from format "2 (Low)" or "8 (Medium)".
+								if ( preg_match( '/(\d+)\s*\(([^)]+)\)/', $value, $parsed_matches ) ) {
+									$numeric_value = trim( $parsed_matches[1] );
+									$text_value    = trim( $parsed_matches[2] );
+
+									if ( 'Residual Likelihood' === $field ) {
+										$current_risk['likelihood'] = $text_value;
+									} elseif ( 'Residual Impact' === $field ) {
+										$current_risk['impact'] = $text_value;
+									} elseif ( 'Residual Risk Score' === $field ) {
+										$current_risk['risk_score'] = $numeric_value;
+										$current_risk['risk_level'] = $text_value;
+									}
 								}
 								break;
 							case 'Treatment Option':
-								// Extract the treatment type (e.g., "Reduce - Implement automated key rotation").
-								if ( preg_match( '/^([A-Za-z]+)/', $value, $treatment_matches ) ) {
-									$current_risk['treatment'] = trim( $treatment_matches[1] );
-								}
+								// Extract the treatment type - split on ' - ' to get the first part.
+								// Handles formats like "Reduce - Details", "Accept", or "Accept + Monitor".
+								$treatment_parts              = explode( ' - ', $value );
+								$current_risk['treatment'] = trim( $treatment_parts[0] );
 								break;
 							case 'Status':
 								$current_risk['status'] = $value;
 								break;
 						}
-					} elseif ( ! $in_table && preg_match( '/^\|\s*-+\s*\|\s*-+\s*\|$/', $line ) ) {
-						// This is the table separator, next lines will be table rows.
-						$in_table = true;
 					}
 				}
 			}
