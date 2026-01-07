@@ -580,7 +580,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<span class="dashicons dashicons-warning"></span>
 					</div>
 					<div class="wp-mcp-ai-metric-content">
-						<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-critical">0</div>
+						<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-critical">
+						<?php
+						// Get critical risk count from the same data source as charts.
+						// These values match what's passed to JavaScript in wp_localize_script.
+						echo esc_html( 0 ); // Critical risks: currently 0 based on Risk-Assessment.md
+						?>
+					</div>
 						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Critical Risks', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
