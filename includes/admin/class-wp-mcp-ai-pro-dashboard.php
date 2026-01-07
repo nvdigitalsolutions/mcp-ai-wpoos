@@ -1301,6 +1301,160 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			<div class="wp-mcp-ai-frameworks">
 				<?php $this->render_framework_status(); ?>
 			</div>
+
+			<!-- Detailed Compliance Listings -->
+			<div class="wp-mcp-ai-framework-details" style="margin-top: 40px;">
+				<h2><?php esc_html_e( 'Detailed Compliance Listings', 'mcp-ai-wpoos' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'View detailed requirements and implementation status for each compliance framework.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				
+				<!-- Framework Tabs for Detailed View -->
+				<div class="wp-mcp-ai-framework-detail-tabs" style="margin: 20px 0;">
+					<button class="button wp-mcp-ai-framework-detail-tab active" data-framework="iso27001">
+						<?php esc_html_e( 'ISO 27001', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<button class="button wp-mcp-ai-framework-detail-tab" data-framework="soc2">
+						<?php esc_html_e( 'SOC 2', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<button class="button wp-mcp-ai-framework-detail-tab" data-framework="hipaa">
+						<?php esc_html_e( 'HIPAA', 'mcp-ai-wpoos' ); ?>
+					</button>
+					<button class="button wp-mcp-ai-framework-detail-tab" data-framework="gdpr">
+						<?php esc_html_e( 'GDPR', 'mcp-ai-wpoos' ); ?>
+					</button>
+				</div>
+
+				<!-- Tab Content -->
+				<div class="wp-mcp-ai-framework-detail-content">
+					<div class="wp-mcp-ai-framework-detail-panel active" id="iso27001-details">
+						<p class="description">
+							<?php
+							printf(
+								/* translators: %s: Link to ISO 27001 tab */
+								esc_html__( 'For detailed ISO 27001 controls, visit the %s.', 'mcp-ai-wpoos' ),
+								'<a href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ) . '">' . esc_html__( 'ISO 27001 tab', 'mcp-ai-wpoos' ) . '</a>'
+							);
+							?>
+						</p>
+					</div>
+					<div class="wp-mcp-ai-framework-detail-panel" id="soc2-details">
+						<?php $this->render_framework_controls_table( 'soc2' ); ?>
+					</div>
+					<div class="wp-mcp-ai-framework-detail-panel" id="hipaa-details">
+						<?php $this->render_framework_controls_table( 'hipaa' ); ?>
+					</div>
+					<div class="wp-mcp-ai-framework-detail-panel" id="gdpr-details">
+						<?php $this->render_framework_controls_table( 'gdpr' ); ?>
+					</div>
+				</div>
+			</div>
+
+			<style>
+				.wp-mcp-ai-framework-detail-tabs {
+					border-bottom: 1px solid #ddd;
+					padding-bottom: 10px;
+				}
+				.wp-mcp-ai-framework-detail-tab {
+					margin-right: 5px;
+					border-bottom: 2px solid transparent;
+				}
+				.wp-mcp-ai-framework-detail-tab.active {
+					border-bottom-color: #0073aa;
+					font-weight: 600;
+				}
+				.wp-mcp-ai-framework-detail-panel {
+					display: none;
+					padding: 20px 0;
+				}
+				.wp-mcp-ai-framework-detail-panel.active {
+					display: block;
+				}
+			</style>
+
+			<script>
+			jQuery(document).ready(function($) {
+				// Framework detail tabs
+				$('.wp-mcp-ai-framework-detail-tab').on('click', function() {
+					var framework = $(this).data('framework');
+					
+					// Update tabs
+					$('.wp-mcp-ai-framework-detail-tab').removeClass('active');
+					$(this).addClass('active');
+					
+					// Update panels
+					$('.wp-mcp-ai-framework-detail-panel').removeClass('active');
+					$('#' + framework + '-details').addClass('active');
+				});
+
+				// Framework status filter
+				$('#framework-status-filter').on('change', function() {
+					var status = $(this).val();
+					if (status === 'all') {
+						$('.wp-mcp-ai-framework-card').show();
+					} else {
+						$('.wp-mcp-ai-framework-card').hide();
+						$('.wp-mcp-ai-framework-card[data-status="' + status + '"]').show();
+					}
+				});
+
+				// Framework category filter
+				$('#framework-category').on('change', function() {
+					var category = $(this).val();
+					if (category === 'all') {
+						$('.wp-mcp-ai-framework-card').show();
+					} else {
+						$('.wp-mcp-ai-framework-card').hide();
+						$('.wp-mcp-ai-framework-card[data-category="' + category + '"]').show();
+					}
+				});
+
+				// Clear filters
+				$('.wp-mcp-ai-clear-framework-filters').on('click', function() {
+					$('#framework-status-filter').val('all');
+					$('#framework-category').val('all');
+					$('.wp-mcp-ai-framework-card').show();
+				});
+
+				// Compare frameworks toggle
+				$('.wp-mcp-ai-compare-frameworks').on('click', function() {
+					$('.wp-mcp-ai-framework-selection').toggle();
+					$('.wp-mcp-ai-framework-checkbox').toggle();
+				});
+
+				// Select all frameworks
+				$('#wp-mcp-ai-select-all-frameworks').on('change', function() {
+					$('.wp-mcp-ai-framework-select').prop('checked', $(this).prop('checked'));
+					updateSelectedFrameworksCount();
+				});
+
+				// Update selected count
+				$('.wp-mcp-ai-framework-select').on('change', function() {
+					updateSelectedFrameworksCount();
+				});
+
+				function updateSelectedFrameworksCount() {
+					var count = $('.wp-mcp-ai-framework-select:checked').length;
+					$('.wp-mcp-ai-selected-frameworks-count').text(count + ' framework(s) selected');
+				}
+
+				// Generate comparison report
+				$('.wp-mcp-ai-generate-comparison').on('click', function() {
+					var selected = [];
+					$('.wp-mcp-ai-framework-select:checked').each(function() {
+						selected.push($(this).val());
+					});
+					
+					if (selected.length === 0) {
+						alert('Please select at least one framework to compare.');
+						return;
+					}
+					
+					// TODO: Implement comparison report generation
+					alert('Comparison report generation for: ' + selected.join(', '));
+				});
+			});
+			</script>
 			<?php
 		}
 
@@ -2434,6 +2588,198 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		}
 
 		/**
+		 * Render framework controls table.
+		 *
+		 * Displays detailed controls/requirements table for a specific framework.
+		 *
+		 * @param string $framework Framework identifier (soc2, hipaa, gdpr).
+		 */
+		private function render_framework_controls_table( $framework ) {
+			// Get controls based on framework.
+			switch ( $framework ) {
+				case 'soc2':
+					$controls      = $this->get_soc2_controls();
+					$framework_name = 'SOC 2';
+					$control_label  = 'Trust Services Criteria';
+					break;
+				case 'hipaa':
+					$controls      = $this->get_hipaa_controls();
+					$framework_name = 'HIPAA';
+					$control_label  = 'Security Rule Safeguards';
+					break;
+				case 'gdpr':
+					$controls      = $this->get_gdpr_controls();
+					$framework_name = 'GDPR';
+					$control_label  = 'Requirements';
+					break;
+				default:
+					return;
+			}
+
+			if ( empty( $controls ) ) {
+				?>
+				<p class="wp-mcp-ai-empty-state">
+					<?php
+					printf(
+						/* translators: %s: Framework name */
+						esc_html__( 'Unable to load %s controls. Please check that the documentation is available.', 'mcp-ai-wpoos' ),
+						esc_html( $framework_name )
+					);
+					?>
+				</p>
+				<?php
+				return;
+			}
+
+			// Calculate stats.
+			$stats = $this->calculate_controls_stats( $controls );
+			?>
+
+			<div class="wp-mcp-ai-framework-controls-header" style="margin-bottom: 20px;">
+				<h3>
+					<?php
+					printf(
+						/* translators: 1: Framework name, 2: Control label */
+						esc_html__( '%1$s %2$s', 'mcp-ai-wpoos' ),
+						esc_html( $framework_name ),
+						esc_html( $control_label )
+					);
+					?>
+				</h3>
+				<div class="wp-mcp-ai-controls-summary" style="display: flex; gap: 20px; margin: 15px 0;">
+					<div>
+						<strong><?php echo esc_html( $stats['implemented'] ); ?></strong>
+						<span><?php esc_html_e( 'Implemented', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div>
+						<strong><?php echo esc_html( $stats['partial'] ); ?></strong>
+						<span><?php esc_html_e( 'Partial', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div>
+						<strong><?php echo esc_html( $stats['planned'] ); ?></strong>
+						<span><?php esc_html_e( 'Planned', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div>
+						<strong><?php echo esc_html( $stats['not_applicable'] ); ?></strong>
+						<span><?php esc_html_e( 'N/A', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div>
+						<strong><?php echo esc_html( $stats['total'] ); ?></strong>
+						<span><?php esc_html_e( 'Total', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+				</div>
+			</div>
+
+			<div class="wp-mcp-ai-framework-controls-filter" style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+				<label for="<?php echo esc_attr( $framework ); ?>-status-filter">
+					<?php esc_html_e( 'Filter by status:', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<select id="<?php echo esc_attr( $framework ); ?>-status-filter" class="wp-mcp-ai-framework-filter-status">
+					<option value="all"><?php esc_html_e( 'All', 'mcp-ai-wpoos' ); ?></option>
+					<option value="implemented"><?php esc_html_e( 'Implemented', 'mcp-ai-wpoos' ); ?></option>
+					<option value="partial"><?php esc_html_e( 'Partial', 'mcp-ai-wpoos' ); ?></option>
+					<option value="planned"><?php esc_html_e( 'Planned', 'mcp-ai-wpoos' ); ?></option>
+					<option value="not_applicable"><?php esc_html_e( 'Not Applicable', 'mcp-ai-wpoos' ); ?></option>
+				</select>
+
+				<label for="<?php echo esc_attr( $framework ); ?>-search">
+					<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<input type="text" id="<?php echo esc_attr( $framework ); ?>-search" class="wp-mcp-ai-framework-filter-search" 
+					placeholder="<?php esc_attr_e( 'Search controls...', 'mcp-ai-wpoos' ); ?>" style="flex: 1; max-width: 300px;" />
+
+				<button class="button wp-mcp-ai-clear-framework-control-filters" data-framework="<?php echo esc_attr( $framework ); ?>">
+					<span class="dashicons dashicons-dismiss"></span>
+					<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
+				</button>
+			</div>
+
+			<table class="wp-list-table widefat fixed striped wp-mcp-ai-framework-controls-table" data-framework="<?php echo esc_attr( $framework ); ?>">
+				<thead>
+					<tr>
+						<th style="width: 150px;"><?php esc_html_e( 'Control ID', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Control Name', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 200px;"><?php esc_html_e( 'Category', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 120px;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 100px;"><?php esc_html_e( 'Applicable', 'mcp-ai-wpoos' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $controls as $control ) : ?>
+						<tr class="wp-mcp-ai-framework-control-row" data-status="<?php echo esc_attr( $control['status_key'] ); ?>">
+							<td><strong><?php echo esc_html( $control['id'] ); ?></strong></td>
+							<td>
+								<strong><?php echo esc_html( $control['name'] ); ?></strong>
+								<?php if ( ! empty( $control['implementation'] ) ) : ?>
+									<p class="description"><?php echo esc_html( wp_trim_words( $control['implementation'], 20 ) ); ?></p>
+								<?php endif; ?>
+								<?php if ( ! empty( $control['mapping'] ) ) : ?>
+									<p class="description">
+										<strong><?php esc_html_e( 'ISO 27001:', 'mcp-ai-wpoos' ); ?></strong>
+										<?php echo esc_html( $control['mapping'] ); ?>
+									</p>
+								<?php endif; ?>
+							</td>
+							<td><?php echo esc_html( $control['category'] ?? '' ); ?></td>
+							<td>
+								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $control['status_key'] ); ?>">
+									<?php echo esc_html( $control['status_key'] === 'not_applicable' ? 'N/A' : ucfirst( $control['status_key'] ) ); ?>
+								</span>
+							</td>
+							<td style="text-align: center;">
+								<?php if ( $control['applicable'] ) : ?>
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php else : ?>
+									<span class="dashicons dashicons-dismiss" style="color: #dc3232;"></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+
+			<script>
+			jQuery(document).ready(function($) {
+				var framework = '<?php echo esc_js( $framework ); ?>';
+				
+				// Filter by status
+				$('#' + framework + '-status-filter').on('change', function() {
+					var status = $(this).val();
+					var $table = $('.wp-mcp-ai-framework-controls-table[data-framework="' + framework + '"]');
+					var $rows = $table.find('.wp-mcp-ai-framework-control-row');
+					
+					if (status === 'all') {
+						$rows.show();
+					} else {
+						$rows.hide();
+						$rows.filter('[data-status="' + status + '"]').show();
+					}
+				});
+
+				// Search controls
+				$('#' + framework + '-search').on('keyup', function() {
+					var search = $(this).val().toLowerCase();
+					var $table = $('.wp-mcp-ai-framework-controls-table[data-framework="' + framework + '"]');
+					var $rows = $table.find('.wp-mcp-ai-framework-control-row');
+					
+					$rows.each(function() {
+						var text = $(this).text().toLowerCase();
+						$(this).toggle(text.indexOf(search) > -1);
+					});
+				});
+
+				// Clear filters
+				$('.wp-mcp-ai-clear-framework-control-filters[data-framework="' + framework + '"]').on('click', function() {
+					$('#' + framework + '-status-filter').val('all').trigger('change');
+					$('#' + framework + '-search').val('');
+					$('.wp-mcp-ai-framework-controls-table[data-framework="' + framework + '"] .wp-mcp-ai-framework-control-row').show();
+				});
+			});
+			</script>
+			<?php
+		}
+
+		/**
 		 * Get ISO 27001 controls from Statement of Applicability.
 		 *
 		 * @return array Array of controls with id, name, status, applicable, and justification.
@@ -2622,6 +2968,269 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			return 0;
+		}
+
+		/**
+		 * Get SOC 2 Trust Services Criteria details.
+		 *
+		 * Parses the SOC 2 Statement of Applicability and returns detailed
+		 * information about each Trust Services Criterion.
+		 *
+		 * @return array Array of criteria with id, name, category, status, status_key, applicable, implementation, and mapping.
+		 */
+		private function get_soc2_controls() {
+			$soc2_file = WP_MCP_AI_PATH . 'docs/compliance/soc2/Statement-of-Applicability.md';
+
+			if ( ! file_exists( $soc2_file ) ) {
+				return array();
+			}
+
+			$content = file_get_contents( $soc2_file );
+			if ( empty( $content ) ) {
+				return array();
+			}
+
+			$controls         = array();
+			$lines            = explode( "\n", $content );
+			$current_control  = null;
+			$current_category = 'General';
+
+			foreach ( $lines as $line ) {
+				// Track category (e.g., "## 2. Common Criteria (CC) - Security").
+				if ( preg_match( '/^##\s+\d+\.\s+(.+)$/', $line, $matches ) ) {
+					$current_category = trim( $matches[1] );
+				}
+
+				// Match control ID header (e.g., "#### CC1.1 - Organization Demonstrates...").
+				if ( preg_match( '/^####\s+([\w\.]+)\s+-\s+(.+)$/', $line, $matches ) ) {
+					// Save previous control if exists.
+					if ( $current_control ) {
+						$controls[] = $current_control;
+					}
+
+					// Start new control.
+					$current_control = array(
+						'id'             => $matches[1],
+						'name'           => trim( $matches[2] ),
+						'category'       => $current_category,
+						'status'         => '',
+						'status_key'     => '',
+						'applicable'     => true,
+						'implementation' => '',
+						'mapping'        => '',
+					);
+				} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$status_text = trim( $matches[1] );
+					$current_control['status'] = $status_text;
+
+					// Map status to key.
+					if ( false !== strpos( $status_text, '✅' ) || false !== strpos( $status_text, 'Implemented' ) ) {
+						$current_control['status_key'] = 'implemented';
+					} elseif ( false !== strpos( $status_text, '🔄' ) || false !== strpos( $status_text, 'Partial' ) ) {
+						$current_control['status_key'] = 'partial';
+					} elseif ( false !== strpos( $status_text, '📋' ) || false !== strpos( $status_text, 'Planned' ) ) {
+						$current_control['status_key'] = 'planned';
+					} elseif ( false !== strpos( $status_text, '❌' ) || false !== strpos( $status_text, 'Not Applicable' ) ) {
+						$current_control['status_key'] = 'not_applicable';
+						$current_control['applicable'] = false;
+					}
+				} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$applicable_text         = trim( $matches[1] );
+					$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
+				} elseif ( $current_control && preg_match( '/^\*\*Implementation:\*\*\s*$/', $line ) ) {
+					// Next lines will be implementation details.
+					$current_control['implementation'] = '';
+				} elseif ( $current_control && preg_match( '/^\*\*ISO 27001 Mapping:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$current_control['mapping'] = trim( $matches[1] );
+				} elseif ( $current_control && ! empty( $current_control['status'] ) && preg_match( '/^-\s+(.+)$/', $line, $matches ) ) {
+					// Implementation bullet points.
+					if ( empty( $current_control['implementation'] ) ) {
+						$current_control['implementation'] = trim( $matches[1] );
+					} else {
+						$current_control['implementation'] .= '; ' . trim( $matches[1] );
+					}
+				}
+			}
+
+			// Save last control.
+			if ( $current_control ) {
+				$controls[] = $current_control;
+			}
+
+			return $controls;
+		}
+
+		/**
+		 * Get HIPAA Security Rule safeguards details.
+		 *
+		 * Parses the HIPAA Statement of Applicability and returns detailed
+		 * information about each safeguard.
+		 *
+		 * @return array Array of safeguards with id, name, category, status, status_key, applicable, implementation, and mapping.
+		 */
+		private function get_hipaa_controls() {
+			$hipaa_file = WP_MCP_AI_PATH . 'docs/compliance/hipaa/Statement-of-Applicability.md';
+
+			if ( ! file_exists( $hipaa_file ) ) {
+				return array();
+			}
+
+			$content = file_get_contents( $hipaa_file );
+			if ( empty( $content ) ) {
+				return array();
+			}
+
+			$controls         = array();
+			$lines            = explode( "\n", $content );
+			$current_control  = null;
+			$current_category = 'General';
+
+			foreach ( $lines as $line ) {
+				// Track category (e.g., "## 2. Administrative Safeguards").
+				if ( preg_match( '/^##\s+\d+\.\s+(.+)$/', $line, $matches ) ) {
+					$current_category = trim( $matches[1] );
+				}
+
+				// Match control ID header (e.g., "#### §164.308(a)(1)(i) - Risk Analysis").
+				if ( preg_match( '/^####\s+(§[\d\.()a-z]+)\s+-\s+(.+)$/', $line, $matches ) ) {
+					// Save previous control if exists.
+					if ( $current_control ) {
+						$controls[] = $current_control;
+					}
+
+					// Start new control.
+					$current_control = array(
+						'id'             => $matches[1],
+						'name'           => trim( $matches[2] ),
+						'category'       => $current_category,
+						'status'         => '',
+						'status_key'     => '',
+						'applicable'     => true,
+						'implementation' => '',
+						'mapping'        => '',
+					);
+				} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$status_text = trim( $matches[1] );
+					$current_control['status'] = $status_text;
+
+					// Map status to key.
+					if ( false !== strpos( $status_text, '✅' ) || false !== strpos( $status_text, 'Implemented' ) ) {
+						$current_control['status_key'] = 'implemented';
+					} elseif ( false !== strpos( $status_text, '🔄' ) || false !== strpos( $status_text, 'Partial' ) ) {
+						$current_control['status_key'] = 'partial';
+					} elseif ( false !== strpos( $status_text, '📋' ) || false !== strpos( $status_text, 'Planned' ) ) {
+						$current_control['status_key'] = 'planned';
+					} elseif ( false !== strpos( $status_text, '❌' ) || false !== strpos( $status_text, 'Not Applicable' ) ) {
+						$current_control['status_key'] = 'not_applicable';
+						$current_control['applicable'] = false;
+					}
+				} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$applicable_text         = trim( $matches[1] );
+					$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
+				} elseif ( $current_control && preg_match( '/^\*\*Implementation:\*\*\s*$/', $line ) ) {
+					// Next lines will be implementation details.
+					$current_control['implementation'] = '';
+				} elseif ( $current_control && preg_match( '/^\*\*ISO 27001 Mapping:\*\*\s+(.+)$/', $line, $matches ) ) {
+					$current_control['mapping'] = trim( $matches[1] );
+				} elseif ( $current_control && ! empty( $current_control['status'] ) && preg_match( '/^-\s+(.+)$/', $line, $matches ) ) {
+					// Implementation bullet points.
+					if ( empty( $current_control['implementation'] ) ) {
+						$current_control['implementation'] = trim( $matches[1] );
+					} else {
+						$current_control['implementation'] .= '; ' . trim( $matches[1] );
+					}
+				}
+			}
+
+			// Save last control.
+			if ( $current_control ) {
+				$controls[] = $current_control;
+			}
+
+			return $controls;
+		}
+
+		/**
+		 * Get GDPR requirements details.
+		 *
+		 * Returns GDPR compliance requirements based on articles and principles.
+		 *
+		 * @return array Array of GDPR requirements.
+		 */
+		private function get_gdpr_controls() {
+			// GDPR requirements based on key articles.
+			return array(
+				array(
+					'id'             => 'Art. 5',
+					'name'           => 'Principles relating to processing of personal data',
+					'category'       => 'Data Protection Principles',
+					'status'         => '✅ Implemented',
+					'status_key'     => 'implemented',
+					'applicable'     => true,
+					'implementation' => 'Lawfulness, fairness, transparency; Purpose limitation; Data minimization; Accuracy; Storage limitation; Integrity and confidentiality',
+					'mapping'        => 'A.5.34, A.8.10, A.8.11',
+				),
+				array(
+					'id'             => 'Art. 6',
+					'name'           => 'Lawfulness of processing',
+					'category'       => 'Legal Basis',
+					'status'         => '✅ Implemented',
+					'status_key'     => 'implemented',
+					'applicable'     => true,
+					'implementation' => 'Processing based on consent, contract, legal obligation, vital interests, public task, or legitimate interests',
+					'mapping'        => 'A.5.34',
+				),
+				array(
+					'id'             => 'Art. 13-14',
+					'name'           => 'Information to be provided to data subject',
+					'category'       => 'Transparency',
+					'status'         => '✅ Implemented',
+					'status_key'     => 'implemented',
+					'applicable'     => true,
+					'implementation' => 'Privacy notices, data processing information disclosure',
+					'mapping'        => 'A.5.34',
+				),
+				array(
+					'id'             => 'Art. 15-22',
+					'name'           => 'Rights of the data subject',
+					'category'       => 'Data Subject Rights',
+					'status'         => '✅ Implemented',
+					'status_key'     => 'implemented',
+					'applicable'     => true,
+					'implementation' => 'Right to access, rectification, erasure, restriction, portability, objection; Automated decision-making',
+					'mapping'        => 'A.5.34, A.8.10',
+				),
+				array(
+					'id'             => 'Art. 25',
+					'name'           => 'Data protection by design and by default',
+					'category'       => 'Privacy Engineering',
+					'status'         => '✅ Implemented',
+					'status_key'     => 'implemented',
+					'applicable'     => true,
+					'implementation' => 'Privacy-first architecture, default privacy settings, data minimization',
+					'mapping'        => 'A.5.34, A.8.25, A.8.26',
+				),
+				array(
+					'id'             => 'Art. 32',
+					'name'           => 'Security of processing',
+					'category'       => 'Security Measures',
+					'status'         => '✅ Implemented',
+					'status_key'     => 'implemented',
+					'applicable'     => true,
+					'implementation' => 'Pseudonymization, encryption, confidentiality, integrity, availability, resilience',
+					'mapping'        => 'A.8.24, A.8.11, A.8.13, A.8.14',
+				),
+				array(
+					'id'             => 'Art. 33-34',
+					'name'           => 'Notification of personal data breach',
+					'category'       => 'Breach Response',
+					'status'         => '🔄 Partial',
+					'status_key'     => 'partial',
+					'applicable'     => true,
+					'implementation' => 'Incident response procedures documented; 72-hour breach notification process being finalized',
+					'mapping'        => 'A.5.24, A.5.25, A.5.26',
+				),
+			);
 		}
 
 		/**
