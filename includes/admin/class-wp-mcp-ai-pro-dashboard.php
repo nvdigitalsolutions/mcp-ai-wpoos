@@ -491,10 +491,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @param string $hook Current admin page hook.
 		 */
 		public function enqueue_assets( $hook ) {
-			// Only load on main Pro Dashboard page.
-			// Diagnostic page has its own minimal assets and doesn't need charts.
-			$allowed_pages = array(
+			// Load assets on main Pro Dashboard page and diagnostic page.
+			$diagnostic_page_hook = $this->get_diagnostic_page_hook();
+			$allowed_pages        = array(
 				'toplevel_page_' . self::PAGE_SLUG,
+				$diagnostic_page_hook,
 			);
 
 			if ( ! in_array( $hook, $allowed_pages, true ) ) {
