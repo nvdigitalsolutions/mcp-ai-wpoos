@@ -2373,7 +2373,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 							<td><strong><?php echo esc_html( $control['id'] ); ?></strong></td>
 							<td>
 								<strong><?php echo esc_html( $control['name'] ); ?></strong>
-								<?php if ( ! empty( $control['justification'] ) ) : ?>
+								<?php if ( ! empty( $control['description'] ) ) : ?>
+									<p class="description"><?php echo esc_html( wp_trim_words( $control['description'], 25 ) ); ?></p>
+								<?php elseif ( ! empty( $control['justification'] ) ) : ?>
 									<p class="description"><?php echo esc_html( wp_trim_words( $control['justification'], 20 ) ); ?></p>
 								<?php endif; ?>
 							</td>
@@ -2997,7 +2999,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 							<td><strong><?php echo esc_html( $control['id'] ); ?></strong></td>
 							<td>
 								<strong><?php echo esc_html( $control['name'] ); ?></strong>
-								<?php if ( ! empty( $control['implementation'] ) ) : ?>
+								<?php if ( ! empty( $control['description'] ) ) : ?>
+									<p class="description"><?php echo esc_html( wp_trim_words( $control['description'], 20 ) ); ?></p>
+								<?php elseif ( ! empty( $control['implementation'] ) ) : ?>
 									<p class="description"><?php echo esc_html( wp_trim_words( $control['implementation'], 20 ) ); ?></p>
 								<?php endif; ?>
 								<?php if ( ! empty( $control['mapping'] ) ) : ?>

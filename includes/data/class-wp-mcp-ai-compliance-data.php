@@ -29,9 +29,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
 		 * Get ISO 27001:2022 controls.
 		 *
 		 * Returns all 93 controls from Annex A with their implementation status,
-		 * applicability, and justification.
+		 * applicability, justification, and descriptions.
 		 *
-		 * @return array Array of controls with id, name, status, status_key, applicable, and justification.
+		 * @return array Array of controls with id, name, status, status_key, applicable, justification, and description.
 		 */
 		public static function get_iso27001_controls() {
 			return array (
@@ -43,6 +43,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Core ISMS requirement',
+    'description' => 'ISMS Policy document created
+Security objectives defined
+Management approval obtained
+Published and communicated to all personnel',
   ),
   1 => 
   array (
@@ -52,6 +56,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Essential for accountability',
+    'description' => 'Roles defined in ISMS Policy (Section 5)
+CISO role established
+Development, operations, and support team responsibilities documented
+RACI matrix maintained',
   ),
   2 => 
   array (
@@ -61,6 +69,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Prevents conflicts of interest and fraud',
+    'description' => 'Code review requires different developer than author
+Deployment approval separate from development
+Security testing independent from development
+Administrative functions separated from operations',
   ),
   3 => 
   array (
@@ -70,6 +82,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Leadership commitment required',
+    'description' => 'Management approval of ISMS policy
+Resource allocation for security
+Regular management reviews (semi-annual)
+Security performance oversight',
   ),
   4 => 
   array (
@@ -79,6 +95,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Legal compliance and incident response',
+    'description' => 'Security contact: security@nvdigitalsolutions.com
+Data protection authorities contact procedures
+Law enforcement liaison procedures
+WordPress.org security team contact',
   ),
   5 => 
   array (
@@ -88,6 +108,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Stay informed of security threats',
+    'description' => 'WordPress security team membership
+OWASP community participation
+Security mailing list subscriptions
+GitHub security advisories monitoring',
   ),
   6 => 
   array (
@@ -97,6 +121,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Proactive threat awareness',
+    'description' => 'GitHub Dependabot alerts
+WordPress security announcements monitoring
+CVE database monitoring for dependencies
+Security research community engagement',
   ),
   7 => 
   array (
@@ -106,6 +134,14 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Security by design',
+    'description' => 'Comprehensive security project management framework
+Security requirements template for all projects
+Mandatory security gates (Design, Code Review, Pre-Release)
+GitHub integration with security labels and branch protection
+Security review process with 3 levels (Standard, Enhanced, Critical)
+Security risk register and assessment matrix
+Security milestones and sign-off procedures
+Security metrics and dashboard reporting',
   ),
   8 => 
   array (
@@ -115,6 +151,17 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Asset management foundation',
+    'description' => 'Automated asset discovery system for all plugin components
+Comprehensive asset register with classification tagging (Public, Internal, Confidential, Restricted)
+Asset ownership documentation for all discovered assets
+Source code inventory (includes/, core/, shared/, addons/ directories)
+Configuration inventory (WordPress options, encryption keys, API credentials)
+Third-party integration inventory (OpenAI, Gemini, Ollama, HuggingFace, JetEngine, WooCommerce, Elementor)
+Data storage inventory (Custom Post Types, user metadata, chat transcripts)
+Documentation inventory (README, SECURITY, compliance documentation)
+Weekly automated discovery via cron job
+REST API for asset management (mcp-ai/v1/assets/*)
+Admin dashboard for viewing and filtering assets',
   ),
   9 => 
   array (
@@ -124,6 +171,13 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Define acceptable usage',
+    'description' => 'Comprehensive Acceptable Use Policy (AUP) covering all information assets (700+ lines)
+14 sections covering acceptable use, unacceptable use, monitoring, compliance
+User responsibilities for authentication, data handling, software usage, network usage, email
+Mobile device security and remote work policies included
+Acknowledgment mechanism with annual re-certification required
+Training integration with onboarding process
+Enforcement through disciplinary process (A.6.4)',
   ),
   10 => 
   array (
@@ -133,6 +187,12 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Offboarding procedures',
+    'description' => 'Comprehensive asset return procedures for physical, digital, and intellectual property
+Asset return checklist with physical assets, digital access, and data confirmation
+Automated access revocation procedures for WordPress, GitHub, and third-party services
+Asset return form with required signatures
+24-hour access revocation timeline
+Asset inventory updates upon termination',
   ),
   11 => 
   array (
@@ -142,6 +202,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Risk-based protection',
+    'description' => 'Four classification levels: Public, Internal, Confidential, Restricted
+Classification documented in ISMS Policy
+Handling requirements per classification',
   ),
   12 => 
   array (
@@ -151,6 +214,13 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Visual classification indicators',
+    'description' => 'Document classification headers in all compliance documents
+Code comments for sensitive sections
+Automated classification labeling system for posts and assistants
+Four-level classification meta box (Public, Internal, Confidential, Restricted)
+Visual classification badges in admin UI
+Classification column in post lists
+Auto-classification based on content patterns',
   ),
   13 => 
   array (
@@ -160,6 +230,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Secure data transmission',
+    'description' => 'HTTPS/TLS for all API communications
+Encrypted storage for sensitive data
+Secure protocols for third-party integrations',
   ),
   14 => 
   array (
@@ -169,6 +242,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Core security control',
+    'description' => 'WordPress role-based access control (RBAC)
+Capability-based permissions for tools
+API key authentication
+Guest token system for public access',
   ),
   15 => 
   array (
@@ -178,6 +255,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'User lifecycle management',
+    'description' => 'WordPress user management integration
+Unique identifiers per user
+User registration and deactivation procedures',
   ),
   16 => 
   array (
@@ -187,6 +267,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Credential security',
+    'description' => 'Strong password requirements (WordPress integration)
+Credential hashing (bcrypt via WordPress)
+API key encryption at rest
+Master key protection (root security key)',
   ),
   17 => 
   array (
@@ -196,6 +280,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Least privilege principle',
+    'description' => 'WordPress capability system
+Per-assistant tool permissions
+API rate limiting per user
+Regular access review procedures',
   ),
   18 => 
   array (
@@ -205,6 +293,13 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Third-party risk management',
+    'description' => 'Comprehensive supplier security management system
+Automated supplier registry with security assessments for all critical vendors
+Vendor security questionnaires and evaluation framework
+Three-tier risk categorization (Critical, Important, Low Risk)
+Performance monitoring and incident tracking
+Quarterly review scheduling with automated reminders
+Assessment of OpenAI, Google, GitHub, Composer, NPM, and other critical suppliers',
   ),
   19 => 
   array (
@@ -214,6 +309,12 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Contractual security obligations',
+    'description' => 'Security requirements template for supplier contracts
+Documentation of SLAs with critical vendors (OpenAI 99.9%, Google 99.95%)
+Security clause tracking in supplier registry
+Terms of Service acceptance and compliance monitoring
+Contractual security requirements enforced for all critical suppliers
+Data processing agreements with GDPR-compliant vendors',
   ),
   20 => 
   array (
@@ -223,6 +324,13 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Dependency security',
+    'description' => 'Automated Software Bill of Materials (SBOM) generation in CycloneDX format
+Daily dependency vulnerability scanning via cron job
+Composer and NPM dependency tracking and audit
+Dependency approval workflow and security review process
+Lock file enforcement (composer.lock, package-lock.json)
+Integration with Dependabot for automated vulnerability alerts
+Supply chain risk monitoring dashboard',
   ),
   21 => 
   array (
@@ -232,6 +340,13 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Ongoing vendor oversight',
+    'description' => 'Automated quarterly supplier review scheduling
+Vendor performance monitoring with uptime tracking (avg 99.85% across all suppliers)
+Supplier security incident recording and tracking system
+Review notification system with email alerts to administrators
+Performance metrics dashboard showing YTD incidents and actual uptime vs. SLA
+Overdue review indicators with automatic escalation
+Change management tracking for supplier service modifications',
   ),
   22 => 
   array (
@@ -241,6 +356,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Cloud-hosted infrastructure',
+    'description' => 'OpenAI cloud security review
+Google Cloud security assessment
+Hosting provider security requirements
+Shared responsibility model documentation',
   ),
   23 => 
   array (
@@ -250,6 +369,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Incident response readiness',
+    'description' => 'Incident management procedure documented
+Security contact established (security@nvdigitalsolutions.com)
+Incident classification and escalation procedures
+Response team roles defined',
   ),
   24 => 
   array (
@@ -259,6 +382,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Incident triage',
+    'description' => 'Event severity classification
+Impact assessment procedures
+Decision criteria for incident declaration',
   ),
   25 => 
   array (
@@ -268,6 +394,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Incident handling',
+    'description' => 'Documented response procedures
+Containment, eradication, recovery steps
+Communication protocols
+Evidence preservation',
   ),
   26 => 
   array (
@@ -277,6 +407,13 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Continuous improvement',
+    'description' => 'Post-incident review process documented in procedures
+Root cause analysis procedures and templates
+Incident lessons learned database (Custom Post Type: mcp_ai_lesson)
+Trend analysis reporting with quarterly/annual views
+Lessons learned tracking with severity and category classification
+Admin UI for managing lessons learned
+Integration with incident management system',
   ),
   27 => 
   array (
@@ -286,6 +423,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Forensic readiness',
+    'description' => 'Audit logging (authentication, access, changes)
+Log retention (12 months)
+Chain of custody procedures',
   ),
   28 => 
   array (
@@ -295,6 +435,14 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Business continuity',
+    'description' => 'Comprehensive Business Continuity Plan with dedicated security section (400+ lines)
+Security measures for 5 disruption types: provider outage, infrastructure failure, security incident, personnel unavailability, natural disaster
+Emergency access procedures with break-glass protocols and dual approval
+Security monitoring requirements during disruption (enhanced 15-min frequency)
+Secure failover procedures with SSL verification and authorization checks
+Post-disruption security review and lessons learned process
+Communication security protocols during emergencies (encrypted channels)
+Compliance maintenance during disruptions (GDPR/CCPA, audit trails)',
   ),
   29 => 
   array (
@@ -304,6 +452,14 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Technology resilience',
+    'description' => 'Redundancy in AI provider integrations (OpenAI, Gemini, Ollama)
+Automatic failover capabilities between providers (< 5 seconds)
+Recovery Time Objectives (RTO) defined for all components
+Recovery Point Objectives (RPO) defined for all data types
+Documented failover procedures and disaster recovery steps
+Quarterly failover testing schedule
+Monitoring and alerting for provider availability
+Backup and recovery procedures documented',
   ),
   30 => 
   array (
@@ -313,6 +469,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Compliance obligations',
+    'description' => 'GDPR compliance considerations
+GPL v3 license compliance
+OpenAI/Gemini terms compliance
+WordPress.org plugin guidelines compliance',
   ),
   31 => 
   array (
@@ -322,6 +482,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'IP protection',
+    'description' => 'GPL v3 license
+Copyright notices
+Third-party license compliance
+Attribution requirements',
   ),
   32 => 
   array (
@@ -331,6 +495,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Records management',
+    'description' => 'Version control for all documents (Git)
+Backup of critical records
+12-month log retention',
   ),
   33 => 
   array (
@@ -340,6 +507,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Data protection compliance',
+    'description' => 'Minimal PII collection
+Data encryption (credentials, sensitive settings)
+User consent mechanisms
+Data deletion capabilities',
   ),
   34 => 
   array (
@@ -349,6 +520,12 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Assurance of effectiveness',
+    'description' => 'Code review process (peer review)
+Security testing (CodeQL)
+Automated quarterly internal audit scheduling
+Comprehensive audit management system with finding tracking
+Management review process documented
+Audit dashboard and statistics reporting',
   ),
   35 => 
   array (
@@ -358,6 +535,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Policy enforcement',
+    'description' => 'ISMS policy enforcement
+WordPress Coding Standards (WPCS) compliance
+Security coding standards (OWASP)',
   ),
   36 => 
   array (
@@ -367,6 +547,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Operational consistency',
+    'description' => 'Development procedures documented
+Deployment procedures documented
+Security procedures documented',
   ),
   37 => 
   array (
@@ -376,6 +559,12 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Trusted personnel',
+    'description' => 'Three-level screening framework (Basic, Standard, Enhanced)
+Role-based screening matrix for all positions
+Comprehensive background screening procedure (identity, references, employment history)
+Screening documentation requirements
+Periodic re-screening every 3 years for sensitive roles
+Security questionnaire and consent forms',
   ),
   38 => 
   array (
@@ -385,6 +574,12 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Contractual security obligations',
+    'description' => 'Mandatory security clauses in all employment agreements (7 clauses)
+Comprehensive non-disclosure agreements (NDA) with defined scope and duration
+Security responsibilities documented by role (All Employees, Developers, Administrators, Security Team)
+Required acknowledgment and acceptance signatures
+Annual security policy acknowledgment
+Confidentiality, acceptable use, data protection, and IP rights clauses',
   ),
   39 => 
   array (
@@ -394,6 +589,18 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Human firewall - Essential for maintaining security culture',
+    'description' => 'Comprehensive security training system with role-based training paths
+Five mandatory training modules covering ISO 27001, secure coding, WordPress security, incident response, and data protection
+Training completion tracking via user metadata
+Annual refresher training with automated email reminders
+Training statistics dashboard for administrators
+User training dashboard for viewing and completing modules
+Training modules stored as custom post type (mcp_ai_training)
+REST API for programmatic training management (mcp-ai/v1/training/*)
+Security awareness content for all users
+Technical security training for developers
+Policy and compliance training
+Incident response procedures training',
   ),
   40 => 
   array (
@@ -403,6 +610,15 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Policy enforcement',
+    'description' => 'Formal disciplinary process for security policy violations (700+ lines)
+4 violation categories with severity levels and specific examples
+7-step disciplinary process: detection → assessment → investigation → action determination → implementation → notification → appeal
+7 action types: verbal warning, written warning, final warning, suspension, demotion, termination, legal action
+Investigation procedures with timelines (2-30 days based on severity)
+Decision-making authority matrix by violation category
+Appeal process with independent review panel
+Post-action monitoring and retraining requirements
+Documentation and record retention (1-7 years based on action type)',
   ),
   41 => 
   array (
@@ -412,6 +628,13 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Post-employment security',
+    'description' => 'Comprehensive post-termination obligations (3-year confidentiality minimum)
+Non-compete and non-solicitation agreements where legally enforceable
+Knowledge transfer requirements with detailed handover checklist
+Exit interview with security focus (7 security questions)
+Post-termination monitoring (30-day and 90-day reviews)
+Legal remedies for breaches documented
+Continuing confidentiality and non-disclosure obligations',
   ),
   42 => 
   array (
@@ -421,6 +644,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Information protection',
+    'description' => 'Comprehensive NDA templates (Employee, Contractor, Mutual, Security Researcher)
+NDA lifecycle management with registration and tracking system
+Breach response procedures and enforcement mechanisms
+Annual reviews and compliance monitoring',
   ),
   43 => 
   array (
@@ -430,6 +657,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Distributed team security',
+    'description' => 'VPN or secure access requirements
+Endpoint security requirements
+HTTPS/TLS for all communications
+Multi-factor authentication',
   ),
   44 => 
   array (
@@ -439,6 +670,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Incident awareness',
+    'description' => 'Security reporting contact (security@nvdigitalsolutions.com)
+GitHub security advisory reporting
+Internal reporting procedures',
   ),
   45 => 
   array (
@@ -448,6 +682,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'not_applicable',
     'applicable' => false,
     'justification' => 'No physical facilities under direct control; cloud-hosted infrastructure managed by providers with ISO 27001 certification',
+    'description' => '',
   ),
   46 => 
   array (
@@ -457,6 +692,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'not_applicable',
     'applicable' => false,
     'justification' => 'See A.7.1',
+    'description' => '',
   ),
   47 => 
   array (
@@ -466,6 +702,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'not_applicable',
     'applicable' => false,
     'justification' => 'Remote work environment, no central office facilities',
+    'description' => '',
   ),
   48 => 
   array (
@@ -475,6 +712,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'not_applicable',
     'applicable' => false,
     'justification' => 'See A.7.1',
+    'description' => '',
   ),
   49 => 
   array (
@@ -484,6 +722,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'not_applicable',
     'applicable' => false,
     'justification' => 'Managed by cloud hosting providers',
+    'description' => '',
   ),
   50 => 
   array (
@@ -493,6 +732,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'not_applicable',
     'applicable' => false,
     'justification' => 'No designated secure areas',
+    'description' => '',
   ),
   51 => 
   array (
@@ -502,6 +742,11 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Remote worker endpoint security',
+    'description' => 'Comprehensive clear desk and clear screen policy for all work locations
+Mandatory screen lock after 5 minutes (PCs) or 2 minutes (mobile)
+Privacy screen requirements for public spaces
+Document handling and secure disposal procedures
+Quarterly audit program with compliance monitoring',
   ),
   52 => 
   array (
@@ -511,6 +756,11 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => false,
     'justification' => 'Developer endpoints',
+    'description' => 'Home office equipment protection standards
+Environmental controls (temperature, humidity, power protection)
+Physical access control requirements (locking, cable locks)
+Equipment transport and storage guidelines
+Surge protectors and UPS requirements',
   ),
   53 => 
   array (
@@ -520,6 +770,12 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Remote work equipment',
+    'description' => 'Comprehensive mobile device management (MDM) policy and implementation
+VPN requirements for all remote access to organizational systems
+Device encryption, authentication, and security software requirements
+Physical device custody and loss/theft response procedures
+BYOD policy with work profile data separation
+Travel security guidelines (domestic and international)',
   ),
   54 => 
   array (
@@ -529,6 +785,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Secure data storage',
+    'description' => 'Encrypted storage for sensitive data
+Database encryption at rest
+Secure credential storage',
   ),
   55 => 
   array (
@@ -538,6 +797,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'not_applicable',
     'applicable' => false,
     'justification' => 'Managed by cloud providers',
+    'description' => '',
   ),
   56 => 
   array (
@@ -547,6 +807,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'not_applicable',
     'applicable' => false,
     'justification' => 'No physical infrastructure management',
+    'description' => '',
   ),
   57 => 
   array (
@@ -556,6 +817,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'not_applicable',
     'applicable' => false,
     'justification' => 'Cloud provider responsibility',
+    'description' => '',
   ),
   58 => 
   array (
@@ -565,6 +827,12 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Developer endpoint disposal',
+    'description' => 'Comprehensive equipment disposal and reuse procedures
+Data sanitization methods by device type (NIST SP 800-88, DoD 5220.22-M)
+Physical destruction standards for sensitive data
+Lost/stolen device response procedures with remote wipe
+Vendor selection criteria and certification requirements
+Complete documentation and audit trail requirements',
   ),
   59 => 
   array (
@@ -574,6 +842,11 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Developer devices',
+    'description' => 'Mandatory endpoint security software (antivirus, EDR, firewall)
+Configuration standards for Windows, macOS, and Linux endpoints
+Patch management (OS within 30 days, critical within 7 days)
+Centralized endpoint management and compliance monitoring
+Full disk encryption required for all devices',
   ),
   60 => 
   array (
@@ -583,6 +856,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Administrative access control',
+    'description' => 'WordPress administrator roles
+Repository administrator access controls
+Limited privileged access (need-to-know)
+Audit logging of privileged actions',
   ),
   61 => 
   array (
@@ -592,6 +869,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Least privilege principle',
+    'description' => 'WordPress capability-based access control
+Per-assistant tool permissions
+API authentication and authorization',
   ),
   62 => 
   array (
@@ -601,6 +881,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Intellectual property protection',
+    'description' => 'GitHub access controls
+Branch protection rules
+Code review requirements
+Open source with GPL v3 (public access controlled by license)',
   ),
   63 => 
   array (
@@ -610,6 +894,11 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Core security control',
+    'description' => 'WordPress authentication integration
+Multi-factor authentication support
+API key authentication
+JWT authentication (Simple JWT plugin)
+Auth0 integration',
   ),
   64 => 
   array (
@@ -619,6 +908,11 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Performance and availability',
+    'description' => 'Comprehensive capacity monitoring (CPU, memory, disk, bandwidth, API limits)
+Alert thresholds (warning at 70%, critical at 85%)
+Rate limiting implementation for API endpoints
+Monthly capacity review and quarterly planning process
+Capacity forecasting and scaling procedures',
   ),
   65 => 
   array (
@@ -628,6 +922,11 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Code integrity',
+    'description' => 'Multi-layered malware protection (prevention, detection, response)
+WordPress site-level malware scanning
+Dependency vulnerability scanning (Dependabot, Composer/npm audit)
+Automated malware scanning in CI/CD pipeline (ClamAV, secret scanning)
+User training on malware awareness (quarterly with phishing simulations)',
   ),
   66 => 
   array (
@@ -637,6 +936,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Proactive vulnerability management',
+    'description' => 'CodeQL security scanning
+Dependabot vulnerability alerts
+Regular dependency updates
+Documented patch management process',
   ),
   67 => 
   array (
@@ -646,6 +949,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'System integrity',
+    'description' => 'Version control for all code and configuration
+Configuration settings in database
+Environment-specific configurations',
   ),
   68 => 
   array (
@@ -655,6 +961,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Data lifecycle management',
+    'description' => 'Secure deletion of sensitive data (crypto-shredding)
+Log retention and deletion (12 months)
+Transcript cleanup features',
   ),
   69 => 
   array (
@@ -664,6 +973,12 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'PII protection',
+    'description' => 'Comprehensive data masking procedures and code library
+API key masking in UI (show last 4 characters only)
+Email, phone, IP address masking functions
+Automatic sensitive data masking in logs
+Test data anonymization scripts
+Production data sanitization procedures for test databases',
   ),
   70 => 
   array (
@@ -673,6 +988,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Information protection',
+    'description' => 'Sensitive data encryption
+Access controls on confidential information
+Audit logging of data access
+Rate limiting to prevent mass data extraction',
   ),
   71 => 
   array (
@@ -682,6 +1001,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Data availability and recovery',
+    'description' => 'Database backup procedures
+Version control as code backup
+Backup retention policies',
   ),
   72 => 
   array (
@@ -691,6 +1013,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'High availability',
+    'description' => 'Multiple AI provider support (OpenAI, Gemini, Ollama)
+Failover capabilities
+Distributed deployment support',
   ),
   73 => 
   array (
@@ -700,6 +1025,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Accountability and forensics',
+    'description' => 'Authentication event logging
+Access logging (tool execution, data access)
+Configuration change logging
+Error and exception logging',
   ),
   74 => 
   array (
@@ -709,6 +1038,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Threat detection',
+    'description' => 'Security event monitoring
+Rate limiting and abuse detection
+Nefarious usage monitoring
+Performance monitoring',
   ),
   75 => 
   array (
@@ -718,6 +1051,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Accurate time for logs and events',
+    'description' => 'Server time synchronization (NTP via hosting provider)
+Timestamps in logs (UTC)
+Time-based operations use server time',
   ),
   76 => 
   array (
@@ -727,6 +1063,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Administrative tool security',
+    'description' => 'WP-CLI access controls
+Administrative functions require elevated privileges
+Audit logging of administrative actions',
   ),
   77 => 
   array (
@@ -736,6 +1075,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'System integrity',
+    'description' => 'WordPress plugin installation controls
+Dependency management (Composer, NPM)
+Code review before deployment
+Version pinning for dependencies',
   ),
   78 => 
   array (
@@ -745,6 +1088,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Network layer protection',
+    'description' => 'HTTPS/TLS for all communications
+API endpoint security
+Network segmentation (hosting provider level)',
   ),
   79 => 
   array (
@@ -754,6 +1100,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Service availability and security',
+    'description' => 'API authentication and authorization
+Rate limiting
+DDoS protection (hosting provider)',
   ),
   80 => 
   array (
@@ -763,6 +1112,12 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => false,
     'justification' => 'Development/production separation',
+    'description' => 'Strict environment segregation (production, staging, development, testing)
+Firewall rules enforcing environment isolation
+No production data in non-production environments (anonymized only)
+Deployment pipeline security with GitOps
+Access control matrix by environment
+Network isolation verification procedures (quarterly testing)',
   ),
   81 => 
   array (
@@ -772,6 +1127,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'not_applicable',
     'applicable' => false,
     'justification' => 'No centralized network infrastructure; individual developer responsibility',
+    'description' => '',
   ),
   82 => 
   array (
@@ -781,6 +1137,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Data confidentiality and integrity',
+    'description' => 'TLS 1.2+ for data in transit
+AES-256 encryption for data at rest (credentials)
+bcrypt for password hashing (WordPress integration)
+Cryptographically secure random number generation',
   ),
   83 => 
   array (
@@ -790,6 +1150,11 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Secure software development',
+    'description' => 'Security requirements in planning
+Secure coding guidelines (WordPress standards, OWASP)
+Code review process
+Security testing (CodeQL)
+Vulnerability management',
   ),
   84 => 
   array (
@@ -799,6 +1164,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Application-level security',
+    'description' => 'Input validation and sanitization
+Output encoding and escaping
+Authentication and authorization
+Error handling',
   ),
   85 => 
   array (
@@ -808,6 +1177,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Architectural security',
+    'description' => 'Defense in depth (multiple security layers)
+Principle of least privilege
+Fail-safe defaults
+Separation of concerns',
   ),
   86 => 
   array (
@@ -817,6 +1190,11 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Vulnerability prevention',
+    'description' => 'WordPress Coding Standards (WPCS)
+OWASP Top 10 guidelines
+Input sanitization and output escaping
+Prepared statements for database queries
+Nonce verification for state changes',
   ),
   87 => 
   array (
@@ -826,6 +1204,10 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Vulnerability detection',
+    'description' => 'Automated security testing (CodeQL)
+Unit tests for security functions
+Integration tests
+Code review with security focus',
   ),
   88 => 
   array (
@@ -835,6 +1217,16 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => false,
     'justification' => 'Third-party contributor management',
+    'description' => 'Comprehensive External Contribution Security Review Procedures (700+ lines)
+Contributor License Agreement (CLA) requirement with automated checking
+Identity verification and trust level system (4 categories: anonymous, community, trusted, security researcher)
+Automated security scanning: CodeQL analysis, dependency vulnerability checks, secret scanning
+Manual security review with 10-point comprehensive checklist
+Risk-based review levels (Low/Medium/High) with escalating approval requirements
+Responsible vulnerability disclosure procedures with coordinated disclosure timeline
+Malicious code detection and incident response procedures
+Branch protection rules enforcing 2 reviewers and status checks
+External contribution monitoring and trust level advancement',
   ),
   89 => 
   array (
@@ -844,6 +1236,14 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Environment isolation',
+    'description' => 'Three distinct environments: Development (local/Docker), Staging (mirrored prod), Production (live)
+Physical/logical separation with isolated infrastructure and databases
+Environment-specific configurations (WP_MCP_AI_ENV, debug settings)
+Strict access control matrix (developers no prod access, admins audited)
+Data flow controls (code-only promotion, anonymized data only to lower envs)
+Deployment gates (2 gates: dev→staging, staging→prod with approvals)
+Automated environment validation checks
+Separate API keys and encryption keys per environment',
   ),
   90 => 
   array (
@@ -853,6 +1253,15 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Controlled changes',
+    'description' => 'Formal change management process with 3 categories (Standard, Normal, Emergency)
+Comprehensive change request template with 9 sections
+Change approval workflow with technical, security, and management reviews
+Risk-based approval requirements (high-risk requires management/CISO approval)
+Deployment gates with pre/post-implementation checklists
+Documented rollback procedures with clear triggers
+Emergency change procedure with expedited approval (CISO required)
+Change tracking and monthly reporting (success rate, rollback frequency, etc.)
+Automated change tracking via Git commits and PR system',
   ),
   91 => 
   array (
@@ -862,6 +1271,13 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Protect production data',
+    'description' => 'Comprehensive test data generation procedures (synthetic data preferred)
+Production data anonymization process with email, IP, and PII anonymization
+Test data protection controls and access logs
+Automated test data cleanup procedures (7-30 day retention)
+Test data lifecycle management (creation → use → cleanup)
+GDPR/CCPA compliant test data handling
+Four test data categories: Synthetic, Anonymized, Subsets (restricted), Prohibited',
   ),
   92 => 
   array (
@@ -871,6 +1287,18 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
     'status_key' => 'implemented',
     'applicable' => true,
     'justification' => 'Minimize audit impact',
+    'description' => 'Comprehensive Audit Protection Procedures (720+ lines)
+Pre-audit risk assessment with impact analysis and mitigation planning
+Auditor access control with custom WordPress "auditor" role (read-only capabilities)
+Audit account management with time-limited access and MFA requirement
+Access level matrix defining permissions by auditor type and resource
+Sensitive data protection with masking, anonymization, and encryption
+Audit environment isolation strategy (read-only production or isolated clone)
+Enhanced logging and real-time monitoring during audit activities
+Performance impact management and scheduling best practices
+Audit-related incident response procedures
+Post-audit cleanup and account deactivation with 30-day retention
+Post-audit security review within 7 days',
   ),
 );
 		}
