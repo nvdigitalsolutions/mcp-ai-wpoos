@@ -1174,6 +1174,51 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		private function render_monitoring_tab() {
 			?>
+			<div class="wp-mcp-ai-monitoring-header">
+				<p class="description">
+					<?php esc_html_e( 'Monitor security events, system health, and compliance-related activities in real-time.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<!-- Monitoring Filters -->
+			<div class="wp-mcp-ai-monitoring-filters">
+				<label for="monitoring-event-type"><?php esc_html_e( 'Event Type:', 'mcp-ai-wpoos' ); ?></label>
+				<select id="monitoring-event-type">
+					<option value="all"><?php esc_html_e( 'All Events', 'mcp-ai-wpoos' ); ?></option>
+					<option value="authentication"><?php esc_html_e( 'Authentication', 'mcp-ai-wpoos' ); ?></option>
+					<option value="file-integrity"><?php esc_html_e( 'File Integrity', 'mcp-ai-wpoos' ); ?></option>
+					<option value="configuration"><?php esc_html_e( 'Configuration', 'mcp-ai-wpoos' ); ?></option>
+					<option value="plugin-updates"><?php esc_html_e( 'Plugin Updates', 'mcp-ai-wpoos' ); ?></option>
+					<option value="security-alerts"><?php esc_html_e( 'Security Alerts', 'mcp-ai-wpoos' ); ?></option>
+				</select>
+
+				<label for="monitoring-severity"><?php esc_html_e( 'Severity:', 'mcp-ai-wpoos' ); ?></label>
+				<select id="monitoring-severity">
+					<option value="all"><?php esc_html_e( 'All Severities', 'mcp-ai-wpoos' ); ?></option>
+					<option value="critical"><?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?></option>
+					<option value="high"><?php esc_html_e( 'High', 'mcp-ai-wpoos' ); ?></option>
+					<option value="medium"><?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></option>
+					<option value="low"><?php esc_html_e( 'Low', 'mcp-ai-wpoos' ); ?></option>
+					<option value="info"><?php esc_html_e( 'Info', 'mcp-ai-wpoos' ); ?></option>
+				</select>
+
+				<label for="monitoring-timeframe"><?php esc_html_e( 'Timeframe:', 'mcp-ai-wpoos' ); ?></label>
+				<select id="monitoring-timeframe">
+					<option value="24h" selected><?php esc_html_e( 'Last 24 Hours', 'mcp-ai-wpoos' ); ?></option>
+					<option value="7d"><?php esc_html_e( 'Last 7 Days', 'mcp-ai-wpoos' ); ?></option>
+					<option value="30d"><?php esc_html_e( 'Last 30 Days', 'mcp-ai-wpoos' ); ?></option>
+					<option value="90d"><?php esc_html_e( 'Last 90 Days', 'mcp-ai-wpoos' ); ?></option>
+				</select>
+
+				<label for="monitoring-search"><?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?></label>
+				<input type="text" id="monitoring-search" placeholder="<?php esc_attr_e( 'Search events...', 'mcp-ai-wpoos' ); ?>" />
+
+				<button class="button wp-mcp-ai-clear-monitoring-filters" title="<?php esc_attr_e( 'Clear all filters', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-dismiss"></span>
+					<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
+				</button>
+			</div>
+
 			<div class="wp-mcp-ai-monitoring-dashboard">
 				<?php $this->render_monitoring_dashboard(); ?>
 			</div>
@@ -1206,6 +1251,54 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		private function render_multi_framework_tab() {
 			?>
+			<div class="wp-mcp-ai-multi-framework-header">
+				<p class="description">
+					<?php esc_html_e( 'Compare and manage compliance across multiple security frameworks including SOC 2, HIPAA, GDPR, and more.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<!-- Framework Filters and Actions -->
+			<div class="wp-mcp-ai-framework-filters">
+				<label for="framework-status-filter"><?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?></label>
+				<select id="framework-status-filter">
+					<option value="all"><?php esc_html_e( 'All Frameworks', 'mcp-ai-wpoos' ); ?></option>
+					<option value="compliant"><?php esc_html_e( 'Compliant', 'mcp-ai-wpoos' ); ?></option>
+					<option value="pending"><?php esc_html_e( 'In Progress', 'mcp-ai-wpoos' ); ?></option>
+					<option value="not-started"><?php esc_html_e( 'Not Started', 'mcp-ai-wpoos' ); ?></option>
+				</select>
+
+				<label for="framework-category"><?php esc_html_e( 'Category:', 'mcp-ai-wpoos' ); ?></label>
+				<select id="framework-category">
+					<option value="all"><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos' ); ?></option>
+					<option value="security"><?php esc_html_e( 'Security Standards', 'mcp-ai-wpoos' ); ?></option>
+					<option value="privacy"><?php esc_html_e( 'Privacy Regulations', 'mcp-ai-wpoos' ); ?></option>
+					<option value="industry"><?php esc_html_e( 'Industry-Specific', 'mcp-ai-wpoos' ); ?></option>
+				</select>
+
+				<button class="button wp-mcp-ai-clear-framework-filters" title="<?php esc_attr_e( 'Clear filters', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-dismiss"></span>
+					<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
+				</button>
+
+				<button class="button button-secondary wp-mcp-ai-compare-frameworks" title="<?php esc_attr_e( 'Compare selected frameworks', 'mcp-ai-wpoos' ); ?>" style="margin-left: auto;">
+					<span class="dashicons dashicons-analytics"></span>
+					<?php esc_html_e( 'Compare', 'mcp-ai-wpoos' ); ?>
+				</button>
+			</div>
+
+			<!-- Framework Selection for Comparison -->
+			<div class="wp-mcp-ai-framework-selection" style="display: none; margin: 15px 0; padding: 15px; background: #f7f7f7; border-radius: 4px;">
+				<label>
+					<input type="checkbox" id="wp-mcp-ai-select-all-frameworks" />
+					<?php esc_html_e( 'Select All', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<span class="wp-mcp-ai-selected-frameworks-count" style="margin-left: 15px;"></span>
+				<button class="button wp-mcp-ai-generate-comparison" style="margin-left: 15px;" title="<?php esc_attr_e( 'Generate comparison report', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-chart-bar"></span>
+					<?php esc_html_e( 'Generate Report', 'mcp-ai-wpoos' ); ?>
+				</button>
+			</div>
+
 			<div class="wp-mcp-ai-frameworks">
 				<?php $this->render_framework_status(); ?>
 			</div>
@@ -2294,7 +2387,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			?>
 			<div class="wp-mcp-ai-frameworks-grid">
 				<?php foreach ( $frameworks as $framework ) : ?>
-					<div class="wp-mcp-ai-framework-card">
+					<div class="wp-mcp-ai-framework-card" 
+						data-status="<?php echo esc_attr( $framework['status'] ); ?>"
+						data-category="<?php echo esc_attr( $framework['category'] ?? 'security' ); ?>"
+						data-framework-id="<?php echo esc_attr( sanitize_title( $framework['name'] ) ); ?>">
+						
+						<div class="wp-mcp-ai-framework-checkbox">
+							<input type="checkbox" 
+								class="wp-mcp-ai-framework-select" 
+								value="<?php echo esc_attr( sanitize_title( $framework['name'] ) ); ?>" 
+								id="framework-<?php echo esc_attr( sanitize_title( $framework['name'] ) ); ?>" />
+						</div>
+
 						<h3><?php echo esc_html( $framework['name'] ); ?></h3>
 						<div class="wp-mcp-ai-framework-status <?php echo esc_attr( $framework['status'] ); ?>">
 							<?php echo esc_html( ucfirst( $framework['status'] ) ); ?>
@@ -2304,6 +2408,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 								<div class="wp-mcp-ai-progress" style="width: <?php echo esc_attr( $framework['percentage'] ); ?>%;">
 									<?php echo esc_html( $framework['percentage'] ); ?>%
 								</div>
+							</div>
+						<?php endif; ?>
+						<?php if ( ! empty( $framework['controls_count'] ) ) : ?>
+							<div class="wp-mcp-ai-framework-info">
+								<small>
+									<?php
+									printf(
+										/* translators: %d: number of controls */
+										esc_html__( '%d controls', 'mcp-ai-wpoos' ),
+										(int) $framework['controls_count']
+									);
+									?>
+								</small>
 							</div>
 						<?php endif; ?>
 						<?php if ( ! $this->is_pro_active() && $framework['status'] === 'pending' ) : ?>

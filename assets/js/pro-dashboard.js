@@ -411,6 +411,198 @@
 		},
 
 		/**
+		 * Initialize monitoring tab filtering.
+		 */
+		initMonitoringFiltering: function() {
+			const self = this;
+			
+			// Event type filter
+			$('#monitoring-event-type, #monitoring-severity, #monitoring-timeframe').on('change', function() {
+				self.filterMonitoringEvents();
+			});
+			
+			// Search filter with debounce
+			let searchTimeout;
+			$('#monitoring-search').on('keyup', function() {
+				clearTimeout(searchTimeout);
+				searchTimeout = setTimeout(function() {
+					self.filterMonitoringEvents();
+				}, 300);
+			});
+			
+			// Clear filters
+			$('.wp-mcp-ai-clear-monitoring-filters').on('click', function(e) {
+				e.preventDefault();
+				$('#monitoring-event-type').val('all');
+				$('#monitoring-severity').val('all');
+				$('#monitoring-timeframe').val('24h');
+				$('#monitoring-search').val('');
+				self.filterMonitoringEvents();
+			});
+		},
+
+		/**
+		 * Filter monitoring events.
+		 */
+		filterMonitoringEvents: function() {
+			const eventType = $('#monitoring-event-type').val();
+			const severity = $('#monitoring-severity').val();
+			const timeframe = $('#monitoring-timeframe').val();
+			const search = $('#monitoring-search').val().toLowerCase();
+			
+			console.log('Filtering monitoring events:', { eventType, severity, timeframe, search });
+			
+			// Filter event cards (if they have data attributes)
+			$('.wp-mcp-ai-monitoring-dashboard .wp-mcp-ai-card').each(function() {
+				const $card = $(this);
+				const cardType = $card.data('event-type');
+				const cardSeverity = $card.data('severity');
+				const cardText = $card.text().toLowerCase();
+				
+				let show = true;
+				
+				// Type filter
+				if (eventType !== 'all' && cardType && cardType !== eventType) {
+					show = false;
+				}
+				
+				// Severity filter
+				if (severity !== 'all' && cardSeverity && cardSeverity !== severity) {
+					show = false;
+				}
+				
+				// Search filter
+				if (search && cardText.indexOf(search) === -1) {
+					show = false;
+				}
+				
+				$card.toggle(show);
+			});
+			
+			// Show message if filters applied
+			if (eventType !== 'all' || severity !== 'all' || timeframe !== '24h' || search) {
+				console.log('Monitoring filters applied');
+			}
+		},
+
+		/**
+		 * Initialize framework filtering and comparison.
+		 */
+		initFrameworkFiltering: function() {
+			const self = this;
+			
+			// Status and category filters
+			$('#framework-status-filter, #framework-category').on('change', function() {
+				self.filterFrameworks();
+			});
+			
+			// Clear filters
+			$('.wp-mcp-ai-clear-framework-filters').on('click', function(e) {
+				e.preventDefault();
+				$('#framework-status-filter').val('all');
+				$('#framework-category').val('all');
+				self.filterFrameworks();
+			});
+			
+			// Compare button
+			$('.wp-mcp-ai-compare-frameworks').on('click', function(e) {
+				e.preventDefault();
+				$('.wp-mcp-ai-framework-selection').slideToggle();
+			});
+			
+			// Select all frameworks
+			$('#wp-mcp-ai-select-all-frameworks').on('change', function() {
+				const checked = $(this).prop('checked');
+				$('.wp-mcp-ai-framework-select:visible').prop('checked', checked);
+				self.updateFrameworkSelection();
+			});
+			
+			// Individual framework selection
+			$(document).on('change', '.wp-mcp-ai-framework-select', function() {
+				self.updateFrameworkSelection();
+			});
+			
+			// Generate comparison report
+			$('.wp-mcp-ai-generate-comparison').on('click', function(e) {
+				e.preventDefault();
+				self.generateFrameworkComparison();
+			});
+		},
+
+		/**
+		 * Filter framework cards.
+		 */
+		filterFrameworks: function() {
+			const status = $('#framework-status-filter').val();
+			const category = $('#framework-category').val();
+			
+			$('.wp-mcp-ai-framework-card').each(function() {
+				const $card = $(this);
+				const cardStatus = $card.data('status');
+				const cardCategory = $card.data('category');
+				
+				let show = true;
+				
+				// Status filter
+				if (status !== 'all' && cardStatus !== status) {
+					show = false;
+				}
+				
+				// Category filter
+				if (category !== 'all' && cardCategory !== category) {
+					show = false;
+				}
+				
+				$card.toggle(show);
+			});
+			
+			// Update visible count
+			const visible = $('.wp-mcp-ai-framework-card:visible').length;
+			const total = $('.wp-mcp-ai-framework-card').length;
+			console.log('Showing', visible, 'of', total, 'frameworks');
+		},
+
+		/**
+		 * Update framework selection state.
+		 */
+		updateFrameworkSelection: function() {
+			const selected = $('.wp-mcp-ai-framework-select:checked').length;
+			
+			if (selected > 0) {
+				$('.wp-mcp-ai-selected-frameworks-count').text(selected + ' framework(s) selected');
+			} else {
+				$('.wp-mcp-ai-selected-frameworks-count').text('');
+			}
+		},
+
+		/**
+		 * Generate framework comparison report.
+		 */
+		generateFrameworkComparison: function() {
+			const selected = [];
+			
+			$('.wp-mcp-ai-framework-select:checked').each(function() {
+				const $card = $(this).closest('.wp-mcp-ai-framework-card');
+				selected.push({
+					id: $(this).val(),
+					name: $card.find('h3').text(),
+					status: $card.find('.wp-mcp-ai-framework-status').text(),
+					percentage: $card.find('.wp-mcp-ai-progress').text()
+				});
+			});
+			
+			if (selected.length === 0) {
+				alert('Please select at least one framework to compare.');
+				return;
+			}
+			
+			console.log('Generating comparison report for:', selected);
+			
+			// Show success message
+			this.showSuccessMessage('Comparison report for ' + selected.length + ' framework(s) will be generated. This feature is coming soon!');
+		},
+
+		/**
 		 * Initialize dashboard components.
 		 */
 		initializeComponents: function() {
@@ -428,6 +620,10 @@
 			this.initControlsFiltering();
 			// Initialize bulk actions
 			this.initBulkActions();
+			// Initialize monitoring filtering
+			this.initMonitoringFiltering();
+			// Initialize framework filtering
+			this.initFrameworkFiltering();
 		},
 
 		/**

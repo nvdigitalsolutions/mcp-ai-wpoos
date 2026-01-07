@@ -785,6 +785,137 @@
 	}
 }
 
+/* Monitoring Tab Enhancements */
+.wp-mcp-ai-monitoring-filters {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 20px 0;
+	padding: 15px;
+	background: #f7f7f7;
+	border-radius: 6px;
+	flex-wrap: wrap;
+}
+
+.wp-mcp-ai-monitoring-filters label {
+	font-weight: 600;
+	color: #333;
+	margin-right: 5px;
+}
+
+.wp-mcp-ai-monitoring-filters select,
+.wp-mcp-ai-monitoring-filters input[type="text"] {
+	padding: 6px 10px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	font-size: 14px;
+}
+
+.wp-mcp-ai-monitoring-filters input[type="text"] {
+	min-width: 200px;
+}
+
+.wp-mcp-ai-clear-monitoring-filters {
+	margin-left: auto;
+}
+
+.wp-mcp-ai-monitoring-header {
+	margin-bottom: 15px;
+}
+
+.wp-mcp-ai-monitoring-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: 20px;
+}
+
+/* Framework Tab Enhancements */
+.wp-mcp-ai-framework-filters {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 20px 0;
+	padding: 15px;
+	background: #f7f7f7;
+	border-radius: 6px;
+	flex-wrap: wrap;
+}
+
+.wp-mcp-ai-framework-filters label {
+	font-weight: 600;
+	color: #333;
+	margin-right: 5px;
+}
+
+.wp-mcp-ai-framework-filters select {
+	padding: 6px 10px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	font-size: 14px;
+}
+
+.wp-mcp-ai-clear-framework-filters {
+	margin-right: 10px;
+}
+
+.wp-mcp-ai-multi-framework-header {
+	margin-bottom: 15px;
+}
+
+.wp-mcp-ai-framework-card {
+	position: relative;
+}
+
+.wp-mcp-ai-framework-checkbox {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	z-index: 10;
+}
+
+.wp-mcp-ai-framework-checkbox input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	cursor: pointer;
+}
+
+.wp-mcp-ai-framework-selection {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.wp-mcp-ai-selected-frameworks-count {
+	color: #666;
+	font-size: 14px;
+}
+
+/* Responsive adjustments for new filters */
+@media (max-width: 768px) {
+	.wp-mcp-ai-monitoring-filters,
+	.wp-mcp-ai-framework-filters {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.wp-mcp-ai-monitoring-filters label,
+	.wp-mcp-ai-framework-filters label {
+		margin-bottom: 5px;
+	}
+
+	.wp-mcp-ai-monitoring-filters select,
+	.wp-mcp-ai-monitoring-filters input[type="text"],
+	.wp-mcp-ai-framework-filters select {
+		width: 100%;
+	}
+
+	.wp-mcp-ai-clear-monitoring-filters,
+	.wp-mcp-ai-clear-framework-filters {
+		margin-left: 0;
+		width: 100%;
+	}
+}
+
 /* Enhanced Tab Navigation */
 .wp-mcp-ai-pro-dashboard .nav-tab.wp-mcp-ai-recently-visited::after {
 	content: "";
