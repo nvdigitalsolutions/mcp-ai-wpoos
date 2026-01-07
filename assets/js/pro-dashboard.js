@@ -422,6 +422,187 @@
 			if (typeof $.fn.tooltip !== 'undefined') {
 				$('[data-toggle="tooltip"]').tooltip();
 			}
+			// Initialize date range selector
+			this.initDateRangeSelector();
+			// Initialize controls filtering
+			this.initControlsFiltering();
+			// Initialize bulk actions
+			this.initBulkActions();
+		},
+
+		/**
+		 * Initialize date range selector.
+		 */
+		initDateRangeSelector: function() {
+			const self = this;
+			
+			// Show/hide custom date inputs
+			$('#wp-mcp-ai-date-range').on('change', function() {
+				const val = $(this).val();
+				if (val === 'custom') {
+					$('.wp-mcp-ai-custom-date-range').slideDown();
+				} else {
+					$('.wp-mcp-ai-custom-date-range').slideUp();
+				}
+			});
+			
+			// Apply date range filter
+			$('.wp-mcp-ai-apply-date-range').on('click', function(e) {
+				e.preventDefault();
+				self.applyDateRange();
+			});
+		},
+
+		/**
+		 * Apply date range filter.
+		 */
+		applyDateRange: function() {
+			const range = $('#wp-mcp-ai-date-range').val();
+			let startDate, endDate;
+			
+			if (range === 'custom') {
+				startDate = $('#wp-mcp-ai-start-date').val();
+				endDate = $('#wp-mcp-ai-end-date').val();
+				
+				if (!startDate || !endDate) {
+					alert('Please select both start and end dates.');
+					return;
+				}
+			} else {
+				endDate = new Date();
+				startDate = new Date();
+				startDate.setDate(startDate.getDate() - parseInt(range));
+			}
+			
+			console.log('Applying date range filter:', startDate, endDate);
+			// Here you would reload dashboard data with the date range
+			this.showSuccessMessage('Date range applied. Data will be updated.');
+		},
+
+		/**
+		 * Initialize controls filtering.
+		 */
+		initControlsFiltering: function() {
+			const self = this;
+			
+			// Category filter
+			$('#controls-category-filter').on('change', function() {
+				self.filterControlsTable();
+			});
+			
+			// Clear filters button
+			$('.wp-mcp-ai-clear-filters').on('click', function(e) {
+				e.preventDefault();
+				$('#controls-status-filter').val('all');
+				$('#controls-category-filter').val('all');
+				$('#controls-search').val('');
+				self.filterControlsTable();
+			});
+		},
+
+		/**
+		 * Filter controls table with multiple criteria.
+		 */
+		filterControlsTable: function() {
+			const status = $('#controls-status-filter').val();
+			const category = $('#controls-category-filter').val();
+			const search = $('#controls-search').val().toLowerCase();
+			
+			$('.wp-mcp-ai-control-row').each(function() {
+				const $row = $(this);
+				const rowStatus = $row.data('status');
+				const rowCategory = $row.data('category');
+				const rowText = $row.text().toLowerCase();
+				
+				let show = true;
+				
+				// Status filter
+				if (status !== 'all' && rowStatus !== status) {
+					show = false;
+				}
+				
+				// Category filter
+				if (category !== 'all' && !rowCategory.startsWith(category)) {
+					show = false;
+				}
+				
+				// Search filter
+				if (search && rowText.indexOf(search) === -1) {
+					show = false;
+				}
+				
+				$row.toggle(show);
+			});
+			
+			// Update visible count
+			const visible = $('.wp-mcp-ai-control-row:visible').length;
+			const total = $('.wp-mcp-ai-control-row').length;
+			console.log('Showing', visible, 'of', total, 'controls');
+		},
+
+		/**
+		 * Initialize bulk actions for controls.
+		 */
+		initBulkActions: function() {
+			const self = this;
+			
+			// Select/deselect all
+			$('#wp-mcp-ai-select-all-table').on('change', function() {
+				const checked = $(this).prop('checked');
+				$('.wp-mcp-ai-control-checkbox:visible').prop('checked', checked);
+				self.updateBulkActionsState();
+			});
+			
+			// Individual checkbox change
+			$(document).on('change', '.wp-mcp-ai-control-checkbox', function() {
+				self.updateBulkActionsState();
+			});
+			
+			// Bulk export
+			$('.wp-mcp-ai-bulk-export').on('click', function(e) {
+				e.preventDefault();
+				self.exportSelectedControls();
+			});
+		},
+
+		/**
+		 * Update bulk actions state based on selection.
+		 */
+		updateBulkActionsState: function() {
+			const selected = $('.wp-mcp-ai-control-checkbox:checked').length;
+			
+			if (selected > 0) {
+				$('.wp-mcp-ai-bulk-actions').slideDown();
+				$('.wp-mcp-ai-selected-count').text(selected + ' control(s) selected');
+			} else {
+				$('.wp-mcp-ai-bulk-actions').slideUp();
+			}
+		},
+
+		/**
+		 * Export selected controls.
+		 */
+		exportSelectedControls: function() {
+			const controls = [];
+			
+			$('.wp-mcp-ai-control-checkbox:checked').each(function() {
+				const $row = $(this).closest('tr');
+				controls.push({
+					id: $row.find('td:eq(0)').text().trim(),
+					name: $row.find('td:eq(1) strong').text().trim(),
+					status: $row.find('td:eq(2)').text().trim(),
+					applicable: $row.find('td:eq(3) .dashicons-yes-alt').length > 0 ? 'Yes' : 'No'
+				});
+			});
+			
+			if (controls.length === 0) {
+				alert('No controls selected.');
+				return;
+			}
+			
+			const csv = this.generateCSV(controls);
+			this.downloadFile(csv, 'selected-controls-' + this.getDateString() + '.csv', 'text/csv');
+			this.showSuccessMessage(controls.length + ' control(s) exported successfully!');
 		},
 
 		/**

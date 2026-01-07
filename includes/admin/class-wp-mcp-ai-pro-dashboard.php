@@ -1118,6 +1118,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<?php $this->render_compliance_summary(); ?>
 				</div>
 			</div>
+
+			<!-- Date Range Selector for Historical View -->
+			<?php $this->render_date_range_selector(); ?>
 			</div>
 			<?php
 		}
@@ -1775,13 +1778,42 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<option value="not_applicable"><?php esc_html_e( 'Not Applicable', 'mcp-ai-wpoos' ); ?></option>
 				</select>
 
+				<label for="controls-category-filter"><?php esc_html_e( 'Category:', 'mcp-ai-wpoos' ); ?></label>
+				<select id="controls-category-filter">
+					<option value="all"><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos' ); ?></option>
+					<option value="a5"><?php esc_html_e( 'A.5 - Organizational', 'mcp-ai-wpoos' ); ?></option>
+					<option value="a6"><?php esc_html_e( 'A.6 - People', 'mcp-ai-wpoos' ); ?></option>
+					<option value="a7"><?php esc_html_e( 'A.7 - Physical', 'mcp-ai-wpoos' ); ?></option>
+					<option value="a8"><?php esc_html_e( 'A.8 - Technical', 'mcp-ai-wpoos' ); ?></option>
+				</select>
+
 				<label for="controls-search"><?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?></label>
 				<input type="text" id="controls-search" placeholder="<?php esc_attr_e( 'Search controls...', 'mcp-ai-wpoos' ); ?>" />
+				
+				<button class="button wp-mcp-ai-clear-filters" title="<?php esc_attr_e( 'Clear all filters', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-dismiss"></span>
+					<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
+				</button>
+			</div>
+
+			<div class="wp-mcp-ai-bulk-actions" style="margin: 15px 0; display: none;">
+				<label>
+					<input type="checkbox" id="wp-mcp-ai-select-all-controls" />
+					<?php esc_html_e( 'Select All', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<span class="wp-mcp-ai-selected-count" style="margin-left: 15px;"></span>
+				<button class="button wp-mcp-ai-bulk-export" style="margin-left: 15px;" title="<?php esc_attr_e( 'Export selected controls', 'mcp-ai-wpoos' ); ?>">
+					<span class="dashicons dashicons-download"></span>
+					<?php esc_html_e( 'Export Selected', 'mcp-ai-wpoos' ); ?>
+				</button>
 			</div>
 
 			<table class="wp-list-table widefat fixed striped wp-mcp-ai-controls-table">
 				<thead>
 					<tr>
+						<th style="width: 40px;" class="check-column">
+							<input type="checkbox" id="wp-mcp-ai-select-all-table" />
+						</th>
 						<th style="width: 120px;"><?php esc_html_e( 'Control ID', 'mcp-ai-wpoos' ); ?></th>
 						<th><?php esc_html_e( 'Control Name', 'mcp-ai-wpoos' ); ?></th>
 						<th style="width: 120px;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
@@ -1790,7 +1822,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</thead>
 				<tbody>
 					<?php foreach ( $controls as $control ) : ?>
-						<tr class="wp-mcp-ai-control-row" data-status="<?php echo esc_attr( $control['status_key'] ); ?>">
+						<tr class="wp-mcp-ai-control-row" data-status="<?php echo esc_attr( $control['status_key'] ); ?>" data-category="<?php echo esc_attr( strtolower( substr( $control['id'], 0, 4 ) ) ); ?>">
+							<th scope="row" class="check-column">
+								<input type="checkbox" class="wp-mcp-ai-control-checkbox" value="<?php echo esc_attr( $control['id'] ); ?>" />
+							</th>
 							<td><strong><?php echo esc_html( $control['id'] ); ?></strong></td>
 							<td>
 								<strong><?php echo esc_html( $control['name'] ); ?></strong>
@@ -2471,6 +2506,41 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			return 0;
+		}
+
+		/**
+		 * Render date range selector for historical metrics.
+		 *
+		 * @since 1.5.2
+		 */
+		private function render_date_range_selector() {
+			?>
+			<div class="wp-mcp-ai-date-range-selector">
+				<label for="wp-mcp-ai-date-range"><?php esc_html_e( 'Historical View:', 'mcp-ai-wpoos' ); ?></label>
+				<select id="wp-mcp-ai-date-range" class="wp-mcp-ai-date-range-select">
+					<option value="7"><?php esc_html_e( 'Last 7 Days', 'mcp-ai-wpoos' ); ?></option>
+					<option value="30" selected><?php esc_html_e( 'Last 30 Days', 'mcp-ai-wpoos' ); ?></option>
+					<option value="90"><?php esc_html_e( 'Last 90 Days', 'mcp-ai-wpoos' ); ?></option>
+					<option value="180"><?php esc_html_e( 'Last 6 Months', 'mcp-ai-wpoos' ); ?></option>
+					<option value="365"><?php esc_html_e( 'Last Year', 'mcp-ai-wpoos' ); ?></option>
+					<option value="custom"><?php esc_html_e( 'Custom Range', 'mcp-ai-wpoos' ); ?></option>
+				</select>
+				<div class="wp-mcp-ai-custom-date-range" style="display: none;">
+					<label for="wp-mcp-ai-start-date"><?php esc_html_e( 'From:', 'mcp-ai-wpoos' ); ?></label>
+					<input type="date" id="wp-mcp-ai-start-date" class="wp-mcp-ai-date-input" />
+					<label for="wp-mcp-ai-end-date"><?php esc_html_e( 'To:', 'mcp-ai-wpoos' ); ?></label>
+					<input type="date" id="wp-mcp-ai-end-date" class="wp-mcp-ai-date-input" />
+				</div>
+				<button class="button button-primary wp-mcp-ai-apply-date-range">
+					<span class="dashicons dashicons-search"></span>
+					<?php esc_html_e( 'Apply', 'mcp-ai-wpoos' ); ?>
+				</button>
+				<span class="wp-mcp-ai-tooltip">
+					<span class="dashicons dashicons-info"></span>
+					<span class="wp-mcp-ai-tooltip-text"><?php esc_html_e( 'View compliance metrics and security events over a specific time period.', 'mcp-ai-wpoos' ); ?></span>
+				</span>
+			</div>
+			<?php
 		}
 
 		/**
