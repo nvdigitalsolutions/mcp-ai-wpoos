@@ -381,57 +381,35 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * Standalone admin pages (Security Audits, Training, etc.) are now
 		 * managed by their respective classes but coordinated through Pro Dashboard.
 		 *
+		 * Now using tab-based navigation: Overview, ISO 27001, Reports, Monitoring,
+		 * Risk Management, and Multi-Framework are rendered as tabs on a single page.
+		 * Other pages remain as separate submenu items.
+		 *
 		 * @return array Array of submenu page configurations.
 		 */
 		private function get_submenu_pages() {
 			return array(
-				// Core Compliance Pages.
+				// Main Pro Dashboard page (with tab-based navigation).
 				array(
-					'page_title' => __( 'Compliance Overview', 'mcp-ai-wpoos' ),
+					'page_title' => __( 'NV oOS Pro Dashboard', 'mcp-ai-wpoos' ),
 					'menu_title' => __( 'Overview', 'mcp-ai-wpoos' ),
 					'capability' => 'manage_options',
 					'menu_slug'  => self::PAGE_SLUG,
-					'callback'   => 'render_overview',
+					'callback'   => 'render_dashboard_with_tabs',
 				),
-				array(
-					'page_title' => __( 'ISO 27001 Management', 'mcp-ai-wpoos' ),
-					'menu_title' => __( 'ISO 27001', 'mcp-ai-wpoos' ),
-					'capability' => 'manage_options',
-					'menu_slug'  => self::PAGE_SLUG . '-iso27001',
-					'callback'   => 'render_iso27001',
-				),
-				// Note: Security Audits submenu is registered by WP_MCP_AI_Security_Audit_Admin.
-				// Note: Asset Inventory submenu is registered by WP_MCP_AI_Asset_Inventory_Admin.
-				// Note: Supplier Security submenu is registered by WP_MCP_AI_Supplier_Security_Admin.
-				// Note: Security Training submenus are registered by WP_MCP_AI_Security_Training_Admin.
-				array(
-					'page_title' => __( 'Compliance Reports', 'mcp-ai-wpoos' ),
-					'menu_title' => __( 'Reports', 'mcp-ai-wpoos' ),
-					'capability' => 'manage_options',
-					'menu_slug'  => self::PAGE_SLUG . '-reports',
-					'callback'   => 'render_reports',
-				),
-				array(
-					'page_title' => __( 'Security Monitoring', 'mcp-ai-wpoos' ),
-					'menu_title' => __( 'Monitoring', 'mcp-ai-wpoos' ),
-					'capability' => 'manage_options',
-					'menu_slug'  => self::PAGE_SLUG . '-monitoring',
-					'callback'   => 'render_monitoring',
-				),
-				array(
-					'page_title' => __( 'Risk Management', 'mcp-ai-wpoos' ),
-					'menu_title' => __( 'Risk Management', 'mcp-ai-wpoos' ),
-					'capability' => 'manage_options',
-					'menu_slug'  => self::PAGE_SLUG . '-risk',
-					'callback'   => 'render_risk_management',
-				),
-				array(
-					'page_title' => __( 'Multi-Framework Compliance', 'mcp-ai-wpoos' ),
-					'menu_title' => __( 'Multi-Framework', 'mcp-ai-wpoos' ),
-					'capability' => 'manage_options',
-					'menu_slug'  => self::PAGE_SLUG . '-multi-framework',
-					'callback'   => 'render_multi_framework',
-				),
+				// Note: The following pages are now tabs within the main dashboard:
+				// - Overview (default tab)
+				// - ISO 27001
+				// - Reports
+				// - Monitoring
+				// - Risk Management
+				// - Multi-Framework
+				//
+				// Other pages are registered by their respective classes:
+				// - Security Audits: WP_MCP_AI_Security_Audit_Admin
+				// - Asset Inventory: WP_MCP_AI_Asset_Inventory_Admin
+				// - Supplier Security: WP_MCP_AI_Supplier_Security_Admin
+				// - Security Training: WP_MCP_AI_Security_Training_Admin
 			);
 		}
 
@@ -787,6 +765,378 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		}
 
 		/**
+		 * Render dashboard with tab-based navigation.
+		 *
+		 * This unified dashboard page contains all main Pro Dashboard sections
+		 * accessible via tabs: Overview, ISO 27001, Reports, Monitoring,
+		 * Risk Management, and Multi-Framework.
+		 *
+		 * @since 1.5.1
+		 */
+		public function render_dashboard_with_tabs() {
+			// Get current tab from URL parameter, default to 'overview'.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
+			
+			// Valid tabs.
+			$valid_tabs = array( 'overview', 'iso27001', 'reports', 'monitoring', 'risk', 'multi-framework' );
+			
+			// Validate tab.
+			if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
+				$current_tab = 'overview';
+			}
+			?>
+			<div class="wrap wp-mcp-ai-pro-dashboard">
+				<div class="wp-mcp-ai-dashboard-header">
+					<h1>
+						<?php esc_html_e( 'NV oOS Pro Dashboard', 'mcp-ai-wpoos' ); ?>
+						<span class="wp-mcp-ai-pro-badge"><?php esc_html_e( 'PRO', 'mcp-ai-wpoos' ); ?></span>
+					</h1>
+					<button type="button" class="button wp-mcp-ai-refresh-dashboard">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?>
+					</button>
+				</div>
+
+				<?php $this->render_pro_status_notice(); ?>
+
+				<!-- Tab Navigation -->
+				<h2 class="nav-tab-wrapper wp-mcp-ai-tab-nav">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=overview' ) ); ?>" 
+					   class="nav-tab <?php echo 'overview' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<?php esc_html_e( 'Overview', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ); ?>" 
+					   class="nav-tab <?php echo 'iso27001' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<?php esc_html_e( 'ISO 27001', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reports' ) ); ?>" 
+					   class="nav-tab <?php echo 'reports' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<?php esc_html_e( 'Reports', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=monitoring' ) ); ?>" 
+					   class="nav-tab <?php echo 'monitoring' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<?php esc_html_e( 'Monitoring', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=risk' ) ); ?>" 
+					   class="nav-tab <?php echo 'risk' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<?php esc_html_e( 'Risk Management', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework' ) ); ?>" 
+					   class="nav-tab <?php echo 'multi-framework' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<?php esc_html_e( 'Multi-Framework', 'mcp-ai-wpoos' ); ?>
+					</a>
+				</h2>
+
+				<!-- Tab Content -->
+				<div class="wp-mcp-ai-tab-content">
+					<?php
+					// Render the current tab content.
+					switch ( $current_tab ) {
+						case 'iso27001':
+							$this->render_iso27001_tab();
+							break;
+						case 'reports':
+							$this->render_reports_tab();
+							break;
+						case 'monitoring':
+							$this->render_monitoring_tab();
+							break;
+						case 'risk':
+							$this->render_risk_tab();
+							break;
+						case 'multi-framework':
+							$this->render_multi_framework_tab();
+							break;
+						case 'overview':
+						default:
+							$this->render_overview_tab();
+							break;
+					}
+					?>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render Overview tab content.
+		 *
+		 * @since 1.5.1
+		 */
+		private function render_overview_tab() {
+			// Get actual compliance data from Statement of Applicability.
+			$controls = $this->get_iso27001_controls();
+			
+			// Check if controls were loaded successfully.
+			if ( empty( $controls ) ) {
+				?>
+				<div class="notice notice-error">
+					<p>
+						<strong><?php esc_html_e( 'Error loading compliance data:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php esc_html_e( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</div>
+				<?php
+				// Set default values to prevent errors.
+				$stats = array(
+					'implemented'    => 0,
+					'partial'        => 0,
+					'planned'        => 0,
+					'not_applicable' => 0,
+					'total'          => 0,
+				);
+				$compliance_pct = 0;
+			} else {
+				$stats            = $this->calculate_controls_stats( $controls );
+				$total_applicable = $stats['total'] - $stats['not_applicable'];
+				$compliance_pct   = $total_applicable > 0 ? round( ( $stats['implemented'] / $total_applicable ) * 100 ) : 0;
+			}
+			?>
+
+			<!-- Key Metrics Summary -->
+			<div class="wp-mcp-ai-metrics-summary">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
+						<span class="dashicons dashicons-yes-alt"></span>
+					</div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-implemented"><?php echo esc_html( $stats['implemented'] ); ?></div>
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Controls Implemented', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
+						<span class="dashicons dashicons-clock"></span>
+					</div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-partial"><?php echo esc_html( $stats['partial'] ); ?></div>
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'In Progress', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
+						<span class="dashicons dashicons-warning"></span>
+					</div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-critical">0</div>
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Critical Risks', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
+						<span class="dashicons dashicons-chart-line"></span>
+					</div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-value wp-mcp-ai-stat-compliance"><?php echo esc_html( $compliance_pct ); ?>%</div>
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Overall Compliance', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Charts Row -->
+			<div class="wp-mcp-ai-charts-row">
+				<div class="wp-mcp-ai-chart-card">
+					<h3><?php esc_html_e( 'Control Implementation', 'mcp-ai-wpoos' ); ?></h3>
+					<div class="wp-mcp-ai-pro-chart-container">
+						<canvas id="wpMcpAiControlsChart"></canvas>
+					</div>
+					<div class="wp-mcp-ai-chart-fallback" style="display:none;">
+						<table class="wp-mcp-ai-chart-data-table">
+							<tr>
+								<td><span class="wp-mcp-ai-legend-dot" style="background: #4caf50;"></span> <?php esc_html_e( 'Implemented', 'mcp-ai-wpoos' ); ?></td>
+								<td><strong><?php echo esc_html( $stats['implemented'] ); ?></strong></td>
+							</tr>
+							<tr>
+								<td><span class="wp-mcp-ai-legend-dot" style="background: #ff9800;"></span> <?php esc_html_e( 'Partial', 'mcp-ai-wpoos' ); ?></td>
+								<td><strong><?php echo esc_html( $stats['partial'] ); ?></strong></td>
+							</tr>
+							<tr>
+								<td><span class="wp-mcp-ai-legend-dot" style="background: #2196f3;"></span> <?php esc_html_e( 'Planned', 'mcp-ai-wpoos' ); ?></td>
+								<td><strong><?php echo esc_html( $stats['planned'] ); ?></strong></td>
+							</tr>
+							<tr>
+								<td><span class="wp-mcp-ai-legend-dot" style="background: #9e9e9e;"></span> <?php esc_html_e( 'N/A', 'mcp-ai-wpoos' ); ?></td>
+								<td><strong><?php echo esc_html( $stats['not_applicable'] ); ?></strong></td>
+							</tr>
+						</table>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-chart-card">
+					<h3><?php esc_html_e( 'Security Metrics', 'mcp-ai-wpoos' ); ?></h3>
+					<div class="wp-mcp-ai-pro-chart-container">
+						<canvas id="wpMcpAiMetricsChart"></canvas>
+					</div>
+					<div class="wp-mcp-ai-chart-fallback" style="display:none;">
+						<p class="description"><?php esc_html_e( 'Tracking security incidents and vulnerability remediation over the last 6 months.', 'mcp-ai-wpoos' ); ?></p>
+						<div class="wp-mcp-ai-metrics-summary-mini">
+							<div><strong>2</strong> <?php esc_html_e( 'Recent Incidents', 'mcp-ai-wpoos' ); ?></div>
+							<div><strong>12</strong> <?php esc_html_e( 'Vulnerabilities Fixed', 'mcp-ai-wpoos' ); ?></div>
+						</div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-chart-card">
+					<h3><?php esc_html_e( 'Risk Distribution', 'mcp-ai-wpoos' ); ?></h3>
+					<div class="wp-mcp-ai-pro-chart-container">
+						<canvas id="wpMcpAiRiskChart"></canvas>
+					</div>
+					<div class="wp-mcp-ai-chart-fallback" style="display:none;">
+						<table class="wp-mcp-ai-chart-data-table">
+							<tr>
+								<td><span class="wp-mcp-ai-legend-dot" style="background: #f44336;"></span> <?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?></td>
+								<td><strong>0</strong></td>
+							</tr>
+							<tr>
+								<td><span class="wp-mcp-ai-legend-dot" style="background: #ff9800;"></span> <?php esc_html_e( 'High', 'mcp-ai-wpoos' ); ?></td>
+								<td><strong>3</strong></td>
+							</tr>
+							<tr>
+								<td><span class="wp-mcp-ai-legend-dot" style="background: #ffc107;"></span> <?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></td>
+								<td><strong>12</strong></td>
+							</tr>
+							<tr>
+								<td><span class="wp-mcp-ai-legend-dot" style="background: #8bc34a;"></span> <?php esc_html_e( 'Low', 'mcp-ai-wpoos' ); ?></td>
+								<td><strong>8</strong></td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Multi-Framework Compliance Status -->
+			<div class="wp-mcp-ai-frameworks-section">
+				<h2><?php esc_html_e( 'Multi-Framework Compliance', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_framework_badges(); ?>
+			</div>
+
+			<div class="wp-mcp-ai-dashboard-grid">
+				<!-- Compliance Status Card -->
+				<div class="wp-mcp-ai-card">
+					<h2><?php esc_html_e( 'ISO 27001 Compliance Status', 'mcp-ai-wpoos' ); ?></h2>
+					<?php $this->render_compliance_status(); ?>
+				</div>
+
+				<!-- Quick Actions Card -->
+				<div class="wp-mcp-ai-card">
+					<h2><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos' ); ?></h2>
+					<?php $this->render_quick_actions(); ?>
+				</div>
+				
+				<!-- System Health Card -->
+				<div class="wp-mcp-ai-card">
+					<h2><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></h2>
+					<?php $this->render_system_health(); ?>
+				</div>
+
+				<!-- Recent Activity Card -->
+				<div class="wp-mcp-ai-card">
+					<h2><?php esc_html_e( 'Recent Security Events', 'mcp-ai-wpoos' ); ?></h2>
+					<?php $this->render_recent_activity(); ?>
+				</div>
+
+				<!-- Documentation Card -->
+				<div class="wp-mcp-ai-card">
+					<h2><?php esc_html_e( 'ISMS Documentation', 'mcp-ai-wpoos' ); ?></h2>
+					<?php $this->render_documentation_links(); ?>
+				</div>
+				
+				<!-- Compliance Summary Card -->
+				<div class="wp-mcp-ai-card">
+					<h2><?php esc_html_e( 'Compliance Summary', 'mcp-ai-wpoos' ); ?></h2>
+					<?php $this->render_compliance_summary(); ?>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render ISO 27001 tab content.
+		 *
+		 * @since 1.5.1
+		 */
+		private function render_iso27001_tab() {
+			?>
+			<div class="wp-mcp-ai-controls-overview">
+				<?php $this->render_controls_summary(); ?>
+			</div>
+
+			<div class="wp-mcp-ai-controls-table">
+				<h2><?php esc_html_e( '93 ISO 27001:2022 Controls', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_controls_table(); ?>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render Reports tab content.
+		 *
+		 * @since 1.5.1
+		 */
+		private function render_reports_tab() {
+			?>
+			<p class="description">
+				<?php esc_html_e( 'Generate and export compliance reports for management review and audit purposes.', 'mcp-ai-wpoos' ); ?>
+				<?php esc_html_e( 'For detailed audit management, visit the "Security Audits" page.', 'mcp-ai-wpoos' ); ?>
+			</p>
+
+			<div class="wp-mcp-ai-report-generator">
+				<h2><?php esc_html_e( 'Generate Compliance Report', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_report_generator(); ?>
+			</div>
+
+			<div class="wp-mcp-ai-audit-history">
+				<h2><?php esc_html_e( 'Recent Reports', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_audit_history(); ?>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render Monitoring tab content.
+		 *
+		 * @since 1.5.1
+		 */
+		private function render_monitoring_tab() {
+			?>
+			<div class="wp-mcp-ai-monitoring-dashboard">
+				<?php $this->render_monitoring_dashboard(); ?>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render Risk Management tab content.
+		 *
+		 * @since 1.5.1
+		 */
+		private function render_risk_tab() {
+			?>
+			<div class="wp-mcp-ai-risk-matrix">
+				<h2><?php esc_html_e( '5×5 Risk Matrix', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_risk_matrix(); ?>
+			</div>
+
+			<div class="wp-mcp-ai-risk-register">
+				<h2><?php esc_html_e( 'Risk Register', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_risk_register(); ?>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render Multi-Framework tab content.
+		 *
+		 * @since 1.5.1
+		 */
+		private function render_multi_framework_tab() {
+			?>
+			<div class="wp-mcp-ai-frameworks">
+				<?php $this->render_framework_status(); ?>
+			</div>
+			<?php
+		}
+
+		/**
 		 * Render Compliance Reports page.
 		 *
 		 * This page provides access to compliance report generation and export.
@@ -977,15 +1327,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		private function render_quick_actions() {
 			?>
 			<div class="wp-mcp-ai-quick-actions">
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-reports' ) ); ?>" class="button button-primary">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reports' ) ); ?>" class="button button-primary">
 					<span class="dashicons dashicons-media-document"></span>
 					<?php esc_html_e( 'Generate Compliance Report', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-iso27001' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ); ?>" class="button">
 					<span class="dashicons dashicons-list-view"></span>
 					<?php esc_html_e( 'View All Controls', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-risk' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=risk' ) ); ?>" class="button">
 					<span class="dashicons dashicons-warning"></span>
 					<?php esc_html_e( 'Manage Risks', 'mcp-ai-wpoos' ); ?>
 				</a>
@@ -1037,7 +1387,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<?php endforeach; ?>
 					</ul>
 					<p class="description" style="margin-top: 15px; text-align: center;">
-						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-monitoring' ) ); ?>">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=monitoring' ) ); ?>">
 							<?php esc_html_e( 'View all security events →', 'mcp-ai-wpoos' ); ?>
 						</a>
 					</p>
@@ -1124,7 +1474,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<?php endforeach; ?>
 				</ul>
 				<p class="description" style="margin-top: 15px; text-align: center;">
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework' ) ); ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework' ) ); ?>">
 						<?php esc_html_e( 'View detailed compliance →', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</p>
@@ -1743,7 +2093,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'percentage' => $iso_compliance,
 					'completed'  => $iso_stats['implemented'],
 					'total'      => $iso_total_applicable,
-					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-iso27001',
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001',
 				),
 				array(
 					'name'       => 'SOC 2',
@@ -1753,7 +2103,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					// Formula: percentage / 100 * 54 = percentage * 0.54
 					'completed'  => round( $soc2_compliance * 0.54 ),
 					'total'      => 54,
-					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework',
 				),
 				array(
 					'name'       => 'HIPAA',
@@ -1763,7 +2113,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					// Formula: percentage / 100 * 43 = percentage * 0.43
 					'completed'  => round( $hipaa_compliance * 0.43 ),
 					'total'      => 43,
-					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework',
 				),
 				array(
 					'name'       => 'GDPR',
@@ -1771,7 +2121,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'percentage' => 95,
 					'completed'  => 6,
 					'total'      => 7,
-					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '-multi-framework',
+					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework',
 				),
 			);
 		}
