@@ -195,7 +195,7 @@ class WP_MCP_AI_Performance_Blocks {
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-performance-test-runner">
+		<div class="wp-block-mcp-ai-wpoos-performance-test-runner">
 			<h3><?php echo esc_html( $title ); ?></h3>
 			<div class="test-runner-controls">
 				<?php foreach ( $enabled_tests as $test_type ) : ?>
@@ -229,7 +229,7 @@ class WP_MCP_AI_Performance_Blocks {
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-performance-metrics">
+		<div class="wp-block-mcp-ai-wpoos-performance-metrics">
 			<h3><?php echo esc_html( $title ); ?></h3>
 			<div class="metrics-grid">
 				<div class="metric-card">
@@ -265,7 +265,7 @@ class WP_MCP_AI_Performance_Blocks {
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-system-health-status">
+		<div class="wp-block-mcp-ai-wpoos-system-health-status">
 			<h3><?php echo esc_html( $title ); ?></h3>
 			<div class="health-status-content">
 				<p><?php esc_html_e( 'System health monitoring active. Check Elementor widgets for detailed view.', 'mcp-ai-wpoos' ); ?></p>
@@ -290,7 +290,7 @@ class WP_MCP_AI_Performance_Blocks {
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-test-results-table">
+		<div class="wp-block-mcp-ai-wpoos-test-results-table">
 			<h3><?php echo esc_html( $title ); ?></h3>
 			<p><?php esc_html_e( 'Test results displayed here. Use Elementor widget for full table view.', 'mcp-ai-wpoos' ); ?></p>
 		</div>
@@ -313,7 +313,7 @@ class WP_MCP_AI_Performance_Blocks {
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-performance-recommendations">
+		<div class="wp-block-mcp-ai-wpoos-performance-recommendations">
 			<h3><?php echo esc_html( $title ); ?></h3>
 			<p><?php esc_html_e( 'AI-generated recommendations displayed here.', 'mcp-ai-wpoos' ); ?></p>
 		</div>
@@ -336,7 +336,7 @@ class WP_MCP_AI_Performance_Blocks {
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-performance-trends">
+		<div class="wp-block-mcp-ai-wpoos-performance-trends">
 			<h3><?php echo esc_html( $title ); ?></h3>
 			<p><?php esc_html_e( 'Performance trends chart. Use Elementor widget for full chart view.', 'mcp-ai-wpoos' ); ?></p>
 		</div>

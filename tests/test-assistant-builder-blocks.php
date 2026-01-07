@@ -107,7 +107,7 @@ class Test_Assistant_Builder_Blocks extends WP_UnitTestCase {
 
 			$this->assertNotNull( $decoded, "block.json for {$block_type} should contain valid JSON" );
 			$this->assertArrayHasKey( 'name', $decoded, "block.json for {$block_type} should have a name" );
-			$this->assertStringStartsWith( 'wp-mcp-ai/', $decoded['name'], 'Block name should start with wp-mcp-ai/' );
+			$this->assertStringStartsWith( 'mcp-ai-wpoos/', $decoded['name'], 'Block name should start with mcp-ai-wpoos/' );
 		}
 	}
 
