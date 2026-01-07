@@ -461,7 +461,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		public function enqueue_assets( $hook ) {
 			// Only load on Pro Dashboard pages.
-			if ( false !== strpos( $hook, self::PAGE_SLUG ) === false ) {
+			if ( false === strpos( $hook, self::PAGE_SLUG ) ) {
 				return;
 			}
 
@@ -1358,13 +1358,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$security_events = array_filter( $recent_events, function( $event ) {
 				$message = $event['message'] ?? '';
 				// Skip generic "Tool executed" and API request logs.
-				if ( false !== strpos( $message, 'Tool executed successfully' ) {
+				if ( false !== strpos( $message, 'Tool executed successfully' ) ) {
 					return false;
 				}
-				if ( false !== strpos( $message, 'Sending request to OpenAI' ) {
+				if ( false !== strpos( $message, 'Sending request to OpenAI' ) ) {
 					return false;
 				}
-				if ( false !== strpos( $message, 'OpenAI request completed' ) {
+				if ( false !== strpos( $message, 'OpenAI request completed' ) ) {
 					return false;
 				}
 				return true;
@@ -2209,13 +2209,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					$current_control['status'] = $status_text;
 
 					// Map status to key.
-					if ( false !== strpos( $status_text, 'Implemented' ) {
+					if ( false !== strpos( $status_text, 'Implemented' ) ) {
 						$current_control['status_key'] = 'implemented';
-					} elseif ( false !== strpos( $status_text, 'Partial' ) {
+					} elseif ( false !== strpos( $status_text, 'Partial' ) ) {
 						$current_control['status_key'] = 'partial';
-					} elseif ( false !== strpos( $status_text, 'Planned' ) {
+					} elseif ( false !== strpos( $status_text, 'Planned' ) ) {
 						$current_control['status_key'] = 'planned';
-					} elseif ( false !== strpos( $status_text, 'Not Applicable' ) {
+					} elseif ( false !== strpos( $status_text, 'Not Applicable' ) ) {
 						$current_control['status_key'] = 'not_applicable';
 						$current_control['applicable'] = false;
 					}
