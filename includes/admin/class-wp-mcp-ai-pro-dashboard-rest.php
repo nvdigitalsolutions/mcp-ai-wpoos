@@ -75,14 +75,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					'callback'            => array( $this, 'generate_report' ),
 					'permission_callback' => array( $this, 'check_pro_permission' ),
 					'args'                => array(
-						'type'   => array(
+						'type'  => array(
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
-							'validate_callback' => function( $param ) {
+							'validate_callback' => function ( $param ) {
 								return in_array( $param, array( 'pdf', 'docx', 'excel', 'html' ), true );
 							},
 						),
-						'scope'  => array(
+						'scope' => array(
 							'default'           => 'full',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
@@ -110,7 +110,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					'callback'            => array( $this, 'get_security_events' ),
 					'permission_callback' => array( $this, 'check_permission' ),
 					'args'                => array(
-						'limit'  => array(
+						'limit' => array(
 							'default'           => 10,
 							'sanitize_callback' => 'absint',
 						),
@@ -270,57 +270,52 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		/**
 		 * Get compliance status.
 		 *
-		 * @return WP_REST_Response Response object.
+		 * @return WP_REST_Response|WP_Error Response object or error.
 		 */
-/**
- * Get compliance status.
- *
- * @return WP_REST_Response|WP_Error Response object or error.
- */
-public function get_compliance_status() {
-	// Get actual controls data from Statement of Applicability.
-	$controls = $this->get_iso27001_controls();
-	
-	// Check if controls were loaded successfully.
-	if ( empty( $controls ) ) {
-		return new WP_Error(
-			'soa_not_found',
-			__( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ),
-			array( 'status' => 500 )
-		);
-	}
-	
-	$stats = $this->calculate_controls_stats( $controls );
+		public function get_compliance_status() {
+			// Get actual controls data from Statement of Applicability.
+			$controls = $this->get_iso27001_controls();
+			
+			// Check if controls were loaded successfully.
+			if ( empty( $controls ) ) {
+				return new WP_Error(
+					'soa_not_found',
+					__( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+			
+			$stats = $this->calculate_controls_stats( $controls );
 
-	// Calculate overall percentage.
-	$total_applicable = $stats['total'] - $stats['not_applicable'];
-	$percentage       = $total_applicable > 0 ? round( ( $stats['implemented'] / $total_applicable ) * 100 ) : 0;
+			// Calculate overall percentage.
+			$total_applicable = $stats['total'] - $stats['not_applicable'];
+			$percentage       = $total_applicable > 0 ? round( ( $stats['implemented'] / $total_applicable ) * 100 ) : 0;
 
-	$status = array(
-		'iso27001'     => array(
-			'status'      => get_option( 'wp_mcp_ai_iso27001_certified', false ) ? 'certified' : 'compliant',
-			'implemented' => $stats['implemented'],
-			'partial'     => $stats['partial'],
-			'planned'     => $stats['planned'],
-			'na'          => $stats['not_applicable'],
-			'total'       => $stats['total'],
-			'percentage'  => $percentage,
-			'cert_date'   => get_option( 'wp_mcp_ai_iso27001_cert_date', '' ),
-		),
-		'controls'     => array(
-			'implemented'    => $stats['implemented'],
-			'partial'        => $stats['partial'],
-			'planned'        => $stats['planned'],
-			'not_applicable' => $stats['not_applicable'],
-			'total'          => $stats['total'],
-		),
-		'metrics'      => $this->get_metrics_data(),
-		'risks'        => $this->get_risk_data(),
-		'last_updated' => current_time( 'mysql' ),
-	);
+			$status = array(
+				'iso27001'     => array(
+					'status'      => get_option( 'wp_mcp_ai_iso27001_certified', false ) ? 'certified' : 'compliant',
+					'implemented' => $stats['implemented'],
+					'partial'     => $stats['partial'],
+					'planned'     => $stats['planned'],
+					'na'          => $stats['not_applicable'],
+					'total'       => $stats['total'],
+					'percentage'  => $percentage,
+					'cert_date'   => get_option( 'wp_mcp_ai_iso27001_cert_date', '' ),
+				),
+				'controls'     => array(
+					'implemented'    => $stats['implemented'],
+					'partial'        => $stats['partial'],
+					'planned'        => $stats['planned'],
+					'not_applicable' => $stats['not_applicable'],
+					'total'          => $stats['total'],
+				),
+				'metrics'      => $this->get_metrics_data(),
+				'risks'        => $this->get_risk_data(),
+				'last_updated' => current_time( 'mysql' ),
+			);
 
-return rest_ensure_response( $status );
-}
+			return rest_ensure_response( $status );
+		}
 
 
 		/**
