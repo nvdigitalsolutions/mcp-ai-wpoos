@@ -486,14 +486,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			wp_enqueue_style(
 				'wp-mcp-ai-pro-dashboard',
-				plugins_url( 'assets/css/pro-dashboard.css', __DIR__ ),
+				WP_MCP_AI_URL . 'assets/css/pro-dashboard.css',
 				array(),
 				WP_MCP_AI_VERSION
 			);
 
 			wp_enqueue_script(
 				'wp-mcp-ai-pro-dashboard',
-				plugins_url( 'assets/js/pro-dashboard.js', __DIR__ ),
+				WP_MCP_AI_URL . 'assets/js/pro-dashboard.js',
 				array( 'jquery', 'chartjs' ),
 				WP_MCP_AI_VERSION,
 				true
