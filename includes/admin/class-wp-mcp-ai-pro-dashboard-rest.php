@@ -308,24 +308,16 @@ public function get_compliance_status() {
 			'cert_date'   => get_option( 'wp_mcp_ai_iso27001_cert_date', '' ),
 		),
 		'controls'     => array(
-'implemented'    => $stats['implemented'],
-'partial'        => $stats['partial'],
-'planned'        => $stats['planned'],
-'not_applicable' => $stats['not_applicable'],
-'total'          => $stats['total'],
-),
-'metrics'      => array(
-'incidents'             => array( 5, 3, 2, 4, 1, 2 ),
-'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
-),
-'risks'        => array(
-'critical' => 0,
-'high'     => 3,
-'medium'   => 12,
-'low'      => 8,
-),
-'last_updated' => current_time( 'mysql' ),
-);
+			'implemented'    => $stats['implemented'],
+			'partial'        => $stats['partial'],
+			'planned'        => $stats['planned'],
+			'not_applicable' => $stats['not_applicable'],
+			'total'          => $stats['total'],
+		),
+		'metrics'      => $this->get_metrics_data(),
+		'risks'        => $this->get_risk_data(),
+		'last_updated' => current_time( 'mysql' ),
+	);
 
 return rest_ensure_response( $status );
 }
@@ -902,6 +894,70 @@ return rest_ensure_response( $status );
 			}
 
 			return $stats;
+		}
+
+		/**
+		 * Get risk data for charts.
+		 *
+		 * Returns risk distribution by severity level.
+		 * Data is sourced from WordPress options or defaults to sample data.
+		 *
+		 * @return array Risk counts by severity.
+		 */
+		private function get_risk_data() {
+			// Try to get from stored option first.
+			$stored_risks = get_option( 'wp_mcp_ai_risk_data', false );
+			
+			if ( false !== $stored_risks && is_array( $stored_risks ) ) {
+				return wp_parse_args(
+					$stored_risks,
+					array(
+						'critical' => 0,
+						'high'     => 0,
+						'medium'   => 0,
+						'low'      => 0,
+					)
+				);
+			}
+
+			// Fallback to sample/default data.
+			// These values can be updated via Settings or Pro Dashboard features.
+			return array(
+				'critical' => 0,
+				'high'     => 3,
+				'medium'   => 12,
+				'low'      => 8,
+			);
+		}
+
+		/**
+		 * Get metrics data for charts.
+		 *
+		 * Returns security metrics trends over the last 6 months.
+		 * Data is sourced from WordPress options or defaults to sample data.
+		 *
+		 * @return array Metrics data with incidents and vulnerabilities fixed.
+		 */
+		private function get_metrics_data() {
+			// Try to get from stored option first.
+			$stored_metrics = get_option( 'wp_mcp_ai_metrics_data', false );
+			
+			if ( false !== $stored_metrics && is_array( $stored_metrics ) ) {
+				return wp_parse_args(
+					$stored_metrics,
+					array(
+						'incidents'             => array( 0, 0, 0, 0, 0, 0 ),
+						'vulnerabilities_fixed' => array( 0, 0, 0, 0, 0, 0 ),
+					)
+				);
+			}
+
+			// Fallback to sample/default data for the last 6 months.
+			// These values can be updated via Settings or Pro Dashboard features.
+			return array(
+				'incidents'             => array( 5, 3, 2, 4, 1, 2 ),
+				'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
+			);
 		}
 	}
 }
