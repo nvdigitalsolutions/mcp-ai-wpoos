@@ -3092,7 +3092,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				}
 
 				// Match control ID header (e.g., "#### §164.308(a)(1)(i) - Risk Analysis").
-				if ( preg_match( '/^####\s+(§[\d\.()a-z]+)\s+-\s+(.+)$/', $line, $matches ) ) {
+				if ( preg_match( '/^####\s+(§[\d\.()a-zA-Z]+)\s+-\s+(.+)$/', $line, $matches ) ) {
 					// Save previous control if exists.
 					if ( $current_control ) {
 						$controls[] = $current_control;
