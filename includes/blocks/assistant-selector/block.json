@@ -1,10 +1,10 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "wp-mcp-ai/assistant-selector",
+	"name": "mcp-ai-wpoos/assistant-selector",
 	"version": "1.0.0",
 	"title": "Assistant Selector",
-	"category": "wp-mcp-ai",
+	"category": "mcp-ai-wpoos",
 	"icon": "admin-users",
 	"description": "A dropdown to select from available AI assistants.",
 	"keywords": [ "ai", "assistant", "selector", "dropdown" ],
