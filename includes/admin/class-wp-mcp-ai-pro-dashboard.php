@@ -484,11 +484,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Get chart data - ensure it's properly structured.
 			$chart_data = $this->get_chart_data();
 
+			// Enqueue responsive utilities first (base styles) - matching base dashboard.
+			$responsive_css_path = WP_MCP_AI_PATH . 'assets/css/admin-responsive-utilities.css';
+			wp_enqueue_style(
+				'wp-mcp-ai-responsive-utilities',
+				WP_MCP_AI_URL . 'assets/css/admin-responsive-utilities.css',
+				array(),
+				file_exists( $responsive_css_path ) ? filemtime( $responsive_css_path ) : WP_MCP_AI_VERSION
+			);
+
+			// Enqueue pro dashboard styles with responsive utilities dependency.
+			$dashboard_css_path = WP_MCP_AI_PATH . 'assets/css/pro-dashboard.css';
 			wp_enqueue_style(
 				'wp-mcp-ai-pro-dashboard',
 				WP_MCP_AI_URL . 'assets/css/pro-dashboard.css',
-				array(),
-				WP_MCP_AI_VERSION
+				array( 'wp-mcp-ai-responsive-utilities' ),
+				file_exists( $dashboard_css_path ) ? filemtime( $dashboard_css_path ) : WP_MCP_AI_VERSION
 			);
 
 			wp_enqueue_script(
@@ -780,39 +791,43 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 			?>
 			<div class="wrap wp-mcp-ai-pro-dashboard">
-				<div class="wp-mcp-ai-dashboard-header">
-					<h1>
-						<?php esc_html_e( 'NV oOS Pro Dashboard', 'mcp-ai-wpoos' ); ?>
-						<span class="wp-mcp-ai-pro-badge"><?php esc_html_e( 'PRO', 'mcp-ai-wpoos' ); ?></span>
-					</h1>
-				</div>
+				<h1>
+					<?php esc_html_e( 'NV oOS Pro Dashboard', 'mcp-ai-wpoos' ); ?>
+					<span class="wp-mcp-ai-pro-badge"><?php esc_html_e( 'PRO', 'mcp-ai-wpoos' ); ?></span>
+				</h1>
 
 				<?php $this->render_pro_status_notice(); ?>
 
 				<!-- Tab Navigation -->
-				<h2 class="nav-tab-wrapper wp-mcp-ai-tab-nav">
+				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Pro Dashboard tabs', 'mcp-ai-wpoos' ); ?>">
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=overview' ) ); ?>" class="nav-tab <?php echo 'overview' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<span class="dashicons dashicons-dashboard"></span>
 						<?php esc_html_e( 'Overview', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ); ?>" class="nav-tab <?php echo 'iso27001' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<span class="dashicons dashicons-list-view"></span>
 						<?php esc_html_e( 'ISO 27001', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reports' ) ); ?>" class="nav-tab <?php echo 'reports' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<span class="dashicons dashicons-media-document"></span>
 						<?php esc_html_e( 'Reports', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=monitoring' ) ); ?>" class="nav-tab <?php echo 'monitoring' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<span class="dashicons dashicons-admin-site-alt3"></span>
 						<?php esc_html_e( 'Monitoring', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=risk' ) ); ?>" class="nav-tab <?php echo 'risk' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<span class="dashicons dashicons-warning"></span>
 						<?php esc_html_e( 'Risk Management', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework' ) ); ?>" class="nav-tab <?php echo 'multi-framework' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<span class="dashicons dashicons-networking"></span>
 						<?php esc_html_e( 'Multi-Framework', 'mcp-ai-wpoos' ); ?>
 					</a>
-				</h2>
+				</nav>
 
 				<!-- Tab Content -->
-				<div class="wp-mcp-ai-tab-content">
+				<div class="tab-content">
 					<?php
 					// Render the current tab content.
 					switch ( $current_tab ) {

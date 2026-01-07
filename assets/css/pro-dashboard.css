@@ -5,74 +5,81 @@
  * @since 1.5.0
  */
 
-/* Pro Dashboard Container */
+/* Pro Dashboard Container - Matched to base dashboard width */
 .wp-mcp-ai-pro-dashboard {
-	max-width: 1400px;
+	max-width: 1200px;
 	margin: 20px 0;
 }
 
-/* Dashboard Header */
-.wp-mcp-ai-dashboard-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
+/* Tab Navigation - Matched to base dashboard styling */
+.wp-mcp-ai-pro-dashboard .nav-tab-wrapper {
 	margin-bottom: 20px;
+	border-bottom: 1px solid #ccd0d4;
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: #8c8f94 #f0f0f1;
 }
 
-.wp-mcp-ai-dashboard-header h1 {
+.wp-mcp-ai-pro-dashboard .nav-tab-wrapper::-webkit-scrollbar {
+	height: 8px;
+}
+
+.wp-mcp-ai-pro-dashboard .nav-tab-wrapper::-webkit-scrollbar-track {
+	background: #f0f0f1;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-pro-dashboard .nav-tab-wrapper::-webkit-scrollbar-thumb {
+	background: #8c8f94;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-pro-dashboard .nav-tab-wrapper::-webkit-scrollbar-thumb:hover {
+	background: #646970;
+}
+
+.wp-mcp-ai-pro-dashboard .nav-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 14px;
 	margin: 0;
-}
-
-.wp-mcp-ai-refresh-dashboard {
-	display: flex;
-	align-items: center;
-	gap: 5px;
-}
-
-.wp-mcp-ai-refresh-dashboard.spinning .dashicons {
-	animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(360deg); }
-}
-
-/* Tab Navigation */
-.wp-mcp-ai-tab-nav {
-	margin-bottom: 20px;
-	border-bottom: 1px solid #c3c4c7;
-}
-
-.wp-mcp-ai-tab-nav .nav-tab {
-	border: 1px solid #c3c4c7;
+	border: 1px solid transparent;
 	border-bottom: none;
-	background: #fff;
-	color: #646970;
+	background: transparent;
 	font-size: 14px;
-	padding: 8px 16px;
-	margin-left: 0;
-	margin-right: 4px;
+	line-height: 1.4;
 	transition: all 0.2s ease;
 }
 
-.wp-mcp-ai-tab-nav .nav-tab:hover {
-	background: #f6f7f7;
-	color: #2271b1;
+.wp-mcp-ai-pro-dashboard .nav-tab .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
 }
 
-.wp-mcp-ai-tab-nav .nav-tab-active {
-	background: #f0f0f1;
-	border-bottom-color: #f0f0f1;
-	color: #1d2327;
+.wp-mcp-ai-pro-dashboard .nav-tab:hover {
+	background-color: #f6f7f7;
+	color: #0073aa;
+}
+
+.wp-mcp-ai-pro-dashboard .nav-tab-active {
+	background-color: #fff;
+	border-color: #ccd0d4;
+	color: #0073aa;
 	font-weight: 600;
+	margin-bottom: -1px;
 }
 
-.wp-mcp-ai-tab-content {
+/* Tab Content - Matched to base dashboard styling */
+.wp-mcp-ai-pro-dashboard .tab-content {
 	background: #fff;
-	border: 1px solid #c3c4c7;
-	border-top: none;
 	padding: 20px;
+	border: 1px solid #ccd0d4;
+	border-top: none;
 	margin-top: -1px;
 }
 
