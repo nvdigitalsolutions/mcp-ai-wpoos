@@ -34,6 +34,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		const PAGE_SLUG = 'nvoos-pro-dashboard';
 
 		/**
+		 * Sanitized parent menu title for hook generation.
+		 *
+		 * WordPress sanitizes "NV oOS Pro" to "nv-oos-pro" for admin page hooks.
+		 * This is used to construct submenu page hooks.
+		 */
+		const SANITIZED_MENU_TITLE = 'nv-oos-pro';
+
+		/**
 		 * Delegate page keys as constants for type safety.
 		 */
 		const DELEGATE_SECURITY_AUDITS    = 'security_audits';
@@ -461,16 +469,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * {parent-title-sanitized}_page_{menu-slug}
 		 *
 		 * For our diagnostic page under "NV oOS Pro" parent:
-		 * - Parent title "NV oOS Pro" → sanitized to "nv-oos-pro"
-		 * - Menu slug: "nvoos-pro-dashboard-diagnostic"
+		 * - Parent title "NV oOS Pro" → sanitized to "nv-oos-pro" (SANITIZED_MENU_TITLE)
+		 * - Menu slug from WP_MCP_AI_Pro_Dashboard_Diagnostic::PAGE_SLUG
 		 * - Result: "nv-oos-pro_page_nvoos-pro-dashboard-diagnostic"
 		 *
 		 * @return string The admin page hook for the diagnostic page.
 		 */
 		private function get_diagnostic_page_hook() {
-			// WordPress sanitizes "NV oOS Pro" to "nv-oos-pro" for the hook prefix.
-			// This is derived from the menu title, not the slug.
-			return 'nv-oos-pro_page_nvoos-pro-dashboard-diagnostic';
+			// Construct the hook dynamically using constants for maintainability.
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
+				// Fallback if diagnostic class isn't loaded yet.
+				return self::SANITIZED_MENU_TITLE . '_page_nvoos-pro-dashboard-diagnostic';
+			}
+
+			return self::SANITIZED_MENU_TITLE . '_page_' . WP_MCP_AI_Pro_Dashboard_Diagnostic::PAGE_SLUG;
 		}
 
 		/**
