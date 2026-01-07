@@ -584,6 +584,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				),
 				'risks'    => $this->get_risk_data(),
 				'metrics'  => $this->get_metrics_data(),
+				'chatData' => $this->get_chat_data(),
 			);
 		}
 
@@ -1078,6 +1079,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			<div class="wp-mcp-ai-frameworks-section">
 				<h2><?php esc_html_e( 'Multi-Framework Compliance', 'mcp-ai-wpoos' ); ?></h2>
 				<?php $this->render_framework_badges(); ?>
+			</div>
+
+			<!-- Chat Statistics Section -->
+			<div class="wp-mcp-ai-chat-statistics-section">
+				<h2><?php esc_html_e( 'Chat & Conversation Analytics', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_chat_statistics(); ?>
 			</div>
 
 			<div class="wp-mcp-ai-dashboard-grid">
@@ -1968,6 +1975,301 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					</div>
 				<?php endforeach; ?>
 			</div>
+			<?php
+		}
+
+		/**
+		 * Render chat statistics section.
+		 *
+		 * Displays conversation analytics including total conversations,
+		 * active users, recent activity trends, and usage analytics.
+		 *
+		 * @since 1.5.3
+		 */
+		private function render_chat_statistics() {
+			$chat_data = $this->get_chat_data();
+			?>
+			<!-- Main Stats Grid -->
+			<div class="wp-mcp-ai-chat-stats-grid">
+				<div class="wp-mcp-ai-chat-stat-card">
+					<div class="wp-mcp-ai-stat-icon">
+						<span class="dashicons dashicons-format-chat"></span>
+					</div>
+					<div class="wp-mcp-ai-stat-content">
+						<div class="wp-mcp-ai-stat-value wp-mcp-ai-chat-total"><?php echo esc_html( number_format_i18n( $chat_data['total_conversations'] ) ); ?></div>
+						<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Total Conversations', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-chat-stat-card">
+					<div class="wp-mcp-ai-stat-icon">
+						<span class="dashicons dashicons-groups"></span>
+					</div>
+					<div class="wp-mcp-ai-stat-content">
+						<div class="wp-mcp-ai-stat-value wp-mcp-ai-chat-users"><?php echo esc_html( number_format_i18n( $chat_data['active_users'] ) ); ?></div>
+						<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Active Users', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-chat-stat-card">
+					<div class="wp-mcp-ai-stat-icon">
+						<span class="dashicons dashicons-calendar-alt"></span>
+					</div>
+					<div class="wp-mcp-ai-stat-content">
+						<div class="wp-mcp-ai-stat-value wp-mcp-ai-chat-today"><?php echo esc_html( number_format_i18n( $chat_data['today_conversations'] ) ); ?></div>
+						<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Today', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-chat-stat-card">
+					<div class="wp-mcp-ai-stat-icon">
+						<span class="dashicons dashicons-chart-area"></span>
+					</div>
+					<div class="wp-mcp-ai-stat-content">
+						<div class="wp-mcp-ai-stat-value wp-mcp-ai-chat-week"><?php echo esc_html( number_format_i18n( $chat_data['this_week_conversations'] ) ); ?></div>
+						<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'This Week', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Usage Statistics (Last 30 Days) -->
+			<?php if ( $chat_data['total_tokens_used'] > 0 ) : ?>
+			<div class="wp-mcp-ai-usage-stats-row">
+				<div class="wp-mcp-ai-usage-stat-card">
+					<div class="wp-mcp-ai-stat-icon" style="background: #50575e;">
+						<span class="dashicons dashicons-chart-line"></span>
+					</div>
+					<div class="wp-mcp-ai-stat-content">
+						<div class="wp-mcp-ai-stat-value"><?php echo esc_html( number_format_i18n( $chat_data['total_tokens_used'] ) ); ?></div>
+						<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Tokens Used (30d)', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-usage-stat-card">
+					<div class="wp-mcp-ai-stat-icon" style="background: #00a32a;">
+						<span class="dashicons dashicons-money-alt"></span>
+					</div>
+					<div class="wp-mcp-ai-stat-content">
+						<div class="wp-mcp-ai-stat-value">$<?php echo esc_html( number_format( $chat_data['total_cost'], 2 ) ); ?></div>
+						<div class="wp-mcp-ai-stat-label"><?php esc_html_e( 'Total Cost (30d)', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Detailed Analytics -->
+			<div class="wp-mcp-ai-analytics-grid">
+				<!-- Top Tools -->
+				<?php if ( ! empty( $chat_data['top_tools'] ) ) : ?>
+				<div class="wp-mcp-ai-analytics-card">
+					<h3><?php esc_html_e( 'Top Tools (30d)', 'mcp-ai-wpoos' ); ?></h3>
+					<table class="wp-mcp-ai-analytics-table">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Tool', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Tokens', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Cost', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $chat_data['top_tools'] as $tool ) : ?>
+							<tr>
+								<td><strong><?php echo esc_html( $tool['tool'] ? $tool['tool'] : __( '(General)', 'mcp-ai-wpoos' ) ); ?></strong></td>
+								<td><?php echo esc_html( number_format_i18n( $tool['total_tokens'] ) ); ?></td>
+								<td>$<?php echo esc_html( number_format( $tool['total_cost'], 2 ) ); ?></td>
+							</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+				<?php endif; ?>
+
+				<!-- Top Providers -->
+				<?php if ( ! empty( $chat_data['top_providers'] ) ) : ?>
+				<div class="wp-mcp-ai-analytics-card">
+					<h3><?php esc_html_e( 'Providers (30d)', 'mcp-ai-wpoos' ); ?></h3>
+					<table class="wp-mcp-ai-analytics-table">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Tokens', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Cost', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $chat_data['top_providers'] as $provider ) : ?>
+							<tr>
+								<td><strong><?php echo esc_html( ucfirst( $provider['provider'] ) ); ?></strong></td>
+								<td><?php echo esc_html( number_format_i18n( $provider['total_tokens'] ) ); ?></td>
+								<td>$<?php echo esc_html( number_format( $provider['total_cost'], 2 ) ); ?></td>
+							</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+				<?php endif; ?>
+
+				<!-- Top Models -->
+				<?php if ( ! empty( $chat_data['top_models'] ) ) : ?>
+				<div class="wp-mcp-ai-analytics-card">
+					<h3><?php esc_html_e( 'Top Models (30d)', 'mcp-ai-wpoos' ); ?></h3>
+					<table class="wp-mcp-ai-analytics-table">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Tokens', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Cost', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $chat_data['top_models'] as $model ) : ?>
+							<tr>
+								<td>
+									<strong><?php echo esc_html( $model['model'] ); ?></strong>
+									<br><small style="color: #646970;"><?php echo esc_html( ucfirst( $model['provider'] ) ); ?></small>
+								</td>
+								<td><?php echo esc_html( number_format_i18n( $model['total_tokens'] ) ); ?></td>
+								<td>$<?php echo esc_html( number_format( $model['total_cost'], 2 ) ); ?></td>
+							</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+				<?php endif; ?>
+			</div>
+			<?php endif; ?>
+
+			<?php
+			if ( 0 === $chat_data['total_conversations'] ) :
+				?>
+				<p class="wp-mcp-ai-chat-empty-state">
+					<span class="dashicons dashicons-info"></span>
+					<?php esc_html_e( 'No chat conversations recorded yet. Chat statistics will appear here once users start interacting with AI assistants.', 'mcp-ai-wpoos' ); ?>
+				</p>
+				<?php
+			endif;
+			?>
+			<style>
+				.wp-mcp-ai-chat-statistics-section {
+					background: #fff;
+					border: 1px solid #dcdcde;
+					border-radius: 4px;
+					padding: 20px;
+					margin: 20px 0;
+				}
+				.wp-mcp-ai-chat-statistics-section h2 {
+					margin-top: 0;
+					font-size: 1.3em;
+					color: #1d2327;
+				}
+				.wp-mcp-ai-chat-stats-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+					gap: 15px;
+					margin-bottom: 15px;
+				}
+				.wp-mcp-ai-usage-stats-row {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					gap: 15px;
+					margin: 15px 0;
+				}
+				.wp-mcp-ai-chat-stat-card,
+				.wp-mcp-ai-usage-stat-card {
+					display: flex;
+					align-items: center;
+					gap: 15px;
+					padding: 15px;
+					background: #f6f7f7;
+					border-radius: 4px;
+					border: 1px solid #e0e0e0;
+				}
+				.wp-mcp-ai-stat-icon {
+					width: 48px;
+					height: 48px;
+					background: #2271b1;
+					border-radius: 50%;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					color: #fff;
+					font-size: 24px;
+					flex-shrink: 0;
+				}
+				.wp-mcp-ai-stat-content {
+					flex: 1;
+				}
+				.wp-mcp-ai-stat-value {
+					font-size: 2em;
+					font-weight: bold;
+					color: #1d2327;
+					line-height: 1;
+				}
+				.wp-mcp-ai-stat-label {
+					font-size: 0.9em;
+					color: #646970;
+					margin-top: 5px;
+				}
+				.wp-mcp-ai-analytics-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+					gap: 15px;
+					margin-top: 20px;
+				}
+				.wp-mcp-ai-analytics-card {
+					background: #fff;
+					border: 1px solid #dcdcde;
+					border-radius: 4px;
+					padding: 15px;
+				}
+				.wp-mcp-ai-analytics-card h3 {
+					margin-top: 0;
+					margin-bottom: 15px;
+					font-size: 1.1em;
+					color: #1d2327;
+					border-bottom: 1px solid #dcdcde;
+					padding-bottom: 10px;
+				}
+				.wp-mcp-ai-analytics-table {
+					width: 100%;
+					border-collapse: collapse;
+				}
+				.wp-mcp-ai-analytics-table th {
+					text-align: left;
+					padding: 8px;
+					background: #f6f7f7;
+					font-weight: 600;
+					font-size: 0.9em;
+					color: #1d2327;
+					border-bottom: 2px solid #dcdcde;
+				}
+				.wp-mcp-ai-analytics-table td {
+					padding: 8px;
+					border-bottom: 1px solid #f0f0f1;
+					font-size: 0.9em;
+				}
+				.wp-mcp-ai-analytics-table tbody tr:last-child td {
+					border-bottom: none;
+				}
+				.wp-mcp-ai-analytics-table tbody tr:hover {
+					background: #f6f7f7;
+				}
+				.wp-mcp-ai-chat-empty-state {
+					padding: 20px;
+					background: #f0f6fc;
+					border: 1px solid #d0e4f5;
+					border-radius: 4px;
+					color: #3c434a;
+					display: flex;
+					align-items: center;
+					gap: 10px;
+				}
+				.wp-mcp-ai-chat-empty-state .dashicons {
+					color: #2271b1;
+				}
+				@media screen and (max-width: 782px) {
+					.wp-mcp-ai-chat-stats-grid,
+					.wp-mcp-ai-usage-stats-row,
+					.wp-mcp-ai-analytics-grid {
+						grid-template-columns: 1fr;
+					}
+				}
+			</style>
 			<?php
 		}
 
@@ -3330,6 +3632,129 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				'incidents'             => array( 5, 3, 2, 4, 1, 2 ),
 				'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
 			);
+		}
+
+		/**
+		 * Get chat data for dashboard.
+		 *
+		 * Returns chat/conversation statistics including total conversations,
+		 * active users, recent activity, and usage analytics (tools, providers, models).
+		 *
+		 * @return array Chat data statistics.
+		 */
+		private function get_chat_data() {
+			global $wpdb;
+
+			$chat_data = array(
+				'total_conversations'      => 0,
+				'active_users'             => 0,
+				'today_conversations'      => 0,
+				'this_week_conversations'  => 0,
+				'top_tools'                => array(),
+				'top_providers'            => array(),
+				'top_models'               => array(),
+				'total_tokens_used'        => 0,
+				'total_cost'               => 0,
+			);
+
+			// Try to get data from transcript repository if available.
+			if ( class_exists( 'WP_MCP_AI_Transcript_Repository' ) ) {
+				$repository = new WP_MCP_AI_Transcript_Repository();
+
+				if ( $repository->table_exists() ) {
+					$table = esc_sql( $repository->get_table_name() );
+
+					// Get total conversations (unique session keys).
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$total = $wpdb->get_var( "SELECT COUNT(DISTINCT session_key) FROM {$table}" );
+					$chat_data['total_conversations'] = absint( $total );
+
+					// Get active users (unique user IDs).
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$active_users = $wpdb->get_var( "SELECT COUNT(DISTINCT user_id) FROM {$table}" );
+					$chat_data['active_users'] = absint( $active_users );
+
+					// Get today's conversations.
+					$today_start = gmdate( 'Y-m-d 00:00:00' );
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$today_count = $wpdb->get_var(
+						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+							"SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE cct_created >= %s",
+							$today_start
+						)
+					);
+					$chat_data['today_conversations'] = absint( $today_count );
+
+					// Get this week's conversations.
+					$week_start = gmdate( 'Y-m-d 00:00:00', strtotime( '-7 days' ) );
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$week_count = $wpdb->get_var(
+						$wpdb->prepare(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+							"SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE cct_created >= %s",
+							$week_start
+						)
+					);
+					$chat_data['this_week_conversations'] = absint( $week_count );
+				}
+			}
+
+			// Get tool, provider, and model usage statistics from token tracking.
+			if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+				// Get data for the last 30 days.
+				$end_date   = gmdate( 'Y-m-d H:i:s' );
+				$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
+
+				// Get top tools by token usage.
+				$tools_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_tool( $start_date, $end_date );
+				if ( is_array( $tools_data ) && ! empty( $tools_data ) ) {
+					// Sort by total tokens descending.
+					usort( $tools_data, function( $a, $b ) {
+						return $b['total_tokens'] - $a['total_tokens'];
+					});
+					// Take top 5.
+					$chat_data['top_tools'] = array_slice( $tools_data, 0, 5 );
+				}
+
+				// Get top providers by usage.
+				$providers_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_provider( $start_date, $end_date );
+				if ( is_array( $providers_data ) && ! empty( $providers_data ) ) {
+					// Sort by total tokens descending.
+					usort( $providers_data, function( $a, $b ) {
+						return $b['total_tokens'] - $a['total_tokens'];
+					});
+					$chat_data['top_providers'] = $providers_data;
+					
+					// Calculate total tokens and cost.
+					foreach ( $providers_data as $provider ) {
+						$chat_data['total_tokens_used'] += isset( $provider['total_tokens'] ) ? (int) $provider['total_tokens'] : 0;
+						$chat_data['total_cost'] += isset( $provider['total_cost'] ) ? (float) $provider['total_cost'] : 0;
+					}
+				}
+
+				// Get top models by usage.
+				$models_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_model( $start_date, $end_date );
+				if ( is_array( $models_data ) && ! empty( $models_data ) ) {
+					// Sort by total tokens descending.
+					usort( $models_data, function( $a, $b ) {
+						return $b['total_tokens'] - $a['total_tokens'];
+					});
+					// Take top 5.
+					$chat_data['top_models'] = array_slice( $models_data, 0, 5 );
+				}
+			}
+
+			/**
+			 * Filter chat data for the Pro Dashboard.
+			 *
+			 * Allows plugins/themes to modify or enhance chat statistics.
+			 *
+			 * @since 1.5.3
+			 *
+			 * @param array $chat_data Chat statistics data.
+			 */
+			return apply_filters( 'wp_mcp_ai_pro_dashboard_chat_data', $chat_data );
 		}
 	}
 }
