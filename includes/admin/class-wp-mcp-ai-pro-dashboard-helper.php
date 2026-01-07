@@ -22,10 +22,13 @@ class WP_MCP_AI_Pro_Dashboard_Helper {
 	/**
 	 * Initialize the helper.
 	 *
-	 * Registers hooks for automatic asset enqueuing on Pro Dashboard pages.
+	 * NOTE: Auto-enqueuing is disabled to prevent conflicts with Pro Dashboard's
+	 * own enqueue_assets() method. The helper provides utility methods for other
+	 * contexts but should not automatically enqueue on Pro Dashboard pages.
 	 */
 	public static function init() {
-		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'maybe_enqueue_pro_dashboard_assets' ) );
+		// Auto-enqueuing disabled - Pro Dashboard class handles its own asset loading.
+		// add_action( 'admin_enqueue_scripts', array( __CLASS__, 'maybe_enqueue_pro_dashboard_assets' ) );
 	}
 
 	/**
