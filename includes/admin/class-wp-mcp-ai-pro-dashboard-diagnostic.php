@@ -24,95 +24,95 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 		 */
 		public static function run_diagnostics() {
 			$results = array(
-				'timestamp'     => current_time( 'mysql' ),
-				'tests'         => array(),
+				'timestamp'      => current_time( 'mysql' ),
+				'tests'          => array(),
 				'overall_status' => 'unknown',
 			);
 
 			// Test 1: Check if Pro Dashboard class exists.
 			$results['tests']['pro_dashboard_class'] = array(
-				'name'   => 'Pro Dashboard Class',
-				'status' => class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ? 'pass' : 'fail',
+				'name'    => 'Pro Dashboard Class',
+				'status'  => class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ? 'pass' : 'fail',
 				'message' => class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ? 'Class exists' : 'Class not found',
 			);
 
 			// Test 2: Check if Compliance Data class exists.
 			$results['tests']['compliance_data_class'] = array(
-				'name'   => 'Compliance Data Class',
-				'status' => class_exists( 'WP_MCP_AI_Compliance_Data' ) ? 'pass' : 'fail',
+				'name'    => 'Compliance Data Class',
+				'status'  => class_exists( 'WP_MCP_AI_Compliance_Data' ) ? 'pass' : 'fail',
 				'message' => class_exists( 'WP_MCP_AI_Compliance_Data' ) ? 'Class exists' : 'Class not found',
 			);
 
 			// Test 3: Check if REST API class exists.
 			$results['tests']['rest_api_class'] = array(
-				'name'   => 'REST API Class',
-				'status' => class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ? 'pass' : 'fail',
+				'name'    => 'REST API Class',
+				'status'  => class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ? 'pass' : 'fail',
 				'message' => class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ? 'Class exists' : 'Class not found',
 			);
 
 			// Test 4: Check if Chart.js file exists.
-			$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
+			$chart_js_path   = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
 			$chart_js_exists = file_exists( $chart_js_path );
 			$results['tests']['chartjs_file'] = array(
-				'name'   => 'Chart.js File',
-				'status' => $chart_js_exists ? 'pass' : 'fail',
+				'name'    => 'Chart.js File',
+				'status'  => $chart_js_exists ? 'pass' : 'fail',
 				'message' => $chart_js_exists ? 'File exists (' . size_format( filesize( $chart_js_path ) ) . ')' : 'File not found',
-				'path'   => $chart_js_path,
+				'path'    => $chart_js_path,
 			);
 
 			// Test 5: Check if pro-dashboard.js file exists.
-			$pro_dashboard_js_path = WP_MCP_AI_PATH . 'assets/js/pro-dashboard.js';
+			$pro_dashboard_js_path   = WP_MCP_AI_PATH . 'assets/js/pro-dashboard.js';
 			$pro_dashboard_js_exists = file_exists( $pro_dashboard_js_path );
 			$results['tests']['pro_dashboard_js_file'] = array(
-				'name'   => 'Pro Dashboard JS File',
-				'status' => $pro_dashboard_js_exists ? 'pass' : 'fail',
+				'name'    => 'Pro Dashboard JS File',
+				'status'  => $pro_dashboard_js_exists ? 'pass' : 'fail',
 				'message' => $pro_dashboard_js_exists ? 'File exists (' . size_format( filesize( $pro_dashboard_js_path ) ) . ')' : 'File not found',
-				'path'   => $pro_dashboard_js_path,
+				'path'    => $pro_dashboard_js_path,
 			);
 
 			// Test 6: Check if ISO 27001 controls can be loaded.
 			if ( class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
-				$controls = WP_MCP_AI_Compliance_Data::get_iso27001_controls();
+				$controls        = WP_MCP_AI_Compliance_Data::get_iso27001_controls();
 				$controls_loaded = is_array( $controls ) && count( $controls ) > 0;
 				$results['tests']['iso27001_controls'] = array(
-					'name'   => 'ISO 27001 Controls Data',
-					'status' => $controls_loaded ? 'pass' : 'fail',
+					'name'    => 'ISO 27001 Controls Data',
+					'status'  => $controls_loaded ? 'pass' : 'fail',
 					'message' => $controls_loaded ? count( $controls ) . ' controls loaded' : 'No controls loaded',
-					'count'  => $controls_loaded ? count( $controls ) : 0,
+					'count'   => $controls_loaded ? count( $controls ) : 0,
 				);
 			} else {
 				$results['tests']['iso27001_controls'] = array(
-					'name'   => 'ISO 27001 Controls Data',
-					'status' => 'fail',
+					'name'    => 'ISO 27001 Controls Data',
+					'status'  => 'fail',
 					'message' => 'Compliance data class not available',
 				);
 			}
 
 			// Test 7: Check if chart data can be generated.
 			if ( class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
-				$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+				$dashboard  = WP_MCP_AI_Pro_Dashboard::get_instance();
 				$reflection = new ReflectionClass( $dashboard );
-				
+
 				try {
 					$method = $reflection->getMethod( 'get_chart_data' );
 					$method->setAccessible( true );
 					$chart_data = $method->invoke( $dashboard );
-					
-					$chart_data_valid = is_array( $chart_data ) && 
-					                   isset( $chart_data['controls'] ) && 
-					                   isset( $chart_data['risks'] ) && 
-					                   isset( $chart_data['metrics'] );
-					
+
+					$chart_data_valid = is_array( $chart_data ) &&
+										isset( $chart_data['controls'] ) &&
+										isset( $chart_data['risks'] ) &&
+										isset( $chart_data['metrics'] );
+
 					$results['tests']['chart_data_generation'] = array(
-						'name'   => 'Chart Data Generation',
-						'status' => $chart_data_valid ? 'pass' : 'fail',
+						'name'    => 'Chart Data Generation',
+						'status'  => $chart_data_valid ? 'pass' : 'fail',
 						'message' => $chart_data_valid ? 'Chart data generated successfully' : 'Chart data invalid or empty',
-						'data'   => $chart_data_valid ? $chart_data : null,
+						'data'    => $chart_data_valid ? $chart_data : null,
 					);
 				} catch ( Exception $e ) {
 					$results['tests']['chart_data_generation'] = array(
-						'name'   => 'Chart Data Generation',
-						'status' => 'fail',
+						'name'    => 'Chart Data Generation',
+						'status'  => 'fail',
 						'message' => 'Error: ' . $e->getMessage(),
 					);
 				}
@@ -121,51 +121,54 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 			// Test 8: Check if scripts are registered.
 			global $wp_scripts;
 			if ( isset( $wp_scripts ) ) {
-				$chartjs_registered = isset( $wp_scripts->registered['chartjs'] );
+				$chartjs_registered       = isset( $wp_scripts->registered['chartjs'] );
 				$pro_dashboard_registered = isset( $wp_scripts->registered['wp-mcp-ai-pro-dashboard'] );
-				
+
 				$results['tests']['scripts_registered'] = array(
-					'name'   => 'Scripts Registered',
-					'status' => ( $chartjs_registered && $pro_dashboard_registered ) ? 'pass' : 'warning',
-					'message' => sprintf(
+					'name'          => 'Scripts Registered',
+					'status'        => ( $chartjs_registered && $pro_dashboard_registered ) ? 'pass' : 'warning',
+					'message'       => sprintf(
 						'Chart.js: %s, Pro Dashboard: %s',
 						$chartjs_registered ? 'registered' : 'not registered',
 						$pro_dashboard_registered ? 'registered' : 'not registered'
 					),
-					'chartjs' => $chartjs_registered,
+					'chartjs'       => $chartjs_registered,
 					'pro_dashboard' => $pro_dashboard_registered,
 				);
 			}
 
 			// Test 9: Check if REST API endpoint is registered.
-			$rest_server = rest_get_server();
-			$routes = $rest_server->get_routes();
+			$rest_server         = rest_get_server();
+			$routes              = $rest_server->get_routes();
 			$endpoint_registered = isset( $routes['/mcp-ai/v1/pro/compliance/status'] );
-			
+
 			$results['tests']['rest_endpoint'] = array(
-				'name'   => 'REST API Endpoint',
-				'status' => $endpoint_registered ? 'pass' : 'fail',
+				'name'    => 'REST API Endpoint',
+				'status'  => $endpoint_registered ? 'pass' : 'fail',
 				'message' => $endpoint_registered ? 'Endpoint registered' : 'Endpoint not registered',
-				'url'    => rest_url( 'mcp-ai/v1/pro/compliance/status' ),
+				'url'     => rest_url( 'mcp-ai/v1/pro/compliance/status' ),
 			);
 
 			// Test 10: Check WP_DEBUG status.
 			$results['tests']['wp_debug'] = array(
-				'name'   => 'WP_DEBUG Status',
-				'status' => ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? 'info' : 'info',
+				'name'    => 'WP_DEBUG Status',
+				'status'  => ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? 'info' : 'info',
 				'message' => ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? 'Enabled' : 'Disabled',
 			);
 
 			// Calculate overall status.
-			$failed_tests = array_filter( $results['tests'], function( $test ) {
-				return $test['status'] === 'fail';
-			} );
+			$failed_tests = array_filter(
+				$results['tests'],
+				function ( $test ) {
+					return $test['status'] === 'fail';
+				}
+			);
 
 			if ( empty( $failed_tests ) ) {
 				$results['overall_status'] = 'pass';
 			} else {
 				$results['overall_status'] = 'fail';
-				$results['failed_count'] = count( $failed_tests );
+				$results['failed_count']   = count( $failed_tests );
 			}
 
 			return $results;
