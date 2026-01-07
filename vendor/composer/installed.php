@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-dashboard-chart-functions',
-        'version' => 'dev-copilot/fix-dashboard-chart-functions',
-        'reference' => '954812c1b12b1afffdef3e5d64b0368567ac7eb7',
+        'pretty_version' => 'dev-copilot/fix-missing-charts-dashboard',
+        'version' => 'dev-copilot/fix-missing-charts-dashboard',
+        'reference' => 'fe7c030bb790737e5e876f073987380238d16466',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-dashboard-chart-functions',
-            'version' => 'dev-copilot/fix-dashboard-chart-functions',
-            'reference' => '954812c1b12b1afffdef3e5d64b0368567ac7eb7',
+            'pretty_version' => 'dev-copilot/fix-missing-charts-dashboard',
+            'version' => 'dev-copilot/fix-missing-charts-dashboard',
+            'reference' => 'fe7c030bb790737e5e876f073987380238d16466',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

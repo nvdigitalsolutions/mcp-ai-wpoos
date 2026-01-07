@@ -240,4 +240,236 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'wpMcpAiProDashboard', $data );
 		$this->assertStringContainsString( 'chartData', $data );
 	}
+	
+	/**
+	 * Test that get_risk_data returns proper structure.
+	 */
+	public function test_get_risk_data() {
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_risk_data' );
+		$method->setAccessible( true );
+
+		$risk_data = $method->invoke( $dashboard );
+
+		// Verify structure.
+		$this->assertIsArray( $risk_data );
+		$this->assertArrayHasKey( 'critical', $risk_data );
+		$this->assertArrayHasKey( 'high', $risk_data );
+		$this->assertArrayHasKey( 'medium', $risk_data );
+		$this->assertArrayHasKey( 'low', $risk_data );
+
+		// Verify data types.
+		$this->assertIsInt( $risk_data['critical'] );
+		$this->assertIsInt( $risk_data['high'] );
+		$this->assertIsInt( $risk_data['medium'] );
+		$this->assertIsInt( $risk_data['low'] );
+	}
+	
+	/**
+	 * Test that get_metrics_data returns proper structure.
+	 */
+	public function test_get_metrics_data() {
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_metrics_data' );
+		$method->setAccessible( true );
+
+		$metrics_data = $method->invoke( $dashboard );
+
+		// Verify structure.
+		$this->assertIsArray( $metrics_data );
+		$this->assertArrayHasKey( 'incidents', $metrics_data );
+		$this->assertArrayHasKey( 'vulnerabilities_fixed', $metrics_data );
+
+		// Verify data types.
+		$this->assertIsArray( $metrics_data['incidents'] );
+		$this->assertIsArray( $metrics_data['vulnerabilities_fixed'] );
+
+		// Verify array lengths.
+		$this->assertCount( 6, $metrics_data['incidents'] );
+		$this->assertCount( 6, $metrics_data['vulnerabilities_fixed'] );
+	}
+	
+	/**
+	 * Test that helper methods can use stored options.
+	 */
+	public function test_helper_methods_use_stored_options() {
+		// Set custom risk data in options.
+		$custom_risks = array(
+			'critical' => 5,
+			'high'     => 10,
+			'medium'   => 15,
+			'low'      => 20,
+		);
+		update_option( 'wp_mcp_ai_risk_data', $custom_risks );
+
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_risk_data' );
+		$method->setAccessible( true );
+
+		$risk_data = $method->invoke( $dashboard );
+
+		// Should return custom data from options.
+		$this->assertEquals( 5, $risk_data['critical'] );
+		$this->assertEquals( 10, $risk_data['high'] );
+		$this->assertEquals( 15, $risk_data['medium'] );
+		$this->assertEquals( 20, $risk_data['low'] );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_risk_data' );
+	}
+	
+	/**
+	 * Test that chart data uses helper methods.
+	 */
+	public function test_chart_data_uses_helper_methods() {
+		// Set custom data in options.
+		$custom_metrics = array(
+			'incidents'             => array( 1, 2, 3, 4, 5, 6 ),
+			'vulnerabilities_fixed' => array( 10, 20, 30, 40, 50, 60 ),
+		);
+		update_option( 'wp_mcp_ai_metrics_data', $custom_metrics );
+
+		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
+
+		$reflection = new ReflectionClass( $dashboard );
+		$method     = $reflection->getMethod( 'get_chart_data' );
+		$method->setAccessible( true );
+
+		$chart_data = $method->invoke( $dashboard );
+
+		// Chart data should contain custom metrics from options.
+		$this->assertEquals( array( 1, 2, 3, 4, 5, 6 ), $chart_data['metrics']['incidents'] );
+		$this->assertEquals( array( 10, 20, 30, 40, 50, 60 ), $chart_data['metrics']['vulnerabilities_fixed'] );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_metrics_data' );
+	}
+	
+	/**
+	 * Test REST API endpoint for getting risk chart data.
+	 */
+	public function test_rest_api_get_risk_chart_data() {
+		// Create an admin user and set as current.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Make REST API request.
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/pro/chart-data/risks' );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		// Verify structure.
+		$this->assertTrue( $data['success'] );
+		$this->assertArrayHasKey( 'data', $data );
+		$this->assertArrayHasKey( 'critical', $data['data'] );
+		$this->assertArrayHasKey( 'high', $data['data'] );
+		$this->assertArrayHasKey( 'medium', $data['data'] );
+		$this->assertArrayHasKey( 'low', $data['data'] );
+	}
+	
+	/**
+	 * Test REST API endpoint for updating risk chart data.
+	 */
+	public function test_rest_api_update_risk_chart_data() {
+		// Create an admin user and set as current.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Make REST API request to update risk data.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/pro/chart-data/risks' );
+		$request->set_param( 'critical', 5 );
+		$request->set_param( 'high', 10 );
+		$request->set_param( 'medium', 15 );
+		$request->set_param( 'low', 20 );
+
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		// Verify response structure.
+		$this->assertTrue( $data['success'] );
+		$this->assertArrayHasKey( 'message', $data );
+		$this->assertArrayHasKey( 'data', $data );
+
+		// Verify data was actually saved.
+		$stored_data = get_option( 'wp_mcp_ai_risk_data' );
+		$this->assertEquals( 5, $stored_data['critical'] );
+		$this->assertEquals( 10, $stored_data['high'] );
+		$this->assertEquals( 15, $stored_data['medium'] );
+		$this->assertEquals( 20, $stored_data['low'] );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_risk_data' );
+	}
+	
+	/**
+	 * Test REST API endpoint for getting metrics chart data.
+	 */
+	public function test_rest_api_get_metrics_chart_data() {
+		// Create an admin user and set as current.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Make REST API request.
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/pro/chart-data/metrics' );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		// Verify structure.
+		$this->assertTrue( $data['success'] );
+		$this->assertArrayHasKey( 'data', $data );
+		$this->assertArrayHasKey( 'incidents', $data['data'] );
+		$this->assertArrayHasKey( 'vulnerabilities_fixed', $data['data'] );
+		$this->assertIsArray( $data['data']['incidents'] );
+		$this->assertIsArray( $data['data']['vulnerabilities_fixed'] );
+		$this->assertCount( 6, $data['data']['incidents'] );
+		$this->assertCount( 6, $data['data']['vulnerabilities_fixed'] );
+	}
+	
+	/**
+	 * Test REST API endpoint for updating metrics chart data.
+	 */
+	public function test_rest_api_update_metrics_chart_data() {
+		// Create an admin user and set as current.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Make REST API request to update metrics data.
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/pro/chart-data/metrics' );
+		$request->set_param( 'incidents', array( 1, 2, 3, 4, 5, 6 ) );
+		$request->set_param( 'vulnerabilities_fixed', array( 10, 20, 30, 40, 50, 60 ) );
+
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+
+		// Verify response structure.
+		$this->assertTrue( $data['success'] );
+		$this->assertArrayHasKey( 'message', $data );
+		$this->assertArrayHasKey( 'data', $data );
+
+		// Verify data was actually saved.
+		$stored_data = get_option( 'wp_mcp_ai_metrics_data' );
+		$this->assertEquals( array( 1, 2, 3, 4, 5, 6 ), $stored_data['incidents'] );
+		$this->assertEquals( array( 10, 20, 30, 40, 50, 60 ), $stored_data['vulnerabilities_fixed'] );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_metrics_data' );
+	}
 }
