@@ -18,6 +18,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 	class WP_MCP_AI_Flowhub_Client {
 		const AUTH_ENDPOINT = 'https://flowhub.auth0.com/oauth/token';
 		const API_ENDPOINT  = 'https://api.flowhub.co';
+		const INVENTORY_ENDPOINT = 'https://api.flowhub.co/v0/inventory';
 
 		/**
 		 * Retrieve the configured API Key.

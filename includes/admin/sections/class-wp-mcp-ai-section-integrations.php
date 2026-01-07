@@ -928,6 +928,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$has_credentials = ! empty( $settings['flowhub_api_key'] ) && ! empty( $settings['flowhub_client_id'] ) && ! empty( $settings['flowhub_client_secret'] ) && ! empty( $settings['flowhub_location_id'] );
 			?>
 			<tr>
+				<th scope="row"><?php esc_html_e( 'Flowhub Connection', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-flowhub-connection" class="button button-secondary">
+							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span id="wp-mcp-ai-flowhub-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Enter your Flowhub credentials in the fields above, then click "Test Connection" to verify they work. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
 				<th scope="row"><?php esc_html_e( 'Flowhub Configuration', 'mcp-ai-wpoos' ); ?></th>
 				<td>
 					<?php if ( $has_credentials ) : ?>
