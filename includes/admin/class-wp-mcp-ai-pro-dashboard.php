@@ -469,17 +469,41 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				true
 			);
 
-			wp_localize_script(
-				'wp-mcp-ai-pro-dashboard',
-				'wpMcpAiProDashboard',
-				array(
-					'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-					'restUrl'    => esc_url_raw( rest_url() ),
-					'restNonce'  => wp_create_nonce( 'wp_rest' ),
-					'nonce'      => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
-					'isProActive' => $this->is_pro_active(),
-				)
-			);
+		// Get chart data for dashboard.
+		$controls = $this->get_iso27001_controls();
+		$stats    = $this->calculate_controls_stats( $controls );
+		
+		wp_localize_script(
+			'wp-mcp-ai-pro-dashboard',
+			'wpMcpAiProDashboard',
+			array(
+				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+				'restUrl'     => esc_url_raw( rest_url() ),
+				'restNonce'   => wp_create_nonce( 'wp_rest' ),
+				'nonce'       => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
+				'isProActive' => $this->is_pro_active() ? '1' : '0',
+				'debug'       => defined( 'WP_DEBUG' ) && WP_DEBUG ? '1' : '0',
+				'chartData'   => array(
+					'controls' => array(
+						'implemented'    => $stats['implemented'],
+						'partial'        => $stats['partial'],
+						'planned'        => $stats['planned'],
+						'not_applicable' => $stats['not_applicable'],
+						'total'          => $stats['total'],
+					),
+					'risks'    => array(
+						'critical' => 0,
+						'high'     => 3,
+						'medium'   => 12,
+						'low'      => 8,
+					),
+					'metrics'  => array(
+						'incidents'             => array( 5, 3, 2, 4, 1, 2 ),
+						'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
+					),
+				),
+			)
+		);
 		}
 
 		/**

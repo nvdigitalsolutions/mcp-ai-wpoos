@@ -131,13 +131,27 @@
 				return;
 			}
 
+			// Get chart data from localized script variable
+			const chartData = wpMcpAiProDashboard.chartData || {};
+			const controls = chartData.controls || {
+				implemented: 0,
+				partial: 0,
+				planned: 0,
+				not_applicable: 0
+			};
+
 			const ctx = canvas.getContext('2d');
 			this.charts.controls = new Chart(ctx, {
 				type: 'doughnut',
 				data: {
 					labels: ['Implemented', 'Partial', 'Planned', 'N/A'],
 					datasets: [{
-						data: [55, 24, 3, 11],
+						data: [
+							controls.implemented,
+							controls.partial,
+							controls.planned,
+							controls.not_applicable
+						],
 						backgroundColor: [
 							'#4caf50',
 							'#ff9800',
@@ -173,6 +187,13 @@
 				return;
 			}
 
+			// Get chart data from localized script variable
+			const chartData = wpMcpAiProDashboard.chartData || {};
+			const metrics = chartData.metrics || {
+				incidents: [5, 3, 2, 4, 1, 2],
+				vulnerabilities_fixed: [8, 12, 10, 15, 14, 12]
+			};
+
 			const ctx = canvas.getContext('2d');
 			this.charts.metrics = new Chart(ctx, {
 				type: 'line',
@@ -180,13 +201,13 @@
 					labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
 					datasets: [{
 						label: 'Security Incidents',
-						data: [5, 3, 2, 4, 1, 2],
+						data: metrics.incidents,
 						borderColor: '#f44336',
 						backgroundColor: 'rgba(244, 67, 54, 0.1)',
 						tension: 0.4
 					}, {
 						label: 'Vulnerabilities Fixed',
-						data: [8, 12, 10, 15, 14, 12],
+						data: metrics.vulnerabilities_fixed,
 						borderColor: '#4caf50',
 						backgroundColor: 'rgba(76, 175, 80, 0.1)',
 						tension: 0.4
@@ -222,6 +243,15 @@
 				return;
 			}
 
+			// Get chart data from localized script variable
+			const chartData = wpMcpAiProDashboard.chartData || {};
+			const risks = chartData.risks || {
+				critical: 0,
+				high: 3,
+				medium: 12,
+				low: 8
+			};
+
 			const ctx = canvas.getContext('2d');
 			this.charts.risk = new Chart(ctx, {
 				type: 'bar',
@@ -229,7 +259,12 @@
 					labels: ['Critical', 'High', 'Medium', 'Low'],
 					datasets: [{
 						label: 'Open Risks',
-						data: [0, 3, 12, 8],
+						data: [
+							risks.critical,
+							risks.high,
+							risks.medium,
+							risks.low
+						],
 						backgroundColor: [
 							'#f44336',
 							'#ff9800',
