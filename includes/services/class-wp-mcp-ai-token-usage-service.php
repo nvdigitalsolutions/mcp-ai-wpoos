@@ -100,7 +100,7 @@ class WP_MCP_AI_Token_Usage_Service {
 
 			$registered_tools = $registry->get_tools();
 
-			// Build array of tool slug => name pairs.
+			// Build array of tool slug => name pairs from registered tools.
 			foreach ( $registered_tools as $tool ) {
 				if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
 					$slug = $tool->get_slug();
@@ -109,6 +109,17 @@ class WP_MCP_AI_Token_Usage_Service {
 					if ( ! empty( $slug ) && ! empty( $name ) ) {
 						$tools[ $slug ] = $name;
 					}
+				}
+			}
+
+			// Also load unregistered tools from Pro addon if available.
+			// This ensures tools that are conditionally registered (e.g., based on settings)
+			// still appear in admin pages for configuration purposes.
+			$unregistered_tools = self::get_unregistered_tools();
+			foreach ( $unregistered_tools as $slug => $name ) {
+				// Only add if not already in the list.
+				if ( ! isset( $tools[ $slug ] ) ) {
+					$tools[ $slug ] = $name;
 				}
 			}
 
@@ -122,6 +133,75 @@ class WP_MCP_AI_Token_Usage_Service {
 		 * @param array $tools Tool slug => Tool name pairs.
 		 */
 		return apply_filters( 'wp_mcp_ai_token_manager_tools', $tools );
+	}
+
+	/**
+	 * Get unregistered tools from Pro addon.
+	 *
+	 * This method loads tool definitions from the Pro addon that may not be
+	 * currently registered due to missing configuration or disabled features.
+	 * This allows admin pages to display all tools for configuration purposes.
+	 *
+	 * @since 1.0.0
+	 * @return array Tool slug => Tool name pairs for unregistered tools.
+	 */
+	private static function get_unregistered_tools() {
+		$unregistered_tools = array();
+
+		// Check if Pro addon is available.
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			return $unregistered_tools;
+		}
+
+		// Get the list of Pro tool class => file mappings by applying the filter
+		// that the Pro addon uses during tool registration.
+		// This gives us the complete list without having to duplicate the code.
+		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tools', array() );
+
+		if ( empty( $pro_tools ) ) {
+			return $unregistered_tools;
+		}
+
+		// Load each tool class and get its metadata.
+		foreach ( $pro_tools as $class => $file ) {
+			// Skip if the file doesn't exist.
+			if ( ! file_exists( $file ) ) {
+				continue;
+			}
+
+			// Check if class is already loaded.
+			if ( class_exists( $class ) ) {
+				// Class is already loaded, we can safely instantiate it.
+				try {
+					$tool_instance = new $class();
+
+					if ( $tool_instance instanceof WP_MCP_AI_Tool_Interface ) {
+						$slug = $tool_instance->get_slug();
+						$name = $tool_instance->get_name();
+
+						if ( ! empty( $slug ) && ! empty( $name ) ) {
+							$unregistered_tools[ $slug ] = $name;
+						}
+					}
+				} catch ( Throwable $e ) {
+					// Log the error if debugging is enabled for troubleshooting.
+					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only.
+						error_log(
+							sprintf(
+								'WP_MCP_AI: Failed to instantiate tool %s: %s',
+								$class,
+								$e->getMessage()
+							)
+						);
+					}
+					// Silently skip tools that can't be instantiated due to missing dependencies.
+					// This is expected for tools that require plugins like WooCommerce, JetEngine, etc.
+				}
+			}
+		}
+
+		return $unregistered_tools;
 	}
 
 	/**
