@@ -491,10 +491,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @param string $hook Current admin page hook.
 		 */
 		public function enqueue_assets( $hook ) {
-			// Only load on Pro Dashboard pages (including diagnostic page).
+			// Only load on main Pro Dashboard page.
+			// Diagnostic page has its own minimal assets and doesn't need charts.
 			$allowed_pages = array(
 				'toplevel_page_' . self::PAGE_SLUG,
-				$this->get_diagnostic_page_hook(),
 			);
 
 			if ( ! in_array( $hook, $allowed_pages, true ) ) {
@@ -502,9 +502,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			}
 
 			// Use Chart.js Helper for consistent registration across the plugin.
-			// Loading Chart.js the same way as Token Manager for consistency.
+			// Calling register_chart_js() + wp_enqueue_script('chartjs') instead of
+			// enqueue_chart_js() avoids loading unnecessary Token Manager files
+			// (analytics-dashboard.css, token-manager-charts.js) on the Pro Dashboard.
 			if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
-				WP_MCP_AI_Chart_JS_Helper::enqueue_chart_js();
+				WP_MCP_AI_Chart_JS_Helper::register_chart_js();
+				wp_enqueue_script( 'chartjs' );
 			} else {
 				// Fallback: Register and enqueue Chart.js directly if helper class not available.
 				$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
