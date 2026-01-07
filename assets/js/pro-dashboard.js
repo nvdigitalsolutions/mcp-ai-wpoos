@@ -86,7 +86,7 @@
 		 */
 		initKeyboardShortcuts: function() {
 			const self = this;
-			const tabs = ['overview', 'iso27001', 'reports', 'monitoring', 'risk', 'multi-framework'];
+			const tabs = ['iso27001', 'overview', 'reports', 'monitoring', 'risk', 'multi-framework'];
 			
 			$(document).on('keydown', function(e) {
 				// Only activate on Alt+Number (1-6)
@@ -123,8 +123,8 @@
 						<button class="wp-mcp-ai-modal-close" aria-label="Close">×</button>
 						<h2>Keyboard Shortcuts</h2>
 						<table class="wp-mcp-ai-shortcuts-table">
-							<tr><th>Alt + 1</th><td>Overview Tab</td></tr>
-							<tr><th>Alt + 2</th><td>ISO 27001 Tab</td></tr>
+							<tr><th>Alt + 1</th><td>ISO 27001 Tab</td></tr>
+							<tr><th>Alt + 2</th><td>Overview Tab</td></tr>
 							<tr><th>Alt + 3</th><td>Reports Tab</td></tr>
 							<tr><th>Alt + 4</th><td>Monitoring Tab</td></tr>
 							<tr><th>Alt + 5</th><td>Risk Management Tab</td></tr>

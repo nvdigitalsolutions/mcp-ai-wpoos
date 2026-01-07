@@ -163,17 +163,17 @@ class Test_Pro_Dashboard_Tabs extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that invalid tab defaults to overview.
+	 * Test that invalid tab defaults to iso27001.
 	 */
-	public function test_invalid_tab_defaults_to_overview() {
+	public function test_invalid_tab_defaults_to_iso27001() {
 		$_GET['tab'] = 'invalid-tab';
 
 		ob_start();
 		$this->dashboard->render_dashboard_with_tabs();
 		$output = ob_get_clean();
 
-		// Should still render (with overview as default).
-		$this->assertNotEmpty( $output, 'Invalid tab should render overview as fallback' );
+		// Should still render (with iso27001 as default).
+		$this->assertNotEmpty( $output, 'Invalid tab should render iso27001 as fallback' );
 
 		// Clean up.
 		unset( $_GET['tab'] );

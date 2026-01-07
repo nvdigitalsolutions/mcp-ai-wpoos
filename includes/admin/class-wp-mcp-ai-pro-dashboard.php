@@ -406,8 +406,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'callback'   => 'render_dashboard_with_tabs',
 				),
 				// Note: The following pages are now tabs within the main dashboard:
-				// - Overview (default tab)
-				// - ISO 27001
+				// - ISO 27001 (default tab)
+				// - Overview
 				// - Reports
 				// - Monitoring
 				// - Risk Management
@@ -821,16 +821,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @since 1.5.1
 		 */
 		public function render_dashboard_with_tabs() {
-			// Valid tabs.
-			$valid_tabs = array( 'overview', 'iso27001', 'reports', 'monitoring', 'risk', 'multi-framework' );
+			// Valid tabs - ISO27001 is now the default/first tab.
+			$valid_tabs = array( 'iso27001', 'overview', 'reports', 'monitoring', 'risk', 'multi-framework' );
 
 			// Get current tab from URL parameter, sanitize and validate immediately.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
+			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'iso27001';
 
 			// Validate tab - ensure it's in the valid tabs list.
 			if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
-				$current_tab = 'overview';
+				$current_tab = 'iso27001';
 			}
 			?>
 			<div class="wrap wp-mcp-ai-pro-dashboard">
@@ -849,13 +849,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 				<!-- Tab Navigation -->
 				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Pro Dashboard tabs', 'mcp-ai-wpoos' ); ?>">
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=overview' ) ); ?>" class="nav-tab <?php echo 'overview' === $current_tab ? 'nav-tab-active' : ''; ?>">
-						<span class="dashicons dashicons-dashboard"></span>
-						<?php esc_html_e( 'Overview', 'mcp-ai-wpoos' ); ?>
-					</a>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ); ?>" class="nav-tab <?php echo 'iso27001' === $current_tab ? 'nav-tab-active' : ''; ?>">
 						<span class="dashicons dashicons-list-view"></span>
 						<?php esc_html_e( 'ISO 27001', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=overview' ) ); ?>" class="nav-tab <?php echo 'overview' === $current_tab ? 'nav-tab-active' : ''; ?>">
+						<span class="dashicons dashicons-dashboard"></span>
+						<?php esc_html_e( 'Overview', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reports' ) ); ?>" class="nav-tab <?php echo 'reports' === $current_tab ? 'nav-tab-active' : ''; ?>">
 						<span class="dashicons dashicons-media-document"></span>
@@ -880,8 +880,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<?php
 					// Render the current tab content.
 					switch ( $current_tab ) {
-						case 'iso27001':
-							$this->render_iso27001_tab();
+						case 'overview':
+							$this->render_overview_tab();
 							break;
 						case 'reports':
 							$this->render_reports_tab();
@@ -895,9 +895,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						case 'multi-framework':
 							$this->render_multi_framework_tab();
 							break;
-						case 'overview':
+						case 'iso27001':
 						default:
-							$this->render_overview_tab();
+							$this->render_iso27001_tab();
 							break;
 					}
 					?>
