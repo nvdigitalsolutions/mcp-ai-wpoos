@@ -406,10 +406,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				// - Multi-Framework
 				//
 				// Other pages are registered by their respective classes:
-				// - Security Audits: WP_MCP_AI_Security_Audit_Admin
-				// - Asset Inventory: WP_MCP_AI_Asset_Inventory_Admin
-				// - Supplier Security: WP_MCP_AI_Supplier_Security_Admin
-				// - Security Training: WP_MCP_AI_Security_Training_Admin
+				// - Security Audits: WP_MCP_AI_Security_Audit_Admin.
+				// - Asset Inventory: WP_MCP_AI_Asset_Inventory_Admin.
+				// - Supplier Security: WP_MCP_AI_Supplier_Security_Admin.
+				// - Security Training: WP_MCP_AI_Security_Training_Admin.
 			);
 		}
 
@@ -435,7 +435,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Find the Overview page (it has the same slug as the parent).
 			$overview_key = null;
 			foreach ( $pro_submenu as $key => $item ) {
-				if ( isset( $item[2] ) && $item[2] === self::PAGE_SLUG ) {
+				if ( isset( $item[2] ) && self::PAGE_SLUG === $item[2] ) {
 					$overview_key = $key;
 					break;
 				}
@@ -445,10 +445,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			if ( null !== $overview_key && 0 !== $overview_key ) {
 				$overview_item = $pro_submenu[ $overview_key ];
 				unset( $pro_submenu[ $overview_key ] );
-				
+
 				// Insert Overview at the beginning.
 				array_unshift( $pro_submenu, $overview_item );
-				
+
 				// Update the global submenu array.
 				$submenu[ self::PAGE_SLUG ] = $pro_submenu;
 			}
@@ -461,39 +461,39 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		public function enqueue_assets( $hook ) {
 			// Only load on Pro Dashboard pages.
-			if ( strpos( $hook, self::PAGE_SLUG ) === false ) {
+			if ( false !== strpos( $hook, self::PAGE_SLUG ) === false ) {
 				return;
 			}
 
-		// Enqueue Chart.js first - directly register and enqueue it.
-		$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
-		$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
+			// Enqueue Chart.js first - directly register and enqueue it.
+			$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
+			$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
 
-		// Register Chart.js library.
-		wp_register_script(
-			'chartjs',
-			$chart_js_url,
-			array(),
-			file_exists( $chart_js_path ) ? filemtime( $chart_js_path ) : '4.4.1',
-			true
-		);
+			// Register Chart.js library.
+			wp_register_script(
+				'chartjs',
+				$chart_js_url,
+				array(),
+				file_exists( $chart_js_path ) ? filemtime( $chart_js_path ) : '4.4.1',
+				true
+			);
 
-		// Enqueue Chart.js.
-		wp_enqueue_script( 'chartjs' );
+			// Enqueue Chart.js.
+			wp_enqueue_script( 'chartjs' );
 
-		// Get chart data - ensure it's properly structured.
-		$chart_data = $this->get_chart_data();
+			// Get chart data - ensure it's properly structured.
+			$chart_data = $this->get_chart_data();
 
 			wp_enqueue_style(
 				'wp-mcp-ai-pro-dashboard',
-				plugins_url( 'assets/css/pro-dashboard.css', dirname( dirname( __FILE__ ) ) ),
+				plugins_url( 'assets/css/pro-dashboard.css', __DIR__ ),
 				array(),
 				WP_MCP_AI_VERSION
 			);
 
 			wp_enqueue_script(
 				'wp-mcp-ai-pro-dashboard',
-				plugins_url( 'assets/js/pro-dashboard.js', dirname( dirname( __FILE__ ) ) ),
+				plugins_url( 'assets/js/pro-dashboard.js', __DIR__ ),
 				array( 'jquery', 'chartjs' ),
 				WP_MCP_AI_VERSION,
 				true
@@ -508,8 +508,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'restNonce'   => wp_create_nonce( 'wp_rest' ),
 					'nonce'       => wp_create_nonce( 'wp_mcp_ai_pro_dashboard' ),
 					'isProActive' => $this->is_pro_active(),
-				'chartData'   => $chart_data,
-				'debug'       => defined( 'WP_DEBUG' ) && WP_DEBUG,
+					'chartData'   => $chart_data,
+					'debug'       => defined( 'WP_DEBUG' ) && WP_DEBUG,
 				)
 			);
 		}
@@ -558,7 +558,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			<?php
 			// Get actual compliance data from Statement of Applicability.
 			$controls = $this->get_iso27001_controls();
-			
+
 			// Check if controls were loaded successfully.
 			if ( empty( $controls ) ) {
 				?>
@@ -713,7 +713,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<h2><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos' ); ?></h2>
 						<?php $this->render_quick_actions(); ?>
 					</div>
-					
+
 					<!-- System Health Card -->
 					<div class="wp-mcp-ai-card">
 						<h2><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></h2>
@@ -731,7 +731,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<h2><?php esc_html_e( 'ISMS Documentation', 'mcp-ai-wpoos' ); ?></h2>
 						<?php $this->render_documentation_links(); ?>
 					</div>
-					
+
 					<!-- Compliance Summary Card -->
 					<div class="wp-mcp-ai-card">
 						<h2><?php esc_html_e( 'Compliance Summary', 'mcp-ai-wpoos' ); ?></h2>
@@ -776,11 +776,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		public function render_dashboard_with_tabs() {
 			// Valid tabs.
 			$valid_tabs = array( 'overview', 'iso27001', 'reports', 'monitoring', 'risk', 'multi-framework' );
-			
+
 			// Get current tab from URL parameter, sanitize and validate immediately.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
-			
+
 			// Validate tab - ensure it's in the valid tabs list.
 			if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
 				$current_tab = 'overview';
@@ -802,28 +802,28 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 				<!-- Tab Navigation -->
 				<h2 class="nav-tab-wrapper wp-mcp-ai-tab-nav">
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=overview' ) ); ?>" 
-					   class="nav-tab <?php echo 'overview' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=overview' ) ); ?>"
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '					   class="tab=overview' ) ); ?>" class="nav-tab <?php echo 'overview' === $current_tab ? 'nav-tab-active' : ''; ?>">
 						<?php esc_html_e( 'Overview', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ); ?>" 
-					   class="nav-tab <?php echo 'iso27001' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=iso27001' ) ); ?>"
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '					   class="tab=iso27001' ) ); ?>" class="nav-tab <?php echo 'iso27001' === $current_tab ? 'nav-tab-active' : ''; ?>">
 						<?php esc_html_e( 'ISO 27001', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reports' ) ); ?>" 
-					   class="nav-tab <?php echo 'reports' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reports' ) ); ?>"
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '					   class="tab=reports' ) ); ?>" class="nav-tab <?php echo 'reports' === $current_tab ? 'nav-tab-active' : ''; ?>">
 						<?php esc_html_e( 'Reports', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=monitoring' ) ); ?>" 
-					   class="nav-tab <?php echo 'monitoring' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=monitoring' ) ); ?>"
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '					   class="tab=monitoring' ) ); ?>" class="nav-tab <?php echo 'monitoring' === $current_tab ? 'nav-tab-active' : ''; ?>">
 						<?php esc_html_e( 'Monitoring', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=risk' ) ); ?>" 
-					   class="nav-tab <?php echo 'risk' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=risk' ) ); ?>"
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '					   class="tab=risk' ) ); ?>" class="nav-tab <?php echo 'risk' === $current_tab ? 'nav-tab-active' : ''; ?>">
 						<?php esc_html_e( 'Risk Management', 'mcp-ai-wpoos' ); ?>
 					</a>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework' ) ); ?>" 
-					   class="nav-tab <?php echo 'multi-framework' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework' ) ); ?>"
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '					   class="tab=multi-framework' ) ); ?>" class="nav-tab <?php echo 'multi-framework' === $current_tab ? 'nav-tab-active' : ''; ?>">
 						<?php esc_html_e( 'Multi-Framework', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</h2>
@@ -867,7 +867,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		private function render_overview_tab() {
 			// Get actual compliance data from Statement of Applicability.
 			$controls = $this->get_iso27001_controls();
-			
+
 			// Check if controls were loaded successfully.
 			if ( empty( $controls ) ) {
 				?>
@@ -1021,7 +1021,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<h2><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos' ); ?></h2>
 					<?php $this->render_quick_actions(); ?>
 				</div>
-				
+
 				<!-- System Health Card -->
 				<div class="wp-mcp-ai-card">
 					<h2><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></h2>
@@ -1039,7 +1039,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<h2><?php esc_html_e( 'ISMS Documentation', 'mcp-ai-wpoos' ); ?></h2>
 					<?php $this->render_documentation_links(); ?>
 				</div>
-				
+
 				<!-- Compliance Summary Card -->
 				<div class="wp-mcp-ai-card">
 					<h2><?php esc_html_e( 'Compliance Summary', 'mcp-ai-wpoos' ); ?></h2>
@@ -1264,7 +1264,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Get actual data from Statement of Applicability.
 			$controls = $this->get_iso27001_controls();
 			$stats    = $this->calculate_controls_stats( $controls );
-			
+
 			$controls_implemented  = $stats['implemented'];
 			$controls_total        = $stats['total'];
 			$total_applicable      = $controls_total - $stats['not_applicable'];
@@ -1353,24 +1353,24 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		private function render_recent_activity() {
 			// Get recent security events from logs.
 			$recent_events = get_option( 'wp_mcp_ai_recent_activity', array() );
-			
-			// Filter to only show security-relevant events
+
+			// Filter to only show security-relevant events.
 			$security_events = array_filter( $recent_events, function( $event ) {
 				$message = $event['message'] ?? '';
-				// Skip generic "Tool executed" and API request logs
-				if ( strpos( $message, 'Tool executed successfully' ) !== false ) {
+				// Skip generic "Tool executed" and API request logs.
+				if ( false !== strpos( $message, 'Tool executed successfully' ) {
 					return false;
 				}
-				if ( strpos( $message, 'Sending request to OpenAI' ) !== false ) {
+				if ( false !== strpos( $message, 'Sending request to OpenAI' ) {
 					return false;
 				}
-				if ( strpos( $message, 'OpenAI request completed' ) !== false ) {
+				if ( false !== strpos( $message, 'OpenAI request completed' ) {
 					return false;
 				}
 				return true;
 			});
-			
-			// If we have security events, use them; otherwise show sample data
+
+			// If we have security events, use them; otherwise show sample data.
 			if ( empty( $security_events ) ) {
 				$security_events = $this->get_sample_security_events();
 			}
@@ -1400,7 +1400,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			</div>
 			<?php
 		}
-		
+
 		/**
 		 * Render system health widget.
 		 */
@@ -1454,7 +1454,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			</div>
 			<?php
 		}
-		
+
 		/**
 		 * Render compliance summary widget.
 		 */
@@ -1481,7 +1481,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			</div>
 			<?php
 		}
-		
+
 		/**
 		 * Get sample security events for demonstration.
 		 *
@@ -1492,7 +1492,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$hour_ago = date( 'Y-m-d H:i:s', strtotime( '-1 hour', strtotime( $now ) ) );
 			$day_ago = date( 'Y-m-d H:i:s', strtotime( '-1 day', strtotime( $now ) ) );
 			$week_ago = date( 'Y-m-d H:i:s', strtotime( '-7 days', strtotime( $now ) ) );
-			
+
 			return array(
 				array(
 					'icon'    => 'shield-alt',
@@ -1630,7 +1630,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		private function render_controls_table() {
 			$controls = $this->get_iso27001_controls();
-			
+
 			if ( empty( $controls ) ) {
 				?>
 				<p class="wp-mcp-ai-empty-state">
@@ -1649,7 +1649,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<option value="planned"><?php esc_html_e( 'Planned', 'mcp-ai-wpoos' ); ?></option>
 					<option value="not_applicable"><?php esc_html_e( 'Not Applicable', 'mcp-ai-wpoos' ); ?></option>
 				</select>
-				
+
 				<label for="controls-search"><?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?></label>
 				<input type="text" id="controls-search" placeholder="<?php esc_attr_e( 'Search controls...', 'mcp-ai-wpoos' ); ?>" />
 			</div>
@@ -1788,7 +1788,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			<p class="description">
 				<?php esc_html_e( 'Audit history tracks compliance activities, control assessments, and remediation progress.', 'mcp-ai-wpoos' ); ?>
 			</p>
-			
+
 			<table class="wp-list-table widefat fixed striped">
 				<thead>
 					<tr>
@@ -1807,7 +1807,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						</td>
 						<td><span class="wp-mcp-ai-status-badge wp-mcp-ai-status-implemented"><?php esc_html_e( 'Complete', 'mcp-ai-wpoos' ); ?></span></td>
 						<td>
-							<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>" 
+							<a href="<?php echo esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/docs/compliance/iso27001/Statement-of-Applicability.md' ); ?>"
 							   class="button button-small" target="_blank">
 								<?php esc_html_e( 'View Report', 'mcp-ai-wpoos' ); ?>
 							</a>
@@ -2079,13 +2079,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$iso_stats = $this->calculate_controls_stats( $iso_controls );
 			$iso_total_applicable = $iso_stats['total'] - $iso_stats['not_applicable'];
 			$iso_compliance = $iso_total_applicable > 0 ? round( ( $iso_stats['implemented'] / $iso_total_applicable ) * 100 ) : 0;
-			
+
 			// Calculate SOC 2 compliance from Trust Services Criteria.
 			$soc2_compliance = $this->get_soc2_compliance();
-			
+
 			// Calculate HIPAA compliance from Security Rule safeguards.
 			$hipaa_compliance = $this->get_hipaa_compliance();
-			
+
 			return array(
 				array(
 					'name'       => 'ISO 27001:2022',
@@ -2100,7 +2100,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'status'     => $soc2_compliance >= 95 ? 'compliant' : 'pending',
 					'percentage' => $soc2_compliance,
 					// SOC 2 has 54 Trust Services Criteria. Convert percentage to completed count.
-					// Formula: percentage / 100 * 54 = percentage * 0.54
+					// Formula: percentage / 100 * 54 = percentage * 0.54.
 					'completed'  => round( $soc2_compliance * 0.54 ),
 					'total'      => 54,
 					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework',
@@ -2110,7 +2110,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					'status'     => $hipaa_compliance >= 95 ? 'compliant' : 'pending',
 					'percentage' => $hipaa_compliance,
 					// HIPAA has 43 applicable safeguards. Convert percentage to completed count.
-					// Formula: percentage / 100 * 43 = percentage * 0.43
+					// Formula: percentage / 100 * 43 = percentage * 0.43.
 					'completed'  => round( $hipaa_compliance * 0.43 ),
 					'total'      => 43,
 					'link'       => 'admin.php?page=' . self::PAGE_SLUG . '&tab=multi-framework',
@@ -2173,7 +2173,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			// Fallback to parsing markdown file (development/debugging).
 			$soa_file = WP_MCP_AI_PATH . 'docs/compliance/iso27001/Statement-of-Applicability.md';
-			
+
 			if ( ! file_exists( $soa_file ) ) {
 				return array();
 			}
@@ -2207,15 +2207,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
 					$status_text = trim( $matches[1] );
 					$current_control['status'] = $status_text;
-					
+
 					// Map status to key.
-					if ( strpos( $status_text, 'Implemented' ) !== false ) {
+					if ( false !== strpos( $status_text, 'Implemented' ) {
 						$current_control['status_key'] = 'implemented';
-					} elseif ( strpos( $status_text, 'Partial' ) !== false ) {
+					} elseif ( false !== strpos( $status_text, 'Partial' ) {
 						$current_control['status_key'] = 'partial';
-					} elseif ( strpos( $status_text, 'Planned' ) !== false ) {
+					} elseif ( false !== strpos( $status_text, 'Planned' ) {
 						$current_control['status_key'] = 'planned';
-					} elseif ( strpos( $status_text, 'Not Applicable' ) !== false ) {
+					} elseif ( false !== strpos( $status_text, 'Not Applicable' ) {
 						$current_control['status_key'] = 'not_applicable';
 						$current_control['applicable'] = false;
 					}
@@ -2276,7 +2276,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			// Fallback to file parsing.
 			$soc2_file = WP_MCP_AI_PATH . 'docs/compliance/soc2/Statement-of-Applicability.md';
-			
+
 			if ( ! file_exists( $soc2_file ) ) {
 				return 0;
 			}
@@ -2292,11 +2292,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$impl_matches = array();
 			$total = preg_match_all( '/^\*\*Status:\*\*/m', $content, $total_matches );
 			$implemented = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content, $impl_matches );
-			
+
 			if ( false === $total || false === $implemented || $total <= 0 ) {
 				return 0;
 			}
-			
+
 			return round( ( $implemented / $total ) * 100 );
 		}
 
@@ -2316,7 +2316,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			// Fallback to file parsing.
 			$hipaa_file = WP_MCP_AI_PATH . 'docs/compliance/hipaa/Statement-of-Applicability.md';
-			
+
 			if ( ! file_exists( $hipaa_file ) ) {
 				return 0;
 			}
@@ -2334,17 +2334,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$total = preg_match_all( '/^\*\*Status:\*\*/m', $content, $total_matches );
 			$implemented = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content, $impl_matches );
 			$not_applicable = preg_match_all( '/^\*\*Status:\*\*.*❌.*Not Applicable/m', $content, $na_matches );
-			
+
 			if ( false === $total || false === $implemented || false === $not_applicable ) {
 				return 0;
 			}
-			
+
 			$applicable_total = $total - $not_applicable;
-			
+
 			if ( $applicable_total > 0 ) {
 				return round( ( $implemented / $applicable_total ) * 100 );
 			}
-			
+
 			return 0;
 		}
 
@@ -2359,7 +2359,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		private function get_risk_data() {
 			// Try to get from stored option first.
 			$stored_risks = get_option( 'wp_mcp_ai_risk_data', false );
-			
+
 			if ( false !== $stored_risks && is_array( $stored_risks ) ) {
 				return wp_parse_args(
 					$stored_risks,
@@ -2393,7 +2393,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		private function get_metrics_data() {
 			// Try to get from stored option first.
 			$stored_metrics = get_option( 'wp_mcp_ai_metrics_data', false );
-			
+
 			if ( false !== $stored_metrics && is_array( $stored_metrics ) ) {
 				return wp_parse_args(
 					$stored_metrics,

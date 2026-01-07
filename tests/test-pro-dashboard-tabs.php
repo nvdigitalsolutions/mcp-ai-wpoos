@@ -128,7 +128,7 @@ class Test_Pro_Dashboard_Tabs extends WP_UnitTestCase {
 
 			// Start output buffering.
 			ob_start();
-			
+
 			try {
 				$this->dashboard->render_dashboard_with_tabs();
 				$output = ob_get_clean();
