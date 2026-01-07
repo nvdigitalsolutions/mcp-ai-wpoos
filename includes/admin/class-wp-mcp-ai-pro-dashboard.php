@@ -354,7 +354,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				__( 'NV oOS Pro', 'mcp-ai-wpoos' ),
 				'manage_options',
 				self::PAGE_SLUG,
-				array( $this, 'render_overview' ),
+				array( $this, 'render_dashboard_with_tabs' ),
 				'dashicons-shield-alt',
 				25
 			);
@@ -774,14 +774,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @since 1.5.1
 		 */
 		public function render_dashboard_with_tabs() {
-			// Get current tab from URL parameter, default to 'overview'.
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
-			
 			// Valid tabs.
 			$valid_tabs = array( 'overview', 'iso27001', 'reports', 'monitoring', 'risk', 'multi-framework' );
 			
-			// Validate tab.
+			// Get current tab from URL parameter, sanitize and validate immediately.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
+			
+			// Validate tab - ensure it's in the valid tabs list.
 			if ( ! in_array( $current_tab, $valid_tabs, true ) ) {
 				$current_tab = 'overview';
 			}
