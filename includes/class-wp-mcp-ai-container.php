@@ -288,6 +288,13 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'client.cloudflare',
+			function () {
+				return new WP_MCP_AI_Cloudflare_Client();
+			}
+		);
+
+		$this->singleton(
 			'client.huggingface_datasets',
 			function () {
 				return new WP_MCP_AI_Huggingface_Datasets_Client();
