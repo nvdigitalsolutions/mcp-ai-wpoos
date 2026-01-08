@@ -768,4 +768,85 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		// Should use Ollama's done_reason field value.
 		$this->assertSame( 'stop', $response['choices'][0]['finish_reason'] );
 	}
+
+	/**
+	 * Ensure the Ollama client handles token limit with empty content correctly.
+	 * This tests the fix for the "response ended prematurely" error.
+	 */
+	public function test_token_limit_with_empty_content_provides_helpful_message() {
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Ollama_Client();
+
+		// Simulate Ollama response when hitting token limit with no content generated.
+		// This happens when the prompt consumes all available tokens (num_predict).
+		$filter_callback = function ( $preempt, $args, $url ) {
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'model'             => 'llama2',
+						'message'           => array(
+							'role'    => 'assistant',
+							'content' => '', // Empty content - hit token limit before generating anything.
+						),
+						'done'              => true,
+						'done_reason'       => 'length', // Ollama signals token limit hit.
+						'prompt_eval_count' => 2000,
+						'eval_count'        => 0, // No tokens generated in response.
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Very long prompt that consumes all tokens...',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// Verify response structure follows OpenAI API standard.
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'choices', $response );
+		$this->assertNotEmpty( $response['choices'] );
+
+		$choice = $response['choices'][0];
+
+		// finish_reason should be 'length' (from done_reason).
+		$this->assertArrayHasKey( 'finish_reason', $choice );
+		$this->assertSame( 'length', $choice['finish_reason'] );
+
+		// Message MUST have content field (OpenAI API standard).
+		$this->assertArrayHasKey( 'message', $choice );
+		$this->assertArrayHasKey( 'content', $choice['message'] );
+		$this->assertIsArray( $choice['message']['content'] );
+		$this->assertNotEmpty( $choice['message']['content'] );
+
+		// Content should contain helpful error message, not be empty.
+		$content_text = $choice['message']['content'][0]['text'];
+		$this->assertNotEmpty( $content_text );
+		$this->assertStringContainsString( 'token limit', $content_text );
+		$this->assertStringContainsString( 'Orchestration', $content_text ); // Should mention where to adjust settings.
+
+		// Verify usage is included.
+		$this->assertArrayHasKey( 'usage', $response );
+		$this->assertSame( 2000, $response['usage']['prompt_tokens'] );
+		$this->assertSame( 0, $response['usage']['completion_tokens'] );
+	}
 }
+
