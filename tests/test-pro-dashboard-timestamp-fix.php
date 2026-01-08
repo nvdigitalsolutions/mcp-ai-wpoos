@@ -49,7 +49,7 @@ class Test_Pro_Dashboard_Timestamp_Fix extends WP_UnitTestCase {
 
 		// Use reflection to call the private enrich_monitoring_events method.
 		$reflection = new ReflectionClass( $dashboard );
-		$method = $reflection->getMethod( 'enrich_monitoring_events' );
+		$method     = $reflection->getMethod( 'enrich_monitoring_events' );
 		$method->setAccessible( true );
 
 		// Call the method.
@@ -83,16 +83,16 @@ class Test_Pro_Dashboard_Timestamp_Fix extends WP_UnitTestCase {
 				'level'     => 'info',
 			),
 			array(
-				'message'   => 'Event with no timestamp',
-				'type'      => 'default',
-				'level'     => 'info',
+				'message' => 'Event with no timestamp',
+				'type'    => 'default',
+				'level'   => 'info',
 			),
 		);
 
 		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		$reflection = new ReflectionClass( $dashboard );
-		$method = $reflection->getMethod( 'enrich_monitoring_events' );
+		$method     = $reflection->getMethod( 'enrich_monitoring_events' );
 		$method->setAccessible( true );
 
 		// This should not throw an error.
@@ -142,7 +142,7 @@ class Test_Pro_Dashboard_Timestamp_Fix extends WP_UnitTestCase {
 		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		$reflection = new ReflectionClass( $dashboard );
-		$method = $reflection->getMethod( 'get_monitoring_event_stats' );
+		$method     = $reflection->getMethod( 'get_monitoring_event_stats' );
 		$method->setAccessible( true );
 
 		// This should not throw an error.
@@ -150,7 +150,7 @@ class Test_Pro_Dashboard_Timestamp_Fix extends WP_UnitTestCase {
 
 		$this->assertIsArray( $stats, 'Stats should be an array' );
 		$this->assertArrayHasKey( 'total_events', $stats, 'Stats should have total_events' );
-		
+
 		// Should count 2 recent events (not the old one from 2 days ago).
 		$this->assertEquals( 2, $stats['total_events'], 'Should count 2 recent events within 24 hours' );
 		$this->assertEquals( 1, $stats['auth_events'], 'Should count 1 auth event' );
@@ -182,7 +182,7 @@ class Test_Pro_Dashboard_Timestamp_Fix extends WP_UnitTestCase {
 		$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
 
 		$reflection = new ReflectionClass( $dashboard );
-		$method = $reflection->getMethod( 'get_monitoring_event_stats' );
+		$method     = $reflection->getMethod( 'get_monitoring_event_stats' );
 		$method->setAccessible( true );
 
 		$stats = $method->invoke( $dashboard );
