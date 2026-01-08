@@ -1,0 +1,385 @@
+<?php
+/**
+ * Cloudflare Workers AI client wrapper.
+ *
+ * @package WP_MCP_AI
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
+	/**
+	 * Provides a wrapper around Cloudflare Workers AI REST API endpoints.
+	 */
+	class WP_MCP_AI_Cloudflare_Client {
+
+		/**
+		 * Retrieve the configured API token.
+		 *
+		 * @return string
+		 */
+		public function get_api_token() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			return isset( $settings['cloudflare_api_token'] ) ? $settings['cloudflare_api_token'] : '';
+		}
+
+		/**
+		 * Retrieve the configured account ID.
+		 *
+		 * @return string
+		 */
+		public function get_account_id() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			return isset( $settings['cloudflare_account_id'] ) ? $settings['cloudflare_account_id'] : '';
+		}
+
+		/**
+		 * Retrieve the configured model.
+		 *
+		 * @return string
+		 */
+		public function get_model() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			return isset( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : '';
+		}
+
+		/**
+		 * Test the connection to Cloudflare Workers AI.
+		 *
+		 * @return array|WP_Error
+		 */
+		public function test_connection() {
+			$api_token  = $this->get_api_token();
+			$account_id = $this->get_account_id();
+
+			if ( empty( $api_token ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_api_token',
+					__( 'No Cloudflare API token has been configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( empty( $account_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_account_id',
+					__( 'No Cloudflare account ID has been configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Test with a simple API call to verify credentials.
+			$url = sprintf(
+				'https://api.cloudflare.com/client/v4/accounts/%s/ai/models',
+				rawurlencode( $account_id )
+			);
+
+			$timeout = max( 30, $this->resolve_timeout( array() ) );
+
+			$request_args = array(
+				'timeout' => $timeout,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_token,
+					'Content-Type'  => 'application/json',
+				),
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_test_connection',
+				'Testing Cloudflare Workers AI connection.',
+				array(
+					'url'     => $url,
+					'timeout' => $timeout,
+				)
+			);
+
+			$response = wp_remote_get( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'Cloudflare Workers AI connection failed.', 'mcp-ai-wpoos' ),
+					__( 'Cloudflare Workers AI', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			if ( $code < 200 || $code >= 300 ) {
+				$body = wp_remote_retrieve_body( $response );
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					__( 'Cloudflare Workers AI returned an error.', 'mcp-ai-wpoos' ),
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+			}
+
+			return array(
+				'success' => true,
+				'message' => __( 'Connected to Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		/**
+		 * Perform a chat completion request against Cloudflare Workers AI.
+		 *
+		 * @param array $messages Message payload to send.
+		 * @param array $options  Additional options (model, temperature, timeout).
+		 * @return array|WP_Error
+		 */
+		public function create_chat_completion( array $messages, array $options = array() ) {
+			$api_token  = $this->get_api_token();
+			$account_id = $this->get_account_id();
+
+			if ( empty( $api_token ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_api_token',
+					__( 'No Cloudflare API token has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_api_token' => __( 'Add a Cloudflare API token in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			if ( empty( $account_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_account_id',
+					__( 'No Cloudflare account ID has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_account_id' => __( 'Add a Cloudflare account ID in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$model = $this->resolve_model( $options );
+
+			if ( empty( $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_model',
+					__( 'No Cloudflare Workers AI model has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_model' => __( 'Choose a Cloudflare Workers AI model in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$payload = $this->build_payload( $messages, $options );
+
+			if ( is_wp_error( $payload ) ) {
+				return $payload;
+			}
+
+			$url = sprintf(
+				'https://api.cloudflare.com/client/v4/accounts/%s/ai/run/%s',
+				rawurlencode( $account_id ),
+				rawurlencode( $model )
+			);
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_token,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $this->resolve_timeout( $options ),
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_request',
+				'Sending request to Cloudflare Workers AI.',
+				array( 'payload' => $this->obfuscate_request_for_log( $payload ) )
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Cloudflare Workers AI request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'Cloudflare Workers AI request failed.', 'mcp-ai-wpoos' ),
+					__( 'Cloudflare Workers AI', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+
+			if ( $code < 200 || $code >= 300 ) {
+				WP_MCP_AI_Logger::log_error(
+					'Cloudflare Workers AI returned an error.',
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					__( 'Cloudflare Workers AI returned an error.', 'mcp-ai-wpoos' ),
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+			}
+
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_response',
+					__( 'Invalid JSON response from Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+					array( 'body' => $body )
+				);
+			}
+
+			// Cloudflare Workers AI response format.
+			if ( ! isset( $decoded['result'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_response',
+					__( 'Unexpected response format from Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+					array( 'decoded' => $decoded )
+				);
+			}
+
+			return $this->normalize_response( $decoded, $model );
+		}
+
+		/**
+		 * Build the request payload.
+		 *
+		 * @param array $messages Messages array.
+		 * @param array $options  Request options.
+		 * @return array
+		 */
+		protected function build_payload( array $messages, array $options ) {
+			$payload = array(
+				'messages' => $messages,
+			);
+
+			// Add optional parameters if provided.
+			if ( isset( $options['temperature'] ) ) {
+				$payload['temperature'] = (float) $options['temperature'];
+			}
+
+			if ( isset( $options['max_tokens'] ) ) {
+				$payload['max_tokens'] = (int) $options['max_tokens'];
+			}
+
+			if ( isset( $options['stream'] ) ) {
+				$payload['stream'] = (bool) $options['stream'];
+			}
+
+			return $payload;
+		}
+
+		/**
+		 * Normalize the API response to a standard format.
+		 *
+		 * @param array  $decoded Decoded API response.
+		 * @param string $model   Model name.
+		 * @return array
+		 */
+		protected function normalize_response( array $decoded, $model ) {
+			$result = isset( $decoded['result'] ) ? $decoded['result'] : array();
+
+			// Extract content from response.
+			$content = '';
+			if ( isset( $result['response'] ) ) {
+				$content = $result['response'];
+			}
+
+			return array(
+				'id'      => uniqid( 'cloudflare-', true ),
+				'object'  => 'chat.completion',
+				'created' => time(),
+				'model'   => $model,
+				'choices' => array(
+					array(
+						'index'         => 0,
+						'message'       => array(
+							'role'    => 'assistant',
+							'content' => $content,
+						),
+						'finish_reason' => 'stop',
+					),
+				),
+				'usage'   => array(
+					'prompt_tokens'     => 0,
+					'completion_tokens' => 0,
+					'total_tokens'      => 0,
+				),
+			);
+		}
+
+		/**
+		 * Resolve the model to use for the request.
+		 *
+		 * @param array $options Request options.
+		 * @return string
+		 */
+		protected function resolve_model( array $options ) {
+			if ( isset( $options['model'] ) && ! empty( $options['model'] ) ) {
+				return sanitize_text_field( $options['model'] );
+			}
+
+			return $this->get_model();
+		}
+
+		/**
+		 * Resolve the timeout to use for the request.
+		 *
+		 * @param array $options Request options.
+		 * @return int
+		 */
+		protected function resolve_timeout( array $options ) {
+			if ( isset( $options['timeout'] ) ) {
+				return (int) $options['timeout'];
+			}
+
+			// Default timeout for Cloudflare Workers AI.
+			return 60;
+		}
+
+		/**
+		 * Obfuscate sensitive data from request for logging.
+		 *
+		 * @param array $payload Request payload.
+		 * @return array
+		 */
+		protected function obfuscate_request_for_log( array $payload ) {
+			$safe_payload = $payload;
+
+			// Remove message content for privacy.
+			if ( isset( $safe_payload['messages'] ) ) {
+				$safe_payload['messages'] = array(
+					'count' => count( $safe_payload['messages'] ),
+				);
+			}
+
+			return $safe_payload;
+		}
+	}
+}
