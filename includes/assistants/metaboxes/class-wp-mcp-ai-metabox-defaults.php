@@ -158,11 +158,13 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 				}
 
 				$provider_labels = array(
-					'openai'     => __( 'OpenAI', 'mcp-ai-wpoos' ),
-					'gemini'     => __( 'Gemini', 'mcp-ai-wpoos' ),
-					'ollama'     => __( 'Ollama', 'mcp-ai-wpoos' ),
-					'lm_studio'  => __( 'LM Studio', 'mcp-ai-wpoos' ),
-					'cloudflare' => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
+					'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
+					'anthropic'   => __( 'Anthropic', 'mcp-ai-wpoos' ),
+					'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
+					'huggingface' => __( 'Huggingface', 'mcp-ai-wpoos' ),
+					'ollama'      => __( 'Ollama', 'mcp-ai-wpoos' ),
+					'lm_studio'   => __( 'LM Studio', 'mcp-ai-wpoos' ),
+					'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
 				);
 
 				$label = isset( $provider_labels[ $choice ] ) ? $provider_labels[ $choice ] : ucfirst( str_replace( '_', ' ', $choice ) );
