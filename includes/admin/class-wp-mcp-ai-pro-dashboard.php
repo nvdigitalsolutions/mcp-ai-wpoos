@@ -1183,10 +1183,160 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 * @since 1.5.1
 		 */
 		private function render_monitoring_tab() {
+			// Get event statistics for the summary table.
+			$recent_events = get_option( 'wp_mcp_ai_recent_activity', array() );
+			$event_stats   = $this->get_monitoring_event_stats();
 			?>
 			<div class="wp-mcp-ai-monitoring-header">
 				<p class="description">
 					<?php esc_html_e( 'Monitor security events, system health, and compliance-related activities in real-time.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<!-- Monitoring Summary Table -->
+			<div class="wp-mcp-ai-monitoring-summary" style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 20px; margin-bottom: 20px;">
+				<h2 style="margin-top: 0; font-size: 18px; border-bottom: 1px solid #dcdcde; padding-bottom: 10px;">
+					<?php esc_html_e( 'Event Summary', 'mcp-ai-wpoos' ); ?>
+				</h2>
+				<table class="wp-list-table widefat fixed striped" style="margin-top: 15px;">
+					<thead>
+						<tr>
+							<th style="width: 40%;"><?php esc_html_e( 'Event Category', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 20%; text-align: center;"><?php esc_html_e( 'Count (24h)', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 20%; text-align: center;"><?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 20%; text-align: center;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>
+								<span class="dashicons dashicons-lock" style="color: #0073aa;"></span>
+								<strong><?php esc_html_e( 'Authentication Events', 'mcp-ai-wpoos' ); ?></strong>
+							</td>
+							<td style="text-align: center; font-weight: bold; font-size: 16px;"><?php echo esc_html( $event_stats['auth_events'] ); ?></td>
+							<td style="text-align: center;">
+								<?php if ( $event_stats['auth_events'] > 0 ) : ?>
+									<span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
+								<?php else : ?>
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php endif; ?>
+							</td>
+							<td style="text-align: center;">
+								<?php if ( $event_stats['auth_events'] > 5 ) : ?>
+									<span style="color: #d63638;"><?php esc_html_e( 'Review', 'mcp-ai-wpoos' ); ?></span>
+								<?php else : ?>
+									<span style="color: #46b450;"><?php esc_html_e( 'Normal', 'mcp-ai-wpoos' ); ?></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span class="dashicons dashicons-media-document" style="color: #0073aa;"></span>
+								<strong><?php esc_html_e( 'File Integrity', 'mcp-ai-wpoos' ); ?></strong>
+							</td>
+							<td style="text-align: center; font-weight: bold; font-size: 16px;"><?php echo esc_html( $event_stats['file_integrity_events'] ); ?></td>
+							<td style="text-align: center;">
+								<?php if ( $event_stats['file_integrity_events'] > 0 ) : ?>
+									<span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
+								<?php else : ?>
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php endif; ?>
+							</td>
+							<td style="text-align: center;">
+								<?php if ( $event_stats['file_integrity_events'] > 0 ) : ?>
+									<span style="color: #d63638;"><?php esc_html_e( 'Review', 'mcp-ai-wpoos' ); ?></span>
+								<?php else : ?>
+									<span style="color: #46b450;"><?php esc_html_e( 'Normal', 'mcp-ai-wpoos' ); ?></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span class="dashicons dashicons-update" style="color: #0073aa;"></span>
+								<strong><?php esc_html_e( 'Plugin & Theme Updates', 'mcp-ai-wpoos' ); ?></strong>
+							</td>
+							<td style="text-align: center; font-weight: bold; font-size: 16px;"><?php echo esc_html( $event_stats['update_events'] ); ?></td>
+							<td style="text-align: center;">
+								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+							</td>
+							<td style="text-align: center;">
+								<span style="color: #46b450;"><?php esc_html_e( 'Normal', 'mcp-ai-wpoos' ); ?></span>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span class="dashicons dashicons-admin-settings" style="color: #0073aa;"></span>
+								<strong><?php esc_html_e( 'Configuration Changes', 'mcp-ai-wpoos' ); ?></strong>
+							</td>
+							<td style="text-align: center; font-weight: bold; font-size: 16px;"><?php echo esc_html( $event_stats['config_events'] ); ?></td>
+							<td style="text-align: center;">
+								<?php if ( $event_stats['config_events'] > 0 ) : ?>
+									<span class="dashicons dashicons-warning" style="color: #f0b849;"></span>
+								<?php else : ?>
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php endif; ?>
+							</td>
+							<td style="text-align: center;">
+								<?php if ( $event_stats['config_events'] > 3 ) : ?>
+									<span style="color: #d63638;"><?php esc_html_e( 'Review', 'mcp-ai-wpoos' ); ?></span>
+								<?php else : ?>
+									<span style="color: #46b450;"><?php esc_html_e( 'Normal', 'mcp-ai-wpoos' ); ?></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<span class="dashicons dashicons-warning" style="color: #d63638;"></span>
+								<strong><?php esc_html_e( 'Security Alerts', 'mcp-ai-wpoos' ); ?></strong>
+							</td>
+							<td style="text-align: center; font-weight: bold; font-size: 16px; color: <?php echo $event_stats['security_events'] > 0 ? '#d63638' : '#46b450'; ?>;">
+								<?php echo esc_html( $event_stats['security_events'] ); ?>
+							</td>
+							<td style="text-align: center;">
+								<?php if ( $event_stats['security_events'] > 0 ) : ?>
+									<span class="dashicons dashicons-dismiss" style="color: #d63638;"></span>
+								<?php else : ?>
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+								<?php endif; ?>
+							</td>
+							<td style="text-align: center;">
+								<?php if ( $event_stats['security_events'] > 0 ) : ?>
+									<span style="color: #d63638; font-weight: bold;"><?php esc_html_e( 'Action Required', 'mcp-ai-wpoos' ); ?></span>
+								<?php else : ?>
+									<span style="color: #46b450;"><?php esc_html_e( 'Normal', 'mcp-ai-wpoos' ); ?></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+					</tbody>
+					<tfoot>
+						<tr style="background: #f6f7f7; font-weight: bold;">
+							<td><?php esc_html_e( 'Total Events', 'mcp-ai-wpoos' ); ?></td>
+							<td style="text-align: center; font-size: 18px; color: #0073aa;"><?php echo esc_html( $event_stats['total_events'] ); ?></td>
+							<td style="text-align: center;">
+								<?php if ( $event_stats['critical_count'] > 0 ) : ?>
+									<span style="color: #d63638; font-weight: bold;"><?php echo esc_html( $event_stats['critical_count'] ); ?></span>
+								<?php else : ?>
+									<span style="color: #46b450;">0</span>
+								<?php endif; ?>
+							</td>
+							<td style="text-align: center;">
+								<?php if ( $event_stats['critical_count'] > 0 ) : ?>
+									<span style="color: #d63638; font-weight: bold;"><?php esc_html_e( 'Attention Needed', 'mcp-ai-wpoos' ); ?></span>
+								<?php else : ?>
+									<span style="color: #46b450;"><?php esc_html_e( 'All Clear', 'mcp-ai-wpoos' ); ?></span>
+								<?php endif; ?>
+							</td>
+						</tr>
+					</tfoot>
+				</table>
+				<p class="description" style="margin-top: 15px; margin-bottom: 0;">
+					<?php
+					printf(
+						/* translators: %d: Number of recent events */
+						esc_html__( 'Detailed event log with %d entries available below. Use filters to refine the view.', 'mcp-ai-wpoos' ),
+						count( $recent_events )
+					);
+					?>
 				</p>
 			</div>
 
