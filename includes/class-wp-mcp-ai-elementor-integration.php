@@ -54,23 +54,36 @@ class WP_MCP_AI_Elementor_Integration {
 			return;
 		}
 
+		// Determine if we should use output buffering.
+		// Skip buffering during Elementor editor page loads to prevent interference with
+		// WordPress authentication checks and other admin scripts that expect normal HTML output.
+		// Only use buffering during AJAX requests where JSON responses are expected.
+		$is_elementor_editor = $this->is_elementor_editor_page_load();
+		$should_buffer       = ! $is_elementor_editor;
+
 		// Start output buffering to catch any stray output that could break JSON responses.
 		// This is critical because Elementor uses AJAX with JSON responses during widget loading.
-		ob_start();
+		if ( $should_buffer ) {
+			ob_start();
+		}
 
 		try {
 			// Verify the shortcode class is loaded before loading widgets that depend on it.
 			// This prevents fatal errors when widgets reference WP_MCP_AI_Shortcode constants.
 			if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
 				// Clean the output buffer and return early if dependency is missing.
-				ob_end_clean();
+				if ( $should_buffer ) {
+					ob_end_clean();
+				}
 				return;
 			}
 
 			// Load the shared trait first, as all widgets depend on it.
 			$trait_path = WP_MCP_AI_PATH . 'includes/elementor/trait-wp-mcp-ai-elementor-text-formatting.php';
 			if ( ! file_exists( $trait_path ) ) {
-				ob_end_clean();
+				if ( $should_buffer ) {
+					ob_end_clean();
+				}
 				return;
 			}
 
@@ -78,7 +91,9 @@ class WP_MCP_AI_Elementor_Integration {
 
 			// Verify the trait was successfully loaded before proceeding.
 			if ( ! trait_exists( 'WP_MCP_AI_Elementor_Text_Formatting' ) ) {
-				ob_end_clean();
+				if ( $should_buffer ) {
+					ob_end_clean();
+				}
 				return;
 			}
 
@@ -147,11 +162,15 @@ class WP_MCP_AI_Elementor_Integration {
 			}
 
 			// Discard any output that was captured to prevent breaking JSON responses.
-			ob_end_clean();
+			if ( $should_buffer ) {
+				ob_end_clean();
+			}
 		} catch ( \Exception $e ) {
 			// If an exception occurs, clean the buffer and log the error.
 			// This prevents the exception message from being output as HTML.
-			ob_end_clean();
+			if ( $should_buffer ) {
+				ob_end_clean();
+			}
 
 			// Log the error if WP_DEBUG is enabled and the logger is available.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -161,5 +180,41 @@ class WP_MCP_AI_Elementor_Integration {
 				);
 			}
 		}
+	}
+
+	/**
+	 * Check if currently in Elementor editor page load context.
+	 *
+	 * Detects if we're loading the Elementor editor page (not AJAX requests).
+	 * This is used to skip output buffering during editor page loads, which would
+	 * interfere with WordPress admin scripts like wp-auth-check.
+	 *
+	 * @return bool True if in Elementor editor page load context, false otherwise.
+	 */
+	protected function is_elementor_editor_page_load() {
+		// Check if this is an AJAX request.
+		$is_ajax_request = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
+			|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
+
+		// If it's an AJAX request, it's not an editor page load.
+		if ( $is_ajax_request ) {
+			return false;
+		}
+
+		// Check if Elementor editor is being loaded via GET parameter.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
+		if ( isset( $_GET['action'] ) && 'elementor' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) {
+			return true;
+		}
+
+		// Check if Elementor Plugin is loaded and editor is active.
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			$elementor = \Elementor\Plugin::instance();
+			if ( $elementor && isset( $elementor->editor ) && $elementor->editor && method_exists( $elementor->editor, 'is_edit_mode' ) ) {
+				return $elementor->editor->is_edit_mode();
+			}
+		}
+
+		return false;
 	}
 }
