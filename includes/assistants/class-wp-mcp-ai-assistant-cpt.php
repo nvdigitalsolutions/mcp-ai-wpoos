@@ -577,31 +577,42 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$entries = array();
 
 				if ( empty( $tasks ) || ! is_array( $tasks ) ) {
-					$should_register_fallback = ! $skip_fallback;
-
-					if ( $tool instanceof WP_MCP_AI_Tool_Fallback_Shortcut_Interface ) {
-						$should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
-					} elseif ( method_exists( $tool, 'should_register_fallback_shortcut' ) ) {
-						$should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+					// Try to get pattern-based recommendations for tools without explicit shortcuts.
+					if ( class_exists( 'WP_MCP_AI_Shortcut_Recommendations' ) ) {
+						$recommendations = WP_MCP_AI_Shortcut_Recommendations::get_recommendations_for_tool( $tool );
+						if ( ! empty( $recommendations ) && is_array( $recommendations ) ) {
+							$tasks = $recommendations;
+						}
 					}
 
-					$should_register_fallback = apply_filters(
-						'wp_mcp_ai_tool_should_register_fallback_shortcut',
-						$should_register_fallback,
-						$tool,
-						$assistant_id,
-						$tasks
-					);
+					// If still no tasks, check for fallback.
+					if ( empty( $tasks ) || ! is_array( $tasks ) ) {
+						$should_register_fallback = ! $skip_fallback;
 
-					if ( $should_register_fallback ) {
-						$entries[] = array(
-							'label'   => sanitize_text_field( $tool->get_slug() ),
-							'payload' => sanitize_textarea_field( $tool->get_slug() ),
+						if ( $tool instanceof WP_MCP_AI_Tool_Fallback_Shortcut_Interface ) {
+							$should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+						} elseif ( method_exists( $tool, 'should_register_fallback_shortcut' ) ) {
+							$should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+						}
+
+						$should_register_fallback = apply_filters(
+							'wp_mcp_ai_tool_should_register_fallback_shortcut',
+							$should_register_fallback,
+							$tool,
+							$assistant_id,
+							$tasks
 						);
-					}
 
-					$shortcuts[ $tool_slug ] = $entries;
-					continue;
+						if ( $should_register_fallback ) {
+							$entries[] = array(
+								'label'   => sanitize_text_field( $tool->get_slug() ),
+								'payload' => sanitize_textarea_field( $tool->get_slug() ),
+							);
+						}
+
+						$shortcuts[ $tool_slug ] = $entries;
+						continue;
+					}
 				}
 
 				foreach ( $tasks as $task ) {
