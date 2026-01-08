@@ -87,7 +87,7 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		// DeepSeek-V3.2: input $0.28/1M, output $0.42/1M.
 		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'huggingface', 'deepseek-ai/DeepSeek-V3.2', 50000, 23422 );
 
-		// Expected: (50K / 1M) * 0.28 + (23.422K / 1M) * 0.42 = 0.014 + 0.00983724 = $0.02383724.
+		// Expected: (50000 / 1M) * 0.28 + (23422 / 1M) * 0.42 = 0.014 + 0.00983724 = $0.02383724.
 		$expected = ( 50000 / 1000000 ) * 0.28 + ( 23422 / 1000000 ) * 0.42;
 		$this->assertEquals( $expected, $cost, 'Hugging Face DeepSeek-V3.2 cost calculation incorrect', 0.0001 );
 	}
