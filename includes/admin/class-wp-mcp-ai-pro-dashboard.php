@@ -2534,38 +2534,149 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		private function render_monitoring_dashboard() {
 			$recent_events = get_option( 'wp_mcp_ai_recent_activity', array() );
+			$event_stats   = $this->get_monitoring_event_stats();
+			$system_health = $this->get_system_health_status();
 			?>
+			
+			<!-- Real-time Status Metrics -->
+			<div class="wp-mcp-ai-monitoring-metrics">
+				<div class="wp-mcp-ai-metric-card" data-status="<?php echo esc_attr( $system_health['overall_status'] ); ?>">
+					<div class="wp-mcp-ai-metric-icon">
+						<span class="dashicons dashicons-shield-alt"></span>
+					</div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-value"><?php echo esc_html( ucfirst( $system_health['overall_status'] ) ); ?></div>
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Security Status', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
+						<span class="dashicons dashicons-warning"></span>
+					</div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-value"><?php echo esc_html( $event_stats['critical_count'] ); ?></div>
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Critical Events (24h)', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
+						<span class="dashicons dashicons-info"></span>
+					</div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-value"><?php echo esc_html( $event_stats['total_events'] ); ?></div>
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Total Events (24h)', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
+						<span class="dashicons dashicons-clock"></span>
+					</div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-value"><?php echo esc_html( $system_health['uptime_display'] ); ?></div>
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'System Uptime', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Monitoring Options Bar -->
+			<div class="wp-mcp-ai-monitoring-options">
+				<button class="button" id="wp-mcp-ai-refresh-monitoring">
+					<span class="dashicons dashicons-update"></span>
+					<?php esc_html_e( 'Refresh Now', 'mcp-ai-wpoos' ); ?>
+				</button>
+				<label class="wp-mcp-ai-auto-refresh-toggle">
+					<input type="checkbox" id="wp-mcp-ai-auto-refresh" checked />
+					<?php esc_html_e( 'Auto-refresh (30s)', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<button class="button" id="wp-mcp-ai-export-events">
+					<span class="dashicons dashicons-download"></span>
+					<?php esc_html_e( 'Export Events', 'mcp-ai-wpoos' ); ?>
+				</button>
+				<span class="wp-mcp-ai-last-updated">
+					<?php
+					printf(
+						/* translators: %s: Timestamp */
+						esc_html__( 'Last updated: %s', 'mcp-ai-wpoos' ),
+						'<span id="wp-mcp-ai-last-update-time">' . esc_html( current_time( 'H:i:s' ) ) . '</span>'
+					);
+					?>
+				</span>
+			</div>
+
 			<div class="wp-mcp-ai-monitoring-grid">
-				<div class="wp-mcp-ai-card">
-					<h3><?php esc_html_e( 'Security Status', 'mcp-ai-wpoos' ); ?></h3>
-					<div class="wp-mcp-ai-status-indicator">
-						<span class="dashicons dashicons-shield-alt" style="font-size: 48px; color: #46b450;"></span>
-						<p><strong><?php esc_html_e( 'All Systems Operational', 'mcp-ai-wpoos' ); ?></strong></p>
+				<!-- System Health Status -->
+				<div class="wp-mcp-ai-card wp-mcp-ai-system-health-card">
+					<h3>
+						<?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?>
+						<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $system_health['overall_status'] ); ?>">
+							<?php echo esc_html( ucfirst( $system_health['overall_status'] ) ); ?>
+						</span>
+					</h3>
+					<div class="wp-mcp-ai-health-indicators">
+						<?php foreach ( $system_health['indicators'] as $indicator ) : ?>
+							<div class="wp-mcp-ai-health-indicator" data-status="<?php echo esc_attr( $indicator['status'] ); ?>">
+								<span class="wp-mcp-ai-health-icon dashicons dashicons-<?php echo esc_attr( $indicator['icon'] ); ?>"></span>
+								<div class="wp-mcp-ai-health-info">
+									<div class="wp-mcp-ai-health-name"><?php echo esc_html( $indicator['name'] ); ?></div>
+									<div class="wp-mcp-ai-health-value"><?php echo esc_html( $indicator['value'] ); ?></div>
+								</div>
+							</div>
+						<?php endforeach; ?>
 					</div>
 				</div>
 
-				<div class="wp-mcp-ai-card">
-					<h3><?php esc_html_e( 'Recent Security Events', 'mcp-ai-wpoos' ); ?></h3>
-					<?php if ( ! empty( $recent_events ) ) : ?>
-						<ul class="wp-mcp-ai-activity-list">
-							<?php foreach ( array_slice( $recent_events, 0, 5 ) as $event ) : ?>
-								<li><?php echo esc_html( $event['message'] ?? __( 'Security event', 'mcp-ai-wpoos' ) ); ?></li>
-							<?php endforeach; ?>
-						</ul>
-					<?php else : ?>
-						<p class="description"><?php esc_html_e( 'No recent security events.', 'mcp-ai-wpoos' ); ?></p>
-					<?php endif; ?>
-				</div>
-
+				<!-- Monitored Resources -->
 				<div class="wp-mcp-ai-card">
 					<h3><?php esc_html_e( 'Monitored Resources', 'mcp-ai-wpoos' ); ?></h3>
-					<ul>
-						<li>✓ <?php esc_html_e( 'File Integrity', 'mcp-ai-wpoos' ); ?></li>
-						<li>✓ <?php esc_html_e( 'Authentication Events', 'mcp-ai-wpoos' ); ?></li>
-						<li>✓ <?php esc_html_e( 'Plugin Updates', 'mcp-ai-wpoos' ); ?></li>
-						<li>✓ <?php esc_html_e( 'Configuration Changes', 'mcp-ai-wpoos' ); ?></li>
+					<ul class="wp-mcp-ai-monitored-resources">
+						<li>
+							<span class="dashicons dashicons-yes-alt"></span>
+							<?php esc_html_e( 'File Integrity Monitoring', 'mcp-ai-wpoos' ); ?>
+							<span class="wp-mcp-ai-resource-count"><?php echo esc_html( $event_stats['file_integrity_events'] ); ?> events</span>
+						</li>
+						<li>
+							<span class="dashicons dashicons-yes-alt"></span>
+							<?php esc_html_e( 'Authentication Events', 'mcp-ai-wpoos' ); ?>
+							<span class="wp-mcp-ai-resource-count"><?php echo esc_html( $event_stats['auth_events'] ); ?> events</span>
+						</li>
+						<li>
+							<span class="dashicons dashicons-yes-alt"></span>
+							<?php esc_html_e( 'Plugin & Theme Updates', 'mcp-ai-wpoos' ); ?>
+							<span class="wp-mcp-ai-resource-count"><?php echo esc_html( $event_stats['update_events'] ); ?> events</span>
+						</li>
+						<li>
+							<span class="dashicons dashicons-yes-alt"></span>
+							<?php esc_html_e( 'Configuration Changes', 'mcp-ai-wpoos' ); ?>
+							<span class="wp-mcp-ai-resource-count"><?php echo esc_html( $event_stats['config_events'] ); ?> events</span>
+						</li>
+						<li>
+							<span class="dashicons dashicons-yes-alt"></span>
+							<?php esc_html_e( 'Security Alerts', 'mcp-ai-wpoos' ); ?>
+							<span class="wp-mcp-ai-resource-count"><?php echo esc_html( $event_stats['security_events'] ); ?> events</span>
+						</li>
 					</ul>
 				</div>
+
+				<!-- Event Timeline Chart -->
+				<div class="wp-mcp-ai-card wp-mcp-ai-event-timeline-card">
+					<h3><?php esc_html_e( 'Event Timeline (24h)', 'mcp-ai-wpoos' ); ?></h3>
+					<div class="wp-mcp-ai-chart-container">
+						<canvas id="wpMcpAiEventTimelineChart"></canvas>
+					</div>
+				</div>
+			</div>
+
+			<!-- Real-time Event Log -->
+			<div class="wp-mcp-ai-card wp-mcp-ai-event-log-card">
+				<div class="wp-mcp-ai-card-header">
+					<h3><?php esc_html_e( 'Real-time Event Log', 'mcp-ai-wpoos' ); ?></h3>
+					<div class="wp-mcp-ai-card-actions">
+						<button class="button button-small" id="wp-mcp-ai-clear-dismissed">
+							<?php esc_html_e( 'Clear Dismissed', 'mcp-ai-wpoos' ); ?>
+						</button>
+					</div>
+				</div>
+				<?php $this->render_monitoring_event_table( $recent_events ); ?>
 			</div>
 			<?php
 		}
@@ -3857,6 +3968,375 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			 * @param array $chat_data Chat statistics data.
 			 */
 			return apply_filters( 'wp_mcp_ai_pro_dashboard_chat_data', $chat_data );
+		}
+
+		/**
+		 * Get monitoring event statistics.
+		 *
+		 * Returns aggregated statistics for monitoring events in the last 24 hours.
+		 *
+		 * @since 1.5.4
+		 * @return array Event statistics with counts by type and severity.
+		 */
+		private function get_monitoring_event_stats() {
+			$recent_events = get_option( 'wp_mcp_ai_recent_activity', array() );
+			$recent_errors = get_option( 'wp_mcp_ai_recent_errors', array() );
+
+			$stats = array(
+				'total_events'           => 0,
+				'critical_count'         => 0,
+				'file_integrity_events'  => 0,
+				'auth_events'            => 0,
+				'update_events'          => 0,
+				'config_events'          => 0,
+				'security_events'        => 0,
+			);
+
+			// Count events from last 24 hours.
+			$cutoff_time = time() - DAY_IN_SECONDS;
+
+			// Process activity events.
+			if ( is_array( $recent_events ) ) {
+				foreach ( $recent_events as $event ) {
+					$event_time = isset( $event['timestamp'] ) ? $event['timestamp'] : 0;
+					if ( $event_time > $cutoff_time ) {
+						++$stats['total_events'];
+
+						// Categorize by type.
+						$event_type = isset( $event['type'] ) ? $event['type'] : '';
+						switch ( $event_type ) {
+							case 'file_change':
+							case 'file_integrity':
+								++$stats['file_integrity_events'];
+								break;
+							case 'login':
+							case 'logout':
+							case 'authentication':
+								++$stats['auth_events'];
+								break;
+							case 'plugin_update':
+							case 'theme_update':
+							case 'core_update':
+								++$stats['update_events'];
+								break;
+							case 'setting_change':
+							case 'config_change':
+								++$stats['config_events'];
+								break;
+							case 'security_alert':
+							case 'security':
+								++$stats['security_events'];
+								break;
+						}
+					}
+				}
+			}
+
+			// Process error events for critical count.
+			if ( is_array( $recent_errors ) ) {
+				foreach ( $recent_errors as $error ) {
+					$error_time = isset( $error['timestamp'] ) ? $error['timestamp'] : 0;
+					if ( $error_time > $cutoff_time ) {
+						$severity = isset( $error['level'] ) ? $error['level'] : '';
+						if ( in_array( $severity, array( 'critical', 'error' ), true ) ) {
+							++$stats['critical_count'];
+						}
+					}
+				}
+			}
+
+			/**
+			 * Filter monitoring event statistics.
+			 *
+			 * @since 1.5.4
+			 *
+			 * @param array $stats Event statistics.
+			 */
+			return apply_filters( 'wp_mcp_ai_monitoring_event_stats', $stats );
+		}
+
+		/**
+		 * Get system health status.
+		 *
+		 * Returns current system health indicators and overall status.
+		 *
+		 * @since 1.5.4
+		 * @return array System health status with indicators and overall status.
+		 */
+		private function get_system_health_status() {
+			$health = array(
+				'overall_status'  => 'operational',
+				'uptime_display'  => $this->get_system_uptime(),
+				'indicators'      => array(),
+			);
+
+			// WordPress Health Check integration.
+			if ( function_exists( 'get_site_health_test_results' ) ) {
+				$site_health = get_site_health_test_results();
+				$failed_tests = 0;
+
+				if ( isset( $site_health['direct'] ) && is_array( $site_health['direct'] ) ) {
+					foreach ( $site_health['direct'] as $test ) {
+						if ( isset( $test['status'] ) && 'critical' === $test['status'] ) {
+							++$failed_tests;
+						}
+					}
+				}
+
+				if ( $failed_tests > 0 ) {
+					$health['overall_status'] = 'warning';
+				}
+			}
+
+			// Database health.
+			global $wpdb;
+			$db_status = $wpdb->check_connection( false ) ? 'healthy' : 'warning';
+			$health['indicators'][] = array(
+				'name'   => __( 'Database Connection', 'mcp-ai-wpoos' ),
+				'value'  => ucfirst( $db_status ),
+				'status' => $db_status,
+				'icon'   => 'database',
+			);
+
+			// PHP version check.
+			$php_version = PHP_VERSION;
+			$php_status  = version_compare( $php_version, '7.4', '>=' ) ? 'healthy' : 'warning';
+			$health['indicators'][] = array(
+				'name'   => __( 'PHP Version', 'mcp-ai-wpoos' ),
+				'value'  => $php_version,
+				'status' => $php_status,
+				'icon'   => 'admin-generic',
+			);
+
+			// WordPress version check.
+			global $wp_version;
+			$wp_status = version_compare( $wp_version, '6.0', '>=' ) ? 'healthy' : 'warning';
+			$health['indicators'][] = array(
+				'name'   => __( 'WordPress Version', 'mcp-ai-wpoos' ),
+				'value'  => $wp_version,
+				'status' => $wp_status,
+				'icon'   => 'wordpress-alt',
+			);
+
+			// Memory usage.
+			if ( function_exists( 'memory_get_usage' ) ) {
+				$memory_usage = size_format( memory_get_usage( true ) );
+				$memory_limit = ini_get( 'memory_limit' );
+				$health['indicators'][] = array(
+					'name'   => __( 'Memory Usage', 'mcp-ai-wpoos' ),
+					'value'  => $memory_usage . ' / ' . $memory_limit,
+					'status' => 'healthy',
+					'icon'   => 'performance',
+				);
+			}
+
+			/**
+			 * Filter system health status.
+			 *
+			 * @since 1.5.4
+			 *
+			 * @param array $health System health data.
+			 */
+			return apply_filters( 'wp_mcp_ai_system_health_status', $health );
+		}
+
+		/**
+		 * Get system uptime display.
+		 *
+		 * Returns a human-readable system uptime string.
+		 *
+		 * @since 1.5.4
+		 * @return string Uptime display.
+		 */
+		private function get_system_uptime() {
+			// Try to get actual system uptime if available (Linux only).
+			if ( function_exists( 'sys_getloadavg' ) && is_readable( '/proc/uptime' ) ) {
+				$uptime_data = file_get_contents( '/proc/uptime' );
+				if ( false !== $uptime_data ) {
+					$uptime_parts = explode( ' ', $uptime_data );
+					if ( isset( $uptime_parts[0] ) && is_numeric( $uptime_parts[0] ) ) {
+						$uptime_seconds = (int) $uptime_parts[0];
+						$days           = floor( $uptime_seconds / 86400 );
+						$hours          = floor( ( $uptime_seconds % 86400 ) / 3600 );
+						return sprintf( '%dd %dh', $days, $hours );
+					}
+				}
+			}
+
+			// Fallback: Use WordPress installation time.
+			$wp_install_time = get_option( 'wp_mcp_ai_install_time', current_time( 'timestamp' ) );
+			$uptime_seconds  = current_time( 'timestamp' ) - $wp_install_time;
+			$days            = floor( $uptime_seconds / 86400 );
+			return sprintf( '%d days', $days );
+		}
+
+		/**
+		 * Render monitoring event table.
+		 *
+		 * Renders a comprehensive, filterable table of monitoring events.
+		 *
+		 * @since 1.5.4
+		 * @param array $events Array of events to display.
+		 */
+		private function render_monitoring_event_table( $events ) {
+			// Enrich events with additional metadata.
+			$enriched_events = $this->enrich_monitoring_events( $events );
+
+			?>
+			<div class="wp-mcp-ai-event-table-wrapper">
+				<?php if ( ! empty( $enriched_events ) ) : ?>
+					<table class="wp-list-table widefat fixed striped wp-mcp-ai-event-table" id="wp-mcp-ai-monitoring-events-table">
+						<thead>
+							<tr>
+								<th class="wp-mcp-ai-event-severity" style="width: 80px;"><?php esc_html_e( 'Severity', 'mcp-ai-wpoos' ); ?></th>
+								<th class="wp-mcp-ai-event-type" style="width: 120px;"><?php esc_html_e( 'Type', 'mcp-ai-wpoos' ); ?></th>
+								<th class="wp-mcp-ai-event-message"><?php esc_html_e( 'Message', 'mcp-ai-wpoos' ); ?></th>
+								<th class="wp-mcp-ai-event-timestamp" style="width: 160px;"><?php esc_html_e( 'Timestamp', 'mcp-ai-wpoos' ); ?></th>
+								<th class="wp-mcp-ai-event-actions" style="width: 100px;"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $enriched_events as $event ) : ?>
+								<tr class="wp-mcp-ai-event-row" 
+									data-event-type="<?php echo esc_attr( $event['type'] ); ?>" 
+									data-event-severity="<?php echo esc_attr( $event['severity'] ); ?>"
+									data-event-timestamp="<?php echo esc_attr( $event['timestamp'] ); ?>">
+									<td class="wp-mcp-ai-event-severity">
+										<span class="wp-mcp-ai-severity-badge wp-mcp-ai-severity-<?php echo esc_attr( $event['severity'] ); ?>">
+											<?php echo esc_html( ucfirst( $event['severity'] ) ); ?>
+										</span>
+									</td>
+									<td class="wp-mcp-ai-event-type">
+										<span class="dashicons dashicons-<?php echo esc_attr( $event['icon'] ); ?>"></span>
+										<?php echo esc_html( $event['type_label'] ); ?>
+									</td>
+									<td class="wp-mcp-ai-event-message">
+										<?php echo esc_html( $event['message'] ); ?>
+										<?php if ( ! empty( $event['details'] ) ) : ?>
+											<button class="button button-link wp-mcp-ai-view-event-details" data-event-id="<?php echo esc_attr( $event['id'] ); ?>">
+												<?php esc_html_e( 'View Details', 'mcp-ai-wpoos' ); ?>
+											</button>
+										<?php endif; ?>
+									</td>
+									<td class="wp-mcp-ai-event-timestamp">
+										<?php echo esc_html( $event['time_display'] ); ?>
+									</td>
+									<td class="wp-mcp-ai-event-actions">
+										<button class="button button-small wp-mcp-ai-dismiss-event" data-event-id="<?php echo esc_attr( $event['id'] ); ?>">
+											<span class="dashicons dashicons-dismiss"></span>
+											<?php esc_html_e( 'Dismiss', 'mcp-ai-wpoos' ); ?>
+										</button>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+
+					<!-- Pagination -->
+					<div class="wp-mcp-ai-event-pagination">
+						<span class="wp-mcp-ai-event-count">
+							<?php
+							printf(
+								/* translators: %d: Number of events */
+								esc_html__( 'Showing %d events', 'mcp-ai-wpoos' ),
+								count( $enriched_events )
+							);
+							?>
+						</span>
+						<button class="button" id="wp-mcp-ai-load-more-events">
+							<?php esc_html_e( 'Load More', 'mcp-ai-wpoos' ); ?>
+						</button>
+					</div>
+				<?php else : ?>
+					<div class="wp-mcp-ai-empty-state">
+						<span class="dashicons dashicons-yes-alt"></span>
+						<p><?php esc_html_e( 'No security events to display. Your system is operating normally.', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<!-- Event Details Modal -->
+			<div id="wp-mcp-ai-event-details-modal" class="wp-mcp-ai-modal" style="display: none;">
+				<div class="wp-mcp-ai-modal-content">
+					<div class="wp-mcp-ai-modal-header">
+						<h2><?php esc_html_e( 'Event Details', 'mcp-ai-wpoos' ); ?></h2>
+						<button class="wp-mcp-ai-modal-close">
+							<span class="dashicons dashicons-no"></span>
+						</button>
+					</div>
+					<div class="wp-mcp-ai-modal-body" id="wp-mcp-ai-event-details-content">
+						<!-- Content loaded dynamically -->
+					</div>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Enrich monitoring events with additional metadata.
+		 *
+		 * Adds type labels, severity, icons, and formatted timestamps to events.
+		 *
+		 * @since 1.5.4
+		 * @param array $events Raw events array.
+		 * @return array Enriched events.
+		 */
+		private function enrich_monitoring_events( $events ) {
+			if ( ! is_array( $events ) ) {
+				return array();
+			}
+
+			$enriched = array();
+			$type_icons = array(
+				'authentication'  => 'lock',
+				'file-integrity'  => 'media-document',
+				'configuration'   => 'admin-settings',
+				'plugin-updates'  => 'update',
+				'security-alerts' => 'warning',
+				'default'         => 'info',
+			);
+
+			$type_labels = array(
+				'authentication'  => __( 'Authentication', 'mcp-ai-wpoos' ),
+				'file-integrity'  => __( 'File Integrity', 'mcp-ai-wpoos' ),
+				'configuration'   => __( 'Configuration', 'mcp-ai-wpoos' ),
+				'plugin-updates'  => __( 'Updates', 'mcp-ai-wpoos' ),
+				'security-alerts' => __( 'Security', 'mcp-ai-wpoos' ),
+			);
+
+			foreach ( $events as $index => $event ) {
+				if ( ! isset( $event['message'] ) ) {
+					continue;
+				}
+
+				$event_type = isset( $event['type'] ) ? $event['type'] : 'default';
+				$timestamp = isset( $event['timestamp'] ) ? $event['timestamp'] : current_time( 'timestamp' );
+
+				$enriched_event = array(
+					'id'           => 'event-' . $index,
+					'type'         => $event_type,
+					'type_label'   => isset( $type_labels[ $event_type ] ) ? $type_labels[ $event_type ] : __( 'General', 'mcp-ai-wpoos' ),
+					'icon'         => isset( $type_icons[ $event_type ] ) ? $type_icons[ $event_type ] : $type_icons['default'],
+					'message'      => $event['message'],
+					'severity'     => isset( $event['level'] ) ? $event['level'] : 'info',
+					'timestamp'    => $timestamp,
+					'time_display' => human_time_diff( $timestamp, current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'mcp-ai-wpoos' ),
+					'details'      => isset( $event['details'] ) ? $event['details'] : '',
+				);
+
+				$enriched[] = $enriched_event;
+			}
+
+			// Sort by timestamp descending (newest first).
+			usort(
+				$enriched,
+				function ( $a, $b ) {
+					// Use spaceship operator for safe comparison without overflow risk.
+					return $b['timestamp'] <=> $a['timestamp'];
+				}
+			);
+
+			return $enriched;
 		}
 	}
 }

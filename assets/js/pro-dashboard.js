@@ -439,6 +439,9 @@
 				$('#monitoring-search').val('');
 				self.filterMonitoringEvents();
 			});
+			
+			// Initialize new monitoring features
+			this.initMonitoringEnhancements();
 		},
 
 		/**
@@ -450,39 +453,305 @@
 			const timeframe = $('#monitoring-timeframe').val();
 			const search = $('#monitoring-search').val().toLowerCase();
 			
-			console.log('Filtering monitoring events:', { eventType, severity, timeframe, search });
-			
-			// Filter event cards (if they have data attributes)
-			$('.wp-mcp-ai-monitoring-dashboard .wp-mcp-ai-card').each(function() {
-				const $card = $(this);
-				const cardType = $card.data('event-type');
-				const cardSeverity = $card.data('severity');
-				const cardText = $card.text().toLowerCase();
+			// Filter event table rows
+			$('.wp-mcp-ai-event-row').each(function() {
+				const $row = $(this);
+				const rowType = $row.data('event-type');
+				const rowSeverity = $row.data('event-severity');
+				const rowText = $row.text().toLowerCase();
 				
 				let show = true;
 				
 				// Type filter
-				if (eventType !== 'all' && cardType && cardType !== eventType) {
+				if (eventType !== 'all' && rowType && rowType !== eventType) {
 					show = false;
 				}
 				
 				// Severity filter
-				if (severity !== 'all' && cardSeverity && cardSeverity !== severity) {
+				if (severity !== 'all' && rowSeverity && rowSeverity !== severity) {
 					show = false;
 				}
 				
 				// Search filter
-				if (search && cardText.indexOf(search) === -1) {
+				if (search && rowText.indexOf(search) === -1) {
 					show = false;
 				}
 				
-				$card.toggle(show);
+				$row.toggle(show);
 			});
 			
-			// Show message if filters applied
-			if (eventType !== 'all' || severity !== 'all' || timeframe !== '24h' || search) {
-				console.log('Monitoring filters applied');
+			// Update visible count
+			const visibleCount = $('.wp-mcp-ai-event-row:visible').length;
+			$('.wp-mcp-ai-event-count').text('Showing ' + visibleCount + ' events');
+		},
+		
+		/**
+		 * Initialize enhanced monitoring features.
+		 */
+		initMonitoringEnhancements: function() {
+			const self = this;
+			let autoRefreshInterval = null;
+			
+			// Manual refresh
+			$('#wp-mcp-ai-refresh-monitoring').on('click', function(e) {
+				e.preventDefault();
+				self.refreshMonitoringData();
+			});
+			
+			// Auto-refresh toggle
+			$('#wp-mcp-ai-auto-refresh').on('change', function() {
+				if ($(this).is(':checked')) {
+					autoRefreshInterval = setInterval(function() {
+						self.refreshMonitoringData();
+					}, 30000); // 30 seconds
+				} else {
+					if (autoRefreshInterval) {
+						clearInterval(autoRefreshInterval);
+						autoRefreshInterval = null;
+					}
+				}
+			});
+			
+			// Start auto-refresh by default
+			if ($('#wp-mcp-ai-auto-refresh').is(':checked')) {
+				autoRefreshInterval = setInterval(function() {
+					self.refreshMonitoringData();
+				}, 30000);
 			}
+			
+			// Export events
+			$('#wp-mcp-ai-export-events').on('click', function(e) {
+				e.preventDefault();
+				self.exportMonitoringEvents();
+			});
+			
+			// Clear dismissed events
+			$('#wp-mcp-ai-clear-dismissed').on('click', function(e) {
+				e.preventDefault();
+				self.clearDismissedEvents();
+			});
+			
+			// Dismiss event
+			$(document).on('click', '.wp-mcp-ai-dismiss-event', function(e) {
+				e.preventDefault();
+				const $button = $(this);
+				const eventId = $button.data('event-id');
+				self.dismissEvent(eventId, $button);
+			});
+			
+			// View event details
+			$(document).on('click', '.wp-mcp-ai-view-event-details', function(e) {
+				e.preventDefault();
+				const eventId = $(this).data('event-id');
+				self.showEventDetails(eventId);
+			});
+			
+			// Close modal
+			$(document).on('click', '.wp-mcp-ai-modal-close, .wp-mcp-ai-modal', function(e) {
+				if (e.target === this) {
+					$('.wp-mcp-ai-modal').hide();
+				}
+			});
+			
+			// Load more events
+			$('#wp-mcp-ai-load-more-events').on('click', function(e) {
+				e.preventDefault();
+				self.loadMoreEvents();
+			});
+			
+			// Initialize event timeline chart
+			this.initEventTimelineChart();
+		},
+		
+		/**
+		 * Refresh monitoring data.
+		 */
+		refreshMonitoringData: function() {
+			const self = this;
+			const $refreshButton = $('#wp-mcp-ai-refresh-monitoring');
+			
+			// Show loading state
+			$refreshButton.prop('disabled', true);
+			$('.wp-mcp-ai-monitoring-options').addClass('wp-mcp-ai-refreshing');
+			
+			// In a real implementation, this would make an AJAX call
+			// For now, simulate a refresh
+			setTimeout(function() {
+				// Update timestamp
+				const now = new Date();
+				const timeString = now.getHours().toString().padStart(2, '0') + ':' +
+					now.getMinutes().toString().padStart(2, '0') + ':' +
+					now.getSeconds().toString().padStart(2, '0');
+				$('#wp-mcp-ai-last-update-time').text(timeString);
+				
+				$refreshButton.prop('disabled', false);
+				$('.wp-mcp-ai-monitoring-options').removeClass('wp-mcp-ai-refreshing');
+			}, 1000);
+		},
+		
+		/**
+		 * Export monitoring events.
+		 */
+		exportMonitoringEvents: function() {
+			const events = [];
+			
+			$('.wp-mcp-ai-event-row:visible').each(function() {
+				const $row = $(this);
+				events.push({
+					severity: $row.data('event-severity'),
+					type: $row.data('event-type'),
+					message: $row.find('.wp-mcp-ai-event-message').text().trim(),
+					timestamp: $row.data('event-timestamp')
+				});
+			});
+			
+			// Convert to CSV
+			let csv = 'Severity,Type,Message,Timestamp\n';
+			events.forEach(function(event) {
+				csv += '"' + event.severity + '","' + event.type + '","' + 
+					event.message.replace(/"/g, '""') + '","' + event.timestamp + '"\n';
+			});
+			
+			// Download
+			const blob = new Blob([csv], { type: 'text/csv' });
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'monitoring-events-' + Date.now() + '.csv';
+			a.click();
+			window.URL.revokeObjectURL(url);
+		},
+		
+		/**
+		 * Clear dismissed events.
+		 */
+		clearDismissedEvents: function() {
+			if (confirm('Are you sure you want to clear all dismissed events? This action cannot be undone.')) {
+				// TODO: Implement AJAX call to clear dismissed events on server
+				// For now, remove dismissed events from current view only
+				const $dismissedRows = $('.wp-mcp-ai-event-row.dismissed');
+				
+				if ($dismissedRows.length > 0) {
+					$dismissedRows.fadeOut(300, function() {
+						$(this).remove();
+						// Update count
+						const visibleCount = $('.wp-mcp-ai-event-row:visible').length;
+						$('.wp-mcp-ai-event-count').text('Showing ' + visibleCount + ' events');
+					});
+				}
+			}
+		},
+		
+		/**
+		 * Dismiss an event.
+		 */
+		dismissEvent: function(eventId, $button) {
+			if (confirm('Dismiss this event?')) {
+				const $row = $button.closest('.wp-mcp-ai-event-row');
+				$row.fadeOut(300, function() {
+					$(this).remove();
+					// Update count
+					const visibleCount = $('.wp-mcp-ai-event-row:visible').length;
+					$('.wp-mcp-ai-event-count').text('Showing ' + visibleCount + ' events');
+				});
+			}
+		},
+		
+		/**
+		 * Show event details modal.
+		 */
+		showEventDetails: function(eventId) {
+			const $row = $('.wp-mcp-ai-event-row').filter(function() {
+				return $(this).find('[data-event-id="' + eventId + '"]').length > 0;
+			});
+			
+			if ($row.length === 0) {
+				return;
+			}
+			
+			const severity = $row.data('event-severity');
+			const type = $row.data('event-type');
+			const message = $row.find('.wp-mcp-ai-event-message').text().trim();
+			const timestamp = $row.data('event-timestamp');
+			
+			const detailsHtml = '<div class="wp-mcp-ai-event-details">' +
+				'<div class="wp-mcp-ai-detail-row"><strong>Severity:</strong> <span class="wp-mcp-ai-severity-badge wp-mcp-ai-severity-' + severity + '">' + severity + '</span></div>' +
+				'<div class="wp-mcp-ai-detail-row"><strong>Type:</strong> ' + type + '</div>' +
+				'<div class="wp-mcp-ai-detail-row"><strong>Message:</strong> ' + message + '</div>' +
+				'<div class="wp-mcp-ai-detail-row"><strong>Timestamp:</strong> ' + new Date(timestamp * 1000).toLocaleString() + '</div>' +
+				'</div>';
+			
+			$('#wp-mcp-ai-event-details-content').html(detailsHtml);
+			$('#wp-mcp-ai-event-details-modal').fadeIn(200);
+		},
+		
+		/**
+		 * Load more events.
+		 */
+		loadMoreEvents: function() {
+			// TODO: Implement AJAX pagination for loading additional events
+			// For now, this is a placeholder that will be implemented in a future update
+			const $button = $('#wp-mcp-ai-load-more-events');
+			$button.prop('disabled', true).text('Feature coming soon...');
+			
+			setTimeout(function() {
+				$button.prop('disabled', false).text('Load More');
+			}, 2000);
+		},
+		
+		/**
+		 * Initialize event timeline chart.
+		 */
+		initEventTimelineChart: function() {
+			const canvas = document.getElementById('wpMcpAiEventTimelineChart');
+			if (!canvas || typeof Chart === 'undefined') {
+				return;
+			}
+			
+			// TODO: Replace with actual event data from PHP via wpMcpAiProDashboard.chartData
+			// Sample data for demonstration - in production, this comes from server
+			const hours = [];
+			const eventCounts = [];
+			
+			for (let i = 23; i >= 0; i--) {
+				const hour = new Date();
+				hour.setHours(hour.getHours() - i);
+				hours.push(hour.getHours() + ':00');
+				// Temporary placeholder data - replace with real data
+				eventCounts.push(Math.floor(Math.random() * 10));
+			}
+			
+			new Chart(canvas, {
+				type: 'line',
+				data: {
+					labels: hours,
+					datasets: [{
+						label: 'Events per Hour',
+						data: eventCounts,
+						borderColor: '#0073aa',
+						backgroundColor: 'rgba(0, 115, 170, 0.1)',
+						tension: 0.4,
+						fill: true
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: {
+							display: false
+						}
+					},
+					scales: {
+						y: {
+							beginAtZero: true,
+							ticks: {
+								precision: 0
+							}
+						}
+					}
+				}
+			});
 		},
 
 		/**
