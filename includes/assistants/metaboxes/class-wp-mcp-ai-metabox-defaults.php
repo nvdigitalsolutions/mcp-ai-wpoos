@@ -127,9 +127,9 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 			$provider = $default_provider;
 		}
 
-		$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ) );
+		$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ) );
 		if ( ! is_array( $provider_choices ) ) {
-			$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+			$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
 		}
 
 		if ( '' === $temperature ) {
@@ -158,10 +158,11 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 				}
 
 				$provider_labels = array(
-					'openai'    => __( 'OpenAI', 'mcp-ai-wpoos' ),
-					'gemini'    => __( 'Gemini', 'mcp-ai-wpoos' ),
-					'ollama'    => __( 'Ollama', 'mcp-ai-wpoos' ),
-					'lm_studio' => __( 'LM Studio', 'mcp-ai-wpoos' ),
+					'openai'     => __( 'OpenAI', 'mcp-ai-wpoos' ),
+					'gemini'     => __( 'Gemini', 'mcp-ai-wpoos' ),
+					'ollama'     => __( 'Ollama', 'mcp-ai-wpoos' ),
+					'lm_studio'  => __( 'LM Studio', 'mcp-ai-wpoos' ),
+					'cloudflare' => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
 				);
 
 				$label = isset( $provider_labels[ $choice ] ) ? $provider_labels[ $choice ] : ucfirst( str_replace( '_', ' ', $choice ) );
