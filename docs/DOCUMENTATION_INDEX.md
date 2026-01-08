@@ -1,12 +1,14 @@
 # NV oOS Documentation Index
 
-**Last Updated:** January 6, 2026  
+**Last Updated:** January 8, 2026  
 **Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 665+ files (645+ in docs/ folder, 5 essential files in root)
+**Total Documentation:** 650+ files (645+ in docs/ folder, 6 essential files in root)
+
+> **📌 JANUARY 8, 2026 UPDATE:** Root directory reorganized - 19 temporary fix documents consolidated. See [Root Directory Consolidation](../ROOT-DOCS-REORGANIZATION.md) for details.
 
 > **📌 JANUARY 6, 2026 UPDATE (WEEK 2)**: 
 > - **100% ISO 27001:2022 Compliance Achieved** - 83 of 83 applicable controls implemented (was 56%)
@@ -30,6 +32,35 @@ This document provides a comprehensive index of all documentation available for 
 ---
 
 ## 🆕 Latest Updates - January 2026 ⭐ **LATEST UPDATES**
+
+### Root Directory Reorganization (January 8, 2026) 📁 **CLEANUP COMPLETE**
+
+Complete consolidation and reorganization of temporary documentation files:
+
+- **[Root Directory Consolidation](../ROOT-DOCS-REORGANIZATION.md)** ⭐ **NEW (Jan 8)**
+  - Cleaned up 19 temporary fix documentation files from root
+  - Consolidated Chart.js and Pro Dashboard fixes into single document
+  - Root directory now contains only 6 essential files
+  - All historical information preserved in proper hierarchy
+  
+- **[CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md](implementation-history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md)** ⭐ **NEW (Jan 8)**
+  - Comprehensive consolidation of all Chart.js and Pro Dashboard fixes
+  - Covers 15 root MD files → 1 consolidated reference
+  - Technical architecture, testing procedures, and lessons learned
+  - Cross-referenced with detailed docs in `docs/fixes/` and `docs/troubleshooting/`
+  
+- **[pro-dashboard-visual-test-guide.md](testing/pro-dashboard-visual-test-guide.md)** ⭐ **MOVED (Jan 8)**
+  - Visual testing guide for Pro Dashboard charts
+  - Moved from root to proper testing documentation location
+  - Complete visual reference with expected chart appearances
+
+**Files Consolidated:**
+- 8 Chart.js fix summaries
+- 4 Pro Dashboard fix summaries  
+- 2 Pull request summaries
+- 3 Implementation summaries
+- 1 Visual test guide
+- 1 Monitoring tab summary
 
 ### Dead Letter Queue & SLA Prioritization (January 3, 2026) ⭐ **NEW FEATURES**
 
