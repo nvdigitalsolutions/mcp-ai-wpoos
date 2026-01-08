@@ -188,10 +188,14 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				);
 			}
 
+			// Check if streaming is requested via options.
+			// Default to false for backward compatibility and non-streaming use cases.
+			$stream = isset( $options['stream'] ) && $options['stream'] ? true : false;
+
 			$payload = array(
 				'model'    => $model,
 				'messages' => $ollama_messages,
-				'stream'   => false,
+				'stream'   => $stream,
 			);
 
 			if ( ! isset( $payload['options'] ) ) {
