@@ -2749,47 +2749,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$payload['sessionKey'] = $recorded_session_key;
 			}
 
-			/**
-			 * Allow filtering of quick replies to be shown with the assistant's response.
-			 *
-			 * Quick replies are interactive buttons that appear below the assistant's message,
-			 * allowing users to quickly respond with predefined options (e.g., Yes/No, A/B/C).
-			 * They follow industry standards for chatbot UX, disappearing after selection.
-			 *
-			 * @since 1.1.0
-			 *
-			 * @param array|null      $quick_replies  Array of quick reply buttons or null for no buttons.
-			 *                                         Each button should have 'label' and 'value' keys.
-			 *                                         Example: array(
-			 *                                             array( 'label' => 'Yes', 'value' => 'Yes, please continue' ),
-			 *                                             array( 'label' => 'No', 'value' => 'No, thank you' )
-			 *                                         )
-			 * @param array           $response       Full AI response with content and tool calls.
-			 * @param int             $assistant_id   Assistant identifier.
-			 * @param array           $messages       Conversation messages array.
-			 * @param array           $assistant_config Assistant configuration.
-			 * @param WP_REST_Request $request        REST request instance.
-			 */
-			$quick_replies = apply_filters( 'wp_mcp_ai_quick_replies', null, $response, $assistant_id, $messages, $assistant_config, $request );
-
-			// Include quick replies in payload if provided.
-			if ( is_array( $quick_replies ) && ! empty( $quick_replies ) ) {
-				// Validate and sanitize quick replies.
-				$sanitized_replies = array();
-				foreach ( $quick_replies as $reply ) {
-					if ( ! is_array( $reply ) || empty( $reply['label'] ) ) {
-						continue;
-					}
-					$sanitized_replies[] = array(
-						'label' => sanitize_text_field( $reply['label'] ),
-						'value' => isset( $reply['value'] ) ? sanitize_textarea_field( $reply['value'] ) : sanitize_text_field( $reply['label'] ),
-					);
-				}
-				if ( ! empty( $sanitized_replies ) ) {
-					$payload['quick_replies'] = $sanitized_replies;
-				}
-			}
-
 			// Include tool result messages in the response for frontend display.
 			if ( ! empty( $tool_result_messages ) ) {
 				$payload['tool_results'] = $tool_result_messages;
@@ -3579,47 +3538,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Include the session key in the response so the client can save it.
 			if ( $recorded_session_key ) {
 				$payload['sessionKey'] = $recorded_session_key;
-			}
-
-			/**
-			 * Allow filtering of quick replies to be shown with the assistant's response.
-			 *
-			 * Quick replies are interactive buttons that appear below the assistant's message,
-			 * allowing users to quickly respond with predefined options (e.g., Yes/No, A/B/C).
-			 * They follow industry standards for chatbot UX, disappearing after selection.
-			 *
-			 * @since 1.1.0
-			 *
-			 * @param array|null      $quick_replies  Array of quick reply buttons or null for no buttons.
-			 *                                         Each button should have 'label' and 'value' keys.
-			 *                                         Example: array(
-			 *                                             array( 'label' => 'Yes', 'value' => 'Yes, please continue' ),
-			 *                                             array( 'label' => 'No', 'value' => 'No, thank you' )
-			 *                                         )
-			 * @param array           $response       Full AI response with content and tool calls.
-			 * @param int             $assistant_id   Assistant identifier.
-			 * @param array           $messages       Conversation messages array.
-			 * @param array           $assistant_config Assistant configuration.
-			 * @param WP_REST_Request $request        REST request instance.
-			 */
-			$quick_replies = apply_filters( 'wp_mcp_ai_quick_replies', null, $response, $assistant_id, $messages, $assistant_config, $request );
-
-			// Include quick replies in payload if provided.
-			if ( is_array( $quick_replies ) && ! empty( $quick_replies ) ) {
-				// Validate and sanitize quick replies.
-				$sanitized_replies = array();
-				foreach ( $quick_replies as $reply ) {
-					if ( ! is_array( $reply ) || empty( $reply['label'] ) ) {
-						continue;
-					}
-					$sanitized_replies[] = array(
-						'label' => sanitize_text_field( $reply['label'] ),
-						'value' => isset( $reply['value'] ) ? sanitize_textarea_field( $reply['value'] ) : sanitize_text_field( $reply['label'] ),
-					);
-				}
-				if ( ! empty( $sanitized_replies ) ) {
-					$payload['quick_replies'] = $sanitized_replies;
-				}
 			}
 
 			// ALWAYS include tool_results in payload if they exist.
