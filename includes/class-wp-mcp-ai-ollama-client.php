@@ -256,15 +256,6 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			$message = array( 'role' => 'assistant' );
 			$content = isset( $response['message']['content'] ) ? (string) $response['message']['content'] : '';
 
-			if ( '' !== $content ) {
-				$message['content'] = array(
-					array(
-						'type' => 'text',
-						'text' => $content,
-					),
-				);
-			}
-
 			// Determine finish_reason based on Ollama response.
 			// Ollama provides a 'done_reason' field that indicates why generation stopped.
 			// Possible values: 'stop' (natural completion), 'length' (max tokens), 'load' (loading model).
@@ -282,6 +273,22 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				$finish_reason = 'length';
 			}
 			// Otherwise keep default 'stop' - we have content and done=true or missing (assumed complete).
+
+			// Industry standard: When finish_reason is 'length' with no content, provide helpful error message.
+			// This happens when the prompt/conversation consumes all available tokens (num_predict limit).
+			// Following OpenAI API standard: message.content field should always be present.
+			if ( 'length' === $finish_reason && '' === trim( $content ) ) {
+				$content = __( 'The model could not generate a response because the conversation exceeded the available token limit. Try shortening your message, starting a new conversation, or increasing the token limit in Settings → NV oOS → Orchestration → Max Tokens.', 'mcp-ai-wpoos' );
+			}
+
+			// Always set message content field to maintain OpenAI API compatibility.
+			// All providers (OpenAI, LM Studio, Gemini, Anthropic) include this field even when empty.
+			$message['content'] = array(
+				array(
+					'type' => 'text',
+					'text' => $content,
+				),
+			);
 
 			$normalized = array(
 				'choices'  => array(
