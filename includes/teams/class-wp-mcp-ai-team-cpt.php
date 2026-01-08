@@ -400,6 +400,7 @@ class WP_MCP_AI_Team_CPT {
 					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'mcp-ai-wpoos' ); ?></option>
 					<option value="ollama" <?php selected( $default_provider, 'ollama' ); ?>><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></option>
 					<option value="lm_studio" <?php selected( $default_provider, 'lm_studio' ); ?>><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></option>
+					<option value="cloudflare" <?php selected( $default_provider, 'cloudflare' ); ?>><?php esc_html_e( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ); ?></option>
 				</select>
 			</p>
 
@@ -531,11 +532,12 @@ class WP_MCP_AI_Team_CPT {
 			$provider = get_post_meta( $post_id, self::META_DEFAULT_PROVIDER, true );
 			if ( $provider ) {
 				$provider_labels = array(
-					'openai'    => 'OpenAI',
-					'gemini'    => 'Gemini',
-					'anthropic' => 'Claude',
-					'ollama'    => 'Ollama',
-					'lm_studio' => 'LM Studio',
+					'openai'     => 'OpenAI',
+					'gemini'     => 'Gemini',
+					'anthropic'  => 'Claude',
+					'ollama'     => 'Ollama',
+					'lm_studio'  => 'LM Studio',
+					'cloudflare' => 'Cloudflare',
 				);
 				echo esc_html( isset( $provider_labels[ $provider ] ) ? $provider_labels[ $provider ] : $provider );
 			} else {
