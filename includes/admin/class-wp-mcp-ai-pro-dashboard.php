@@ -44,10 +44,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		/**
 		 * Delegate page keys as constants for type safety.
 		 */
-		const DELEGATE_SECURITY_AUDITS    = 'security_audits';
+		const DELEGATE_SECURITY_AUDITS   = 'security_audits';
 		const DELEGATE_SECURITY_TRAINING = 'security_training';
 		const DELEGATE_SUPPLIER_SECURITY = 'supplier_security';
-		const DELEGATE_ASSET_INVENTORY    = 'asset_inventory';
+		const DELEGATE_ASSET_INVENTORY   = 'asset_inventory';
 
 		/**
 		 * Singleton instance.
@@ -619,14 +619,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</div>
 				<?php
 				// Set default values to prevent errors.
-				$stats = array(
+				$stats          = array(
 					'implemented'    => 0,
 					'partial'        => 0,
 					'planned'        => 0,
 					'not_applicable' => 0,
 					'total'          => 0,
 				);
-				$compliance_pct   = 0;
+				$compliance_pct = 0;
 			} else {
 				$stats            = $this->calculate_controls_stats( $controls );
 				$total_applicable = $stats['total'] - $stats['not_applicable'];
@@ -931,14 +931,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</div>
 				<?php
 				// Set default values to prevent errors.
-				$stats = array(
+				$stats          = array(
 					'implemented'    => 0,
 					'partial'        => 0,
 					'planned'        => 0,
 					'not_applicable' => 0,
 					'total'          => 0,
 				);
-				$compliance_pct   = 0;
+				$compliance_pct = 0;
 			} else {
 				$stats            = $this->calculate_controls_stats( $controls );
 				$total_applicable = $stats['total'] - $stats['not_applicable'];
@@ -1890,20 +1890,23 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$recent_events = get_option( 'wp_mcp_ai_recent_activity', array() );
 
 			// Filter to only show security-relevant events.
-			$security_events = array_filter( $recent_events, function( $event ) {
-				$message = $event['message'] ?? '';
-				// Skip generic "Tool executed" and API request logs.
-				if ( false !== strpos( $message, 'Tool executed successfully' ) ) {
-					return false;
+			$security_events = array_filter(
+				$recent_events,
+				function ( $event ) {
+					$message = $event['message'] ?? '';
+					// Skip generic "Tool executed" and API request logs.
+					if ( false !== strpos( $message, 'Tool executed successfully' ) ) {
+						return false;
+					}
+					if ( false !== strpos( $message, 'Sending request to OpenAI' ) ) {
+						return false;
+					}
+					if ( false !== strpos( $message, 'OpenAI request completed' ) ) {
+						return false;
+					}
+					return true;
 				}
-				if ( false !== strpos( $message, 'Sending request to OpenAI' ) ) {
-					return false;
-				}
-				if ( false !== strpos( $message, 'OpenAI request completed' ) ) {
-					return false;
-				}
-				return true;
-			});
+			);
 
 			// If we have security events, use them; otherwise show sample data.
 			if ( empty( $security_events ) ) {
@@ -3010,7 +3013,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<?php foreach ( $risks as $risk ) : ?>
 							<?php
 							// Map risk level to badge class.
-							$badge_classes = array(
+							$badge_classes    = array(
 								'critical' => 'risk-critical',
 								'high'     => 'risk-high',
 								'medium'   => 'risk-medium',
@@ -3177,22 +3180,22 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Get controls based on framework.
 			switch ( $framework ) {
 				case 'iso27001':
-					$controls      = $this->get_iso27001_controls();
+					$controls       = $this->get_iso27001_controls();
 					$framework_name = 'ISO 27001:2022';
 					$control_label  = 'Controls';
 					break;
 				case 'soc2':
-					$controls      = $this->get_soc2_controls();
+					$controls       = $this->get_soc2_controls();
 					$framework_name = 'SOC 2';
 					$control_label  = 'Trust Services Criteria';
 					break;
 				case 'hipaa':
-					$controls      = $this->get_hipaa_controls();
+					$controls       = $this->get_hipaa_controls();
 					$framework_name = 'HIPAA';
 					$control_label  = 'Security Rule Safeguards';
 					break;
 				case 'gdpr':
-					$controls      = $this->get_gdpr_controls();
+					$controls       = $this->get_gdpr_controls();
 					$framework_name = 'GDPR';
 					$control_label  = 'Requirements';
 					break;
@@ -3391,8 +3394,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$controls      = array();
-			$lines         = explode( "\n", $content );
+			$controls        = array();
+			$lines           = explode( "\n", $content );
 			$current_control = null;
 
 			foreach ( $lines as $line ) {
@@ -3413,7 +3416,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						'justification' => '',
 					);
 				} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
-					$status_text = trim( $matches[1] );
+					$status_text               = trim( $matches[1] );
 					$current_control['status'] = $status_text;
 
 					// Map status to key.
@@ -3428,7 +3431,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						$current_control['applicable'] = false;
 					}
 				} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
-					$applicable_text         = trim( $matches[1] );
+					$applicable_text               = trim( $matches[1] );
 					$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
 				} elseif ( $current_control && preg_match( '/^\*\*Justification:\*\*\s+(.+)$/', $line, $matches ) ) {
 					$current_control['justification'] = trim( $matches[1] );
@@ -3497,9 +3500,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			// Count total criteria and implemented criteria.
 			// SOC 2 SoA uses "✅ Implemented" status markers.
 			$total_matches = array();
-			$impl_matches = array();
-			$total = preg_match_all( '/^\*\*Status:\*\*/m', $content, $total_matches );
-			$implemented = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content, $impl_matches );
+			$impl_matches  = array();
+			$total         = preg_match_all( '/^\*\*Status:\*\*/m', $content, $total_matches );
+			$implemented   = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content, $impl_matches );
 
 			if ( false === $total || false === $implemented || $total <= 0 ) {
 				return 0;
@@ -3536,11 +3539,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			// Count total safeguards and implemented safeguards.
 			// HIPAA SoA uses "✅ Implemented" and "❌ Not Applicable" status markers.
-			$total_matches = array();
-			$impl_matches = array();
-			$na_matches = array();
-			$total = preg_match_all( '/^\*\*Status:\*\*/m', $content, $total_matches );
-			$implemented = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content, $impl_matches );
+			$total_matches  = array();
+			$impl_matches   = array();
+			$na_matches     = array();
+			$total          = preg_match_all( '/^\*\*Status:\*\*/m', $content, $total_matches );
+			$implemented    = preg_match_all( '/^\*\*Status:\*\*.*✅.*Implemented/m', $content, $impl_matches );
 			$not_applicable = preg_match_all( '/^\*\*Status:\*\*.*❌.*Not Applicable/m', $content, $na_matches );
 
 			if ( false === $total || false === $implemented || false === $not_applicable ) {
@@ -3606,7 +3609,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						'mapping'        => '',
 					);
 				} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
-					$status_text = trim( $matches[1] );
+					$status_text               = trim( $matches[1] );
 					$current_control['status'] = $status_text;
 
 					// Map status to key.
@@ -3621,7 +3624,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						$current_control['applicable'] = false;
 					}
 				} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
-					$applicable_text         = trim( $matches[1] );
+					$applicable_text               = trim( $matches[1] );
 					$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
 				} elseif ( $current_control && preg_match( '/^\*\*Implementation:\*\*\s*$/', $line ) ) {
 					// Next lines will be implementation details.
@@ -3696,7 +3699,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						'mapping'        => '',
 					);
 				} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
-					$status_text = trim( $matches[1] );
+					$status_text               = trim( $matches[1] );
 					$current_control['status'] = $status_text;
 
 					// Map status to key.
@@ -3711,7 +3714,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						$current_control['applicable'] = false;
 					}
 				} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
-					$applicable_text         = trim( $matches[1] );
+					$applicable_text               = trim( $matches[1] );
 					$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
 				} elseif ( $current_control && preg_match( '/^\*\*Implementation:\*\*\s*$/', $line ) ) {
 					// Next lines will be implementation details.
@@ -3970,7 +3973,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						'treatment'   => '',
 						'status'      => '',
 					);
-					$in_table = false;
+					$in_table     = false;
 				} elseif ( $current_risk ) {
 					// Detect start of table (more flexible to handle whitespace variations).
 					if ( preg_match( '/^\|\s*Field\s*\|\s*Value\s*\|/i', $line ) ) {
@@ -4012,7 +4015,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 							case 'Treatment Option':
 								// Extract the treatment type - split on ' - ' to get the first part.
 								// Handles formats like "Reduce - Details", "Accept", or "Accept + Monitor".
-								$treatment_parts              = explode( ' - ', $value );
+								$treatment_parts           = explode( ' - ', $value );
 								$current_risk['treatment'] = trim( $treatment_parts[0] );
 								break;
 							case 'Status':
@@ -4043,15 +4046,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			global $wpdb;
 
 			$chat_data = array(
-				'total_conversations'      => 0,
-				'active_users'             => 0,
-				'today_conversations'      => 0,
-				'this_week_conversations'  => 0,
-				'top_tools'                => array(),
-				'top_providers'            => array(),
-				'top_models'               => array(),
-				'total_tokens_used'        => 0,
-				'total_cost'               => 0,
+				'total_conversations'     => 0,
+				'active_users'            => 0,
+				'today_conversations'     => 0,
+				'this_week_conversations' => 0,
+				'top_tools'               => array(),
+				'top_providers'           => array(),
+				'top_models'              => array(),
+				'total_tokens_used'       => 0,
+				'total_cost'              => 0,
 			);
 
 			// Try to get data from transcript repository if available.
@@ -4063,12 +4066,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 					// Get total conversations (unique session keys).
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					$total = $wpdb->get_var( "SELECT COUNT(DISTINCT session_key) FROM {$table}" );
+					$total                            = $wpdb->get_var( "SELECT COUNT(DISTINCT session_key) FROM {$table}" );
 					$chat_data['total_conversations'] = absint( $total );
 
 					// Get active users (unique user IDs).
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					$active_users = $wpdb->get_var( "SELECT COUNT(DISTINCT user_id) FROM {$table}" );
+					$active_users              = $wpdb->get_var( "SELECT COUNT(DISTINCT user_id) FROM {$table}" );
 					$chat_data['active_users'] = absint( $active_users );
 
 					// Get today's conversations.
@@ -4107,9 +4110,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				$tools_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_tool( $start_date, $end_date );
 				if ( is_array( $tools_data ) && ! empty( $tools_data ) ) {
 					// Sort by total tokens descending.
-					usort( $tools_data, function( $a, $b ) {
-						return $b['total_tokens'] - $a['total_tokens'];
-					});
+					usort(
+						$tools_data,
+						function ( $a, $b ) {
+							return $b['total_tokens'] - $a['total_tokens'];
+						}
+					);
 					// Take top 5.
 					$chat_data['top_tools'] = array_slice( $tools_data, 0, 5 );
 				}
@@ -4118,15 +4124,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				$providers_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_provider( $start_date, $end_date );
 				if ( is_array( $providers_data ) && ! empty( $providers_data ) ) {
 					// Sort by total tokens descending.
-					usort( $providers_data, function( $a, $b ) {
-						return $b['total_tokens'] - $a['total_tokens'];
-					});
+					usort(
+						$providers_data,
+						function ( $a, $b ) {
+							return $b['total_tokens'] - $a['total_tokens'];
+						}
+					);
 					$chat_data['top_providers'] = $providers_data;
-					
+
 					// Calculate total tokens and cost.
 					foreach ( $providers_data as $provider ) {
 						$chat_data['total_tokens_used'] += isset( $provider['total_tokens'] ) ? (int) $provider['total_tokens'] : 0;
-						$chat_data['total_cost'] += isset( $provider['total_cost'] ) ? (float) $provider['total_cost'] : 0;
+						$chat_data['total_cost']        += isset( $provider['total_cost'] ) ? (float) $provider['total_cost'] : 0;
 					}
 				}
 
@@ -4134,9 +4143,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				$models_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_model( $start_date, $end_date );
 				if ( is_array( $models_data ) && ! empty( $models_data ) ) {
 					// Sort by total tokens descending.
-					usort( $models_data, function( $a, $b ) {
-						return $b['total_tokens'] - $a['total_tokens'];
-					});
+					usort(
+						$models_data,
+						function ( $a, $b ) {
+							return $b['total_tokens'] - $a['total_tokens'];
+						}
+					);
 					// Take top 5.
 					$chat_data['top_models'] = array_slice( $models_data, 0, 5 );
 				}
@@ -4167,13 +4179,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$recent_errors = get_option( 'wp_mcp_ai_recent_errors', array() );
 
 			$stats = array(
-				'total_events'           => 0,
-				'critical_count'         => 0,
-				'file_integrity_events'  => 0,
-				'auth_events'            => 0,
-				'update_events'          => 0,
-				'config_events'          => 0,
-				'security_events'        => 0,
+				'total_events'          => 0,
+				'critical_count'        => 0,
+				'file_integrity_events' => 0,
+				'auth_events'           => 0,
+				'update_events'         => 0,
+				'config_events'         => 0,
+				'security_events'       => 0,
 			);
 
 			// Count events from last 24 hours.
@@ -4183,6 +4195,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			if ( is_array( $recent_events ) ) {
 				foreach ( $recent_events as $event ) {
 					$event_time = isset( $event['timestamp'] ) ? $event['timestamp'] : 0;
+					// Convert MySQL datetime string to Unix timestamp if needed.
+					if ( ! is_numeric( $event_time ) ) {
+						$event_time = strtotime( $event_time );
+						if ( false === $event_time ) {
+							$event_time = 0;
+						}
+					} else {
+						$event_time = (int) $event_time;
+					}
+
 					if ( $event_time > $cutoff_time ) {
 						++$stats['total_events'];
 
@@ -4220,6 +4242,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			if ( is_array( $recent_errors ) ) {
 				foreach ( $recent_errors as $error ) {
 					$error_time = isset( $error['timestamp'] ) ? $error['timestamp'] : 0;
+					// Convert MySQL datetime string to Unix timestamp if needed.
+					if ( ! is_numeric( $error_time ) ) {
+						$error_time = strtotime( $error_time );
+						if ( false === $error_time ) {
+							$error_time = 0;
+						}
+					} else {
+						$error_time = (int) $error_time;
+					}
+
 					if ( $error_time > $cutoff_time ) {
 						$severity = isset( $error['level'] ) ? $error['level'] : '';
 						if ( in_array( $severity, array( 'critical', 'error' ), true ) ) {
@@ -4249,14 +4281,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 		 */
 		private function get_system_health_status() {
 			$health = array(
-				'overall_status'  => 'operational',
-				'uptime_display'  => $this->get_system_uptime(),
-				'indicators'      => array(),
+				'overall_status' => 'operational',
+				'uptime_display' => $this->get_system_uptime(),
+				'indicators'     => array(),
 			);
 
 			// WordPress Health Check integration.
 			if ( function_exists( 'get_site_health_test_results' ) ) {
-				$site_health = get_site_health_test_results();
+				$site_health  = get_site_health_test_results();
 				$failed_tests = 0;
 
 				if ( isset( $site_health['direct'] ) && is_array( $site_health['direct'] ) ) {
@@ -4274,7 +4306,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			// Database health.
 			global $wpdb;
-			$db_status = $wpdb->check_connection( false ) ? 'healthy' : 'warning';
+			$db_status              = $wpdb->check_connection( false ) ? 'healthy' : 'warning';
 			$health['indicators'][] = array(
 				'name'   => __( 'Database Connection', 'mcp-ai-wpoos' ),
 				'value'  => ucfirst( $db_status ),
@@ -4283,8 +4315,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			);
 
 			// PHP version check.
-			$php_version = PHP_VERSION;
-			$php_status  = version_compare( $php_version, '7.4', '>=' ) ? 'healthy' : 'warning';
+			$php_version            = PHP_VERSION;
+			$php_status             = version_compare( $php_version, '7.4', '>=' ) ? 'healthy' : 'warning';
 			$health['indicators'][] = array(
 				'name'   => __( 'PHP Version', 'mcp-ai-wpoos' ),
 				'value'  => $php_version,
@@ -4294,7 +4326,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			// WordPress version check.
 			global $wp_version;
-			$wp_status = version_compare( $wp_version, '6.0', '>=' ) ? 'healthy' : 'warning';
+			$wp_status              = version_compare( $wp_version, '6.0', '>=' ) ? 'healthy' : 'warning';
 			$health['indicators'][] = array(
 				'name'   => __( 'WordPress Version', 'mcp-ai-wpoos' ),
 				'value'  => $wp_version,
@@ -4304,8 +4336,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			// Memory usage.
 			if ( function_exists( 'memory_get_usage' ) ) {
-				$memory_usage = size_format( memory_get_usage( true ) );
-				$memory_limit = ini_get( 'memory_limit' );
+				$memory_usage           = size_format( memory_get_usage( true ) );
+				$memory_limit           = ini_get( 'memory_limit' );
 				$health['indicators'][] = array(
 					'name'   => __( 'Memory Usage', 'mcp-ai-wpoos' ),
 					'value'  => $memory_usage . ' / ' . $memory_limit,
@@ -4476,7 +4508,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				return array();
 			}
 
-			$enriched = array();
+			$enriched   = array();
 			$type_icons = array(
 				'authentication'  => 'lock',
 				'file-integrity'  => 'media-document',
@@ -4500,7 +4532,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				}
 
 				$event_type = isset( $event['type'] ) ? $event['type'] : 'default';
-				$timestamp = isset( $event['timestamp'] ) ? $event['timestamp'] : current_time( 'timestamp' );
+				$timestamp  = isset( $event['timestamp'] ) ? $event['timestamp'] : current_time( 'timestamp' );
+
+				// Convert MySQL datetime string to Unix timestamp if needed.
+				if ( ! is_numeric( $timestamp ) ) {
+					$timestamp = strtotime( $timestamp );
+					// If conversion fails, use current time.
+					if ( false === $timestamp ) {
+						$timestamp = current_time( 'timestamp' );
+					}
+				} else {
+					// Ensure numeric timestamp is an integer.
+					$timestamp = (int) $timestamp;
+				}
 
 				$enriched_event = array(
 					'id'           => 'event-' . $index,
