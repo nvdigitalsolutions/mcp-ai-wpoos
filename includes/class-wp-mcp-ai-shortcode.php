@@ -1116,6 +1116,11 @@ class WP_MCP_AI_Shortcode {
 						continue;
 					}
 
+					// Skip hidden shortcuts.
+					if ( isset( $custom_shortcut['hidden'] ) && $custom_shortcut['hidden'] ) {
+						continue;
+					}
+
 					$label   = isset( $custom_shortcut['label'] ) ? sanitize_text_field( $custom_shortcut['label'] ) : '';
 					$payload = isset( $custom_shortcut['payload'] ) ? sanitize_textarea_field( $custom_shortcut['payload'] ) : '';
 
@@ -1183,6 +1188,11 @@ class WP_MCP_AI_Shortcode {
 				if ( ! empty( $override_shortcuts ) ) {
 					foreach ( $override_shortcuts as $override_shortcut ) {
 						if ( ! is_array( $override_shortcut ) ) {
+							continue;
+						}
+
+						// Skip hidden shortcuts.
+						if ( isset( $override_shortcut['hidden'] ) && $override_shortcut['hidden'] ) {
 							continue;
 						}
 
