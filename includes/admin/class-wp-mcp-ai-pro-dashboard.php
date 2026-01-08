@@ -4183,6 +4183,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			if ( is_array( $recent_events ) ) {
 				foreach ( $recent_events as $event ) {
 					$event_time = isset( $event['timestamp'] ) ? $event['timestamp'] : 0;
+					// Convert MySQL datetime string to Unix timestamp if needed.
+					if ( ! is_numeric( $event_time ) ) {
+						$event_time = strtotime( $event_time );
+						if ( false === $event_time ) {
+							$event_time = 0;
+						}
+					} else {
+						$event_time = (int) $event_time;
+					}
+
 					if ( $event_time > $cutoff_time ) {
 						++$stats['total_events'];
 
@@ -4220,6 +4230,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			if ( is_array( $recent_errors ) ) {
 				foreach ( $recent_errors as $error ) {
 					$error_time = isset( $error['timestamp'] ) ? $error['timestamp'] : 0;
+					// Convert MySQL datetime string to Unix timestamp if needed.
+					if ( ! is_numeric( $error_time ) ) {
+						$error_time = strtotime( $error_time );
+						if ( false === $error_time ) {
+							$error_time = 0;
+						}
+					} else {
+						$error_time = (int) $error_time;
+					}
+
 					if ( $error_time > $cutoff_time ) {
 						$severity = isset( $error['level'] ) ? $error['level'] : '';
 						if ( in_array( $severity, array( 'critical', 'error' ), true ) ) {
@@ -4501,6 +4521,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 				$event_type = isset( $event['type'] ) ? $event['type'] : 'default';
 				$timestamp = isset( $event['timestamp'] ) ? $event['timestamp'] : current_time( 'timestamp' );
+
+				// Convert MySQL datetime string to Unix timestamp if needed.
+				if ( ! is_numeric( $timestamp ) ) {
+					$timestamp = strtotime( $timestamp );
+					// If conversion fails, use current time.
+					if ( false === $timestamp ) {
+						$timestamp = current_time( 'timestamp' );
+					}
+				} else {
+					// Ensure numeric timestamp is an integer.
+					$timestamp = (int) $timestamp;
+				}
 
 				$enriched_event = array(
 					'id'           => 'event-' . $index,
