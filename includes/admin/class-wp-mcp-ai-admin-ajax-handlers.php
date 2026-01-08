@@ -222,7 +222,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$models = array();
 			foreach ( $data['models'] as $model ) {
 				if ( isset( $model['name'] ) ) {
-					$models[] = $model['name'];
+					$models[] = array(
+						'name'   => $model['name'],
+						'size'   => isset( $model['size'] ) ? $model['size'] : 0,
+						'family' => isset( $model['details']['family'] ) ? $model['details']['family'] : '',
+					);
 				}
 			}
 
