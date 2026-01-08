@@ -64,6 +64,23 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test cost calculation for Hugging Face models.
+	 */
+	public function test_calculate_cost_huggingface() {
+		// Llama 3.3 70B: $1.00 per 1M tokens (input/output).
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'huggingface', 'meta-llama/Llama-3.3-70B-Instruct', 1000000, 500000 );
+
+		// Expected: (1M / 1M) * 1.00 + (500K / 1M) * 1.00 = 1.00 + 0.50 = $1.50.
+		$this->assertEquals( 1.50, $cost, 'Hugging Face Llama 3.3 70B cost calculation incorrect' );
+
+		// Phi-3 Mini: $0.10 per 1M tokens (input/output).
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'huggingface', 'microsoft/Phi-3-mini-4k-instruct', 2000000, 1000000 );
+
+		// Expected: (2M / 1M) * 0.10 + (1M / 1M) * 0.10 = 0.20 + 0.10 = $0.30.
+		$this->assertEquals( 0.30, $cost, 'Hugging Face Phi-3 Mini cost calculation incorrect' );
+	}
+
+	/**
 	 * Test cost calculation for unknown provider.
 	 */
 	public function test_calculate_cost_unknown_provider() {
@@ -128,6 +145,7 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'anthropic', $providers, 'Should include Anthropic' );
 		$this->assertArrayHasKey( 'ollama', $providers, 'Should include Ollama' );
 		$this->assertArrayHasKey( 'lm_studio', $providers, 'Should include LM Studio' );
+		$this->assertArrayHasKey( 'huggingface', $providers, 'Should include Hugging Face' );
 	}
 
 	/**
