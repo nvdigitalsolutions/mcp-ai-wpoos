@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-widget-loading-error',
-        'version' => 'dev-copilot/fix-widget-loading-error',
-        'reference' => 'c16f0ca4efdfa8e3fedc7ce516e4da479ab4958c',
+        'pretty_version' => 'dev-copilot/fix-ollama-provider-issue',
+        'version' => 'dev-copilot/fix-ollama-provider-issue',
+        'reference' => '94d0e9179265a11747ed02bca05424f53b22a4c9',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-widget-loading-error',
-            'version' => 'dev-copilot/fix-widget-loading-error',
-            'reference' => 'c16f0ca4efdfa8e3fedc7ce516e4da479ab4958c',
+            'pretty_version' => 'dev-copilot/fix-ollama-provider-issue',
+            'version' => 'dev-copilot/fix-ollama-provider-issue',
+            'reference' => '94d0e9179265a11747ed02bca05424f53b22a4c9',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
