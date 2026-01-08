@@ -293,6 +293,11 @@ class WP_MCP_AI_Cost_Calculator {
 			),
 		),
 		'huggingface' => array(
+			// DeepSeek V3.2 (January 2026).
+			'deepseek-ai/DeepSeek-V3.2'         => array(
+				'input'  => 0.28, // $0.28 per 1M tokens (cache miss).
+				'output' => 0.42, // $0.42 per 1M tokens.
+			),
 			// Llama 3.3 70B Instruct.
 			'meta-llama/Llama-3.3-70B-Instruct' => array(
 				'input'  => 1.00, // $1.00 per 1M tokens ($0.001 per 1K).
@@ -322,6 +327,12 @@ class WP_MCP_AI_Cost_Calculator {
 			'Qwen/Qwen2.5-7B-Instruct'          => array(
 				'input'  => 0.20, // $0.20 per 1M tokens ($0.0002 per 1K).
 				'output' => 0.20,
+			),
+			// Default fallback for unknown Hugging Face models.
+			// Uses average pricing for estimation when specific model is not listed.
+			'default'                           => array(
+				'input'  => 0.50, // $0.50 per 1M tokens (estimated average).
+				'output' => 0.50, // $0.50 per 1M tokens (estimated average).
 			),
 		),
 	);
@@ -379,9 +390,11 @@ class WP_MCP_AI_Cost_Calculator {
 			return $provider_pricing[ $model_normalized ];
 		}
 
-		// For ollama and lm_studio, return default pricing.
-		if ( in_array( $provider, array( 'ollama', 'lm_studio' ), true ) ) {
-			return $provider_pricing['default'];
+		// For ollama, lm_studio, and huggingface, return default pricing if available.
+		if ( in_array( $provider, array( 'ollama', 'lm_studio', 'huggingface' ), true ) ) {
+			if ( isset( $provider_pricing['default'] ) ) {
+				return $provider_pricing['default'];
+			}
 		}
 
 		// Try to find the longest matching prefix (e.g., 'gpt-5-2025-08-07' should match 'gpt-5').
