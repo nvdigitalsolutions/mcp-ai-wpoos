@@ -203,6 +203,10 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			// Apply resource-aware num_predict if not explicitly set.
+			// Priority order:
+			// 1. options['max_tokens'] (if set, converted to num_predict for Ollama compatibility)
+			// 2. options['num_predict'] (if set, Ollama native parameter)
+			// 3. Resource manager tier-based limits (2000/8000/32000 based on workload tier)
 			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['num_predict'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$num_predict  = $resource_mgr->get_max_tokens();
@@ -215,13 +219,17 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				 */
 				$num_predict = apply_filters( 'wp_mcp_ai_ollama_num_predict', $num_predict, $options );
 
-				if ( $num_predict > 0 ) {
-					$payload['options']['num_predict'] = $num_predict;
-				}
+				// Enforce minimum value to prevent Ollama from using unlimited tokens.
+				// If filter returns 0 or negative, use minimum of 512 tokens.
+				$num_predict = max( 512, absint( $num_predict ) );
+
+				$payload['options']['num_predict'] = $num_predict;
 			} elseif ( isset( $options['max_tokens'] ) ) {
-				$payload['options']['num_predict'] = absint( $options['max_tokens'] );
+				// Use max_tokens with minimum enforcement.
+				$payload['options']['num_predict'] = max( 512, absint( $options['max_tokens'] ) );
 			} elseif ( isset( $options['num_predict'] ) ) {
-				$payload['options']['num_predict'] = absint( $options['num_predict'] );
+				// Use num_predict with minimum enforcement.
+				$payload['options']['num_predict'] = max( 512, absint( $options['num_predict'] ) );
 			}
 
 			if ( empty( $payload['options'] ) ) {
