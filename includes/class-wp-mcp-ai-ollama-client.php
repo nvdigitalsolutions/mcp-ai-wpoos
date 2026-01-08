@@ -196,10 +196,10 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 				// Accumulate content from message field.
 				if ( isset( $chunk['message']['content'] ) ) {
-					// Ollama sends incremental content in each chunk.
-					// Some implementations send the full content each time, others send deltas.
-					// For safety, we take the latest content from the chunk.
-					$accumulated_content = (string) $chunk['message']['content'];
+					// Ollama sends incremental content deltas in each chunk.
+					// We need to append (concatenate) each delta to build the full response.
+					// See: https://docs.ollama.com/api/streaming
+					$accumulated_content .= (string) $chunk['message']['content'];
 				}
 
 				// Check if this is the final chunk.

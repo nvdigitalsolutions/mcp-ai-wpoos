@@ -770,6 +770,123 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that streaming responses accumulate content correctly.
+	 *
+	 * This tests the fix for the bug where streaming responses only returned
+	 * the last chunk's content instead of accumulating all chunks.
+	 *
+	 * @group streaming
+	 */
+	public function test_streaming_response_accumulates_content() {
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Ollama_Client();
+
+		// Simulate Ollama streaming response with multiple chunks.
+		// Ollama sends content deltas in each chunk, not full accumulated content.
+		// See: https://docs.ollama.com/api/streaming
+		$filter_callback = function ( $preempt, $args, $url ) {
+			// Simulate newline-delimited JSON stream with multiple chunks.
+			$stream_chunks = array(
+				array(
+					'model'   => 'llama2',
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => 'Hello',
+					),
+					'done'    => false,
+				),
+				array(
+					'model'   => 'llama2',
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => ' there',
+					),
+					'done'    => false,
+				),
+				array(
+					'model'   => 'llama2',
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => '!',
+					),
+					'done'    => false,
+				),
+				array(
+					'model'              => 'llama2',
+					'message'            => array(
+						'role'    => 'assistant',
+						'content' => '', // Final chunk often has empty content.
+					),
+					'done'               => true,
+					'done_reason'        => 'stop',
+					'prompt_eval_count'  => 10,
+					'eval_count'         => 15,
+				),
+			);
+
+			// Build newline-delimited JSON response.
+			$body = '';
+			foreach ( $stream_chunks as $chunk ) {
+				$body .= wp_json_encode( $chunk ) . "\n";
+			}
+
+			return array(
+				'headers'  => array(),
+				'body'     => $body,
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Say hello',
+			),
+		);
+
+		// Enable streaming in options.
+		$response = $client->create_chat_completion( $messages, array( 'stream' => true ) );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// Verify response structure.
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'choices', $response );
+		$this->assertNotEmpty( $response['choices'] );
+
+		$choice = $response['choices'][0];
+
+		// Verify finish_reason is 'stop'.
+		$this->assertArrayHasKey( 'finish_reason', $choice );
+		$this->assertSame( 'stop', $choice['finish_reason'] );
+
+		// Verify message content.
+		$this->assertArrayHasKey( 'message', $choice );
+		$this->assertArrayHasKey( 'content', $choice['message'] );
+		$this->assertIsArray( $choice['message']['content'] );
+		$this->assertNotEmpty( $choice['message']['content'] );
+
+		// Content should be accumulated from all chunks: "Hello" + " there" + "!" = "Hello there!".
+		$content_text = $choice['message']['content'][0]['text'];
+		$this->assertSame( 'Hello there!', $content_text, 'Streaming content should accumulate all chunks, not just the last one' );
+
+		// Verify usage metadata from final chunk.
+		$this->assertArrayHasKey( 'usage', $response );
+		$this->assertSame( 10, $response['usage']['prompt_tokens'] );
+		$this->assertSame( 15, $response['usage']['completion_tokens'] );
+	}
+
+	/**
 	 * Ensure the Ollama client handles token limit with empty content correctly.
 	 * This tests the fix for the "response ended prematurely" error.
 	 */
