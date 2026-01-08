@@ -19,8 +19,8 @@ class WP_MCP_AI_Cost_Calculator {
 	/**
 	 * Provider pricing models (USD per 1M tokens).
 	 *
-	 * Prices updated as of November 2025.
-	 * Source: Official provider pricing pages.
+	 * Prices updated as of January 2026.
+	 * Source: Official provider pricing pages and Hugging Face Inference API.
 	 */
 	const PRICING = array(
 		'openai'    => array(
@@ -286,10 +286,42 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 0.00,
 			),
 		),
-		'lm_studio' => array(
+		'lm_studio'   => array(
 			'default' => array(
 				'input'  => 0.00,
 				'output' => 0.00,
+			),
+		),
+		'huggingface' => array(
+			// Llama 3.3 70B Instruct.
+			'meta-llama/Llama-3.3-70B-Instruct' => array(
+				'input'  => 1.00, // $1.00 per 1M tokens ($0.001 per 1K).
+				'output' => 1.00,
+			),
+			// Llama 3.1 8B Instruct.
+			'meta-llama/Llama-3.1-8B-Instruct'  => array(
+				'input'  => 0.30, // $0.30 per 1M tokens ($0.0003 per 1K).
+				'output' => 0.30,
+			),
+			// Mistral 7B Instruct v0.3.
+			'mistralai/Mistral-7B-Instruct-v0.3' => array(
+				'input'  => 0.20, // $0.20 per 1M tokens ($0.0002 per 1K).
+				'output' => 0.20,
+			),
+			// Phi-3 Mini 4K Instruct.
+			'microsoft/Phi-3-mini-4k-instruct'  => array(
+				'input'  => 0.10, // $0.10 per 1M tokens ($0.0001 per 1K).
+				'output' => 0.10,
+			),
+			// Qwen 2.5 72B Instruct.
+			'Qwen/Qwen2.5-72B-Instruct'         => array(
+				'input'  => 1.00, // $1.00 per 1M tokens ($0.001 per 1K).
+				'output' => 1.00,
+			),
+			// Qwen 2.5 7B Instruct.
+			'Qwen/Qwen2.5-7B-Instruct'          => array(
+				'input'  => 0.20, // $0.20 per 1M tokens ($0.0002 per 1K).
+				'output' => 0.20,
 			),
 		),
 	);

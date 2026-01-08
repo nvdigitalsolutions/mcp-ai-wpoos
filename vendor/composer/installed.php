@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-pro-dashboard-monitoring',
-        'version' => 'dev-copilot/enhance-pro-dashboard-monitoring',
-        'reference' => '8b30aaed86543e60002d0ca30b92548e6fee4bb8',
+        'pretty_version' => 'dev-copilot/update-model-pricing-table',
+        'version' => 'dev-copilot/update-model-pricing-table',
+        'reference' => '7c6af8cd8283e84d996e5ac22e8a36dd5e14f203',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-pro-dashboard-monitoring',
-            'version' => 'dev-copilot/enhance-pro-dashboard-monitoring',
-            'reference' => '8b30aaed86543e60002d0ca30b92548e6fee4bb8',
+            'pretty_version' => 'dev-copilot/update-model-pricing-table',
+            'version' => 'dev-copilot/update-model-pricing-table',
+            'reference' => '7c6af8cd8283e84d996e5ac22e8a36dd5e14f203',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
