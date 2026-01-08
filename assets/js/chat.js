@@ -12350,6 +12350,9 @@
                 const usage = chatData && chatData.usage ? chatData.usage : null;
                 const cost = data && data.cost ? data.cost : null;
                 
+                // Extract quick_replies from data (interactive buttons feature)
+                const quickReplies = data && data.quick_replies ? data.quick_replies : null;
+                
                 const messageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                     state: state,
                     speech: {
@@ -12357,7 +12360,8 @@
                         text: assistantDisplay.text || '',
                     },
                     usage: usage,
-                    cost: cost
+                    cost: cost,
+                    quickReplies: quickReplies
                 });
                 
                 // Add assistant message to conversation
@@ -12652,6 +12656,9 @@
                 });
             }
 
+            // Extract quick_replies from data (interactive buttons feature)
+            const quickReplies = data && data.quick_replies ? data.quick_replies : null;
+
             assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 state: state,
                 speech: {
@@ -12661,6 +12668,7 @@
                 usage: aggregatedUsage,
                 cost: aggregatedCost,
                 capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null,
+                quickReplies: quickReplies
             });
             
             // Preserve the original content structure if it's an array (contains image blocks)
@@ -13942,6 +13950,67 @@
         messageElement.appendChild(flagsContainer);
     }
 
+    /**
+     * Render quick reply buttons for the assistant's message.
+     * 
+     * Quick replies are interactive buttons that allow users to respond quickly
+     * with predefined options (e.g., Yes/No, A/B/C choices). They follow industry
+     * standards for chatbot UX by disappearing after selection to prevent confusion.
+     * 
+     * @param {Array} quickReplies - Array of quick reply button objects with 'label' and 'value'
+     * @param {Object} state - Chat state object for handling button clicks
+     * @return {HTMLElement|null} Container element with buttons, or null if no valid replies
+     */
+    function renderQuickReplies(quickReplies, state) {
+        if (!Array.isArray(quickReplies) || quickReplies.length === 0) {
+            return null;
+        }
+
+        // Validate that we have at least one valid quick reply
+        const validReplies = quickReplies.filter(function(reply) {
+            return reply && typeof reply === 'object' && reply.label;
+        });
+
+        if (validReplies.length === 0) {
+            return null;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'wp-mcp-ai-chat__quick-replies';
+
+        validReplies.forEach(function(reply) {
+            const button = document.createElement('button');
+            button.className = 'wp-mcp-ai-chat__quick-reply-button';
+            button.textContent = escapeHtml(reply.label);
+            button.type = 'button';
+
+            // Use value if provided, otherwise use label
+            const responseValue = reply.value || reply.label;
+
+            // Handle button click
+            button.addEventListener('click', function() {
+                // Remove all quick reply buttons to prevent multiple submissions
+                const allQuickReplies = state.messagesEl.querySelectorAll('.wp-mcp-ai-chat__quick-replies');
+                allQuickReplies.forEach(function(qr) {
+                    qr.remove();
+                });
+
+                // Send the response value as a user message
+                if (state.inputEl) {
+                    state.inputEl.value = responseValue;
+                    // Trigger the send button click to submit the message
+                    if (state.sendButtonEl) {
+                        state.sendButtonEl.click();
+                    }
+                }
+            });
+
+            container.appendChild(button);
+        });
+
+        return container;
+    }
+
     function appendMessage(listEl, role, payload, allowMarkdown, options) {
         if (typeof payload === 'undefined' || payload === null) {
             return null;
@@ -14244,6 +14313,15 @@
         }
 
         listEl.appendChild(entry);
+
+        // Render quick reply buttons for assistant messages (interactive buttons feature)
+        if (role === 'assistant' && options && options.quickReplies && chatState) {
+            const quickRepliesContainer = renderQuickReplies(options.quickReplies, chatState);
+            if (quickRepliesContainer) {
+                listEl.appendChild(quickRepliesContainer);
+            }
+        }
+
         scrollBatcher.scrollToBottom(listEl);
 
         return entry;
