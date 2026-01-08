@@ -131,6 +131,9 @@ class WP_MCP_AI_Model_Config_Renderer {
 				.wp-mcp-ai-model-provider-badge.lm_studio {
 					background-color: #666;
 				}
+				.wp-mcp-ai-model-provider-badge.cloudflare {
+					background-color: #f38020;
+				}
 				.wp-mcp-ai-storage-info {
 					background: #f0f6fc;
 					border-left: 4px solid #0073aa;

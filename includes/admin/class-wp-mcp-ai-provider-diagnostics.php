@@ -341,9 +341,82 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- Cloudflare Workers AI -->
+				<div class="card">
+					<h2><?php esc_html_e( '6. Cloudflare Workers AI', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_cloudflare'] ) ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'API Token Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['cloudflare_api_token'] ) ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['cloudflare_api_token'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Account ID', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['cloudflare_account_id'] ) ) : ?>
+										<code><?php echo esc_html( $settings['cloudflare_account_id'] ); ?></code>
+									<?php else : ?>
+										<span style="color: orange;">⚠ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['cloudflare_model'] ) ) : ?>
+										<code><?php echo esc_html( $settings['cloudflare_model'] ); ?></code>
+									<?php else : ?>
+										<?php esc_html_e( 'Not Selected', 'mcp-ai-wpoos' ); ?>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="cloudflare-test-result" style="margin: 15px 0;"></div>
+
+					<button 
+						type="button" 
+						class="button button-primary test-provider" 
+						data-provider="cloudflare"
+						<?php echo esc_attr( empty( $settings['enable_cloudflare'] ) || empty( $settings['cloudflare_api_token'] ) || empty( $settings['cloudflare_account_id'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test Cloudflare Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_cloudflare'] ) || empty( $settings['cloudflare_api_token'] ) || empty( $settings['cloudflare_account_id'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your Cloudflare Workers AI settings in the Providers tab. You need to enable the provider, set your API token, and account ID.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Cloudflare Workers AI provides access to models like Llama, Mistral, and more running on Cloudflare\'s edge network.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
 				<!-- Google Maps Platform -->
 				<div class="card">
-					<h2><?php esc_html_e( '6. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '7. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -390,7 +463,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Provider Summary -->
 				<div class="card">
-					<h2><?php esc_html_e( '7. Provider Summary', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '8. Provider Summary', 'mcp-ai-wpoos' ); ?></h2>
 					<?php
 					$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 					$configured       = array();
@@ -409,6 +482,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					}
 					if ( ! empty( $settings['lm_studio_endpoint_url'] ) ) {
 						$configured[] = 'LM Studio';
+					}
+					if ( ! empty( $settings['enable_cloudflare'] ) && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
+						$configured[] = 'Cloudflare Workers AI';
 					}
 					if ( ! empty( $settings['google_maps_api_key'] ) ) {
 						$configured[] = 'Google Maps';
@@ -460,7 +536,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Troubleshooting -->
 				<div class="card">
-					<h2><?php esc_html_e( '8. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '9. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
 					
 					<h3><?php esc_html_e( 'Common Issues:', 'mcp-ai-wpoos' ); ?></h3>
 					<ul>
@@ -508,6 +584,16 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							</ul>
 						</li>
 						<li>
+							<strong><?php esc_html_e( 'Cloudflare Workers AI connection fails:', 'mcp-ai-wpoos' ); ?></strong>
+							<ul>
+								<li><?php esc_html_e( 'Verify the Cloudflare provider is enabled in settings', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Check API token is correct and has Workers AI permissions', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Ensure account ID matches your Cloudflare account', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Verify Workers AI is enabled for your Cloudflare account', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Check that selected model is available in your region', 'mcp-ai-wpoos' ); ?></li>
+							</ul>
+						</li>
+						<li>
 							<strong><?php esc_html_e( 'Google Maps connection fails:', 'mcp-ai-wpoos' ); ?></strong>
 							<ul>
 								<li><?php esc_html_e( 'Verify API key is correct and active', 'mcp-ai-wpoos' ); ?></li>
@@ -525,6 +611,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						<li><a href="https://platform.openai.com/api-keys" target="_blank"><?php esc_html_e( 'OpenAI API Keys', 'mcp-ai-wpoos' ); ?></a></li>
 						<li><a href="https://aistudio.google.com/app/apikey" target="_blank"><?php esc_html_e( 'Google AI Studio', 'mcp-ai-wpoos' ); ?></a></li>
 						<li><a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank"><?php esc_html_e( 'Google Cloud Console - Maps API', 'mcp-ai-wpoos' ); ?></a></li>
+						<li><a href="https://dash.cloudflare.com/" target="_blank"><?php esc_html_e( 'Cloudflare Dashboard', 'mcp-ai-wpoos' ); ?></a></li>
 						<li><a href="https://ollama.com/" target="_blank"><?php esc_html_e( 'Ollama Documentation', 'mcp-ai-wpoos' ); ?></a></li>
 						<li><a href="https://lmstudio.ai/" target="_blank"><?php esc_html_e( 'LM Studio Download', 'mcp-ai-wpoos' ); ?></a></li>
 					</ul>
@@ -638,6 +725,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'lm_studio':
 					self::test_lm_studio( $settings );
+					break;
+
+				case 'cloudflare':
+					self::test_cloudflare( $settings );
 					break;
 
 				case 'google_maps':
@@ -942,6 +1033,68 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					array(
 						'message' => __( 'LM Studio connection successful!', 'mcp-ai-wpoos' ),
 						'details' => $result,
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test Cloudflare Workers AI connection.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_cloudflare( $settings ) {
+			if ( empty( $settings['enable_cloudflare'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Cloudflare Workers AI provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['cloudflare_api_token'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Cloudflare API token is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['cloudflare_account_id'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Cloudflare account ID is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Cloudflare client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$client = new WP_MCP_AI_Cloudflare_Client();
+				$result = $client->test_connection();
+
+				if ( is_wp_error( $result ) ) {
+					wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+					return;
+				}
+
+				// Extract model count from the result if available.
+				$model_count = isset( $result['model_count'] ) ? $result['model_count'] : 0;
+				$account_id  = isset( $settings['cloudflare_account_id'] ) ? $settings['cloudflare_account_id'] : '';
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Cloudflare Workers AI connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Account ID', 'mcp-ai-wpoos' )      => $account_id,
+							__( 'Models Available', 'mcp-ai-wpoos' ) => $model_count,
+							__( 'Selected Model', 'mcp-ai-wpoos' )   => isset( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
+						),
 					)
 				);
 			} catch ( Exception $e ) {

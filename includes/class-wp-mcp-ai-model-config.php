@@ -1961,6 +1961,10 @@ class WP_MCP_AI_Model_Config {
 			$providers['lm_studio'] = __( 'LM Studio (Local)', 'mcp-ai-wpoos' );
 		}
 
+		if ( ! empty( $settings['enable_cloudflare'] ) && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
+			$providers['cloudflare'] = __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' );
+		}
+
 		return $providers;
 	}
 }

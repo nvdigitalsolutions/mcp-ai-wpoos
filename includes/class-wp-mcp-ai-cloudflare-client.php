@@ -122,9 +122,19 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				);
 			}
 
+			// Parse the response to get model count.
+			$body        = wp_remote_retrieve_body( $response );
+			$data        = json_decode( $body, true );
+			$model_count = 0;
+
+			if ( isset( $data['result'] ) && is_array( $data['result'] ) ) {
+				$model_count = count( $data['result'] );
+			}
+
 			return array(
-				'success' => true,
-				'message' => __( 'Connected to Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+				'success'     => true,
+				'message'     => __( 'Connected to Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+				'model_count' => $model_count,
 			);
 		}
 
