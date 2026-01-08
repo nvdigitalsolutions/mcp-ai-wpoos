@@ -183,10 +183,8 @@ class WP_MCP_AI_Model_Service {
 	 * @return array Model list.
 	 */
 	protected function get_anthropic_models( $settings ) {
-		if ( empty( $settings['anthropic_api_key'] ) ) {
-			return array();
-		}
-
+		// Return models even if API key is not configured, for browsing purposes.
+		// The models are static and don't require API access to list.
 		$models = array();
 
 		// Claude 4 series (multimodal - vision capable) - 2025.

@@ -603,9 +603,12 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 	}
 
 	/**
-	 * Test that Anthropic provider returns empty when not configured.
+	 * Test that Anthropic provider returns models even when not configured.
+	 *
+	 * Since Anthropic uses a static model list (no API call needed to list models),
+	 * models should be available for browsing even without an API key configured.
 	 */
-	public function test_anthropic_provider_returns_empty_when_not_configured() {
+	public function test_anthropic_provider_returns_models_when_not_configured() {
 		wp_set_current_user( $this->user_id );
 
 		// Clear Anthropic settings.
@@ -628,14 +631,15 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 		$this->assertIsArray( $response, 'Response should be a valid JSON array' );
 		$this->assertArrayHasKey( 'success', $response, 'Response should have success key' );
 
-		// Should fail when not configured.
-		$this->assertFalse( $response['success'], 'Anthropic should fail when API key is not configured' );
+		// Should succeed and return models even without API key (for browsing purposes).
+		$this->assertTrue( $response['success'], 'Anthropic should return models even without API key configured' );
 		$this->assertArrayHasKey( 'data', $response );
-		$this->assertArrayHasKey( 'message', $response['data'] );
-		$this->assertStringContainsStringIgnoringCase(
-			'no models available',
-			$response['data']['message'],
-			'Error should mention no models available'
-		);
+		$this->assertArrayHasKey( 'models', $response['data'] );
+		$this->assertNotEmpty( $response['data']['models'], 'Anthropic should return Claude models for browsing' );
+
+		// Verify some expected Claude models are present.
+		$model_ids = array_keys( $response['data']['models'] );
+		$this->assertContains( 'claude-sonnet-4.5', $model_ids, 'Should include Claude Sonnet 4.5' );
+		$this->assertContains( 'claude-opus-4.1', $model_ids, 'Should include Claude Opus 4.1' );
 	}
 }
