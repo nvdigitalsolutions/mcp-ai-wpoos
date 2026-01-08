@@ -478,6 +478,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'get_openai_file_details'            => 'external-tools',
 				'list_available_models'              => 'external-tools',
 				'get_model_information'              => 'external-tools',
+				'research_model'                     => 'external-tools',
+				'add_model_config'                   => 'external-tools',
+				'discover_new_models'                => 'external-tools',
 				'create_text_embeddings'             => 'external-tools',
 				// OpenAI API Integration - Phase 2 Tools.
 				'semantic_content_search'            => 'external-tools',
@@ -831,6 +834,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_OpenAI_File_Details'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-openai-file-details.php',
 				'WP_MCP_AI_Tool_List_Available_Models'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-available-models.php',
 				'WP_MCP_AI_Tool_Get_Model_Information'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-model-information.php',
+				'WP_MCP_AI_Tool_Research_Model'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-model.php',
+				'WP_MCP_AI_Tool_Add_Model_Config'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-add-model-config.php',
+				'WP_MCP_AI_Tool_Discover_New_Models'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-discover-new-models.php',
 				'WP_MCP_AI_Tool_Create_Text_Embeddings'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-text-embeddings.php',
 				// OpenAI API Integration - Phase 2 Tools.
 				'WP_MCP_AI_Tool_Semantic_Content_Search'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-semantic-content-search.php',
