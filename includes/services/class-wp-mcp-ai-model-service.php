@@ -29,7 +29,7 @@ class WP_MCP_AI_Model_Service {
 	/**
 	 * Get available models for a specific provider
 	 *
-	 * @param string $provider Provider name (openai, anthropic, gemini, ollama, lm_studio).
+	 * @param string $provider Provider name (openai, anthropic, gemini, huggingface, ollama, lm_studio).
 	 * @param array  $args     Optional arguments (capability_flags, tool_slug).
 	 * @return array Array of model_id => model_name pairs.
 	 */
@@ -65,6 +65,10 @@ class WP_MCP_AI_Model_Service {
 
 			case 'gemini':
 				$models = $this->get_gemini_models( $settings, $requires_vision, $requires_multimodal, $args );
+				break;
+
+			case 'huggingface':
+				$models = $this->get_huggingface_models( $settings, $requires_vision, $requires_multimodal );
 				break;
 
 			case 'ollama':
@@ -260,6 +264,102 @@ class WP_MCP_AI_Model_Service {
 	}
 
 	/**
+	 * Get Hugging Face models
+	 *
+	 * @param array $settings              Plugin settings.
+	 * @param bool  $requires_vision       Whether vision capability is required.
+	 * @param bool  $requires_multimodal   Whether multimodal capability is required.
+	 * @return array Model list.
+	 */
+	protected function get_huggingface_models( $settings, $requires_vision, $requires_multimodal ) {
+		if ( empty( $settings['huggingface_api_key'] ) ) {
+			return array();
+		}
+
+		if ( empty( $settings['huggingface_endpoint_url'] ) ) {
+			return array();
+		}
+
+		// Try to fetch models dynamically from Hugging Face API.
+		if ( class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+			$client = new WP_MCP_AI_Huggingface_Client();
+			$result = $client->list_models();
+
+			// If list_models() succeeds and returns an array of models, use it.
+			if ( ! is_wp_error( $result ) && is_array( $result ) && ! empty( $result ) ) {
+				$models = array();
+				foreach ( $result as $model ) {
+					if ( isset( $model['id'] ) ) {
+						$model_id   = $model['id'];
+						$model_name = $model_id;
+
+						// Add owned_by info if available.
+						if ( isset( $model['owned_by'] ) && ! empty( $model['owned_by'] ) ) {
+							$model_name = $model_id . ' (' . $model['owned_by'] . ')';
+						}
+
+						$models[ $model_id ] = $model_name;
+					}
+				}
+
+				if ( ! empty( $models ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'model_service_huggingface_dynamic',
+						'Successfully fetched Hugging Face models from API',
+						array( 'count' => count( $models ) )
+					);
+					return $models;
+				}
+			}
+
+			// Log if dynamic fetch failed.
+			if ( is_wp_error( $result ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'model_service_huggingface_fetch_failed',
+					'Failed to fetch Hugging Face models from API, falling back to static list',
+					array( 'error' => $result->get_error_message() )
+				);
+			}
+		}
+
+		// Fallback: Return common Hugging Face models if dynamic fetch fails.
+		$models = array();
+
+		// Add configured model if available.
+		if ( ! empty( $settings['huggingface_model'] ) ) {
+			$models[ $settings['huggingface_model'] ] = $settings['huggingface_model'];
+		}
+
+		// Common Hugging Face Inference API models (text generation).
+		if ( ! $requires_vision && ! $requires_multimodal ) {
+			$common_models = array(
+				'meta-llama/Llama-3.3-70B-Instruct'      => 'Llama 3.3 70B Instruct',
+				'meta-llama/Llama-3.2-3B-Instruct'       => 'Llama 3.2 3B Instruct',
+				'meta-llama/Llama-3.1-8B-Instruct'       => 'Llama 3.1 8B Instruct',
+				'mistralai/Mistral-7B-Instruct-v0.3'     => 'Mistral 7B Instruct v0.3',
+				'mistralai/Mixtral-8x7B-Instruct-v0.1'   => 'Mixtral 8x7B Instruct',
+				'Qwen/Qwen2.5-72B-Instruct'              => 'Qwen 2.5 72B Instruct',
+				'Qwen/Qwen2.5-32B-Instruct'              => 'Qwen 2.5 32B Instruct',
+				'Qwen/Qwen2.5-14B-Instruct'              => 'Qwen 2.5 14B Instruct',
+				'Qwen/Qwen2.5-7B-Instruct'               => 'Qwen 2.5 7B Instruct',
+				'google/gemma-2-27b-it'                  => 'Gemma 2 27B Instruct',
+				'google/gemma-2-9b-it'                   => 'Gemma 2 9B Instruct',
+				'microsoft/Phi-3.5-mini-instruct'        => 'Phi-3.5 Mini Instruct',
+				'deepseek-ai/DeepSeek-V3'                => 'DeepSeek V3',
+				'deepseek-ai/DeepSeek-Coder-V2-Instruct' => 'DeepSeek Coder V2 Instruct',
+			);
+
+			foreach ( $common_models as $model_id => $model_name ) {
+				if ( ! isset( $models[ $model_id ] ) ) {
+					$models[ $model_id ] = $model_name;
+				}
+			}
+		}
+
+		return $models;
+	}
+
+	/**
 	 * Get Ollama models
 	 *
 	 * @param array $settings              Plugin settings.
@@ -426,11 +526,12 @@ class WP_MCP_AI_Model_Service {
 	 */
 	public function get_default_model_for_provider( $provider ) {
 		$defaults = array(
-			'openai'    => 'gpt-4.1',
-			'anthropic' => 'claude-sonnet-4.5',
-			'gemini'    => 'gemini-2.5-flash',
-			'ollama'    => 'llama3.2',
-			'lm_studio' => 'qwen/qwen2.5-7b',
+			'openai'      => 'gpt-4.1',
+			'anthropic'   => 'claude-sonnet-4.5',
+			'gemini'      => 'gemini-2.5-flash',
+			'huggingface' => 'meta-llama/Llama-3.2-3B-Instruct',
+			'ollama'      => 'llama3.2',
+			'lm_studio'   => 'qwen/qwen2.5-7b',
 		);
 
 		$default = isset( $defaults[ $provider ] ) ? $defaults[ $provider ] : '';
