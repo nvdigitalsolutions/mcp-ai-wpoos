@@ -48,6 +48,13 @@
   - Dev tools reinstallable via `composer install` when needed
 
 ### Fixed
+- **Hugging Face Model Pricing - January 8, 2026**: Fixed $0 cost display for Hugging Face models
+  - Added 'huggingface' provider entry to WP_MCP_AI_Cost_Calculator pricing table
+  - Included pricing for 6 models: Llama 3.3 70B, Llama 3.1 8B, Mistral 7B, Phi-3 Mini, Qwen 2.5 72B, Qwen 2.5 7B
+  - Pricing ranges from $0.10 to $1.00 per 1M tokens (input/output)
+  - Added comprehensive test coverage for Hugging Face cost calculations
+  - See `includes/class-wp-mcp-ai-cost-calculator.php` (lines 295-326)
+
 - **PM Assistant Fixes - January 6, 2026**: Six critical modal and chat fixes (PRs #2629, #2632, #2633, #2636, #2637, #2626)
   - Modal Rendering: Added missing CSS for proper overlay display
   - Chat Localization: Ensured wpMcpAiChat global availability
