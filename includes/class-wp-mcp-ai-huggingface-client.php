@@ -663,6 +663,30 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 				$response['model'] = $model;
 			}
 
+			// Ensure usage data is present and includes provider/model information.
+			// Hugging Face returns OpenAI-compatible usage with prompt_tokens, completion_tokens, total_tokens.
+			if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
+				// Add provider and model to usage for frontend display.
+				$response['usage']['provider'] = 'huggingface';
+				$response['usage']['model']    = $model;
+			} elseif ( ! isset( $response['usage'] ) ) {
+				// If usage is missing, create a minimal structure.
+				// This should not happen with proper Hugging Face responses, but provides fallback.
+				$response['usage'] = array(
+					'prompt_tokens'     => 0,
+					'completion_tokens' => 0,
+					'total_tokens'      => 0,
+					'provider'          => 'huggingface',
+					'model'             => $model,
+				);
+
+				WP_MCP_AI_Logger::log_event(
+					'huggingface_missing_usage',
+					'Hugging Face response missing usage data.',
+					array( 'model' => $model )
+				);
+			}
+
 			return $response;
 		}
 

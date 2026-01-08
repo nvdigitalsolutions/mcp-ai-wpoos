@@ -428,4 +428,78 @@ class WP_MCP_AI_Huggingface_Client_Tests extends WP_UnitTestCase {
 		$this->assertEquals( 'text', $normalized['choices'][0]['message']['content'][0]['type'] );
 		$this->assertEquals( 'Hello!', $normalized['choices'][0]['message']['content'][0]['text'] );
 	}
+
+	/**
+	 * Test normalize_response preserves and enhances usage data.
+	 */
+	public function test_normalize_response_preserves_and_enhances_usage_data() {
+		$response = array(
+			'choices' => array(
+				array(
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => 'Hello!',
+					),
+				),
+			),
+			'model'   => 'meta-llama/Llama-3.3-70B-Instruct',
+			'usage'   => array(
+				'prompt_tokens'     => 10,
+				'completion_tokens' => 5,
+				'total_tokens'      => 15,
+			),
+		);
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'normalize_response' );
+		$method->setAccessible( true );
+
+		$normalized = $method->invoke( $this->client, $response, 'meta-llama/Llama-3.3-70B-Instruct' );
+
+		// Verify usage data is preserved.
+		$this->assertArrayHasKey( 'usage', $normalized );
+		$this->assertEquals( 10, $normalized['usage']['prompt_tokens'] );
+		$this->assertEquals( 5, $normalized['usage']['completion_tokens'] );
+		$this->assertEquals( 15, $normalized['usage']['total_tokens'] );
+
+		// Verify provider and model are added to usage.
+		$this->assertEquals( 'huggingface', $normalized['usage']['provider'] );
+		$this->assertEquals( 'meta-llama/Llama-3.3-70B-Instruct', $normalized['usage']['model'] );
+	}
+
+	/**
+	 * Test normalize_response creates fallback usage data when missing.
+	 */
+	public function test_normalize_response_creates_fallback_usage_data_when_missing() {
+		$response = array(
+			'choices' => array(
+				array(
+					'message' => array(
+						'role'    => 'assistant',
+						'content' => 'Hello!',
+					),
+				),
+			),
+			'model'   => 'meta-llama/Llama-3.3-70B-Instruct',
+			// No usage field provided.
+		);
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'normalize_response' );
+		$method->setAccessible( true );
+
+		$normalized = $method->invoke( $this->client, $response, 'meta-llama/Llama-3.3-70B-Instruct' );
+
+		// Verify fallback usage data is created.
+		$this->assertArrayHasKey( 'usage', $normalized );
+		$this->assertEquals( 0, $normalized['usage']['prompt_tokens'] );
+		$this->assertEquals( 0, $normalized['usage']['completion_tokens'] );
+		$this->assertEquals( 0, $normalized['usage']['total_tokens'] );
+
+		// Verify provider and model are added.
+		$this->assertEquals( 'huggingface', $normalized['usage']['provider'] );
+		$this->assertEquals( 'meta-llama/Llama-3.3-70B-Instruct', $normalized['usage']['model'] );
+	}
 }
