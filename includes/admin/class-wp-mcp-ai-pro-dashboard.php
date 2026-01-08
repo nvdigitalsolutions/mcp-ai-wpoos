@@ -1191,37 +1191,45 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			</div>
 
 			<!-- Monitoring Filters -->
-			<div class="wp-mcp-ai-monitoring-filters">
-				<label for="monitoring-event-type"><?php esc_html_e( 'Event Type:', 'mcp-ai-wpoos' ); ?></label>
-				<select id="monitoring-event-type">
-					<option value="all"><?php esc_html_e( 'All Events', 'mcp-ai-wpoos' ); ?></option>
-					<option value="authentication"><?php esc_html_e( 'Authentication', 'mcp-ai-wpoos' ); ?></option>
-					<option value="file-integrity"><?php esc_html_e( 'File Integrity', 'mcp-ai-wpoos' ); ?></option>
-					<option value="configuration"><?php esc_html_e( 'Configuration', 'mcp-ai-wpoos' ); ?></option>
-					<option value="plugin-updates"><?php esc_html_e( 'Plugin Updates', 'mcp-ai-wpoos' ); ?></option>
-					<option value="security-alerts"><?php esc_html_e( 'Security Alerts', 'mcp-ai-wpoos' ); ?></option>
-				</select>
+			<div class="wp-mcp-ai-monitoring-filters" style="background: #f7f7f7; padding: 15px; border-radius: 4px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+				<div style="display: flex; align-items: center; gap: 8px;">
+					<label for="monitoring-event-type"><?php esc_html_e( 'Event Type:', 'mcp-ai-wpoos' ); ?></label>
+					<select id="monitoring-event-type">
+						<option value="all"><?php esc_html_e( 'All Events', 'mcp-ai-wpoos' ); ?></option>
+						<option value="authentication"><?php esc_html_e( 'Authentication', 'mcp-ai-wpoos' ); ?></option>
+						<option value="file-integrity"><?php esc_html_e( 'File Integrity', 'mcp-ai-wpoos' ); ?></option>
+						<option value="configuration"><?php esc_html_e( 'Configuration', 'mcp-ai-wpoos' ); ?></option>
+						<option value="plugin-updates"><?php esc_html_e( 'Plugin Updates', 'mcp-ai-wpoos' ); ?></option>
+						<option value="security-alerts"><?php esc_html_e( 'Security Alerts', 'mcp-ai-wpoos' ); ?></option>
+					</select>
+				</div>
 
-				<label for="monitoring-severity"><?php esc_html_e( 'Severity:', 'mcp-ai-wpoos' ); ?></label>
-				<select id="monitoring-severity">
-					<option value="all"><?php esc_html_e( 'All Severities', 'mcp-ai-wpoos' ); ?></option>
-					<option value="critical"><?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?></option>
-					<option value="high"><?php esc_html_e( 'High', 'mcp-ai-wpoos' ); ?></option>
-					<option value="medium"><?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></option>
-					<option value="low"><?php esc_html_e( 'Low', 'mcp-ai-wpoos' ); ?></option>
-					<option value="info"><?php esc_html_e( 'Info', 'mcp-ai-wpoos' ); ?></option>
-				</select>
+				<div style="display: flex; align-items: center; gap: 8px;">
+					<label for="monitoring-severity"><?php esc_html_e( 'Severity:', 'mcp-ai-wpoos' ); ?></label>
+					<select id="monitoring-severity">
+						<option value="all"><?php esc_html_e( 'All Severities', 'mcp-ai-wpoos' ); ?></option>
+						<option value="critical"><?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?></option>
+						<option value="high"><?php esc_html_e( 'High', 'mcp-ai-wpoos' ); ?></option>
+						<option value="medium"><?php esc_html_e( 'Medium', 'mcp-ai-wpoos' ); ?></option>
+						<option value="low"><?php esc_html_e( 'Low', 'mcp-ai-wpoos' ); ?></option>
+						<option value="info"><?php esc_html_e( 'Info', 'mcp-ai-wpoos' ); ?></option>
+					</select>
+				</div>
 
-				<label for="monitoring-timeframe"><?php esc_html_e( 'Timeframe:', 'mcp-ai-wpoos' ); ?></label>
-				<select id="monitoring-timeframe">
-					<option value="24h" selected><?php esc_html_e( 'Last 24 Hours', 'mcp-ai-wpoos' ); ?></option>
-					<option value="7d"><?php esc_html_e( 'Last 7 Days', 'mcp-ai-wpoos' ); ?></option>
-					<option value="30d"><?php esc_html_e( 'Last 30 Days', 'mcp-ai-wpoos' ); ?></option>
-					<option value="90d"><?php esc_html_e( 'Last 90 Days', 'mcp-ai-wpoos' ); ?></option>
-				</select>
+				<div style="display: flex; align-items: center; gap: 8px;">
+					<label for="monitoring-timeframe"><?php esc_html_e( 'Timeframe:', 'mcp-ai-wpoos' ); ?></label>
+					<select id="monitoring-timeframe">
+						<option value="24h" selected><?php esc_html_e( 'Last 24 Hours', 'mcp-ai-wpoos' ); ?></option>
+						<option value="7d"><?php esc_html_e( 'Last 7 Days', 'mcp-ai-wpoos' ); ?></option>
+						<option value="30d"><?php esc_html_e( 'Last 30 Days', 'mcp-ai-wpoos' ); ?></option>
+						<option value="90d"><?php esc_html_e( 'Last 90 Days', 'mcp-ai-wpoos' ); ?></option>
+					</select>
+				</div>
 
-				<label for="monitoring-search"><?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?></label>
-				<input type="text" id="monitoring-search" placeholder="<?php esc_attr_e( 'Search events...', 'mcp-ai-wpoos' ); ?>" />
+				<div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+					<label for="monitoring-search"><?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?></label>
+					<input type="text" id="monitoring-search" placeholder="<?php esc_attr_e( 'Search events...', 'mcp-ai-wpoos' ); ?>" style="flex: 1; max-width: 300px;" />
+				</div>
 
 				<button class="button wp-mcp-ai-clear-monitoring-filters" title="<?php esc_attr_e( 'Clear all filters', 'mcp-ai-wpoos' ); ?>">
 					<span class="dashicons dashicons-dismiss"></span>
@@ -1229,7 +1237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</button>
 			</div>
 
-			<div class="wp-mcp-ai-monitoring-dashboard">
+			<div class="wp-mcp-ai-monitoring-dashboard" style="clear: both;">
 				<?php $this->render_monitoring_dashboard(); ?>
 			</div>
 			<?php
@@ -2802,16 +2810,42 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$risks = $this->get_risk_register_entries();
 
 			?>
-			<p class="description">
-				<?php esc_html_e( 'The risk register documents all identified risks, their assessment, and treatment plans.', 'mcp-ai-wpoos' ); ?>
-			</p>
+			<div class="wp-mcp-ai-risk-register-header" style="background: #f7f7f7; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+				<p class="description" style="margin: 0;">
+					<?php
+					if ( ! empty( $risks ) ) {
+						printf(
+							/* translators: %d: Number of risks */
+							esc_html__( 'The risk register documents all %d identified risks, their assessment, and treatment plans. All risks are shown below.', 'mcp-ai-wpoos' ),
+							count( $risks )
+						);
+					} else {
+						esc_html_e( 'The risk register documents all identified risks, their assessment, and treatment plans.', 'mcp-ai-wpoos' );
+					}
+					?>
+				</p>
+			</div>
 
 			<?php if ( empty( $risks ) ) : ?>
-				<p class="wp-mcp-ai-empty-state">
-					<?php esc_html_e( 'Unable to load risk register. Please check that the Risk-Register.md file is available.', 'mcp-ai-wpoos' ); ?>
-				</p>
+				<div class="notice notice-warning inline">
+					<p>
+						<strong><?php esc_html_e( 'Unable to load risk register.', 'mcp-ai-wpoos' ); ?></strong>
+						<?php esc_html_e( 'Please check that the Risk-Register.md file is available at docs/compliance/iso27001/Risk-Register.md', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</div>
 			<?php else : ?>
-				<table class="wp-list-table widefat fixed striped">
+				<div class="wp-mcp-ai-risk-count" style="margin-bottom: 15px; padding: 10px; background: #e7f5fe; border-left: 4px solid #0073aa;">
+					<strong>
+						<?php
+						printf(
+							/* translators: %d: Number of risks */
+							esc_html__( 'Displaying all %d risks from the Risk Register', 'mcp-ai-wpoos' ),
+							count( $risks )
+						);
+						?>
+					</strong>
+				</div>
+				<table class="wp-list-table widefat fixed striped wp-mcp-ai-risk-register-table">
 					<thead>
 						<tr>
 							<th style="width: 80px;"><?php esc_html_e( 'Risk ID', 'mcp-ai-wpoos' ); ?></th>
@@ -4248,9 +4282,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						</button>
 					</div>
 				<?php else : ?>
-					<div class="wp-mcp-ai-empty-state">
-						<span class="dashicons dashicons-yes-alt"></span>
-						<p><?php esc_html_e( 'No security events to display. Your system is operating normally.', 'mcp-ai-wpoos' ); ?></p>
+					<div class="wp-mcp-ai-empty-state" style="text-align: center; padding: 40px 20px; background: #f7f7f7; border-radius: 4px; border: 2px dashed #c3c4c7;">
+						<span class="dashicons dashicons-yes-alt" style="font-size: 48px; width: 48px; height: 48px; color: #46b450;"></span>
+						<h3 style="margin: 15px 0 10px;"><?php esc_html_e( 'No Security Events to Display', 'mcp-ai-wpoos' ); ?></h3>
+						<p style="color: #646970; margin: 0;">
+							<?php esc_html_e( 'Your system is operating normally. Security events will appear here when activity is logged.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<p style="color: #646970; font-size: 12px; margin-top: 10px;">
+							<?php esc_html_e( 'Events are automatically logged for authentication attempts, file changes, configuration updates, and security alerts.', 'mcp-ai-wpoos' ); ?>
+						</p>
 					</div>
 				<?php endif; ?>
 			</div>
