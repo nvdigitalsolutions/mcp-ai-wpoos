@@ -190,6 +190,30 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				);
 			}
 
+			// Prepare system messages array (will be prepended to messages).
+			$system_messages = array();
+
+			// Add system_prompt if provided (assistant knowledge and instructions).
+			if ( ! empty( $options['system_prompt'] ) ) {
+				$system_messages[] = array(
+					'role'    => 'system',
+					'content' => wp_kses_post( (string) $options['system_prompt'] ),
+				);
+			}
+
+			// Add memory documents if provided (assistant knowledge base).
+			if ( ! empty( $options['memory_documents'] ) && is_array( $options['memory_documents'] ) ) {
+				$memory_messages = $this->build_memory_messages_from_options( $options );
+				if ( ! empty( $memory_messages ) ) {
+					$system_messages = array_merge( $system_messages, $memory_messages );
+				}
+			}
+
+			// Prepend system messages to conversation messages.
+			if ( ! empty( $system_messages ) ) {
+				$messages = array_merge( $system_messages, $messages );
+			}
+
 			$payload = $this->build_payload( $messages, $options );
 
 			if ( is_wp_error( $payload ) ) {
@@ -434,12 +458,38 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				$content = $result['response'];
 			}
 
+			// Extract usage data if available from Cloudflare API.
+			// Cloudflare Workers AI may include usage in the response or result.
+			$usage = array(
+				'prompt_tokens'     => 0,
+				'completion_tokens' => 0,
+				'total_tokens'      => 0,
+			);
+
+			// Check if usage data is in the decoded response (top-level).
+			if ( isset( $decoded['usage'] ) && is_array( $decoded['usage'] ) ) {
+				$usage = $this->extract_usage_data( $decoded['usage'] );
+			} elseif ( isset( $result['usage'] ) && is_array( $result['usage'] ) ) {
+				// Some endpoints may include usage within the result object.
+				$usage = $this->extract_usage_data( $result['usage'] );
+			}
+
+			// If no usage data was provided by Cloudflare, estimate based on content length.
+			if ( 0 === $usage['prompt_tokens'] && 0 === $usage['completion_tokens'] && 0 === $usage['total_tokens'] ) {
+				$usage = $this->estimate_token_usage( $content );
+			}
+
+			// Add provider and model to usage for tracking.
+			$usage['provider'] = 'cloudflare';
+			$usage['model']    = $model;
+
 			return array(
-				'id'      => uniqid( 'cloudflare-', true ),
-				'object'  => 'chat.completion',
-				'created' => time(),
-				'model'   => $model,
-				'choices' => array(
+				'id'       => uniqid( 'cloudflare-', true ),
+				'object'   => 'chat.completion',
+				'created'  => time(),
+				'model'    => $model,
+				'provider' => 'cloudflare',
+				'choices'  => array(
 					array(
 						'index'         => 0,
 						'message'       => array(
@@ -449,11 +499,59 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 						'finish_reason' => 'stop',
 					),
 				),
-				'usage'   => array(
-					'prompt_tokens'     => 0,
-					'completion_tokens' => 0,
-					'total_tokens'      => 0,
-				),
+				'usage'    => $usage,
+			);
+		}
+
+		/**
+		 * Extract usage data from Cloudflare API usage object.
+		 *
+		 * @param array $usage_data Raw usage data from API.
+		 * @return array Normalized usage array.
+		 */
+		protected function extract_usage_data( array $usage_data ) {
+			$prompt_tokens     = isset( $usage_data['prompt_tokens'] ) ? max( 0, (int) $usage_data['prompt_tokens'] ) : 0;
+			$completion_tokens = isset( $usage_data['completion_tokens'] ) ? max( 0, (int) $usage_data['completion_tokens'] ) : 0;
+			$total_tokens      = isset( $usage_data['total_tokens'] ) ? max( 0, (int) $usage_data['total_tokens'] ) : 0;
+
+			// Calculate total if not provided.
+			if ( 0 === $total_tokens && ( $prompt_tokens > 0 || $completion_tokens > 0 ) ) {
+				$total_tokens = $prompt_tokens + $completion_tokens;
+			}
+
+			return array(
+				'prompt_tokens'     => $prompt_tokens,
+				'completion_tokens' => $completion_tokens,
+				'total_tokens'      => $total_tokens,
+			);
+		}
+
+		/**
+		 * Estimate token usage when not provided by the API.
+		 *
+		 * Uses a simple heuristic: ~4 characters per token (average for English text).
+		 * This is an approximation and should be marked as estimated in tracking.
+		 *
+		 * @param string $content Response content.
+		 * @return array Estimated usage array.
+		 */
+		protected function estimate_token_usage( $content ) {
+			// Rough estimation: ~4 characters per token (standard approximation).
+			$estimated_completion_tokens = max( 1, (int) ceil( strlen( $content ) / 4 ) );
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_estimated_usage',
+				'Cloudflare response did not include usage data. Using estimation.',
+				array(
+					'estimated_completion_tokens' => $estimated_completion_tokens,
+					'content_length'              => strlen( $content ),
+				)
+			);
+
+			return array(
+				'prompt_tokens'     => 0, // Cannot estimate prompt without request data.
+				'completion_tokens' => $estimated_completion_tokens,
+				'total_tokens'      => $estimated_completion_tokens,
 			);
 		}
 
@@ -503,6 +601,50 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			}
 
 			return $safe_payload;
+		}
+
+		/**
+		 * Build additional system messages from memory documents.
+		 *
+		 * @param array $options Chat request options containing memory_documents.
+		 * @return array Array of system messages for memory documents.
+		 */
+		protected function build_memory_messages_from_options( array $options ) {
+			if ( empty( $options['memory_documents'] ) || ! is_array( $options['memory_documents'] ) ) {
+				return array();
+			}
+
+			$messages = array();
+
+			foreach ( $options['memory_documents'] as $document ) {
+				if ( empty( $document['chunks'] ) || ! is_array( $document['chunks'] ) ) {
+					continue;
+				}
+
+				$title      = isset( $document['title'] ) && '' !== $document['title'] ? sanitize_text_field( $document['title'] ) : __( 'Document', 'mcp-ai-wpoos' );
+				$chunks     = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
+				$parts      = count( $chunks );
+				$part_index = 0;
+
+				foreach ( $chunks as $chunk ) {
+					++$part_index;
+
+					$label = $title;
+
+					if ( $parts > 1 ) {
+						/* translators: %1$s: document title, %2$d: chunk number. */
+						$label = sprintf( __( '%1$s (Part %2$d)', 'mcp-ai-wpoos' ), $title, $part_index );
+					}
+
+					$messages[] = array(
+						'role'    => 'system',
+						/* translators: %1$s: document title, %2$s: extracted text snippet. */
+						'content' => sprintf( __( 'Reference document "%1$s": %2$s', 'mcp-ai-wpoos' ), $label, wp_kses_post( $chunk ) ),
+					);
+				}
+			}
+
+			return $messages;
 		}
 	}
 }
