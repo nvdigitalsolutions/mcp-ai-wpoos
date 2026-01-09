@@ -2183,10 +2183,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['default_provider'] ) ) {
 				$provider = sanitize_key( $settings['default_provider'] );
-				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini', 'ollama' ) );
+				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ) );
 
 				if ( ! is_array( $allowed ) ) {
-					$allowed = array( 'openai', 'gemini' );
+					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
 				}
 
 				if ( in_array( $provider, $allowed, true ) ) {
