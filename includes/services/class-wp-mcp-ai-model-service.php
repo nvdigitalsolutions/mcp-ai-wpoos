@@ -485,23 +485,44 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		// Cloudflare Workers AI currently doesn't support vision/multimodal models.
-		if ( $requires_vision || $requires_multimodal ) {
-			return array();
+		// Cloudflare Workers AI multimodal support (Llama 4 Scout).
+		if ( $requires_multimodal || $requires_vision ) {
+			// Llama 4 Scout - multimodal (text + image).
+			$models['@cf/meta/llama-4-scout'] = 'Llama 4 Scout (17B, Multimodal)';
+			return $models;
 		}
 
-		// Llama models.
-		$models['@cf/meta/llama-3.1-8b-instruct']  = 'Llama 3.1 8B Instruct';
-		$models['@cf/meta/llama-3.1-70b-instruct'] = 'Llama 3.1 70B Instruct';
-		$models['@cf/meta/llama-3.2-1b-instruct']  = 'Llama 3.2 1B Instruct';
-		$models['@cf/meta/llama-3.2-3b-instruct']  = 'Llama 3.2 3B Instruct';
+		// Text generation models.
+		// Llama 3.1 models (most popular).
+		$models['@cf/meta/llama-3.1-8b-instruct']      = 'Llama 3.1 8B Instruct';
+		$models['@cf/meta/llama-3.1-8b-instruct-fast'] = 'Llama 3.1 8B Instruct Fast (128K context)';
+		$models['@cf/meta/llama-3.1-70b-instruct']     = 'Llama 3.1 70B Instruct';
 
-		// Mistral models.
-		$models['@cf/mistral/mistral-7b-instruct-v0.1'] = 'Mistral 7B Instruct v0.1';
+		// Llama 3.2 models (compact).
+		$models['@cf/meta/llama-3.2-1b-instruct'] = 'Llama 3.2 1B Instruct';
+		$models['@cf/meta/llama-3.2-3b-instruct'] = 'Llama 3.2 3B Instruct';
 
-		// Qwen models.
-		$models['@cf/qwen/qwen1.5-7b-chat-awq']  = 'Qwen 1.5 7B Chat';
-		$models['@cf/qwen/qwen1.5-14b-chat-awq'] = 'Qwen 1.5 14B Chat';
+		// Llama 2 models (legacy).
+		$models['@cf/meta/llama-2-7b-chat-int4']  = 'Llama 2 7B Chat (INT4)';
+		$models['@cf/meta/llama-2-13b-chat-int8'] = 'Llama 2 13B Chat (INT8)';
+
+		// Mistral models (FIXED: corrected namespace from @cf/mistral to @cf/mistralai).
+		$models['@cf/mistralai/mistral-7b-instruct-v0.1'] = 'Mistral 7B Instruct v0.1';
+
+		// Qwen models (multilingual, including Chinese).
+		$models['@cf/qwen/qwen1.5-0.5b-chat']    = 'Qwen 1.5 0.5B Chat';
+		$models['@cf/qwen/qwen1.5-1.8b-chat']    = 'Qwen 1.5 1.8B Chat';
+		$models['@cf/qwen/qwen1.5-7b-chat-awq']  = 'Qwen 1.5 7B Chat (AWQ)';
+		$models['@cf/qwen/qwen1.5-14b-chat-awq'] = 'Qwen 1.5 14B Chat (AWQ)';
+
+		// Compact/efficient models.
+		$models['@cf/tinyllama/tinyllama-1.1b-chat-v1.0'] = 'TinyLlama 1.1B Chat v1.0';
+		$models['@cf/microsoft/phi-2']                    = 'Microsoft Phi-2';
+
+		// Specialized models.
+		$models['@cf/tiiuae/falcon-7b-instruct']             = 'Falcon 7B Instruct';
+		$models['@cf/deepseek-ai/deepseek-math-7b-instruct'] = 'DeepSeek Math 7B Instruct';
+		$models['@cf/openchat/openchat-3.5-0106']            = 'OpenChat 3.5';
 
 		return $models;
 	}
