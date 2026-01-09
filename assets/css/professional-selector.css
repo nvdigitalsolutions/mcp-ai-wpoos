@@ -255,7 +255,7 @@
 	transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.wp-mcp-ai-professional-selector-modal[style*="display: block"],
+/* Show modal when visible class is added */
 .wp-mcp-ai-professional-selector-modal.wp-mcp-ai-modal--visible {
 	display: block;
 	visibility: visible;

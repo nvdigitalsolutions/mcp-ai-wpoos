@@ -441,10 +441,17 @@
 		 * Initialize the dynamically inserted chat interface.
 		 *
 		 * This calls the chat.js initialization function to attach event handlers
-		 * to the dynamically inserted chat HTML.
+		 * to the dynamically inserted chat HTML. A delay is used to ensure the
+		 * DOM is fully rendered and the chat instance configuration is available
+		 * after the AJAX response completes.
 		 */
 		initializeChatInterface: function() {
-			// Wait a brief moment for DOM to be fully ready
+			/**
+			 * Delay before initializing chat interface (milliseconds).
+			 * This ensures the DOM is fully rendered and JavaScript execution context
+			 * is complete after AJAX response. This delay matches the pattern used
+			 * in admin-test-profession.js for similar dynamic chat initialization.
+			 */
 			const CHAT_INIT_DELAY_MS = 100;
 			
 			setTimeout(function() {
