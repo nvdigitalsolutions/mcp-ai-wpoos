@@ -322,8 +322,12 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		 * @return array
 		 */
 		protected function build_payload( array $messages, array $options ) {
+			// Normalize messages to ensure content is in the correct format.
+			// Cloudflare Workers AI expects content to be a string for text-only messages.
+			$normalized_messages = $this->normalize_messages( $messages );
+
 			$payload = array(
-				'messages' => $messages,
+				'messages' => $normalized_messages,
 			);
 
 			// Add optional parameters if provided.
@@ -340,6 +344,78 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			}
 
 			return $payload;
+		}
+
+		/**
+		 * Normalize messages to convert content arrays to strings.
+		 *
+		 * Cloudflare Workers AI expects message content to be a string for text-only messages.
+		 * When content is provided as an array (OpenAI format for multimodal support),
+		 * we need to convert it to a string by extracting and concatenating text parts.
+		 *
+		 * @param array $messages Messages array with potentially array-based content.
+		 * @return array Normalized messages with string content.
+		 */
+		protected function normalize_messages( array $messages ) {
+			$normalized = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
+				$content = isset( $message['content'] ) ? $message['content'] : '';
+
+				// If content is an array, convert it to a string.
+				if ( is_array( $content ) ) {
+					$text_parts = array();
+
+					foreach ( $content as $segment ) {
+						// Handle simple string segments.
+						if ( is_string( $segment ) ) {
+							$text_parts[] = $segment;
+						} elseif ( is_array( $segment ) && isset( $segment['text'] ) ) {
+							// Handle content part objects with 'text' property.
+							$text_parts[] = $segment['text'];
+						}
+					}
+
+					// Join text parts with newlines.
+					$content = implode( "\n", $text_parts );
+				}
+
+				// Sanitize content and skip empty messages (except for assistant messages with tool_calls).
+				$content = wp_kses_post( (string) $content );
+				if ( '' === trim( $content ) && 'assistant' !== $role ) {
+					continue;
+				}
+
+				// Build normalized message.
+				$normalized_message = array(
+					'role'    => $role,
+					'content' => $content,
+				);
+
+				// Preserve tool_calls if present (for assistant messages).
+				if ( isset( $message['tool_calls'] ) ) {
+					$normalized_message['tool_calls'] = $message['tool_calls'];
+				}
+
+				// Preserve tool_call_id if present (for tool messages).
+				if ( isset( $message['tool_call_id'] ) ) {
+					$normalized_message['tool_call_id'] = $message['tool_call_id'];
+				}
+
+				// Preserve name if present (for tool messages).
+				if ( isset( $message['name'] ) ) {
+					$normalized_message['name'] = sanitize_text_field( $message['name'] );
+				}
+
+				$normalized[] = $normalized_message;
+			}
+
+			return $normalized;
 		}
 
 		/**
