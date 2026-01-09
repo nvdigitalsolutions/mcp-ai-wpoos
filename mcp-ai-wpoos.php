@@ -655,6 +655,12 @@ if ( is_admin() ) {
 		wp_mcp_ai_container()->get( 'admin.test_profession' );
 	}
 
+	// Load test model page (submenu of AI Professions CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-model.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-model.php';
+		wp_mcp_ai_container()->get( 'admin.test_model' );
+	}
+
 	// Load test team page (submenu of AI Teams CPT).
 	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php';
