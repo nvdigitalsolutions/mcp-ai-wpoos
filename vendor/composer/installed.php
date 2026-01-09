@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-invalid-model-id-error',
-        'version' => 'dev-copilot/fix-invalid-model-id-error',
-        'reference' => '114f765b8b73aa61c64930e666eb96024050dfbf',
+        'pretty_version' => 'dev-copilot/complete-documentation-screenshots',
+        'version' => 'dev-copilot/complete-documentation-screenshots',
+        'reference' => '168cb37236896d00c68ff22fb77ff24bf6b8705e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-invalid-model-id-error',
-            'version' => 'dev-copilot/fix-invalid-model-id-error',
-            'reference' => '114f765b8b73aa61c64930e666eb96024050dfbf',
+            'pretty_version' => 'dev-copilot/complete-documentation-screenshots',
+            'version' => 'dev-copilot/complete-documentation-screenshots',
+            'reference' => '168cb37236896d00c68ff22fb77ff24bf6b8705e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
