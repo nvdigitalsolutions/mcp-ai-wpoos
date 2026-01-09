@@ -620,6 +620,35 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.000020,
 				'output_cost_per_1k' => 0.000080,
 			),
+			// HuggingFace Inference API models (as of January 2026).
+			'deepseek-ai/deepseek-v3.2'                    => array(
+				'input_cost_per_1k'  => 0.00028, // $0.28 per 1M tokens = $0.00028 per 1K.
+				'output_cost_per_1k' => 0.00042, // $0.42 per 1M tokens = $0.00042 per 1K.
+			),
+			'meta-llama/llama-3.3-70b-instruct'            => array(
+				'input_cost_per_1k'  => 0.001, // $1.00 per 1M tokens = $0.001 per 1K.
+				'output_cost_per_1k' => 0.001,
+			),
+			'meta-llama/llama-3.1-8b-instruct'             => array(
+				'input_cost_per_1k'  => 0.0003, // $0.30 per 1M tokens = $0.0003 per 1K.
+				'output_cost_per_1k' => 0.0003,
+			),
+			'mistralai/mistral-7b-instruct-v0.3'           => array(
+				'input_cost_per_1k'  => 0.0002, // $0.20 per 1M tokens = $0.0002 per 1K.
+				'output_cost_per_1k' => 0.0002,
+			),
+			'microsoft/phi-3-mini-4k-instruct'             => array(
+				'input_cost_per_1k'  => 0.0001, // $0.10 per 1M tokens = $0.0001 per 1K.
+				'output_cost_per_1k' => 0.0001,
+			),
+			'qwen/qwen2.5-72b-instruct'                    => array(
+				'input_cost_per_1k'  => 0.001, // $1.00 per 1M tokens = $0.001 per 1K.
+				'output_cost_per_1k' => 0.001,
+			),
+			'qwen/qwen2.5-7b-instruct'                     => array(
+				'input_cost_per_1k'  => 0.0002, // $0.20 per 1M tokens = $0.0002 per 1K.
+				'output_cost_per_1k' => 0.0002,
+			),
 		);
 
 		// Try exact match first.
