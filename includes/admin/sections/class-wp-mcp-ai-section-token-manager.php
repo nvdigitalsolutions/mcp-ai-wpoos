@@ -1213,6 +1213,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<option value="huggingface">Hugging Face</option>
 								<option value="ollama">Ollama (Local)</option>
 								<option value="lm_studio">LM Studio (Local)</option>
+								<option value="cloudflare">Cloudflare Workers AI</option>
 							</select>
 							<button type="button" class="button button-secondary" id="wp-mcp-ai-research-model">
 								<?php esc_html_e( 'Research Model', 'mcp-ai-wpoos' ); ?>

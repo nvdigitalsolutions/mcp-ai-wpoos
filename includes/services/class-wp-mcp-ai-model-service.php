@@ -79,6 +79,10 @@ class WP_MCP_AI_Model_Service {
 				$models = $this->get_lm_studio_models( $settings, $requires_vision, $requires_multimodal );
 				break;
 
+			case 'cloudflare':
+				$models = $this->get_cloudflare_models( $settings, $requires_vision, $requires_multimodal );
+				break;
+
 			default:
 				WP_MCP_AI_Logger::log_event(
 					'model_service_invalid_provider',
@@ -466,6 +470,43 @@ class WP_MCP_AI_Model_Service {
 	}
 
 	/**
+	 * Get Cloudflare Workers AI models
+	 *
+	 * @param array $settings              Plugin settings.
+	 * @param bool  $requires_vision       Whether vision capability is required.
+	 * @param bool  $requires_multimodal   Whether multimodal capability is required.
+	 * @return array Model list.
+	 */
+	protected function get_cloudflare_models( $settings, $requires_vision, $requires_multimodal ) {
+		// Check if Cloudflare provider is enabled and configured.
+		if ( empty( $settings['cloudflare_enabled'] ) || empty( $settings['cloudflare_api_token'] ) || empty( $settings['cloudflare_account_id'] ) ) {
+			return array();
+		}
+
+		$models = array();
+
+		// Cloudflare Workers AI currently doesn't support vision/multimodal models.
+		if ( $requires_vision || $requires_multimodal ) {
+			return array();
+		}
+
+		// Llama models.
+		$models['@cf/meta/llama-3.1-8b-instruct']  = 'Llama 3.1 8B Instruct';
+		$models['@cf/meta/llama-3.1-70b-instruct'] = 'Llama 3.1 70B Instruct';
+		$models['@cf/meta/llama-3.2-1b-instruct']  = 'Llama 3.2 1B Instruct';
+		$models['@cf/meta/llama-3.2-3b-instruct']  = 'Llama 3.2 3B Instruct';
+
+		// Mistral models.
+		$models['@cf/mistral/mistral-7b-instruct-v0.1'] = 'Mistral 7B Instruct v0.1';
+
+		// Qwen models.
+		$models['@cf/qwen/qwen1.5-7b-chat-awq']  = 'Qwen 1.5 7B Chat';
+		$models['@cf/qwen/qwen1.5-14b-chat-awq'] = 'Qwen 1.5 14B Chat';
+
+		return $models;
+	}
+
+	/**
 	 * Validate model for provider
 	 *
 	 * @param string $model    Model ID.
@@ -530,6 +571,7 @@ class WP_MCP_AI_Model_Service {
 			'huggingface' => 'meta-llama/Llama-3.2-3B-Instruct',
 			'ollama'      => 'llama3.2',
 			'lm_studio'   => 'qwen/qwen2.5-7b',
+			'cloudflare'  => '@cf/meta/llama-3.1-8b-instruct',
 		);
 
 		$default = isset( $defaults[ $provider ] ) ? $defaults[ $provider ] : '';
