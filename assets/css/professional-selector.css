@@ -333,6 +333,19 @@
 	height: 24px;
 }
 
+/* Fallback if dashicons don't load */
+.wp-mcp-ai-professional-selector-modal__close .dashicons::before {
+	content: "\f335";
+	font-family: dashicons;
+	speak: never;
+	font-weight: 400;
+	font-variant: normal;
+	text-transform: none;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
 .wp-mcp-ai-professional-selector-modal__body {
 	padding: 2rem;
 	overflow-y: auto;

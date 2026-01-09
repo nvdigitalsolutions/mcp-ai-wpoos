@@ -444,13 +444,21 @@
 		 * to the dynamically inserted chat HTML.
 		 */
 		initializeChatInterface: function() {
-			// Check if the chat init API is available
-			if (typeof window.wpMcpAiChatInit !== 'undefined' && window.wpMcpAiChatInit.init) {
-				// Call the chat initialization function
-				window.wpMcpAiChatInit.init();
-			} else if (window.console && console.warn) {
-				console.warn('[Professional Selector] Chat initialization API not available. Chat may not function correctly.');
-			}
+			// Wait a brief moment for DOM to be fully ready
+			setTimeout(function() {
+				// Check if the chat init API is available
+				if (typeof window.wpMcpAiChatInit !== 'undefined' && window.wpMcpAiChatInit.init) {
+					// Call the chat initialization function
+					window.wpMcpAiChatInit.init();
+					
+					if (window.console && console.log) {
+						console.log('[Professional Selector] Chat interface initialized successfully.');
+					}
+				} else if (window.console && console.warn) {
+					console.warn('[Professional Selector] Chat initialization API not available. Chat may not function correctly.');
+					console.warn('[Professional Selector] Available: window.wpMcpAiChatInit =', typeof window.wpMcpAiChatInit);
+				}
+			}, 100);
 		}
 	};
 
