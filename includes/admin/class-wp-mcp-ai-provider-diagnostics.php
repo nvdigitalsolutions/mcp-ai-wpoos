@@ -1079,7 +1079,27 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				$result = $client->test_connection();
 
 				if ( is_wp_error( $result ) ) {
-					wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+					$error_data = $result->get_error_data();
+					$error_msg  = $result->get_error_message();
+					
+					// Include additional error details if available.
+					if ( is_array( $error_data ) ) {
+						if ( isset( $error_data['status'] ) ) {
+							$error_msg .= ' ' . sprintf( __( '(HTTP Status: %d)', 'mcp-ai-wpoos' ), $error_data['status'] );
+						}
+						if ( isset( $error_data['body'] ) ) {
+							$body_data = json_decode( $error_data['body'], true );
+							if ( $body_data && isset( $body_data['errors'] ) && is_array( $body_data['errors'] ) ) {
+								foreach ( $body_data['errors'] as $error ) {
+									if ( isset( $error['message'] ) ) {
+										$error_msg .= ' - ' . $error['message'];
+									}
+								}
+							}
+						}
+					}
+					
+					wp_send_json_error( array( 'message' => $error_msg ) );
 					return;
 				}
 
