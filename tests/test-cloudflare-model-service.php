@@ -47,7 +47,7 @@ class Test_Cloudflare_Model_Service extends WP_UnitTestCase {
 			if ( strpos( $model_id, '@cf/meta/llama' ) === 0 ) {
 				$has_llama = true;
 			}
-			if ( strpos( $model_id, '@cf/mistral/' ) === 0 ) {
+			if ( strpos( $model_id, '@cf/mistralai/' ) === 0 ) {
 				$has_mistral = true;
 			}
 			if ( strpos( $model_id, '@cf/qwen/' ) === 0 ) {
@@ -155,6 +155,6 @@ class Test_Cloudflare_Model_Service extends WP_UnitTestCase {
 		// Verify model labels.
 		$this->assertEquals( 'Llama 3.1 8B Instruct', $models['@cf/meta/llama-3.1-8b-instruct'] );
 		$this->assertEquals( 'Llama 3.1 70B Instruct', $models['@cf/meta/llama-3.1-70b-instruct'] );
-		$this->assertEquals( 'Mistral 7B Instruct v0.1', $models['@cf/mistral/mistral-7b-instruct-v0.1'] );
+		$this->assertEquals( 'Mistral 7B Instruct v0.1', $models['@cf/mistralai/mistral-7b-instruct-v0.1'] );
 	}
 }
