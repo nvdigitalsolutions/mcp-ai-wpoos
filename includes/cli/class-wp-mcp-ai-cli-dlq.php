@@ -244,7 +244,7 @@ $item_id = $args[0];
 $item    = WP_MCP_AI_Dead_Letter_Queue::get( $item_id );
 
 if ( ! $item ) {
-WP_CLI::error( "Item '{$item_id}' not found in dead letter queue.' );
+	WP_CLI::error( "Item '{$item_id}' not found in dead letter queue." );
 }
 
 $result = WP_MCP_AI_Dead_Letter_Queue::dismiss( $item_id );
