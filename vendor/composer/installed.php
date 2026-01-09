@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/complete-documentation-screenshots',
-        'version' => 'dev-copilot/complete-documentation-screenshots',
-        'reference' => '168cb37236896d00c68ff22fb77ff24bf6b8705e',
+        'pretty_version' => 'dev-copilot/fix-cloudflare-worker-ai-error',
+        'version' => 'dev-copilot/fix-cloudflare-worker-ai-error',
+        'reference' => '50a72d425bbddf6538d36d6163fc9f0d620dec77',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/complete-documentation-screenshots',
-            'version' => 'dev-copilot/complete-documentation-screenshots',
-            'reference' => '168cb37236896d00c68ff22fb77ff24bf6b8705e',
+            'pretty_version' => 'dev-copilot/fix-cloudflare-worker-ai-error',
+            'version' => 'dev-copilot/fix-cloudflare-worker-ai-error',
+            'reference' => '50a72d425bbddf6538d36d6163fc9f0d620dec77',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

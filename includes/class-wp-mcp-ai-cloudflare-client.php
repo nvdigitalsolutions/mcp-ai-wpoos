@@ -196,10 +196,25 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				return $payload;
 			}
 
+			// Cloudflare Workers AI expects model IDs like @cf/meta/llama-3.1-8b-instruct
+			// to be part of the URL path with forward slashes intact, not URL-encoded.
+			// Validate model ID format and escape properly for URL path.
+			// Model IDs must start with @ and contain only alphanumeric, hyphens, dots, slashes, and underscores.
+			if ( ! preg_match( '/^@[a-zA-Z0-9\/_.-]+$/', $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_model_id',
+					__( 'Invalid Cloudflare model ID format.', 'mcp-ai-wpoos' ),
+					array( 'model' => $model )
+				);
+			}
+
+			// Only escape the @ symbol and spaces, preserve forward slashes for URL path.
+			$escaped_model = str_replace( array( '@', ' ' ), array( '%40', '%20' ), $model );
+
 			$url = sprintf(
 				'https://api.cloudflare.com/client/v4/accounts/%s/ai/run/%s',
 				rawurlencode( $account_id ),
-				rawurlencode( $model )
+				$escaped_model
 			);
 
 			$request_args = array(
@@ -237,17 +252,39 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			$body = wp_remote_retrieve_body( $response );
 
 			if ( $code < 200 || $code >= 300 ) {
+				// Parse Cloudflare error response for better error messages.
+				$error_message = __( 'Cloudflare Workers AI returned an error.', 'mcp-ai-wpoos' );
+				$decoded_body  = json_decode( $body, true );
+
+				if ( is_array( $decoded_body ) && isset( $decoded_body['errors'] ) && is_array( $decoded_body['errors'] ) ) {
+					// Cloudflare returns errors in an array with code and message.
+					foreach ( $decoded_body['errors'] as $error ) {
+						if ( isset( $error['message'] ) ) {
+							// Sanitize error message to prevent XSS.
+							$sanitized_message = sanitize_text_field( $error['message'] );
+							$error_message    .= ' ' . $sanitized_message;
+							if ( isset( $error['code'] ) ) {
+								// Ensure code is an integer.
+								$error_code     = absint( $error['code'] );
+								$error_message .= ' (Code: ' . $error_code . ')';
+							}
+							break; // Use the first error message.
+						}
+					}
+				}
+
 				WP_MCP_AI_Logger::log_error(
 					'Cloudflare Workers AI returned an error.',
 					array(
-						'status' => $code,
-						'body'   => $body,
+						'status'        => $code,
+						'body'          => $body,
+						'error_message' => $error_message,
 					)
 				);
 
 				return new WP_Error(
 					'wp_mcp_ai_api_error',
-					__( 'Cloudflare Workers AI returned an error.', 'mcp-ai-wpoos' ),
+					$error_message,
 					array(
 						'status' => $code,
 						'body'   => $body,
