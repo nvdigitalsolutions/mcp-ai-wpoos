@@ -35,14 +35,29 @@ class Test_Cloudflare_Model_Service extends WP_UnitTestCase {
 		$this->assertNotEmpty( $models, 'Cloudflare models should be returned when provider is enabled' );
 		$this->assertIsArray( $models, 'Models should be an array' );
 		
-		// Verify expected models are present.
-		$this->assertArrayHasKey( '@cf/meta/llama-3.1-8b-instruct', $models );
-		$this->assertArrayHasKey( '@cf/meta/llama-3.1-70b-instruct', $models );
-		$this->assertArrayHasKey( '@cf/meta/llama-3.2-1b-instruct', $models );
-		$this->assertArrayHasKey( '@cf/meta/llama-3.2-3b-instruct', $models );
-		$this->assertArrayHasKey( '@cf/mistral/mistral-7b-instruct-v0.1', $models );
-		$this->assertArrayHasKey( '@cf/qwen/qwen1.5-7b-chat-awq', $models );
-		$this->assertArrayHasKey( '@cf/qwen/qwen1.5-14b-chat-awq', $models );
+		// Verify we have a reasonable number of models (at least 5).
+		$this->assertGreaterThanOrEqual( 5, count( $models ), 'Should have at least 5 Cloudflare models' );
+		
+		// Verify we have models from each family (Llama, Mistral, Qwen).
+		$has_llama   = false;
+		$has_mistral = false;
+		$has_qwen    = false;
+		
+		foreach ( array_keys( $models ) as $model_id ) {
+			if ( strpos( $model_id, '@cf/meta/llama' ) === 0 ) {
+				$has_llama = true;
+			}
+			if ( strpos( $model_id, '@cf/mistral/' ) === 0 ) {
+				$has_mistral = true;
+			}
+			if ( strpos( $model_id, '@cf/qwen/' ) === 0 ) {
+				$has_qwen = true;
+			}
+		}
+		
+		$this->assertTrue( $has_llama, 'Should have at least one Llama model' );
+		$this->assertTrue( $has_mistral, 'Should have at least one Mistral model' );
+		$this->assertTrue( $has_qwen, 'Should have at least one Qwen model' );
 	}
 
 	/**

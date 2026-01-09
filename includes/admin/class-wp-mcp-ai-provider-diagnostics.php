@@ -1085,14 +1085,14 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					// Include additional error details if available.
 					if ( is_array( $error_data ) ) {
 						if ( isset( $error_data['status'] ) ) {
-							$error_msg .= ' ' . sprintf( __( '(HTTP Status: %d)', 'mcp-ai-wpoos' ), $error_data['status'] );
+							$error_msg .= ' ' . sprintf( __( '(HTTP Status: %d)', 'mcp-ai-wpoos' ), absint( $error_data['status'] ) );
 						}
 						if ( isset( $error_data['body'] ) ) {
 							$body_data = json_decode( $error_data['body'], true );
 							if ( $body_data && isset( $body_data['errors'] ) && is_array( $body_data['errors'] ) ) {
 								foreach ( $body_data['errors'] as $error ) {
 									if ( isset( $error['message'] ) ) {
-										$error_msg .= ' - ' . $error['message'];
+										$error_msg .= ' - ' . esc_html( $error['message'] );
 									}
 								}
 							}
