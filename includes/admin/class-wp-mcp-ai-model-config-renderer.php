@@ -39,10 +39,42 @@ class WP_MCP_AI_Model_Config_Renderer {
 			?>
 			<div class="wp-mcp-ai-model-config-table-wrapper wp-mcp-ai-table-wrapper">
 				<div class="wp-mcp-ai-model-config-header" style="margin-bottom: 20px;">
-					<h3><?php esc_html_e( 'Model Configurations', 'mcp-ai-wpoos' ); ?></h3>
-					<p class="description">
-						<?php esc_html_e( 'Configure rate limits, fallback models, and other settings for each AI model. These settings are stored in WordPress options with optional JetEngine CCT backup.', 'mcp-ai-wpoos' ); ?>
-					</p>
+					<div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+						<div style="flex: 1; min-width: 300px;">
+							<h3 style="margin-top: 0;"><?php esc_html_e( 'Model Configurations', 'mcp-ai-wpoos' ); ?></h3>
+							<p class="description" style="margin-top: 5px;">
+								<?php esc_html_e( 'Configure rate limits, fallback models, and other settings for each AI model. These settings are stored in WordPress options with optional JetEngine CCT backup.', 'mcp-ai-wpoos' ); ?>
+							</p>
+						</div>
+						<div class="wp-mcp-ai-model-search-wrapper" style="min-width: 300px;">
+							<label for="wp-mcp-ai-model-search" style="display: block; margin-bottom: 5px; font-weight: 600;">
+								<?php esc_html_e( 'Search Models', 'mcp-ai-wpoos' ); ?>
+							</label>
+							<div style="position: relative;">
+								<input 
+									type="text" 
+									id="wp-mcp-ai-model-search" 
+									class="regular-text" 
+									placeholder="<?php esc_attr_e( 'Search by model name, provider, or ID...', 'mcp-ai-wpoos' ); ?>"
+									style="width: 100%; padding-right: 30px;"
+								/>
+								<span class="dashicons dashicons-search" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #8c8f94; pointer-events: none;"></span>
+							</div>
+							<p class="description" style="margin-top: 5px;">
+								<span id="wp-mcp-ai-model-search-count">
+									<?php
+									/* translators: %d: total number of models */
+									printf( esc_html__( 'Showing %d models', 'mcp-ai-wpoos' ), count( $model_configs ) );
+									?>
+								</span>
+								<span id="wp-mcp-ai-model-search-clear" style="display: none; margin-left: 10px;">
+									<a href="#" style="text-decoration: none;">
+										<?php esc_html_e( 'Clear search', 'mcp-ai-wpoos' ); ?>
+									</a>
+								</span>
+							</p>
+						</div>
+					</div>
 				</div>
 
 				<?php echo self::render_storage_info(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -450,6 +482,83 @@ class WP_MCP_AI_Model_Config_Renderer {
 						}, 2000);
 					}
 				});
+			});
+
+			// Model search functionality.
+			var $searchInput = $('#wp-mcp-ai-model-search');
+			var $searchCount = $('#wp-mcp-ai-model-search-count');
+			var $searchClear = $('#wp-mcp-ai-model-search-clear');
+			var $modelTable = $('.wp-mcp-ai-model-config-table tbody');
+			var $modelRows = $modelTable.find('tr');
+			var totalModels = $modelRows.length;
+
+			// Search function.
+			function searchModels() {
+				var searchTerm = $searchInput.val().toLowerCase().trim();
+				var visibleCount = 0;
+
+				if (searchTerm === '') {
+					// Show all rows.
+					$modelRows.show();
+					visibleCount = totalModels;
+					$searchClear.hide();
+				} else {
+					// Filter rows based on search term.
+					$modelRows.each(function() {
+						var $row = $(this);
+						var modelId = $row.attr('data-model-id') || '';
+						var modelName = $row.find('td:eq(0)').text().toLowerCase();
+						var provider = $row.find('td:eq(1)').text().toLowerCase();
+						
+						// Search in model ID, name, and provider.
+						if (modelId.toLowerCase().indexOf(searchTerm) > -1 ||
+							modelName.indexOf(searchTerm) > -1 ||
+							provider.indexOf(searchTerm) > -1) {
+							$row.show();
+							visibleCount++;
+						} else {
+							$row.hide();
+						}
+					});
+					$searchClear.show();
+				}
+
+				// Update count.
+				if (searchTerm === '') {
+					$searchCount.text('<?php esc_html_e( 'Showing', 'mcp-ai-wpoos' ); ?> ' + visibleCount + ' <?php esc_html_e( 'models', 'mcp-ai-wpoos' ); ?>');
+				} else {
+					$searchCount.text('<?php esc_html_e( 'Found', 'mcp-ai-wpoos' ); ?> ' + visibleCount + ' <?php esc_html_e( 'of', 'mcp-ai-wpoos' ); ?> ' + totalModels + ' <?php esc_html_e( 'models', 'mcp-ai-wpoos' ); ?>');
+				}
+
+				// Show "no results" message if needed.
+				if (visibleCount === 0 && searchTerm !== '') {
+					if ($modelTable.find('.wp-mcp-ai-no-results').length === 0) {
+						$modelTable.append('<tr class="wp-mcp-ai-no-results"><td colspan="9" style="text-align: center; padding: 20px; color: #999;"><?php esc_html_e( 'No models found matching your search.', 'mcp-ai-wpoos' ); ?></td></tr>');
+					}
+				} else {
+					$modelTable.find('.wp-mcp-ai-no-results').remove();
+				}
+			}
+
+			// Bind search input.
+			$searchInput.on('keyup search input', function() {
+				searchModels();
+			});
+
+			// Clear search.
+			$searchClear.on('click', function(e) {
+				e.preventDefault();
+				$searchInput.val('').trigger('input');
+			});
+
+			// Add data-model-id attribute to rows for easier searching.
+			$modelRows.each(function() {
+				var $row = $(this);
+				var $saveButton = $row.find('.wp-mcp-ai-save-model-config');
+				if ($saveButton.length) {
+					var modelId = $saveButton.data('model');
+					$row.attr('data-model-id', modelId);
+				}
 			});
 		});
 		</script>

@@ -510,10 +510,12 @@ class WP_MCP_AI_Model_Service {
 		$models['@cf/mistralai/mistral-7b-instruct-v0.1'] = 'Mistral 7B Instruct v0.1';
 
 		// Qwen models (multilingual, including Chinese).
-		$models['@cf/qwen/qwen1.5-0.5b-chat']    = 'Qwen 1.5 0.5B Chat';
-		$models['@cf/qwen/qwen1.5-1.8b-chat']    = 'Qwen 1.5 1.8B Chat';
-		$models['@cf/qwen/qwen1.5-7b-chat-awq']  = 'Qwen 1.5 7B Chat (AWQ)';
-		$models['@cf/qwen/qwen1.5-14b-chat-awq'] = 'Qwen 1.5 14B Chat (AWQ)';
+		$models['@cf/qwen/qwen1.5-0.5b-chat']              = 'Qwen 1.5 0.5B Chat';
+		$models['@cf/qwen/qwen1.5-1.8b-chat']              = 'Qwen 1.5 1.8B Chat';
+		$models['@cf/qwen/qwen1.5-7b-chat-awq']            = 'Qwen 1.5 7B Chat (AWQ)';
+		$models['@cf/qwen/qwen1.5-14b-chat-awq']           = 'Qwen 1.5 14B Chat (AWQ)';
+		$models['@cf/qwen/qwen2.5-coder-32b-instruct']     = 'Qwen 2.5 Coder 32B Instruct';
+		$models['@cf/qwen/qwen3-30b-a3b-fp8']              = 'Qwen 3 30B (A3B FP8)';
 
 		// Compact/efficient models.
 		$models['@cf/tinyllama/tinyllama-1.1b-chat-v1.0'] = 'TinyLlama 1.1B Chat v1.0';
