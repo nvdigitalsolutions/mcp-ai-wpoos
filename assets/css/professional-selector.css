@@ -205,35 +205,24 @@
 	}
 }
 
-/* Loading spinner styles - CSS animation based */
+/* Loading spinner styles */
 .wp-mcp-ai-professional-selector .spinner {
+	background: url("../../wp-admin/images/spinner.gif") no-repeat;
+	background-size: 20px 20px;
 	display: inline-block;
+	opacity: 0.7;
+	filter: alpha(opacity=70);
 	width: 20px;
 	height: 20px;
 	margin: 0;
 	vertical-align: middle;
-	opacity: 0.7;
-	filter: alpha(opacity=70);
-	position: relative;
 }
 
-.wp-mcp-ai-professional-selector .spinner::before {
-	content: "";
-	display: block;
-	width: 20px;
-	height: 20px;
-	border: 2px solid #2271b1; /* WordPress admin primary color */
-	border-top-color: transparent;
-	border-radius: 50%;
-	animation: wp-mcp-ai-spinner-rotate 0.6s linear infinite;
-}
-
-@keyframes wp-mcp-ai-spinner-rotate {
-	from {
-		transform: rotate(0deg);
-	}
-	to {
-		transform: rotate(360deg);
+@media print,
+	(-webkit-min-device-pixel-ratio: 1.25),
+	(min-resolution: 120dpi) {
+	.wp-mcp-ai-professional-selector .spinner {
+		background-image: url("../../wp-admin/images/spinner-2x.gif");
 	}
 }
 
@@ -250,16 +239,6 @@
 	bottom: 0;
 	z-index: 100000;
 	display: none;
-	visibility: hidden;
-	opacity: 0;
-	transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-
-/* Show modal when visible class is added */
-.wp-mcp-ai-professional-selector-modal.wp-mcp-ai-modal--visible {
-	display: block;
-	visibility: visible;
-	opacity: 1;
 }
 
 .wp-mcp-ai-professional-selector-modal__backdrop {
@@ -331,19 +310,6 @@
 	font-size: 24px;
 	width: 24px;
 	height: 24px;
-}
-
-/* Fallback if dashicons don't load */
-.wp-mcp-ai-professional-selector-modal__close .dashicons::before {
-	content: "\f335";
-	font-family: dashicons;
-	speak: never;
-	font-weight: 400;
-	font-variant: normal;
-	text-transform: none;
-	line-height: 1;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
 }
 
 .wp-mcp-ai-professional-selector-modal__body {
