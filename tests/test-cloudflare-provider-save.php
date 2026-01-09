@@ -25,7 +25,7 @@ class WP_MCP_AI_Cloudflare_Provider_Save_Test extends WP_UnitTestCase {
 		$providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
 
 		foreach ( $providers as $provider ) {
-			$result = $this->assertEquals(
+			$this->assertEquals(
 				$provider,
 				WP_MCP_AI_Assistant_CPT::sanitize_provider_meta( $provider ),
 				"Provider '{$provider}' should be accepted as valid."
