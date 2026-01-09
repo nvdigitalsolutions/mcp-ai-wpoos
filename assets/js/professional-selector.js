@@ -445,6 +445,8 @@
 		 */
 		initializeChatInterface: function() {
 			// Wait a brief moment for DOM to be fully ready
+			const CHAT_INIT_DELAY_MS = 100;
+			
 			setTimeout(function() {
 				// Check if the chat init API is available
 				if (typeof window.wpMcpAiChatInit !== 'undefined' && window.wpMcpAiChatInit.init) {
@@ -458,7 +460,7 @@
 					console.warn('[Professional Selector] Chat initialization API not available. Chat may not function correctly.');
 					console.warn('[Professional Selector] Available: window.wpMcpAiChatInit =', typeof window.wpMcpAiChatInit);
 				}
-			}, 100);
+			}, CHAT_INIT_DELAY_MS);
 		}
 	};
 

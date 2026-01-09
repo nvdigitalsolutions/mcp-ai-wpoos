@@ -222,7 +222,7 @@
 	display: block;
 	width: 20px;
 	height: 20px;
-	border: 2px solid #3b82f6;
+	border: 2px solid #2271b1; /* WordPress admin primary color */
 	border-top-color: transparent;
 	border-radius: 50%;
 	animation: wp-mcp-ai-spinner-rotate 0.6s linear infinite;
