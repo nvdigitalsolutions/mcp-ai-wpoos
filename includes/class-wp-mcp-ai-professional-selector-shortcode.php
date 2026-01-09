@@ -67,7 +67,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		wp_register_style(
 			self::STYLE_HANDLE,
 			$style_path,
-			array( 'dashicons' ),
+			array( 'dashicons', WP_MCP_AI_Shortcode::STYLE_HANDLE ),
 			$style_version
 		);
 
