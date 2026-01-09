@@ -227,6 +227,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						'message' => __( 'No remote endpoint configured. Crawl4AI jobs will run locally until a base URL is provided.', 'mcp-ai-wpoos' ),
 					),
 				),
+				'playwright'       => array(
+					'label'            => __( 'Playwright (Pro)', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'playwright_service_url' ),
+					'fields'           => array(
+						'playwright_service_url' => __( 'Service URL', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Enables browser automation with JavaScript rendering, screenshots, PDFs, and form interactions via the web_browser Pro tool.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Configure a Playwright service URL for full browser automation capabilities. Leave empty to use local HTTP fallback (limited to simple page fetch).', 'mcp-ai-wpoos' ),
+					'ready_message'    => __( 'Remote Playwright service configured.', 'mcp-ai-wpoos' ),
+					'empty_status'     => array(
+						'status'  => 'info',
+						'label'   => __( 'Local fallback', 'mcp-ai-wpoos' ),
+						'message' => __( 'No remote service configured. The web_browser tool will use local HTTP fallback with limited functionality (no JavaScript, screenshots, or PDFs).', 'mcp-ai-wpoos' ),
+					),
+				),
 				'cloudflare'       => array(
 					'label'            => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'cloudflare_zone_id', 'cloudflare_api_token' ),
@@ -1800,6 +1815,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			);
 
 			add_settings_field(
+				'playwright_service_url',
+				__( 'Playwright Service URL', 'mcp-ai-wpoos' ),
+				array( $this, 'render_playwright_service_url_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
 				'cloudflare_zone_id',
 				__( 'Cloudflare Zone ID', 'mcp-ai-wpoos' ),
 				array( $this, 'render_cloudflare_zone_id_field' ),
@@ -2254,6 +2277,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['crawl4ai_api_key'] ) ) {
 				$clean['crawl4ai_api_key'] = trim( sanitize_text_field( $settings['crawl4ai_api_key'] ) );
+			}
+
+			if ( isset( $settings['playwright_service_url'] ) ) {
+				$service_url = trim( $settings['playwright_service_url'] );
+
+				$clean['playwright_service_url'] = $service_url ? esc_url_raw( $service_url ) : '';
 			}
 
 			if ( isset( $settings['cloudflare_api_token'] ) ) {
@@ -3476,6 +3505,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_base_url]" value="<?php echo esc_attr( $settings['crawl4ai_base_url'] ); ?>" class="regular-text" placeholder="https://example.com/" />
 		<p class="description"><?php esc_html_e( 'Base URL for the Crawl4AI API (for example, https://localhost:11235/).', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Playwright service URL field.
+		 */
+		public function render_playwright_service_url_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[playwright_service_url]" value="<?php echo esc_attr( $settings['playwright_service_url'] ); ?>" class="regular-text" placeholder="https://playwright.example.com/" />
+		<p class="description"><?php esc_html_e( 'URL for the Playwright service (Node.js + Express). Leave empty to use local HTTP fallback (limited functionality).', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
