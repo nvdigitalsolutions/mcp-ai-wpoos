@@ -459,6 +459,13 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'admin.test_model',
+			function () {
+				return new WP_MCP_AI_Admin_Test_Model();
+			}
+		);
+
+		$this->singleton(
 			'admin.test_team',
 			function () {
 				return new WP_MCP_AI_Admin_Test_Team();
