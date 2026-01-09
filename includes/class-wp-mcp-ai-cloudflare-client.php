@@ -434,12 +434,38 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				$content = $result['response'];
 			}
 
+			// Extract usage data if available from Cloudflare API.
+			// Cloudflare Workers AI may include usage in the response or result.
+			$usage = array(
+				'prompt_tokens'     => 0,
+				'completion_tokens' => 0,
+				'total_tokens'      => 0,
+			);
+
+			// Check if usage data is in the decoded response (top-level).
+			if ( isset( $decoded['usage'] ) && is_array( $decoded['usage'] ) ) {
+				$usage = $this->extract_usage_data( $decoded['usage'] );
+			} elseif ( isset( $result['usage'] ) && is_array( $result['usage'] ) ) {
+				// Some endpoints may include usage within the result object.
+				$usage = $this->extract_usage_data( $result['usage'] );
+			}
+
+			// If no usage data was provided by Cloudflare, estimate based on content length.
+			if ( 0 === $usage['prompt_tokens'] && 0 === $usage['completion_tokens'] && 0 === $usage['total_tokens'] ) {
+				$usage = $this->estimate_token_usage( $content );
+			}
+
+			// Add provider and model to usage for tracking.
+			$usage['provider'] = 'cloudflare';
+			$usage['model']    = $model;
+
 			return array(
-				'id'      => uniqid( 'cloudflare-', true ),
-				'object'  => 'chat.completion',
-				'created' => time(),
-				'model'   => $model,
-				'choices' => array(
+				'id'       => uniqid( 'cloudflare-', true ),
+				'object'   => 'chat.completion',
+				'created'  => time(),
+				'model'    => $model,
+				'provider' => 'cloudflare',
+				'choices'  => array(
 					array(
 						'index'         => 0,
 						'message'       => array(
@@ -449,11 +475,59 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 						'finish_reason' => 'stop',
 					),
 				),
-				'usage'   => array(
-					'prompt_tokens'     => 0,
-					'completion_tokens' => 0,
-					'total_tokens'      => 0,
-				),
+				'usage'    => $usage,
+			);
+		}
+
+		/**
+		 * Extract usage data from Cloudflare API usage object.
+		 *
+		 * @param array $usage_data Raw usage data from API.
+		 * @return array Normalized usage array.
+		 */
+		protected function extract_usage_data( array $usage_data ) {
+			$prompt_tokens     = isset( $usage_data['prompt_tokens'] ) ? max( 0, (int) $usage_data['prompt_tokens'] ) : 0;
+			$completion_tokens = isset( $usage_data['completion_tokens'] ) ? max( 0, (int) $usage_data['completion_tokens'] ) : 0;
+			$total_tokens      = isset( $usage_data['total_tokens'] ) ? max( 0, (int) $usage_data['total_tokens'] ) : 0;
+
+			// Calculate total if not provided.
+			if ( 0 === $total_tokens && ( $prompt_tokens > 0 || $completion_tokens > 0 ) ) {
+				$total_tokens = $prompt_tokens + $completion_tokens;
+			}
+
+			return array(
+				'prompt_tokens'     => $prompt_tokens,
+				'completion_tokens' => $completion_tokens,
+				'total_tokens'      => $total_tokens,
+			);
+		}
+
+		/**
+		 * Estimate token usage when not provided by the API.
+		 *
+		 * Uses a simple heuristic: ~4 characters per token (average for English text).
+		 * This is an approximation and should be marked as estimated in tracking.
+		 *
+		 * @param string $content Response content.
+		 * @return array Estimated usage array.
+		 */
+		protected function estimate_token_usage( $content ) {
+			// Rough estimation: ~4 characters per token (standard approximation).
+			$estimated_completion_tokens = max( 1, (int) ceil( strlen( $content ) / 4 ) );
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_estimated_usage',
+				'Cloudflare response did not include usage data. Using estimation.',
+				array(
+					'estimated_completion_tokens' => $estimated_completion_tokens,
+					'content_length'              => strlen( $content ),
+				)
+			);
+
+			return array(
+				'prompt_tokens'     => 0, // Cannot estimate prompt without request data.
+				'completion_tokens' => $estimated_completion_tokens,
+				'total_tokens'      => $estimated_completion_tokens,
 			);
 		}
 
