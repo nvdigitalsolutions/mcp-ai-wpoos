@@ -2,7 +2,23 @@
 
 ## Issues Fixed
 
-### 1. Model Dropdown Not Populating in Assistant CPT (PRIMARY ISSUE)
+### 1. Invalid Model ID Error (PRIMARY ISSUE - JANUARY 2025)
+
+**Root Cause**: Incorrect Mistral model namespace and outdated model catalog.
+- **File**: `includes/services/class-wp-mcp-ai-model-service.php`
+- **Line**: 500
+- **Problem**: 
+  - Used `@cf/mistral/mistral-7b-instruct-v0.1` but Cloudflare uses `@cf/mistralai/mistral-7b-instruct-v0.1`
+  - Missing 13 models added to Cloudflare Workers AI in 2024-2025
+  - Missing Llama 4 Scout (multimodal model released April 2025)
+- **Impact**: Model validation failures, "invalid model ID" errors
+- **Fix**: 
+  - Corrected Mistral namespace from `@cf/mistral/` to `@cf/mistralai/`
+  - Added 13 new models including Llama 4 Scout, TinyLlama, Phi-2, etc.
+  - Updated model configurations with accurate context windows and pricing
+  - Enhanced multimodal support for Llama 4 Scout
+
+### 2. Model Dropdown Not Populating in Assistant CPT (SECONDARY ISSUE)
 
 **Root Cause**: The Model Service was checking for the wrong setting name.
 - **File**: `includes/services/class-wp-mcp-ai-model-service.php`
@@ -33,14 +49,25 @@
    - `enable_cloudflare` must be true ✅ (was checking wrong name ❌)
    - `cloudflare_api_token` must be set ✅
    - `cloudflare_account_id` must be set ✅
-6. Returns available models (7 models):
+6. Returns available models (20 models - updated January 2025):
    - Llama 3.1 8B Instruct
+   - Llama 3.1 8B Instruct Fast (NEW - 128K context)
    - Llama 3.1 70B Instruct  
    - Llama 3.2 1B Instruct
    - Llama 3.2 3B Instruct
-   - Mistral 7B Instruct v0.1
-   - Qwen 1.5 7B Chat
-   - Qwen 1.5 14B Chat
+   - Llama 2 7B Chat (INT4) (NEW)
+   - Llama 2 13B Chat (INT8) (NEW)
+   - Llama 4 Scout (NEW - 17B, Multimodal)
+   - Mistral 7B Instruct v0.1 (FIXED namespace)
+   - Qwen 1.5 0.5B Chat (NEW)
+   - Qwen 1.5 1.8B Chat (NEW)
+   - Qwen 1.5 7B Chat (AWQ)
+   - Qwen 1.5 14B Chat (AWQ)
+   - TinyLlama 1.1B Chat v1.0 (NEW)
+   - Microsoft Phi-2 (NEW)
+   - Falcon 7B Instruct (NEW)
+   - DeepSeek Math 7B Instruct (NEW)
+   - OpenChat 3.5 (NEW)
 7. JavaScript populates dropdown with models
 
 ## Select Rendering Pattern
