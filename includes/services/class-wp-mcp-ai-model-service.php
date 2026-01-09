@@ -479,7 +479,7 @@ class WP_MCP_AI_Model_Service {
 	 */
 	protected function get_cloudflare_models( $settings, $requires_vision, $requires_multimodal ) {
 		// Check if Cloudflare provider is enabled and configured.
-		if ( empty( $settings['cloudflare_enabled'] ) || empty( $settings['cloudflare_api_token'] ) || empty( $settings['cloudflare_account_id'] ) ) {
+		if ( empty( $settings['enable_cloudflare'] ) || empty( $settings['cloudflare_api_token'] ) || empty( $settings['cloudflare_account_id'] ) ) {
 			return array();
 		}
 
