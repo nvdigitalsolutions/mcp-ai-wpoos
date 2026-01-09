@@ -75,7 +75,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 
 			// Test with a simple API call to verify credentials.
 			$url = sprintf(
-				'https://api.cloudflare.com/client/v4/accounts/%s/ai/models',
+				'https://api.cloudflare.com/client/v4/accounts/%s/ai/models/search',
 				rawurlencode( $account_id )
 			);
 

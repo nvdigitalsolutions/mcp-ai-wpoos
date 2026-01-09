@@ -148,7 +148,7 @@ All provider enable settings follow the pattern `enable_{provider}`:
 The bug was an inconsistency where only Cloudflare was checked as `cloudflare_enabled`.
 
 ### Cloudflare API Endpoints Used
-- **List Models**: `GET https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/models`
+- **List Models**: `GET https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/models/search`
 - **Run Model**: `POST https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model}`
 
 ### Authentication
