@@ -85,6 +85,7 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 	public function test_admin_components_registered() {
 		$this->assertTrue( $this->container->has( 'admin.cron_manager' ), 'Cron manager should be registered' );
 		$this->assertTrue( $this->container->has( 'admin.test_assistant' ), 'Test assistant should be registered' );
+		$this->assertTrue( $this->container->has( 'admin.test_model' ), 'Test model should be registered' );
 		$this->assertTrue( $this->container->has( 'admin.ajax_handlers' ), 'AJAX handlers should be registered' );
 		$this->assertTrue( $this->container->has( 'admin.settings_base' ), 'Settings base should be registered' );
 		$this->assertTrue( $this->container->has( 'admin.settings_renderer' ), 'Settings renderer should be registered' );
