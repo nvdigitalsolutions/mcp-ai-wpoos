@@ -6,8 +6,14 @@
  * This script parses the Statement of Applicability markdown files
  * and generates a PHP data class with embedded compliance data.
  *
+ * This is a CLI script, not WordPress plugin code. PHPCS rules for
+ * escaping output and using WordPress functions don't apply here.
+ *
  * @package WP_MCP_AI
  * @since 1.5.0
+ *
+ * phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+ * phpcs:disable WordPress.WP.AlternativeFunctions
  */
 
 // Define paths.
@@ -33,15 +39,21 @@ function parse_iso27001_controls( $file ) {
 		return array();
 	}
 
-	$lines           = explode( "\n", $content );
-	$controls        = array();
-	$current_control = null;
+	$lines                = explode( "\n", $content );
+	$controls             = array();
+	$current_control      = null;
+	$in_implementation    = false;
+	$implementation_lines = array();
 
 	foreach ( $lines as $line ) {
 		// Match control ID header (e.g., "### A.5.1 Policies for Information Security").
 		if ( preg_match( '/^###\s+(A\.\d+\.\d+(?:\.\d+)?)\s+(.+)$/', $line, $matches ) ) {
 			// Save previous control if exists.
 			if ( $current_control ) {
+				// Process collected implementation lines.
+				if ( ! empty( $implementation_lines ) ) {
+					$current_control['description'] = implode( "\n", $implementation_lines );
+				}
 				$controls[] = $current_control;
 			}
 
@@ -53,7 +65,10 @@ function parse_iso27001_controls( $file ) {
 				'status_key'    => '',
 				'applicable'    => true,
 				'justification' => '',
+				'description'   => '',
 			);
+			$in_implementation    = false;
+			$implementation_lines = array();
 		} elseif ( $current_control && preg_match( '/^\*\*Status:\*\*\s+(.+)$/', $line, $matches ) ) {
 			$status_text               = trim( $matches[1] );
 			$current_control['status'] = $status_text;
@@ -66,7 +81,7 @@ function parse_iso27001_controls( $file ) {
 			} elseif ( strpos( $status_text, 'Planned' ) !== false ) {
 				$current_control['status_key'] = 'planned';
 			} elseif ( strpos( $status_text, 'Not Applicable' ) !== false ) {
-				$current_control['status_key']  = 'not_applicable';
+				$current_control['status_key'] = 'not_applicable';
 				$current_control['applicable'] = false;
 			}
 		} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
@@ -74,11 +89,28 @@ function parse_iso27001_controls( $file ) {
 			$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
 		} elseif ( $current_control && preg_match( '/^\*\*Justification:\*\*\s+(.+)$/', $line, $matches ) ) {
 			$current_control['justification'] = trim( $matches[1] );
+		} elseif ( $current_control && preg_match( '/^\*\*Implementation:\*\*\s*$/', $line ) ) {
+			// Start collecting implementation lines.
+			$in_implementation = true;
+		} elseif ( $current_control && preg_match( '/^\*\*Evidence:\*\*/', $line ) ) {
+			// Stop collecting implementation lines when we hit Evidence section.
+			$in_implementation = false;
+		} elseif ( $in_implementation && ! empty( trim( $line ) ) && ! preg_match( '/^\*\*/', $line ) ) {
+			// Collect implementation bullet points and text.
+			$line = trim( $line );
+			if ( preg_match( '/^-\s+(.+)$/', $line, $matches ) ) {
+				// Bullet point - extract the text.
+				$implementation_lines[] = trim( $matches[1] );
+			}
 		}
 	}
 
 	// Save last control.
 	if ( $current_control ) {
+		// Process collected implementation lines for the last control.
+		if ( ! empty( $implementation_lines ) ) {
+			$current_control['description'] = implode( "\n", $implementation_lines );
+		}
 		$controls[] = $current_control;
 	}
 
@@ -151,9 +183,9 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
 		 * Get ISO 27001:2022 controls.
 		 *
 		 * Returns all 93 controls from Annex A with their implementation status,
-		 * applicability, and justification.
+		 * applicability, justification, and descriptions.
 		 *
-		 * @return array Array of controls with id, name, status, status_key, applicable, and justification.
+		 * @return array Array of controls with id, name, status, status_key, applicable, justification, and description.
 		 */
 		public static function get_iso27001_controls() {
 			return %ISO27001_DATA%;
@@ -215,7 +247,8 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
 PHP_CLASS;
 
 	// Replace placeholders with actual data.
-	$iso27001_data_export = var_export( $iso27001_controls, true );
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export -- Legitimate use in code generator.
+	$iso27001_data_export  = var_export( $iso27001_controls, true );
 	$iso27001_stats_export = var_export( $iso27001_stats, true );
 
 	$class_content = str_replace(

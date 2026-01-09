@@ -69,7 +69,7 @@
 	 * Uses requestAnimationFrame to batch multiple scroll requests.
 	 */
 	const scrollBatcher = (function() {
-		let pendingScrolls = new Map();
+		const pendingScrolls = new Map();
 		let rafScheduled = false;
 
 		function performScrolls() {

@@ -101,6 +101,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<span class="dashicons dashicons-admin-generic"></span>
 						<?php esc_html_e( 'Per Models', 'mcp-ai-wpoos' ); ?>
 					</a>
+					<a href="<?php echo esc_url( $this->get_view_url( 'model_manager' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'model_manager' === $active_view ? 'active' : ''; ?>">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Model Manager', 'mcp-ai-wpoos' ); ?>
+					</a>
 					<?php if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) : ?>
 						<a href="<?php echo esc_url( $this->get_view_url( 'analytics' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'analytics' === $active_view ? 'active' : ''; ?>">
 							<span class="dashicons dashicons-chart-line"></span>
@@ -124,6 +128,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							break;
 						case 'per_models':
 							$this->render_per_models_view();
+							break;
+						case 'model_manager':
+							$this->render_model_manager_view();
 							break;
 						case 'analytics':
 							if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) {
@@ -1160,6 +1167,407 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			// Output JavaScript for inline editing.
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript is properly escaped in renderer.
 			echo WP_MCP_AI_Model_Config_Renderer::render_javascript();
+		}
+
+		/**
+		 * Render Model Manager view.
+		 *
+		 * Displays interface for discovering, researching, and adding AI models.
+		 */
+		private function render_model_manager_view() {
+			// Load AJAX handler if not already loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Manager_Ajax' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-manager-ajax.php';
+			}
+
+			?>
+			<div class="wp-mcp-ai-model-manager">
+				<div class="wp-mcp-ai-model-manager__header">
+					<h2><?php esc_html_e( 'AI Model Manager', 'mcp-ai-wpoos' ); ?></h2>
+					<p class="description">
+						<?php esc_html_e( 'Discover, research, and add new AI models to the plugin configuration using the built-in research tools.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</div>
+
+				<!-- Quick Actions -->
+				<div class="wp-mcp-ai-model-manager__actions">
+					<div class="wp-mcp-ai-card">
+						<h3><span class="dashicons dashicons-search"></span> <?php esc_html_e( 'Discover New Models', 'mcp-ai-wpoos' ); ?></h3>
+						<p><?php esc_html_e( 'Automatically discover newly released models from all configured AI providers.', 'mcp-ai-wpoos' ); ?></p>
+						<button type="button" class="button button-primary" id="wp-mcp-ai-discover-models">
+							<?php esc_html_e( 'Discover Models', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span class="spinner" style="float: none; margin: 0 10px;"></span>
+					</div>
+
+					<div class="wp-mcp-ai-card">
+						<h3><span class="dashicons dashicons-admin-generic"></span> <?php esc_html_e( 'Research Specific Model', 'mcp-ai-wpoos' ); ?></h3>
+						<p><?php esc_html_e( 'Research a specific model by ID to get its specifications and configuration.', 'mcp-ai-wpoos' ); ?></p>
+						<div class="wp-mcp-ai-research-form">
+							<input type="text" id="wp-mcp-ai-model-id" placeholder="<?php esc_attr_e( 'e.g., gpt-4.5-turbo', 'mcp-ai-wpoos' ); ?>" class="regular-text" />
+							<select id="wp-mcp-ai-model-provider" class="regular-text">
+								<option value=""><?php esc_html_e( 'Select Provider', 'mcp-ai-wpoos' ); ?></option>
+								<option value="openai">OpenAI</option>
+								<option value="anthropic">Anthropic (Claude)</option>
+								<option value="gemini">Google Gemini</option>
+								<option value="huggingface">Hugging Face</option>
+								<option value="ollama">Ollama (Local)</option>
+								<option value="lm_studio">LM Studio (Local)</option>
+								<option value="cloudflare">Cloudflare Workers AI</option>
+							</select>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-research-model">
+								<?php esc_html_e( 'Research Model', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="spinner" style="float: none; margin: 0 10px;"></span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Results Area -->
+				<div id="wp-mcp-ai-model-manager-results" style="margin-top: 20px;"></div>
+
+				<!-- Available Tools Info -->
+				<div class="wp-mcp-ai-model-manager__info" style="margin-top: 30px;">
+					<h3><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos' ); ?></h3>
+					<p><?php esc_html_e( 'The Model Manager uses three built-in tools for AI model management:', 'mcp-ai-wpoos' ); ?></p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><strong>research_model</strong> - <?php esc_html_e( 'Uses AI to research model specifications from documentation', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>discover_new_models</strong> - <?php esc_html_e( 'Queries provider APIs to find newly released models', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>add_model_config</strong> - <?php esc_html_e( 'Adds researched models to the orchestration configuration', 'mcp-ai-wpoos' ); ?></li>
+					</ul>
+					<p>
+						<?php
+						$docs_url = 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/MODEL-RESEARCH-TOOLS.md';
+						printf(
+							/* translators: %s: Documentation URL */
+							wp_kses_post( __( 'For detailed documentation, see <a href="%s" target="_blank">Model Research Tools Documentation</a>', 'mcp-ai-wpoos' ) ),
+							esc_url( $docs_url )
+						);
+						?>
+					</p>
+				</div>
+
+				<!-- Configured Models List -->
+				<div class="wp-mcp-ai-model-manager__configured" style="margin-top: 30px;">
+					<h3><?php esc_html_e( 'Currently Configured Models', 'mcp-ai-wpoos' ); ?></h3>
+					<p class="description">
+						<?php
+						printf(
+							/* translators: %s: Per Models view link */
+							wp_kses_post( __( 'View and edit existing model configurations in the %s view.', 'mcp-ai-wpoos' ) ),
+							'<a href="' . esc_url( $this->get_view_url( 'per_models' ) ) . '">' . esc_html__( 'Per Models', 'mcp-ai-wpoos' ) . '</a>'
+						);
+						?>
+					</p>
+					<?php
+					$all_configs = WP_MCP_AI_Model_Config::get_all_configs();
+					$providers   = array();
+					foreach ( $all_configs as $model_id => $config ) {
+						$provider = isset( $config['provider'] ) ? $config['provider'] : 'unknown';
+						if ( ! isset( $providers[ $provider ] ) ) {
+							$providers[ $provider ] = array();
+						}
+						$providers[ $provider ][] = $model_id;
+					}
+					?>
+					<div class="wp-mcp-ai-providers-summary">
+						<?php foreach ( $providers as $provider => $models ) : ?>
+							<div class="wp-mcp-ai-provider-card">
+								<h4><?php echo esc_html( ucfirst( $provider ) ); ?></h4>
+								<p>
+									<?php
+									printf(
+										/* translators: %d: number of models */
+										esc_html( _n( '%d model configured', '%d models configured', count( $models ), 'mcp-ai-wpoos' ) ),
+										esc_html( count( $models ) )
+									);
+									?>
+								</p>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				</div>
+			</div>
+
+			<style>
+			.wp-mcp-ai-model-manager__actions {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 20px;
+				margin: 20px 0;
+			}
+			.wp-mcp-ai-card {
+				background: #fff;
+				border: 1px solid #c3c4c7;
+				border-radius: 4px;
+				padding: 20px;
+			}
+			.wp-mcp-ai-card h3 {
+				margin-top: 0;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+			.wp-mcp-ai-card .dashicons {
+				color: #2271b1;
+			}
+			.wp-mcp-ai-research-form {
+				display: flex;
+				gap: 10px;
+				align-items: center;
+				flex-wrap: wrap;
+			}
+			#wp-mcp-ai-model-manager-results {
+				background: #fff;
+				border: 1px solid #c3c4c7;
+				border-radius: 4px;
+				padding: 20px;
+				display: none;
+			}
+			#wp-mcp-ai-model-manager-results.has-content {
+				display: block;
+			}
+			.wp-mcp-ai-providers-summary {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+				gap: 15px;
+				margin-top: 15px;
+			}
+			.wp-mcp-ai-provider-card {
+				background: #f6f7f7;
+				padding: 15px;
+				border-radius: 4px;
+				border-left: 3px solid #2271b1;
+			}
+			.wp-mcp-ai-provider-card h4 {
+				margin: 0 0 5px 0;
+			}
+			.wp-mcp-ai-provider-card p {
+				margin: 0;
+				color: #646970;
+			}
+			.wp-mcp-ai-model-result {
+				border: 1px solid #c3c4c7;
+				border-radius: 4px;
+				padding: 15px;
+				margin: 10px 0;
+			}
+			.wp-mcp-ai-model-result h4 {
+				margin-top: 0;
+			}
+			.wp-mcp-ai-model-specs {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 10px;
+				margin: 15px 0;
+			}
+			.wp-mcp-ai-model-spec {
+				padding: 10px;
+				background: #f6f7f7;
+				border-radius: 3px;
+			}
+			.wp-mcp-ai-model-spec strong {
+				display: block;
+				margin-bottom: 3px;
+				color: #1d2327;
+			}
+			</style>
+
+			<script>
+			jQuery(document).ready(function($) {
+				// Discover models action
+				$('#wp-mcp-ai-discover-models').on('click', function() {
+					var button = $(this);
+					var spinner = button.next('.spinner');
+					var resultsDiv = $('#wp-mcp-ai-model-manager-results');
+
+					button.prop('disabled', true);
+					spinner.addClass('is-active');
+					resultsDiv.html('<p><?php esc_html_e( 'Discovering models...', 'mcp-ai-wpoos' ); ?></p>').addClass('has-content');
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_discover_models',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_model_manager' ) ); ?>'
+						},
+						success: function(response) {
+							if (response.success) {
+								renderDiscoveryResults(response.data);
+							} else {
+								resultsDiv.html('<div class="notice notice-error"><p>' + (response.data || '<?php esc_html_e( 'Failed to discover models.', 'mcp-ai-wpoos' ); ?>') + '</p></div>');
+							}
+						},
+						error: function() {
+							resultsDiv.html('<div class="notice notice-error"><p><?php esc_html_e( 'Failed to discover models. Please try again.', 'mcp-ai-wpoos' ); ?></p></div>');
+						},
+						complete: function() {
+							button.prop('disabled', false);
+							spinner.removeClass('is-active');
+						}
+					});
+				});
+
+				// Research model action
+				$('#wp-mcp-ai-research-model').on('click', function() {
+					var button = $(this);
+					var spinner = button.next('.spinner');
+					var modelId = $('#wp-mcp-ai-model-id').val();
+					var provider = $('#wp-mcp-ai-model-provider').val();
+					var resultsDiv = $('#wp-mcp-ai-model-manager-results');
+
+					if (!modelId || !provider) {
+						alert('<?php esc_html_e( 'Please enter a model ID and select a provider.', 'mcp-ai-wpoos' ); ?>');
+						return;
+					}
+
+					button.prop('disabled', true);
+					spinner.addClass('is-active');
+					resultsDiv.html('<p><?php esc_html_e( 'Researching model...', 'mcp-ai-wpoos' ); ?></p>').addClass('has-content');
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_research_model',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_model_manager' ) ); ?>',
+							model_id: modelId,
+							provider: provider
+						},
+						success: function(response) {
+							if (response.success) {
+								renderResearchResults(response.data, modelId);
+							} else {
+								resultsDiv.html('<div class="notice notice-error"><p>' + (response.data || '<?php esc_html_e( 'Failed to research model.', 'mcp-ai-wpoos' ); ?>') + '</p></div>');
+							}
+						},
+						error: function() {
+							resultsDiv.html('<div class="notice notice-error"><p><?php esc_html_e( 'Failed to research model. Please try again.', 'mcp-ai-wpoos' ); ?></p></div>');
+						},
+						complete: function() {
+							button.prop('disabled', false);
+							spinner.removeClass('is-active');
+						}
+					});
+				});
+
+				function renderDiscoveryResults(data) {
+					var html = '<h3><?php esc_html_e( 'Discovery Results', 'mcp-ai-wpoos' ); ?></h3>';
+					
+					if (data.discovered && data.discovered.length > 0) {
+						html += '<h4><?php esc_html_e( 'Newly Discovered Models', 'mcp-ai-wpoos' ); ?> (' + data.discovered.length + ')</h4>';
+						data.discovered.forEach(function(model) {
+							html += '<div class="wp-mcp-ai-model-result">';
+							html += '<h4>' + escapeHtml(model.name) + ' (' + escapeHtml(model.provider) + ')</h4>';
+							html += '<p><code>' + escapeHtml(model.model_id) + '</code></p>';
+							html += '<button class="button button-primary research-and-add-btn" data-model-id="' + escapeHtml(model.model_id) + '" data-provider="' + escapeHtml(model.provider) + '"><?php esc_html_e( 'Research & Add', 'mcp-ai-wpoos' ); ?></button>';
+							html += '</div>';
+						});
+					}
+
+					if (data.already_exists && data.already_exists.length > 0) {
+						html += '<h4><?php esc_html_e( 'Already Configured', 'mcp-ai-wpoos' ); ?> (' + data.already_exists.length + ')</h4>';
+						html += '<p><?php esc_html_e( 'These models are already in your configuration:', 'mcp-ai-wpoos' ); ?></p>';
+						html += '<ul>';
+						data.already_exists.forEach(function(model) {
+							html += '<li><code>' + escapeHtml(model.model_id) + '</code> (' + escapeHtml(model.provider) + ')</li>';
+						});
+						html += '</ul>';
+					}
+
+					if (!data.discovered || data.discovered.length === 0) {
+						html += '<p><?php esc_html_e( 'No new models discovered. All provider models are already configured.', 'mcp-ai-wpoos' ); ?></p>';
+					}
+
+					$('#wp-mcp-ai-model-manager-results').html(html).addClass('has-content');
+
+					// Bind research and add buttons
+					$('.research-and-add-btn').on('click', function() {
+						var btn = $(this);
+						var modelId = btn.data('model-id');
+						var provider = btn.data('provider');
+						
+						$('#wp-mcp-ai-model-id').val(modelId);
+						$('#wp-mcp-ai-model-provider').val(provider);
+						$('#wp-mcp-ai-research-model').click();
+					});
+				}
+
+				function renderResearchResults(data, modelId) {
+					var html = '<h3><?php esc_html_e( 'Research Results', 'mcp-ai-wpoos' ); ?></h3>';
+					html += '<div class="wp-mcp-ai-model-result">';
+					html += '<h4>' + escapeHtml(data.name) + '</h4>';
+					html += '<p><strong><?php esc_html_e( 'Provider:', 'mcp-ai-wpoos' ); ?></strong> ' + escapeHtml(data.provider) + '</p>';
+					html += '<div class="wp-mcp-ai-model-specs">';
+					html += '<div class="wp-mcp-ai-model-spec"><strong><?php esc_html_e( 'Context Window', 'mcp-ai-wpoos' ); ?></strong>' + Number(data.context_window).toLocaleString() + ' tokens</div>';
+					html += '<div class="wp-mcp-ai-model-spec"><strong><?php esc_html_e( 'Cost per 1K', 'mcp-ai-wpoos' ); ?></strong>$' + data.cost_per_1k + '</div>';
+					html += '<div class="wp-mcp-ai-model-spec"><strong><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></strong>' + escapeHtml(data.status) + '</div>';
+					if (data._research_metadata && data._research_metadata.confidence) {
+						html += '<div class="wp-mcp-ai-model-spec"><strong><?php esc_html_e( 'Confidence', 'mcp-ai-wpoos' ); ?></strong>' + data._research_metadata.confidence + '%</div>';
+					}
+					html += '</div>';
+					html += '<button class="button button-primary" id="add-researched-model" data-model-id="' + escapeHtml(modelId) + '"><?php esc_html_e( 'Add to Configuration', 'mcp-ai-wpoos' ); ?></button>';
+					html += '</div>';
+
+					$('#wp-mcp-ai-model-manager-results').html(html).addClass('has-content');
+
+					// Store data for add action
+					$('#add-researched-model').data('config', data);
+				}
+
+				// Add researched model
+				$(document).on('click', '#add-researched-model', function() {
+					var button = $(this);
+					var config = button.data('config');
+					var modelId = button.data('model-id');
+
+					if (!config || !modelId) return;
+
+					button.prop('disabled', true).text('<?php esc_html_e( 'Adding...', 'mcp-ai-wpoos' ); ?>');
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_add_model_config',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_model_manager' ) ); ?>',
+							model_id: modelId,
+							config: JSON.stringify(config)
+						},
+						success: function(response) {
+							if (response.success) {
+								button.text('<?php esc_html_e( 'Added!', 'mcp-ai-wpoos' ); ?>').removeClass('button-primary').addClass('button-secondary');
+								$('<div class="notice notice-success inline"><p>' + escapeHtml(response.data.message || '<?php esc_html_e( 'Model added successfully!', 'mcp-ai-wpoos' ); ?>') + '</p></div>').insertBefore('#wp-mcp-ai-model-manager-results');
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else {
+								alert('<?php esc_html_e( 'Failed to add model:', 'mcp-ai-wpoos' ); ?> ' + (response.data || ''));
+								button.prop('disabled', false).text('<?php esc_html_e( 'Add to Configuration', 'mcp-ai-wpoos' ); ?>');
+							}
+						},
+						error: function() {
+							alert('<?php esc_html_e( 'Failed to add model. Please try again.', 'mcp-ai-wpoos' ); ?>');
+							button.prop('disabled', false).text('<?php esc_html_e( 'Add to Configuration', 'mcp-ai-wpoos' ); ?>');
+						}
+					});
+				});
+
+				function escapeHtml(text) {
+					if (typeof text !== 'string') return text;
+					var map = {
+						'&': '&amp;',
+						'<': '&lt;',
+						'>': '&gt;',
+						'"': '&quot;',
+						"'": '&#039;'
+					};
+					return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+				}
+			});
+			</script>
+			<?php
 		}
 
 		/**

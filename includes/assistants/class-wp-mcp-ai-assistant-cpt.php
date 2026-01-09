@@ -323,206 +323,248 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			echo '<div class="wp-mcp-ai-prebuilt-shortcuts">';
 			echo '<h3>' . esc_html__( 'Pre-built prompt shortcuts', 'mcp-ai-wpoos' ) . '</h3>';
-			echo '<p class="description">' . esc_html__( 'Adjust the shortcuts that selected tools contribute to the assistant chat interface.', 'mcp-ai-wpoos' ) . '</p>';
+			echo '<p class="description">' . esc_html__( 'Configure quick-access prompts that appear as buttons in the chat interface. Users can click these to instantly send pre-written prompts to the assistant.', 'mcp-ai-wpoos' ) . '</p>';
 
 			if ( empty( $selected_tools ) ) {
-				echo '<p class="description">' . esc_html__( 'Select at least one tool above to configure its pre-built shortcuts.', 'mcp-ai-wpoos' ) . '</p>';
+				echo '<div class="notice notice-info inline" style="margin: 1rem 0; padding: 10px;">';
+				echo '<p style="margin: 0.5em 0;"><strong>' . esc_html__( 'Get started:', 'mcp-ai-wpoos' ) . '</strong></p>';
+				echo '<ol style="margin: 0.5em 0 0.5em 1.5em;">';
+				echo '<li>' . esc_html__( 'Select tools from the "Available Tools" section above', 'mcp-ai-wpoos' ) . '</li>';
+				echo '<li>' . esc_html__( 'Each tool automatically provides helpful prompt shortcuts', 'mcp-ai-wpoos' ) . '</li>';
+				echo '<li>' . esc_html__( 'Customize or hide shortcuts as needed', 'mcp-ai-wpoos' ) . '</li>';
+				echo '</ol>';
+				echo '</div>';
+				echo '</div>';
+				return;
 			}
 
 			$default_shortcuts_map = $this->get_default_prebuilt_shortcuts_map( $selected_tools, $post->ID );
+			
+			// Group tools by category for better organization.
+			$tool_groups = $this->group_tools_for_shortcuts( $selected_tools );
+			
+			// Render search and filter UI.
+			$this->render_shortcuts_search_filter( $tool_groups );
 
 			$tool_index = 0;
 
-			foreach ( $selected_tools as $tool_slug ) {
-				$tool = $this->registry->get_tool( $tool_slug );
-
-				if ( ! $tool ) {
+			// Show tools grouped by category.
+			foreach ( $tool_groups as $group_name => $group_tools ) {
+				if ( empty( $group_tools ) ) {
 					continue;
 				}
 
-				$tool_name           = $tool->get_name();
-				$defaults            = isset( $default_shortcuts_map[ $tool_slug ] ) ? $default_shortcuts_map[ $tool_slug ] : array();
-				$settings            = isset( $prebuilt_shortcuts[ $tool_slug ] ) ? $prebuilt_shortcuts[ $tool_slug ] : array();
-				$mode                = ( isset( $settings['mode'] ) && 'custom' === $settings['mode'] ) ? 'custom' : 'inherit';
-				$custom_rows         = ( 'custom' === $mode && isset( $settings['shortcuts'] ) && is_array( $settings['shortcuts'] ) ) ? $settings['shortcuts'] : array();
-				$next_index          = ( 'custom' === $mode ) ? count( $custom_rows ) : 0;
-				$defaults_json       = wp_json_encode( $defaults );
-				$has_existing_custom = ( 'custom' === $mode );
-				$rows_aria_hidden    = ( 'custom' === $mode ) ? 'false' : 'true';
-				$mode_label_inherit  = __( 'Using defaults', 'mcp-ai-wpoos' );
-				$mode_label_custom   = __( 'Custom prompts', 'mcp-ai-wpoos' );
-				$mode_label          = ( 'custom' === $mode ) ? $mode_label_custom : $mode_label_inherit;
-				$open_attr           = ( 0 === $tool_index || 'custom' === $mode ) ? ' open' : '';
+				$group_label = $this->get_group_label_for_shortcuts( $group_name );
+				
+				echo '<div class="wp-mcp-ai-prebuilt-shortcuts__group" data-group="' . esc_attr( $group_name ) . '">';
+				echo '<h4 class="wp-mcp-ai-prebuilt-shortcuts__group-title">' . esc_html( $group_label ) . ' <span class="wp-mcp-ai-prebuilt-shortcuts__group-count">(' . count( $group_tools ) . ')</span></h4>';
 
-				if ( false === $defaults_json ) {
-					$defaults_json = '[]';
-				}
+				foreach ( $group_tools as $tool_slug ) {
+					$tool = $this->registry->get_tool( $tool_slug );
 
-				echo '<details class="wp-mcp-ai-prebuilt-shortcuts__tool" data-tool="' . esc_attr( $tool_slug ) . '" data-defaults="' . esc_attr( $defaults_json ) . '" data-has-existing-custom="' . ( $has_existing_custom ? 'true' : 'false' ) . '" data-mode-label-inherit="' . esc_attr( $mode_label_inherit ) . '" data-mode-label-custom="' . esc_attr( $mode_label_custom ) . '"' . esc_attr( $open_attr ) . '>';
-				echo '<summary class="wp-mcp-ai-prebuilt-shortcuts__summary">';
-				echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-title">' . esc_html( $tool_name ) . '</span>';
-				echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-mode" aria-live="polite">' . esc_html( $mode_label ) . '</span>';
-				echo '</summary>';
-				echo '<div class="wp-mcp-ai-prebuilt-shortcuts__content">';
-				echo '<p class="wp-mcp-ai-prebuilt-shortcuts__mode">';
-				printf(
-					'<label><input type="radio" name="wp_mcp_ai_prebuilt_shortcuts[%1$s][mode]" value="inherit" %2$s /> %3$s</label>',
-					esc_attr( $tool_slug ),
-					checked( 'inherit', $mode, false ),
-					esc_html__( 'Use defaults', 'mcp-ai-wpoos' )
-				);
-				printf(
-					'<label><input type="radio" name="wp_mcp_ai_prebuilt_shortcuts[%1$s][mode]" value="custom" %2$s /> %3$s</label>',
-					esc_attr( $tool_slug ),
-					checked( 'custom', $mode, false ),
-					esc_html__( 'Customize', 'mcp-ai-wpoos' )
-				);
-				echo '</p>';
-
-				echo '<div class="wp-mcp-ai-prebuilt-shortcuts__defaults">';
-				if ( ! empty( $defaults ) ) {
-					echo '<p class="description">' . esc_html__( 'Default prompts provided by this tool:', 'mcp-ai-wpoos' ) . '</p>';
-					echo '<ul class="wp-mcp-ai-prebuilt-shortcuts__defaults-list">';
-
-					foreach ( $defaults as $default_shortcut ) {
-						$default_label   = isset( $default_shortcut['label'] ) ? (string) $default_shortcut['label'] : '';
-						$default_payload = isset( $default_shortcut['payload'] ) ? (string) $default_shortcut['payload'] : '';
-						$summary         = '';
-
-						if ( '' !== $default_payload ) {
-							$summary = wp_html_excerpt( $default_payload, 100, '&hellip;' );
-						}
-
-						echo '<li>';
-						if ( '' !== $default_label ) {
-							echo '<strong>' . esc_html( $default_label ) . '</strong>';
-						} else {
-							echo '<strong>' . esc_html__( 'Shortcut', 'mcp-ai-wpoos' ) . '</strong>';
-						}
-
-						if ( '' !== $summary ) {
-							echo '<span class="wp-mcp-ai-prebuilt-shortcuts__defaults-summary"> ' . esc_html( $summary ) . '</span>';
-						}
-
-						echo '</li>';
+					if ( ! $tool ) {
+						continue;
 					}
 
-					echo '</ul>';
-				} else {
-					echo '<p class="description">' . esc_html__( 'This tool does not provide any pre-built shortcuts.', 'mcp-ai-wpoos' ) . '</p>';
-				}
-				echo '</div>';
+					$tool_name           = $tool->get_name();
+					$tool_description    = method_exists( $tool, 'get_description' ) ? $tool->get_description() : '';
+					$defaults            = isset( $default_shortcuts_map[ $tool_slug ] ) ? $default_shortcuts_map[ $tool_slug ] : array();
+					$settings            = isset( $prebuilt_shortcuts[ $tool_slug ] ) ? $prebuilt_shortcuts[ $tool_slug ] : array();
+					$mode                = ( isset( $settings['mode'] ) && 'custom' === $settings['mode'] ) ? 'custom' : 'inherit';
+					$custom_rows         = ( 'custom' === $mode && isset( $settings['shortcuts'] ) && is_array( $settings['shortcuts'] ) ) ? $settings['shortcuts'] : array();
+					$next_index          = ( 'custom' === $mode ) ? count( $custom_rows ) : 0;
+					$defaults_json       = wp_json_encode( $defaults );
+					$has_existing_custom = ( 'custom' === $mode );
+					$rows_aria_hidden    = ( 'custom' === $mode ) ? 'false' : 'true';
+					$mode_label_inherit  = __( 'Using defaults', 'mcp-ai-wpoos' );
+					$mode_label_custom   = __( 'Custom prompts', 'mcp-ai-wpoos' );
+					$mode_label          = ( 'custom' === $mode ) ? $mode_label_custom : $mode_label_inherit;
+					$open_attr           = ( 0 === $tool_index || 'custom' === $mode ) ? ' open' : '';
+					$shortcut_count      = count( $defaults );
 
-				echo '<div class="wp-mcp-ai-prebuilt-shortcuts__rows" data-tool="' . esc_attr( $tool_slug ) . '" data-next-index="' . esc_attr( $next_index ) . '" aria-hidden="' . esc_attr( $rows_aria_hidden ) . '"';
-				if ( 'custom' !== $mode ) {
-					echo ' hidden';
-				}
-				echo '>';
-
-				if ( 'custom' === $mode ) {
-					foreach ( $custom_rows as $index => $shortcut ) {
-						$index       = intval( $index );
-						$label       = isset( $shortcut['label'] ) ? (string) $shortcut['label'] : '';
-						$payload     = isset( $shortcut['payload'] ) ? (string) $shortcut['payload'] : '';
-						$description = isset( $shortcut['description'] ) ? (string) $shortcut['description'] : '';
-						/* translators: 1: Shortcut number. 2: Tool name. */
-						$legend_text = sprintf( __( 'Shortcut %1$d for %2$s', 'mcp-ai-wpoos' ), $index + 1, $tool_name );
-
-						echo '<fieldset class="wp-mcp-ai-prebuilt-shortcuts__row" data-index="' . esc_attr( $index ) . '">';
-						echo '<legend class="screen-reader-text">' . esc_html( $legend_text ) . '</legend>';
-						echo '<p>';
-						printf(
-							'<label><strong>%1$s</strong><input type="text" class="widefat" name="wp_mcp_ai_prebuilt_shortcuts[%2$s][shortcuts][%3$s][label]" value="%4$s"%5$s /></label>',
-							esc_html__( 'Shortcut label', 'mcp-ai-wpoos' ),
-							esc_attr( $tool_slug ),
-							esc_attr( $index ),
-							esc_attr( $label ),
-							disabled( 'custom' !== $mode, true, false )
-						);
-						echo '</p>';
-						echo '<p>';
-						printf(
-							'<label><strong>%1$s</strong><textarea class="widefat" rows="4" name="wp_mcp_ai_prebuilt_shortcuts[%2$s][shortcuts][%3$s][payload]"%4$s>%5$s</textarea></label>',
-							esc_html__( 'Prompt text', 'mcp-ai-wpoos' ),
-							esc_attr( $tool_slug ),
-							esc_attr( $index ),
-							disabled( 'custom' !== $mode, true, false ),
-							esc_textarea( $payload )
-						);
-						echo '</p>';
-						echo '<p>';
-						printf(
-							'<label><strong>%1$s</strong><textarea class="widefat" rows="3" name="wp_mcp_ai_prebuilt_shortcuts[%2$s][shortcuts][%3$s][description]"%4$s>%5$s</textarea></label>',
-							esc_html__( 'Optional description', 'mcp-ai-wpoos' ),
-							esc_attr( $tool_slug ),
-							esc_attr( $index ),
-							disabled( 'custom' !== $mode, true, false ),
-							esc_textarea( $description )
-						);
-						echo '</p>';
-						echo '<p>';
-						printf(
-							'<button type="button" class="button-link-delete wp-mcp-ai-prebuilt-shortcuts__remove"%1$s>%2$s</button>',
-							disabled( 'custom' !== $mode, true, false ),
-							esc_html__( 'Remove shortcut', 'mcp-ai-wpoos' )
-						);
-						echo '</p>';
-						echo '<hr />';
-						echo '</fieldset>';
+					if ( false === $defaults_json ) {
+						$defaults_json = '[]';
 					}
+
+					echo '<details class="wp-mcp-ai-prebuilt-shortcuts__tool" data-tool="' . esc_attr( $tool_slug ) . '" data-group="' . esc_attr( $group_name ) . '" data-defaults="' . esc_attr( $defaults_json ) . '" data-has-existing-custom="' . ( $has_existing_custom ? 'true' : 'false' ) . '" data-mode-label-inherit="' . esc_attr( $mode_label_inherit ) . '" data-mode-label-custom="' . esc_attr( $mode_label_custom ) . '"' . esc_attr( $open_attr ) . '>';
+					echo '<summary class="wp-mcp-ai-prebuilt-shortcuts__summary">';
+					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-title">' . esc_html( $tool_name ) . '</span>';
+					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-badge">';
+					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-count">' . esc_html( sprintf( _n( '%d shortcut', '%d shortcuts', $shortcut_count, 'mcp-ai-wpoos' ), $shortcut_count ) ) . '</span>';
+					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-mode" aria-live="polite">' . esc_html( $mode_label ) . '</span>';
+					echo '</span>';
+					echo '</summary>';
+					echo '<div class="wp-mcp-ai-prebuilt-shortcuts__content">';
+					
+					if ( $tool_description ) {
+						echo '<p class="wp-mcp-ai-prebuilt-shortcuts__tool-description"><em>' . esc_html( $tool_description ) . '</em></p>';
+					}
+
+					echo '<div class="wp-mcp-ai-prebuilt-shortcuts__mode-selector">';
+					echo '<p class="wp-mcp-ai-prebuilt-shortcuts__mode" style="margin-top: 0;">';
+					printf(
+						'<label class="wp-mcp-ai-prebuilt-shortcuts__mode-option"><input type="radio" name="wp_mcp_ai_prebuilt_shortcuts[%1$s][mode]" value="inherit" %2$s /> <strong>%3$s</strong><br><span class="description">%4$s</span></label>',
+						esc_attr( $tool_slug ),
+						checked( 'inherit', $mode, false ),
+						esc_html__( 'Use recommended shortcuts', 'mcp-ai-wpoos' ),
+						esc_html__( 'Use the default shortcuts automatically provided for this tool', 'mcp-ai-wpoos' )
+					);
+					printf(
+						'<label class="wp-mcp-ai-prebuilt-shortcuts__mode-option"><input type="radio" name="wp_mcp_ai_prebuilt_shortcuts[%1$s][mode]" value="custom" %2$s /> <strong>%3$s</strong><br><span class="description">%4$s</span></label>',
+						esc_attr( $tool_slug ),
+						checked( 'custom', $mode, false ),
+						esc_html__( 'Customize shortcuts', 'mcp-ai-wpoos' ),
+						esc_html__( 'Create your own custom prompt shortcuts or modify the defaults', 'mcp-ai-wpoos' )
+					);
+					echo '</p>';
+					echo '</div>';
+
+					echo '<div class="wp-mcp-ai-prebuilt-shortcuts__defaults">';
+					if ( ! empty( $defaults ) ) {
+						echo '<h5 style="margin-top: 1rem;">' . esc_html__( 'Recommended shortcuts for this tool:', 'mcp-ai-wpoos' ) . '</h5>';
+						echo '<ul class="wp-mcp-ai-prebuilt-shortcuts__defaults-list">';
+
+						foreach ( $defaults as $default_shortcut ) {
+							$default_label   = isset( $default_shortcut['label'] ) ? (string) $default_shortcut['label'] : '';
+							$default_payload = isset( $default_shortcut['payload'] ) ? (string) $default_shortcut['payload'] : '';
+							$default_desc    = isset( $default_shortcut['description'] ) ? (string) $default_shortcut['description'] : '';
+							$summary         = '';
+
+							if ( '' !== $default_payload ) {
+								$summary = wp_html_excerpt( $default_payload, 120, '&hellip;' );
+							}
+
+							echo '<li>';
+							if ( '' !== $default_label ) {
+								echo '<strong class="wp-mcp-ai-prebuilt-shortcuts__defaults-label">' . esc_html( $default_label ) . '</strong>';
+							} else {
+								echo '<strong class="wp-mcp-ai-prebuilt-shortcuts__defaults-label">' . esc_html__( 'Shortcut', 'mcp-ai-wpoos' ) . '</strong>';
+							}
+
+							if ( '' !== $default_desc ) {
+								echo '<p class="wp-mcp-ai-prebuilt-shortcuts__defaults-description">' . esc_html( $default_desc ) . '</p>';
+							}
+
+							if ( '' !== $summary ) {
+								echo '<p class="wp-mcp-ai-prebuilt-shortcuts__defaults-summary"><code>' . esc_html( $summary ) . '</code></p>';
+							}
+
+							echo '</li>';
+						}
+
+						echo '</ul>';
+					} else {
+						echo '<div class="notice notice-warning inline" style="margin: 1rem 0;">';
+						echo '<p>' . esc_html__( 'This tool does not provide any pre-built shortcuts yet. You can create custom shortcuts below.', 'mcp-ai-wpoos' ) . '</p>';
+						echo '</div>';
+					}
+					echo '</div>';
+
+					echo '<div class="wp-mcp-ai-prebuilt-shortcuts__rows" data-tool="' . esc_attr( $tool_slug ) . '" data-next-index="' . esc_attr( $next_index ) . '" aria-hidden="' . esc_attr( $rows_aria_hidden ) . '"';
+					if ( 'custom' !== $mode ) {
+						echo ' hidden';
+					}
+					echo '>';
+
+					if ( 'custom' === $mode ) {
+						foreach ( $custom_rows as $index => $shortcut ) {
+							$index       = intval( $index );
+							$label       = isset( $shortcut['label'] ) ? (string) $shortcut['label'] : '';
+							$payload     = isset( $shortcut['payload'] ) ? (string) $shortcut['payload'] : '';
+							$description = isset( $shortcut['description'] ) ? (string) $shortcut['description'] : '';
+							$hidden      = isset( $shortcut['hidden'] ) && $shortcut['hidden'];
+							/* translators: 1: Shortcut number. 2: Tool name. */
+							$legend_text = sprintf( __( 'Shortcut %1$d for %2$s', 'mcp-ai-wpoos' ), $index + 1, $tool_name );
+
+							$row_class = 'wp-mcp-ai-prebuilt-shortcuts__row';
+							if ( $hidden ) {
+								$row_class .= ' wp-mcp-ai-prebuilt-shortcuts__row--hidden';
+							}
+
+							echo '<fieldset class="' . esc_attr( $row_class ) . '" data-index="' . esc_attr( $index ) . '">';
+							echo '<legend class="screen-reader-text">' . esc_html( $legend_text ) . '</legend>';
+							echo '<div class="wp-mcp-ai-prebuilt-shortcuts__row-header">';
+							echo '<p style="margin: 0;">';
+							printf(
+								'<label class="wp-mcp-ai-prebuilt-shortcuts__hide-toggle"><input type="checkbox" name="wp_mcp_ai_prebuilt_shortcuts[%1$s][shortcuts][%2$s][hidden]" value="1"%3$s%4$s /> <span class="dashicons dashicons-hidden" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span> %5$s</label>',
+								esc_attr( $tool_slug ),
+								esc_attr( $index ),
+								checked( $hidden, true, false ),
+								disabled( 'custom' !== $mode, true, false ),
+								esc_html__( 'Hide this shortcut (keep it but don\'t show in chat)', 'mcp-ai-wpoos' )
+							);
+							echo '</p>';
+							echo '</div>';
+							echo '<p>';
+							printf(
+								'<label><strong>%1$s</strong><br><span class="description">%2$s</span><input type="text" class="widefat" name="wp_mcp_ai_prebuilt_shortcuts[%3$s][shortcuts][%4$s][label]" value="%5$s"%6$s placeholder="%7$s" /></label>',
+								esc_html__( 'Button Label', 'mcp-ai-wpoos' ),
+								esc_html__( 'Short text that appears on the button (e.g., "Show recent posts")', 'mcp-ai-wpoos' ),
+								esc_attr( $tool_slug ),
+								esc_attr( $index ),
+								esc_attr( $label ),
+								disabled( 'custom' !== $mode, true, false ),
+								esc_attr__( 'e.g., Show latest updates', 'mcp-ai-wpoos' )
+							);
+							echo '</p>';
+							echo '<p>';
+							printf(
+								'<label><strong>%1$s</strong><br><span class="description">%2$s</span><textarea class="widefat" rows="4" name="wp_mcp_ai_prebuilt_shortcuts[%3$s][shortcuts][%4$s][payload]"%5$s placeholder="%6$s">%7$s</textarea></label>',
+								esc_html__( 'Prompt Text', 'mcp-ai-wpoos' ),
+								esc_html__( 'The actual prompt that gets sent to the assistant when clicked', 'mcp-ai-wpoos' ),
+								esc_attr( $tool_slug ),
+								esc_attr( $index ),
+								disabled( 'custom' !== $mode, true, false ),
+								esc_attr__( 'e.g., Use the get_recent_posts tool to show the 5 most recent blog posts', 'mcp-ai-wpoos' ),
+								esc_textarea( $payload )
+							);
+							echo '</p>';
+							echo '<p>';
+							printf(
+								'<label><strong>%1$s</strong><br><span class="description">%2$s</span><textarea class="widefat" rows="2" name="wp_mcp_ai_prebuilt_shortcuts[%3$s][shortcuts][%4$s][description]"%5$s placeholder="%6$s">%7$s</textarea></label>',
+								esc_html__( 'Description (Optional)', 'mcp-ai-wpoos' ),
+								esc_html__( 'Help text that appears when hovering over the button', 'mcp-ai-wpoos' ),
+								esc_attr( $tool_slug ),
+								esc_attr( $index ),
+								disabled( 'custom' !== $mode, true, false ),
+								esc_attr__( 'e.g., Quickly view the latest blog posts', 'mcp-ai-wpoos' ),
+								esc_textarea( $description )
+							);
+							echo '</p>';
+							echo '<p>';
+							printf(
+								'<button type="button" class="button-link-delete wp-mcp-ai-prebuilt-shortcuts__remove"%1$s><span class="dashicons dashicons-trash" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span> %2$s</button>',
+								disabled( 'custom' !== $mode, true, false ),
+								esc_html__( 'Delete this shortcut', 'mcp-ai-wpoos' )
+							);
+							echo '</p>';
+							echo '<hr />';
+							echo '</fieldset>';
+						}
+					}
+
+					echo '</div>';
+					echo '<p>';
+					printf(
+						'<button type="button" class="button wp-mcp-ai-prebuilt-shortcuts__add" data-tool="%1$s"%2$s><span class="dashicons dashicons-plus-alt" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span> %3$s</button>',
+						esc_attr( $tool_slug ),
+						disabled( 'custom' !== $mode, true, false ),
+						esc_html__( 'Add custom shortcut', 'mcp-ai-wpoos' )
+					);
+					echo '</p>';
+					echo '</div>';
+					echo '</details>';
+
+					++$tool_index;
 				}
-
-				echo '</div>';
-				echo '<p>';
-				printf(
-					'<button type="button" class="button wp-mcp-ai-prebuilt-shortcuts__add" data-tool="%1$s"%2$s>%3$s</button>',
-					esc_attr( $tool_slug ),
-					disabled( 'custom' !== $mode, true, false ),
-					esc_html__( 'Add shortcut', 'mcp-ai-wpoos' )
-				);
-				echo '</p>';
-				echo '</div>';
-				echo '</details>';
-
-				++$tool_index;
+				
+				echo '</div>'; // Close group.
 			}
 
 			echo '</div>';
 
-			static $prebuilt_shortcut_template_printed = false;
-
-			if ( ! $prebuilt_shortcut_template_printed ) {
-				$prebuilt_shortcut_template_printed = true;
-				?>
-			<template id="wp-mcp-ai-prebuilt-shortcut-template">
-				<fieldset class="wp-mcp-ai-prebuilt-shortcuts__row" data-index="__INDEX__">
-					<legend class="screen-reader-text"><?php esc_html_e( 'New pre-built shortcut', 'mcp-ai-wpoos' ); ?></legend>
-					<p>
-						<label>
-							<strong><?php esc_html_e( 'Shortcut label', 'mcp-ai-wpoos' ); ?></strong>
-							<input type="text" class="widefat" name="wp_mcp_ai_prebuilt_shortcuts[__TOOL__][shortcuts][__INDEX__][label]" />
-						</label>
-					</p>
-					<p>
-						<label>
-							<strong><?php esc_html_e( 'Prompt text', 'mcp-ai-wpoos' ); ?></strong>
-							<textarea class="widefat" rows="4" name="wp_mcp_ai_prebuilt_shortcuts[__TOOL__][shortcuts][__INDEX__][payload]"></textarea>
-						</label>
-					</p>
-					<p>
-						<label>
-							<strong><?php esc_html_e( 'Optional description', 'mcp-ai-wpoos' ); ?></strong>
-							<textarea class="widefat" rows="3" name="wp_mcp_ai_prebuilt_shortcuts[__TOOL__][shortcuts][__INDEX__][description]"></textarea>
-						</label>
-					</p>
-					<p>
-						<button type="button" class="button-link-delete wp-mcp-ai-prebuilt-shortcuts__remove"><?php esc_html_e( 'Remove shortcut', 'mcp-ai-wpoos' ); ?></button>
-					</p>
-					<hr />
-				</fieldset>
-			</template>
-				<?php
-			}
+			$this->render_prebuilt_shortcuts_styles();
+			$this->render_prebuilt_shortcut_template();
 		}
 
 		/**
@@ -577,31 +619,42 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$entries = array();
 
 				if ( empty( $tasks ) || ! is_array( $tasks ) ) {
-					$should_register_fallback = ! $skip_fallback;
-
-					if ( $tool instanceof WP_MCP_AI_Tool_Fallback_Shortcut_Interface ) {
-						$should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
-					} elseif ( method_exists( $tool, 'should_register_fallback_shortcut' ) ) {
-						$should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+					// Try to get pattern-based recommendations for tools without explicit shortcuts.
+					if ( class_exists( 'WP_MCP_AI_Shortcut_Recommendations' ) ) {
+						$recommendations = WP_MCP_AI_Shortcut_Recommendations::get_recommendations_for_tool( $tool );
+						if ( ! empty( $recommendations ) && is_array( $recommendations ) ) {
+							$tasks = $recommendations;
+						}
 					}
 
-					$should_register_fallback = apply_filters(
-						'wp_mcp_ai_tool_should_register_fallback_shortcut',
-						$should_register_fallback,
-						$tool,
-						$assistant_id,
-						$tasks
-					);
+					// If still no tasks, check for fallback.
+					if ( empty( $tasks ) || ! is_array( $tasks ) ) {
+						$should_register_fallback = ! $skip_fallback;
 
-					if ( $should_register_fallback ) {
-						$entries[] = array(
-							'label'   => sanitize_text_field( $tool->get_slug() ),
-							'payload' => sanitize_textarea_field( $tool->get_slug() ),
+						if ( $tool instanceof WP_MCP_AI_Tool_Fallback_Shortcut_Interface ) {
+							$should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+						} elseif ( method_exists( $tool, 'should_register_fallback_shortcut' ) ) {
+							$should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+						}
+
+						$should_register_fallback = apply_filters(
+							'wp_mcp_ai_tool_should_register_fallback_shortcut',
+							$should_register_fallback,
+							$tool,
+							$assistant_id,
+							$tasks
 						);
-					}
 
-					$shortcuts[ $tool_slug ] = $entries;
-					continue;
+						if ( $should_register_fallback ) {
+							$entries[] = array(
+								'label'   => sanitize_text_field( $tool->get_slug() ),
+								'payload' => sanitize_textarea_field( $tool->get_slug() ),
+							);
+						}
+
+						$shortcuts[ $tool_slug ] = $entries;
+						continue;
+					}
 				}
 
 				foreach ( $tasks as $task ) {
@@ -665,6 +718,603 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			return $shortcuts;
+		}
+
+		/**
+		 * Group tools for shortcuts display.
+		 *
+		 * @param array $tool_slugs Selected tool slugs.
+		 * @return array Grouped tools by category.
+		 */
+		protected function group_tools_for_shortcuts( $tool_slugs ) {
+			$groups = array(
+				'content'       => array(),
+				'media'         => array(),
+				'ecommerce'     => array(),
+				'analytics'     => array(),
+				'ai_ml'         => array(),
+				'management'    => array(),
+				'development'   => array(),
+				'communication' => array(),
+				'seo'           => array(),
+				'other'         => array(),
+			);
+
+			foreach ( $tool_slugs as $slug ) {
+				$tool = $this->registry->get_tool( $slug );
+				if ( ! $tool ) {
+					continue;
+				}
+
+				$group = $this->categorize_tool_for_shortcuts( $slug );
+				$groups[ $group ][] = $slug;
+			}
+
+			// Remove empty groups.
+			return array_filter( $groups );
+		}
+
+		/**
+		 * Categorize a tool into a group for shortcuts.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return string Group key.
+		 */
+		protected function categorize_tool_for_shortcuts( $slug ) {
+			// Content & Publishing.
+			if ( preg_match( '/post|page|content|search|term|taxonomy/i', $slug ) ) {
+				return 'content';
+			}
+
+			// Media.
+			if ( preg_match( '/image|video|audio|media|speech|music|photo|picture/i', $slug ) ) {
+				return 'media';
+			}
+
+			// E-commerce.
+			if ( preg_match( '/woo|product|order|cart|shop|payment|inventory/i', $slug ) ) {
+				return 'ecommerce';
+			}
+
+			// Analytics & Reporting.
+			if ( preg_match( '/analytics|report|chart|stats|insight|metric/i', $slug ) ) {
+				return 'analytics';
+			}
+
+			// AI/ML.
+			if ( preg_match( '/embed|vector|semantic|moderat|batch|model|token/i', $slug ) ) {
+				return 'ai_ml';
+			}
+
+			// Site Management.
+			if ( preg_match( '/site|health|cache|backup|update|security|cron|schedule/i', $slug ) ) {
+				return 'management';
+			}
+
+			// Development.
+			if ( preg_match( '/code|snippet|cli|debug|probe|github|git/i', $slug ) ) {
+				return 'development';
+			}
+
+			// Communication.
+			if ( preg_match( '/email|message|mail|sms|telegram|whatsapp|social|facebook|twitter|linkedin/i', $slug ) ) {
+				return 'communication';
+			}
+
+			// SEO & Marketing.
+			if ( preg_match( '/seo|rank|search|marketing|calendar/i', $slug ) ) {
+				return 'seo';
+			}
+
+			return 'other';
+		}
+
+		/**
+		 * Get human-readable label for a shortcuts group.
+		 *
+		 * @param string $group_key Group key.
+		 * @return string Group label.
+		 */
+		protected function get_group_label_for_shortcuts( $group_key ) {
+			$labels = array(
+				'content'       => __( 'Content & Publishing', 'mcp-ai-wpoos' ),
+				'media'         => __( 'Media & Images', 'mcp-ai-wpoos' ),
+				'ecommerce'     => __( 'E-commerce', 'mcp-ai-wpoos' ),
+				'analytics'     => __( 'Analytics & Reporting', 'mcp-ai-wpoos' ),
+				'ai_ml'         => __( 'AI & Machine Learning', 'mcp-ai-wpoos' ),
+				'management'    => __( 'Site Management', 'mcp-ai-wpoos' ),
+				'development'   => __( 'Development', 'mcp-ai-wpoos' ),
+				'communication' => __( 'Communication', 'mcp-ai-wpoos' ),
+				'seo'           => __( 'SEO & Marketing', 'mcp-ai-wpoos' ),
+				'other'         => __( 'Other Tools', 'mcp-ai-wpoos' ),
+			);
+
+			return isset( $labels[ $group_key ] ) ? $labels[ $group_key ] : $labels['other'];
+		}
+
+		/**
+		 * Render search and filter bar for shortcuts.
+		 *
+		 * @param array $tool_groups Grouped tools.
+		 */
+		protected function render_shortcuts_search_filter( $tool_groups ) {
+			$group_labels = array();
+			foreach ( $tool_groups as $group_key => $tools ) {
+				if ( ! empty( $tools ) ) {
+					$group_labels[ $group_key ] = $this->get_group_label_for_shortcuts( $group_key );
+				}
+			}
+
+			?>
+			<div class="wp-mcp-ai-shortcuts-filter-bar" style="margin: 1rem 0; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+				<div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+					<label for="wp-mcp-ai-shortcuts-search" style="font-weight: 600;">
+						<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
+					</label>
+					<input type="search" 
+							id="wp-mcp-ai-shortcuts-search" 
+							placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>" 
+							style="flex: 1; max-width: 300px;">
+
+					<label for="wp-mcp-ai-shortcuts-category" style="font-weight: 600; margin-left: 10px;">
+						<?php esc_html_e( 'Category:', 'mcp-ai-wpoos' ); ?>
+					</label>
+					<select id="wp-mcp-ai-shortcuts-category" style="min-width: 200px;">
+						<option value=""><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos' ); ?></option>
+						<?php foreach ( $group_labels as $group_key => $group_label ) : ?>
+							<option value="<?php echo esc_attr( $group_key ); ?>">
+								<?php echo esc_html( $group_label ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+
+					<label for="wp-mcp-ai-shortcuts-mode-filter" style="font-weight: 600; margin-left: 10px;">
+						<?php esc_html_e( 'Show:', 'mcp-ai-wpoos' ); ?>
+					</label>
+					<select id="wp-mcp-ai-shortcuts-mode-filter" style="min-width: 150px;">
+						<option value=""><?php esc_html_e( 'All tools', 'mcp-ai-wpoos' ); ?></option>
+						<option value="custom"><?php esc_html_e( 'Customized only', 'mcp-ai-wpoos' ); ?></option>
+						<option value="inherit"><?php esc_html_e( 'Using defaults only', 'mcp-ai-wpoos' ); ?></option>
+					</select>
+
+					<button type="button" id="wp-mcp-ai-shortcuts-clear-filters" class="button" style="display: none;">
+						<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
+					</button>
+				</div>
+			</div>
+
+			<script type="text/javascript">
+			( function() {
+				document.addEventListener( 'DOMContentLoaded', function() {
+					var searchInput = document.getElementById( 'wp-mcp-ai-shortcuts-search' );
+					var categorySelect = document.getElementById( 'wp-mcp-ai-shortcuts-category' );
+					var modeSelect = document.getElementById( 'wp-mcp-ai-shortcuts-mode-filter' );
+					var clearButton = document.getElementById( 'wp-mcp-ai-shortcuts-clear-filters' );
+					var shortcutsContainer = document.querySelector( '.wp-mcp-ai-prebuilt-shortcuts' );
+
+					if ( ! searchInput || ! categorySelect || ! modeSelect || ! clearButton || ! shortcutsContainer ) {
+						return;
+					}
+
+					function filterShortcuts() {
+						var searchTerm = searchInput.value.toLowerCase().trim();
+						var selectedCategory = categorySelect.value;
+						var selectedMode = modeSelect.value;
+
+						// Show/hide clear button.
+						if ( searchTerm || selectedCategory || selectedMode ) {
+							clearButton.style.display = '';
+						} else {
+							clearButton.style.display = 'none';
+						}
+
+						var groups = shortcutsContainer.querySelectorAll( '.wp-mcp-ai-prebuilt-shortcuts__group' );
+						var visibleGroupCount = 0;
+
+						groups.forEach( function( group ) {
+							var groupCategory = group.getAttribute( 'data-group' );
+							var categoryMatches = ! selectedCategory || groupCategory === selectedCategory;
+
+							if ( ! categoryMatches ) {
+								group.style.display = 'none';
+								return;
+							}
+
+							var tools = group.querySelectorAll( '.wp-mcp-ai-prebuilt-shortcuts__tool' );
+							var visibleToolCount = 0;
+
+							tools.forEach( function( tool ) {
+								var toolName = tool.querySelector( '.wp-mcp-ai-prebuilt-shortcuts__summary-title' );
+								var toolText = toolName ? toolName.textContent.toLowerCase() : '';
+								var toolSlug = tool.getAttribute( 'data-tool' ) || '';
+								
+								// Get current mode for this tool.
+								var modeRadio = tool.querySelector( 'input[type="radio"][value="custom"]:checked' );
+								var toolMode = modeRadio ? 'custom' : 'inherit';
+
+								var searchMatches = ! searchTerm || 
+									toolText.indexOf( searchTerm ) !== -1 || 
+									toolSlug.indexOf( searchTerm ) !== -1;
+								
+								var modeMatches = ! selectedMode || toolMode === selectedMode;
+
+								if ( searchMatches && modeMatches ) {
+									tool.style.display = '';
+									visibleToolCount++;
+								} else {
+									tool.style.display = 'none';
+								}
+							} );
+
+							if ( visibleToolCount > 0 ) {
+								group.style.display = '';
+								visibleGroupCount++;
+							} else {
+								group.style.display = 'none';
+							}
+						} );
+
+						// Show "no results" message.
+						var existingMessage = shortcutsContainer.querySelector( '.wp-mcp-ai-shortcuts-no-results' );
+						if ( visibleGroupCount === 0 && ( searchTerm || selectedCategory || selectedMode ) ) {
+							if ( ! existingMessage ) {
+								var message = document.createElement( 'p' );
+								message.className = 'wp-mcp-ai-shortcuts-no-results';
+								message.style.padding = '20px';
+								message.style.textAlign = 'center';
+								message.style.color = '#646970';
+								message.textContent = '<?php echo esc_js( __( 'No tools match your search criteria.', 'mcp-ai-wpoos' ) ); ?>';
+								shortcutsContainer.appendChild( message );
+							}
+						} else if ( existingMessage ) {
+							existingMessage.remove();
+						}
+					}
+
+					// Attach event listeners.
+					searchInput.addEventListener( 'input', filterShortcuts );
+					categorySelect.addEventListener( 'change', filterShortcuts );
+					modeSelect.addEventListener( 'change', filterShortcuts );
+					
+					clearButton.addEventListener( 'click', function() {
+						searchInput.value = '';
+						categorySelect.value = '';
+						modeSelect.value = '';
+						filterShortcuts();
+					} );
+
+					// Allow Enter key in search.
+					searchInput.addEventListener( 'keypress', function( e ) {
+						if ( e.which === 13 ) {
+							e.preventDefault();
+							filterShortcuts();
+						}
+					} );
+				} );
+			} )();
+			</script>
+			<?php
+		}
+
+		/**
+		 * Render styles for shortcuts UI.
+		 */
+		protected function render_prebuilt_shortcuts_styles() {
+			static $styles_printed = false;
+			if ( $styles_printed ) {
+				return;
+			}
+			$styles_printed = true;
+			?>
+			<style>
+			.wp-mcp-ai-prebuilt-shortcuts__group {
+				margin-bottom: 2rem;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__group-title {
+				margin: 0 0 1rem 0;
+				padding: 0.75rem;
+				background: #f0f0f1;
+				border-left: 4px solid #2271b1;
+				font-size: 14px;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__group-count {
+				color: #646970;
+				font-weight: normal;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__tool {
+				border: 1px solid #dcdcde;
+				border-radius: 4px;
+				margin-bottom: 0.5rem;
+				background: #fff;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__summary {
+				cursor: pointer;
+				padding: 1rem;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				list-style: none;
+				user-select: none;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker {
+				display: none;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__summary:hover {
+				background: #f6f7f7;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__summary-title {
+				font-weight: 600;
+				flex: 1;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__summary-badge {
+				display: flex;
+				gap: 0.5rem;
+				align-items: center;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__summary-count {
+				font-size: 0.875rem;
+				color: #646970;
+				background: #f0f0f1;
+				padding: 0.25rem 0.5rem;
+				border-radius: 3px;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__summary-mode {
+				font-size: 0.875rem;
+				padding: 0.25rem 0.5rem;
+				border-radius: 3px;
+				background: #e0e0e0;
+				color: #1d2327;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__tool[open] {
+				border-color: #2271b1;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary {
+				border-bottom: 1px solid #dcdcde;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__content {
+				padding: 1rem;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__tool-description {
+				margin: 0 0 1rem 0;
+				padding: 0.75rem;
+				background: #f6f7f7;
+				border-left: 3px solid #72aee6;
+				font-size: 13px;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__mode-selector {
+				margin: 1rem 0;
+				padding: 1rem;
+				background: #f9f9f9;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__mode-option {
+				display: block;
+				margin-bottom: 0.75rem;
+				padding: 0.5rem;
+				cursor: pointer;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__mode-option:hover {
+				background: #fff;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__mode-option input {
+				margin-right: 0.5rem;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__defaults-list {
+				margin: 0.5rem 0;
+				padding: 0;
+				list-style: none;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__defaults-list > li {
+				margin-bottom: 1rem;
+				padding: 0.75rem;
+				background: #fff;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__defaults-label {
+				display: block;
+				margin-bottom: 0.5rem;
+				color: #1d2327;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__defaults-description {
+				margin: 0.5rem 0;
+				font-size: 13px;
+				color: #646970;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__defaults-summary {
+				margin: 0.5rem 0 0 0;
+				font-size: 12px;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__defaults-summary code {
+				display: block;
+				padding: 0.5rem;
+				background: #f0f0f1;
+				border-left: 2px solid #2271b1;
+				word-wrap: break-word;
+				white-space: pre-wrap;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__row {
+				margin: 1rem 0;
+				padding: 1rem;
+				background: #fff;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__row--hidden {
+				opacity: 0.6;
+				background: #f9f9f9;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__row--hidden::before {
+				content: "Hidden";
+				display: inline-block;
+				padding: 0.25rem 0.5rem;
+				background: #f0f0f1;
+				color: #646970;
+				border-radius: 3px;
+				font-size: 11px;
+				font-weight: 600;
+				text-transform: uppercase;
+				margin-bottom: 0.5rem;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__row-header {
+				margin-bottom: 1rem;
+				padding-bottom: 1rem;
+				border-bottom: 1px solid #ddd;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__hide-toggle {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__row p label strong {
+				display: block;
+				margin-bottom: 0.25rem;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__row p label .description {
+				display: block;
+				margin-bottom: 0.5rem;
+				font-size: 13px;
+				color: #646970;
+			}
+			.wp-mcp-ai-prebuilt-shortcuts__add {
+				margin-top: 1rem;
+			}
+			</style>
+			<?php
+		}
+
+		/**
+		 * Render the template for new shortcuts.
+		 */
+		protected function render_prebuilt_shortcut_template() {
+			static $template_printed = false;
+			if ( $template_printed ) {
+				return;
+			}
+			$template_printed = true;
+			?>
+			<template id="wp-mcp-ai-prebuilt-shortcut-template">
+				<fieldset class="wp-mcp-ai-prebuilt-shortcuts__row" data-index="__INDEX__">
+					<legend class="screen-reader-text"><?php esc_html_e( 'New pre-built shortcut', 'mcp-ai-wpoos' ); ?></legend>
+					<div class="wp-mcp-ai-prebuilt-shortcuts__row-header">
+						<p style="margin: 0;">
+							<label class="wp-mcp-ai-prebuilt-shortcuts__hide-toggle">
+								<input type="checkbox" name="wp_mcp_ai_prebuilt_shortcuts[__TOOL__][shortcuts][__INDEX__][hidden]" value="1" />
+								<span class="dashicons dashicons-hidden" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span>
+								<?php esc_html_e( 'Hide this shortcut (keep it but don\'t show in chat)', 'mcp-ai-wpoos' ); ?>
+							</label>
+						</p>
+					</div>
+					<p>
+						<label>
+							<strong><?php esc_html_e( 'Button Label', 'mcp-ai-wpoos' ); ?></strong><br>
+							<span class="description"><?php esc_html_e( 'Short text that appears on the button (e.g., "Show recent posts")', 'mcp-ai-wpoos' ); ?></span>
+							<input type="text" class="widefat" name="wp_mcp_ai_prebuilt_shortcuts[__TOOL__][shortcuts][__INDEX__][label]" placeholder="<?php esc_attr_e( 'e.g., Show latest updates', 'mcp-ai-wpoos' ); ?>" />
+						</label>
+					</p>
+					<p>
+						<label>
+							<strong><?php esc_html_e( 'Prompt Text', 'mcp-ai-wpoos' ); ?></strong><br>
+							<span class="description"><?php esc_html_e( 'The actual prompt that gets sent to the assistant when clicked', 'mcp-ai-wpoos' ); ?></span>
+							<textarea class="widefat" rows="4" name="wp_mcp_ai_prebuilt_shortcuts[__TOOL__][shortcuts][__INDEX__][payload]" placeholder="<?php esc_attr_e( 'e.g., Use the get_recent_posts tool to show the 5 most recent blog posts', 'mcp-ai-wpoos' ); ?>"></textarea>
+						</label>
+					</p>
+					<p>
+						<label>
+							<strong><?php esc_html_e( 'Description (Optional)', 'mcp-ai-wpoos' ); ?></strong><br>
+							<span class="description"><?php esc_html_e( 'Help text that appears when hovering over the button', 'mcp-ai-wpoos' ); ?></span>
+							<textarea class="widefat" rows="2" name="wp_mcp_ai_prebuilt_shortcuts[__TOOL__][shortcuts][__INDEX__][description]" placeholder="<?php esc_attr_e( 'e.g., Quickly view the latest blog posts', 'mcp-ai-wpoos' ); ?>"></textarea>
+						</label>
+					</p>
+					<p>
+						<button type="button" class="button-link-delete wp-mcp-ai-prebuilt-shortcuts__remove">
+							<span class="dashicons dashicons-trash" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span>
+							<?php esc_html_e( 'Delete this shortcut', 'mcp-ai-wpoos' ); ?>
+						</button>
+					</p>
+					<hr />
+				</fieldset>
+			</template>
+			<?php
+		}
+
+		/**
+		 * Render styles for custom shortcuts UI.
+		 */
+		protected function render_custom_shortcuts_styles() {
+			static $styles_printed = false;
+			if ( $styles_printed ) {
+				return;
+			}
+			$styles_printed = true;
+			?>
+			<style>
+			.wp-mcp-ai-tool-shortcuts__item {
+				border: 1px solid #dcdcde;
+				border-radius: 4px;
+				margin-bottom: 0.5rem;
+				background: #fff;
+			}
+			.wp-mcp-ai-tool-shortcuts__item--hidden {
+				opacity: 0.6;
+				background: #f9f9f9;
+			}
+			.wp-mcp-ai-tool-shortcuts__summary {
+				cursor: pointer;
+				padding: 1rem;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				list-style: none;
+				user-select: none;
+			}
+			.wp-mcp-ai-tool-shortcuts__summary::-webkit-details-marker {
+				display: none;
+			}
+			.wp-mcp-ai-tool-shortcuts__summary:hover {
+				background: #f6f7f7;
+			}
+			.wp-mcp-ai-tool-shortcuts__summary-title {
+				font-weight: 600;
+				flex: 1;
+			}
+			.wp-mcp-ai-tool-shortcuts__summary-tool {
+				font-size: 0.875rem;
+				color: #646970;
+				background: #f0f0f1;
+				padding: 0.25rem 0.5rem;
+				border-radius: 3px;
+			}
+			.wp-mcp-ai-tool-shortcuts__item[open] {
+				border-color: #2271b1;
+			}
+			.wp-mcp-ai-tool-shortcuts__item[open] .wp-mcp-ai-tool-shortcuts__summary {
+				border-bottom: 1px solid #dcdcde;
+			}
+			.wp-mcp-ai-tool-shortcuts__row {
+				padding: 1rem;
+			}
+			.wp-mcp-ai-tool-shortcuts__row-header {
+				margin-bottom: 1rem;
+			}
+			.wp-mcp-ai-tool-shortcuts__hide-toggle {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+			.wp-mcp-ai-tool-shortcuts__row p label strong {
+				display: block;
+				margin-bottom: 0.25rem;
+			}
+			.wp-mcp-ai-tool-shortcuts__row p label .description {
+				display: block;
+				margin-bottom: 0.5rem;
+				font-size: 13px;
+				color: #646970;
+			}
+			</style>
+			<?php
 		}
 
 		/**
@@ -1122,9 +1772,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		public static function sanitize_provider_meta( $provider ) {
 			$provider = is_string( $provider ) ? sanitize_key( $provider ) : '';
 
-			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ) );
+			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ) );
 			if ( ! is_array( $allowed_providers ) ) {
-				$allowed_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+				$allowed_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
 			}
 
 			if ( ! in_array( $provider, $allowed_providers, true ) ) {
@@ -1752,16 +2402,28 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			echo '<p>' . esc_html__( 'Select the tools this assistant is permitted to invoke.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '<p class="description">' . esc_html__( 'Expand a group to review related capabilities. You can optionally limit who can call each tool by assigning WordPress roles.', 'mcp-ai-wpoos' ) . '</p>';
 
-			echo '<fieldset class="wp-mcp-ai-tools__shortcuts-toggle">';
+			echo '<div class="notice notice-info inline" style="margin: 1rem 0; padding: 10px;">';
+			echo '<p style="margin: 0.5em 0;"><strong>' . esc_html_e( 'About Prompt Shortcuts:', 'mcp-ai-wpoos' ) . '</strong></p>';
+			echo '<ul style="margin: 0.5em 0 0.5em 1.5em;">';
+			echo '<li>' . esc_html_e( 'Each tool you select can provide pre-built prompt shortcuts', 'mcp-ai-wpoos' ) . '</li>';
+			echo '<li>' . esc_html_e( 'You can customize or hide individual shortcuts in the "Pre-built Prompt Shortcuts" section below', 'mcp-ai-wpoos' ) . '</li>';
+			echo '<li>' . esc_html_e( 'Or use the checkbox below to disable all tool shortcuts at once', 'mcp-ai-wpoos' ) . '</li>';
+			echo '</ul>';
+			echo '</div>';
+
+			echo '<fieldset class="wp-mcp-ai-tools__shortcuts-toggle" style="margin: 1rem 0; padding: 1rem; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">';
 			echo '<legend class="screen-reader-text">' . esc_html__( 'Tool shortcut options', 'mcp-ai-wpoos' ) . '</legend>';
-			echo '<label for="wp-mcp-ai-disable-tool-shortcuts" class="wp-mcp-ai-tools__shortcuts-toggle-label">';
+			echo '<label for="wp-mcp-ai-disable-tool-shortcuts" class="wp-mcp-ai-tools__shortcuts-toggle-label" style="display: flex; align-items: flex-start; gap: 0.5rem;">';
 			printf(
-				'<input type="checkbox" id="wp-mcp-ai-disable-tool-shortcuts" name="wp_mcp_ai_disable_prebuilt_shortcuts" value="1" %s />',
+				'<input type="checkbox" id="wp-mcp-ai-disable-tool-shortcuts" name="wp_mcp_ai_disable_prebuilt_shortcuts" value="1" %s style="margin-top: 0.25rem;" />',
 				checked( $disable_tool_shortcuts, true, false )
 			);
-			echo '<span>' . esc_html__( 'Disable pre-built prompt shortcuts from selected tools', 'mcp-ai-wpoos' ) . '</span>';
+			echo '<div>';
+			echo '<strong>' . esc_html__( 'Disable all pre-built shortcuts from tools', 'mcp-ai-wpoos' ) . '</strong>';
+			echo '<p class="description" style="margin: 0.25rem 0 0 0;">' . esc_html__( 'When enabled, tools will still work, but their automatic prompt shortcuts won\'t appear. Only your custom shortcuts (defined in the "Custom Prompt Shortcuts" section) will be shown.', 'mcp-ai-wpoos' ) . '</p>';
+			echo '<p class="description" style="margin: 0.5rem 0 0 0;"><em>' . esc_html__( 'Tip: For more control, leave this unchecked and hide individual shortcuts in the "Pre-built Prompt Shortcuts" section below.', 'mcp-ai-wpoos' ) . '</em></p>';
+			echo '</div>';
 			echo '</label>';
-			echo '<p class="description">' . esc_html__( 'When enabled, only the custom shortcuts you define below will appear in the chat interface.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</fieldset>';
 
 			// Render tool selection presets.
@@ -2418,6 +3080,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						'payload'     => '',
 						'tool'        => '',
 						'description' => '',
+						'hidden'      => false,
 					),
 				);
 			}
@@ -2444,8 +3107,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$tool_default     = __( 'No specific tool', 'mcp-ai-wpoos' );
 			?>
 		<div class="wp-mcp-ai-tool-shortcuts">
-			<h3><?php esc_html_e( 'Prompt shortcuts', 'mcp-ai-wpoos' ); ?></h3>
-			<p class="description"><?php esc_html_e( 'Create ready-to-use prompts that will show as shortcuts in the chat interface for this assistant.', 'mcp-ai-wpoos' ); ?></p>
+			<h3><?php esc_html_e( 'Custom Prompt Shortcuts', 'mcp-ai-wpoos' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Create custom prompts that aren\'t tied to specific tools. These appear alongside tool-provided shortcuts in the chat interface.', 'mcp-ai-wpoos' ); ?></p>
+			
+			<div class="notice notice-info inline" style="margin: 1rem 0; padding: 10px;">
+				<p style="margin: 0.5em 0;"><strong><?php esc_html_e( 'Tip:', 'mcp-ai-wpoos' ); ?></strong></p>
+				<ul style="margin: 0.5em 0 0.5em 1.5em;">
+					<li><?php esc_html_e( 'Use these for common tasks that don\'t require a specific tool', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Examples: "Summarize this page", "Explain in simple terms", "Give me 3 ideas"', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'You can hide shortcuts temporarily without deleting them', 'mcp-ai-wpoos' ); ?></li>
+				</ul>
+			</div>
+
 			<div
 				id="wp-mcp-ai-tool-shortcuts-rows"
 				class="wp-mcp-ai-tool-shortcuts__rows"
@@ -2457,11 +3130,17 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$payload          = isset( $shortcut['payload'] ) ? $shortcut['payload'] : '';
 					$tool             = isset( $shortcut['tool'] ) ? $shortcut['tool'] : '';
 					$description      = isset( $shortcut['description'] ) ? $shortcut['description'] : '';
+					$hidden           = isset( $shortcut['hidden'] ) && $shortcut['hidden'];
 					$summary_fallback = sprintf( $summary_template, intval( $index ) + 1 );
 					$tool_label       = isset( $tool_options[ $tool ] ) ? $tool_options[ $tool ] : $tool_default;
+					
+					$item_class = 'wp-mcp-ai-tool-shortcuts__item';
+					if ( $hidden ) {
+						$item_class .= ' wp-mcp-ai-tool-shortcuts__item--hidden';
+					}
 					?>
 					<details
-						class="wp-mcp-ai-tool-shortcuts__item"
+						class="<?php echo esc_attr( $item_class ); ?>"
 						data-index="<?php echo esc_attr( $index ); ?>"
 						data-summary-template="<?php echo esc_attr( $summary_template ); ?>"
 						data-tool-default="<?php echo esc_attr( $tool_default ); ?>"
@@ -2471,7 +3150,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							open<?php endif; ?>
 					>
 						<summary class="wp-mcp-ai-tool-shortcuts__summary">
-							<span class="wp-mcp-ai-tool-shortcuts__summary-title"><?php echo esc_html( '' !== $label ? $label : $summary_fallback ); ?></span>
+							<span class="wp-mcp-ai-tool-shortcuts__summary-title">
+								<?php 
+								if ( $hidden ) {
+									echo '<span class="dashicons dashicons-hidden" style="font-size: 16px; opacity: 0.5;"></span> ';
+								}
+								echo esc_html( '' !== $label ? $label : $summary_fallback ); 
+								?>
+							</span>
 							<span class="wp-mcp-ai-tool-shortcuts__summary-tool"><?php echo esc_html( $tool_label ); ?></span>
 						</summary>
 						<fieldset class="wp-mcp-ai-tool-shortcuts__row" data-index="<?php echo esc_attr( $index ); ?>">
@@ -2481,40 +3167,56 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								printf( esc_html__( 'Shortcut %d', 'mcp-ai-wpoos' ), intval( $index ) + 1 );
 								?>
 							</legend>
+							<div class="wp-mcp-ai-tool-shortcuts__row-header">
+								<p style="margin: 0 0 1rem 0; padding-bottom: 1rem; border-bottom: 1px solid #ddd;">
+									<label class="wp-mcp-ai-tool-shortcuts__hide-toggle">
+										<input type="checkbox" name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][hidden]" value="1" <?php checked( $hidden, true ); ?> />
+										<span class="dashicons dashicons-hidden" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span>
+										<?php esc_html_e( 'Hide this shortcut (keep it but don\'t show in chat)', 'mcp-ai-wpoos' ); ?>
+									</label>
+								</p>
+							</div>
 							<p>
 								<label>
-									<strong><?php esc_html_e( 'Shortcut label', 'mcp-ai-wpoos' ); ?></strong>
+									<strong><?php esc_html_e( 'Button Label', 'mcp-ai-wpoos' ); ?></strong><br>
+									<span class="description"><?php esc_html_e( 'Short text that appears on the button', 'mcp-ai-wpoos' ); ?></span>
 									<input
 										type="text"
 										class="widefat"
 										name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][label]"
 										value="<?php echo esc_attr( $label ); ?>"
+										placeholder="<?php esc_attr_e( 'e.g., Explain in simple terms', 'mcp-ai-wpoos' ); ?>"
 									/>
 								</label>
 							</p>
 							<p>
 								<label>
-									<strong><?php esc_html_e( 'Prompt text', 'mcp-ai-wpoos' ); ?></strong>
+									<strong><?php esc_html_e( 'Prompt Text', 'mcp-ai-wpoos' ); ?></strong><br>
+									<span class="description"><?php esc_html_e( 'The actual prompt that gets sent to the assistant', 'mcp-ai-wpoos' ); ?></span>
 									<textarea
 										class="widefat"
 										rows="4"
 										name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][payload]"
+										placeholder="<?php esc_attr_e( 'e.g., Please explain the above in simple, easy-to-understand language', 'mcp-ai-wpoos' ); ?>"
 									><?php echo esc_textarea( $payload ); ?></textarea>
 								</label>
 							</p>
 							<p>
 								<label>
-									<strong><?php esc_html_e( 'Optional description', 'mcp-ai-wpoos' ); ?></strong>
+									<strong><?php esc_html_e( 'Description (Optional)', 'mcp-ai-wpoos' ); ?></strong><br>
+									<span class="description"><?php esc_html_e( 'Help text shown when hovering over the button', 'mcp-ai-wpoos' ); ?></span>
 									<textarea
 										class="widefat"
-										rows="3"
+										rows="2"
 										name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][description]"
+										placeholder="<?php esc_attr_e( 'e.g., Get a simplified explanation of complex topics', 'mcp-ai-wpoos' ); ?>"
 									><?php echo esc_textarea( $description ); ?></textarea>
 								</label>
 							</p>
 							<p>
 								<label>
-									<strong><?php esc_html_e( 'Associated tool', 'mcp-ai-wpoos' ); ?></strong>
+									<strong><?php esc_html_e( 'Associated Tool (Optional)', 'mcp-ai-wpoos' ); ?></strong><br>
+									<span class="description"><?php esc_html_e( 'Link this shortcut to a specific tool for better organization', 'mcp-ai-wpoos' ); ?></span>
 									<select
 										class="widefat"
 										name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][tool]"
@@ -2529,7 +3231,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							</p>
 							<p>
 								<button type="button" class="button-link-delete wp-mcp-ai-remove-tool-shortcut">
-									<?php esc_html_e( 'Remove shortcut', 'mcp-ai-wpoos' ); ?>
+									<span class="dashicons dashicons-trash" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span>
+									<?php esc_html_e( 'Delete this shortcut', 'mcp-ai-wpoos' ); ?>
 								</button>
 							</p>
 						</fieldset>
@@ -2538,10 +3241,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			</div>
 			<p>
 				<button type="button" class="button" id="wp-mcp-ai-add-tool-shortcut">
-						<?php esc_html_e( 'Add shortcut', 'mcp-ai-wpoos' ); ?>
+					<span class="dashicons dashicons-plus-alt" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span>
+					<?php esc_html_e( 'Add custom shortcut', 'mcp-ai-wpoos' ); ?>
 				</button>
 			</p>
 		</div>
+
+		<?php $this->render_custom_shortcuts_styles(); ?>
 
 		<template id="wp-mcp-ai-tool-shortcut-template">
 			<details
@@ -2557,27 +3263,40 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				</summary>
 				<fieldset class="wp-mcp-ai-tool-shortcuts__row" data-index="__INDEX__">
 					<legend class="screen-reader-text"><?php esc_html_e( 'New shortcut', 'mcp-ai-wpoos' ); ?></legend>
+					<div class="wp-mcp-ai-tool-shortcuts__row-header">
+						<p style="margin: 0 0 1rem 0; padding-bottom: 1rem; border-bottom: 1px solid #ddd;">
+							<label class="wp-mcp-ai-tool-shortcuts__hide-toggle">
+								<input type="checkbox" name="wp_mcp_ai_tool_shortcuts[__INDEX__][hidden]" value="1" />
+								<span class="dashicons dashicons-hidden" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span>
+								<?php esc_html_e( 'Hide this shortcut (keep it but don\'t show in chat)', 'mcp-ai-wpoos' ); ?>
+							</label>
+						</p>
+					</div>
 					<p>
 						<label>
-							<strong><?php esc_html_e( 'Shortcut label', 'mcp-ai-wpoos' ); ?></strong>
-							<input type="text" class="widefat" name="wp_mcp_ai_tool_shortcuts[__INDEX__][label]" />
+							<strong><?php esc_html_e( 'Button Label', 'mcp-ai-wpoos' ); ?></strong><br>
+							<span class="description"><?php esc_html_e( 'Short text that appears on the button', 'mcp-ai-wpoos' ); ?></span>
+							<input type="text" class="widefat" name="wp_mcp_ai_tool_shortcuts[__INDEX__][label]" placeholder="<?php esc_attr_e( 'e.g., Explain in simple terms', 'mcp-ai-wpoos' ); ?>" />
 						</label>
 					</p>
 					<p>
 						<label>
-							<strong><?php esc_html_e( 'Prompt text', 'mcp-ai-wpoos' ); ?></strong>
-							<textarea class="widefat" rows="4" name="wp_mcp_ai_tool_shortcuts[__INDEX__][payload]"></textarea>
+							<strong><?php esc_html_e( 'Prompt Text', 'mcp-ai-wpoos' ); ?></strong><br>
+							<span class="description"><?php esc_html_e( 'The actual prompt that gets sent to the assistant', 'mcp-ai-wpoos' ); ?></span>
+							<textarea class="widefat" rows="4" name="wp_mcp_ai_tool_shortcuts[__INDEX__][payload]" placeholder="<?php esc_attr_e( 'e.g., Please explain the above in simple, easy-to-understand language', 'mcp-ai-wpoos' ); ?>"></textarea>
 						</label>
 					</p>
 					<p>
 						<label>
-							<strong><?php esc_html_e( 'Optional description', 'mcp-ai-wpoos' ); ?></strong>
-							<textarea class="widefat" rows="3" name="wp_mcp_ai_tool_shortcuts[__INDEX__][description]"></textarea>
+							<strong><?php esc_html_e( 'Description (Optional)', 'mcp-ai-wpoos' ); ?></strong><br>
+							<span class="description"><?php esc_html_e( 'Help text shown when hovering over the button', 'mcp-ai-wpoos' ); ?></span>
+							<textarea class="widefat" rows="2" name="wp_mcp_ai_tool_shortcuts[__INDEX__][description]" placeholder="<?php esc_attr_e( 'e.g., Get a simplified explanation of complex topics', 'mcp-ai-wpoos' ); ?>"></textarea>
 						</label>
 					</p>
 					<p>
 						<label>
-							<strong><?php esc_html_e( 'Associated tool', 'mcp-ai-wpoos' ); ?></strong>
+							<strong><?php esc_html_e( 'Associated Tool (Optional)', 'mcp-ai-wpoos' ); ?></strong><br>
+							<span class="description"><?php esc_html_e( 'Link this shortcut to a specific tool for better organization', 'mcp-ai-wpoos' ); ?></span>
 							<select class="widefat" name="wp_mcp_ai_tool_shortcuts[__INDEX__][tool]">
 								<?php foreach ( $tool_options as $slug => $name ) : ?>
 									<option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $name ); ?></option>
@@ -2586,7 +3305,10 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						</label>
 					</p>
 					<p>
-						<button type="button" class="button-link-delete wp-mcp-ai-remove-tool-shortcut"><?php esc_html_e( 'Remove shortcut', 'mcp-ai-wpoos' ); ?></button>
+						<button type="button" class="button-link-delete wp-mcp-ai-remove-tool-shortcut">
+							<span class="dashicons dashicons-trash" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span>
+							<?php esc_html_e( 'Delete this shortcut', 'mcp-ai-wpoos' ); ?>
+						</button>
 					</p>
 				</fieldset>
 			</details>
@@ -2803,9 +3525,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$provider = $default_provider;
 			}
 
-			$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ) );
+			$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ) );
 			if ( ! is_array( $provider_choices ) ) {
-				$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+				$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
 			}
 
 			if ( '' === $temperature ) {
@@ -4122,6 +4844,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					}
 				}
 
+				// Preserve hidden flag.
+				if ( isset( $shortcut['hidden'] ) ) {
+					$entry['hidden'] = (bool) $shortcut['hidden'];
+				}
+
 				if ( isset( $shortcut['tool'] ) && is_string( $shortcut['tool'] ) ) {
 					$tool = sanitize_key( $shortcut['tool'] );
 
@@ -4213,6 +4940,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							if ( '' !== $description ) {
 								$item['description'] = $description;
 							}
+						}
+
+						// Preserve hidden flag.
+						if ( isset( $shortcut['hidden'] ) ) {
+							$item['hidden'] = (bool) $shortcut['hidden'];
 						}
 
 						$entry['shortcuts'][] = $item;

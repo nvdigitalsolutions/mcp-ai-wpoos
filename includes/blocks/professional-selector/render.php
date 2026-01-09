@@ -61,7 +61,7 @@ if ( $template && 'classic' !== $template ) {
 $shortcode = '[mcp_ai_professional_selector ' . implode( ' ', $shortcode_atts ) . ']';
 
 // Get wrapper attributes - handle both block and non-block contexts.
-$wrapper_class = 'wp-block-wp-mcp-ai-professional-selector';
+$wrapper_class = 'wp-block-mcp-ai-wpoos-professional-selector';
 
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(

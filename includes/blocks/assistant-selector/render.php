@@ -58,7 +58,7 @@ $unique_id = wp_unique_id( 'wp-mcp-ai-assistant-selector-' );
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
-			'class'         => 'wp-block-wp-mcp-ai-assistant-selector',
+			'class' => 'wp-block-mcp-ai-wpoos-assistant-selector',
 			'data-block-id' => $unique_id,
 		)
 	);
@@ -66,7 +66,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	// Non-block context fallback (e.g., direct include in admin pages).
 	$wrapper_attributes = sprintf(
 		'class="%s" data-block-id="%s"',
-		esc_attr( 'wp-block-wp-mcp-ai-assistant-selector' ),
+		esc_attr( 'wp-block-mcp-ai-wpoos-assistant-selector' ),
 		esc_attr( $unique_id )
 	);
 }

@@ -56,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Hugging Face, Ollama, LM Studio).', 'mcp-ai-wpoos' );
+			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Hugging Face, Ollama, LM Studio, Cloudflare Workers AI).', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -104,7 +104,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'custom',
 					'label'       => __( 'Provider Priority Order', 'mcp-ai-wpoos' ),
 					'description' => __( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable.', 'mcp-ai-wpoos' ),
-					'default'     => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ),
+					'default'     => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ),
 				),
 
 				// OpenAI Settings.
@@ -576,6 +576,71 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'step'        => 1,
 				),
 
+				// Cloudflare Workers AI Settings.
+				'enable_cloudflare'                  => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Cloudflare Workers AI Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Cloudflare Workers AI as an available provider', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When disabled, Cloudflare Workers AI will not be available for use by assistants or API requests.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'cloudflare_api_token'               => array(
+					'type'         => 'password',
+					'label'        => __( 'Cloudflare API Token', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Cloudflare API tokens URL */
+						__( 'Your Cloudflare API token with Workers AI permissions. Get one from <a href="%s" target="_blank">Cloudflare Dashboard</a>. Create a token with "Workers AI" permissions for your account.', 'mcp-ai-wpoos' ),
+						'https://dash.cloudflare.com/profile/api-tokens'
+					),
+					'placeholder'  => 'Bearer token...',
+					'autocomplete' => 'new-password',
+				),
+				'cloudflare_account_id'              => array(
+					'type'         => 'text',
+					'label'        => __( 'Cloudflare Account ID', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Cloudflare Dashboard URL */
+						__( 'Your Cloudflare account ID. Find this in your <a href="%s" target="_blank">Cloudflare Dashboard</a> under Workers & Pages > Overview.', 'mcp-ai-wpoos' ),
+						'https://dash.cloudflare.com/'
+					),
+					'placeholder'  => '1234567890abcdef...',
+					'autocomplete' => 'off',
+				),
+				'cloudflare_model'                   => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Cloudflare Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Cloudflare Workers AI requests. Updated catalog includes Llama 4 Scout (multimodal), fast variants, and specialized models. Llama 3.1-8B-Instruct is the most popular choice.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						// Llama 3.1 models (most popular).
+						'@cf/meta/llama-3.1-8b-instruct'           => 'Llama 3.1 8B Instruct (Recommended)',
+						'@cf/meta/llama-3.1-8b-instruct-fast'      => 'Llama 3.1 8B Instruct Fast (128K context)',
+						'@cf/meta/llama-3.1-70b-instruct'          => 'Llama 3.1 70B Instruct',
+						// Llama 3.2 models (compact).
+						'@cf/meta/llama-3.2-1b-instruct'           => 'Llama 3.2 1B Instruct',
+						'@cf/meta/llama-3.2-3b-instruct'           => 'Llama 3.2 3B Instruct',
+						// Llama 2 models (legacy).
+						'@cf/meta/llama-2-7b-chat-int4'            => 'Llama 2 7B Chat (INT4)',
+						'@cf/meta/llama-2-13b-chat-int8'           => 'Llama 2 13B Chat (INT8)',
+						// Llama 4 Scout (NEW - multimodal).
+						'@cf/meta/llama-4-scout'                   => 'Llama 4 Scout (17B, Multimodal)',
+						// Mistral models (FIXED namespace).
+						'@cf/mistralai/mistral-7b-instruct-v0.1'   => 'Mistral 7B Instruct v0.1',
+						// Qwen models (multilingual).
+						'@cf/qwen/qwen1.5-0.5b-chat'               => 'Qwen 1.5 0.5B Chat',
+						'@cf/qwen/qwen1.5-1.8b-chat'               => 'Qwen 1.5 1.8B Chat',
+						'@cf/qwen/qwen1.5-7b-chat-awq'             => 'Qwen 1.5 7B Chat (AWQ)',
+						'@cf/qwen/qwen1.5-14b-chat-awq'            => 'Qwen 1.5 14B Chat (AWQ)',
+						// Compact/efficient models.
+						'@cf/tinyllama/tinyllama-1.1b-chat-v1.0'   => 'TinyLlama 1.1B Chat v1.0',
+						'@cf/microsoft/phi-2'                      => 'Microsoft Phi-2',
+						// Specialized models.
+						'@cf/tiiuae/falcon-7b-instruct'            => 'Falcon 7B Instruct',
+						'@cf/deepseek-ai/deepseek-math-7b-instruct' => 'DeepSeek Math 7B Instruct',
+						'@cf/openchat/openchat-3.5-0106'           => 'OpenChat 3.5',
+					),
+					'default'     => '@cf/meta/llama-3.1-8b-instruct',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -645,6 +710,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'  => __( 'HF Datasets', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-database',
 					'fields' => array( 'enable_huggingface_datasets', 'huggingface_datasets_api_token', 'huggingface_datasets_cache_ttl', 'huggingface_datasets_default_limit' ),
+				),
+				'cloudflare'           => array(
+					'id'     => 'cloudflare',
+					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
@@ -802,6 +873,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
+				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
 			);
 			?>
 			<tr>
@@ -900,7 +972,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array Sanitized provider priority list.
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
 			$sanitized       = array();
 
 			if ( ! is_array( $priority_list ) ) {

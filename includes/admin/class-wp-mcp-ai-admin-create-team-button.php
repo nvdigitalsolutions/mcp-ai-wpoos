@@ -171,6 +171,7 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 											<option value="anthropic"><?php esc_html_e( 'Anthropic Claude', 'mcp-ai-wpoos' ); ?></option>
 											<option value="ollama"><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></option>
 											<option value="lm_studio"><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></option>
+											<option value="cloudflare"><?php esc_html_e( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ); ?></option>
 										</select>
 										<p class="description">
 											<?php esc_html_e( 'Override profession defaults with a single provider for all team members.', 'mcp-ai-wpoos' ); ?>

@@ -24,6 +24,12 @@ In 5 minutes, you'll:
 3. Click **Install Now** → **Activate**
 4. Look for "NV oOS" in admin menu
 
+![Plugins List](../screenshots/admin/02-plugins-list.png)
+*Plugins page before activation*
+
+![Plugin Activated](../screenshots/admin/03-plugin-activated-with-notices.png)
+*After activation - notice the new menu items and security warnings*
+
 ---
 
 ## Step 2: Add API Key (60 seconds)
@@ -32,6 +38,12 @@ In 5 minutes, you'll:
 2. Go to **Settings → NV oOS**
 3. Paste key in "OpenAI API Key" field
 4. Look for green ✅ checkmark
+
+![General Settings](../screenshots/admin/04-settings-general.png)
+*Main NV oOS settings page*
+
+![AI Providers Tab](../screenshots/admin/58-ai-providers-tab.png)
+*AI Providers configuration*
 
 ---
 
@@ -42,6 +54,12 @@ In 5 minutes, you'll:
 3. Keep defaults (gpt-4o-mini, temperature 0.7)
 4. Click **Publish**
 5. Note the ID in URL (e.g., `post=123`)
+
+![All Assistants Page](../screenshots/admin/60-all-assistants-list.png)
+*AI Assistants list page (empty state)*
+
+![Create Assistant](../screenshots/admin/61-create-assistant.png)
+*Create Assistant page showing 204 profession templates*
 
 ---
 

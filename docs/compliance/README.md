@@ -31,6 +31,8 @@ The plugin achieves **100% compliance** with ISO/IEC 27001:2022 standard.
 
 **Key Documents:**
 - Statement of Applicability - All 83 applicable controls
+- Risk Register - 65 identified and assessed risks
+- Risk Assessment Methodology
 - Comprehensive procedures (~90KB total)
 - Control implementation evidence
 - Audit-ready documentation

@@ -53,6 +53,15 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	}
 
 	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#ai-providers-tab';
+	}
+
+	/**
 	 * Render the metabox content.
 	 *
 	 * @param WP_Post $post The post object.
@@ -153,6 +162,7 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'mcp-ai-wpoos' ); ?></option>
 					<option value="ollama" <?php selected( $default_provider, 'ollama' ); ?>><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></option>
 					<option value="lm_studio" <?php selected( $default_provider, 'lm_studio' ); ?>><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></option>
+					<option value="cloudflare" <?php selected( $default_provider, 'cloudflare' ); ?>><?php esc_html_e( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ); ?></option>
 				</select>
 			</p>
 
@@ -186,6 +196,7 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 			</p>
 		</div>
 		<?php
+		$this->render_documentation_link();
 	}
 
 	/**

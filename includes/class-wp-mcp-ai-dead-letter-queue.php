@@ -39,6 +39,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 	const TYPE_WEBHOOK     = 'webhook';
 	const TYPE_ASYNC_TOOL  = 'async_tool';
 	const TYPE_JOB_QUEUE   = 'job_queue';
+	const TYPE_MESH_QUERY  = 'mesh_query';
 
 	/**
 	 * Add an item to the dead letter queue.

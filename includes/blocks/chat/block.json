@@ -1,10 +1,10 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "wp-mcp-ai/chat",
+	"name": "mcp-ai-wpoos/chat",
 	"version": "1.0.0",
 	"title": "AI Chat",
-	"category": "wp-mcp-ai",
+	"category": "mcp-ai-wpoos",
 	"icon": "format-chat",
 	"description": "Display an AI chat interface powered by WP oOS.",
 	"keywords": [ "ai", "chat", "assistant", "conversation", "mcp" ],

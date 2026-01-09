@@ -76,15 +76,13 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	}
 
 	/**
-	 * Register PHP version notice on admin_init to avoid early translation loading.
+	 * Register PHP version notice directly on admin_notices.
 	 *
-	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-	 * Using admin_init ensures notices are registered after init completes.
+	 * This notice doesn't use translation functions, so there's no risk of
+	 * early translation loading. However, we follow the same direct hook pattern
+	 * as other admin notices for consistency.
 	 */
-	function wp_mcp_ai_register_php_version_notice() {
-		add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
-	}
-	add_action( 'admin_init', 'wp_mcp_ai_register_php_version_notice' );
+	add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
 
 	/**
 	 * Prevent plugin activation on incompatible PHP versions.
@@ -127,15 +125,13 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 			}
 
 			/**
-			 * Register dev deps error notice on admin_init to avoid early translation loading.
+			 * Register dev deps error notice directly on admin_notices.
 			 *
-			 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-			 * Using admin_init ensures notices are registered after init completes.
+			 * This notice doesn't use translation functions, so there's no risk of
+			 * early translation loading. However, we follow the same direct hook pattern
+			 * as other admin notices for consistency.
 			 */
-			function wp_mcp_ai_register_dev_deps_error_notice() {
-				add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
-			}
-			add_action( 'admin_init', 'wp_mcp_ai_register_dev_deps_error_notice' );
+			add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
 		}
 
 		// Log the issue.
@@ -463,6 +459,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ollama-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-lm-studio-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
 require_once WP_MCP_AI_PATH . 'includes/tool-response-helpers.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
@@ -658,6 +655,12 @@ if ( is_admin() ) {
 		wp_mcp_ai_container()->get( 'admin.test_profession' );
 	}
 
+	// Load test model page (submenu of AI Professions CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-model.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-model.php';
+		wp_mcp_ai_container()->get( 'admin.test_model' );
+	}
+
 	// Load test team page (submenu of AI Teams CPT).
 	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php';
@@ -704,7 +707,10 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-license.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-report-generator.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-helper.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-diagnostic.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-chart-settings.php';
 	
 	// Initialize Pro Dashboard components.
 	new WP_MCP_AI_Pro_Database();
@@ -1511,15 +1517,31 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 }
 
 /**
- * Register activation security notice on admin_init to avoid early translation loading.
+ * Run deferred activation security check.
  *
  * WordPress 6.7.0+ requires translations to be loaded at init or later.
- * Using admin_init ensures translations are available before admin notices are displayed.
+ * This function runs the security check on admin_init (after init completes)
+ * and stores results for display in admin_notices.
  */
-function wp_mcp_ai_register_activation_security_notice() {
-	add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
+function wp_mcp_ai_run_deferred_activation_security_check() {
+	// Check if we need to run the deferred activation security check.
+	if ( get_transient( 'wp_mcp_ai_run_activation_security_check' ) ) {
+		delete_transient( 'wp_mcp_ai_run_activation_security_check' );
+		wp_mcp_ai_check_activation_security();
+	}
 }
-add_action( 'admin_init', 'wp_mcp_ai_register_activation_security_notice' );
+add_action( 'admin_init', 'wp_mcp_ai_run_deferred_activation_security_check' );
+
+/**
+ * Register activation security notice directly on admin_notices.
+ *
+ * WordPress 6.7.0+ requires translations to be loaded at init or later.
+ * By hooking directly to admin_notices instead of using admin_init as an intermediary,
+ * we ensure translation functions are only called when the notice is actually rendered,
+ * which happens after init completes. This prevents the "_load_textdomain_just_in_time
+ * was called incorrectly" warning.
+ */
+add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
 
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**
@@ -1550,8 +1572,11 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		// Check site security and store result for display in admin notice.
-		wp_mcp_ai_check_activation_security();
+		// Set a flag to run security check on next admin_init instead of during activation.
+		// This avoids triggering translation loading before the init action (WordPress 6.7+ requirement).
+		// The security check tool uses translation functions, which would trigger the
+		// "_load_textdomain_just_in_time was called incorrectly" warning if called during activation.
+		set_transient( 'wp_mcp_ai_run_activation_security_check', true, HOUR_IN_SECONDS );
 
 		// Schedule file cleanup cron job (daily).
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_gemini_files' ) ) {
