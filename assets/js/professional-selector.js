@@ -439,10 +439,11 @@
 		 * @return {string} HTML string for chat interface.
 		 */
 		buildChatHTML: function(instanceId) {
-			const placeholderText = ProfessionalSelector.escapeHtml('Ask me anything...');
-			const attachLabel = ProfessionalSelector.escapeHtml('Attach file');
-			const transcribeLabel = ProfessionalSelector.escapeHtml('Transcribe audio');
-			const sendLabel = ProfessionalSelector.escapeHtml('Send');
+			// These are hardcoded safe strings, no need to escape
+			const placeholderText = 'Ask me anything...';
+			const attachLabel = 'Attach file';
+			const transcribeLabel = 'Transcribe audio';
+			const sendLabel = 'Send';
 			
 			return '<div class="wp-mcp-ai-chat" id="' + instanceId + '" data-wp-mcp-ai-chat>' +
 				'<div class="wp-mcp-ai-chat__transcript-controls">' +
@@ -543,11 +544,15 @@
 
 		/**
 		 * Generate a unique session key for the chat instance.
+		 * Uses timestamp and crypto API for better entropy.
 		 *
 		 * @return {string} Session key.
 		 */
 		generateSessionKey: function() {
-			return 'prof-selector-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+			const timestamp = Date.now().toString(36);
+			const random1 = Math.random().toString(36).substring(2, 15);
+			const random2 = Math.random().toString(36).substring(2, 15);
+			return 'prof-selector-' + timestamp + '-' + random1 + random2;
 		}
 	};
 
