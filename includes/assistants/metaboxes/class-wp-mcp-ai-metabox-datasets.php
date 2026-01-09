@@ -57,6 +57,16 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 	}
 
 	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @since 1.0.0
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/DATASET_ASSIGNMENT_GUIDE.md';
+	}
+
+	/**
 	 * Check if current user can view this metabox.
 	 *
 	 * @since 1.0.0
@@ -296,6 +306,7 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 		} )();
 		</script>
 		<?php
+		$this->render_documentation_link();
 	}
 
 	/**
