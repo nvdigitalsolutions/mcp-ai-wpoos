@@ -1,12 +1,12 @@
 # NV oOS Documentation Index
 
-**Last Updated:** January 8, 2026  
+**Last Updated:** January 9, 2026  
 **Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 651+ files (645+ in docs/ folder, 6 essential files in root)
+**Total Documentation:** 653+ files (647+ in docs/ folder, 6 essential files in root)
 
 > **📌 JANUARY 8, 2026 UPDATE (LATEST):** 
 > - **Complete Code Review & Gap Analysis** - Comprehensive audit completed. Grade: A- (93/100). Production ready! See [CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)
@@ -35,6 +35,33 @@ This document provides a comprehensive index of all documentation available for 
 ---
 
 ## 🆕 Latest Updates - January 2026 ⭐ **LATEST UPDATES**
+
+### Web Browser Pro Tool Proposal (January 9, 2026) 🌐 **NEW PROPOSAL** ⭐
+
+**NEW:** Evaluation and decision to create Playwright-based browser automation Pro tool:
+
+- **[PLAYWRIGHT_INTEGRATION_EVALUATION.md](proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md)** ⭐ **NEW (Jan 9)**
+  - Full technical evaluation of Playwright integration options
+  - Analysis: Enhance web_search vs Create new Pro tool
+  - **Decision: Create new Pro tool `web_browser`**
+  - Architecture design (external Playwright service)
+  - Security considerations and mitigations
+  - 8-week implementation roadmap
+  - Complete capability flags and parameter schema
+
+- **[WEB_BROWSER_PRO_TOOL_SUMMARY.md](proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md)** ⭐ **NEW (Jan 9)**
+  - Executive decision summary for stakeholders
+  - **Key rationale: Base version size management** (118 tools, 17MB)
+  - Playwright would add ~200MB dependencies (10x increase)
+  - Pro tool justification: Resource-intensive, advanced features
+  - Clear use case comparison: web_search vs web_browser
+  - Implementation plan and success metrics
+
+**Decision Factors:**
+- ⚠️ Base version already large (118 tools, 17MB includes)
+- Browser automation requires 200-500MB RAM per instance
+- Advanced use cases justify Pro tier pricing
+- External service architecture (proven with Crawl4AI)
 
 ### Complete Code Review & Gap Analysis (January 8, 2026) 🔍 **LATEST** ⭐
 
@@ -635,6 +662,13 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [base-vs-full-comparison.md](reference/technical/base-vs-full-comparison.md) | Base vs Full version comparison | Admins |
 | [BUILD-ARTIFACTS-CLARIFICATION.md](troubleshooting/common/BUILD-ARTIFACTS-CLARIFICATION.md) | Build artifacts and base vs core terminology clarification | Developers/Admins |
 | [memory-limits.md](features/memory/memory-limits.md) | Memory management and limits | Developers |
+
+### Proposals & Planning
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [PLAYWRIGHT_INTEGRATION_EVALUATION.md](proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md) | **NEW (Jan 2026):** Full technical evaluation of Playwright browser automation integration - Decision to create Pro tool `web_browser` (15KB) | Developers/Decision Makers |
+| [WEB_BROWSER_PRO_TOOL_SUMMARY.md](proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md) | **NEW (Jan 2026):** Executive summary for web_browser Pro tool decision - Base version size management rationale (7KB) | Stakeholders/Admins |
 
 ### Integration Guides
 
