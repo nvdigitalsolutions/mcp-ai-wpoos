@@ -59,16 +59,18 @@ class WP_MCP_AI_Admin_Test_Model {
 		}
 
 		// Enqueue professional selector shortcode assets.
+		$dependencies = array();
 		if ( class_exists( 'WP_MCP_AI_Professional_Selector_Shortcode' ) ) {
 			wp_enqueue_style( WP_MCP_AI_Professional_Selector_Shortcode::STYLE_HANDLE );
 			wp_enqueue_script( WP_MCP_AI_Professional_Selector_Shortcode::SCRIPT_HANDLE );
+			$dependencies[] = WP_MCP_AI_Professional_Selector_Shortcode::STYLE_HANDLE;
 		}
 
 		// Enqueue additional admin styles for this page.
 		wp_enqueue_style(
 			'wp-mcp-ai-admin-test-model',
 			WP_MCP_AI_URL . 'assets/css/admin-test-model.css',
-			array(),
+			$dependencies,
 			$this->get_asset_version( 'assets/css/admin-test-model.css' )
 		);
 	}
