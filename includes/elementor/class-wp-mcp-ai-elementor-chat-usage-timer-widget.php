@@ -103,8 +103,8 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
 				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
 				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
-				'return_value' => 'true',
-				'default'      => 'true',
+				'return_value' => 'yes',
+				'default'      => 'yes',
 			)
 		);
 
@@ -116,7 +116,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 				'default'     => __( 'Focus timer', 'mcp-ai-wpoos' ),
 				'placeholder' => __( 'Label displayed above the timer.', 'mcp-ai-wpoos' ),
 				'condition'   => array(
-					'show_timer' => 'true',
+					'show_timer' => 'yes',
 				),
 			)
 		);
@@ -131,7 +131,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 				'step'        => 1,
 				'default'     => 25,
 				'condition'   => array(
-					'show_timer' => 'true',
+					'show_timer' => 'yes',
 				),
 				'description' => __( 'Set how long the countdown should run when the page loads.', 'mcp-ai-wpoos' ),
 			)
@@ -145,7 +145,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 				'default'     => __( 'Time is up! Take a break or start a new sprint.', 'mcp-ai-wpoos' ),
 				'placeholder' => __( 'Message displayed when the timer finishes.', 'mcp-ai-wpoos' ),
 				'condition'   => array(
-					'show_timer' => 'true',
+					'show_timer' => 'yes',
 				),
 			)
 		);
@@ -166,8 +166,8 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
 				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
 				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
-				'return_value' => 'true',
-				'default'      => 'true',
+				'return_value' => 'yes',
+				'default'      => 'yes',
 			)
 		);
 
@@ -259,12 +259,12 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		$title       = isset( $settings['title'] ) ? $settings['title'] : '';
 		$description = isset( $settings['description'] ) ? $settings['description'] : '';
 
-		$show_timer          = isset( $settings['show_timer'] ) && 'true' === $settings['show_timer'];
+		$show_timer          = isset( $settings['show_timer'] ) && 'yes' === $settings['show_timer'];
 		$timer_label         = isset( $settings['timer_label'] ) ? $settings['timer_label'] : '';
 		$timer_duration      = isset( $settings['timer_duration'] ) ? (int) $settings['timer_duration'] : 0;
 		$timer_complete_text = isset( $settings['timer_complete_text'] ) ? $settings['timer_complete_text'] : '';
 
-		$show_usage                = isset( $settings['show_usage'] ) && 'true' === $settings['show_usage'];
+		$show_usage                = isset( $settings['show_usage'] ) && 'yes' === $settings['show_usage'];
 		$usage_heading             = isset( $settings['usage_heading'] ) ? $settings['usage_heading'] : '';
 		$usage_empty_message       = isset( $settings['usage_empty_message'] ) ? $settings['usage_empty_message'] : '';
 		$usage_login_message       = isset( $settings['usage_login_message'] ) ? $settings['usage_login_message'] : '';

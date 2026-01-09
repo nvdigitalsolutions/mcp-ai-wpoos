@@ -1,10 +1,10 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "wp-mcp-ai/assistant-builder",
+	"name": "mcp-ai-wpoos/assistant-builder",
 	"version": "1.0.0",
 	"title": "AI Assistant Builder",
-	"category": "wp-mcp-ai",
+	"category": "mcp-ai-wpoos",
 	"icon": "hammer",
 	"description": "A complete interface for building new AI assistants with chat, tools configuration, knowledge base, and build functionality.",
 	"keywords": [ "ai", "assistant", "builder", "create", "tools", "chat", "mcp" ],

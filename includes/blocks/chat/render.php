@@ -48,9 +48,9 @@ $shortcode = '[mcp_ai_chat ' . implode( ' ', $shortcode_atts ) . ']';
 
 // Get wrapper attributes - handle both block and non-block contexts.
 // Check if we're in a proper block rendering context (has $block object).
-$wrapper_class = 'wp-block-wp-mcp-ai-chat';
+$wrapper_class = 'wp-block-mcp-ai-wpoos-chat';
 if ( $show_build_button ) {
-	$wrapper_class .= ' wp-block-wp-mcp-ai-chat--with-build';
+	$wrapper_class .= ' wp-block-mcp-ai-wpoos-chat--with-build';
 }
 
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {

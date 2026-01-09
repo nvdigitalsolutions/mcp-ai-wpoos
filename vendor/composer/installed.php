@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/clone-production-plugin-dev-files',
+        'version' => 'dev-copilot/clone-production-plugin-dev-files',
+        'reference' => '933424a2746603bf2821c6e0e028c115acc53bb5',
         'pretty_version' => 'dev-copilot/fix-ollama-error',
         'version' => 'dev-copilot/fix-ollama-error',
         'reference' => '849b32a8379d4ad8693e383c76064dd8fee4152c',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/clone-production-plugin-dev-files',
+            'version' => 'dev-copilot/clone-production-plugin-dev-files',
+            'reference' => '933424a2746603bf2821c6e0e028c115acc53bb5',
             'pretty_version' => 'dev-copilot/fix-ollama-error',
             'version' => 'dev-copilot/fix-ollama-error',
             'reference' => '849b32a8379d4ad8693e383c76064dd8fee4152c',

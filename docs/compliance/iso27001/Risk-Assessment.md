@@ -341,11 +341,32 @@ Controls should be selected from:
 
 ## 8. Risk Register
 
-### 8.1 Risk Register Format
+### 8.1 Comprehensive Risk Register
 
-The risk register documents all identified risks and their treatment.
+The complete risk register documenting all 65 identified and assessed risks is maintained in a separate document:
 
-**Required Fields:**
+**[Risk-Register.md](./Risk-Register.md)** - Comprehensive Risk Register
+
+This register includes:
+- **65 risks** across 8 categories
+- Complete risk assessments with likelihood and impact ratings
+- Treatment plans and ownership assignments
+- Quarterly review schedule
+- Risk metrics and monitoring procedures
+
+**Risk Categories:**
+1. Authentication & Authorization (9 risks)
+2. API Integration & Third-Party Services (10 risks)
+3. Data Security & Privacy (12 risks)
+4. WordPress-Specific Security (9 risks)
+5. AI/ML Integration (9 risks)
+6. Third-Party Dependencies (7 risks)
+7. Operations & Infrastructure (5 risks)
+8. Compliance & Legal (4 risks)
+
+### 8.2 Risk Register Format
+
+The risk register follows a standardized format with the following required fields:
 - Risk ID (unique identifier)
 - Risk Description
 - Asset(s) Affected
@@ -363,9 +384,11 @@ The risk register documents all identified risks and their treatment.
 - Status (Open/In Progress/Closed)
 - Review Date
 
-### 8.2 Sample Risk Register Entries
+### 8.3 Sample Risk Register Entries
 
-#### Risk #001: API Key Exposure
+The following are sample entries demonstrating the risk register format. For the complete risk register with all 65 identified risks, see [Risk-Register.md](./Risk-Register.md).
+
+#### Sample Risk #001: API Key Exposure
 
 | Field | Value |
 |-------|-------|
@@ -386,7 +409,7 @@ The risk register documents all identified risks and their treatment.
 | **Status** | In Progress |
 | **Review Date** | 2026-03-01 |
 
-#### Risk #002: SQL Injection Vulnerability
+#### Sample Risk #002: SQL Injection Vulnerability
 
 | Field | Value |
 |-------|-------|
@@ -407,7 +430,7 @@ The risk register documents all identified risks and their treatment.
 | **Status** | Ongoing |
 | **Review Date** | 2026-02-01 |
 
-#### Risk #003: Third-Party API Compromise
+#### Sample Risk #003: Third-Party API Compromise
 
 | Field | Value |
 |-------|-------|

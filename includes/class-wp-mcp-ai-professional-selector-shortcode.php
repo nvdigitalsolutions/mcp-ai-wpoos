@@ -67,7 +67,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		wp_register_style(
 			self::STYLE_HANDLE,
 			$style_path,
-			array(),
+			array( 'dashicons' ),
 			$style_version
 		);
 
@@ -404,7 +404,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	protected function get_available_providers() {
 		$providers = apply_filters(
 			'wp_mcp_ai_allowed_providers',
-			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' )
+			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' )
 		);
 
 		$labels = array(
@@ -414,6 +414,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 			'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 			'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 			'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
+			'cloudflare'  => __( 'Cloudflare Worker AI', 'mcp-ai-wpoos' ),
 		);
 
 		$options = array();

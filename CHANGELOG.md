@@ -48,6 +48,16 @@
   - Dev tools reinstallable via `composer install` when needed
 
 ### Fixed
+- **Hugging Face Model Pricing - January 8, 2026**: Fixed $0 cost display for Hugging Face models
+  - Added DeepSeek-V3.2 pricing ($0.28 input / $0.42 output per 1M tokens)
+  - Added default fallback pricing for unknown models ($0.50 per 1M tokens)
+  - Updated `get_model_pricing()` to support default pricing for Huggingface (similar to ollama/lm_studio)
+  - Included pricing for 6 additional models: Llama 3.3 70B, Llama 3.1 8B, Mistral 7B, Phi-3 Mini, Qwen 2.5 72B, Qwen 2.5 7B
+  - Pricing ranges from $0.10 to $1.00 per 1M tokens (input/output)
+  - Added comprehensive test coverage for Hugging Face cost calculations
+  - Resolves issue where DeepSeek-V3.2 and other unknown models showed no cost information
+  - See `includes/class-wp-mcp-ai-cost-calculator.php` (lines 295-337)
+
 - **PM Assistant Fixes - January 6, 2026**: Six critical modal and chat fixes (PRs #2629, #2632, #2633, #2636, #2637, #2626)
   - Modal Rendering: Added missing CSS for proper overlay display
   - Chat Localization: Ensured wpMcpAiChat global availability

@@ -1,0 +1,174 @@
+/**
+ * Test Model Admin Page Styles
+ *
+ * Styles for the Test Model admin page under Professional CPT.
+ */
+
+.wp-mcp-ai-test-model-page {
+	max-width: 1400px;
+}
+
+.wp-mcp-ai-test-model-intro {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-left-width: 4px;
+	border-left-color: #72aee6;
+	padding: 15px 20px;
+	margin: 20px 0;
+	border-radius: 3px;
+}
+
+.wp-mcp-ai-test-model-intro .description {
+	font-size: 14px;
+	line-height: 1.6;
+	margin: 0;
+	color: #50575e;
+}
+
+.wp-mcp-ai-test-model-instructions {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	padding: 25px 30px;
+	margin: 20px 0;
+	border-radius: 3px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.wp-mcp-ai-test-model-instructions h2 {
+	margin-top: 0;
+	font-size: 20px;
+	color: #1d2327;
+	border-bottom: 1px solid #dcdcde;
+	padding-bottom: 10px;
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-test-model-instructions h3 {
+	font-size: 16px;
+	color: #1d2327;
+	margin-top: 25px;
+	margin-bottom: 15px;
+}
+
+.wp-mcp-ai-test-model-instructions ol {
+	margin: 15px 0;
+	padding-left: 25px;
+	line-height: 1.8;
+}
+
+.wp-mcp-ai-test-model-instructions ol li {
+	margin-bottom: 15px;
+	color: #50575e;
+}
+
+.wp-mcp-ai-test-model-instructions ol li strong {
+	color: #1d2327;
+	font-weight: 600;
+}
+
+.wp-mcp-ai-test-model-tips {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+	padding: 20px;
+	margin-top: 25px;
+}
+
+.wp-mcp-ai-test-model-tips ul {
+	margin: 10px 0;
+	padding-left: 25px;
+	line-height: 1.7;
+}
+
+.wp-mcp-ai-test-model-tips ul li {
+	margin-bottom: 10px;
+	color: #50575e;
+	list-style-type: disc;
+}
+
+.wp-mcp-ai-test-model-selector {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	padding: 25px 30px;
+	margin: 20px 0;
+	border-radius: 3px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.wp-mcp-ai-test-model-selector h2 {
+	margin-top: 0;
+	font-size: 20px;
+	color: #1d2327;
+	border-bottom: 1px solid #dcdcde;
+	padding-bottom: 10px;
+	margin-bottom: 25px;
+}
+
+/* Professional selector within the test model page */
+.wp-mcp-ai-test-model-selector .wp-mcp-ai-professional-selector {
+	margin: 0;
+	padding: 0;
+}
+
+.wp-mcp-ai-test-model-selector .wp-mcp-ai-professional-selector__title {
+	display: none; /* Hide the default title since we have one above */
+}
+
+.wp-mcp-ai-test-model-footer {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+	padding: 20px 25px;
+	margin: 20px 0;
+}
+
+.wp-mcp-ai-test-model-footer h3 {
+	margin-top: 0;
+	font-size: 16px;
+	color: #1d2327;
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-test-model-footer p {
+	margin: 0;
+	line-height: 1.6;
+	color: #50575e;
+}
+
+.wp-mcp-ai-test-model-footer a {
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.wp-mcp-ai-test-model-footer a:hover {
+	color: #135e96;
+	text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-test-model-intro,
+	.wp-mcp-ai-test-model-instructions,
+	.wp-mcp-ai-test-model-selector,
+	.wp-mcp-ai-test-model-footer {
+		padding: 15px 20px;
+	}
+
+	.wp-mcp-ai-test-model-instructions ol {
+		padding-left: 20px;
+	}
+
+	.wp-mcp-ai-test-model-tips ul {
+		padding-left: 20px;
+	}
+}
+
+/* Modal full-width adjustments for admin context */
+.wp-mcp-ai-test-model-selector .wp-mcp-ai-professional-selector-modal__panel {
+	max-width: 95%;
+	max-height: 90vh;
+}
+
+.wp-mcp-ai-test-model-selector .wp-mcp-ai-professional-selector-modal__body {
+	max-height: calc(90vh - 60px);
+}

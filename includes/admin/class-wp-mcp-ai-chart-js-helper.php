@@ -72,14 +72,16 @@ class WP_MCP_AI_Chart_JS_Helper {
 		}
 
 		// Only load on NV oOS settings pages.
-		if ( false === strpos( $hook, 'mcp-ai-wpoos' ) ) {
+		// Hook will be 'toplevel_page_wp-mcp-ai-dashboard' for main settings page.
+		if ( false === strpos( $hook, 'wp-mcp-ai-dashboard' ) ) {
 			return;
 		}
 
 		// Check if we're on the token manager tab.
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		if ( 'token_manager' !== $active_tab && empty( $active_tab ) ) {
+		// Only enqueue on token_manager tab (empty tab means overview, not token_manager).
+		if ( 'token_manager' !== $active_tab ) {
 			return;
 		}
 

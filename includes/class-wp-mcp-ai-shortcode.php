@@ -685,14 +685,16 @@ class WP_MCP_AI_Shortcode {
 				$GLOBALS['wp_mcp_ai_chat_configs'] = array();
 			}
 			$GLOBALS['wp_mcp_ai_chat_configs'][ $instance_id ] = $config;
-			
+
 			// Log for debugging PM assistant issues.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( sprintf(
-					'[WP_MCP_AI] Shortcode stored config for instance: %s (assistant_id: %s)',
-					$instance_id,
-					isset( $config['assistantId'] ) ? $config['assistantId'] : 'N/A'
-				) );
+				error_log(
+					sprintf(
+						'[WP_MCP_AI] Shortcode stored config for instance: %s (assistant_id: %s)',
+						$instance_id,
+						isset( $config['assistantId'] ) ? $config['assistantId'] : 'N/A'
+					)
+				);
 			}
 
 			$inline_config  = 'window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};';
@@ -1116,6 +1118,11 @@ class WP_MCP_AI_Shortcode {
 						continue;
 					}
 
+					// Skip hidden shortcuts.
+					if ( isset( $custom_shortcut['hidden'] ) && $custom_shortcut['hidden'] ) {
+						continue;
+					}
+
 					$label   = isset( $custom_shortcut['label'] ) ? sanitize_text_field( $custom_shortcut['label'] ) : '';
 					$payload = isset( $custom_shortcut['payload'] ) ? sanitize_textarea_field( $custom_shortcut['payload'] ) : '';
 
@@ -1183,6 +1190,11 @@ class WP_MCP_AI_Shortcode {
 				if ( ! empty( $override_shortcuts ) ) {
 					foreach ( $override_shortcuts as $override_shortcut ) {
 						if ( ! is_array( $override_shortcut ) ) {
+							continue;
+						}
+
+						// Skip hidden shortcuts.
+						if ( isset( $override_shortcut['hidden'] ) && $override_shortcut['hidden'] ) {
 							continue;
 						}
 

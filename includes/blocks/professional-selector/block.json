@@ -1,10 +1,10 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "wp-mcp-ai/professional-selector",
+	"name": "mcp-ai-wpoos/professional-selector",
 	"version": "1.0.0",
 	"title": "Professional Selector Chat",
-	"category": "wp-mcp-ai",
+	"category": "mcp-ai-wpoos",
 	"icon": "businessperson",
 	"description": "Allow users to select a professional, provider, and model before starting a chat.",
 	"keywords": [ "ai", "chat", "professional", "selector", "provider", "model", "mcp" ],

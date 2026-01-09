@@ -385,6 +385,7 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 		});
 		</script>
 		<?php
+		$this->render_documentation_link();
 	}
 
 	/**

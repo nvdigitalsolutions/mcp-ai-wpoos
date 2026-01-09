@@ -2,6 +2,8 @@
 
 General-purpose infrastructure for real-time notifications on async WordPress jobs.
 
+> **🆕 v1.2.0 Enhancement:** Job status now includes [Little's Law-based completion prediction](../LITTLES_LAW_INTEGRATION.md#2-job-notifier-integration) with estimated remaining time and SLA compliance tracking.
+
 ## Overview
 
 The job notification system provides:

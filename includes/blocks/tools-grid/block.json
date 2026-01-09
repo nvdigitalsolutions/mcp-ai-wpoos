@@ -1,10 +1,10 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "wp-mcp-ai/tools-grid",
+	"name": "mcp-ai-wpoos/tools-grid",
 	"version": "1.0.0",
 	"title": "AI Tools Grid",
-	"category": "wp-mcp-ai",
+	"category": "mcp-ai-wpoos",
 	"icon": "admin-tools",
 	"description": "Display a grid of available AI tools that users can enable/disable.",
 	"keywords": [ "ai", "tools", "grid", "capabilities", "mcp" ],

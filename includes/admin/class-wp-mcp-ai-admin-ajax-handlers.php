@@ -58,6 +58,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
+				'wp_ajax_wp_mcp_ai_test_flowhub_connection' => 'handle_test_flowhub_connection',
+				'wp_ajax_wp_mcp_ai_test_isams_connection'  => 'handle_test_isams_connection',
 				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
 				'wp_ajax_wp_mcp_ai_reset_all_token_usage'  => 'handle_reset_all_token_usage',
 				'wp_ajax_wp_mcp_ai_save_tool_limits'       => 'handle_save_tool_limits',
@@ -220,7 +222,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$models = array();
 			foreach ( $data['models'] as $model ) {
 				if ( isset( $model['name'] ) ) {
-					$models[] = $model['name'];
+					$models[] = array(
+						'name'   => $model['name'],
+						'size'   => isset( $model['size'] ) ? $model['size'] : 0,
+						'family' => isset( $model['details']['family'] ) ? $model['details']['family'] : '',
+					);
 				}
 			}
 
@@ -807,6 +813,281 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'message' => __( 'Successfully connected to Brave Search API!', 'mcp-ai-wpoos' ),
 				)
 			);
+		}
+
+		/**
+		 * Handle AJAX request to test Flowhub connection.
+		 */
+		public function handle_test_flowhub_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_key       = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+			$client_id     = isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '';
+			$client_secret = isset( $_POST['client_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['client_secret'] ) ) : '';
+			$location_id   = isset( $_POST['location_id'] ) ? sanitize_text_field( wp_unslash( $_POST['location_id'] ) ) : '';
+
+			if ( empty( $api_key ) || empty( $client_id ) || empty( $client_secret ) || empty( $location_id ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide all Flowhub credentials (API Key, Client ID, Client Secret, Location ID).', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Get timeout from settings.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, $timeout );
+
+			// Step 1: Test OAuth2 authentication.
+			$token_url = 'https://flowhub.auth0.com/oauth/token';
+
+			$token_response = wp_remote_post(
+				$token_url,
+				array(
+					'headers' => array(
+						'Content-Type' => 'application/json',
+					),
+					'body'    => wp_json_encode(
+						array(
+							'client_id'     => $client_id,
+							'client_secret' => $client_secret,
+							'grant_type'    => 'client_credentials',
+							'audience'      => 'https://api.flowhub.co',
+						)
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $token_response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'OAuth2 authentication failed: %s', 'mcp-ai-wpoos' ),
+							$token_response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$token_code = wp_remote_retrieve_response_code( $token_response );
+			$token_body = wp_remote_retrieve_body( $token_response );
+			$token_data = json_decode( $token_body, true );
+
+			if ( 401 === $token_code || 403 === $token_code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid Client ID or Client Secret. Please check your OAuth2 credentials.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( 200 !== $token_code || empty( $token_data['access_token'] ) ) {
+				$error_message = __( 'Failed to obtain access token.', 'mcp-ai-wpoos' );
+				if ( isset( $token_data['error_description'] ) ) {
+					$error_message = sanitize_text_field( $token_data['error_description'] );
+				}
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			$access_token = $token_data['access_token'];
+
+			// Step 2: Test API access with inventory endpoint.
+			$inventory_url = 'https://api.flowhub.co/v0/inventory';
+
+			$api_response = wp_remote_get(
+				$inventory_url,
+				array(
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $access_token,
+						'X-API-Key'     => $api_key,
+						'X-Location-ID' => $location_id,
+						'Content-Type'  => 'application/json',
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $api_response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'API connection failed: %s', 'mcp-ai-wpoos' ),
+							$api_response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$api_code = wp_remote_retrieve_response_code( $api_response );
+			$api_body = wp_remote_retrieve_body( $api_response );
+			$api_data = json_decode( $api_body, true );
+
+			if ( 401 === $api_code || 403 === $api_code ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid API Key or Location ID. Please check your credentials.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( 429 === $api_code ) {
+				wp_send_json_error( array( 'message' => __( 'Rate limit exceeded. Your credentials are valid but you have exceeded your rate limit.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( 200 !== $api_code && 204 !== $api_code ) {
+				$error_message = __( 'Invalid API credentials or connection failed.', 'mcp-ai-wpoos' );
+				if ( isset( $api_data['message'] ) ) {
+					$error_message = sanitize_text_field( $api_data['message'] );
+				}
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			// Success message with inventory count if available.
+			$message = __( 'Successfully connected to Flowhub API!', 'mcp-ai-wpoos' );
+			if ( is_array( $api_data ) && count( $api_data ) > 0 ) {
+				$message = sprintf(
+					/* translators: %d: number of inventory items */
+					__( 'Successfully connected to Flowhub API! Found %d inventory items.', 'mcp-ai-wpoos' ),
+					count( $api_data )
+				);
+			} elseif ( 204 === $api_code ) {
+				$message = __( 'Successfully connected to Flowhub API! (No inventory items found)', 'mcp-ai-wpoos' );
+			}
+
+			wp_send_json_success( array( 'message' => $message ) );
+		}
+
+		/**
+		 * Handle AJAX request to test iSAMS connection.
+		 */
+		public function handle_test_isams_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_url    = isset( $_POST['api_url'] ) ? esc_url_raw( wp_unslash( $_POST['api_url'] ) ) : '';
+			$api_key    = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+			$api_secret = isset( $_POST['api_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['api_secret'] ) ) : '';
+
+			if ( empty( $api_url ) || empty( $api_key ) || empty( $api_secret ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide all required iSAMS credentials (URL, API Key, and API Secret).', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Ensure URL has trailing slash.
+			$api_url = trailingslashit( $api_url );
+
+			// Get timeout from settings.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, $timeout );
+
+			// Test authentication by requesting a token.
+			$auth_url = $api_url . 'api/authentication/token';
+
+			$response = wp_remote_post(
+				$auth_url,
+				array(
+					'headers' => array(
+						'Content-Type' => 'application/json',
+					),
+					'body'    => wp_json_encode(
+						array(
+							'apiKey'    => $api_key,
+							'apiSecret' => $api_secret,
+						)
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+
+			if ( 200 !== $response_code ) {
+				$error_message = __( 'Invalid credentials or connection failed.', 'mcp-ai-wpoos' );
+				
+				// Try to get error from response.
+				$data = json_decode( $response_body, true );
+				if ( isset( $data['message'] ) ) {
+					$error_message = sanitize_text_field( $data['message'] );
+				} elseif ( 401 === $response_code ) {
+					$error_message = __( 'Authentication failed. Please check your API Key and Secret.', 'mcp-ai-wpoos' );
+				} elseif ( 404 === $response_code ) {
+					$error_message = __( 'API endpoint not found. Please check your iSAMS URL.', 'mcp-ai-wpoos' );
+				}
+
+				wp_send_json_error( array( 'message' => $error_message ) );
+				return;
+			}
+
+			$data = json_decode( $response_body, true );
+
+			if ( empty( $data['token'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid response from iSAMS API.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Test a simple API call with the token to verify it works.
+			$test_url = $api_url . 'api/school/terms';
+			$test_response = wp_remote_get(
+				add_query_arg( array( 'page' => 1, 'pageSize' => 1 ), $test_url ),
+				array(
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $data['token'],
+						'Accept'        => 'application/json',
+					),
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $test_response ) ) {
+				wp_send_json_success(
+					array(
+						'message' => __( 'Successfully authenticated with iSAMS! (Warning: Test query failed, but credentials are valid)', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			$test_code = wp_remote_retrieve_response_code( $test_response );
+
+			if ( 200 === $test_code ) {
+				wp_send_json_success(
+					array(
+						'message' => __( 'Successfully connected to iSAMS! All credentials are working correctly.', 'mcp-ai-wpoos' ),
+					)
+				);
+			} else {
+				wp_send_json_success(
+					array(
+						'message' => __( 'Successfully authenticated with iSAMS! (Note: Some API endpoints may require additional permissions)', 'mcp-ai-wpoos' ),
+					)
+				);
+			}
 		}
 
 		/**
@@ -2548,7 +2829,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Validate provider.
-			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ) );
+			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ) );
 			if ( ! in_array( $provider, $allowed_providers, true ) ) {
 				wp_send_json_error(
 					array(

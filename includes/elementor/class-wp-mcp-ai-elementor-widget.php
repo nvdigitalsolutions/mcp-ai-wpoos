@@ -102,8 +102,8 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
 				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
 				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
-				'return_value' => 'true',
-				'default'      => 'false',
+				'return_value' => 'yes',
+				'default'      => '',
 				'description'  => __( 'Enable guest access using temporary tokens when the assistant allows it.', 'mcp-ai-wpoos' ),
 			)
 		);
@@ -115,8 +115,8 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
 				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
 				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
-				'return_value' => 'true',
-				'default'      => 'true',
+				'return_value' => 'yes',
+				'default'      => 'yes',
 				'description'  => __( 'Store chat requests and responses in the ai_chat_transcripts Custom Content Type.', 'mcp-ai-wpoos' ),
 			)
 		);
@@ -128,8 +128,8 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
 				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
 				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
-				'return_value' => 'true',
-				'default'      => 'true',
+				'return_value' => 'yes',
+				'default'      => 'yes',
 				'description'  => __( 'Enable Server-Sent Events (SSE) streaming for faster perceived response times. Responses will appear progressively as they are generated. Note: Streamable HTTP (MCP 2024-11-05) is separately available for MCP clients at the /mcp endpoint.', 'mcp-ai-wpoos' ),
 			)
 		);
@@ -141,8 +141,8 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
 				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
 				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
-				'return_value' => 'true',
-				'default'      => 'false',
+				'return_value' => 'yes',
+				'default'      => '',
 				'description'  => __( 'Allow the assistant to use sensitive tools that may modify site content or settings. Only enable if you trust the assistant configuration.', 'mcp-ai-wpoos' ),
 			)
 		);
@@ -1146,20 +1146,20 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$attributes['assistant'] = (string) absint( $assistant_setting );
 		}
 
-		$allow_guests               = ! empty( $settings['allow_guests'] ) && 'true' === $settings['allow_guests'];
+		$allow_guests               = ! empty( $settings['allow_guests'] ) && 'yes' === $settings['allow_guests'];
 		$attributes['allow_guests'] = $allow_guests ? 'true' : 'false';
 
-		$save_transcript = empty( $settings['save_transcript'] ) || 'true' === $settings['save_transcript'];
+		$save_transcript = empty( $settings['save_transcript'] ) || 'yes' === $settings['save_transcript'];
 		if ( ! $save_transcript ) {
 			$attributes['save_transcript'] = 'false';
 		}
 
-		$enable_streaming = ! empty( $settings['enable_streaming'] ) && 'true' === $settings['enable_streaming'];
+		$enable_streaming = ! empty( $settings['enable_streaming'] ) && 'yes' === $settings['enable_streaming'];
 		if ( $enable_streaming ) {
 			$attributes['enable_streaming'] = 'true';
 		}
 
-		$allow_sensitive_tools = ! empty( $settings['allow_sensitive_tools'] ) && 'true' === $settings['allow_sensitive_tools'];
+		$allow_sensitive_tools = ! empty( $settings['allow_sensitive_tools'] ) && 'yes' === $settings['allow_sensitive_tools'];
 		if ( $allow_sensitive_tools ) {
 			$attributes['allow_sensitive_tools'] = 'true';
 		}

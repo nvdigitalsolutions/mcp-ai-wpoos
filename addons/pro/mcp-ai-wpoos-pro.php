@@ -126,6 +126,50 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_admin_sections' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_pro_load_textdomain' ) ) {
+	/**
+	 * Load Pro addon text domain for translations.
+	 *
+	 * When the Pro addon is bundled with the base plugin (cloned repository),
+	 * it doesn't have a plugin header, so WordPress cannot auto-load its translations.
+	 * We manually load the text domain on the init hook to comply with WordPress 6.7+
+	 * requirements for translation loading timing.
+	 *
+	 * @since 1.0.0
+	 */
+	function wp_mcp_ai_pro_load_textdomain() {
+		// Only load if Pro is bundled (no plugin header).
+		// If Pro is installed as separate plugin, WordPress handles this automatically.
+		// Check if the Pro addon is loaded as a separate active plugin by checking
+		// if it's in the active_plugins option. This works in all contexts (admin/frontend).
+		$active_plugins = (array) get_option( 'active_plugins', array() );
+		$pro_plugin     = plugin_basename( WP_MCP_AI_PRO_FILE );
+		$is_pro_active  = in_array( $pro_plugin, $active_plugins, true );
+		
+		// For multisite, also check network active plugins.
+		if ( is_multisite() ) {
+			$network_active = (array) get_site_option( 'active_sitewide_plugins', array() );
+			$is_pro_active  = $is_pro_active || isset( $network_active[ $pro_plugin ] );
+		}
+		
+		if ( ! $is_pro_active ) {
+			// Pro is bundled, not a separate plugin - load text domain manually.
+			// Use wp_normalize_path for cross-platform compatibility.
+			$languages_dir = wp_normalize_path( WP_MCP_AI_PRO_PATH . 'languages' );
+			$plugin_dir    = wp_normalize_path( WP_PLUGIN_DIR );
+			
+			// Calculate relative path for load_plugin_textdomain.
+			$relative_path = str_replace( trailingslashit( $plugin_dir ), '', $languages_dir );
+			
+			load_plugin_textdomain(
+				'mcp-ai-wpoos-pro',
+				false,
+				$relative_path
+			);
+		}
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 	/**
 	 * Initialize Open Operator System Pro.
@@ -141,6 +185,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			add_action( 'admin_notices', 'wp_mcp_ai_pro_missing_core_notice' );
 			return;
 		}
+		
+		// Register text domain loading on init hook.
+		// This ensures translations are loaded at the correct time for WordPress 6.7+.
+		add_action( 'init', 'wp_mcp_ai_pro_load_textdomain', 1 );
 
 		// Load Pro tool interfaces (extend Core interfaces).
 		// Pro tools can implement additional interfaces for advanced features.
@@ -298,6 +346,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Delete_All_Export'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-all-export.php',
 			'WP_MCP_AI_Pro_Tool_Schedule_All_Import'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-schedule-all-import.php',
 			'WP_MCP_AI_Pro_Tool_Delete_All_Import'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-all-import.php',
+			// iSAMS School Management System tool.
+			'WP_MCP_AI_Tool_ISAMS_Query'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-isams-query.php',
+			// Web Browser Automation tool (Playwright-based).
+			'WP_MCP_AI_Tool_Web_Browser'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-browser.php',
 		);
 
 		// Add quiz tools if enabled.
@@ -544,6 +596,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'google_analytics_report'         => 'external-tools',
 			// Business and accounting tools - Require external API credentials.
 			'quickbooks_report'               => 'external-tools',
+			// iSAMS School Management System - Requires external API credentials.
+			'isams_query'                     => 'external-tools',
 			// Site Creator and related tools.
 			'site_creator'                    => 'wordpress-core',
 			'install_and_activate_plugin'     => 'wordpress-core',

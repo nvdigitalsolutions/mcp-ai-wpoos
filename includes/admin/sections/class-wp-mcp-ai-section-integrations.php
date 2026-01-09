@@ -256,6 +256,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'default'        => false,
 				),
 
+				// Flowhub Settings.
+				'flowhub_api_key'                   => array(
+					'type'         => 'password',
+					'label'        => __( 'Flowhub API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Flowhub API request URL */
+						__( 'Your Flowhub API Key for cannabis dispensary integration. Required for Flowhub tools. Request credentials from <a href="%s" target="_blank">Flowhub API Integration Form</a>.', 'mcp-ai-wpoos' ),
+						'https://flowhub.com/api-integration-request'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'flowhub_client_id'                 => array(
+					'type'         => 'text',
+					'label'        => __( 'Flowhub Client ID', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Your Flowhub OAuth2 Client ID for authentication.', 'mcp-ai-wpoos' ),
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+				),
+				'flowhub_client_secret'             => array(
+					'type'         => 'password',
+					'label'        => __( 'Flowhub Client Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Your Flowhub OAuth2 Client Secret. Keep this secure and never share it publicly.', 'mcp-ai-wpoos' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'flowhub_location_id'               => array(
+					'type'         => 'text',
+					'label'        => __( 'Flowhub Location ID', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Your dispensary Location ID. Each location requires separate credentials.', 'mcp-ai-wpoos' ),
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+				),
+
 				// QuickBooks.
 				'quickbooks_api_key'                => array(
 					'type'         => 'password',
@@ -385,6 +419,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
+
+				// iSAMS School Management System.
+				'isams_api_url'                     => array(
+					'type'        => 'text',
+					'label'       => __( 'iSAMS API URL', 'mcp-ai-wpoos' ),
+					'description' => sprintf(
+						/* translators: %s: URL to iSAMS documentation */
+						__( 'Your iSAMS instance URL (e.g., https://yourschool.isams.cloud/). Get your credentials from your iSAMS administrator. %s', 'mcp-ai-wpoos' ),
+						'<a href="https://developer.isams.com/" target="_blank">' . __( 'iSAMS API Documentation', 'mcp-ai-wpoos' ) . '</a>'
+					) . $pro_notice,
+					'placeholder' => 'https://yourschool.isams.cloud/',
+					'disabled'    => ! $is_pro_active,
+				),
+				'isams_api_key'                     => array(
+					'type'         => 'text',
+					'label'        => __( 'iSAMS API Key', 'mcp-ai-wpoos' ),
+					'description'  => __( 'API key provided by your iSAMS administrator.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+					'disabled'     => ! $is_pro_active,
+				),
+				'isams_api_secret'                  => array(
+					'type'         => 'password',
+					'label'        => __( 'iSAMS API Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'API secret provided by your iSAMS administrator. Keep this secure.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
 			);
 		}
 
@@ -421,6 +484,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'  => __( 'PayHere', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-money-alt',
 					'fields' => array( 'payhere_app_id', 'payhere_app_secret', 'payhere_sandbox_mode' ),
+				),
+				'flowhub'          => array(
+					'id'     => 'flowhub',
+					'label'  => __( 'Flowhub', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-store',
+					'fields' => array( 'flowhub_api_key', 'flowhub_client_id', 'flowhub_client_secret', 'flowhub_location_id' ),
 				),
 				'removebg'         => array(
 					'id'     => 'removebg',
@@ -472,6 +541,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'  => __( 'TikTok', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
+				),
+				'isams'            => array(
+					'id'     => 'isams',
+					'label'  => $is_pro_active ? __( 'iSAMS', 'mcp-ai-wpoos' ) : __( 'iSAMS (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-welcome-learn-more',
+					'fields' => array( 'isams_api_url', 'isams_api_key', 'isams_api_secret' ),
+					'pro'    => true,
 				),
 			);
 		}
@@ -558,6 +634,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				case 'payhere':
 					$this->render_payhere_footer();
 					break;
+				case 'flowhub':
+					$this->render_flowhub_footer();
+					break;
 				case 'meta':
 					$this->render_meta_footer();
 					break;
@@ -575,6 +654,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					break;
 				case 'mailjet':
 					$this->render_mailjet_footer();
+					break;
+				case 'isams':
+					$this->render_isams_footer();
 					break;
 			}
 		}
@@ -833,6 +915,116 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<li><?php esc_html_e( 'Enable sandbox mode for testing (optional)', 'mcp-ai-wpoos' ); ?></li>
 						<li><?php esc_html_e( 'Save your settings', 'mcp-ai-wpoos' ); ?></li>
 					</ol>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Flowhub footer content.
+		 */
+		private function render_flowhub_footer() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_credentials = ! empty( $settings['flowhub_api_key'] ) && ! empty( $settings['flowhub_client_id'] ) && ! empty( $settings['flowhub_client_secret'] ) && ! empty( $settings['flowhub_location_id'] );
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Flowhub Connection', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-flowhub-connection" class="button button-secondary">
+							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span id="wp-mcp-ai-flowhub-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Enter your Flowhub credentials in the fields above, then click "Test Connection" to verify they work. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Flowhub Configuration', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<?php if ( $has_credentials ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'Flowhub Credentials Configured', 'mcp-ai-wpoos' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'Your Flowhub credentials are configured. AI assistants can now access inventory, orders, customers, and products using the Flowhub API.',
+									'mcp-ai-wpoos'
+								)
+							);
+							?>
+						</p>
+					<?php else : ?>
+						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #721c24;">
+								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+								<strong><?php esc_html_e( 'Flowhub Credentials Required', 'mcp-ai-wpoos' ); ?></strong>
+							</p>
+						</div>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								__(
+									'To enable Flowhub cannabis dispensary integration tools, configure your Flowhub API credentials in the fields above, then save your settings.',
+									'mcp-ai-wpoos'
+								)
+							);
+							?>
+						</p>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'About Flowhub Integration:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Flowhub is a cannabis dispensary POS and inventory management system', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Supports retrieving inventory, orders, customers, and products', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Supports creating orders and managing customer/product data', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Each dispensary location requires separate credentials', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Uses OAuth2 authentication for secure API access', 'mcp-ai-wpoos' ); ?></li>
+					</ul>
+					<p class="description">
+						<strong><?php esc_html_e( 'Setup Instructions:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ol style="margin-left: 20px;">
+						<li>
+							<?php
+							printf(
+								/* translators: %s: URL to Flowhub API Request Form */
+								wp_kses_post( __( 'Fill out the <a href="%s" target="_blank">Flowhub API Integration Request Form</a>', 'mcp-ai-wpoos' ) ),
+								esc_url( 'https://flowhub.com/api-integration-request' )
+							);
+							?>
+						</li>
+						<li><?php esc_html_e( 'Wait for Flowhub support to provide your API credentials', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Copy your API Key, Client ID, Client Secret, and Location ID', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Paste them into the fields above', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Save your settings', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'If you manage multiple locations, repeat the process for each location', 'mcp-ai-wpoos' ); ?></li>
+					</ol>
+					<p class="description">
+						<strong><?php esc_html_e( 'Available Flowhub Tools:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><strong>flowhub_get_inventory</strong> - <?php esc_html_e( 'Retrieve inventory data with filtering and pagination', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>flowhub_get_orders</strong> - <?php esc_html_e( 'Retrieve orders and transactions', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>flowhub_create_order</strong> - <?php esc_html_e( 'Create new dispensary orders', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>flowhub_get_customers</strong> - <?php esc_html_e( 'Retrieve customer profiles', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>flowhub_manage_customer</strong> - <?php esc_html_e( 'Create or update customer information', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>flowhub_get_products</strong> - <?php esc_html_e( 'Retrieve product catalog', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>flowhub_manage_product</strong> - <?php esc_html_e( 'Create or update product details', 'mcp-ai-wpoos' ); ?></li>
+					</ul>
 				</td>
 			</tr>
 			<?php
@@ -1334,6 +1526,61 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					</div>
 				</div>
 			</div>
+			<?php
+		}
+
+		/**
+		 * Render iSAMS footer content.
+		 */
+		private function render_isams_footer() {
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'iSAMS Connection', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-isams-connection" class="button button-secondary">
+							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span id="wp-mcp-ai-isams-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Enter your iSAMS API credentials in the fields above, then click "Test Connection" to verify they work. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div style="margin: 1rem 0;">
+						<h4><?php esc_html_e( 'Available iSAMS Tools', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description" style="margin-bottom: 10px;">
+							<?php esc_html_e( 'The following AI tools are available when iSAMS is properly configured:', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<ul style="margin-left: 1.5rem;">
+							<li><strong>isams_query</strong> - <?php esc_html_e( 'Query iSAMS for pupils, employees, departments, houses, terms, subjects, year groups, and admission applicants', 'mcp-ai-wpoos' ); ?></li>
+						</ul>
+						<p class="description" style="margin-top: 1rem;">
+							<strong><?php esc_html_e( 'About iSAMS Integration:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ul style="list-style: disc; margin-left: 20px;">
+							<li><?php esc_html_e( 'API credentials are obtained from your iSAMS administrator', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Supports read-only access to school management data', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Access tokens are automatically cached for 55 minutes', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Requires Pro addon to be active', 'mcp-ai-wpoos' ); ?></li>
+						</ul>
+						<p class="description" style="margin-top: 1rem;">
+							<strong><?php esc_html_e( 'Setup Instructions:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ol style="margin-left: 20px;">
+							<li><?php esc_html_e( 'Contact your iSAMS administrator to obtain API credentials', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Enter the iSAMS instance URL (e.g., https://yourschool.isams.cloud/)', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Enter your API Key and API Secret in the fields above', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Save your settings', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Click "Test Connection" to verify credentials work', 'mcp-ai-wpoos' ); ?></li>
+						</ol>
+					</div>
+				</td>
+			</tr>
 			<?php
 		}
 
