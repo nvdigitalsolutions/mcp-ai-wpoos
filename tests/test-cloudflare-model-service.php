@@ -34,7 +34,7 @@ class Test_Cloudflare_Model_Service extends WP_UnitTestCase {
 		// Verify models are returned.
 		$this->assertNotEmpty( $models, 'Cloudflare models should be returned when provider is enabled' );
 		$this->assertIsArray( $models, 'Models should be an array' );
-		
+
 		// Verify we have a reasonable number of models (at least 5).
 		$this->assertGreaterThanOrEqual( 5, count( $models ), 'Should have at least 5 Cloudflare models' );
 		
