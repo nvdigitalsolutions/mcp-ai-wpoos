@@ -275,8 +275,8 @@
 			// Create and render chat interface.
 			ProfessionalSelector.createChatInterface($container, state, $modalChat);
 
-			// Show modal.
-			$modal.show();
+			// Show modal with both jQuery method and CSS class for maximum compatibility.
+			$modal.show().addClass('wp-mcp-ai-modal--visible');
 			$('body').addClass('wp-mcp-ai-professional-selector-modal-open');
 		},
 
@@ -289,7 +289,7 @@
 			const $modal = $container.find('[data-modal]');
 			const $modalChat = $container.find('[data-modal-chat]');
 
-			$modal.hide();
+			$modal.hide().removeClass('wp-mcp-ai-modal--visible');
 			$('body').removeClass('wp-mcp-ai-professional-selector-modal-open');
 			
 			// Clear chat container.

@@ -205,24 +205,35 @@
 	}
 }
 
-/* Loading spinner styles */
+/* Loading spinner styles - CSS animation based */
 .wp-mcp-ai-professional-selector .spinner {
-	background: url("../../wp-admin/images/spinner.gif") no-repeat;
-	background-size: 20px 20px;
 	display: inline-block;
-	opacity: 0.7;
-	filter: alpha(opacity=70);
 	width: 20px;
 	height: 20px;
 	margin: 0;
 	vertical-align: middle;
+	opacity: 0.7;
+	filter: alpha(opacity=70);
+	position: relative;
 }
 
-@media print,
-	(-webkit-min-device-pixel-ratio: 1.25),
-	(min-resolution: 120dpi) {
-	.wp-mcp-ai-professional-selector .spinner {
-		background-image: url("../../wp-admin/images/spinner-2x.gif");
+.wp-mcp-ai-professional-selector .spinner::before {
+	content: "";
+	display: block;
+	width: 20px;
+	height: 20px;
+	border: 2px solid #3b82f6;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: wp-mcp-ai-spinner-rotate 0.6s linear infinite;
+}
+
+@keyframes wp-mcp-ai-spinner-rotate {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
 	}
 }
 
@@ -239,6 +250,16 @@
 	bottom: 0;
 	z-index: 100000;
 	display: none;
+	visibility: hidden;
+	opacity: 0;
+	transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.wp-mcp-ai-professional-selector-modal[style*="display: block"],
+.wp-mcp-ai-professional-selector-modal.wp-mcp-ai-modal--visible {
+	display: block;
+	visibility: visible;
+	opacity: 1;
 }
 
 .wp-mcp-ai-professional-selector-modal__backdrop {
