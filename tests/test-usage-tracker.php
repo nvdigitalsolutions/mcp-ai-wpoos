@@ -463,4 +463,59 @@ class WP_MCP_AI_Usage_Tracker_Test extends WP_UnitTestCase {
 		// Total: $64.36812.
 		$this->assertEqualsWithDelta( 64.36812, $total_cost, 0.00001, 'gpt-5 variant cost calculation should work' );
 	}
+
+	/**
+	 * Test calculate_cost with HuggingFace DeepSeek model.
+	 */
+	public function test_calculate_cost_huggingface_deepseek() {
+		// DeepSeek-V3.2: input $0.00028/1K, output $0.00042/1K.
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'huggingface', 'deepseek-ai/deepseek-v3.2', 50000, 23422 );
+
+		// Expected: (50000/1000 * 0.00028) + (23422/1000 * 0.00042) = 0.014 + 0.00983724 = 0.02383724.
+		$this->assertEqualsWithDelta( 0.02383724, $cost, 0.00001, 'HuggingFace DeepSeek-V3.2 cost calculation incorrect' );
+	}
+
+	/**
+	 * Test calculate_cost with HuggingFace Llama model.
+	 */
+	public function test_calculate_cost_huggingface_llama() {
+		// Llama 3.3 70B: input $0.001/1K, output $0.001/1K.
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'huggingface', 'meta-llama/llama-3.3-70b-instruct', 1000000, 500000 );
+
+		// Expected: (1000000/1000 * 0.001) + (500000/1000 * 0.001) = 1.0 + 0.5 = 1.5.
+		$this->assertEqualsWithDelta( 1.5, $cost, 0.00001, 'HuggingFace Llama 3.3 70B cost calculation incorrect' );
+	}
+
+	/**
+	 * Test calculate_cost with HuggingFace Phi-3 model.
+	 */
+	public function test_calculate_cost_huggingface_phi3() {
+		// Phi-3 Mini: input $0.0001/1K, output $0.0001/1K.
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'huggingface', 'microsoft/phi-3-mini-4k-instruct', 2000000, 1000000 );
+
+		// Expected: (2000000/1000 * 0.0001) + (1000000/1000 * 0.0001) = 0.2 + 0.1 = 0.3.
+		$this->assertEqualsWithDelta( 0.3, $cost, 0.00001, 'HuggingFace Phi-3 Mini cost calculation incorrect' );
+	}
+
+	/**
+	 * Test calculate_cost with HuggingFace Mistral model.
+	 */
+	public function test_calculate_cost_huggingface_mistral() {
+		// Mistral 7B: input $0.0002/1K, output $0.0002/1K.
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'huggingface', 'mistralai/mistral-7b-instruct-v0.3', 500000, 250000 );
+
+		// Expected: (500000/1000 * 0.0002) + (250000/1000 * 0.0002) = 0.1 + 0.05 = 0.15.
+		$this->assertEqualsWithDelta( 0.15, $cost, 0.00001, 'HuggingFace Mistral 7B cost calculation incorrect' );
+	}
+
+	/**
+	 * Test calculate_cost with HuggingFace Qwen model.
+	 */
+	public function test_calculate_cost_huggingface_qwen() {
+		// Qwen 2.5 72B: input $0.001/1K, output $0.001/1K.
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'huggingface', 'qwen/qwen2.5-72b-instruct', 100000, 50000 );
+
+		// Expected: (100000/1000 * 0.001) + (50000/1000 * 0.001) = 0.1 + 0.05 = 0.15.
+		$this->assertEqualsWithDelta( 0.15, $cost, 0.00001, 'HuggingFace Qwen 2.5 72B cost calculation incorrect' );
+	}
 }

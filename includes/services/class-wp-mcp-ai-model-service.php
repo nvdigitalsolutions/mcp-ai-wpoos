@@ -29,7 +29,7 @@ class WP_MCP_AI_Model_Service {
 	/**
 	 * Get available models for a specific provider
 	 *
-	 * @param string $provider Provider name (openai, anthropic, gemini, ollama, lm_studio).
+	 * @param string $provider Provider name (openai, anthropic, gemini, huggingface, ollama, lm_studio).
 	 * @param array  $args     Optional arguments (capability_flags, tool_slug).
 	 * @return array Array of model_id => model_name pairs.
 	 */
@@ -67,12 +67,20 @@ class WP_MCP_AI_Model_Service {
 				$models = $this->get_gemini_models( $settings, $requires_vision, $requires_multimodal, $args );
 				break;
 
+			case 'huggingface':
+				$models = $this->get_huggingface_models( $settings, $requires_vision, $requires_multimodal );
+				break;
+
 			case 'ollama':
 				$models = $this->get_ollama_models( $settings, $requires_vision, $requires_multimodal );
 				break;
 
 			case 'lm_studio':
 				$models = $this->get_lm_studio_models( $settings, $requires_vision, $requires_multimodal );
+				break;
+
+			case 'cloudflare':
+				$models = $this->get_cloudflare_models( $settings, $requires_vision, $requires_multimodal );
 				break;
 
 			default:
@@ -179,10 +187,8 @@ class WP_MCP_AI_Model_Service {
 	 * @return array Model list.
 	 */
 	protected function get_anthropic_models( $settings ) {
-		if ( empty( $settings['anthropic_api_key'] ) ) {
-			return array();
-		}
-
+		// Return models even if API key is not configured, for browsing purposes.
+		// The models are static and don't require API access to list.
 		$models = array();
 
 		// Claude 4 series (multimodal - vision capable) - 2025.
@@ -254,6 +260,102 @@ class WP_MCP_AI_Model_Service {
 			$models['gemma-2-27b-it'] = 'Gemma 2 27B (Instruct)';
 			$models['gemma-2-9b-it']  = 'Gemma 2 9B (Instruct)';
 			$models['gemma-2-2b-it']  = 'Gemma 2 2B (Instruct)';
+		}
+
+		return $models;
+	}
+
+	/**
+	 * Get Hugging Face models
+	 *
+	 * @param array $settings              Plugin settings.
+	 * @param bool  $requires_vision       Whether vision capability is required.
+	 * @param bool  $requires_multimodal   Whether multimodal capability is required.
+	 * @return array Model list.
+	 */
+	protected function get_huggingface_models( $settings, $requires_vision, $requires_multimodal ) {
+		if ( empty( $settings['huggingface_api_key'] ) ) {
+			return array();
+		}
+
+		if ( empty( $settings['huggingface_endpoint_url'] ) ) {
+			return array();
+		}
+
+		// Try to fetch models dynamically from Hugging Face API.
+		if ( class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+			$client = new WP_MCP_AI_Huggingface_Client();
+			$result = $client->list_models();
+
+			// If list_models() succeeds and returns an array of models, use it.
+			if ( ! is_wp_error( $result ) && is_array( $result ) && ! empty( $result ) ) {
+				$models = array();
+				foreach ( $result as $model ) {
+					if ( isset( $model['id'] ) ) {
+						$model_id   = $model['id'];
+						$model_name = $model_id;
+
+						// Add owned_by info if available.
+						if ( isset( $model['owned_by'] ) && ! empty( $model['owned_by'] ) ) {
+							$model_name = $model_id . ' (' . $model['owned_by'] . ')';
+						}
+
+						$models[ $model_id ] = $model_name;
+					}
+				}
+
+				if ( ! empty( $models ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'model_service_huggingface_dynamic',
+						'Successfully fetched Hugging Face models from API',
+						array( 'count' => count( $models ) )
+					);
+					return $models;
+				}
+			}
+
+			// Log if dynamic fetch failed.
+			if ( is_wp_error( $result ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'model_service_huggingface_fetch_failed',
+					'Failed to fetch Hugging Face models from API, falling back to static list',
+					array( 'error' => $result->get_error_message() )
+				);
+			}
+		}
+
+		// Fallback: Return common Hugging Face models if dynamic fetch fails.
+		$models = array();
+
+		// Add configured model if available.
+		if ( ! empty( $settings['huggingface_model'] ) ) {
+			$models[ $settings['huggingface_model'] ] = $settings['huggingface_model'];
+		}
+
+		// Common Hugging Face Inference API models (text generation).
+		if ( ! $requires_vision && ! $requires_multimodal ) {
+			$common_models = array(
+				'meta-llama/Llama-3.3-70B-Instruct'      => 'Llama 3.3 70B Instruct',
+				'meta-llama/Llama-3.2-3B-Instruct'       => 'Llama 3.2 3B Instruct',
+				'meta-llama/Llama-3.1-8B-Instruct'       => 'Llama 3.1 8B Instruct',
+				'mistralai/Mistral-7B-Instruct-v0.3'     => 'Mistral 7B Instruct v0.3',
+				'mistralai/Mixtral-8x7B-Instruct-v0.1'   => 'Mixtral 8x7B Instruct',
+				'Qwen/Qwen2.5-72B-Instruct'              => 'Qwen 2.5 72B Instruct',
+				'Qwen/Qwen2.5-32B-Instruct'              => 'Qwen 2.5 32B Instruct',
+				'Qwen/Qwen2.5-14B-Instruct'              => 'Qwen 2.5 14B Instruct',
+				'Qwen/Qwen2.5-7B-Instruct'               => 'Qwen 2.5 7B Instruct',
+				'google/gemma-2-27b-it'                  => 'Gemma 2 27B Instruct',
+				'google/gemma-2-9b-it'                   => 'Gemma 2 9B Instruct',
+				'microsoft/Phi-3.5-mini-instruct'        => 'Phi-3.5 Mini Instruct',
+				'deepseek-ai/DeepSeek-V3'                => 'DeepSeek V3',
+				'deepseek-ai/DeepSeek-Coder-V2-Instruct' => 'DeepSeek Coder V2 Instruct',
+			);
+
+			foreach ( $common_models as $model_id => $model_name ) {
+				if ( ! isset( $models[ $model_id ] ) ) {
+					$models[ $model_id ] = $model_name;
+				}
+			}
 		}
 
 		return $models;
@@ -368,6 +470,66 @@ class WP_MCP_AI_Model_Service {
 	}
 
 	/**
+	 * Get Cloudflare Workers AI models
+	 *
+	 * @param array $settings              Plugin settings.
+	 * @param bool  $requires_vision       Whether vision capability is required.
+	 * @param bool  $requires_multimodal   Whether multimodal capability is required.
+	 * @return array Model list.
+	 */
+	protected function get_cloudflare_models( $settings, $requires_vision, $requires_multimodal ) {
+		// Check if Cloudflare provider is enabled and configured.
+		if ( empty( $settings['enable_cloudflare'] ) || empty( $settings['cloudflare_api_token'] ) || empty( $settings['cloudflare_account_id'] ) ) {
+			return array();
+		}
+
+		$models = array();
+
+		// Cloudflare Workers AI multimodal support (Llama 4 Scout).
+		if ( $requires_multimodal || $requires_vision ) {
+			// Llama 4 Scout - multimodal (text + image).
+			$models['@cf/meta/llama-4-scout'] = 'Llama 4 Scout (17B, Multimodal)';
+			return $models;
+		}
+
+		// Text generation models.
+		// Llama 3.1 models (most popular).
+		$models['@cf/meta/llama-3.1-8b-instruct']      = 'Llama 3.1 8B Instruct';
+		$models['@cf/meta/llama-3.1-8b-instruct-fast'] = 'Llama 3.1 8B Instruct Fast (128K context)';
+		$models['@cf/meta/llama-3.1-70b-instruct']     = 'Llama 3.1 70B Instruct';
+
+		// Llama 3.2 models (compact).
+		$models['@cf/meta/llama-3.2-1b-instruct'] = 'Llama 3.2 1B Instruct';
+		$models['@cf/meta/llama-3.2-3b-instruct'] = 'Llama 3.2 3B Instruct';
+
+		// Llama 2 models (legacy).
+		$models['@cf/meta/llama-2-7b-chat-int4']  = 'Llama 2 7B Chat (INT4)';
+		$models['@cf/meta/llama-2-13b-chat-int8'] = 'Llama 2 13B Chat (INT8)';
+
+		// Mistral models (FIXED: corrected namespace from @cf/mistral to @cf/mistralai).
+		$models['@cf/mistralai/mistral-7b-instruct-v0.1'] = 'Mistral 7B Instruct v0.1';
+
+		// Qwen models (multilingual, including Chinese).
+		$models['@cf/qwen/qwen1.5-0.5b-chat']              = 'Qwen 1.5 0.5B Chat';
+		$models['@cf/qwen/qwen1.5-1.8b-chat']              = 'Qwen 1.5 1.8B Chat';
+		$models['@cf/qwen/qwen1.5-7b-chat-awq']            = 'Qwen 1.5 7B Chat (AWQ)';
+		$models['@cf/qwen/qwen1.5-14b-chat-awq']           = 'Qwen 1.5 14B Chat (AWQ)';
+		$models['@cf/qwen/qwen2.5-coder-32b-instruct']     = 'Qwen 2.5 Coder 32B Instruct';
+		$models['@cf/qwen/qwen3-30b-a3b-fp8']              = 'Qwen 3 30B (A3B FP8)';
+
+		// Compact/efficient models.
+		$models['@cf/tinyllama/tinyllama-1.1b-chat-v1.0'] = 'TinyLlama 1.1B Chat v1.0';
+		$models['@cf/microsoft/phi-2']                    = 'Microsoft Phi-2';
+
+		// Specialized models.
+		$models['@cf/tiiuae/falcon-7b-instruct']             = 'Falcon 7B Instruct';
+		$models['@cf/deepseek-ai/deepseek-math-7b-instruct'] = 'DeepSeek Math 7B Instruct';
+		$models['@cf/openchat/openchat-3.5-0106']            = 'OpenChat 3.5';
+
+		return $models;
+	}
+
+	/**
 	 * Validate model for provider
 	 *
 	 * @param string $model    Model ID.
@@ -426,11 +588,13 @@ class WP_MCP_AI_Model_Service {
 	 */
 	public function get_default_model_for_provider( $provider ) {
 		$defaults = array(
-			'openai'    => 'gpt-4.1',
-			'anthropic' => 'claude-sonnet-4.5',
-			'gemini'    => 'gemini-2.5-flash',
-			'ollama'    => 'llama3.2',
-			'lm_studio' => 'qwen/qwen2.5-7b',
+			'openai'      => 'gpt-4.1',
+			'anthropic'   => 'claude-sonnet-4.5',
+			'gemini'      => 'gemini-2.5-flash',
+			'huggingface' => 'meta-llama/Llama-3.2-3B-Instruct',
+			'ollama'      => 'llama3.2',
+			'lm_studio'   => 'qwen/qwen2.5-7b',
+			'cloudflare'  => '@cf/meta/llama-3.1-8b-instruct',
 		);
 
 		$default = isset( $defaults[ $provider ] ) ? $defaults[ $provider ] : '';

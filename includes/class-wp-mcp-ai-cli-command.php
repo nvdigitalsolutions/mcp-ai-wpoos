@@ -1304,12 +1304,26 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		}
 	}
 
+	// Load additional CLI command classes.
+	if ( ! class_exists( 'WP_MCP_AI_CLI_DLQ' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-dlq.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-dlq.php';
+	}
+	if ( ! class_exists( 'WP_MCP_AI_CLI_SLA' ) && file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-sla.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-sla.php';
+	}
+
 	WP_CLI::add_command( 'mcp-ai', 'WP_MCP_AI_CLI_Command' );
 	WP_CLI::add_command( 'mcp-ai plugins', 'WP_MCP_AI_CLI_Plugins_Command' );
 	WP_CLI::add_command( 'mcp-ai queue', 'WP_MCP_AI_CLI_Queue_Command' );
 	WP_CLI::add_command( 'mcp-ai token', 'WP_MCP_AI_CLI_Token_Command' );
 	WP_CLI::add_command( 'mcp-ai rabbitmq', 'WP_MCP_AI_CLI_RabbitMQ_Command' );
 	WP_CLI::add_command( 'mcp-ai stdio', 'WP_MCP_AI_CLI_STDIO_Command' );
-	WP_CLI::add_command( 'mcp-ai dlq', 'WP_MCP_AI_CLI_DLQ' );
-	WP_CLI::add_command( 'mcp-ai sla', 'WP_MCP_AI_CLI_SLA' );
+	
+	// Register DLQ and SLA commands only if the classes were successfully loaded.
+	if ( class_exists( 'WP_MCP_AI_CLI_DLQ' ) ) {
+		WP_CLI::add_command( 'mcp-ai dlq', 'WP_MCP_AI_CLI_DLQ' );
+	}
+	if ( class_exists( 'WP_MCP_AI_CLI_SLA' ) ) {
+		WP_CLI::add_command( 'mcp-ai sla', 'WP_MCP_AI_CLI_SLA' );
+	}
 }

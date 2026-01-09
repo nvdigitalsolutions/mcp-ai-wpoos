@@ -40,7 +40,7 @@ class Test_Block_Render_Non_Block_Context extends WP_UnitTestCase {
 
 		// Should produce output without errors.
 		$this->assertNotEmpty( $output );
-		$this->assertStringContainsString( 'wp-block-wp-mcp-ai-tools-grid', $output );
+		$this->assertStringContainsString( 'wp-block-mcp-ai-wpoos-tools-grid', $output );
 		$this->assertStringContainsString( 'Test Tools', $output );
 	}
 
@@ -68,7 +68,7 @@ class Test_Block_Render_Non_Block_Context extends WP_UnitTestCase {
 
 		// Should produce output without errors.
 		$this->assertNotEmpty( $output );
-		$this->assertStringContainsString( 'wp-block-wp-mcp-ai-knowledge-base', $output );
+		$this->assertStringContainsString( 'wp-block-mcp-ai-wpoos-knowledge-base', $output );
 		$this->assertStringContainsString( 'Test Knowledge Base', $output );
 	}
 
@@ -98,7 +98,7 @@ class Test_Block_Render_Non_Block_Context extends WP_UnitTestCase {
 
 		// Should still produce valid output.
 		$this->assertNotEmpty( $output );
-		$this->assertStringContainsString( 'class="wp-block-wp-mcp-ai-tools-grid"', $output );
+		$this->assertStringContainsString( 'class="wp-block-mcp-ai-wpoos-tools-grid"', $output );
 		$this->assertStringContainsString( 'data-block-id=', $output );
 	}
 
@@ -127,7 +127,7 @@ class Test_Block_Render_Non_Block_Context extends WP_UnitTestCase {
 
 		// Should still produce valid output.
 		$this->assertNotEmpty( $output );
-		$this->assertStringContainsString( 'class="wp-block-wp-mcp-ai-knowledge-base"', $output );
+		$this->assertStringContainsString( 'class="wp-block-mcp-ai-wpoos-knowledge-base"', $output );
 		$this->assertStringContainsString( 'data-block-id=', $output );
 	}
 
@@ -154,7 +154,7 @@ class Test_Block_Render_Non_Block_Context extends WP_UnitTestCase {
 
 		// Should still produce valid output.
 		$this->assertNotEmpty( $output );
-		$this->assertStringContainsString( 'wp-block-wp-mcp-ai-assistant-builder', $output );
+		$this->assertStringContainsString( 'wp-block-mcp-ai-wpoos-assistant-builder', $output );
 		$this->assertStringContainsString( 'data-block-id=', $output );
 	}
 
@@ -178,7 +178,7 @@ class Test_Block_Render_Non_Block_Context extends WP_UnitTestCase {
 
 		// Should still produce valid output.
 		$this->assertNotEmpty( $output );
-		$this->assertStringContainsString( 'wp-block-wp-mcp-ai-chat', $output );
+		$this->assertStringContainsString( 'wp-block-mcp-ai-wpoos-chat', $output );
 	}
 
 	/**
@@ -201,7 +201,7 @@ class Test_Block_Render_Non_Block_Context extends WP_UnitTestCase {
 
 		// Should still produce valid output.
 		$this->assertNotEmpty( $output );
-		$this->assertStringContainsString( 'wp-block-wp-mcp-ai-assistant-selector', $output );
+		$this->assertStringContainsString( 'wp-block-mcp-ai-wpoos-assistant-selector', $output );
 		$this->assertStringContainsString( 'data-block-id=', $output );
 	}
 

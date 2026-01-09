@@ -1,8 +1,10 @@
 # SLA-based Prioritization with Little's Law
 
-**Last Updated:** January 2026  
-**Version:** 1.1.0  
+**Last Updated:** January 6, 2026  
+**Version:** 1.2.0  
 **Status:** Implemented
+
+> **🆕 v1.2.0 Enhancement:** SLA Manager now includes [comprehensive compliance tracking and analytics](../features/LITTLES_LAW_INTEGRATION.md#3-sla-manager-integration) with percentile calculations and dashboard aggregation.
 
 ## Overview
 

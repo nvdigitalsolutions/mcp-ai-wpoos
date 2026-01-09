@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Check user permissions.
 if ( ! current_user_can( 'edit_posts' ) ) {
-	echo '<p class="wp-block-wp-mcp-ai-tools-grid__notice">' . esc_html__( 'You do not have permission to view tools.', 'mcp-ai-wpoos' ) . '</p>';
+	echo '<p class="wp-block-mcp-ai-wpoos-tools-grid__notice">' . esc_html__( 'You do not have permission to view tools.', 'mcp-ai-wpoos' ) . '</p>';
 	return;
 }
 
@@ -99,7 +99,7 @@ if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 $unique_id = wp_unique_id( 'wp-mcp-ai-tools-grid-' );
 
 if ( empty( $groups ) ) {
-	echo '<p class="wp-block-wp-mcp-ai-tools-grid__notice">' . esc_html__( 'No tools are currently registered.', 'mcp-ai-wpoos' ) . '</p>';
+	echo '<p class="wp-block-mcp-ai-wpoos-tools-grid__notice">' . esc_html__( 'No tools are currently registered.', 'mcp-ai-wpoos' ) . '</p>';
 	return;
 }
 
@@ -108,7 +108,7 @@ if ( empty( $groups ) ) {
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
-			'class'         => 'wp-block-wp-mcp-ai-tools-grid',
+			'class' => 'wp-block-mcp-ai-wpoos-tools-grid',
 			'data-block-id' => $unique_id,
 		)
 	);
@@ -116,18 +116,18 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	// Non-block context fallback (e.g., direct include in admin pages).
 	$wrapper_attributes = sprintf(
 		'class="%s" data-block-id="%s"',
-		esc_attr( 'wp-block-wp-mcp-ai-tools-grid' ),
+		esc_attr( 'wp-block-mcp-ai-wpoos-tools-grid' ),
 		esc_attr( $unique_id )
 	);
 }
 ?>
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 	<?php if ( $title ) : ?>
-		<h3 class="wp-block-wp-mcp-ai-tools-grid__title"><?php echo esc_html( $title ); ?></h3>
+		<h3 class="wp-block-mcp-ai-wpoos-tools-grid__title"><?php echo esc_html( $title ); ?></h3>
 	<?php endif; ?>
 
 	<?php if ( $description ) : ?>
-		<p class="wp-block-wp-mcp-ai-tools-grid__description"><?php echo esc_html( $description ); ?></p>
+		<p class="wp-block-mcp-ai-wpoos-tools-grid__description"><?php echo esc_html( $description ); ?></p>
 	<?php endif; ?>
 
 	<?php if ( $show_actions ) : ?>
@@ -145,15 +145,15 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 			WP_MCP_AI_Tool_Presets_Helper::render_presets(
 				array(
 					'available_tools'   => $available_tools,
-					'container_class'   => 'wp-block-wp-mcp-ai-tools-grid__presets',
+					'container_class'   => 'wp-block-mcp-ai-wpoos-tools-grid__presets',
 					'checkbox_selector' => '.wp-mcp-ai-tools-grid__checkbox',
 				)
 			);
 		}
 		?>
 
-		<div class="wp-block-wp-mcp-ai-tools-grid__filter-bar">
-			<label for="<?php echo esc_attr( $unique_id . '-search' ); ?>" class="wp-block-wp-mcp-ai-tools-grid__filter-label">
+		<div class="wp-block-mcp-ai-wpoos-tools-grid__filter-bar">
+			<label for="<?php echo esc_attr( $unique_id . '-search' ); ?>" class="wp-block-mcp-ai-wpoos-tools-grid__filter-label">
 				<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
 			</label>
 			<input 
@@ -163,7 +163,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 				placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
 				aria-label="<?php esc_attr_e( 'Search tools', 'mcp-ai-wpoos' ); ?>"
 			>
-			<label for="<?php echo esc_attr( $unique_id . '-group' ); ?>" class="wp-block-wp-mcp-ai-tools-grid__filter-label">
+			<label for="<?php echo esc_attr( $unique_id . '-group' ); ?>" class="wp-block-mcp-ai-wpoos-tools-grid__filter-label">
 				<?php esc_html_e( 'Category:', 'mcp-ai-wpoos' ); ?>
 			</label>
 			<select id="<?php echo esc_attr( $unique_id . '-group' ); ?>" class="wp-mcp-ai-tools-grid__group-select" aria-label="<?php esc_attr_e( 'Filter by group', 'mcp-ai-wpoos' ); ?>">
@@ -176,7 +176,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 				<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
 			</button>
 		</div>
-		<div class="wp-block-wp-mcp-ai-tools-grid__actions">
+		<div class="wp-block-mcp-ai-wpoos-tools-grid__actions">
 			<button type="button" class="button wp-mcp-ai-tools-grid__select-all">
 				<?php esc_html_e( 'Select All', 'mcp-ai-wpoos' ); ?>
 			</button>
@@ -193,27 +193,27 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 		</div>
 	<?php endif; ?>
 
-	<div class="wp-block-wp-mcp-ai-tools-grid__groups">
+	<div class="wp-block-mcp-ai-wpoos-tools-grid__groups">
 		<?php foreach ( $groups as $group ) : ?>
 			<?php $open_attr = $start_collapsed ? '' : ' open'; ?>
-			<details class="wp-block-wp-mcp-ai-tools-grid__group"<?php echo esc_attr( $open_attr ); ?>>
+			<details class="wp-block-mcp-ai-wpoos-tools-grid__group"<?php echo esc_attr( $open_attr ); ?>>
 				<summary>
-					<span class="wp-block-wp-mcp-ai-tools-grid__group-title"><?php echo esc_html( $group['label'] ); ?></span>
-					<span class="wp-block-wp-mcp-ai-tools-grid__group-count">
+					<span class="wp-block-mcp-ai-wpoos-tools-grid__group-title"><?php echo esc_html( $group['label'] ); ?></span>
+					<span class="wp-block-mcp-ai-wpoos-tools-grid__group-count">
 						<span class="wp-mcp-ai-tools-grid__group-selected">0</span> / <?php echo esc_html( count( $group['tools'] ) ); ?>
 					</span>
 				</summary>
-				<ul class="wp-block-wp-mcp-ai-tools-grid__list">
+				<ul class="wp-block-mcp-ai-wpoos-tools-grid__list">
 					<?php foreach ( $group['tools'] as $tool ) : ?>
 						<?php
 						$is_selected = in_array( $tool['slug'], $selected_tools, true );
-						$item_class  = 'wp-block-wp-mcp-ai-tools-grid__item';
+						$item_class  = 'wp-block-mcp-ai-wpoos-tools-grid__item';
 						if ( $is_selected ) {
-							$item_class .= ' wp-block-wp-mcp-ai-tools-grid__item--selected';
+							$item_class .= ' wp-block-mcp-ai-wpoos-tools-grid__item--selected';
 						}
 						?>
 						<li class="<?php echo esc_attr( $item_class ); ?>" data-tool-slug="<?php echo esc_attr( $tool['slug'] ); ?>">
-							<div class="wp-block-wp-mcp-ai-tools-grid__item-header">
+							<div class="wp-block-mcp-ai-wpoos-tools-grid__item-header">
 								<input 
 									type="checkbox" 
 									class="wp-mcp-ai-tools-grid__checkbox"
@@ -222,11 +222,11 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 									<?php checked( $is_selected ); ?>
 								>
 								<label for="<?php echo esc_attr( $unique_id . '-' . $tool['slug'] ); ?>">
-									<span class="wp-block-wp-mcp-ai-tools-grid__item-name"><?php echo esc_html( $tool['name'] ); ?></span>
+									<span class="wp-block-mcp-ai-wpoos-tools-grid__item-name"><?php echo esc_html( $tool['name'] ); ?></span>
 								</label>
 							</div>
 							<?php if ( $show_descriptions && ! empty( $tool['description'] ) ) : ?>
-								<p class="wp-block-wp-mcp-ai-tools-grid__item-description"><?php echo esc_html( $tool['description'] ); ?></p>
+								<p class="wp-block-mcp-ai-wpoos-tools-grid__item-description"><?php echo esc_html( $tool['description'] ); ?></p>
 							<?php endif; ?>
 						</li>
 					<?php endforeach; ?>

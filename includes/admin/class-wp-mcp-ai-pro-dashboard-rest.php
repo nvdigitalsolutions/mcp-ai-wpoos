@@ -75,14 +75,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					'callback'            => array( $this, 'generate_report' ),
 					'permission_callback' => array( $this, 'check_pro_permission' ),
 					'args'                => array(
-						'type'   => array(
+						'type'  => array(
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
-							'validate_callback' => function( $param ) {
+							'validate_callback' => function ( $param ) {
 								return in_array( $param, array( 'pdf', 'docx', 'excel', 'html' ), true );
 							},
 						),
-						'scope'  => array(
+						'scope' => array(
 							'default'           => 'full',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
@@ -110,7 +110,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					'callback'            => array( $this, 'get_security_events' ),
 					'permission_callback' => array( $this, 'check_permission' ),
 					'args'                => array(
-						'limit'  => array(
+						'limit' => array(
 							'default'           => 10,
 							'sanitize_callback' => 'absint',
 						),
@@ -223,6 +223,73 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					),
 				)
 			);
+
+			// Update chart data endpoints.
+			register_rest_route(
+				self::NAMESPACE,
+				'/chart-data/risks',
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => array( $this, 'get_risk_chart_data' ),
+						'permission_callback' => array( $this, 'check_permission' ),
+					),
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'update_risk_chart_data' ),
+						'permission_callback' => array( $this, 'check_pro_permission' ),
+						'args'                => array(
+							'critical' => array(
+								'required'          => true,
+								'sanitize_callback' => 'absint',
+							),
+							'high'     => array(
+								'required'          => true,
+								'sanitize_callback' => 'absint',
+							),
+							'medium'   => array(
+								'required'          => true,
+								'sanitize_callback' => 'absint',
+							),
+							'low'      => array(
+								'required'          => true,
+								'sanitize_callback' => 'absint',
+							),
+						),
+					),
+				)
+			);
+
+			register_rest_route(
+				self::NAMESPACE,
+				'/chart-data/metrics',
+				array(
+					array(
+						'methods'             => 'GET',
+						'callback'            => array( $this, 'get_metrics_chart_data' ),
+						'permission_callback' => array( $this, 'check_permission' ),
+					),
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'update_metrics_chart_data' ),
+						'permission_callback' => array( $this, 'check_pro_permission' ),
+						'args'                => array(
+							'incidents'             => array(
+								'required'          => true,
+								'validate_callback' => function ( $param ) {
+									return is_array( $param ) && count( $param ) === 6;
+								},
+							),
+							'vulnerabilities_fixed' => array(
+								'required'          => true,
+								'validate_callback' => function ( $param ) {
+									return is_array( $param ) && count( $param ) === 6;
+								},
+							),
+						),
+					),
+				)
+			);
 		}
 
 		/**
@@ -270,65 +337,52 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		/**
 		 * Get compliance status.
 		 *
-		 * @return WP_REST_Response Response object.
+		 * @return WP_REST_Response|WP_Error Response object or error.
 		 */
-/**
- * Get compliance status.
- *
- * @return WP_REST_Response|WP_Error Response object or error.
- */
-public function get_compliance_status() {
-	// Get actual controls data from Statement of Applicability.
-	$controls = $this->get_iso27001_controls();
-	
-	// Check if controls were loaded successfully.
-	if ( empty( $controls ) ) {
-		return new WP_Error(
-			'soa_not_found',
-			__( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ),
-			array( 'status' => 500 )
-		);
-	}
-	
-	$stats = $this->calculate_controls_stats( $controls );
+		public function get_compliance_status() {
+			// Get actual controls data from Statement of Applicability.
+			$controls = $this->get_iso27001_controls();
+			
+			// Check if controls were loaded successfully.
+			if ( empty( $controls ) ) {
+				return new WP_Error(
+					'soa_not_found',
+					__( 'Statement of Applicability file not found or could not be parsed. Please ensure the file exists at docs/compliance/iso27001/Statement-of-Applicability.md', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+			
+			$stats = $this->calculate_controls_stats( $controls );
 
-	// Calculate overall percentage.
-	$total_applicable = $stats['total'] - $stats['not_applicable'];
-	$percentage       = $total_applicable > 0 ? round( ( $stats['implemented'] / $total_applicable ) * 100 ) : 0;
+			// Calculate overall percentage.
+			$total_applicable = $stats['total'] - $stats['not_applicable'];
+			$percentage       = $total_applicable > 0 ? round( ( $stats['implemented'] / $total_applicable ) * 100 ) : 0;
 
-	$status = array(
-		'iso27001'     => array(
-			'status'      => get_option( 'wp_mcp_ai_iso27001_certified', false ) ? 'certified' : 'compliant',
-			'implemented' => $stats['implemented'],
-			'partial'     => $stats['partial'],
-			'planned'     => $stats['planned'],
-			'na'          => $stats['not_applicable'],
-			'total'       => $stats['total'],
-			'percentage'  => $percentage,
-			'cert_date'   => get_option( 'wp_mcp_ai_iso27001_cert_date', '' ),
-		),
-		'controls'     => array(
-'implemented'    => $stats['implemented'],
-'partial'        => $stats['partial'],
-'planned'        => $stats['planned'],
-'not_applicable' => $stats['not_applicable'],
-'total'          => $stats['total'],
-),
-'metrics'      => array(
-'incidents'             => array( 5, 3, 2, 4, 1, 2 ),
-'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
-),
-'risks'        => array(
-'critical' => 0,
-'high'     => 3,
-'medium'   => 12,
-'low'      => 8,
-),
-'last_updated' => current_time( 'mysql' ),
-);
+			$status = array(
+				'iso27001'     => array(
+					'status'      => get_option( 'wp_mcp_ai_iso27001_certified', false ) ? 'certified' : 'compliant',
+					'implemented' => $stats['implemented'],
+					'partial'     => $stats['partial'],
+					'planned'     => $stats['planned'],
+					'na'          => $stats['not_applicable'],
+					'total'       => $stats['total'],
+					'percentage'  => $percentage,
+					'cert_date'   => get_option( 'wp_mcp_ai_iso27001_cert_date', '' ),
+				),
+				'controls'     => array(
+					'implemented'    => $stats['implemented'],
+					'partial'        => $stats['partial'],
+					'planned'        => $stats['planned'],
+					'not_applicable' => $stats['not_applicable'],
+					'total'          => $stats['total'],
+				),
+				'metrics'      => $this->get_metrics_data(),
+				'risks'        => $this->get_risk_data(),
+				'last_updated' => current_time( 'mysql' ),
+			);
 
-return rest_ensure_response( $status );
-}
+			return rest_ensure_response( $status );
+		}
 
 
 		/**
@@ -902,6 +956,173 @@ return rest_ensure_response( $status );
 			}
 
 			return $stats;
+		}
+
+		/**
+		 * Get risk chart data.
+		 *
+		 * @return WP_REST_Response Response object.
+		 */
+		public function get_risk_chart_data() {
+			$risk_data = $this->get_risk_data();
+			
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'data'    => $risk_data,
+				)
+			);
+		}
+
+		/**
+		 * Update risk chart data.
+		 *
+		 * @param WP_REST_Request $request Request object.
+		 * @return WP_REST_Response|WP_Error Response object or error.
+		 */
+		public function update_risk_chart_data( $request ) {
+			$risk_data = array(
+				'critical' => $request->get_param( 'critical' ),
+				'high'     => $request->get_param( 'high' ),
+				'medium'   => $request->get_param( 'medium' ),
+				'low'      => $request->get_param( 'low' ),
+			);
+
+			$updated = update_option( 'wp_mcp_ai_risk_data', $risk_data );
+
+			if ( ! $updated ) {
+				return new WP_Error(
+					'update_failed',
+					__( 'Failed to update risk data.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'message' => __( 'Risk data updated successfully.', 'mcp-ai-wpoos' ),
+					'data'    => $risk_data,
+				)
+			);
+		}
+
+		/**
+		 * Get metrics chart data.
+		 *
+		 * @return WP_REST_Response Response object.
+		 */
+		public function get_metrics_chart_data() {
+			$metrics_data = $this->get_metrics_data();
+			
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'data'    => $metrics_data,
+				)
+			);
+		}
+
+		/**
+		 * Update metrics chart data.
+		 *
+		 * @param WP_REST_Request $request Request object.
+		 * @return WP_REST_Response|WP_Error Response object or error.
+		 */
+		public function update_metrics_chart_data( $request ) {
+			$incidents             = $request->get_param( 'incidents' );
+			$vulnerabilities_fixed = $request->get_param( 'vulnerabilities_fixed' );
+
+			// Sanitize array values.
+			$incidents             = array_map( 'absint', $incidents );
+			$vulnerabilities_fixed = array_map( 'absint', $vulnerabilities_fixed );
+
+			$metrics_data = array(
+				'incidents'             => $incidents,
+				'vulnerabilities_fixed' => $vulnerabilities_fixed,
+			);
+
+			$updated = update_option( 'wp_mcp_ai_metrics_data', $metrics_data );
+
+			if ( ! $updated ) {
+				return new WP_Error(
+					'update_failed',
+					__( 'Failed to update metrics data.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'success' => true,
+					'message' => __( 'Metrics data updated successfully.', 'mcp-ai-wpoos' ),
+					'data'    => $metrics_data,
+				)
+			);
+		}
+
+		/**
+		 * Get risk data for charts.
+		 *
+		 * Returns risk distribution by severity level.
+		 * Data is sourced from WordPress options or defaults to sample data.
+		 *
+		 * @return array Risk counts by severity.
+		 */
+		private function get_risk_data() {
+			// Try to get from stored option first.
+			$stored_risks = get_option( 'wp_mcp_ai_risk_data', false );
+			
+			if ( false !== $stored_risks && is_array( $stored_risks ) ) {
+				return wp_parse_args(
+					$stored_risks,
+					array(
+						'critical' => 0,
+						'high'     => 0,
+						'medium'   => 0,
+						'low'      => 0,
+					)
+				);
+			}
+
+			// Fallback to sample/default data.
+			// These values can be updated via Settings or Pro Dashboard features.
+			return array(
+				'critical' => 0,
+				'high'     => 3,
+				'medium'   => 12,
+				'low'      => 8,
+			);
+		}
+
+		/**
+		 * Get metrics data for charts.
+		 *
+		 * Returns security metrics trends over the last 6 months.
+		 * Data is sourced from WordPress options or defaults to sample data.
+		 *
+		 * @return array Metrics data with incidents and vulnerabilities fixed.
+		 */
+		private function get_metrics_data() {
+			// Try to get from stored option first.
+			$stored_metrics = get_option( 'wp_mcp_ai_metrics_data', false );
+			
+			if ( false !== $stored_metrics && is_array( $stored_metrics ) ) {
+				return wp_parse_args(
+					$stored_metrics,
+					array(
+						'incidents'             => array( 0, 0, 0, 0, 0, 0 ),
+						'vulnerabilities_fixed' => array( 0, 0, 0, 0, 0, 0 ),
+					)
+				);
+			}
+
+			// Fallback to sample/default data for the last 6 months.
+			// These values can be updated via Settings or Pro Dashboard features.
+			return array(
+				'incidents'             => array( 5, 3, 2, 4, 1, 2 ),
+				'vulnerabilities_fixed' => array( 8, 12, 10, 15, 14, 12 ),
+			);
 		}
 	}
 }

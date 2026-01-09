@@ -35,6 +35,15 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 	}
 
 	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md';
+	}
+
+	/**
 	 * Render the metabox content.
 	 *
 	 * @param WP_Post $post The post object.
@@ -383,6 +392,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 			}
 		</style>
 		<?php
+		$this->render_documentation_link();
 	}
 
 	/**

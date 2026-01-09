@@ -378,4 +378,234 @@ class WP_MCP_AI_SLA_Manager {
 
 		return $recommendations;
 	}
+
+	/**
+	 * Track SLA compliance for a completed job.
+	 *
+	 * Stores metrics for later analysis and reporting.
+	 *
+	 * @param string $job_id        Job identifier.
+	 * @param string $tier          SLA tier.
+	 * @param float  $actual_time   Actual completion time (seconds).
+	 * @param float  $target_time   SLA target time (seconds).
+	 * @param bool   $success       Whether job completed successfully.
+	 */
+	public static function track_sla_compliance( $job_id, $tier, $actual_time, $target_time, $success ) {
+		$compliance_data = get_option( 'wp_mcp_ai_sla_compliance_log', array() );
+
+		// Keep only last 1000 entries.
+		if ( count( $compliance_data ) >= 1000 ) {
+			$compliance_data = array_slice( $compliance_data, -999 );
+		}
+
+		$compliance_data[] = array(
+			'job_id'      => sanitize_text_field( $job_id ),
+			'tier'        => sanitize_key( $tier ),
+			'actual_time' => floatval( $actual_time ),
+			'target_time' => floatval( $target_time ),
+			'success'     => (bool) $success,
+			'compliant'   => $actual_time <= $target_time,
+			'timestamp'   => current_time( 'mysql', true ),
+		);
+
+		update_option( 'wp_mcp_ai_sla_compliance_log', $compliance_data, false );
+	}
+
+	/**
+	 * Get SLA compliance statistics.
+	 *
+	 * @param string $tier Optional tier to filter by.
+	 * @param int    $hours Number of hours to look back (default 24).
+	 * @return array Compliance statistics.
+	 */
+	public static function get_sla_statistics( $tier = '', $hours = 24 ) {
+		$compliance_data = get_option( 'wp_mcp_ai_sla_compliance_log', array() );
+
+		if ( empty( $compliance_data ) ) {
+			return array(
+				'total_jobs'        => 0,
+				'compliant_jobs'    => 0,
+				'violated_jobs'     => 0,
+				'compliance_rate'   => 0,
+				'avg_actual_time'   => 0,
+				'avg_target_time'   => 0,
+				'p50_actual_time'   => 0,
+				'p95_actual_time'   => 0,
+				'p99_actual_time'   => 0,
+			);
+		}
+
+		// Filter by time window.
+		$cutoff_time = strtotime( "-{$hours} hours" );
+		$filtered    = array();
+
+		foreach ( $compliance_data as $entry ) {
+			$entry_time = isset( $entry['timestamp'] ) ? strtotime( $entry['timestamp'] ) : 0;
+
+			if ( $entry_time < $cutoff_time ) {
+				continue;
+			}
+
+			// Filter by tier if specified.
+			if ( ! empty( $tier ) && isset( $entry['tier'] ) && $entry['tier'] !== $tier ) {
+				continue;
+			}
+
+			$filtered[] = $entry;
+		}
+
+		if ( empty( $filtered ) ) {
+			return array(
+				'total_jobs'        => 0,
+				'compliant_jobs'    => 0,
+				'violated_jobs'     => 0,
+				'compliance_rate'   => 0,
+				'avg_actual_time'   => 0,
+				'avg_target_time'   => 0,
+				'p50_actual_time'   => 0,
+				'p95_actual_time'   => 0,
+				'p99_actual_time'   => 0,
+			);
+		}
+
+		// Calculate statistics.
+		$total_jobs     = count( $filtered );
+		$compliant_jobs = 0;
+		$violated_jobs  = 0;
+		$total_actual   = 0;
+		$total_target   = 0;
+		$actual_times   = array();
+
+		foreach ( $filtered as $entry ) {
+			if ( isset( $entry['compliant'] ) && $entry['compliant'] ) {
+				++$compliant_jobs;
+			} else {
+				++$violated_jobs;
+			}
+
+			$actual = isset( $entry['actual_time'] ) ? floatval( $entry['actual_time'] ) : 0;
+			$target = isset( $entry['target_time'] ) ? floatval( $entry['target_time'] ) : 0;
+
+			$total_actual   += $actual;
+			$total_target   += $target;
+			$actual_times[] = $actual;
+		}
+
+		// Sort for percentile calculations.
+		sort( $actual_times );
+
+		return array(
+			'total_jobs'      => $total_jobs,
+			'compliant_jobs'  => $compliant_jobs,
+			'violated_jobs'   => $violated_jobs,
+			'compliance_rate' => $total_jobs > 0 ? ( $compliant_jobs / $total_jobs * 100 ) : 0,
+			'avg_actual_time' => $total_jobs > 0 ? ( $total_actual / $total_jobs ) : 0,
+			'avg_target_time' => $total_jobs > 0 ? ( $total_target / $total_jobs ) : 0,
+			'p50_actual_time' => self::calculate_percentile( $actual_times, 50 ),
+			'p95_actual_time' => self::calculate_percentile( $actual_times, 95 ),
+			'p99_actual_time' => self::calculate_percentile( $actual_times, 99 ),
+		);
+	}
+
+	/**
+	 * Calculate percentile value from sorted array.
+	 *
+	 * @param array $sorted_values Sorted array of values.
+	 * @param float $percentile    Percentile to calculate (0-100).
+	 * @return float Percentile value.
+	 */
+	protected static function calculate_percentile( $sorted_values, $percentile ) {
+		if ( empty( $sorted_values ) ) {
+			return 0;
+		}
+
+		$count = count( $sorted_values );
+		$index = ( $percentile / 100 ) * ( $count - 1 );
+
+		// Linear interpolation between adjacent values.
+		$lower = floor( $index );
+		$upper = ceil( $index );
+
+		if ( $lower === $upper ) {
+			return $sorted_values[ $lower ];
+		}
+
+		$fraction = $index - $lower;
+		return $sorted_values[ $lower ] + ( $fraction * ( $sorted_values[ $upper ] - $sorted_values[ $lower ] ) );
+	}
+
+	/**
+	 * Get comprehensive SLA dashboard data.
+	 *
+	 * @return array Dashboard data including metrics for all tiers.
+	 */
+	public static function get_dashboard_data() {
+		$tiers = self::get_valid_tiers();
+		$data  = array(
+			'tiers'           => array(),
+			'overall'         => array(),
+			'recommendations' => self::get_tuning_recommendations(),
+		);
+
+		// Get statistics for each tier.
+		$total_compliant = 0;
+		$total_violated  = 0;
+		$total_jobs      = 0;
+
+		foreach ( $tiers as $tier ) {
+			$tier_stats = self::get_sla_statistics( $tier, 24 );
+			$tier_info  = self::get_tier_info( $tier );
+			$metrics    = self::analyze_queue_metrics( $tier );
+
+			$data['tiers'][ $tier ] = array_merge(
+				$tier_info,
+				$tier_stats,
+				array(
+					'queue_metrics' => $metrics,
+				)
+			);
+
+			$total_compliant += $tier_stats['compliant_jobs'];
+			$total_violated  += $tier_stats['violated_jobs'];
+			$total_jobs      += $tier_stats['total_jobs'];
+		}
+
+		// Overall statistics.
+		$data['overall'] = array(
+			'total_jobs'      => $total_jobs,
+			'compliant_jobs'  => $total_compliant,
+			'violated_jobs'   => $total_violated,
+			'compliance_rate' => $total_jobs > 0 ? ( $total_compliant / $total_jobs * 100 ) : 0,
+			'health_status'   => self::get_overall_health_status( $total_compliant, $total_violated ),
+		);
+
+		return $data;
+	}
+
+	/**
+	 * Get overall health status based on compliance.
+	 *
+	 * @param int $compliant_count Number of compliant jobs.
+	 * @param int $violated_count  Number of violated jobs.
+	 * @return string Health status (excellent, good, warning, critical).
+	 */
+	protected static function get_overall_health_status( $compliant_count, $violated_count ) {
+		$total = $compliant_count + $violated_count;
+
+		if ( 0 === $total ) {
+			return 'unknown';
+		}
+
+		$compliance_rate = ( $compliant_count / $total ) * 100;
+
+		if ( $compliance_rate >= 99 ) {
+			return 'excellent';
+		} elseif ( $compliance_rate >= 95 ) {
+			return 'good';
+		} elseif ( $compliance_rate >= 90 ) {
+			return 'warning';
+		} else {
+			return 'critical';
+		}
+	}
 }

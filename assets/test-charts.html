@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Dashboard Chart Test</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="../js/vendor/chart.min.js"></script>
+    <script src="../js/pro-dashboard.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f0f1;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.pass {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .status.fail {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        h1 {
+            color: #23282d;
+        }
+        h2 {
+            color: #0073aa;
+            border-bottom: 2px solid #0073aa;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Pro Dashboard Chart Test Page</h1>
+    
+    <div class="test-container">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Console Output</h2>
+        <pre id="console-output"></pre>
+    </div>
+
+    <div class="test-container">
+        <h2>Sample Chart</h2>
+        <div class="chart-container">
+            <canvas id="testChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Capture console output
+        let consoleOutput = [];
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            consoleOutput.push('[LOG] ' + args.join(' '));
+            originalLog.apply(console, args);
+            updateConsoleOutput();
+        };
+        
+        console.error = function(...args) {
+            consoleOutput.push('[ERROR] ' + args.join(' '));
+            originalError.apply(console, args);
+            updateConsoleOutput();
+        };
+
+        function updateConsoleOutput() {
+            document.getElementById('console-output').textContent = consoleOutput.join('\n');
+        }
+
+        function addTestResult(name, pass, message) {
+            const resultsDiv = document.getElementById('test-results');
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'status ' + (pass ? 'pass' : 'fail');
+            statusDiv.innerHTML = '<strong>' + (pass ? '✓' : '✗') + ' ' + name + ':</strong> ' + message;
+            resultsDiv.appendChild(statusDiv);
+        }
+
+        // Run tests
+        console.log('=== Starting Pro Dashboard Chart Tests ===');
+
+        // Test 1: jQuery loaded
+        if (typeof jQuery !== 'undefined') {
+            addTestResult('jQuery', true, 'Loaded (version ' + jQuery.fn.jquery + ')');
+            console.log('jQuery loaded successfully');
+        } else {
+            addTestResult('jQuery', false, 'Not loaded');
+            console.error('jQuery not loaded');
+        }
+
+        // Test 2: Chart.js loaded
+        if (typeof Chart !== 'undefined') {
+            addTestResult('Chart.js', true, 'Loaded (version ' + Chart.version + ')');
+            console.log('Chart.js loaded successfully');
+        } else {
+            addTestResult('Chart.js', false, 'Not loaded');
+            console.error('Chart.js not loaded');
+        }
+
+        // Test 3: Try to create a simple chart
+        if (typeof Chart !== 'undefined') {
+            try {
+                const ctx = document.getElementById('testChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Implemented', 'Partial', 'Planned', 'N/A'],
+                        datasets: [{
+                            data: [83, 0, 0, 10],
+                            backgroundColor: ['#4caf50', '#ff9800', '#2196f3', '#9e9e9e']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                addTestResult('Chart Creation', true, 'Sample chart created successfully');
+                console.log('Sample chart created successfully');
+            } catch (error) {
+                addTestResult('Chart Creation', false, 'Error: ' + error.message);
+                console.error('Chart creation failed:', error);
+            }
+        } else {
+            addTestResult('Chart Creation', false, 'Skipped (Chart.js not loaded)');
+        }
+
+        // Test 4: Mock wpMcpAiProDashboard data
+        window.wpMcpAiProDashboard = {
+            ajaxUrl: '/wp-admin/admin-ajax.php',
+            restUrl: '/wp-json/',
+            restNonce: 'test-nonce',
+            nonce: 'test-nonce',
+            isProActive: true,
+            chartData: {
+                controls: {
+                    implemented: 83,
+                    partial: 0,
+                    planned: 0,
+                    not_applicable: 10,
+                    total: 93
+                },
+                risks: {
+                    critical: 0,
+                    high: 3,
+                    medium: 12,
+                    low: 8
+                },
+                metrics: {
+                    incidents: [5, 3, 2, 4, 1, 2],
+                    vulnerabilities_fixed: [8, 12, 10, 15, 14, 12]
+                }
+            },
+            debug: true
+        };
+
+        if (typeof window.wpMcpAiProDashboard !== 'undefined') {
+            addTestResult('Mock Data', true, 'Test data structure created');
+            console.log('Mock wpMcpAiProDashboard data:', window.wpMcpAiProDashboard);
+        }
+
+        console.log('=== Tests Complete ===');
+    </script>
+</body>
+</html>

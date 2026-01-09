@@ -1,7 +1,9 @@
 # Mesh Compute Routing Guide
 
-**Version:** 1.0.0  
-**Last Updated:** November 6, 2025
+**Version:** 1.2.0  
+**Last Updated:** January 6, 2026
+
+> **🆕 v1.2.0 Enhancement:** Mesh routing now includes [Little's Law-based capacity prediction](../LITTLES_LAW_INTEGRATION.md#1-mesh-router-integration) for smarter peer selection and load balancing.
 
 ## Overview
 

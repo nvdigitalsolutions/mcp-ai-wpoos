@@ -64,6 +64,72 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test cost calculation for Hugging Face models.
+	 */
+	public function test_calculate_cost_huggingface() {
+		// Llama 3.3 70B: $1.00 per 1M tokens (input/output).
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'huggingface', 'meta-llama/Llama-3.3-70B-Instruct', 1000000, 500000 );
+
+		// Expected: (1M / 1M) * 1.00 + (500K / 1M) * 1.00 = 1.00 + 0.50 = $1.50.
+		$this->assertEquals( 1.50, $cost, 'Hugging Face Llama 3.3 70B cost calculation incorrect' );
+
+		// Phi-3 Mini: $0.10 per 1M tokens (input/output).
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'huggingface', 'microsoft/Phi-3-mini-4k-instruct', 2000000, 1000000 );
+
+		// Expected: (2M / 1M) * 0.10 + (1M / 1M) * 0.10 = 0.20 + 0.10 = $0.30.
+		$this->assertEquals( 0.30, $cost, 'Hugging Face Phi-3 Mini cost calculation incorrect' );
+	}
+
+	/**
+	 * Test cost calculation for Hugging Face DeepSeek-V3.2.
+	 */
+	public function test_calculate_cost_huggingface_deepseek() {
+		// DeepSeek-V3.2: input $0.28/1M, output $0.42/1M.
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'huggingface', 'deepseek-ai/DeepSeek-V3.2', 50000, 23422 );
+
+		// Expected: (50000 / 1M) * 0.28 + (23422 / 1M) * 0.42 = 0.014 + 0.00983724 = $0.02383724.
+		$expected = ( 50000 / 1000000 ) * 0.28 + ( 23422 / 1000000 ) * 0.42;
+		$this->assertEquals( $expected, $cost, 'Hugging Face DeepSeek-V3.2 cost calculation incorrect', 0.0001 );
+	}
+
+	/**
+	 * Test cost calculation for unknown Hugging Face model (default fallback).
+	 */
+	public function test_calculate_cost_huggingface_unknown_model() {
+		// Unknown model should use default pricing: $0.50 per 1M tokens (input/output).
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'huggingface', 'unknown-org/unknown-model', 1000000, 500000 );
+
+		// Expected: (1M / 1M) * 0.50 + (500K / 1M) * 0.50 = 0.50 + 0.25 = $0.75.
+		$this->assertEquals( 0.75, $cost, 'Hugging Face unknown model should use default pricing' );
+	}
+
+	/**
+	 * Test get_model_pricing for Hugging Face DeepSeek-V3.2.
+	 */
+	public function test_get_model_pricing_huggingface_deepseek() {
+		$pricing = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'huggingface', 'deepseek-ai/DeepSeek-V3.2' );
+
+		$this->assertIsArray( $pricing, 'Pricing should be an array' );
+		$this->assertArrayHasKey( 'input', $pricing, 'Pricing should have input key' );
+		$this->assertArrayHasKey( 'output', $pricing, 'Pricing should have output key' );
+		$this->assertEquals( 0.28, $pricing['input'], 'DeepSeek input pricing incorrect' );
+		$this->assertEquals( 0.42, $pricing['output'], 'DeepSeek output pricing incorrect' );
+	}
+
+	/**
+	 * Test get_model_pricing for unknown Hugging Face model (default fallback).
+	 */
+	public function test_get_model_pricing_huggingface_default() {
+		$pricing = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'huggingface', 'unknown-model' );
+
+		$this->assertIsArray( $pricing, 'Pricing should be an array for unknown model' );
+		$this->assertArrayHasKey( 'input', $pricing, 'Default pricing should have input key' );
+		$this->assertArrayHasKey( 'output', $pricing, 'Default pricing should have output key' );
+		$this->assertEquals( 0.50, $pricing['input'], 'Default input pricing incorrect' );
+		$this->assertEquals( 0.50, $pricing['output'], 'Default output pricing incorrect' );
+	}
+
+	/**
 	 * Test cost calculation for unknown provider.
 	 */
 	public function test_calculate_cost_unknown_provider() {
@@ -128,6 +194,7 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'anthropic', $providers, 'Should include Anthropic' );
 		$this->assertArrayHasKey( 'ollama', $providers, 'Should include Ollama' );
 		$this->assertArrayHasKey( 'lm_studio', $providers, 'Should include LM Studio' );
+		$this->assertArrayHasKey( 'huggingface', $providers, 'Should include Hugging Face' );
 	}
 
 	/**
