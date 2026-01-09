@@ -190,6 +190,30 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				);
 			}
 
+			// Prepare system messages array (will be prepended to messages).
+			$system_messages = array();
+
+			// Add system_prompt if provided (assistant knowledge and instructions).
+			if ( ! empty( $options['system_prompt'] ) ) {
+				$system_messages[] = array(
+					'role'    => 'system',
+					'content' => wp_kses_post( (string) $options['system_prompt'] ),
+				);
+			}
+
+			// Add memory documents if provided (assistant knowledge base).
+			if ( ! empty( $options['memory_documents'] ) && is_array( $options['memory_documents'] ) ) {
+				$memory_messages = $this->build_memory_messages_from_options( $options );
+				if ( ! empty( $memory_messages ) ) {
+					$system_messages = array_merge( $system_messages, $memory_messages );
+				}
+			}
+
+			// Prepend system messages to conversation messages.
+			if ( ! empty( $system_messages ) ) {
+				$messages = array_merge( $system_messages, $messages );
+			}
+
 			$payload = $this->build_payload( $messages, $options );
 
 			if ( is_wp_error( $payload ) ) {
@@ -577,6 +601,50 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			}
 
 			return $safe_payload;
+		}
+
+		/**
+		 * Build additional system messages from memory documents.
+		 *
+		 * @param array $options Chat request options containing memory_documents.
+		 * @return array Array of system messages for memory documents.
+		 */
+		protected function build_memory_messages_from_options( array $options ) {
+			if ( empty( $options['memory_documents'] ) || ! is_array( $options['memory_documents'] ) ) {
+				return array();
+			}
+
+			$messages = array();
+
+			foreach ( $options['memory_documents'] as $document ) {
+				if ( empty( $document['chunks'] ) || ! is_array( $document['chunks'] ) ) {
+					continue;
+				}
+
+				$title      = isset( $document['title'] ) && '' !== $document['title'] ? sanitize_text_field( $document['title'] ) : __( 'Document', 'mcp-ai-wpoos' );
+				$chunks     = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
+				$parts      = count( $chunks );
+				$part_index = 0;
+
+				foreach ( $chunks as $chunk ) {
+					++$part_index;
+
+					$label = $title;
+
+					if ( $parts > 1 ) {
+						/* translators: %1$s: document title, %2$d: chunk number. */
+						$label = sprintf( __( '%1$s (Part %2$d)', 'mcp-ai-wpoos' ), $title, $part_index );
+					}
+
+					$messages[] = array(
+						'role'    => 'system',
+						/* translators: %1$s: document title, %2$s: extracted text snippet. */
+						'content' => sprintf( __( 'Reference document "%1$s": %2$s', 'mcp-ai-wpoos' ), $label, wp_kses_post( $chunk ) ),
+					);
+				}
+			}
+
+			return $messages;
 		}
 	}
 }
