@@ -20,7 +20,7 @@ class Test_Cloudflare_Message_Normalization extends WP_UnitTestCase {
 	/**
 	 * Set up test environment.
 	 */
-	public function setUp(): void {
+	public function setUp() {
 		parent::setUp();
 
 		// Load the Cloudflare client class.

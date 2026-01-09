@@ -375,13 +375,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 						// Handle simple string segments.
 						if ( is_string( $segment ) ) {
 							$text_parts[] = $segment;
-						} elseif ( is_array( $segment ) ) {
+						} elseif ( is_array( $segment ) && isset( $segment['text'] ) ) {
 							// Handle content part objects with 'text' property.
-							if ( isset( $segment['text'] ) ) {
-								$text_parts[] = $segment['text'];
-							} elseif ( isset( $segment['type'] ) && 'text' === $segment['type'] && isset( $segment['text'] ) ) {
-								$text_parts[] = $segment['text'];
-							}
+							$text_parts[] = $segment['text'];
 						}
 					}
 
