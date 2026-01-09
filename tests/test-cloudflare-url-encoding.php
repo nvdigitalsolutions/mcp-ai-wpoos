@@ -89,6 +89,13 @@ class Test_Cloudflare_URL_Encoding extends WP_UnitTestCase {
 		);
 
 		foreach ( $model_ids as $model ) {
+			// Test that model ID matches expected format.
+			$this->assertMatchesRegularExpression(
+				'/^@[a-zA-Z0-9\/_.-]+$/',
+				$model,
+				"Model ID '{$model}' should match valid format"
+			);
+
 			$escaped_model = str_replace( array( '@', ' ' ), array( '%40', '%20' ), $model );
 
 			// All should have @ encoded.
@@ -99,6 +106,26 @@ class Test_Cloudflare_URL_Encoding extends WP_UnitTestCase {
 
 			// None should have encoded slashes.
 			$this->assertStringNotContainsString( '%2F', $escaped_model, "Model ID '{$model}' should not have encoded slashes" );
+		}
+	}
+
+	/**
+	 * Test invalid model ID formats are rejected.
+	 */
+	public function test_invalid_model_id_formats() {
+		$invalid_model_ids = array(
+			'cf/meta/llama',           // Missing @ prefix.
+			'@cf/meta/llama<script>',  // Contains script tag.
+			'@cf/meta/llama;rm -rf',   // Contains shell command.
+			'@cf/meta/llama&test=1',   // Contains query string.
+		);
+
+		foreach ( $invalid_model_ids as $model ) {
+			$this->assertDoesNotMatchRegularExpression(
+				'/^@[a-zA-Z0-9\/_.-]+$/',
+				$model,
+				"Invalid model ID '{$model}' should not match valid format"
+			);
 		}
 	}
 

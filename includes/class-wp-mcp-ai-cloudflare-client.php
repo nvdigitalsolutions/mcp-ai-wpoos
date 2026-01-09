@@ -198,7 +198,17 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 
 			// Cloudflare Workers AI expects model IDs like @cf/meta/llama-3.1-8b-instruct
 			// to be part of the URL path with forward slashes intact, not URL-encoded.
-			// Only escape special characters like @ and spaces, but preserve forward slashes.
+			// Validate model ID format and escape properly for URL path.
+			// Model IDs must start with @ and contain only alphanumeric, hyphens, dots, slashes, and underscores.
+			if ( ! preg_match( '/^@[a-zA-Z0-9\/_.-]+$/', $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_model_id',
+					__( 'Invalid Cloudflare model ID format.', 'mcp-ai-wpoos' ),
+					array( 'model' => $model )
+				);
+			}
+
+			// Only escape the @ symbol and spaces, preserve forward slashes for URL path.
 			$escaped_model = str_replace( array( '@', ' ' ), array( '%40', '%20' ), $model );
 
 			$url = sprintf(
@@ -250,9 +260,13 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 					// Cloudflare returns errors in an array with code and message.
 					foreach ( $decoded_body['errors'] as $error ) {
 						if ( isset( $error['message'] ) ) {
-							$error_message .= ' ' . $error['message'];
+							// Sanitize error message to prevent XSS.
+							$sanitized_message = sanitize_text_field( $error['message'] );
+							$error_message    .= ' ' . $sanitized_message;
 							if ( isset( $error['code'] ) ) {
-								$error_message .= ' (Code: ' . $error['code'] . ')';
+								// Ensure code is an integer.
+								$error_code     = absint( $error['code'] );
+								$error_message .= ' (Code: ' . $error_code . ')';
 							}
 							break; // Use the first error message.
 						}
