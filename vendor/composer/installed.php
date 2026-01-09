@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-cloudflare-worker-ai-error-again',
-        'version' => 'dev-copilot/fix-cloudflare-worker-ai-error-again',
-        'reference' => 'a407ecc2eadb35840df573de756ae43c8643208d',
+        'pretty_version' => 'dev-copilot/update-elementor-selector-widget',
+        'version' => 'dev-copilot/update-elementor-selector-widget',
+        'reference' => 'd74192ba6676f0e2230be317021a61563bfadfa3',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-cloudflare-worker-ai-error-again',
-            'version' => 'dev-copilot/fix-cloudflare-worker-ai-error-again',
-            'reference' => 'a407ecc2eadb35840df573de756ae43c8643208d',
+            'pretty_version' => 'dev-copilot/update-elementor-selector-widget',
+            'version' => 'dev-copilot/update-elementor-selector-widget',
+            'reference' => 'd74192ba6676f0e2230be317021a61563bfadfa3',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
