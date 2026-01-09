@@ -730,6 +730,9 @@ Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 | [gemini-api-enhancements.md](reference/api/gemini/gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
 | [send-group-email-usage.md](features/tools/communication/send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
 | [tool-image-download.md](guides/developer/tool-development/tool-image-download.md) | Image download tool specifics | Developers |
+| **[CRAWL4AI_SERVICE_IMPLEMENTATION.md](features/tools/crawl4ai/CRAWL4AI_SERVICE_IMPLEMENTATION.md)** ⭐ **NEW (Jan 2026)** | **Complete Crawl4AI remote service implementation** - Copy-paste ready Python/FastAPI code, Docker deployment, browser pool management (30KB) | Developers |
+| **[CRAWL4AI_SERVICE_REFERENCE.md](features/tools/crawl4ai/CRAWL4AI_SERVICE_REFERENCE.md)** ⭐ **NEW (Jan 2026)** | **Crawl4AI service API reference** - REST endpoints, deployment guides, integration examples, troubleshooting (32KB) | Developers/Admins |
+| [CRAWL4AI-JOB-TRACKING.md](features/tools/crawl4ai/CRAWL4AI-JOB-TRACKING.md) | Job tracking enhancement for Crawl4AI (all job types tracked) | Developers |
 
 ### Chat Features
 
