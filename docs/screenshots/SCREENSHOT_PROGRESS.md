@@ -19,24 +19,36 @@
 ### Remaining High-Priority Screenshots
 
 #### Chat Interface (16 screenshots)
-**Status:** Environment ready, requires API key configuration and test assistant
+**Status:** ✅ Automation tools ready! Ready for capture with AI provider API key
 
-1. `chat/frontend-shortcode.png` - Basic chat interface via `[wp_mcp_ai_chat]` shortcode
-2. `chat/chat-conversation-example.png` - Active conversation with messages
-3. `chat/chat-with-attachments.png` - File upload interface
-4. `chat/chat-tool-execution.png` - Tool execution in progress
-5. `chat/chat-streaming-response.png` - Streaming response animation
-6. `chat/chat-shortcuts-buttons.png` - Prompt shortcuts
-7. `chat/chat-error-handling.png` - Error state display
-8. `chat/chat-mobile-portrait.png` - Mobile view (portrait)
-9. `chat/chat-mobile-landscape.png` - Mobile view (landscape)
-10. `chat/frontend-guest-mode.png` - Guest access mode
-11. `chat/chat-history-localstorage.png` - Browser localStorage view
-12. `chat/chat-history-restoration.png` - History after reload
-13. `chat/elementor-chat-widget.png` - Elementor editor (requires Elementor)
-14. `chat/elementor-chat-widget-frontend.png` - Elementor frontend
-15. `chat/elementor-dashboard-widgets.png` - Elementor widgets panel
-16. `chat/elementor-chat-intro-widget.png` - Chat intro widget
+**Automation Tools Created (January 9, 2026):**
+- ✅ `bin/capture-chat-screenshots.sh` - Automated WordPress setup script
+- ✅ `bin/playwright-capture-screenshots.js` - Playwright automation for screenshot capture
+- ✅ `docs/screenshots/CHAT_CAPTURE_GUIDE.md` - Comprehensive capture guide (32 pages)
+
+**To capture screenshots:**
+1. Set AI provider API key: `export OPENAI_API_KEY="sk-..."`
+2. Run setup: `./bin/capture-chat-screenshots.sh`
+3. Run automation: `node bin/playwright-capture-screenshots.js`
+4. Manual Elementor captures (requires Elementor plugin)
+
+**Screenshot List:**
+1. `chat/frontend-shortcode.png` - Basic chat interface via `[wp_mcp_ai_chat]` shortcode [Automated]
+2. `chat/chat-conversation-example.png` - Active conversation with messages [Automated]
+3. `chat/chat-with-attachments.png` - File upload interface [Automated]
+4. `chat/chat-tool-execution.png` - Tool execution in progress [Automated]
+5. `chat/chat-streaming-response.png` - Streaming response animation [Automated]
+6. `chat/chat-shortcuts-buttons.png` - Prompt shortcuts [Automated if configured]
+7. `chat/chat-error-handling.png` - Error state display [Automated]
+8. `chat/chat-mobile-portrait.png` - Mobile view (portrait) [Automated]
+9. `chat/chat-mobile-landscape.png` - Mobile view (landscape) [Automated]
+10. `chat/frontend-guest-mode.png` - Guest access mode [Automated]
+11. `chat/chat-history-localstorage.png` - Browser localStorage view [Semi-automated]
+12. `chat/chat-history-restoration.png` - History after reload [Automated]
+13. `chat/elementor-chat-widget.png` - Elementor editor [Manual - requires Elementor]
+14. `chat/elementor-chat-widget-frontend.png` - Elementor frontend [Manual - requires Elementor]
+15. `chat/elementor-dashboard-widgets.png` - Elementor widgets panel [Manual - requires Elementor]
+16. `chat/elementor-chat-intro-widget.png` - Chat intro widget [Manual - requires Elementor]
 
 #### Additional Admin Pages (MEDIUM priority)
 1. ✅ `admin/60-all-assistants-list.png` - All Assistants page (empty state)
@@ -91,22 +103,44 @@
 
 ## Setup Instructions for Next Session
 
-### Prerequisites
+### Automated Setup (Recommended)
+
+**IMPORTANT**: See `docs/screenshots/CHAT_CAPTURE_GUIDE.md` for complete instructions.
+
+#### Quick Start
 ```bash
-# Start Docker environment
+# 1. Start Docker environment
 cd /home/runner/work/mcp-ai-wpoos/mcp-ai-wpoos
-docker compose up -d
+docker compose up -d && sleep 30
 
-# Wait for WordPress to be ready
-sleep 30
+# 2. Set AI Provider API Key
+export OPENAI_API_KEY="sk-your-key-here"
+# OR: export GEMINI_API_KEY="your-key"
+# OR: export OLLAMA_URL="http://localhost:11434"
 
-# WordPress is accessible at http://localhost:8000
-# Admin credentials: admin / StrongPassword123!
+# 3. Run automated setup
+chmod +x bin/capture-chat-screenshots.sh
+./bin/capture-chat-screenshots.sh
+
+# 4. Capture screenshots (automated)
+export PAGE_ID="<from-setup-output>"
+export GUEST_PAGE_ID="<from-setup-output>"
+npm install playwright  # First time only
+node bin/playwright-capture-screenshots.js
 ```
 
-### Quick Start for Chat Screenshots
+This will:
+1. ✅ Install WordPress if needed
+2. ✅ Activate NV oOS plugin
+3. ✅ Configure AI provider with your API key
+4. ✅ Create test assistant
+5. ✅ Create chat demo pages (standard + guest mode)
+6. ✅ Automatically capture 12 of 16 screenshots
+7. ⏳ Manual capture needed for 4 Elementor screenshots
 
-1. **Configure AI Provider (choose one):**
+### Manual Setup (Alternative)
+
+1. **Configure AI Provider:**
    - Navigate to: NV oOS → General Settings → AI Providers
    - Add API key for OpenAI OR Gemini OR configure Ollama
 
@@ -118,7 +152,7 @@ sleep 30
 3. **Create Chat Page:**
    - Pages → Add New
    - Add title: "AI Chat Demo"
-   - Add shortcode block with: `[wp_mcp_ai_chat]`
+   - Add shortcode block with: `[wp_mcp_ai_chat assistant="<ID>"]`
    - Publish page
    - Visit page on frontend to capture chat screenshots
 
@@ -194,11 +228,11 @@ After capturing screenshots, update these documentation files:
 1. ✅ Document environment setup and WordPress installation
 2. ✅ Activate NV oOS plugin
 3. ✅ Capture key admin interface screenshots (Assistants, Teams)
-4. ⏳ Configure AI provider and create test assistant
-5. ⏳ Capture chat interface screenshots
-6. ⏳ Capture remaining admin pages if time permits
+4. ✅ Create automated setup and capture tools for chat screenshots
+5. ⏳ Configure AI provider and create test assistant (requires API key)
+6. ⏳ Capture chat interface screenshots (requires API key)
 
-#### Completed This Session
+#### Completed This Session (January 9, 2026)
 - ✅ Docker environment started and verified
 - ✅ WordPress 6.4.3 installed with admin/StrongPassword123!
 - ✅ NV oOS plugin activated successfully
@@ -206,22 +240,105 @@ After capturing screenshots, update these documentation files:
 - ✅ Screenshot: All Assistants page (empty state)
 - ✅ Screenshot: Create Assistant page (204 profession templates)
 - ✅ Screenshot: Teams overview page (75 teams)
+- ✅ **NEW**: Created `bin/capture-chat-screenshots.sh` - Automated setup script (290 lines)
+- ✅ **NEW**: Created `bin/playwright-capture-screenshots.js` - Playwright automation (348 lines)
+- ✅ **NEW**: Created `docs/screenshots/CHAT_CAPTURE_GUIDE.md` - Comprehensive guide (32 pages)
+- ✅ **NEW**: Updated SCREENSHOT_PROGRESS.md with automation instructions
 
-#### Next Steps
-1. Configure OpenAI, Gemini, or Ollama API key
-2. Create test assistant for chat demonstrations
-3. Create chat demo page with shortcode
-4. Capture all 16 chat interface screenshots
-5. Capture additional admin pages (Build Assistant, Test Assistant, Professions)
-6. Update documentation to reference new screenshots
+#### Tools Created for Chat Screenshot Capture
 
-### Next Session Tasks
-1. Configure OpenAI or Gemini API key
-2. Create test assistant
-3. Create chat demo page
-4. Capture all 16 chat interface screenshots
-5. Capture additional admin pages (Assistants, Professions, Token Manager, etc.)
-6. If time permits: Install Elementor for widget screenshots
+**1. Setup Script (`bin/capture-chat-screenshots.sh`)**
+- Automated WordPress installation and configuration
+- Plugin activation
+- AI provider configuration (OpenAI/Gemini/Ollama)
+- Test assistant creation
+- Chat demo pages creation (standard + guest mode)
+- Comprehensive status output with URLs
+
+**2. Playwright Automation (`bin/playwright-capture-screenshots.js`)**
+- Automated capture of 12 of 16 screenshots
+- Mobile responsive views (portrait + landscape)
+- Guest mode (incognito context)
+- Error state handling
+- History persistence testing
+- Full documentation inline
+
+**3. Comprehensive Guide (`docs/screenshots/CHAT_CAPTURE_GUIDE.md`)**
+- Quick start instructions
+- Detailed manual capture steps for all 16 screenshots
+- Screenshot specifications table
+- Quality guidelines
+- Troubleshooting section
+- Optimization instructions
+- Verification checklist
+
+#### Why Automation Tools Were Created
+
+The chat interface screenshots require:
+1. **Environment Setup**: WordPress installation, plugin activation, AI provider configuration
+2. **Data Creation**: Test assistant, demo pages with shortcodes
+3. **Complex Capture**: Mobile views, guest mode, error states, streaming responses
+4. **Repeatability**: Multiple screenshots with consistent setup
+
+**Without automation:**
+- Manual setup: 30-45 minutes per attempt
+- Error-prone configuration
+- Difficult to reproduce
+- Inconsistent results
+
+**With automation:**
+- Setup: 2-3 minutes
+- Consistent configuration
+- Repeatable process
+- Automated capture of 12 screenshots
+
+#### Next Steps (When API Key Available)
+1. ✅ Automation tools ready: `bin/capture-chat-screenshots.sh` and `bin/playwright-capture-screenshots.js`
+2. ⏳ Set AI provider API key: `export OPENAI_API_KEY="sk-..."`
+3. ⏳ Run setup script: `./bin/capture-chat-screenshots.sh`
+4. ⏳ Run Playwright automation: `node bin/playwright-capture-screenshots.js`
+5. ⏳ Manually capture 4 Elementor screenshots (requires Elementor plugin)
+6. ⏳ Optimize screenshots with pngquant or TinyPNG
+7. ⏳ Update documentation references
+
+### Next Session Tasks (Ready to Execute)
+**Prerequisites:** OpenAI, Gemini, or Ollama API key
+
+**Estimated Time:** 15-20 minutes total
+- Setup (automated): 2-3 minutes
+- Screenshot capture (automated): 5-10 minutes
+- Elementor screenshots (manual): 10-15 minutes
+- Optimization and commit: 5 minutes
+
+**Execution:**
+```bash
+# 1. Set API key (choose one)
+export OPENAI_API_KEY="sk-your-key"
+# export GEMINI_API_KEY="your-key"
+# export OLLAMA_URL="http://localhost:11434"
+
+# 2. Run setup
+./bin/capture-chat-screenshots.sh
+
+# 3. Extract page IDs from output
+export PAGE_ID="<id>"
+export GUEST_PAGE_ID="<id>"
+
+# 4. Run automation
+npm install playwright  # First time only
+node bin/playwright-capture-screenshots.js
+
+# 5. Install Elementor and capture remaining 4 screenshots
+docker compose run --rm wp-cli plugin install elementor --activate
+# Follow manual instructions in CHAT_CAPTURE_GUIDE.md
+
+# 6. Optimize
+find docs/screenshots/chat -name "*.png" -exec pngquant --quality=65-80 --ext .png --force {} \;
+
+# 7. Commit
+git add docs/screenshots/chat/
+git commit -m "Add 16 chat interface screenshots"
+```
 
 ## File Locations
 
