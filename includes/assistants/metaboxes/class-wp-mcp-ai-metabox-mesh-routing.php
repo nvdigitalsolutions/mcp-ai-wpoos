@@ -67,6 +67,16 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 	}
 
 	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @since 1.0.0
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/federation/mesh-routing-guide.md';
+	}
+
+	/**
 	 * Render the metabox content.
 	 *
 	 * @since 1.0.0
@@ -268,5 +278,6 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 			</script>
 		</div>
 		<?php
+		$this->render_documentation_link();
 	}
 }
