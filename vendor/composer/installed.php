@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/implement-traditional-function-calling',
-        'version' => 'dev-copilot/implement-traditional-function-calling',
-        'reference' => '530f3043aa8ff6ec7489eb0267f406416ee42a97',
+        'pretty_version' => 'dev-copilot/fix-tools-execution-issue',
+        'version' => 'dev-copilot/fix-tools-execution-issue',
+        'reference' => 'c85bc3d883dd6471ef052b6af96c59be3d7f66ab',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/implement-traditional-function-calling',
-            'version' => 'dev-copilot/implement-traditional-function-calling',
-            'reference' => '530f3043aa8ff6ec7489eb0267f406416ee42a97',
+            'pretty_version' => 'dev-copilot/fix-tools-execution-issue',
+            'version' => 'dev-copilot/fix-tools-execution-issue',
+            'reference' => 'c85bc3d883dd6471ef052b6af96c59be3d7f66ab',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
