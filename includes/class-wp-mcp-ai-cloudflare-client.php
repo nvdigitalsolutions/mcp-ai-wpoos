@@ -357,6 +357,20 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				);
 			}
 
+			// Log response structure for debugging tool_calls issues.
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_response_structure',
+				'Cloudflare API response received',
+				array(
+					'has_result'      => isset( $decoded['result'] ),
+					'has_tool_calls'  => isset( $decoded['result']['tool_calls'] ),
+					'tool_calls_type' => isset( $decoded['result']['tool_calls'] ) ? gettype( $decoded['result']['tool_calls'] ) : 'N/A',
+					'tool_calls_empty' => isset( $decoded['result']['tool_calls'] ) ? empty( $decoded['result']['tool_calls'] ) : 'N/A',
+					'response_keys'   => isset( $decoded['result'] ) ? array_keys( $decoded['result'] ) : array(),
+					'model'           => $model,
+				)
+			);
+
 			return $this->normalize_response( $decoded, $model );
 		}
 
@@ -606,8 +620,99 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 
 			// Check for tool_calls in the result.
 			// Cloudflare may return tool_calls when the model decides to use a tool/function.
+			// We need to validate that tool_calls is not just present but also properly formatted.
 			if ( isset( $result['tool_calls'] ) && is_array( $result['tool_calls'] ) && ! empty( $result['tool_calls'] ) ) {
-				$message['tool_calls'] = $result['tool_calls'];
+				// Validate and normalize each tool_call to OpenAI format.
+				// Cloudflare may return tool_calls in two formats:
+				// 1. OpenAI format: {"function": {"name": "tool_name", "arguments": {...}}}
+				// 2. Simpler format: {"name": "tool_name", "arguments": {...}}
+				$valid_tool_calls = array();
+				foreach ( $result['tool_calls'] as $index => $tool_call ) {
+					if ( ! is_array( $tool_call ) ) {
+						continue;
+					}
+
+					$normalized_tool_call = null;
+
+					// Check for OpenAI format first (function.name).
+					if ( isset( $tool_call['function'] ) && 
+						 is_array( $tool_call['function'] ) && 
+						 isset( $tool_call['function']['name'] ) && 
+						 ! empty( $tool_call['function']['name'] ) ) {
+						// Already in OpenAI format, use as-is.
+						$normalized_tool_call = $tool_call;
+					} elseif ( isset( $tool_call['name'] ) && ! empty( $tool_call['name'] ) ) {
+						// Cloudflare simpler format - normalize to OpenAI format.
+						// The arguments field needs to be a JSON string in OpenAI format.
+						$arguments = isset( $tool_call['arguments'] ) ? $tool_call['arguments'] : array();
+						if ( is_array( $arguments ) || is_object( $arguments ) ) {
+							$arguments = wp_json_encode( $arguments );
+						}
+
+						$normalized_tool_call = array(
+							'id'       => isset( $tool_call['id'] ) ? $tool_call['id'] : 'call_' . uniqid(),
+							'type'     => 'function',
+							'function' => array(
+								'name'      => $tool_call['name'],
+								'arguments' => $arguments,
+							),
+						);
+
+						WP_MCP_AI_Logger::log_event(
+							'cloudflare_tool_call_normalized',
+							'Normalized Cloudflare simpler format to OpenAI format',
+							array(
+								'original_format' => $tool_call,
+								'normalized'      => $normalized_tool_call,
+							)
+						);
+					}
+
+					if ( $normalized_tool_call ) {
+						$valid_tool_calls[] = $normalized_tool_call;
+					} else {
+						WP_MCP_AI_Logger::log_event(
+							'cloudflare_invalid_tool_call',
+							'Cloudflare returned malformed tool_call',
+							array(
+								'tool_call_structure' => $tool_call,
+								'missing_function'    => ! isset( $tool_call['function'] ),
+								'missing_name'        => ! isset( $tool_call['name'] ),
+								'index'               => $index,
+							)
+						);
+					}
+				}
+				
+				// Only add tool_calls to message if we have valid ones.
+				if ( ! empty( $valid_tool_calls ) ) {
+					$message['tool_calls'] = $valid_tool_calls;
+					
+					WP_MCP_AI_Logger::log_event(
+						'cloudflare_tool_calls_detected',
+						'Cloudflare response contains valid tool_calls',
+						array(
+							'tool_call_count' => count( $valid_tool_calls ),
+							'tool_names'      => array_map(
+								function( $tc ) {
+									return isset( $tc['function']['name'] ) ? $tc['function']['name'] : 'unknown';
+								},
+								$valid_tool_calls
+							),
+							'has_content'     => ! empty( $content ),
+							'content_preview' => substr( $content, 0, 100 ),
+						)
+					);
+				} else {
+					WP_MCP_AI_Logger::log_event(
+						'cloudflare_tool_calls_filtered',
+						'Cloudflare tool_calls array was present but contained no valid tool calls',
+						array(
+							'original_count' => count( $result['tool_calls'] ),
+							'valid_count'    => 0,
+						)
+					);
+				}
 			}
 
 			$has_tool_calls = isset( $message['tool_calls'] ) && ! empty( $message['tool_calls'] );
