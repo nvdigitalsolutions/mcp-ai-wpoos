@@ -193,6 +193,18 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Prepare system messages array (will be prepended to messages).
 			$system_messages = array();
 
+			// Log options to debug system_prompt issue.
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_system_prompt_check',
+				'Checking system_prompt in options',
+				array(
+					'has_system_prompt'    => isset( $options['system_prompt'] ),
+					'is_empty'             => empty( $options['system_prompt'] ),
+					'system_prompt_length' => isset( $options['system_prompt'] ) ? strlen( (string) $options['system_prompt'] ) : 0,
+					'options_keys'         => array_keys( $options ),
+				)
+			);
+
 			// Add system_prompt if provided (assistant knowledge and instructions).
 			if ( ! empty( $options['system_prompt'] ) ) {
 				$system_messages[] = array(
@@ -212,6 +224,16 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Prepend system messages to conversation messages.
 			if ( ! empty( $system_messages ) ) {
 				$messages = array_merge( $system_messages, $messages );
+
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_system_messages_added',
+					'System messages prepended to conversation',
+					array(
+						'system_message_count' => count( $system_messages ),
+						'total_message_count'  => count( $messages ),
+						'first_message_role'   => isset( $messages[0]['role'] ) ? $messages[0]['role'] : 'unknown',
+					)
+				);
 			}
 
 			$payload = $this->build_payload( $messages, $options );
@@ -349,6 +371,19 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Normalize messages to ensure content is in the correct format.
 			// Cloudflare Workers AI expects content to be a string for text-only messages.
 			$normalized_messages = $this->normalize_messages( $messages );
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_payload_build',
+				'Building payload for Cloudflare API',
+				array(
+					'input_message_count'      => count( $messages ),
+					'normalized_message_count' => count( $normalized_messages ),
+					'first_normalized_role'    => isset( $normalized_messages[0]['role'] ) ? $normalized_messages[0]['role'] : 'none',
+					'has_system_messages'      => ! empty( array_filter( $normalized_messages, function( $msg ) {
+						return isset( $msg['role'] ) && 'system' === $msg['role'];
+					} ) ),
+				)
+			);
 
 			$payload = array(
 				'messages' => $normalized_messages,
