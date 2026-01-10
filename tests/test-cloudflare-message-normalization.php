@@ -246,4 +246,82 @@ class Test_Cloudflare_Message_Normalization extends WP_UnitTestCase {
 
 		return $method->invoke( $this->client, $messages );
 	}
+
+	/**
+	 * Test that tool_calls in responses are properly extracted and preserved.
+	 */
+	public function test_response_with_tool_calls() {
+		$cloudflare_response = array(
+			'success' => true,
+			'result'  => array(
+				'response'   => '',
+				'tool_calls' => array(
+					array(
+						'id'       => 'call_123',
+						'type'     => 'function',
+						'function' => array(
+							'name'      => 'get_weather',
+							'arguments' => '{"location":"London"}',
+						),
+					),
+				),
+			),
+		);
+
+		$normalized = $this->invoke_normalize_response( $cloudflare_response, '@cf/meta/llama-3.2-3b-instruct' );
+
+		$this->assertIsArray( $normalized );
+		$this->assertEquals( 'chat.completion', $normalized['object'] );
+		$this->assertArrayHasKey( 'choices', $normalized );
+		$this->assertCount( 1, $normalized['choices'] );
+
+		$message = $normalized['choices'][0]['message'];
+		$this->assertEquals( 'assistant', $message['role'] );
+		$this->assertEquals( '', $message['content'] );
+		$this->assertArrayHasKey( 'tool_calls', $message );
+		$this->assertCount( 1, $message['tool_calls'] );
+		$this->assertEquals( 'call_123', $message['tool_calls'][0]['id'] );
+		$this->assertEquals( 'get_weather', $message['tool_calls'][0]['function']['name'] );
+
+		// Check finish_reason is set to tool_calls.
+		$this->assertEquals( 'tool_calls', $normalized['choices'][0]['finish_reason'] );
+	}
+
+	/**
+	 * Test that responses without tool_calls have finish_reason set to stop.
+	 */
+	public function test_response_without_tool_calls() {
+		$cloudflare_response = array(
+			'success' => true,
+			'result'  => array(
+				'response' => 'Hello! How can I help you today?',
+			),
+		);
+
+		$normalized = $this->invoke_normalize_response( $cloudflare_response, '@cf/meta/llama-3.2-3b-instruct' );
+
+		$this->assertIsArray( $normalized );
+		$message = $normalized['choices'][0]['message'];
+		$this->assertEquals( 'assistant', $message['role'] );
+		$this->assertEquals( 'Hello! How can I help you today?', $message['content'] );
+		$this->assertArrayNotHasKey( 'tool_calls', $message );
+
+		// Check finish_reason is set to stop.
+		$this->assertEquals( 'stop', $normalized['choices'][0]['finish_reason'] );
+	}
+
+	/**
+	 * Helper method to invoke the protected normalize_response method.
+	 *
+	 * @param array  $response Cloudflare API response.
+	 * @param string $model    Model name.
+	 * @return array Normalized response.
+	 */
+	private function invoke_normalize_response( array $response, $model ) {
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'normalize_response' );
+		$method->setAccessible( true );
+
+		return $method->invoke( $this->client, $response, $model );
+	}
 }
