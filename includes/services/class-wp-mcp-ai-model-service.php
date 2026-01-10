@@ -485,15 +485,11 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		// Cloudflare Workers AI multimodal support (Llama 4 Scout).
-		if ( $requires_multimodal || $requires_vision ) {
-			// Llama 4 Scout - multimodal (text + image).
-			$models['@cf/meta/llama-4-scout']                  = 'Llama 4 Scout (17B, Multimodal)';
-			$models['@cf/meta/llama-4-scout-17b-16e-instruct'] = 'Llama 4 Scout 17B 16E Instruct (131K context, Multimodal)';
-			return $models;
-		}
-
 		// Text generation models.
+		// Llama 4 Scout models (NEW in 2025 - multimodal but can handle text-only).
+		$models['@cf/meta/llama-4-scout']                  = 'Llama 4 Scout (17B, Multimodal)';
+		$models['@cf/meta/llama-4-scout-17b-16e-instruct'] = 'Llama 4 Scout 17B 16E Instruct (131K context)';
+
 		// Llama 3.1 models (most popular).
 		$models['@cf/meta/llama-3.1-8b-instruct']      = 'Llama 3.1 8B Instruct';
 		$models['@cf/meta/llama-3.1-8b-instruct-fast'] = 'Llama 3.1 8B Instruct Fast (128K context)';
