@@ -1955,6 +1955,18 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.002,
 				'status'         => 'active',
 			),
+			'@cf/meta/llama-4-scout-17b-16e-instruct'      => array(
+				'name'           => 'Llama 4 Scout 17B 16E Instruct',
+				'provider'       => 'cloudflare',
+				'tpm'            => 50000,
+				'rpm'            => 200,
+				'tpd'            => 2000000,
+				'rpd'            => 5000,
+				'context_window' => 131000,  // 131K context window for large documents.
+				'fallback_model' => '@cf/meta/llama-3.1-8b-instruct',
+				'cost_per_1k'    => 0.00027,  // $0.27 per 1M input tokens.
+				'status'         => 'active',
+			),
 			// Mistral models (FIXED: corrected namespace).
 			'@cf/mistralai/mistral-7b-instruct-v0.1'       => array(
 				'name'           => 'Mistral 7B Instruct v0.1',
