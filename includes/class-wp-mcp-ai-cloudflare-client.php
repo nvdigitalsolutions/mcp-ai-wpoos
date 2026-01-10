@@ -393,62 +393,62 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Cloudflare Workers AI expects content to be a string for text-only messages.
 			$normalized_messages = $this->normalize_messages( $messages );
 
-		// CRITICAL: Cloudflare Workers AI follows OpenAI's chat completions format.
-		// System messages should be kept in the messages array with role: "system",
-		// NOT extracted to a separate "system" field (that's for Ollama only).
-		//
-		// According to Cloudflare documentation and testing:
-		// - The API expects: {"messages": [{"role": "system", "content": "..."}]}
-		// - System messages should be the FIRST messages in the array
-		// - Multiple system messages are allowed and will be processed in order
-		//
-		// Previous implementation incorrectly used a separate "system" field which caused
-		// the model to ignore system instructions entirely.
-		//
-		// See: https://developers.cloudflare.com/workers-ai/models/
-		
-		WP_MCP_AI_Logger::log_event(
-		'cloudflare_payload_build',
-		'Building payload for Cloudflare API (OpenAI format)',
-		array(
-		'input_message_count'       => count( $messages ),
-		'normalized_message_count'  => count( $normalized_messages ),
-		'first_message_role'        => isset( $normalized_messages[0]['role'] ) ? $normalized_messages[0]['role'] : 'none',
-		)
-		);
-		
-		// Build payload with messages array (OpenAI format).
-		// System messages are included in the messages array, not extracted to a separate field.
-		$payload = array(
-		'messages' => $normalized_messages,
-		);
+			// CRITICAL: Cloudflare Workers AI follows OpenAI's chat completions format.
+			// System messages should be kept in the messages array with role: "system",
+			// NOT extracted to a separate "system" field (that's for Ollama only).
+			//
+			// According to Cloudflare documentation and testing:
+			// - The API expects: {"messages": [{"role": "system", "content": "..."}]}
+			// - System messages should be the FIRST messages in the array
+			// - Multiple system messages are allowed and will be processed in order
+			//
+			// Previous implementation incorrectly used a separate "system" field which caused
+			// the model to ignore system instructions entirely.
+			//
+			// See: https://developers.cloudflare.com/workers-ai/models/
+			
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_payload_build',
+				'Building payload for Cloudflare API (OpenAI format)',
+				array(
+					'input_message_count'       => count( $messages ),
+					'normalized_message_count'  => count( $normalized_messages ),
+					'first_message_role'        => isset( $normalized_messages[0]['role'] ) ? $normalized_messages[0]['role'] : 'none',
+				)
+			);
+			
+			// Build payload with messages array (OpenAI format).
+			// System messages are included in the messages array, not extracted to a separate field.
+			$payload = array(
+				'messages' => $normalized_messages,
+			);
 
 			// Add optional parameters.
 			if ( isset( $options['temperature'] ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
-		// Set max_tokens using Resource Manager if not explicitly provided.
-		// Cloudflare defaults to only 256 tokens which is extremely low.
-		// This follows the same pattern as Ollama, Gemini, LM Studio, etc.
-		if ( ! isset( $options['max_tokens'] ) ) {
-		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-		$max_tokens   = $resource_mgr->get_max_tokens();
-		
-		WP_MCP_AI_Logger::log_event(
-		'cloudflare_default_max_tokens',
-		'Using Resource Manager max_tokens for Cloudflare',
-		array(
-		'max_tokens' => $max_tokens,
-		'tier'       => $resource_mgr->get_workload_tier(),
-		'reason'     => 'Cloudflare defaults to only 256 tokens which is too low',
-		)
-		);
-		
-		$payload['max_tokens'] = $max_tokens;
-		} else{
-		$payload['max_tokens'] = (int) $options['max_tokens'];
-		}
+			// Set max_tokens using Resource Manager if not explicitly provided.
+			// Cloudflare defaults to only 256 tokens which is extremely low.
+			// This follows the same pattern as Ollama, Gemini, LM Studio, etc.
+			if ( ! isset( $options['max_tokens'] ) ) {
+				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+				$max_tokens   = $resource_mgr->get_max_tokens();
+			
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_default_max_tokens',
+					'Using Resource Manager max_tokens for Cloudflare',
+					array(
+						'max_tokens' => $max_tokens,
+						'tier'       => $resource_mgr->get_workload_tier(),
+						'reason'     => 'Cloudflare defaults to only 256 tokens which is too low',
+					)
+				);
+			
+				$payload['max_tokens'] = $max_tokens;
+			} else {
+				$payload['max_tokens'] = (int) $options['max_tokens'];
+			}
 
 			if ( isset( $options['stream'] ) ) {
 				$payload['stream'] = (bool) $options['stream'];
