@@ -483,6 +483,15 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			$usage['provider'] = 'cloudflare';
 			$usage['model']    = $model;
 
+			// Normalize content to array format for consistency with other providers.
+			// The chat client expects content as an array with structured content blocks.
+			$normalized_content = array(
+				array(
+					'type' => 'text',
+					'text' => $content,
+				),
+			);
+
 			return array(
 				'id'       => uniqid( 'cloudflare-', true ),
 				'object'   => 'chat.completion',
@@ -494,7 +503,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 						'index'         => 0,
 						'message'       => array(
 							'role'    => 'assistant',
-							'content' => $content,
+							'content' => $normalized_content,
 						),
 						'finish_reason' => 'stop',
 					),
