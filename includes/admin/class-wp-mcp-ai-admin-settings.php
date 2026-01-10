@@ -4580,74 +4580,26 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * @return array<string, string> Associative array of model slugs mapped to display labels.
 		 */
 		protected function get_openai_default_model_choices() {
-			// Try to get models from CCT if JetEngine is active.
-			$cct_models = $this->get_openai_models_from_cct();
-
-			// Fallback to hardcoded choices if CCT is not available or empty.
-			if ( empty( $cct_models ) ) {
-				$choices = array(
-					// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
-					'gpt-5.2'                            => __( 'GPT-5.2 (Flagship)', 'mcp-ai-wpoos' ),
-					'gpt-5.2-2025-12-11'                 => __( 'GPT-5.2 (Dec 2025)', 'mcp-ai-wpoos' ),
-					'gpt-5.2-pro'                        => __( 'GPT-5.2 Pro (Advanced Reasoning)', 'mcp-ai-wpoos' ),
-					'gpt-5.2-pro-2025-12-11'             => __( 'GPT-5.2 Pro (Dec 2025)', 'mcp-ai-wpoos' ),
-					'gpt-5.2-instant'                    => __( 'GPT-5.2 Instant (High Throughput)', 'mcp-ai-wpoos' ),
-					'gpt-5.2-thinking'                   => __( 'GPT-5.2 Thinking (Deeper Analysis)', 'mcp-ai-wpoos' ),
-					// GPT-5.1 series (Nov 2025).
-					'gpt-5.1'                            => __( 'GPT-5.1', 'mcp-ai-wpoos' ),
-					'gpt-5.1-2025-11-13'                 => __( 'GPT-5.1 (Nov 2025)', 'mcp-ai-wpoos' ),
-					'gpt-5.1-instant'                    => __( 'GPT-5.1 Instant (Fast)', 'mcp-ai-wpoos' ),
-					'gpt-5.1-thinking'                   => __( 'GPT-5.1 Thinking (Deep Reasoning)', 'mcp-ai-wpoos' ),
-					'gpt-5.1-codex-max'                  => __( 'GPT-5.1 Codex Max (Advanced Coding)', 'mcp-ai-wpoos' ),
-					'gpt-5.1-codex-mini'                 => __( 'GPT-5.1 Codex Mini', 'mcp-ai-wpoos' ),
-					// GPT-5 series (Aug 2025).
-					'gpt-5'                              => __( 'GPT-5', 'mcp-ai-wpoos' ),
-					'gpt-5-2025-08-07'                   => __( 'GPT-5 (Aug 2025)', 'mcp-ai-wpoos' ),
-					'gpt-5-mini'                         => __( 'GPT-5 Mini', 'mcp-ai-wpoos' ),
-					'gpt-5-nano'                         => __( 'GPT-5 Nano', 'mcp-ai-wpoos' ),
-					'gpt-5-pro'                          => __( 'GPT-5 Pro', 'mcp-ai-wpoos' ),
-					'gpt-5-codex'                        => __( 'GPT-5 Codex (Coding)', 'mcp-ai-wpoos' ),
-					'gpt-5-codex-mini'                   => __( 'GPT-5 Codex Mini', 'mcp-ai-wpoos' ),
-					// Future placeholder models.
-					'gpt-4.5-preview'                    => __( 'GPT-4.5 Preview', 'mcp-ai-wpoos' ),
-					'gpt-4.5-turbo'                      => __( 'GPT-4.5 Turbo', 'mcp-ai-wpoos' ),
-					// Reasoning models (o-series - "thinking models").
-					'o1-2024-12-17'                      => __( 'o1 (Dec 2024)', 'mcp-ai-wpoos' ),
-					'o1-preview'                         => __( 'o1 Preview', 'mcp-ai-wpoos' ),
-					'o1-mini'                            => __( 'o1 Mini', 'mcp-ai-wpoos' ),
-					'o1'                                 => __( 'o1 (Legacy Reasoning)', 'mcp-ai-wpoos' ),
-					'o1-pro'                             => __( 'o1 Pro (Legacy Advanced)', 'mcp-ai-wpoos' ),
-					'o3-mini'                            => __( 'o3 Mini (24% faster, structured outputs)', 'mcp-ai-wpoos' ),
-					'o3'                                 => __( 'o3 (Reasoning Model)', 'mcp-ai-wpoos' ),
-					'o3-pro'                             => __( 'o3 Pro (Advanced Reasoning)', 'mcp-ai-wpoos' ),
-					'o4-mini'                            => __( 'o4 Mini', 'mcp-ai-wpoos' ),
-					// GPT-4o series (current flagship).
-					'gpt-4o'                             => __( 'GPT-4o', 'mcp-ai-wpoos' ),
-					'gpt-4o-mini'                        => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
-					'gpt-4o-audio-preview'               => __( 'GPT-4o Audio Preview', 'mcp-ai-wpoos' ),
-					'gpt-4o-audio-preview-2024-12-17'    => __( 'GPT-4o Audio Preview (Dec 2024)', 'mcp-ai-wpoos' ),
-					'gpt-4o-realtime-preview'            => __( 'GPT-4o Realtime Preview', 'mcp-ai-wpoos' ),
-					'gpt-4o-realtime-preview-2024-12-17' => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'mcp-ai-wpoos' ),
-					'gpt-4o-realtime-preview-2025-01-06' => __( 'GPT-4o Realtime Preview (Jan 2025)', 'mcp-ai-wpoos' ),
-					'gpt-4o-realtime-preview-2025-06-03' => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'mcp-ai-wpoos' ),
-					'gpt-4o-mini-realtime-preview'       => __( 'GPT-4o Mini Realtime Preview', 'mcp-ai-wpoos' ),
-					'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'mcp-ai-wpoos' ),
-					'gpt-realtime-mini'                  => __( 'GPT Realtime Mini', 'mcp-ai-wpoos' ),
-					'gpt-realtime-mini-2025-12-15'       => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'mcp-ai-wpoos' ),
-					// Legacy GPT-4 series.
-					'gpt-4.1'                            => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
-					'gpt-4.1-mini'                       => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
-					'gpt-4.1-nano'                       => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
-					'gpt-4-turbo'                        => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
-					'gpt-4'                              => __( 'GPT-4', 'mcp-ai-wpoos' ),
-					// GPT-3.5 series (legacy).
-					'gpt-3.5-turbo'                      => __( 'GPT-3.5 Turbo', 'mcp-ai-wpoos' ),
-					'gpt-3.5-turbo-16k'                  => __( 'GPT-3.5 Turbo 16k', 'mcp-ai-wpoos' ),
-					'gpt-3.5-turbo-instruct'             => __( 'GPT-3.5 Turbo Instruct', 'mcp-ai-wpoos' ),
-				);
-			} else {
-				$choices = $cct_models;
+			// Try Model Config first (single source of truth).
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$model_config_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'openai' );
+				if ( ! empty( $model_config_models ) ) {
+					return $model_config_models;
+				}
 			}
+
+			// Fallback to CCT if JetEngine is active.
+			$cct_models = $this->get_openai_models_from_cct();
+			if ( ! empty( $cct_models ) ) {
+				return $cct_models;
+			}
+
+			// Final fallback to minimal hardcoded list.
+			$choices = array(
+				'gpt-4o'        => __( 'GPT-4o', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini'   => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
+				'gpt-4-turbo'   => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
+			);
 
 			/**
 			 * Filter the default OpenAI model choices displayed in the settings UI.

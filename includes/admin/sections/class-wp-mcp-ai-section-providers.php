@@ -74,28 +74,70 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
-			// Get dynamic model choices (from CCT if available, or fallback).
-			$model_choices = array();
-			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-				$model_choices = WP_MCP_AI_Admin_Settings::get_openai_default_model_choices_static();
+			// Get dynamic model choices from Model Config.
+			$openai_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$openai_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'openai' );
 			}
 
-			// Fallback to minimal hardcoded list if static method unavailable.
-			if ( empty( $model_choices ) ) {
-				$model_choices = array(
-					// Latest reasoning models (thinking models).
-					'o1-2024-12-17' => 'o1 (Dec 2024)',
-					'o1-preview'    => 'o1 Preview',
-					'o1-mini'       => 'o1 Mini',
-					'o3-mini'       => 'o3 Mini (24% faster, structured outputs)',
-					// GPT-4o series (current flagship).
+			// Fallback to minimal list if Model Config unavailable.
+			if ( empty( $openai_models ) ) {
+				$openai_models = array(
 					'gpt-4o'        => 'GPT-4o',
 					'gpt-4o-mini'   => 'GPT-4o Mini',
-					// Legacy models.
 					'gpt-4-turbo'   => 'GPT-4 Turbo',
-					'gpt-4'         => 'GPT-4',
-					'gpt-3.5-turbo' => 'GPT-3.5 Turbo',
 				);
+			}
+
+			// Get Anthropic models from Model Config.
+			$anthropic_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$anthropic_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'anthropic' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $anthropic_models ) ) {
+				$anthropic_models = array(
+					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
+					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
+				);
+			}
+
+			// Get Gemini models from Model Config.
+			$gemini_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$gemini_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'gemini' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $gemini_models ) ) {
+				$gemini_models = array(
+					'gemini-2.5-flash' => 'Gemini 2.5 Flash (Latest - Stable)',
+					'gemini-1.5-pro'   => 'Gemini 1.5 Pro',
+				);
+			}
+
+			// Get Cloudflare models from Model Config.
+			$cloudflare_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$cloudflare_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'cloudflare' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $cloudflare_models ) ) {
+				$cloudflare_models = array(
+					'@cf/meta/llama-3.2-3b-instruct' => 'Llama 3.2 3B Instruct (Recommended)',
+					'@cf/meta/llama-3.3-70b-instruct-fp8-fast' => 'Llama 3.3 70B Instruct FP8 Fast',
+				);
+			}
+
+			// Get provider list dynamically.
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
+				if ( ! empty( $configured_providers ) ) {
+					$provider_list = $configured_providers;
+				}
 			}
 
 			return array(
@@ -104,7 +146,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'custom',
 					'label'       => __( 'Provider Priority Order', 'mcp-ai-wpoos' ),
 					'description' => __( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable.', 'mcp-ai-wpoos' ),
-					'default'     => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ),
+					'default'     => $provider_list,
 				),
 
 				// OpenAI Settings.
@@ -130,7 +172,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'select',
 					'label'       => __( 'Default OpenAI Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default model to use for OpenAI requests. This model will be used unless overridden by an assistant or specific API call. Consider cost, speed, and capability trade-offs.', 'mcp-ai-wpoos' ),
-					'options'     => $model_choices,
+					'options'     => $openai_models,
 					'default'     => 'gpt-4.1',
 				),
 				'openai_embedding_model'             => array(
@@ -306,13 +348,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'select',
 					'label'       => __( 'Default Anthropic Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default Claude model to use for Anthropic requests. Claude 3.5 Sonnet offers the best balance of intelligence and speed. Claude 3.5 Haiku is faster and more economical for simpler tasks.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
-						'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
-						'claude-3-opus-20240229'     => 'Claude 3 Opus',
-						'claude-3-sonnet-20240229'   => 'Claude 3 Sonnet',
-						'claude-3-haiku-20240307'    => 'Claude 3 Haiku',
-					),
+					'options'     => $anthropic_models,
 					'default'     => 'claude-3-5-sonnet-20241022',
 				),
 
@@ -339,15 +375,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'select',
 					'label'       => __( 'Default Gemini Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default model to use for Gemini requests. Gemini 2.5 Pro is the flagship model with best performance. Gemini 2.5 Flash is the latest stable model with multimodal support (text, image, video). Gemini 2.0 Flash is the previous stable generation. Gemini 1.5 Pro provides proven performance, while 1.5 Flash is faster and more economical.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'gemini-2.5-pro'   => 'Gemini 2.5 Pro',
-						'gemini-2.5-flash' => 'Gemini 2.5 Flash (Latest - Stable)',
-						'gemini-2.0-flash' => 'Gemini 2.0 Flash',
-						'gemini-exp-1206'  => 'Gemini Exp 1206 (Experimental)',
-						'gemini-1.5-pro'   => 'Gemini 1.5 Pro',
-						'gemini-1.5-flash' => 'Gemini 1.5 Flash',
-						'gemini-pro'       => 'Gemini Pro',
-					),
+					'options'     => $gemini_models,
 					'default'     => 'gemini-2.5-flash',
 				),
 				'gemini_image_model'                 => array(
@@ -610,25 +638,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'select',
 					'label'       => __( 'Default Cloudflare Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default model to use for Cloudflare Workers AI requests. Updated catalog includes function calling and text generation models. Llama 3.2-3B-Instruct is recommended for general use.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						// Function Calling Models.
-						'@cf/meta/llama-3.3-70b-instruct-fp8-fast'     => 'Llama 3.3 70B Instruct FP8 Fast',
-						'@cf/meta/llama-4-scout-17b-16e-instruct'      => 'Llama 4 Scout 17B 16E Instruct',
-						'@cf/ibm-granite/granite-4.0-h-micro'          => 'IBM Granite 4.0 H Micro',
-						'@cf/qwen/qwen3-30b-a3b-fp8'                   => 'Qwen 3 30B A3B FP8',
-						'@cf/mistralai/mistral-small-3.1-24b-instruct' => 'Mistral Small 3.1 24B Instruct',
-						'@hf/nousresearch/hermes-2-pro-mistral-7b'     => 'Hermes 2 Pro Mistral 7B',
-						// Text Generation Models.
-						'@cf/aisingapore/gemma-sea-lion-v4-27b-it'     => 'Gemma SEA Lion V4 27B IT',
-						'@cf/openai/gpt-oss-20b'                       => 'GPT OSS 20B',
-						'@cf/openai/gpt-oss-120b'                      => 'GPT OSS 120B',
-						'@cf/google/gemma-3-12b-it'                    => 'Gemma 3 12B IT',
-						'@cf/qwen/qwq-32b'                             => 'Qwen QwQ 32B',
-						'@cf/qwen/qwen2.5-coder-32b-instruct'          => 'Qwen 2.5 Coder 32B Instruct',
-						'@cf/deepseek-ai/deepseek-r1-distill-qwen-32b' => 'DeepSeek R1 Distill Qwen 32B',
-						'@cf/meta/llama-3.2-1b-instruct'               => 'Llama 3.2 1B Instruct',
-						'@cf/meta/llama-3.2-3b-instruct'               => 'Llama 3.2 3B Instruct (Recommended)',
-					),
+					'options'     => $cloudflare_models,
 					'default'     => '@cf/meta/llama-3.2-3b-instruct',
 				),
 				'cloudflare_image_model'             => array(
@@ -1014,7 +1024,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array Sanitized provider priority list.
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
+			// Get valid providers dynamically from Model Config.
 			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
+				if ( ! empty( $configured_providers ) ) {
+					$valid_providers = $configured_providers;
+				}
+			}
+
 			$sanitized       = array();
 
 			if ( ! is_array( $priority_list ) ) {

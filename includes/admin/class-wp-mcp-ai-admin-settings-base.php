@@ -180,11 +180,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 * @return array Sanitized provider priority list.
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
-			if ( ! is_array( $priority_list ) ) {
-				return array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+			// Get available providers dynamically from Model Config.
+			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
+				if ( ! empty( $configured_providers ) ) {
+					$available_providers = $configured_providers;
+				}
 			}
 
-			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+			if ( ! is_array( $priority_list ) ) {
+				return $available_providers;
+			}
+
 			$sanitized           = array();
 			$seen                = array();
 
@@ -252,6 +260,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 * @return array
 		 */
 		public static function get_default_settings() {
+			// Get dynamic provider list from Model Config.
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
+				if ( ! empty( $configured_providers ) ) {
+					$provider_list = $configured_providers;
+				}
+			}
+
 			return array(
 				'openai_api_key'                       => '',
 				'gemini_api_key'                       => '',
@@ -264,7 +281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'default_model'                        => 'gpt-4.1',
 				'default_gemini_model'                 => 'gemini-2.5-flash',
 				'default_provider'                     => 'openai',
-				'provider_priority_list'               => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ),
+				'provider_priority_list'               => $provider_list,
 				'web_search_provider'                  => 'duckduckgo',
 				'brave_search_api_key'                 => '',
 				'google_maps_api_key'                  => '',
