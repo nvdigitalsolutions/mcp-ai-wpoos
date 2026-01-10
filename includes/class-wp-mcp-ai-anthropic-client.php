@@ -14,6 +14,8 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 	 * Provides a wrapper around Anthropic's Messages API endpoint.
 	 */
 	class WP_MCP_AI_Anthropic_Client {
+use WP_MCP_AI_Tool_Runner;
+
 		const API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 		const API_VERSION  = '2023-06-01';
 
@@ -324,6 +326,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Add tools if specified.
+			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+				$payload['tools'] = $options['tools'];
+			}
+
 			return $payload;
 		}
 
@@ -587,5 +594,160 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			return $payload;
 		}
+
+/**
+ * Get the provider name for logging.
+ *
+ * @return string Provider name.
+ */
+protected function get_provider_name() {
+return 'anthropic';
+}
+
+/**
+ * Prepare tool definitions in Anthropic format.
+ *
+ * @param array $tools Array of tool definitions.
+ * @return array Anthropic-specific tool definitions.
+ */
+protected function prepare_tool_definitions( array $tools ) {
+$tool_definitions = array();
+
+foreach ( $tools as $tool ) {
+if ( ! isset( $tool['name'] ) ) {
+continue;
+}
+
+$tool_name = sanitize_text_field( $tool['name'] );
+
+// Build tool definition for Anthropic API.
+$definition = array(
+'name'        => $tool_name,
+'description' => isset( $tool['description'] ) ? sanitize_text_field( $tool['description'] ) : '',
+);
+
+if ( isset( $tool['parameters'] ) && is_array( $tool['parameters'] ) ) {
+// Anthropic uses 'input_schema' instead of 'parameters'.
+$definition['input_schema'] = $tool['parameters'];
+}
+
+$tool_definitions[] = $definition;
+}
+
+return $tool_definitions;
+}
+
+/**
+ * Extract tool calls from API response.
+ *
+ * @param array $response API response.
+ * @return array Array of tool calls.
+ */
+protected function extract_tool_calls_from_response( array $response ) {
+if ( isset( $response['choices'][0]['message']['tool_calls'] ) ) {
+return $response['choices'][0]['message']['tool_calls'];
+}
+return array();
+}
+
+/**
+ * Build assistant message with tool calls.
+ *
+ * For Anthropic, we need to reconstruct the content blocks with tool_use.
+ *
+ * @param array $response   API response.
+ * @param array $tool_calls Tool calls to include.
+ * @return array Assistant message.
+ */
+protected function build_assistant_message_with_tool_calls( array $response, array $tool_calls ) {
+return $response['choices'][0]['message'];
+}
+
+/**
+ * Get function name from tool call.
+ *
+ * @param array $tool_call Tool call data.
+ * @return string Function name.
+ */
+protected function get_tool_call_function_name( array $tool_call ) {
+return isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
+}
+
+/**
+ * Get tool call ID from tool call.
+ *
+ * @param array $tool_call Tool call data.
+ * @return string Tool call ID.
+ */
+protected function get_tool_call_id( array $tool_call ) {
+return isset( $tool_call['id'] ) ? $tool_call['id'] : uniqid( 'tool-', true );
+}
+
+/**
+ * Parse arguments from tool call.
+ *
+ * @param array $tool_call Tool call data.
+ * @return array Parsed arguments.
+ */
+protected function parse_tool_call_arguments( array $tool_call ) {
+$arguments = array();
+if ( isset( $tool_call['function']['arguments'] ) ) {
+$args_json = $tool_call['function']['arguments'];
+if ( is_string( $args_json ) ) {
+$arguments = json_decode( $args_json, true );
+if ( JSON_ERROR_NONE !== json_last_error() ) {
+$arguments = array();
+}
+} elseif ( is_array( $args_json ) ) {
+$arguments = $args_json;
+}
+}
+return $arguments;
+}
+
+/**
+ * Build tool response message for Anthropic.
+ *
+ * Anthropic expects tool_result messages in a specific format.
+ *
+ * @param string $tool_call_id  Tool call ID.
+ * @param string $function_name Function name.
+ * @param string $content       Response content.
+ * @return array Tool response message.
+ */
+protected function build_tool_response_message( $tool_call_id, $function_name, $content ) {
+// Anthropic uses a different format for tool results.
+// We'll store it in OpenAI format and convert in build_payload.
+return array(
+'role'         => 'user',
+'content'      => array(
+array(
+'type'         => 'tool_result',
+'tool_use_id'  => $tool_call_id,
+'content'      => $content,
+),
+),
+);
+}
+
+/**
+ * Get tool definition name.
+ *
+ * @param array $tool_definition Tool definition.
+ * @return string Tool name.
+ */
+protected function get_tool_definition_name( array $tool_definition ) {
+return isset( $tool_definition['name'] ) ? $tool_definition['name'] : '';
+}
+
+/**
+ * Get tool definition parameters.
+ *
+ * @param array $tool_definition Tool definition.
+ * @return array|null Parameters schema or null.
+ */
+protected function get_tool_definition_parameters( array $tool_definition ) {
+return isset( $tool_definition['input_schema'] ) ? $tool_definition['input_schema'] : null;
+}
 	}
 }
