@@ -193,6 +193,18 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Prepare system messages array (will be prepended to messages).
 			$system_messages = array();
 
+			// Log options to debug system_prompt issue.
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_system_prompt_check',
+				'Checking system_prompt in options',
+				array(
+					'has_system_prompt'    => isset( $options['system_prompt'] ),
+					'is_empty'             => empty( $options['system_prompt'] ),
+					'system_prompt_length' => isset( $options['system_prompt'] ) ? strlen( (string) $options['system_prompt'] ) : 0,
+					'options_keys'         => array_keys( $options ),
+				)
+			);
+
 			// Add system_prompt if provided (assistant knowledge and instructions).
 			if ( ! empty( $options['system_prompt'] ) ) {
 				$system_messages[] = array(
@@ -212,6 +224,16 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Prepend system messages to conversation messages.
 			if ( ! empty( $system_messages ) ) {
 				$messages = array_merge( $system_messages, $messages );
+
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_system_messages_added',
+					'System messages prepended to conversation',
+					array(
+						'system_message_count' => count( $system_messages ),
+						'total_message_count'  => count( $messages ),
+						'first_message_role'   => isset( $messages[0]['role'] ) ? $messages[0]['role'] : 'unknown',
+					)
+				);
 			}
 
 			$payload = $this->build_payload( $messages, $options );
@@ -350,9 +372,48 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Cloudflare Workers AI expects content to be a string for text-only messages.
 			$normalized_messages = $this->normalize_messages( $messages );
 
-			$payload = array(
-				'messages' => $normalized_messages,
+			// Cloudflare Workers AI uses a separate 'system' field for system prompts
+			// rather than system role messages, similar to Ollama.
+			// We need to extract system messages from the messages array and use the system field instead.
+			$system_content = '';
+			$non_system_messages = array();
+
+			foreach ( $normalized_messages as $msg ) {
+				if ( isset( $msg['role'] ) && 'system' === $msg['role'] ) {
+					// Accumulate system message content.
+					if ( ! empty( $msg['content'] ) ) {
+						if ( ! empty( $system_content ) ) {
+							$system_content .= "\n\n" . $msg['content'];
+						} else {
+							$system_content = $msg['content'];
+						}
+					}
+				} else {
+					// Keep non-system messages.
+					$non_system_messages[] = $msg;
+				}
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_payload_build',
+				'Building payload for Cloudflare API',
+				array(
+					'input_message_count'       => count( $messages ),
+					'normalized_message_count'  => count( $normalized_messages ),
+					'system_content_length'     => strlen( $system_content ),
+					'non_system_message_count'  => count( $non_system_messages ),
+					'first_message_role'        => isset( $non_system_messages[0]['role'] ) ? $non_system_messages[0]['role'] : 'none',
+				)
 			);
+
+			$payload = array(
+				'messages' => $non_system_messages,
+			);
+
+			// Add system prompt as a separate field (Cloudflare/Ollama style).
+			if ( ! empty( $system_content ) ) {
+				$payload['system'] = $system_content;
+			}
 
 			// Add optional parameters if provided.
 			if ( isset( $options['temperature'] ) ) {
