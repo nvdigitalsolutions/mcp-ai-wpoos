@@ -26,9 +26,9 @@ class Test_Chat_Client_Tool_Choice_Default extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that Cloudflare chat-client defaults to tool_choice="none".
+	 * Test that Cloudflare chat-client defaults to tool_choice="auto".
 	 */
-	public function test_cloudflare_chat_client_defaults_to_tool_choice_none() {
+	public function test_cloudflare_chat_client_defaults_to_tool_choice_auto() {
 		$options = array(
 			'tools' => array(
 				array(
@@ -57,9 +57,9 @@ class Test_Chat_Client_Tool_Choice_Default extends WP_UnitTestCase {
 
 		$result = $this->controller->set_chat_client_tool_choice_default( $options, $assistant_config, $request_params );
 
-		// Should default to "none" for Cloudflare.
+		// Should default to "auto" for Cloudflare.
 		$this->assertArrayHasKey( 'tool_choice', $result, 'tool_choice should be set' );
-		$this->assertSame( 'none', $result['tool_choice'], 'Default tool_choice should be "none" for Cloudflare' );
+		$this->assertSame( 'auto', $result['tool_choice'], 'Default tool_choice should be "auto" for Cloudflare' );
 	}
 
 	/**
