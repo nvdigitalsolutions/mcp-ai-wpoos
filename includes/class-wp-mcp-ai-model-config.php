@@ -2151,4 +2151,49 @@ class WP_MCP_AI_Model_Config {
 
 		return $providers;
 	}
+
+	/**
+	 * Get all provider slugs from Model Config.
+	 *
+	 * Returns a unique list of all provider slugs that have models configured,
+	 * regardless of whether API keys are set up.
+	 *
+	 * @since 1.0.0
+	 * @return array Array of provider slugs (e.g., ['openai', 'anthropic', 'gemini']).
+	 */
+	public static function get_all_provider_slugs() {
+		$all_configs = self::get_all_configs();
+		$providers   = array();
+
+		foreach ( $all_configs as $config ) {
+			if ( isset( $config['provider'] ) && ! in_array( $config['provider'], $providers, true ) ) {
+				$providers[] = $config['provider'];
+			}
+		}
+
+		// Sort providers alphabetically for consistency.
+		sort( $providers );
+
+		return $providers;
+	}
+
+	/**
+	 * Get models for a specific provider from Model Config.
+	 *
+	 * @since 1.0.0
+	 * @param string $provider Provider slug (e.g., 'openai', 'anthropic').
+	 * @return array Associative array of model_id => model_name.
+	 */
+	public static function get_models_by_provider( $provider ) {
+		$all_configs = self::get_all_configs();
+		$models      = array();
+
+		foreach ( $all_configs as $model_id => $config ) {
+			if ( isset( $config['provider'] ) && $config['provider'] === $provider ) {
+				$models[ $model_id ] = isset( $config['name'] ) ? $config['name'] : $model_id;
+			}
+		}
+
+		return $models;
+	}
 }
