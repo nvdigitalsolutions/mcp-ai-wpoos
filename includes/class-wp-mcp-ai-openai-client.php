@@ -14,6 +14,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 	 * Provides a small wrapper around OpenAI's Chat Completions HTTP endpoint.
 	 */
 	class WP_MCP_AI_OpenAI_Client {
+use WP_MCP_AI_Tool_Runner;
+
 		const CHAT_COMPLETIONS_ENDPOINT     = 'https://api.openai.com/v1/chat/completions';
 		const RESPONSES_ENDPOINT            = 'https://api.openai.com/v1/responses';
 		const FILES_ENDPOINT                = 'https://api.openai.com/v1/files';
@@ -5505,5 +5507,152 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			return is_array( $decoded ) ? $decoded : array();
 		}
+
+/**
+ * Get the provider name for logging.
+ *
+ * @return string Provider name.
+ */
+protected function get_provider_name() {
+return 'openai';
+}
+
+/**
+ * Prepare tool definitions in OpenAI format.
+ *
+ * @param array $tools Array of tool definitions.
+ * @return array OpenAI-specific tool definitions.
+ */
+protected function prepare_tool_definitions( array $tools ) {
+$tool_definitions = array();
+
+foreach ( $tools as $tool ) {
+if ( ! isset( $tool['name'] ) ) {
+continue;
+}
+
+$tool_name = sanitize_text_field( $tool['name'] );
+
+// Build tool definition for API.
+$definition = array(
+'name'        => $tool_name,
+'description' => isset( $tool['description'] ) ? sanitize_text_field( $tool['description'] ) : '',
+);
+
+if ( isset( $tool['parameters'] ) && is_array( $tool['parameters'] ) ) {
+$definition['parameters'] = $tool['parameters'];
+}
+
+$tool_definitions[] = array(
+'type'     => 'function',
+'function' => $definition,
+);
+}
+
+return $tool_definitions;
+}
+
+/**
+ * Extract tool calls from API response.
+ *
+ * @param array $response API response.
+ * @return array Array of tool calls.
+ */
+protected function extract_tool_calls_from_response( array $response ) {
+if ( isset( $response['choices'][0]['message']['tool_calls'] ) ) {
+return $response['choices'][0]['message']['tool_calls'];
+}
+return array();
+}
+
+/**
+ * Build assistant message with tool calls.
+ *
+ * @param array $response   API response.
+ * @param array $tool_calls Tool calls to include.
+ * @return array Assistant message.
+ */
+protected function build_assistant_message_with_tool_calls( array $response, array $tool_calls ) {
+return $response['choices'][0]['message'];
+}
+
+/**
+ * Get function name from tool call.
+ *
+ * @param array $tool_call Tool call data.
+ * @return string Function name.
+ */
+protected function get_tool_call_function_name( array $tool_call ) {
+return isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
+}
+
+/**
+ * Get tool call ID from tool call.
+ *
+ * @param array $tool_call Tool call data.
+ * @return string Tool call ID.
+ */
+protected function get_tool_call_id( array $tool_call ) {
+return isset( $tool_call['id'] ) ? $tool_call['id'] : uniqid( 'tool-', true );
+}
+
+/**
+ * Parse arguments from tool call.
+ *
+ * @param array $tool_call Tool call data.
+ * @return array Parsed arguments.
+ */
+protected function parse_tool_call_arguments( array $tool_call ) {
+$arguments = array();
+if ( isset( $tool_call['function']['arguments'] ) ) {
+$args_json = $tool_call['function']['arguments'];
+if ( is_string( $args_json ) ) {
+$arguments = json_decode( $args_json, true );
+if ( JSON_ERROR_NONE !== json_last_error() ) {
+$arguments = array();
+}
+} elseif ( is_array( $args_json ) ) {
+$arguments = $args_json;
+}
+}
+return $arguments;
+}
+
+/**
+ * Build tool response message.
+ *
+ * @param string $tool_call_id  Tool call ID.
+ * @param string $function_name Function name.
+ * @param string $content       Response content.
+ * @return array Tool response message.
+ */
+protected function build_tool_response_message( $tool_call_id, $function_name, $content ) {
+return array(
+'role'         => 'tool',
+'tool_call_id' => $tool_call_id,
+'name'         => $function_name,
+'content'      => $content,
+);
+}
+
+/**
+ * Get tool definition name.
+ *
+ * @param array $tool_definition Tool definition.
+ * @return string Tool name.
+ */
+protected function get_tool_definition_name( array $tool_definition ) {
+return isset( $tool_definition['function']['name'] ) ? $tool_definition['function']['name'] : '';
+}
+
+/**
+ * Get tool definition parameters.
+ *
+ * @param array $tool_definition Tool definition.
+ * @return array|null Parameters schema or null.
+ */
+protected function get_tool_definition_parameters( array $tool_definition ) {
+return isset( $tool_definition['function']['parameters'] ) ? $tool_definition['function']['parameters'] : null;
+}
 	}
 }
