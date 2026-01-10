@@ -271,4 +271,98 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 
 		$this->assertNotEmpty( $malformed_logs, 'Should log when malformed tool_call is detected' );
 	}
+
+	/**
+	 * Test Cloudflare simpler format (name at top level) is normalized to OpenAI format.
+	 */
+	public function test_cloudflare_simpler_format_normalized() {
+		$decoded = array(
+			'success' => true,
+			'result'  => array(
+				'response'   => '',
+				'tool_calls' => array(
+					array(
+						'name'      => 'web_search',
+						'arguments' => array(
+							'query' => 'things you can do',
+						),
+					),
+				),
+			),
+		);
+
+		$reflection = new ReflectionClass( $this->client );
+		$method = $reflection->getMethod( 'normalize_response' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'choices', $result );
+		$this->assertArrayHasKey( 'message', $result['choices'][0] );
+		$this->assertArrayHasKey( 'tool_calls', $result['choices'][0]['message'] );
+		$this->assertCount( 1, $result['choices'][0]['message']['tool_calls'] );
+
+		$tool_call = $result['choices'][0]['message']['tool_calls'][0];
+		$this->assertArrayHasKey( 'function', $tool_call, 'Tool call should have function field' );
+		$this->assertArrayHasKey( 'name', $tool_call['function'], 'Function should have name field' );
+		$this->assertEquals( 'web_search', $tool_call['function']['name'] );
+		$this->assertArrayHasKey( 'arguments', $tool_call['function'], 'Function should have arguments field' );
+
+		// Arguments should be JSON string in OpenAI format.
+		$this->assertIsString( $tool_call['function']['arguments'], 'Arguments should be a JSON string' );
+		$decoded_args = json_decode( $tool_call['function']['arguments'], true );
+		$this->assertEquals( 'things you can do', $decoded_args['query'] );
+
+		$this->assertEquals( 'tool_calls', $result['choices'][0]['finish_reason'] );
+	}
+
+	/**
+	 * Test mix of Cloudflare simpler format and OpenAI format.
+	 */
+	public function test_mixed_cloudflare_and_openai_formats() {
+		$decoded = array(
+			'success' => true,
+			'result'  => array(
+				'response'   => '',
+				'tool_calls' => array(
+					// Cloudflare simpler format.
+					array(
+						'name'      => 'web_search',
+						'arguments' => array(
+							'query' => 'test query',
+						),
+					),
+					// OpenAI format.
+					array(
+						'id'       => 'call_456',
+						'type'     => 'function',
+						'function' => array(
+							'name'      => 'another_tool',
+							'arguments' => '{"param":"value"}',
+						),
+					),
+				),
+			),
+		);
+
+		$reflection = new ReflectionClass( $this->client );
+		$method = $reflection->getMethod( 'normalize_response' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
+
+		$this->assertArrayHasKey( 'tool_calls', $result['choices'][0]['message'] );
+		$this->assertCount( 2, $result['choices'][0]['message']['tool_calls'], 'Should include both tool calls' );
+
+		// Check first tool call (normalized from simpler format).
+		$tool_call_1 = $result['choices'][0]['message']['tool_calls'][0];
+		$this->assertEquals( 'web_search', $tool_call_1['function']['name'] );
+		$this->assertIsString( $tool_call_1['function']['arguments'] );
+
+		// Check second tool call (already in OpenAI format).
+		$tool_call_2 = $result['choices'][0]['message']['tool_calls'][1];
+		$this->assertEquals( 'another_tool', $tool_call_2['function']['name'] );
+		$this->assertEquals( '{"param":"value"}', $tool_call_2['function']['arguments'] );
+	}
 }

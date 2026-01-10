@@ -622,16 +622,54 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Cloudflare may return tool_calls when the model decides to use a tool/function.
 			// We need to validate that tool_calls is not just present but also properly formatted.
 			if ( isset( $result['tool_calls'] ) && is_array( $result['tool_calls'] ) && ! empty( $result['tool_calls'] ) ) {
-				// Validate each tool_call has the required structure.
+				// Validate and normalize each tool_call to OpenAI format.
+				// Cloudflare may return tool_calls in two formats:
+				// 1. OpenAI format: {"function": {"name": "tool_name", "arguments": {...}}}
+				// 2. Simpler format: {"name": "tool_name", "arguments": {...}}
 				$valid_tool_calls = array();
-				foreach ( $result['tool_calls'] as $tool_call ) {
-					// Each tool_call must have 'function' with 'name'.
-					if ( is_array( $tool_call ) && 
-						 isset( $tool_call['function'] ) && 
+				foreach ( $result['tool_calls'] as $index => $tool_call ) {
+					if ( ! is_array( $tool_call ) ) {
+						continue;
+					}
+
+					$normalized_tool_call = null;
+
+					// Check for OpenAI format first (function.name).
+					if ( isset( $tool_call['function'] ) && 
 						 is_array( $tool_call['function'] ) && 
 						 isset( $tool_call['function']['name'] ) && 
 						 ! empty( $tool_call['function']['name'] ) ) {
-						$valid_tool_calls[] = $tool_call;
+						// Already in OpenAI format, use as-is.
+						$normalized_tool_call = $tool_call;
+					} elseif ( isset( $tool_call['name'] ) && ! empty( $tool_call['name'] ) ) {
+						// Cloudflare simpler format - normalize to OpenAI format.
+						// The arguments field needs to be a JSON string in OpenAI format.
+						$arguments = isset( $tool_call['arguments'] ) ? $tool_call['arguments'] : array();
+						if ( is_array( $arguments ) || is_object( $arguments ) ) {
+							$arguments = wp_json_encode( $arguments );
+						}
+
+						$normalized_tool_call = array(
+							'id'       => isset( $tool_call['id'] ) ? $tool_call['id'] : 'call_' . uniqid(),
+							'type'     => 'function',
+							'function' => array(
+								'name'      => $tool_call['name'],
+								'arguments' => $arguments,
+							),
+						);
+
+						WP_MCP_AI_Logger::log_event(
+							'cloudflare_tool_call_normalized',
+							'Normalized Cloudflare simpler format to OpenAI format',
+							array(
+								'original_format' => $tool_call,
+								'normalized'      => $normalized_tool_call,
+							)
+						);
+					}
+
+					if ( $normalized_tool_call ) {
+						$valid_tool_calls[] = $normalized_tool_call;
 					} else {
 						WP_MCP_AI_Logger::log_event(
 							'cloudflare_invalid_tool_call',
@@ -639,7 +677,8 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 							array(
 								'tool_call_structure' => $tool_call,
 								'missing_function'    => ! isset( $tool_call['function'] ),
-								'missing_name'        => ! isset( $tool_call['function']['name'] ),
+								'missing_name'        => ! isset( $tool_call['name'] ),
+								'index'               => $index,
 							)
 						);
 					}
