@@ -736,6 +736,38 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				}
 			}
 
+			// Some Cloudflare models output tool calls as plain JSON text in the content
+			// instead of using the proper tool_calls array or XML format.
+			// Pattern: {"type": "function", "name": "tool_name", "parameters": {...}}
+			if ( ! $tool_calls_found && ! empty( $content ) && $this->contains_json_tool_call( $content ) ) {
+				$parsed_tool_calls = $this->parse_json_tool_calls( $content );
+				
+				if ( ! empty( $parsed_tool_calls ) ) {
+					// Use the parsed tool calls as if they came from the API properly formatted.
+					$result['tool_calls'] = $parsed_tool_calls;
+					$tool_calls_found = true;
+					
+					// Remove JSON from content since it's now converted to tool_calls.
+					$message['content'] = '';
+					
+					WP_MCP_AI_Logger::log_event(
+						'cloudflare_json_tool_calls_parsed',
+						'Detected and parsed JSON-formatted tool calls from Cloudflare model response',
+						array(
+							'model'            => $model,
+							'tool_call_count'  => count( $parsed_tool_calls ),
+							'tool_names'       => array_map(
+								function( $tc ) {
+									return isset( $tc['function']['name'] ) ? $tc['function']['name'] : 'unknown';
+								},
+								$parsed_tool_calls
+							),
+							'original_content' => substr( $content, 0, 500 ),
+						)
+					);
+				}
+			}
+
 			if ( $tool_calls_found ) {
 				// Validate and normalize each tool_call to OpenAI format.
 				// Cloudflare may return tool_calls in two formats:
@@ -1864,6 +1896,133 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				}
 			}
 			
+			return $tool_calls;
+		}
+
+		/**
+		 * Check if content contains JSON-formatted tool calls.
+		 *
+		 * Some Cloudflare models output tool calls as plain JSON text in the content
+		 * instead of using the proper tool_calls array format.
+		 *
+		 * Pattern examples:
+		 * - {"type": "function", "name": "tool_name", "parameters": {...}}
+		 * - {"type": "function", "name": "tool_name", "arguments": {...}}
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $content Response content to check.
+		 * @return bool True if content contains JSON tool call pattern.
+		 */
+		protected function contains_json_tool_call( $content ) {
+			if ( ! is_string( $content ) || '' === trim( $content ) ) {
+				return false;
+			}
+
+			// Try to decode as JSON first.
+			$decoded = json_decode( trim( $content ), true );
+			
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return false;
+			}
+
+			// Check if it matches tool call structure.
+			if ( ! is_array( $decoded ) ) {
+				return false;
+			}
+
+			// Check for function call pattern with type and name fields.
+			// Accept both "parameters" and "arguments" field names.
+			if ( isset( $decoded['type'] ) && 'function' === $decoded['type'] &&
+			     isset( $decoded['name'] ) && is_string( $decoded['name'] ) ) {
+				return true;
+			}
+
+			return false;
+		}
+
+		/**
+		 * Parse JSON-formatted tool calls from content.
+		 *
+		 * Extracts tool name and arguments/parameters from JSON text and converts to OpenAI format.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $content Response content containing JSON tool calls.
+		 * @return array Array of tool calls in OpenAI format, or empty array if parsing fails.
+		 */
+		protected function parse_json_tool_calls( $content ) {
+			if ( ! is_string( $content ) || '' === trim( $content ) ) {
+				return array();
+			}
+
+			$tool_calls = array();
+			
+			// Try to decode the content as JSON.
+			$decoded = json_decode( trim( $content ), true );
+			
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_json_tool_call_parse_error',
+					'Failed to decode JSON tool call',
+					array(
+						'content'    => substr( $content, 0, 500 ),
+						'json_error' => json_last_error_msg(),
+					)
+				);
+				return array();
+			}
+
+			if ( ! is_array( $decoded ) ) {
+				return array();
+			}
+
+			// Extract tool name.
+			$tool_name = isset( $decoded['name'] ) ? trim( $decoded['name'] ) : '';
+			
+			if ( empty( $tool_name ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_json_tool_call_parse_error',
+					'Found JSON tool call but tool name is empty',
+					array(
+						'decoded' => $decoded,
+					)
+				);
+				return array();
+			}
+
+			// Extract arguments - accept both "parameters" and "arguments" field names.
+			$arguments = null;
+			if ( isset( $decoded['parameters'] ) ) {
+				$arguments = $decoded['parameters'];
+			} elseif ( isset( $decoded['arguments'] ) ) {
+				$arguments = $decoded['arguments'];
+			}
+
+			// Ensure arguments is an array or object.
+			if ( ! is_array( $arguments ) && ! is_object( $arguments ) ) {
+				$arguments = array();
+			}
+
+			// Convert to OpenAI format.
+			$tool_calls[] = array(
+				'id'       => 'call_json_' . uniqid(),
+				'type'     => 'function',
+				'function' => array(
+					'name'      => sanitize_text_field( $tool_name ),
+					'arguments' => wp_json_encode( $arguments ),
+				),
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_json_tool_call_parsed',
+				'Successfully parsed JSON tool call',
+				array(
+					'tool_name' => $tool_name,
+					'arguments' => $arguments,
+				)
+			);
+
 			return $tool_calls;
 		}
 

@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-tools-execution-issue',
+        'version' => 'dev-copilot/fix-tools-execution-issue',
+        'reference' => 'c85bc3d883dd6471ef052b6af96c59be3d7f66ab',
         'pretty_version' => 'dev-copilot/remove-other-ai-models',
         'version' => 'dev-copilot/remove-other-ai-models',
         'reference' => '74452fb9f3400afde47b8b093d613918a7505fa4',
@@ -50,6 +53,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-tools-execution-issue',
+            'version' => 'dev-copilot/fix-tools-execution-issue',
+            'reference' => 'c85bc3d883dd6471ef052b6af96c59be3d7f66ab',
             'pretty_version' => 'dev-copilot/remove-other-ai-models',
             'version' => 'dev-copilot/remove-other-ai-models',
             'reference' => '74452fb9f3400afde47b8b093d613918a7505fa4',
