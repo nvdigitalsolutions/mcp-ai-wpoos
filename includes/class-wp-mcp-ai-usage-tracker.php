@@ -563,7 +563,61 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.00025,
 				'output_cost_per_1k' => 0.00125,
 			),
-			// Cloudflare Workers AI models (as of February 2025).
+			// Cloudflare Workers AI models (as of January 2025).
+			// Function Calling Models.
+			'@cf/meta/llama-3.3-70b-instruct-fp8-fast'     => array(
+				'input_cost_per_1k'  => 0.000293,
+				'output_cost_per_1k' => 0.002253,
+			),
+			'@cf/meta/llama-4-scout-17b-16e-instruct'      => array(
+				'input_cost_per_1k'  => 0.000270,
+				'output_cost_per_1k' => 0.000850,
+			),
+			'@cf/ibm-granite/granite-4.0-h-micro'          => array(
+				'input_cost_per_1k'  => 0.000100,
+				'output_cost_per_1k' => 0.000300,
+			),
+			'@cf/qwen/qwen3-30b-a3b-fp8'                   => array(
+				'input_cost_per_1k'  => 0.000400,
+				'output_cost_per_1k' => 0.001200,
+			),
+			'@cf/mistralai/mistral-small-3.1-24b-instruct' => array(
+				'input_cost_per_1k'  => 0.000351,
+				'output_cost_per_1k' => 0.000555,
+			),
+			'@hf/nousresearch/hermes-2-pro-mistral-7b'     => array(
+				'input_cost_per_1k'  => 0.000110,
+				'output_cost_per_1k' => 0.000190,
+			),
+			// Text Generation Models.
+			'@cf/aisingapore/gemma-sea-lion-v4-27b-it'     => array(
+				'input_cost_per_1k'  => 0.000350,
+				'output_cost_per_1k' => 0.001000,
+			),
+			'@cf/openai/gpt-oss-20b'                       => array(
+				'input_cost_per_1k'  => 0.000250,
+				'output_cost_per_1k' => 0.000800,
+			),
+			'@cf/openai/gpt-oss-120b'                      => array(
+				'input_cost_per_1k'  => 0.000600,
+				'output_cost_per_1k' => 0.002000,
+			),
+			'@cf/google/gemma-3-12b-it'                    => array(
+				'input_cost_per_1k'  => 0.000150,
+				'output_cost_per_1k' => 0.000450,
+			),
+			'@cf/qwen/qwq-32b'                             => array(
+				'input_cost_per_1k'  => 0.000400,
+				'output_cost_per_1k' => 0.001200,
+			),
+			'@cf/qwen/qwen2.5-coder-32b-instruct'          => array(
+				'input_cost_per_1k'  => 0.000400,
+				'output_cost_per_1k' => 0.001200,
+			),
+			'@cf/deepseek-ai/deepseek-r1-distill-qwen-32b' => array(
+				'input_cost_per_1k'  => 0.000497,
+				'output_cost_per_1k' => 0.004881,
+			),
 			'@cf/meta/llama-3.2-1b-instruct'               => array(
 				'input_cost_per_1k'  => 0.000027,
 				'output_cost_per_1k' => 0.000201,
@@ -571,58 +625,6 @@ class WP_MCP_AI_Usage_Tracker {
 			'@cf/meta/llama-3.2-3b-instruct'               => array(
 				'input_cost_per_1k'  => 0.000051,
 				'output_cost_per_1k' => 0.000335,
-			),
-			'@cf/meta/llama-3.1-8b-instruct-fp8-fast'      => array(
-				'input_cost_per_1k'  => 0.000045,
-				'output_cost_per_1k' => 0.000384,
-			),
-			'@cf/meta/llama-3.1-8b-instruct'               => array(
-				'input_cost_per_1k'  => 0.000282,
-				'output_cost_per_1k' => 0.000827,
-			),
-			'@cf/meta/llama-3.1-8b-instruct-fast'          => array(
-				'input_cost_per_1k'  => 0.000282,
-				'output_cost_per_1k' => 0.000827,
-			),
-			'@cf/meta/llama-3.2-11b-vision-instruct'       => array(
-				'input_cost_per_1k'  => 0.000049,
-				'output_cost_per_1k' => 0.000676,
-			),
-			'@cf/meta/llama-3.1-70b-instruct-fp8-fast'     => array(
-				'input_cost_per_1k'  => 0.000293,
-				'output_cost_per_1k' => 0.002253,
-			),
-			'@cf/meta/llama-3.1-70b-instruct'              => array(
-				'input_cost_per_1k'  => 0.000293,
-				'output_cost_per_1k' => 0.002253,
-			),
-			'@cf/meta/llama-4-scout-17b-16e-instruct'      => array(
-				'input_cost_per_1k'  => 0.000270,  // $0.27 per 1M input tokens.
-				'output_cost_per_1k' => 0.000850,  // $0.85 per 1M output tokens.
-			),
-			'@cf/deepseek-ai/deepseek-r1-distill-qwen-32b' => array(
-				'input_cost_per_1k'  => 0.000497,
-				'output_cost_per_1k' => 0.004881,
-			),
-			'@cf/mistral/mistral-7b-instruct-v0.1'         => array(
-				'input_cost_per_1k'  => 0.000110,
-				'output_cost_per_1k' => 0.000190,
-			),
-			'@cf/mistralai/mistral-small-3.1-24b-instruct' => array(
-				'input_cost_per_1k'  => 0.000351,
-				'output_cost_per_1k' => 0.000555,
-			),
-			'@cf/meta/llama-2-7b-chat-int4'                => array(
-				'input_cost_per_1k'  => 0.000050,
-				'output_cost_per_1k' => 0.000150,
-			),
-			'@cf/meta/llama-2-13b-chat-int8'               => array(
-				'input_cost_per_1k'  => 0.000080,
-				'output_cost_per_1k' => 0.000250,
-			),
-			'@cf/qwen/qwen1.5-0.5b-chat'                   => array(
-				'input_cost_per_1k'  => 0.000020,
-				'output_cost_per_1k' => 0.000080,
 			),
 			// HuggingFace Inference API models (as of January 2026).
 			'deepseek-ai/deepseek-v3.2'                    => array(
