@@ -161,7 +161,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
 				// Check if tools have executable functions (needed for embedded calling).
 				$has_executables = $this->tools_have_executables( $options['tools'] );
-				
+
 				if ( $has_executables ) {
 					// Use embedded function calling for better reliability.
 					WP_MCP_AI_Logger::log_event(
@@ -172,7 +172,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 							'reason'     => 'Cloudflare models work better with embedded approach for tool execution',
 						)
 					);
-					
+
 					return $this->run_with_tools( $messages, $options['tools'], $options );
 				} else {
 					// Tools provided but no executables - this is the traditional flow
@@ -187,7 +187,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 					);
 				}
 			}
-			
+
 			// Continue with traditional single request/response approach.
 			$api_token  = $this->get_api_token();
 			$account_id = $this->get_account_id();

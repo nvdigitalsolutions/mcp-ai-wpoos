@@ -15,6 +15,9 @@
  * @package WP_MCP_AI
  */
 
+/**
+ * Test class for Cloudflare Workers AI Traditional Function Calling.
+ */
 class Test_Cloudflare_Traditional_Function_Calling extends WP_UnitTestCase {
 
 	/**
@@ -73,8 +76,8 @@ class Test_Cloudflare_Traditional_Function_Calling extends WP_UnitTestCase {
 		);
 
 		$options = array(
-			'tools'  => $tools,
-			'model'  => '@cf/meta/llama-3.1-8b-instruct',
+			'tools'      => $tools,
+			'model'      => '@cf/meta/llama-3.1-8b-instruct',
 			'max_tokens' => 100, // Keep it small for testing.
 		);
 
@@ -409,29 +412,31 @@ class Test_Cloudflare_Traditional_Function_Calling extends WP_UnitTestCase {
 	 * works with the existing chat service agentic loop.
 	 */
 	public function test_traditional_function_calling_workflow_documentation() {
-		// This test documents the traditional function calling workflow:
-		//
-		// 1. Chat service calls $client->create_chat_completion($messages, $options)
-		//    with tools in $options['tools']
-		//
-		// 2. Cloudflare returns response with tool_calls in:
-		//    $response['choices'][0]['message']['tool_calls']
-		//
-		// 3. Chat service checks finish_reason:
-		//    - If 'tool_calls', it executes tools via execute_tool_calls()
-		//    - If 'stop', conversation is complete
-		//
-		// 4. Tool results are added as 'tool' role messages:
-		//    array(
-		//        'role' => 'tool',
-		//        'tool_call_id' => $tool_call_id,
-		//        'name' => $function_name,
-		//        'content' => $tool_result
-		//    )
-		//
-		// 5. Updated conversation is sent back to $client->create_chat_completion()
-		//
-		// 6. Loop continues until finish_reason is 'stop' or max iterations reached
+		/*
+		 * This test documents the traditional function calling workflow:
+		 *
+		 * 1. Chat service calls $client->create_chat_completion($messages, $options)
+		 *    with tools in $options['tools']
+		 *
+		 * 2. Cloudflare returns response with tool_calls in:
+		 *    $response['choices'][0]['message']['tool_calls']
+		 *
+		 * 3. Chat service checks finish_reason:
+		 *    - If 'tool_calls', it executes tools via execute_tool_calls()
+		 *    - If 'stop', conversation is complete
+		 *
+		 * 4. Tool results are added as 'tool' role messages:
+		 *    array(
+		 *        'role' => 'tool',
+		 *        'tool_call_id' => $tool_call_id,
+		 *        'name' => $function_name,
+		 *        'content' => $tool_result
+		 *    )
+		 *
+		 * 5. Updated conversation is sent back to $client->create_chat_completion()
+		 *
+		 * 6. Loop continues until finish_reason is 'stop' or max iterations reached
+		 */
 
 		// Verify the workflow components exist.
 		$this->assertTrue(

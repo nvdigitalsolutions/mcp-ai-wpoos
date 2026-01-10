@@ -5,13 +5,21 @@
  * @package WP_MCP_AI
  */
 
+/**
+ * Test class for Cloudflare XML tool calls debugging.
+ */
 class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 
 	/**
 	 * Cloudflare client instance.
+	 *
+	 * @var WP_MCP_AI_Cloudflare_Client
 	 */
 	private $client;
 
+	/**
+	 * Set up test environment.
+	 */
 	public function setUp(): void {
 		parent::setUp();
 
@@ -63,21 +71,23 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 		// Mock a response with XML tool call in content
 		// This simulates what some Cloudflare models do
 		$this->assertTrue( true, 'Test setup complete' );
-		
-		// The issue: When model returns XML like:
-		// <name>calculate</name><arguments>{"expression":"5+3"}</arguments>
-		// 
-		// Expected behavior:
-		// 1. XML is parsed to tool_calls
-		// 2. Tool is executed
-		// 3. Result is sent back to model
-		// 4. Final response is returned
-		//
-		// Current behavior (bug):
-		// 1. XML is parsed
-		// 2. Content is cleared
-		// 3. Response is returned with empty content
-		// 4. Tool is NOT executed
+
+		/*
+		 * The issue: When model returns XML like:
+		 * <name>calculate</name><arguments>{"expression":"5+3"}</arguments>
+		 *
+		 * Expected behavior:
+		 * 1. XML is parsed to tool_calls
+		 * 2. Tool is executed
+		 * 3. Result is sent back to model
+		 * 4. Final response is returned
+		 *
+		 * Current behavior (bug):
+		 * 1. XML is parsed
+		 * 2. Content is cleared
+		 * 3. Response is returned with empty content
+		 * 4. Tool is NOT executed
+		 */
 	}
 
 	/**
@@ -100,14 +110,14 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 
 		// After XML parsing, tool_calls should be present
 		$this->assertArrayHasKey( 'tool_calls', $result['choices'][0]['message'], 'XML should be parsed to tool_calls' );
-		
+
 		// finish_reason should be 'tool_calls' not 'stop'
-		$this->assertEquals( 
-			'tool_calls', 
+		$this->assertEquals(
+			'tool_calls',
 			$result['choices'][0]['finish_reason'],
 			'finish_reason should be "tool_calls" when XML tool calls are parsed'
 		);
-		
+
 		// Content should be empty since XML was converted
 		$this->assertEquals(
 			'',
@@ -123,15 +133,15 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 		$content = '<name>get_weather</name><arguments>{"location":"London"}</arguments>';
 
 		$reflection = new ReflectionClass( $this->client );
-		
-		// Test contains_xml_tool_call
+
+		// Test contains_xml_tool_call.
 		$contains_method = $reflection->getMethod( 'contains_xml_tool_call' );
 		$contains_method->setAccessible( true );
 		$has_xml = $contains_method->invoke( $this->client, $content );
-		
+
 		$this->assertTrue( $has_xml, 'Should detect XML tool call pattern' );
-		
-		// Test parse_xml_tool_calls
+
+		// Test parse_xml_tool_calls.
 		$parse_method = $reflection->getMethod( 'parse_xml_tool_calls' );
 		$parse_method->setAccessible( true );
 		$parsed = $parse_method->invoke( $this->client, $content );
@@ -139,8 +149,8 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 		$this->assertIsArray( $parsed );
 		$this->assertNotEmpty( $parsed );
 		$this->assertEquals( 'get_weather', $parsed[0]['function']['name'] );
-		
-		// Arguments should be JSON string
+
+		// Arguments should be JSON string.
 		$this->assertIsString( $parsed[0]['function']['arguments'] );
 		$args = json_decode( $parsed[0]['function']['arguments'], true );
 		$this->assertEquals( 'London', $args['location'] );
