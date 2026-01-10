@@ -698,6 +698,9 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-key-rotation.php';
 	WP_MCP_AI_Admin_Key_Rotation::init();
 
+	// Load Model Manager AJAX handlers.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-manager-ajax.php';
+
 	// Load ISO 27001 certification badge display.
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-iso27001-badge.php';
 
