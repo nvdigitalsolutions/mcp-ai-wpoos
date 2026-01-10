@@ -1213,11 +1213,15 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		 *                         - model: Model to use (default: configured model)
 		 *                         - temperature: Temperature setting (0-1)
 		 *                         - max_tokens: Maximum tokens to generate
+		 *                         - tool_choice: Control tool usage - "auto" (default), "none", "required", "any", or specific tool
+		 *                         - response_format: JSON mode config - {type: "json_object"} or {type: "json_schema", json_schema: {...}}
+		 *                         - disable_auto_json: Disable automatic JSON mode for tool calling (default: false)
 		 *                         - strictValidation: Validate tool arguments before execution (default: true)
 		 *                         - maxRecursiveToolRuns: Maximum recursive tool call depth (default: 5)
 		 *                         - streamFinalResponse: Return streaming response (default: false)
 		 *                         - verbose: Enable verbose logging (default: false)
 		 *                         - autoTrimTools: Automatically trim tools based on context (default: false)
+		 *                         - maxTools: Maximum tools when auto-trimming (default: 10)
 		 *                         - timeout: Request timeout in seconds
 		 * @return array|WP_Error Response array or error.
 		 */
