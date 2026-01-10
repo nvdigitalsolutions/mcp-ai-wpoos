@@ -609,37 +609,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'cloudflare_model'                   => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Cloudflare Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default model to use for Cloudflare Workers AI requests. Updated catalog includes Llama 4 Scout (multimodal), fast variants, and specialized models. Llama 3.1-8B-Instruct is the most popular choice.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Cloudflare Workers AI requests. Updated catalog includes function calling and text generation models. Llama 3.2-3B-Instruct is recommended for general use.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						// Llama 3.1 models (most popular).
-						'@cf/meta/llama-3.1-8b-instruct'           => 'Llama 3.1 8B Instruct (Recommended)',
-						'@cf/meta/llama-3.1-8b-instruct-fast'      => 'Llama 3.1 8B Instruct Fast (128K context)',
-						'@cf/meta/llama-3.1-70b-instruct'          => 'Llama 3.1 70B Instruct',
-						// Llama 3.2 models (compact).
-						'@cf/meta/llama-3.2-1b-instruct'           => 'Llama 3.2 1B Instruct',
-						'@cf/meta/llama-3.2-3b-instruct'           => 'Llama 3.2 3B Instruct',
-						// Llama 2 models (legacy).
-						'@cf/meta/llama-2-7b-chat-int4'            => 'Llama 2 7B Chat (INT4)',
-						'@cf/meta/llama-2-13b-chat-int8'           => 'Llama 2 13B Chat (INT8)',
-						// Llama 4 Scout (NEW - multimodal).
-						'@cf/meta/llama-4-scout'                   => 'Llama 4 Scout (17B, Multimodal)',
-						'@cf/meta/llama-4-scout-17b-16e-instruct'  => 'Llama 4 Scout 17B 16E Instruct (131K context, Multimodal)',
-						// Mistral models (FIXED namespace).
-						'@cf/mistralai/mistral-7b-instruct-v0.1'   => 'Mistral 7B Instruct v0.1',
-						// Qwen models (multilingual).
-						'@cf/qwen/qwen1.5-0.5b-chat'               => 'Qwen 1.5 0.5B Chat',
-						'@cf/qwen/qwen1.5-1.8b-chat'               => 'Qwen 1.5 1.8B Chat',
-						'@cf/qwen/qwen1.5-7b-chat-awq'             => 'Qwen 1.5 7B Chat (AWQ)',
-						'@cf/qwen/qwen1.5-14b-chat-awq'            => 'Qwen 1.5 14B Chat (AWQ)',
-						// Compact/efficient models.
-						'@cf/tinyllama/tinyllama-1.1b-chat-v1.0'   => 'TinyLlama 1.1B Chat v1.0',
-						'@cf/microsoft/phi-2'                      => 'Microsoft Phi-2',
-						// Specialized models.
-						'@cf/tiiuae/falcon-7b-instruct'            => 'Falcon 7B Instruct',
-						'@cf/deepseek-ai/deepseek-math-7b-instruct' => 'DeepSeek Math 7B Instruct',
-						'@cf/openchat/openchat-3.5-0106'           => 'OpenChat 3.5',
+						// Function Calling Models.
+						'@cf/meta/llama-3.3-70b-instruct-fp8-fast'     => 'Llama 3.3 70B Instruct FP8 Fast',
+						'@cf/meta/llama-4-scout-17b-16e-instruct'      => 'Llama 4 Scout 17B 16E Instruct',
+						'@cf/ibm-granite/granite-4.0-h-micro'          => 'IBM Granite 4.0 H Micro',
+						'@cf/qwen/qwen3-30b-a3b-fp8'                   => 'Qwen 3 30B A3B FP8',
+						'@cf/mistralai/mistral-small-3.1-24b-instruct' => 'Mistral Small 3.1 24B Instruct',
+						'@hf/nousresearch/hermes-2-pro-mistral-7b'     => 'Hermes 2 Pro Mistral 7B',
+						// Text Generation Models.
+						'@cf/aisingapore/gemma-sea-lion-v4-27b-it'     => 'Gemma SEA Lion V4 27B IT',
+						'@cf/openai/gpt-oss-20b'                       => 'GPT OSS 20B',
+						'@cf/openai/gpt-oss-120b'                      => 'GPT OSS 120B',
+						'@cf/google/gemma-3-12b-it'                    => 'Gemma 3 12B IT',
+						'@cf/qwen/qwq-32b'                             => 'Qwen QwQ 32B',
+						'@cf/qwen/qwen2.5-coder-32b-instruct'          => 'Qwen 2.5 Coder 32B Instruct',
+						'@cf/deepseek-ai/deepseek-r1-distill-qwen-32b' => 'DeepSeek R1 Distill Qwen 32B',
+						'@cf/meta/llama-3.2-1b-instruct'               => 'Llama 3.2 1B Instruct',
+						'@cf/meta/llama-3.2-3b-instruct'               => 'Llama 3.2 3B Instruct (Recommended)',
 					),
-					'default'     => '@cf/meta/llama-3.1-8b-instruct',
+					'default'     => '@cf/meta/llama-3.2-3b-instruct',
 				),
 				'cloudflare_image_model'             => array(
 					'type'        => 'select',
