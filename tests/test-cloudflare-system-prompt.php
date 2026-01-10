@@ -233,3 +233,5 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 		$this->assertCount( 1, $payload['messages'] );
 		$this->assertEquals( 'user', $payload['messages'][0]['role'] );
 	}
+}
+
