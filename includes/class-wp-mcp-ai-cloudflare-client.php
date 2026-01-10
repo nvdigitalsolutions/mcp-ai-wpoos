@@ -900,6 +900,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 					'provider'   => 'cloudflare',
 				);
 			}
+		}
+
+		/**
 		 * Run chat completion with embedded function calling support (ai-utils style).
 		 *
 		 * This method provides a PHP equivalent to the @cloudflare/ai-utils runWithTools() utility,
