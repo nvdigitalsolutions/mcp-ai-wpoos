@@ -415,8 +415,10 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 					'input_message_count'       => count( $messages ),
 					'normalized_message_count'  => count( $normalized_messages ),
 					'system_content_length'     => strlen( $system_content ),
+					'system_content_preview'    => ! empty( $system_content ) ? substr( $system_content, 0, 100 ) . '...' : '',
 					'non_system_message_count'  => count( $non_system_messages ),
 					'first_message_role'        => isset( $non_system_messages[0]['role'] ) ? $non_system_messages[0]['role'] : 'none',
+					'will_include_system_field' => ! empty( $system_content ),
 				)
 			);
 
@@ -428,6 +430,24 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// This ensures the system instructions are applied before processing messages and tools.
 			if ( ! empty( $system_content ) ) {
 				$payload['system'] = $system_content;
+				
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_system_field_added',
+					'System field added to Cloudflare payload',
+					array(
+						'system_length'  => strlen( $system_content ),
+						'system_preview' => substr( $system_content, 0, 150 ) . '...',
+					)
+				);
+			} else {
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_no_system_field',
+					'WARNING: No system field in Cloudflare payload - assistant may not follow instructions',
+					array(
+						'system_content_empty' => empty( $system_content ),
+						'system_content_value' => $system_content,
+					)
+				);
 			}
 
 			// Add messages array AFTER system field.
