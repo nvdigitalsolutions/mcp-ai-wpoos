@@ -326,10 +326,10 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		// Make the API call.
-		$result = $client->chat_completion(
+		$result = $client->create_chat_completion(
+			$messages,
 			array(
 				'model'       => $model,
-				'messages'    => $messages,
 				'temperature' => 0.2, // Low temperature for factual information.
 				'max_tokens'  => 2000,
 			)
