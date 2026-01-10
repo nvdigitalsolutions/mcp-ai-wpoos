@@ -447,9 +447,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * This endpoint is specifically designed for browser chat interfaces
 	 * and applies relaxed iteration limits (15) compared to the MCP protocol endpoint (1).
 	 *
-	 * For Cloudflare Workers AI, defaults to tool_choice="none" to prevent auto-triggering
-	 * of tools unless explicitly requested by the user. This ensures the assistant responds
-	 * from its persona/knowledge first, and only uses tools when appropriate.
+	 * For Cloudflare Workers AI, defaults to tool_choice="auto" to allow the model to
+	 * intelligently decide when tools are appropriate based on user intent. The system
+	 * prompt and conversation context guide appropriate tool usage.
 	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return WP_REST_Response|WP_Error Response object.
@@ -509,9 +509,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * Set default tool_choice for chat-client requests.
 	 *
-	 * For Cloudflare Workers AI specifically, defaults to "none" to prevent auto-triggering
-	 * of tools. This ensures assistants respond from their persona first and only use tools
-	 * when the user explicitly requests a tool-requiring action.
+	 * For Cloudflare Workers AI, defaults to "auto" to allow the model to intelligently
+	 * decide when to use tools based on the user's request. The model will only trigger
+	 * tools when appropriate based on the conversation context.
 	 *
 	 * User can still override by passing tool_choice in request options.
 	 *
@@ -528,12 +528,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$provider = isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : '';
 		
 		if ( 'cloudflare' === $provider && ! isset( $options['tool_choice'] ) && ! empty( $options['tools'] ) ) {
-			// Default to "none" for chat-client to prevent auto-triggering
-			$options['tool_choice'] = 'none';
+			// Default to "auto" for chat-client to let model decide when tools are needed
+			$options['tool_choice'] = 'auto';
 			
 			WP_MCP_AI_Logger::log_event(
 				'chat_client_tool_choice_default',
-				'Set default tool_choice="none" for Cloudflare chat-client',
+				'Set default tool_choice="auto" for Cloudflare chat-client',
 				array(
 					'assistant_id' => isset( $assistant_config['ID'] ) ? $assistant_config['ID'] : null,
 					'tool_count'   => count( $options['tools'] ),
