@@ -326,6 +326,7 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 		$result = array(
 			'attachment_id' => $storage['attachment_id'],
 			'url'           => $storage['url'],
+			'download_url'  => isset( $storage['download_url'] ) && '' !== $storage['download_url'] ? $storage['download_url'] : $storage['url'],
 			'file_path'     => $storage['file'],
 			'file_name'     => $storage['file_name'],
 			'mime_type'     => $storage['mime_type'],
@@ -490,6 +491,7 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 			'file'          => $file_path,
 			'file_name'     => wp_basename( $file_path ),
 			'url'           => $local_url,
+			'download_url'  => $local_url,
 			'mime_type'     => $mime_type,
 			'bytes'         => $bytes ? (int) $bytes : 0,
 			'title'         => $title,
@@ -720,6 +722,7 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 			'file'          => $file_path,
 			'file_name'     => wp_basename( $file_path ),
 			'url'           => $local_url,
+			'download_url'  => $local_url,
 			'mime_type'     => 'image/svg+xml',
 			'bytes'         => $bytes ? (int) $bytes : 0,
 			'title'         => get_the_title( $attachment_id ),
@@ -737,10 +740,11 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 			return $result;
 		}
 
-		// Keep only essential metadata.
+		// Keep only essential metadata for LLM reasoning.
 		$keep_fields = array(
 			'attachment_id',
 			'url',
+			'download_url',
 			'file_name',
 			'mime_type',
 			'bytes',
@@ -769,9 +773,15 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 		}
 
 		// Add image_url structure for the agentic loop.
-		if ( isset( $result['url'] ) && '' !== $result['url'] ) {
+		// This allows vision models to "see" the generated image in subsequent iterations.
+		// Prefer download_url (if available) over url for Cloudflare images.
+		$image_url = isset( $result['download_url'] ) && '' !== $result['download_url']
+			? $result['download_url']
+			: ( isset( $result['url'] ) && '' !== $result['url'] ? $result['url'] : '' );
+
+		if ( '' !== $image_url ) {
 			$sanitized['image_url'] = array(
-				'url' => $result['url'],
+				'url' => $image_url,
 			);
 		}
 
