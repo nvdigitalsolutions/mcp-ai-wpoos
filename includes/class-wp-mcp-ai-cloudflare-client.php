@@ -406,16 +406,20 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				)
 			);
 
-			$payload = array(
-				'messages' => $non_system_messages,
-			);
+			// Build payload with system field FIRST, before messages and tools.
+			// Cloudflare Workers AI processes fields in order, so system must come first.
+			$payload = array();
 
-			// Add system prompt as a separate field (Cloudflare/Ollama style).
+			// Add system prompt as the FIRST field (Cloudflare/Ollama style).
+			// This ensures the system instructions are applied before processing messages and tools.
 			if ( ! empty( $system_content ) ) {
 				$payload['system'] = $system_content;
 			}
 
-			// Add optional parameters if provided.
+			// Add messages array AFTER system field.
+			$payload['messages'] = $non_system_messages;
+
+			// Add optional parameters.
 			if ( isset( $options['temperature'] ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
@@ -428,7 +432,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				$payload['stream'] = (bool) $options['stream'];
 			}
 
-			// Add tools if provided.
+			// Add tools LAST, after system and messages.
 			// Tools are passed from the REST controller in OpenAI format with type='function' and function definition.
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
 				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );

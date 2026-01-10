@@ -233,5 +233,69 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 		$this->assertCount( 1, $payload['messages'] );
 		$this->assertEquals( 'user', $payload['messages'][0]['role'] );
 	}
+
+	/**
+	 * Test that payload fields are ordered correctly: system, messages, tools.
+	 *
+	 * Cloudflare Workers AI processes fields in order, so system must come first
+	 * to ensure the system instructions are applied before messages and tools.
+	 */
+	public function test_payload_field_ordering() {
+		$messages = array(
+			array(
+				'role'    => 'system',
+				'content' => 'You are YAAD-RELIEF, a disaster relief assistant for Jamaica.',
+			),
+			array(
+				'role'    => 'user',
+				'content' => 'What can you help me with?',
+			),
+		);
+
+		$tools = array(
+			array(
+				'type'     => 'function',
+				'function' => array(
+					'name'        => 'get_weather',
+					'description' => 'Get weather information',
+					'parameters'  => array(
+						'type'       => 'object',
+						'properties' => array(),
+					),
+				),
+			),
+		);
+
+		$options = array(
+			'tools'       => $tools,
+			'temperature' => 0.7,
+		);
+
+		// Use reflection to access the protected build_payload method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'build_payload' );
+		$method->setAccessible( true );
+
+		$payload = $method->invoke( $this->client, $messages, $options );
+
+		// Get the keys in the order they appear in the payload.
+		$keys = array_keys( $payload );
+
+		// Verify system comes BEFORE messages.
+		$system_index   = array_search( 'system', $keys, true );
+		$messages_index = array_search( 'messages', $keys, true );
+		$this->assertLessThan( $messages_index, $system_index, 'System field should come before messages field' );
+
+		// If tools are present, verify they come AFTER system and messages.
+		if ( isset( $payload['tools'] ) ) {
+			$tools_index = array_search( 'tools', $keys, true );
+			$this->assertGreaterThan( $system_index, $tools_index, 'Tools field should come after system field' );
+			$this->assertGreaterThan( $messages_index, $tools_index, 'Tools field should come after messages field' );
+		}
+
+		// Verify the expected order: system, messages, then optionally temperature, tools.
+		$this->assertEquals( 'system', $keys[0], 'First field should be system' );
+		$this->assertEquals( 'messages', $keys[1], 'Second field should be messages' );
+	}
 }
 
