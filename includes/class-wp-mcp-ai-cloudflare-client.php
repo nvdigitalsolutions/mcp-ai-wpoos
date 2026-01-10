@@ -446,10 +446,46 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				$payload['stream'] = (bool) $options['stream'];
 			}
 
+			// Add response_format for JSON mode (OpenAI-compatible).
+			// Supported values: {"type": "json_object"} or {"type": "json_schema", "json_schema": {...}}.
+			// When tools are present and no response_format is explicitly set, automatically enable
+			// JSON mode to ensure tool calls are properly formatted and parseable.
+			$has_tools = ! empty( $options['tools'] ) && is_array( $options['tools'] );
+			
+			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
+				// User explicitly set response_format, use it.
+				$payload['response_format'] = $options['response_format'];
+			} elseif ( $has_tools && ! isset( $options['disable_auto_json'] ) ) {
+				// Auto-enable JSON mode for tool calling to ensure consistent, parseable responses.
+				// This helps prevent issues where the model returns malformed tool calls.
+				// Can be disabled by setting $options['disable_auto_json'] = true.
+				$payload['response_format'] = array( 'type' => 'json_object' );
+				
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_auto_json_enabled',
+					'Automatically enabled JSON mode for tool calling',
+					array(
+						'tool_count'  => count( $options['tools'] ),
+						'tool_choice' => isset( $options['tool_choice'] ) ? $options['tool_choice'] : 'auto',
+					)
+				);
+			}
+
 			// Add tools LAST, after system and messages.
 			// Tools are passed from the REST controller in OpenAI format with type='function' and function definition.
-			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+			// Respect tool_choice parameter to control when tools are included and how they're used.
+			$tool_choice = isset( $options['tool_choice'] ) ? $options['tool_choice'] : 'auto';
+			
+			// If tool_choice is "none", don't include tools in the payload.
+			// This prevents the model from auto-triggering tools when they shouldn't be used.
+			if ( 'none' !== $tool_choice && ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
 				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
+				
+				// Add tool_choice to payload if it's not "auto" (which is the default behavior).
+				// Supported values: "auto" (default), "none", "any"/"required", or specific tool.
+				if ( 'auto' !== $tool_choice ) {
+					$payload['tool_choice'] = $tool_choice;
+				}
 			}
 
 			return $payload;
