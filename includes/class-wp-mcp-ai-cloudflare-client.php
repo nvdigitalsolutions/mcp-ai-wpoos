@@ -370,10 +370,79 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Add tools if provided.
 			// Tools are passed from the REST controller in OpenAI format with type='function' and function definition.
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
-				$payload['tools'] = $options['tools'];
+				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
 			}
 
 			return $payload;
+		}
+
+		/**
+		 * Normalize tools for the request payload.
+		 *
+		 * Ensures tools have the correct format with proper name field.
+		 * Converts tool slugs/IDs to names as needed.
+		 *
+		 * @param array $tools Tools array to normalize.
+		 * @return array Normalized tools array.
+		 */
+		protected function normalise_tools_for_payload( $tools ) {
+			if ( $tools instanceof \Traversable ) {
+				$tools = iterator_to_array( $tools );
+			}
+
+			if ( is_object( $tools ) ) {
+				$tools = (array) $tools;
+			}
+
+			if ( ! is_array( $tools ) ) {
+				return array();
+			}
+
+			$normalised = array();
+
+			foreach ( $tools as $tool ) {
+				if ( $tool instanceof \Traversable ) {
+					$tool = iterator_to_array( $tool );
+				}
+
+				if ( is_object( $tool ) ) {
+					$tool = (array) $tool;
+				}
+
+				if ( ! is_array( $tool ) || empty( $tool ) ) {
+					continue;
+				}
+
+				$type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
+
+				if ( 'function' === $type ) {
+					if ( isset( $tool['function'] ) && is_array( $tool['function'] ) ) {
+						if ( isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+							$tool['name'] = (string) $tool['function']['name'];
+						}
+					}
+				}
+
+				if ( ! isset( $tool['name'] ) || '' === $tool['name'] ) {
+					if ( isset( $tool['function'] ) && is_array( $tool['function'] ) && isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+						$tool['name'] = (string) $tool['function']['name'];
+					} elseif ( isset( $tool['slug'] ) && '' !== $tool['slug'] ) {
+						$tool['name'] = (string) $tool['slug'];
+					} elseif ( isset( $tool['id'] ) && '' !== $tool['id'] ) {
+						$tool['name'] = (string) $tool['id'];
+					}
+				}
+
+				if ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
+					continue;
+				}
+
+				$tool['name'] = (string) $tool['name'];
+
+				$normalised[] = $tool;
+			}
+
+			return array_values( $normalised );
 		}
 
 		/**
