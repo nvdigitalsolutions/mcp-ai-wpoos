@@ -32,12 +32,12 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that system_prompt in options is added as a system message.
+	 * Test that system_prompt in options is added as a system field in payload.
 	 *
-	 * This test verifies that when system_prompt is provided in options,
-	 * it is prepended to the messages array as a system role message.
+	 * Cloudflare Workers AI uses a separate 'system' field for system prompts
+	 * rather than system role messages (similar to Ollama).
 	 */
-	public function test_system_prompt_added_to_messages() {
+	public function test_system_prompt_added_as_system_field() {
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -73,26 +73,30 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 		// Now call build_payload with the updated messages.
 		$payload = $method->invoke( $this->client, $messages, $options );
 
-		// Verify the payload contains messages with system role first.
+		// Verify the payload has a 'system' field with the system_prompt content.
+		$this->assertArrayHasKey( 'system', $payload );
+		$this->assertStringContainsString( 'disaster relief assistant', $payload['system'] );
+
+		// Verify messages array only contains non-system messages.
 		$this->assertArrayHasKey( 'messages', $payload );
 		$this->assertIsArray( $payload['messages'] );
-		$this->assertGreaterThanOrEqual( 2, count( $payload['messages'] ) );
+		$this->assertCount( 1, $payload['messages'] );
+		$this->assertEquals( 'user', $payload['messages'][0]['role'] );
+		$this->assertEquals( 'Hello, what can you do?', $payload['messages'][0]['content'] );
 
-		// First message should be system role with the system_prompt content.
-		$this->assertEquals( 'system', $payload['messages'][0]['role'] );
-		$this->assertStringContainsString( 'disaster relief assistant', $payload['messages'][0]['content'] );
-
-		// Second message should be the user message.
-		$this->assertEquals( 'user', $payload['messages'][1]['role'] );
-		$this->assertEquals( 'Hello, what can you do?', $payload['messages'][1]['content'] );
+		// Verify no system role messages in the messages array.
+		foreach ( $payload['messages'] as $msg ) {
+			$this->assertNotEquals( 'system', $msg['role'], 'Messages array should not contain system role messages' );
+		}
 	}
 
 	/**
-	 * Test that system messages are not stripped during normalization.
+	 * Test that system messages are extracted and converted to system field.
 	 *
-	 * Verifies that normalize_messages preserves system role messages.
+	 * Verifies that system role messages are extracted from the messages array
+	 * and placed in the 'system' field of the payload.
 	 */
-	public function test_system_messages_preserved_during_normalization() {
+	public function test_system_messages_extracted_to_system_field() {
 		$messages = array(
 			array(
 				'role'    => 'system',
@@ -104,23 +108,23 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 			),
 		);
 
-		// Use reflection to access the protected normalize_messages method.
+		// Use reflection to access the protected build_payload method.
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'normalize_messages' );
+		$method     = $reflection->getMethod( 'build_payload' );
 		$method->setAccessible( true );
 
-		$normalized = $method->invoke( $this->client, $messages );
+		$payload = $method->invoke( $this->client, $messages, array() );
 
-		// Verify both messages are preserved.
-		$this->assertCount( 2, $normalized );
+		// Verify system field is present with system message content.
+		$this->assertArrayHasKey( 'system', $payload );
+		$this->assertStringContainsString( 'YAAD-RELIEF', $payload['system'] );
+		$this->assertStringContainsString( 'disaster relief', $payload['system'] );
 
-		// First message should still be system role.
-		$this->assertEquals( 'system', $normalized[0]['role'] );
-		$this->assertStringContainsString( 'YAAD-RELIEF', $normalized[0]['content'] );
-
-		// Second message should be user role.
-		$this->assertEquals( 'user', $normalized[1]['role'] );
-		$this->assertStringContainsString( 'hurricane', $normalized[1]['content'] );
+		// Verify messages array only contains non-system messages.
+		$this->assertArrayHasKey( 'messages', $payload );
+		$this->assertCount( 1, $payload['messages'] );
+		$this->assertEquals( 'user', $payload['messages'][0]['role'] );
+		$this->assertStringContainsString( 'hurricane', $payload['messages'][0]['content'] );
 	}
 
 	/**
@@ -142,12 +146,12 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that empty system_prompt doesn't add a system message.
+	 * Test that empty system_prompt doesn't add a system field.
 	 *
 	 * Verifies that when system_prompt is empty or not provided,
-	 * no system message is added to the payload.
+	 * no system field is added to the payload.
 	 */
-	public function test_empty_system_prompt_no_system_message() {
+	public function test_empty_system_prompt_no_system_field() {
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -180,9 +184,52 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 
 		$payload = $method->invoke( $this->client, $messages, $options );
 
+		// Verify the payload does not have a system field.
+		$this->assertArrayNotHasKey( 'system', $payload );
+
 		// Verify the payload only contains the user message.
 		$this->assertArrayHasKey( 'messages', $payload );
 		$this->assertCount( 1, $payload['messages'] );
 		$this->assertEquals( 'user', $payload['messages'][0]['role'] );
 	}
-}
+
+	/**
+	 * Test that multiple system messages are combined into a single system field.
+	 *
+	 * This handles cases where professional layer prompts are added as additional
+	 * system messages, ensuring they're all combined correctly.
+	 */
+	public function test_multiple_system_messages_combined() {
+		$messages = array(
+			array(
+				'role'    => 'system',
+				'content' => 'You are YAAD-RELIEF, a disaster relief assistant for Jamaica.',
+			),
+			array(
+				'role'    => 'system',
+				'content' => 'Professional Role: You have expertise in hurricane preparedness and emergency response.',
+			),
+			array(
+				'role'    => 'user',
+				'content' => 'What should I prepare for a hurricane?',
+			),
+		);
+
+		// Use reflection to access the protected build_payload method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'build_payload' );
+		$method->setAccessible( true );
+
+		$payload = $method->invoke( $this->client, $messages, array() );
+
+		// Verify system field contains both system messages combined.
+		$this->assertArrayHasKey( 'system', $payload );
+		$this->assertStringContainsString( 'YAAD-RELIEF', $payload['system'] );
+		$this->assertStringContainsString( 'Professional Role', $payload['system'] );
+		$this->assertStringContainsString( 'hurricane preparedness', $payload['system'] );
+
+		// Verify messages array only contains the user message.
+		$this->assertArrayHasKey( 'messages', $payload );
+		$this->assertCount( 1, $payload['messages'] );
+		$this->assertEquals( 'user', $payload['messages'][0]['role'] );
+	}

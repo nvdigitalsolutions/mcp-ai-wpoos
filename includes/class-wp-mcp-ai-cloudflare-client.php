@@ -372,22 +372,48 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Cloudflare Workers AI expects content to be a string for text-only messages.
 			$normalized_messages = $this->normalize_messages( $messages );
 
+			// Cloudflare Workers AI uses a separate 'system' field for system prompts
+			// rather than system role messages, similar to Ollama.
+			// We need to extract system messages from the messages array and use the system field instead.
+			$system_content = '';
+			$non_system_messages = array();
+
+			foreach ( $normalized_messages as $msg ) {
+				if ( isset( $msg['role'] ) && 'system' === $msg['role'] ) {
+					// Accumulate system message content.
+					if ( ! empty( $msg['content'] ) ) {
+						if ( ! empty( $system_content ) ) {
+							$system_content .= "\n\n" . $msg['content'];
+						} else {
+							$system_content = $msg['content'];
+						}
+					}
+				} else {
+					// Keep non-system messages.
+					$non_system_messages[] = $msg;
+				}
+			}
+
 			WP_MCP_AI_Logger::log_event(
 				'cloudflare_payload_build',
 				'Building payload for Cloudflare API',
 				array(
-					'input_message_count'      => count( $messages ),
-					'normalized_message_count' => count( $normalized_messages ),
-					'first_normalized_role'    => isset( $normalized_messages[0]['role'] ) ? $normalized_messages[0]['role'] : 'none',
-					'has_system_messages'      => ! empty( array_filter( $normalized_messages, function( $msg ) {
-						return isset( $msg['role'] ) && 'system' === $msg['role'];
-					} ) ),
+					'input_message_count'       => count( $messages ),
+					'normalized_message_count'  => count( $normalized_messages ),
+					'system_content_length'     => strlen( $system_content ),
+					'non_system_message_count'  => count( $non_system_messages ),
+					'first_message_role'        => isset( $non_system_messages[0]['role'] ) ? $non_system_messages[0]['role'] : 'none',
 				)
 			);
 
 			$payload = array(
-				'messages' => $normalized_messages,
+				'messages' => $non_system_messages,
 			);
+
+			// Add system prompt as a separate field (Cloudflare/Ollama style).
+			if ( ! empty( $system_content ) ) {
+				$payload['system'] = $system_content;
+			}
 
 			// Add optional parameters if provided.
 			if ( isset( $options['temperature'] ) ) {
