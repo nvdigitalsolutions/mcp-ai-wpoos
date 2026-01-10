@@ -572,7 +572,7 @@ class WP_MCP_AI_Model_Service {
 			'huggingface' => 'meta-llama/Llama-3.2-3B-Instruct',
 			'ollama'      => 'llama3.2',
 			'lm_studio'   => 'qwen/qwen2.5-7b',
-			'cloudflare'  => '@cf/meta/llama-3.1-8b-instruct',
+			'cloudflare'  => '@cf/meta/llama-3.2-3b-instruct',
 		);
 
 		$default = isset( $defaults[ $provider ] ) ? $defaults[ $provider ] : '';
