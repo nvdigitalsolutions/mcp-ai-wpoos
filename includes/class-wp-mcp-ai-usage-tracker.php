@@ -596,6 +596,10 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.000293,
 				'output_cost_per_1k' => 0.002253,
 			),
+			'@cf/meta/llama-4-scout-17b-16e-instruct'      => array(
+				'input_cost_per_1k'  => 0.000270,  // $0.27 per 1M input tokens.
+				'output_cost_per_1k' => 0.000850,  // $0.85 per 1M output tokens.
+			),
 			'@cf/deepseek-ai/deepseek-r1-distill-qwen-32b' => array(
 				'input_cost_per_1k'  => 0.000497,
 				'output_cost_per_1k' => 0.004881,

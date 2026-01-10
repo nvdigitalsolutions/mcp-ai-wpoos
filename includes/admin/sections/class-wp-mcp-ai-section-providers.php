@@ -623,6 +623,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'@cf/meta/llama-2-13b-chat-int8'           => 'Llama 2 13B Chat (INT8)',
 						// Llama 4 Scout (NEW - multimodal).
 						'@cf/meta/llama-4-scout'                   => 'Llama 4 Scout (17B, Multimodal)',
+						'@cf/meta/llama-4-scout-17b-16e-instruct'  => 'Llama 4 Scout 17B 16E Instruct (131K context, Multimodal)',
 						// Mistral models (FIXED namespace).
 						'@cf/mistralai/mistral-7b-instruct-v0.1'   => 'Mistral 7B Instruct v0.1',
 						// Qwen models (multilingual).
