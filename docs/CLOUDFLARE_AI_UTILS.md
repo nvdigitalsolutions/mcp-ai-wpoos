@@ -37,6 +37,9 @@ public function run_with_tools( array $messages, array $tools = array(), array $
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
+| `tool_choice` | string\|array | `"auto"` | Control tool usage: "auto", "none", "required", "any", or specific tool object |
+| `response_format` | array | `null` | JSON mode config: `{type: "json_object"}` or `{type: "json_schema", json_schema: {...}}` |
+| `disable_auto_json` | bool | `false` | Disable automatic JSON mode for tool calling |
 | `strictValidation` | bool | `true` | Validate tool arguments before execution |
 | `maxRecursiveToolRuns` | int | `5` | Maximum recursive tool call depth |
 | `streamFinalResponse` | bool | `false` | Return streaming response (PHP limitation: not truly streaming) |
