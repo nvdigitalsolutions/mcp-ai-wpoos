@@ -900,6 +900,483 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 					'provider'   => 'cloudflare',
 				);
 			}
+		 * Run chat completion with embedded function calling support (ai-utils style).
+		 *
+		 * This method provides a PHP equivalent to the @cloudflare/ai-utils runWithTools() utility,
+		 * enabling embedded function calling with Cloudflare Workers AI models.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $messages  Message payload to send.
+		 * @param array $tools     Array of tool definitions with executable functions.
+		 * @param array $options   Additional options:
+		 *                         - model: Model to use (default: configured model)
+		 *                         - temperature: Temperature setting (0-1)
+		 *                         - max_tokens: Maximum tokens to generate
+		 *                         - strictValidation: Validate tool arguments before execution (default: true)
+		 *                         - maxRecursiveToolRuns: Maximum recursive tool call depth (default: 5)
+		 *                         - streamFinalResponse: Return streaming response (default: false)
+		 *                         - verbose: Enable verbose logging (default: false)
+		 *                         - autoTrimTools: Automatically trim tools based on context (default: false)
+		 *                         - timeout: Request timeout in seconds
+		 * @return array|WP_Error Response array or error.
+		 */
+		public function run_with_tools( array $messages, array $tools = array(), array $options = array() ) {
+			// Configuration options with defaults.
+			$strict_validation       = isset( $options['strictValidation'] ) ? (bool) $options['strictValidation'] : true;
+			$max_recursive_runs      = isset( $options['maxRecursiveToolRuns'] ) ? absint( $options['maxRecursiveToolRuns'] ) : 5;
+			$stream_final_response   = isset( $options['streamFinalResponse'] ) ? (bool) $options['streamFinalResponse'] : false;
+			$verbose                 = isset( $options['verbose'] ) ? (bool) $options['verbose'] : false;
+			$auto_trim_tools         = isset( $options['autoTrimTools'] ) ? (bool) $options['autoTrimTools'] : false;
+
+			if ( $verbose ) {
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_run_with_tools_start',
+					'Starting Cloudflare Workers AI embedded function calling.',
+					array(
+						'message_count'       => count( $messages ),
+						'tool_count'          => count( $tools ),
+						'strict_validation'   => $strict_validation,
+						'max_recursive_runs'  => $max_recursive_runs,
+						'auto_trim_tools'     => $auto_trim_tools,
+					)
+				);
+			}
+
+			// Validate tools array.
+			if ( empty( $tools ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_no_tools',
+					__( 'At least one tool must be provided for embedded function calling.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Auto-trim tools if enabled.
+			if ( $auto_trim_tools ) {
+				$tools = $this->auto_trim_tools( $messages, $tools, $options );
+				if ( $verbose ) {
+					WP_MCP_AI_Logger::log_event(
+						'cloudflare_auto_trim_tools',
+						'Automatically trimmed tools based on context.',
+						array( 'remaining_tool_count' => count( $tools ) )
+					);
+				}
+			}
+
+			// Convert tools to Cloudflare format and create tool lookup.
+			$tool_definitions = array();
+			$tool_functions   = array();
+
+			foreach ( $tools as $tool ) {
+				if ( ! isset( $tool['name'] ) || ! isset( $tool['function'] ) ) {
+					continue;
+				}
+
+				$tool_name = sanitize_text_field( $tool['name'] );
+
+				// Build tool definition for API.
+				$definition = array(
+					'name'        => $tool_name,
+					'description' => isset( $tool['description'] ) ? sanitize_text_field( $tool['description'] ) : '',
+				);
+
+				if ( isset( $tool['parameters'] ) && is_array( $tool['parameters'] ) ) {
+					$definition['parameters'] = $tool['parameters'];
+				}
+
+				$tool_definitions[] = array(
+					'type'     => 'function',
+					'function' => $definition,
+				);
+
+				// Store executable function.
+				$tool_functions[ $tool_name ] = $tool['function'];
+			}
+
+			// Prepare options with tools.
+			$request_options = $options;
+			$request_options['tools'] = $tool_definitions;
+
+			// Execute recursive tool calling loop.
+			$conversation_messages = $messages;
+			$recursion_count       = 0;
+
+			while ( $recursion_count < $max_recursive_runs ) {
+				++$recursion_count;
+
+				if ( $verbose ) {
+					WP_MCP_AI_Logger::log_event(
+						'cloudflare_tool_run_iteration',
+						sprintf( 'Tool execution iteration %d/%d', $recursion_count, $max_recursive_runs ),
+						array( 'message_count' => count( $conversation_messages ) )
+					);
+				}
+
+				// Make API request.
+				$response = $this->create_chat_completion( $conversation_messages, $request_options );
+
+				if ( is_wp_error( $response ) ) {
+					return $response;
+				}
+
+				// Check if model wants to call any tools.
+				$tool_calls = array();
+				if ( isset( $response['choices'][0]['message']['tool_calls'] ) ) {
+					$tool_calls = $response['choices'][0]['message']['tool_calls'];
+				}
+
+				// If no tool calls, we're done.
+				if ( empty( $tool_calls ) ) {
+					if ( $verbose ) {
+						WP_MCP_AI_Logger::log_event(
+							'cloudflare_run_with_tools_complete',
+							'Completed without tool calls.',
+							array( 'iterations' => $recursion_count )
+						);
+					}
+
+					// Return final response (optionally as stream).
+					if ( $stream_final_response ) {
+						// For PHP, we can't actually stream, so just return the response.
+						// In a real Workers environment, this would use ReadableStream.
+						return $response;
+					}
+
+					return $response;
+				}
+
+				// Add assistant's tool call message to conversation.
+				$conversation_messages[] = $response['choices'][0]['message'];
+
+				// Execute each tool call.
+				foreach ( $tool_calls as $tool_call ) {
+					if ( ! isset( $tool_call['function']['name'] ) ) {
+						continue;
+					}
+
+					$function_name = $tool_call['function']['name'];
+					$tool_call_id  = isset( $tool_call['id'] ) ? $tool_call['id'] : uniqid( 'tool-', true );
+
+					// Check if function exists.
+					if ( ! isset( $tool_functions[ $function_name ] ) ) {
+						$error_message = sprintf(
+							/* translators: %s: function name */
+							__( 'Tool function "%s" not found.', 'mcp-ai-wpoos' ),
+							$function_name
+						);
+
+						$conversation_messages[] = array(
+							'role'         => 'tool',
+							'tool_call_id' => $tool_call_id,
+							'name'         => $function_name,
+							'content'      => wp_json_encode( array( 'error' => $error_message ) ),
+						);
+
+						WP_MCP_AI_Logger::log_error(
+							'Cloudflare tool function not found.',
+							array(
+								'function_name' => $function_name,
+								'tool_call_id'  => $tool_call_id,
+							)
+						);
+						continue;
+					}
+
+					// Parse arguments.
+					$arguments = array();
+					if ( isset( $tool_call['function']['arguments'] ) ) {
+						$args_json = $tool_call['function']['arguments'];
+						if ( is_string( $args_json ) ) {
+							$arguments = json_decode( $args_json, true );
+							if ( JSON_ERROR_NONE !== json_last_error() ) {
+								$arguments = array();
+							}
+						} elseif ( is_array( $args_json ) ) {
+							$arguments = $args_json;
+						}
+					}
+
+					// Validate arguments if strict validation is enabled.
+					if ( $strict_validation ) {
+						$validation_error = $this->validate_tool_arguments( $function_name, $arguments, $tool_definitions );
+						if ( is_wp_error( $validation_error ) ) {
+							$conversation_messages[] = array(
+								'role'         => 'tool',
+								'tool_call_id' => $tool_call_id,
+								'name'         => $function_name,
+								'content'      => wp_json_encode( array( 'error' => $validation_error->get_error_message() ) ),
+							);
+
+							WP_MCP_AI_Logger::log_error(
+								'Cloudflare tool argument validation failed.',
+								array(
+									'function_name' => $function_name,
+									'error'         => $validation_error->get_error_message(),
+								)
+							);
+							continue;
+						}
+					}
+
+					// Execute the tool function.
+					try {
+						$function_callable = $tool_functions[ $function_name ];
+
+						if ( ! is_callable( $function_callable ) ) {
+							throw new Exception( 'Tool function is not callable.' );
+						}
+
+						$result = call_user_func( $function_callable, $arguments );
+
+						// Convert result to JSON string.
+						$result_content = is_string( $result ) ? $result : wp_json_encode( $result );
+
+						$conversation_messages[] = array(
+							'role'         => 'tool',
+							'tool_call_id' => $tool_call_id,
+							'name'         => $function_name,
+							'content'      => $result_content,
+						);
+
+						if ( $verbose ) {
+							WP_MCP_AI_Logger::log_event(
+								'cloudflare_tool_executed',
+								sprintf( 'Executed tool: %s', $function_name ),
+								array(
+									'function_name' => $function_name,
+									'tool_call_id'  => $tool_call_id,
+									'result_length' => strlen( $result_content ),
+								)
+							);
+						}
+					} catch ( Exception $e ) {
+						$error_message = $e->getMessage();
+
+						$conversation_messages[] = array(
+							'role'         => 'tool',
+							'tool_call_id' => $tool_call_id,
+							'name'         => $function_name,
+							'content'      => wp_json_encode( array( 'error' => $error_message ) ),
+						);
+
+						WP_MCP_AI_Logger::log_error(
+							'Cloudflare tool execution failed.',
+							array(
+								'function_name' => $function_name,
+								'error'         => $error_message,
+							)
+						);
+					}
+				}
+			}
+
+			// Max recursion reached.
+			if ( $verbose ) {
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_max_recursion_reached',
+					'Maximum recursive tool runs reached.',
+					array( 'max_runs' => $max_recursive_runs )
+				);
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_max_tool_recursion',
+				__( 'Maximum recursive tool runs reached without completion.', 'mcp-ai-wpoos' ),
+				array(
+					'status'         => 500,
+					'max_runs'       => $max_recursive_runs,
+					'final_messages' => $conversation_messages,
+				)
+			);
+		}
+
+		/**
+		 * Validate tool arguments against the tool definition schema.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $function_name    Name of the function being called.
+		 * @param array  $arguments        Arguments provided by the model.
+		 * @param array  $tool_definitions Array of tool definitions.
+		 * @return true|WP_Error True if valid, WP_Error otherwise.
+		 */
+		protected function validate_tool_arguments( $function_name, $arguments, $tool_definitions ) {
+			// Find the tool definition.
+			$tool_schema = null;
+			foreach ( $tool_definitions as $tool_def ) {
+				if ( isset( $tool_def['function']['name'] ) && $tool_def['function']['name'] === $function_name ) {
+					$tool_schema = isset( $tool_def['function']['parameters'] ) ? $tool_def['function']['parameters'] : null;
+					break;
+				}
+			}
+
+			if ( null === $tool_schema ) {
+				return true; // No schema to validate against.
+			}
+
+			// Check required parameters.
+			if ( isset( $tool_schema['required'] ) && is_array( $tool_schema['required'] ) ) {
+				foreach ( $tool_schema['required'] as $required_param ) {
+					if ( ! isset( $arguments[ $required_param ] ) ) {
+						return new WP_Error(
+							'wp_mcp_ai_missing_required_param',
+							sprintf(
+								/* translators: %1$s: parameter name, %2$s: function name */
+								__( 'Required parameter "%1$s" missing for tool "%2$s".', 'mcp-ai-wpoos' ),
+								$required_param,
+								$function_name
+							),
+							array( 'parameter' => $required_param )
+						);
+					}
+				}
+			}
+
+			// Validate parameter types if schema includes type definitions.
+			if ( isset( $tool_schema['properties'] ) && is_array( $tool_schema['properties'] ) ) {
+				foreach ( $arguments as $param_name => $param_value ) {
+					if ( ! isset( $tool_schema['properties'][ $param_name ] ) ) {
+						// Ignore extra parameters (non-strict mode).
+						continue;
+					}
+
+					$param_schema = $tool_schema['properties'][ $param_name ];
+					if ( ! isset( $param_schema['type'] ) ) {
+						continue;
+					}
+
+					$expected_type = $param_schema['type'];
+					$actual_type   = gettype( $param_value );
+
+					// Map PHP types to JSON Schema types.
+					$type_map = array(
+						'boolean' => 'boolean',
+						'integer' => 'number',
+						'double'  => 'number',
+						'string'  => 'string',
+						'array'   => 'array',
+						'object'  => 'object',
+						'NULL'    => 'null',
+					);
+
+					$mapped_type = isset( $type_map[ $actual_type ] ) ? $type_map[ $actual_type ] : $actual_type;
+
+					// Allow integer for number type.
+					if ( 'number' === $expected_type && in_array( $mapped_type, array( 'number', 'integer' ), true ) ) {
+						continue;
+					}
+
+					if ( $expected_type !== $mapped_type ) {
+						return new WP_Error(
+							'wp_mcp_ai_invalid_param_type',
+							sprintf(
+								/* translators: %1$s: parameter name, %2$s: expected type, %3$s: actual type */
+								__( 'Parameter "%1$s" expected type "%2$s" but got "%3$s".', 'mcp-ai-wpoos' ),
+								$param_name,
+								$expected_type,
+								$mapped_type
+							),
+							array(
+								'parameter'     => $param_name,
+								'expected_type' => $expected_type,
+								'actual_type'   => $mapped_type,
+							)
+						);
+					}
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Automatically trim tools based on context to reduce token usage.
+		 *
+		 * This is a simplified implementation that keeps tools relevant to the conversation.
+		 * In a production environment, this could use more sophisticated NLP or embedding-based
+		 * similarity matching.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $messages Message history.
+		 * @param array $tools    Array of tool definitions.
+		 * @param array $options  Request options.
+		 * @return array Trimmed tools array.
+		 */
+		protected function auto_trim_tools( $messages, $tools, $options = array() ) {
+			// Get the last user message to determine relevance.
+			$last_user_message = '';
+			for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
+				if ( isset( $messages[ $i ]['role'] ) && 'user' === $messages[ $i ]['role'] ) {
+					$last_user_message = isset( $messages[ $i ]['content'] ) ? strtolower( (string) $messages[ $i ]['content'] ) : '';
+					break;
+				}
+			}
+
+			if ( empty( $last_user_message ) || empty( $tools ) ) {
+				return $tools;
+			}
+
+			// Score each tool based on relevance.
+			$scored_tools = array();
+			foreach ( $tools as $tool ) {
+				$score = 0;
+
+				// Check name relevance.
+				if ( isset( $tool['name'] ) ) {
+					$tool_name = strtolower( str_replace( array( '-', '_' ), ' ', $tool['name'] ) );
+					$name_words = explode( ' ', $tool_name );
+					foreach ( $name_words as $word ) {
+						if ( ! empty( $word ) && false !== strpos( $last_user_message, $word ) ) {
+							$score += 3; // Higher weight for name match.
+						}
+					}
+				}
+
+				// Check description relevance.
+				if ( isset( $tool['description'] ) ) {
+					$tool_desc  = strtolower( $tool['description'] );
+					$desc_words = explode( ' ', $tool_desc );
+					foreach ( $desc_words as $word ) {
+						if ( strlen( $word ) > 3 && false !== strpos( $last_user_message, $word ) ) {
+							$score += 1;
+						}
+					}
+				}
+
+				$scored_tools[] = array(
+					'tool'  => $tool,
+					'score' => $score,
+				);
+			}
+
+			// Sort by score (descending).
+			usort(
+				$scored_tools,
+				function ( $a, $b ) {
+					return $b['score'] - $a['score'];
+				}
+			);
+
+			// Keep top tools (limit to max 10 tools to avoid token overflow).
+			$max_tools     = isset( $options['maxTools'] ) ? absint( $options['maxTools'] ) : 10;
+			$trimmed_tools = array();
+
+			foreach ( array_slice( $scored_tools, 0, $max_tools ) as $scored ) {
+				// Only include tools with a relevance score.
+				if ( $scored['score'] > 0 || count( $trimmed_tools ) < 3 ) {
+					// Always keep at least 3 tools even if score is 0.
+					$trimmed_tools[] = $scored['tool'];
+				}
+			}
+
+			// If no tools passed the relevance test, keep all original tools.
+			if ( empty( $trimmed_tools ) ) {
+				return $tools;
+			}
+
+			return $trimmed_tools;
 		}
 	}
 }
