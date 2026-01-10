@@ -476,9 +476,6 @@ class WP_MCP_AI_Tool_Token_Limits {
 			'default' => __( 'Default (use assistant/global setting)', 'mcp-ai-wpoos' ),
 		);
 
-		// Get settings.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-
 		// Get tool capability flags if tool_slug is provided.
 		$capability_flags   = array();
 		$model_requirements = array();
@@ -522,351 +519,68 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$requires_multimodal = in_array( 'requires-multimodal-model', $capability_flags, true ) || in_array( 'multimodal', $model_requirements, true );
 		$requires_image_gen  = in_array( 'requires-image-generation-model', $capability_flags, true ) || in_array( 'image-generation', $model_requirements, true ) || in_array( 'image-editing', $model_requirements, true );
 
-		// OpenAI models - always show regardless of API key configuration.
-		$openai_models = array();
+		// Get all configured models from Model Config (source of truth).
+		// This ensures the dropdown matches the Per Models table exactly.
+		if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+			$all_model_configs = WP_MCP_AI_Model_Config::get_all_configs();
 
-			// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
-			$openai_models['gpt-5.2']                = 'GPT-5.2 (Flagship)';
-			$openai_models['gpt-5.2-2025-12-11']     = 'GPT-5.2 (Dec 2025)';
-			$openai_models['gpt-5.2-pro']            = 'GPT-5.2 Pro (Advanced Reasoning)';
-			$openai_models['gpt-5.2-pro-2025-12-11'] = 'GPT-5.2 Pro (Dec 2025)';
-			$openai_models['gpt-5.2-instant']        = 'GPT-5.2 Instant (High Throughput)';
-			$openai_models['gpt-5.2-thinking']       = 'GPT-5.2 Thinking (Deeper Analysis)';
+			// Group models by provider.
+			$models_by_provider = array();
+			foreach ( $all_model_configs as $model_id => $config ) {
+				$provider = isset( $config['provider'] ) ? $config['provider'] : 'unknown';
+				$name     = isset( $config['name'] ) ? $config['name'] : $model_id;
 
-			// GPT-5.1 series (Nov 2025).
-			$openai_models['gpt-5.1']            = 'GPT-5.1';
-			$openai_models['gpt-5.1-2025-11-13'] = 'GPT-5.1 (Nov 2025)';
+				// Filter based on tool requirements.
+				// For now, we'll show all models - filtering can be added later if needed.
+				// TODO: Add capability filtering based on model metadata.
 
-			// GPT-5 series (Aug 2025).
-			$openai_models['gpt-5']            = 'GPT-5';
-			$openai_models['gpt-5-2025-08-07'] = 'GPT-5 (Aug 2025)';
-			$openai_models['gpt-5-mini']       = 'GPT-5 Mini';
-			$openai_models['gpt-5-nano']       = 'GPT-5 Nano';
-			$openai_models['gpt-5-pro']        = 'GPT-5 Pro';
-
-			// GPT-5 Codex variants (coding-optimized).
-			if ( ! $requires_vision && ! $requires_multimodal ) {
-				$openai_models['gpt-5-codex']      = 'GPT-5 Codex';
-				$openai_models['gpt-5-codex-mini'] = 'GPT-5 Codex Mini';
+				if ( ! isset( $models_by_provider[ $provider ] ) ) {
+					$models_by_provider[ $provider ] = array();
+				}
+				$models_by_provider[ $provider ][ $model_id ] = $name;
 			}
 
-			// GPT-4.1 series (multimodal - vision capable).
-			$openai_models['gpt-4.1']            = 'GPT-4.1';
-			$openai_models['gpt-4.1-mini']       = 'GPT-4.1 Mini';
-			$openai_models['gpt-4.1-nano']       = 'GPT-4.1 Nano';
-			$openai_models['gpt-4.1-turbo']      = 'GPT-4.1 Turbo';
-			$openai_models['gpt-4.1-2025-04-14'] = 'GPT-4.1 (Apr 2025)';
-
-			// GPT-4o series (multimodal - vision capable).
-			$openai_models['gpt-4o']            = 'GPT-4o';
-			$openai_models['gpt-4o-mini']       = 'GPT-4o Mini';
-			$openai_models['gpt-4o-2024-11-20'] = 'GPT-4o (Nov 2024)';
-			$openai_models['gpt-4o-2024-08-06'] = 'GPT-4o (Aug 2024)';
-			$openai_models['gpt-4o-2024-05-13'] = 'GPT-4o (May 2024)';
-			$openai_models['chatgpt-4o-latest'] = 'ChatGPT-4o (Latest)';
-
-			// Legacy models (text-only).
-			if ( ! $requires_vision && ! $requires_multimodal ) {
-				$openai_models['gpt-4-turbo']   = 'GPT-4 Turbo (Legacy)';
-				$openai_models['gpt-4']         = 'GPT-4 (Legacy)';
-				$openai_models['gpt-3.5-turbo'] = 'GPT-3.5 Turbo (Legacy)';
-			}
-
-		if ( ! empty( $openai_models ) ) {
-			$models['openai_group'] = array(
-				'label'   => __( 'OpenAI', 'mcp-ai-wpoos' ),
-				'options' => $openai_models,
+			// Add provider groups to models array with proper labels.
+			$provider_labels = array(
+				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
+				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+				'gemini'      => __( 'Google Gemini & Gemma', 'mcp-ai-wpoos' ),
+				'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
+				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
+				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
 			);
-		}
 
-		// Anthropic models - always show regardless of API key configuration.
-		$anthropic_models = array();
-
-			// Claude 4 series (multimodal - vision capable) - 2025.
-			$anthropic_models['claude-sonnet-4.5']          = 'Claude Sonnet 4.5 (Recommended)';
-			$anthropic_models['claude-sonnet-4-5-20250929'] = 'Claude Sonnet 4.5 (Sep 2025)';
-			$anthropic_models['claude-haiku-4.5']           = 'Claude Haiku 4.5 (Fastest)';
-			$anthropic_models['claude-opus-4.1']            = 'Claude Opus 4.1 (Flagship)';
-			$anthropic_models['claude-opus-4.0']            = 'Claude Opus 4.0';
-
-			// Claude 3.5 series (legacy - for backward compatibility).
-			$anthropic_models['claude-3-5-sonnet-20241022'] = 'Claude 3.5 Sonnet (Legacy)';
-			$anthropic_models['claude-3-5-haiku-20241022']  = 'Claude 3.5 Haiku (Legacy)';
-
-		if ( ! empty( $anthropic_models ) ) {
-			$models['anthropic_group'] = array(
-				'label'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
-				'options' => $anthropic_models,
-			);
-		}
-
-		// Gemini models - always show regardless of API key configuration.
-		$gemini_models = array();
-
-			// Gemini 3 series (multimodal - latest generation) - Preview.
-			$gemini_models['gemini-3-pro-preview'] = 'Gemini 3 Pro (Preview)';
-
-			// Gemini 2.5 series (multimodal - text, image, video) - Stable.
-			$gemini_models['gemini-2.5-pro']                   = 'Gemini 2.5 Pro';
-			$gemini_models['gemini-2.5-flash']                 = 'Gemini 2.5 Flash (Recommended)';
-			$gemini_models['gemini-2.5-flash-lite']            = 'Gemini 2.5 Flash Lite';
-			$gemini_models['gemini-2.5-flash-preview-09-2025'] = 'Gemini 2.5 Flash (Sep 2025 Preview)';
-
-			// Gemini 2.5 specialized models.
-			$gemini_models['gemini-live-2.5-flash-preview']                = 'Gemini Live 2.5 Flash (Voice/Multimodal)';
-			$gemini_models['gemini-2.5-flash-preview-native-audio-dialog'] = 'Gemini 2.5 Native Audio Dialog';
-			$gemini_models['gemini-2.5-flash-preview-tts']                 = 'Gemini 2.5 Flash TTS';
-			$gemini_models['gemini-2.5-pro-preview-tts']                   = 'Gemini 2.5 Pro TTS';
-
-			// Image generation model - only for image generation/editing tools.
-			if ( $requires_image_gen ) {
-				$gemini_models['gemini-2.5-flash-image'] = 'Gemini 2.5 Flash Image';
+			foreach ( $models_by_provider as $provider => $provider_models ) {
+				if ( ! empty( $provider_models ) ) {
+					$label = isset( $provider_labels[ $provider ] ) ? $provider_labels[ $provider ] : ucfirst( $provider );
+					$models[ $provider . '_group' ] = array(
+						'label'   => $label,
+						'options' => $provider_models,
+					);
+				}
 			}
 
-			// Gemini 2.0 series (stable).
-			$gemini_models['gemini-2.0-flash']      = 'Gemini 2.0 Flash';
-			$gemini_models['gemini-2.0-flash-lite'] = 'Gemini 2.0 Flash Lite';
-			$gemini_models['gemini-2.0-flash-exp']  = 'Gemini 2.0 Flash (Experimental)';
-
-			// Experimental models.
-			$gemini_models['gemini-exp-1206'] = 'Gemini Exp 1206';
-			$gemini_models['gemini-exp-1121'] = 'Gemini Exp 1121';
-
-			// Gemini 1.5 series (legacy - for backward compatibility).
-			$gemini_models['gemini-1.5-pro']   = 'Gemini 1.5 Pro (Legacy)';
-			$gemini_models['gemini-1.5-flash'] = 'Gemini 1.5 Flash (Legacy)';
-
-			// Gemma models (Google's open models - text-only).
-			if ( ! $requires_vision && ! $requires_multimodal ) {
-				$gemini_models['gemma-2-27b-it'] = 'Gemma 2 27B (Instruct)';
-				$gemini_models['gemma-2-9b-it']  = 'Gemma 2 9B (Instruct)';
-				$gemini_models['gemma-2-2b-it']  = 'Gemma 2 2B (Instruct)';
-			}
-
-		if ( ! empty( $gemini_models ) ) {
-			$models['gemini_group'] = array(
-				'label'   => __( 'Google Gemini & Gemma', 'mcp-ai-wpoos' ),
-				'options' => $gemini_models,
-			);
+			/**
+			 * Filter available models for tool preferences.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array  $models    Available models grouped by provider.
+			 * @param string $tool_slug Tool slug for context.
+			 * @param array  $capability_flags Tool capability flags.
+			 */
+			return apply_filters( 'wp_mcp_ai_available_tool_models', $models, $tool_slug, $capability_flags );
 		}
 
-		// Ollama models - always show common models regardless of endpoint configuration.
-		$ollama_models = array();
-
-		// Add common Ollama models (Gemma, Llama, etc.).
-		$common_ollama_models = array(
-			'llama3.2'       => 'Llama 3.2',
-			'llama3.1'       => 'Llama 3.1',
-			'llama3'         => 'Llama 3',
-			'llama2'         => 'Llama 2',
-			'mistral'        => 'Mistral',
-			'mixtral'        => 'Mixtral',
-			'gemma2'         => 'Gemma 2',
-			'gemma'          => 'Gemma',
-			'codellama'      => 'CodeLlama',
-			'deepseek-coder' => 'DeepSeek Coder',
-			'phi3'           => 'Phi-3',
-			'qwen2.5'        => 'Qwen 2.5',
-		);
-
-		// Add common models that match vision/multimodal requirements.
-		if ( ! $requires_vision && ! $requires_multimodal ) {
-			foreach ( $common_ollama_models as $model_id => $model_name ) {
-				$ollama_models[ $model_id ] = $model_name;
-			}
-		}
-
-		// If user has configured a specific model, add it if not already present.
-		if ( ! empty( $settings['ollama_endpoint_url'] ) && ! empty( $settings['ollama_model'] ) ) {
-			if ( ! isset( $ollama_models[ $settings['ollama_model'] ] ) ) {
-				$ollama_models[ $settings['ollama_model'] ] = $settings['ollama_model'];
-			}
-		}
-
-		if ( ! empty( $ollama_models ) ) {
-			$models['ollama_group'] = array(
-				'label'   => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
-				'options' => $ollama_models,
-			);
-		}
-
-		// LM Studio models - always show common models regardless of endpoint configuration.
-		$lm_studio_models = array();
-
-		// Add common LM Studio models (popular models from lmstudio.ai - 2025).
-		$common_lm_studio_models = array(
-			// Qwen models (function calling, coding, vision) - Top performers.
-			'qwen/qwen3-coder-30b'                    => 'Qwen 3 Coder 30B',
-			'qwen/qwen3-vl-30b'                       => 'Qwen 3 Vision-Language 30B',
-			'qwen/qwen2.5-coder-32b'                  => 'Qwen 2.5 Coder 32B',
-			'qwen/qwen2.5-32b'                        => 'Qwen 2.5 32B',
-			'qwen/qwen2.5-14b'                        => 'Qwen 2.5 14B',
-			'qwen/qwen2.5-7b'                         => 'Qwen 2.5 7B',
-			// Llama models (Meta's flagship).
-			'meta-llama/llama-3.3-70b-instruct'       => 'Llama 3.3 70B Instruct',
-			'meta-llama/llama-3.2-3b-instruct'        => 'Llama 3.2 3B Instruct',
-			'meta-llama/llama-3.2-1b-instruct'        => 'Llama 3.2 1B Instruct',
-			'meta-llama/llama-3.1-8b-instruct'        => 'Llama 3.1 8B Instruct',
-			// Mistral models (efficient reasoning).
-			'mistralai/mistral-large-2411'            => 'Mistral Large 2411',
-			'mistralai/mistral-nemo-2407'             => 'Mistral Nemo 2407',
-			'mistralai/mistral-7b-instruct-v0.3'      => 'Mistral 7B Instruct v0.3',
-			'mistralai/mixtral-8x7b-instruct'         => 'Mixtral 8x7B Instruct',
-			'mistralai/mixtral-8x22b-instruct'        => 'Mixtral 8x22B Instruct',
-			// DeepSeek models (coding specialist).
-			'deepseek-ai/deepseek-coder-33b-instruct' => 'DeepSeek Coder 33B Instruct',
-			'deepseek-ai/deepseek-v3'                 => 'DeepSeek V3',
-			'deepseek-ai/deepseek-r1'                 => 'DeepSeek R1 (Reasoning)',
-			// Microsoft Phi models (small but capable).
-			'microsoft/phi-4'                         => 'Phi-4',
-			'microsoft/phi-3.5-mini-instruct'         => 'Phi-3.5 Mini Instruct',
-			// Google Gemma models.
-			'google/gemma-3-12b-it'                   => 'Gemma 3 12B Instruct',
-			'google/gemma-2-27b-it'                   => 'Gemma 2 27B Instruct',
-			'google/gemma-2-9b-it'                    => 'Gemma 2 9B Instruct',
-			'google/gemma-2-2b-it'                    => 'Gemma 2 2B Instruct',
-		);
-
-		// Add common models that match vision/multimodal requirements.
-		if ( ! $requires_vision && ! $requires_multimodal ) {
-			foreach ( $common_lm_studio_models as $model_id => $model_name ) {
-				$lm_studio_models[ $model_id ] = $model_name;
-			}
-		}
-
-		// If user has configured a specific model, add it if not already present.
-		if ( ! empty( $settings['lm_studio_endpoint_url'] ) && ! empty( $settings['lm_studio_model'] ) ) {
-			if ( ! isset( $lm_studio_models[ $settings['lm_studio_model'] ] ) ) {
-				$lm_studio_models[ $settings['lm_studio_model'] ] = $settings['lm_studio_model'];
-			}
-		}
-
-		if ( ! empty( $lm_studio_models ) ) {
-			$models['lm_studio_group'] = array(
-				'label'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
-				'options' => $lm_studio_models,
-			);
-		}
-
-		// Hugging Face models - always show regardless of API key configuration.
-		$huggingface_models = array();
-
-		// Vision/multimodal models.
-		if ( $requires_vision || $requires_multimodal ) {
-			$huggingface_models['meta-llama/Llama-3.2-11B-Vision-Instruct'] = 'Llama 3.2 11B Vision Instruct';
-			$huggingface_models['meta-llama/Llama-3.2-90B-Vision-Instruct'] = 'Llama 3.2 90B Vision Instruct';
-			$huggingface_models['Qwen/Qwen2-VL-72B-Instruct']          = 'Qwen 2 VL 72B Instruct';
-			$huggingface_models['Qwen/Qwen2-VL-7B-Instruct']           = 'Qwen 2 VL 7B Instruct';
-		} else {
-			// Meta Llama models (text-only).
-			$huggingface_models['meta-llama/Llama-3.3-70B-Instruct']   = 'Llama 3.3 70B Instruct';
-			$huggingface_models['meta-llama/Llama-3.2-3B-Instruct']    = 'Llama 3.2 3B Instruct';
-			$huggingface_models['meta-llama/Llama-3.2-1B-Instruct']    = 'Llama 3.2 1B Instruct';
-			$huggingface_models['meta-llama/Llama-3.1-8B-Instruct']    = 'Llama 3.1 8B Instruct';
-			$huggingface_models['meta-llama/Llama-3.1-70B-Instruct']   = 'Llama 3.1 70B Instruct';
-			// Mistral models.
-			$huggingface_models['mistralai/Mistral-Large-Instruct-2411'] = 'Mistral Large Instruct 2411';
-			$huggingface_models['mistralai/Mistral-Small-Instruct-2409'] = 'Mistral Small Instruct 2409';
-			$huggingface_models['mistralai/Mistral-7B-Instruct-v0.3']  = 'Mistral 7B Instruct v0.3';
-			$huggingface_models['mistralai/Mixtral-8x7B-Instruct-v0.1'] = 'Mixtral 8x7B Instruct';
-			$huggingface_models['mistralai/Mixtral-8x22B-Instruct-v0.1'] = 'Mixtral 8x22B Instruct';
-			// Microsoft Phi models.
-			$huggingface_models['microsoft/Phi-4']                      = 'Phi-4';
-			$huggingface_models['microsoft/Phi-3.5-mini-instruct']      = 'Phi-3.5 Mini Instruct';
-			$huggingface_models['microsoft/Phi-3-mini-4k-instruct']     = 'Phi-3 Mini 4K Instruct';
-			$huggingface_models['microsoft/Phi-3-medium-4k-instruct']   = 'Phi-3 Medium 4K Instruct';
-			// Qwen models.
-			$huggingface_models['Qwen/Qwen2.5-72B-Instruct']           = 'Qwen 2.5 72B Instruct';
-			$huggingface_models['Qwen/Qwen2.5-32B-Instruct']           = 'Qwen 2.5 32B Instruct';
-			$huggingface_models['Qwen/Qwen2.5-14B-Instruct']           = 'Qwen 2.5 14B Instruct';
-			$huggingface_models['Qwen/Qwen2.5-7B-Instruct']            = 'Qwen 2.5 7B Instruct';
-			$huggingface_models['Qwen/Qwen2.5-Coder-32B-Instruct']     = 'Qwen 2.5 Coder 32B Instruct';
-			$huggingface_models['Qwen/Qwen2.5-Coder-7B-Instruct']      = 'Qwen 2.5 Coder 7B Instruct';
-			$huggingface_models['Qwen/QwQ-32B-Preview']                = 'Qwen QwQ 32B Preview';
-			// DeepSeek models.
-			$huggingface_models['deepseek-ai/DeepSeek-V3']             = 'DeepSeek V3';
-			$huggingface_models['deepseek-ai/DeepSeek-R1']             = 'DeepSeek R1';
-			$huggingface_models['deepseek-ai/DeepSeek-R1-Distill-Qwen-32B'] = 'DeepSeek R1 Distill Qwen 32B';
-			$huggingface_models['deepseek-ai/deepseek-coder-33b-instruct'] = 'DeepSeek Coder 33B Instruct';
-			// Google Gemma models.
-			$huggingface_models['google/gemma-3-12b-it']               = 'Gemma 3 12B Instruct';
-			$huggingface_models['google/gemma-2-27b-it']               = 'Gemma 2 27B Instruct';
-			$huggingface_models['google/gemma-2-9b-it']                = 'Gemma 2 9B Instruct';
-			$huggingface_models['google/gemma-2-2b-it']                = 'Gemma 2 2B Instruct';
-			// NVIDIA Nemotron models.
-			$huggingface_models['nvidia/Llama-3.1-Nemotron-70B-Instruct-HF'] = 'Llama 3.1 Nemotron 70B Instruct';
-			$huggingface_models['nvidia/Llama-3.1-Nemotron-51B-Instruct'] = 'Llama 3.1 Nemotron 51B Instruct';
-			// Alibaba models.
-			$huggingface_models['Qwen/Qwen3-235B-A22B']                = 'Qwen 3 235B A22B';
-			// Nous Research models.
-			$huggingface_models['NousResearch/Hermes-3-Llama-3.1-70B'] = 'Hermes 3 Llama 3.1 70B';
-			$huggingface_models['NousResearch/Hermes-2-Pro-Mistral-7B'] = 'Hermes 2 Pro Mistral 7B';
-			// IBM Granite models.
-			$huggingface_models['ibm-granite/granite-3.1-8b-instruct'] = 'IBM Granite 3.1 8B Instruct';
-			$huggingface_models['ibm-granite/granite-3.0-8b-instruct'] = 'IBM Granite 3.0 8B Instruct';
-		}
-
-		if ( ! empty( $huggingface_models ) ) {
-			$models['huggingface_group'] = array(
-				'label'   => __( 'Hugging Face', 'mcp-ai-wpoos' ),
-				'options' => $huggingface_models,
-			);
-		}
-
-		// Cloudflare Workers AI models - always show regardless of API token configuration.
-		$cloudflare_models = array();
-
-		// Function calling models (most compatible).
-		if ( ! $requires_image_gen ) {
-			$cloudflare_models['@cf/meta/llama-3.3-70b-instruct-fp8-fast']     = 'Llama 3.3 70B Instruct FP8 Fast';
-			$cloudflare_models['@cf/meta/llama-4-scout-17b-16e-instruct']      = 'Llama 4 Scout 17B 16E Instruct';
-			$cloudflare_models['@cf/ibm-granite/granite-4.0-h-micro']          = 'IBM Granite 4.0 H Micro';
-			$cloudflare_models['@cf/qwen/qwen3-30b-a3b-fp8']                   = 'Qwen 3 30B A3B FP8';
-			$cloudflare_models['@cf/mistralai/mistral-small-3.1-24b-instruct'] = 'Mistral Small 3.1 24B Instruct';
-			$cloudflare_models['@hf/nousresearch/hermes-2-pro-mistral-7b']     = 'Hermes 2 Pro Mistral 7B';
-			// Text generation models.
-			$cloudflare_models['@cf/aisingapore/gemma-sea-lion-v4-27b-it']     = 'Gemma SEA Lion V4 27B IT';
-			$cloudflare_models['@cf/openai/gpt-oss-20b']                       = 'GPT OSS 20B';
-			$cloudflare_models['@cf/openai/gpt-oss-120b']                      = 'GPT OSS 120B';
-			$cloudflare_models['@cf/google/gemma-3-12b-it']                    = 'Gemma 3 12B IT';
-			$cloudflare_models['@cf/qwen/qwq-32b']                             = 'Qwen QwQ 32B';
-			$cloudflare_models['@cf/qwen/qwen2.5-coder-32b-instruct']          = 'Qwen 2.5 Coder 32B Instruct';
-			$cloudflare_models['@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'] = 'DeepSeek R1 Distill Qwen 32B';
-			$cloudflare_models['@cf/meta/llama-3.2-1b-instruct']               = 'Llama 3.2 1B Instruct';
-			$cloudflare_models['@cf/meta/llama-3.2-3b-instruct']               = 'Llama 3.2 3B Instruct (Recommended)';
-		}
-
-		// Image generation models - only for image generation tools.
-		if ( $requires_image_gen ) {
-			$cloudflare_models['@cf/stabilityai/stable-diffusion-xl-base-1.0'] = 'Stable Diffusion XL Base 1.0';
-			$cloudflare_models['@cf/bytedance/stable-diffusion-xl-lightning']  = 'Stable Diffusion XL Lightning';
-			$cloudflare_models['@cf/black-forest-labs/flux-1-schnell']         = 'Flux-1 Schnell';
-			$cloudflare_models['@cf/black-forest-labs/flux-2-dev']             = 'Flux-2 Dev';
-			$cloudflare_models['@cf/leonardo/lucid-origin']                    = 'Leonardo Lucid Origin';
-			$cloudflare_models['@cf/leonardo/phoenix-1.0']                     = 'Leonardo Phoenix 1.0';
-			$cloudflare_models['@cf/lykon/dreamshaper-8-lcm']                  = 'Dreamshaper 8 LCM';
-		}
-
-		if ( ! empty( $cloudflare_models ) ) {
-			$models['cloudflare_group'] = array(
-				'label'   => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
-				'options' => $cloudflare_models,
-			);
-		}
-
-		/**
-		 * Filter available models for tool preferences.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param array  $models    Available models grouped by provider.
-		 * @param string $tool_slug Tool slug for context.
-		 * @param array  $capability_flags Tool capability flags.
-		 */
+		// Fallback: If Model Config class doesn't exist, return empty (with default option).
+		// This should never happen in normal operation.
 		return apply_filters( 'wp_mcp_ai_available_tool_models', $models, $tool_slug, $capability_flags );
 	}
 
 	/**
+	 * Set custom tier for a user.
+	 *
 	 * Set custom tier for a user.
 	 *
 	 * @param int    $user_id User ID.
