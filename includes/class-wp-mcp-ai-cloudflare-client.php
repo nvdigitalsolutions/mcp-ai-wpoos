@@ -141,11 +141,54 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		/**
 		 * Perform a chat completion request against Cloudflare Workers AI.
 		 *
+		 * For Cloudflare Workers AI, this method intelligently routes to the best approach:
+		 * - If tools are provided: Uses embedded function calling (run_with_tools) for better reliability
+		 * - If no tools: Uses traditional single request/response
+		 *
+		 * This routing is necessary because Cloudflare models may return XML-formatted tool calls
+		 * in the content, which requires the embedded approach to properly execute and continue.
+		 *
 		 * @param array $messages Message payload to send.
 		 * @param array $options  Additional options (model, temperature, timeout).
 		 * @return array|WP_Error
 		 */
 		public function create_chat_completion( array $messages, array $options = array() ) {
+			// Check if tools are provided and we should use embedded function calling.
+			// Cloudflare Workers AI works better with embedded function calling because:
+			// 1. Some models return XML tool calls instead of proper JSON
+			// 2. The embedded approach handles the complete loop automatically
+			// 3. It ensures tools are actually executed and results are returned
+			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+				// Check if tools have executable functions (needed for embedded calling).
+				$has_executables = $this->tools_have_executables( $options['tools'] );
+				
+				if ( $has_executables ) {
+					// Use embedded function calling for better reliability.
+					WP_MCP_AI_Logger::log_event(
+						'cloudflare_routing_to_embedded',
+						'Routing to embedded function calling (run_with_tools) because tools with executables are provided',
+						array(
+							'tool_count' => count( $options['tools'] ),
+							'reason'     => 'Cloudflare models work better with embedded approach for tool execution',
+						)
+					);
+					
+					return $this->run_with_tools( $messages, $options['tools'], $options );
+				} else {
+					// Tools provided but no executables - this is the traditional flow
+					// where the chat service will handle execution externally.
+					WP_MCP_AI_Logger::log_event(
+						'cloudflare_using_traditional',
+						'Using traditional function calling because tools lack executable functions',
+						array(
+							'tool_count' => count( $options['tools'] ),
+							'reason'     => 'Chat service will handle tool execution externally',
+						)
+					);
+				}
+			}
+			
+			// Continue with traditional single request/response approach.
 			$api_token  = $this->get_api_token();
 			$account_id = $this->get_account_id();
 
@@ -1822,6 +1865,37 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			}
 			
 			return $tool_calls;
+		}
+
+		/**
+		 * Check if tools array contains executable functions.
+		 *
+		 * For embedded function calling (run_with_tools), each tool must have
+		 * a 'function' key with a callable value. This method checks if the
+		 * provided tools array contains executables for embedded calling.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $tools Array of tool definitions.
+		 * @return bool True if tools have executable functions, false otherwise.
+		 */
+		protected function tools_have_executables( $tools ) {
+			if ( empty( $tools ) || ! is_array( $tools ) ) {
+				return false;
+			}
+
+			foreach ( $tools as $tool ) {
+				if ( ! is_array( $tool ) ) {
+					continue;
+				}
+
+				// Check if tool has executable function.
+				if ( isset( $tool['function'] ) && is_callable( $tool['function'] ) ) {
+					return true;
+				}
+			}
+
+			return false;
 		}
 	}
 }
