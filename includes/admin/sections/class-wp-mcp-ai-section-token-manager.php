@@ -1175,10 +1175,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 * Displays interface for discovering, researching, and adding AI models.
 		 */
 		private function render_model_manager_view() {
-			// Load AJAX handler if not already loaded.
-			if ( ! class_exists( 'WP_MCP_AI_Model_Manager_Ajax' ) ) {
-				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-manager-ajax.php';
-			}
+			// AJAX handlers are now loaded in the main plugin file during admin_init.
 
 			?>
 			<div class="wp-mcp-ai-model-manager">
