@@ -64,7 +64,7 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 				),
 				'model'         => array(
 					'type'        => 'string',
-					'description' => __( 'Cloudflare Workers AI model to use. Examples: @cf/stabilityai/stable-diffusion-xl-base-1.0, @cf/bytedance/stable-diffusion-xl-lightning, @cf/black-forest-labs/flux-1-schnell', 'mcp-ai-wpoos' ),
+					'description' => __( 'Cloudflare Workers AI model to use. Examples: @cf/stabilityai/stable-diffusion-xl-base-1.0, @cf/black-forest-labs/flux-2-dev, @cf/leonardo/lucid-origin, @cf/leonardo/phoenix-1.0, @cf/black-forest-labs/flux-1-schnell', 'mcp-ai-wpoos' ),
 					'default'     => $defaults['model'],
 				),
 				'width'         => array(
@@ -823,6 +823,9 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 					'@cf/stabilityai/stable-diffusion-xl-base-1.0',
 					'@cf/bytedance/stable-diffusion-xl-lightning',
 					'@cf/black-forest-labs/flux-1-schnell',
+					'@cf/black-forest-labs/flux-2-dev',
+					'@cf/leonardo/lucid-origin',
+					'@cf/leonardo/phoenix-1.0',
 					'@cf/lykon/dreamshaper-8-lcm',
 				),
 				'required'  => false,
