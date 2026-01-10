@@ -648,6 +648,258 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		}
 
 		/**
+		 * Generate an image using Cloudflare Workers AI.
+		 *
+		 * @param string $prompt  Text prompt for image generation.
+		 * @param array  $options Optional parameters (model, width, height, num_steps, guidance, seed, timeout).
+		 * @return array|WP_Error Image data array or error.
+		 */
+		public function generate_image( $prompt, array $options = array() ) {
+			$api_token  = $this->get_api_token();
+			$account_id = $this->get_account_id();
+
+			if ( empty( $api_token ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_api_token',
+					__( 'No Cloudflare API token has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_api_token' => __( 'Add a Cloudflare API token in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			if ( empty( $account_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_account_id',
+					__( 'No Cloudflare account ID has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_account_id' => __( 'Add a Cloudflare account ID in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $this->get_model();
+
+			if ( empty( $model ) ) {
+				// Default to stable-diffusion-xl-base-1.0 if no model is configured.
+				$model = '@cf/stabilityai/stable-diffusion-xl-base-1.0';
+			}
+
+			// Validate model ID format.
+			if ( ! preg_match( '/^@[a-zA-Z0-9\/_.-]+$/', $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_model_id',
+					__( 'Invalid Cloudflare model ID format.', 'mcp-ai-wpoos' ),
+					array( 'model' => $model )
+				);
+			}
+
+			// Build request payload.
+			$payload = array(
+				'prompt' => sanitize_textarea_field( $prompt ),
+			);
+
+			// Add optional parameters if provided.
+			if ( isset( $options['width'] ) && is_numeric( $options['width'] ) ) {
+				$payload['width'] = max( 256, min( 2048, absint( $options['width'] ) ) );
+			}
+
+			if ( isset( $options['height'] ) && is_numeric( $options['height'] ) ) {
+				$payload['height'] = max( 256, min( 2048, absint( $options['height'] ) ) );
+			}
+
+			if ( isset( $options['num_steps'] ) && is_numeric( $options['num_steps'] ) ) {
+				$payload['num_steps'] = max( 1, min( 20, absint( $options['num_steps'] ) ) );
+			}
+
+			if ( isset( $options['guidance'] ) && is_numeric( $options['guidance'] ) ) {
+				$payload['guidance'] = (float) $options['guidance'];
+			}
+
+			if ( isset( $options['seed'] ) && is_numeric( $options['seed'] ) ) {
+				$payload['seed'] = absint( $options['seed'] );
+			}
+
+			// Escape model for URL path (preserve forward slashes).
+			$escaped_model = str_replace( array( '@', ' ' ), array( '%40', '%20' ), $model );
+
+			$url = sprintf(
+				'https://api.cloudflare.com/client/v4/accounts/%s/ai/run/%s',
+				rawurlencode( $account_id ),
+				$escaped_model
+			);
+
+			$timeout = isset( $options['timeout'] ) && $options['timeout'] > 0 ? absint( $options['timeout'] ) : 60;
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_token,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_image_request',
+				'Sending image generation request to Cloudflare Workers AI.',
+				array(
+					'model'  => $model,
+					'width'  => isset( $payload['width'] ) ? $payload['width'] : 'default',
+					'height' => isset( $payload['height'] ) ? $payload['height'] : 'default',
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'cloudflare_image_error',
+					'Cloudflare Workers AI image generation failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'Cloudflare Workers AI image generation request failed.', 'mcp-ai-wpoos' ),
+					__( 'Cloudflare Workers AI', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+
+			if ( $code < 200 || $code >= 300 ) {
+				// Parse Cloudflare error response.
+				$error_message = __( 'Cloudflare Workers AI returned an error.', 'mcp-ai-wpoos' );
+				$decoded_body  = json_decode( $body, true );
+
+				if ( is_array( $decoded_body ) && isset( $decoded_body['errors'] ) && is_array( $decoded_body['errors'] ) ) {
+					foreach ( $decoded_body['errors'] as $error ) {
+						if ( isset( $error['message'] ) ) {
+							$error_message .= ' ' . sanitize_text_field( $error['message'] );
+							if ( isset( $error['code'] ) ) {
+								$error_message .= ' (Code: ' . absint( $error['code'] ) . ')';
+							}
+							break;
+						}
+					}
+				}
+
+				WP_MCP_AI_Logger::log_error(
+					'cloudflare_image_error',
+					'Cloudflare Workers AI returned an error.',
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+			}
+
+			// Cloudflare can return either binary image data or JSON with base64 encoded image.
+			// Check content type to determine format.
+			$content_type = wp_remote_retrieve_header( $response, 'content-type' );
+
+			if ( false !== strpos( $content_type, 'application/json' ) ) {
+				// JSON response with base64 encoded image.
+				$decoded = json_decode( $body, true );
+
+				if ( JSON_ERROR_NONE !== json_last_error() ) {
+					return new WP_Error(
+						'wp_mcp_ai_invalid_response',
+						__( 'Invalid JSON response from Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+						array( 'body' => $body )
+					);
+				}
+
+				if ( ! isset( $decoded['result'] ) || ! isset( $decoded['result']['image'] ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_invalid_response',
+						__( 'Unexpected response format from Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+						array( 'decoded' => $decoded )
+					);
+				}
+
+				// Base64 encoded image data.
+				$image_data = base64_decode( $decoded['result']['image'], true );
+
+				if ( false === $image_data || '' === $image_data ) {
+					return new WP_Error(
+						'wp_mcp_ai_invalid_image',
+						__( 'Failed to decode base64 image data from Cloudflare Workers AI.', 'mcp-ai-wpoos' )
+					);
+				}
+
+				return array(
+					'image'      => $image_data,
+					'format'     => 'png', // Most Cloudflare models return PNG.
+					'mime_type'  => 'image/png',
+					'model'      => $model,
+					'created'    => time(),
+					'bytes'      => strlen( $image_data ),
+					'width'      => isset( $payload['width'] ) ? $payload['width'] : null,
+					'height'     => isset( $payload['height'] ) ? $payload['height'] : null,
+					'num_steps'  => isset( $payload['num_steps'] ) ? $payload['num_steps'] : null,
+					'provider'   => 'cloudflare',
+				);
+			} else {
+				// Binary image data (PNG, JPEG, etc.).
+				$image_data = $body;
+
+				if ( '' === $image_data ) {
+					return new WP_Error(
+						'wp_mcp_ai_empty_image',
+						__( 'Cloudflare Workers AI returned an empty image.', 'mcp-ai-wpoos' )
+					);
+				}
+
+				// Detect image format from binary data.
+				$format    = 'png'; // Default.
+				$mime_type = 'image/png';
+
+				// Check for PNG signature.
+				if ( 0 === strpos( $image_data, "\x89PNG" ) ) {
+					$format    = 'png';
+					$mime_type = 'image/png';
+				} elseif ( 0 === strpos( $image_data, "\xFF\xD8\xFF" ) ) {
+					// Check for JPEG signature.
+					$format    = 'jpeg';
+					$mime_type = 'image/jpeg';
+				} elseif ( 0 === strpos( $image_data, 'RIFF' ) && false !== strpos( substr( $image_data, 0, 12 ), 'WEBP' ) ) {
+					// Check for WebP signature.
+					$format    = 'webp';
+					$mime_type = 'image/webp';
+				}
+
+				return array(
+					'image'      => $image_data,
+					'format'     => $format,
+					'mime_type'  => $mime_type,
+					'model'      => $model,
+					'created'    => time(),
+					'bytes'      => strlen( $image_data ),
+					'width'      => isset( $payload['width'] ) ? $payload['width'] : null,
+					'height'     => isset( $payload['height'] ) ? $payload['height'] : null,
+					'num_steps'  => isset( $payload['num_steps'] ) ? $payload['num_steps'] : null,
+					'provider'   => 'cloudflare',
+				);
+			}
 		 * Run chat completion with embedded function calling support (ai-utils style).
 		 *
 		 * This method provides a PHP equivalent to the @cloudflare/ai-utils runWithTools() utility,
