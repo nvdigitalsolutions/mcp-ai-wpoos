@@ -285,7 +285,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'crawl4ai_api_key'                     => '',
 				'cloudflare_api_token'                 => '',
 				'cloudflare_account_id'                => '',
-				'cloudflare_model'                     => '@cf/meta/llama-3.1-8b-instruct',
+				'cloudflare_model'                     => '@cf/meta/llama-3.2-3b-instruct',
 				'cloudflare_image_model'               => '@cf/stabilityai/stable-diffusion-xl-base-1.0',
 				'cloudflare_image_width'               => 1024,
 				'cloudflare_image_height'              => 1024,

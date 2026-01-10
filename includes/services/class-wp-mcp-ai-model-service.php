@@ -485,43 +485,24 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		// Text generation models.
-		// Llama 4 Scout models (NEW in 2025 - multimodal but can handle text-only).
-		$models['@cf/meta/llama-4-scout']                  = 'Llama 4 Scout (17B, Multimodal)';
-		$models['@cf/meta/llama-4-scout-17b-16e-instruct'] = 'Llama 4 Scout 17B 16E Instruct (131K context)';
+		// Function Calling Models.
+		$models['@cf/meta/llama-3.3-70b-instruct-fp8-fast']     = 'Llama 3.3 70B Instruct FP8 Fast';
+		$models['@cf/meta/llama-4-scout-17b-16e-instruct']      = 'Llama 4 Scout 17B 16E Instruct';
+		$models['@cf/ibm-granite/granite-4.0-h-micro']          = 'IBM Granite 4.0 H Micro';
+		$models['@cf/qwen/qwen3-30b-a3b-fp8']                   = 'Qwen 3 30B A3B FP8';
+		$models['@cf/mistralai/mistral-small-3.1-24b-instruct'] = 'Mistral Small 3.1 24B Instruct';
+		$models['@hf/nousresearch/hermes-2-pro-mistral-7b']     = 'Hermes 2 Pro Mistral 7B';
 
-		// Llama 3.1 models (most popular).
-		$models['@cf/meta/llama-3.1-8b-instruct']      = 'Llama 3.1 8B Instruct';
-		$models['@cf/meta/llama-3.1-8b-instruct-fast'] = 'Llama 3.1 8B Instruct Fast (128K context)';
-		$models['@cf/meta/llama-3.1-70b-instruct']     = 'Llama 3.1 70B Instruct';
-
-		// Llama 3.2 models (compact).
-		$models['@cf/meta/llama-3.2-1b-instruct'] = 'Llama 3.2 1B Instruct';
-		$models['@cf/meta/llama-3.2-3b-instruct'] = 'Llama 3.2 3B Instruct';
-
-		// Llama 2 models (legacy).
-		$models['@cf/meta/llama-2-7b-chat-int4']  = 'Llama 2 7B Chat (INT4)';
-		$models['@cf/meta/llama-2-13b-chat-int8'] = 'Llama 2 13B Chat (INT8)';
-
-		// Mistral models (FIXED: corrected namespace from @cf/mistral to @cf/mistralai).
-		$models['@cf/mistralai/mistral-7b-instruct-v0.1'] = 'Mistral 7B Instruct v0.1';
-
-		// Qwen models (multilingual, including Chinese).
-		$models['@cf/qwen/qwen1.5-0.5b-chat']              = 'Qwen 1.5 0.5B Chat';
-		$models['@cf/qwen/qwen1.5-1.8b-chat']              = 'Qwen 1.5 1.8B Chat';
-		$models['@cf/qwen/qwen1.5-7b-chat-awq']            = 'Qwen 1.5 7B Chat (AWQ)';
-		$models['@cf/qwen/qwen1.5-14b-chat-awq']           = 'Qwen 1.5 14B Chat (AWQ)';
-		$models['@cf/qwen/qwen2.5-coder-32b-instruct']     = 'Qwen 2.5 Coder 32B Instruct';
-		$models['@cf/qwen/qwen3-30b-a3b-fp8']              = 'Qwen 3 30B (A3B FP8)';
-
-		// Compact/efficient models.
-		$models['@cf/tinyllama/tinyllama-1.1b-chat-v1.0'] = 'TinyLlama 1.1B Chat v1.0';
-		$models['@cf/microsoft/phi-2']                    = 'Microsoft Phi-2';
-
-		// Specialized models.
-		$models['@cf/tiiuae/falcon-7b-instruct']             = 'Falcon 7B Instruct';
-		$models['@cf/deepseek-ai/deepseek-math-7b-instruct'] = 'DeepSeek Math 7B Instruct';
-		$models['@cf/openchat/openchat-3.5-0106']            = 'OpenChat 3.5';
+		// Text Generation Models.
+		$models['@cf/aisingapore/gemma-sea-lion-v4-27b-it']     = 'Gemma SEA Lion V4 27B IT';
+		$models['@cf/openai/gpt-oss-20b']                       = 'GPT OSS 20B';
+		$models['@cf/openai/gpt-oss-120b']                      = 'GPT OSS 120B';
+		$models['@cf/google/gemma-3-12b-it']                    = 'Gemma 3 12B IT';
+		$models['@cf/qwen/qwq-32b']                             = 'Qwen QwQ 32B';
+		$models['@cf/qwen/qwen2.5-coder-32b-instruct']          = 'Qwen 2.5 Coder 32B Instruct';
+		$models['@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'] = 'DeepSeek R1 Distill Qwen 32B';
+		$models['@cf/meta/llama-3.2-1b-instruct']               = 'Llama 3.2 1B Instruct';
+		$models['@cf/meta/llama-3.2-3b-instruct']               = 'Llama 3.2 3B Instruct';
 
 		return $models;
 	}
@@ -591,7 +572,7 @@ class WP_MCP_AI_Model_Service {
 			'huggingface' => 'meta-llama/Llama-3.2-3B-Instruct',
 			'ollama'      => 'llama3.2',
 			'lm_studio'   => 'qwen/qwen2.5-7b',
-			'cloudflare'  => '@cf/meta/llama-3.1-8b-instruct',
+			'cloudflare'  => '@cf/meta/llama-3.2-3b-instruct',
 		);
 
 		$default = isset( $defaults[ $provider ] ) ? $defaults[ $provider ] : '';
