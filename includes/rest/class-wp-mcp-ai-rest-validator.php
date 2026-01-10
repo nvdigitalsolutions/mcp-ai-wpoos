@@ -640,6 +640,25 @@ class WP_MCP_AI_REST_Validator {
 			$options['system_prompt'] = wp_kses_post( $assistant_config['system_prompt'] );
 		}
 
+		// Debug logging for Cloudflare system_prompt issues.
+		if ( 'cloudflare' === $provider ) {
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_sanitize_options_system_prompt',
+				'System prompt after sanitize_options for Cloudflare',
+				array(
+					'assistant_id'                   => isset( $assistant_config['ID'] ) ? $assistant_config['ID'] : null,
+					'assistant_title'                => isset( $assistant_config['title'] ) ? $assistant_config['title'] : null,
+					'has_system_prompt_in_options'   => isset( $options['system_prompt'] ),
+					'system_prompt_empty'            => empty( $options['system_prompt'] ),
+					'system_prompt_length'           => isset( $options['system_prompt'] ) ? strlen( (string) $options['system_prompt'] ) : 0,
+					'system_prompt_preview'          => isset( $options['system_prompt'] ) ? substr( (string) $options['system_prompt'], 0, 200 ) : '',
+					'has_system_prompt_in_config'    => ! empty( $assistant_config['system_prompt'] ),
+					'config_system_prompt_length'    => ! empty( $assistant_config['system_prompt'] ) ? strlen( (string) $assistant_config['system_prompt'] ) : 0,
+					'config_system_prompt_preview'   => ! empty( $assistant_config['system_prompt'] ) ? substr( (string) $assistant_config['system_prompt'], 0, 200 ) : '',
+				)
+			);
+		}
+
 		if ( isset( $options['memory_files'] ) ) {
 			$options['memory_files'] = $this->sanitize_memory_files( $options['memory_files'] );
 		} elseif ( ! empty( $assistant_config['memory_files'] ) ) {
