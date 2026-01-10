@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-text-to-image-tool',
-        'version' => 'dev-copilot/create-text-to-image-tool',
-        'reference' => '38f91061531c2335c851cf735e27059aee667b68',
+        'pretty_version' => 'dev-copilot/add-run-with-tools-to-clients',
+        'version' => 'dev-copilot/add-run-with-tools-to-clients',
+        'reference' => '9dfce018f2dccea84e9c93dbbdd162079611ad47',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-text-to-image-tool',
-            'version' => 'dev-copilot/create-text-to-image-tool',
-            'reference' => '38f91061531c2335c851cf735e27059aee667b68',
+            'pretty_version' => 'dev-copilot/add-run-with-tools-to-clients',
+            'version' => 'dev-copilot/add-run-with-tools-to-clients',
+            'reference' => '9dfce018f2dccea84e9c93dbbdd162079611ad47',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
