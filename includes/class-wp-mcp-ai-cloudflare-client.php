@@ -275,7 +275,14 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			WP_MCP_AI_Logger::log_event(
 				'cloudflare_request',
 				'Sending request to Cloudflare Workers AI.',
-				array( 'payload' => $this->obfuscate_request_for_log( $payload ) )
+				array(
+					'payload'              => $this->obfuscate_request_for_log( $payload ),
+					'has_system_field'     => isset( $payload['system'] ),
+					'system_field_length'  => isset( $payload['system'] ) ? strlen( $payload['system'] ) : 0,
+					'system_field_preview' => isset( $payload['system'] ) ? substr( $payload['system'], 0, 200 ) : '',
+					'message_count'        => isset( $payload['messages'] ) && is_array( $payload['messages'] ) ? count( $payload['messages'] ) : 0,
+					'has_tools'            => isset( $payload['tools'] ) && ! empty( $payload['tools'] ),
+				)
 			);
 
 			$response = wp_remote_post( $url, $request_args );
