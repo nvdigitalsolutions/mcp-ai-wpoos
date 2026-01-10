@@ -608,6 +608,22 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Cloudflare may return tool_calls when the model decides to use a tool/function.
 			if ( isset( $result['tool_calls'] ) && is_array( $result['tool_calls'] ) && ! empty( $result['tool_calls'] ) ) {
 				$message['tool_calls'] = $result['tool_calls'];
+				
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_tool_calls_detected',
+					'Cloudflare response contains tool_calls',
+					array(
+						'tool_call_count' => count( $result['tool_calls'] ),
+						'tool_names'      => array_map(
+							function( $tc ) {
+								return isset( $tc['function']['name'] ) ? $tc['function']['name'] : 'unknown';
+							},
+							$result['tool_calls']
+						),
+						'has_content'     => ! empty( $content ),
+						'content_preview' => substr( $content, 0, 100 ),
+					)
+				);
 			}
 
 			$has_tool_calls = isset( $message['tool_calls'] ) && ! empty( $message['tool_calls'] );

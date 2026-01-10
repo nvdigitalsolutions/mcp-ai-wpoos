@@ -5951,6 +5951,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					continue;
 				}
 
+				// Filter tools by user capabilities.
+				// If the tool requires a specific capability, only include it if the current user has that capability.
+				if ( method_exists( $tool, 'get_required_capability' ) ) {
+					$required_capability = $tool->get_required_capability();
+					if ( ! empty( $required_capability ) && ! current_user_can( $required_capability ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'tool_filtered_by_capability',
+							sprintf( 'Tool "%s" filtered from payload - user lacks required capability: %s', $slug, $required_capability ),
+							array(
+								'tool_slug'           => $slug,
+								'required_capability' => $required_capability,
+								'user_id'             => get_current_user_id(),
+							)
+						);
+						continue;
+					}
+				}
+
 				try {
 					$schema = $tool->get_parameters_schema();
 
