@@ -60,7 +60,7 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'provider'   => array(
 					'type'        => 'string',
 					'description' => __( 'AI provider name.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ),
+					'enum'        => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ),
 				),
 				'use_web_search' => array(
 					'type'        => 'boolean',
@@ -119,13 +119,13 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$use_search = isset( $arguments['use_web_search'] ) ? (bool) $arguments['use_web_search'] : true;
 
 		// Validate provider.
-		$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+		$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
 		if ( ! in_array( $provider, $valid_providers, true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_provider',
 				sprintf(
 					/* translators: %s: provider name */
-					__( 'Invalid provider: %s. Must be one of: openai, anthropic, gemini, huggingface, ollama, lm_studio', 'mcp-ai-wpoos' ),
+					__( 'Invalid provider: %s. Must be one of: openai, anthropic, gemini, huggingface, ollama, lm_studio, cloudflare', 'mcp-ai-wpoos' ),
 					$provider
 				)
 			);
