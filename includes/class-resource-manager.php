@@ -191,21 +191,38 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 				'high'   => 32000,
 			);
 
-			// Use configured value if available, otherwise use default for tier.
-			if ( null !== $configured_value && absint( $configured_value ) > 0 ) {
-				$max_tokens = absint( $configured_value );
-			} else {
-				$max_tokens = isset( $default_map[ $tier ] ) ? $default_map[ $tier ] : 8000;
-			}
-
-			/**
-			 * Filter the recommended maximum tokens (context window size).
-			 *
-			 * @param int    $max_tokens The recommended maximum tokens.
-			 * @param string $tier       The current workload tier ('low', 'medium', or 'high').
-			 */
-			return apply_filters( 'wp_mcp_ai_resource_max_tokens', $max_tokens, $tier );
+		// Use configured value if available, otherwise use default for tier.
+		if ( null !== $configured_value && absint( $configured_value ) > 0 ) {
+			$max_tokens = absint( $configured_value );
+			$source     = 'orchestration_preset';
+		} else {
+			$max_tokens = isset( $default_map[ $tier ] ) ? $default_map[ $tier ] : 8000;
+			$source     = 'default_fallback';
 		}
+
+		// Log max_tokens resolution for debugging token limit issues.
+		// This helps diagnose why responses might be limited to unexpected token counts.
+		WP_MCP_AI_Logger::log_event(
+			'resource_manager_max_tokens',
+			'Resource Manager resolved max_tokens',
+			array(
+				'max_tokens'       => $max_tokens,
+				'workload_tier'    => $tier,
+				'source'           => $source,
+				'setting_key'      => $setting_key,
+				'configured_value' => $configured_value,
+				'memory_limit'     => $this->get_memory_limit(),
+			)
+		);
+
+		/**
+		 * Filter the recommended maximum tokens (context window size).
+		 *
+		 * @param int    $max_tokens The recommended maximum tokens.
+		 * @param string $tier       The current workload tier ('low', 'medium', or 'high').
+		 */
+		return apply_filters( 'wp_mcp_ai_resource_max_tokens', $max_tokens, $tier );
+	}
 
 		/**
 		 * Get the recommended request timeout based on the current workload tier.
