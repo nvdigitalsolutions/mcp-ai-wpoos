@@ -641,6 +641,54 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => '@cf/meta/llama-3.1-8b-instruct',
 				),
+				'cloudflare_image_model'             => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Cloudflare Image Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Stable Diffusion XL Base is recommended for general purpose use.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Recommended)',
+						'@cf/bytedance/stable-diffusion-xl-lightning'  => 'Stable Diffusion XL Lightning (Fast)',
+						'@cf/black-forest-labs/flux-1-schnell'         => 'Flux-1 Schnell',
+						'@cf/lykon/dreamshaper-8-lcm'                  => 'Dreamshaper 8 LCM',
+					),
+					'default'     => '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+				),
+				'cloudflare_image_width'             => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Image Width', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default width for generated images in pixels (256-2048). Different models may have different optimal sizes.', 'mcp-ai-wpoos' ),
+					'default'     => 1024,
+					'min'         => 256,
+					'max'         => 2048,
+					'step'        => 64,
+				),
+				'cloudflare_image_height'            => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Image Height', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default height for generated images in pixels (256-2048). Different models may have different optimal sizes.', 'mcp-ai-wpoos' ),
+					'default'     => 1024,
+					'min'         => 256,
+					'max'         => 2048,
+					'step'        => 64,
+				),
+				'cloudflare_image_num_steps'         => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Number of Steps', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default number of diffusion steps (1-20). More steps can improve quality but take longer. 20 is recommended.', 'mcp-ai-wpoos' ),
+					'default'     => 20,
+					'min'         => 1,
+					'max'         => 20,
+					'step'        => 1,
+				),
+				'cloudflare_image_guidance'          => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Guidance Scale', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default guidance scale controls how closely the image follows the prompt. Higher values (7-15) mean stricter adherence. 7.5 is recommended.', 'mcp-ai-wpoos' ),
+					'default'     => 7.5,
+					'min'         => 1.0,
+					'max'         => 20.0,
+					'step'        => 0.5,
+				),
 
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
@@ -716,7 +764,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model' ),
+					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model', 'cloudflare_image_model', 'cloudflare_image_width', 'cloudflare_image_height', 'cloudflare_image_num_steps', 'cloudflare_image_guidance' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',

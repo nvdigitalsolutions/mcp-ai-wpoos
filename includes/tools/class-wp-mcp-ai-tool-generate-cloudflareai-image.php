@@ -159,8 +159,36 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-		if ( ! empty( $settings['cloudflare_model'] ) ) {
-			$defaults['model'] = sanitize_text_field( $settings['cloudflare_model'] );
+		if ( ! empty( $settings['cloudflare_image_model'] ) ) {
+			$defaults['model'] = sanitize_text_field( $settings['cloudflare_image_model'] );
+		}
+
+		if ( ! empty( $settings['cloudflare_image_width'] ) ) {
+			$width = absint( $settings['cloudflare_image_width'] );
+			if ( $width >= 256 && $width <= 2048 ) {
+				$defaults['width'] = $width;
+			}
+		}
+
+		if ( ! empty( $settings['cloudflare_image_height'] ) ) {
+			$height = absint( $settings['cloudflare_image_height'] );
+			if ( $height >= 256 && $height <= 2048 ) {
+				$defaults['height'] = $height;
+			}
+		}
+
+		if ( isset( $settings['cloudflare_image_num_steps'] ) && '' !== $settings['cloudflare_image_num_steps'] ) {
+			$num_steps = absint( $settings['cloudflare_image_num_steps'] );
+			if ( $num_steps >= 1 && $num_steps <= 20 ) {
+				$defaults['num_steps'] = $num_steps;
+			}
+		}
+
+		if ( isset( $settings['cloudflare_image_guidance'] ) && '' !== $settings['cloudflare_image_guidance'] ) {
+			$guidance = (float) $settings['cloudflare_image_guidance'];
+			if ( $guidance >= 1.0 && $guidance <= 20.0 ) {
+				$defaults['guidance'] = $guidance;
+			}
 		}
 
 		return $defaults;
