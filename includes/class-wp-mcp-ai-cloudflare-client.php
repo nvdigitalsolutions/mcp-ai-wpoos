@@ -367,6 +367,12 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				$payload['stream'] = (bool) $options['stream'];
 			}
 
+			// Add tools if provided.
+			// Tools are passed from the REST controller in OpenAI format with type='function' and function definition.
+			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+				$payload['tools'] = $options['tools'];
+			}
+
 			return $payload;
 		}
 
