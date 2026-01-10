@@ -448,27 +448,17 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 
 			// Add response_format for JSON mode (OpenAI-compatible).
 			// Supported values: {"type": "json_object"} or {"type": "json_schema", "json_schema": {...}}.
-			// When tools are present and no response_format is explicitly set, automatically enable
-			// JSON mode to ensure tool calls are properly formatted and parseable.
-			$has_tools = ! empty( $options['tools'] ) && is_array( $options['tools'] );
-			
+			// Note: JSON mode is only supported on specific Cloudflare Workers AI models (e.g., Llama 3.1+, DeepSeek).
+			// Auto-JSON mode for tool calling has been removed because:
+			// 1. Not all Cloudflare models support JSON mode (added Feb 25, 2025)
+			// 2. Tool calling works without explicit JSON mode on supported models
+			// 3. Using json_object on unsupported models causes "unknown variant" errors
 			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
 				// User explicitly set response_format, use it.
-				$payload['response_format'] = $options['response_format'];
-			} elseif ( $has_tools && ! isset( $options['disable_auto_json'] ) ) {
-				// Auto-enable JSON mode for tool calling to ensure consistent, parseable responses.
-				// This helps prevent issues where the model returns malformed tool calls.
-				// Can be disabled by setting $options['disable_auto_json'] = true.
-				$payload['response_format'] = array( 'type' => 'json_object' );
-				
-				WP_MCP_AI_Logger::log_event(
-					'cloudflare_auto_json_enabled',
-					'Automatically enabled JSON mode for tool calling',
-					array(
-						'tool_count'  => count( $options['tools'] ),
-						'tool_choice' => isset( $options['tool_choice'] ) ? $options['tool_choice'] : 'auto',
-					)
-				);
+				// Only include if it's not empty to avoid sending empty arrays.
+				if ( ! empty( $options['response_format'] ) ) {
+					$payload['response_format'] = $options['response_format'];
+				}
 			}
 
 			// Add tools LAST, after system and messages.
@@ -1215,7 +1205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		 *                         - max_tokens: Maximum tokens to generate
 		 *                         - tool_choice: Control tool usage - "auto" (default), "none", "required", "any", or specific tool
 		 *                         - response_format: JSON mode config - {type: "json_object"} or {type: "json_schema", json_schema: {...}}
-		 *                         - disable_auto_json: Disable automatic JSON mode for tool calling (default: false)
+		 *                           Note: Only supported on specific models (Llama 3.1+, DeepSeek, etc.). Not auto-enabled.
 		 *                         - strictValidation: Validate tool arguments before execution (default: true)
 		 *                         - maxRecursiveToolRuns: Maximum recursive tool call depth (default: 5)
 		 *                         - streamFinalResponse: Return streaming response (default: false)

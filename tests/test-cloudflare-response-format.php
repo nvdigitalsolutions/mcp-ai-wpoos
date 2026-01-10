@@ -254,9 +254,10 @@ class Test_Cloudflare_Response_Format extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that auto-JSON mode is enabled when tools are present.
+	 * Test that response_format is NOT auto-enabled when tools are present.
+	 * Auto-JSON has been removed because not all Cloudflare models support it.
 	 */
-	public function test_auto_json_mode_with_tools() {
+	public function test_no_auto_json_mode_with_tools() {
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -287,15 +288,14 @@ class Test_Cloudflare_Response_Format extends WP_UnitTestCase {
 
 		$payload = $method->invoke( $this->client, $messages, $options );
 
-		// Auto-JSON should be enabled.
-		$this->assertArrayHasKey( 'response_format', $payload, 'Auto-JSON should be enabled when tools present' );
-		$this->assertSame( array( 'type' => 'json_object' ), $payload['response_format'], 'Auto-JSON should use json_object type' );
+		// Auto-JSON should NOT be enabled (removed in fix for unsupported models).
+		$this->assertArrayNotHasKey( 'response_format', $payload, 'Auto-JSON should not be enabled automatically' );
 	}
 
 	/**
-	 * Test that auto-JSON mode can be disabled.
+	 * Test that response_format can still be explicitly set when tools are present.
 	 */
-	public function test_auto_json_mode_can_be_disabled() {
+	public function test_explicit_response_format_with_tools() {
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -317,7 +317,7 @@ class Test_Cloudflare_Response_Format extends WP_UnitTestCase {
 					),
 				),
 			),
-			'disable_auto_json' => true, // Explicitly disable auto-JSON.
+			'response_format' => array( 'type' => 'json_object' ), // Explicitly enable.
 		);
 
 		$reflection = new ReflectionClass( $this->client );
@@ -326,8 +326,9 @@ class Test_Cloudflare_Response_Format extends WP_UnitTestCase {
 
 		$payload = $method->invoke( $this->client, $messages, $options );
 
-		// Auto-JSON should NOT be enabled.
-		$this->assertArrayNotHasKey( 'response_format', $payload, 'Auto-JSON should be disabled when disable_auto_json is true' );
+		// Explicit response_format should be respected.
+		$this->assertArrayHasKey( 'response_format', $payload, 'Explicit response_format should be included' );
+		$this->assertSame( array( 'type' => 'json_object' ), $payload['response_format'], 'Should use explicitly set response_format' );
 	}
 
 	/**
