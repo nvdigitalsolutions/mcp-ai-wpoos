@@ -2178,6 +2178,11 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 					foreach ( $decoded_body['errors'] as $error ) {
 						if ( isset( $error['message'] ) ) {
 							$error_message .= ' ' . sanitize_text_field( $error['message'] );
+							
+							// Provide helpful context for common errors.
+							if ( 404 === $code || false !== strpos( strtolower( $error['message'] ), 'no route' ) ) {
+								$error_message .= ' ' . __( 'The Whisper model may not be available for your Cloudflare account. Verify the model name (@cf/openai/whisper or @cf/openai/whisper-large-v3-turbo) is correct and enabled.', 'mcp-ai-wpoos' );
+							}
 							break;
 						}
 					}
@@ -2186,8 +2191,11 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				WP_MCP_AI_Logger::log_error(
 					'Cloudflare Workers AI audio transcription error.',
 					array(
-						'status' => $code,
-						'body'   => $body,
+						'status'       => $code,
+						'body'         => $body,
+						'model'        => $model,
+						'account_id'   => $account_id,
+						'request_url'  => $url,
 					)
 				);
 
@@ -2195,8 +2203,12 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 					'wp_mcp_ai_api_error',
 					$error_message,
 					array(
-						'status' => $code,
-						'body'   => $body,
+						'status'  => $code,
+						'body'    => $body,
+						'actions' => array(
+							'verify_cloudflare_model' => __( 'Check that the Whisper model is available in your Cloudflare Workers AI account.', 'mcp-ai-wpoos' ),
+							'check_account_limits'    => __( 'Verify your Cloudflare account has access to audio transcription features.', 'mcp-ai-wpoos' ),
+						),
 					)
 				);
 			}
@@ -2233,8 +2245,10 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 					);
 				}
 				return array(
-					'text' => $text,
-					'raw'  => $decoded,
+					'text'   => $text,
+					'model'  => $model,
+					'format' => 'json',
+					'raw'    => $decoded,
 				);
 			}
 

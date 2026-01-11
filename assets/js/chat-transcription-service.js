@@ -692,9 +692,9 @@
 			}
 
 			const metaParts = [];
-			if (record && record.name) {
-				metaParts.push(record.name);
-			}
+			// Note: We intentionally do NOT add record.name (filename) to metaParts
+			// because it's shown in the status message and would be redundant in the textarea.
+			// Users want just the transcription text, not the temporary audio filename.
 
 			if (payload.language) {
 				metaParts.push('Language: ' + payload.language);

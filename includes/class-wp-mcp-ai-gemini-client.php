@@ -3239,8 +3239,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			// Normalize to consistent format.
 			return array(
-				'text' => $text,
-				'raw'  => $decoded,
+				'text'     => $text,
+				'model'    => 'google-speech-to-text',
+				'format'   => 'json',
+				'language' => $language_code,
+				'raw'      => $decoded,
 			);
 		}
 
