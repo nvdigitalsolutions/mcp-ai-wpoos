@@ -2245,5 +2245,323 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				array( 'response' => $decoded )
 			);
 		}
+
+		/**
+		 * Generate speech audio from text using Cloudflare Workers AI TTS models.
+		 *
+		 * Supports:
+		 * - @cf/deepgram/aura-2-en (Deepgram Aura-2, high-quality, multiple voices)
+		 * - @cf/myshell-ai/melotts (MeloTTS, multilingual support)
+		 *
+		 * @param string $text    Text to convert to speech.
+		 * @param array  $options Optional configuration (model, voice, format, speed, timeout).
+		 * @return array|WP_Error Array with 'audio', 'format', 'model', 'voice' on success, WP_Error on failure.
+		 */
+		public function generate_speech( $text, array $options = array() ) {
+			$api_token  = $this->get_api_token();
+			$account_id = $this->get_account_id();
+
+			if ( empty( $api_token ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_api_token',
+					__( 'No Cloudflare API token has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_api_token' => __( 'Add a Cloudflare API token in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			if ( empty( $account_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_account_id',
+					__( 'No Cloudflare account ID has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_account_id' => __( 'Add a Cloudflare account ID in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$text = sanitize_textarea_field( $text );
+
+			if ( '' === $text ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_speech_input',
+					__( 'A text prompt must be supplied to generate speech.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Get settings for defaults.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Default to Deepgram Aura-2 (high quality, multiple voices).
+			$default_model = isset( $settings['cloudflare_speech_model'] ) && '' !== $settings['cloudflare_speech_model']
+				? sanitize_text_field( $settings['cloudflare_speech_model'] )
+				: '@cf/deepgram/aura-2-en';
+
+			// Voice defaults depend on the model.
+			$default_voice = isset( $settings['cloudflare_speech_voice'] ) && '' !== $settings['cloudflare_speech_voice']
+				? sanitize_text_field( $settings['cloudflare_speech_voice'] )
+				: 'luna'; // Deepgram Aura-2 default voice.
+
+			$default_format = isset( $settings['cloudflare_speech_format'] ) && '' !== $settings['cloudflare_speech_format']
+				? sanitize_key( $settings['cloudflare_speech_format'] )
+				: 'mp3';
+
+			// Extract options.
+			$model   = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
+			$voice   = isset( $options['voice'] ) && '' !== $options['voice'] ? sanitize_text_field( $options['voice'] ) : $default_voice;
+			$format  = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : $default_format;
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : 30;
+			$timeout = max( 5, $timeout );
+
+			// Build payload based on model.
+			$payload = array();
+
+			if ( false !== strpos( $model, 'deepgram' ) || false !== strpos( $model, 'aura' ) ) {
+				// Deepgram Aura-2 model.
+				// API: {"text": "Hello", "speaker": "luna", "encoding": "mp3"}
+				$payload = array(
+					'text'    => $text,
+					'speaker' => $voice, // Deepgram uses "speaker" parameter.
+				);
+
+				// Map format to Deepgram encoding.
+				$encoding = $this->map_format_to_deepgram_encoding( $format );
+				if ( $encoding ) {
+					$payload['encoding'] = $encoding;
+				}
+
+				// Deepgram Aura-2 doesn't support speed parameter in current API.
+			} elseif ( false !== strpos( $model, 'melotts' ) || false !== strpos( $model, 'myshell' ) ) {
+				// MeloTTS model.
+				// API: {"prompt": "Hello", "lang": "en"}
+				$payload = array(
+					'prompt' => $text,
+				);
+
+				// MeloTTS uses language code, not voice name.
+				// Map voice to language if it looks like a language code.
+				if ( strlen( $voice ) === 2 ) {
+					$payload['lang'] = $voice;
+				} else {
+					// Default to English if voice is a name.
+					$payload['lang'] = 'en';
+				}
+
+				// MeloTTS returns base64-encoded MP3, format is fixed.
+				$format = 'mp3';
+			} else {
+				// Unknown model, use generic approach.
+				$payload = array(
+					'text' => $text,
+				);
+
+				if ( $voice ) {
+					$payload['voice'] = $voice;
+				}
+			}
+
+			// Add speed if supported and provided.
+			if ( isset( $options['speed'] ) && '' !== $options['speed'] ) {
+				$speed = floatval( $options['speed'] );
+				$speed = max( 0.25, min( 4, $speed ) );
+
+				// Only add speed to models that support it.
+				if ( false === strpos( $model, 'deepgram' ) && false === strpos( $model, 'aura' ) ) {
+					$payload['speed'] = $speed;
+				}
+			}
+
+			/**
+			 * Filter the Cloudflare TTS payload before sending.
+			 *
+			 * @param array  $payload Prepared request payload.
+			 * @param string $text    Original text input.
+			 * @param string $model   Model identifier.
+			 * @param array  $options Original options.
+			 */
+			$payload = apply_filters( 'wp_mcp_ai_cloudflare_speech_payload', $payload, $text, $model, $options );
+
+			$encoded_payload = wp_json_encode( $payload );
+			if ( false === $encoded_payload ) {
+				return new WP_Error(
+					'wp_mcp_ai_encoding_error',
+					__( 'Failed to encode the Cloudflare TTS request payload.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Build API endpoint.
+			$url = sprintf(
+				'https://api.cloudflare.com/client/v4/accounts/%s/ai/run/%s',
+				rawurlencode( $account_id ),
+				rawurlencode( $model )
+			);
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_token,
+					'Content-Type'  => 'application/json',
+				),
+				'timeout' => $timeout,
+				'body'    => $encoded_payload,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_tts_request',
+				'Sending text-to-speech request to Cloudflare Workers AI.',
+				array(
+					'model'   => $model,
+					'voice'   => $voice,
+					'format'  => $format,
+					'timeout' => $timeout,
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Cloudflare text-to-speech request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The Cloudflare Workers AI request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'Cloudflare Workers AI', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$status_code = wp_remote_retrieve_response_code( $response );
+			$body        = wp_remote_retrieve_body( $response );
+
+			if ( $status_code < 200 || $status_code >= 300 ) {
+				$decoded = json_decode( $body, true );
+				$error   = json_last_error();
+
+				if ( JSON_ERROR_NONE === $error && isset( $decoded['errors'][0]['message'] ) ) {
+					$message = $decoded['errors'][0]['message'];
+				} elseif ( JSON_ERROR_NONE === $error && isset( $decoded['error'] ) ) {
+					$message = is_string( $decoded['error'] ) ? $decoded['error'] : wp_json_encode( $decoded['error'] );
+				} else {
+					$message = __( 'Unexpected response from Cloudflare Workers AI.', 'mcp-ai-wpoos' );
+				}
+
+				WP_MCP_AI_Logger::log_error(
+					'Cloudflare text-to-speech request returned an error.',
+					array(
+						'status'   => $status_code,
+						'response' => JSON_ERROR_NONE === $error ? $decoded : $body,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$message,
+					array( 'status' => $status_code )
+				);
+			}
+
+			if ( '' === $body ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_audio',
+					__( 'Cloudflare Workers AI returned an empty audio response.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Parse response.
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				// If not JSON, assume binary audio data (Deepgram Aura-2 returns binary).
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_tts_success',
+					'Successfully generated speech with Cloudflare Workers AI (binary response).',
+					array(
+						'model'       => $model,
+						'voice'       => $voice,
+						'format'      => $format,
+						'body_length' => strlen( $body ),
+					)
+				);
+
+				return array(
+					'audio'  => $body,
+					'format' => $format,
+					'model'  => $model,
+					'voice'  => $voice,
+				);
+			}
+
+			// Handle JSON response (MeloTTS returns base64-encoded audio).
+			if ( isset( $decoded['result']['audio'] ) ) {
+				// MeloTTS format: {"result": {"audio": "base64..."}}
+				$audio_base64 = $decoded['result']['audio'];
+				$audio_binary = base64_decode( $audio_base64 );
+
+				if ( false === $audio_binary || '' === $audio_binary ) {
+					return new WP_Error(
+						'wp_mcp_ai_decode_error',
+						__( 'Failed to decode audio data from Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+						array( 'response' => $decoded )
+					);
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'cloudflare_tts_success',
+					'Successfully generated speech with Cloudflare Workers AI (base64 response).',
+					array(
+						'model'       => $model,
+						'voice'       => $voice,
+						'format'      => $format,
+						'body_length' => strlen( $audio_binary ),
+					)
+				);
+
+				return array(
+					'audio'  => $audio_binary,
+					'format' => $format,
+					'model'  => $model,
+					'voice'  => $voice,
+				);
+			}
+
+			// Unexpected response format.
+			return new WP_Error(
+				'wp_mcp_ai_unexpected_response',
+				__( 'Unexpected response format from Cloudflare Workers AI TTS.', 'mcp-ai-wpoos' ),
+				array( 'response' => $decoded )
+			);
+		}
+
+		/**
+		 * Map audio format to Deepgram encoding parameter.
+		 *
+		 * @param string $format Audio format (mp3, wav, opus, etc.).
+		 * @return string|null Deepgram encoding or null if not supported.
+		 */
+		protected function map_format_to_deepgram_encoding( $format ) {
+			$mapping = array(
+				'mp3'    => 'mp3',
+				'opus'   => 'opus',
+				'aac'    => 'aac',
+				'flac'   => 'flac',
+				'pcm'    => 'linear16',
+				'linear' => 'linear16',
+				'wav'    => 'linear16', // Wav uses linear16 PCM.
+			);
+
+			$format = strtolower( $format );
+
+			return isset( $mapping[ $format ] ) ? $mapping[ $format ] : null;
+		}
 	}
 }
