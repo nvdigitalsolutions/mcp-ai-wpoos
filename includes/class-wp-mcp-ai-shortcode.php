@@ -186,6 +186,10 @@ class WP_MCP_AI_Shortcode {
 				'nonce'               => wp_create_nonce( 'wp_rest' ),
 				'showUsageCosts'      => $show_usage_costs,
 				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+				'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
+				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
+				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
+				'vadAudioThreshold'   => isset( $settings['vad_audio_threshold'] ) ? floatval( $settings['vad_audio_threshold'] ) : -50,
 				'strings'             => array(
 					'placeholder'                   => __( 'Ask something…', 'mcp-ai-wpoos' ),
 					'send'                          => __( 'Send', 'mcp-ai-wpoos' ),

@@ -33,11 +33,12 @@
 	const VOICE_CHAT_PROCESSING_CLASS = 'wp-mcp-ai-chat__voice-chat--processing';
 	const VOICE_CHAT_LISTENING_CLASS = 'wp-mcp-ai-chat__voice-chat--listening';
 
-	// VAD (Voice Activity Detection) constants
-	const VAD_SILENCE_THRESHOLD_MS = 700;        // Industry standard: 700ms of silence triggers auto-stop
-	const VAD_MIN_SPEECH_DURATION_MS = 300;      // Minimum 300ms of speech before allowing auto-stop
-	const VAD_AUDIO_LEVEL_THRESHOLD = -50;       // dB threshold for considering audio as "speech"
-	const VAD_CHECK_INTERVAL_MS = 100;           // Check audio levels every 100ms
+	// VAD (Voice Activity Detection) default constants
+	// These can be overridden by WordPress settings passed via config
+	const VAD_DEFAULT_SILENCE_THRESHOLD_MS = 700;      // Industry standard: 700ms
+	const VAD_DEFAULT_MIN_SPEECH_DURATION_MS = 300;    // Minimum speech duration
+	const VAD_DEFAULT_AUDIO_LEVEL_THRESHOLD = -50;     // dB threshold for speech
+	const VAD_CHECK_INTERVAL_MS = 100;                 // Check audio levels every 100ms
 
 	// Object URL registry for cleanup
 	let objectUrlRegistry = [];
@@ -1485,6 +1486,31 @@
 			return;
 		}
 
+		// Check if VAD is enabled in WordPress settings
+		const vadEnabled = state.config && typeof state.config.vadEnabled !== 'undefined' 
+			? state.config.vadEnabled 
+			: true;
+
+		if (!vadEnabled) {
+			if (window.console && console.log) {
+				console.log('VAD: Voice Activity Detection disabled in settings');
+			}
+			return;
+		}
+
+		// Get configurable VAD settings from WordPress
+		const silenceThreshold = state.config && state.config.vadSilenceThreshold 
+			? state.config.vadSilenceThreshold 
+			: VAD_DEFAULT_SILENCE_THRESHOLD_MS;
+		
+		const minSpeechDuration = state.config && state.config.vadMinSpeech 
+			? state.config.vadMinSpeech 
+			: VAD_DEFAULT_MIN_SPEECH_DURATION_MS;
+		
+		const audioThreshold = state.config && typeof state.config.vadAudioThreshold !== 'undefined'
+			? state.config.vadAudioThreshold 
+			: VAD_DEFAULT_AUDIO_LEVEL_THRESHOLD;
+
 		try {
 			// Create Web Audio API context
 			const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -1501,11 +1527,14 @@
 			const source = state.vadAudioContext.createMediaStreamSource(stream);
 			source.connect(state.vadAnalyser);
 
-			// Initialize VAD state
+			// Initialize VAD state with configurable thresholds
 			state.vadSilenceStart = null;
 			state.vadSpeechStart = Date.now();
 			state.vadLastSpeechTime = Date.now();
 			state.vadEnabled = true;
+			state.vadSilenceThreshold = silenceThreshold;
+			state.vadMinSpeechDuration = minSpeechDuration;
+			state.vadAudioThreshold = audioThreshold;
 
 			// Start monitoring audio levels
 			state.vadMonitorInterval = setInterval(function() {
@@ -1513,7 +1542,11 @@
 			}, VAD_CHECK_INTERVAL_MS);
 
 			if (window.console && console.log) {
-				console.log('VAD: Voice Activity Detection initialized');
+				console.log('VAD: Voice Activity Detection initialized', {
+					silenceThreshold: silenceThreshold + 'ms',
+					minSpeechDuration: minSpeechDuration + 'ms',
+					audioThreshold: audioThreshold + 'dB'
+				});
 			}
 		} catch (error) {
 			if (window.console && console.warn) {
@@ -1552,7 +1585,13 @@
 
 			const now = Date.now();
 			const speechDuration = now - state.vadSpeechStart;
-			const isSpeech = dB > VAD_AUDIO_LEVEL_THRESHOLD;
+			
+			// Use configurable thresholds from state
+			const audioThreshold = state.vadAudioThreshold || VAD_DEFAULT_AUDIO_LEVEL_THRESHOLD;
+			const silenceThreshold = state.vadSilenceThreshold || VAD_DEFAULT_SILENCE_THRESHOLD_MS;
+			const minSpeechDuration = state.vadMinSpeechDuration || VAD_DEFAULT_MIN_SPEECH_DURATION_MS;
+			
+			const isSpeech = dB > audioThreshold;
 
 			if (isSpeech) {
 				// Speech detected
@@ -1577,8 +1616,8 @@
 				}
 
 				// Check if we should auto-stop
-				if (speechDuration >= VAD_MIN_SPEECH_DURATION_MS && 
-					silenceDuration >= VAD_SILENCE_THRESHOLD_MS) {
+				if (speechDuration >= minSpeechDuration && 
+					silenceDuration >= silenceThreshold) {
 					
 					if (window.console && console.log) {
 						console.log('VAD: Auto-stopping after ' + silenceDuration + 'ms of silence');
