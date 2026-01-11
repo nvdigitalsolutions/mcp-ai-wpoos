@@ -1,6 +1,14 @@
 <?php
 /**
- * Tool that converts text to speech using OpenAI's Text-to-Speech API.
+ * Tool that converts text to speech using AI TTS providers.
+ *
+ * Supports multiple providers:
+ * - OpenAI: tts-1, tts-1-hd models with 6 voices (alloy, echo, fable, onyx, nova, shimmer)
+ * - Google/Gemini: Neural2 voices with multiple languages and accents
+ * - Cloudflare Workers AI: Deepgram Aura-2 (high quality) and MeloTTS (multilingual)
+ *
+ * The tool automatically uses the assistant's configured provider for TTS generation.
+ * For providers without native TTS support (Ollama, Hugging Face), it falls back to OpenAI if configured.
  *
  * @package WP_MCP_AI
  */
@@ -15,7 +23,10 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
- * Provides a tool for generating speech audio via OpenAI.
+ * Provides a tool for generating speech audio via multiple AI providers.
+ *
+ * Note: Class name remains WP_MCP_AI_Tool_Generate_OpenAI_Speech for backward compatibility,
+ * but the tool now supports OpenAI, Google/Gemini, and Cloudflare providers.
  */
 class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const DEFAULT_MODEL  = 'tts-1';
@@ -75,14 +86,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate OpenAI Speech', 'mcp-ai-wpoos' );
+		return __( 'Generate Speech', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Converts text to speech using OpenAI TTS and stores the audio in the Media Library. Works with any provider by using OpenAI for audio generation.', 'mcp-ai-wpoos' );
+		return __( 'Converts text to speech using AI TTS and stores the audio in the Media Library. Supports OpenAI (tts-1, tts-1-hd), Google/Gemini (Neural2 voices), and Cloudflare Workers AI (Deepgram Aura-2, MeloTTS) providers.', 'mcp-ai-wpoos' );
 	}
 
 	/**
