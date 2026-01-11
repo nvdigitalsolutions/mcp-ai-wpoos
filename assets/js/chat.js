@@ -11334,6 +11334,18 @@
             })
             .then(function (streamResult) {
                 streamCompleted = true;
+                
+                // Log stream completion for debugging
+                if (window.console && console.log) {
+                    console.log('[NV oOS] Streaming completed:', {
+                        hasFinalData: !!(streamResult && streamResult.finalData),
+                        hasStreamedContent: !!(streamResult && streamResult.content),
+                        streamedContentLength: streamResult && streamResult.content ? streamResult.content.length : 0,
+                        streamedContentSample: streamResult && streamResult.content ? streamResult.content.substring(0, 100) : '',
+                        streamingElementExists: !!streamingMessageElement,
+                        streamingElementInDOM: streamingMessageElement ? streamingMessageElement.parentNode !== null : false
+                    });
+                }
 
                 // Handle final message if available
                 if (streamResult && streamResult.finalData) {
@@ -11367,13 +11379,90 @@
                         }
                     }
                     
-                    // Remove temporary streaming message BEFORE calling handleChatResponse
-                    // This prevents duplicate messages from appearing in the chat.
-                    // The streamed content has already been captured in streamResult.content
-                    // and injected into finalData, so the final message will have the same content.
+                    // BUG FIX: The streaming element already displays the correct final content.
+                    // Instead of removing it and having handleChatResponse create a new bubble
+                    // (which may fail or create duplicates), we keep the streaming element and just
+                    // add the conversation message directly, then return early.
+                    //
+                    // The issue was: streamingMessageElement removed → handleChatResponse called →
+                    // either no bubble created OR duplicate bubble created → content lost/duplicated in UI
+                    // (though it reappears correctly after save/reload because it's in conversation).
+                    //
+                    // Solution: Keep streaming element, finalize it with buttons, add to conversation manually,
+                    // and RETURN EARLY to avoid calling handleChatResponse which would create duplicate.
+                    const shouldKeepStreamingElement = streamingMessageElement && 
+                                                      streamingMessageElement.parentNode &&
+                                                      streamResult.content &&
+                                                      streamResult.content.trim();
+                    
+                    if (shouldKeepStreamingElement) {
+                        // Streaming element has the final content - keep it and finalize
+                        if (window.console && console.log) {
+                            console.log('[NV oOS] Keeping streaming element (has content) and finalizing with buttons');
+                        }
+                        
+                        // Finalize the streaming element with buttons
+                        // (This mirrors the fallback path at lines ~11428-11443)
+                        attachSpeechButton(streamingMessageElement, state, streamResult.content);
+                        attachCopyButton(streamingMessageElement, streamResult.content);
+                        attachDeleteButton(streamingMessageElement, state, 'assistant');
+                        
+                        // Add the assistant message to conversation
+                        const displayPayload = { text: streamResult.content };
+                        const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload);
+                        const assistantMessage = createConversationMessage('assistant', streamResult.content, displayMetadata);
+                        state.conversation.push(assistantMessage);
+                        
+                        // Process tool_results if present (add them to conversation)
+                        if (streamResult.finalData && streamResult.finalData.tool_results) {
+                            streamResult.finalData.tool_results.forEach(function(toolResult) {
+                                if (toolResult && toolResult.role === 'tool') {
+                                    // Skip async pending results
+                                    let parsedContent = toolResult.content;
+                                    if (typeof parsedContent === 'string') {
+                                        try {
+                                            parsedContent = JSON.parse(parsedContent);
+                                        } catch (e) {
+                                            parsedContent = toolResult.content;
+                                        }
+                                    }
+                                    if (isAsyncPendingToolResult(parsedContent)) {
+                                        return;
+                                    }
+                                    
+                                    // Add display metadata to tool result
+                                    const normalizedForDisplay = normaliseToolResultForDisplay(toolResult.name || '', parsedContent);
+                                    const toolDisplay = createToolDisplayMetadata(normalizedForDisplay);
+                                    if (toolDisplay) {
+                                        toolResult.display = toolDisplay;
+                                    }
+                                    
+                                    state.conversation.push(toolResult);
+                                }
+                            });
+                        }
+                        
+                        // Save and finalize
+                        saveConversationToStorage(state);
+                        saveConversationToCCT(state, { silent: true });
+                        finalize();
+                        setTimeout(function() {
+                            clearStatus(state.container);
+                        }, 1500);
+                        
+                        // IMPORTANT: Return early here to avoid calling handleChatResponse
+                        // which would create a duplicate bubble
+                        return Promise.resolve(streamResult);
+                    }
+                    
+                    // No streaming element or no content - remove it and use normal flow
                     if (streamingMessageElement && streamingMessageElement.parentNode) {
                         streamingMessageElement.parentNode.removeChild(streamingMessageElement);
                         streamingMessageElement = null;
+                        
+                        if (window.console && console.log) {
+                            console.log('[NV oOS] Removed streaming element (will create new bubble via handleChatResponse)');
+                        }
                     }
                     
                     // Process the final response data using standard handler
@@ -11843,6 +11932,16 @@
                                 // Use the final complete text if it's different or more complete than streamed content
                                 // This ensures truncated responses and final messages are properly displayed
                                 if (finalText && typeof finalText === 'string') {
+                                    // Log final text extraction for debugging
+                                    if (window.console && console.log) {
+                                        console.log('[NV oOS] SSE: Extracted final text from finalData:', {
+                                            finalTextLength: finalText.length,
+                                            finalTextSample: finalText.substring(0, 100),
+                                            fullContentLength: fullContent ? fullContent.length : 0,
+                                            willUpdateContent: !fullContent || finalText.length > fullContent.length || finalText !== fullContent
+                                        });
+                                    }
+                                    
                                     // Use finalText if:
                                     // 1. We have no streamed content yet, OR
                                     // 2. Final text is longer (more complete), OR  
@@ -11852,6 +11951,10 @@
                                         fullContent = finalText;
                                         // Update the streaming bubble with the final text
                                         updateCallback(fullContent);
+                                        
+                                        if (window.console && console.log) {
+                                            console.log('[NV oOS] SSE: Updated fullContent and called updateCallback with final text');
+                                        }
                                     }
                                 }
                                 
@@ -12559,6 +12662,17 @@
         }
 
         const assistantMessage = { role: 'assistant' };
+        
+        // Log message content for debugging
+        if (window.console && console.log) {
+            console.log('[NV oOS] handleChatResponse: Processing message:', {
+                hasMessage: !!message,
+                messageContent: message && message.content,
+                messageContentType: message && typeof message.content,
+                messageContentLength: message && message.content && typeof message.content === 'string' ? message.content.length : 0
+            });
+        }
+        
         const assistantDisplay = prepareAssistantDisplay(message, state);
         let hasDisplayText = typeof assistantDisplay.text === 'string' && assistantDisplay.text.trim() !== '';
         const hasDisplayAttachments = assistantDisplay.attachments.length > 0;
@@ -12802,6 +12916,20 @@
                 });
             }
 
+            // Add debug logging to trace final message display issue
+            if (window.console && console.log) {
+                console.log('[NV oOS] handleChatResponse: About to append assistant message:', {
+                    hasDisplayText: hasDisplayText,
+                    hasDisplayAttachments: hasDisplayAttachments,
+                    hasDisplayContent: hasDisplayContent,
+                    textLength: assistantDisplay.text ? assistantDisplay.text.length : 0,
+                    textSample: assistantDisplay.text ? assistantDisplay.text.substring(0, 100) : '',
+                    attachmentsCount: assistantDisplay.attachments ? assistantDisplay.attachments.length : 0,
+                    hasUsage: !!aggregatedUsage,
+                    hasCost: !!aggregatedCost
+                });
+            }
+            
             assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 state: state,
                 speech: {
@@ -12812,6 +12940,14 @@
                 cost: aggregatedCost,
                 capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null,
             });
+            
+            // Log whether appendMessage returned an element
+            if (window.console && console.log) {
+                console.log('[NV oOS] handleChatResponse: appendMessage result:', {
+                    elementCreated: !!assistantMessageElement,
+                    elementInDOM: assistantMessageElement ? assistantMessageElement.parentNode !== null : false
+                });
+            }
             
             // Preserve the original content structure if it's an array (contains image blocks)
             // This is needed to maintain image_url content in the agentic loop
