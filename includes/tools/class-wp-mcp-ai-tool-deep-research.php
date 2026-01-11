@@ -61,7 +61,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Performs comprehensive deep research on any topic using multi-step web search and AI analysis. Works with all supported AI providers (OpenAI, Gemini, Anthropic, Ollama). Generates detailed research reports with findings and citations.', 'mcp-ai-wpoos' );
+		return __( '(Pro) Performs comprehensive deep research on any topic using multi-step web search and AI analysis. Works with all supported AI providers (OpenAI, Gemini, Anthropic, Cloudflare, HuggingFace, Ollama). Generates detailed research reports with findings and citations. Configure a dedicated research model in Settings → NV oOS → deep_research_model.', 'mcp-ai-wpoos' );
 	}
 
 	/**
