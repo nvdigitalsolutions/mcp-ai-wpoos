@@ -936,10 +936,18 @@
 					throw new Error('Upload failed');
 				}
 
-				if (state.attachmentLibrary && record.fileId) {
-					state.attachmentLibrary[record.fileId] = record;
-				}
+				// Note: DO NOT add transcription audio to attachmentLibrary
+				// These are temporary files for transcription only, not message attachments
+				// Adding them to attachmentLibrary causes them to persist and be reused
 
+				// Add small delay to ensure WordPress has fully processed the uploaded file
+				return new Promise(function(resolve) {
+					setTimeout(function() {
+						resolve(record);
+					}, 150);
+				});
+			})
+			.then(function (record) {
 				return helpers.requestTranscription(state, record);
 			})
 			.then(function (response) {
@@ -1379,10 +1387,18 @@
 					throw new Error('Upload failed');
 				}
 
-				if (state.attachmentLibrary && record.fileId) {
-					state.attachmentLibrary[record.fileId] = record;
-				}
+				// Note: DO NOT add translation audio to attachmentLibrary
+				// These are temporary files for translation only, not message attachments
+				// Adding them to attachmentLibrary causes them to persist and be reused
 
+				// Add small delay to ensure WordPress has fully processed the uploaded file
+				return new Promise(function(resolve) {
+					setTimeout(function() {
+						resolve(record);
+					}, 150);
+				});
+			})
+			.then(function (record) {
 				// Request translation (translate=true)
 				return helpers.requestTranscription(state, record, true);
 			})
@@ -1962,10 +1978,18 @@
 					throw new Error('Upload failed');
 				}
 
-				if (state.attachmentLibrary && record.fileId) {
-					state.attachmentLibrary[record.fileId] = record;
-				}
+				// Note: DO NOT add voice chat audio to attachmentLibrary
+				// These are temporary files for transcription only, not message attachments
+				// Adding them to attachmentLibrary causes them to persist and be reused
 
+				// Add small delay to ensure WordPress has fully processed the uploaded file
+				return new Promise(function(resolve) {
+					setTimeout(function() {
+						resolve(record);
+					}, 150);
+				});
+			})
+			.then(function (record) {
 				return helpers.requestTranscription(state, record);
 			})
 			.then(function (response) {
@@ -1980,6 +2004,7 @@
 
 				const transcribedText = result.text.trim();
 				
+				// Set textarea value temporarily for form submission
 				if (state.textarea) {
 					state.textarea.value = transcribedText;
 				}
@@ -1991,7 +2016,7 @@
 					);
 				}
 
-				// Trigger form submission
+				// Trigger form submission which will clear the textarea
 				const form = state.container ? state.container.querySelector('.wp-mcp-ai-chat__form') : null;
 				if (form) {
 					const submitEvent = new Event('submit', {
@@ -2002,6 +2027,10 @@
 				} else if (helpers && helpers.sendMessage) {
 					// Fallback to sendMessage helper if form not found
 					helpers.sendMessage(state);
+					// Clear textarea after sending since sendMessage doesn't do it automatically
+					if (state.textarea) {
+						state.textarea.value = '';
+					}
 				}
 			})
 			.catch(function (error) {
