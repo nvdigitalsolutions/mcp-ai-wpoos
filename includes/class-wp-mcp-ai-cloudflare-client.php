@@ -2563,5 +2563,193 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 
 			return isset( $mapping[ $format ] ) ? $mapping[ $format ] : null;
 		}
+
+		/**
+		 * Detect voice activity and turn completion using Cloudflare Workers AI.
+		 *
+		 * Uses @cf/pipecat-ai/smart-turn-v2 model for Voice Activity Detection (VAD).
+		 * This model detects when a speaker has finished their conversational turn,
+		 * enabling more natural voice interactions.
+		 *
+		 * @param string $file_path Path to audio file (PCM format recommended).
+		 * @param array  $options   Optional configuration (timeout).
+		 * @return array|WP_Error Array with 'is_complete' (bool) and 'probability' (float) on success.
+		 */
+		public function detect_turn_completion( $file_path, array $options = array() ) {
+			$api_token  = $this->get_api_token();
+			$account_id = $this->get_account_id();
+
+			if ( empty( $api_token ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_api_token',
+					__( 'No Cloudflare API token has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_token' => __( 'Add a Cloudflare API token in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			if ( empty( $account_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_account_id',
+					__( 'No Cloudflare account ID has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_account' => __( 'Add a Cloudflare account ID in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$file_path = (string) $file_path;
+
+			if ( '' === $file_path || ! file_exists( $file_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_file_not_found',
+					__( 'Audio file not found.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Smart Turn v2 model for VAD.
+			$model = '@cf/pipecat-ai/smart-turn-v2';
+
+			// Build the URL.
+			$escaped_model = str_replace( array( '@', ' ' ), array( '%40', '%20' ), $model );
+			$url           = sprintf(
+				'https://api.cloudflare.com/client/v4/accounts/%s/ai/run/%s',
+				rawurlencode( $account_id ),
+				$escaped_model
+			);
+
+			// Read file content.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$file_data = file_get_contents( $file_path );
+
+			if ( false === $file_data ) {
+				return new WP_Error(
+					'wp_mcp_ai_file_read_error',
+					__( 'Could not read the audio file.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			// Get timeout.
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : 30;
+			$timeout = max( 5, $timeout );
+
+			// Cloudflare Workers AI expects the audio file as binary data (PCM format preferred).
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_token,
+					'Content-Type'  => 'application/octet-stream',
+				),
+				'body'    => $file_data,
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_vad_request',
+				'Sending VAD turn detection request to Cloudflare Workers AI.',
+				array(
+					'model'     => $model,
+					'file_size' => strlen( $file_data ),
+					'timeout'   => $timeout,
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Cloudflare Workers AI VAD request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The Cloudflare Workers AI VAD request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'Cloudflare Workers AI', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$status_code = wp_remote_retrieve_response_code( $response );
+			$body        = wp_remote_retrieve_body( $response );
+
+			if ( $status_code < 200 || $status_code >= 300 ) {
+				$decoded = json_decode( $body, true );
+				$error   = json_last_error();
+
+				if ( JSON_ERROR_NONE === $error && isset( $decoded['errors'][0]['message'] ) ) {
+					$message = $decoded['errors'][0]['message'];
+				} else {
+					$message = __( 'Unexpected response from Cloudflare Workers AI.', 'mcp-ai-wpoos' );
+				}
+
+				WP_MCP_AI_Logger::log_error(
+					'Cloudflare Workers AI VAD request returned an error.',
+					array(
+						'status'   => $status_code,
+						'response' => JSON_ERROR_NONE === $error ? $decoded : $body,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$message,
+					array( 'status' => $status_code )
+				);
+			}
+
+			if ( '' === $body ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_response',
+					__( 'Cloudflare Workers AI returned an empty VAD response.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Parse JSON response.
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_response',
+					__( 'Invalid JSON response from Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+					array( 'body' => $body )
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_vad_success',
+				'Successfully detected turn completion with Cloudflare Workers AI.',
+				array(
+					'model'          => $model,
+					'is_complete'    => isset( $decoded['result']['is_complete'] ) ? $decoded['result']['is_complete'] : null,
+					'probability'    => isset( $decoded['result']['probability'] ) ? $decoded['result']['probability'] : null,
+					'response_keys'  => is_array( $decoded ) ? array_keys( $decoded ) : array(),
+				)
+			);
+
+			// Smart Turn v2 returns: {"result": {"is_complete": true/false, "probability": 0.0-1.0}}.
+			if ( isset( $decoded['result']['is_complete'] ) ) {
+				return array(
+					'is_complete' => (bool) $decoded['result']['is_complete'],
+					'probability' => isset( $decoded['result']['probability'] ) ? (float) $decoded['result']['probability'] : 0.0,
+					'raw'         => $decoded,
+				);
+			}
+
+			// Unexpected response format.
+			return new WP_Error(
+				'wp_mcp_ai_unexpected_response',
+				__( 'Unexpected response format from Cloudflare Workers AI VAD.', 'mcp-ai-wpoos' ),
+				array( 'response' => $decoded )
+			);
+		}
 	}
 }
