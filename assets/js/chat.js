@@ -2828,6 +2828,47 @@
         );
     }
 
+    /**
+     * Get the best supported audio MIME type for MediaRecorder.
+     * Prefers audio-only formats to avoid creating video containers.
+     *
+     * @return {string|null} The MIME type string or null if none supported
+     */
+    function getSupportedAudioMimeType() {
+        if (typeof window === 'undefined' || typeof window.MediaRecorder === 'undefined') {
+            return null;
+        }
+
+        // List of audio MIME types to try, in order of preference
+        // We prefer audio-only formats to avoid video container formats
+        const audioMimeTypes = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/ogg;codecs=opus',
+            'audio/ogg',
+            'audio/mp4',
+            'audio/mpeg',
+            // Fallback to video container if no audio-only format is supported
+            // This maintains backward compatibility
+            'video/webm;codecs=vp8,opus',
+            'video/webm',
+        ];
+
+        for (let i = 0; i < audioMimeTypes.length; i++) {
+            const mimeType = audioMimeTypes[i];
+            try {
+                if (MediaRecorder.isTypeSupported(mimeType)) {
+                    return mimeType;
+                }
+            } catch (error) {
+                // Continue to next MIME type
+            }
+        }
+
+        // If no specific type is supported, let MediaRecorder use its default
+        return null;
+    }
+
     function stopRecordingStream(state) {
         if (!state || !state.recordingStream) {
             return;
@@ -3045,7 +3086,10 @@
                 state.recordedChunks = [];
 
                 try {
-                    state.mediaRecorder = new MediaRecorder(stream);
+                    // Get the best supported audio MIME type to ensure we create audio files, not video
+                    const audioMimeType = getSupportedAudioMimeType();
+                    const options = audioMimeType ? { mimeType: audioMimeType } : {};
+                    state.mediaRecorder = new MediaRecorder(stream, options);
                 } catch (error) {
                     stopRecordingStream(state);
                     setStatus(
@@ -3702,7 +3746,10 @@
                 state.voiceChatChunks = [];
 
                 try {
-                    state.voiceChatRecorder = new MediaRecorder(stream);
+                    // Get the best supported audio MIME type to ensure we create audio files, not video
+                    const audioMimeType = getSupportedAudioMimeType();
+                    const options = audioMimeType ? { mimeType: audioMimeType } : {};
+                    state.voiceChatRecorder = new MediaRecorder(stream, options);
                 } catch (error) {
                     stopVoiceChatStream(state);
                     setStatus(
@@ -3734,7 +3781,11 @@
                         return;
                     }
 
-                    const blob = new Blob(state.voiceChatChunks, { type: 'audio/webm' });
+                    // Use the actual MIME type from the recorder, or fall back to 'audio/webm'
+                    const mimeType = state.voiceChatRecorder && state.voiceChatRecorder.mimeType
+                        ? state.voiceChatRecorder.mimeType
+                        : 'audio/webm';
+                    const blob = new Blob(state.voiceChatChunks, { type: mimeType });
                     state.voiceChatChunks = [];
 
                     processVoiceChatAudio(state, blob);
