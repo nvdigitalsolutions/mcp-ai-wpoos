@@ -274,20 +274,61 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			unset( $options['language'] );
 		}
 
-		$client = new WP_MCP_AI_OpenAI_Client();
+		// Use provider-specific client based on assistant configuration.
+		$client = null;
+		switch ( $provider ) {
+			case 'cloudflare':
+				if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
+				}
+				$client = new WP_MCP_AI_Cloudflare_Client();
+				// Set model to Cloudflare Whisper if not specified.
+				if ( self::DEFAULT_MODEL === $options['model'] ) {
+					$options['model'] = '@cf/openai/whisper';
+				}
+				break;
+
+			case 'huggingface':
+				if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
+				}
+				$client = new WP_MCP_AI_Huggingface_Client();
+				// Set model to Hugging Face Whisper if not specified.
+				if ( self::DEFAULT_MODEL === $options['model'] ) {
+					$options['model'] = 'openai/whisper-large-v3';
+				}
+				break;
+
+			case 'gemini':
+			case 'google':
+				if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
+				}
+				$client = new WP_MCP_AI_Gemini_Client();
+				break;
+
+			case 'openai':
+			default:
+				$client = new WP_MCP_AI_OpenAI_Client();
+				break;
+		}
+
 		$result = $client->transcribe_audio( $audio['file_path'], $options );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 
+		// Normalize response format across providers.
+		$text = isset( $result['text'] ) ? $result['text'] : '';
+
 		$payload = array(
-			'attachment_id'   => $attachment_id,
-			'file_name'       => $audio['file_name'],
-			'mime_type'       => $audio['mime_type'],
-			'file_size'       => $audio['file_size'],
-			'model'           => $result['model'],
-			'text'            => $result['text'],
+			'attachment_id' => $attachment_id,
+			'file_name'     => $audio['file_name'],
+			'mime_type'     => $audio['mime_type'],
+			'file_size'     => $audio['file_size'],
+			'model'         => isset( $result['model'] ) ? $result['model'] : $options['model'],
+			'text'          => $text,
 			'translated'      => ! empty( $result['translated'] ),
 			'response_format' => $result['format'],
 		);

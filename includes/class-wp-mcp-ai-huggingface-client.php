@@ -802,5 +802,166 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 
 			return array_values( $normalised );
 		}
+
+		/**
+		 * Transcribe audio using Hugging Face Inference API (OpenAI-compatible).
+		 *
+		 * @param string $file_path Path to the audio file.
+		 * @param array  $options   Additional options (model, language, etc.).
+		 * @return array|WP_Error Transcription result or error.
+		 */
+		public function transcribe_audio( $file_path, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_huggingface_api_key',
+					__( 'No Hugging Face API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_huggingface_key' => __( 'Add a Hugging Face API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$file_path = (string) $file_path;
+
+			if ( '' === $file_path || ! file_exists( $file_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_transcription_missing_file',
+					__( 'The audio file to transcribe could not be located.', 'mcp-ai-wpoos' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			// Use Whisper model from Hugging Face or a custom endpoint.
+			// Default to openai/whisper-large-v3 which is a popular Whisper model.
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'openai/whisper-large-v3';
+
+			// Get endpoint URL or use default Inference API.
+			$endpoint_url = $this->get_endpoint_url();
+
+			if ( empty( $endpoint_url ) ) {
+				// Use Hugging Face Inference API endpoint for the model.
+				$url = sprintf( 'https://api-inference.huggingface.co/models/%s', rawurlencode( $model ) );
+			} else {
+				// Use custom endpoint with /audio/transcriptions path (OpenAI-compatible).
+				$url = untrailingslashit( $endpoint_url ) . '/audio/transcriptions';
+			}
+
+			// Read file content.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$file_data = file_get_contents( $file_path );
+
+			if ( false === $file_data ) {
+				return new WP_Error(
+					'wp_mcp_ai_file_read_error',
+					__( 'Could not read the audio file.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : 60;
+			$timeout = max( 5, $timeout );
+
+			// Hugging Face Inference API accepts raw audio data.
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/octet-stream',
+				),
+				'body'    => $file_data,
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'huggingface_transcribe_audio',
+				'Sending audio transcription request to Hugging Face.',
+				array(
+					'model'     => $model,
+					'file_size' => strlen( $file_data ),
+					'timeout'   => $timeout,
+					'url'       => $url,
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Hugging Face audio transcription failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'Hugging Face audio transcription request failed.', 'mcp-ai-wpoos' ),
+					__( 'Hugging Face', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = __( 'Hugging Face audio transcription returned an error.', 'mcp-ai-wpoos' );
+				$decoded_body  = json_decode( $body, true );
+
+				if ( is_array( $decoded_body ) && isset( $decoded_body['error'] ) ) {
+					$error_message .= ' ' . sanitize_text_field( $decoded_body['error'] );
+				}
+
+				WP_MCP_AI_Logger::log_error(
+					'Hugging Face audio transcription error.',
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+			}
+
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_response',
+					__( 'Invalid JSON response from Hugging Face.', 'mcp-ai-wpoos' ),
+					array( 'body' => $body )
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'huggingface_transcribe_audio_success',
+				'Successfully transcribed audio with Hugging Face.',
+				array(
+					'model'         => $model,
+					'has_text'      => isset( $decoded['text'] ),
+					'response_keys' => is_array( $decoded ) ? array_keys( $decoded ) : array(),
+				)
+			);
+
+			// Hugging Face Inference API returns: {"text": "transcription"}.
+			// Normalize to consistent format.
+			if ( isset( $decoded['text'] ) ) {
+				return array(
+					'text' => $decoded['text'],
+					'raw'  => $decoded,
+				);
+			}
+
+			return $decoded;
+		}
 	}
 }
