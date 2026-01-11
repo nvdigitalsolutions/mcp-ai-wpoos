@@ -243,13 +243,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_transcribe_model'            => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Transcription Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for audio transcription and translation. gpt-4o-transcribe offers highest accuracy, gpt-4o-mini-transcribe is optimized for speed and cost.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for audio transcription and translation. whisper-1 is the OpenAI Whisper model for speech-to-text.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gpt-4o-transcribe'      => 'gpt-4o-transcribe (Highest Accuracy)',
-						'gpt-4o-mini-transcribe' => 'gpt-4o-mini-transcribe (Recommended)',
-						'whisper-1'              => 'Whisper-1',
+						'whisper-1' => 'Whisper-1 (OpenAI Official)',
 					),
-					'default'     => 'gpt-4o-mini-transcribe',
+					'default'     => 'whisper-1',
 				),
 				'openai_transcribe_response_format'  => array(
 					'type'        => 'select',
@@ -276,13 +274,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_speech_model'                => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Text-to-Speech Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for text-to-speech (TTS) generation. gpt-4o-mini-tts is optimized for voice synthesis. tts-1 is the standard quality model, tts-1-hd provides higher quality audio.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for text-to-speech (TTS) generation. tts-1 is the standard quality model, tts-1-hd provides higher quality audio.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gpt-4o-mini-tts' => 'gpt-4o-mini-tts (Recommended)',
-						'tts-1'           => 'TTS-1 (Standard)',
-						'tts-1-hd'        => 'TTS-1-HD (High Quality)',
+						'tts-1'    => 'TTS-1 (Standard Quality)',
+						'tts-1-hd' => 'TTS-1-HD (High Quality)',
 					),
-					'default'     => 'gpt-4o-mini-tts',
+					'default'     => 'tts-1',
 				),
 				'openai_speech_voice'                => array(
 					'type'        => 'select',

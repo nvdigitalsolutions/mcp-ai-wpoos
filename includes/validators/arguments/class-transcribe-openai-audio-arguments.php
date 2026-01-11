@@ -70,7 +70,7 @@ class TranscribeOpenAIAudioArguments {
 		minMessage: 'Model must be at least {{ limit }} characters long.',
 		maxMessage: 'Model cannot be longer than {{ limit }} characters.'
 	)]
-	public $model = 'gpt-4o-mini-transcribe';
+	public $model = 'whisper-1';
 
 	/**
 	 * Optional prompt for transcription context.
