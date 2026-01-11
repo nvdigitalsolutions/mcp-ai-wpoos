@@ -120,26 +120,123 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 			$url = untrailingslashit( $endpoint_url ) . '/api/chat';
 
-			$response = wp_remote_post(
-				$url,
-				array(
-					'headers' => array( 'Content-Type' => 'application/json' ),
-					'body'    => wp_json_encode( $payload ),
-					// Use higher minimum timeout for local AI models which need more time to generate responses.
-					'timeout' => max( 120, $this->resolve_timeout( $options ) ),
-				)
+			// Check if streaming is enabled in the payload.
+			$is_streaming = isset( $payload['stream'] ) && $payload['stream'];
+
+			$http_args = array(
+				'headers' => array( 'Content-Type' => 'application/json' ),
+				'body'    => wp_json_encode( $payload ),
+				// Use higher minimum timeout for local AI models which need more time to generate responses.
+				'timeout' => max( 120, $this->resolve_timeout( $options ) ),
 			);
+
+			// For streaming responses, we need to handle the response differently.
+			// Ollama streams newline-delimited JSON objects when stream=true.
+			if ( $is_streaming ) {
+				// Set HTTP streaming to true so we can read the response in chunks.
+				$http_args['stream'] = true;
+			}
+
+			$response = wp_remote_post( $url, $http_args );
 
 			if ( is_wp_error( $response ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Request failed.', 'mcp-ai-wpoos' ), __( 'Ollama', 'mcp-ai-wpoos' ) );
 			}
 
+			// Handle streaming vs non-streaming responses differently.
+			if ( $is_streaming ) {
+				return $this->handle_streaming_response( $response, $model );
+			}
+
+			// Non-streaming response - decode and normalize as before.
 			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			return $this->normalize_response( $decoded, $model );
+		}
+
+		/**
+		 * Handle streaming response from Ollama.
+		 *
+		 * Ollama streams newline-delimited JSON objects when stream=true.
+		 * Each chunk is a JSON object with 'message' and 'done' fields.
+		 * We accumulate the content and return the final normalized response.
+		 *
+		 * @param array|WP_Error $response HTTP response from wp_remote_post.
+		 * @param string         $model    Model name.
+		 * @return array|WP_Error Normalized response or error.
+		 */
+		protected function handle_streaming_response( $response, $model ) {
+			$body = wp_remote_retrieve_body( $response );
+
+			if ( empty( $body ) ) {
+				return new WP_Error( 'wp_mcp_ai_empty_streaming_response', __( 'Empty streaming response from Ollama.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Split response by newlines to get individual JSON chunks.
+			$lines = explode( "\n", $body );
+
+			$accumulated_content = '';
+			$final_chunk         = null;
+
+			foreach ( $lines as $line ) {
+				$line = trim( $line );
+				if ( empty( $line ) ) {
+					continue;
+				}
+
+				// Decode the JSON chunk.
+				$chunk = json_decode( $line, true );
+				if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+					// Skip invalid JSON lines.
+					continue;
+				}
+
+				// Accumulate content from message field.
+				if ( isset( $chunk['message']['content'] ) ) {
+					// Ollama sends incremental content deltas in each chunk.
+					// We need to append (concatenate) each delta to build the full response.
+					// See: https://docs.ollama.com/api/streaming
+					$accumulated_content .= (string) $chunk['message']['content'];
+				}
+
+				// Check if this is the final chunk.
+				if ( isset( $chunk['done'] ) && $chunk['done'] ) {
+					$final_chunk = $chunk;
+					break; // Stop processing once we hit the done chunk.
+				}
+			}
+
+			// If we didn't find a final chunk, return an error.
+			if ( null === $final_chunk ) {
+				return new WP_Error( 'wp_mcp_ai_incomplete_streaming_response', __( 'Ollama streaming response did not complete (no done=true chunk).', 'mcp-ai-wpoos' ) );
+			}
+
+			// Build a normalized response structure similar to non-streaming responses.
+			// Use the final chunk for metadata (usage, done_reason, etc.).
+			$normalized_response = array(
+				'message' => array(
+					'role'    => isset( $final_chunk['message']['role'] ) ? $final_chunk['message']['role'] : 'assistant',
+					'content' => $accumulated_content,
+				),
+				'done'    => true,
+			);
+
+			// Copy over metadata fields from the final chunk if available.
+			if ( isset( $final_chunk['done_reason'] ) ) {
+				$normalized_response['done_reason'] = $final_chunk['done_reason'];
+			}
+			if ( isset( $final_chunk['prompt_eval_count'] ) ) {
+				$normalized_response['prompt_eval_count'] = $final_chunk['prompt_eval_count'];
+			}
+			if ( isset( $final_chunk['eval_count'] ) ) {
+				$normalized_response['eval_count'] = $final_chunk['eval_count'];
+			}
+
+			// Normalize the response to match the expected format.
+			return $this->normalize_response( $normalized_response, $model );
 		}
 
 		protected function resolve_model( array $options ) {
@@ -188,10 +285,14 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				);
 			}
 
+			// Check if streaming is requested via options.
+			// Default to false for backward compatibility and non-streaming use cases.
+			$stream = isset( $options['stream'] ) && $options['stream'] ? true : false;
+
 			$payload = array(
 				'model'    => $model,
 				'messages' => $ollama_messages,
-				'stream'   => false,
+				'stream'   => $stream,
 			);
 
 			if ( ! isset( $payload['options'] ) ) {
@@ -203,6 +304,10 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			// Apply resource-aware num_predict if not explicitly set.
+			// Priority order:
+			// 1. options['max_tokens'] (if set, converted to num_predict for Ollama compatibility)
+			// 2. options['num_predict'] (if set, Ollama native parameter)
+			// 3. Resource manager tier-based limits (2000/8000/32000 based on workload tier)
 			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['num_predict'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$num_predict  = $resource_mgr->get_max_tokens();
@@ -215,13 +320,17 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				 */
 				$num_predict = apply_filters( 'wp_mcp_ai_ollama_num_predict', $num_predict, $options );
 
-				if ( $num_predict > 0 ) {
-					$payload['options']['num_predict'] = $num_predict;
-				}
+				// Enforce minimum value to prevent Ollama from using unlimited tokens.
+				// If filter returns 0 or negative, use minimum of 512 tokens.
+				$num_predict = max( 512, absint( $num_predict ) );
+
+				$payload['options']['num_predict'] = $num_predict;
 			} elseif ( isset( $options['max_tokens'] ) ) {
-				$payload['options']['num_predict'] = absint( $options['max_tokens'] );
+				// Use max_tokens with minimum enforcement.
+				$payload['options']['num_predict'] = max( 512, absint( $options['max_tokens'] ) );
 			} elseif ( isset( $options['num_predict'] ) ) {
-				$payload['options']['num_predict'] = absint( $options['num_predict'] );
+				// Use num_predict with minimum enforcement.
+				$payload['options']['num_predict'] = max( 512, absint( $options['num_predict'] ) );
 			}
 
 			if ( empty( $payload['options'] ) ) {
@@ -256,15 +365,6 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			$message = array( 'role' => 'assistant' );
 			$content = isset( $response['message']['content'] ) ? (string) $response['message']['content'] : '';
 
-			if ( '' !== $content ) {
-				$message['content'] = array(
-					array(
-						'type' => 'text',
-						'text' => $content,
-					),
-				);
-			}
-
 			// Determine finish_reason based on Ollama response.
 			// Ollama provides a 'done_reason' field that indicates why generation stopped.
 			// Possible values: 'stop' (natural completion), 'length' (max tokens), 'load' (loading model).
@@ -282,6 +382,22 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				$finish_reason = 'length';
 			}
 			// Otherwise keep default 'stop' - we have content and done=true or missing (assumed complete).
+
+			// Industry standard: When finish_reason is 'length' with no content, provide helpful error message.
+			// This happens when the prompt/conversation consumes all available tokens (num_predict limit).
+			// Following OpenAI API standard: message.content field should always be present.
+			if ( 'length' === $finish_reason && '' === trim( $content ) ) {
+				$content = __( 'The model could not generate a response because the conversation exceeded the available token limit. Try shortening your message, starting a new conversation, or increasing the token limit in Settings → NV oOS → Orchestration → Max Tokens.', 'mcp-ai-wpoos' );
+			}
+
+			// Always set message content field to maintain OpenAI API compatibility.
+			// All providers (OpenAI, LM Studio, Gemini, Anthropic) include this field even when empty.
+			$message['content'] = array(
+				array(
+					'type' => 'text',
+					'text' => $content,
+				),
+			);
 
 			$normalized = array(
 				'choices'  => array(
