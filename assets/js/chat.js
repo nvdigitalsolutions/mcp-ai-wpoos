@@ -11381,14 +11381,15 @@
                     
                     // BUG FIX: The streaming element already displays the correct final content.
                     // Instead of removing it and having handleChatResponse create a new bubble
-                    // (which may fail or get lost), we keep the streaming element and just
-                    // add the conversation message directly.
+                    // (which may fail or create duplicates), we keep the streaming element and just
+                    // add the conversation message directly, then return early.
                     //
                     // The issue was: streamingMessageElement removed → handleChatResponse called →
-                    // message added to conversation BUT no bubble created in DOM → content lost in UI
-                    // (though it reappears after save/reload because it's in the conversation).
+                    // either no bubble created OR duplicate bubble created → content lost/duplicated in UI
+                    // (though it reappears correctly after save/reload because it's in conversation).
                     //
-                    // Solution: Keep streaming element, finalize it with buttons, add to conversation manually.
+                    // Solution: Keep streaming element, finalize it with buttons, add to conversation manually,
+                    // and RETURN EARLY to avoid calling handleChatResponse which would create duplicate.
                     const shouldKeepStreamingElement = streamingMessageElement && 
                                                       streamingMessageElement.parentNode &&
                                                       streamResult.content &&
@@ -11397,7 +11398,7 @@
                     if (shouldKeepStreamingElement) {
                         // Streaming element has the final content - keep it and finalize
                         if (window.console && console.log) {
-                            console.log('[NV oOS] Keeping streaming element and finalizing it with buttons');
+                            console.log('[NV oOS] Keeping streaming element (has content) and finalizing with buttons');
                         }
                         
                         // Finalize the streaming element with buttons
@@ -11416,7 +11417,7 @@
                         if (streamResult.finalData && streamResult.finalData.tool_results) {
                             streamResult.finalData.tool_results.forEach(function(toolResult) {
                                 if (toolResult && toolResult.role === 'tool') {
-                                    // Add display metadata to tool result
+                                    // Skip async pending results
                                     let parsedContent = toolResult.content;
                                     if (typeof parsedContent === 'string') {
                                         try {
@@ -11425,7 +11426,11 @@
                                             parsedContent = toolResult.content;
                                         }
                                     }
+                                    if (isAsyncPendingToolResult && isAsyncPendingToolResult(parsedContent)) {
+                                        return;
+                                    }
                                     
+                                    // Add display metadata to tool result
                                     const normalizedForDisplay = normaliseToolResultForDisplay(toolResult.name || '', parsedContent);
                                     const toolDisplay = createToolDisplayMetadata(normalizedForDisplay);
                                     if (toolDisplay) {
@@ -11445,16 +11450,18 @@
                             clearStatus(state.container);
                         }, 1500);
                         
-                        return streamResult;
-                    } else {
-                        // No streaming element or no content - use normal flow
-                        if (streamingMessageElement && streamingMessageElement.parentNode) {
-                            streamingMessageElement.parentNode.removeChild(streamingMessageElement);
-                            streamingMessageElement = null;
-                            
-                            if (window.console && console.log) {
-                                console.log('[NV oOS] Removed streaming element (will create new bubble via handleChatResponse)');
-                            }
+                        // IMPORTANT: Return early here to avoid calling handleChatResponse
+                        // which would create a duplicate bubble
+                        return Promise.resolve(streamResult);
+                    }
+                    
+                    // No streaming element or no content - remove it and use normal flow
+                    if (streamingMessageElement && streamingMessageElement.parentNode) {
+                        streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+                        streamingMessageElement = null;
+                        
+                        if (window.console && console.log) {
+                            console.log('[NV oOS] Removed streaming element (will create new bubble via handleChatResponse)');
                         }
                     }
                     
