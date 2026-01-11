@@ -1294,8 +1294,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$body     = '';
 
 			foreach ( $fields as $name => $value ) {
-				$name  = (string) $name;
-				$value = (string) $value;
+				$name = (string) $name;
+
+				// Handle array values by JSON-encoding them for OpenAI API compatibility.
+				if ( is_array( $value ) ) {
+					$value = wp_json_encode( $value );
+				} else {
+					$value = (string) $value;
+				}
 
 				$body .= '--' . $boundary . $eol;
 				$body .= 'Content-Disposition: form-data; name="' . $name . '"' . $eol . $eol;
