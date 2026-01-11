@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-voice-chat-tool',
-        'version' => 'dev-copilot/update-voice-chat-tool',
-        'reference' => '8f8e5ef17fc61f020beecedd930b29ea89d7fa7e',
+        'pretty_version' => 'dev-copilot/fix-transcription-error',
+        'version' => 'dev-copilot/fix-transcription-error',
+        'reference' => 'bb3eb1930cf5e226c981aebc493509a316f84374',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-voice-chat-tool',
-            'version' => 'dev-copilot/update-voice-chat-tool',
-            'reference' => '8f8e5ef17fc61f020beecedd930b29ea89d7fa7e',
+            'pretty_version' => 'dev-copilot/fix-transcription-error',
+            'version' => 'dev-copilot/fix-transcription-error',
+            'reference' => 'bb3eb1930cf5e226c981aebc493509a316f84374',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
