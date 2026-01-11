@@ -1128,6 +1128,11 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 
 				if ( JSON_ERROR_NONE === $error && isset( $decoded['error'] ) ) {
 					$message = is_string( $decoded['error'] ) ? $decoded['error'] : wp_json_encode( $decoded['error'] );
+					
+					// Provide helpful context for common errors.
+					if ( 404 === $status_code || false !== strpos( strtolower( $message ), 'no route' ) || false !== strpos( strtolower( $message ), 'not found' ) ) {
+						$message .= ' ' . __( 'The TTS model may not exist or be accessible. Verify the model name (e.g., facebook/mms-tts-eng) is correct. For private models, ensure your API key has access. For dedicated endpoints, configure the huggingface_endpoint_url setting.', 'mcp-ai-wpoos' );
+					}
 				} else {
 					$message = __( 'Unexpected response from Hugging Face Inference API.', 'mcp-ai-wpoos' );
 				}
@@ -1137,13 +1142,22 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 					array(
 						'status'   => $status_code,
 						'response' => JSON_ERROR_NONE === $error ? $decoded : $body,
+						'model'    => $model,
+						'url'      => $url,
 					)
 				);
 
 				return new WP_Error(
 					'wp_mcp_ai_api_error',
 					$message,
-					array( 'status' => $status_code )
+					array(
+						'status'  => $status_code,
+						'actions' => array(
+							'verify_model_name'   => __( 'Check that the TTS model name is correct (e.g., facebook/mms-tts-eng).', 'mcp-ai-wpoos' ),
+							'check_api_key'       => __( 'Verify your Hugging Face API key has access to the model.', 'mcp-ai-wpoos' ),
+							'use_custom_endpoint' => __( 'For dedicated Inference Endpoints, configure huggingface_endpoint_url in settings.', 'mcp-ai-wpoos' ),
+						),
+					)
 				);
 			}
 
