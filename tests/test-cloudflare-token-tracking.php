@@ -194,6 +194,67 @@ class Test_Cloudflare_Token_Tracking extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that content is normalized to array format for chat client compatibility.
+	 *
+	 * This test verifies the fix for the issue where Cloudflare Worker AI responses
+	 * couldn't be displayed in the chat client because content was returned as a string
+	 * instead of an array with structured content blocks.
+	 */
+	public function test_content_normalized_to_array_format() {
+		$api_response = array(
+			'result'  => array(
+				'response' => 'Hello! How can I help you today?',
+			),
+			'success' => true,
+		);
+
+		$normalized = $this->invoke_normalize_response( $api_response, '@cf/meta/llama-3.1-8b-instruct' );
+
+		// Check that the response has the expected structure.
+		$this->assertArrayHasKey( 'choices', $normalized );
+		$this->assertIsArray( $normalized['choices'] );
+		$this->assertCount( 1, $normalized['choices'] );
+
+		// Check the first choice.
+		$choice = $normalized['choices'][0];
+		$this->assertArrayHasKey( 'message', $choice );
+		$this->assertArrayHasKey( 'content', $choice['message'] );
+
+		// Verify content is an array (not a string).
+		$content = $choice['message']['content'];
+		$this->assertIsArray( $content, 'Content must be an array for chat client compatibility' );
+
+		// Verify array structure matches expected format.
+		$this->assertCount( 1, $content );
+		$this->assertIsArray( $content[0] );
+		$this->assertArrayHasKey( 'type', $content[0] );
+		$this->assertArrayHasKey( 'text', $content[0] );
+		$this->assertEquals( 'text', $content[0]['type'] );
+		$this->assertEquals( 'Hello! How can I help you today?', $content[0]['text'] );
+	}
+
+	/**
+	 * Test that empty content is still normalized to array format.
+	 */
+	public function test_empty_content_normalized_to_array_format() {
+		$api_response = array(
+			'result'  => array(
+				'response' => '',
+			),
+			'success' => true,
+		);
+
+		$normalized = $this->invoke_normalize_response( $api_response, '@cf/meta/llama-3.1-8b-instruct' );
+
+		// Even empty content should be in array format.
+		$content = $normalized['choices'][0]['message']['content'];
+		$this->assertIsArray( $content );
+		$this->assertCount( 1, $content );
+		$this->assertEquals( 'text', $content[0]['type'] );
+		$this->assertEquals( '', $content[0]['text'] );
+	}
+
+	/**
 	 * Helper method to invoke the protected normalize_response method.
 	 *
 	 * @param array  $decoded Decoded API response.
