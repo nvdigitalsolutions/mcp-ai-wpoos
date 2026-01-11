@@ -82,7 +82,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Converts text to speech using OpenAI and stores the audio in the Media Library.', 'mcp-ai-wpoos' );
+		return __( 'Converts text to speech using OpenAI TTS and stores the audio in the Media Library. Works with any provider by using OpenAI for audio generation.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -146,11 +146,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id   = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		$has_token = ! empty( $context['token_authenticated'] );
+		$is_guest  = ! empty( $context['guest_request'] );
 		$text      = isset( $arguments['text'] ) ? sanitize_textarea_field( $arguments['text'] ) : '';
 		$text      = trim( $text );
 		$defaults  = $this->get_configured_defaults();
 
-		if ( ! $user_id && ! $has_token ) {
+		// Allow guest users for speech generation (chat UI feature).
+		if ( ! $user_id && ! $has_token && ! $is_guest ) {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to generate speech audio.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
@@ -163,6 +165,62 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 			}
 		}
+
+		// Check if assistant is configured to use a non-OpenAI provider.
+		$assistant_config = isset( $context['assistant_config'] ) ? $context['assistant_config'] : array();
+		$provider         = isset( $assistant_config['provider'] ) ? strtolower( $assistant_config['provider'] ) : 'openai';
+
+		// Speech generation requires OpenAI API, even if the assistant uses a different provider.
+		// This is because providers like Cloudflare, Ollama, etc. don't support TTS or have different APIs.
+		// We'll always use OpenAI for this specialized feature and check if API key is configured.
+		if ( 'openai' !== $provider ) {
+			// Get OpenAI API key to verify it's configured.
+			if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_settings_unavailable',
+					__( 'Settings are not available.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+			$openai_api_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+
+			if ( empty( $openai_api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_openai_key',
+					sprintf(
+						/* translators: %s: provider name */
+						__( 'Speech generation requires OpenAI API. Your assistant uses "%s" provider, but no OpenAI API key is configured. Please add an OpenAI API key in the plugin settings to use speech generation features.', 'mcp-ai-wpoos' ),
+						$provider
+					),
+					array(
+						'status'   => 400,
+						'provider' => $provider,
+						'actions'  => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			// Log that we're falling back to OpenAI for speech generation.
+			WP_MCP_AI_Logger::log_event(
+				'speech_generation_provider_fallback',
+				sprintf( 'Using OpenAI for speech generation despite assistant using %s provider.', $provider ),
+				array(
+					'assistant_id'     => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
+					'primary_provider' => $provider,
+					'tool'             => 'generate_openai_speech',
+				)
+			);
+		}
+
+		// TODO: Future enhancement - implement provider-aware speech generation:
+		// - For Cloudflare: Investigate if Workers AI supports TTS models
+		// - For Ollama: Check for local TTS model availability
+		// - For OpenAI: Continue using existing TTS-1/TTS-1-HD models
+		// This will require creating a provider abstraction layer for audio services.
 
 		if ( '' === $text ) {
 			return new WP_Error( 'wp_mcp_ai_missing_text', __( 'No text was supplied for the speech request.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
