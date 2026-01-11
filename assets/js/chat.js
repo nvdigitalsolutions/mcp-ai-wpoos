@@ -3257,9 +3257,10 @@
                     throw new Error('Upload failed');
                 }
 
-                if (state.attachmentLibrary && record.fileId) {
-                    state.attachmentLibrary[record.fileId] = record;
-                }
+                // NOTE: Do NOT add transcription audio to attachmentLibrary.
+                // Transcription audio files are temporary recordings used only for transcription,
+                // not attachments that should persist in the conversation. Adding them to the
+                // library causes file reuse issues where old recordings are incorrectly used.
 
                 return requestTranscription(state, record);
             })
@@ -3886,9 +3887,10 @@
                     throw new Error('Upload failed');
                 }
 
-                if (state.attachmentLibrary && record.fileId) {
-                    state.attachmentLibrary[record.fileId] = record;
-                }
+                // NOTE: Do NOT add transcription audio to attachmentLibrary.
+                // Transcription audio files are temporary recordings used only for transcription,
+                // not attachments that should persist in the conversation. Adding them to the
+                // library causes file reuse issues where old recordings are incorrectly used.
 
                 return requestTranscription(state, record);
             })
