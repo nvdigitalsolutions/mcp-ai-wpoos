@@ -216,11 +216,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		// TODO: Future enhancement - implement provider-aware speech generation:
-		// - For Cloudflare: Investigate if Workers AI supports TTS models
-		// - For Ollama: Check for local TTS model availability
-		// - For OpenAI: Continue using existing TTS-1/TTS-1-HD models
-		// This will require creating a provider abstraction layer for audio services.
+		// TODO: Add TTS support for additional providers:
+		// - Cloudflare: Investigate if Workers AI supports TTS models
+		// - Ollama: Check for local TTS model availability
+		// Currently supported: OpenAI (tts-1/tts-1-hd), Google (Neural2 voices)
 
 		if ( '' === $text ) {
 			return new WP_Error( 'wp_mcp_ai_missing_text', __( 'No text was supplied for the speech request.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
@@ -294,27 +293,23 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 			case 'cloudflare':
 			case 'huggingface':
 				// Cloudflare and Hugging Face don't currently support TTS.
-				// Fall back to OpenAI if available.
-				if ( 'openai' !== $provider ) {
-					return new WP_Error(
-						'wp_mcp_ai_tts_not_supported',
-						sprintf(
-							/* translators: %s: provider name */
-							__( 'Text-to-speech is not supported by "%s" provider. Please configure an OpenAI API key to use this feature, or switch to a provider that supports TTS (OpenAI or Google).', 'mcp-ai-wpoos' ),
-							$provider
+				return new WP_Error(
+					'wp_mcp_ai_tts_not_supported',
+					sprintf(
+						/* translators: %s: provider name */
+						__( 'Text-to-speech is not supported by "%s" provider. Please configure an OpenAI API key to use this feature, or switch to a provider that supports TTS (OpenAI or Google).', 'mcp-ai-wpoos' ),
+						$provider
+					),
+					array(
+						'status'   => 400,
+						'provider' => $provider,
+						'actions'  => array(
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+							'switch_to_openai'         => __( 'Change the assistant to use OpenAI provider.', 'mcp-ai-wpoos' ),
+							'switch_to_google'         => __( 'Change the assistant to use Google/Gemini provider.', 'mcp-ai-wpoos' ),
 						),
-						array(
-							'status'   => 400,
-							'provider' => $provider,
-							'actions'  => array(
-								'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
-								'switch_to_openai'         => __( 'Change the assistant to use OpenAI provider.', 'mcp-ai-wpoos' ),
-								'switch_to_google'         => __( 'Change the assistant to use Google/Gemini provider.', 'mcp-ai-wpoos' ),
-							),
-						)
-					);
-				}
-				// Fall through to default OpenAI.
+					)
+				);
 
 			case 'openai':
 			default:

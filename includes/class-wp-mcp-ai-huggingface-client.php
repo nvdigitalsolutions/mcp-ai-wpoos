@@ -955,13 +955,26 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			// Hugging Face Inference API returns: {"text": "transcription"}.
 			// Normalize to consistent format.
 			if ( isset( $decoded['text'] ) ) {
+				$text = trim( $decoded['text'] );
+				if ( '' === $text ) {
+					return new WP_Error(
+						'wp_mcp_ai_empty_transcription',
+						__( 'Hugging Face returned an empty transcription.', 'mcp-ai-wpoos' ),
+						array( 'response' => $decoded )
+					);
+				}
 				return array(
-					'text' => $decoded['text'],
+					'text' => $text,
 					'raw'  => $decoded,
 				);
 			}
 
-			return $decoded;
+			// Unexpected response format.
+			return new WP_Error(
+				'wp_mcp_ai_unexpected_response',
+				__( 'Unexpected response format from Hugging Face.', 'mcp-ai-wpoos' ),
+				array( 'response' => $decoded )
+			);
 		}
 	}
 }

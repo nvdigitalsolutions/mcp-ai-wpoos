@@ -3228,6 +3228,15 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				)
 			);
 
+			// Check if transcription is empty.
+			if ( '' === $text ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_transcription',
+					__( 'Google Speech-to-Text returned an empty transcription. The audio may not contain speech or may be in an unsupported format.', 'mcp-ai-wpoos' ),
+					array( 'response' => $decoded )
+				);
+			}
+
 			// Normalize to consistent format.
 			return array(
 				'text' => $text,

@@ -165,9 +165,12 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		$assistant_config = isset( $context['assistant_config'] ) ? $context['assistant_config'] : array();
 		$provider         = isset( $assistant_config['provider'] ) ? strtolower( $assistant_config['provider'] ) : 'openai';
 
-		// Audio transcription requires OpenAI API, even if the assistant uses a different provider.
-		// This is because providers like Cloudflare, Ollama, etc. don't support audio transcription.
-		// We'll always use OpenAI for this specialized feature and check if API key is configured.
+		// Audio transcription now supports multiple providers:
+		// - OpenAI: whisper-1 (transcription + translation)
+		// - Cloudflare: @cf/openai/whisper (transcription only)
+		// - Hugging Face: openai/whisper-large-v3 (transcription)
+		// - Google/Gemini: Speech-to-Text API (transcription, 125+ languages)
+		// The tool will automatically route to the appropriate provider's client.
 		if ( 'openai' !== $provider ) {
 			// Get OpenAI API key to verify it's configured.
 			$settings       = WP_MCP_AI_Admin_Settings::get_settings();

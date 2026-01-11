@@ -2224,13 +2224,26 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Cloudflare Workers AI Whisper returns: {"result": {"text": "transcription", "vtt": "..."}}.
 			// Normalize to OpenAI format for consistency.
 			if ( isset( $decoded['result']['text'] ) ) {
+				$text = trim( $decoded['result']['text'] );
+				if ( '' === $text ) {
+					return new WP_Error(
+						'wp_mcp_ai_empty_transcription',
+						__( 'Cloudflare Workers AI returned an empty transcription.', 'mcp-ai-wpoos' ),
+						array( 'response' => $decoded )
+					);
+				}
 				return array(
-					'text' => $decoded['result']['text'],
+					'text' => $text,
 					'raw'  => $decoded,
 				);
 			}
 
-			return $decoded;
+			// Unexpected response format.
+			return new WP_Error(
+				'wp_mcp_ai_unexpected_response',
+				__( 'Unexpected response format from Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+				array( 'response' => $decoded )
+			);
 		}
 	}
 }
