@@ -2274,8 +2274,6 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			);
 		}
 
-
-
 		/**
 		 * Detect voice activity and turn completion using Cloudflare Workers AI.
 		 *
