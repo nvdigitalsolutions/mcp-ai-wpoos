@@ -36,14 +36,14 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Transcribe OpenAI Audio', 'mcp-ai-wpoos' );
+		return __( 'Transcribe Audio', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Converts an uploaded audio file into English text using OpenAI Whisper transcription or translation. Requires OpenAI provider to be configured.', 'mcp-ai-wpoos' );
+		return __( 'Converts an uploaded audio file into text using AI speech-to-text. Supports OpenAI Whisper, Cloudflare Workers AI (Whisper, Deepgram Flux), Hugging Face, and Google Gemini providers.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -285,9 +285,13 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 				}
 				$client = new WP_MCP_AI_Cloudflare_Client();
-				// Set model to Cloudflare Whisper if not specified.
+				// Set model to configured Cloudflare STT model if not specified.
 				if ( self::DEFAULT_MODEL === $options['model'] ) {
-					$options['model'] = '@cf/openai/whisper';
+					$settings = WP_MCP_AI_Admin_Settings::get_settings();
+					$configured_model = isset( $settings['cloudflare_audio_model'] ) && '' !== $settings['cloudflare_audio_model']
+						? $settings['cloudflare_audio_model']
+						: '@cf/openai/whisper';
+					$options['model'] = $configured_model;
 				}
 				break;
 
