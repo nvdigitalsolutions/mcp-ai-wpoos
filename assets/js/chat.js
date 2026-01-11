@@ -11334,6 +11334,18 @@
             })
             .then(function (streamResult) {
                 streamCompleted = true;
+                
+                // Log stream completion for debugging
+                if (window.console && console.log) {
+                    console.log('[NV oOS] Streaming completed:', {
+                        hasFinalData: !!(streamResult && streamResult.finalData),
+                        hasStreamedContent: !!(streamResult && streamResult.content),
+                        streamedContentLength: streamResult && streamResult.content ? streamResult.content.length : 0,
+                        streamedContentSample: streamResult && streamResult.content ? streamResult.content.substring(0, 100) : '',
+                        streamingElementExists: !!streamingMessageElement,
+                        streamingElementInDOM: streamingMessageElement ? streamingMessageElement.parentNode !== null : false
+                    });
+                }
 
                 // Handle final message if available
                 if (streamResult && streamResult.finalData) {
@@ -11843,6 +11855,16 @@
                                 // Use the final complete text if it's different or more complete than streamed content
                                 // This ensures truncated responses and final messages are properly displayed
                                 if (finalText && typeof finalText === 'string') {
+                                    // Log final text extraction for debugging
+                                    if (window.console && console.log) {
+                                        console.log('[NV oOS] SSE: Extracted final text from finalData:', {
+                                            finalTextLength: finalText.length,
+                                            finalTextSample: finalText.substring(0, 100),
+                                            fullContentLength: fullContent ? fullContent.length : 0,
+                                            willUpdateContent: !fullContent || finalText.length > fullContent.length || finalText !== fullContent
+                                        });
+                                    }
+                                    
                                     // Use finalText if:
                                     // 1. We have no streamed content yet, OR
                                     // 2. Final text is longer (more complete), OR  
@@ -11852,6 +11874,10 @@
                                         fullContent = finalText;
                                         // Update the streaming bubble with the final text
                                         updateCallback(fullContent);
+                                        
+                                        if (window.console && console.log) {
+                                            console.log('[NV oOS] SSE: Updated fullContent and called updateCallback with final text');
+                                        }
                                     }
                                 }
                                 
@@ -12802,6 +12828,20 @@
                 });
             }
 
+            // Add debug logging to trace final message display issue
+            if (window.console && console.log) {
+                console.log('[NV oOS] handleChatResponse: About to append assistant message:', {
+                    hasDisplayText: hasDisplayText,
+                    hasDisplayAttachments: hasDisplayAttachments,
+                    hasDisplayContent: hasDisplayContent,
+                    textLength: assistantDisplay.text ? assistantDisplay.text.length : 0,
+                    textSample: assistantDisplay.text ? assistantDisplay.text.substring(0, 100) : '',
+                    attachmentsCount: assistantDisplay.attachments ? assistantDisplay.attachments.length : 0,
+                    hasUsage: !!aggregatedUsage,
+                    hasCost: !!aggregatedCost
+                });
+            }
+            
             assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 state: state,
                 speech: {
@@ -12812,6 +12852,14 @@
                 cost: aggregatedCost,
                 capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null,
             });
+            
+            // Log whether appendMessage returned an element
+            if (window.console && console.log) {
+                console.log('[NV oOS] handleChatResponse: appendMessage result:', {
+                    elementCreated: !!assistantMessageElement,
+                    elementInDOM: assistantMessageElement ? assistantMessageElement.parentNode !== null : false
+                });
+            }
             
             // Preserve the original content structure if it's an array (contains image blocks)
             // This is needed to maintain image_url content in the agentic loop
