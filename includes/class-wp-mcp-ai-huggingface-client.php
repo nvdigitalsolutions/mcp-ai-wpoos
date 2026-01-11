@@ -976,5 +976,196 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 				array( 'response' => $decoded )
 			);
 		}
+
+		/**
+		 * Generate speech audio from text using Hugging Face Inference API TTS models.
+		 *
+		 * Supports models like:
+		 * - facebook/fastspeech2-en-ljspeech (Fast, English)
+		 * - facebook/mms-tts-eng (Multi-lingual Massively Multilingual Speech)
+		 * - microsoft/speecht5_tts (High quality, multi-speaker)
+		 * - Any text-to-speech model on Hugging Face Hub
+		 *
+		 * @param string $text    Text to convert to speech.
+		 * @param array  $options Optional configuration (model, timeout).
+		 * @return array|WP_Error Array with 'audio', 'format', 'model' on success, WP_Error on failure.
+		 */
+		public function generate_speech( $text, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_huggingface_api_key',
+					__( 'No Hugging Face API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_huggingface_api_key' => __( 'Add a Hugging Face API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$text = sanitize_textarea_field( $text );
+
+			if ( '' === $text ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_speech_input',
+					__( 'A text prompt must be supplied to generate speech.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Get settings for defaults.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Default to facebook/mms-tts-eng (good quality, widely available).
+			$default_model = isset( $settings['huggingface_speech_model'] ) && '' !== $settings['huggingface_speech_model']
+				? sanitize_text_field( $settings['huggingface_speech_model'] )
+				: 'facebook/mms-tts-eng';
+
+			// Extract options.
+			$model   = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : 30;
+			$timeout = max( 5, $timeout );
+
+			// Build payload - Hugging Face expects {"inputs": "text to speak"}.
+			$payload = array(
+				'inputs' => $text,
+			);
+
+			// Some models support additional parameters.
+			if ( isset( $options['speaker'] ) && '' !== $options['speaker'] ) {
+				$payload['parameters'] = array(
+					'speaker' => sanitize_text_field( $options['speaker'] ),
+				);
+			}
+
+			/**
+			 * Filter the Hugging Face TTS payload before sending.
+			 *
+			 * @param array  $payload Prepared request payload.
+			 * @param string $text    Original text input.
+			 * @param string $model   Model identifier.
+			 * @param array  $options Original options.
+			 */
+			$payload = apply_filters( 'wp_mcp_ai_huggingface_speech_payload', $payload, $text, $model, $options );
+
+			$encoded_payload = wp_json_encode( $payload );
+			if ( false === $encoded_payload ) {
+				return new WP_Error(
+					'wp_mcp_ai_encoding_error',
+					__( 'Failed to encode the Hugging Face TTS request payload.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Build API endpoint for the specific model.
+			$url = sprintf(
+				'https://api-inference.huggingface.co/models/%s',
+				rawurlencode( $model )
+			);
+
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+				),
+				'timeout' => $timeout,
+				'body'    => $encoded_payload,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'huggingface_tts_request',
+				'Sending text-to-speech request to Hugging Face Inference API.',
+				array(
+					'model'   => $model,
+					'timeout' => $timeout,
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Hugging Face text-to-speech request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The Hugging Face Inference API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'Hugging Face', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$status_code = wp_remote_retrieve_response_code( $response );
+			$body        = wp_remote_retrieve_body( $response );
+
+			if ( $status_code < 200 || $status_code >= 300 ) {
+				$decoded = json_decode( $body, true );
+				$error   = json_last_error();
+
+				if ( JSON_ERROR_NONE === $error && isset( $decoded['error'] ) ) {
+					$message = is_string( $decoded['error'] ) ? $decoded['error'] : wp_json_encode( $decoded['error'] );
+				} else {
+					$message = __( 'Unexpected response from Hugging Face Inference API.', 'mcp-ai-wpoos' );
+				}
+
+				WP_MCP_AI_Logger::log_error(
+					'Hugging Face text-to-speech request returned an error.',
+					array(
+						'status'   => $status_code,
+						'response' => JSON_ERROR_NONE === $error ? $decoded : $body,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$message,
+					array( 'status' => $status_code )
+				);
+			}
+
+			if ( '' === $body ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_audio',
+					__( 'Hugging Face Inference API returned an empty audio response.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Hugging Face TTS models typically return binary audio data (WAV or FLAC).
+			// The content type header tells us the format.
+			$headers      = wp_remote_retrieve_headers( $response );
+			$content_type = isset( $headers['content-type'] ) ? sanitize_text_field( $headers['content-type'] ) : '';
+
+			// Determine format from content type.
+			$format = 'wav'; // Default to WAV.
+			if ( false !== strpos( $content_type, 'audio/flac' ) ) {
+				$format = 'flac';
+			} elseif ( false !== strpos( $content_type, 'audio/mpeg' ) || false !== strpos( $content_type, 'audio/mp3' ) ) {
+				$format = 'mp3';
+			} elseif ( false !== strpos( $content_type, 'audio/wav' ) || false !== strpos( $content_type, 'audio/wave' ) ) {
+				$format = 'wav';
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'huggingface_tts_success',
+				'Successfully generated speech with Hugging Face Inference API.',
+				array(
+					'model'        => $model,
+					'format'       => $format,
+					'content_type' => $content_type,
+					'body_length'  => strlen( $body ),
+				)
+			);
+
+			return array(
+				'audio'        => $body,
+				'format'       => $format,
+				'model'        => $model,
+				'content_type' => $content_type,
+			);
+		}
 	}
 }
