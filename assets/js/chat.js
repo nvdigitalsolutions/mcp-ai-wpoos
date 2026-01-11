@@ -11379,13 +11379,83 @@
                         }
                     }
                     
-                    // Remove temporary streaming message BEFORE calling handleChatResponse
-                    // This prevents duplicate messages from appearing in the chat.
-                    // The streamed content has already been captured in streamResult.content
-                    // and injected into finalData, so the final message will have the same content.
-                    if (streamingMessageElement && streamingMessageElement.parentNode) {
-                        streamingMessageElement.parentNode.removeChild(streamingMessageElement);
-                        streamingMessageElement = null;
+                    // BUG FIX: The streaming element already displays the correct final content.
+                    // Instead of removing it and having handleChatResponse create a new bubble
+                    // (which may fail or get lost), we keep the streaming element and just
+                    // add the conversation message directly.
+                    //
+                    // The issue was: streamingMessageElement removed → handleChatResponse called →
+                    // message added to conversation BUT no bubble created in DOM → content lost in UI
+                    // (though it reappears after save/reload because it's in the conversation).
+                    //
+                    // Solution: Keep streaming element, finalize it with buttons, add to conversation manually.
+                    const shouldKeepStreamingElement = streamingMessageElement && 
+                                                      streamingMessageElement.parentNode &&
+                                                      streamResult.content &&
+                                                      streamResult.content.trim();
+                    
+                    if (shouldKeepStreamingElement) {
+                        // Streaming element has the final content - keep it and finalize
+                        if (window.console && console.log) {
+                            console.log('[NV oOS] Keeping streaming element and finalizing it with buttons');
+                        }
+                        
+                        // Finalize the streaming element with buttons
+                        // (This mirrors the fallback path at lines ~11428-11443)
+                        attachSpeechButton(streamingMessageElement, state, streamResult.content);
+                        attachCopyButton(streamingMessageElement, streamResult.content);
+                        attachDeleteButton(streamingMessageElement, state, 'assistant');
+                        
+                        // Add the assistant message to conversation
+                        const displayPayload = { text: streamResult.content };
+                        const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload);
+                        const assistantMessage = createConversationMessage('assistant', streamResult.content, displayMetadata);
+                        state.conversation.push(assistantMessage);
+                        
+                        // Process tool_results if present (add them to conversation)
+                        if (streamResult.finalData && streamResult.finalData.tool_results) {
+                            streamResult.finalData.tool_results.forEach(function(toolResult) {
+                                if (toolResult && toolResult.role === 'tool') {
+                                    // Add display metadata to tool result
+                                    let parsedContent = toolResult.content;
+                                    if (typeof parsedContent === 'string') {
+                                        try {
+                                            parsedContent = JSON.parse(parsedContent);
+                                        } catch (e) {
+                                            parsedContent = toolResult.content;
+                                        }
+                                    }
+                                    
+                                    const normalizedForDisplay = normaliseToolResultForDisplay(toolResult.name || '', parsedContent);
+                                    const toolDisplay = createToolDisplayMetadata(normalizedForDisplay);
+                                    if (toolDisplay) {
+                                        toolResult.display = toolDisplay;
+                                    }
+                                    
+                                    state.conversation.push(toolResult);
+                                }
+                            });
+                        }
+                        
+                        // Save and finalize
+                        saveConversationToStorage(state);
+                        saveConversationToCCT(state, { silent: true });
+                        finalize();
+                        setTimeout(function() {
+                            clearStatus(state.container);
+                        }, 1500);
+                        
+                        return streamResult;
+                    } else {
+                        // No streaming element or no content - use normal flow
+                        if (streamingMessageElement && streamingMessageElement.parentNode) {
+                            streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+                            streamingMessageElement = null;
+                            
+                            if (window.console && console.log) {
+                                console.log('[NV oOS] Removed streaming element (will create new bubble via handleChatResponse)');
+                            }
+                        }
                     }
                     
                     // Process the final response data using standard handler
