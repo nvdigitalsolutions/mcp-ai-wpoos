@@ -12761,14 +12761,39 @@
         // when processing async tool results later (for updating DOM with video attachments)
         let assistantMessageElement = null;
 
-        if (hasDisplayContent) {
-            // Extract usage and cost data for Phase 7 Week 5-6 Enhanced Token Tracking
-            const usage = chatData && chatData.usage ? chatData.usage : null;
-            const cost = data && data.cost ? data.cost : null;
+        // Extract usage and cost data for Phase 7 Week 5-6 Enhanced Token Tracking
+        // Declare these variables outside hasDisplayContent block so they're available
+        // for tool result processing even when assistant message has no display content
+        const usage = chatData && chatData.usage ? chatData.usage : null;
+        const cost = data && data.cost ? data.cost : null;
 
-            // Aggregate tool usage and cost data (Phase 7 Week 5-6 Enhancement for Tool Token Display)
-            let aggregatedUsage = usage ? Object.assign({}, usage) : null;
-            let aggregatedCost = cost ? Object.assign({}, cost) : null;
+        // Aggregate tool usage and cost data (Phase 7 Week 5-6 Enhancement for Tool Token Display)
+        // Initialize these before hasDisplayContent check so tool results can aggregate into them
+        let aggregatedUsage = usage ? Object.assign({}, usage) : null;
+        let aggregatedCost = cost ? Object.assign({}, cost) : null;
+
+        // Collect capability flags from tool results
+        // Moved outside hasDisplayContent block so flags are available even when message has no display content
+        const capabilityFlags = [];
+        if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+            data.tool_results.forEach(function (toolResult) {
+                if (!toolResult) {
+                    return;
+                }
+
+                // Extract capability flags if present
+                if (toolResult.capability_flags && Array.isArray(toolResult.capability_flags)) {
+                    // Merge unique flags
+                    toolResult.capability_flags.forEach(function (flag) {
+                        if (flag && typeof flag === 'string' && capabilityFlags.indexOf(flag) === -1) {
+                            capabilityFlags.push(flag);
+                        }
+                    });
+                }
+            });
+        }
+
+        if (hasDisplayContent) {
 
             // Collect usage and cost from all tool results
             if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
@@ -12892,26 +12917,6 @@
                         if (toolProvider && !aggregatedUsage.provider) {
                             aggregatedUsage.provider = toolProvider;
                         }
-                    }
-                });
-            }
-
-            // Collect capability flags from tool results
-            const capabilityFlags = [];
-            if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
-                data.tool_results.forEach(function (toolResult) {
-                    if (!toolResult) {
-                        return;
-                    }
-
-                    // Extract capability flags if present
-                    if (toolResult.capability_flags && Array.isArray(toolResult.capability_flags)) {
-                        // Merge unique flags
-                        toolResult.capability_flags.forEach(function (flag) {
-                            if (flag && typeof flag === 'string' && capabilityFlags.indexOf(flag) === -1) {
-                                capabilityFlags.push(flag);
-                            }
-                        });
                     }
                 });
             }
