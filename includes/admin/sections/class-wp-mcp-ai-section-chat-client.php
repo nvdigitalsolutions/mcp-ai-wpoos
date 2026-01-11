@@ -227,6 +227,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 					'default'     => '',
 					'placeholder' => __( 'Send', 'mcp-ai-wpoos' ),
 				),
+				'show_usage_costs'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Show Usage Costs', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Display token usage and estimated costs in chat interface', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Shows small badges with total tokens and estimated cost (in USD) after each assistant response in the frontend chat. Helps users understand API usage and costs in real-time. Phase 7: Enhanced Token Tracking with Real-Time Cost Attribution.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 				// Features subtab fields.
 				'chat_enable_copy_button'         => array(
 					'type'           => 'checkbox',
@@ -433,6 +440,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 						'chat_welcome_message',
 						'chat_placeholder_text',
 						'chat_send_button_text',
+						'show_usage_costs',
 					),
 				),
 				'features'             => array(

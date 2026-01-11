@@ -2828,6 +2828,47 @@
         );
     }
 
+    /**
+     * Get the best supported audio MIME type for MediaRecorder.
+     * Prefers audio-only formats to avoid creating video containers.
+     *
+     * @return {string|null} The MIME type string or null if none supported
+     */
+    function getSupportedAudioMimeType() {
+        if (typeof window === 'undefined' || typeof window.MediaRecorder === 'undefined') {
+            return null;
+        }
+
+        // List of audio MIME types to try, in order of preference
+        // We prefer audio-only formats to avoid video container formats
+        const audioMimeTypes = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/ogg;codecs=opus',
+            'audio/ogg',
+            'audio/mp4',
+            'audio/mpeg',
+            // Fallback to video container if no audio-only format is supported
+            // This maintains backward compatibility
+            'video/webm;codecs=vp8,opus',
+            'video/webm',
+        ];
+
+        for (let i = 0; i < audioMimeTypes.length; i++) {
+            const mimeType = audioMimeTypes[i];
+            try {
+                if (MediaRecorder.isTypeSupported(mimeType)) {
+                    return mimeType;
+                }
+            } catch (error) {
+                // Continue to next MIME type
+            }
+        }
+
+        // If no specific type is supported, let MediaRecorder use its default
+        return null;
+    }
+
     function stopRecordingStream(state) {
         if (!state || !state.recordingStream) {
             return;
@@ -2917,6 +2958,41 @@
 
         if (input) {
             input.disabled = !canUse || state.busy || state.uploading > 0 || state.transcribing || state.isRecording;
+        }
+    }
+
+    function updateTranslateButtonState(state) {
+        if (audioService && audioService.updateTranslateButtonState) {
+            return audioService.updateTranslateButtonState(state);
+        }
+
+        // Fallback implementation
+        if (!state) {
+            return;
+        }
+
+        const button = state.translateButton;
+        const input = state.translateInput;
+
+        const canUse = !!state.canUploadAttachments;
+        let disabled = !canUse || state.busy || state.uploading > 0 || state.translating;
+
+        if (state.isTranslateRecording) {
+            disabled = false;
+        }
+
+        if (button) {
+            button.disabled = disabled;
+
+            if (!canUse) {
+                button.hidden = true;
+            } else {
+                button.hidden = false;
+            }
+        }
+
+        if (input) {
+            input.disabled = !canUse || state.busy || state.uploading > 0 || state.translating || state.isTranslateRecording;
         }
     }
 
@@ -3010,7 +3086,10 @@
                 state.recordedChunks = [];
 
                 try {
-                    state.mediaRecorder = new MediaRecorder(stream);
+                    // Get the best supported audio MIME type to ensure we create audio files, not video
+                    const audioMimeType = getSupportedAudioMimeType();
+                    const options = audioMimeType ? { mimeType: audioMimeType } : {};
+                    state.mediaRecorder = new MediaRecorder(stream, options);
                 } catch (error) {
                     stopRecordingStream(state);
                     setStatus(
@@ -3222,9 +3301,10 @@
                     throw new Error('Upload failed');
                 }
 
-                if (state.attachmentLibrary && record.fileId) {
-                    state.attachmentLibrary[record.fileId] = record;
-                }
+                // NOTE: Do NOT add transcription audio to attachmentLibrary.
+                // Transcription audio files are temporary recordings used only for transcription,
+                // not attachments that should persist in the conversation. Adding them to the
+                // library causes file reuse issues where old recordings are incorrectly used.
 
                 return requestTranscription(state, record);
             })
@@ -3355,7 +3435,7 @@
             });
     }
 
-    function requestTranscription(state, record) {
+    function requestTranscription(state, record, translate) {
         if (!state || !record || typeof record.id === 'undefined') {
             return Promise.reject(new Error('Missing attachment id'));
         }
@@ -3378,11 +3458,17 @@
             },
         };
 
+        // Add translate parameter if provided
+        if (typeof translate !== 'undefined') {
+            payload.arguments.translate = !!translate;
+        }
+
         if (window.console && console.log) {
             console.log('Voice chat: Requesting transcription', {
                 endpoint: state.config.toolsEndpoint,
                 attachmentId: record.id,
-                tool: TRANSCRIBE_TOOL_NAME
+                tool: TRANSCRIBE_TOOL_NAME,
+                translate: translate
             });
         }
 
@@ -3570,6 +3656,43 @@
     }
 
     /**
+     * Translation Functions
+     */
+    function handleTranslateButtonClick(state) {
+        if (audioService && audioService.handleTranslateButtonClick) {
+            const helpers = {
+                getString: getString,
+                setStatus: setStatus,
+                uploadAudioForTranscription: uploadAudioForTranscription,
+                requestTranscription: requestTranscription,
+            };
+            return audioService.handleTranslateButtonClick(state, helpers);
+        }
+
+        // Fallback: Translation not available
+        if (window.console && console.warn) {
+            console.warn('Translation service not available');
+        }
+    }
+
+    function handleTranslateFileSelection(event, state) {
+        if (audioService && audioService.handleTranslateFileSelection) {
+            const helpers = {
+                getString: getString,
+                setStatus: setStatus,
+                uploadAudioForTranscription: uploadAudioForTranscription,
+                requestTranscription: requestTranscription,
+            };
+            return audioService.handleTranslateFileSelection(event, state, helpers);
+        }
+
+        // Fallback: Translation not available
+        if (window.console && console.warn) {
+            console.warn('Translation service not available');
+        }
+    }
+
+    /**
      * Voice Chat Functions
      */
     function handleVoiceChatButtonClick(state) {
@@ -3623,7 +3746,10 @@
                 state.voiceChatChunks = [];
 
                 try {
-                    state.voiceChatRecorder = new MediaRecorder(stream);
+                    // Get the best supported audio MIME type to ensure we create audio files, not video
+                    const audioMimeType = getSupportedAudioMimeType();
+                    const options = audioMimeType ? { mimeType: audioMimeType } : {};
+                    state.voiceChatRecorder = new MediaRecorder(stream, options);
                 } catch (error) {
                     stopVoiceChatStream(state);
                     setStatus(
@@ -3655,7 +3781,11 @@
                         return;
                     }
 
-                    const blob = new Blob(state.voiceChatChunks, { type: 'audio/webm' });
+                    // Use the actual MIME type from the recorder, or fall back to 'audio/webm'
+                    const mimeType = state.voiceChatRecorder && state.voiceChatRecorder.mimeType
+                        ? state.voiceChatRecorder.mimeType
+                        : 'audio/webm';
+                    const blob = new Blob(state.voiceChatChunks, { type: mimeType });
                     state.voiceChatChunks = [];
 
                     processVoiceChatAudio(state, blob);
@@ -3808,9 +3938,10 @@
                     throw new Error('Upload failed');
                 }
 
-                if (state.attachmentLibrary && record.fileId) {
-                    state.attachmentLibrary[record.fileId] = record;
-                }
+                // NOTE: Do NOT add transcription audio to attachmentLibrary.
+                // Transcription audio files are temporary recordings used only for transcription,
+                // not attachments that should persist in the conversation. Adding them to the
+                // library causes file reuse issues where old recordings are incorrectly used.
 
                 return requestTranscription(state, record);
             })
@@ -10040,6 +10171,8 @@
             const fileInput = container.querySelector('.wp-mcp-ai-chat__file-input');
             const transcribeButton = container.querySelector('.wp-mcp-ai-chat__transcribe');
             const transcribeInput = container.querySelector('.wp-mcp-ai-chat__transcribe-input');
+            const translateButton = container.querySelector('.wp-mcp-ai-chat__translate');
+            const translateInput = container.querySelector('.wp-mcp-ai-chat__translate-input');
             const voiceChatButton = container.querySelector('.wp-mcp-ai-chat__voice-chat');
             const toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
             const toolShortcutsWrapper = container.querySelector('.wp-mcp-ai-chat__tool-shortcuts-wrapper');
@@ -10134,6 +10267,8 @@
                 fileInput: fileInput,
                 transcribeButton: transcribeButton,
                 transcribeInput: transcribeInput,
+                translateButton: translateButton,
+                translateInput: translateInput,
                 voiceChatButton: voiceChatButton,
                 toolShortcutsContainer: toolShortcutsContainer,
                 toolShortcutsWrapper: toolShortcutsWrapper,
@@ -10380,6 +10515,20 @@
                 });
             }
 
+            if (state.canUploadAttachments && translateButton) {
+                translateButton.hidden = false;
+                translateButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    handleTranslateButtonClick(state);
+                });
+            }
+
+            if (state.canUploadAttachments && translateInput) {
+                translateInput.addEventListener('change', function (event) {
+                    handleTranslateFileSelection(event, state);
+                });
+            }
+
             if (state.canUploadAttachments && voiceChatButton) {
                 voiceChatButton.hidden = false;
                 voiceChatButton.addEventListener('click', function (event) {
@@ -10390,6 +10539,7 @@
 
             updateAttachButtonState(state);
             updateTranscribeButtonState(state);
+            updateTranslateButtonState(state);
             updateVoiceChatButtonState(state);
 
             // Initialize keyboard shortcuts
@@ -11184,6 +11334,18 @@
             })
             .then(function (streamResult) {
                 streamCompleted = true;
+                
+                // Log stream completion for debugging
+                if (window.console && console.log) {
+                    console.log('[NV oOS] Streaming completed:', {
+                        hasFinalData: !!(streamResult && streamResult.finalData),
+                        hasStreamedContent: !!(streamResult && streamResult.content),
+                        streamedContentLength: streamResult && streamResult.content ? streamResult.content.length : 0,
+                        streamedContentSample: streamResult && streamResult.content ? streamResult.content.substring(0, 100) : '',
+                        streamingElementExists: !!streamingMessageElement,
+                        streamingElementInDOM: streamingMessageElement ? streamingMessageElement.parentNode !== null : false
+                    });
+                }
 
                 // Handle final message if available
                 if (streamResult && streamResult.finalData) {
@@ -11217,13 +11379,90 @@
                         }
                     }
                     
-                    // Remove temporary streaming message BEFORE calling handleChatResponse
-                    // This prevents duplicate messages from appearing in the chat.
-                    // The streamed content has already been captured in streamResult.content
-                    // and injected into finalData, so the final message will have the same content.
+                    // BUG FIX: The streaming element already displays the correct final content.
+                    // Instead of removing it and having handleChatResponse create a new bubble
+                    // (which may fail or create duplicates), we keep the streaming element and just
+                    // add the conversation message directly, then return early.
+                    //
+                    // The issue was: streamingMessageElement removed → handleChatResponse called →
+                    // either no bubble created OR duplicate bubble created → content lost/duplicated in UI
+                    // (though it reappears correctly after save/reload because it's in conversation).
+                    //
+                    // Solution: Keep streaming element, finalize it with buttons, add to conversation manually,
+                    // and RETURN EARLY to avoid calling handleChatResponse which would create duplicate.
+                    const shouldKeepStreamingElement = streamingMessageElement && 
+                                                      streamingMessageElement.parentNode &&
+                                                      streamResult.content &&
+                                                      streamResult.content.trim();
+                    
+                    if (shouldKeepStreamingElement) {
+                        // Streaming element has the final content - keep it and finalize
+                        if (window.console && console.log) {
+                            console.log('[NV oOS] Keeping streaming element (has content) and finalizing with buttons');
+                        }
+                        
+                        // Finalize the streaming element with buttons
+                        // (This mirrors the fallback path at lines ~11428-11443)
+                        attachSpeechButton(streamingMessageElement, state, streamResult.content);
+                        attachCopyButton(streamingMessageElement, streamResult.content);
+                        attachDeleteButton(streamingMessageElement, state, 'assistant');
+                        
+                        // Add the assistant message to conversation
+                        const displayPayload = { text: streamResult.content };
+                        const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload);
+                        const assistantMessage = createConversationMessage('assistant', streamResult.content, displayMetadata);
+                        state.conversation.push(assistantMessage);
+                        
+                        // Process tool_results if present (add them to conversation)
+                        if (streamResult.finalData && streamResult.finalData.tool_results) {
+                            streamResult.finalData.tool_results.forEach(function(toolResult) {
+                                if (toolResult && toolResult.role === 'tool') {
+                                    // Skip async pending results
+                                    let parsedContent = toolResult.content;
+                                    if (typeof parsedContent === 'string') {
+                                        try {
+                                            parsedContent = JSON.parse(parsedContent);
+                                        } catch (e) {
+                                            parsedContent = toolResult.content;
+                                        }
+                                    }
+                                    if (isAsyncPendingToolResult(parsedContent)) {
+                                        return;
+                                    }
+                                    
+                                    // Add display metadata to tool result
+                                    const normalizedForDisplay = normaliseToolResultForDisplay(toolResult.name || '', parsedContent);
+                                    const toolDisplay = createToolDisplayMetadata(normalizedForDisplay);
+                                    if (toolDisplay) {
+                                        toolResult.display = toolDisplay;
+                                    }
+                                    
+                                    state.conversation.push(toolResult);
+                                }
+                            });
+                        }
+                        
+                        // Save and finalize
+                        saveConversationToStorage(state);
+                        saveConversationToCCT(state, { silent: true });
+                        finalize();
+                        setTimeout(function() {
+                            clearStatus(state.container);
+                        }, 1500);
+                        
+                        // IMPORTANT: Return early here to avoid calling handleChatResponse
+                        // which would create a duplicate bubble
+                        return Promise.resolve(streamResult);
+                    }
+                    
+                    // No streaming element or no content - remove it and use normal flow
                     if (streamingMessageElement && streamingMessageElement.parentNode) {
                         streamingMessageElement.parentNode.removeChild(streamingMessageElement);
                         streamingMessageElement = null;
+                        
+                        if (window.console && console.log) {
+                            console.log('[NV oOS] Removed streaming element (will create new bubble via handleChatResponse)');
+                        }
                     }
                     
                     // Process the final response data using standard handler
@@ -11693,6 +11932,16 @@
                                 // Use the final complete text if it's different or more complete than streamed content
                                 // This ensures truncated responses and final messages are properly displayed
                                 if (finalText && typeof finalText === 'string') {
+                                    // Log final text extraction for debugging
+                                    if (window.console && console.log) {
+                                        console.log('[NV oOS] SSE: Extracted final text from finalData:', {
+                                            finalTextLength: finalText.length,
+                                            finalTextSample: finalText.substring(0, 100),
+                                            fullContentLength: fullContent ? fullContent.length : 0,
+                                            willUpdateContent: !fullContent || finalText.length > fullContent.length || finalText !== fullContent
+                                        });
+                                    }
+                                    
                                     // Use finalText if:
                                     // 1. We have no streamed content yet, OR
                                     // 2. Final text is longer (more complete), OR  
@@ -11702,6 +11951,10 @@
                                         fullContent = finalText;
                                         // Update the streaming bubble with the final text
                                         updateCallback(fullContent);
+                                        
+                                        if (window.console && console.log) {
+                                            console.log('[NV oOS] SSE: Updated fullContent and called updateCallback with final text');
+                                        }
                                     }
                                 }
                                 
@@ -12409,6 +12662,17 @@
         }
 
         const assistantMessage = { role: 'assistant' };
+        
+        // Log message content for debugging
+        if (window.console && console.log) {
+            console.log('[NV oOS] handleChatResponse: Processing message:', {
+                hasMessage: !!message,
+                messageContent: message && message.content,
+                messageContentType: message && typeof message.content,
+                messageContentLength: message && message.content && typeof message.content === 'string' ? message.content.length : 0
+            });
+        }
+        
         const assistantDisplay = prepareAssistantDisplay(message, state);
         let hasDisplayText = typeof assistantDisplay.text === 'string' && assistantDisplay.text.trim() !== '';
         const hasDisplayAttachments = assistantDisplay.attachments.length > 0;
@@ -12497,14 +12761,39 @@
         // when processing async tool results later (for updating DOM with video attachments)
         let assistantMessageElement = null;
 
-        if (hasDisplayContent) {
-            // Extract usage and cost data for Phase 7 Week 5-6 Enhanced Token Tracking
-            const usage = chatData && chatData.usage ? chatData.usage : null;
-            const cost = data && data.cost ? data.cost : null;
+        // Extract usage and cost data for Phase 7 Week 5-6 Enhanced Token Tracking
+        // Declare these variables outside hasDisplayContent block so they're available
+        // for tool result processing even when assistant message has no display content
+        const usage = chatData && chatData.usage ? chatData.usage : null;
+        const cost = data && data.cost ? data.cost : null;
 
-            // Aggregate tool usage and cost data (Phase 7 Week 5-6 Enhancement for Tool Token Display)
-            let aggregatedUsage = usage ? Object.assign({}, usage) : null;
-            let aggregatedCost = cost ? Object.assign({}, cost) : null;
+        // Aggregate tool usage and cost data (Phase 7 Week 5-6 Enhancement for Tool Token Display)
+        // Initialize these before hasDisplayContent check so tool results can aggregate into them
+        let aggregatedUsage = usage ? Object.assign({}, usage) : null;
+        let aggregatedCost = cost ? Object.assign({}, cost) : null;
+
+        // Collect capability flags from tool results
+        // Moved outside hasDisplayContent block so flags are available even when message has no display content
+        const capabilityFlags = [];
+        if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+            data.tool_results.forEach(function (toolResult) {
+                if (!toolResult) {
+                    return;
+                }
+
+                // Extract capability flags if present
+                if (toolResult.capability_flags && Array.isArray(toolResult.capability_flags)) {
+                    // Merge unique flags
+                    toolResult.capability_flags.forEach(function (flag) {
+                        if (flag && typeof flag === 'string' && capabilityFlags.indexOf(flag) === -1) {
+                            capabilityFlags.push(flag);
+                        }
+                    });
+                }
+            });
+        }
+
+        if (hasDisplayContent) {
 
             // Collect usage and cost from all tool results
             if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
@@ -12632,26 +12921,20 @@
                 });
             }
 
-            // Collect capability flags from tool results
-            const capabilityFlags = [];
-            if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
-                data.tool_results.forEach(function (toolResult) {
-                    if (!toolResult) {
-                        return;
-                    }
-
-                    // Extract capability flags if present
-                    if (toolResult.capability_flags && Array.isArray(toolResult.capability_flags)) {
-                        // Merge unique flags
-                        toolResult.capability_flags.forEach(function (flag) {
-                            if (flag && typeof flag === 'string' && capabilityFlags.indexOf(flag) === -1) {
-                                capabilityFlags.push(flag);
-                            }
-                        });
-                    }
+            // Add debug logging to trace final message display issue
+            if (window.console && console.log) {
+                console.log('[NV oOS] handleChatResponse: About to append assistant message:', {
+                    hasDisplayText: hasDisplayText,
+                    hasDisplayAttachments: hasDisplayAttachments,
+                    hasDisplayContent: hasDisplayContent,
+                    textLength: assistantDisplay.text ? assistantDisplay.text.length : 0,
+                    textSample: assistantDisplay.text ? assistantDisplay.text.substring(0, 100) : '',
+                    attachmentsCount: assistantDisplay.attachments ? assistantDisplay.attachments.length : 0,
+                    hasUsage: !!aggregatedUsage,
+                    hasCost: !!aggregatedCost
                 });
             }
-
+            
             assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 state: state,
                 speech: {
@@ -12662,6 +12945,14 @@
                 cost: aggregatedCost,
                 capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null,
             });
+            
+            // Log whether appendMessage returned an element
+            if (window.console && console.log) {
+                console.log('[NV oOS] handleChatResponse: appendMessage result:', {
+                    elementCreated: !!assistantMessageElement,
+                    elementInDOM: assistantMessageElement ? assistantMessageElement.parentNode !== null : false
+                });
+            }
             
             // Preserve the original content structure if it's an array (contains image blocks)
             // This is needed to maintain image_url content in the agentic loop

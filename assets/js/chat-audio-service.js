@@ -25,9 +25,20 @@
 	const TRANSCRIBE_RECORDING_CLASS = 'wp-mcp-ai-chat__transcribe--recording';
 	const MAX_TRANSCRIBE_BYTES = 26214400; // 25MB
 
+	// Audio translation constants (uses same tool as transcription)
+	const TRANSLATE_RECORDING_CLASS = 'wp-mcp-ai-chat__translate--recording';
+
 	// Voice chat constants
 	const VOICE_CHAT_RECORDING_CLASS = 'wp-mcp-ai-chat__voice-chat--recording';
 	const VOICE_CHAT_PROCESSING_CLASS = 'wp-mcp-ai-chat__voice-chat--processing';
+	const VOICE_CHAT_LISTENING_CLASS = 'wp-mcp-ai-chat__voice-chat--listening';
+
+	// VAD (Voice Activity Detection) default constants
+	// These can be overridden by WordPress settings passed via config
+	const VAD_DEFAULT_SILENCE_THRESHOLD_MS = 700;      // Industry standard: 700ms
+	const VAD_DEFAULT_MIN_SPEECH_DURATION_MS = 300;    // Minimum speech duration
+	const VAD_DEFAULT_AUDIO_LEVEL_THRESHOLD = -50;     // dB threshold for speech
+	const VAD_CHECK_INTERVAL_MS = 100;                 // Check audio levels every 100ms
 
 	// Object URL registry for cleanup
 	let objectUrlRegistry = [];
@@ -925,10 +936,18 @@
 					throw new Error('Upload failed');
 				}
 
-				if (state.attachmentLibrary && record.fileId) {
-					state.attachmentLibrary[record.fileId] = record;
-				}
+				// Note: DO NOT add transcription audio to attachmentLibrary
+				// These are temporary files for transcription only, not message attachments
+				// Adding them to attachmentLibrary causes them to persist and be reused
 
+				// Add small delay to ensure WordPress has fully processed the uploaded file
+				return new Promise(function(resolve) {
+					setTimeout(function() {
+						resolve(record);
+					}, 150);
+				});
+			})
+			.then(function (record) {
 				return helpers.requestTranscription(state, record);
 			})
 			.then(function (response) {
@@ -1006,6 +1025,667 @@
 		}
 
 		return body;
+	}
+
+	// ========================================
+	// Audio Translation Functions
+	// ========================================
+
+	/**
+	 * Handle translate button click event.
+	 * 
+	 * @param {Object} state - Chat state object
+	 * @param {Object} helpers - Helper functions
+	 */
+	function handleTranslateButtonClick(state, helpers) {
+		if (!state || state.translating) {
+			return;
+		}
+
+		if (state.isTranslateRecording) {
+			stopTranslateRecording(state, helpers);
+			return;
+		}
+
+		if (!state.canUploadAttachments) {
+			return;
+		}
+
+		if (supportsAudioRecording()) {
+			let shouldRecord = true;
+
+			if (state.translateInput && helpers && helpers.getString) {
+				const message = helpers.getString(
+					'translateChooseSource',
+					'Press OK to record with your microphone, or Cancel to choose an audio file.'
+				);
+
+				if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+					shouldRecord = window.confirm(message);
+				}
+			}
+
+			if (shouldRecord) {
+				startTranslateRecording(state, helpers);
+				return;
+			}
+		}
+
+		if (state.translateInput && !state.translateInput.disabled) {
+			state.translateInput.click();
+		}
+	}
+
+	/**
+	 * Start audio recording for translation.
+	 * 
+	 * @param {Object} state - Chat state object
+	 * @param {Object} helpers - Helper functions
+	 */
+	function startTranslateRecording(state, helpers) {
+		if (!state || !supportsAudioRecording()) {
+			return;
+		}
+
+		state.translateRecordingShouldProcess = false;
+
+		if (state.translateButton) {
+			state.translateButton.disabled = true;
+		}
+
+		navigator.mediaDevices
+			.getUserMedia({ audio: true })
+			.then(function (stream) {
+				state.translateRecordingStream = stream;
+				state.translateRecordedChunks = [];
+
+				try {
+					state.translateMediaRecorder = new MediaRecorder(stream);
+				} catch (error) {
+					stopTranslateRecordingStream(state);
+					if (helpers && helpers.setStatus && helpers.getString) {
+						helpers.setStatus(
+							state.container,
+							helpers.getString(
+								'recordingError',
+								'Could not access your microphone. Please allow access or upload an audio file instead.'
+							)
+						);
+					}
+					updateTranslateButtonState(state);
+					return;
+				}
+
+				if (!state.translateMediaRecorder) {
+					stopTranslateRecordingStream(state);
+					updateTranslateButtonState(state);
+					return;
+				}
+
+				state.translateRecordingShouldProcess = true;
+
+				state.translateMediaRecorder.addEventListener('dataavailable', function (event) {
+					if (event && event.data && event.data.size) {
+						state.translateRecordedChunks.push(event.data);
+					}
+				});
+
+				state.translateMediaRecorder.addEventListener('stop', function () {
+					const chunks = state.translateRecordedChunks || [];
+					const mimeType = state.translateMediaRecorder && state.translateMediaRecorder.mimeType ? state.translateMediaRecorder.mimeType : 'audio/webm';
+					let baseMimeType = typeof mimeType === 'string' ? mimeType.split(';')[0] : '';
+					if (!baseMimeType && typeof mimeType === 'string') {
+						baseMimeType = mimeType;
+					}
+
+					stopTranslateRecordingStream(state);
+					setTranslateRecordingState(state, false, helpers);
+
+					if (!state.translateRecordingShouldProcess) {
+						state.translateRecordedChunks = [];
+						updateTranslateButtonState(state);
+						return;
+					}
+
+					if (!chunks || !chunks.length) {
+						if (helpers && helpers.setStatus && helpers.getString) {
+							helpers.setStatus(
+								state.container,
+								helpers.getString('voiceChatNoData', 'No audio was recorded.')
+							);
+						}
+						updateTranslateButtonState(state);
+						return;
+					}
+
+					const blob = new Blob(chunks, { type: baseMimeType || 'audio/webm' });
+					state.translateRecordedChunks = [];
+
+					processTranslateAudio(state, blob, helpers);
+				});
+
+				state.translateMediaRecorder.start();
+				state.translateRecordingShouldProcess = true;
+				setTranslateRecordingState(state, true, helpers);
+			})
+			.catch(function () {
+				if (helpers && helpers.setStatus && helpers.getString) {
+					helpers.setStatus(
+						state.container,
+						helpers.getString(
+							'recordingError',
+							'Could not access your microphone. Please allow access or upload an audio file instead.'
+						)
+					);
+				}
+				updateTranslateButtonState(state);
+			});
+	}
+
+	/**
+	 * Stop translate recording.
+	 * 
+	 * @param {Object} state - Chat state object
+	 * @param {Object} helpers - Helper functions
+	 */
+	function stopTranslateRecording(state, helpers) {
+		if (!state) {
+			return;
+		}
+
+		setTranslateRecordingState(state, false, helpers);
+
+		if (state.translateMediaRecorder && state.translateMediaRecorder.state !== 'inactive') {
+			state.translateMediaRecorder.stop();
+		} else {
+			stopTranslateRecordingStream(state);
+			updateTranslateButtonState(state);
+		}
+	}
+
+	/**
+	 * Stop translate recording stream and release media tracks.
+	 * 
+	 * @param {Object} state - Chat state object
+	 */
+	function stopTranslateRecordingStream(state) {
+		if (!state || !state.translateRecordingStream) {
+			return;
+		}
+
+		const tracks = state.translateRecordingStream.getTracks ? state.translateRecordingStream.getTracks() : [];
+		tracks.forEach(function (track) {
+			try {
+				track.stop();
+			} catch (error) {}
+		});
+
+		state.translateRecordingStream = null;
+	}
+
+	/**
+	 * Set translate recording state and update UI.
+	 * 
+	 * @param {Object} state - Chat state object
+	 * @param {boolean} recording - Whether recording is active
+	 * @param {Object} helpers - Helper functions
+	 */
+	function setTranslateRecordingState(state, recording, helpers) {
+		if (!state) {
+			return;
+		}
+
+		state.isTranslateRecording = !!recording;
+
+		const button = state.translateButton;
+		if (button && button.classList) {
+			if (state.isTranslateRecording) {
+				button.classList.add(TRANSLATE_RECORDING_CLASS);
+			} else {
+				button.classList.remove(TRANSLATE_RECORDING_CLASS);
+			}
+		}
+
+		if (button && helpers && helpers.getString) {
+			const label = state.isTranslateRecording
+				? helpers.getString('stopRecording', 'Stop recording')
+				: helpers.getString('translateAudio', 'Translate audio');
+			button.setAttribute('aria-label', label);
+			button.setAttribute('title', label);
+		}
+
+		if (state.container && helpers && helpers.setStatus && helpers.getString) {
+			if (state.isTranslateRecording) {
+				helpers.setStatus(state.container, helpers.getString('recording', 'Recording… tap to stop.'));
+			} else if (!state.translating && !state.busy) {
+				helpers.setStatus(state.container, '');
+			}
+		}
+	}
+
+	/**
+	 * Update translate button state based on chat state.
+	 * 
+	 * @param {Object} state - Chat state object
+	 */
+	function updateTranslateButtonState(state) {
+		if (!state) {
+			return;
+		}
+
+		const button = state.translateButton;
+		const input = state.translateInput;
+
+		const canUse = !!state.canUploadAttachments;
+		let disabled = !canUse || state.busy || state.uploading > 0 || state.translating;
+
+		if (state.isTranslateRecording) {
+			disabled = false;
+		}
+
+		if (button) {
+			button.disabled = disabled;
+
+			if (!canUse) {
+				button.hidden = true;
+			} else {
+				button.hidden = false;
+			}
+		}
+
+		if (input) {
+			input.disabled = !canUse || state.busy || state.uploading > 0 || state.translating || state.isTranslateRecording;
+		}
+	}
+
+	/**
+	 * Handle translate file input change.
+	 * 
+	 * @param {Event} event - File input change event
+	 * @param {Object} state - Chat state object
+	 * @param {Object} helpers - Helper functions
+	 */
+	function handleTranslateFileSelection(event, state, helpers) {
+		if (!event || !event.target || !state || state.translating) {
+			return;
+		}
+
+		const files = event.target.files;
+		if (!files || !files.length) {
+			return;
+		}
+
+		const file = files[0];
+		event.target.value = '';
+
+		if (file.size > MAX_TRANSCRIBE_BYTES) {
+			if (helpers && helpers.setStatus && helpers.getString) {
+				helpers.setStatus(
+					state.container,
+					helpers.getString(
+						'translationFileTooLarge',
+						'The selected audio file is too large. Please choose a file under 25MB.'
+					)
+				);
+			}
+			return;
+		}
+
+		processTranslateAudio(state, file, helpers);
+	}
+
+	/**
+	 * Process audio for translation.
+	 * 
+	 * @param {Object} state - Chat state object
+	 * @param {Blob|File} blob - Audio blob or file to translate
+	 * @param {Object} helpers - Helper functions
+	 */
+	function processTranslateAudio(state, blob, helpers) {
+		if (!state || !blob || state.translating) {
+			return;
+		}
+
+		if (blob.size > MAX_TRANSCRIBE_BYTES) {
+			if (helpers && helpers.setStatus && helpers.getString) {
+				helpers.setStatus(
+					state.container,
+					helpers.getString(
+						'translationFileTooLarge',
+						'The selected audio file is too large. Please choose a file under 25MB.'
+					)
+				);
+			}
+			updateTranslateButtonState(state);
+			return;
+		}
+
+		state.translating = true;
+		updateTranslateButtonState(state);
+
+		if (helpers && helpers.setStatus && helpers.getString) {
+			helpers.setStatus(state.container, helpers.getString('translating', 'Translating audio…'));
+		}
+
+		const file = blob instanceof File ? blob : new File([blob], 'audio-' + Date.now() + '.webm', {
+			type: blob.type || 'audio/webm',
+			lastModified: Date.now(),
+		});
+
+		let uploadedRecord = null;
+
+		if (!helpers || !helpers.uploadAudioForTranscription || !helpers.requestTranscription) {
+			state.translating = false;
+			updateTranslateButtonState(state);
+			return;
+		}
+
+		helpers.uploadAudioForTranscription(state, file)
+			.then(function (record) {
+				uploadedRecord = record;
+				if (!record || typeof record.id === 'undefined') {
+					throw new Error('Upload failed');
+				}
+
+				// Note: DO NOT add translation audio to attachmentLibrary
+				// These are temporary files for translation only, not message attachments
+				// Adding them to attachmentLibrary causes them to persist and be reused
+
+				// Add small delay to ensure WordPress has fully processed the uploaded file
+				return new Promise(function(resolve) {
+					setTimeout(function() {
+						resolve(record);
+					}, 150);
+				});
+			})
+			.then(function (record) {
+				// Request translation (translate=true)
+				return helpers.requestTranscription(state, record, true);
+			})
+			.then(function (response) {
+				const result = extractTranscriptionResult(response);
+
+				if (!result || !result.text || !result.text.trim()) {
+					throw new Error('No text translated');
+				}
+
+				const translatedText = result.text.trim();
+				insertTranslatedText(state, translatedText, helpers);
+
+				if (helpers && helpers.setStatus && helpers.getString) {
+					const fileName = uploadedRecord && uploadedRecord.filename ? uploadedRecord.filename : 'audio file';
+					const successMessage = helpers.getString('translationSuccess', 'Inserted translation from "%s".');
+					helpers.setStatus(
+						state.container,
+						successMessage.replace('%s', fileName)
+					);
+				}
+			})
+			.catch(function (error) {
+				// Provide more specific error messages based on error type
+				let errorMessage = helpers.getString('translationError', 'The translation request failed. Please try again.');
+				
+				if (error && error.status === 404) {
+					errorMessage = helpers.getString(
+						'translationEndpointNotFound',
+						'Translation service is temporarily unavailable. Please try again later.'
+					);
+				} else if (error && (error.message === 'Tools endpoint unavailable' || error.message === 'Could not locate transcription tool')) {
+					errorMessage = helpers.getString(
+						'translationNotConfigured',
+						'Translation is not properly configured. Please contact support.'
+					);
+				}
+
+				if (helpers && helpers.setStatus) {
+					helpers.setStatus(state.container, errorMessage);
+				}
+
+				if (window.console && console.error) {
+					console.error('Translation failed', {
+						error: error,
+						message: error ? error.message : 'Unknown error',
+						status: error ? error.status : undefined
+					});
+				}
+			})
+			.finally(function () {
+				state.translating = false;
+				updateTranslateButtonState(state);
+			});
+	}
+
+	/**
+	 * Insert translated text into the chat textarea.
+	 * 
+	 * @param {Object} state - Chat state object
+	 * @param {string} text - Translated text
+	 * @param {Object} helpers - Helper functions
+	 */
+	function insertTranslatedText(state, text, helpers) {
+		if (!state || !state.textarea || !text) {
+			return;
+		}
+
+		const trimmedText = text.trim();
+		if (!trimmedText) {
+			return;
+		}
+
+		const existing = state.textarea.value || '';
+		const trimmedExisting = existing.replace(/\s+$/, '');
+		const newValue = trimmedExisting ? trimmedExisting + '\n\n' + trimmedText : trimmedText;
+
+		state.textarea.value = newValue;
+		state.textarea.focus();
+
+		try {
+			const caret = newValue.length;
+			state.textarea.setSelectionRange(caret, caret);
+		} catch (error) {}
+	}
+
+	// ========================================
+	// Voice Activity Detection (VAD) Functions
+	// ========================================
+
+	/**
+	 * Initialize VAD monitoring for voice chat recording.
+	 * Uses Web Audio API to analyze audio levels in real-time.
+	 * 
+	 * @param {Object} state - Chat state object
+	 * @param {MediaStream} stream - Audio stream from getUserMedia
+	 * @param {Object} helpers - Helper functions
+	 */
+	function initVoiceActivityDetection(state, stream, helpers) {
+		if (!state || !stream) {
+			return;
+		}
+
+		// Check if VAD is enabled in WordPress settings
+		const vadEnabled = state.config && typeof state.config.vadEnabled !== 'undefined' 
+			? state.config.vadEnabled 
+			: true;
+
+		if (!vadEnabled) {
+			if (window.console && console.log) {
+				console.log('VAD: Voice Activity Detection disabled in settings');
+			}
+			return;
+		}
+
+		// Get configurable VAD settings from WordPress
+		const silenceThreshold = state.config && state.config.vadSilenceThreshold 
+			? state.config.vadSilenceThreshold 
+			: VAD_DEFAULT_SILENCE_THRESHOLD_MS;
+		
+		const minSpeechDuration = state.config && state.config.vadMinSpeech 
+			? state.config.vadMinSpeech 
+			: VAD_DEFAULT_MIN_SPEECH_DURATION_MS;
+		
+		const audioThreshold = state.config && typeof state.config.vadAudioThreshold !== 'undefined'
+			? state.config.vadAudioThreshold 
+			: VAD_DEFAULT_AUDIO_LEVEL_THRESHOLD;
+
+		try {
+			// Create Web Audio API context
+			const AudioContext = window.AudioContext || window.webkitAudioContext;
+			if (!AudioContext) {
+				// VAD not supported, fall back to manual mode
+				return;
+			}
+
+			state.vadAudioContext = new AudioContext();
+			state.vadAnalyser = state.vadAudioContext.createAnalyser();
+			state.vadAnalyser.fftSize = 2048;
+			state.vadAnalyser.smoothingTimeConstant = 0.8;
+
+			const source = state.vadAudioContext.createMediaStreamSource(stream);
+			source.connect(state.vadAnalyser);
+
+			// Initialize VAD state with configurable thresholds
+			state.vadSilenceStart = null;
+			state.vadSpeechStart = Date.now();
+			state.vadLastSpeechTime = Date.now();
+			state.vadEnabled = true;
+			state.vadSilenceThreshold = silenceThreshold;
+			state.vadMinSpeechDuration = minSpeechDuration;
+			state.vadAudioThreshold = audioThreshold;
+
+			// Start monitoring audio levels
+			state.vadMonitorInterval = setInterval(function() {
+				checkVoiceActivity(state, helpers);
+			}, VAD_CHECK_INTERVAL_MS);
+
+			if (window.console && console.log) {
+				console.log('VAD: Voice Activity Detection initialized', {
+					silenceThreshold: silenceThreshold + 'ms',
+					minSpeechDuration: minSpeechDuration + 'ms',
+					audioThreshold: audioThreshold + 'dB'
+				});
+			}
+		} catch (error) {
+			if (window.console && console.warn) {
+				console.warn('VAD: Could not initialize Voice Activity Detection', error);
+			}
+			// Continue without VAD
+		}
+	}
+
+	/**
+	 * Check voice activity and trigger auto-stop on silence.
+	 * 
+	 * @param {Object} state - Chat state object
+	 * @param {Object} helpers - Helper functions
+	 */
+	function checkVoiceActivity(state, helpers) {
+		if (!state || !state.vadEnabled || !state.vadAnalyser || !state.isVoiceChatRecording) {
+			return;
+		}
+
+		try {
+			// Get audio level
+			const bufferLength = state.vadAnalyser.frequencyBinCount;
+			const dataArray = new Uint8Array(bufferLength);
+			state.vadAnalyser.getByteFrequencyData(dataArray);
+
+			// Calculate average audio level
+			let sum = 0;
+			for (let i = 0; i < bufferLength; i++) {
+				sum += dataArray[i];
+			}
+			const average = sum / bufferLength;
+
+			// Convert to dB scale (0-255 range to dB)
+			const dB = 20 * Math.log10(average / 255);
+
+			const now = Date.now();
+			const speechDuration = now - state.vadSpeechStart;
+			
+			// Use configurable thresholds from state
+			const audioThreshold = state.vadAudioThreshold || VAD_DEFAULT_AUDIO_LEVEL_THRESHOLD;
+			const silenceThreshold = state.vadSilenceThreshold || VAD_DEFAULT_SILENCE_THRESHOLD_MS;
+			const minSpeechDuration = state.vadMinSpeechDuration || VAD_DEFAULT_MIN_SPEECH_DURATION_MS;
+			
+			const isSpeech = dB > audioThreshold;
+
+			if (isSpeech) {
+				// Speech detected
+				state.vadLastSpeechTime = now;
+				state.vadSilenceStart = null;
+
+				// Update UI to show "listening" state
+				if (state.voiceChatButton && state.voiceChatButton.classList) {
+					state.voiceChatButton.classList.add(VOICE_CHAT_LISTENING_CLASS);
+				}
+			} else {
+				// Silence detected
+				if (state.vadSilenceStart === null) {
+					state.vadSilenceStart = now;
+				}
+
+				const silenceDuration = now - state.vadSilenceStart;
+
+				// Remove "listening" class during silence
+				if (state.voiceChatButton && state.voiceChatButton.classList) {
+					state.voiceChatButton.classList.remove(VOICE_CHAT_LISTENING_CLASS);
+				}
+
+				// Check if we should auto-stop
+				if (speechDuration >= minSpeechDuration && 
+					silenceDuration >= silenceThreshold) {
+					
+					if (window.console && console.log) {
+						console.log('VAD: Auto-stopping after ' + silenceDuration + 'ms of silence');
+					}
+
+					// Auto-stop recording
+					stopVoiceActivityDetection(state);
+					stopVoiceChatRecording(state, helpers);
+				}
+			}
+		} catch (error) {
+			if (window.console && console.error) {
+				console.error('VAD: Error checking voice activity', error);
+			}
+		}
+	}
+
+	/**
+	 * Stop VAD monitoring and clean up resources.
+	 * 
+	 * @param {Object} state - Chat state object
+	 */
+	function stopVoiceActivityDetection(state) {
+		if (!state) {
+			return;
+		}
+
+		state.vadEnabled = false;
+
+		if (state.vadMonitorInterval) {
+			clearInterval(state.vadMonitorInterval);
+			state.vadMonitorInterval = null;
+		}
+
+		if (state.vadAudioContext) {
+			try {
+				state.vadAudioContext.close();
+			} catch (error) {
+				// Ignore close errors
+			}
+			state.vadAudioContext = null;
+		}
+
+		state.vadAnalyser = null;
+		state.vadSilenceStart = null;
+		state.vadSpeechStart = null;
+		state.vadLastSpeechTime = null;
+
+		// Remove listening class
+		if (state.voiceChatButton && state.voiceChatButton.classList) {
+			state.voiceChatButton.classList.remove(VOICE_CHAT_LISTENING_CLASS);
+		}
 	}
 
 	// ========================================
@@ -1109,6 +1789,9 @@
 				state.voiceChatShouldProcess = true;
 				setVoiceChatRecordingState(state, true, helpers);
 				updateVoiceChatButtonState(state);
+
+				// Initialize Voice Activity Detection for hands-free auto-stop
+				initVoiceActivityDetection(state, stream, helpers);
 			})
 			.catch(function (error) {
 				if (helpers && helpers.setStatus && helpers.getString) {
@@ -1131,6 +1814,9 @@
 		if (!state) {
 			return;
 		}
+
+		// Stop VAD monitoring
+		stopVoiceActivityDetection(state);
 
 		setVoiceChatRecordingState(state, false, helpers);
 
@@ -1292,10 +1978,18 @@
 					throw new Error('Upload failed');
 				}
 
-				if (state.attachmentLibrary && record.fileId) {
-					state.attachmentLibrary[record.fileId] = record;
-				}
+				// Note: DO NOT add voice chat audio to attachmentLibrary
+				// These are temporary files for transcription only, not message attachments
+				// Adding them to attachmentLibrary causes them to persist and be reused
 
+				// Add small delay to ensure WordPress has fully processed the uploaded file
+				return new Promise(function(resolve) {
+					setTimeout(function() {
+						resolve(record);
+					}, 150);
+				});
+			})
+			.then(function (record) {
 				return helpers.requestTranscription(state, record);
 			})
 			.then(function (response) {
@@ -1305,18 +1999,38 @@
 					throw new Error('No text transcribed');
 				}
 
+				// Enable voice chat mode to auto-play the response
+				state.voiceChatModeActive = true;
+
 				const transcribedText = result.text.trim();
 				
+				// Set textarea value temporarily for form submission
 				if (state.textarea) {
 					state.textarea.value = transcribedText;
 				}
 
-				if (helpers && helpers.setStatus) {
-					helpers.setStatus(state.container, '');
+				if (helpers && helpers.setStatus && helpers.getString) {
+					helpers.setStatus(
+						state.container,
+						helpers.getString('voiceChatSending', 'Sending your message…')
+					);
 				}
 
-				if (helpers && helpers.sendMessage) {
+				// Trigger form submission which will clear the textarea
+				const form = state.container ? state.container.querySelector('.wp-mcp-ai-chat__form') : null;
+				if (form) {
+					const submitEvent = new Event('submit', {
+						bubbles: true,
+						cancelable: true,
+					});
+					form.dispatchEvent(submitEvent);
+				} else if (helpers && helpers.sendMessage) {
+					// Fallback to sendMessage helper if form not found
 					helpers.sendMessage(state);
+					// Clear textarea after sending since sendMessage doesn't do it automatically
+					if (state.textarea) {
+						state.textarea.value = '';
+					}
 				}
 			})
 			.catch(function (error) {
@@ -1381,6 +2095,12 @@
 		extractTranscriptionResult: extractTranscriptionResult,
 		TRANSCRIBE_RECORDING_CLASS: TRANSCRIBE_RECORDING_CLASS,
 		MAX_TRANSCRIBE_BYTES: MAX_TRANSCRIBE_BYTES,
+		
+		// Audio translation
+		handleTranslateButtonClick: handleTranslateButtonClick,
+		handleTranslateFileSelection: handleTranslateFileSelection,
+		updateTranslateButtonState: updateTranslateButtonState,
+		TRANSLATE_RECORDING_CLASS: TRANSLATE_RECORDING_CLASS,
 		
 		// Voice chat
 		handleVoiceChatButtonClick: handleVoiceChatButtonClick,

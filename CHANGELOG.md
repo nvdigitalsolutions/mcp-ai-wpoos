@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Fixed
+- **Audio Transcription MIME Type (January 11, 2026)**: Fixed transcription button creating video files instead of audio files
+  - Added `getSupportedAudioMimeType()` helper function to check browser support
+  - MediaRecorder now explicitly requests audio-only MIME types (audio/webm, audio/ogg, etc.)
+  - Prefers audio formats over video container formats to avoid confusion
+  - Maintains backward compatibility with fallback to video/webm if needed
+  - Affects both transcribe and voice chat recording features
+  - OpenAI Whisper API accepts both audio and video files with audio tracks
+
 ### Added
 - **Cloudflare Image Generation Models (January 11, 2026)**: Added support for new Cloudflare Workers AI image generation models (PR #2785)
   - **Flux-2 Dev** (`@cf/black-forest-labs/flux-2-dev`) - Advanced image generation model

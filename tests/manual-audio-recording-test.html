@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recording MIME Type Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #0073aa;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005177;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background: white;
+            border-left: 4px solid #0073aa;
+        }
+        .success {
+            border-left-color: #46b450;
+        }
+        .error {
+            border-left-color: #dc3232;
+        }
+        code {
+            background: #e8e8e8;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: "Courier New", monospace;
+        }
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎤 Audio Recording MIME Type Test</h1>
+    <p>This test validates that the <code>getSupportedAudioMimeType()</code> function correctly prioritizes audio-only MIME types over video container formats.</p>
+
+    <div class="test-section">
+        <h2>Test 1: Check Supported Audio MIME Types</h2>
+        <p>Tests which audio MIME types are supported by your browser's MediaRecorder.</p>
+        <button onclick="testSupportedMimeTypes()">Run Test</button>
+        <div id="mime-test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Record with Default MIME Type (OLD behavior)</h2>
+        <p>Records audio without specifying a MIME type - likely creates video/webm.</p>
+        <button id="recordDefaultBtn" onclick="recordWithDefault()">Start Recording</button>
+        <button id="stopDefaultBtn" onclick="stopRecording('default')" disabled>Stop Recording</button>
+        <div id="default-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Record with Audio MIME Type (NEW behavior)</h2>
+        <p>Records audio with explicit audio-only MIME type - should create audio/webm or audio/ogg.</p>
+        <button id="recordAudioBtn" onclick="recordWithAudioMimeType()">Start Recording</button>
+        <button id="stopAudioBtn" onclick="stopRecording('audio')" disabled>Stop Recording</button>
+        <div id="audio-result"></div>
+    </div>
+
+    <script>
+        // Copy of the getSupportedAudioMimeType function from chat.js
+        function getSupportedAudioMimeType() {
+            if (typeof window === 'undefined' || typeof window.MediaRecorder === 'undefined') {
+                return null;
+            }
+
+            const audioMimeTypes = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/ogg;codecs=opus',
+                'audio/ogg',
+                'audio/mp4',
+                'audio/mpeg',
+                'video/webm;codecs=vp8,opus',
+                'video/webm',
+            ];
+
+            for (let i = 0; i < audioMimeTypes.length; i++) {
+                const mimeType = audioMimeTypes[i];
+                try {
+                    if (MediaRecorder.isTypeSupported(mimeType)) {
+                        return mimeType;
+                    }
+                } catch (error) {
+                    // Continue to next MIME type
+                }
+            }
+
+            return null;
+        }
+
+        let recorders = {
+            default: null,
+            audio: null
+        };
+        let chunks = {
+            default: [],
+            audio: []
+        };
+
+        function testSupportedMimeTypes() {
+            const resultDiv = document.getElementById('mime-test-result');
+            const audioMimeTypes = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/ogg;codecs=opus',
+                'audio/ogg',
+                'audio/mp4',
+                'audio/mpeg',
+                'video/webm;codecs=vp8,opus',
+                'video/webm',
+            ];
+
+            let html = '<div class="result"><h3>Supported MIME Types:</h3><ul>';
+            let foundAudio = false;
+            
+            audioMimeTypes.forEach((type, index) => {
+                const supported = MediaRecorder.isTypeSupported(type);
+                const isAudio = type.startsWith('audio/');
+                const emoji = supported ? '✅' : '❌';
+                const priority = supported && !foundAudio && isAudio ? ' <strong>(SELECTED)</strong>' : '';
+                
+                html += `<li>${emoji} <code>${type}</code>${priority}</li>`;
+                
+                if (supported && !foundAudio && isAudio) {
+                    foundAudio = true;
+                }
+            });
+
+            html += '</ul>';
+            
+            const selectedType = getSupportedAudioMimeType();
+            html += `<p><strong>Selected MIME Type:</strong> <code>${selectedType || 'null (browser default)'}</code></p>`;
+            html += '</div>';
+
+            resultDiv.innerHTML = html;
+        }
+
+        async function recordWithDefault() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                chunks.default = [];
+                
+                // OLD behavior - no MIME type specified
+                recorders.default = new MediaRecorder(stream);
+                
+                recorders.default.addEventListener('dataavailable', (event) => {
+                    if (event.data && event.data.size > 0) {
+                        chunks.default.push(event.data);
+                    }
+                });
+
+                recorders.default.addEventListener('stop', () => {
+                    const blob = new Blob(chunks.default);
+                    const resultDiv = document.getElementById('default-result');
+                    const mimeType = recorders.default.mimeType || 'unknown';
+                    
+                    const isVideo = mimeType.startsWith('video/');
+                    const className = isVideo ? 'result error' : 'result success';
+                    
+                    resultDiv.innerHTML = `
+                        <div class="${className}">
+                            <h3>${isVideo ? '❌ Problem Detected' : '✅ Correct'}</h3>
+                            <p><strong>MIME Type:</strong> <code>${mimeType}</code></p>
+                            <p><strong>Blob Size:</strong> ${blob.size} bytes</p>
+                            <p><strong>Blob Type:</strong> <code>${blob.type || 'empty'}</code></p>
+                            ${isVideo ? '<p>⚠️ This is a <strong>video</strong> container, not pure audio!</p>' : ''}
+                            <audio controls src="${URL.createObjectURL(blob)}"></audio>
+                        </div>
+                    `;
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                });
+
+                recorders.default.start();
+                document.getElementById('recordDefaultBtn').disabled = true;
+                document.getElementById('stopDefaultBtn').disabled = false;
+            } catch (error) {
+                document.getElementById('default-result').innerHTML = 
+                    `<div class="result error"><p>Error: ${error.message}</p></div>`;
+            }
+        }
+
+        async function recordWithAudioMimeType() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                chunks.audio = [];
+                
+                // NEW behavior - audio MIME type specified
+                const audioMimeType = getSupportedAudioMimeType();
+                const options = audioMimeType ? { mimeType: audioMimeType } : {};
+                recorders.audio = new MediaRecorder(stream, options);
+                
+                recorders.audio.addEventListener('dataavailable', (event) => {
+                    if (event.data && event.data.size > 0) {
+                        chunks.audio.push(event.data);
+                    }
+                });
+
+                recorders.audio.addEventListener('stop', () => {
+                    const mimeType = recorders.audio.mimeType || 'unknown';
+                    const blob = new Blob(chunks.audio, { type: mimeType });
+                    const resultDiv = document.getElementById('audio-result');
+                    
+                    const isAudio = mimeType.startsWith('audio/');
+                    const className = isAudio ? 'result success' : 'result';
+                    
+                    resultDiv.innerHTML = `
+                        <div class="${className}">
+                            <h3>${isAudio ? '✅ Success' : '⚠️ Check Result'}</h3>
+                            <p><strong>MIME Type:</strong> <code>${mimeType}</code></p>
+                            <p><strong>Blob Size:</strong> ${blob.size} bytes</p>
+                            <p><strong>Blob Type:</strong> <code>${blob.type || 'empty'}</code></p>
+                            ${isAudio ? '<p>✅ This is <strong>pure audio</strong>, not a video container!</p>' : ''}
+                            <audio controls src="${URL.createObjectURL(blob)}"></audio>
+                        </div>
+                    `;
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                });
+
+                recorders.audio.start();
+                document.getElementById('recordAudioBtn').disabled = true;
+                document.getElementById('stopAudioBtn').disabled = false;
+            } catch (error) {
+                document.getElementById('audio-result').innerHTML = 
+                    `<div class="result error"><p>Error: ${error.message}</p></div>`;
+            }
+        }
+
+        function stopRecording(type) {
+            if (recorders[type] && recorders[type].state !== 'inactive') {
+                recorders[type].stop();
+            }
+            
+            if (type === 'default') {
+                document.getElementById('recordDefaultBtn').disabled = false;
+                document.getElementById('stopDefaultBtn').disabled = true;
+            } else {
+                document.getElementById('recordAudioBtn').disabled = false;
+                document.getElementById('stopAudioBtn').disabled = true;
+            }
+        }
+    </script>
+
+    <div class="test-section">
+        <h2>📋 How to Interpret Results</h2>
+        <ul>
+            <li><strong>Test 1:</strong> Shows which MIME types your browser supports. The first audio/* type is selected.</li>
+            <li><strong>Test 2:</strong> Should show <code>video/webm</code> MIME type (the problem we're fixing).</li>
+            <li><strong>Test 3:</strong> Should show <code>audio/webm</code> or <code>audio/ogg</code> MIME type (the fix).</li>
+        </ul>
+        <p><strong>Expected Outcome:</strong> Test 3 should produce an audio-only file, not a video container.</p>
+    </div>
+</body>
+</html>

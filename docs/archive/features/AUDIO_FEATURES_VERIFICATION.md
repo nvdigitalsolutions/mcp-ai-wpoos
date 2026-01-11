@@ -29,7 +29,7 @@ This repository contains **comprehensive audio capabilities** that are fully imp
 - Automatic cleanup of cached audio URLs
 
 **Tool**: `generate_openai_speech`
-- Model: `gpt-4o-mini-tts` (default)
+- Model: `tts-1` (default, standard quality) or `tts-1-hd` (high quality)
 - Voice: `alloy` (default)
 - Format: `mp3` (default)
 - Creates WordPress attachments with proper metadata
@@ -60,7 +60,7 @@ This repository contains **comprehensive audio capabilities** that are fully imp
 - Temperature control for output variability
 
 **Tool**: `transcribe_openai_audio`
-- Model: `gpt-4o-mini-transcribe` (default)
+- Model: `whisper-1` (OpenAI official Whisper model)
 - Format: `verbose_json` (default)
 - Returns: text, language, duration, segments
 
