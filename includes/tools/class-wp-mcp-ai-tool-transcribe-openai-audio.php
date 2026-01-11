@@ -330,14 +330,14 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		$text = isset( $result['text'] ) ? $result['text'] : '';
 
 		$payload = array(
-			'attachment_id' => $attachment_id,
-			'file_name'     => $audio['file_name'],
-			'mime_type'     => $audio['mime_type'],
-			'file_size'     => $audio['file_size'],
-			'model'         => isset( $result['model'] ) ? $result['model'] : $options['model'],
-			'text'          => $text,
+			'attachment_id'   => $attachment_id,
+			'file_name'       => $audio['file_name'],
+			'mime_type'       => $audio['mime_type'],
+			'file_size'       => $audio['file_size'],
+			'model'           => isset( $result['model'] ) ? $result['model'] : $options['model'],
+			'text'            => $text,
 			'translated'      => ! empty( $result['translated'] ),
-			'response_format' => $result['format'],
+			'response_format' => isset( $result['format'] ) ? $result['format'] : 'json',
 		);
 
 		if ( isset( $result['language'] ) ) {

@@ -2233,8 +2233,10 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 					);
 				}
 				return array(
-					'text' => $text,
-					'raw'  => $decoded,
+					'text'   => $text,
+					'model'  => $model,
+					'format' => 'json',
+					'raw'    => $decoded,
 				);
 			}
 
