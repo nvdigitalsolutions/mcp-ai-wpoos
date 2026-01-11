@@ -482,6 +482,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'research_model'                     => 'external-tools',
 				'add_model_config'                   => 'external-tools',
 				'discover_new_models'                => 'external-tools',
+				'deep_research'                      => 'external-tools',
 				'create_text_embeddings'             => 'external-tools',
 				// OpenAI API Integration - Phase 2 Tools.
 				'semantic_content_search'            => 'external-tools',
@@ -936,6 +937,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-is-valid.php',
 				'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-filter.php',
 				'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-recommended-datasets.php',
+				// Deep Research tool (Pro).
+				'WP_MCP_AI_Tool_Deep_Research'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-deep-research.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.

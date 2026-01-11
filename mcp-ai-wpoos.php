@@ -1281,6 +1281,10 @@ if ( ! has_action( 'wp_mcp_ai_cleanup_openai_files', 'wp_mcp_ai_cleanup_openai_f
 	add_action( 'wp_mcp_ai_cleanup_openai_files', 'wp_mcp_ai_cleanup_openai_files_handler' );
 }
 
+if ( ! has_action( 'wp_mcp_ai_deep_research_background', 'wp_mcp_ai_deep_research_background_handler' ) ) {
+	add_action( 'wp_mcp_ai_deep_research_background', 'wp_mcp_ai_deep_research_background_handler', 10, 1 );
+}
+
 if ( ! function_exists( 'wp_mcp_ai_cleanup_gemini_files_handler' ) ) {
 	/**
 	 * Cron job handler for cleaning up old Gemini files.
@@ -1324,6 +1328,49 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_openai_files_handler' ) ) {
 			'Daily OpenAI file cleanup completed.',
 			$result
 		);
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_deep_research_background_handler' ) ) {
+	/**
+	 * Cron job handler for background deep research execution.
+	 *
+	 * Runs when a deep research job is scheduled in background mode.
+	 *
+	 * @param array $args Cron job arguments containing job parameters.
+	 */
+	function wp_mcp_ai_deep_research_background_handler( $args ) {
+		if ( ! is_array( $args ) ) {
+			return;
+		}
+
+		// Extract job parameters.
+		$job_id          = isset( $args['job_id'] ) ? sanitize_text_field( $args['job_id'] ) : '';
+		$topic           = isset( $args['topic'] ) ? sanitize_text_field( $args['topic'] ) : '';
+		$depth           = isset( $args['depth'] ) ? sanitize_key( $args['depth'] ) : 'standard';
+		$focus_areas     = isset( $args['focus_areas'] ) && is_array( $args['focus_areas'] ) ? $args['focus_areas'] : array();
+		$include_sources = isset( $args['include_sources'] ) ? (bool) $args['include_sources'] : true;
+		$user_id         = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
+
+		if ( empty( $job_id ) || empty( $topic ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Deep research background job missing required parameters.',
+				array( 'args' => $args )
+			);
+			return;
+		}
+
+		// Execute the research via the tool's static method.
+		if ( class_exists( 'WP_MCP_AI_Tool_Deep_Research' ) ) {
+			WP_MCP_AI_Tool_Deep_Research::execute_background_research(
+				$job_id,
+				$topic,
+				$depth,
+				$focus_areas,
+				$include_sources,
+				$user_id
+			);
+		}
 	}
 }
 
