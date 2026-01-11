@@ -74,28 +74,70 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
-			// Get dynamic model choices (from CCT if available, or fallback).
-			$model_choices = array();
-			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-				$model_choices = WP_MCP_AI_Admin_Settings::get_openai_default_model_choices_static();
+			// Get dynamic model choices from Model Config.
+			$openai_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$openai_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'openai' );
 			}
 
-			// Fallback to minimal hardcoded list if static method unavailable.
-			if ( empty( $model_choices ) ) {
-				$model_choices = array(
-					// Latest reasoning models (thinking models).
-					'o1-2024-12-17' => 'o1 (Dec 2024)',
-					'o1-preview'    => 'o1 Preview',
-					'o1-mini'       => 'o1 Mini',
-					'o3-mini'       => 'o3 Mini (24% faster, structured outputs)',
-					// GPT-4o series (current flagship).
+			// Fallback to minimal list if Model Config unavailable.
+			if ( empty( $openai_models ) ) {
+				$openai_models = array(
 					'gpt-4o'        => 'GPT-4o',
 					'gpt-4o-mini'   => 'GPT-4o Mini',
-					// Legacy models.
 					'gpt-4-turbo'   => 'GPT-4 Turbo',
-					'gpt-4'         => 'GPT-4',
-					'gpt-3.5-turbo' => 'GPT-3.5 Turbo',
 				);
+			}
+
+			// Get Anthropic models from Model Config.
+			$anthropic_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$anthropic_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'anthropic' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $anthropic_models ) ) {
+				$anthropic_models = array(
+					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
+					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
+				);
+			}
+
+			// Get Gemini models from Model Config.
+			$gemini_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$gemini_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'gemini' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $gemini_models ) ) {
+				$gemini_models = array(
+					'gemini-2.5-flash' => 'Gemini 2.5 Flash (Latest - Stable)',
+					'gemini-1.5-pro'   => 'Gemini 1.5 Pro',
+				);
+			}
+
+			// Get Cloudflare models from Model Config.
+			$cloudflare_models = array();
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$cloudflare_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'cloudflare' );
+			}
+
+			// Fallback to minimal list.
+			if ( empty( $cloudflare_models ) ) {
+				$cloudflare_models = array(
+					'@cf/meta/llama-3.2-3b-instruct' => 'Llama 3.2 3B Instruct (Recommended)',
+					'@cf/meta/llama-3.3-70b-instruct-fp8-fast' => 'Llama 3.3 70B Instruct FP8 Fast',
+				);
+			}
+
+			// Get provider list dynamically.
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
+				if ( ! empty( $configured_providers ) ) {
+					$provider_list = $configured_providers;
+				}
 			}
 
 			return array(
@@ -104,7 +146,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'custom',
 					'label'       => __( 'Provider Priority Order', 'mcp-ai-wpoos' ),
 					'description' => __( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable.', 'mcp-ai-wpoos' ),
-					'default'     => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ),
+					'default'     => $provider_list,
 				),
 
 				// OpenAI Settings.
@@ -130,7 +172,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'select',
 					'label'       => __( 'Default OpenAI Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default model to use for OpenAI requests. This model will be used unless overridden by an assistant or specific API call. Consider cost, speed, and capability trade-offs.', 'mcp-ai-wpoos' ),
-					'options'     => $model_choices,
+					'options'     => $openai_models,
 					'default'     => 'gpt-4.1',
 				),
 				'openai_embedding_model'             => array(
@@ -306,13 +348,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'select',
 					'label'       => __( 'Default Anthropic Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default Claude model to use for Anthropic requests. Claude 3.5 Sonnet offers the best balance of intelligence and speed. Claude 3.5 Haiku is faster and more economical for simpler tasks.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
-						'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
-						'claude-3-opus-20240229'     => 'Claude 3 Opus',
-						'claude-3-sonnet-20240229'   => 'Claude 3 Sonnet',
-						'claude-3-haiku-20240307'    => 'Claude 3 Haiku',
-					),
+					'options'     => $anthropic_models,
 					'default'     => 'claude-3-5-sonnet-20241022',
 				),
 
@@ -339,15 +375,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'select',
 					'label'       => __( 'Default Gemini Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default model to use for Gemini requests. Gemini 2.5 Pro is the flagship model with best performance. Gemini 2.5 Flash is the latest stable model with multimodal support (text, image, video). Gemini 2.0 Flash is the previous stable generation. Gemini 1.5 Pro provides proven performance, while 1.5 Flash is faster and more economical.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'gemini-2.5-pro'   => 'Gemini 2.5 Pro',
-						'gemini-2.5-flash' => 'Gemini 2.5 Flash (Latest - Stable)',
-						'gemini-2.0-flash' => 'Gemini 2.0 Flash',
-						'gemini-exp-1206'  => 'Gemini Exp 1206 (Experimental)',
-						'gemini-1.5-pro'   => 'Gemini 1.5 Pro',
-						'gemini-1.5-flash' => 'Gemini 1.5 Flash',
-						'gemini-pro'       => 'Gemini Pro',
-					),
+					'options'     => $gemini_models,
 					'default'     => 'gemini-2.5-flash',
 				),
 				'gemini_image_model'                 => array(
@@ -609,36 +637,60 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'cloudflare_model'                   => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Cloudflare Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default model to use for Cloudflare Workers AI requests. Updated catalog includes Llama 4 Scout (multimodal), fast variants, and specialized models. Llama 3.1-8B-Instruct is the most popular choice.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Cloudflare Workers AI requests. Updated catalog includes function calling and text generation models. Llama 3.2-3B-Instruct is recommended for general use.', 'mcp-ai-wpoos' ),
+					'options'     => $cloudflare_models,
+					'default'     => '@cf/meta/llama-3.2-3b-instruct',
+				),
+				'cloudflare_image_model'             => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Cloudflare Image Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Stable Diffusion XL Base is recommended for general purpose use.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						// Llama 3.1 models (most popular).
-						'@cf/meta/llama-3.1-8b-instruct'           => 'Llama 3.1 8B Instruct (Recommended)',
-						'@cf/meta/llama-3.1-8b-instruct-fast'      => 'Llama 3.1 8B Instruct Fast (128K context)',
-						'@cf/meta/llama-3.1-70b-instruct'          => 'Llama 3.1 70B Instruct',
-						// Llama 3.2 models (compact).
-						'@cf/meta/llama-3.2-1b-instruct'           => 'Llama 3.2 1B Instruct',
-						'@cf/meta/llama-3.2-3b-instruct'           => 'Llama 3.2 3B Instruct',
-						// Llama 2 models (legacy).
-						'@cf/meta/llama-2-7b-chat-int4'            => 'Llama 2 7B Chat (INT4)',
-						'@cf/meta/llama-2-13b-chat-int8'           => 'Llama 2 13B Chat (INT8)',
-						// Llama 4 Scout (NEW - multimodal).
-						'@cf/meta/llama-4-scout'                   => 'Llama 4 Scout (17B, Multimodal)',
-						// Mistral models (FIXED namespace).
-						'@cf/mistralai/mistral-7b-instruct-v0.1'   => 'Mistral 7B Instruct v0.1',
-						// Qwen models (multilingual).
-						'@cf/qwen/qwen1.5-0.5b-chat'               => 'Qwen 1.5 0.5B Chat',
-						'@cf/qwen/qwen1.5-1.8b-chat'               => 'Qwen 1.5 1.8B Chat',
-						'@cf/qwen/qwen1.5-7b-chat-awq'             => 'Qwen 1.5 7B Chat (AWQ)',
-						'@cf/qwen/qwen1.5-14b-chat-awq'            => 'Qwen 1.5 14B Chat (AWQ)',
-						// Compact/efficient models.
-						'@cf/tinyllama/tinyllama-1.1b-chat-v1.0'   => 'TinyLlama 1.1B Chat v1.0',
-						'@cf/microsoft/phi-2'                      => 'Microsoft Phi-2',
-						// Specialized models.
-						'@cf/tiiuae/falcon-7b-instruct'            => 'Falcon 7B Instruct',
-						'@cf/deepseek-ai/deepseek-math-7b-instruct' => 'DeepSeek Math 7B Instruct',
-						'@cf/openchat/openchat-3.5-0106'           => 'OpenChat 3.5',
+						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Recommended)',
+						'@cf/bytedance/stable-diffusion-xl-lightning'  => 'Stable Diffusion XL Lightning (Fast)',
+						'@cf/black-forest-labs/flux-1-schnell'         => 'Flux-1 Schnell',
+						'@cf/black-forest-labs/flux-2-dev'             => 'Flux-2 Dev',
+						'@cf/leonardo/lucid-origin'                    => 'Leonardo Lucid Origin',
+						'@cf/leonardo/phoenix-1.0'                     => 'Leonardo Phoenix 1.0',
+						'@cf/lykon/dreamshaper-8-lcm'                  => 'Dreamshaper 8 LCM',
 					),
-					'default'     => '@cf/meta/llama-3.1-8b-instruct',
+					'default'     => '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+				),
+				'cloudflare_image_width'             => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Image Width', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default width for generated images in pixels (256-2048). Different models may have different optimal sizes.', 'mcp-ai-wpoos' ),
+					'default'     => 1024,
+					'min'         => 256,
+					'max'         => 2048,
+					'step'        => 64,
+				),
+				'cloudflare_image_height'            => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Image Height', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default height for generated images in pixels (256-2048). Different models may have different optimal sizes.', 'mcp-ai-wpoos' ),
+					'default'     => 1024,
+					'min'         => 256,
+					'max'         => 2048,
+					'step'        => 64,
+				),
+				'cloudflare_image_num_steps'         => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Number of Steps', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default number of diffusion steps (1-20). More steps can improve quality but take longer. 20 is recommended.', 'mcp-ai-wpoos' ),
+					'default'     => 20,
+					'min'         => 1,
+					'max'         => 20,
+					'step'        => 1,
+				),
+				'cloudflare_image_guidance'          => array(
+					'type'        => 'number',
+					'label'       => __( 'Default Guidance Scale', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default guidance scale controls how closely the image follows the prompt. Higher values (7-15) mean stricter adherence. 7.5 is recommended.', 'mcp-ai-wpoos' ),
+					'default'     => 7.5,
+					'min'         => 1.0,
+					'max'         => 20.0,
+					'step'        => 0.5,
 				),
 
 				// Google Maps Settings.
@@ -715,7 +767,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model' ),
+					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model', 'cloudflare_image_model', 'cloudflare_image_width', 'cloudflare_image_height', 'cloudflare_image_num_steps', 'cloudflare_image_guidance' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
@@ -972,7 +1024,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array Sanitized provider priority list.
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
+			// Get valid providers dynamically from Model Config.
 			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
+				if ( ! empty( $configured_providers ) ) {
+					$valid_providers = $configured_providers;
+				}
+			}
+
 			$sanitized       = array();
 
 			if ( ! is_array( $priority_list ) ) {
