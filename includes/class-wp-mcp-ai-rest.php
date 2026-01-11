@@ -2733,10 +2733,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Extract cost information for Phase 7 Week 5-6 Enhanced Token Tracking.
 			$cost_data = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'chat response' );
 
+			// Extract usage information from response for frontend display.
+			$usage_data = null;
+			if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
+				$usage_data = array(
+					'prompt_tokens'     => isset( $response['usage']['prompt_tokens'] ) ? absint( $response['usage']['prompt_tokens'] ) : 0,
+					'completion_tokens' => isset( $response['usage']['completion_tokens'] ) ? absint( $response['usage']['completion_tokens'] ) : 0,
+					'total_tokens'      => isset( $response['usage']['total_tokens'] ) ? absint( $response['usage']['total_tokens'] ) : 0,
+				);
+
+				// Add provider and model info to usage data.
+				if ( isset( $options['provider'] ) ) {
+					$usage_data['provider'] = $options['provider'];
+				}
+				if ( isset( $options['model'] ) ) {
+					$usage_data['model'] = $options['model'];
+				}
+			}
+
 			$payload = array(
 				'assistant_id' => $assistant_id,
 				'data'         => $response,
 			);
+
+			// Include usage data if available for frontend badge display.
+			if ( $usage_data ) {
+				$payload['usage'] = $usage_data;
+			}
 
 			// Include cost data if available (Phase 7 Week 5-6).
 			if ( $cost_data ) {
