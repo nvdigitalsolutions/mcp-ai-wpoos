@@ -845,7 +845,8 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 
 			if ( empty( $endpoint_url ) ) {
 				// Use Hugging Face Inference API endpoint for the model.
-				$url = sprintf( 'https://api-inference.huggingface.co/models/%s', rawurlencode( $model ) );
+				// Updated to use router.huggingface.co (api-inference.huggingface.co is deprecated).
+				$url = sprintf( 'https://router.huggingface.co/models/%s', rawurlencode( $model ) );
 			} else {
 				// Use custom endpoint with /audio/transcriptions path (OpenAI-compatible).
 				$url = untrailingslashit( $endpoint_url ) . '/audio/transcriptions';
@@ -1060,8 +1061,9 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			}
 
 			// Build API endpoint for the specific model.
+			// Updated to use router.huggingface.co (api-inference.huggingface.co is deprecated).
 			$url = sprintf(
-				'https://api-inference.huggingface.co/models/%s',
+				'https://router.huggingface.co/models/%s',
 				rawurlencode( $model )
 			);
 
