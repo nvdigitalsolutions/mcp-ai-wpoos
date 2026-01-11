@@ -11401,15 +11401,143 @@
                             console.log('[NV oOS] Keeping streaming element (has content) and finalizing with buttons');
                         }
                         
-                        // Finalize the streaming element with buttons
-                        // (This mirrors the fallback path at lines ~11428-11443)
+                        // Extract usage/cost/capability flags from finalData (Phase 7 Enhancement)
+                        // This mirrors the logic in handleChatResponse (lines 12764-12794)
+                        const chatData = streamResult.finalData && streamResult.finalData.data ? streamResult.finalData.data : null;
+                        const usage = chatData && chatData.usage ? chatData.usage : null;
+                        const cost = streamResult.finalData && streamResult.finalData.cost ? streamResult.finalData.cost : null;
+                        
+                        // Aggregate tool usage and cost data (same as handleChatResponse lines 12800-12922)
+                        let aggregatedUsage = usage ? Object.assign({}, usage) : null;
+                        let aggregatedCost = cost ? Object.assign({}, cost) : null;
+                        
+                        // Collect capability flags from tool results
+                        const capabilityFlags = [];
+                        if (streamResult.finalData && Array.isArray(streamResult.finalData.tool_results) && streamResult.finalData.tool_results.length > 0) {
+                            streamResult.finalData.tool_results.forEach(function (toolResult) {
+                                if (!toolResult) {
+                                    return;
+                                }
+                                
+                                // Aggregate usage data from tool results
+                                let toolUsage = null;
+                                let toolCost = null;
+                                
+                                // Try direct usage field first
+                                if (toolResult.usage && typeof toolResult.usage === 'object') {
+                                    toolUsage = toolResult.usage;
+                                }
+                                
+                                // Try direct cost field
+                                if (toolResult.cost && typeof toolResult.cost === 'object') {
+                                    toolCost = toolResult.cost;
+                                }
+                                
+                                // Fall back to parsing content for usage and cost data
+                                if ((!toolUsage || !toolCost) && toolResult.content) {
+                                    let parsedContent = toolResult.content;
+                                    if (typeof parsedContent === 'string') {
+                                        try {
+                                            parsedContent = JSON.parse(parsedContent);
+                                        } catch (e) {
+                                            parsedContent = null;
+                                        }
+                                    }
+                                    
+                                    if (parsedContent && typeof parsedContent === 'object') {
+                                        if (!toolUsage && parsedContent.usage && typeof parsedContent.usage === 'object') {
+                                            toolUsage = parsedContent.usage;
+                                        }
+                                        if (!toolCost && parsedContent.cost && typeof parsedContent.cost === 'object') {
+                                            toolCost = parsedContent.cost;
+                                        }
+                                    }
+                                }
+                                
+                                // Aggregate usage data if found
+                                if (toolUsage) {
+                                    if (!aggregatedUsage) {
+                                        aggregatedUsage = {
+                                            prompt_tokens: 0,
+                                            completion_tokens: 0,
+                                            total_tokens: 0
+                                        };
+                                    }
+                                    
+                                    aggregatedUsage.prompt_tokens = (aggregatedUsage.prompt_tokens || 0) + (toolUsage.prompt_tokens || 0);
+                                    aggregatedUsage.completion_tokens = (aggregatedUsage.completion_tokens || 0) + (toolUsage.completion_tokens || 0);
+                                    aggregatedUsage.total_tokens = (aggregatedUsage.total_tokens || 0) + (toolUsage.total_tokens || 0);
+                                    
+                                    if (toolUsage.is_estimated) {
+                                        aggregatedUsage.is_estimated = true;
+                                    }
+                                }
+                                
+                                // Aggregate cost data if found
+                                if (toolCost && typeof toolCost.cost_usd === 'number') {
+                                    if (!aggregatedCost) {
+                                        aggregatedCost = {
+                                            cost_usd: 0
+                                        };
+                                    }
+                                    
+                                    aggregatedCost.cost_usd = (aggregatedCost.cost_usd || 0) + toolCost.cost_usd;
+                                    
+                                    if (toolCost.is_estimated) {
+                                        aggregatedCost.is_estimated = true;
+                                    }
+                                    
+                                    if (!aggregatedCost.provider && toolCost.provider) {
+                                        aggregatedCost.provider = toolCost.provider;
+                                    }
+                                    if (!aggregatedCost.model && toolCost.model) {
+                                        aggregatedCost.model = toolCost.model;
+                                    }
+                                }
+                                
+                                // Extract capability flags if present
+                                if (toolResult.capability_flags && Array.isArray(toolResult.capability_flags)) {
+                                    toolResult.capability_flags.forEach(function (flag) {
+                                        if (flag && typeof flag === 'string' && capabilityFlags.indexOf(flag) === -1) {
+                                            capabilityFlags.push(flag);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        
+                        // Log extracted data for debugging
+                        if (window.console && console.log) {
+                            console.log('[NV oOS] Streaming path: Extracted usage/cost/capability data:', {
+                                hasUsage: !!aggregatedUsage,
+                                hasCost: !!aggregatedCost,
+                                hasCapabilityFlags: capabilityFlags.length > 0,
+                                usageData: aggregatedUsage,
+                                costData: aggregatedCost,
+                                capabilityFlags: capabilityFlags
+                            });
+                        }
+                        
+                        // Finalize the streaming element with buttons and badges
                         attachSpeechButton(streamingMessageElement, state, streamResult.content);
                         attachCopyButton(streamingMessageElement, streamResult.content);
                         attachDeleteButton(streamingMessageElement, state, 'assistant');
                         
-                        // Add the assistant message to conversation
+                        // Attach usage and cost badges if data is available (Phase 7 Enhancement)
+                        attachUsageBadges(streamingMessageElement, aggregatedUsage, aggregatedCost);
+                        
+                        // Attach capability flag badges if data is available
+                        if (capabilityFlags.length > 0) {
+                            attachCapabilityFlagBadges(streamingMessageElement, capabilityFlags);
+                        }
+                        
+                        // Add the assistant message to conversation with usage/cost metadata
                         const displayPayload = { text: streamResult.content };
-                        const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload);
+                        const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload, {
+                            usage: aggregatedUsage,
+                            cost: aggregatedCost,
+                            capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null
+                        });
                         const assistantMessage = createConversationMessage('assistant', streamResult.content, displayMetadata);
                         state.conversation.push(assistantMessage);
                         
@@ -14184,6 +14312,11 @@
      * @param {Array|null} capabilityFlags - Array of capability flag strings
      */
     function attachCapabilityFlagBadges(messageElement, capabilityFlags) {
+        // Only show if setting is enabled
+        if (!globalConfig.showCapabilityFlags) {
+            return;
+        }
+
         // Only show if we have flags
         if (!capabilityFlags || !Array.isArray(capabilityFlags) || capabilityFlags.length === 0) {
             return;
