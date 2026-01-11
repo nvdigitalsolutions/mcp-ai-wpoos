@@ -19,7 +19,7 @@ Uses the plugin's own AI capabilities to research model specifications from prov
 #### Parameters
 
 - `model_id` (string, required): Model identifier (e.g., "gpt-4.5-turbo")
-- `provider` (string, required): Provider name (openai, anthropic, gemini, huggingface, ollama, lm_studio)
+- `provider` (string, required): Provider name (openai, anthropic, gemini, huggingface, ollama, lm_studio, cloudflare)
 - `use_web_search` (boolean, optional): Whether to use web search for documentation (default: true)
 
 #### Returns

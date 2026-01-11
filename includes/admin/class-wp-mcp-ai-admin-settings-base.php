@@ -180,11 +180,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 * @return array Sanitized provider priority list.
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
-			if ( ! is_array( $priority_list ) ) {
-				return array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+			// Get available providers dynamically from Model Config.
+			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
+				if ( ! empty( $configured_providers ) ) {
+					$available_providers = $configured_providers;
+				}
 			}
 
-			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+			if ( ! is_array( $priority_list ) ) {
+				return $available_providers;
+			}
+
 			$sanitized           = array();
 			$seen                = array();
 
@@ -252,6 +260,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 * @return array
 		 */
 		public static function get_default_settings() {
+			// Get dynamic provider list from Model Config.
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
+				if ( ! empty( $configured_providers ) ) {
+					$provider_list = $configured_providers;
+				}
+			}
+
 			return array(
 				'openai_api_key'                       => '',
 				'gemini_api_key'                       => '',
@@ -264,7 +281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'default_model'                        => 'gpt-4.1',
 				'default_gemini_model'                 => 'gemini-2.5-flash',
 				'default_provider'                     => 'openai',
-				'provider_priority_list'               => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ),
+				'provider_priority_list'               => $provider_list,
 				'web_search_provider'                  => 'duckduckgo',
 				'brave_search_api_key'                 => '',
 				'google_maps_api_key'                  => '',
@@ -284,6 +301,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'crawl4ai_base_url'                    => '',
 				'crawl4ai_api_key'                     => '',
 				'cloudflare_api_token'                 => '',
+				'cloudflare_account_id'                => '',
+				'cloudflare_model'                     => '@cf/meta/llama-3.2-3b-instruct',
+				'cloudflare_image_model'               => '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+				'cloudflare_image_width'               => 1024,
+				'cloudflare_image_height'              => 1024,
+				'cloudflare_image_num_steps'           => 20,
+				'cloudflare_image_guidance'            => 7.5,
 				'cloudflare_zone_id'                   => '',
 				'enable_varnish_purge'                 => false,
 				'cloudways_email'                      => '',
