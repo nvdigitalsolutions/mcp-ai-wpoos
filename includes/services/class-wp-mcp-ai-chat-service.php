@@ -606,12 +606,42 @@ class WP_MCP_AI_Chat_Service {
 				}
 			}
 
-			$results[] = array(
+			// Build base result structure.
+			$result_entry = array(
 				'role'         => 'tool',
 				'tool_call_id' => $tool_id,
 				'name'         => $tool_name,
 				'content'      => $result_content,
 			);
+
+			// Extract cost, usage, and capability_flags from tool result for chat client display.
+			// Tools return these fields in their result array, and the chat client needs them
+			// at the top level of tool_results (not encoded in content) to display usage badges,
+			// cost information, and capability indicators.
+			if ( ! is_wp_error( $tool_result ) && is_array( $tool_result ) ) {
+				// Extract usage data (token counts, model, provider).
+				if ( isset( $tool_result['usage'] ) && is_array( $tool_result['usage'] ) ) {
+					$result_entry['usage'] = $tool_result['usage'];
+				}
+
+				// Extract cost data (cost_usd, provider, model, is_estimated).
+				if ( isset( $tool_result['cost'] ) && is_array( $tool_result['cost'] ) ) {
+					$result_entry['cost'] = $tool_result['cost'];
+				}
+
+				// Get capability_flags from tool registry for this tool.
+				// These flags indicate tool capabilities (vision, write, async, etc.) which
+				// the chat client uses to display capability badges and inform the user.
+				$tool_registry = $this->get_tool_registry();
+				if ( $tool_registry ) {
+					$capability_flags = $tool_registry->get_tool_capability_flags( $tool_name );
+					if ( ! empty( $capability_flags ) && is_array( $capability_flags ) ) {
+						$result_entry['capability_flags'] = $capability_flags;
+					}
+				}
+			}
+
+			$results[] = $result_entry;
 		}
 
 		return $results;
@@ -1038,6 +1068,15 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		return $this->tool_orchestrator;
+	}
+
+	/**
+	 * Get tool registry instance
+	 *
+	 * @return WP_MCP_AI_Tool_Registry|null
+	 */
+	private function get_tool_registry() {
+		return $this->tool_registry;
 	}
 
 	/**
