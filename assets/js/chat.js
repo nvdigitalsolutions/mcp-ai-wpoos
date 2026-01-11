@@ -11426,7 +11426,7 @@
                                             parsedContent = toolResult.content;
                                         }
                                     }
-                                    if (isAsyncPendingToolResult && isAsyncPendingToolResult(parsedContent)) {
+                                    if (isAsyncPendingToolResult(parsedContent)) {
                                         return;
                                     }
                                     
