@@ -606,12 +606,41 @@ class WP_MCP_AI_Chat_Service {
 				}
 			}
 
-			$results[] = array(
+			// Build base result structure.
+			$result_entry = array(
 				'role'         => 'tool',
 				'tool_call_id' => $tool_id,
 				'name'         => $tool_name,
 				'content'      => $result_content,
 			);
+
+			// Extract cost and usage from tool result for chat client display.
+			// These fields are only extracted when the tool execution was successful
+			// (i.e., not a WP_Error). The chat client needs them at the top level of
+			// tool_results (not encoded in content) to display usage badges and cost information.
+			if ( ! is_wp_error( $tool_result ) && is_array( $tool_result ) ) {
+				// Extract usage data (token counts, model, provider).
+				if ( isset( $tool_result['usage'] ) && is_array( $tool_result['usage'] ) ) {
+					$result_entry['usage'] = $tool_result['usage'];
+				}
+
+				// Extract cost data (cost_usd, provider, model, is_estimated).
+				if ( isset( $tool_result['cost'] ) && is_array( $tool_result['cost'] ) ) {
+					$result_entry['cost'] = $tool_result['cost'];
+				}
+			}
+
+			// Get capability_flags from tool registry for this tool.
+			// These flags indicate tool capabilities (vision, write, async, etc.) which
+			// the chat client uses to display capability badges and inform the user.
+			// Capability flags describe the tool itself, not the result, so they should
+			// be included even if the tool execution failed.
+			$capability_flags = $this->tool_registry->get_tool_capability_flags( $tool_name );
+			if ( ! empty( $capability_flags ) && is_array( $capability_flags ) ) {
+				$result_entry['capability_flags'] = $capability_flags;
+			}
+
+			$results[] = $result_entry;
 		}
 
 		return $results;

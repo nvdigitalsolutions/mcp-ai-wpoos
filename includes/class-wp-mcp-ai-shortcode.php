@@ -186,6 +186,10 @@ class WP_MCP_AI_Shortcode {
 				'nonce'               => wp_create_nonce( 'wp_rest' ),
 				'showUsageCosts'      => $show_usage_costs,
 				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+				'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
+				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
+				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
+				'vadAudioThreshold'   => isset( $settings['vad_audio_threshold'] ) ? floatval( $settings['vad_audio_threshold'] ) : -50,
 				'strings'             => array(
 					'placeholder'                   => __( 'Ask something…', 'mcp-ai-wpoos' ),
 					'send'                          => __( 'Send', 'mcp-ai-wpoos' ),
@@ -227,6 +231,16 @@ class WP_MCP_AI_Shortcode {
 					'transcribeChooseSource'        => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
 					'transcriptionEndpointNotFound' => __( 'Transcription service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
 					'transcriptionNotConfigured'    => __( 'Transcription is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
+					'translate'                     => __( 'Translate', 'mcp-ai-wpoos' ),
+					'translateAudio'                => __( 'Translate audio', 'mcp-ai-wpoos' ),
+					'translating'                   => __( 'Translating audio…', 'mcp-ai-wpoos' ),
+					'translationError'              => __( 'The translation request failed. Please try again.', 'mcp-ai-wpoos' ),
+					/* translators: %s: file name */
+																'translationSuccess' => __( 'Inserted translation from "%s".', 'mcp-ai-wpoos' ),
+					'translationFileTooLarge'       => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
+					'translateChooseSource'         => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
+					'translationEndpointNotFound'   => __( 'Translation service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
+					'translationNotConfigured'      => __( 'Translation is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
 					'voiceChatError'                => __( 'Voice chat failed. Please try again or type your message.', 'mcp-ai-wpoos' ),
 					'voiceChatEndpointNotFound'     => __( 'Voice chat service is temporarily unavailable. Please type your message instead.', 'mcp-ai-wpoos' ),
 					'voiceChatNotConfigured'        => __( 'Voice chat is not properly configured. Please type your message instead.', 'mcp-ai-wpoos' ),
@@ -234,6 +248,8 @@ class WP_MCP_AI_Shortcode {
 					'voiceChatNoData'               => __( 'No audio was recorded.', 'mcp-ai-wpoos' ),
 					'voiceChatFileTooLarge'         => __( 'The recorded audio is too large. Please try a shorter message.', 'mcp-ai-wpoos' ),
 					'voiceChatPermissionDenied'     => __( 'Microphone access was denied.', 'mcp-ai-wpoos' ),
+					'voiceChatRecording'            => __( 'Recording… speak now or tap to stop and send. (Hands-free: pauses auto-send)', 'mcp-ai-wpoos' ),
+					'voiceChatSending'              => __( 'Sending your message…', 'mcp-ai-wpoos' ),
 					'attachmentsLabel'              => __( 'Attachments', 'mcp-ai-wpoos' ),
 					'removeAttachment'              => __( 'Remove', 'mcp-ai-wpoos' ),
 					/* translators: %s: file name being uploaded */
@@ -767,6 +783,13 @@ class WP_MCP_AI_Shortcode {
 				<div class="wp-mcp-ai-chat__actions">
 					<input type="file" class="wp-mcp-ai-chat__file-input" multiple hidden />
 					<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled' ); ?> />
+					<input type="file" class="wp-mcp-ai-chat__translate-input" accept="audio/*" hidden<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled' ); ?> />
+					<button type="button" class="wp-mcp-ai-chat__translate" aria-label="<?php echo esc_attr__( 'Translate audio', 'mcp-ai-wpoos' ); ?>"<?php echo $can_upload_attachments ? '' : ' disabled hidden'; ?>>
+						<svg class="wp-mcp-ai-chat__translate-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04M18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12m-2.62 7l1.62-4.33L19.12 17h-3.24z"></path>
+						</svg>
+						<span class="screen-reader-text"><?php esc_html_e( 'Translate audio', 'mcp-ai-wpoos' ); ?></span>
+					</button>
 					<button type="button" class="wp-mcp-ai-chat__voice-chat" aria-label="<?php echo esc_attr__( 'Voice chat', 'mcp-ai-wpoos' ); ?>"<?php echo esc_attr( $can_upload_attachments ? '' : ' disabled hidden' ); ?>>
 						<svg class="wp-mcp-ai-chat__voice-chat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>

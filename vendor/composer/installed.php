@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-transcription-button-issue',
+        'version' => 'dev-copilot/fix-transcription-button-issue',
+        'reference' => 'e11c77ed3edc66c6a704b06ce985c00d6c5c83d0',
         'pretty_version' => 'dev-copilot/fix-tools-execution-issue',
         'version' => 'dev-copilot/fix-tools-execution-issue',
         'reference' => 'c85bc3d883dd6471ef052b6af96c59be3d7f66ab',
@@ -44,6 +47,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-transcription-button-issue',
+            'version' => 'dev-copilot/fix-transcription-button-issue',
+            'reference' => 'e11c77ed3edc66c6a704b06ce985c00d6c5c83d0',
             'pretty_version' => 'dev-copilot/fix-chat-client-cloudflare-issue',
             'version' => 'dev-copilot/fix-chat-client-cloudflare-issue',
             'reference' => '22cbd2ef3873cdbc8b6fdce8eeb6214dd4beed45',
@@ -51,15 +57,6 @@
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
             'dev_requirement' => false,
-        ),
-        'myclabs/deep-copy' => array(
-            'pretty_version' => '1.13.4',
-            'version' => '1.13.4.0',
-            'reference' => '07d290f0c47959fd5eed98c95ee5602db07e0b6a',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../myclabs/deep-copy',
-            'aliases' => array(),
-            'dev_requirement' => true,
         ),
         'nyholm/psr7' => array(
             'pretty_version' => '1.8.2',
@@ -69,24 +66,6 @@
             'install_path' => __DIR__ . '/../nyholm/psr7',
             'aliases' => array(),
             'dev_requirement' => false,
-        ),
-        'phar-io/manifest' => array(
-            'pretty_version' => '2.0.4',
-            'version' => '2.0.4.0',
-            'reference' => '54750ef60c58e43759730615a392c31c80e23176',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../phar-io/manifest',
-            'aliases' => array(),
-            'dev_requirement' => true,
-        ),
-        'phar-io/version' => array(
-            'pretty_version' => '3.2.1',
-            'version' => '3.2.1.0',
-            'reference' => '4f7fd7836c6f332bb2933569e566a0d6c4cbed74',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../phar-io/version',
-            'aliases' => array(),
-            'dev_requirement' => true,
         ),
         'php-http/async-client-implementation' => array(
             'dev_requirement' => false,
@@ -210,15 +189,6 @@
             'install_path' => __DIR__ . '/../rahul900day/tiktoken-php',
             'aliases' => array(),
             'dev_requirement' => false,
-        ),
-        'squizlabs/php_codesniffer' => array(
-            'pretty_version' => '3.13.5',
-            'version' => '3.13.5.0',
-            'reference' => '0ca86845ce43291e8f5692c7356fccf3bcf02bf4',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../squizlabs/php_codesniffer',
-            'aliases' => array(),
-            'dev_requirement' => true,
         ),
         'symfony/cache' => array(
             'pretty_version' => 'v6.4.30',

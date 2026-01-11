@@ -243,12 +243,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_transcribe_model'            => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Transcription Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for audio transcription and translation. gpt-4o-mini-transcribe is optimized for transcription tasks.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for audio transcription and translation. whisper-1 is the OpenAI Whisper model for speech-to-text.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gpt-4o-mini-transcribe' => 'gpt-4o-mini-transcribe (Recommended)',
-						'whisper-1'              => 'Whisper-1',
+						'whisper-1' => 'Whisper-1 (OpenAI Official)',
 					),
-					'default'     => 'gpt-4o-mini-transcribe',
+					'default'     => 'whisper-1',
 				),
 				'openai_transcribe_response_format'  => array(
 					'type'        => 'select',
@@ -275,13 +274,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_speech_model'                => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Text-to-Speech Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for text-to-speech (TTS) generation. gpt-4o-mini-tts is optimized for voice synthesis. tts-1 is the standard quality model, tts-1-hd provides higher quality audio.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for text-to-speech (TTS) generation. tts-1 is the standard quality model, tts-1-hd provides higher quality audio.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gpt-4o-mini-tts' => 'gpt-4o-mini-tts (Recommended)',
-						'tts-1'           => 'TTS-1 (Standard)',
-						'tts-1-hd'        => 'TTS-1-HD (High Quality)',
+						'tts-1'    => 'TTS-1 (Standard Quality)',
+						'tts-1-hd' => 'TTS-1-HD (High Quality)',
 					),
-					'default'     => 'gpt-4o-mini-tts',
+					'default'     => 'tts-1',
 				),
 				'openai_speech_voice'                => array(
 					'type'        => 'select',
@@ -309,6 +307,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'wav'  => 'WAV (Uncompressed)',
 					),
 					'default'     => 'mp3',
+				),
+				'enable_voice_activity_detection'    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Voice Activity Detection (VAD)', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable hands-free voice chat with auto-send on pause', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, voice chat automatically stops recording and sends your message after detecting a pause in your speech (700ms of silence). This provides a hands-free experience. You can still manually stop recording anytime.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'vad_silence_threshold'              => array(
+					'type'        => 'number',
+					'label'       => __( 'VAD Silence Threshold (milliseconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to wait after detecting silence before auto-stopping recording. Industry standard: 700ms. Lower values (500ms) are more responsive but may cut off pauses. Higher values (1000ms+) give more time for thinking.', 'mcp-ai-wpoos' ),
+					'default'     => '700',
+					'min'         => '300',
+					'max'         => '3000',
+					'step'        => '100',
+				),
+				'vad_min_speech_duration'            => array(
+					'type'        => 'number',
+					'label'       => __( 'VAD Minimum Speech Duration (milliseconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Minimum amount of speech required before VAD can auto-stop. Prevents false triggers from quick sounds. Recommended: 300ms.', 'mcp-ai-wpoos' ),
+					'default'     => '300',
+					'min'         => '100',
+					'max'         => '1000',
+					'step'        => '50',
+				),
+				'vad_audio_threshold'                => array(
+					'type'        => 'number',
+					'label'       => __( 'VAD Audio Level Threshold (dB)', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Audio level threshold for detecting speech vs silence. Default: -50dB. Lower values (e.g., -60dB) are more sensitive and detect quieter speech. Higher values (e.g., -40dB) require louder speech and ignore more background noise.', 'mcp-ai-wpoos' ),
+					'default'     => '-50',
+					'min'         => '-70',
+					'max'         => '-30',
+					'step'        => '5',
 				),
 				'enable_high_token_model_switch'     => array(
 					'type'           => 'checkbox',
@@ -456,6 +488,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '5',
 				),
 
+				// Gemini Audio Settings (Speech-to-Text & Text-to-Speech).
+				'gemini_audio_language'              => array(
+					'type'        => 'text',
+					'label'       => __( 'Gemini Audio Language Code', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default language code for Google Speech-to-Text and Text-to-Speech (e.g., "en-US", "es-ES", "fr-FR"). Supports 125+ languages.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'en-US',
+					'default'     => 'en-US',
+				),
+				'gemini_speech_voice'                => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini Speech Voice', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default voice for Google Text-to-Speech. Neural2 voices provide improved quality. Choose based on desired gender and language.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'en-US-Neural2-A' => 'en-US-Neural2-A (Male)',
+						'en-US-Neural2-C' => 'en-US-Neural2-C (Female, Recommended)',
+						'en-US-Neural2-D' => 'en-US-Neural2-D (Male)',
+						'en-US-Neural2-E' => 'en-US-Neural2-E (Female)',
+						'en-US-Neural2-F' => 'en-US-Neural2-F (Female)',
+						'en-US-Neural2-G' => 'en-US-Neural2-G (Female)',
+						'en-US-Neural2-H' => 'en-US-Neural2-H (Female)',
+						'en-US-Neural2-I' => 'en-US-Neural2-I (Male)',
+						'en-US-Neural2-J' => 'en-US-Neural2-J (Male)',
+					),
+					'default'     => 'en-US-Neural2-C',
+				),
+
 				// Ollama Settings.
 				'enable_ollama'                      => array(
 					'type'           => 'checkbox',
@@ -564,6 +622,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Hugging Face Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The model identifier to use with Hugging Face. Examples: "meta-llama/Llama-3.3-70B-Instruct", "mistralai/Mistral-7B-Instruct-v0.3", "microsoft/Phi-3-mini-4k-instruct". Must be a chat/instruction model with a chat_template defined.', 'mcp-ai-wpoos' ),
 					'placeholder' => 'meta-llama/Llama-3.3-70B-Instruct',
+				),
+
+				// Hugging Face Audio Settings (Speech-to-Text).
+				'huggingface_audio_model'            => array(
+					'type'        => 'text',
+					'label'       => __( 'Hugging Face Audio Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Model identifier for audio transcription. Default is "openai/whisper-large-v3" which provides high-quality multilingual transcription via Hugging Face Inference API.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'openai/whisper-large-v3',
+					'default'     => 'openai/whisper-large-v3',
 				),
 
 				// Hugging Face Dataset Viewer Settings.
@@ -693,6 +760,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'step'        => 0.5,
 				),
 
+				// Cloudflare Audio Settings (Speech-to-Text).
+				'cloudflare_audio_model'             => array(
+					'type'        => 'select',
+					'label'       => __( 'Cloudflare STT Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Speech-to-Text model for audio transcription. Whisper provides standard transcription. Deepgram Flux offers advanced features with turn detection for conversational AI.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'@cf/openai/whisper'   => __( 'Whisper (Standard - OpenAI Whisper)', 'mcp-ai-wpoos' ),
+						'@cf/deepgram/flux'    => __( 'Deepgram Flux (Advanced - Turn Detection)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => '@cf/openai/whisper',
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -737,7 +816,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'gemini_audio_language', 'gemini_speech_voice' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',
@@ -755,7 +834,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'huggingface',
 					'label'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'enable_huggingface', 'huggingface_api_key', 'huggingface_endpoint_url', 'huggingface_model' ),
+					'fields' => array( 'enable_huggingface', 'huggingface_api_key', 'huggingface_endpoint_url', 'huggingface_model', 'huggingface_audio_model' ),
 				),
 				'huggingface_datasets' => array(
 					'id'     => 'huggingface_datasets',
@@ -767,7 +846,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model', 'cloudflare_image_model', 'cloudflare_image_width', 'cloudflare_image_height', 'cloudflare_image_num_steps', 'cloudflare_image_guidance' ),
+					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model', 'cloudflare_image_model', 'cloudflare_image_width', 'cloudflare_image_height', 'cloudflare_image_num_steps', 'cloudflare_image_guidance', 'cloudflare_audio_model' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
