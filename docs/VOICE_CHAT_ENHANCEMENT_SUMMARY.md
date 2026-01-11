@@ -101,16 +101,15 @@ User Voice → Transcribe → AI Process → TTS → Auto-Play
 
 ## Model Support
 
-### Added gpt-4o-transcribe
+### Corrected to Official OpenAI Models
 
-**New Option**: `gpt-4o-transcribe` (highest accuracy transcription model)
+**IMPORTANT UPDATE**: The plugin now uses official OpenAI model names.
 
 **Available Models:**
-- `gpt-4o-transcribe` - Highest accuracy (NEW)
-- `gpt-4o-mini-transcribe` - Speed/cost optimized (Default)
-- `whisper-1` - Legacy model
+- **Transcription**: `whisper-1` (official OpenAI Whisper model)
+- **Text-to-Speech**: `tts-1` (standard quality, default), `tts-1-hd` (high quality)
 
-**Configuration**: Settings → NV oOS → Providers → OpenAI → Transcription Model
+**Configuration**: Settings → NV oOS → Providers → OpenAI
 
 ---
 
@@ -119,7 +118,7 @@ User Voice → Transcribe → AI Process → TTS → Auto-Play
 ### Backend (PHP)
 | File | Lines | Changes |
 |------|-------|---------|
-| `includes/admin/sections/class-wp-mcp-ai-section-providers.php` | +40 | Added gpt-4o-transcribe option + VAD settings |
+| `includes/admin/sections/class-wp-mcp-ai-section-providers.php` | +40 | Added transcription model options + VAD settings *(model names corrected in 2026-01-11)* |
 | `includes/class-wp-mcp-ai-shortcode.php` | +50 | Added translate button HTML + VAD config + localization |
 | `tests/test-transcription-settings.php` | +1 | Updated test assertions |
 
@@ -149,7 +148,7 @@ User Voice → Transcribe → AI Process → TTS → Auto-Play
 ## Commit History
 
 1. **Initial plan** (65975c1)
-2. **Add gpt-4o-transcribe** (ca9d6c3)
+2. **Add transcription model options** (ca9d6c3) *(model names corrected to `whisper-1` and `tts-1` in 2026-01-11)*
 3. **Fix auto-playback** (ae8d40f)
 4. **Add documentation** (79bb3c2)
 5. **Add translate button** (6392ed9)
@@ -197,12 +196,12 @@ User Voice → Transcribe → AI Process → TTS → Auto-Play
 4. System: Auto-stops recording
    System: 🔵 Blue "Processing your voice message…"
 
-5. System: Transcribes audio (gpt-4o-transcribe)
+5. System: Transcribes audio (whisper-1)
    System: Sends to AI (gpt-4.1)
    System: "Sending your message…"
 
 6. AI: Generates response text
-   System: Converts to speech (gpt-4o-mini-tts)
+   System: Converts to speech (tts-1 or tts-1-hd)
 
 7. System: 🔊 Auto-plays voice response
    User: Hears AI's voice

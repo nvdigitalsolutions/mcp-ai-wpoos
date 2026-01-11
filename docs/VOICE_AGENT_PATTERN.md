@@ -15,7 +15,7 @@ This plugin implements the OpenAI Voice Agent pattern, providing seamless voice-
 User Voice Input
       ↓
 [Step 1: Speech-to-Text]
-gpt-4o-transcribe OR gpt-4o-mini-transcribe
+whisper-1 (OpenAI Whisper)
       ↓
 Transcribed Text
       ↓
@@ -25,7 +25,7 @@ gpt-4.1, gpt-4o, gpt-4o-mini (configurable)
 AI Response Text
       ↓
 [Step 3: Text-to-Speech]
-gpt-4o-mini-tts, tts-1, tts-1-hd
+tts-1 (standard) or tts-1-hd (high quality)
       ↓
 Audio Response → Auto-play
 ```
@@ -84,9 +84,7 @@ Audio Response → Auto-play
 
 **Transcription Settings**:
 - Model: `openai_transcribe_model`
-  - `gpt-4o-transcribe` - Highest accuracy
-  - `gpt-4o-mini-transcribe` - Speed/cost optimized (default)
-  - `whisper-1` - Legacy model
+  - `whisper-1` - OpenAI Whisper model (official)
 - Response Format: `openai_transcribe_response_format`
 - Language: `openai_transcribe_language` (optional)
 - Temperature: `openai_transcribe_temperature` (optional)
@@ -97,8 +95,7 @@ Audio Response → Auto-play
 
 **TTS Settings**:
 - Model: `openai_speech_model`
-  - `gpt-4o-mini-tts` - Optimized synthesis (default)
-  - `tts-1` - Standard quality
+  - `tts-1` - Standard quality (default)
   - `tts-1-hd` - High quality audio
 - Voice: `openai_speech_voice` (alloy, echo, fable, onyx, nova, shimmer)
 - Format: `openai_speech_format` (mp3, aac, flac, opus, pcm, wav)
@@ -299,8 +296,8 @@ navigator.mediaDevices.getUserMedia({ audio: true })
 
 ## Changelog
 
-### 2026-01-11: Voice Agent Pattern Implementation
-- Added `gpt-4o-transcribe` model option for higher accuracy
+### 2026-01-11: Voice Agent Pattern Implementation & Model Corrections
+- **CORRECTED**: Updated to use official OpenAI model names (`tts-1`, `whisper-1`)
 - Fixed auto-playback by setting `voiceChatModeActive` flag
 - Improved form submission and status messages
 - Rebuilt JavaScript bundles with fixes
