@@ -1119,6 +1119,48 @@
     fill: currentColor;
 }
 
+.wp-mcp-ai-chat__translate {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    border: 1px solid var(--wp-mcp-ai-color-attach-border, #c3c4c7);
+    background: #fff;
+    color: var(--wp-mcp-ai-color-attach-text, #1d2327);
+    padding: 0;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+.wp-mcp-ai-chat__translate:hover,
+.wp-mcp-ai-chat__translate:focus {
+    background: var(--wp-mcp-ai-color-attach-hover-background, #f0f0f0);
+    color: var(--wp-mcp-ai-color-attach-text, #1d2327);
+    border-color: var(--wp-mcp-ai-color-attach-hover-border, #a7aaad);
+}
+
+.wp-mcp-ai-chat__translate:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background: #f6f7f7;
+}
+
+.wp-mcp-ai-chat__translate--recording,
+.wp-mcp-ai-chat__translate--recording:hover,
+.wp-mcp-ai-chat__translate--recording:focus {
+    background: #d63638;
+    border-color: #8a1f1f;
+    color: #fff;
+}
+
+.wp-mcp-ai-chat__translate-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: currentColor;
+}
+
 .wp-mcp-ai-chat__voice-chat {
     display: inline-flex;
     align-items: center;
@@ -2338,12 +2380,14 @@
 
 /* Reduce voice chat and transcribe button sizes */
 .wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__voice-chat,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__translate,
 .wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__transcribe {
     width: 32px;
     height: 32px;
 }
 
 .wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__voice-chat-icon,
+.wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__translate-icon,
 .wp-mcp-ai-chat--template-compact .wp-mcp-ai-chat__transcribe-icon {
     width: 16px;
     height: 16px;
@@ -2661,6 +2705,7 @@
     
     /* Voice and transcribe buttons */
     .wp-mcp-ai-chat__voice-chat,
+    .wp-mcp-ai-chat__translate,
     .wp-mcp-ai-chat__transcribe {
         width: 44px;
         height: 44px;
@@ -2749,6 +2794,7 @@
     .wp-mcp-ai-chat__export,
     .wp-mcp-ai-chat__save,
     .wp-mcp-ai-chat__voice-chat,
+    .wp-mcp-ai-chat__translate,
     .wp-mcp-ai-chat__transcribe {
         min-width: 44px;
         min-height: 44px;
