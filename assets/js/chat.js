@@ -2920,6 +2920,41 @@
         }
     }
 
+    function updateTranslateButtonState(state) {
+        if (audioService && audioService.updateTranslateButtonState) {
+            return audioService.updateTranslateButtonState(state);
+        }
+
+        // Fallback implementation
+        if (!state) {
+            return;
+        }
+
+        const button = state.translateButton;
+        const input = state.translateInput;
+
+        const canUse = !!state.canUploadAttachments;
+        let disabled = !canUse || state.busy || state.uploading > 0 || state.translating;
+
+        if (state.isTranslateRecording) {
+            disabled = false;
+        }
+
+        if (button) {
+            button.disabled = disabled;
+
+            if (!canUse) {
+                button.hidden = true;
+            } else {
+                button.hidden = false;
+            }
+        }
+
+        if (input) {
+            input.disabled = !canUse || state.busy || state.uploading > 0 || state.translating || state.isTranslateRecording;
+        }
+    }
+
     function handleTranscribeButtonClick(state) {
         if (transcriptionService && transcriptionService.handleTranscribeButtonClick) {
             const helpers = {
@@ -3355,7 +3390,7 @@
             });
     }
 
-    function requestTranscription(state, record) {
+    function requestTranscription(state, record, translate) {
         if (!state || !record || typeof record.id === 'undefined') {
             return Promise.reject(new Error('Missing attachment id'));
         }
@@ -3378,11 +3413,17 @@
             },
         };
 
+        // Add translate parameter if provided
+        if (typeof translate !== 'undefined') {
+            payload.arguments.translate = !!translate;
+        }
+
         if (window.console && console.log) {
             console.log('Voice chat: Requesting transcription', {
                 endpoint: state.config.toolsEndpoint,
                 attachmentId: record.id,
-                tool: TRANSCRIBE_TOOL_NAME
+                tool: TRANSCRIBE_TOOL_NAME,
+                translate: translate
             });
         }
 
@@ -3567,6 +3608,43 @@
         parts.push(String(secs).padStart(2, '0'));
 
         return parts.join(':');
+    }
+
+    /**
+     * Translation Functions
+     */
+    function handleTranslateButtonClick(state) {
+        if (audioService && audioService.handleTranslateButtonClick) {
+            const helpers = {
+                getString: getString,
+                setStatus: setStatus,
+                uploadAudioForTranscription: uploadAudioForTranscription,
+                requestTranscription: requestTranscription,
+            };
+            return audioService.handleTranslateButtonClick(state, helpers);
+        }
+
+        // Fallback: Translation not available
+        if (window.console && console.warn) {
+            console.warn('Translation service not available');
+        }
+    }
+
+    function handleTranslateFileSelection(event, state) {
+        if (audioService && audioService.handleTranslateFileSelection) {
+            const helpers = {
+                getString: getString,
+                setStatus: setStatus,
+                uploadAudioForTranscription: uploadAudioForTranscription,
+                requestTranscription: requestTranscription,
+            };
+            return audioService.handleTranslateFileSelection(event, state, helpers);
+        }
+
+        // Fallback: Translation not available
+        if (window.console && console.warn) {
+            console.warn('Translation service not available');
+        }
     }
 
     /**
@@ -10040,6 +10118,8 @@
             const fileInput = container.querySelector('.wp-mcp-ai-chat__file-input');
             const transcribeButton = container.querySelector('.wp-mcp-ai-chat__transcribe');
             const transcribeInput = container.querySelector('.wp-mcp-ai-chat__transcribe-input');
+            const translateButton = container.querySelector('.wp-mcp-ai-chat__translate');
+            const translateInput = container.querySelector('.wp-mcp-ai-chat__translate-input');
             const voiceChatButton = container.querySelector('.wp-mcp-ai-chat__voice-chat');
             const toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
             const toolShortcutsWrapper = container.querySelector('.wp-mcp-ai-chat__tool-shortcuts-wrapper');
@@ -10134,6 +10214,8 @@
                 fileInput: fileInput,
                 transcribeButton: transcribeButton,
                 transcribeInput: transcribeInput,
+                translateButton: translateButton,
+                translateInput: translateInput,
                 voiceChatButton: voiceChatButton,
                 toolShortcutsContainer: toolShortcutsContainer,
                 toolShortcutsWrapper: toolShortcutsWrapper,
@@ -10380,6 +10462,20 @@
                 });
             }
 
+            if (state.canUploadAttachments && translateButton) {
+                translateButton.hidden = false;
+                translateButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    handleTranslateButtonClick(state);
+                });
+            }
+
+            if (state.canUploadAttachments && translateInput) {
+                translateInput.addEventListener('change', function (event) {
+                    handleTranslateFileSelection(event, state);
+                });
+            }
+
             if (state.canUploadAttachments && voiceChatButton) {
                 voiceChatButton.hidden = false;
                 voiceChatButton.addEventListener('click', function (event) {
@@ -10390,6 +10486,7 @@
 
             updateAttachButtonState(state);
             updateTranscribeButtonState(state);
+            updateTranslateButtonState(state);
             updateVoiceChatButtonState(state);
 
             // Initialize keyboard shortcuts
