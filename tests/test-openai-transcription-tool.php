@@ -607,6 +607,77 @@ class WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Timestamp granularities array parameter should be JSON-encoded in multipart body.
+	 */
+	public function test_execute_handles_timestamp_granularities_array() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$attachment_id = $this->create_audio_attachment( $user_id );
+
+		$tool             = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
+		$captured_request = null;
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			$payload = array(
+				'text'     => 'Transcription with timestamps',
+				'language' => 'en',
+				'duration' => 2.5,
+				'words'    => array(
+					array(
+						'word'  => 'Hello',
+						'start' => 0.0,
+						'end'   => 0.5,
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'attachment_id'           => $attachment_id,
+				'translate'               => false,
+				'timestamp_granularities' => array( 'word', 'segment' ),
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request );
+		$this->assertSame( WP_MCP_AI_OpenAI_Client::AUDIO_TRANSCRIPTIONS_ENDPOINT, $captured_request['url'] );
+
+		// Verify the request body contains JSON-encoded array, not the string "Array".
+		$body = $captured_request['args']['body'];
+		$this->assertIsString( $body );
+		$this->assertStringContainsString( '["word","segment"]', $body );
+		$this->assertStringNotContainsString( 'name="timestamp_granularities"' . "\r\n\r\n" . 'Array', $body );
+
+		$this->assertIsArray( $result );
+		$this->assertSame( $attachment_id, $result['attachment_id'] );
+		$this->assertSame( 'Transcription with timestamps', $result['text'] );
+
+		wp_delete_attachment( $attachment_id, true );
+	}
+
+	/**
 	 * Helper to create a dummy audio attachment for testing.
 	 *
 	 * @param int $author_id Optional author identifier.

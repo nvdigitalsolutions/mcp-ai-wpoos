@@ -3812,14 +3812,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_openai_speech_model_field() {
 			$settings = self::get_settings();
-			$current  = isset( $settings['openai_speech_model'] ) ? sanitize_text_field( $settings['openai_speech_model'] ) : 'gpt-4o-mini-tts';
+			$current  = isset( $settings['openai_speech_model'] ) ? sanitize_text_field( $settings['openai_speech_model'] ) : 'tts-1';
 			?>
 		<input
 			type="text"
 			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_speech_model]"
 			value="<?php echo esc_attr( $current ); ?>"
 			class="regular-text"
-			placeholder="gpt-4o-mini-tts"
+			placeholder="tts-1"
 		/>
 		<p class="description"><?php esc_html_e( 'Default text-to-speech model used by the Generate OpenAI Speech tool.', 'mcp-ai-wpoos' ); ?></p>
 			<?php

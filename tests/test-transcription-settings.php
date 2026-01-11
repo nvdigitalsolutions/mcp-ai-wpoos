@@ -50,6 +50,7 @@ class WP_MCP_AI_Transcription_Settings_Test extends WP_UnitTestCase {
 		$this->assertSame( 'text', $fields['openai_transcribe_temperature']['type'] );
 
 		// Verify model options.
+		$this->assertArrayHasKey( 'gpt-4o-transcribe', $fields['openai_transcribe_model']['options'] );
 		$this->assertArrayHasKey( 'gpt-4o-mini-transcribe', $fields['openai_transcribe_model']['options'] );
 		$this->assertArrayHasKey( 'whisper-1', $fields['openai_transcribe_model']['options'] );
 

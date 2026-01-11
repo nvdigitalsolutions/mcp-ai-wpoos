@@ -429,9 +429,10 @@
 						throw new Error('Upload failed');
 					}
 
-					if (state.attachmentLibrary && record.fileId) {
-						state.attachmentLibrary[record.fileId] = record;
-					}
+					// NOTE: Do NOT add transcription audio to attachmentLibrary.
+					// Transcription audio files are temporary recordings used only for transcription,
+					// not attachments that should persist in the conversation. Adding them to the
+					// library causes file reuse issues where old recordings are incorrectly used.
 
 					return helpers.requestTranscription(state, record);
 				})
@@ -691,9 +692,9 @@
 			}
 
 			const metaParts = [];
-			if (record && record.name) {
-				metaParts.push(record.name);
-			}
+			// Note: We intentionally do NOT add record.name (filename) to metaParts
+			// because it's shown in the status message and would be redundant in the textarea.
+			// Users want just the transcription text, not the temporary audio filename.
 
 			if (payload.language) {
 				metaParts.push('Language: ' + payload.language);
