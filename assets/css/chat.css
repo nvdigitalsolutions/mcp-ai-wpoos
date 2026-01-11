@@ -1216,6 +1216,31 @@
     color: #fff;
 }
 
+.wp-mcp-ai-chat__voice-chat--listening {
+    background: linear-gradient(120deg, #10b981, #059669);
+    border-color: #047857;
+    color: #fff;
+    animation: wp-mcp-ai-voice-listening 1s ease-in-out infinite;
+}
+
+.wp-mcp-ai-chat__voice-chat--listening:hover,
+.wp-mcp-ai-chat__voice-chat--listening:focus {
+    background: linear-gradient(120deg, #059669, #047857);
+    border-color: #065f46;
+    color: #fff;
+}
+
+@keyframes wp-mcp-ai-voice-listening {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+}
+
 .wp-mcp-ai-chat__voice-chat-icon {
     width: 1.25rem;
     height: 1.25rem;

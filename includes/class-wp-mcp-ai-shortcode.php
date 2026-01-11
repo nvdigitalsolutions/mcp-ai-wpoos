@@ -244,6 +244,8 @@ class WP_MCP_AI_Shortcode {
 					'voiceChatNoData'               => __( 'No audio was recorded.', 'mcp-ai-wpoos' ),
 					'voiceChatFileTooLarge'         => __( 'The recorded audio is too large. Please try a shorter message.', 'mcp-ai-wpoos' ),
 					'voiceChatPermissionDenied'     => __( 'Microphone access was denied.', 'mcp-ai-wpoos' ),
+					'voiceChatRecording'            => __( 'Recording… speak now or tap to stop and send. (Hands-free: pauses auto-send)', 'mcp-ai-wpoos' ),
+					'voiceChatSending'              => __( 'Sending your message…', 'mcp-ai-wpoos' ),
 					'attachmentsLabel'              => __( 'Attachments', 'mcp-ai-wpoos' ),
 					'removeAttachment'              => __( 'Remove', 'mcp-ai-wpoos' ),
 					/* translators: %s: file name being uploaded */

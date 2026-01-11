@@ -31,6 +31,13 @@
 	// Voice chat constants
 	const VOICE_CHAT_RECORDING_CLASS = 'wp-mcp-ai-chat__voice-chat--recording';
 	const VOICE_CHAT_PROCESSING_CLASS = 'wp-mcp-ai-chat__voice-chat--processing';
+	const VOICE_CHAT_LISTENING_CLASS = 'wp-mcp-ai-chat__voice-chat--listening';
+
+	// VAD (Voice Activity Detection) constants
+	const VAD_SILENCE_THRESHOLD_MS = 700;        // Industry standard: 700ms of silence triggers auto-stop
+	const VAD_MIN_SPEECH_DURATION_MS = 300;      // Minimum 300ms of speech before allowing auto-stop
+	const VAD_AUDIO_LEVEL_THRESHOLD = -50;       // dB threshold for considering audio as "speech"
+	const VAD_CHECK_INTERVAL_MS = 100;           // Check audio levels every 100ms
 
 	// Object URL registry for cleanup
 	let objectUrlRegistry = [];
@@ -1462,6 +1469,171 @@
 	}
 
 	// ========================================
+	// Voice Activity Detection (VAD) Functions
+	// ========================================
+
+	/**
+	 * Initialize VAD monitoring for voice chat recording.
+	 * Uses Web Audio API to analyze audio levels in real-time.
+	 * 
+	 * @param {Object} state - Chat state object
+	 * @param {MediaStream} stream - Audio stream from getUserMedia
+	 * @param {Object} helpers - Helper functions
+	 */
+	function initVoiceActivityDetection(state, stream, helpers) {
+		if (!state || !stream) {
+			return;
+		}
+
+		try {
+			// Create Web Audio API context
+			const AudioContext = window.AudioContext || window.webkitAudioContext;
+			if (!AudioContext) {
+				// VAD not supported, fall back to manual mode
+				return;
+			}
+
+			state.vadAudioContext = new AudioContext();
+			state.vadAnalyser = state.vadAudioContext.createAnalyser();
+			state.vadAnalyser.fftSize = 2048;
+			state.vadAnalyser.smoothingTimeConstant = 0.8;
+
+			const source = state.vadAudioContext.createMediaStreamSource(stream);
+			source.connect(state.vadAnalyser);
+
+			// Initialize VAD state
+			state.vadSilenceStart = null;
+			state.vadSpeechStart = Date.now();
+			state.vadLastSpeechTime = Date.now();
+			state.vadEnabled = true;
+
+			// Start monitoring audio levels
+			state.vadMonitorInterval = setInterval(function() {
+				checkVoiceActivity(state, helpers);
+			}, VAD_CHECK_INTERVAL_MS);
+
+			if (window.console && console.log) {
+				console.log('VAD: Voice Activity Detection initialized');
+			}
+		} catch (error) {
+			if (window.console && console.warn) {
+				console.warn('VAD: Could not initialize Voice Activity Detection', error);
+			}
+			// Continue without VAD
+		}
+	}
+
+	/**
+	 * Check voice activity and trigger auto-stop on silence.
+	 * 
+	 * @param {Object} state - Chat state object
+	 * @param {Object} helpers - Helper functions
+	 */
+	function checkVoiceActivity(state, helpers) {
+		if (!state || !state.vadEnabled || !state.vadAnalyser || !state.isVoiceChatRecording) {
+			return;
+		}
+
+		try {
+			// Get audio level
+			const bufferLength = state.vadAnalyser.frequencyBinCount;
+			const dataArray = new Uint8Array(bufferLength);
+			state.vadAnalyser.getByteFrequencyData(dataArray);
+
+			// Calculate average audio level
+			let sum = 0;
+			for (let i = 0; i < bufferLength; i++) {
+				sum += dataArray[i];
+			}
+			const average = sum / bufferLength;
+
+			// Convert to dB scale (0-255 range to dB)
+			const dB = 20 * Math.log10(average / 255);
+
+			const now = Date.now();
+			const speechDuration = now - state.vadSpeechStart;
+			const isSpeech = dB > VAD_AUDIO_LEVEL_THRESHOLD;
+
+			if (isSpeech) {
+				// Speech detected
+				state.vadLastSpeechTime = now;
+				state.vadSilenceStart = null;
+
+				// Update UI to show "listening" state
+				if (state.voiceChatButton && state.voiceChatButton.classList) {
+					state.voiceChatButton.classList.add(VOICE_CHAT_LISTENING_CLASS);
+				}
+			} else {
+				// Silence detected
+				if (state.vadSilenceStart === null) {
+					state.vadSilenceStart = now;
+				}
+
+				const silenceDuration = now - state.vadSilenceStart;
+
+				// Remove "listening" class during silence
+				if (state.voiceChatButton && state.voiceChatButton.classList) {
+					state.voiceChatButton.classList.remove(VOICE_CHAT_LISTENING_CLASS);
+				}
+
+				// Check if we should auto-stop
+				if (speechDuration >= VAD_MIN_SPEECH_DURATION_MS && 
+					silenceDuration >= VAD_SILENCE_THRESHOLD_MS) {
+					
+					if (window.console && console.log) {
+						console.log('VAD: Auto-stopping after ' + silenceDuration + 'ms of silence');
+					}
+
+					// Auto-stop recording
+					stopVoiceActivityDetection(state);
+					stopVoiceChatRecording(state, helpers);
+				}
+			}
+		} catch (error) {
+			if (window.console && console.error) {
+				console.error('VAD: Error checking voice activity', error);
+			}
+		}
+	}
+
+	/**
+	 * Stop VAD monitoring and clean up resources.
+	 * 
+	 * @param {Object} state - Chat state object
+	 */
+	function stopVoiceActivityDetection(state) {
+		if (!state) {
+			return;
+		}
+
+		state.vadEnabled = false;
+
+		if (state.vadMonitorInterval) {
+			clearInterval(state.vadMonitorInterval);
+			state.vadMonitorInterval = null;
+		}
+
+		if (state.vadAudioContext) {
+			try {
+				state.vadAudioContext.close();
+			} catch (error) {
+				// Ignore close errors
+			}
+			state.vadAudioContext = null;
+		}
+
+		state.vadAnalyser = null;
+		state.vadSilenceStart = null;
+		state.vadSpeechStart = null;
+		state.vadLastSpeechTime = null;
+
+		// Remove listening class
+		if (state.voiceChatButton && state.voiceChatButton.classList) {
+			state.voiceChatButton.classList.remove(VOICE_CHAT_LISTENING_CLASS);
+		}
+	}
+
+	// ========================================
 	// Voice Chat Functions
 	// ========================================
 
@@ -1562,6 +1734,9 @@
 				state.voiceChatShouldProcess = true;
 				setVoiceChatRecordingState(state, true, helpers);
 				updateVoiceChatButtonState(state);
+
+				// Initialize Voice Activity Detection for hands-free auto-stop
+				initVoiceActivityDetection(state, stream, helpers);
 			})
 			.catch(function (error) {
 				if (helpers && helpers.setStatus && helpers.getString) {
@@ -1584,6 +1759,9 @@
 		if (!state) {
 			return;
 		}
+
+		// Stop VAD monitoring
+		stopVoiceActivityDetection(state);
 
 		setVoiceChatRecordingState(state, false, helpers);
 
