@@ -12585,6 +12585,17 @@
         }
 
         const assistantMessage = { role: 'assistant' };
+        
+        // Log message content for debugging
+        if (window.console && console.log) {
+            console.log('[NV oOS] handleChatResponse: Processing message:', {
+                hasMessage: !!message,
+                messageContent: message && message.content,
+                messageContentType: message && typeof message.content,
+                messageContentLength: message && message.content && typeof message.content === 'string' ? message.content.length : 0
+            });
+        }
+        
         const assistantDisplay = prepareAssistantDisplay(message, state);
         let hasDisplayText = typeof assistantDisplay.text === 'string' && assistantDisplay.text.trim() !== '';
         const hasDisplayAttachments = assistantDisplay.attachments.length > 0;
