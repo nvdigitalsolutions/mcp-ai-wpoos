@@ -6,6 +6,14 @@
  * supported AI providers. It combines web search with iterative AI analysis to produce
  * comprehensive research reports.
  *
+ * Recommended Models for Deep Research (December 2025):
+ * - OpenAI: gpt-4o (multimodal, fast, cost-effective) or gpt-4.5/o3 (advanced reasoning)
+ * - Gemini: gemini-3-pro (flagship, 1M token context, agentic capabilities)
+ * - Anthropic: claude-opus-4.5 (highest intelligence, 200K context, persistent memory)
+ * - Cloudflare: @cf/meta/llama-4-scout-17b-instruct or @cf/deepseek/deepseek-v3.2-thinking
+ * - HuggingFace: meta-llama/Llama-3.3-70B-Instruct or deepseek-ai/DeepSeek-V3.2
+ * - Ollama: llama3.3 or deepseek-r1 (privacy-focused local research)
+ *
  * @package WP_MCP_AI
  */
 
@@ -495,6 +503,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Fall back to trying providers in order of preference: OpenAI > Gemini > Anthropic > Cloudflare > HuggingFace > Ollama.
 		if ( ! empty( $settings['openai_api_key'] ) && class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$client = new WP_MCP_AI_OpenAI_Client();
+			// Prefer gpt-4o for research (multimodal, fast, cost-effective) or fall back to configured default.
 			$model  = ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4o';
 			return array(
 				'client'   => $client,
@@ -505,7 +514,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! empty( $settings['gemini_api_key'] ) && class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$client = new WP_MCP_AI_Gemini_Client();
-			$model  = ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';
+			// Prefer gemini-3-pro for deep research (1M context, agentic capabilities) or fall back to configured default.
+			$model  = ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3-pro';
 			return array(
 				'client'   => $client,
 				'provider' => 'gemini',
@@ -515,7 +525,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! empty( $settings['anthropic_api_key'] ) && class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			$client = new WP_MCP_AI_Anthropic_Client();
-			$model  = 'claude-sonnet-4.5';
+			// Prefer claude-opus-4.5 for comprehensive research (highest intelligence, 200K context, persistent memory).
+			$model  = 'claude-opus-4.5';
 			return array(
 				'client'   => $client,
 				'provider' => 'anthropic',
@@ -525,31 +536,34 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) && class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			$client = new WP_MCP_AI_Cloudflare_Client();
-			$model  = ! empty( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : '@cf/meta/llama-3.1-8b-instruct';
+			// Prefer Llama 4 or DeepSeek for research, fall back to configured default.
+			$default_model = ! empty( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : '@cf/meta/llama-4-scout-17b-instruct';
 			return array(
 				'client'   => $client,
 				'provider' => 'cloudflare',
-				'model'    => $model,
+				'model'    => $default_model,
 			);
 		}
 
 		if ( ! empty( $settings['huggingface_api_key'] ) && ! empty( $settings['huggingface_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			$client = new WP_MCP_AI_Huggingface_Client();
-			$model  = ! empty( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : 'meta-llama/Llama-3.2-3B-Instruct';
+			// Prefer Llama 3.3 70B or DeepSeek V3.2 for research, fall back to configured default.
+			$default_model = ! empty( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : 'meta-llama/Llama-3.3-70B-Instruct';
 			return array(
 				'client'   => $client,
 				'provider' => 'huggingface',
-				'model'    => $model,
+				'model'    => $default_model,
 			);
 		}
 
 		if ( ! empty( $settings['ollama_endpoint_url'] ) && class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			$client = new WP_MCP_AI_Ollama_Client();
-			$model  = ! empty( $settings['ollama_model'] ) ? $settings['ollama_model'] : 'llama3';
+			// Prefer llama3.3 or deepseek-r1 for local research, fall back to configured default.
+			$default_model = ! empty( $settings['ollama_model'] ) ? $settings['ollama_model'] : 'llama3.3';
 			return array(
 				'client'   => $client,
 				'provider' => 'ollama',
-				'model'    => $model,
+				'model'    => $default_model,
 			);
 		}
 
