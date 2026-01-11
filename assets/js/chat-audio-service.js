@@ -1305,17 +1305,32 @@
 					throw new Error('No text transcribed');
 				}
 
+				// Enable voice chat mode to auto-play the response
+				state.voiceChatModeActive = true;
+
 				const transcribedText = result.text.trim();
 				
 				if (state.textarea) {
 					state.textarea.value = transcribedText;
 				}
 
-				if (helpers && helpers.setStatus) {
-					helpers.setStatus(state.container, '');
+				if (helpers && helpers.setStatus && helpers.getString) {
+					helpers.setStatus(
+						state.container,
+						helpers.getString('voiceChatSending', 'Sending your message…')
+					);
 				}
 
-				if (helpers && helpers.sendMessage) {
+				// Trigger form submission
+				const form = state.container ? state.container.querySelector('.wp-mcp-ai-chat__form') : null;
+				if (form) {
+					const submitEvent = new Event('submit', {
+						bubbles: true,
+						cancelable: true,
+					});
+					form.dispatchEvent(submitEvent);
+				} else if (helpers && helpers.sendMessage) {
+					// Fallback to sendMessage helper if form not found
 					helpers.sendMessage(state);
 				}
 			})
