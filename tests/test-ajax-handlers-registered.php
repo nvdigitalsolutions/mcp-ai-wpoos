@@ -56,6 +56,9 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 		'wp_ajax_wp_mcp_ai_get_performance_metrics',
 		'wp_ajax_wp_mcp_ai_export_test_results',
 		'wp_ajax_wp_mcp_ai_dismiss_price_notice',
+		'wp_ajax_wp_mcp_ai_discover_models',
+		'wp_ajax_wp_mcp_ai_research_model',
+		'wp_ajax_wp_mcp_ai_add_model_config',
 	);
 
 	/**
@@ -238,6 +241,24 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 			$this->assertTrue(
 				has_action( $action ) !== false,
 				"Chart action '{$action}' should be registered"
+			);
+		}
+	}
+
+	/**
+	 * Test that Model Manager handlers are registered.
+	 */
+	public function test_model_manager_ajax_handlers() {
+		$model_manager_actions = array(
+			'wp_ajax_wp_mcp_ai_discover_models',
+			'wp_ajax_wp_mcp_ai_research_model',
+			'wp_ajax_wp_mcp_ai_add_model_config',
+		);
+
+		foreach ( $model_manager_actions as $action ) {
+			$this->assertTrue(
+				has_action( $action ) !== false,
+				"Model Manager action '{$action}' should be registered"
 			);
 		}
 	}

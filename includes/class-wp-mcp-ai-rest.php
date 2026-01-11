@@ -2287,6 +2287,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 
+			// Debug logging for assistant configuration loading.
+			WP_MCP_AI_Logger::log_event(
+				'rest_chat_assistant_config_loaded',
+				'Assistant configuration loaded in handle_chat_request',
+				array(
+					'assistant_id'                => $assistant_id,
+					'has_system_prompt'           => ! empty( $assistant_config['system_prompt'] ),
+					'system_prompt_length'        => ! empty( $assistant_config['system_prompt'] ) ? strlen( $assistant_config['system_prompt'] ) : 0,
+					'system_prompt_preview'       => ! empty( $assistant_config['system_prompt'] ) ? substr( $assistant_config['system_prompt'], 0, 200 ) : '',
+					'provider'                    => isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : '',
+					'model'                       => isset( $assistant_config['model'] ) ? $assistant_config['model'] : '',
+					'tools_count'                 => isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) ? count( $assistant_config['tools'] ) : 0,
+				)
+			);
+
 			// If testing a profession, merge profession configuration.
 			if ( $profession_id ) {
 				$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
@@ -5949,6 +5964,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( ! $tool ) {
 					WP_MCP_AI_Admin_Settings::log( 'Assistant references missing tool.', array( 'tool' => $slug ) );
 					continue;
+				}
+
+				// Filter tools by user capabilities.
+				// If the tool requires a specific capability, only include it if the current user has that capability.
+				if ( method_exists( $tool, 'get_required_capability' ) ) {
+					$required_capability = $tool->get_required_capability();
+					if ( ! empty( $required_capability ) && ! current_user_can( $required_capability ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'tool_filtered_by_capability',
+							sprintf( 'Tool "%s" filtered from payload - user lacks required capability: %s', $slug, $required_capability ),
+							array(
+								'tool_slug'           => $slug,
+								'required_capability' => $required_capability,
+								'user_id'             => get_current_user_id(),
+							)
+						);
+						continue;
+					}
 				}
 
 				try {

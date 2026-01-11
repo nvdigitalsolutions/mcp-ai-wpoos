@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Added
+- **Cloudflare Image Generation Models (January 11, 2026)**: Added support for new Cloudflare Workers AI image generation models (PR #2785)
+  - **Flux-2 Dev** (`@cf/black-forest-labs/flux-2-dev`) - Advanced image generation model
+  - **Leonardo AI Models**: Lucid Origin (`@cf/leonardo/lucid-origin`) and Phoenix 1.0 (`@cf/leonardo/phoenix-1.0`)
+  - All models support configurable dimensions (256-2048px), diffusion steps (1-20), and guidance parameters
+  - Compatible with existing `cloudflareai_text_to_image` tool
+  - Join Stable Diffusion XL Base/Lightning, Flux-1 Schnell, and Dreamshaper 8 LCM models
+  - See [Cloudflare Image Generation Tool](includes/tools/class-wp-mcp-ai-tool-generate-cloudflareai-image.php)
+
 - **ISO 27001/SOC 2/HIPAA Compliance - January 6, 2026**: Achieved 100% ISO 27001:2022 compliance (PR #2645, #2631, #2630)
   - ISO 27001: 100% (83 of 83 applicable controls) - up from 56%
   - SOC 2: 100% (54 of 54 Trust Services Criteria)
@@ -83,6 +91,12 @@
   - See [CODE_REVIEW_2026-01-02.md](docs/implementation-history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)
 
 ### Changed
+- **Root Directory Organization**: Cleaned up root directory by moving troubleshooting documentation files (January 10, 2026)
+  - Moved `CLOUDFLARE-SYSTEM-PROMPT-TEST.md` from root to `docs/troubleshooting/common/`
+  - Moved `MODEL-MANAGER-FIX-VERIFICATION.md` from root to `docs/troubleshooting/common/`
+  - Root directory now contains only 5 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, BUILD.md)
+  - Zero information loss during reorganization
+
 - **Root Directory Organization**: Cleaned up root directory by moving fix and implementation summary files (PR #XXXX)
   - Moved 6 remote connection fix files from root to `docs/fixes/`
   - Moved 2 vectorizer implementation summaries from root to `docs/implementation-summaries/`
