@@ -243,8 +243,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'openai_transcribe_model'            => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Transcription Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for audio transcription and translation. gpt-4o-mini-transcribe is optimized for transcription tasks.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for audio transcription and translation. gpt-4o-transcribe offers highest accuracy, gpt-4o-mini-transcribe is optimized for speed and cost.', 'mcp-ai-wpoos' ),
 					'options'     => array(
+						'gpt-4o-transcribe'      => 'gpt-4o-transcribe (Highest Accuracy)',
 						'gpt-4o-mini-transcribe' => 'gpt-4o-mini-transcribe (Recommended)',
 						'whisper-1'              => 'Whisper-1',
 					),
