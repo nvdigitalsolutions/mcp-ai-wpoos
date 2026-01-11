@@ -14184,6 +14184,11 @@
      * @param {Array|null} capabilityFlags - Array of capability flag strings
      */
     function attachCapabilityFlagBadges(messageElement, capabilityFlags) {
+        // Only show if setting is enabled
+        if (!globalConfig.showCapabilityFlags) {
+            return;
+        }
+
         // Only show if we have flags
         if (!capabilityFlags || !Array.isArray(capabilityFlags) || capabilityFlags.length === 0) {
             return;
