@@ -762,12 +762,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 				// Cloudflare Audio Settings (Speech-to-Text).
 				'cloudflare_audio_model'             => array(
-					'type'        => 'text',
-					'label'       => __( 'Cloudflare Audio Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Model identifier for audio transcription. Default is "@cf/openai/whisper" which provides Whisper-based transcription via Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
-					'placeholder' => '@cf/openai/whisper',
+					'type'        => 'select',
+					'label'       => __( 'Cloudflare STT Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Speech-to-Text model for audio transcription. Whisper provides standard transcription. Deepgram Flux offers advanced features with turn detection for conversational AI.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'@cf/openai/whisper'   => __( 'Whisper (Standard - OpenAI Whisper)', 'mcp-ai-wpoos' ),
+						'@cf/deepgram/flux'    => __( 'Deepgram Flux (Advanced - Turn Detection)', 'mcp-ai-wpoos' ),
+					),
 					'default'     => '@cf/openai/whisper',
-					'readonly'    => true,
 				),
 
 				// Google Maps Settings.

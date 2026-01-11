@@ -1,6 +1,15 @@
 <?php
 /**
- * Tool that converts text to speech using OpenAI's Text-to-Speech API.
+ * Tool that converts text to speech using AI TTS providers.
+ *
+ * Supports multiple providers:
+ * - OpenAI: tts-1, tts-1-hd models with 6 voices (alloy, echo, fable, onyx, nova, shimmer)
+ * - Google/Gemini: Neural2 voices with multiple languages and accents
+ * - Cloudflare Workers AI: Deepgram Aura-2 (high quality) and MeloTTS (multilingual)
+ * - Hugging Face: facebook/mms-tts-eng, microsoft/speecht5_tts, facebook/fastspeech2-en-ljspeech, and more
+ *
+ * The tool automatically uses the assistant's configured provider for TTS generation.
+ * For providers without native TTS support (Ollama), it falls back to OpenAI if configured.
  *
  * @package WP_MCP_AI
  */
@@ -15,7 +24,10 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
- * Provides a tool for generating speech audio via OpenAI.
+ * Provides a tool for generating speech audio via multiple AI providers.
+ *
+ * Note: Class name remains WP_MCP_AI_Tool_Generate_OpenAI_Speech for backward compatibility,
+ * but the tool now supports OpenAI, Google/Gemini, Cloudflare, and Hugging Face providers.
  */
 class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const DEFAULT_MODEL  = 'tts-1';
@@ -75,14 +87,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate OpenAI Speech', 'mcp-ai-wpoos' );
+		return __( 'Generate Speech', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Converts text to speech using OpenAI TTS and stores the audio in the Media Library. Works with any provider by using OpenAI for audio generation.', 'mcp-ai-wpoos' );
+		return __( 'Converts text to speech using AI TTS and stores the audio in the Media Library. Supports OpenAI (tts-1, tts-1-hd), Google/Gemini (Neural2 voices), Cloudflare Workers AI (Deepgram Aura-2, MeloTTS), and Hugging Face (facebook/mms-tts-eng, microsoft/speecht5_tts, etc.) providers.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -170,11 +182,12 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		$assistant_config = isset( $context['assistant_config'] ) ? $context['assistant_config'] : array();
 		$provider         = isset( $assistant_config['provider'] ) ? strtolower( $assistant_config['provider'] ) : 'openai';
 
-		// Speech generation requires OpenAI API, even if the assistant uses a different provider.
-		// This is because providers like Cloudflare, Ollama, etc. don't support TTS or have different APIs.
-		// We'll always use OpenAI for this specialized feature and check if API key is configured.
-		if ( 'openai' !== $provider ) {
-			// Get OpenAI API key to verify it's configured.
+		// TTS is natively supported by OpenAI, Gemini/Google, Cloudflare, and Hugging Face.
+		// For other providers (Ollama), we fall back to OpenAI if API key is configured.
+		$providers_with_native_tts = array( 'openai', 'gemini', 'google', 'cloudflare', 'huggingface' );
+
+		if ( ! in_array( $provider, $providers_with_native_tts, true ) ) {
+			// Provider doesn't have native TTS support. Check for OpenAI fallback.
 			if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_settings_unavailable',
@@ -216,10 +229,12 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		// TODO: Add TTS support for additional providers:
-		// - Cloudflare: Investigate if Workers AI supports TTS models
-		// - Ollama: Check for local TTS model availability
-		// Currently supported: OpenAI (tts-1/tts-1-hd), Google (Neural2 voices)
+		// TTS is now supported by:
+		// - OpenAI: tts-1, tts-1-hd (voices: alloy, echo, fable, onyx, nova, shimmer)
+		// - Gemini/Google: Neural2 voices (en-US-Neural2-C, etc.)
+		// - Cloudflare: @cf/deepgram/aura-2-en (voices: luna, apollo, etc.), @cf/myshell-ai/melotts (multilingual)
+		// - Hugging Face: facebook/mms-tts-eng, microsoft/speecht5_tts, facebook/fastspeech2-en-ljspeech, and more
+		// - Ollama: Fallback to OpenAI if configured
 
 		if ( '' === $text ) {
 			return new WP_Error( 'wp_mcp_ai_missing_text', __( 'No text was supplied for the speech request.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
@@ -291,25 +306,43 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 				break;
 
 			case 'cloudflare':
+				// Cloudflare Workers AI supports TTS via Deepgram Aura-2 and MeloTTS.
+				if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
+				}
+				$client = new WP_MCP_AI_Cloudflare_Client();
+				
+				// Use configured Cloudflare TTS model or default to Deepgram Aura-2.
+				if ( ! isset( $options['model'] ) || '' === $options['model'] ) {
+					$options['model'] = '@cf/deepgram/aura-2-en';
+				}
+				
+				$speech = $client->generate_speech( $text, $options );
+				break;
+
 			case 'huggingface':
-				// Cloudflare and Hugging Face don't currently support TTS.
-				return new WP_Error(
-					'wp_mcp_ai_tts_not_supported',
-					sprintf(
-						/* translators: %s: provider name */
-						__( 'Text-to-speech is not supported by "%s" provider. Please configure an OpenAI API key to use this feature, or switch to a provider that supports TTS (OpenAI or Google).', 'mcp-ai-wpoos' ),
-						$provider
-					),
-					array(
-						'status'   => 400,
-						'provider' => $provider,
-						'actions'  => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
-							'switch_to_openai'         => __( 'Change the assistant to use OpenAI provider.', 'mcp-ai-wpoos' ),
-							'switch_to_google'         => __( 'Change the assistant to use Google/Gemini provider.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
+				// Hugging Face Inference API supports TTS via multiple models.
+				if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
+				}
+				$client = new WP_MCP_AI_Huggingface_Client();
+				
+				// Use configured Hugging Face TTS model or default to facebook/mms-tts-eng.
+				if ( ! isset( $options['model'] ) || '' === $options['model'] ) {
+					$options['model'] = 'facebook/mms-tts-eng';
+				}
+				
+				$speech = $client->generate_speech( $text, $options );
+				break;
+
+			case 'ollama':
+				// Ollama doesn't currently support TTS.
+				// Fall back to OpenAI for speech generation (OpenAI API key check already done above).
+				// This allows assistants using Ollama to still use TTS features
+				// as long as an OpenAI API key is configured.
+				$client = new WP_MCP_AI_OpenAI_Client();
+				$speech = $client->generate_speech( $text, $options );
+				break;
 
 			case 'openai':
 			default:
