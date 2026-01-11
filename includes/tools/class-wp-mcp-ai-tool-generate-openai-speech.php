@@ -266,14 +266,69 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
-		$client = new WP_MCP_AI_OpenAI_Client();
-		$speech = $client->generate_speech( $text, $options );
+		// Use provider-specific client based on assistant configuration.
+		$client = null;
+		$speech = null;
+		switch ( $provider ) {
+			case 'gemini':
+			case 'google':
+				if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
+				}
+				$client = new WP_MCP_AI_Gemini_Client();
+				// Set default voice for Google TTS if not specified.
+				if ( 'alloy' === $voice ) {
+					$options['voice'] = 'en-US-Neural2-C';
+				}
+				$options['language'] = 'en-US'; // Can be customized via arguments.
+				$speech              = $client->generate_speech( $text, $options );
+				// Normalize Google TTS response to match OpenAI format.
+				if ( ! is_wp_error( $speech ) && isset( $speech['audio_data'] ) ) {
+					$speech = array(
+						'audio'  => $speech['audio_data'],
+						'format' => isset( $speech['format'] ) ? $speech['format'] : 'mp3',
+					);
+				}
+				break;
+
+			case 'cloudflare':
+			case 'huggingface':
+				// Cloudflare and Hugging Face don't currently support TTS.
+				// Fall back to OpenAI if available.
+				if ( 'openai' !== $provider ) {
+					return new WP_Error(
+						'wp_mcp_ai_tts_not_supported',
+						sprintf(
+							/* translators: %s: provider name */
+							__( 'Text-to-speech is not supported by "%s" provider. Please configure an OpenAI API key to use this feature, or switch to a provider that supports TTS (OpenAI or Google).', 'mcp-ai-wpoos' ),
+							$provider
+						),
+						array(
+							'status'   => 400,
+							'provider' => $provider,
+							'actions'  => array(
+								'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+								'switch_to_openai'         => __( 'Change the assistant to use OpenAI provider.', 'mcp-ai-wpoos' ),
+								'switch_to_google'         => __( 'Change the assistant to use Google/Gemini provider.', 'mcp-ai-wpoos' ),
+							),
+						)
+					);
+				}
+				// Fall through to default OpenAI.
+
+			case 'openai':
+			default:
+				$client = new WP_MCP_AI_OpenAI_Client();
+				$speech = $client->generate_speech( $text, $options );
+				break;
+		}
+
 		if ( is_wp_error( $speech ) ) {
 			return $speech;
 		}
 
 		if ( empty( $speech['audio'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_empty_audio', __( 'OpenAI returned an empty audio response.', 'mcp-ai-wpoos' ) );
+			return new WP_Error( 'wp_mcp_ai_empty_audio', __( 'The provider returned an empty audio response.', 'mcp-ai-wpoos' ) );
 		}
 
 		$file_name = isset( $arguments['file_name'] ) ? $arguments['file_name'] : '';

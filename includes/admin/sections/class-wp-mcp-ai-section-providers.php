@@ -488,6 +488,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '5',
 				),
 
+				// Gemini Audio Settings (Speech-to-Text & Text-to-Speech).
+				'gemini_audio_language'              => array(
+					'type'        => 'text',
+					'label'       => __( 'Gemini Audio Language Code', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default language code for Google Speech-to-Text and Text-to-Speech (e.g., "en-US", "es-ES", "fr-FR"). Supports 125+ languages.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'en-US',
+					'default'     => 'en-US',
+				),
+				'gemini_speech_voice'                => array(
+					'type'        => 'select',
+					'label'       => __( 'Gemini Speech Voice', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default voice for Google Text-to-Speech. Neural2 voices provide improved quality. Choose based on desired gender and language.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'en-US-Neural2-A' => 'en-US-Neural2-A (Male)',
+						'en-US-Neural2-C' => 'en-US-Neural2-C (Female, Recommended)',
+						'en-US-Neural2-D' => 'en-US-Neural2-D (Male)',
+						'en-US-Neural2-E' => 'en-US-Neural2-E (Female)',
+						'en-US-Neural2-F' => 'en-US-Neural2-F (Female)',
+						'en-US-Neural2-G' => 'en-US-Neural2-G (Female)',
+						'en-US-Neural2-H' => 'en-US-Neural2-H (Female)',
+						'en-US-Neural2-I' => 'en-US-Neural2-I (Male)',
+						'en-US-Neural2-J' => 'en-US-Neural2-J (Male)',
+					),
+					'default'     => 'en-US-Neural2-C',
+				),
+
 				// Ollama Settings.
 				'enable_ollama'                      => array(
 					'type'           => 'checkbox',
@@ -596,6 +622,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Hugging Face Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The model identifier to use with Hugging Face. Examples: "meta-llama/Llama-3.3-70B-Instruct", "mistralai/Mistral-7B-Instruct-v0.3", "microsoft/Phi-3-mini-4k-instruct". Must be a chat/instruction model with a chat_template defined.', 'mcp-ai-wpoos' ),
 					'placeholder' => 'meta-llama/Llama-3.3-70B-Instruct',
+				),
+
+				// Hugging Face Audio Settings (Speech-to-Text).
+				'huggingface_audio_model'            => array(
+					'type'        => 'text',
+					'label'       => __( 'Hugging Face Audio Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Model identifier for audio transcription. Default is "openai/whisper-large-v3" which provides high-quality multilingual transcription via Hugging Face Inference API.', 'mcp-ai-wpoos' ),
+					'placeholder' => 'openai/whisper-large-v3',
+					'default'     => 'openai/whisper-large-v3',
 				),
 
 				// Hugging Face Dataset Viewer Settings.
@@ -725,6 +760,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'step'        => 0.5,
 				),
 
+				// Cloudflare Audio Settings (Speech-to-Text).
+				'cloudflare_audio_model'             => array(
+					'type'        => 'text',
+					'label'       => __( 'Cloudflare Audio Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Model identifier for audio transcription. Default is "@cf/openai/whisper" which provides Whisper-based transcription via Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+					'placeholder' => '@cf/openai/whisper',
+					'default'     => '@cf/openai/whisper',
+					'readonly'    => true,
+				),
+
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -769,7 +814,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'gemini_audio_language', 'gemini_speech_voice' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',
@@ -787,7 +832,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'huggingface',
 					'label'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'enable_huggingface', 'huggingface_api_key', 'huggingface_endpoint_url', 'huggingface_model' ),
+					'fields' => array( 'enable_huggingface', 'huggingface_api_key', 'huggingface_endpoint_url', 'huggingface_model', 'huggingface_audio_model' ),
 				),
 				'huggingface_datasets' => array(
 					'id'     => 'huggingface_datasets',
@@ -799,7 +844,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model', 'cloudflare_image_model', 'cloudflare_image_width', 'cloudflare_image_height', 'cloudflare_image_num_steps', 'cloudflare_image_guidance' ),
+					'fields' => array( 'enable_cloudflare', 'cloudflare_api_token', 'cloudflare_account_id', 'cloudflare_model', 'cloudflare_image_model', 'cloudflare_image_width', 'cloudflare_image_height', 'cloudflare_image_num_steps', 'cloudflare_image_guidance', 'cloudflare_audio_model' ),
 				),
 				'google_maps'          => array(
 					'id'     => 'google_maps',
