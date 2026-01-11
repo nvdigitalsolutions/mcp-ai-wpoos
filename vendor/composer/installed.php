@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-audio-button-error',
-        'version' => 'dev-copilot/fix-audio-button-error',
-        'reference' => 'ef403e0d696d545a7fb6917fa52d8635411745df',
+        'pretty_version' => 'dev-copilot/fix-speech-button-color-change',
+        'version' => 'dev-copilot/fix-speech-button-color-change',
+        'reference' => 'd335c8c9386aa33168b3f7626d8ced311601c5fb',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-audio-button-error',
-            'version' => 'dev-copilot/fix-audio-button-error',
-            'reference' => 'ef403e0d696d545a7fb6917fa52d8635411745df',
+            'pretty_version' => 'dev-copilot/fix-speech-button-color-change',
+            'version' => 'dev-copilot/fix-speech-button-color-change',
+            'reference' => 'd335c8c9386aa33168b3f7626d8ced311601c5fb',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
