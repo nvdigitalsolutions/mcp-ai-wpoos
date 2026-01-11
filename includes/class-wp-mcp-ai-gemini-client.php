@@ -3063,5 +3063,360 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			return $payload;
 		}
+
+		/**
+		 * Transcribe audio using Google Speech-to-Text API.
+		 *
+		 * @param string $file_path Path to the audio file.
+		 * @param array  $options   Additional options (language, encoding, etc.).
+		 * @return array|WP_Error Transcription result or error.
+		 */
+		public function transcribe_audio( $file_path, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_api_key',
+					__( 'No Gemini/Google API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$file_path = (string) $file_path;
+
+			if ( '' === $file_path || ! file_exists( $file_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_transcription_missing_file',
+					__( 'The audio file to transcribe could not be located.', 'mcp-ai-wpoos' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			// Read and base64 encode the file.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$file_data = file_get_contents( $file_path );
+
+			if ( false === $file_data ) {
+				return new WP_Error(
+					'wp_mcp_ai_file_read_error',
+					__( 'Could not read the audio file.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			$audio_content = base64_encode( $file_data );
+
+			// Get language code (default to auto-detect).
+			$language_code = isset( $options['language'] ) && '' !== $options['language'] ? sanitize_text_field( $options['language'] ) : 'en-US';
+
+			// Build request payload for Google Speech-to-Text API.
+			$payload = array(
+				'config' => array(
+					'encoding'        => 'LINEAR16', // Will be overridden by auto-detection.
+					'languageCode'    => $language_code,
+					'enableAutomaticPunctuation' => true,
+				),
+				'audio'  => array(
+					'content' => $audio_content,
+				),
+			);
+
+			$url = 'https://speech.googleapis.com/v1/speech:recognize?key=' . rawurlencode( $api_key );
+
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : 60;
+			$timeout = max( 5, $timeout );
+
+			$request_args = array(
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'google_transcribe_audio',
+				'Sending audio transcription request to Google Speech-to-Text.',
+				array(
+					'language'  => $language_code,
+					'file_size' => strlen( $file_data ),
+					'timeout'   => $timeout,
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Google Speech-to-Text transcription failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'Google Speech-to-Text transcription request failed.', 'mcp-ai-wpoos' ),
+					__( 'Google Speech-to-Text', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = __( 'Google Speech-to-Text transcription returned an error.', 'mcp-ai-wpoos' );
+				$decoded_body  = json_decode( $body, true );
+
+				if ( is_array( $decoded_body ) && isset( $decoded_body['error']['message'] ) ) {
+					$error_message .= ' ' . sanitize_text_field( $decoded_body['error']['message'] );
+				}
+
+				WP_MCP_AI_Logger::log_error(
+					'Google Speech-to-Text transcription error.',
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+			}
+
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_response',
+					__( 'Invalid JSON response from Google Speech-to-Text.', 'mcp-ai-wpoos' ),
+					array( 'body' => $body )
+				);
+			}
+
+			// Google Speech-to-Text returns: {"results": [{"alternatives": [{"transcript": "text", "confidence": 0.95}]}]}.
+			// Extract the transcript from the first result.
+			$text = '';
+			if ( isset( $decoded['results'] ) && is_array( $decoded['results'] ) ) {
+				foreach ( $decoded['results'] as $result ) {
+					if ( isset( $result['alternatives'][0]['transcript'] ) ) {
+						$text .= $result['alternatives'][0]['transcript'] . ' ';
+					}
+				}
+			}
+
+			$text = trim( $text );
+
+			WP_MCP_AI_Logger::log_event(
+				'google_transcribe_audio_success',
+				'Successfully transcribed audio with Google Speech-to-Text.',
+				array(
+					'language'      => $language_code,
+					'text_length'   => strlen( $text ),
+					'result_count'  => isset( $decoded['results'] ) ? count( $decoded['results'] ) : 0,
+				)
+			);
+
+			// Check if transcription is empty.
+			if ( '' === $text ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_transcription',
+					__( 'Google Speech-to-Text returned an empty transcription. The audio may not contain speech or may be in an unsupported format.', 'mcp-ai-wpoos' ),
+					array( 'response' => $decoded )
+				);
+			}
+
+			// Normalize to consistent format.
+			return array(
+				'text' => $text,
+				'raw'  => $decoded,
+			);
+		}
+
+		/**
+		 * Generate speech using Google Text-to-Speech API.
+		 *
+		 * @param string $text    Text to convert to speech.
+		 * @param array  $options Additional options (voice, language, etc.).
+		 * @return array|WP_Error Audio data or error.
+		 */
+		public function generate_speech( $text, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_api_key',
+					__( 'No Gemini/Google API key has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_key' => __( 'Add a Gemini API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$text = sanitize_textarea_field( $text );
+
+			if ( '' === $text ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_speech_input',
+					__( 'A text prompt must be supplied to generate speech.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Get voice and language settings.
+			$language_code = isset( $options['language'] ) && '' !== $options['language'] ? sanitize_text_field( $options['language'] ) : 'en-US';
+			$voice_name    = isset( $options['voice'] ) && '' !== $options['voice'] ? sanitize_text_field( $options['voice'] ) : 'en-US-Neural2-C';
+
+			// Build request payload for Google Text-to-Speech API.
+			$payload = array(
+				'input' => array(
+					'text' => $text,
+				),
+				'voice' => array(
+					'languageCode' => $language_code,
+					'name'         => $voice_name,
+				),
+				'audioConfig' => array(
+					'audioEncoding' => 'MP3',
+				),
+			);
+
+			// Add speaking rate if provided.
+			if ( isset( $options['speed'] ) && '' !== $options['speed'] ) {
+				$speed                           = floatval( $options['speed'] );
+				$speed                           = max( 0.25, min( 4.0, $speed ) );
+				$payload['audioConfig']['speakingRate'] = $speed;
+			}
+
+			$url = 'https://texttospeech.googleapis.com/v1/text:synthesize?key=' . rawurlencode( $api_key );
+
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : 60;
+			$timeout = max( 5, $timeout );
+
+			$request_args = array(
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'google_generate_speech',
+				'Sending text-to-speech request to Google TTS.',
+				array(
+					'language'    => $language_code,
+					'voice'       => $voice_name,
+					'text_length' => strlen( $text ),
+					'timeout'     => $timeout,
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Google TTS request failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'Google Text-to-Speech request failed.', 'mcp-ai-wpoos' ),
+					__( 'Google Text-to-Speech', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = __( 'Google Text-to-Speech returned an error.', 'mcp-ai-wpoos' );
+				$decoded_body  = json_decode( $body, true );
+
+				if ( is_array( $decoded_body ) && isset( $decoded_body['error']['message'] ) ) {
+					$error_message .= ' ' . sanitize_text_field( $decoded_body['error']['message'] );
+				}
+
+				WP_MCP_AI_Logger::log_error(
+					'Google TTS error.',
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+			}
+
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_response',
+					__( 'Invalid JSON response from Google TTS.', 'mcp-ai-wpoos' ),
+					array( 'body' => $body )
+				);
+			}
+
+			// Google TTS returns: {"audioContent": "base64-encoded-audio"}.
+			if ( ! isset( $decoded['audioContent'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_audio',
+					__( 'No audio content received from Google TTS.', 'mcp-ai-wpoos' ),
+					array( 'response' => $decoded )
+				);
+			}
+
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+			$audio_data = base64_decode( $decoded['audioContent'] );
+
+			if ( false === $audio_data ) {
+				return new WP_Error(
+					'wp_mcp_ai_audio_decode_error',
+					__( 'Could not decode audio content from Google TTS.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'google_generate_speech_success',
+				'Successfully generated speech with Google TTS.',
+				array(
+					'language'   => $language_code,
+					'voice'      => $voice_name,
+					'audio_size' => strlen( $audio_data ),
+				)
+			);
+
+			// Return audio data in format compatible with OpenAI response.
+			return array(
+				'audio_data' => $audio_data,
+				'format'     => 'mp3',
+				'raw'        => $decoded,
+			);
+		}
 	}
 }

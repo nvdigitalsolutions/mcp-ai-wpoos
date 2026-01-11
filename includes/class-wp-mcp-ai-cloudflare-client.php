@@ -2056,5 +2056,194 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 
 			return false;
 		}
+
+		/**
+		 * Transcribe audio using Cloudflare Workers AI Whisper model.
+		 *
+		 * @param string $file_path Path to the audio file.
+		 * @param array  $options   Additional options (model, language, etc.).
+		 * @return array|WP_Error Transcription result or error.
+		 */
+		public function transcribe_audio( $file_path, array $options = array() ) {
+			$api_token  = $this->get_api_token();
+			$account_id = $this->get_account_id();
+
+			if ( empty( $api_token ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_api_token',
+					__( 'No Cloudflare API token has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_token' => __( 'Add a Cloudflare API token in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			if ( empty( $account_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_cloudflare_account_id',
+					__( 'No Cloudflare account ID has been configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_cloudflare_account' => __( 'Add a Cloudflare account ID in the NV oOS settings.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			}
+
+			$file_path = (string) $file_path;
+
+			if ( '' === $file_path || ! file_exists( $file_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_transcription_missing_file',
+					__( 'The audio file to transcribe could not be located.', 'mcp-ai-wpoos' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			// Cloudflare Workers AI Whisper model.
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : '@cf/openai/whisper';
+
+			// Build the URL with proper encoding for @ symbol.
+			$escaped_model = str_replace( array( '@', ' ' ), array( '%40', '%20' ), $model );
+			$url           = sprintf(
+				'https://api.cloudflare.com/client/v4/accounts/%s/ai/run/%s',
+				rawurlencode( $account_id ),
+				$escaped_model
+			);
+
+			// Read file content.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$file_data = file_get_contents( $file_path );
+
+			if ( false === $file_data ) {
+				return new WP_Error(
+					'wp_mcp_ai_file_read_error',
+					__( 'Could not read the audio file.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			// Get timeout.
+			$timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : 60;
+			$timeout = max( 5, $timeout );
+
+			// Cloudflare Workers AI expects the audio file as binary data in the request body.
+			$request_args = array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_token,
+					'Content-Type'  => 'application/octet-stream',
+				),
+				'body'    => $file_data,
+				'timeout' => $timeout,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_transcribe_audio',
+				'Sending audio transcription request to Cloudflare Workers AI.',
+				array(
+					'model'     => $model,
+					'file_size' => strlen( $file_data ),
+					'timeout'   => $timeout,
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Cloudflare Workers AI audio transcription failed.',
+					array( 'error' => $response->get_error_message() )
+				);
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'Cloudflare Workers AI audio transcription request failed.', 'mcp-ai-wpoos' ),
+					__( 'Cloudflare Workers AI', 'mcp-ai-wpoos' )
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = __( 'Cloudflare Workers AI audio transcription returned an error.', 'mcp-ai-wpoos' );
+				$decoded_body  = json_decode( $body, true );
+
+				if ( is_array( $decoded_body ) && isset( $decoded_body['errors'] ) && is_array( $decoded_body['errors'] ) ) {
+					foreach ( $decoded_body['errors'] as $error ) {
+						if ( isset( $error['message'] ) ) {
+							$error_message .= ' ' . sanitize_text_field( $error['message'] );
+							break;
+						}
+					}
+				}
+
+				WP_MCP_AI_Logger::log_error(
+					'Cloudflare Workers AI audio transcription error.',
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $body,
+					)
+				);
+			}
+
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_response',
+					__( 'Invalid JSON response from Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+					array( 'body' => $body )
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'cloudflare_transcribe_audio_success',
+				'Successfully transcribed audio with Cloudflare Workers AI.',
+				array(
+					'model'          => $model,
+					'has_text'       => isset( $decoded['result']['text'] ),
+					'response_keys'  => is_array( $decoded ) ? array_keys( $decoded ) : array(),
+				)
+			);
+
+			// Cloudflare Workers AI Whisper returns: {"result": {"text": "transcription", "vtt": "..."}}.
+			// Normalize to OpenAI format for consistency.
+			if ( isset( $decoded['result']['text'] ) ) {
+				$text = trim( $decoded['result']['text'] );
+				if ( '' === $text ) {
+					return new WP_Error(
+						'wp_mcp_ai_empty_transcription',
+						__( 'Cloudflare Workers AI returned an empty transcription.', 'mcp-ai-wpoos' ),
+						array( 'response' => $decoded )
+					);
+				}
+				return array(
+					'text' => $text,
+					'raw'  => $decoded,
+				);
+			}
+
+			// Unexpected response format.
+			return new WP_Error(
+				'wp_mcp_ai_unexpected_response',
+				__( 'Unexpected response format from Cloudflare Workers AI.', 'mcp-ai-wpoos' ),
+				array( 'response' => $decoded )
+			);
+		}
 	}
 }
