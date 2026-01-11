@@ -155,6 +155,7 @@ class WP_MCP_AI_Shortcode {
 					'currentUserId'       => get_current_user_id(),
 					'nonce'               => wp_create_nonce( 'wp_rest' ),
 					'showUsageCosts'      => false,
+					'showCapabilityFlags' => false,
 					'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
 					'isElementorEditor'   => true,
 					'strings'             => array(
@@ -172,6 +173,12 @@ class WP_MCP_AI_Shortcode {
 		// Allow filtering of cost display setting.
 		$show_usage_costs = apply_filters( 'wp_mcp_ai_show_usage_costs', $show_usage_costs, get_current_user_id() );
 
+		// Get capability flags display setting.
+		$show_capability_flags = isset( $settings['show_capability_flags'] ) ? (bool) $settings['show_capability_flags'] : false;
+
+		// Allow filtering of capability flags display setting.
+		$show_capability_flags = apply_filters( 'wp_mcp_ai_show_capability_flags', $show_capability_flags, get_current_user_id() );
+
 		wp_localize_script(
 			self::SCRIPT_HANDLE,
 			'wpMcpAiChat',
@@ -185,6 +192,7 @@ class WP_MCP_AI_Shortcode {
 				'currentUserId'       => get_current_user_id(),
 				'nonce'               => wp_create_nonce( 'wp_rest' ),
 				'showUsageCosts'      => $show_usage_costs,
+				'showCapabilityFlags' => $show_capability_flags,
 				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
 				'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
 				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
