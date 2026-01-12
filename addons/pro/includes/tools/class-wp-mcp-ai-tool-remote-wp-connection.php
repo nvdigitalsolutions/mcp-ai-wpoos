@@ -833,6 +833,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			// Check if this is a delimiter (., !, ?).
 			if ( isset( $sentences[ $i + 1 ] ) && in_array( $sentences[ $i + 1 ], array( '.', '!', '?' ), true ) ) {
 				$result .= $sentences[ $i + 1 ];
+				// Add space after punctuation if there are more sentences to come.
+				if ( $count + 1 < $sentence_count && isset( $sentences[ $i + 2 ] ) ) {
+					$result .= ' ';
+				}
 				$i++; // Skip the delimiter in next iteration.
 				$count++;
 			}
