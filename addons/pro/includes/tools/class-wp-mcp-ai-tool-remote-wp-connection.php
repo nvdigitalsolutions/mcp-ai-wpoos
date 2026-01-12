@@ -22,6 +22,31 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-mana
 class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * Essential WooCommerce product fields to retrieve.
+	 *
+	 * Excludes verbose fields like meta_data, related_ids, etc. to reduce token usage.
+	 * Fields included: id, name, slug, permalink, sku, prices, stock info, type, status,
+	 * categories, images, attributes, variations, parent_id, descriptions.
+	 *
+	 * @since 1.0.0
+	 * @var string
+	 */
+	const PRODUCT_FIELDS = 'id,name,slug,permalink,sku,price,regular_price,sale_price,on_sale,' .
+		'stock_status,stock_quantity,manage_stock,backorders_allowed,type,status,' .
+		'categories,images,attributes,variations,parent_id,description,short_description';
+
+	/**
+	 * Essential WooCommerce product variation fields to retrieve.
+	 *
+	 * Fields included: id, sku, prices, stock info, attributes, image.
+	 *
+	 * @since 1.0.0
+	 * @var string
+	 */
+	const VARIATION_FIELDS = 'id,sku,price,regular_price,sale_price,on_sale,' .
+		'stock_status,stock_quantity,manage_stock,backorders_allowed,attributes,image';
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -39,7 +64,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'wp-mcp-ai-pro' );
+		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -88,7 +113,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				),
 				'per_page'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of items to retrieve per page. Default: 10, Max: 100.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Number of items to retrieve per page. Default: 25 for get_wc_products (10 for other actions), Max: 100. Products are automatically sorted with in-stock items first.', 'wp-mcp-ai-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 100,
@@ -531,13 +556,16 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
+		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 25;
 		$per_page = min( max( $per_page, 1 ), 100 );
 		$page = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
+			// Sort by stock status ascending - 'instock' comes before 'outofstock' alphabetically.
+			'orderby'  => 'stock_status',
+			'order'    => 'asc',
 		);
 
 		if ( ! empty( $arguments['search'] ) ) {
@@ -560,6 +588,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			$params['type'] = sanitize_key( $arguments['type'] );
 		}
 
+		// Exclude verbose fields to reduce token usage.
+		// Keep only essential product information including description (will be truncated).
+		$params['_fields'] = self::PRODUCT_FIELDS;
+
 		$endpoint = 'wc/v3/products';
 
 		if ( ! empty( $params ) ) {
@@ -571,6 +603,9 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( is_wp_error( $products ) ) {
 			return $products;
 		}
+
+		// Truncate descriptions to save tokens while keeping essential info.
+		$products = $this->truncate_product_descriptions( $products );
 
 		// Check if we should include variations.
 		$include_variations = isset( $arguments['include_variations'] ) ? (bool) $arguments['include_variations'] : true;
@@ -743,8 +778,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$endpoint = 'wc/v3/products/' . $product_id . '/variations';
 
 		// Get variations (max 100 per page, first page only).
+		// Exclude verbose fields to reduce token usage.
 		$params = array(
 			'per_page' => 100,
+			'_fields'  => self::VARIATION_FIELDS,
 		);
 
 		$endpoint = add_query_arg( $params, $endpoint );
@@ -756,6 +793,82 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return is_array( $variations ) ? $variations : array();
+	}
+
+	/**
+	 * Truncate product descriptions to reduce token usage.
+	 *
+	 * Limits descriptions to 2-3 sentences while preserving essential information.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $products Array of product objects.
+	 * @return array Products with truncated descriptions.
+	 */
+	protected function truncate_product_descriptions( $products ) {
+		if ( ! is_array( $products ) ) {
+			return $products;
+		}
+
+		foreach ( $products as $product ) {
+			// Truncate description (long version).
+			if ( isset( $product->description ) && ! empty( $product->description ) ) {
+				$product->description = $this->truncate_to_sentences( $product->description, 3 );
+			}
+
+			// Truncate short_description.
+			if ( isset( $product->short_description ) && ! empty( $product->short_description ) ) {
+				$product->short_description = $this->truncate_to_sentences( $product->short_description, 2 );
+			}
+		}
+
+		return $products;
+	}
+
+	/**
+	 * Truncate text to a specific number of sentences.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $text            Text to truncate.
+	 * @param int    $sentence_count  Number of sentences to keep.
+	 * @return string Truncated text.
+	 */
+	protected function truncate_to_sentences( $text, $sentence_count = 3 ) {
+		if ( empty( $text ) ) {
+			return $text;
+		}
+
+		// Strip HTML tags first.
+		$text = wp_strip_all_tags( $text );
+
+		// Split by sentence endings with intelligent boundary detection.
+		// Regex explained:
+		// - (?<=[.!?]) = Positive lookbehind: Must be preceded by sentence-ending punctuation
+		// - (?=\s+[A-Z]) = Positive lookahead: Must be followed by whitespace + capital letter
+		// - | = OR
+		// - (?<=[.!?])$ = Positive lookbehind + end of string anchor
+		//
+		// This pattern:
+		// ✓ Splits on: "sentence. Next" or "sentence! Next" or "sentence? Next"
+		// ✗ Does NOT split on: "Mr. Smith" or "$19.99" or "U.S.A." (no capital after space)
+		$sentences = preg_split( '/(?<=[.!?])(?=\s+[A-Z])|(?<=[.!?])$/', $text, -1, PREG_SPLIT_NO_EMPTY );
+
+		if ( empty( $sentences ) || count( $sentences ) <= 1 ) {
+			// No sentence boundaries found or only one sentence.
+			return $text;
+		}
+
+		// Reconstruct with limited number of sentences.
+		$result_sentences = array_slice( $sentences, 0, $sentence_count );
+		$result = implode( ' ', array_map( 'trim', $result_sentences ) );
+
+		// If we truncated (more sentences exist than we included), add ellipsis.
+		if ( count( $sentences ) > $sentence_count ) {
+			$result = rtrim( $result ) . '...';
+		}
+
+		return trim( $result );
 	}
 
 	/**

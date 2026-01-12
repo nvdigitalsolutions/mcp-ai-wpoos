@@ -238,6 +238,29 @@ class Test_Remote_Connection_Tool_Variations extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that tool description mentions stock sorting and optimization.
+	 */
+	public function test_tool_description_mentions_stock_sorting() {
+		$description = $this->tool->get_description();
+
+		$this->assertStringContainsString( 'in-stock', strtolower( $description ) );
+		$this->assertStringContainsString( 'token', strtolower( $description ) );
+	}
+
+	/**
+	 * Test per_page parameter description mentions updated default.
+	 */
+	public function test_per_page_parameter_description_updated() {
+		$schema = $this->tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'per_page', $schema['properties'] );
+		$description = $schema['properties']['per_page']['description'];
+
+		$this->assertStringContainsString( '25', $description );
+		$this->assertStringContainsString( 'in-stock', strtolower( $description ) );
+	}
+
+	/**
 	 * Clean up test environment.
 	 */
 	public function tearDown(): void {
