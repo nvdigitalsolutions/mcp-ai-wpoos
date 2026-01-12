@@ -601,6 +601,9 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			return $products;
 		}
 
+		// Optimize images to save tokens (limit to 3 images, keep only src and alt).
+		$products = $this->optimize_product_images( $products );
+
 		// Truncate descriptions to save tokens while keeping essential info.
 		$products = $this->truncate_product_descriptions( $products );
 
@@ -705,6 +708,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			return $product;
 		}
 
+		// Optimize the single product to reduce token usage.
+		if ( is_object( $product ) ) {
+			$product_array = array( $product );
+			$product_array = $this->optimize_product_images( $product_array );
+			$product_array = $this->truncate_product_descriptions( $product_array );
+			$product = $product_array[0];
+		}
+
 		return array(
 			'summary' => __( 'Product retrieved successfully', 'wp-mcp-ai-pro' ),
 			'product' => $product,
@@ -793,7 +804,75 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			return $variations;
 		}
 
-		return is_array( $variations ) ? $variations : array();
+		if ( ! is_array( $variations ) ) {
+			return array();
+		}
+
+		// Optimize variation images to save tokens.
+		$variations = $this->optimize_product_images( $variations );
+
+		return $variations;
+	}
+
+	/**
+	 * Optimize image arrays to reduce token usage.
+	 *
+	 * Reduces image data to only essential fields (src URL) and limits to first 3 images.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $products Array of product objects.
+	 * @return array Products with optimized image arrays.
+	 */
+	protected function optimize_product_images( $products ) {
+		if ( ! is_array( $products ) ) {
+			return $products;
+		}
+
+		foreach ( $products as $product ) {
+			// Optimize images array - keep only src URL and limit to 3 images.
+			if ( isset( $product->images ) && is_array( $product->images ) ) {
+				$optimized_images = array();
+				$image_count = 0;
+				
+				foreach ( $product->images as $image ) {
+					if ( $image_count >= 3 ) {
+						break; // Limit to first 3 images to save tokens.
+					}
+					
+					if ( is_object( $image ) && isset( $image->src ) ) {
+						$optimized_images[] = (object) array(
+							'src' => $image->src,
+							'alt' => isset( $image->alt ) ? $image->alt : '',
+						);
+					} elseif ( is_array( $image ) && isset( $image['src'] ) ) {
+						$optimized_images[] = array(
+							'src' => $image['src'],
+							'alt' => isset( $image['alt'] ) ? $image['alt'] : '',
+						);
+					}
+					
+					$image_count++;
+				}
+				
+				$product->images = $optimized_images;
+			}
+			
+			// Optimize single image field for variations.
+			if ( isset( $product->image ) && is_object( $product->image ) && isset( $product->image->src ) ) {
+				$product->image = (object) array(
+					'src' => $product->image->src,
+					'alt' => isset( $product->image->alt ) ? $product->image->alt : '',
+				);
+			} elseif ( isset( $product->image ) && is_array( $product->image ) && isset( $product->image['src'] ) ) {
+				$product->image = array(
+					'src' => $product->image['src'],
+					'alt' => isset( $product->image['alt'] ) ? $product->image['alt'] : '',
+				);
+			}
+		}
+
+		return $products;
 	}
 
 	/**
