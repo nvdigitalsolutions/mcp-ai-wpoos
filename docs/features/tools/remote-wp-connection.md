@@ -148,6 +148,8 @@ Get media library items.
 #### `get_wc_products`
 Get WooCommerce products with **AUTOMATIC variation support** - variations are included by default.
 
+**IMPORTANT:** When `include_variations` is enabled (default), variable products are represented **ONLY by their variations** (not the parent product) to provide accurate stock quantities and avoid confusion. Each variation includes `parent_id` and `parent_name` for reference.
+
 **Parameters:**
 - `connection_id` (string, required): Connection ID
 - `per_page` (integer): Results per page (1-100, default: 10)
@@ -157,7 +159,7 @@ Get WooCommerce products with **AUTOMATIC variation support** - variations are i
 - `status` (string): Product status filter
 - `category` (string): Filter by category slug or ID
 - `type` (string): Filter by product type (simple, variable, grouped, external)
-- `include_variations` (boolean): Include product variations in results (**default: true** - variations are automatically included with full stock data)
+- `include_variations` (boolean): Include product variations in results (**default: true** - when enabled, variable products are replaced with their variations)
 
 **Example:**
 ```json
@@ -193,15 +195,15 @@ Note: No need to specify `include_variations: true` - variations are fetched aut
 **Returns:**
 ```json
 {
-  "summary": "Retrieved 5 product(s) with 12 variation(s)",
+  "summary": "Retrieved 3 product(s) with 12 variation(s). Note: Variable products are represented by their variations only, not the parent product.",
   "products": [
     {
-      "id": 123,
-      "name": "T-Shirt",
-      "type": "variable",
-      "sku": "TSH-001",
-      "price": "19.99",
-      "stock_quantity": null,
+      "id": 101,
+      "name": "Simple Product",
+      "type": "simple",
+      "sku": "SIMPLE-001",
+      "price": "15.99",
+      "stock_quantity": 25,
       "stock_status": "instock"
     },
     {
@@ -216,15 +218,32 @@ Note: No need to specify `include_variations: true` - variations are fetched aut
       "price": "19.99",
       "stock_quantity": 50,
       "stock_status": "instock"
+    },
+    {
+      "id": 457,
+      "parent_id": 123,
+      "parent_name": "T-Shirt",
+      "attributes": [
+        {"name": "Size", "option": "Large"},
+        {"name": "Color", "option": "Red"}
+      ],
+      "sku": "TSH-001-L-RED",
+      "price": "19.99",
+      "stock_quantity": 30,
+      "stock_status": "instock"
     }
   ],
-  "count": 17,
-  "parent_count": 5,
+  "count": 13,
+  "parent_count": 3,
   "variation_count": 12
 }
 ```
 
-**IMPORTANT:** Variations are **AUTOMATICALLY** included by default. When `include_variations` is true (which is the default), variable products will have their variations fetched and included in a single call. Each variation includes `parent_id`, `parent_name`, `stock_quantity`, `stock_status`, `sku`, `price`, and `attributes` fields. You do NOT need to make a separate call to `get_wc_product_variations` unless you want to get variations for a specific product ID only.
+**IMPORTANT:** When `include_variations` is true (the default), variable products are **NOT included** in the results - only their variations are returned. This prevents stock confusion since parent variable products typically have `stock_quantity: null` (stock is managed at the variation level). Each variation includes `parent_id`, `parent_name`, `stock_quantity`, `stock_status`, `sku`, `price`, and `attributes` fields. 
+
+**Note:** Simple products and other non-variable product types are always included in results regardless of the `include_variations` setting. Only variable product parents are replaced with their variations.
+
+You do NOT need to make a separate call to `get_wc_product_variations` unless you want to get variations for a specific product ID only.
 
 #### `get_wc_product`
 Get a single product by ID.
@@ -334,7 +353,7 @@ Get WooCommerce product categories.
 }
 ```
 
-**Response:** Returns parent product AND all variations with individual stock levels for each size/color combination automatically. No second call needed!
+**Response:** Returns all variations with individual stock levels for each size/color combination. The parent variable product is NOT included - only the variations are returned with accurate stock quantities. Each variation includes `parent_id` and `parent_name` for reference. No second call needed!
 
 ### Check Product Stock by SKU
 
