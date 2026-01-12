@@ -201,6 +201,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					),
 					'inactive_message' => __( 'Set the web search provider to Brave to activate this connector.', 'mcp-ai-wpoos' ),
 				),
+				'mubert'           => array(
+					'label'            => __( 'Mubert', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'mubert_api_key' ),
+					'fields'           => array(
+						'mubert_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Enables royalty-free background music generation with 150+ genres and 50+ moods.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Request an API key from Mubert (business@mubert.com) before using the generate_music tool.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://mubert.com',
+				),
 				'ita_tariff_rates' => array(
 					'label'            => __( 'ITA Tariff Rates', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'ita_tariff_api_key' ),
@@ -2205,6 +2215,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['brave_search_api_key'] ) ) {
 				$clean['brave_search_api_key'] = trim( sanitize_text_field( $settings['brave_search_api_key'] ) );
+			}
+
+			if ( isset( $settings['mubert_api_key'] ) ) {
+				$clean['mubert_api_key'] = trim( sanitize_text_field( $settings['mubert_api_key'] ) );
 			}
 
 			if ( isset( $settings['ita_tariff_api_key'] ) ) {
