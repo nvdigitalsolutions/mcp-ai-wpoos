@@ -186,18 +186,6 @@ class WP_MCP_AI_ECA_Metabox_Details extends WP_MCP_AI_ECA_Metabox_Base {
 				</p>
 			</div>
 		</div>
-
-		<script type="text/javascript">
-		jQuery(document).ready(function($) {
-			$('#wp_mcp_ai_eca_is_paid').on('change', function() {
-				if ($(this).is(':checked')) {
-					$('#wp_mcp_ai_eca_cost_fields').show();
-				} else {
-					$('#wp_mcp_ai_eca_cost_fields').hide();
-				}
-			});
-		});
-		</script>
 		<?php
 	}
 

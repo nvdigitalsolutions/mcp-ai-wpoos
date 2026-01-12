@@ -57,6 +57,7 @@ class WP_MCP_AI_ECA_CPT {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register_meta_boxes' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'save_eca_meta' ), 5, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'show_info_notice' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_scripts' ) );
 
 		// Load metabox classes.
 		self::load_metabox_classes();
@@ -251,6 +252,34 @@ class WP_MCP_AI_ECA_CPT {
 	}
 
 	/**
+	 * Enqueue admin scripts and styles for ECA metaboxes.
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public static function enqueue_admin_scripts( $hook ) {
+		// Only load on ECA edit screen.
+		$screen = get_current_screen();
+		if ( ! $screen || self::POST_TYPE !== $screen->post_type ) {
+			return;
+		}
+
+		// Enqueue inline script for paid activity toggle.
+		$inline_script = "
+		jQuery(document).ready(function($) {
+			$('#wp_mcp_ai_eca_is_paid').on('change', function() {
+				if ($(this).is(':checked')) {
+					$('#wp_mcp_ai_eca_cost_fields').show();
+				} else {
+					$('#wp_mcp_ai_eca_cost_fields').hide();
+				}
+			});
+		});
+		";
+
+		wp_add_inline_script( 'jquery', $inline_script );
+	}
+
+	/**
 	 * Register ECA and Student custom post types.
 	 */
 	public static function register_post_types() {
@@ -275,19 +304,19 @@ class WP_MCP_AI_ECA_CPT {
 					'not_found_in_trash' => __( 'No ECAs found in Trash.', 'mcp-ai-wpoos-pro' ),
 				),
 				'description'        => __( 'Extra-Curricular Activities for students.', 'mcp-ai-wpoos-pro' ),
-				'public'             => false,
-				'publicly_queryable' => false,
+				'public'             => true,
+				'publicly_queryable' => true,
 				'show_ui'            => true,
 				'show_in_menu'       => true,
 				'menu_icon'          => 'dashicons-calendar-alt',
-				'query_var'          => false,
-				'rewrite'            => false,
+				'query_var'          => true,
+				'rewrite'            => array( 'slug' => 'eca' ),
 				'capability_type'    => 'post',
-				'has_archive'        => false,
+				'has_archive'        => true,
 				'hierarchical'       => false,
 				'menu_position'      => null,
-				'supports'           => array( 'title', 'editor', 'author' ),
-				'show_in_rest'       => false,
+				'supports'           => array( 'title', 'editor', 'author', 'thumbnail', 'custom-fields' ),
+				'show_in_rest'       => true,
 			)
 		);
 
@@ -312,19 +341,19 @@ class WP_MCP_AI_ECA_CPT {
 					'not_found_in_trash' => __( 'No students found in Trash.', 'mcp-ai-wpoos-pro' ),
 				),
 				'description'        => __( 'Students enrolled in Extra-Curricular Activities.', 'mcp-ai-wpoos-pro' ),
-				'public'             => false,
-				'publicly_queryable' => false,
+				'public'             => true,
+				'publicly_queryable' => true,
 				'show_ui'            => true,
 				'show_in_menu'       => true,
 				'menu_icon'          => 'dashicons-groups',
-				'query_var'          => false,
-				'rewrite'            => false,
+				'query_var'          => true,
+				'rewrite'            => array( 'slug' => 'student' ),
 				'capability_type'    => 'post',
-				'has_archive'        => false,
+				'has_archive'        => true,
 				'hierarchical'       => false,
 				'menu_position'      => null,
-				'supports'           => array( 'title', 'editor', 'author' ),
-				'show_in_rest'       => false,
+				'supports'           => array( 'title', 'editor', 'author', 'thumbnail', 'custom-fields' ),
+				'show_in_rest'       => true,
 			)
 		);
 	}

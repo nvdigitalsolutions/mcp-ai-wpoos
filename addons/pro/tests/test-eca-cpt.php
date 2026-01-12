@@ -65,8 +65,8 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 			)
 		);
 
-		// Simulate accessing ECA page.
-		$_GET['post_type'] = 'mcp_ai_eca';
+		// Set up screen for ECA page.
+		set_current_screen( 'edit-mcp_ai_eca' );
 
 		// Capture output.
 		ob_start();
@@ -75,9 +75,6 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 
 		// Should not show notice when enabled.
 		$this->assertEmpty( $output );
-
-		// Clean up.
-		unset( $_GET['post_type'] );
 	}
 
 	/**
@@ -87,8 +84,8 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 		// Disable ECA management (default state).
 		update_option( 'wp_mcp_ai_settings', array() );
 
-		// Simulate accessing ECA page.
-		$_GET['post_type'] = 'mcp_ai_eca';
+		// Set up screen for ECA page.
+		set_current_screen( 'edit-mcp_ai_eca' );
 
 		// Capture output.
 		ob_start();
@@ -98,9 +95,6 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 		// Should show notice with specific text.
 		$this->assertStringContainsString( 'ECA Management Disabled', $output );
 		$this->assertStringContainsString( 'Enable ECA Management', $output );
-
-		// Clean up.
-		unset( $_GET['post_type'] );
 	}
 
 	/**
