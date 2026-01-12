@@ -39,7 +39,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products (including variations), orders, and other data in read-only mode. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'wp-mcp-ai-pro' );
+		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. IMPORTANT: When using get_wc_products, product variations are AUTOMATICALLY included by default with full stock quantities - you do NOT need to make a separate call to get_wc_product_variations unless you want variations only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -113,7 +113,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				),
 				'include_variations' => array(
 					'type'        => 'boolean',
-					'description' => __( 'For get_wc_products: Whether to include product variations in results. When true, variations of variable products are fetched and included. Default: true.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'For get_wc_products: Whether to include product variations in results. AUTOMATICALLY ENABLED BY DEFAULT (true) - variations with full stock data are included automatically. Set to false only if you want parent products without variations. When true, variations of variable products are fetched and included with stock_quantity, stock_status, sku, price, and attributes for each variation.', 'wp-mcp-ai-pro' ),
 					'default'     => true,
 				),
 				'category'      => array(
