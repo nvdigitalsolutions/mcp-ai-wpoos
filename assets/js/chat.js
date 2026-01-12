@@ -12691,6 +12691,48 @@
                 }
             }
 
+            // If still no fallback text, try extracting from tool_results
+            // This handles cases where LLM returns empty content after tool execution
+            // (e.g., some HuggingFace models) - we display the tool result summaries instead
+            if (!fallbackText && hasToolResults) {
+                const toolTexts = [];
+                data.tool_results.forEach(function (toolResult) {
+                    if (!toolResult || !toolResult.content) {
+                        return;
+                    }
+
+                    const toolName = toolResult.name || '';
+                    
+                    // Parse the tool result content (JSON string) into an object
+                    let parsedContent = toolResult.content;
+                    if (typeof parsedContent === 'string') {
+                        try {
+                            parsedContent = JSON.parse(parsedContent);
+                        } catch (e) {
+                            // If parsing fails, use the string as-is
+                            parsedContent = toolResult.content;
+                        }
+                    }
+                    
+                    // Skip async pending tool results - they'll be handled by polling
+                    if (isAsyncPendingToolResult(parsedContent)) {
+                        return;
+                    }
+                    
+                    // Normalize the tool result to extract displayable text
+                    const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
+                    
+                    if (normalized && normalized.text && typeof normalized.text === 'string') {
+                        toolTexts.push(normalized.text);
+                    }
+                });
+                
+                // Combine tool result texts as fallback
+                if (toolTexts.length > 0) {
+                    fallbackText = toolTexts.join('\n\n').trim();
+                }
+            }
+
             if (fallbackText) {
                 assistantDisplay.text = fallbackText;
                 hasDisplayText = true;
