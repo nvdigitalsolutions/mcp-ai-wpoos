@@ -39,7 +39,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. IMPORTANT: When using get_wc_products, product variations are AUTOMATICALLY included by default with full stock quantities - you do NOT need to make a separate call to get_wc_product_variations unless you want variations only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'wp-mcp-ai-pro' );
+		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -113,7 +113,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				),
 				'include_variations' => array(
 					'type'        => 'boolean',
-					'description' => __( 'For get_wc_products: Whether to include product variations in results. AUTOMATICALLY ENABLED BY DEFAULT (true) - variations with full stock data are included automatically. Set to false only if you want parent products without variations. When true, variations of variable products are fetched and included with stock_quantity, stock_status, sku, price, and attributes for each variation.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'For get_wc_products: Whether to include product variations in results. AUTOMATICALLY ENABLED BY DEFAULT (true). When enabled, variable products are represented ONLY by their variations (not the parent product) to avoid stock confusion. Each variation includes parent_id, parent_name, stock_quantity, stock_status, sku, price, and attributes. Set to false only if you want parent products without variations. To get variations for a specific product, use get_wc_product_variations instead.', 'wp-mcp-ai-pro' ),
 					'default'     => true,
 				),
 				'category'      => array(
@@ -577,18 +577,19 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		$all_products = array();
 		$variation_count = 0;
+		$parent_count = 0;
 
 		foreach ( $products as $product ) {
-			// Add the parent product.
-			$all_products[] = $product;
+			$is_variable = isset( $product->type ) && 'variable' === $product->type;
+			$has_product_id = isset( $product->id );
 
 			// If this is a variable product and variations are requested, fetch them.
-			if ( $include_variations && isset( $product->type ) && 'variable' === $product->type && isset( $product->id ) ) {
+			if ( $include_variations && $is_variable && $has_product_id ) {
 				$variations = $this->fetch_product_variations( $connection, $product->id );
 
 				if ( ! is_wp_error( $variations ) && ! empty( $variations ) ) {
 					foreach ( $variations as $variation ) {
-						// Add parent product name context to variation for clarity.
+						// Add parent product context to variation for clarity.
 						if ( isset( $variation->id ) ) {
 							$variation->parent_id = $product->id;
 							$variation->parent_name = isset( $product->name ) ? $product->name : '';
@@ -596,22 +597,33 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 							$variation_count++;
 						}
 					}
+					// Track that we included this variable product via its variations.
+					$parent_count++;
+				} else {
+					// If fetching variations failed, include the parent product.
+					$all_products[] = $product;
+					$parent_count++;
 				}
+			} else {
+				// Add non-variable products or when variations are not included.
+				$all_products[] = $product;
+				$parent_count++;
 			}
 		}
 
-		$summary = sprintf(
-			/* translators: 1: number of products, 2: number of variations */
-			__( 'Retrieved %1$d product(s)', 'wp-mcp-ai-pro' ),
-			count( $products )
-		);
-
+		// Build summary message.
 		if ( $variation_count > 0 ) {
 			$summary = sprintf(
-				/* translators: 1: number of products, 2: number of variations */
-				__( 'Retrieved %1$d product(s) with %2$d variation(s)', 'wp-mcp-ai-pro' ),
-				count( $products ),
+				/* translators: 1: number of product groups (variable products counted as groups, simple products as individual), 2: number of variations */
+				__( 'Retrieved %1$d product(s) with %2$d variation(s). Note: Variable products are represented by their variations only, not the parent product.', 'wp-mcp-ai-pro' ),
+				$parent_count,
 				$variation_count
+			);
+		} else {
+			$summary = sprintf(
+				/* translators: %d: number of products */
+				__( 'Retrieved %d product(s)', 'wp-mcp-ai-pro' ),
+				$parent_count
 			);
 		}
 
@@ -619,7 +631,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'summary'  => $summary,
 			'products' => $all_products,
 			'count'    => count( $all_products ),
-			'parent_count' => count( $products ),
+			'parent_count' => $parent_count,
 			'variation_count' => $variation_count,
 		);
 	}
