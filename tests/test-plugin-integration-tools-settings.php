@@ -1,17 +1,17 @@
 <?php
 /**
- * Test WooCommerce Tools Visibility
+ * Test Plugin Integration Tools Settings Enforcement
  *
- * Tests that WooCommerce tools from the Pro addon are properly registered
- * and visible in the assistant edit page when WooCommerce is active.
+ * Tests that plugin-specific tools (WooCommerce, JetEngine, Elementor) are properly
+ * registered and visible only when their respective enable settings are active.
  *
  * @package WP_MCP_AI
  */
 
 /**
- * Test class for WooCommerce tools visibility.
+ * Test class for plugin integration tools settings.
  */
-class Test_WooCommerce_Tools_Visibility extends WP_UnitTestCase {
+class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 	/**
 	 * Test that Pro addon defines WooCommerce tools.
 	 */
@@ -323,6 +323,132 @@ class Test_WooCommerce_Tools_Visibility extends WP_UnitTestCase {
 		}
 
 		// Clean up - restore original settings.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that JetEngine tools respect the enable_jetengine_tools setting.
+	 */
+	public function test_jetengine_tools_respect_enable_setting() {
+		// Skip if JetEngine is not available.
+		if ( ! function_exists( 'jet_engine' ) ) {
+			$this->markTestSkipped( 'JetEngine is not available in the test environment.' );
+		}
+
+		// Test with setting disabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_jetengine_tools'] = false;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Force re-registration.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$reflection = new ReflectionClass( $registry );
+		$instance_property = $reflection->getProperty( 'instance' );
+		$instance_property->setAccessible( true );
+		$instance_property->setValue( null, null );
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$all_tools = $registry->get_tools();
+		$registered_slugs = array_map(
+			function ( $tool ) {
+				return $tool->get_slug();
+			},
+			$all_tools
+		);
+
+		// Verify JetEngine tool is NOT registered.
+		$this->assertNotContains(
+			'jetengine',
+			$registered_slugs,
+			'JetEngine tool should NOT be registered when setting is disabled'
+		);
+
+		// Test with setting enabled.
+		$settings['enable_jetengine_tools'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Force re-registration.
+		$instance_property->setValue( null, null );
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$all_tools = $registry->get_tools();
+		$registered_slugs = array_map(
+			function ( $tool ) {
+				return $tool->get_slug();
+			},
+			$all_tools
+		);
+
+		// Verify JetEngine tool IS registered.
+		$this->assertContains(
+			'jetengine',
+			$registered_slugs,
+			'JetEngine tool should be registered when setting is enabled'
+		);
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that Elementor tools respect the enable_elementor_widgets setting.
+	 */
+	public function test_elementor_tools_respect_enable_setting() {
+		// Skip if Elementor is not available.
+		if ( ! did_action( 'elementor/loaded' ) && ! class_exists( '\Elementor\Plugin' ) ) {
+			$this->markTestSkipped( 'Elementor is not available in the test environment.' );
+		}
+
+		// Test with setting disabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_elementor_widgets'] = false;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Force re-registration.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$reflection = new ReflectionClass( $registry );
+		$instance_property = $reflection->getProperty( 'instance' );
+		$instance_property->setAccessible( true );
+		$instance_property->setValue( null, null );
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$all_tools = $registry->get_tools();
+		$registered_slugs = array_map(
+			function ( $tool ) {
+				return $tool->get_slug();
+			},
+			$all_tools
+		);
+
+		// Verify Elementor tool is NOT registered.
+		$this->assertNotContains(
+			'elementor',
+			$registered_slugs,
+			'Elementor tool should NOT be registered when setting is disabled'
+		);
+
+		// Test with setting enabled.
+		$settings['enable_elementor_widgets'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Force re-registration.
+		$instance_property->setValue( null, null );
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$all_tools = $registry->get_tools();
+		$registered_slugs = array_map(
+			function ( $tool ) {
+				return $tool->get_slug();
+			},
+			$all_tools
+		);
+
+		// Verify Elementor tool IS registered.
+		$this->assertContains(
+			'elementor',
+			$registered_slugs,
+			'Elementor tool should be registered when setting is enabled'
+		);
+
+		// Clean up.
 		delete_option( 'wp_mcp_ai_settings' );
 	}
 }
