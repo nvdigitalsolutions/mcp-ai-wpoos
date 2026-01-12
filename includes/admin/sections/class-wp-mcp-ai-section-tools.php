@@ -435,6 +435,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables AI-powered Extra-Curricular Activities management for schools. Provides tools for creating and managing ECAs (clubs, societies, sports), managing student enrollments, viewing schedules, and syncing with iSAMS. Includes 5+ tools for comprehensive ECA administration. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// Health and Wellness Management fields.
+				'enable_health_wellness_management'    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Health & Wellness Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Health and Wellness management toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered health and wellness management for individuals, families, and pets. Provides 30+ tools for managing members, medical records, policies, checkups, prescriptions, and allergies. Includes secure health data storage with proper access controls. Always ensure HIPAA/GDPR compliance for healthcare deployments. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -535,7 +544,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management' ),
 				),
 				'media'          => array(
 					'id'     => 'media',
