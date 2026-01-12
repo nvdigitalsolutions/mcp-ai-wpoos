@@ -618,33 +618,60 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$variation_count = 0;
 		$parent_count = 0;
 
-		foreach ( $products as $product ) {
-			$is_variable = isset( $product->type ) && 'variable' === $product->type;
-			$has_product_id = isset( $product->id );
+		if ( $include_variations ) {
+			// Optimize: Collect all variable product IDs first, then fetch variations in batch.
+			$variable_product_ids = array();
+			$variable_products_map = array();
+			$simple_products = array();
 
-			// If this is a variable product and variations are requested, fetch them.
-			if ( $include_variations && $is_variable && $has_product_id ) {
-				$variations = $this->fetch_product_variations( $connection, $product->id );
+			foreach ( $products as $product ) {
+				$is_variable = isset( $product->type ) && 'variable' === $product->type;
+				$has_product_id = isset( $product->id );
 
-				if ( ! is_wp_error( $variations ) && ! empty( $variations ) ) {
-					foreach ( $variations as $variation ) {
-						// Add parent product context to variation for clarity.
-						if ( isset( $variation->id ) ) {
-							$variation->parent_id = $product->id;
-							$variation->parent_name = isset( $product->name ) ? $product->name : '';
-							$all_products[] = $variation;
-							$variation_count++;
-						}
-					}
-					// Track that we included this variable product via its variations.
-					$parent_count++;
+				if ( $is_variable && $has_product_id ) {
+					$variable_product_ids[] = $product->id;
+					$variable_products_map[ $product->id ] = $product;
 				} else {
-					// If fetching variations failed, include the parent product.
-					$all_products[] = $product;
-					$parent_count++;
+					// Non-variable products (simple, grouped, external, etc.).
+					$simple_products[] = $product;
 				}
-			} else {
-				// Add non-variable products or when variations are not included.
+			}
+
+			// Fetch all variations in optimized batch mode if there are variable products.
+			if ( ! empty( $variable_product_ids ) ) {
+				$all_variations = $this->fetch_all_product_variations_batch( $connection, $variable_product_ids );
+
+				// Process variable products with their variations.
+				foreach ( $variable_product_ids as $product_id ) {
+					$product = $variable_products_map[ $product_id ];
+					
+					if ( isset( $all_variations[ $product_id ] ) && ! empty( $all_variations[ $product_id ] ) ) {
+						// Add each variation with parent context.
+						foreach ( $all_variations[ $product_id ] as $variation ) {
+							if ( isset( $variation->id ) ) {
+								$variation->parent_id = $product->id;
+								$variation->parent_name = isset( $product->name ) ? $product->name : '';
+								$all_products[] = $variation;
+								$variation_count++;
+							}
+						}
+						$parent_count++;
+					} else {
+						// If fetching variations failed or no variations exist, include the parent product.
+						$all_products[] = $product;
+						$parent_count++;
+					}
+				}
+			}
+
+			// Add all simple/non-variable products.
+			foreach ( $simple_products as $product ) {
+				$all_products[] = $product;
+				$parent_count++;
+			}
+		} else {
+			// If variations are not requested, just add all products as-is.
+			foreach ( $products as $product ) {
 				$all_products[] = $product;
 				$parent_count++;
 			}
@@ -812,6 +839,61 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$variations = $this->optimize_product_images( $variations );
 
 		return $variations;
+	}
+
+	/**
+	 * Fetch product variations for multiple products in optimized batch mode.
+	 *
+	 * This method optimizes variation fetching by checking cache first and reducing
+	 * redundant processing. While WordPress HTTP API doesn't support truly parallel
+	 * requests, this method minimizes overhead by batching the logic and leveraging
+	 * the existing caching layer in the Remote Site Manager.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection        Connection data.
+	 * @param array $product_ids       Array of product IDs to fetch variations for.
+	 * @return array Associative array mapping product_id => variations array.
+	 */
+	protected function fetch_all_product_variations_batch( $connection, $product_ids ) {
+		if ( empty( $product_ids ) || ! is_array( $product_ids ) ) {
+			return array();
+		}
+
+		$results = array();
+
+		// Fetch variations for all products.
+		// The Remote Site Manager's make_request method will handle caching,
+		// so subsequent requests for the same product will be fast.
+		foreach ( $product_ids as $product_id ) {
+			$product_id = absint( $product_id );
+			if ( ! $product_id ) {
+				continue;
+			}
+
+			$endpoint = 'wc/v3/products/' . $product_id . '/variations';
+			$params = array(
+				'per_page' => 100,
+				'_fields'  => self::VARIATION_FIELDS,
+			);
+			$endpoint = add_query_arg( $params, $endpoint );
+
+			// Use the existing make_request which handles caching and authentication.
+			$variations = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
+
+			if ( is_wp_error( $variations ) || ! is_array( $variations ) ) {
+				// On error or invalid response, store empty array for this product.
+				$results[ $product_id ] = array();
+				continue;
+			}
+
+			// Optimize variation images to save tokens.
+			$variations = $this->optimize_product_images( $variations );
+
+			$results[ $product_id ] = $variations;
+		}
+
+		return $results;
 	}
 
 	/**

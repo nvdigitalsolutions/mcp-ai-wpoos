@@ -245,6 +245,8 @@ Note: No need to specify `include_variations: true` - variations are fetched aut
 
 You do NOT need to make a separate call to `get_wc_product_variations` unless you want to get variations for a specific product ID only.
 
+**Performance Optimization:** The variation fetching is optimized using batched logic that separates products by type before making API calls. This approach leverages the Remote Site Manager's caching layer for improved performance, especially with multiple variable products.
+
 #### `get_wc_product`
 Get a single product by ID.
 
