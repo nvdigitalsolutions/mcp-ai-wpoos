@@ -228,6 +228,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Places Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/places-management-init.php';
 
+		// Load ECA Management CPT registration (Pro feature).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/eca-management-init.php';
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 
@@ -342,6 +345,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			// Web Browser Automation tool (Playwright-based).
 			'WP_MCP_AI_Tool_Web_Browser'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-browser.php',
 		);
+
+		// Add ECA management tools if enabled.
+		if ( ! empty( $settings['enable_eca_management'] ) ) {
+			$eca_tools = array(
+				'WP_MCP_AI_Tool_Create_ECA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-eca.php',
+				'WP_MCP_AI_Tool_List_ECAs'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-ecas.php',
+				'WP_MCP_AI_Tool_Enroll_Student_ECA'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-enroll-student-eca.php',
+				'WP_MCP_AI_Tool_Get_Student'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-student.php',
+				'WP_MCP_AI_Tool_Sync_Students_From_ISAMS' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-students-from-isams.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $eca_tools );
+		}
 
 		// Add quiz tools if enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
