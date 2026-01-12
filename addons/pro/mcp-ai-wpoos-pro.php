@@ -392,6 +392,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
 		}
 
+		// Add health and wellness management tools if enabled.
+		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
+			$health_wellness_tools = array(
+				'WP_MCP_AI_Tool_Create_Member'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-member.php',
+				'WP_MCP_AI_Tool_List_Members'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-members.php',
+				'WP_MCP_AI_Tool_Get_Member_Health_Summary'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-member-health-summary.php',
+			);
+			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
+		}
+
 		// Add WooCommerce tools if enabled.
 		if ( ! empty( $settings['enable_woocommerce_tools'] ) ) {
 			$woo_tools = array(
@@ -682,6 +692,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['enroll_student_eca']       = 'wordpress-core';
 			$pro_tools['get_student']              = 'wordpress-core';
 			$pro_tools['sync_students_from_isams'] = 'wordpress-core';
+		}
+
+		// Add health and wellness management tool mappings if enabled.
+		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
+			$pro_tools['create_member']              = 'wordpress-core';
+			$pro_tools['list_members']               = 'wordpress-core';
+			$pro_tools['get_member_health_summary']  = 'wordpress-core';
 		}
 
 		/**
