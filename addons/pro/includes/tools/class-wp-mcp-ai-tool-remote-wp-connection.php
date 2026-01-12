@@ -817,7 +817,8 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * Optimize image arrays to reduce token usage.
 	 *
-	 * Reduces image data to only essential fields (src URL) and limits to first 3 images.
+	 * Reduces image data to only essential fields (src and alt), removing verbose date fields.
+	 * Limits to first 3 images.
 	 *
 	 * @since 1.0.0
 	 *
@@ -830,7 +831,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		foreach ( $products as $product ) {
-			// Optimize images array - keep only src URL and limit to 3 images.
+			// Optimize images array - keep only src and alt, removing all date fields.
 			if ( isset( $product->images ) && is_array( $product->images ) ) {
 				$optimized_images = array();
 				$image_count = 0;
@@ -906,18 +907,22 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	}
 
 	/**
-	 * Sort products by stock status to prioritize in-stock items.
+	 * Sort products by stock status and product type.
 	 *
-	 * Sorts products client-side to show in-stock items first, since the WooCommerce
-	 * REST API v3 doesn't support orderby=stock_status. Sorting order:
-	 * 1. instock
-	 * 2. onbackorder
-	 * 3. outofstock
+	 * Sorts products client-side to show in-stock items first, with variable products
+	 * prioritized over simple products within each stock status. Since the WooCommerce
+	 * REST API v3 doesn't support complex sorting. Sorting order:
+	 * 1. instock variable
+	 * 2. instock simple (and other types)
+	 * 3. onbackorder variable
+	 * 4. onbackorder simple (and other types)
+	 * 5. outofstock variable
+	 * 6. outofstock simple (and other types)
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param array $products Array of product objects.
-	 * @return array Products sorted by stock status.
+	 * @return array Products sorted by stock status and type.
 	 */
 	protected function sort_products_by_stock_status( $products ) {
 		if ( ! is_array( $products ) || empty( $products ) ) {
@@ -931,9 +936,15 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'outofstock'   => 3,
 		);
 
+		// Define product type priority (lower number = higher priority).
+		$type_priority = array(
+			'variable' => 1,
+			'simple'   => 2,
+		);
+
 		usort(
 			$products,
-			function ( $a, $b ) use ( $stock_priority ) {
+			function ( $a, $b ) use ( $stock_priority, $type_priority ) {
 				$stock_a = isset( $a->stock_status ) ? $a->stock_status : 'outofstock';
 				$stock_b = isset( $b->stock_status ) ? $b->stock_status : 'outofstock';
 
@@ -941,7 +952,19 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				$priority_a = isset( $stock_priority[ $stock_a ] ) ? $stock_priority[ $stock_a ] : 999;
 				$priority_b = isset( $stock_priority[ $stock_b ] ) ? $stock_priority[ $stock_b ] : 999;
 
-				return $priority_a - $priority_b;
+				// If stock status is different, sort by stock status.
+				if ( $priority_a !== $priority_b ) {
+					return $priority_a - $priority_b;
+				}
+
+				// Stock status is the same, sort by product type.
+				$type_a = isset( $a->type ) ? $a->type : 'simple';
+				$type_b = isset( $b->type ) ? $b->type : 'simple';
+
+				$type_priority_a = isset( $type_priority[ $type_a ] ) ? $type_priority[ $type_a ] : 999;
+				$type_priority_b = isset( $type_priority[ $type_b ] ) ? $type_priority[ $type_b ] : 999;
+
+				return $type_priority_a - $type_priority_b;
 			}
 		);
 

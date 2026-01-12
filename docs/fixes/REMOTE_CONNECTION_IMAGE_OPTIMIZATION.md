@@ -44,8 +44,8 @@ The `optimize_product_images()` method reduces image data to only essential fiel
 
 ### Key Optimizations
 
-1. **Field Reduction**: Removes 6 verbose fields per image (id, date_created, date_created_gmt, date_modified, date_modified_gmt, name)
-2. **Image Limit**: Restricts to first 3 images per product (most products only need 1-2 images for AI processing)
+1. **Field Reduction**: Removes 6 verbose fields per image (id, date_created, date_created_gmt, date_modified, date_modified_gmt, name) - keeping only src and alt
+2. **Image Limit**: Restricts to first 3 images per product (most products only need 1-3 images for AI processing)
 3. **Universal Application**: Works for both product `images` arrays and variation `image` single fields
 4. **Format Agnostic**: Handles both object and array image formats
 
@@ -87,7 +87,7 @@ The `optimize_product_images()` method reduces image data to only essential fiel
 Comprehensive test suite added in `test-remote-connection-image-optimization.php`:
 
 - ✓ Basic image optimization
-- ✓ 3-image limit enforcement
+- ✓ 1-image limit enforcement
 - ✓ Array and object format handling
 - ✓ Single image fields (variations)
 - ✓ Missing alt text defaults
@@ -116,7 +116,7 @@ $result = $tool->execute(
 
 Consider these additional optimizations:
 
-1. **Configurable image limit**: Allow customization of the 3-image limit
+1. **Configurable image limit**: Allow customization of the 3-image limit via filter
 2. **Lazy loading**: Only fetch images when specifically requested
 3. **Thumbnail preference**: Prioritize smaller image sizes for even more savings
 4. **Description HTML stripping**: Already implemented but could be enhanced to remove inline image URLs
