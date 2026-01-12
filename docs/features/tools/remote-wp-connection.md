@@ -146,7 +146,7 @@ Get media library items.
 ### WooCommerce Data
 
 #### `get_wc_products`
-Get WooCommerce products with optional variation support.
+Get WooCommerce products with **AUTOMATIC variation support** - variations are included by default.
 
 **Parameters:**
 - `connection_id` (string, required): Connection ID
@@ -157,7 +157,7 @@ Get WooCommerce products with optional variation support.
 - `status` (string): Product status filter
 - `category` (string): Filter by category slug or ID
 - `type` (string): Filter by product type (simple, variable, grouped, external)
-- `include_variations` (boolean): Include product variations in results (default: true)
+- `include_variations` (boolean): Include product variations in results (**default: true** - variations are automatically included with full stock data)
 
 **Example:**
 ```json
@@ -165,18 +165,28 @@ Get WooCommerce products with optional variation support.
   "connection_id": "conn_abc123",
   "action": "get_wc_products",
   "per_page": 20,
-  "status": "publish",
-  "include_variations": true
+  "status": "publish"
 }
 ```
+Note: Variations are automatically included - no need to specify `include_variations`!
 
-**Example - Search by SKU:**
+**Example - Basic search (variations automatically included):**
+```json
+{
+  "connection_id": "conn_abc123",
+  "action": "get_wc_products",
+  "search": "shirt"
+}
+```
+Note: No need to specify `include_variations: true` - variations are fetched automatically!
+
+**Example - Exclude variations:**
 ```json
 {
   "connection_id": "conn_abc123",
   "action": "get_wc_products",
   "search": "shirt",
-  "include_variations": true
+  "include_variations": false
 }
 ```
 
@@ -214,7 +224,7 @@ Get WooCommerce products with optional variation support.
 }
 ```
 
-**Note:** When `include_variations` is true (default), variable products will have their variations fetched and included in the results. Each variation includes `parent_id` and `parent_name` fields for context.
+**IMPORTANT:** Variations are **AUTOMATICALLY** included by default. When `include_variations` is true (which is the default), variable products will have their variations fetched and included in a single call. Each variation includes `parent_id`, `parent_name`, `stock_quantity`, `stock_status`, `sku`, `price`, and `attributes` fields. You do NOT need to make a separate call to `get_wc_product_variations` unless you want to get variations for a specific product ID only.
 
 #### `get_wc_product`
 Get a single product by ID.
@@ -312,20 +322,19 @@ Get WooCommerce product categories.
 
 **Prompt:** "Check the current stock for all sizes and colors of our blue T-shirt on the production store"
 
-**Tool Call 1 - Search for the product:**
+**Tool Call - Single call gets everything:**
 ```json
 {
   "tool": "remote_wp_connection",
   "arguments": {
     "connection_id": "conn_prod_store",
     "action": "get_wc_products",
-    "search": "blue t-shirt",
-    "include_variations": true
+    "search": "blue t-shirt"
   }
 }
 ```
 
-**Response:** Returns parent product and all variations with individual stock levels for each size/color combination.
+**Response:** Returns parent product AND all variations with individual stock levels for each size/color combination automatically. No second call needed!
 
 ### Check Product Stock by SKU
 
@@ -338,11 +347,12 @@ Get WooCommerce product categories.
   "arguments": {
     "connection_id": "conn_prod_store",
     "action": "get_wc_products",
-    "sku": "TSH-001",
-    "include_variations": true
+    "sku": "TSH-001"
   }
 }
 ```
+
+Note: Variations are automatically included with their stock quantities.
 
 ### Get Variations for a Specific Product
 
