@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-wp-remote-connect-tool',
-        'version' => 'dev-copilot/enhance-wp-remote-connect-tool',
-        'reference' => 'a10616d579dc9de92b6d7b5deade9e8f33f26bb5',
+        'pretty_version' => 'dev-copilot/check-woocommerce-toolset-implementation-again',
+        'version' => 'dev-copilot/check-woocommerce-toolset-implementation-again',
+        'reference' => '5a6318a8163e8dfe2458a910fcd6c42638ab53d3',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-wp-remote-connect-tool',
-            'version' => 'dev-copilot/enhance-wp-remote-connect-tool',
-            'reference' => 'a10616d579dc9de92b6d7b5deade9e8f33f26bb5',
+            'pretty_version' => 'dev-copilot/check-woocommerce-toolset-implementation-again',
+            'version' => 'dev-copilot/check-woocommerce-toolset-implementation-again',
+            'reference' => '5a6318a8163e8dfe2458a910fcd6c42638ab53d3',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
