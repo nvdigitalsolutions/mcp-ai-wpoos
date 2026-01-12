@@ -357,6 +357,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Enroll_Student_ECA'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-enroll-student-eca.php',
 				'WP_MCP_AI_Tool_Get_Student'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-student.php',
 				'WP_MCP_AI_Tool_Sync_Students_From_ISAMS' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-students-from-isams.php',
+				'WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-isams.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $eca_tools );
 		}
