@@ -563,9 +563,6 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
-			// Sort by stock status ascending - 'instock' comes before 'outofstock' alphabetically.
-			'orderby'  => 'stock_status',
-			'order'    => 'asc',
 		);
 
 		if ( ! empty( $arguments['search'] ) ) {
@@ -606,6 +603,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		// Truncate descriptions to save tokens while keeping essential info.
 		$products = $this->truncate_product_descriptions( $products );
+
+		// Sort products by stock status (in-stock first) since WooCommerce API doesn't support
+		// orderby=stock_status. We sort client-side after fetching.
+		$products = $this->sort_products_by_stock_status( $products );
 
 		// Check if we should include variations.
 		$include_variations = isset( $arguments['include_variations'] ) ? (bool) $arguments['include_variations'] : true;
@@ -821,6 +822,49 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				$product->short_description = $this->truncate_to_sentences( $product->short_description, 2 );
 			}
 		}
+
+		return $products;
+	}
+
+	/**
+	 * Sort products by stock status to prioritize in-stock items.
+	 *
+	 * Sorts products client-side to show in-stock items first, since the WooCommerce
+	 * REST API v3 doesn't support orderby=stock_status. Sorting order:
+	 * 1. instock
+	 * 2. onbackorder
+	 * 3. outofstock
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $products Array of product objects.
+	 * @return array Products sorted by stock status.
+	 */
+	protected function sort_products_by_stock_status( $products ) {
+		if ( ! is_array( $products ) || empty( $products ) ) {
+			return $products;
+		}
+
+		// Define stock status priority (lower number = higher priority).
+		$stock_priority = array(
+			'instock'      => 1,
+			'onbackorder'  => 2,
+			'outofstock'   => 3,
+		);
+
+		usort(
+			$products,
+			function ( $a, $b ) use ( $stock_priority ) {
+				$stock_a = isset( $a->stock_status ) ? $a->stock_status : 'outofstock';
+				$stock_b = isset( $b->stock_status ) ? $b->stock_status : 'outofstock';
+
+				// Get priority for each stock status (default to 999 if unknown).
+				$priority_a = isset( $stock_priority[ $stock_a ] ) ? $stock_priority[ $stock_a ] : 999;
+				$priority_b = isset( $stock_priority[ $stock_b ] ) ? $stock_priority[ $stock_b ] : 999;
+
+				return $priority_a - $priority_b;
+			}
+		);
 
 		return $products;
 	}
