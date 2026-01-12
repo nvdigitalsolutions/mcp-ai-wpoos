@@ -4,6 +4,8 @@
 
 The Remote WordPress/WooCommerce Connection Tool enables AI assistants to access data from external WordPress and WooCommerce sites through their REST APIs. This Pro feature provides read-only access to posts, media, products, orders, and other resources from configured remote sites.
 
+**CRITICAL FOR VARIABLE PRODUCTS:** This tool is essential for checking accurate stock information for variable products (products with variations like sizes, colors, etc.). Static product exports or JSON files only show generic/empty stock data for parent variable products because the actual stock is managed at the variation level. Always use this tool to get live stock quantities and availability for variable products.
+
 ## Features
 
 - **Multiple Site Connections**: Configure and manage multiple remote WordPress/WooCommerce sites
@@ -11,6 +13,7 @@ The Remote WordPress/WooCommerce Connection Tool enables AI assistants to access
 - **Multiple Authentication Methods**: Support for Application Passwords, Basic Auth, JWT, and no-auth
 - **Per-Assistant Configuration**: Enable/disable specific connections for individual assistants
 - **WooCommerce Support**: Full access to products, orders, customers, and categories
+- **Automatic Variation Fetching**: Automatically retrieves all variations for variable products with live stock data
 - **Connection Testing**: Test connectivity and authentication before use
 
 ## Configuration
@@ -338,6 +341,39 @@ Get WooCommerce product categories.
 - `page` (integer): Page number (default: 1)
 
 ## Use Cases
+
+### Working with Variable Products (CRITICAL)
+
+**Scenario:** You have a product export JSON file that shows a product like "1 Million" with `Product Type: "variable"` and empty or generic stock/price fields.
+
+**Why Stock Data is Unreliable:** Variable products (products with variations) manage stock at the variation level, not the parent product level. The parent product typically shows `stock_quantity: null` or empty stock data because each variation (e.g., "1 Million 100ml", "1 Million 50ml") has its own independent stock quantity and availability.
+
+**Solution:** Always use `remote_wp_connection` with `action="get_wc_products"` to fetch live stock data for variable products. The tool automatically retrieves all variations with their accurate stock quantities.
+
+**Example - Checking stock for a variable product:**
+
+**Prompt:** "Is the product '1 Million' in stock?"
+
+**Tool Call:**
+```json
+{
+  "tool": "remote_wp_connection",
+  "arguments": {
+    "connection_id": "conn_prod_store",
+    "action": "get_wc_products",
+    "search": "1 Million"
+  }
+}
+```
+
+**Response:** Returns all variations of "1 Million" (e.g., 100ml, 50ml sizes) with accurate stock_quantity and stock_status for each variation. The parent variable product is NOT included - only variations with real stock data are returned.
+
+**Key Points:**
+- ✓ Variable products require checking the remote API for accurate stock
+- ✓ Static JSON files show unreliable stock for variable products
+- ✓ Variations are fetched automatically (include_variations defaults to true)
+- ✓ Each variation includes parent_id, parent_name, stock_quantity, stock_status, sku, price
+- ✓ You can determine if ANY size/variant is in stock by checking all variations
 
 ### Check Product Stock with Variations
 
