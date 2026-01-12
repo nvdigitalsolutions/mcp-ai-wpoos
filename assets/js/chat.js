@@ -12974,11 +12974,44 @@
             }
             
             // Extract and preserve display metadata for persistence (including badges)
-            const displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay, {
+            let displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay, {
                 usage: aggregatedUsage,
                 cost: aggregatedCost,
                 capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
             });
+            
+            // Fallback: If extractDisplayMetadata returns null (e.g., assistantMessageElement is invalid),
+            // create minimal display metadata manually to ensure text is preserved
+            if (!displayMetadata && assistantDisplay.text) {
+                displayMetadata = {
+                    bubbleType: 'assistant',
+                    text: assistantDisplay.text,
+                    attachments: assistantDisplay.attachments || []
+                };
+                
+                if (assistantDisplay.chartHtml) {
+                    displayMetadata.chartHtml = assistantDisplay.chartHtml;
+                    displayMetadata.chartWidth = assistantDisplay.chartWidth || 600;
+                    displayMetadata.chartHeight = assistantDisplay.chartHeight || 350;
+                }
+                
+                if (aggregatedUsage) {
+                    displayMetadata.usage = aggregatedUsage;
+                }
+                
+                if (aggregatedCost) {
+                    displayMetadata.cost = aggregatedCost;
+                }
+                
+                if (capabilityFlags && capabilityFlags.length > 0) {
+                    displayMetadata.capabilityFlags = capabilityFlags;
+                }
+                
+                if (window.console && console.warn) {
+                    console.warn('[NV oOS] extractDisplayMetadata returned null for normal message path, using fallback display metadata');
+                }
+            }
+            
             if (displayMetadata) {
                 assistantMessage.display = displayMetadata;
             }
