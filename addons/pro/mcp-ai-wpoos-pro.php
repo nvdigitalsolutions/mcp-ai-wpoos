@@ -398,6 +398,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Create_Member'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-member.php',
 				'WP_MCP_AI_Tool_List_Members'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-members.php',
 				'WP_MCP_AI_Tool_Get_Member_Health_Summary'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-member-health-summary.php',
+				'WP_MCP_AI_Tool_Search_Policies'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-policies.php',
+				'WP_MCP_AI_Tool_Search_Prescriptions'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-prescriptions.php',
+				'WP_MCP_AI_Tool_Search_Medical_Records'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-medical-records.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
 		}
@@ -699,6 +702,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['create_member']              = 'wordpress-core';
 			$pro_tools['list_members']               = 'wordpress-core';
 			$pro_tools['get_member_health_summary']  = 'wordpress-core';
+			$pro_tools['search_policies']            = 'wordpress-core';
+			$pro_tools['search_prescriptions']       = 'wordpress-core';
+			$pro_tools['search_medical_records']     = 'wordpress-core';
 		}
 
 		/**
