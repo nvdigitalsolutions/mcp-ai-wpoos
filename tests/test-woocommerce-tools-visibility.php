@@ -250,38 +250,79 @@ class Test_WooCommerce_Tools_Visibility extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test WooCommerce tool availability check.
+	 * Test that WooCommerce tools are only registered when setting is enabled.
 	 */
-	public function test_woocommerce_tool_availability_check() {
-		// Load the WooCommerce Products tool class.
-		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php';
-		if ( file_exists( $tool_file ) ) {
-			require_once $tool_file;
+	public function test_woocommerce_tools_respect_enable_setting() {
+		// Skip if WooCommerce is not available.
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			$this->markTestSkipped( 'WooCommerce is not available in the test environment.' );
 		}
 
-		// If WooCommerce is active, tool should be available.
-		if ( class_exists( 'WooCommerce' ) && class_exists( 'WP_MCP_AI_Pro_Tool_Woo_Products' ) ) {
-			$this->assertTrue(
-				WP_MCP_AI_Pro_Tool_Woo_Products::is_available(),
-				'WooCommerce Products tool should be available when WooCommerce is active'
-			);
-		} elseif ( class_exists( 'WP_MCP_AI_Pro_Tool_Woo_Products' ) ) {
-			$this->assertFalse(
-				WP_MCP_AI_Pro_Tool_Woo_Products::is_available(),
-				'WooCommerce Products tool should not be available when WooCommerce is not active'
-			);
+		// Test with setting disabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_woocommerce_tools'] = false;
+		update_option( 'wp_mcp_ai_settings', $settings );
 
-			// Check unavailable reason.
-			$reason = WP_MCP_AI_Pro_Tool_Woo_Products::get_unavailable_reason();
-			$this->assertNotEmpty(
-				$reason,
-				'Tool should provide a reason when unavailable'
-			);
-			$this->assertStringContainsString(
-				'WooCommerce',
-				$reason,
-				'Unavailable reason should mention WooCommerce'
+		// Force re-registration of tools by clearing the instance.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$reflection = new ReflectionClass( $registry );
+		$instance_property = $reflection->getProperty( 'instance' );
+		$instance_property->setAccessible( true );
+		$instance_property->setValue( null, null );
+		$tools_property = $reflection->getProperty( 'tools' );
+		$tools_property->setAccessible( true );
+		$tools_property->setValue( $registry, null );
+
+		// Get new registry instance.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+		// Get all registered tools.
+		$all_tools = $registry->get_tools();
+		$registered_slugs = array_map(
+			function ( $tool ) {
+				return $tool->get_slug();
+			},
+			$all_tools
+		);
+
+		// Verify WooCommerce tools are NOT registered.
+		$woo_tools = array( 'woo_products', 'woo_orders', 'woo_customers', 'woo_coupons' );
+		foreach ( $woo_tools as $tool_slug ) {
+			$this->assertNotContains(
+				$tool_slug,
+				$registered_slugs,
+				"WooCommerce tool '{$tool_slug}' should NOT be registered when setting is disabled"
 			);
 		}
+
+		// Test with setting enabled.
+		$settings['enable_woocommerce_tools'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Force re-registration again.
+		$instance_property->setValue( null, null );
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$tools_property->setValue( $registry, null );
+
+		// Get all registered tools again.
+		$all_tools = $registry->get_tools();
+		$registered_slugs = array_map(
+			function ( $tool ) {
+				return $tool->get_slug();
+			},
+			$all_tools
+		);
+
+		// Verify WooCommerce tools ARE registered.
+		foreach ( $woo_tools as $tool_slug ) {
+			$this->assertContains(
+				$tool_slug,
+				$registered_slugs,
+				"WooCommerce tool '{$tool_slug}' should be registered when setting is enabled"
+			);
+		}
+
+		// Clean up - restore original settings.
+		delete_option( 'wp_mcp_ai_settings' );
 	}
 }
