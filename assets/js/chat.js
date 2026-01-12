@@ -10824,6 +10824,17 @@
                 // Check if this message has tool_calls (either in message or display metadata)
                 const hasToolCalls = message.tool_calls || (display && display.tool_calls);
                 
+                // Debug logging for quiz tool persistence issue
+                if (window.console && console.log && display) {
+                    console.log('[NV oOS] Restoring assistant message:', {
+                        hasDisplay: !!display,
+                        displayText: display.text,
+                        displayBubbleType: display.bubbleType,
+                        content: content,
+                        hasToolCalls: hasToolCalls
+                    });
+                }
+                
                 if (display) {
                     // Use saved display metadata for consistency
                     // Include both message and text fields if available
@@ -12567,13 +12578,56 @@
                 
                 // Add assistant message to conversation
                 if (state.conversation && Array.isArray(state.conversation)) {
+                    const displayMetadata = extractDisplayMetadata(messageElement, assistantDisplay, {
+                        usage: usage,
+                        cost: cost
+                    });
+                    
+                    // Debug logging for quiz tool persistence issue
+                    if (window.console && console.log && data.tool_results && data.tool_results.length > 0) {
+                        const toolNames = data.tool_results.map(function(tr) { return tr.name; }).join(', ');
+                        console.log('[NV oOS] Creating assistant message from tool results:', {
+                            toolNames: toolNames,
+                            assistantDisplayText: assistantDisplay.text,
+                            hasDisplayMetadata: !!displayMetadata,
+                            displayMetadataText: displayMetadata && displayMetadata.text,
+                            messageElementValid: !!messageElement
+                        });
+                    }
+                    
+                    // Fallback: If extractDisplayMetadata returns null (e.g., messageElement is invalid),
+                    // create minimal display metadata manually to ensure text is preserved
+                    let finalDisplayMetadata = displayMetadata;
+                    if (!finalDisplayMetadata && assistantDisplay.text) {
+                        finalDisplayMetadata = {
+                            bubbleType: 'assistant',
+                            text: assistantDisplay.text,
+                            attachments: assistantDisplay.attachments || []
+                        };
+                        
+                        if (assistantDisplay.chartHtml) {
+                            finalDisplayMetadata.chartHtml = assistantDisplay.chartHtml;
+                            finalDisplayMetadata.chartWidth = assistantDisplay.chartWidth || 600;
+                            finalDisplayMetadata.chartHeight = assistantDisplay.chartHeight || 350;
+                        }
+                        
+                        if (usage) {
+                            finalDisplayMetadata.usage = usage;
+                        }
+                        
+                        if (cost) {
+                            finalDisplayMetadata.cost = cost;
+                        }
+                        
+                        if (window.console && console.warn) {
+                            console.warn('[NV oOS] extractDisplayMetadata returned null, using fallback display metadata');
+                        }
+                    }
+                    
                     const assistantMessage = createConversationMessage(
                         'assistant',
                         assistantDisplay.text || '',
-                        extractDisplayMetadata(messageElement, assistantDisplay, {
-                            usage: usage,
-                            cost: cost
-                        })
+                        finalDisplayMetadata
                     );
                     state.conversation.push(assistantMessage);
                 }
@@ -12688,6 +12742,48 @@
                         })
                         .join('\n\n')
                         .trim();
+                }
+            }
+
+            // If still no fallback text, try extracting from tool_results
+            // This handles cases where LLM returns empty content after tool execution
+            // (e.g., some HuggingFace models) - we display the tool result summaries instead
+            if (!fallbackText && hasToolResults) {
+                const toolTexts = [];
+                data.tool_results.forEach(function (toolResult) {
+                    if (!toolResult || !toolResult.content) {
+                        return;
+                    }
+
+                    const toolName = toolResult.name || '';
+                    
+                    // Parse the tool result content (JSON string) into an object
+                    let parsedContent = toolResult.content;
+                    if (typeof parsedContent === 'string') {
+                        try {
+                            parsedContent = JSON.parse(parsedContent);
+                        } catch (e) {
+                            // If parsing fails, use the string as-is
+                            parsedContent = toolResult.content;
+                        }
+                    }
+                    
+                    // Skip async pending tool results - they'll be handled by polling
+                    if (isAsyncPendingToolResult(parsedContent)) {
+                        return;
+                    }
+                    
+                    // Normalize the tool result to extract displayable text
+                    const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
+                    
+                    if (normalized && normalized.text && typeof normalized.text === 'string') {
+                        toolTexts.push(normalized.text);
+                    }
+                });
+                
+                // Combine tool result texts as fallback
+                if (toolTexts.length > 0) {
+                    fallbackText = toolTexts.join('\n\n').trim();
                 }
             }
 
@@ -12878,11 +12974,44 @@
             }
             
             // Extract and preserve display metadata for persistence (including badges)
-            const displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay, {
+            let displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay, {
                 usage: aggregatedUsage,
                 cost: aggregatedCost,
                 capabilityFlags: capabilityFlags && capabilityFlags.length > 0 ? capabilityFlags : null
             });
+            
+            // Fallback: If extractDisplayMetadata returns null (e.g., assistantMessageElement is invalid),
+            // create minimal display metadata manually to ensure text is preserved
+            if (!displayMetadata && assistantDisplay.text) {
+                displayMetadata = {
+                    bubbleType: 'assistant',
+                    text: assistantDisplay.text,
+                    attachments: assistantDisplay.attachments || []
+                };
+                
+                if (assistantDisplay.chartHtml) {
+                    displayMetadata.chartHtml = assistantDisplay.chartHtml;
+                    displayMetadata.chartWidth = assistantDisplay.chartWidth || 600;
+                    displayMetadata.chartHeight = assistantDisplay.chartHeight || 350;
+                }
+                
+                if (aggregatedUsage) {
+                    displayMetadata.usage = aggregatedUsage;
+                }
+                
+                if (aggregatedCost) {
+                    displayMetadata.cost = aggregatedCost;
+                }
+                
+                if (capabilityFlags && capabilityFlags.length > 0) {
+                    displayMetadata.capabilityFlags = capabilityFlags;
+                }
+                
+                if (window.console && console.warn) {
+                    console.warn('[NV oOS] extractDisplayMetadata returned null for normal message path, using fallback display metadata');
+                }
+            }
+            
             if (displayMetadata) {
                 assistantMessage.display = displayMetadata;
             }
