@@ -22,6 +22,24 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-mana
 class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * Essential WooCommerce product fields to retrieve.
+	 *
+	 * Excludes verbose fields like meta_data, related_ids, etc. to reduce token usage.
+	 *
+	 * @since 1.0.0
+	 * @var string
+	 */
+	const PRODUCT_FIELDS = 'id,name,slug,permalink,sku,price,regular_price,sale_price,on_sale,stock_status,stock_quantity,manage_stock,backorders_allowed,type,status,categories,images,attributes,variations,parent_id,description,short_description';
+
+	/**
+	 * Essential WooCommerce product variation fields to retrieve.
+	 *
+	 * @since 1.0.0
+	 * @var string
+	 */
+	const VARIATION_FIELDS = 'id,sku,price,regular_price,sale_price,on_sale,stock_status,stock_quantity,manage_stock,backorders_allowed,attributes,image';
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -564,7 +582,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		// Exclude verbose fields to reduce token usage.
 		// Keep only essential product information including description (will be truncated).
-		$params['_fields'] = 'id,name,slug,permalink,sku,price,regular_price,sale_price,on_sale,stock_status,stock_quantity,manage_stock,backorders_allowed,type,status,categories,images,attributes,variations,parent_id,description,short_description';
+		$params['_fields'] = self::PRODUCT_FIELDS;
 
 		$endpoint = 'wc/v3/products';
 
@@ -755,7 +773,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		// Exclude verbose fields to reduce token usage.
 		$params = array(
 			'per_page' => 100,
-			'_fields'  => 'id,sku,price,regular_price,sale_price,on_sale,stock_status,stock_quantity,manage_stock,backorders_allowed,attributes,image',
+			'_fields'  => self::VARIATION_FIELDS,
 		);
 
 		$endpoint = add_query_arg( $params, $endpoint );
@@ -816,29 +834,34 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		// Strip HTML tags first.
 		$text = wp_strip_all_tags( $text );
 
-		// Split by sentence endings (., !, ?).
-		$sentences = preg_split( '/([.!?])\s+/', $text, -1, PREG_SPLIT_DELIM_CAPTURE );
+		// Split by sentence endings (., !, ?) with optional following whitespace.
+		// This captures all sentence endings, even at the end of text.
+		$sentences = preg_split( '/([.!?])/', $text, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY );
 
 		if ( empty( $sentences ) ) {
 			return $text;
 		}
 
 		// Reconstruct sentences.
+		// After preg_split with PREG_SPLIT_DELIM_CAPTURE, the array alternates between text and delimiters.
 		$result = '';
 		$count = 0;
 
 		for ( $i = 0; $i < count( $sentences ) && $count < $sentence_count; $i++ ) {
-			$result .= $sentences[ $i ];
-
-			// Check if this is a delimiter (., !, ?).
-			if ( isset( $sentences[ $i + 1 ] ) && in_array( $sentences[ $i + 1 ], array( '.', '!', '?' ), true ) ) {
-				$result .= $sentences[ $i + 1 ];
+			$current = trim( $sentences[ $i ] );
+			
+			// Check if current element is a delimiter.
+			if ( in_array( $current, array( '.', '!', '?' ), true ) ) {
+				$result .= $current;
+				$count++;
+				
 				// Add space after punctuation if there are more sentences to come.
-				if ( $count + 1 < $sentence_count && isset( $sentences[ $i + 2 ] ) ) {
+				if ( $count < $sentence_count && isset( $sentences[ $i + 1 ] ) ) {
 					$result .= ' ';
 				}
-				$i++; // Skip the delimiter in next iteration.
-				$count++;
+			} else {
+				// This is text content, add it to result.
+				$result .= $current;
 			}
 		}
 
