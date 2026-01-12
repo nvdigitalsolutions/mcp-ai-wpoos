@@ -136,6 +136,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'string',
 					'description' => __( 'Product SKU for WooCommerce product queries.', 'wp-mcp-ai-pro' ),
 				),
+				'stock_status'  => array(
+					'type'        => 'string',
+					'description' => __( 'Filter products by stock status (e.g., instock, outofstock, onbackorder) for WooCommerce product queries. When used with variable products, automatically filters variations to only show those matching the stock status.', 'wp-mcp-ai-pro' ),
+				),
 				'include_variations' => array(
 					'type'        => 'boolean',
 					'description' => __( 'For get_wc_products: Whether to include product variations in results. AUTOMATICALLY ENABLED BY DEFAULT (true). When enabled, variable products are represented ONLY by their variations (not the parent product) to avoid stock confusion. Each variation includes parent_id, parent_name, stock_quantity, stock_status, sku, price, and attributes. Set to false only if you want parent products without variations. To get variations for a specific product, use get_wc_product_variations instead.', 'wp-mcp-ai-pro' ),
@@ -585,6 +589,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			$params['type'] = sanitize_key( $arguments['type'] );
 		}
 
+		if ( ! empty( $arguments['stock_status'] ) ) {
+			$params['stock_status'] = sanitize_key( $arguments['stock_status'] );
+		}
+
 		// Exclude verbose fields to reduce token usage.
 		// Keep only essential product information including description (will be truncated).
 		$params['_fields'] = self::PRODUCT_FIELDS;
@@ -613,6 +621,9 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		// Check if we should include variations.
 		$include_variations = isset( $arguments['include_variations'] ) ? (bool) $arguments['include_variations'] : true;
+		
+		// Get stock_status filter if provided.
+		$filter_stock_status = ! empty( $arguments['stock_status'] ) ? sanitize_key( $arguments['stock_status'] ) : '';
 
 		$all_products = array();
 		$variation_count = 0;
@@ -646,16 +657,31 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 					$product = $variable_products_map[ $product_id ];
 					
 					if ( isset( $all_variations[ $product_id ] ) && ! empty( $all_variations[ $product_id ] ) ) {
+						$has_matching_variations = false;
+						
 						// Add each variation with parent context.
 						foreach ( $all_variations[ $product_id ] as $variation ) {
 							if ( isset( $variation->id ) ) {
+								// Filter variations by stock_status if specified.
+								if ( $filter_stock_status ) {
+									$variation_stock_status = isset( $variation->stock_status ) ? $variation->stock_status : '';
+									if ( $variation_stock_status !== $filter_stock_status ) {
+										// Skip variations that don't match the stock_status filter.
+										continue;
+									}
+								}
+								
 								$variation->parent_id = $product->id;
 								$variation->parent_name = isset( $product->name ) ? $product->name : '';
 								$all_products[] = $variation;
 								$variation_count++;
+								$has_matching_variations = true;
 							}
 						}
-						$parent_count++;
+						
+						if ( $has_matching_variations ) {
+							$parent_count++;
+						}
 					} else {
 						// If fetching variations failed or no variations exist, include the parent product.
 						$all_products[] = $product;

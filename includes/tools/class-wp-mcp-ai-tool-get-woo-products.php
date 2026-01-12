@@ -54,7 +54,7 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns WooCommerce catalog products with pricing and stock details. Requires WooCommerce.', 'mcp-ai-wpoos' );
+		return __( 'Returns WooCommerce catalog products with pricing and stock details. When include_variations is enabled or stock_status filter is used, variable products are automatically expanded to show their variations with accurate stock quantities. Requires WooCommerce.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -81,7 +81,12 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'stock_status' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional stock status to filter by (e.g. instock, outofstock).', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional stock status to filter by (e.g. instock, outofstock). When used, variable products automatically include their variations with accurate stock quantities.', 'mcp-ai-wpoos' ),
+				),
+				'include_variations' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Whether to include product variations for variable products. When true (default), variable products are represented by their variations with individual stock quantities for accurate stock reporting.', 'mcp-ai-wpoos' ),
+					'default'     => true,
 				),
 			),
 			'additionalProperties' => false,
@@ -144,40 +149,125 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$products = wc_get_products( $args );
 
+		// Determine if we should include variations.
+		// Defaults to true for accurate stock information (especially important for stock_status filters).
+		$include_variations = true;
+		if ( isset( $arguments['include_variations'] ) ) {
+			$include_variations = (bool) $arguments['include_variations'];
+		}
+
 		$results = array();
+		$variation_count = 0;
+		$parent_count = 0;
 
-		foreach ( $products as $product ) {
-			if ( ! $product || ! is_object( $product ) ) {
-				continue;
+		if ( $include_variations ) {
+			// Process products and expand variable products to their variations.
+			foreach ( $products as $product ) {
+				if ( ! $product || ! is_object( $product ) ) {
+					continue;
+				}
+
+				/** @var WC_Product $product */
+				// Check if this is a variable product.
+				$is_variable = method_exists( $product, 'is_type' ) && $product->is_type( 'variable' );
+
+				if ( $is_variable && method_exists( $product, 'get_children' ) ) {
+					// Get variation IDs for this variable product.
+					$variation_ids = $product->get_children();
+
+					if ( ! empty( $variation_ids ) ) {
+						// Fetch each variation and add it to results.
+						foreach ( $variation_ids as $variation_id ) {
+							$variation = wc_get_product( $variation_id );
+
+							if ( ! $variation || ! is_object( $variation ) ) {
+								continue;
+							}
+
+							// Build variation data with parent context.
+							$variation_data = $this->format_product_data( $variation );
+							$variation_data['parent_id'] = $product->get_id();
+							$variation_data['parent_name'] = $product->get_name();
+
+							// Get variation attributes (e.g., Size: Large, Color: Red).
+							if ( method_exists( $variation, 'get_attributes' ) ) {
+								$attributes = $variation->get_attributes();
+								if ( ! empty( $attributes ) ) {
+									$variation_data['attributes'] = $attributes;
+								}
+							}
+
+							$results[] = $variation_data;
+							$variation_count++;
+						}
+						$parent_count++;
+					} else {
+						// Variable product with no variations - include the parent.
+						$results[] = $this->format_product_data( $product );
+						$parent_count++;
+					}
+				} else {
+					// Non-variable product (simple, grouped, external, etc.).
+					$results[] = $this->format_product_data( $product );
+					$parent_count++;
+				}
 			}
+		} else {
+			// Standard mode: just return products as-is.
+			foreach ( $products as $product ) {
+				if ( ! $product || ! is_object( $product ) ) {
+					continue;
+				}
 
-			/** @var WC_Product $product */
-			$results[] = array(
-				'id'             => $product->get_id(),
-				'name'           => $product->get_name(),
-				'sku'            => $product->get_sku(),
-				'type'           => $product->get_type(),
-				'status'         => $product->get_status(),
-				'price'          => $product->get_price(),
-				'regular_price'  => $product->get_regular_price(),
-				'sale_price'     => $product->get_sale_price(),
-				'stock_status'   => $product->get_stock_status(),
-				'stock_quantity' => $product->get_stock_quantity(),
-				'manage_stock'   => method_exists( $product, 'get_manage_stock' ) ? $product->get_manage_stock() : null,
-				'permalink'      => method_exists( $product, 'get_permalink' ) ? $product->get_permalink() : '',
-				'date_created'   => method_exists( $product, 'get_date_created' ) && $product->get_date_created() ? gmdate( DATE_W3C, $product->get_date_created()->getTimestamp() ) : null,
-				'date_modified'  => method_exists( $product, 'get_date_modified' ) && $product->get_date_modified() ? gmdate( DATE_W3C, $product->get_date_modified()->getTimestamp() ) : null,
+				$results[] = $this->format_product_data( $product );
+			}
+		}
+
+		// Build summary message.
+		if ( $variation_count > 0 ) {
+			$summary = sprintf(
+				/* translators: 1: number of parent products, 2: number of variations */
+				__( 'Found %1$d product(s) with %2$d variation(s). Variable products are represented by their variations with individual stock quantities.', 'mcp-ai-wpoos' ),
+				$parent_count,
+				$variation_count
+			);
+		} else {
+			$summary = sprintf(
+				/* translators: %d: number of products */
+				__( 'Found %d product(s)', 'mcp-ai-wpoos' ),
+				count( $results )
 			);
 		}
 
 		return array(
-			'summary'  => sprintf(
-				/* translators: %d: number of products */
-				__( 'Found %d product(s)', 'mcp-ai-wpoos' ),
-				count( $results )
-			),
+			'summary'  => $summary,
 			'products' => $results,
 			'count'    => count( $results ),
+		);
+	}
+
+	/**
+	 * Format product data into standardized array structure.
+	 *
+	 * @param WC_Product $product Product object.
+	 * @return array Formatted product data.
+	 */
+	protected function format_product_data( $product ) {
+		return array(
+			'id'             => $product->get_id(),
+			'name'           => $product->get_name(),
+			'sku'            => $product->get_sku(),
+			'type'           => $product->get_type(),
+			'status'         => $product->get_status(),
+			'price'          => $product->get_price(),
+			'regular_price'  => $product->get_regular_price(),
+			'sale_price'     => $product->get_sale_price(),
+			'stock_status'   => $product->get_stock_status(),
+			'stock_quantity' => $product->get_stock_quantity(),
+			'manage_stock'   => method_exists( $product, 'get_manage_stock' ) ? $product->get_manage_stock() : null,
+			'permalink'      => method_exists( $product, 'get_permalink' ) ? $product->get_permalink() : '',
+			'date_created'   => method_exists( $product, 'get_date_created' ) && $product->get_date_created() ? gmdate( DATE_W3C, $product->get_date_created()->getTimestamp() ) : null,
+			'date_modified'  => method_exists( $product, 'get_date_modified' ) && $product->get_date_modified() ? gmdate( DATE_W3C, $product->get_date_modified()->getTimestamp() ) : null,
 		);
 	}
 

@@ -131,6 +131,30 @@ class Test_Remote_Connection_Tool_Variations extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that stock_status parameter exists in schema.
+	 */
+	public function test_schema_includes_stock_status_parameter() {
+		$schema = $this->tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'stock_status', $schema['properties'] );
+		$this->assertEquals( 'string', $schema['properties']['stock_status']['type'] );
+	}
+
+	/**
+	 * Test stock_status parameter description mentions variation filtering.
+	 */
+	public function test_stock_status_parameter_description() {
+		$schema = $this->tool->get_parameters_schema();
+
+		$this->assertArrayHasKey( 'stock_status', $schema['properties'] );
+		$description = $schema['properties']['stock_status']['description'];
+
+		$this->assertStringContainsString( 'stock', strtolower( $description ) );
+		$this->assertStringContainsString( 'variation', strtolower( $description ) );
+		$this->assertStringContainsString( 'filter', strtolower( $description ) );
+	}
+
+	/**
 	 * Test get_wc_product_variations requires product_id.
 	 */
 	public function test_get_variations_requires_product_id() {
