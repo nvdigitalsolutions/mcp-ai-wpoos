@@ -293,15 +293,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Delete_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-event.php',
 			'WP_MCP_AI_Tool_List_Events'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-events.php',
 			'WP_MCP_AI_Tool_Get_Calendar_View'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-calendar-view.php',
-			// WooCommerce tools.
-			'WP_MCP_AI_Pro_Tool_Woo_Products'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
-			'WP_MCP_AI_Pro_Tool_Woo_Orders'               => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
-			'WP_MCP_AI_Pro_Tool_Woo_Customers'            => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-customers.php',
-			'WP_MCP_AI_Pro_Tool_Woo_Coupons'              => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-coupons.php',
-			// JetEngine tools.
-			'WP_MCP_AI_Pro_Tool_JetEngine'                => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
-			// Elementor tools.
-			'WP_MCP_AI_Pro_Tool_Elementor'                => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-elementor.php',
 			// Product Actualization tool.
 			'WP_MCP_AI_Pro_Tool_Product_Actualization'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php',
 			// Product Price Lookup tool.
@@ -378,6 +369,33 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Search_And_Save_Places' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-and-save-places.php',
 			);
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
+		}
+
+		// Add WooCommerce tools if enabled.
+		if ( ! empty( $settings['enable_woocommerce_tools'] ) ) {
+			$woo_tools = array(
+				'WP_MCP_AI_Pro_Tool_Woo_Products'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-products.php',
+				'WP_MCP_AI_Pro_Tool_Woo_Orders'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-orders.php',
+				'WP_MCP_AI_Pro_Tool_Woo_Customers' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-customers.php',
+				'WP_MCP_AI_Pro_Tool_Woo_Coupons'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-woo-coupons.php',
+			);
+			$pro_tools = array_merge( $pro_tools, $woo_tools );
+		}
+
+		// Add JetEngine tools if enabled.
+		if ( ! empty( $settings['enable_jetengine_tools'] ) ) {
+			$jetengine_tools = array(
+				'WP_MCP_AI_Pro_Tool_JetEngine' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-jetengine.php',
+			);
+			$pro_tools       = array_merge( $pro_tools, $jetengine_tools );
+		}
+
+		// Add Elementor tools if enabled.
+		if ( ! empty( $settings['enable_elementor_widgets'] ) ) {
+			$elementor_tools = array(
+				'WP_MCP_AI_Pro_Tool_Elementor' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-elementor.php',
+			);
+			$pro_tools       = array_merge( $pro_tools, $elementor_tools );
 		}
 
 		/**
