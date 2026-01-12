@@ -43,92 +43,92 @@ class WP_MCP_AI_Tool_Update_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'eca_id'            => array(
+				'eca_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'ECA ID to update (required)', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'name'              => array(
+				'name'         => array(
 					'type'        => 'string',
 					'description' => __( 'ECA name (optional)', 'wp-mcp-ai' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'description'       => array(
+				'description'  => array(
 					'type'        => 'string',
 					'description' => __( 'ECA description (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 10000,
 				),
-				'eca_code'          => array(
+				'eca_code'     => array(
 					'type'        => 'string',
 					'description' => __( 'ECA code/identifier (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 50,
 				),
-				'eca_type'          => array(
+				'eca_type'     => array(
 					'type'        => 'string',
 					'description' => __( 'Type of ECA (optional)', 'wp-mcp-ai' ),
 					'enum'        => array( 'club', 'society', 'sport_squad', 'sport_academy', 'other' ),
 				),
-				'day'               => array(
+				'day'          => array(
 					'type'        => 'string',
 					'description' => __( 'Day of the week (optional)', 'wp-mcp-ai' ),
 					'enum'        => array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ),
 				),
-				'time_start'        => array(
+				'time_start'   => array(
 					'type'        => 'string',
 					'description' => __( 'Start time in 24-hour format (optional)', 'wp-mcp-ai' ),
 					'pattern'     => '^([01]?[0-9]|2[0-3]):[0-5][0-9]$',
 				),
-				'time_end'          => array(
+				'time_end'     => array(
 					'type'        => 'string',
 					'description' => __( 'End time in 24-hour format (optional)', 'wp-mcp-ai' ),
 					'pattern'     => '^([01]?[0-9]|2[0-3]):[0-5][0-9]$',
 				),
-				'venue'             => array(
+				'venue'        => array(
 					'type'        => 'string',
 					'description' => __( 'Venue/location (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 200,
 				),
-				'year_groups'       => array(
+				'year_groups'  => array(
 					'type'        => 'array',
 					'description' => __( 'Array of year groups (optional)', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'teachers'          => array(
+				'teachers'     => array(
 					'type'        => 'array',
 					'description' => __( 'Array of teacher names (optional)', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'max_capacity'      => array(
+				'max_capacity' => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of students (optional)', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 					'maximum'     => 500,
 				),
-				'is_paid'           => array(
+				'is_paid'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether this is a paid activity (optional)', 'wp-mcp-ai' ),
 				),
-				'cost'              => array(
+				'cost'         => array(
 					'type'        => 'string',
 					'description' => __( 'Cost details if paid activity (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 200,
 				),
-				'booking_type'      => array(
+				'booking_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Booking method (optional)', 'wp-mcp-ai' ),
 					'enum'        => array( 'preference', 'first_come_first_served', 'audition', 'pre_selected' ),
 				),
-				'isams_id'          => array(
+				'isams_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'iSAMS identifier (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 100,
 				),
-				'socs_id'           => array(
+				'socs_id'      => array(
 					'type'        => 'string',
 					'description' => __( 'SOCS system identifier (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 100,
@@ -215,7 +215,7 @@ class WP_MCP_AI_Tool_Update_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		if ( isset( $arguments['eca_type'] ) ) {
-			$eca_type     = sanitize_key( $arguments['eca_type'] );
+			$eca_type    = sanitize_key( $arguments['eca_type'] );
 			$valid_types = array( 'club', 'society', 'sport_squad', 'sport_academy', 'other' );
 			if ( in_array( $eca_type, $valid_types, true ) ) {
 				update_post_meta( $eca_id, '_eca_type', $eca_type );
@@ -297,20 +297,20 @@ class WP_MCP_AI_Tool_Update_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'id'           => $eca_id,
 				'name'         => $updated_post->post_title,
 				'description'  => $updated_post->post_content,
-				'eca_code'     => get_post_meta( $eca_id, '_eca_code', true ) ?: '',
-				'type'         => get_post_meta( $eca_id, '_eca_type', true ) ?: 'club',
-				'day'          => get_post_meta( $eca_id, '_eca_day', true ) ?: '',
-				'time_start'   => get_post_meta( $eca_id, '_eca_time_start', true ) ?: '',
-				'time_end'     => get_post_meta( $eca_id, '_eca_time_end', true ) ?: '',
-				'venue'        => get_post_meta( $eca_id, '_eca_venue', true ) ?: '',
-				'year_groups'  => get_post_meta( $eca_id, '_eca_year_groups', true ) ?: array(),
-				'teachers'     => get_post_meta( $eca_id, '_eca_teachers', true ) ?: array(),
+				'eca_code'     => get_post_meta( $eca_id, '_eca_code', true ) ? get_post_meta( $eca_id, '_eca_code', true ) : '',
+				'type'         => get_post_meta( $eca_id, '_eca_type', true ) ? get_post_meta( $eca_id, '_eca_type', true ) : 'club',
+				'day'          => get_post_meta( $eca_id, '_eca_day', true ) ? get_post_meta( $eca_id, '_eca_day', true ) : '',
+				'time_start'   => get_post_meta( $eca_id, '_eca_time_start', true ) ? get_post_meta( $eca_id, '_eca_time_start', true ) : '',
+				'time_end'     => get_post_meta( $eca_id, '_eca_time_end', true ) ? get_post_meta( $eca_id, '_eca_time_end', true ) : '',
+				'venue'        => get_post_meta( $eca_id, '_eca_venue', true ) ? get_post_meta( $eca_id, '_eca_venue', true ) : '',
+				'year_groups'  => get_post_meta( $eca_id, '_eca_year_groups', true ) ? get_post_meta( $eca_id, '_eca_year_groups', true ) : array(),
+				'teachers'     => get_post_meta( $eca_id, '_eca_teachers', true ) ? get_post_meta( $eca_id, '_eca_teachers', true ) : array(),
 				'max_capacity' => absint( get_post_meta( $eca_id, '_eca_max_capacity', true ) ),
 				'is_paid'      => (bool) get_post_meta( $eca_id, '_eca_is_paid', true ),
-				'cost'         => get_post_meta( $eca_id, '_eca_cost', true ) ?: '',
-				'booking_type' => get_post_meta( $eca_id, '_eca_booking_type', true ) ?: 'preference',
-				'isams_id'     => get_post_meta( $eca_id, '_eca_isams_id', true ) ?: '',
-				'socs_id'      => get_post_meta( $eca_id, '_eca_socs_id', true ) ?: '',
+				'cost'         => get_post_meta( $eca_id, '_eca_cost', true ) ? get_post_meta( $eca_id, '_eca_cost', true ) : '',
+				'booking_type' => get_post_meta( $eca_id, '_eca_booking_type', true ) ? get_post_meta( $eca_id, '_eca_booking_type', true ) : 'preference',
+				'isams_id'     => get_post_meta( $eca_id, '_eca_isams_id', true ) ? get_post_meta( $eca_id, '_eca_isams_id', true ) : '',
+				'socs_id'      => get_post_meta( $eca_id, '_eca_socs_id', true ) ? get_post_meta( $eca_id, '_eca_socs_id', true ) : '',
 				'updated_at'   => current_time( 'mysql' ),
 			),
 		);

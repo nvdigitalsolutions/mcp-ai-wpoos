@@ -43,39 +43,39 @@ class WP_MCP_AI_Tool_ISAMS_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'            => array(
+				'action'         => array(
 					'type'        => 'string',
 					'description' => __( 'Sync action to perform (required)', 'wp-mcp-ai' ),
 					'enum'        => array( 'import_students', 'export_ecas', 'import_bookings', 'sync_allocations', 'test_connection' ),
 				),
-				'isams_api_url'     => array(
+				'isams_api_url'  => array(
 					'type'        => 'string',
 					'description' => __( 'iSAMS API endpoint URL (optional, uses saved settings if not provided)', 'wp-mcp-ai' ),
 					'format'      => 'uri',
 				),
-				'isams_api_key'     => array(
+				'isams_api_key'  => array(
 					'type'        => 'string',
 					'description' => __( 'iSAMS API key (optional, uses saved settings if not provided)', 'wp-mcp-ai' ),
 					'maxLength'   => 200,
 				),
-				'socs_school_id'    => array(
+				'socs_school_id' => array(
 					'type'        => 'string',
 					'description' => __( 'SOCS school identifier (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 100,
 				),
-				'term'              => array(
+				'term'           => array(
 					'type'        => 'string',
 					'description' => __( 'Academic term (e.g., "Lent 2026") (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 100,
 				),
-				'year_groups'       => array(
+				'year_groups'    => array(
 					'type'        => 'array',
 					'description' => __( 'Filter by year groups for import (optional)', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'dry_run'           => array(
+				'dry_run'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Perform validation only without making changes (default: false)', 'wp-mcp-ai' ),
 					'default'     => false,
@@ -134,8 +134,8 @@ class WP_MCP_AI_Tool_ISAMS_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		if ( ! $isams_api_url || ! $isams_api_key ) {
 			$settings      = get_option( 'wp_mcp_ai_eca_settings', array() );
-			$isams_api_url = $isams_api_url ?: ( $settings['isams_api_url'] ?? '' );
-			$isams_api_key = $isams_api_key ?: ( $settings['isams_api_key'] ?? '' );
+			$isams_api_url = $isams_api_url ? $isams_api_url : ( $settings['isams_api_url'] ?? '' );
+			$isams_api_key = $isams_api_key ? $isams_api_key : ( $settings['isams_api_key'] ?? '' );
 		}
 
 		switch ( $action ) {
@@ -212,6 +212,7 @@ class WP_MCP_AI_Tool_ISAMS_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		return array(
 			'success'  => true,
+			/* translators: %d: Number of students imported */
 			'message'  => sprintf( __( 'Imported %d students from iSAMS (placeholder).', 'wp-mcp-ai' ), count( $mock_students ) ),
 			'dry_run'  => $dry_run,
 			'imported' => $dry_run ? 0 : count( $mock_students ),
@@ -243,12 +244,9 @@ class WP_MCP_AI_Tool_ISAMS_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$query = new WP_Query( $query_args );
 		$count = $query->found_posts;
 
-		if ( ! $dry_run ) {
-			// Placeholder - would make real API calls here.
-		}
-
 		return array(
 			'success'  => true,
+			/* translators: %d: Number of ECAs exported */
 			'message'  => sprintf( __( 'Exported %d ECAs to iSAMS/SOCS (placeholder).', 'wp-mcp-ai' ), $count ),
 			'dry_run'  => $dry_run,
 			'exported' => $dry_run ? 0 : $count,
@@ -275,6 +273,7 @@ class WP_MCP_AI_Tool_ISAMS_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		return array(
 			'success'  => true,
+			/* translators: %d: Number of bookings imported */
 			'message'  => sprintf( __( 'Imported %d bookings from SOCS (placeholder).', 'wp-mcp-ai' ), $mock_count ),
 			'dry_run'  => $dry_run,
 			'imported' => $dry_run ? 0 : $mock_count,
@@ -300,6 +299,7 @@ class WP_MCP_AI_Tool_ISAMS_Sync implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		return array(
 			'success' => true,
+			/* translators: %d: Number of booking allocations synced */
 			'message' => sprintf( __( 'Synced %d booking allocations with SOCS (placeholder).', 'wp-mcp-ai' ), $mock_count ),
 			'dry_run' => $dry_run,
 			'synced'  => $dry_run ? 0 : $mock_count,

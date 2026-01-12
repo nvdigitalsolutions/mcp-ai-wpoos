@@ -306,14 +306,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add ECA management tools if enabled.
 		if ( ! empty( $settings['enable_eca_management'] ) ) {
 			$eca_tools = array(
-				'WP_MCP_AI_Tool_Create_ECA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-eca.php',
-				'WP_MCP_AI_Tool_Update_ECA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-eca.php',
-				'WP_MCP_AI_Tool_Delete_ECA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-eca.php',
-				'WP_MCP_AI_Tool_List_ECAs'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-ecas.php',
-				'WP_MCP_AI_Tool_Manage_ECA_Bookings'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-eca-bookings.php',
-				'WP_MCP_AI_Tool_ISAMS_Sync'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-isams-sync.php',
+				'WP_MCP_AI_Tool_Create_ECA'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-eca.php',
+				'WP_MCP_AI_Tool_Update_ECA'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-eca.php',
+				'WP_MCP_AI_Tool_Delete_ECA'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-eca.php',
+				'WP_MCP_AI_Tool_List_ECAs'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-ecas.php',
+				'WP_MCP_AI_Tool_Manage_ECA_Bookings' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-eca-bookings.php',
+				'WP_MCP_AI_Tool_ISAMS_Sync'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-isams-sync.php',
 			);
-			$pro_tools  = array_merge( $pro_tools, $eca_tools );
+			$pro_tools = array_merge( $pro_tools, $eca_tools );
 		}
 
 		/**
@@ -570,12 +570,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 
 		// Add ECA management tool mappings if enabled.
 		if ( ! empty( $settings['enable_eca_management'] ) ) {
-			$pro_tools['create_eca']            = 'wordpress-core';
-			$pro_tools['update_eca']            = 'wordpress-core';
-			$pro_tools['delete_eca']            = 'wordpress-core';
-			$pro_tools['list_ecas']             = 'wordpress-core';
-			$pro_tools['manage_eca_bookings']   = 'wordpress-core';
-			$pro_tools['isams_sync']            = 'external-tools';
+			$pro_tools['create_eca']          = 'wordpress-core';
+			$pro_tools['update_eca']          = 'wordpress-core';
+			$pro_tools['delete_eca']          = 'wordpress-core';
+			$pro_tools['list_ecas']           = 'wordpress-core';
+			$pro_tools['manage_eca_bookings'] = 'wordpress-core';
+			$pro_tools['isams_sync']          = 'external-tools';
 		}
 
 		/**

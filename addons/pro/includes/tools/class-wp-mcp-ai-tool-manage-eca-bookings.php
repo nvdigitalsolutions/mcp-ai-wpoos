@@ -43,59 +43,59 @@ class WP_MCP_AI_Tool_Manage_ECA_Bookings implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'            => array(
+				'action'               => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform (required)', 'wp-mcp-ai' ),
 					'enum'        => array( 'create', 'update', 'list', 'allocate', 'cancel' ),
 				),
-				'booking_id'        => array(
+				'booking_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Booking ID (required for update/cancel actions)', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'student_name'      => array(
+				'student_name'         => array(
 					'type'        => 'string',
 					'description' => __( 'Student name (required for create)', 'wp-mcp-ai' ),
 					'maxLength'   => 200,
 				),
-				'student_email'     => array(
+				'student_email'        => array(
 					'type'        => 'string',
 					'description' => __( 'Student/parent email (required for create)', 'wp-mcp-ai' ),
 					'format'      => 'email',
 					'maxLength'   => 200,
 				),
-				'student_year'      => array(
+				'student_year'         => array(
 					'type'        => 'string',
 					'description' => __( 'Student year group (e.g., "Year 7") (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 50,
 				),
-				'eca_id'            => array(
+				'eca_id'               => array(
 					'type'        => 'integer',
 					'description' => __( 'ECA ID to book (required for create)', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'preference_order'  => array(
+				'preference_order'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Preference order (1 = first choice) (optional)', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 					'maximum'     => 10,
 				),
-				'status'            => array(
+				'status'               => array(
 					'type'        => 'string',
 					'description' => __( 'Booking status (optional)', 'wp-mcp-ai' ),
 					'enum'        => array( 'pending', 'confirmed', 'waitlist', 'cancelled' ),
 				),
-				'isams_student_id'  => array(
+				'isams_student_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'iSAMS student identifier (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 100,
 				),
-				'filter_eca_id'     => array(
+				'filter_eca_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter bookings by ECA ID (for list action)', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
-				'filter_status'     => array(
+				'filter_status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Filter bookings by status (for list action)', 'wp-mcp-ai' ),
 					'enum'        => array( 'pending', 'confirmed', 'waitlist', 'cancelled' ),
@@ -105,7 +105,7 @@ class WP_MCP_AI_Tool_Manage_ECA_Bookings implements WP_MCP_AI_Tool_Interface, WP
 					'description' => __( 'Filter bookings by student email (for list action)', 'wp-mcp-ai' ),
 					'format'      => 'email',
 				),
-				'limit'             => array(
+				'limit'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of bookings to return (for list action)', 'wp-mcp-ai' ),
 					'default'     => 50,
@@ -264,7 +264,7 @@ class WP_MCP_AI_Tool_Manage_ECA_Bookings implements WP_MCP_AI_Tool_Interface, WP
 
 		// Update metadata if provided.
 		if ( isset( $arguments['status'] ) ) {
-			$status        = sanitize_key( $arguments['status'] );
+			$status         = sanitize_key( $arguments['status'] );
 			$valid_statuses = array( 'pending', 'confirmed', 'waitlist', 'cancelled' );
 			if ( in_array( $status, $valid_statuses, true ) ) {
 				update_post_meta( $booking_id, '_booking_status', $status );
@@ -389,16 +389,16 @@ class WP_MCP_AI_Tool_Manage_ECA_Bookings implements WP_MCP_AI_Tool_Interface, WP
 		$eca    = $eca_id ? get_post( $eca_id ) : null;
 
 		return array(
-			'id'                 => $booking_id,
-			'student_name'       => get_post_meta( $booking_id, '_booking_student_name', true ),
-			'student_email'      => get_post_meta( $booking_id, '_booking_student_email', true ),
-			'student_year'       => get_post_meta( $booking_id, '_booking_student_year', true ) ?: '',
-			'eca_id'             => $eca_id,
-			'eca_name'           => $eca ? $eca->post_title : '',
-			'preference_order'   => absint( get_post_meta( $booking_id, '_booking_preference_order', true ) ),
-			'status'             => get_post_meta( $booking_id, '_booking_status', true ) ?: 'pending',
-			'isams_student_id'   => get_post_meta( $booking_id, '_booking_isams_student_id', true ) ?: '',
-			'created_at'         => get_the_date( 'c', $booking_id ),
+			'id'               => $booking_id,
+			'student_name'     => get_post_meta( $booking_id, '_booking_student_name', true ),
+			'student_email'    => get_post_meta( $booking_id, '_booking_student_email', true ),
+			'student_year'     => get_post_meta( $booking_id, '_booking_student_year', true ) ? get_post_meta( $booking_id, '_booking_student_year', true ) : '',
+			'eca_id'           => $eca_id,
+			'eca_name'         => $eca ? $eca->post_title : '',
+			'preference_order' => absint( get_post_meta( $booking_id, '_booking_preference_order', true ) ),
+			'status'           => get_post_meta( $booking_id, '_booking_status', true ) ? get_post_meta( $booking_id, '_booking_status', true ) : 'pending',
+			'isams_student_id' => get_post_meta( $booking_id, '_booking_isams_student_id', true ) ? get_post_meta( $booking_id, '_booking_isams_student_id', true ) : '',
+			'created_at'       => get_the_date( 'c', $booking_id ),
 		);
 	}
 }

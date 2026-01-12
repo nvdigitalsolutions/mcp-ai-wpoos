@@ -43,90 +43,90 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'name'              => array(
+				'name'         => array(
 					'type'        => 'string',
 					'description' => __( 'ECA name (required)', 'wp-mcp-ai' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'description'       => array(
+				'description'  => array(
 					'type'        => 'string',
 					'description' => __( 'ECA description (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 10000,
 				),
-				'eca_code'          => array(
+				'eca_code'     => array(
 					'type'        => 'string',
 					'description' => __( 'ECA code/identifier (e.g., "1", "2A") (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 50,
 				),
-				'eca_type'          => array(
+				'eca_type'     => array(
 					'type'        => 'string',
 					'description' => __( 'Type of ECA', 'wp-mcp-ai' ),
 					'enum'        => array( 'club', 'society', 'sport_squad', 'sport_academy', 'other' ),
 					'default'     => 'club',
 				),
-				'day'               => array(
+				'day'          => array(
 					'type'        => 'string',
 					'description' => __( 'Day of the week (e.g., "Monday", "Tuesday") (optional)', 'wp-mcp-ai' ),
 					'enum'        => array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ),
 				),
-				'time_start'        => array(
+				'time_start'   => array(
 					'type'        => 'string',
 					'description' => __( 'Start time in 24-hour format (e.g., "14:45") (optional)', 'wp-mcp-ai' ),
 					'pattern'     => '^([01]?[0-9]|2[0-3]):[0-5][0-9]$',
 				),
-				'time_end'          => array(
+				'time_end'     => array(
 					'type'        => 'string',
 					'description' => __( 'End time in 24-hour format (e.g., "16:00") (optional)', 'wp-mcp-ai' ),
 					'pattern'     => '^([01]?[0-9]|2[0-3]):[0-5][0-9]$',
 				),
-				'venue'             => array(
+				'venue'        => array(
 					'type'        => 'string',
 					'description' => __( 'Venue/location (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 200,
 				),
-				'year_groups'       => array(
+				'year_groups'  => array(
 					'type'        => 'array',
 					'description' => __( 'Array of year groups (e.g., ["Year 7", "Year 8"]) (optional)', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'teachers'          => array(
+				'teachers'     => array(
 					'type'        => 'array',
 					'description' => __( 'Array of teacher names (optional)', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'max_capacity'      => array(
+				'max_capacity' => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of students (optional)', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 					'maximum'     => 500,
 				),
-				'is_paid'           => array(
+				'is_paid'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether this is a paid activity (default: false)', 'wp-mcp-ai' ),
 					'default'     => false,
 				),
-				'cost'              => array(
+				'cost'         => array(
 					'type'        => 'string',
 					'description' => __( 'Cost details if paid activity (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 200,
 				),
-				'booking_type'      => array(
+				'booking_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Booking method', 'wp-mcp-ai' ),
 					'enum'        => array( 'preference', 'first_come_first_served', 'audition', 'pre_selected' ),
 					'default'     => 'preference',
 				),
-				'isams_id'          => array(
+				'isams_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'iSAMS identifier for synchronization (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 100,
 				),
-				'socs_id'           => array(
+				'socs_id'      => array(
 					'type'        => 'string',
 					'description' => __( 'SOCS system identifier (optional)', 'wp-mcp-ai' ),
 					'maxLength'   => 100,
