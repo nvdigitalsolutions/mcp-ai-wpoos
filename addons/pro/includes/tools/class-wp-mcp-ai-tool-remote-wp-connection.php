@@ -614,7 +614,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		// Build summary message.
 		if ( $variation_count > 0 ) {
 			$summary = sprintf(
-				/* translators: 1: number of parent products, 2: number of variations */
+				/* translators: 1: number of product groups (variable products counted as groups, simple products as individual), 2: number of variations */
 				__( 'Retrieved %1$d product(s) with %2$d variation(s). Note: Variable products are represented by their variations only, not the parent product.', 'wp-mcp-ai-pro' ),
 				$parent_count,
 				$variation_count
