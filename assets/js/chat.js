@@ -10824,6 +10824,17 @@
                 // Check if this message has tool_calls (either in message or display metadata)
                 const hasToolCalls = message.tool_calls || (display && display.tool_calls);
                 
+                // Debug logging for quiz tool persistence issue
+                if (window.console && console.log && display) {
+                    console.log('[NV oOS] Restoring assistant message:', {
+                        hasDisplay: !!display,
+                        displayText: display.text,
+                        displayBubbleType: display.bubbleType,
+                        content: content,
+                        hasToolCalls: hasToolCalls
+                    });
+                }
+                
                 if (display) {
                     // Use saved display metadata for consistency
                     // Include both message and text fields if available
@@ -12567,13 +12578,27 @@
                 
                 // Add assistant message to conversation
                 if (state.conversation && Array.isArray(state.conversation)) {
+                    const displayMetadata = extractDisplayMetadata(messageElement, assistantDisplay, {
+                        usage: usage,
+                        cost: cost
+                    });
+                    
+                    // Debug logging for quiz tool persistence issue
+                    if (window.console && console.log && data.tool_results && data.tool_results.length > 0) {
+                        const toolNames = data.tool_results.map(function(tr) { return tr.name; }).join(', ');
+                        console.log('[NV oOS] Creating assistant message from tool results:', {
+                            toolNames: toolNames,
+                            assistantDisplayText: assistantDisplay.text,
+                            hasDisplayMetadata: !!displayMetadata,
+                            displayMetadataText: displayMetadata && displayMetadata.text,
+                            messageElementValid: !!messageElement
+                        });
+                    }
+                    
                     const assistantMessage = createConversationMessage(
                         'assistant',
                         assistantDisplay.text || '',
-                        extractDisplayMetadata(messageElement, assistantDisplay, {
-                            usage: usage,
-                            cost: cost
-                        })
+                        displayMetadata
                     );
                     state.conversation.push(assistantMessage);
                 }
