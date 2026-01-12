@@ -25,19 +25,26 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * Essential WooCommerce product fields to retrieve.
 	 *
 	 * Excludes verbose fields like meta_data, related_ids, etc. to reduce token usage.
+	 * Fields included: id, name, slug, permalink, sku, prices, stock info, type, status,
+	 * categories, images, attributes, variations, parent_id, descriptions.
 	 *
 	 * @since 1.0.0
 	 * @var string
 	 */
-	const PRODUCT_FIELDS = 'id,name,slug,permalink,sku,price,regular_price,sale_price,on_sale,stock_status,stock_quantity,manage_stock,backorders_allowed,type,status,categories,images,attributes,variations,parent_id,description,short_description';
+	const PRODUCT_FIELDS = 'id,name,slug,permalink,sku,price,regular_price,sale_price,on_sale,' .
+		'stock_status,stock_quantity,manage_stock,backorders_allowed,type,status,' .
+		'categories,images,attributes,variations,parent_id,description,short_description';
 
 	/**
 	 * Essential WooCommerce product variation fields to retrieve.
 	 *
+	 * Fields included: id, sku, prices, stock info, attributes, image.
+	 *
 	 * @since 1.0.0
 	 * @var string
 	 */
-	const VARIATION_FIELDS = 'id,sku,price,regular_price,sale_price,on_sale,stock_status,stock_quantity,manage_stock,backorders_allowed,attributes,image';
+	const VARIATION_FIELDS = 'id,sku,price,regular_price,sale_price,on_sale,' .
+		'stock_status,stock_quantity,manage_stock,backorders_allowed,attributes,image';
 
 	/**
 	 * {@inheritdoc}
@@ -835,9 +842,16 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		// Strip HTML tags first.
 		$text = wp_strip_all_tags( $text );
 
-		// Split by sentence endings with better boundary detection.
-		// Matches . ! ? followed by whitespace and a capital letter, or at end of string.
-		// This avoids splitting on abbreviations and numbers.
+		// Split by sentence endings with intelligent boundary detection.
+		// Regex explained:
+		// - (?<=[.!?]) = Positive lookbehind: Must be preceded by sentence-ending punctuation
+		// - (?=\s+[A-Z]) = Positive lookahead: Must be followed by whitespace + capital letter
+		// - | = OR
+		// - (?<=[.!?])$ = Positive lookbehind + end of string anchor
+		//
+		// This pattern:
+		// ✓ Splits on: "sentence. Next" or "sentence! Next" or "sentence? Next"
+		// ✗ Does NOT split on: "Mr. Smith" or "$19.99" or "U.S.A." (no capital after space)
 		$sentences = preg_split( '/(?<=[.!?])(?=\s+[A-Z])|(?<=[.!?])$/', $text, -1, PREG_SPLIT_NO_EMPTY );
 
 		if ( empty( $sentences ) || count( $sentences ) <= 1 ) {
