@@ -39,7 +39,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'wp-mcp-ai-pro' );
+		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products (including variations), orders, and other data in read-only mode. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'wp-mcp-ai-pro' );
 	}
 
 	/**
@@ -61,6 +61,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 						'get_media',
 						'get_wc_products',
 						'get_wc_product',
+						'get_wc_product_variations',
 						'get_wc_orders',
 						'get_wc_order',
 						'get_wc_customers',
@@ -109,6 +110,19 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				'sku'           => array(
 					'type'        => 'string',
 					'description' => __( 'Product SKU for WooCommerce product queries.', 'wp-mcp-ai-pro' ),
+				),
+				'include_variations' => array(
+					'type'        => 'boolean',
+					'description' => __( 'For get_wc_products: Whether to include product variations in results. When true, variations of variable products are fetched and included. Default: true.', 'wp-mcp-ai-pro' ),
+					'default'     => true,
+				),
+				'category'      => array(
+					'type'        => 'string',
+					'description' => __( 'Filter products by category slug or ID for WooCommerce product queries.', 'wp-mcp-ai-pro' ),
+				),
+				'type'          => array(
+					'type'        => 'string',
+					'description' => __( 'Filter products by type (e.g., simple, variable, grouped, external) for WooCommerce product queries.', 'wp-mcp-ai-pro' ),
 				),
 			),
 			'required'             => array( 'action' ),
@@ -254,6 +268,9 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 			case 'get_wc_product':
 				return $this->get_wc_product( $connection, $arguments );
+
+			case 'get_wc_product_variations':
+				return $this->get_wc_product_variations( $connection, $arguments );
 
 			case 'get_wc_orders':
 				return $this->get_wc_orders( $connection, $arguments );
@@ -535,6 +552,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			$params['status'] = sanitize_key( $arguments['status'] );
 		}
 
+		if ( ! empty( $arguments['category'] ) ) {
+			$params['category'] = sanitize_text_field( $arguments['category'] );
+		}
+
+		if ( ! empty( $arguments['type'] ) ) {
+			$params['type'] = sanitize_key( $arguments['type'] );
+		}
+
 		$endpoint = 'wc/v3/products';
 
 		if ( ! empty( $params ) ) {
@@ -547,14 +572,55 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			return $products;
 		}
 
+		// Check if we should include variations.
+		$include_variations = isset( $arguments['include_variations'] ) ? (bool) $arguments['include_variations'] : true;
+
+		$all_products = array();
+		$variation_count = 0;
+
+		foreach ( $products as $product ) {
+			// Add the parent product.
+			$all_products[] = $product;
+
+			// If this is a variable product and variations are requested, fetch them.
+			if ( $include_variations && isset( $product->type ) && 'variable' === $product->type && isset( $product->id ) ) {
+				$variations = $this->fetch_product_variations( $connection, $product->id );
+
+				if ( ! is_wp_error( $variations ) && ! empty( $variations ) ) {
+					foreach ( $variations as $variation ) {
+						// Add parent product name context to variation for clarity.
+						if ( isset( $variation->id ) ) {
+							$variation->parent_id = $product->id;
+							$variation->parent_name = isset( $product->name ) ? $product->name : '';
+							$all_products[] = $variation;
+							$variation_count++;
+						}
+					}
+				}
+			}
+		}
+
+		$summary = sprintf(
+			/* translators: 1: number of products, 2: number of variations */
+			__( 'Retrieved %1$d product(s)', 'wp-mcp-ai-pro' ),
+			count( $products )
+		);
+
+		if ( $variation_count > 0 ) {
+			$summary = sprintf(
+				/* translators: 1: number of products, 2: number of variations */
+				__( 'Retrieved %1$d product(s) with %2$d variation(s)', 'wp-mcp-ai-pro' ),
+				count( $products ),
+				$variation_count
+			);
+		}
+
 		return array(
-			'summary'  => sprintf(
-				/* translators: %d: number of products */
-				__( 'Retrieved %d product(s)', 'wp-mcp-ai-pro' ),
-				count( $products )
-			),
-			'products' => $products,
-			'count'    => count( $products ),
+			'summary'  => $summary,
+			'products' => $all_products,
+			'count'    => count( $all_products ),
+			'parent_count' => count( $products ),
+			'variation_count' => $variation_count,
 		);
 	}
 
@@ -595,6 +661,89 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'summary' => __( 'Product retrieved successfully', 'wp-mcp-ai-pro' ),
 			'product' => $product,
 		);
+	}
+
+	/**
+	 * Get WooCommerce product variations from remote site.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param array $arguments  Query arguments.
+	 * @return array|WP_Error Variations data.
+	 */
+	protected function get_wc_product_variations( $connection, $arguments ) {
+		if ( empty( $connection['has_woocommerce'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_no_woocommerce',
+				__( 'This connection does not have WooCommerce enabled.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		if ( empty( $arguments['post_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_product_id',
+				__( 'Product ID is required for fetching variations.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$product_id = absint( $arguments['post_id'] );
+		$variations = $this->fetch_product_variations( $connection, $product_id );
+
+		if ( is_wp_error( $variations ) ) {
+			return $variations;
+		}
+
+		return array(
+			'summary'    => sprintf(
+				/* translators: 1: number of variations, 2: product ID */
+				__( 'Retrieved %1$d variation(s) for product ID %2$d', 'wp-mcp-ai-pro' ),
+				count( $variations ),
+				$product_id
+			),
+			'variations' => $variations,
+			'count'      => count( $variations ),
+			'product_id' => $product_id,
+		);
+	}
+
+	/**
+	 * Fetch product variations from remote site.
+	 *
+	 * Helper method to retrieve all variations for a given product ID.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @param int   $product_id Product ID.
+	 * @return array|WP_Error Array of variations or WP_Error on failure.
+	 */
+	protected function fetch_product_variations( $connection, $product_id ) {
+		$product_id = absint( $product_id );
+
+		if ( ! $product_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_product_id',
+				__( 'Invalid product ID for fetching variations.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$endpoint = 'wc/v3/products/' . $product_id . '/variations';
+
+		// Get variations (max 100 per page, first page only).
+		$params = array(
+			'per_page' => 100,
+		);
+
+		$endpoint = add_query_arg( $params, $endpoint );
+
+		$variations = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
+
+		if ( is_wp_error( $variations ) ) {
+			return $variations;
+		}
+
+		return is_array( $variations ) ? $variations : array();
 	}
 
 	/**

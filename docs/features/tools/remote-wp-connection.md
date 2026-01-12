@@ -146,15 +146,18 @@ Get media library items.
 ### WooCommerce Data
 
 #### `get_wc_products`
-Get WooCommerce products.
+Get WooCommerce products with optional variation support.
 
 **Parameters:**
 - `connection_id` (string, required): Connection ID
 - `per_page` (integer): Results per page (1-100, default: 10)
 - `page` (integer): Page number (default: 1)
-- `search` (string): Search term
+- `search` (string): Search term (searches product titles)
 - `sku` (string): Product SKU filter
 - `status` (string): Product status filter
+- `category` (string): Filter by category slug or ID
+- `type` (string): Filter by product type (simple, variable, grouped, external)
+- `include_variations` (boolean): Include product variations in results (default: true)
 
 **Example:**
 ```json
@@ -162,27 +165,56 @@ Get WooCommerce products.
   "connection_id": "conn_abc123",
   "action": "get_wc_products",
   "per_page": 20,
-  "status": "publish"
+  "status": "publish",
+  "include_variations": true
+}
+```
+
+**Example - Search by SKU:**
+```json
+{
+  "connection_id": "conn_abc123",
+  "action": "get_wc_products",
+  "search": "shirt",
+  "include_variations": true
 }
 ```
 
 **Returns:**
 ```json
 {
-  "summary": "Retrieved 20 product(s)",
+  "summary": "Retrieved 5 product(s) with 12 variation(s)",
   "products": [
     {
       "id": 123,
       "name": "T-Shirt",
+      "type": "variable",
       "sku": "TSH-001",
+      "price": "19.99",
+      "stock_quantity": null,
+      "stock_status": "instock"
+    },
+    {
+      "id": 456,
+      "parent_id": 123,
+      "parent_name": "T-Shirt",
+      "attributes": [
+        {"name": "Size", "option": "Medium"},
+        {"name": "Color", "option": "Blue"}
+      ],
+      "sku": "TSH-001-M-BLUE",
       "price": "19.99",
       "stock_quantity": 50,
       "stock_status": "instock"
     }
   ],
-  "count": 20
+  "count": 17,
+  "parent_count": 5,
+  "variation_count": 12
 }
 ```
+
+**Note:** When `include_variations` is true (default), variable products will have their variations fetched and included in the results. Each variation includes `parent_id` and `parent_name` fields for context.
 
 #### `get_wc_product`
 Get a single product by ID.
@@ -190,6 +222,47 @@ Get a single product by ID.
 **Parameters:**
 - `connection_id` (string, required): Connection ID
 - `post_id` (integer, required): Product ID
+
+#### `get_wc_product_variations`
+Get all variations for a specific variable product.
+
+**Parameters:**
+- `connection_id` (string, required): Connection ID
+- `post_id` (integer, required): Product ID of the parent variable product
+
+**Example:**
+```json
+{
+  "connection_id": "conn_abc123",
+  "action": "get_wc_product_variations",
+  "post_id": 123
+}
+```
+
+**Returns:**
+```json
+{
+  "summary": "Retrieved 8 variation(s) for product ID 123",
+  "variations": [
+    {
+      "id": 456,
+      "attributes": [
+        {"name": "Size", "option": "Small"},
+        {"name": "Color", "option": "Red"}
+      ],
+      "sku": "TSH-001-S-RED",
+      "price": "19.99",
+      "regular_price": "19.99",
+      "sale_price": "",
+      "stock_quantity": 25,
+      "stock_status": "instock",
+      "manage_stock": true
+    }
+  ],
+  "count": 8,
+  "product_id": 123
+}
+```
 
 #### `get_wc_orders`
 Get WooCommerce orders.
@@ -235,7 +308,26 @@ Get WooCommerce product categories.
 
 ## Use Cases
 
-### Check Product Stock
+### Check Product Stock with Variations
+
+**Prompt:** "Check the current stock for all sizes and colors of our blue T-shirt on the production store"
+
+**Tool Call 1 - Search for the product:**
+```json
+{
+  "tool": "remote_wp_connection",
+  "arguments": {
+    "connection_id": "conn_prod_store",
+    "action": "get_wc_products",
+    "search": "blue t-shirt",
+    "include_variations": true
+  }
+}
+```
+
+**Response:** Returns parent product and all variations with individual stock levels for each size/color combination.
+
+### Check Product Stock by SKU
 
 **Prompt:** "Check the current stock quantity for SKU 'TSH-001' on our production store"
 
@@ -246,7 +338,41 @@ Get WooCommerce product categories.
   "arguments": {
     "connection_id": "conn_prod_store",
     "action": "get_wc_products",
-    "sku": "TSH-001"
+    "sku": "TSH-001",
+    "include_variations": true
+  }
+}
+```
+
+### Get Variations for a Specific Product
+
+**Prompt:** "Show me all available variations and stock levels for product ID 123"
+
+**Tool Call:**
+```json
+{
+  "tool": "remote_wp_connection",
+  "arguments": {
+    "connection_id": "conn_prod_store",
+    "action": "get_wc_product_variations",
+    "post_id": 123
+  }
+}
+```
+
+### Search Products by Category
+
+**Prompt:** "Show me all products in the 'shirts' category"
+
+**Tool Call:**
+```json
+{
+  "tool": "remote_wp_connection",
+  "arguments": {
+    "connection_id": "conn_prod_store",
+    "action": "get_wc_products",
+    "category": "shirts",
+    "include_variations": false
   }
 }
 ```
