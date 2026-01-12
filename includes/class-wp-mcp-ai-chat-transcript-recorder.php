@@ -271,7 +271,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 				'session_key'          => isset( $context['session_key'] ) ? $context['session_key'] : 'none',
 				'jetengine_active'     => function_exists( 'jet_engine' ),
 				'jetengine_class_path' => defined( 'WP_MCP_AI_PATH' ) ? WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php' : 'undefined',
-				'base_version_mode'    => function_exists( 'wp_mcp_ai_is_base_version' ) ? wp_mcp_ai_is_base_version() : 'unknown',
+				'base_version_mode'    => wp_mcp_ai_is_base_version(),
 				'pro_addon_active'     => defined( 'WP_MCP_AI_PRO_VERSION' ),
 				'impact'               => 'Transcripts will be stored in browser only (24h)',
 				'solution'             => 'If using base + pro plugins, ensure Pro addon is activated. If using base only, JetEngine integration is not available.',
@@ -290,7 +290,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		$info = array(
 			'jetengine_function_exists' => function_exists( 'jet_engine' ),
 			'jetengine_class_exists'    => class_exists( 'WP_MCP_AI_JetEngine_CCT' ),
-			'base_version_mode'         => function_exists( 'wp_mcp_ai_is_base_version' ) ? wp_mcp_ai_is_base_version() : 'unknown',
+			'base_version_mode'         => wp_mcp_ai_is_base_version(),
 			'pro_addon_active'          => defined( 'WP_MCP_AI_PRO_VERSION' ),
 		);
 

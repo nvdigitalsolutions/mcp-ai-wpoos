@@ -34,7 +34,17 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test loading logic for base + pro plugin scenario.
+	 * Test helper function wp_mcp_ai_should_load_integrations exists.
+	 */
+	public function test_should_load_integrations_function_exists() {
+		$this->assertTrue(
+			function_exists( 'wp_mcp_ai_should_load_integrations' ),
+			'wp_mcp_ai_should_load_integrations() helper function should exist'
+		);
+	}
+
+	/**
+	 * Test loading logic for base + pro plugin scenario using helper function.
 	 *
 	 * This simulates the scenario where:
 	 * 1. Base plugin is active (WP_MCP_AI_BASE_VERSION = true)
@@ -54,6 +64,13 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 		$this->assertTrue(
 			$should_load,
 			'Integrations should load when Pro addon is active, even in base version mode'
+		);
+
+		// Verify the helper function produces the same result in test environment.
+		// In test environment, base version is false, so should always return true.
+		$this->assertTrue(
+			wp_mcp_ai_should_load_integrations(),
+			'Helper function should return true in test environment (full version)'
 		);
 	}
 
