@@ -58,6 +58,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudways_connection' => 'handle_test_cloudways_connection',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
+				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
 				'wp_ajax_wp_mcp_ai_test_flowhub_connection' => 'handle_test_flowhub_connection',
 				'wp_ajax_wp_mcp_ai_test_isams_connection'  => 'handle_test_isams_connection',
 				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
@@ -811,6 +812,58 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			wp_send_json_success(
 				array(
 					'message' => __( 'Successfully connected to Brave Search API!', 'mcp-ai-wpoos' ),
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to test Mubert API connection.
+		 */
+		public function handle_test_mubert_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+			if ( empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide a Mubert API key.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Load the Mubert service.
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-mubert-music-service.php';
+
+			// Create service instance with test API key.
+			$service = new WP_MCP_AI_Mubert_Music_Service();
+
+			// Temporarily override the API key for testing.
+			$original_settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$test_settings     = $original_settings;
+			$test_settings['mubert_api_key'] = $api_key;
+			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $test_settings );
+
+			// Test the connection.
+			$result = $service->test_connection();
+
+			// Restore original settings.
+			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $original_settings );
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error(
+					array(
+						'message' => $result->get_error_message(),
+					)
+				);
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => $result['message'],
 				)
 			);
 		}

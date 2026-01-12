@@ -17,7 +17,7 @@
 # NOTE: Tools marked with "bug" status are automatically disabled
 # to prevent usage until issues are resolved.
 #
-# Last Updated: January 2, 2026
+# Last Updated: January 12, 2026
 # Total Tools: 215 (Base: 149, Pro: 66)
 
 
@@ -37,7 +37,7 @@ edit_gemini_image_validated = stable
 generate_gemini_image_validated = stable
 generate_image_alt_text_validated = stable
 generate_image_caption_validated = stable
-generate_music_validated = stable
+generate_music = stable
 generate_openai_image_validated = stable
 generate_openai_speech_validated = stable
 generate_sora_video_validated = stable
@@ -227,7 +227,7 @@ gemini_geospatial_query = experimental
 generate_auth0_token = experimental
 generate_gemini_image = experimental
 generate_jukebox_music = experimental
-generate_music = experimental
+generate_music_validated = experimental
 generate_openai_image = experimental
 generate_simple_jwt_token = experimental
 generate_sora_video = experimental
