@@ -729,12 +729,12 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$endpoint = 'wc/v3/products/' . $product_id . '/variations';
-		
-		// Get all variations (max 100 per page, fetch multiple pages if needed).
+
+		// Get variations (max 100 per page, first page only).
 		$params = array(
 			'per_page' => 100,
 		);
-		
+
 		$endpoint = add_query_arg( $params, $endpoint );
 
 		$variations = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
