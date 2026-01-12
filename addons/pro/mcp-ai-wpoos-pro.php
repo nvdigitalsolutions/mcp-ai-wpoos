@@ -267,6 +267,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 	 * @param WP_MCP_AI_Core_Server|WP_MCP_AI_Tool_Registry $registry Tool registry or server instance.
 	 */
 	function wp_mcp_ai_pro_register_tools( $registry ) {
+		// Get settings for conditional tool loading.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		
 		// Load Pro tool files.
 		$pro_tools = array(
 			// Remote WordPress/WooCommerce Connection tool.
@@ -359,7 +362,6 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		}
 
 		// Add quiz tools if enabled.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( ! empty( $settings['enable_quiz_system'] ) ) {
 			$quiz_tools = array(
 				'WP_MCP_AI_Tool_Create_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-quiz.php',
@@ -667,6 +669,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['delete_event']      = 'wordpress-core';
 			$pro_tools['list_events']       = 'wordpress-core';
 			$pro_tools['get_calendar_view'] = 'wordpress-core';
+		}
+
+		// Add ECA management tool mappings if enabled.
+		if ( ! empty( $settings['enable_eca_management'] ) ) {
+			$pro_tools['create_eca']               = 'wordpress-core';
+			$pro_tools['list_ecas']                = 'wordpress-core';
+			$pro_tools['enroll_student_eca']       = 'wordpress-core';
+			$pro_tools['get_student']              = 'wordpress-core';
+			$pro_tools['sync_students_from_isams'] = 'wordpress-core';
 		}
 
 		/**
