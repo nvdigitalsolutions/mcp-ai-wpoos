@@ -536,7 +536,11 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-r
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
 
 // Load third-party plugin integrations only when not in base version mode.
-if ( ! wp_mcp_ai_is_base_version() ) {
+// However, if Pro addon is active (even with base version), load JetEngine integrations
+// since Pro features may depend on them for chat transcript storage and other functionality.
+$load_integrations = ! wp_mcp_ai_is_base_version() || defined( 'WP_MCP_AI_PRO_VERSION' );
+
+if ( $load_integrations ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php';
@@ -763,7 +767,11 @@ WP_MCP_AI_REST_API_Context_Fix::init();
 WP_MCP_AI_HTTP::bootstrap();
 
 // Initialize third-party plugin integrations only when not in base version mode.
-if ( ! wp_mcp_ai_is_base_version() ) {
+// However, if Pro addon is active (even with base version), initialize integrations
+// since Pro features may depend on them.
+$init_integrations = ! wp_mcp_ai_is_base_version() || defined( 'WP_MCP_AI_PRO_VERSION' );
+
+if ( $init_integrations ) {
 	if ( class_exists( 'WP_MCP_AI_JetEngine_Tool_Handlers' ) ) {
 		WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
 	}
