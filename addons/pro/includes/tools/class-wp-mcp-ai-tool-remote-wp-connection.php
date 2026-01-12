@@ -556,6 +556,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$params = array(
 			'per_page' => $per_page,
 			'page'     => $page,
+			// Sort by stock status ascending - 'instock' comes before 'outofstock' alphabetically.
 			'orderby'  => 'stock_status',
 			'order'    => 'asc',
 		);
@@ -834,39 +835,22 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		// Strip HTML tags first.
 		$text = wp_strip_all_tags( $text );
 
-		// Split by sentence endings (., !, ?) with optional following whitespace.
-		// This captures all sentence endings, even at the end of text.
-		$sentences = preg_split( '/([.!?])/', $text, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY );
+		// Split by sentence endings with better boundary detection.
+		// Matches . ! ? followed by whitespace and a capital letter, or at end of string.
+		// This avoids splitting on abbreviations and numbers.
+		$sentences = preg_split( '/(?<=[.!?])(?=\s+[A-Z])|(?<=[.!?])$/', $text, -1, PREG_SPLIT_NO_EMPTY );
 
-		if ( empty( $sentences ) ) {
+		if ( empty( $sentences ) || count( $sentences ) <= 1 ) {
+			// No sentence boundaries found or only one sentence.
 			return $text;
 		}
 
-		// Reconstruct sentences.
-		// After preg_split with PREG_SPLIT_DELIM_CAPTURE, the array alternates between text and delimiters.
-		$result = '';
-		$count = 0;
+		// Reconstruct with limited number of sentences.
+		$result_sentences = array_slice( $sentences, 0, $sentence_count );
+		$result = implode( ' ', array_map( 'trim', $result_sentences ) );
 
-		for ( $i = 0; $i < count( $sentences ) && $count < $sentence_count; $i++ ) {
-			$current = trim( $sentences[ $i ] );
-			
-			// Check if current element is a delimiter.
-			if ( in_array( $current, array( '.', '!', '?' ), true ) ) {
-				$result .= $current;
-				$count++;
-				
-				// Add space after punctuation if there are more sentences to come.
-				if ( $count < $sentence_count && isset( $sentences[ $i + 1 ] ) ) {
-					$result .= ' ';
-				}
-			} else {
-				// This is text content, add it to result.
-				$result .= $current;
-			}
-		}
-
-		// If we truncated, add ellipsis.
-		if ( $count >= $sentence_count && strlen( $text ) > strlen( $result ) ) {
+		// If we truncated (more sentences exist than we included), add ellipsis.
+		if ( count( $sentences ) > $sentence_count ) {
 			$result = rtrim( $result ) . '...';
 		}
 
