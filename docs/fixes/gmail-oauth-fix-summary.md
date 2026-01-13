@@ -1,6 +1,52 @@
 # Gmail OAuth Fix Summary
 
-## Latest Enhancement - PR #2883 (January 13, 2026) 🎉 **NEWEST**
+## Latest Fix - HTML Entity Encoding Issue (January 13, 2026) 🎉 **NEWEST**
+
+### What Changed
+**"Fix HTML entity encoding in OAuth redirect URI display"**
+
+Changed the redirect URI display fields to use `esc_url()` instead of `esc_attr()` to prevent the ampersand `&` from being HTML-encoded as `&amp;`.
+
+### Problem
+Users were getting `redirect_uri_mismatch` errors when copying the redirect URI from the admin interface and pasting it into Google Cloud Console. The issue was that `esc_attr()` was encoding the ampersand as `&amp;` in the HTML:
+
+```html
+<input value="...admin.php?page=wp-mcp-ai-remote-sites&amp;oauth_handler=gmail_oauth_callback">
+```
+
+While browsers typically decode `&amp;` back to `&` when the user copies the value, there were edge cases:
+- Users copying from browser DevTools or "View Source"  
+- Browser quirks or extensions interfering with copy operations
+- Automated tools reading the HTML directly
+
+When `&amp;` was pasted into Google Cloud Console, it was treated literally, causing a mismatch with the actual redirect URI (which uses `&`).
+
+### Solution
+Changed from `esc_attr()` to `esc_url()` for the redirect URI display fields:
+
+```php
+// OLD (problematic):
+echo esc_attr( $gmail_redirect_uri );
+// Output: ...admin.php?page=wp-mcp-ai-remote-sites&amp;oauth_handler=gmail_oauth_callback
+
+// NEW (correct):
+echo esc_url( $gmail_redirect_uri );
+// Output: ...admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback
+```
+
+### Files Modified
+- `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php`
+  - Line 967: Gmail redirect URI display
+  - Line 1050: Google Drive redirect URI display
+
+### User Benefits
+- **No More HTML Entities:** The ampersand is no longer encoded, preventing copy-paste issues
+- **Works with DevTools:** Users can now copy from anywhere without HTML encoding interference
+- **Exact Match Guaranteed:** The displayed URI matches exactly what Google OAuth expects
+
+---
+
+## Previous Enhancement - PR #2883 (January 13, 2026)
 
 ### What Changed in PR #2883
 **"Display OAuth redirect URI in admin to prevent redirect_uri_mismatch errors"**
