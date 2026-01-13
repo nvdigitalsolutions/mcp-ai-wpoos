@@ -630,6 +630,8 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 
 ## 📦 Installation
 
+> **Important:** This repository includes production dependencies in the `vendor/` directory. When cloning for production use, run `composer install --no-dev` to ensure no development dependencies are added. For development work (testing, linting), see [Development Tooling](#-development-tooling).
+
 ### For Developers (GitHub Clone)
 
 If you're cloning from GitHub for development:
