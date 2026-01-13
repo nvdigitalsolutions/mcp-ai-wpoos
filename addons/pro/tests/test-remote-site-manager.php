@@ -470,4 +470,95 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 			'Expected an EZuite-specific error code, got: ' . $result->get_error_code()
 		);
 	}
+
+	/**
+	 * Test saving a Gmail connection with all fields.
+	 */
+	public function test_save_gmail_connection_with_all_fields() {
+		$connection_data = array(
+			'name'            => 'Test Gmail Connection',
+			'url'             => 'https://gmail.googleapis.com',
+			'connection_type' => 'gmail',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_client_id_123.apps.googleusercontent.com',
+			'client_secret'   => 'test_client_secret_xyz',
+			'refresh_token'   => 'test_refresh_token_abc',
+			'user_email'      => 'test@gmail.com',
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertNotWPError( $result );
+		$this->assertIsString( $result );
+		$this->assertStringStartsWith( 'conn_', $result );
+
+		// Retrieve the saved connection.
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
+
+		$this->assertIsArray( $connection );
+		$this->assertEquals( 'Test Gmail Connection', $connection['name'] );
+		$this->assertEquals( 'gmail', $connection['connection_type'] );
+		$this->assertEquals( 'test_client_id_123.apps.googleusercontent.com', $connection['client_id'] );
+		$this->assertEquals( 'test@gmail.com', $connection['user_email'] );
+
+		// Verify sensitive fields are encrypted.
+		$this->assertNotEquals( 'test_client_secret_xyz', $connection['client_secret'] );
+		$this->assertNotEmpty( $connection['client_secret'] );
+		$this->assertNotEquals( 'test_refresh_token_abc', $connection['refresh_token'] );
+		$this->assertNotEmpty( $connection['refresh_token'] );
+	}
+
+	/**
+	 * Test updating Gmail connection preserves existing client_id and secret when not provided.
+	 */
+	public function test_update_gmail_connection_preserves_existing_values() {
+		// First, create a Gmail connection.
+		$connection_data = array(
+			'name'            => 'Gmail Connection',
+			'url'             => 'https://gmail.googleapis.com',
+			'connection_type' => 'gmail',
+			'auth_type'       => 'none',
+			'client_id'       => 'original_client_id.apps.googleusercontent.com',
+			'client_secret'   => 'original_client_secret',
+			'refresh_token'   => 'original_refresh_token',
+			'user_email'      => 'original@gmail.com',
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Now update the connection without providing client_secret and refresh_token.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => 'Updated Gmail Connection',
+			'url'             => 'https://gmail.googleapis.com',
+			'connection_type' => 'gmail',
+			'auth_type'       => 'none',
+			'client_id'       => 'updated_client_id.apps.googleusercontent.com',
+			'client_secret'   => '', // Empty - should preserve existing.
+			'refresh_token'   => '', // Empty - should preserve existing.
+			'user_email'      => 'updated@gmail.com',
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+		$this->assertNotWPError( $result );
+		$this->assertEquals( $connection_id, $result );
+
+		// Retrieve the updated connection.
+		$updated_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		// Verify that name, client_id, and user_email were updated.
+		$this->assertEquals( 'Updated Gmail Connection', $updated_connection['name'] );
+		$this->assertEquals( 'updated_client_id.apps.googleusercontent.com', $updated_connection['client_id'] );
+		$this->assertEquals( 'updated@gmail.com', $updated_connection['user_email'] );
+
+		// Verify that client_secret and refresh_token were preserved (still encrypted).
+		$this->assertNotEmpty( $updated_connection['client_secret'] );
+		$this->assertNotEquals( 'original_client_secret', $updated_connection['client_secret'] );
+		$this->assertNotEmpty( $updated_connection['refresh_token'] );
+		$this->assertNotEquals( 'original_refresh_token', $updated_connection['refresh_token'] );
+	}
 }

@@ -839,12 +839,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="gmail_client_id"><?php esc_html_e( 'OAuth Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="gmail_client_id" id="gmail_client_id" class="regular-text" value="" autocomplete="off">
-						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client ID.', 'wp-mcp-ai-pro' ); ?></p>
-						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
-						<?php endif; ?>
+						<input type="text" name="gmail_client_id" id="gmail_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -855,7 +851,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="password" name="gmail_client_secret" id="gmail_client_secret" class="regular-text" value="" autocomplete="new-password">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret.', 'wp-mcp-ai-pro' ); ?></p>
+							<?php if ( ! empty( $connection['client_secret'] ) ) : ?>
+								<p class="description">
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+									<?php esc_html_e( 'Client secret is set. Leave blank to keep existing secret, or enter a new one to replace it.', 'wp-mcp-ai-pro' ); ?>
+								</p>
+							<?php else : ?>
+								<p class="description"><?php esc_html_e( 'Client secret is not set. Enter OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+							<?php endif; ?>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
@@ -869,7 +872,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<textarea name="gmail_refresh_token" id="gmail_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing refresh token. This is typically obtained through the OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
+							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
+								<p class="description">
+									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+									<?php esc_html_e( 'Refresh token is set. Leave blank to keep existing token, or paste a new token to replace it.', 'wp-mcp-ai-pro' ); ?>
+								</p>
+							<?php else : ?>
+								<p class="description"><?php esc_html_e( 'Optional: OAuth refresh token. Leave blank if not obtained yet through OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
+							<?php endif; ?>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Optional: Pre-existing OAuth refresh token. If not provided, tools will need to initiate OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
