@@ -579,7 +579,7 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-media.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php';
-	require_once WP_MCP_AI_PATH . 'includes/integrations/google-drive-integration-init.php';
+	// Google Drive OAuth removed - now handled in PRO addon's Remote Sites feature.
 	require_once WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudways-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudflare-integration-init.php';
