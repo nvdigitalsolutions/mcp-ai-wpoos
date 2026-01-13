@@ -14,6 +14,27 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-remote-sit
 class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 	/**
+	 * Google OAuth token endpoint URL.
+	 *
+	 * @var string
+	 */
+	const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
+
+	/**
+	 * Gmail profile API endpoint.
+	 *
+	 * @var string
+	 */
+	const GMAIL_PROFILE_ENDPOINT = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
+
+	/**
+	 * Google userinfo API endpoint.
+	 *
+	 * @var string
+	 */
+	const GOOGLE_USERINFO_ENDPOINT = 'https://www.googleapis.com/oauth2/v2/userinfo';
+
+	/**
 	 * Set up test environment.
 	 */
 	public function setUp(): void {
@@ -1053,15 +1074,15 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 * @param false|array|WP_Error $response    A preemptive return value of an HTTP request.
 	 * @param array                $parsed_args HTTP request arguments.
 	 * @param string               $url         The request URL.
-	 * @return array Mock HTTP response.
+	 * @return array|false|WP_Error Mock HTTP response or original response.
 	 */
 	public function mock_gmail_token_exchange( $response, $parsed_args, $url ) {
-		// Mock token exchange endpoint (shared with Drive).
-		if ( 'https://oauth2.googleapis.com/token' === $url ) {
+		// Mock token exchange endpoint (shared logic).
+		if ( self::GOOGLE_TOKEN_ENDPOINT === $url ) {
 			return $this->mock_google_token_response( 'test_refresh_token_123' );
 		}
 
-		if ( 'https://gmail.googleapis.com/gmail/v1/users/me/profile' === $url ) {
+		if ( self::GMAIL_PROFILE_ENDPOINT === $url ) {
 			// Return mock Gmail profile response.
 			return array(
 				'response' => array(
@@ -1085,15 +1106,15 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 * @param false|array|WP_Error $response    A preemptive return value of an HTTP request.
 	 * @param array                $parsed_args HTTP request arguments.
 	 * @param string               $url         The request URL.
-	 * @return array Mock HTTP response.
+	 * @return array|false|WP_Error Mock HTTP response or original response.
 	 */
 	public function mock_google_drive_token_exchange( $response, $parsed_args, $url ) {
-		// Mock token exchange endpoint (shared with Gmail).
-		if ( 'https://oauth2.googleapis.com/token' === $url ) {
+		// Mock token exchange endpoint (shared logic).
+		if ( self::GOOGLE_TOKEN_ENDPOINT === $url ) {
 			return $this->mock_google_token_response( 'test_drive_refresh_token_456' );
 		}
 
-		if ( 'https://www.googleapis.com/oauth2/v2/userinfo' === $url ) {
+		if ( self::GOOGLE_USERINFO_ENDPOINT === $url ) {
 			// Return mock userinfo response.
 			return array(
 				'response' => array(
@@ -1116,6 +1137,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 * Helper: Mock Google OAuth token endpoint response.
 	 *
 	 * Shared helper to reduce code duplication between Gmail and Drive mocks.
+	 * Both mock methods call this to handle the token exchange endpoint.
 	 *
 	 * @param string $refresh_token The refresh token to return.
 	 * @return array Mock HTTP response.
