@@ -336,6 +336,13 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 				$query_params['room_id'] = sanitize_text_field( $options['room_id'] );
 			}
 
+			// Add location_id if available (endpoint is "Non-Zero Inventory By Location").
+			// FlowHub may require or filter by location_id for multi-location dispensaries.
+			$location_id = $this->get_location_id();
+			if ( ! empty( $location_id ) ) {
+				$query_params['location_id'] = sanitize_text_field( $location_id );
+			}
+
 			// Use the non-zero inventory endpoint as per Flowhub API docs.
 			return $this->make_request(
 				'/v0/inventoryNonZero',
