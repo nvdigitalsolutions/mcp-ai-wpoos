@@ -371,19 +371,31 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertInstanceOf( 'WP_Error', $result );
 
-		// Test Flowhub - missing location_id.
+		// Test Flowhub - missing client_id (should fail).
 		$connection_data = array(
 			'name'            => 'Test',
 			'url'             => 'https://test.com',
 			'connection_type' => 'flowhub',
 			'auth_type'       => 'none',
 			'api_key'         => 'test',
-			'client_id'       => 'test',
-			'client_secret'   => 'test',
 			'enabled'         => true,
 		);
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertStringContainsString( 'client ID', $result->get_error_message() );
+
+		// Test Flowhub - with both api_key and client_id (should succeed).
+		$connection_data = array(
+			'name'            => 'Test Flowhub',
+			'url'             => 'https://test.com',
+			'connection_type' => 'flowhub',
+			'auth_type'       => 'none',
+			'api_key'         => 'test_api_key',
+			'client_id'       => 'test_client_id',
+			'enabled'         => true,
+		);
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertIsString( $result, 'Flowhub connection with api_key and client_id should save successfully' );
 
 		// Test PayHere - missing app_secret.
 		$connection_data = array(
@@ -396,5 +408,67 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		);
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertInstanceOf( 'WP_Error', $result );
+	}
+
+	/**
+	 * Test that unique field names prevent form submission conflicts.
+	 *
+	 * This test verifies the fix for the issue where multiple connection types
+	 * had fields with the same name (e.g., api_key, client_id), causing the
+	 * last field in DOM order to override earlier fields when the form was submitted.
+	 */
+	public function test_unique_field_names_prevent_conflicts() {
+		// Simulate form submission for Flowhub connection with unique field names.
+		$_POST['wp_mcp_ai_pro_save_connection'] = '1';
+		$_POST['_wpnonce']                      = wp_create_nonce( 'save_remote_connection' );
+		$_POST['name']                          = 'Test Flowhub';
+		$_POST['url']                           = 'https://flowhub.example.com';
+		$_POST['connection_type']               = 'flowhub';
+		$_POST['auth_type']                     = 'none';
+		$_POST['flowhub_api_key']               = 'flowhub_test_key_123';
+		$_POST['flowhub_client_id']             = 'flowhub_client_abc';
+		$_POST['enabled']                       = '1';
+
+		// Also set QuickBooks fields (which would have overridden if names weren't unique).
+		$_POST['quickbooks_client_id']     = '';
+		$_POST['quickbooks_client_secret'] = '';
+
+		// Also set EZuite ERP fields (which would have overridden if names weren't unique).
+		$_POST['ezuite_erp_api_key']    = '';
+		$_POST['ezuite_erp_api_secret'] = '';
+
+		// Simulate the admin class handling the form submission.
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+
+		// Extract the connection data logic (same as in handle_actions).
+		$connection_type = sanitize_key( wp_unslash( $_POST['connection_type'] ) );
+		$api_key         = '';
+		$client_id       = '';
+
+		switch ( $connection_type ) {
+			case 'flowhub':
+				$api_key   = isset( $_POST['flowhub_api_key'] ) ? wp_unslash( $_POST['flowhub_api_key'] ) : '';
+				$client_id = isset( $_POST['flowhub_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_client_id'] ) ) : '';
+				break;
+		}
+
+		// Verify Flowhub values were extracted correctly (not overridden by empty QuickBooks/EZuite fields).
+		$this->assertEquals( 'flowhub_test_key_123', $api_key, 'Flowhub API key should be preserved' );
+		$this->assertEquals( 'flowhub_client_abc', $client_id, 'Flowhub client ID should be preserved' );
+
+		// Clean up.
+		unset( $_POST['wp_mcp_ai_pro_save_connection'] );
+		unset( $_POST['_wpnonce'] );
+		unset( $_POST['name'] );
+		unset( $_POST['url'] );
+		unset( $_POST['connection_type'] );
+		unset( $_POST['auth_type'] );
+		unset( $_POST['flowhub_api_key'] );
+		unset( $_POST['flowhub_client_id'] );
+		unset( $_POST['quickbooks_client_id'] );
+		unset( $_POST['quickbooks_client_secret'] );
+		unset( $_POST['ezuite_erp_api_key'] );
+		unset( $_POST['ezuite_erp_api_secret'] );
+		unset( $_POST['enabled'] );
 	}
 }

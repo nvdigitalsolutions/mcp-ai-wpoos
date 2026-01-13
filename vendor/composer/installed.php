@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-flowhub-connection-error',
+        'version' => 'dev-copilot/fix-flowhub-connection-error',
+        'reference' => '485abbe89f32f8c5d299ad81f33ffdb7ccec78a8',
         'pretty_version' => 'dev-copilot/update-ezuite-connection-settings',
         'version' => 'dev-copilot/update-ezuite-connection-settings',
         'reference' => '05d62ab1608a7c1e7ff98e5cfc325827141eac8f',
@@ -38,6 +41,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-flowhub-connection-error',
+            'version' => 'dev-copilot/fix-flowhub-connection-error',
+            'reference' => '485abbe89f32f8c5d299ad81f33ffdb7ccec78a8',
             'pretty_version' => 'dev-copilot/update-ezuite-connection-settings',
             'version' => 'dev-copilot/update-ezuite-connection-settings',
             'reference' => '05d62ab1608a7c1e7ff98e5cfc325827141eac8f',
