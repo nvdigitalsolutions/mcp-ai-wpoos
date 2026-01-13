@@ -1,12 +1,12 @@
 # Remote Connection Types Migration - Implementation Summary
 
 **Date:** January 13, 2026  
-**Status:** ✅ Complete  
+**Status:** ✅ Complete + Google Drive Added  
 **Issue:** Add connection type options for migrated tools and create auto-migration script
 
 ## Overview
 
-This update adds support for 5 new connection types to the Remote Sites system and provides an automated migration script to transition existing API credentials from plugin settings to the new connection-based system.
+This update adds support for 6 new connection types to the Remote Sites system and provides an automated migration script to transition existing API credentials from plugin settings to the new connection-based system. The latest addition includes Google Drive with OAuth2 and folder scoping support.
 
 ## What Was Changed
 
@@ -14,15 +14,17 @@ This update adds support for 5 new connection types to the Remote Sites system a
 
 **File:** `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php`
 
-#### Connection Type Dropdown (Lines 499-527)
-Added 5 new connection types to the dropdown:
+#### Connection Type Dropdown
+Added 6 new connection types to the dropdown:
 - `isams` - iSAMS (School Management)
 - `flowhub` - Flowhub (POS/Retail)
 - `payhere` - PayHere (Payment Gateway)
 - `quickbooks` - QuickBooks (Accounting)
 - `ezuite_erp` - EZuite ERP (Inventory)
+- `gmail` - Gmail (Email Service)
+- `google_drive` - **NEW** Google Drive (Cloud Storage) with OAuth2 and folder scoping
 
-#### Type-Specific Form Fields (Lines 598-785)
+#### Type-Specific Form Fields
 Added conditional form fields for each connection type:
 
 **iSAMS Fields:**
@@ -48,10 +50,23 @@ Added conditional form fields for each connection type:
 **EZuite ERP Fields:**
 - API Key (required)
 
-#### JavaScript Updates (Lines 733-804)
-Updated `toggleConnectionTypeFields()` to show/hide type-specific fields based on selected connection type.
+**Gmail Fields:**
+- OAuth Client ID (required)
+- OAuth Client Secret (required)
+- Refresh Token (optional, obtained via OAuth flow)
+- Gmail User Email (optional)
 
-#### Connection Type Display (Lines 288-318)
+**Google Drive Fields:** (**NEW**)
+- OAuth Client ID (required)
+- OAuth Client Secret (required)
+- Refresh Token (optional, obtained via OAuth flow)
+- Folder ID (optional, for scoping access to specific folder)
+- Google User Email (optional)
+
+#### JavaScript Updates
+Updated `toggleConnectionTypeFields()` to show/hide type-specific fields based on selected connection type, including Google Drive fields.
+
+#### Connection Type Display
 Updated connection list view to display all connection types with distinct badge colors:
 - WordPress: Blue (#2271b1)
 - Generic: Gray (#50575e)
@@ -60,12 +75,14 @@ Updated connection list view to display all connection types with distinct badge
 - PayHere: Yellow (#f0b849)
 - QuickBooks: Dark Green (#2c9f47)
 - EZuite ERP: Purple (#8c50a7)
+- Gmail: Google Red (#ea4335)
+- **Google Drive: Google Blue (#4285f4)** (**NEW**)
 
 ### 2. Remote Site Manager Validation Updates
 
 **File:** `addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php`
 
-#### Updated Validations (Lines 652-696)
+#### Updated Validations
 Enhanced connection validation for all connection types:
 
 - **EZuite ERP:** Requires api_key only (api_secret not needed)
@@ -73,6 +90,30 @@ Enhanced connection validation for all connection types:
 - **Flowhub:** Validates api_key, client_id, client_secret, and location_id
 - **PayHere:** Validates app_id and app_secret
 - **QuickBooks:** Validates client_id and client_secret (company_id is optional)
+- **Gmail:** Validates OAuth client_id and client_secret (refresh_token obtained via OAuth)
+- **Google Drive:** (**NEW**) Validates OAuth client_id and client_secret (refresh_token and folder_id optional)
+
+### 3. OAuth Integration
+
+**Files Added:**
+- `includes/integrations/class-wp-mcp-ai-google-drive-oauth-handler.php` (**NEW**)
+- `includes/integrations/google-drive-integration-init.php` (**NEW**)
+
+**Integration Features:**
+- OAuth2 authorization code grant flow
+- Automatic token refresh mechanism
+- User profile fetching for email address
+- Folder scoping support for limiting access
+- Follows Gmail OAuth pattern for consistency
+
+**OAuth Scopes:**
+- `https://www.googleapis.com/auth/drive.readonly` - Read-only file access
+- `https://www.googleapis.com/auth/drive.metadata.readonly` - Read-only metadata access
+
+**Endpoints:**
+- Authorization: `https://accounts.google.com/o/oauth2/v2/auth`
+- Token Exchange: `https://oauth2.googleapis.com/token`
+- API Base: `https://www.googleapis.com/drive/v3`
 
 ### 3. Migration Script
 

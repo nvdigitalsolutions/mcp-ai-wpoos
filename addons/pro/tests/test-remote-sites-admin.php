@@ -471,4 +471,101 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		unset( $_POST['ezuite_erp_api_secret'] );
 		unset( $_POST['enabled'] );
 	}
+
+	/**
+	 * Test that new connection type "google_drive" appears in dropdown.
+	 */
+	public function test_google_drive_connection_type_in_dropdown() {
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+
+		ob_start();
+		$admin->render_admin_page();
+		$output = ob_get_clean();
+
+		// Check that Google Drive option exists in the dropdown.
+		$this->assertStringContainsString( 'value="google_drive"', $output, 'Google Drive should be in connection type dropdown' );
+		$this->assertStringContainsString( 'Google Drive (Cloud Storage)', $output, 'Google Drive label should be present' );
+
+		unset( $_GET['page'] );
+	}
+
+	/**
+	 * Test creating a Google Drive connection with required fields.
+	 */
+	public function test_create_google_drive_connection() {
+		$connection_data = array(
+			'name'             => 'Test Google Drive Connection',
+			'url'              => 'https://www.googleapis.com/drive/v3',
+			'connection_type'  => 'google_drive',
+			'auth_type'        => 'none',
+			'client_id'        => 'google_drive_client_id_123',
+			'client_secret'    => 'google_drive_client_secret_456',
+			'refresh_token'    => 'google_drive_refresh_token_789',
+			'folder_id'        => '1a2b3c4d5e6f7g8h9i0j',
+			'user_email'       => 'test@example.com',
+			'enabled'          => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+
+		$this->assertNotWPError( $connection_id, 'Google Drive connection should be created successfully' );
+		$this->assertIsString( $connection_id, 'Connection ID should be a string' );
+		$this->assertStringStartsWith( 'conn_', $connection_id, 'Connection ID should start with conn_' );
+
+		// Retrieve and verify the connection.
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $connection, 'Google Drive connection should be retrievable' );
+		$this->assertEquals( 'Test Google Drive Connection', $connection['name'] );
+		$this->assertEquals( 'google_drive', $connection['connection_type'] );
+		$this->assertEquals( '1a2b3c4d5e6f7g8h9i0j', $connection['folder_id'] );
+		$this->assertEquals( 'test@example.com', $connection['user_email'] );
+	}
+
+	/**
+	 * Test validation for Google Drive connection type.
+	 */
+	public function test_google_drive_connection_validation() {
+		// Test missing client_id.
+		$connection_data = array(
+			'name'            => 'Test Google Drive',
+			'url'             => 'https://www.googleapis.com/drive/v3',
+			'connection_type' => 'google_drive',
+			'auth_type'       => 'none',
+			'client_secret'   => 'google_drive_client_secret_456',
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertWPError( $result, 'Should fail validation without client_id' );
+		$this->assertEquals( 'wp_mcp_ai_pro_missing_google_drive_credentials', $result->get_error_code() );
+
+		// Test missing client_secret.
+		$connection_data = array(
+			'name'            => 'Test Google Drive',
+			'url'             => 'https://www.googleapis.com/drive/v3',
+			'connection_type' => 'google_drive',
+			'auth_type'       => 'none',
+			'client_id'       => 'google_drive_client_id_123',
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertWPError( $result, 'Should fail validation without client_secret' );
+		$this->assertEquals( 'wp_mcp_ai_pro_missing_google_drive_credentials', $result->get_error_code() );
+
+		// Test successful validation with required fields (refresh_token and folder_id are optional).
+		$connection_data = array(
+			'name'            => 'Test Google Drive',
+			'url'             => 'https://www.googleapis.com/drive/v3',
+			'connection_type' => 'google_drive',
+			'auth_type'       => 'none',
+			'client_id'       => 'google_drive_client_id_123',
+			'client_secret'   => 'google_drive_client_secret_456',
+			'enabled'         => true,
+		);
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $result, 'Should pass validation with required fields' );
+	}
 }

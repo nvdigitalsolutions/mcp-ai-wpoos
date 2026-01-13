@@ -196,6 +196,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$refresh_token  = isset( $_POST['gmail_refresh_token'] ) ? wp_unslash( $_POST['gmail_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$user_email     = isset( $_POST['gmail_user_email'] ) ? sanitize_email( wp_unslash( $_POST['gmail_user_email'] ) ) : '';
 					break;
+				case 'google_drive':
+					$client_id      = isset( $_POST['google_drive_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_client_id'] ) ) : '';
+					$client_secret  = isset( $_POST['google_drive_client_secret'] ) ? wp_unslash( $_POST['google_drive_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$refresh_token  = isset( $_POST['google_drive_refresh_token'] ) ? wp_unslash( $_POST['google_drive_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$user_email     = isset( $_POST['google_drive_user_email'] ) ? sanitize_email( wp_unslash( $_POST['google_drive_user_email'] ) ) : '';
+					break;
 			}
 
 			// For FlowHub connections, always use the fixed API URL and custom_header auth
@@ -216,6 +222,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( 'gmail' === $connection_type ) {
 				$url = 'https://gmail.googleapis.com';
 				$auth_type = 'none'; // Gmail uses OAuth, not standard auth types
+			}
+
+			// For Google Drive connections, always use the Google Drive API URL
+			if ( 'google_drive' === $connection_type ) {
+				$url = 'https://www.googleapis.com/drive/v3';
+				$auth_type = 'none'; // Google Drive uses OAuth, not standard auth types
 			}
 
 			$connection_data = array(
@@ -245,6 +257,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				// Gmail-specific fields.
 				'refresh_token'   => $refresh_token,
 				'user_email'      => $user_email,
+				// Google Drive-specific fields.
+				'folder_id'       => isset( $_POST['google_drive_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_folder_id'] ) ) : '',
 			);
 
 			$result          = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -388,25 +402,27 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								
 								// Define labels and colors for each connection type
 								$type_labels = array(
-									'wordpress'   => __( 'WordPress', 'wp-mcp-ai-pro' ),
-									'generic'     => __( 'Generic REST API', 'wp-mcp-ai-pro' ),
-									'isams'       => __( 'iSAMS', 'wp-mcp-ai-pro' ),
-									'flowhub'     => __( 'Flowhub', 'wp-mcp-ai-pro' ),
-									'payhere'     => __( 'PayHere', 'wp-mcp-ai-pro' ),
-									'quickbooks'  => __( 'QuickBooks', 'wp-mcp-ai-pro' ),
-									'ezuite_erp'  => __( 'EZuite ERP', 'wp-mcp-ai-pro' ),
-									'gmail'       => __( 'Gmail', 'wp-mcp-ai-pro' ),
+									'wordpress'    => __( 'WordPress', 'wp-mcp-ai-pro' ),
+									'generic'      => __( 'Generic REST API', 'wp-mcp-ai-pro' ),
+									'isams'        => __( 'iSAMS', 'wp-mcp-ai-pro' ),
+									'flowhub'      => __( 'Flowhub', 'wp-mcp-ai-pro' ),
+									'payhere'      => __( 'PayHere', 'wp-mcp-ai-pro' ),
+									'quickbooks'   => __( 'QuickBooks', 'wp-mcp-ai-pro' ),
+									'ezuite_erp'   => __( 'EZuite ERP', 'wp-mcp-ai-pro' ),
+									'gmail'        => __( 'Gmail', 'wp-mcp-ai-pro' ),
+									'google_drive' => __( 'Google Drive', 'wp-mcp-ai-pro' ),
 								);
 								
 								$type_colors = array(
-									'wordpress'   => '#2271b1',
-									'generic'     => '#50575e',
-									'isams'       => '#d63638',
-									'flowhub'     => '#00a32a',
-									'payhere'     => '#f0b849',
-									'quickbooks'  => '#2c9f47',
-									'ezuite_erp'  => '#8c50a7',
-									'gmail'       => '#ea4335', // Google red color
+									'wordpress'    => '#2271b1',
+									'generic'      => '#50575e',
+									'isams'        => '#d63638',
+									'flowhub'      => '#00a32a',
+									'payhere'      => '#f0b849',
+									'quickbooks'   => '#2c9f47',
+									'ezuite_erp'   => '#8c50a7',
+									'gmail'        => '#ea4335', // Google red color
+									'google_drive' => '#4285f4', // Google blue color
 								);
 								
 								$type_label = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -644,6 +660,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="gmail" <?php selected( $connection_type, 'gmail' ); ?>>
 								<?php esc_html_e( 'Gmail (Email Service)', 'wp-mcp-ai-pro' ); ?>
+							</option>
+							<option value="google_drive" <?php selected( $connection_type, 'google_drive' ); ?>>
+								<?php esc_html_e( 'Google Drive (Cloud Storage)', 'wp-mcp-ai-pro' ); ?>
 							</option>
 						</select>
 						<p class="description">
@@ -935,6 +954,68 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- Type-specific fields for Google Drive -->
+				<tr class="google_drive-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_drive_client_id"><?php esc_html_e( 'OAuth Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="google_drive_client_id" id="google_drive_client_id" class="regular-text" value="" autocomplete="off">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client ID.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_drive-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_drive_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="google_drive_client_secret" id="google_drive_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_drive-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_drive_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<textarea name="google_drive_refresh_token" id="google_drive_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing refresh token. This is typically obtained through the OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Optional: Pre-existing OAuth refresh token. If not provided, tools will need to initiate OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_drive-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_drive_folder_id"><?php esc_html_e( 'Folder ID (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="google_drive_folder_id" id="google_drive_folder_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['folder_id'] ) ? esc_attr( $connection['folder_id'] ) : ''; ?>" autocomplete="off" placeholder="1a2b3c4d5e6f7g8h9i0j">
+						<p class="description"><?php esc_html_e( 'Optional: Limit access to a specific folder by ID. Leave blank for full drive access (within granted scopes).', 'wp-mcp-ai-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_drive-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_drive_user_email"><?php esc_html_e( 'Google User Email (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="email" name="google_drive_user_email" id="google_drive_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="user@example.com">
+						<p class="description"><?php esc_html_e( 'The Google account email associated with this connection for reference.', 'wp-mcp-ai-pro' ); ?></p>
+					</td>
+				</tr>
 				<?php if ( $is_edit && 'gmail' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
 					<tr class="gmail-only-field" style="display: none;">
 						<th scope="row">
@@ -1052,6 +1133,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var quickbooksFields = document.querySelectorAll('.quickbooks-only-field');
 			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
 			var gmailFields = document.querySelectorAll('.gmail-only-field');
+			var googleDriveFields = document.querySelectorAll('.google_drive-only-field');
 			var authTypeRow = document.getElementById('auth_type_row');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
@@ -1081,6 +1163,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			gmailFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			googleDriveFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -1147,6 +1232,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				urlField.style.backgroundColor = '#f0f0f0';
 				urlDescription.style.display = 'none';
 				// Gmail doesn't use the standard auth_type, it has its own OAuth flow
+				authTypeSelect.value = 'none';
+			} else if (connectionType === 'google_drive') {
+				googleDriveFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Google Drive uses OAuth, set URL to Google's Drive API
+				urlField.value = 'https://www.googleapis.com/drive/v3';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				// Google Drive doesn't use the standard auth_type, it has its own OAuth flow
 				authTypeSelect.value = 'none';
 			}
 		}

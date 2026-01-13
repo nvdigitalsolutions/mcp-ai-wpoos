@@ -1977,6 +1977,45 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			);
 
 			add_settings_section(
+				'wp_mcp_ai_google_drive_section',
+				__( 'Google Drive Integration', 'mcp-ai-wpoos' ),
+				array( $this, 'render_google_drive_section_description' ),
+				self::PAGE_SLUG
+			);
+
+			add_settings_field(
+				'google_drive_client_id',
+				__( 'Google Drive Client ID', 'mcp-ai-wpoos' ),
+				array( $this, 'render_google_drive_client_id_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_google_drive_section'
+			);
+
+			add_settings_field(
+				'google_drive_client_secret',
+				__( 'Google Drive Client Secret', 'mcp-ai-wpoos' ),
+				array( $this, 'render_google_drive_client_secret_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_google_drive_section'
+			);
+
+			add_settings_field(
+				'google_drive_refresh_token',
+				__( 'Google Drive Refresh Token', 'mcp-ai-wpoos' ),
+				array( $this, 'render_google_drive_refresh_token_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_google_drive_section'
+			);
+
+			add_settings_field(
+				'google_drive_user_email',
+				__( 'Google Drive User Email', 'mcp-ai-wpoos' ),
+				array( $this, 'render_google_drive_user_email_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_google_drive_section'
+			);
+
+			add_settings_section(
 				'wp_mcp_ai_chat_colors_section',
 				__( 'Chat Appearance', 'mcp-ai-wpoos' ),
 				array( $this, 'render_chat_colors_section_description' ),
@@ -5417,6 +5456,92 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			return $max_bytes;
+		}
+
+		/**
+		 * Render the Google Drive integration section description.
+		 */
+		public function render_google_drive_section_description() {
+			$settings      = self::get_settings();
+			$has_client_id = ! empty( $settings['google_drive_client_id'] );
+			$has_secret    = ! empty( $settings['google_drive_client_secret'] );
+			$login_url     = '';
+
+			if ( $has_client_id && $has_secret ) {
+				$login_url = wp_nonce_url(
+					admin_url( 'admin-post.php?action=wp_mcp_ai_google_drive_oauth_start' ),
+					'wp_mcp_ai_google_drive_oauth_start'
+				);
+			}
+			?>
+		<p><?php esc_html_e( 'Provide OAuth credentials for the Google Drive API. These are used by assistants to access files and folders on your behalf.', 'mcp-ai-wpoos' ); ?></p>
+			<?php if ( $login_url ) : ?>
+			<p>
+				<a class="button button-secondary" href="<?php echo esc_url( $login_url ); ?>">
+					<?php esc_html_e( 'Connect Google Drive Account', 'mcp-ai-wpoos' ); ?>
+				</a>
+			</p>
+			<p class="description"><?php esc_html_e( 'Launch the Google consent screen to mint and store a refresh token automatically. The plugin requests read-only access to Google Drive files and metadata.', 'mcp-ai-wpoos' ); ?></p>
+		<?php else : ?>
+			<p class="description"><?php esc_html_e( 'Save your Google Drive client ID and secret, then reload this page to enable the Google login button.', 'mcp-ai-wpoos' ); ?></p>
+		<?php endif; ?>
+			<?php if ( ! empty( $settings['google_drive_refresh_token'] ) ) : ?>
+			<p class="description">
+				<?php
+				if ( ! empty( $settings['google_drive_user_email'] ) ) {
+					/* translators: %s: Google Drive email address. */
+					printf( esc_html__( 'A valid refresh token is currently stored for %s.', 'mcp-ai-wpoos' ), '<code>' . esc_html( $settings['google_drive_user_email'] ) . '</code>' );
+				} else {
+					esc_html_e( 'A valid refresh token is currently stored.', 'mcp-ai-wpoos' );
+				}
+				?>
+			</p>
+		<?php endif; ?>
+			<?php
+		}
+
+		/**
+		 * Render the Google Drive client ID field.
+		 */
+		public function render_google_drive_client_id_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_drive_client_id]" value="<?php echo esc_attr( $settings['google_drive_client_id'] ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Enter the OAuth client ID from your Google Cloud project.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Google Drive client secret field.
+		 */
+		public function render_google_drive_client_secret_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_drive_client_secret]" value="<?php echo esc_attr( $settings['google_drive_client_secret'] ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Enter the OAuth client secret associated with the client ID.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Google Drive refresh token field.
+		 */
+		public function render_google_drive_refresh_token_field() {
+			$settings = self::get_settings();
+			?>
+		<textarea name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_drive_refresh_token]" rows="3" class="large-text" autocomplete="off"><?php echo esc_textarea( $settings['google_drive_refresh_token'] ); ?></textarea>
+		<p class="description"><?php esc_html_e( 'Provide a long-lived refresh token issued for the Google Drive API with read-only scopes.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Google Drive user email field.
+		 */
+		public function render_google_drive_user_email_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_drive_user_email]" value="<?php echo esc_attr( $settings['google_drive_user_email'] ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Specify the Google account email address associated with the refresh token.', 'mcp-ai-wpoos' ); ?></p>
+			<?php
 		}
 	}
 }
