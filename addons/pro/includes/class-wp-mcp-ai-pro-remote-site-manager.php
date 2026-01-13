@@ -795,14 +795,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
-	 * Encrypt a sensitive value.
+	 * Encrypt a sensitive value for storage.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $value Value to encrypt.
 	 * @return string Encrypted value.
 	 */
-	protected static function encrypt_value( $value ) {
+	public static function encrypt_value( $value ) {
 		if ( empty( $value ) ) {
 			return '';
 		}
@@ -830,7 +830,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @param string $encrypted Encrypted value.
 	 * @return string Decrypted value.
 	 */
-	protected static function decrypt_value( $encrypted ) {
+	public static function decrypt_value( $encrypted ) {
 		if ( empty( $encrypted ) ) {
 			return '';
 		}
