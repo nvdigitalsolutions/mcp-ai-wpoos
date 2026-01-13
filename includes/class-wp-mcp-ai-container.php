@@ -529,13 +529,6 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
-			'admin.gmail_crawl_integration',
-			function () {
-				return new WP_MCP_AI_Admin_Gmail_Crawl_Integration();
-			}
-		);
-
-		$this->singleton(
 			'admin.custom_filters_applicator',
 			function () {
 				return new WP_MCP_AI_Custom_Filters_Applicator();
