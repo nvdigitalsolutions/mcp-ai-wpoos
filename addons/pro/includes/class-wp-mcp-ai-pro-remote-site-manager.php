@@ -909,6 +909,17 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
 		}
 
+		if ( 'google_drive' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_google_drive_credentials',
+					__( 'OAuth Client ID and client secret are required for Google Drive connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
+			// Note: folder_id is optional - if not provided, full drive access within granted scopes
+		}
+
 		return true;
 	}
 
