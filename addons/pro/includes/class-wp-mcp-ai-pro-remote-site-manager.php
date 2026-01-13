@@ -123,6 +123,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['_consumer_secret_encrypted'] = true;
 			}
 
+			// Preserve existing api_key if not provided.
+			if ( empty( $connection_data['api_key'] ) && ! empty( $existing_connection['api_key'] ) ) {
+				$connection_data['api_key'] = $existing_connection['api_key'];
+				$connection_data['_api_key_encrypted'] = true;
+			}
+
 			// Preserve created timestamp.
 			if ( ! isset( $connection_data['created'] ) && ! empty( $existing_connection['created'] ) ) {
 				$connection_data['created'] = $existing_connection['created'];
@@ -140,12 +146,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'id'              => $connection_id,
 			'name'            => sanitize_text_field( $connection_data['name'] ),
 			'url'             => esc_url_raw( trailingslashit( $connection_data['url'] ) ),
+			'connection_type' => isset( $connection_data['connection_type'] ) ? sanitize_key( $connection_data['connection_type'] ) : 'wordpress',
 			'auth_type'       => sanitize_key( $connection_data['auth_type'] ),
 			'username'        => isset( $connection_data['username'] ) ? sanitize_text_field( $connection_data['username'] ) : '',
 			'password'        => isset( $connection_data['password'] ) ? $connection_data['password'] : '',
 			'token'           => isset( $connection_data['token'] ) ? $connection_data['token'] : '',
 			'consumer_key'    => isset( $connection_data['consumer_key'] ) ? $connection_data['consumer_key'] : '',
 			'consumer_secret' => isset( $connection_data['consumer_secret'] ) ? $connection_data['consumer_secret'] : '',
+			'api_key'         => isset( $connection_data['api_key'] ) ? $connection_data['api_key'] : '',
 			'has_woocommerce' => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'         => ! empty( $connection_data['enabled'] ),
 			'created'         => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
@@ -167,6 +175,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( ! empty( $connection['consumer_secret'] ) && empty( $connection_data['_consumer_secret_encrypted'] ) ) {
 			$connection['consumer_secret'] = self::encrypt_value( $connection['consumer_secret'] );
+		}
+
+		if ( ! empty( $connection['api_key'] ) && empty( $connection_data['_api_key_encrypted'] ) ) {
+			$connection['api_key'] = self::encrypt_value( $connection['api_key'] );
 		}
 
 		$connections[ $connection_id ] = $connection;
@@ -572,6 +584,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					__( 'Consumer key and consumer secret are required for WooCommerce authentication.', 'wp-mcp-ai-pro' )
 				);
 			}
+		}
+
+		// Validate connection type specific requirements.
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
+		if ( 'ezuite_erp' === $connection_type && empty( $connection['api_key'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_api_key',
+				__( 'API key is required for EZuite ERP connections.', 'wp-mcp-ai-pro' )
+			);
 		}
 
 		return true;
