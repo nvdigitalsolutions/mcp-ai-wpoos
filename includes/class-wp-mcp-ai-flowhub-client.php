@@ -249,6 +249,12 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 
 			WP_MCP_AI_Logger::log_event( 'flowhub_api_response', 'Flowhub API request completed successfully.' );
 
+			// Flowhub API wraps responses in { "status": 200, "data": [...] } format.
+			// Unwrap the data if present, otherwise return decoded response as-is.
+			if ( isset( $decoded['data'] ) ) {
+				return $decoded['data'];
+			}
+
 			return $decoded;
 		}
 

@@ -582,6 +582,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<select name="auth_type" id="auth_type" onchange="toggleAuthFields(this.value)">
 							<option value="none" <?php selected( $is_edit ? $connection['auth_type'] : 'none', 'none' ); ?>><?php esc_html_e( 'None', 'wp-mcp-ai-pro' ); ?></option>
+							<option value="custom_header" <?php selected( $is_edit ? $connection['auth_type'] : '', 'custom_header' ); ?>><?php esc_html_e( 'Custom Header', 'wp-mcp-ai-pro' ); ?></option>
 							<option value="application_password" <?php selected( $is_edit ? $connection['auth_type'] : '', 'application_password' ); ?>><?php esc_html_e( 'Application Password', 'wp-mcp-ai-pro' ); ?></option>
 							<option value="basic_auth" <?php selected( $is_edit ? $connection['auth_type'] : '', 'basic_auth' ); ?>><?php esc_html_e( 'Basic Auth', 'wp-mcp-ai-pro' ); ?></option>
 							<option value="jwt" <?php selected( $is_edit ? $connection['auth_type'] : '', 'jwt' ); ?>><?php esc_html_e( 'JWT Token', 'wp-mcp-ai-pro' ); ?></option>
@@ -880,6 +881,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var payhereFields = document.querySelectorAll('.payhere-only-field');
 			var quickbooksFields = document.querySelectorAll('.quickbooks-only-field');
 			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
+			var authTypeSelect = document.getElementById('auth_type');
 
 			// Hide all type-specific fields first
 			wordpressFields.forEach(function(field) {
@@ -921,6 +923,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				flowhubFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
+				// Flowhub uses custom header authentication
+				authTypeSelect.value = 'custom_header';
 			} else if (connectionType === 'payhere') {
 				payhereFields.forEach(function(field) {
 					field.style.display = 'table-row';
@@ -933,6 +937,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				ezuiteFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
+				// EZuite ERP uses custom header authentication
+				authTypeSelect.value = 'custom_header';
 			}
 		}
 
