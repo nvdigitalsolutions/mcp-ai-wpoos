@@ -146,12 +146,11 @@ $migrations = array(
 		'type'      => 'flowhub',
 		'auth_type' => 'custom_header',
 		'fields'    => array(
-			'api_key'       => 'flowhub_api_key',
-			'client_id'     => 'flowhub_client_id',
-			'client_secret' => 'flowhub_client_secret',
-			'location_id'   => 'flowhub_location_id',
+			'api_key'     => 'flowhub_api_key',
+			'client_id'   => 'flowhub_client_id',
+			'location_id' => 'flowhub_location_id',
 		),
-		'required'  => array( 'flowhub_api_key', 'flowhub_client_id', 'flowhub_client_secret', 'flowhub_location_id' ),
+		'required'  => array( 'flowhub_api_key', 'flowhub_client_id' ),
 		'default_url' => 'https://api.flowhub.com',
 	),
 	'payhere'     => array(
