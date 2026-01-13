@@ -10,6 +10,12 @@ Error 400: redirect_uri_mismatch
 ## Root Cause
 The redirect URI being sent to Google doesn't match what's configured in your Google Cloud Console OAuth 2.0 credentials.
 
+**This implementation follows:**
+- [Google OAuth 2.0 Best Practices](https://developers.google.com/identity/protocols/oauth2/resources/best-practices)
+- [Google Apigee OAuth Guidelines](https://docs.cloud.google.com/apigee/docs/api-platform/security/oauth/access-tokens)
+
+According to these guidelines, the redirect_uri must match **exactly** (including protocol, domain, path, and query parameters) between the authorization request and token exchange. Our implementation ensures this automatically.
+
 ## Solution (Step-by-Step)
 
 ### Step 1: Get Your Exact Redirect URI from NV oOS
@@ -104,5 +110,8 @@ If you're still having issues:
 
 ## Reference
 
-- Full Gmail OAuth documentation: `docs/fixes/gmail-oauth-fix-summary.md`
-- Google OAuth setup guide: `docs/getting-started/installation-setup/google-oauth-setup.md`
+- **Comprehensive verification guide:** `docs/getting-started/installation-setup/OAUTH_VERIFICATION_CHECKLIST.md`
+- **Google OAuth setup guide:** `docs/getting-started/installation-setup/google-oauth-setup.md`
+- **Full Gmail OAuth documentation:** `docs/fixes/gmail-oauth-fix-summary.md`
+- **Google OAuth 2.0 Best Practices:** https://developers.google.com/identity/protocols/oauth2/resources/best-practices
+- **Apigee OAuth Guidelines:** https://docs.cloud.google.com/apigee/docs/api-platform/security/oauth/access-tokens
