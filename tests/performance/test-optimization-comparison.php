@@ -352,7 +352,7 @@ class WP_MCP_AI_Optimization_Comparison_Test extends WP_UnitTestCase {
 		}
 
 		// Simulate rendering chat shortcode.
-		$output = do_shortcode( '[wp_mcp_ai_chat assistant_id="' . $assistant_id . '"]' );
+		$output = do_shortcode( '[mcp_ai_chat assistant="' . $assistant_id . '"]' );
 
 		$end_time   = microtime( true );
 		$end_memory = memory_get_usage();
