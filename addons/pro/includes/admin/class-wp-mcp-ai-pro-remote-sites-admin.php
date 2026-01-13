@@ -927,6 +927,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="gmail-only-field" style="display: none;">
 					<th scope="row">
+						<label><?php esc_html_e( 'Authorized Redirect URI', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$gmail_redirect_uri = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback' );
+						?>
+						<input type="text" readonly="readonly" value="<?php echo esc_attr( $gmail_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description">
+							<strong><?php esc_html_e( 'Important:', 'wp-mcp-ai-pro' ); ?></strong>
+							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'wp-mcp-ai-pro' ); ?>
+							<br>
+							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
+								<?php esc_html_e( 'Open Google Cloud Console', 'wp-mcp-ai-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+							</a>
+						</p>
+					</td>
+				</tr>
+
+				<tr class="gmail-only-field" style="display: none;">
+					<th scope="row">
 						<label for="gmail_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'wp-mcp-ai-pro' ); ?></label>
 					</th>
 					<td>
@@ -985,6 +1005,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_drive-only-field" style="display: none;">
+					<th scope="row">
+						<label><?php esc_html_e( 'Authorized Redirect URI', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$google_drive_redirect_uri = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=google_drive_oauth_callback' );
+						?>
+						<input type="text" readonly="readonly" value="<?php echo esc_attr( $google_drive_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<p class="description">
+							<strong><?php esc_html_e( 'Important:', 'wp-mcp-ai-pro' ); ?></strong>
+							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'wp-mcp-ai-pro' ); ?>
+							<br>
+							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
+								<?php esc_html_e( 'Open Google Cloud Console', 'wp-mcp-ai-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+							</a>
+						</p>
 					</td>
 				</tr>
 
