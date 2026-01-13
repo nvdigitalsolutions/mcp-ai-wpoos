@@ -141,5 +141,6 @@ if ( is_admin() ) {
 
 	if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-place-research-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-place-settings-page.php';
 	}
 }

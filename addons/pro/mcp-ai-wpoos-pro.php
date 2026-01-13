@@ -227,6 +227,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 				$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 				if ( ! $is_base ) {
 					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-research-page.php';
+					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-settings-page.php';
 				}
 			}
 		}
