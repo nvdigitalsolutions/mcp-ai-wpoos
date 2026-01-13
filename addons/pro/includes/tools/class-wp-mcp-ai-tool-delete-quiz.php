@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool for deleting policies.
+ * Tool for deleting quizzes.
  *
  * @package WP_MCP_AI
  */
@@ -10,28 +10,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Deletes an insurance policy.
+ * Deletes a quiz.
  */
-class WP_MCP_AI_Tool_Delete_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return 'delete_policy';
+		return 'delete_quiz';
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Delete Policy', 'mcp-ai-wpoos-pro' );
+		return __( 'Delete Quiz', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Deletes an insurance policy. This action cannot be undone.', 'mcp-ai-wpoos-pro' );
+		return __( 'Deletes a quiz. Note: This does not automatically delete associated submissions. This action cannot be undone.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -41,13 +41,13 @@ class WP_MCP_AI_Tool_Delete_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'policy_id' => array(
+				'quiz_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Policy ID to delete (required)', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Quiz ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 			),
-			'required'             => array( 'policy_id' ),
+			'required'             => array( 'quiz_id' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_Delete_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return false;
 		}
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		return ! empty( $settings['enable_health_wellness_management'] );
+		return ! empty( $settings['enable_quiz_system'] );
 	}
 
 	/**
@@ -83,31 +83,31 @@ class WP_MCP_AI_Tool_Delete_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'delete_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete policies.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete quizzes.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$policy_id = isset( $arguments['policy_id'] ) ? absint( $arguments['policy_id'] ) : 0;
+		$quiz_id = isset( $arguments['quiz_id'] ) ? absint( $arguments['quiz_id'] ) : 0;
 
-		if ( ! $policy_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Policy ID is required.', 'mcp-ai-wpoos-pro' ) );
+		if ( ! $quiz_id ) {
+			return new WP_Error( 'wp_mcp_ai_missing_id', __( 'Quiz ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$policy = get_post( $policy_id );
+		$quiz = get_post( $quiz_id );
 
-		if ( ! $policy || 'mcp_ai_policy' !== $policy->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_policy', __( 'Invalid policy ID.', 'mcp-ai-wpoos-pro' ) );
+		if ( ! $quiz || 'mcp_ai_quiz' !== $quiz->post_type ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_quiz', __( 'Invalid quiz ID.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$result = wp_delete_post( $policy_id, true );
+		$result = wp_delete_post( $quiz_id, true );
 
 		if ( ! $result ) {
-			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete policy.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete quiz.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return array(
-			'success'   => true,
-			'message'   => __( 'Policy deleted successfully.', 'mcp-ai-wpoos-pro' ),
-			'policy_id' => $policy_id,
+			'success' => true,
+			'message' => __( 'Quiz deleted successfully.', 'mcp-ai-wpoos-pro' ),
+			'quiz_id' => $quiz_id,
 		);
 	}
 }

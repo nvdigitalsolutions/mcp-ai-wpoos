@@ -13,68 +13,80 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Updates an existing policy.
  */
 class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_slug() {
 		return 'update_policy';
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_name() {
 		return __( 'Update Policy', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_description() {
 		return __( 'Updates an existing insurance policy. Provide only the fields you want to update.', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'policy_id'         => array(
+				'policy_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Policy ID to update (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'policy_number'     => array(
+				'policy_number'    => array(
 					'type'        => 'string',
 					'description' => __( 'New policy number (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'name'              => array(
+				'name'             => array(
 					'type'        => 'string',
 					'description' => __( 'New policy name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'policy_type'       => array(
+				'policy_type'      => array(
 					'type'        => 'string',
 					'description' => __( 'New policy type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'health-insurance', 'dental-insurance', 'vision-insurance', 'pet-insurance', 'life-insurance' ),
 				),
-				'provider'          => array(
+				'provider'         => array(
 					'type'        => 'string',
 					'description' => __( 'New provider (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'status'            => array(
+				'status'           => array(
 					'type'        => 'string',
 					'description' => __( 'New status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'active', 'expired', 'pending', 'cancelled' ),
 				),
-				'effective_date'    => array(
+				'effective_date'   => array(
 					'type'        => 'string',
 					'description' => __( 'New effective date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'expiration_date'   => array(
+				'expiration_date'  => array(
 					'type'        => 'string',
 					'description' => __( 'New expiration date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'premium'           => array(
+				'premium'          => array(
 					'type'        => 'string',
 					'description' => __( 'New premium amount (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'coverage_details'  => array(
+				'coverage_details' => array(
 					'type'        => 'string',
 					'description' => __( 'New coverage details (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
@@ -85,10 +97,18 @@ class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 	}
 
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get_capability_flags() {
 		return array( 'pro', 'database-write' );
 	}
 
+	/**
+	 * Check if the tool is available.
+	 *
+	 * @return bool
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -97,6 +117,13 @@ class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return ! empty( $settings['enable_health_wellness_management'] );
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or error.
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
@@ -157,8 +184,8 @@ class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return array(
-			'success' => true,
-			'message' => __( 'Policy updated successfully.', 'mcp-ai-wpoos-pro' ),
+			'success'   => true,
+			'message'   => __( 'Policy updated successfully.', 'mcp-ai-wpoos-pro' ),
 			'policy_id' => $policy_id,
 		);
 	}

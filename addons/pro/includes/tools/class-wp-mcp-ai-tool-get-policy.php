@@ -13,18 +13,30 @@ exit;
  * Get details of a single insurance policy.
  */
 class WP_MCP_AI_Tool_Get_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+/**
+ * {@inheritdoc}
+ */
 public function get_slug() {
 return 'get_policy';
 }
 
+/**
+ * {@inheritdoc}
+ */
 public function get_name() {
 return __( 'Get Policy', 'mcp-ai-wpoos-pro' );
 }
 
+/**
+ * {@inheritdoc}
+ */
 public function get_description() {
 return __( 'Gets detailed information about a specific insurance policy.', 'mcp-ai-wpoos-pro' );
 }
 
+/**
+ * {@inheritdoc}
+ */
 public function get_parameters_schema() {
 return array(
 'type'                 => 'object',
@@ -40,10 +52,18 @@ return array(
 );
 }
 
+/**
+ * {@inheritdoc}
+ */
 public function get_capability_flags() {
 return array( 'pro', 'database-read' );
 }
 
+/**
+ * Check if the tool is available.
+ *
+ * @return bool
+ */
 public static function is_available() {
 if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 return false;
@@ -52,6 +72,13 @@ $settings = get_option( 'wp_mcp_ai_settings', array() );
 return ! empty( $settings['enable_health_wellness_management'] );
 }
 
+/**
+ * Execute the tool.
+ *
+ * @param array $arguments Tool arguments.
+ * @param array $context   Execution context including user_id.
+ * @return array|WP_Error Tool results or error.
+ */
 public function execute( array $arguments = array(), array $context = array() ) {
 $current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
@@ -76,10 +103,10 @@ $types = wp_get_object_terms( $policy_id, 'mcp_ai_policy_type', array( 'fields' 
 $type  = ! empty( $types ) && ! is_wp_error( $types ) ? $types[0] : '';
 
 // Get member info.
-$member_id = get_post_meta( $policy_id, '_policy_member_id', true );
+$member_id   = get_post_meta( $policy_id, '_policy_member_id', true );
 $member_name = '';
 if ( $member_id ) {
-$member = get_post( $member_id );
+$member      = get_post( $member_id );
 $member_name = $member ? $member->post_title : '';
 }
 

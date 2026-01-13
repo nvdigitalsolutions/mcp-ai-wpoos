@@ -355,10 +355,20 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add ECA management tools if enabled.
 		if ( ! empty( $settings['enable_eca_management'] ) ) {
 			$eca_tools = array(
+				// ECA Management (CRUD).
 				'WP_MCP_AI_Tool_Create_ECA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-eca.php',
 				'WP_MCP_AI_Tool_List_ECAs'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-ecas.php',
-				'WP_MCP_AI_Tool_Enroll_Student_ECA'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-enroll-student-eca.php',
+				'WP_MCP_AI_Tool_Get_ECA'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-eca.php',
+				'WP_MCP_AI_Tool_Update_ECA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-eca.php',
+				'WP_MCP_AI_Tool_Delete_ECA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-eca.php',
+				// Student Management (CRUD).
+				'WP_MCP_AI_Tool_Create_Student'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-student.php',
+				'WP_MCP_AI_Tool_List_Students'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-students.php',
 				'WP_MCP_AI_Tool_Get_Student'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-student.php',
+				'WP_MCP_AI_Tool_Update_Student'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-student.php',
+				'WP_MCP_AI_Tool_Delete_Student'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-student.php',
+				// Specialized ECA tools.
+				'WP_MCP_AI_Tool_Enroll_Student_ECA'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-enroll-student-eca.php',
 				'WP_MCP_AI_Tool_Sync_Students_From_ISAMS' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-students-from-isams.php',
 				'WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-isams.php',
 			);
@@ -368,13 +378,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add quiz tools if enabled.
 		if ( ! empty( $settings['enable_quiz_system'] ) ) {
 			$quiz_tools = array(
+				// Quiz CRUD.
 				'WP_MCP_AI_Tool_Create_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-quiz.php',
 				'WP_MCP_AI_Tool_Get_Quiz'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz.php',
 				'WP_MCP_AI_Tool_List_Quizzes'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-quizzes.php',
+				'WP_MCP_AI_Tool_Update_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-quiz.php',
+				'WP_MCP_AI_Tool_Delete_Quiz'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-quiz.php',
+				// Quiz specialized tools.
 				'WP_MCP_AI_Tool_Submit_Quiz_Answer'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-quiz-answer.php',
 				'WP_MCP_AI_Tool_Grade_Quiz'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-grade-quiz.php',
 				'WP_MCP_AI_Tool_Get_Quiz_Submissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-submissions.php',
 				'WP_MCP_AI_Tool_Get_Quiz_Results'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
+				'WP_MCP_AI_Tool_Get_Quiz_Analytics'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-analytics.php',
 			);
 			$pro_tools  = array_merge( $pro_tools, $quiz_tools );
 		}
@@ -674,9 +689,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( ! empty( $settings['enable_quiz_system'] ) ) {
 			$pro_tools['create_quiz']          = 'wordpress-core';
-			$pro_tools['update_quiz']          = 'wordpress-core';
-			$pro_tools['get_quiz']             = 'wordpress-core';
 			$pro_tools['list_quizzes']         = 'wordpress-core';
+			$pro_tools['get_quiz']             = 'wordpress-core';
+			$pro_tools['update_quiz']          = 'wordpress-core';
+			$pro_tools['delete_quiz']          = 'wordpress-core';
 			$pro_tools['submit_quiz_answer']   = 'wordpress-core';
 			$pro_tools['grade_quiz']           = 'wordpress-core';
 			$pro_tools['get_quiz_submissions'] = 'wordpress-core';
@@ -703,11 +719,22 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 
 		// Add ECA management tool mappings if enabled.
 		if ( ! empty( $settings['enable_eca_management'] ) ) {
+			// ECA Management (CRUD).
 			$pro_tools['create_eca']               = 'wordpress-core';
 			$pro_tools['list_ecas']                = 'wordpress-core';
-			$pro_tools['enroll_student_eca']       = 'wordpress-core';
+			$pro_tools['get_eca']                  = 'wordpress-core';
+			$pro_tools['update_eca']               = 'wordpress-core';
+			$pro_tools['delete_eca']               = 'wordpress-core';
+			// Student Management (CRUD).
+			$pro_tools['create_student']           = 'wordpress-core';
+			$pro_tools['list_students']            = 'wordpress-core';
 			$pro_tools['get_student']              = 'wordpress-core';
+			$pro_tools['update_student']           = 'wordpress-core';
+			$pro_tools['delete_student']           = 'wordpress-core';
+			// Specialized ECA tools.
+			$pro_tools['enroll_student_eca']       = 'wordpress-core';
 			$pro_tools['sync_students_from_isams'] = 'wordpress-core';
+			$pro_tools['sync_ecas_from_isams']     = 'wordpress-core';
 		}
 
 		// Add health and wellness management tool mappings if enabled.
