@@ -20,7 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return string
 		 */
 		public function get_id() {
-			return 'integrations_gmail_crawl4ai';
+			return 'integrations_external_tools';
 		}
 
 		/**
@@ -80,23 +80,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$pro_notice    = $is_pro_active ? '' : ' ' . __( '<strong>(Requires Pro addon)</strong>', 'mcp-ai-wpoos' );
 
 			return array(
-				// Gmail OAuth.
-				'gmail_client_id'                   => array(
-					'type'         => 'text',
-					'label'        => __( 'Gmail OAuth Client ID', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'off',
-					'disabled'     => ! $is_pro_active,
-				),
-				'gmail_client_secret'               => array(
-					'type'         => 'password',
-					'label'        => __( 'Gmail OAuth Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
 
 				// Crawl4AI.
 				'crawl4ai_base_url'                 => array(
@@ -357,10 +340,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
 			return array(
-					'icon'   => 'dashicons-email',
-					'fields' => array( 'gmail_client_id', 'gmail_client_secret' ),
-					'pro'    => true,
-				),
 				'crawl4ai'         => array(
 					'id'     => 'crawl4ai',
 					'label'  => __( 'Crawl4AI', 'mcp-ai-wpoos' ),
@@ -461,7 +440,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				}
 			}
 
-			// Default to 'gmail' if not set or invalid.
+			// Default to 'crawl4ai' if not set or invalid.
 			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
 				$subtab = 'crawl4ai';
 			}
