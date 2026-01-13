@@ -139,6 +139,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$api_secret      = '';
 			$client_id       = '';
 			$client_secret   = '';
+			$refresh_token   = '';
+			$user_email      = '';
 
 			switch ( $connection_type ) {
 				case 'isams':
@@ -157,6 +159,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_key     = isset( $_POST['ezuite_erp_api_key'] ) ? wp_unslash( $_POST['ezuite_erp_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$api_secret  = isset( $_POST['ezuite_erp_api_secret'] ) ? wp_unslash( $_POST['ezuite_erp_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
+				case 'gmail':
+					$client_id      = isset( $_POST['gmail_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['gmail_client_id'] ) ) : '';
+					$client_secret  = isset( $_POST['gmail_client_secret'] ) ? wp_unslash( $_POST['gmail_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$refresh_token  = isset( $_POST['gmail_refresh_token'] ) ? wp_unslash( $_POST['gmail_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$user_email     = isset( $_POST['gmail_user_email'] ) ? sanitize_email( wp_unslash( $_POST['gmail_user_email'] ) ) : '';
+					break;
 			}
 
 			// For FlowHub connections, always use the fixed API URL and custom_header auth
@@ -171,6 +179,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			// For EZuite ERP connections, always use custom_header auth
 			if ( 'ezuite_erp' === $connection_type ) {
 				$auth_type = 'custom_header';
+			}
+
+			// For Gmail connections, always use the Gmail API URL
+			if ( 'gmail' === $connection_type ) {
+				$url = 'https://gmail.googleapis.com';
+				$auth_type = 'none'; // Gmail uses OAuth, not standard auth types
 			}
 
 			$connection_data = array(
@@ -197,6 +211,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'enabled'         => ! empty( $_POST['enabled'] ),
 				'cache_ttl'       => isset( $_POST['cache_ttl'] ) ? max( 0, min( 3600, absint( $_POST['cache_ttl'] ) ) ) : 300,
 				'test_endpoint'   => isset( $_POST['test_endpoint'] ) ? sanitize_text_field( wp_unslash( $_POST['test_endpoint'] ) ) : '',
+				// Gmail-specific fields.
+				'refresh_token'   => $refresh_token,
+				'user_email'      => $user_email,
 			);
 
 			$result          = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
