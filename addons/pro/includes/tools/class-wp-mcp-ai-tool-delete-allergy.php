@@ -1,8 +1,8 @@
 <?php
 /**
- * Tool for deleting checkups/appointments.
+ * Tool for deleting allergies.
  *
- * Allows AI assistants to delete checkups from the health wellness system.
+ * Allows AI assistants to delete allergy records from the health wellness system.
  *
  * @package WP_MCP_AI
  */
@@ -12,28 +12,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Deletes a checkup/appointment.
+ * Deletes an allergy record.
  */
-class WP_MCP_AI_Tool_Delete_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Delete_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return 'delete_checkup';
+		return 'delete_allergy';
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Delete Checkup', 'mcp-ai-wpoos-pro' );
+		return __( 'Delete Allergy', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Deletes a checkup/appointment from the health and wellness system. Only the checkup creator or users with delete_others_posts capability can delete checkups.', 'mcp-ai-wpoos-pro' );
+		return __( 'Deletes an allergy record from the health and wellness system. Only the allergy creator or users with delete_others_posts capability can delete allergy records.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,9 +43,9 @@ class WP_MCP_AI_Tool_Delete_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'checkup_id' => array(
+				'allergy_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Checkup ID to delete (required)', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Allergy ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'force'      => array(
@@ -54,7 +54,7 @@ class WP_MCP_AI_Tool_Delete_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'default'     => false,
 				),
 			),
-			'required'             => array( 'checkup_id' ),
+			'required'             => array( 'allergy_id' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -90,46 +90,46 @@ class WP_MCP_AI_Tool_Delete_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to delete checkups.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to delete allergy records.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate inputs.
-		$checkup_id = isset( $arguments['checkup_id'] ) ? absint( $arguments['checkup_id'] ) : 0;
-		$force           = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
+		$allergy_id = isset( $arguments['allergy_id'] ) ? absint( $arguments['allergy_id'] ) : 0;
+		$force      = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
 
-		if ( ! $checkup_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_checkup_id', __( 'Checkup ID is required.', 'mcp-ai-wpoos-pro' ) );
+		if ( ! $allergy_id ) {
+			return new WP_Error( 'wp_mcp_ai_missing_allergy_id', __( 'Allergy ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Verify checkup exists.
-		$checkup = get_post( $checkup_id );
+		// Verify allergy exists.
+		$allergy = get_post( $allergy_id );
 
-		if ( ! $checkup || 'mcp_ai_checkup' !== $checkup->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_checkup_not_found', __( 'Checkup not found.', 'mcp-ai-wpoos-pro' ) );
+		if ( ! $allergy || 'mcp_ai_allergy' !== $allergy->post_type ) {
+			return new WP_Error( 'wp_mcp_ai_allergy_not_found', __( 'Allergy record not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Check permissions.
-		$is_author = absint( $checkup->post_author ) === $current_user_id;
+		$is_author = absint( $allergy->post_author ) === $current_user_id;
 		$can_delete_others = user_can( $current_user_id, 'delete_others_posts' );
 
 		if ( ! $is_author && ! $can_delete_others ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete this checkup.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete this allergy record.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Delete the checkup.
-		$result = wp_delete_post( $checkup_id, $force );
+		// Delete the allergy.
+		$result = wp_delete_post( $allergy_id, $force );
 
 		if ( ! $result ) {
-			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete checkup.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete allergy record.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return array(
 			'success'    => true,
-			'checkup_id' => $checkup_id,
+			'allergy_id' => $allergy_id,
 			'message'    => sprintf(
-				/* translators: 1: checkup title, 2: action (deleted/trashed) */
-				__( 'Checkup "%1$s" has been %2$s.', 'mcp-ai-wpoos-pro' ),
-				$checkup->post_title,
+				/* translators: 1: allergen name, 2: action (deleted/trashed) */
+				__( 'Allergy record for "%1$s" has been %2$s.', 'mcp-ai-wpoos-pro' ),
+				$allergy->post_title,
 				$force ? __( 'permanently deleted', 'mcp-ai-wpoos-pro' ) : __( 'moved to trash', 'mcp-ai-wpoos-pro' )
 			),
 		);

@@ -180,7 +180,8 @@ class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				return new WP_Error( 'wp_mcp_ai_invalid_name', __( 'Policy name cannot be empty.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			$result = wp_update_post( array(
+			$result = wp_update_post(
+		array(
 				'ID'         => $policy_id,
 				'post_title' => $name,
 			), true );
@@ -195,7 +196,8 @@ class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Update coverage details if provided.
 		if ( isset( $arguments['coverage_details'] ) ) {
 			$coverage = sanitize_textarea_field( $arguments['coverage_details'] );
-			$result = wp_update_post( array(
+			$result = wp_update_post(
+		array(
 				'ID'           => $policy_id,
 				'post_content' => $coverage,
 			), true );

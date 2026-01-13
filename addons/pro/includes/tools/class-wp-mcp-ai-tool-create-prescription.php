@@ -172,13 +172,16 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Create the prescription post.
-		$prescription_id = wp_insert_post( array(
+		$prescription_id = wp_insert_post(
+		array(
 			'post_type'    => 'mcp_ai_prescription',
 			'post_title'   => $medication,
 			'post_content' => $instructions,
 			'post_status'  => 'publish',
 			'post_author'  => $current_user_id,
-		), true );
+		),
+		true
+	);
 
 		if ( is_wp_error( $prescription_id ) ) {
 			return $prescription_id;

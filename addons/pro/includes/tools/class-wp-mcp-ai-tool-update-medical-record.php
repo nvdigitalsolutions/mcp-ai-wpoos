@@ -160,7 +160,8 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 				return new WP_Error( 'wp_mcp_ai_invalid_title', __( 'Record title cannot be empty.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			$result = wp_update_post( array(
+			$result = wp_update_post(
+		array(
 				'ID'         => $record_id,
 				'post_title' => $title,
 			), true );
@@ -175,7 +176,8 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		// Update description if provided.
 		if ( isset( $arguments['description'] ) ) {
 			$description = sanitize_textarea_field( $arguments['description'] );
-			$result = wp_update_post( array(
+			$result = wp_update_post(
+		array(
 				'ID'           => $record_id,
 				'post_content' => $description,
 			), true );

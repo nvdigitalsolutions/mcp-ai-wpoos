@@ -40,7 +40,8 @@ class Test_Health_Wellness_Member_Tools extends WP_UnitTestCase {
 		) );
 
 		// Create test member.
-		$this->test_member_id = wp_insert_post( array(
+		$this->test_member_id = wp_insert_post(
+		array(
 			'post_type'   => 'mcp_ai_member',
 			'post_title'  => 'John Doe',
 			'post_status' => 'publish',
@@ -301,7 +302,8 @@ class Test_Health_Wellness_Member_Tools extends WP_UnitTestCase {
 	 */
 	public function test_delete_member_deletes_related_records() {
 		// Create related allergy record.
-		$allergy_id = wp_insert_post( array(
+		$allergy_id = wp_insert_post(
+		array(
 			'post_type'   => 'mcp_ai_allergy',
 			'post_title'  => 'Peanuts',
 			'post_status' => 'publish',
@@ -309,7 +311,8 @@ class Test_Health_Wellness_Member_Tools extends WP_UnitTestCase {
 		update_post_meta( $allergy_id, '_allergy_member_id', $this->test_member_id );
 
 		// Create related prescription.
-		$prescription_id = wp_insert_post( array(
+		$prescription_id = wp_insert_post(
+		array(
 			'post_type'   => 'mcp_ai_prescription',
 			'post_title'  => 'Test Medication',
 			'post_status' => 'publish',

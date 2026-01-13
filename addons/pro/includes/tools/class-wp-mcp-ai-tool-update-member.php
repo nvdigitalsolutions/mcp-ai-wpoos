@@ -178,7 +178,8 @@ class WP_MCP_AI_Tool_Update_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				return new WP_Error( 'wp_mcp_ai_invalid_name', __( 'Member name cannot be empty.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			$result = wp_update_post( array(
+			$result = wp_update_post(
+		array(
 				'ID'         => $member_id,
 				'post_title' => $name,
 			), true );

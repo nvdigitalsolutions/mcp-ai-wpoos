@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/add-health-wellness-tools',
         'version' => 'dev-copilot/add-health-wellness-tools',
-        'reference' => '35e87098b639b23ae3ef75ea21b88bb4046df0dc',
+        'reference' => '3eb6097579d47724f14302d9e6bcd3bff14c1544',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/add-health-wellness-tools',
             'version' => 'dev-copilot/add-health-wellness-tools',
-            'reference' => '35e87098b639b23ae3ef75ea21b88bb4046df0dc',
+            'reference' => '3eb6097579d47724f14302d9e6bcd3bff14c1544',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

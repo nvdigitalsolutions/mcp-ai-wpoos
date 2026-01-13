@@ -130,10 +130,10 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Validate required fields.
-		$member_id   = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
-		$title       = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$type        = isset( $arguments['type'] ) ? sanitize_key( $arguments['type'] ) : '';
-		$date        = isset( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : '';
+		$member_id = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
+		$title     = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+		$type      = isset( $arguments['type'] ) ? sanitize_key( $arguments['type'] ) : '';
+		$date      = isset( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : '';
 
 		if ( ! $member_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_member_id', __( 'Member ID is required.', 'mcp-ai-wpoos-pro' ) );
@@ -170,13 +170,16 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		$attachments = isset( $arguments['attachments'] ) ? sanitize_text_field( $arguments['attachments'] ) : '';
 
 		// Create the medical record post.
-		$record_id = wp_insert_post( array(
+		$record_id = wp_insert_post(
+		array(
 			'post_type'    => 'mcp_ai_medical_record',
 			'post_title'   => $title,
 			'post_content' => $description,
 			'post_status'  => 'publish',
 			'post_author'  => $current_user_id,
-		), true );
+		),
+		true
+	);
 
 		if ( is_wp_error( $record_id ) ) {
 			return $record_id;

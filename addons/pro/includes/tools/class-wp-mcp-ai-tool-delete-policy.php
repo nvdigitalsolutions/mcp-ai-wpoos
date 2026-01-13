@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_Delete_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Validate inputs.
 		$policy_id = isset( $arguments['policy_id'] ) ? absint( $arguments['policy_id'] ) : 0;
-		$force     = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
+		$force           = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
 
 		if ( ! $policy_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_policy_id', __( 'Policy ID is required.', 'mcp-ai-wpoos-pro' ) );

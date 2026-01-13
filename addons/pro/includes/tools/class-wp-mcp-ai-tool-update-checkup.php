@@ -155,7 +155,8 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				return new WP_Error( 'wp_mcp_ai_invalid_title', __( 'Checkup title cannot be empty.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			$result = wp_update_post( array(
+			$result = wp_update_post(
+		array(
 				'ID'         => $checkup_id,
 				'post_title' => $title,
 			), true );
@@ -170,7 +171,8 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Update notes if provided.
 		if ( isset( $arguments['notes'] ) ) {
 			$notes = sanitize_textarea_field( $arguments['notes'] );
-			$result = wp_update_post( array(
+			$result = wp_update_post(
+		array(
 				'ID'           => $checkup_id,
 				'post_content' => $notes,
 			), true );

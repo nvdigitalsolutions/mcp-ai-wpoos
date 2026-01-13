@@ -145,22 +145,22 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_textdomain' ) ) {
 		$active_plugins = (array) get_option( 'active_plugins', array() );
 		$pro_plugin     = plugin_basename( WP_MCP_AI_PRO_FILE );
 		$is_pro_active  = in_array( $pro_plugin, $active_plugins, true );
-		
+
 		// For multisite, also check network active plugins.
 		if ( is_multisite() ) {
 			$network_active = (array) get_site_option( 'active_sitewide_plugins', array() );
 			$is_pro_active  = $is_pro_active || isset( $network_active[ $pro_plugin ] );
 		}
-		
+
 		if ( ! $is_pro_active ) {
 			// Pro is bundled, not a separate plugin - load text domain manually.
 			// Use wp_normalize_path for cross-platform compatibility.
 			$languages_dir = wp_normalize_path( WP_MCP_AI_PRO_PATH . 'languages' );
 			$plugin_dir    = wp_normalize_path( WP_PLUGIN_DIR );
-			
+
 			// Calculate relative path for load_plugin_textdomain.
 			$relative_path = str_replace( trailingslashit( $plugin_dir ), '', $languages_dir );
-			
+
 			load_plugin_textdomain(
 				'mcp-ai-wpoos-pro',
 				false,
@@ -185,7 +185,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			add_action( 'admin_notices', 'wp_mcp_ai_pro_missing_core_notice' );
 			return;
 		}
-		
+
 		// Register text domain loading on init hook.
 		// This ensures translations are loaded at the correct time for WordPress 6.7+.
 		add_action( 'init', 'wp_mcp_ai_pro_load_textdomain', 1 );
@@ -272,7 +272,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 	function wp_mcp_ai_pro_register_tools( $registry ) {
 		// Get settings for conditional tool loading.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		
+
 		// Load Pro tool files.
 		$pro_tools = array(
 			// Remote WordPress/WooCommerce Connection tool.

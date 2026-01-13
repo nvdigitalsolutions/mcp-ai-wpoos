@@ -165,7 +165,8 @@ class WP_MCP_AI_Tool_Update_Prescription implements WP_MCP_AI_Tool_Interface, WP
 				return new WP_Error( 'wp_mcp_ai_invalid_medication', __( 'Medication name cannot be empty.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			$result = wp_update_post( array(
+			$result = wp_update_post(
+		array(
 				'ID'         => $prescription_id,
 				'post_title' => $medication,
 			), true );
@@ -180,7 +181,8 @@ class WP_MCP_AI_Tool_Update_Prescription implements WP_MCP_AI_Tool_Interface, WP
 		// Update instructions if provided.
 		if ( isset( $arguments['instructions'] ) ) {
 			$instructions = sanitize_textarea_field( $arguments['instructions'] );
-			$result = wp_update_post( array(
+			$result = wp_update_post(
+		array(
 				'ID'           => $prescription_id,
 				'post_content' => $instructions,
 			), true );

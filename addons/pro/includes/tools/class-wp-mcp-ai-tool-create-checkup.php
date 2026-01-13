@@ -86,7 +86,7 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'default'     => 'scheduled',
 				),
 			),
-			'required'             => array( 'member_id', 'title', 'date' ),
+			'required' => array(
 			'additionalProperties' => false,
 		);
 	}
@@ -161,13 +161,16 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		// Create the checkup post.
-		$checkup_id = wp_insert_post( array(
+		$checkup_id = wp_insert_post(
+		array(
 			'post_type'    => 'mcp_ai_checkup',
 			'post_title'   => $title,
 			'post_content' => $notes,
 			'post_status'  => 'publish',
 			'post_author'  => $current_user_id,
-		), true );
+		),
+		true
+	);
 
 		if ( is_wp_error( $checkup_id ) ) {
 			return $checkup_id;

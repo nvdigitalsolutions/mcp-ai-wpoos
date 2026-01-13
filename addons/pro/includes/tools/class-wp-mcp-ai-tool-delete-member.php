@@ -100,8 +100,8 @@ class WP_MCP_AI_Tool_Delete_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Validate inputs.
-		$member_id       = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
-		$delete_related  = isset( $arguments['delete_related'] ) ? (bool) $arguments['delete_related'] : false;
+		$member_id      = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
+		$delete_related = isset( $arguments['delete_related'] ) ? (bool) $arguments['delete_related'] : false;
 		$force           = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
 
 		if ( ! $member_id ) {
@@ -229,7 +229,7 @@ class WP_MCP_AI_Tool_Delete_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				foreach ( $query->posts as $post_id ) {
 					$result = wp_delete_post( $post_id, $force );
 					if ( $result ) {
-						$count++;
+						++$count;
 					}
 				}
 			}
