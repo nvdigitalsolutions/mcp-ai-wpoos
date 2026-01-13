@@ -2764,11 +2764,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			</div>
 
 			<?php $this->render_error_log_section(); ?>
-			
+
 			<?php $this->render_token_usage_section(); ?>
-			
+
 			<?php $this->render_tool_token_limits_section(); ?>
-			
+
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
 					<h2 class="wp-mcp-ai-connector-checklist__title"><?php esc_html_e( 'Connector Checklist', 'mcp-ai-wpoos' ); ?></h2>
@@ -3386,10 +3386,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					?>
 				</tbody>
 			</table>
-			<button type="button" class="button" id="wp-mcp-ai-add-peer" 
-				data-placeholder-name="<?php esc_attr_e( 'e.g., Production Site', 'mcp-ai-wpoos' ); ?>" 
-				data-placeholder-url="https://example.com" 
-				data-placeholder-key="mesh_..." 
+			<button type="button" class="button" id="wp-mcp-ai-add-peer"
+				data-placeholder-name="<?php esc_attr_e( 'e.g., Production Site', 'mcp-ai-wpoos' ); ?>"
+				data-placeholder-url="https://example.com"
+				data-placeholder-key="mesh_..."
 				data-btn-remove="<?php esc_attr_e( 'Remove', 'mcp-ai-wpoos' ); ?>"><?php esc_html_e( 'Add Peer Site', 'mcp-ai-wpoos' ); ?></button>
 		</div>
 		<p class="description"><?php esc_html_e( 'Add peer sites that this site can query. Each peer requires a friendly name, the root URL of the remote site, and the inbound API key from that remote site.', 'mcp-ai-wpoos' ); ?></p>
@@ -3964,14 +3964,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_cloudways_server_id_field() {
 			$settings = self::get_settings();
 			?>
-		<input 
-			type="text" 
+		<input
+			type="text"
 			id="wp-mcp-ai-cloudways-server-id"
-			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_server_id]" 
-			value="<?php echo esc_attr( $settings['cloudways_server_id'] ); ?>" 
-			class="regular-text" 
-			autocomplete="off" 
-			readonly 
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_server_id]"
+			value="<?php echo esc_attr( $settings['cloudways_server_id'] ); ?>"
+			class="regular-text"
+			autocomplete="off"
+			readonly
 			aria-describedby="wp-mcp-ai-cloudways-server-id-description"
 			aria-label="<?php esc_attr_e( 'Cloudways Server ID', 'mcp-ai-wpoos' ); ?>"
 		/>
@@ -3986,14 +3986,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_cloudways_app_id_field() {
 			$settings = self::get_settings();
 			?>
-		<input 
-			type="text" 
+		<input
+			type="text"
 			id="wp-mcp-ai-cloudways-app-id"
-			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_app_id]" 
-			value="<?php echo esc_attr( $settings['cloudways_app_id'] ); ?>" 
-			class="regular-text" 
-			autocomplete="off" 
-			readonly 
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_app_id]"
+			value="<?php echo esc_attr( $settings['cloudways_app_id'] ); ?>"
+			class="regular-text"
+			autocomplete="off"
+			readonly
 			aria-describedby="wp-mcp-ai-cloudways-app-id-description"
 			aria-label="<?php esc_attr_e( 'Cloudways Application ID', 'mcp-ai-wpoos' ); ?>"
 		/>

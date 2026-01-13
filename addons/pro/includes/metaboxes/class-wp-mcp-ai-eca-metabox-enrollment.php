@@ -81,11 +81,11 @@ class WP_MCP_AI_ECA_Metabox_Enrollment extends WP_MCP_AI_ECA_Metabox_Base {
 						</label>
 					</th>
 					<td>
-						<input 
-							type="number" 
-							id="wp_mcp_ai_eca_max_students" 
-							name="wp_mcp_ai_eca_max_students" 
-							value="<?php echo esc_attr( $max_students ); ?>" 
+						<input
+							type="number"
+							id="wp_mcp_ai_eca_max_students"
+							name="wp_mcp_ai_eca_max_students"
+							value="<?php echo esc_attr( $max_students ); ?>"
 							min="0"
 							step="1"
 							class="regular-text"
@@ -146,10 +146,10 @@ class WP_MCP_AI_ECA_Metabox_Enrollment extends WP_MCP_AI_ECA_Metabox_Base {
 					</th>
 					<td>
 						<label>
-							<input 
-								type="checkbox" 
-								id="wp_mcp_ai_eca_requires_audition" 
-								name="wp_mcp_ai_eca_requires_audition" 
+							<input
+								type="checkbox"
+								id="wp_mcp_ai_eca_requires_audition"
+								name="wp_mcp_ai_eca_requires_audition"
 								value="yes"
 								<?php checked( $requires_audition, 'yes' ); ?>
 							/>

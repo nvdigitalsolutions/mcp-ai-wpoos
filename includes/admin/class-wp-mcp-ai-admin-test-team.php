@@ -231,8 +231,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 									<td><?php echo esc_html( $provider_display ); ?></td>
 									<td><code><?php echo esc_html( $model_display ); ?></code></td>
 									<td>
-										<button 
-											type="button" 
+										<button
+											type="button"
 											class="button button-primary wp-mcp-ai-test-team-btn"
 											data-team-id="<?php echo esc_attr( $team->ID ); ?>"
 											data-team-title="<?php echo esc_attr( $team->post_title ); ?>"

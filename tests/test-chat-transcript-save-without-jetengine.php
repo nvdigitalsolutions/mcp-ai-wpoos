@@ -159,7 +159,7 @@ class Test_Chat_Transcript_Save_Without_JetEngine extends WP_UnitTestCase {
 		$warning = $save_data['warning'];
 		$this->assertStringContainsString( 'Permanent transcript storage', $warning, 'Warning should indicate permanent storage issue' );
 		$this->assertStringContainsString( 'JetEngine', $warning, 'Warning should mention JetEngine' );
-		
+
 		// Verify main message indicates browser-only storage.
 		$message = $save_data['message'];
 		$this->assertStringContainsString( 'browser only', $message, 'Message should indicate browser-only storage' );

@@ -162,7 +162,7 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 							}
 						}
 						?>
-						<tr class="wp-mcp-ai-dataset-row" 
+						<tr class="wp-mcp-ai-dataset-row"
 							data-category="<?php echo esc_attr( $dataset_info['category'] ); ?>"
 							data-name="<?php echo esc_attr( strtolower( $dataset_info['name'] ) ); ?>"
 							data-description="<?php echo esc_attr( strtolower( $dataset_info['description'] ) ); ?>"
@@ -178,9 +178,9 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 									)
 								);
 								?>
-								<input 
-									type="checkbox" 
-									name="wp_mcp_ai_preferred_datasets[]" 
+								<input
+									type="checkbox"
+									name="wp_mcp_ai_preferred_datasets[]"
 									value="<?php echo esc_attr( $dataset_value ); ?>"
 									class="wp-mcp-ai-dataset-checkbox"
 									<?php checked( $is_selected ); ?>
@@ -251,42 +251,42 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 		<script type="text/javascript">
 		( function() {
 			var maxDatasets = 10;
-			
+
 			document.addEventListener( 'DOMContentLoaded', function() {
 				var checkboxes = document.querySelectorAll( '.wp-mcp-ai-dataset-checkbox' );
 				var categoryFilter = document.getElementById( 'wp-mcp-ai-dataset-category-filter' );
 				var searchInput = document.getElementById( 'wp-mcp-ai-dataset-search' );
 				var rows = document.querySelectorAll( '.wp-mcp-ai-dataset-row' );
-				
+
 				// Handle checkbox selection with max limit.
 				checkboxes.forEach( function( checkbox ) {
 					checkbox.addEventListener( 'change', function() {
 						var checked = document.querySelectorAll( '.wp-mcp-ai-dataset-checkbox:checked' );
-						
+
 						if ( checked.length > maxDatasets ) {
 							// Uncheck the first checked item.
 							checked[0].checked = false;
 						}
 					} );
 				} );
-				
+
 				// Handle filtering.
 				function filterDatasets() {
 					var category = categoryFilter.value.toLowerCase();
 					var search = searchInput.value.toLowerCase().trim();
-					
+
 					rows.forEach( function( row ) {
 						var rowCategory = row.getAttribute( 'data-category' ).toLowerCase();
 						var rowName = row.getAttribute( 'data-name' ).toLowerCase();
 						var rowDesc = row.getAttribute( 'data-description' ).toLowerCase();
 						var rowTags = row.getAttribute( 'data-tags' ).toLowerCase();
-						
+
 						var categoryMatch = ! category || rowCategory === category;
-						var searchMatch = ! search || 
-							rowName.indexOf( search ) !== -1 || 
+						var searchMatch = ! search ||
+							rowName.indexOf( search ) !== -1 ||
 							rowDesc.indexOf( search ) !== -1 ||
 							rowTags.indexOf( search ) !== -1;
-						
+
 						if ( categoryMatch && searchMatch ) {
 							row.style.display = '';
 						} else {
@@ -294,11 +294,11 @@ class WP_MCP_AI_Metabox_Datasets extends WP_MCP_AI_Metabox_Base {
 						}
 					} );
 				}
-				
+
 				if ( categoryFilter ) {
 					categoryFilter.addEventListener( 'change', filterDatasets );
 				}
-				
+
 				if ( searchInput ) {
 					searchInput.addEventListener( 'input', filterDatasets );
 				}

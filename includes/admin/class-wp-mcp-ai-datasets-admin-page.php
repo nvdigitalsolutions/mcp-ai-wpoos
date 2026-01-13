@@ -124,7 +124,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 					<p class="description">
 						<?php esc_html_e( 'Browse and explore 50+ top free datasets from HuggingFace Hub. Use these datasets for AI assistant training, few-shot learning, and data exploration.', 'mcp-ai-wpoos' ); ?>
 					</p>
-					
+
 					<div class="wp-mcp-ai-datasets-search">
 						<input type="text" id="wp-mcp-ai-datasets-search" placeholder="<?php esc_attr_e( 'Search datasets by name, category, or use case...', 'mcp-ai-wpoos' ); ?>" />
 						<button type="button" class="button" id="wp-mcp-ai-datasets-search-btn">
@@ -193,11 +193,11 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 			$priority_class = 'priority-' . esc_attr( $dataset['priority'] );
 			$category_class = 'category-' . esc_attr( $dataset['category'] );
 			?>
-			<div class="wp-mcp-ai-dataset-card <?php echo esc_attr( $priority_class . ' ' . $category_class ); ?>" 
+			<div class="wp-mcp-ai-dataset-card <?php echo esc_attr( $priority_class . ' ' . $category_class ); ?>"
 				data-dataset="<?php echo esc_attr( $dataset['dataset'] ); ?>"
 				data-category="<?php echo esc_attr( $dataset['category'] ); ?>"
 				data-priority="<?php echo esc_attr( $dataset['priority'] ); ?>">
-				
+
 				<div class="dataset-card-header">
 					<h3><?php echo esc_html( $dataset['name'] ); ?></h3>
 					<span class="dataset-badge priority-<?php echo esc_attr( $dataset['priority'] ); ?>">
@@ -207,7 +207,7 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 
 				<div class="dataset-card-body">
 					<p class="dataset-description"><?php echo esc_html( $dataset['description'] ); ?></p>
-					
+
 					<div class="dataset-meta">
 						<span class="dataset-size">
 							<span class="dashicons dashicons-database"></span>
@@ -227,20 +227,20 @@ if ( ! class_exists( 'WP_MCP_AI_Datasets_Admin_Page' ) ) {
 				</div>
 
 				<div class="dataset-card-footer">
-					<button type="button" class="button button-primary wp-mcp-ai-dataset-preview" 
+					<button type="button" class="button button-primary wp-mcp-ai-dataset-preview"
 							data-dataset="<?php echo esc_attr( $dataset['dataset'] ); ?>">
 						<span class="dashicons dashicons-visibility"></span>
 						<?php esc_html_e( 'Preview', 'mcp-ai-wpoos' ); ?>
 					</button>
-					
-					<button type="button" class="button wp-mcp-ai-dataset-copy-code" 
+
+					<button type="button" class="button wp-mcp-ai-dataset-copy-code"
 							data-code="<?php echo esc_attr( $dataset['example'] ); ?>">
 						<span class="dashicons dashicons-clipboard"></span>
 						<?php esc_html_e( 'Copy Code', 'mcp-ai-wpoos' ); ?>
 					</button>
 
-					<a href="https://huggingface.co/datasets/<?php echo esc_attr( $dataset['dataset'] ); ?>" 
-						target="_blank" 
+					<a href="https://huggingface.co/datasets/<?php echo esc_attr( $dataset['dataset'] ); ?>"
+						target="_blank"
 						class="button">
 						<span class="dashicons dashicons-external"></span>
 						<?php esc_html_e( 'View on HF', 'mcp-ai-wpoos' ); ?>

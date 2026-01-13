@@ -317,7 +317,7 @@ class WP_MCP_AI_Supplier_Security {
 	 */
 	public function upsert_supplier( $supplier_id, $data ) {
 		$suppliers = $this->get_suppliers();
-		
+
 		// Merge with existing data if updating.
 		if ( isset( $suppliers[ $supplier_id ] ) ) {
 			$suppliers[ $supplier_id ] = array_merge( $suppliers[ $supplier_id ], $data );
@@ -339,7 +339,7 @@ class WP_MCP_AI_Supplier_Security {
 	 */
 	public function delete_supplier( $supplier_id ) {
 		$suppliers = $this->get_suppliers();
-		
+
 		if ( ! isset( $suppliers[ $supplier_id ] ) ) {
 			return false;
 		}
@@ -356,7 +356,7 @@ class WP_MCP_AI_Supplier_Security {
 	 */
 	public function get_suppliers_by_category( $category ) {
 		$suppliers = $this->get_suppliers();
-		
+
 		return array_filter(
 			$suppliers,
 			function ( $supplier ) use ( $category ) {
@@ -373,7 +373,7 @@ class WP_MCP_AI_Supplier_Security {
 	 */
 	public function get_suppliers_by_risk( $risk_level ) {
 		$suppliers = $this->get_suppliers();
-		
+
 		return array_filter(
 			$suppliers,
 			function ( $supplier ) use ( $risk_level ) {
@@ -390,7 +390,7 @@ class WP_MCP_AI_Supplier_Security {
 	public function get_suppliers_due_for_review() {
 		$suppliers = $this->get_suppliers();
 		$today     = current_time( 'Y-m-d' );
-		
+
 		return array_filter(
 			$suppliers,
 			function ( $supplier ) use ( $today ) {
@@ -439,7 +439,7 @@ class WP_MCP_AI_Supplier_Security {
 	 */
 	protected function send_review_notification( $suppliers ) {
 		$admin_email = get_option( 'admin_email' );
-		
+
 		$subject = sprintf(
 			/* translators: %d: Number of suppliers */
 			__( '[NV oOS] %d Supplier(s) Due for Security Review', 'mcp-ai-wpoos' ),
@@ -447,7 +447,7 @@ class WP_MCP_AI_Supplier_Security {
 		);
 
 		$message = __( 'The following suppliers are due for their periodic security review:', 'mcp-ai-wpoos' ) . "\n\n";
-		
+
 		foreach ( $suppliers as $supplier ) {
 			$message .= sprintf(
 				"- %s (%s)\n  Category: %s | Risk: %s\n  Last Review: %s\n\n",
@@ -476,7 +476,7 @@ class WP_MCP_AI_Supplier_Security {
 	 */
 	public function record_incident( $supplier_id, $incident ) {
 		$supplier = $this->get_supplier( $supplier_id );
-		
+
 		if ( ! $supplier ) {
 			return false;
 		}
@@ -503,7 +503,7 @@ class WP_MCP_AI_Supplier_Security {
 	 */
 	public function get_statistics() {
 		$suppliers = $this->get_suppliers();
-		
+
 		$stats = array(
 			'total'           => count( $suppliers ),
 			'by_category'     => array(
@@ -578,7 +578,7 @@ class WP_MCP_AI_Supplier_Security {
 		// Log scan results.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 			$total_vulns = ( $results['composer']['vulnerabilities'] ?? 0 ) + ( $results['npm']['vulnerabilities'] ?? 0 );
-			
+
 			WP_MCP_AI_Logger::log(
 				$total_vulns > 0 ? 'warning' : 'info',
 				sprintf( 'Dependency vulnerability scan completed: %d vulnerabilities found', $total_vulns ),
@@ -605,7 +605,7 @@ class WP_MCP_AI_Supplier_Security {
 	 */
 	protected function scan_composer_dependencies() {
 		$composer_lock = WP_MCP_AI_PATH . 'composer.lock';
-		
+
 		if ( ! file_exists( $composer_lock ) ) {
 			return array( 'status' => 'error', 'message' => 'composer.lock not found' );
 		}
@@ -627,7 +627,7 @@ class WP_MCP_AI_Supplier_Security {
 	 */
 	protected function scan_npm_dependencies() {
 		$package_lock = WP_MCP_AI_PATH . 'package-lock.json';
-		
+
 		if ( ! file_exists( $package_lock ) ) {
 			return array( 'status' => 'error', 'message' => 'package-lock.json not found' );
 		}
@@ -659,7 +659,7 @@ class WP_MCP_AI_Supplier_Security {
 		$composer_lock = WP_MCP_AI_PATH . 'composer.lock';
 		if ( file_exists( $composer_lock ) ) {
 			$composer_data = json_decode( file_get_contents( $composer_lock ), true );
-			
+
 			if ( isset( $composer_data['packages'] ) ) {
 				foreach ( $composer_data['packages'] as $package ) {
 					$sbom['components'][] = array(
@@ -677,7 +677,7 @@ class WP_MCP_AI_Supplier_Security {
 		$package_lock = WP_MCP_AI_PATH . 'package-lock.json';
 		if ( file_exists( $package_lock ) ) {
 			$npm_data = json_decode( file_get_contents( $package_lock ), true );
-			
+
 			if ( isset( $npm_data['packages'] ) ) {
 				foreach ( $npm_data['packages'] as $path => $package ) {
 					// Skip root package.
@@ -686,7 +686,7 @@ class WP_MCP_AI_Supplier_Security {
 					}
 
 					$name = ltrim( $path, 'node_modules/' );
-					
+
 					$sbom['components'][] = array(
 						'type'    => 'library',
 						'name'    => $name,

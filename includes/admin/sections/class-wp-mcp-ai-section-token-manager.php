@@ -586,15 +586,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<td>
 							<strong><?php echo esc_html( $tool_name ); ?></strong>
 							<?php if ( ! $match_status['matches'] ) : ?>
-								<span class="dashicons dashicons-lightbulb wp-mcp-ai-recommendation-icon" 
-										style="color: #f0b849; font-size: 16px; vertical-align: middle; cursor: help;" 
+								<span class="dashicons dashicons-lightbulb wp-mcp-ai-recommendation-icon"
+										style="color: #f0b849; font-size: 16px; vertical-align: middle; cursor: help;"
 										title="<?php echo esc_attr( $match_status['reason'] ); ?>"></span>
 							<?php endif; ?>
 						</td>
 						<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
 						<td>
-							<select 
-								class="wp-mcp-ai-tool-model-input" 
+							<select
+								class="wp-mcp-ai-tool-model-input"
 								data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
 								style="width: 100%; max-width: 250px;"
 							>
@@ -625,16 +625,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						</td>
 						<td>
 							<div style="position: relative; display: inline-block;">
-								<input 
-									type="number" 
-									class="wp-mcp-ai-tool-multiplier-input" 
-									data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" 
+								<input
+									type="number"
+									class="wp-mcp-ai-tool-multiplier-input"
+									data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
 									data-recommended="<?php echo esc_attr( $recommendation['multiplier'] ); ?>"
-									value="<?php echo esc_attr( $multiplier ); ?>" 
-									min="0.1" 
-									max="10" 
-									step="0.1" 
-									style="width: 70px;" 
+									value="<?php echo esc_attr( $multiplier ); ?>"
+									min="0.1"
+									max="10"
+									step="0.1"
+									style="width: 70px;"
 								/>×
 								<?php if ( ! $match_status['multiplier_matches'] ) : ?>
 									<span class="wp-mcp-ai-recommended-value" style="display: block; font-size: 10px; color: #f0b849; font-style: italic;">
@@ -965,7 +965,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<!-- Analytics Charts Section -->
 			<div class="wp-mcp-ai-analytics-section" style="margin-top: 30px;">
 				<h4><?php esc_html_e( 'Usage Distribution', 'mcp-ai-wpoos' ); ?></h4>
-				
+
 				<!-- Provider & Model Distribution Charts -->
 				<div class="wp-mcp-ai-chart-row">
 					<div class="wp-mcp-ai-chart-container wp-mcp-ai-chart-half">
@@ -1451,7 +1451,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 				function renderDiscoveryResults(data) {
 					var html = '<h3><?php esc_html_e( 'Discovery Results', 'mcp-ai-wpoos' ); ?></h3>';
-					
+
 					if (data.discovered && data.discovered.length > 0) {
 						html += '<h4><?php esc_html_e( 'Newly Discovered Models', 'mcp-ai-wpoos' ); ?> (' + data.discovered.length + ')</h4>';
 						data.discovered.forEach(function(model) {
@@ -1484,7 +1484,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						var btn = $(this);
 						var modelId = btn.data('model-id');
 						var provider = btn.data('provider');
-						
+
 						$('#wp-mcp-ai-model-id').val(modelId);
 						$('#wp-mcp-ai-model-provider').val(provider);
 						$('#wp-mcp-ai-research-model').click();

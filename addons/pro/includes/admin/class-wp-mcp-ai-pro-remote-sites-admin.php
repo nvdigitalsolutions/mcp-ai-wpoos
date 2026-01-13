@@ -83,34 +83,38 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// Handle delete action.
 		if ( 'delete' === $action && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
-			if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'delete_connection_' . $_GET['connection_id'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'delete_connection_' . $connection_id ) ) {
 				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
 			}
 
-			$connection_id = sanitize_key( $_GET['connection_id'] );
-			$deleted = WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
+			$deleted       = WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
 
 			if ( $deleted ) {
 				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&deleted=1' ) );
 			} else {
-				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . urlencode( __( 'Connection not found or could not be deleted.', 'wp-mcp-ai-pro' ) ) ) );
+				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found or could not be deleted.', 'wp-mcp-ai-pro' ) ) ) );
 			}
 			exit;
 		}
 
 		// Handle test action.
 		if ( 'test' === $action && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
-			if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'test_connection_' . $_GET['connection_id'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'test_connection_' . $connection_id ) ) {
 				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
 			}
 
-			$connection_id = sanitize_key( $_GET['connection_id'] );
-			$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
+			$result       = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
 
 			$redirect_url = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&connection_id=' . $connection_id );
 
 			if ( is_wp_error( $result ) ) {
-				$redirect_url = add_query_arg( 'test_error', urlencode( $result->get_error_message() ), $redirect_url );
+				$redirect_url = add_query_arg( 'test_error', rawurlencode( $result->get_error_message() ), $redirect_url );
 			} else {
 				$redirect_url = add_query_arg( 'test_success', '1', $redirect_url );
 			}
@@ -121,40 +125,42 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// Handle save action.
 		if ( isset( $_POST['wp_mcp_ai_pro_save_connection'] ) && isset( $_POST['_wpnonce'] ) ) {
-			if ( ! wp_verify_nonce( $_POST['_wpnonce'], 'save_remote_connection' ) ) {
+			$nonce = isset( $_POST['_wpnonce'] ) ? wp_unslash( $_POST['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+			if ( ! wp_verify_nonce( $nonce, 'save_remote_connection' ) ) {
 				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
 			}
 
 			$connection_data = array(
-				'id'              => isset( $_POST['connection_id'] ) ? sanitize_key( $_POST['connection_id'] ) : '',
-				'name'            => isset( $_POST['name'] ) ? sanitize_text_field( $_POST['name'] ) : '',
-				'url'             => isset( $_POST['url'] ) ? esc_url_raw( $_POST['url'] ) : '',
-				'connection_type' => isset( $_POST['connection_type'] ) ? sanitize_key( $_POST['connection_type'] ) : 'wordpress',
-				'auth_type'       => isset( $_POST['auth_type'] ) ? sanitize_key( $_POST['auth_type'] ) : 'none',
-				'username'        => isset( $_POST['username'] ) ? sanitize_text_field( $_POST['username'] ) : '',
-				'password'        => isset( $_POST['password'] ) ? $_POST['password'] : '',
-				'token'           => isset( $_POST['token'] ) ? $_POST['token'] : '',
-				'consumer_key'    => isset( $_POST['consumer_key'] ) ? sanitize_text_field( $_POST['consumer_key'] ) : '',
-				'consumer_secret' => isset( $_POST['consumer_secret'] ) ? $_POST['consumer_secret'] : '',
-				'api_key'         => isset( $_POST['api_key'] ) ? $_POST['api_key'] : '',
-				'api_secret'      => isset( $_POST['api_secret'] ) ? $_POST['api_secret'] : '',
-				'client_id'       => isset( $_POST['client_id'] ) ? sanitize_text_field( $_POST['client_id'] ) : '',
-				'client_secret'   => isset( $_POST['client_secret'] ) ? $_POST['client_secret'] : '',
-				'app_id'          => isset( $_POST['app_id'] ) ? sanitize_text_field( $_POST['app_id'] ) : '',
-				'app_secret'      => isset( $_POST['app_secret'] ) ? $_POST['app_secret'] : '',
-				'location_id'     => isset( $_POST['location_id'] ) ? sanitize_text_field( $_POST['location_id'] ) : '',
-				'company_id'      => isset( $_POST['company_id'] ) ? sanitize_text_field( $_POST['company_id'] ) : '',
+				'id'              => isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '',
+				'name'            => isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '',
+				'url'             => isset( $_POST['url'] ) ? esc_url_raw( wp_unslash( $_POST['url'] ) ) : '',
+				'connection_type' => isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'wordpress',
+				'auth_type'       => isset( $_POST['auth_type'] ) ? sanitize_key( wp_unslash( $_POST['auth_type'] ) ) : 'none',
+				'username'        => isset( $_POST['username'] ) ? sanitize_text_field( wp_unslash( $_POST['username'] ) ) : '',
+				'password'        => isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				'token'           => isset( $_POST['token'] ) ? wp_unslash( $_POST['token'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				'consumer_key'    => isset( $_POST['consumer_key'] ) ? sanitize_text_field( wp_unslash( $_POST['consumer_key'] ) ) : '',
+				'consumer_secret' => isset( $_POST['consumer_secret'] ) ? wp_unslash( $_POST['consumer_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				'api_key'         => isset( $_POST['api_key'] ) ? wp_unslash( $_POST['api_key'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				'api_secret'      => isset( $_POST['api_secret'] ) ? wp_unslash( $_POST['api_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				'client_id'       => isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '',
+				'client_secret'   => isset( $_POST['client_secret'] ) ? wp_unslash( $_POST['client_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				'app_id'          => isset( $_POST['app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['app_id'] ) ) : '',
+				'app_secret'      => isset( $_POST['app_secret'] ) ? wp_unslash( $_POST['app_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				'location_id'     => isset( $_POST['location_id'] ) ? sanitize_text_field( wp_unslash( $_POST['location_id'] ) ) : '',
+				'company_id'      => isset( $_POST['company_id'] ) ? sanitize_text_field( wp_unslash( $_POST['company_id'] ) ) : '',
 				'sandbox_mode'    => ! empty( $_POST['sandbox_mode'] ),
 				'has_woocommerce' => ! empty( $_POST['has_woocommerce'] ),
 				'enabled'         => ! empty( $_POST['enabled'] ),
 				'cache_ttl'       => isset( $_POST['cache_ttl'] ) ? max( 0, min( 3600, absint( $_POST['cache_ttl'] ) ) ) : 300,
-				'test_endpoint'   => isset( $_POST['test_endpoint'] ) ? sanitize_text_field( $_POST['test_endpoint'] ) : '',
+				'test_endpoint'   => isset( $_POST['test_endpoint'] ) ? sanitize_text_field( wp_unslash( $_POST['test_endpoint'] ) ) : '',
 			);
 
-			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+			$result          = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
 			if ( is_wp_error( $result ) ) {
-				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . urlencode( $result->get_error_message() ) ) );
+				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( $result->get_error_message() ) ) );
 			} else {
 				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&saved=1' ) );
 			}
@@ -174,7 +180,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		if ( $editing ) {
 			$connection_to_edit = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $editing );
-			
+
 			// If editing but connection not found, show error and list instead.
 			if ( null === $connection_to_edit ) {
 				$editing = '';
@@ -192,27 +198,29 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</div>
 			<?php endif; ?>
 
-			<?php if ( isset( $_GET['deleted'] ) ) : ?>
+			<?php if ( isset( $_GET['deleted'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Connection deleted successfully.', 'wp-mcp-ai-pro' ); ?></p>
 				</div>
 			<?php endif; ?>
 
-			<?php if ( isset( $_GET['error'] ) ) : ?>
+			<?php if ( isset( $_GET['error'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<?php $error_message = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : ''; ?>
 				<div class="notice notice-error is-dismissible">
-					<p><?php echo esc_html( $_GET['error'] ); ?></p>
+					<p><?php echo esc_html( $error_message ); ?></p>
 				</div>
 			<?php endif; ?>
 
-			<?php if ( isset( $_GET['test_success'] ) ) : ?>
+			<?php if ( isset( $_GET['test_success'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Connection test successful!', 'wp-mcp-ai-pro' ); ?></p>
 				</div>
 			<?php endif; ?>
 
-			<?php if ( isset( $_GET['test_error'] ) ) : ?>
+			<?php if ( isset( $_GET['test_error'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+				<?php $test_error = isset( $_GET['test_error'] ) ? sanitize_text_field( wp_unslash( $_GET['test_error'] ) ) : ''; ?>
 				<div class="notice notice-error is-dismissible">
-					<p><?php echo esc_html( urldecode( $_GET['test_error'] ) ); ?></p>
+					<p><?php echo esc_html( urldecode( $test_error ) ); ?></p>
 				</div>
 			<?php endif; ?>
 
@@ -606,7 +614,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</label>
 					</td>
 				</tr>
-				
+
 				<tr>
 					<th scope="row">
 						<label for="cache_ttl"><?php esc_html_e( 'Cache TTL (seconds)', 'wp-mcp-ai-pro' ); ?></label>
@@ -672,10 +680,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		document.addEventListener('DOMContentLoaded', function() {
 			var authType = document.getElementById('auth_type').value;
 			var connectionType = document.getElementById('connection_type').value;
-			
+
 			toggleAuthFields(authType);
 			toggleConnectionTypeFields(connectionType);
-			
+
 			// Add event listener for connection type changes
 			document.getElementById('connection_type').addEventListener('change', function() {
 				toggleConnectionTypeFields(this.value);

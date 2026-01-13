@@ -353,7 +353,7 @@ class WP_MCP_AI_Job_Queue_Manager {
 		// Max retries exceeded - move to dead letter queue.
 		if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
 			$retry_history = isset( $queue[ $job_id ]['retry_history'] ) ? $queue[ $job_id ]['retry_history'] : array();
-			
+
 			// Build retry history from queue data.
 			for ( $i = 0; $i <= $retry_count; $i++ ) {
 				$retry_history[] = array(

@@ -17,7 +17,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Clear any existing connections.
 		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
 	}
@@ -28,7 +28,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 	public function tearDown(): void {
 		// Clean up test connections.
 		delete_option( WP_MCP_AI_Pro_Remote_Site_Manager::OPTION_NAME );
-		
+
 		parent::tearDown();
 	}
 
@@ -75,14 +75,14 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
 		$this->assertNotWPError( $result );
-		
+
 		// Verify connection was saved.
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
 		$this->assertIsArray( $connection );
 		$this->assertEquals( 'Test Site with Auth', $connection['name'] );
 		$this->assertEquals( 'application_password', $connection['auth_type'] );
 		$this->assertTrue( $connection['has_woocommerce'] );
-		
+
 		// Verify password is encrypted.
 		$this->assertNotEquals( 'test_password_123', $connection['password'] );
 	}
@@ -265,7 +265,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 
 		// Password should be encrypted in storage.
 		$this->assertNotEquals( 'my_secret_password_123', $connection['password'] );
-		
+
 		// Verify encryption produces base64 string.
 		$this->assertMatchesRegularExpression( '/^[A-Za-z0-9+\/=]+$/', $connection['password'] );
 	}
@@ -304,14 +304,14 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
 		$this->assertNotWPError( $result );
-		
+
 		// Verify connection was saved.
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $result );
 		$this->assertIsArray( $connection );
 		$this->assertEquals( 'Test WooCommerce Site', $connection['name'] );
 		$this->assertEquals( 'woocommerce', $connection['auth_type'] );
 		$this->assertTrue( $connection['has_woocommerce'] );
-		
+
 		// Verify consumer key and secret are encrypted.
 		$this->assertNotEquals( 'ck_1234567890abcdef', $connection['consumer_key'] );
 		$this->assertNotEquals( 'cs_1234567890abcdef', $connection['consumer_secret'] );

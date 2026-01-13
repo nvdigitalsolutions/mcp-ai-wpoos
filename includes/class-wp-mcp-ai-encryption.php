@@ -169,8 +169,8 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 
 			// Get all posts with encrypted meta data.
 			$query = $wpdb->prepare(
-				"SELECT post_id, meta_id, meta_value 
-				FROM {$wpdb->postmeta} 
+				"SELECT post_id, meta_id, meta_value
+				FROM {$wpdb->postmeta}
 				WHERE meta_key = %s",
 				self::ENCRYPTED_SECRET_META_KEY
 			);

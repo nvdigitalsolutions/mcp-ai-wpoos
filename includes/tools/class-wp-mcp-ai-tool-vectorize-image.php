@@ -340,7 +340,7 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 		}
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
-		
+
 		// Get attachment URL and ensure it's valid.
 		$attachment_url = wp_get_attachment_url( $attachment_id );
 		if ( false === $attachment_url ) {

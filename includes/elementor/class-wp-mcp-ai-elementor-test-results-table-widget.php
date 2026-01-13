@@ -310,7 +310,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 				$('.wp-mcp-ai-test-results__details-btn').on('click', function(e) {
 					e.preventDefault();
 					var testId = $(this).data('test-id');
-					
+
 					// In a real implementation, this would fetch and display full test details.
 					alert('<?php echo esc_js( __( 'Test ID:', 'mcp-ai-wpoos' ) ); ?> ' + testId);
 				});

@@ -112,7 +112,7 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 		// Validate connection if provided.
 		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-			
+
 			if ( null === $connection ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_connection_not_found',

@@ -127,7 +127,7 @@ class WP_MCP_AI_Quiz_Research_Page {
 			<h1 class="wp-heading-inline">
 				<?php esc_html_e( 'Research & Add Quiz', 'mcp-ai-wpoos-pro' ); ?>
 			</h1>
-			
+
 			<hr class="wp-header-end">
 
 			<div class="wp-mcp-ai-research-container">

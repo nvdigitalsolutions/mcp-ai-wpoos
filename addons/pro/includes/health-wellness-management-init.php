@@ -22,7 +22,7 @@ if ( is_admin() ) {
 	$settings = get_option( 'wp_mcp_ai_settings', array() );
 	$is_enabled = ! empty( $settings['enable_health_wellness_management'] );
 	$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-	
+
 	if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-policy-research-page.php';
 	}

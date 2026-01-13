@@ -1442,8 +1442,8 @@ composer install</pre>
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$autoload_size = $wpdb->get_var(
-			"SELECT SUM(LENGTH(option_value)) 
-			FROM {$wpdb->options} 
+			"SELECT SUM(LENGTH(option_value))
+			FROM {$wpdb->options}
 			WHERE autoload = 'yes'"
 		);
 
@@ -1478,8 +1478,8 @@ composer install</pre>
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$transient_count = $wpdb->get_var(
-			"SELECT COUNT(*) 
-			FROM {$wpdb->options} 
+			"SELECT COUNT(*)
+			FROM {$wpdb->options}
 			WHERE option_name LIKE '_transient_%'"
 		);
 

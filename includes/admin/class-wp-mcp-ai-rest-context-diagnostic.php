@@ -94,7 +94,7 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 		?>
 		<div class="wrap wp-mcp-ai-diagnostic">
 			<h1><?php esc_html_e( 'REST API Context Parameter Diagnostic', 'mcp-ai-wpoos' ); ?></h1>
-			
+
 			<p>
 				<?php
 				esc_html_e(
@@ -159,7 +159,7 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 
 			<?php if ( ! empty( $diagnostics['recommendations'] ) ) : ?>
 				<h2><?php esc_html_e( 'Recommendations', 'mcp-ai-wpoos' ); ?></h2>
-				
+
 				<?php foreach ( $diagnostics['recommendations'] as $recommendation ) : ?>
 					<div class="recommendation">
 						<p><?php echo esc_html( $recommendation ); ?></p>
@@ -209,7 +209,7 @@ RewriteRule ^wp-json/(.*)$ /index.php?rest_route=/$1 [QSA,L]</div>
 
 			<h2><?php esc_html_e( 'Testing', 'mcp-ai-wpoos' ); ?></h2>
 			<p><?php esc_html_e( 'Use these commands to test if the context parameter is working:', 'mcp-ai-wpoos' ); ?></p>
-			
+
 			<h4><?php esc_html_e( 'Test 1: Check cache headers', 'mcp-ai-wpoos' ); ?></h4>
 			<div class="code-block">curl -I "<?php echo esc_url( rest_url( 'wp/v2/posts' ) ); ?>?context=edit" | grep -i "cache-control"</div>
 			<p><strong><?php esc_html_e( 'Expected:', 'mcp-ai-wpoos' ); ?></strong> Cache-Control: no-store, no-cache, must-revalidate, max-age=0</p>

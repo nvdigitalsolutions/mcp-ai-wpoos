@@ -2954,7 +2954,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 
 			$transcript_context['request_started_at']    = microtime( true );
-			
+
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
 			try {
@@ -3000,7 +3000,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$this->send_sse_done();
 				exit;
 			}
-			
+
 			$transcript_context['response_completed_at'] = microtime( true );
 
 			if ( ! is_wp_error( $response ) ) {

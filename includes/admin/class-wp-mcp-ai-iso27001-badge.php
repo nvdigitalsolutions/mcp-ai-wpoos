@@ -34,7 +34,7 @@ class WP_MCP_AI_ISO27001_Badge {
 	 */
 	public function display_certification_notice() {
 		$screen = get_current_screen();
-		
+
 		// Only show on NV oOS related pages.
 		if ( ! $screen || strpos( $screen->id, 'mcp-ai' ) === false ) {
 			return;
@@ -48,7 +48,7 @@ class WP_MCP_AI_ISO27001_Badge {
 			<div class="nvoos-badge-container">
 				<span class="nvoos-badge-icon">
 					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" 
+						<path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z"
 						      fill="#4CAF50" stroke="#2E7D32" stroke-width="2"/>
 						<path d="M9 12L11 14L15 10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 					</svg>
@@ -117,7 +117,7 @@ class WP_MCP_AI_ISO27001_Badge {
 	public function add_plugin_meta_badge( $links, $file ) {
 		if ( strpos( $file, 'mcp-ai-wpoos' ) !== false ) {
 			$status = $this->get_certification_status();
-			
+
 			$links[] = sprintf(
 				'<span class="nvoos-plugin-badge nvoos-plugin-badge-%s">🛡️ ISO 27001 %s</span>',
 				esc_attr( $status['class'] ),

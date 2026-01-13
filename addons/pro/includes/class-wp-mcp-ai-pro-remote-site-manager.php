@@ -96,14 +96,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// If updating and password/token fields are empty, preserve existing values.
 		if ( $is_update ) {
 			$existing_connection = $connections[ $connection_id ];
-			
+
 			// Preserve existing password if not provided.
 			if ( empty( $connection_data['password'] ) && ! empty( $existing_connection['password'] ) ) {
 				$connection_data['password'] = $existing_connection['password'];
 				// Mark as already encrypted.
 				$connection_data['_password_encrypted'] = true;
 			}
-			
+
 			// Preserve existing token if not provided.
 			if ( empty( $connection_data['token'] ) && ! empty( $existing_connection['token'] ) ) {
 				$connection_data['token'] = $existing_connection['token'];
@@ -359,7 +359,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	public static function make_request( $connection, $endpoint, $method = 'GET', $body = array() ) {
 		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
 		$start_time    = microtime( true );
-		
+
 		$url = self::build_api_url( $connection['url'], $endpoint, $connection );
 
 		if ( is_wp_error( $url ) ) {
@@ -389,7 +389,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'timeout' => 30,
 			'headers' => self::get_auth_headers( $connection ),
 		);
-		
+
 		// Add compression support for large responses.
 		$args['headers']['Accept-Encoding'] = 'gzip, deflate';
 
@@ -407,11 +407,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return $cached_result;
 			}
 		}
-		
+
 		// Request deduplication - check if this exact request is already in progress.
 		$dedup_key = self::get_dedup_key( $connection_id, $endpoint, $method, $body );
 		$in_progress = get_transient( $dedup_key );
-		
+
 		if ( false !== $in_progress ) {
 			// Another request is in progress - wait briefly and check cache.
 			usleep( 100000 ); // Wait 0.1 seconds.
@@ -424,20 +424,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 			// If no cached result yet, proceed with request (acceptable race condition).
 		}
-		
+
 		// Mark this request as in progress.
 		set_transient( $dedup_key, true, 30 );
 
 		// Perform request with retry logic.
 		$response = self::make_request_with_retry( $url, $args );
-		
+
 		// Clear deduplication lock.
 		delete_transient( $dedup_key );
 
 		if ( is_wp_error( $response ) ) {
 			$duration = microtime( true ) - $start_time;
 			self::record_health_metric( $connection_id, false, $duration );
-			
+
 			return new WP_Error(
 				'wp_mcp_ai_pro_request_failed',
 				sprintf(
@@ -454,7 +454,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( $status_code >= 400 ) {
 			$duration = microtime( true ) - $start_time;
 			self::record_health_metric( $connection_id, false, $duration );
-			
+
 			$error_message = sprintf(
 				/* translators: %d: HTTP status code */
 				__( 'HTTP error %d', 'wp-mcp-ai-pro' ),
@@ -475,13 +475,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( null === $decoded ) {
 			$duration = microtime( true ) - $start_time;
 			self::record_health_metric( $connection_id, false, $duration );
-			
+
 			return new WP_Error(
 				'wp_mcp_ai_pro_json_error',
 				__( 'Invalid JSON response from remote site.', 'wp-mcp-ai-pro' )
 			);
 		}
-		
+
 		// Record successful request for health monitoring.
 		$duration = microtime( true ) - $start_time;
 		self::record_health_metric( $connection_id, true, $duration );
@@ -490,12 +490,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			// Use per-connection cache TTL if set, otherwise default to 5 minutes.
 			$cache_ttl = isset( $connection['cache_ttl'] ) ? absint( $connection['cache_ttl'] ) : 5 * MINUTE_IN_SECONDS;
-			
+
 			// Validate cache_ttl is within acceptable range (0-3600 seconds).
 			if ( $cache_ttl > 3600 ) {
 				$cache_ttl = 3600; // Cap at 1 hour.
 			}
-			
+
 			// Skip caching if TTL is 0 (disabled for this connection).
 			if ( $cache_ttl > 0 ) {
 				/**
@@ -651,7 +651,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Validate connection type specific requirements.
 		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
-		
+
 		if ( 'ezuite_erp' === $connection_type && empty( $connection['api_key'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_api_key',
@@ -726,7 +726,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		foreach ( $connections as $key => $connection ) {
 			$lowercase_key = strtolower( $key );
-			
+
 			// Check if key needs migration.
 			if ( $key !== $lowercase_key ) {
 				$needs_migration = true;

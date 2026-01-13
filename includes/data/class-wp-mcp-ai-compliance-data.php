@@ -35,7 +35,7 @@ if ( ! class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
 		 */
 		public static function get_iso27001_controls() {
 			return array (
-  0 => 
+  0 =>
   array (
     'id' => 'A.5.1',
     'name' => 'Policies for Information Security',
@@ -48,7 +48,7 @@ Security objectives defined
 Management approval obtained
 Published and communicated to all personnel',
   ),
-  1 => 
+  1 =>
   array (
     'id' => 'A.5.2',
     'name' => 'Information Security Roles and Responsibilities',
@@ -61,7 +61,7 @@ CISO role established
 Development, operations, and support team responsibilities documented
 RACI matrix maintained',
   ),
-  2 => 
+  2 =>
   array (
     'id' => 'A.5.3',
     'name' => 'Segregation of Duties',
@@ -74,7 +74,7 @@ Deployment approval separate from development
 Security testing independent from development
 Administrative functions separated from operations',
   ),
-  3 => 
+  3 =>
   array (
     'id' => 'A.5.4',
     'name' => 'Management Responsibilities',
@@ -87,7 +87,7 @@ Resource allocation for security
 Regular management reviews (semi-annual)
 Security performance oversight',
   ),
-  4 => 
+  4 =>
   array (
     'id' => 'A.5.5',
     'name' => 'Contact with Authorities',
@@ -100,7 +100,7 @@ Data protection authorities contact procedures
 Law enforcement liaison procedures
 WordPress.org security team contact',
   ),
-  5 => 
+  5 =>
   array (
     'id' => 'A.5.6',
     'name' => 'Contact with Special Interest Groups',
@@ -113,7 +113,7 @@ OWASP community participation
 Security mailing list subscriptions
 GitHub security advisories monitoring',
   ),
-  6 => 
+  6 =>
   array (
     'id' => 'A.5.7',
     'name' => 'Threat Intelligence',
@@ -126,7 +126,7 @@ WordPress security announcements monitoring
 CVE database monitoring for dependencies
 Security research community engagement',
   ),
-  7 => 
+  7 =>
   array (
     'id' => 'A.5.8',
     'name' => 'Information Security in Project Management',
@@ -143,7 +143,7 @@ Security risk register and assessment matrix
 Security milestones and sign-off procedures
 Security metrics and dashboard reporting',
   ),
-  8 => 
+  8 =>
   array (
     'id' => 'A.5.9',
     'name' => 'Inventory of Information and Other Associated Assets',
@@ -163,7 +163,7 @@ Weekly automated discovery via cron job
 REST API for asset management (mcp-ai/v1/assets/*)
 Admin dashboard for viewing and filtering assets',
   ),
-  9 => 
+  9 =>
   array (
     'id' => 'A.5.10',
     'name' => 'Acceptable Use of Information and Other Associated Assets',
@@ -179,7 +179,7 @@ Acknowledgment mechanism with annual re-certification required
 Training integration with onboarding process
 Enforcement through disciplinary process (A.6.4)',
   ),
-  10 => 
+  10 =>
   array (
     'id' => 'A.5.11',
     'name' => 'Return of Assets',
@@ -194,7 +194,7 @@ Asset return form with required signatures
 24-hour access revocation timeline
 Asset inventory updates upon termination',
   ),
-  11 => 
+  11 =>
   array (
     'id' => 'A.5.12',
     'name' => 'Classification of Information',
@@ -206,7 +206,7 @@ Asset inventory updates upon termination',
 Classification documented in ISMS Policy
 Handling requirements per classification',
   ),
-  12 => 
+  12 =>
   array (
     'id' => 'A.5.13',
     'name' => 'Labelling of Information',
@@ -222,7 +222,7 @@ Visual classification badges in admin UI
 Classification column in post lists
 Auto-classification based on content patterns',
   ),
-  13 => 
+  13 =>
   array (
     'id' => 'A.5.14',
     'name' => 'Information Transfer',
@@ -234,7 +234,7 @@ Auto-classification based on content patterns',
 Encrypted storage for sensitive data
 Secure protocols for third-party integrations',
   ),
-  14 => 
+  14 =>
   array (
     'id' => 'A.5.15',
     'name' => 'Access Control',
@@ -247,7 +247,7 @@ Capability-based permissions for tools
 API key authentication
 Guest token system for public access',
   ),
-  15 => 
+  15 =>
   array (
     'id' => 'A.5.16',
     'name' => 'Identity Management',
@@ -259,7 +259,7 @@ Guest token system for public access',
 Unique identifiers per user
 User registration and deactivation procedures',
   ),
-  16 => 
+  16 =>
   array (
     'id' => 'A.5.17',
     'name' => 'Authentication Information',
@@ -272,7 +272,7 @@ Credential hashing (bcrypt via WordPress)
 API key encryption at rest
 Master key protection (root security key)',
   ),
-  17 => 
+  17 =>
   array (
     'id' => 'A.5.18',
     'name' => 'Access Rights',
@@ -285,7 +285,7 @@ Per-assistant tool permissions
 API rate limiting per user
 Regular access review procedures',
   ),
-  18 => 
+  18 =>
   array (
     'id' => 'A.5.19',
     'name' => 'Information Security in Supplier Relationships',
@@ -301,7 +301,7 @@ Performance monitoring and incident tracking
 Quarterly review scheduling with automated reminders
 Assessment of OpenAI, Google, GitHub, Composer, NPM, and other critical suppliers',
   ),
-  19 => 
+  19 =>
   array (
     'id' => 'A.5.20',
     'name' => 'Addressing Information Security Within Supplier Agreements',
@@ -316,7 +316,7 @@ Terms of Service acceptance and compliance monitoring
 Contractual security requirements enforced for all critical suppliers
 Data processing agreements with GDPR-compliant vendors',
   ),
-  20 => 
+  20 =>
   array (
     'id' => 'A.5.21',
     'name' => 'Managing Information Security in the ICT Supply Chain',
@@ -332,7 +332,7 @@ Lock file enforcement (composer.lock, package-lock.json)
 Integration with Dependabot for automated vulnerability alerts
 Supply chain risk monitoring dashboard',
   ),
-  21 => 
+  21 =>
   array (
     'id' => 'A.5.22',
     'name' => 'Monitoring, Review and Change Management of Supplier Services',
@@ -348,7 +348,7 @@ Performance metrics dashboard showing YTD incidents and actual uptime vs. SLA
 Overdue review indicators with automatic escalation
 Change management tracking for supplier service modifications',
   ),
-  22 => 
+  22 =>
   array (
     'id' => 'A.5.23',
     'name' => 'Information Security for Use of Cloud Services',
@@ -361,7 +361,7 @@ Google Cloud security assessment
 Hosting provider security requirements
 Shared responsibility model documentation',
   ),
-  23 => 
+  23 =>
   array (
     'id' => 'A.5.24',
     'name' => 'Information Security Incident Management Planning and Preparation',
@@ -374,7 +374,7 @@ Security contact established (security@nvdigitalsolutions.com)
 Incident classification and escalation procedures
 Response team roles defined',
   ),
-  24 => 
+  24 =>
   array (
     'id' => 'A.5.25',
     'name' => 'Assessment and Decision on Information Security Events',
@@ -386,7 +386,7 @@ Response team roles defined',
 Impact assessment procedures
 Decision criteria for incident declaration',
   ),
-  25 => 
+  25 =>
   array (
     'id' => 'A.5.26',
     'name' => 'Response to Information Security Incidents',
@@ -399,7 +399,7 @@ Containment, eradication, recovery steps
 Communication protocols
 Evidence preservation',
   ),
-  26 => 
+  26 =>
   array (
     'id' => 'A.5.27',
     'name' => 'Learning from Information Security Incidents',
@@ -415,7 +415,7 @@ Lessons learned tracking with severity and category classification
 Admin UI for managing lessons learned
 Integration with incident management system',
   ),
-  27 => 
+  27 =>
   array (
     'id' => 'A.5.28',
     'name' => 'Collection of Evidence',
@@ -427,7 +427,7 @@ Integration with incident management system',
 Log retention (12 months)
 Chain of custody procedures',
   ),
-  28 => 
+  28 =>
   array (
     'id' => 'A.5.29',
     'name' => 'Information Security During Disruption',
@@ -444,7 +444,7 @@ Post-disruption security review and lessons learned process
 Communication security protocols during emergencies (encrypted channels)
 Compliance maintenance during disruptions (GDPR/CCPA, audit trails)',
   ),
-  29 => 
+  29 =>
   array (
     'id' => 'A.5.30',
     'name' => 'ICT Readiness for Business Continuity',
@@ -461,7 +461,7 @@ Quarterly failover testing schedule
 Monitoring and alerting for provider availability
 Backup and recovery procedures documented',
   ),
-  30 => 
+  30 =>
   array (
     'id' => 'A.5.31',
     'name' => 'Legal, Statutory, Regulatory and Contractual Requirements',
@@ -474,7 +474,7 @@ GPL v3 license compliance
 OpenAI/Gemini terms compliance
 WordPress.org plugin guidelines compliance',
   ),
-  31 => 
+  31 =>
   array (
     'id' => 'A.5.32',
     'name' => 'Intellectual Property Rights',
@@ -487,7 +487,7 @@ Copyright notices
 Third-party license compliance
 Attribution requirements',
   ),
-  32 => 
+  32 =>
   array (
     'id' => 'A.5.33',
     'name' => 'Protection of Records',
@@ -499,7 +499,7 @@ Attribution requirements',
 Backup of critical records
 12-month log retention',
   ),
-  33 => 
+  33 =>
   array (
     'id' => 'A.5.34',
     'name' => 'Privacy and Protection of PII',
@@ -512,7 +512,7 @@ Data encryption (credentials, sensitive settings)
 User consent mechanisms
 Data deletion capabilities',
   ),
-  34 => 
+  34 =>
   array (
     'id' => 'A.5.35',
     'name' => 'Independent Review of Information Security',
@@ -527,7 +527,7 @@ Comprehensive audit management system with finding tracking
 Management review process documented
 Audit dashboard and statistics reporting',
   ),
-  35 => 
+  35 =>
   array (
     'id' => 'A.5.36',
     'name' => 'Compliance with Policies, Rules and Standards for Information Security',
@@ -539,7 +539,7 @@ Audit dashboard and statistics reporting',
 WordPress Coding Standards (WPCS) compliance
 Security coding standards (OWASP)',
   ),
-  36 => 
+  36 =>
   array (
     'id' => 'A.5.37',
     'name' => 'Documented Operating Procedures',
@@ -551,7 +551,7 @@ Security coding standards (OWASP)',
 Deployment procedures documented
 Security procedures documented',
   ),
-  37 => 
+  37 =>
   array (
     'id' => 'A.6.1',
     'name' => 'Screening',
@@ -566,7 +566,7 @@ Screening documentation requirements
 Periodic re-screening every 3 years for sensitive roles
 Security questionnaire and consent forms',
   ),
-  38 => 
+  38 =>
   array (
     'id' => 'A.6.2',
     'name' => 'Terms and Conditions of Employment',
@@ -581,7 +581,7 @@ Required acknowledgment and acceptance signatures
 Annual security policy acknowledgment
 Confidentiality, acceptable use, data protection, and IP rights clauses',
   ),
-  39 => 
+  39 =>
   array (
     'id' => 'A.6.3',
     'name' => 'Information Security Awareness, Education and Training',
@@ -602,7 +602,7 @@ Technical security training for developers
 Policy and compliance training
 Incident response procedures training',
   ),
-  40 => 
+  40 =>
   array (
     'id' => 'A.6.4',
     'name' => 'Disciplinary Process',
@@ -620,7 +620,7 @@ Appeal process with independent review panel
 Post-action monitoring and retraining requirements
 Documentation and record retention (1-7 years based on action type)',
   ),
-  41 => 
+  41 =>
   array (
     'id' => 'A.6.5',
     'name' => 'Responsibilities After Termination or Change of Employment',
@@ -636,7 +636,7 @@ Post-termination monitoring (30-day and 90-day reviews)
 Legal remedies for breaches documented
 Continuing confidentiality and non-disclosure obligations',
   ),
-  42 => 
+  42 =>
   array (
     'id' => 'A.6.6',
     'name' => 'Confidentiality or Non-Disclosure Agreements',
@@ -649,7 +649,7 @@ NDA lifecycle management with registration and tracking system
 Breach response procedures and enforcement mechanisms
 Annual reviews and compliance monitoring',
   ),
-  43 => 
+  43 =>
   array (
     'id' => 'A.6.7',
     'name' => 'Remote Working',
@@ -662,7 +662,7 @@ Endpoint security requirements
 HTTPS/TLS for all communications
 Multi-factor authentication',
   ),
-  44 => 
+  44 =>
   array (
     'id' => 'A.6.8',
     'name' => 'Information Security Event Reporting',
@@ -674,7 +674,7 @@ Multi-factor authentication',
 GitHub security advisory reporting
 Internal reporting procedures',
   ),
-  45 => 
+  45 =>
   array (
     'id' => 'A.7.1',
     'name' => 'Physical Security Perimeters',
@@ -684,7 +684,7 @@ Internal reporting procedures',
     'justification' => 'No physical facilities under direct control; cloud-hosted infrastructure managed by providers with ISO 27001 certification',
     'description' => '',
   ),
-  46 => 
+  46 =>
   array (
     'id' => 'A.7.2',
     'name' => 'Physical Entry',
@@ -694,7 +694,7 @@ Internal reporting procedures',
     'justification' => 'See A.7.1',
     'description' => '',
   ),
-  47 => 
+  47 =>
   array (
     'id' => 'A.7.3',
     'name' => 'Securing Offices, Rooms and Facilities',
@@ -704,7 +704,7 @@ Internal reporting procedures',
     'justification' => 'Remote work environment, no central office facilities',
     'description' => '',
   ),
-  48 => 
+  48 =>
   array (
     'id' => 'A.7.4',
     'name' => 'Physical Security Monitoring',
@@ -714,7 +714,7 @@ Internal reporting procedures',
     'justification' => 'See A.7.1',
     'description' => '',
   ),
-  49 => 
+  49 =>
   array (
     'id' => 'A.7.5',
     'name' => 'Protecting Against Physical and Environmental Threats',
@@ -724,7 +724,7 @@ Internal reporting procedures',
     'justification' => 'Managed by cloud hosting providers',
     'description' => '',
   ),
-  50 => 
+  50 =>
   array (
     'id' => 'A.7.6',
     'name' => 'Working in Secure Areas',
@@ -734,7 +734,7 @@ Internal reporting procedures',
     'justification' => 'No designated secure areas',
     'description' => '',
   ),
-  51 => 
+  51 =>
   array (
     'id' => 'A.7.7',
     'name' => 'Clear Desk and Clear Screen',
@@ -748,7 +748,7 @@ Privacy screen requirements for public spaces
 Document handling and secure disposal procedures
 Quarterly audit program with compliance monitoring',
   ),
-  52 => 
+  52 =>
   array (
     'id' => 'A.7.8',
     'name' => 'Equipment Siting and Protection',
@@ -762,7 +762,7 @@ Physical access control requirements (locking, cable locks)
 Equipment transport and storage guidelines
 Surge protectors and UPS requirements',
   ),
-  53 => 
+  53 =>
   array (
     'id' => 'A.7.9',
     'name' => 'Security of Assets Off-Premises',
@@ -777,7 +777,7 @@ Physical device custody and loss/theft response procedures
 BYOD policy with work profile data separation
 Travel security guidelines (domestic and international)',
   ),
-  54 => 
+  54 =>
   array (
     'id' => 'A.7.10',
     'name' => 'Storage Media',
@@ -789,7 +789,7 @@ Travel security guidelines (domestic and international)',
 Database encryption at rest
 Secure credential storage',
   ),
-  55 => 
+  55 =>
   array (
     'id' => 'A.7.11',
     'name' => 'Supporting Utilities',
@@ -799,7 +799,7 @@ Secure credential storage',
     'justification' => 'Managed by cloud providers',
     'description' => '',
   ),
-  56 => 
+  56 =>
   array (
     'id' => 'A.7.12',
     'name' => 'Cabling Security',
@@ -809,7 +809,7 @@ Secure credential storage',
     'justification' => 'No physical infrastructure management',
     'description' => '',
   ),
-  57 => 
+  57 =>
   array (
     'id' => 'A.7.13',
     'name' => 'Equipment Maintenance',
@@ -819,7 +819,7 @@ Secure credential storage',
     'justification' => 'Cloud provider responsibility',
     'description' => '',
   ),
-  58 => 
+  58 =>
   array (
     'id' => 'A.7.14',
     'name' => 'Secure Disposal or Reuse of Equipment',
@@ -834,7 +834,7 @@ Lost/stolen device response procedures with remote wipe
 Vendor selection criteria and certification requirements
 Complete documentation and audit trail requirements',
   ),
-  59 => 
+  59 =>
   array (
     'id' => 'A.8.1',
     'name' => 'User Endpoint Devices',
@@ -848,7 +848,7 @@ Patch management (OS within 30 days, critical within 7 days)
 Centralized endpoint management and compliance monitoring
 Full disk encryption required for all devices',
   ),
-  60 => 
+  60 =>
   array (
     'id' => 'A.8.2',
     'name' => 'Privileged Access Rights',
@@ -861,7 +861,7 @@ Repository administrator access controls
 Limited privileged access (need-to-know)
 Audit logging of privileged actions',
   ),
-  61 => 
+  61 =>
   array (
     'id' => 'A.8.3',
     'name' => 'Information Access Restriction',
@@ -873,7 +873,7 @@ Audit logging of privileged actions',
 Per-assistant tool permissions
 API authentication and authorization',
   ),
-  62 => 
+  62 =>
   array (
     'id' => 'A.8.4',
     'name' => 'Access to Source Code',
@@ -886,7 +886,7 @@ Branch protection rules
 Code review requirements
 Open source with GPL v3 (public access controlled by license)',
   ),
-  63 => 
+  63 =>
   array (
     'id' => 'A.8.5',
     'name' => 'Secure Authentication',
@@ -900,7 +900,7 @@ API key authentication
 JWT authentication (Simple JWT plugin)
 Auth0 integration',
   ),
-  64 => 
+  64 =>
   array (
     'id' => 'A.8.6',
     'name' => 'Capacity Management',
@@ -914,7 +914,7 @@ Rate limiting implementation for API endpoints
 Monthly capacity review and quarterly planning process
 Capacity forecasting and scaling procedures',
   ),
-  65 => 
+  65 =>
   array (
     'id' => 'A.8.7',
     'name' => 'Protection Against Malware',
@@ -928,7 +928,7 @@ Dependency vulnerability scanning (Dependabot, Composer/npm audit)
 Automated malware scanning in CI/CD pipeline (ClamAV, secret scanning)
 User training on malware awareness (quarterly with phishing simulations)',
   ),
-  66 => 
+  66 =>
   array (
     'id' => 'A.8.8',
     'name' => 'Management of Technical Vulnerabilities',
@@ -941,7 +941,7 @@ Dependabot vulnerability alerts
 Regular dependency updates
 Documented patch management process',
   ),
-  67 => 
+  67 =>
   array (
     'id' => 'A.8.9',
     'name' => 'Configuration Management',
@@ -953,7 +953,7 @@ Documented patch management process',
 Configuration settings in database
 Environment-specific configurations',
   ),
-  68 => 
+  68 =>
   array (
     'id' => 'A.8.10',
     'name' => 'Information Deletion',
@@ -965,7 +965,7 @@ Environment-specific configurations',
 Log retention and deletion (12 months)
 Transcript cleanup features',
   ),
-  69 => 
+  69 =>
   array (
     'id' => 'A.8.11',
     'name' => 'Data Masking',
@@ -980,7 +980,7 @@ Automatic sensitive data masking in logs
 Test data anonymization scripts
 Production data sanitization procedures for test databases',
   ),
-  70 => 
+  70 =>
   array (
     'id' => 'A.8.12',
     'name' => 'Data Leakage Prevention',
@@ -993,7 +993,7 @@ Access controls on confidential information
 Audit logging of data access
 Rate limiting to prevent mass data extraction',
   ),
-  71 => 
+  71 =>
   array (
     'id' => 'A.8.13',
     'name' => 'Information Backup',
@@ -1005,7 +1005,7 @@ Rate limiting to prevent mass data extraction',
 Version control as code backup
 Backup retention policies',
   ),
-  72 => 
+  72 =>
   array (
     'id' => 'A.8.14',
     'name' => 'Redundancy of Information Processing Facilities',
@@ -1017,7 +1017,7 @@ Backup retention policies',
 Failover capabilities
 Distributed deployment support',
   ),
-  73 => 
+  73 =>
   array (
     'id' => 'A.8.15',
     'name' => 'Logging',
@@ -1030,7 +1030,7 @@ Access logging (tool execution, data access)
 Configuration change logging
 Error and exception logging',
   ),
-  74 => 
+  74 =>
   array (
     'id' => 'A.8.16',
     'name' => 'Monitoring Activities',
@@ -1043,7 +1043,7 @@ Rate limiting and abuse detection
 Nefarious usage monitoring
 Performance monitoring',
   ),
-  75 => 
+  75 =>
   array (
     'id' => 'A.8.17',
     'name' => 'Clock Synchronization',
@@ -1055,7 +1055,7 @@ Performance monitoring',
 Timestamps in logs (UTC)
 Time-based operations use server time',
   ),
-  76 => 
+  76 =>
   array (
     'id' => 'A.8.18',
     'name' => 'Use of Privileged Utility Programs',
@@ -1067,7 +1067,7 @@ Time-based operations use server time',
 Administrative functions require elevated privileges
 Audit logging of administrative actions',
   ),
-  77 => 
+  77 =>
   array (
     'id' => 'A.8.19',
     'name' => 'Installation of Software on Operational Systems',
@@ -1080,7 +1080,7 @@ Dependency management (Composer, NPM)
 Code review before deployment
 Version pinning for dependencies',
   ),
-  78 => 
+  78 =>
   array (
     'id' => 'A.8.20',
     'name' => 'Networks Security',
@@ -1092,7 +1092,7 @@ Version pinning for dependencies',
 API endpoint security
 Network segmentation (hosting provider level)',
   ),
-  79 => 
+  79 =>
   array (
     'id' => 'A.8.21',
     'name' => 'Security of Network Services',
@@ -1104,7 +1104,7 @@ Network segmentation (hosting provider level)',
 Rate limiting
 DDoS protection (hosting provider)',
   ),
-  80 => 
+  80 =>
   array (
     'id' => 'A.8.22',
     'name' => 'Segregation of Networks',
@@ -1119,7 +1119,7 @@ Deployment pipeline security with GitOps
 Access control matrix by environment
 Network isolation verification procedures (quarterly testing)',
   ),
-  81 => 
+  81 =>
   array (
     'id' => 'A.8.23',
     'name' => 'Web Filtering',
@@ -1129,7 +1129,7 @@ Network isolation verification procedures (quarterly testing)',
     'justification' => 'No centralized network infrastructure; individual developer responsibility',
     'description' => '',
   ),
-  82 => 
+  82 =>
   array (
     'id' => 'A.8.24',
     'name' => 'Use of Cryptography',
@@ -1142,7 +1142,7 @@ AES-256 encryption for data at rest (credentials)
 bcrypt for password hashing (WordPress integration)
 Cryptographically secure random number generation',
   ),
-  83 => 
+  83 =>
   array (
     'id' => 'A.8.25',
     'name' => 'Secure Development Life Cycle',
@@ -1156,7 +1156,7 @@ Code review process
 Security testing (CodeQL)
 Vulnerability management',
   ),
-  84 => 
+  84 =>
   array (
     'id' => 'A.8.26',
     'name' => 'Application Security Requirements',
@@ -1169,7 +1169,7 @@ Output encoding and escaping
 Authentication and authorization
 Error handling',
   ),
-  85 => 
+  85 =>
   array (
     'id' => 'A.8.27',
     'name' => 'Secure System Architecture and Engineering Principles',
@@ -1182,7 +1182,7 @@ Principle of least privilege
 Fail-safe defaults
 Separation of concerns',
   ),
-  86 => 
+  86 =>
   array (
     'id' => 'A.8.28',
     'name' => 'Secure Coding',
@@ -1196,7 +1196,7 @@ Input sanitization and output escaping
 Prepared statements for database queries
 Nonce verification for state changes',
   ),
-  87 => 
+  87 =>
   array (
     'id' => 'A.8.29',
     'name' => 'Security Testing in Development and Acceptance',
@@ -1209,7 +1209,7 @@ Unit tests for security functions
 Integration tests
 Code review with security focus',
   ),
-  88 => 
+  88 =>
   array (
     'id' => 'A.8.30',
     'name' => 'Outsourced Development',
@@ -1228,7 +1228,7 @@ Malicious code detection and incident response procedures
 Branch protection rules enforcing 2 reviewers and status checks
 External contribution monitoring and trust level advancement',
   ),
-  89 => 
+  89 =>
   array (
     'id' => 'A.8.31',
     'name' => 'Separation of Development, Test and Production Environments',
@@ -1245,7 +1245,7 @@ Deployment gates (2 gates: dev→staging, staging→prod with approvals)
 Automated environment validation checks
 Separate API keys and encryption keys per environment',
   ),
-  90 => 
+  90 =>
   array (
     'id' => 'A.8.32',
     'name' => 'Change Management',
@@ -1263,7 +1263,7 @@ Emergency change procedure with expedited approval (CISO required)
 Change tracking and monthly reporting (success rate, rollback frequency, etc.)
 Automated change tracking via Git commits and PR system',
   ),
-  91 => 
+  91 =>
   array (
     'id' => 'A.8.33',
     'name' => 'Test Information',
@@ -1279,7 +1279,7 @@ Test data lifecycle management (creation → use → cleanup)
 GDPR/CCPA compliant test data handling
 Four test data categories: Synthetic, Anonymized, Subsets (restricted), Prohibited',
   ),
-  92 => 
+  92 =>
   array (
     'id' => 'A.8.34',
     'name' => 'Protection of Information Systems During Audit Testing',
@@ -1331,11 +1331,11 @@ Post-audit security review within 7 days',
 			// For now, return a default based on ISO 27001 implementation.
 			$iso_stats = self::get_iso27001_stats();
 			$total_applicable = $iso_stats['total'] - $iso_stats['not_applicable'];
-			
+
 			if ( $total_applicable > 0 ) {
 				return round( ( $iso_stats['implemented'] / $total_applicable ) * 100 );
 			}
-			
+
 			return 0;
 		}
 
@@ -1352,11 +1352,11 @@ Post-audit security review within 7 days',
 			// For now, return a default based on ISO 27001 implementation.
 			$iso_stats = self::get_iso27001_stats();
 			$total_applicable = $iso_stats['total'] - $iso_stats['not_applicable'];
-			
+
 			if ( $total_applicable > 0 ) {
 				return round( ( $iso_stats['implemented'] / $total_applicable ) * 100 );
 			}
-			
+
 			return 0;
 		}
 	}

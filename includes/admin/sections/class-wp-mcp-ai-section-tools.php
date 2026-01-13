@@ -1380,7 +1380,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							);
 							$is_active  = ( $group['id'] === $active_subtab );
 							?>
-							<a href="<?php echo esc_url( $subtab_url ); ?>" 
+							<a href="<?php echo esc_url( $subtab_url ); ?>"
 								class="wp-mcp-ai-subtab <?php echo esc_attr( $is_active ? 'wp-mcp-ai-subtab-active' : '' ); ?>"
 								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
@@ -1475,11 +1475,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 									</span>
 								<?php endif; ?>
 							</label>
-							<input type="search" 
-									id="tool_search" 
-									name="tool_search" 
-									value="<?php echo esc_attr( $search ); ?>" 
-									placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>" 
+							<input type="search"
+									id="tool_search"
+									name="tool_search"
+									value="<?php echo esc_attr( $search ); ?>"
+									placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
 									style="width: 100%;">
 						</div>
 
@@ -1520,35 +1520,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					(function($) {
 						$('#wp-mcp-ai-filter-tools').on('click', function() {
 							const $button = $(this);
-							
+
 							// Add loading state
 							$button.addClass('is-loading').prop('disabled', true);
-							
+
 							const search = $('#tool_search').val();
 							const group = $('#tool_group').val();
 							const url = new URL(window.location.href);
-							
+
 							// Update URL parameters.
 							url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
 							url.searchParams.set('tab', 'tools');
 							url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
-							
+
 							if (search) {
 								url.searchParams.set('tool_search', search);
 							} else {
 								url.searchParams.delete('tool_search');
 							}
-							
+
 							if (group) {
 								url.searchParams.set('tool_group', group);
 							} else {
 								url.searchParams.delete('tool_group');
 							}
-							
+
 							// Navigate to filtered URL.
 							window.location.href = url.toString();
 						});
-						
+
 						// Allow Enter key to trigger filter.
 						$('#tool_search, #tool_group').on('keypress', function(e) {
 							if (e.which === 13) {
@@ -1650,8 +1650,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 										<td>
 											<?php if ( $is_available ) : ?>
 												<label class="wp-mcp-ai-toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
-													<input type="checkbox" 
-															class="wp-mcp-ai-tool-toggle" 
+													<input type="checkbox"
+															class="wp-mcp-ai-tool-toggle"
 															data-tool-slug="<?php echo esc_attr( $slug ); ?>"
 															<?php checked( $is_enabled ); ?>
 															style="opacity: 0; width: 0; height: 0;">

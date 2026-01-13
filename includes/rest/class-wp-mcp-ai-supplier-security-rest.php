@@ -416,7 +416,7 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 	 */
 	public function record_incident( $request ) {
 		$supplier_id = sanitize_text_field( $request->get_param( 'id' ) );
-		
+
 		$incident = array(
 			'title'       => sanitize_text_field( $request->get_param( 'title' ) ),
 			'description' => sanitize_textarea_field( $request->get_param( 'description' ) ),

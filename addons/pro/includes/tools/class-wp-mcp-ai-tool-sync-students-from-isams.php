@@ -98,13 +98,13 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
 		}
-		
+
 		// Check if iSAMS is configured.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['isams_api_url'] ) || empty( $settings['isams_api_key'] ) ) {
 			return false;
 		}
-		
+
 		// Check if ECA management is enabled.
 		return ! empty( $settings['enable_eca_management'] );
 	}
@@ -116,15 +116,15 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 	 */
 	public static function get_unavailable_reason() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		
+
 		if ( empty( $settings['isams_api_url'] ) || empty( $settings['isams_api_key'] ) ) {
 			return __( 'iSAMS API credentials are not configured.', 'mcp-ai-wpoos-pro' );
 		}
-		
+
 		if ( empty( $settings['enable_eca_management'] ) ) {
 			return __( 'ECA Management must be enabled in plugin settings.', 'mcp-ai-wpoos-pro' );
 		}
-		
+
 		return __( 'Student sync tool is only available in the Pro version.', 'mcp-ai-wpoos-pro' );
 	}
 
@@ -200,7 +200,7 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function sync_single_student( $isams_tool, $arguments, $context, $update_existing ) {
 		$student_id = isset( $arguments['student_id'] ) ? sanitize_text_field( $arguments['student_id'] ) : '';
-		
+
 		if ( empty( $student_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_student_id',
@@ -253,7 +253,7 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function sync_year_group( $isams_tool, $arguments, $context, $page, $limit, $update_existing ) {
 		$year_group = isset( $arguments['year_group'] ) ? sanitize_text_field( $arguments['year_group'] ) : '';
-		
+
 		if ( empty( $year_group ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_year_group',
@@ -275,8 +275,8 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 			return $isams_result;
 		}
 
-		$students = isset( $isams_result['data'] ) && is_array( $isams_result['data'] ) 
-			? $isams_result['data'] 
+		$students = isset( $isams_result['data'] ) && is_array( $isams_result['data'] )
+			? $isams_result['data']
 			: array();
 
 		// Filter by year group.
@@ -315,8 +315,8 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 			return $isams_result;
 		}
 
-		$students = isset( $isams_result['data'] ) && is_array( $isams_result['data'] ) 
-			? $isams_result['data'] 
+		$students = isset( $isams_result['data'] ) && is_array( $isams_result['data'] )
+			? $isams_result['data']
 			: array();
 
 		return $this->process_students_batch( $students, $update_existing, 'all', $page, $limit );
@@ -341,7 +341,7 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 
 		foreach ( $students as $student_data ) {
 			$result = $this->create_or_update_student( $student_data, $update_existing );
-			
+
 			if ( is_wp_error( $result ) ) {
 				$errors[] = array(
 					'student_id' => isset( $student_data['id'] ) ? $student_data['id'] : 'unknown',
@@ -404,7 +404,7 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 
 		// Check if student already exists.
 		$existing_post_id = get_option( 'wp_mcp_ai_student_isams_mapping_' . $isams_id );
-		
+
 		if ( $existing_post_id && ! $update_existing ) {
 			return array(
 				'action'     => 'skipped',

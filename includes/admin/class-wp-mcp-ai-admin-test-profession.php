@@ -251,8 +251,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 										?>
 									</td>
 									<td>
-										<button 
-											type="button" 
+										<button
+											type="button"
 											class="button button-primary wp-mcp-ai-test-profession-btn"
 											data-profession-id="<?php echo esc_attr( $profession->ID ); ?>"
 											data-profession-title="<?php echo esc_attr( $profession->post_title ); ?>"

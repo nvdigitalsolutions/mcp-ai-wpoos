@@ -21,7 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
  * Graphic Editor Plus - Comprehensive graphic editing tool.
  *
  * Operations supported:
- * 
+ *
  * LOCAL OPERATIONS (Fast, no API cost):
  * - add_logo: Overlay logo with positioning and transparency
  * - resize_graphic: Smart resize with format conversion
@@ -68,9 +68,9 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 					'operation'         => array(
 						'type'        => 'string',
 						'description' => __( 'Operation to perform. LOCAL: add_logo, resize_graphic, expand_scene. AI-POWERED: ai_enhance, ai_style, ai_background, ai_retouch', 'mcp-ai-wpoos' ),
-						'enum'        => array( 
-							'add_logo', 
-							'resize_graphic', 
+						'enum'        => array(
+							'add_logo',
+							'resize_graphic',
 							'expand_scene',
 							'ai_enhance',
 							'ai_style',
@@ -384,7 +384,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		// Get image as base64.
 		$temp_file = wp_tempnam();
 		$save_result = $image_editor->save( $temp_file );
-		
+
 		if ( is_wp_error( $save_result ) ) {
 			return $save_result;
 		}
@@ -421,7 +421,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	protected function store_ai_image_result( $image, $file_name, $prompt, $user_id, $operation ) {
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 		$image_data = base64_decode( $image['image'] );
-		
+
 		if ( false === $image_data ) {
 			return new WP_Error( 'wp_mcp_ai_decode_failed', __( 'Failed to decode AI image data.', 'mcp-ai-wpoos' ) );
 		}
@@ -772,9 +772,9 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		if ( is_resource( $base_resource ) || ( is_object( $base_resource ) && get_class( $base_resource ) === 'GdImage' ) ) {
 			imagealphablending( $base_resource, true );
 			imagesavealpha( $base_resource, true );
-			
+
 			$result = imagecopy( $base_resource, $overlay_resource, $x, $y, 0, 0, $overlay_size['width'], $overlay_size['height'] );
-			
+
 			return $result ? true : new WP_Error( 'wp_mcp_ai_gd_error', __( 'GD overlay failed.', 'mcp-ai-wpoos' ) );
 		}
 

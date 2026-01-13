@@ -180,7 +180,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 							<p style="margin: 0;"><strong><?php esc_html_e( 'Current Configuration:', 'mcp-ai-wpoos' ); ?></strong></p>
 							<ul style="margin: 0.5rem 0 0 1.5rem;">
 								<li>
-									<strong>WP_MCP_AI_BASE_VERSION constant:</strong> 
+									<strong>WP_MCP_AI_BASE_VERSION constant:</strong>
 									<?php
 									if ( $constant_defined ) {
 										echo '<code>' . esc_html( $constant_value ? 'true' : 'false' ) . '</code>';
@@ -190,7 +190,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 									?>
 								</li>
 								<li>
-									<strong>Mode:</strong> 
+									<strong>Mode:</strong>
 									<?php echo wp_kses_post( $is_base_version ? '<strong style="color: #8b6c00;">Base Version</strong> (Elementor widgets disabled)' : '<strong style="color: #0a5f1a;">Full Version</strong> (Elementor widgets enabled)' ); ?>
 								</li>
 							</ul>

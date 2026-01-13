@@ -180,7 +180,7 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 		// Check year group eligibility.
 		$student_year_group = get_post_meta( $student_id, '_student_year_group', true );
 		$eca_year_groups = get_post_meta( $eca_id, '_eca_year_groups', true );
-		
+
 		if ( is_array( $eca_year_groups ) && ! empty( $eca_year_groups ) && $student_year_group ) {
 			if ( ! in_array( $student_year_group, $eca_year_groups, true ) ) {
 				return new WP_Error(
