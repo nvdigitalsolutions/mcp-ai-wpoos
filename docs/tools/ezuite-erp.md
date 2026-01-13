@@ -134,6 +134,11 @@ Pull all items from the ERP system using connection conn_abc123
 }
 ```
 
+**Important Notes**:
+- `api_body` is required for all API actions
+- Using `Location_Code: "ALL"` may return large datasets - use specific location codes when possible
+- For production use, consider filtering by specific locations to improve performance
+
 **Response Structure**:
 ```json
 {
@@ -433,7 +438,7 @@ This tool declares the following capability flags:
 
 ## Related Documentation
 
-- [EZuite ERP Official Documentation](https://api.ezuite.com/)
+- [EZuite ERP Official Documentation](https://api.ezuite.com/) (Note: Verify actual documentation URL with EZuite)
 - [Remote Site Manager Documentation](../guides/remote-site-manager.md)
 - [Tool Development Guide](../guides/tool-development.md)
 

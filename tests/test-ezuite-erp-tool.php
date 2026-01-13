@@ -41,15 +41,26 @@ class WP_MCP_AI_Tool_EZuite_ERP_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		// Check if WP_MCP_AI_PRO_PATH constant is defined.
+		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			// Fallback: calculate path from WP_MCP_AI_PATH.
+			if ( defined( 'WP_MCP_AI_PATH' ) ) {
+				define( 'WP_MCP_AI_PRO_PATH', WP_MCP_AI_PATH . '../addons/pro/' );
+			} else {
+				$this->markTestSkipped( 'WP_MCP_AI_PATH or WP_MCP_AI_PRO_PATH not defined.' );
+				return;
+			}
+		}
+
 		// Load the pro tool file.
-		$pro_tool_path = WP_MCP_AI_PATH . '../addons/pro/includes/tools/class-wp-mcp-ai-tool-ezuite-erp.php';
+		$pro_tool_path = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ezuite-erp.php';
 		if ( ! file_exists( $pro_tool_path ) ) {
 			$this->markTestSkipped( 'Pro addon not available. EZuite ERP tool is a pro tool.' );
 			return;
 		}
 
 		// Load remote site manager dependency.
-		$remote_manager_path = WP_MCP_AI_PATH . '../addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		$remote_manager_path = WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 		if ( file_exists( $remote_manager_path ) ) {
 			require_once $remote_manager_path;
 		}

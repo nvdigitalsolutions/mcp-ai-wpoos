@@ -396,11 +396,9 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( ! empty( $arguments['api_body'] ) && is_array( $arguments['api_body'] ) ) {
 			$api_body = $arguments['api_body'];
 		} else {
-			// Default body for item pull.
-			$api_body = array(
-				array(
-					'Location_Code' => 'ALL',
-				),
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_api_body',
+				__( 'API body parameter is required. For LX_ItemPull, provide Location_Code. Note: Using "ALL" may return large datasets.', 'wp-mcp-ai-pro' )
 			);
 		}
 
@@ -582,8 +580,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro feature.
-			'read-only',            // Can be read-only depending on API action.
-			'write',                // Can modify data via create/update actions.
+			'write',                // Can modify data (includes read operations).
 			'external-api',         // Makes external API calls.
 			'requires-capability',  // Requires 'edit_posts' capability.
 			'requires-credentials', // Requires API key configuration.
