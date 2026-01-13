@@ -223,7 +223,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 			// Load Quiz Research & Add page.
 			if ( is_admin() ) {
-				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-research-page.php';
+				// Check if not in base version.
+				$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+				if ( ! $is_base ) {
+					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-quiz-research-page.php';
+				}
 			}
 		}
 		// Load Project Management CPT registration (Pro feature).
