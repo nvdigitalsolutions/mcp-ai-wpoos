@@ -648,7 +648,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// Capture redirect to extract state parameter.
-		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
 		try {
@@ -658,7 +658,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		}
 
 		$redirect_url = $this->redirect_url;
-		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
 
 		// Verify redirect URL contains Google OAuth endpoint.
 		$this->assertStringContainsString( 'accounts.google.com/o/oauth2/v2/auth', $redirect_url, 'Should redirect to Google OAuth endpoint' );
@@ -725,7 +725,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$_GET['code'] = 'test_authorization_code';
 
 		// Capture redirect.
-		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
 		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
@@ -740,7 +740,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		}
 
 		$redirect_url = $this->redirect_url;
-		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
 		remove_filter( 'pre_http_request', array( $this, 'mock_gmail_token_exchange' ) );
 
 		// Verify redirect to success page.
@@ -776,7 +776,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$_GET['code'] = 'test_authorization_code';
 
 		// Capture redirect.
-		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
 		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
@@ -791,7 +791,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		}
 
 		$redirect_url = $this->redirect_url;
-		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
 
 		// Verify redirect to error page.
 		$this->assertStringContainsString( 'error=', $redirect_url, 'Should redirect to error page' );
@@ -810,8 +810,8 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 * Verifies proper error handling when Google doesn't return a code.
 	 */
 	public function test_gmail_oauth_callback_missing_code() {
-		// Create state parameter and transient.
-		$connection_id = 'conn_test123';
+		// Create state parameter and transient with non-existent connection ID.
+		$connection_id = 'conn_test_nonexistent_' . wp_generate_uuid4();
 		$state = wp_generate_uuid4();
 		$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
 		set_transient(
@@ -831,7 +831,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		// No code parameter.
 
 		// Capture redirect.
-		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
 		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
@@ -846,7 +846,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		}
 
 		$redirect_url = $this->redirect_url;
-		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
 
 		// Verify redirect to error page.
 		$this->assertStringContainsString( 'error=', $redirect_url, 'Should redirect to error page' );
@@ -885,7 +885,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// Capture redirect to extract state parameter.
-		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
 		try {
@@ -895,7 +895,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		}
 
 		$redirect_url = $this->redirect_url;
-		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
 
 		// Verify redirect URL contains Google OAuth endpoint.
 		$this->assertStringContainsString( 'accounts.google.com/o/oauth2/v2/auth', $redirect_url, 'Should redirect to Google OAuth endpoint' );
@@ -970,7 +970,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$_GET['code'] = 'test_authorization_code';
 
 		// Capture redirect.
-		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
 		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
@@ -985,7 +985,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		}
 
 		$redirect_url = $this->redirect_url;
-		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
 		remove_filter( 'pre_http_request', array( $this, 'mock_google_drive_token_exchange' ) );
 
 		// Verify redirect to success page.
@@ -1020,7 +1020,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$_GET['error'] = 'access_denied';
 
 		// Capture redirect.
-		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
 		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
@@ -1035,7 +1035,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		}
 
 		$redirect_url = $this->redirect_url;
-		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect' ) );
 
 		// Verify redirect to error page.
 		$this->assertStringContainsString( 'error=', $redirect_url, 'Should redirect to error page' );
@@ -1048,18 +1048,6 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Helper: Capture redirect URL for testing.
-	 *
-	 * @param string $location Redirect location.
-	 * @param int    $status   HTTP status code.
-	 * @return false Always returns false to prevent actual redirect.
-	 */
-	public function capture_redirect_url( $location, $status ) {
-		$this->redirect_url = $location;
-		return false; // Prevent actual redirect.
-	}
-
-	/**
 	 * Helper: Mock Gmail token exchange response.
 	 *
 	 * @param false|array|WP_Error $response    A preemptive return value of an HTTP request.
@@ -1068,22 +1056,9 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 * @return array Mock HTTP response.
 	 */
 	public function mock_gmail_token_exchange( $response, $parsed_args, $url ) {
+		// Mock token exchange endpoint (shared with Drive).
 		if ( 'https://oauth2.googleapis.com/token' === $url ) {
-			// Return mock token response.
-			return array(
-				'response' => array(
-					'code'    => 200,
-					'message' => 'OK',
-				),
-				'body'     => wp_json_encode(
-					array(
-						'access_token'  => 'test_access_token_abc',
-						'refresh_token' => 'test_refresh_token_123',
-						'expires_in'    => 3600,
-						'token_type'    => 'Bearer',
-					)
-				),
-			);
+			return $this->mock_google_token_response( 'test_refresh_token_123' );
 		}
 
 		if ( 'https://gmail.googleapis.com/gmail/v1/users/me/profile' === $url ) {
@@ -1113,22 +1088,9 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 * @return array Mock HTTP response.
 	 */
 	public function mock_google_drive_token_exchange( $response, $parsed_args, $url ) {
+		// Mock token exchange endpoint (shared with Gmail).
 		if ( 'https://oauth2.googleapis.com/token' === $url ) {
-			// Return mock token response.
-			return array(
-				'response' => array(
-					'code'    => 200,
-					'message' => 'OK',
-				),
-				'body'     => wp_json_encode(
-					array(
-						'access_token'  => 'test_drive_access_token_xyz',
-						'refresh_token' => 'test_drive_refresh_token_456',
-						'expires_in'    => 3600,
-						'token_type'    => 'Bearer',
-					)
-				),
-			);
+			return $this->mock_google_token_response( 'test_drive_refresh_token_456' );
 		}
 
 		if ( 'https://www.googleapis.com/oauth2/v2/userinfo' === $url ) {
@@ -1140,7 +1102,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 				),
 				'body'     => wp_json_encode(
 					array(
-						'email' => 'driveuser@gmail.com',
+						'email'          => 'driveuser@gmail.com',
 						'verified_email' => true,
 					)
 				),
@@ -1148,5 +1110,30 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Helper: Mock Google OAuth token endpoint response.
+	 *
+	 * Shared helper to reduce code duplication between Gmail and Drive mocks.
+	 *
+	 * @param string $refresh_token The refresh token to return.
+	 * @return array Mock HTTP response.
+	 */
+	private function mock_google_token_response( $refresh_token ) {
+		return array(
+			'response' => array(
+				'code'    => 200,
+				'message' => 'OK',
+			),
+			'body'     => wp_json_encode(
+				array(
+					'access_token'  => 'test_access_token',
+					'refresh_token' => $refresh_token,
+					'expires_in'    => 3600,
+					'token_type'    => 'Bearer',
+				)
+			),
+		);
 	}
 }
