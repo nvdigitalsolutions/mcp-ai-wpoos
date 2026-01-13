@@ -15,6 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load ECA CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-eca-cpt.php';
 
+// Load ECA Research & Add page.
+if ( is_admin() ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-eca-research-page.php';
+}
+
 /**
  * Enqueue ECA management admin styles.
  *

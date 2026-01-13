@@ -16,6 +16,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load Health and Wellness CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-cpt.php';
 
+// Load Policy Research & Add page.
+if ( is_admin() ) {
+	require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-policy-research-page.php';
+}
+
 /**
  * Enqueue health and wellness management admin styles.
  *
