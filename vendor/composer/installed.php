@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-flowhub-connection-error-again',
-        'version' => 'dev-copilot/fix-flowhub-connection-error-again',
-        'reference' => 'de24ca02a063c588988db9742974d94510881667',
+        'pretty_version' => 'dev-copilot/fix-ezuite-http-error',
+        'version' => 'dev-copilot/fix-ezuite-http-error',
+        'reference' => '530d5e0f4e231ea6e9abd40e2035d827ff0083aa',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-flowhub-connection-error-again',
-            'version' => 'dev-copilot/fix-flowhub-connection-error-again',
-            'reference' => 'de24ca02a063c588988db9742974d94510881667',
+            'pretty_version' => 'dev-copilot/fix-ezuite-http-error',
+            'version' => 'dev-copilot/fix-ezuite-http-error',
+            'reference' => '530d5e0f4e231ea6e9abd40e2035d827ff0083aa',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

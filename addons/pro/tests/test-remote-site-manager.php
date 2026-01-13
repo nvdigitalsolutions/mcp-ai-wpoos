@@ -420,4 +420,54 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$client = new WP_MCP_AI_PayHere_Client();
 		$this->assertInstanceOf( 'WP_MCP_AI_PayHere_Client', $client );
 	}
+
+	/**
+	 * Test that EZuite ERP connection type is handled correctly in test_connection.
+	 *
+	 * This test verifies that the test_connection method properly routes EZuite ERP
+	 * connections to the test_ezuite_connection handler instead of attempting to
+	 * test WordPress REST API endpoints.
+	 */
+	public function test_ezuite_connection_type_routing() {
+		// Create an EZuite ERP connection.
+		$connection_data = array(
+			'name'            => 'Test EZuite Connection',
+			'url'             => 'https://api.ezuite.com/api/External_Api/Action_Api/Invoke',
+			'connection_type' => 'ezuite_erp',
+			'auth_type'       => 'none',
+			'api_key'         => 'test-api-key-123',
+			'enabled'         => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Retrieve the connection.
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertIsArray( $connection );
+		$this->assertEquals( 'ezuite_erp', $connection['connection_type'] );
+
+		// Call test_connection with the EZuite connection.
+		// We expect it to fail with connection error (not 404) since we're using a fake API key.
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
+
+		// The result should be a WP_Error, but NOT a wp_mcp_ai_pro_invalid_connection error.
+		// It should be a connection failure or API error (which proves the routing worked).
+		$this->assertWPError( $result );
+		$this->assertNotEquals( 'wp_mcp_ai_pro_invalid_connection', $result->get_error_code() );
+
+		// The error should be one of the EZuite-specific errors.
+		$valid_error_codes = array(
+			'wp_mcp_ai_pro_connection_failed',
+			'wp_mcp_ai_pro_api_error',
+			'wp_mcp_ai_pro_invalid_response',
+			'wp_mcp_ai_pro_ezuite_error',
+		);
+
+		$this->assertContains(
+			$result->get_error_code(),
+			$valid_error_codes,
+			'Expected an EZuite-specific error code, got: ' . $result->get_error_code()
+		);
+	}
 }
