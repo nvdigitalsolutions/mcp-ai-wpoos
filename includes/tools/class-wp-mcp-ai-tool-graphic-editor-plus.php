@@ -692,10 +692,87 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	 * @return array|WP_Error Tool results or error.
 	 */
 	protected function execute_expand_scene( $arguments, $user_id ) {
-		return new WP_Error(
-			'wp_mcp_ai_not_implemented',
-			__( 'Canvas expansion is not yet implemented. Please use the AI operations (ai_enhance, ai_style, ai_background) for intelligent image transformations.', 'mcp-ai-wpoos' ),
-			array( 'status' => 501 )
+		// Load source image.
+		$image_editor = $this->load_source_image( $arguments, $user_id );
+		if ( is_wp_error( $image_editor ) ) {
+			return $image_editor;
+		}
+
+		$original_size = $image_editor->get_size();
+
+		// Get parameters.
+		$direction        = isset( $arguments['expand_direction'] ) ? sanitize_text_field( $arguments['expand_direction'] ) : 'all';
+		$pixels           = isset( $arguments['expand_pixels'] ) ? absint( $arguments['expand_pixels'] ) : 50;
+		$background_color = isset( $arguments['background_color'] ) ? sanitize_text_field( $arguments['background_color'] ) : 'transparent';
+
+		// Validate direction.
+		$valid_directions = array( 'all', 'top', 'bottom', 'left', 'right', 'horizontal', 'vertical' );
+		if ( ! in_array( $direction, $valid_directions, true ) ) {
+			if ( isset( $image_editor->temp_file ) ) {
+				$this->delete_temp_file( $image_editor->temp_file );
+			}
+			return new WP_Error( 'wp_mcp_ai_invalid_direction', __( 'Invalid expansion direction.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		// Calculate new dimensions and offsets.
+		$expansion = $this->calculate_expansion( $original_size, $direction, $pixels );
+
+		// Parse background color.
+		if ( 'transparent' !== $background_color ) {
+			$color = $this->parse_hex_color( $background_color );
+			if ( is_wp_error( $color ) ) {
+				if ( isset( $image_editor->temp_file ) ) {
+					$this->delete_temp_file( $image_editor->temp_file );
+				}
+				return $color;
+			}
+		} else {
+			$color = 'transparent';
+		}
+
+		// Perform canvas expansion.
+		$expand_result = $this->expand_canvas( $image_editor, $expansion, $color );
+
+		if ( is_wp_error( $expand_result ) ) {
+			if ( isset( $image_editor->temp_file ) ) {
+				$this->delete_temp_file( $image_editor->temp_file );
+			}
+			return $expand_result;
+		}
+
+		// Save as new attachment.
+		$storage = $this->save_as_attachment( $image_editor, $arguments, $user_id, 'expanded' );
+
+		if ( isset( $image_editor->temp_file ) ) {
+			$this->delete_temp_file( $image_editor->temp_file );
+		}
+
+		if ( is_wp_error( $storage ) ) {
+			return $storage;
+		}
+
+		return array(
+			'attachment_id'   => $storage['attachment_id'],
+			'url'             => $storage['url'],
+			'file_name'       => $storage['file_name'],
+			'mime_type'       => $storage['mime_type'],
+			'bytes'           => $storage['bytes'],
+			'title'           => $storage['title'],
+			'operation'       => 'expand_scene',
+			'direction'       => $direction,
+			'pixels'          => $pixels,
+			'original_width'  => $original_size['width'],
+			'original_height' => $original_size['height'],
+			'new_width'       => $expansion['new_width'],
+			'new_height'      => $expansion['new_height'],
+			'text'            => sprintf(
+				/* translators: 1: direction, 2: pixels, 3: original dimensions, 4: new dimensions */
+				__( 'Successfully expanded canvas %1$s by %2$d pixels from %3$s to %4$s.', 'mcp-ai-wpoos' ),
+				$direction,
+				$pixels,
+				$original_size['width'] . 'x' . $original_size['height'],
+				$expansion['new_width'] . 'x' . $expansion['new_height']
+			),
 		);
 	}
 
@@ -737,6 +814,193 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		$coords['y'] = max( 0, $coords['y'] );
 
 		return $coords;
+	}
+
+	/**
+	 * Calculate expansion dimensions and offsets.
+	 *
+	 * @param array  $original_size Original image size with width and height.
+	 * @param string $direction     Expansion direction.
+	 * @param int    $pixels        Pixels to expand.
+	 * @return array Expansion data with new_width, new_height, offset_x, offset_y.
+	 */
+	protected function calculate_expansion( $original_size, $direction, $pixels ) {
+		$new_width  = $original_size['width'];
+		$new_height = $original_size['height'];
+		$offset_x   = 0;
+		$offset_y   = 0;
+
+		switch ( $direction ) {
+			case 'all':
+				$new_width  += $pixels * 2;
+				$new_height += $pixels * 2;
+				$offset_x    = $pixels;
+				$offset_y    = $pixels;
+				break;
+			case 'top':
+				$new_height += $pixels;
+				$offset_y    = $pixels;
+				break;
+			case 'bottom':
+				$new_height += $pixels;
+				break;
+			case 'left':
+				$new_width += $pixels;
+				$offset_x   = $pixels;
+				break;
+			case 'right':
+				$new_width += $pixels;
+				break;
+			case 'horizontal':
+				$new_width += $pixels * 2;
+				$offset_x   = $pixels;
+				break;
+			case 'vertical':
+				$new_height += $pixels * 2;
+				$offset_y    = $pixels;
+				break;
+		}
+
+		return array(
+			'new_width'  => $new_width,
+			'new_height' => $new_height,
+			'offset_x'   => $offset_x,
+			'offset_y'   => $offset_y,
+		);
+	}
+
+	/**
+	 * Parse hex color string into RGB components.
+	 *
+	 * @param string $hex_color Hex color string (with or without #).
+	 * @return array|WP_Error RGB array with r, g, b keys or error.
+	 */
+	protected function parse_hex_color( $hex_color ) {
+		// Remove # if present.
+		$hex = ltrim( $hex_color, '#' );
+
+		// Validate hex string.
+		if ( ! preg_match( '/^[0-9A-Fa-f]{3}$|^[0-9A-Fa-f]{6}$/', $hex ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_color', __( 'Invalid hex color format. Use #RRGGBB or #RGB.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		// Convert 3-digit hex to 6-digit.
+		if ( 3 === strlen( $hex ) ) {
+			$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+		}
+
+		// Parse RGB components.
+		$r = hexdec( substr( $hex, 0, 2 ) );
+		$g = hexdec( substr( $hex, 2, 2 ) );
+		$b = hexdec( substr( $hex, 4, 2 ) );
+
+		return array(
+			'r' => $r,
+			'g' => $g,
+			'b' => $b,
+		);
+	}
+
+	/**
+	 * Expand canvas of an image.
+	 *
+	 * @param WP_Image_Editor $image_editor Image editor instance.
+	 * @param array           $expansion    Expansion data from calculate_expansion().
+	 * @param array|string    $color        RGB color array or 'transparent'.
+	 * @return true|WP_Error True on success, error on failure.
+	 */
+	protected function expand_canvas( $image_editor, $expansion, $color ) {
+		$image_resource = $image_editor->get_image();
+
+		if ( is_wp_error( $image_resource ) ) {
+			return new WP_Error( 'wp_mcp_ai_resource_error', __( 'Failed to get image resource.', 'mcp-ai-wpoos' ) );
+		}
+
+		$new_width  = $expansion['new_width'];
+		$new_height = $expansion['new_height'];
+		$offset_x   = $expansion['offset_x'];
+		$offset_y   = $expansion['offset_y'];
+
+		// Handle ImageMagick.
+		if ( $image_resource instanceof Imagick ) {
+			try {
+				// Set background color.
+				if ( 'transparent' === $color ) {
+					$background = new ImagickPixel( 'transparent' );
+				} else {
+					$background = new ImagickPixel( sprintf( 'rgb(%d,%d,%d)', $color['r'], $color['g'], $color['b'] ) );
+				}
+
+				// Extend the image (canvas expansion).
+				$image_resource->extentImage( $new_width, $new_height, -$offset_x, -$offset_y );
+				$image_resource->setImageBackgroundColor( $background );
+
+				return true;
+			} catch ( Exception $e ) {
+				return new WP_Error( 'wp_mcp_ai_imagick_error', $e->getMessage() );
+			}
+		}
+
+		// Handle GD.
+		if ( is_resource( $image_resource ) || ( is_object( $image_resource ) && get_class( $image_resource ) === 'GdImage' ) ) {
+			// Create new canvas.
+			$new_canvas = imagecreatetruecolor( $new_width, $new_height );
+
+			// Set up transparency or background color.
+			if ( 'transparent' === $color ) {
+				// Enable alpha blending.
+				imagealphablending( $new_canvas, false );
+				imagesavealpha( $new_canvas, true );
+
+				// Fill with transparent color.
+				$transparent = imagecolorallocatealpha( $new_canvas, 0, 0, 0, 127 );
+				imagefill( $new_canvas, 0, 0, $transparent );
+			} else {
+				// Fill with solid color.
+				$bg_color = imagecolorallocate( $new_canvas, $color['r'], $color['g'], $color['b'] );
+				imagefill( $new_canvas, 0, 0, $bg_color );
+			}
+
+			// Enable alpha blending for copying.
+			imagealphablending( $new_canvas, true );
+
+			// Copy original image onto new canvas.
+			$original_size = $image_editor->get_size();
+			$result        = imagecopy( $new_canvas, $image_resource, $offset_x, $offset_y, 0, 0, $original_size['width'], $original_size['height'] );
+
+			if ( ! $result ) {
+				imagedestroy( $new_canvas );
+				return new WP_Error( 'wp_mcp_ai_gd_error', __( 'Failed to expand canvas with GD.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Replace the image resource in the editor.
+			// For GD editors, we need to use reflection to set the resource.
+			if ( method_exists( $image_editor, 'update_image' ) ) {
+				$image_editor->update_image( $new_canvas );
+			} else {
+				// Fallback: Destroy old resource and set new one via reflection.
+				imagedestroy( $image_resource );
+				$reflection = new ReflectionClass( $image_editor );
+				$property   = $reflection->getProperty( 'image' );
+				$property->setAccessible( true );
+				$property->setValue( $image_editor, $new_canvas );
+
+				// Update size property.
+				$size_property = $reflection->getProperty( 'size' );
+				$size_property->setAccessible( true );
+				$size_property->setValue(
+					$image_editor,
+					array(
+						'width'  => $new_width,
+						'height' => $new_height,
+					)
+				);
+			}
+
+			return true;
+		}
+
+		return new WP_Error( 'wp_mcp_ai_unsupported', __( 'Unsupported image editor type for canvas expansion.', 'mcp-ai-wpoos' ) );
 	}
 
 	/**
