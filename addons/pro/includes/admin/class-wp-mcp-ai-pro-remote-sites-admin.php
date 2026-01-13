@@ -340,6 +340,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'payhere'     => __( 'PayHere', 'wp-mcp-ai-pro' ),
 									'quickbooks'  => __( 'QuickBooks', 'wp-mcp-ai-pro' ),
 									'ezuite_erp'  => __( 'EZuite ERP', 'wp-mcp-ai-pro' ),
+									'gmail'       => __( 'Gmail', 'wp-mcp-ai-pro' ),
 								);
 								
 								$type_colors = array(
@@ -350,6 +351,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'payhere'     => '#f0b849',
 									'quickbooks'  => '#2c9f47',
 									'ezuite_erp'  => '#8c50a7',
+									'gmail'       => '#ea4335', // Google red color
 								);
 								
 								$type_label = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -585,6 +587,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="ezuite_erp" <?php selected( $connection_type, 'ezuite_erp' ); ?>>
 								<?php esc_html_e( 'EZuite ERP (Inventory)', 'wp-mcp-ai-pro' ); ?>
 							</option>
+							<option value="gmail" <?php selected( $connection_type, 'gmail' ); ?>>
+								<?php esc_html_e( 'Gmail (Email Service)', 'wp-mcp-ai-pro' ); ?>
+							</option>
 						</select>
 						<p class="description">
 							<?php esc_html_e( 'Select the type of connection. Each type has specific authentication requirements and field configurations.', 'wp-mcp-ai-pro' ); ?>
@@ -811,6 +816,59 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- Type-specific fields for Gmail -->
+				<tr class="gmail-only-field" style="display: none;">
+					<th scope="row">
+						<label for="gmail_client_id"><?php esc_html_e( 'OAuth Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="gmail_client_id" id="gmail_client_id" class="regular-text" value="" autocomplete="off">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client ID.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="gmail-only-field" style="display: none;">
+					<th scope="row">
+						<label for="gmail_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="gmail_client_secret" id="gmail_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="gmail-only-field" style="display: none;">
+					<th scope="row">
+						<label for="gmail_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<textarea name="gmail_refresh_token" id="gmail_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing refresh token. This is typically obtained through the OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Optional: Pre-existing OAuth refresh token. If not provided, tools will need to initiate OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="gmail-only-field" style="display: none;">
+					<th scope="row">
+						<label for="gmail_user_email"><?php esc_html_e( 'Gmail User Email (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="email" name="gmail_user_email" id="gmail_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="user@gmail.com">
+						<p class="description"><?php esc_html_e( 'The Gmail address associated with this connection for reference.', 'wp-mcp-ai-pro' ); ?></p>
+					</td>
+				</tr>
+
 				<tr class="wordpress-only-field">
 					<th scope="row"><?php esc_html_e( 'WooCommerce', 'wp-mcp-ai-pro' ); ?></th>
 					<td>
@@ -898,6 +956,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var payhereFields = document.querySelectorAll('.payhere-only-field');
 			var quickbooksFields = document.querySelectorAll('.quickbooks-only-field');
 			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
+			var gmailFields = document.querySelectorAll('.gmail-only-field');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
 			var urlDescription = document.getElementById('url-description');
@@ -923,6 +982,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			ezuiteFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			gmailFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -971,6 +1033,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 				// EZuite ERP uses custom header authentication
 				authTypeSelect.value = 'custom_header';
+			} else if (connectionType === 'gmail') {
+				gmailFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Gmail uses OAuth, set URL to Google's Gmail API
+				urlField.value = 'https://gmail.googleapis.com';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				// Gmail doesn't use the standard auth_type, it has its own OAuth flow
+				authTypeSelect.value = 'none';
 			}
 		}
 
