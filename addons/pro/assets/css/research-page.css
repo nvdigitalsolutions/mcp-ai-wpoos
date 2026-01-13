@@ -1,0 +1,278 @@
+/**
+ * Research Page Styles
+ *
+ * Styles for the CPT Research & Add pages with chat interface.
+ *
+ * @package WP_MCP_AI_Pro
+ */
+
+/* Research Page Container */
+.wp-mcp-ai-research-page {
+	margin-top: 20px;
+}
+
+.wp-mcp-ai-research-container {
+	display: flex;
+	gap: 30px;
+	margin-top: 20px;
+}
+
+/* Sidebar */
+.wp-mcp-ai-research-sidebar {
+	flex: 0 0 300px;
+	min-width: 300px;
+}
+
+.wp-mcp-ai-research-intro,
+.wp-mcp-ai-research-tips,
+.wp-mcp-ai-research-examples,
+.wp-mcp-ai-research-actions {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	padding: 20px;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.wp-mcp-ai-research-intro h2,
+.wp-mcp-ai-research-tips h3,
+.wp-mcp-ai-research-examples h3,
+.wp-mcp-ai-research-actions h3 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	font-size: 14px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-research-intro ol {
+	margin: 0;
+	padding-left: 20px;
+	color: #50575e;
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+.wp-mcp-ai-research-intro ol li {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-research-tips ul {
+	margin: 0;
+	padding-left: 0;
+	list-style: none;
+	color: #50575e;
+	font-size: 13px;
+}
+
+.wp-mcp-ai-research-tips ul li {
+	margin-bottom: 12px;
+	padding-left: 20px;
+	position: relative;
+}
+
+.wp-mcp-ai-research-tips ul li::before {
+	content: "•";
+	position: absolute;
+	left: 0;
+	color: #2271b1;
+	font-weight: bold;
+	font-size: 16px;
+}
+
+.wp-mcp-ai-research-tips ul li strong {
+	color: #1d2327;
+}
+
+/* Example Queries */
+.wp-mcp-ai-example-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.wp-mcp-ai-example-list li {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-example-query {
+	width: 100%;
+	text-align: left;
+	white-space: normal;
+	height: auto;
+	padding: 10px 12px;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.wp-mcp-ai-example-query:hover {
+	background: #f6f7f7;
+	border-color: #2271b1;
+	color: #2271b1;
+}
+
+/* Main Content Area */
+.wp-mcp-ai-research-main {
+	flex: 1;
+	min-width: 0;
+}
+
+.wp-mcp-ai-research-chat {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	padding: 20px;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+	margin-bottom: 20px;
+}
+
+/* Research Data Preview */
+.wp-mcp-ai-research-create-section {
+	background: #f0f6fc;
+	border: 2px solid #2271b1;
+	border-radius: 4px;
+	padding: 20px;
+	margin-top: 20px;
+}
+
+.wp-mcp-ai-research-data-preview {
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-research-data-preview h3 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	color: #1d2327;
+}
+
+#wp-mcp-ai-research-data-content {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	padding: 15px;
+	max-height: 400px;
+	overflow-y: auto;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+#wp-mcp-ai-research-data-content h4 {
+	margin-top: 0;
+	margin-bottom: 10px;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+#wp-mcp-ai-research-data-content p {
+	margin-bottom: 10px;
+}
+
+#wp-mcp-ai-research-data-content strong {
+	color: #1d2327;
+	font-weight: 600;
+}
+
+/* Create Actions */
+.wp-mcp-ai-research-create-actions {
+	text-align: center;
+}
+
+.wp-mcp-ai-create-place-btn,
+.wp-mcp-ai-create-quiz-btn {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-research-create-actions .description {
+	margin-top: 10px;
+	color: #646970;
+	font-style: italic;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 1280px) {
+	.wp-mcp-ai-research-container {
+		flex-direction: column;
+	}
+
+	.wp-mcp-ai-research-sidebar {
+		flex: 1;
+		min-width: 100%;
+	}
+}
+
+/* Quick Actions Buttons */
+.wp-mcp-ai-research-actions p {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-research-actions .button {
+	width: 100%;
+}
+
+/* Loading States */
+.wp-mcp-ai-research-chat.loading {
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.wp-mcp-ai-research-chat.loading::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 24px;
+	height: 24px;
+	margin: -12px 0 0 -12px;
+	border: 3px solid #f3f3f3;
+	border-top: 3px solid #2271b1;
+	border-radius: 50%;
+	animation: wp-mcp-ai-spin 1s linear infinite;
+}
+
+@keyframes wp-mcp-ai-spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+/* Success Messages */
+.wp-mcp-ai-success-message {
+	background: #d7f1de;
+	border-left: 4px solid #00a32a;
+	padding: 12px;
+	margin: 15px 0;
+	border-radius: 2px;
+}
+
+.wp-mcp-ai-success-message p {
+	margin: 0;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+/* Error Messages */
+.wp-mcp-ai-error-message {
+	background: #fcf0f1;
+	border-left: 4px solid #d63638;
+	padding: 12px;
+	margin: 15px 0;
+	border-radius: 2px;
+}
+
+.wp-mcp-ai-error-message p {
+	margin: 0;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+/* Button Enhancements */
+.wp-mcp-ai-create-place-btn .dashicons,
+.wp-mcp-ai-create-quiz-btn .dashicons {
+	line-height: inherit;
+}
+
+/* Ensure chat interface fits properly */
+.wp-mcp-ai-research-chat .wp-mcp-ai-chat-container {
+	max-width: 100%;
+}
