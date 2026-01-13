@@ -145,6 +145,35 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		}
 
 		/**
+		 * Sanitize error response body for safe inclusion in error data.
+		 * Truncates large bodies and extracts useful information from HTML.
+		 *
+		 * @param string $body Raw response body.
+		 * @return string Sanitized and truncated body.
+		 */
+		protected function sanitize_error_body( $body ) {
+			// Truncate very large bodies to prevent memory issues.
+			$max_length = 500;
+			if ( strlen( $body ) > $max_length ) {
+				$body = substr( $body, 0, $max_length ) . '... [truncated]';
+			}
+
+			// If it looks like HTML, try to extract the error message.
+			if ( preg_match( '/<title>(.*?)<\/title>/i', $body, $matches ) ) {
+				$title = sanitize_text_field( $matches[1] );
+				// Also extract h1 if present.
+				if ( preg_match( '/<h1[^>]*>(.*?)<\/h1>/i', $body, $h1_matches ) ) {
+					$h1 = sanitize_text_field( $h1_matches[1] );
+					return sprintf( '%s: %s', $title, $h1 );
+				}
+				return $title;
+			}
+
+			// Otherwise, just strip tags and sanitize.
+			return sanitize_text_field( wp_strip_all_tags( $body ) );
+		}
+
+		/**
 		 * Make an authenticated API request to Flowhub.
 		 * Uses header-based authentication with clientId and key headers.
 		 *
@@ -250,12 +279,17 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 
 				// If JSON parsing failed, use the raw body for logging.
 				if ( JSON_ERROR_NONE !== json_last_error() ) {
+					// Truncate and sanitize body for safe inclusion in error data.
+					// HTML error pages can be large and contain sensitive information.
+					$sanitized_body = $this->sanitize_error_body( $body );
+
 					WP_MCP_AI_Logger::log_error(
 						'Flowhub returned non-JSON error response.',
 						array(
-							'code'     => $code,
-							'endpoint' => $endpoint,
-							'body'     => $body,
+							'code'          => $code,
+							'endpoint'      => $endpoint,
+							'body'          => $sanitized_body,
+							'content_type'  => wp_remote_retrieve_header( $response, 'content-type' ),
 						)
 					);
 
@@ -268,8 +302,9 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 
 					// Add specific guidance for common error codes.
 					$error_data = array(
-						'status' => $code,
-						'body'   => $body,
+						'status'       => $code,
+						'body'         => $sanitized_body,
+						'content_type' => wp_remote_retrieve_header( $response, 'content-type' ),
 					);
 
 					// Add actionable error messages for specific HTTP codes.
