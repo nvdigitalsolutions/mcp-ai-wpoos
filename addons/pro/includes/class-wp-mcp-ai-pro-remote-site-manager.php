@@ -310,6 +310,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return $validation;
 		}
 
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
+
+		// Handle Flowhub connections separately.
+		if ( 'flowhub' === $connection_type ) {
+			return self::test_flowhub_connection( $connection );
+		}
+
 		// Test basic WordPress REST API access.
 		$response = self::make_request( $connection, 'wp/v2/types' );
 
@@ -340,6 +347,45 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( ! is_wp_error( $site_info ) && isset( $site_info['name'] ) ) {
 			$results['site_name'] = $site_info['name'];
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Test Flowhub API connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_flowhub_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Flowhub_Client( $connection_id );
+
+		// Test with a simple inventory request.
+		$response = $client->get_inventory( array( 'limit' => 1 ) );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$results = array(
+			'success' => true,
+			'flowhub' => true,
+			'message' => __( 'Flowhub connection successful. API credentials verified.', 'wp-mcp-ai-pro' ),
+		);
+
+		// Add inventory count if available.
+		if ( isset( $response['total'] ) ) {
+			$results['inventory_count'] = absint( $response['total'] );
+			/* translators: %d: number of inventory items */
+			$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'wp-mcp-ai-pro' ), $results['inventory_count'] );
 		}
 
 		return $results;
@@ -671,10 +717,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		if ( 'flowhub' === $connection_type ) {
-			if ( empty( $connection['api_key'] ) || empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) || empty( $connection['location_id'] ) ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['client_id'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_flowhub_credentials',
-					__( 'API key, client ID, client secret, and location ID are required for Flowhub connections.', 'wp-mcp-ai-pro' )
+					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'wp-mcp-ai-pro' )
 				);
 			}
 		}

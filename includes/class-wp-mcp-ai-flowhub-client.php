@@ -14,11 +14,12 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 	 * Provides a wrapper around Flowhub API.
 	 * Maintains separation of concerns: this class handles ONLY API communication.
 	 * WordPress integration and capability checks are handled by tool classes.
+	 *
+	 * Flowhub API uses header-based authentication with clientId and key headers.
+	 * See: https://flowhub.stoplight.io/docs/public-developer-portal/
 	 */
 	class WP_MCP_AI_Flowhub_Client {
-		const AUTH_ENDPOINT = 'https://flowhub.auth0.com/oauth/token';
 		const API_ENDPOINT  = 'https://api.flowhub.co';
-		const INVENTORY_ENDPOINT = 'https://api.flowhub.co/v0/inventory';
 
 		/**
 		 * Connection ID for Remote Sites connections.
@@ -37,12 +38,12 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		}
 
 		/**
-		 * Retrieve the configured API Key.
+		 * Retrieve the configured API Key (referred to as "key" header in Flowhub API).
 		 *
 		 * @param string|null $connection_id Optional connection ID to get credentials from.
 		 * @return string
 		 */
-		public function get_api_key( $connection_id = null ) {
+		public function get_key( $connection_id = null ) {
 			// Use instance connection_id if not provided.
 			if ( null === $connection_id ) {
 				$connection_id = $this->connection_id;
@@ -63,7 +64,17 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		}
 
 		/**
-		 * Retrieve the configured Client ID.
+		 * Legacy method for backwards compatibility.
+		 *
+		 * @param string|null $connection_id Optional connection ID to get credentials from.
+		 * @return string
+		 */
+		public function get_api_key( $connection_id = null ) {
+			return $this->get_key( $connection_id );
+		}
+
+		/**
+		 * Retrieve the configured Client ID (referred to as "clientId" header in Flowhub API).
 		 *
 		 * @param string|null $connection_id Optional connection ID to get credentials from.
 		 * @return string
@@ -86,32 +97,6 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['flowhub_client_id'] ) ? $settings['flowhub_client_id'] : '';
-		}
-
-		/**
-		 * Retrieve the configured Client Secret.
-		 *
-		 * @param string|null $connection_id Optional connection ID to get credentials from.
-		 * @return string
-		 */
-		public function get_client_secret( $connection_id = null ) {
-			// Use instance connection_id if not provided.
-			if ( null === $connection_id ) {
-				$connection_id = $this->connection_id;
-			}
-
-			// Try to get from connection first.
-			if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
-				if ( $connection && ! empty( $connection['client_secret'] ) ) {
-					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
-				}
-			}
-
-			// Fallback to settings.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-
-			return isset( $settings['flowhub_client_secret'] ) ? $settings['flowhub_client_secret'] : '';
 		}
 
 		/**
@@ -150,133 +135,30 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		}
 
 		/**
-		 * Request an OAuth2 access token from Flowhub.
-		 *
-		 * @param array $options Optional timeout and other settings.
-		 * @return string|WP_Error Access token string or error.
-		 */
-		protected function get_access_token( array $options = array() ) {
-			$client_id     = $this->get_client_id();
-			$client_secret = $this->get_client_secret();
-
-			if ( empty( $client_id ) || empty( $client_secret ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_flowhub_credentials',
-					__( 'Flowhub Client ID and Client Secret must be configured.', 'mcp-ai-wpoos' ),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'configure_flowhub_credentials' => __( 'Add Flowhub credentials in the NV oOS settings.', 'mcp-ai-wpoos' ),
-						),
-					)
-				);
-			}
-
-			$url = self::AUTH_ENDPOINT;
-
-			$request_args = array(
-				'timeout' => isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 30,
-				'headers' => array(
-					'Content-Type' => 'application/json',
-				),
-				'body'    => wp_json_encode(
-					array(
-						'client_id'     => $client_id,
-						'client_secret' => $client_secret,
-						'grant_type'    => 'client_credentials',
-						'audience'      => 'https://api.flowhub.co',
-					)
-				),
-			);
-
-			WP_MCP_AI_Logger::log_event(
-				'flowhub_token_request',
-				'Requesting access token from Flowhub.'
-			);
-
-			$response = wp_remote_post( $url, $request_args );
-
-			if ( is_wp_error( $response ) ) {
-				WP_MCP_AI_Logger::log_error( 'Flowhub token request failed.', array( 'error' => $response->get_error_message() ) );
-
-				return WP_MCP_AI_HTTP::prepare_transport_error(
-					$response,
-					'wp_mcp_ai_http_error',
-					__( 'The Flowhub authentication request failed to complete.', 'mcp-ai-wpoos' ),
-					__( 'Flowhub', 'mcp-ai-wpoos' )
-				);
-			}
-
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
-			$decoded = json_decode( $body, true );
-
-			if ( JSON_ERROR_NONE !== json_last_error() ) {
-				WP_MCP_AI_Logger::log_error( 'Failed to decode Flowhub token response.', array( 'body' => $body ) );
-
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Flowhub returned malformed JSON.', 'mcp-ai-wpoos' ) );
-			}
-
-			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error_description'] ) ? $decoded['error_description'] : __( 'Unexpected response from Flowhub.', 'mcp-ai-wpoos' );
-
-				WP_MCP_AI_Logger::log_error(
-					'Flowhub returned an error response for token request.',
-					array(
-						'code' => $code,
-						'body' => $decoded,
-					)
-				);
-
-				return new WP_Error(
-					'wp_mcp_ai_auth_error',
-					$error_message,
-					array(
-						'status' => $code,
-						'body'   => $decoded,
-					)
-				);
-			}
-
-			if ( ! isset( $decoded['access_token'] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_token',
-					__( 'No access token in Flowhub response.', 'mcp-ai-wpoos' ),
-					array( 'body' => $decoded )
-				);
-			}
-
-			WP_MCP_AI_Logger::log_event( 'flowhub_token_response', 'Flowhub access token obtained successfully.' );
-
-			return $decoded['access_token'];
-		}
-
-		/**
 		 * Make an authenticated API request to Flowhub.
+		 * Uses header-based authentication with clientId and key headers.
 		 *
-		 * @param string $endpoint API endpoint path (e.g., '/inventory').
+		 * @param string $endpoint API endpoint path (e.g., '/v0/inventoryNonZero').
 		 * @param string $method   HTTP method (GET, POST, PUT, DELETE).
 		 * @param array  $data     Request data for POST/PUT requests.
 		 * @param array  $options  Additional options (timeout, query params).
 		 * @return array|WP_Error API response or error.
 		 */
 		public function make_request( $endpoint, $method = 'GET', $data = array(), $options = array() ) {
-			$api_key     = $this->get_api_key();
-			$location_id = $this->get_location_id();
+			$client_id = $this->get_client_id();
+			$key       = $this->get_key();
 
-			if ( empty( $api_key ) || empty( $location_id ) ) {
+			if ( empty( $client_id ) || empty( $key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_flowhub_config',
-					__( 'Flowhub API Key and Location ID must be configured.', 'mcp-ai-wpoos' ),
-					array( 'status' => 400 )
+					__( 'Flowhub Client ID and API Key must be configured.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_flowhub_credentials' => __( 'Add Flowhub credentials in the NV oOS settings or Remote Sites.', 'mcp-ai-wpoos' ),
+						),
+					)
 				);
-			}
-
-			// Get access token.
-			$access_token = $this->get_access_token( $options );
-
-			if ( is_wp_error( $access_token ) ) {
-				return $access_token;
 			}
 
 			$url = trailingslashit( $this->get_api_endpoint() ) . ltrim( $endpoint, '/' );
@@ -290,10 +172,10 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 				'timeout' => isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 30,
 				'method'  => strtoupper( $method ),
 				'headers' => array(
-					'Authorization' => 'Bearer ' . $access_token,
-					'X-API-Key'     => $api_key,
-					'X-Location-ID' => $location_id,
-					'Content-Type'  => 'application/json',
+					'clientId'     => $client_id,
+					'key'          => $key,
+					'Accept'       => 'application/json',
+					'Content-Type' => 'application/json',
 				),
 			);
 
@@ -379,8 +261,9 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 				$query_params['room_id'] = sanitize_text_field( $options['room_id'] );
 			}
 
+			// Use the non-zero inventory endpoint as per Flowhub API docs.
 			return $this->make_request(
-				'/inventory',
+				'/v0/inventoryNonZero',
 				'GET',
 				array(),
 				array( 'query' => $query_params )
