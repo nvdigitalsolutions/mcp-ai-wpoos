@@ -568,4 +568,57 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertNotWPError( $result, 'Should pass validation with required fields' );
 	}
+
+	/**
+	 * Test that Google Drive connection fields populate correctly when editing.
+	 *
+	 * This test verifies that the fix for displaying saved values works correctly.
+	 */
+	public function test_google_drive_connection_fields_populate_on_edit() {
+		// Create a Google Drive connection with all fields filled.
+		$connection_data = array(
+			'name'             => 'My Google Drive',
+			'url'              => 'https://www.googleapis.com/drive/v3',
+			'connection_type'  => 'google_drive',
+			'auth_type'        => 'none',
+			'client_id'        => 'test_client_id_abc123',
+			'client_secret'    => 'test_client_secret_xyz789',
+			'refresh_token'    => 'test_refresh_token_def456',
+			'folder_id'        => '1a2b3c4d5e6f7g8h',
+			'user_email'       => 'testuser@gmail.com',
+			'enabled'          => true,
+		);
+
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Simulate editing the connection.
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+		$_GET['edit'] = $connection_id;
+
+		// Capture the edit form output.
+		ob_start();
+		$admin->render_admin_page();
+		$output = ob_get_clean();
+
+		// Verify that the client_id field is populated.
+		$this->assertStringContainsString( 'value="test_client_id_abc123"', $output, 'Client ID should be populated in the form' );
+
+		// Verify that client_secret shows "is set" indicator (since it's encrypted and not displayed).
+		$this->assertStringContainsString( 'Client secret is set', $output, 'Client secret indicator should show it is set' );
+
+		// Verify that refresh_token shows "is set" indicator.
+		$this->assertStringContainsString( 'Refresh token is set', $output, 'Refresh token indicator should show it is set' );
+
+		// Verify that folder_id field is populated.
+		$this->assertStringContainsString( 'value="1a2b3c4d5e6f7g8h"', $output, 'Folder ID should be populated in the form' );
+
+		// Verify that user_email field is populated.
+		$this->assertStringContainsString( 'value="testuser@gmail.com"', $output, 'User email should be populated in the form' );
+
+		// Clean up.
+		unset( $_GET['page'] );
+		unset( $_GET['edit'] );
+	}
 }
