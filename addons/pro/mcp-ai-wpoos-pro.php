@@ -406,6 +406,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Policy'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-policy.php',
 				'WP_MCP_AI_Tool_Update_Policy'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-policy.php',
 				'WP_MCP_AI_Tool_Delete_Policy'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-policy.php',
+				'WP_MCP_AI_Tool_Create_Medical_Record'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-medical-record.php',
+				'WP_MCP_AI_Tool_List_Medical_Records'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-medical-records.php',
+				'WP_MCP_AI_Tool_Get_Medical_Record'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-medical-record.php',
+				'WP_MCP_AI_Tool_Update_Medical_Record'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-medical-record.php',
+				'WP_MCP_AI_Tool_Delete_Medical_Record'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-medical-record.php',
 				'WP_MCP_AI_Tool_Search_Policies'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-policies.php',
 				'WP_MCP_AI_Tool_Search_Prescriptions'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-prescriptions.php',
 				'WP_MCP_AI_Tool_Search_Medical_Records'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-medical-records.php',
@@ -718,6 +723,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_policy']                 = 'wordpress-core';
 			$pro_tools['update_policy']              = 'wordpress-core';
 			$pro_tools['delete_policy']              = 'wordpress-core';
+			$pro_tools['create_medical_record']      = 'wordpress-core';
+			$pro_tools['list_medical_records']       = 'wordpress-core';
+			$pro_tools['get_medical_record']         = 'wordpress-core';
+			$pro_tools['update_medical_record']      = 'wordpress-core';
+			$pro_tools['delete_medical_record']      = 'wordpress-core';
 			$pro_tools['search_policies']            = 'wordpress-core';
 			$pro_tools['search_prescriptions']       = 'wordpress-core';
 			$pro_tools['search_medical_records']     = 'wordpress-core';
