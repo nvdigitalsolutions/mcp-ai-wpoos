@@ -242,13 +242,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
-				// PayHere Settings.
+				// PayHere Settings - DEPRECATED: Use Remote Sites instead.
 				'payhere_app_id'                    => array(
 					'type'         => 'text',
-					'label'        => __( 'PayHere App ID', 'mcp-ai-wpoos' ),
+					'label'        => __( 'PayHere App ID (Deprecated)', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: PayHere dashboard URL */
-						__( 'Your PayHere App ID. Required for payment retrieval tools. Get your credentials from <a href="%s" target="_blank">PayHere Settings</a> under API Keys.', 'mcp-ai-wpoos' ),
+						/* translators: %1$s: Remote Sites URL, %2$s: PayHere dashboard URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%1$s">Remote Sites</a> to configure PayHere connections instead. This settings-based configuration is deprecated and will be removed in a future version. <br><br>Your PayHere App ID. Required for payment retrieval tools. Get your credentials from <a href="%2$s" target="_blank">PayHere Settings</a> under API Keys.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ),
 						'https://www.payhere.lk/merchant/settings/api-keys'
 					),
 					'placeholder'  => 'app-...',
@@ -256,26 +257,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 				'payhere_app_secret'                => array(
 					'type'         => 'password',
-					'label'        => __( 'PayHere App Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your PayHere App Secret. Keep this secure and never share it publicly.', 'mcp-ai-wpoos' ),
+					'label'        => __( 'PayHere App Secret (Deprecated)', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> instead. Your PayHere App Secret. Keep this secure and never share it publicly.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					),
 					'placeholder'  => 'secret-...',
 					'autocomplete' => 'new-password',
 				),
 				'payhere_sandbox_mode'              => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'PayHere Sandbox Mode', 'mcp-ai-wpoos' ),
+					'label'          => __( 'PayHere Sandbox Mode (Deprecated)', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable sandbox mode for testing', 'mcp-ai-wpoos' ),
-					'description'    => __( 'When enabled, all PayHere API requests will use the sandbox environment. Disable for production use with real transactions.', 'mcp-ai-wpoos' ),
+					'description'    => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> instead. When enabled, all PayHere API requests will use the sandbox environment. Disable for production use with real transactions.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					),
 					'default'        => false,
 				),
 
-				// Flowhub Settings.
+				// Flowhub Settings - DEPRECATED: Use Remote Sites instead.
 				'flowhub_api_key'                   => array(
 					'type'         => 'password',
-					'label'        => __( 'Flowhub API Key', 'mcp-ai-wpoos' ),
+					'label'        => __( 'Flowhub API Key (Deprecated)', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
-						/* translators: %s: Flowhub API request URL */
-						__( 'Your Flowhub API Key for cannabis dispensary integration. Required for Flowhub tools. Request credentials from <a href="%s" target="_blank">Flowhub API Integration Form</a>.', 'mcp-ai-wpoos' ),
+						/* translators: %1$s: Remote Sites URL, %2$s: Flowhub API request URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%1$s">Remote Sites</a> to configure Flowhub connections instead. This settings-based configuration is deprecated and will be removed in a future version. <br><br>Your Flowhub API Key for cannabis dispensary integration. Required for Flowhub tools. Request credentials from <a href="%2$s" target="_blank">Flowhub API Integration Form</a>.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ),
 						'https://flowhub.com/api-integration-request'
 					),
 					'placeholder'  => '',
@@ -283,53 +293,81 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				),
 				'flowhub_client_id'                 => array(
 					'type'         => 'text',
-					'label'        => __( 'Flowhub Client ID', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your Flowhub OAuth2 Client ID for authentication.', 'mcp-ai-wpoos' ),
+					'label'        => __( 'Flowhub Client ID (Deprecated)', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> instead. Your Flowhub OAuth2 Client ID for authentication.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
 				'flowhub_client_secret'             => array(
 					'type'         => 'password',
-					'label'        => __( 'Flowhub Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your Flowhub OAuth2 Client Secret. Keep this secure and never share it publicly.', 'mcp-ai-wpoos' ),
+					'label'        => __( 'Flowhub Client Secret (Deprecated)', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> instead. Your Flowhub OAuth2 Client Secret. Keep this secure and never share it publicly.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
 				'flowhub_location_id'               => array(
 					'type'         => 'text',
-					'label'        => __( 'Flowhub Location ID', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your dispensary Location ID. Each location requires separate credentials.', 'mcp-ai-wpoos' ),
+					'label'        => __( 'Flowhub Location ID (Deprecated)', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> instead. Your dispensary Location ID. Each location requires separate credentials.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
 
-				// QuickBooks.
+				// QuickBooks - DEPRECATED: Use Remote Sites instead.
 				'quickbooks_api_key'                => array(
 					'type'         => 'password',
-					'label'        => __( 'QuickBooks API Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API key for QuickBooks integration.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'label'        => __( 'QuickBooks API Key (Deprecated)', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> to configure QuickBooks connections instead. This settings-based configuration is deprecated and will be removed in a future version.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					) . ' ' . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
 				),
 				'quickbooks_company_id'             => array(
 					'type'        => 'text',
-					'label'       => __( 'QuickBooks Company ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'Your QuickBooks company (realm) ID.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'label'       => __( 'QuickBooks Company ID (Deprecated)', 'mcp-ai-wpoos' ),
+					'description' => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> instead. Your QuickBooks company (realm) ID.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					) . ' ' . $pro_notice,
 					'placeholder' => '',
 					'disabled'    => ! $is_pro_active,
 				),
 				'quickbooks_client_id'              => array(
 					'type'        => 'text',
-					'label'       => __( 'QuickBooks Client ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'label'       => __( 'QuickBooks Client ID (Deprecated)', 'mcp-ai-wpoos' ),
+					'description' => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> instead. OAuth 2.0 Client ID from QuickBooks developer portal.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					) . ' ' . $pro_notice,
 					'placeholder' => '',
 					'disabled'    => ! $is_pro_active,
 				),
 				'quickbooks_client_secret'          => array(
 					'type'         => 'password',
-					'label'        => __( 'QuickBooks Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'label'        => __( 'QuickBooks Client Secret (Deprecated)', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> instead. OAuth 2.0 Client Secret from QuickBooks developer portal.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					) . ' ' . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
@@ -433,30 +471,39 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
-				// iSAMS School Management System.
+				// iSAMS School Management System - DEPRECATED: Use Remote Sites instead.
 				'isams_api_url'                     => array(
 					'type'        => 'text',
-					'label'       => __( 'iSAMS API URL', 'mcp-ai-wpoos' ),
+					'label'       => __( 'iSAMS API URL (Deprecated)', 'mcp-ai-wpoos' ),
 					'description' => sprintf(
-						/* translators: %s: URL to iSAMS documentation */
-						__( 'Your iSAMS instance URL (e.g., https://yourschool.isams.cloud/). Get your credentials from your iSAMS administrator. %s', 'mcp-ai-wpoos' ),
+						/* translators: %1$s: Remote Sites URL, %2$s: URL to iSAMS documentation */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%1$s">Remote Sites</a> to configure iSAMS connections instead. This settings-based configuration is deprecated and will be removed in a future version. <br><br>Your iSAMS instance URL (e.g., https://yourschool.isams.cloud/). Get your credentials from your iSAMS administrator. %2$s', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ),
 						'<a href="https://developer.isams.com/" target="_blank">' . __( 'iSAMS API Documentation', 'mcp-ai-wpoos' ) . '</a>'
-					) . $pro_notice,
+					) . ' ' . $pro_notice,
 					'placeholder' => 'https://yourschool.isams.cloud/',
 					'disabled'    => ! $is_pro_active,
 				),
 				'isams_api_key'                     => array(
 					'type'         => 'text',
-					'label'        => __( 'iSAMS API Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API key provided by your iSAMS administrator.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'label'        => __( 'iSAMS API Key (Deprecated)', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> instead. API key provided by your iSAMS administrator.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					) . ' ' . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 					'disabled'     => ! $is_pro_active,
 				),
 				'isams_api_secret'                  => array(
 					'type'         => 'password',
-					'label'        => __( 'iSAMS API Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API secret provided by your iSAMS administrator. Keep this secure.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'label'        => __( 'iSAMS API Secret (Deprecated)', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: Remote Sites URL */
+						__( '<strong>⚠️ DEPRECATED:</strong> Please use <a href="%s">Remote Sites</a> instead. API secret provided by your iSAMS administrator. Keep this secure.', 'mcp-ai-wpoos' ),
+						admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' )
+					) . ' ' . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
