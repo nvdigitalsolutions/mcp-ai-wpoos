@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-custom-post-types',
-        'version' => 'dev-copilot/create-custom-post-types',
-        'reference' => 'b34ecd6e236e688fdda2bea39ca9d4e3b816eb32',
+        'pretty_version' => 'dev-copilot/add-health-wellness-tools',
+        'version' => 'dev-copilot/add-health-wellness-tools',
+        'reference' => '35e87098b639b23ae3ef75ea21b88bb4046df0dc',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-custom-post-types',
-            'version' => 'dev-copilot/create-custom-post-types',
-            'reference' => 'b34ecd6e236e688fdda2bea39ca9d4e3b816eb32',
+            'pretty_version' => 'dev-copilot/add-health-wellness-tools',
+            'version' => 'dev-copilot/add-health-wellness-tools',
+            'reference' => '35e87098b639b23ae3ef75ea21b88bb4046df0dc',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
