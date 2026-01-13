@@ -329,6 +329,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables the quiz/assessment system for tutors. Provides 7 tools for creating quizzes, managing submissions, and grading. Includes automatic JetEngine CCT synchronization when available. Requires edit_posts capability to create quizzes. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+				'enable_media_toolkit'                 => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Media Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable media template management (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the Media Toolkit for creating and managing reusable templates for the Graphic Editor Plus tool. Templates allow you to save operation configurations (logo positions, resize settings, AI prompts) and apply them to multiple images via AI assistants or batch operations. Requires upload_files capability. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 
 				// Media fields.
 				'enable_ai_media_library'              => array(
@@ -544,7 +551,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management' ),
 				),
 				'media'          => array(
 					'id'     => 'media',
