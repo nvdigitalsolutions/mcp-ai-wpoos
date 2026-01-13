@@ -16,8 +16,8 @@
  * @package WP_MCP_AI_Pro
  */
 
-// Find WordPress installation
-$wp_root = dirname( dirname( __FILE__ ) );
+// Find WordPress installation.
+$wp_root       = dirname( __DIR__ );
 $wp_load_paths = array(
 	$wp_root . '/../../wp-load.php',
 	$wp_root . '/../../../wp-load.php',
@@ -25,9 +25,9 @@ $wp_load_paths = array(
 );
 
 $wp_load = null;
-foreach ( $wp_load_paths as $path ) {
-	if ( file_exists( $path ) ) {
-		$wp_load = $path;
+foreach ( $wp_load_paths as $wp_load_path ) {
+	if ( file_exists( $wp_load_path ) ) {
+		$wp_load = $wp_load_path;
 		break;
 	}
 }
@@ -38,28 +38,34 @@ if ( ! $wp_load ) {
 	exit( 1 );
 }
 
-// Load WordPress
+// Load WordPress.
 require_once $wp_load;
 
-// Check if we're running in CLI
+// Check if we're running in CLI.
 if ( 'cli' !== php_sapi_name() ) {
 	echo "Error: This script must be run from the command line.\n";
 	exit( 1 );
 }
 
-// Check if user is allowed to run this
+// Check if user is allowed to run this.
 if ( ! current_user_can( 'manage_options' ) ) {
-	// In CLI context, check if running as admin
+	// In CLI context, check if running as admin.
 	if ( ! defined( 'WP_CLI' ) ) {
-		wp_set_current_user( 1 ); // Set as first admin user for CLI context
+		wp_set_current_user( 1 ); // Set as first admin user for CLI context.
 	}
 }
 
-// Parse arguments
+// Parse arguments.
 $dry_run = in_array( '--dry-run', $argv, true );
 $verbose = in_array( '--verbose', $argv, true ) || $dry_run;
 
-// Output functions
+// Output functions.
+/**
+ * Log info message.
+ *
+ * @param string $message       Message to log.
+ * @param bool   $force_verbose Force output even if not verbose.
+ */
 function log_info( $message, $force_verbose = false ) {
 	global $verbose;
 	if ( $force_verbose || $verbose ) {
@@ -67,21 +73,36 @@ function log_info( $message, $force_verbose = false ) {
 	}
 }
 
+/**
+ * Log success message.
+ *
+ * @param string $message Message to log.
+ */
 function log_success( $message ) {
 	echo "[SUCCESS] $message\n";
 }
 
+/**
+ * Log warning message.
+ *
+ * @param string $message Message to log.
+ */
 function log_warning( $message ) {
 	echo "[WARNING] $message\n";
 }
 
+/**
+ * Log error message.
+ *
+ * @param string $message Message to log.
+ */
 function log_error( $message ) {
 	echo "[ERROR] $message\n";
 }
 
-// Ensure required classes are loaded
+// Ensure required classes are loaded.
 if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
-	$manager_path = dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+	$manager_path = dirname( __DIR__ ) . '/addons/pro/includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 	if ( file_exists( $manager_path ) ) {
 		require_once $manager_path;
 	} else {
@@ -90,7 +111,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
 	}
 }
 
-// Start migration
+// Start migration.
 echo "\n";
 echo "========================================\n";
 echo "Settings to Connections Migration Tool\n";
@@ -101,12 +122,12 @@ if ( $dry_run ) {
 	echo "Running in DRY-RUN mode - no changes will be made.\n\n";
 }
 
-// Get current settings
-$settings = get_option( 'wp_mcp_ai_settings', array() );
-$migrated_count = 0;
-$skipped_count = 0;
+// Get current settings.
+$settings        = get_option( 'wp_mcp_ai_settings', array() );
+$migrated_count  = 0;
+$skipped_count   = 0;
 
-// Define migration configurations
+// Define migration configurations.
 $migrations = array(
 	'isams'       => array(
 		'name'      => 'iSAMS School Management',
@@ -163,11 +184,11 @@ $migrations = array(
 	),
 );
 
-// Check each service for existing credentials
+// Check each service for existing credentials.
 foreach ( $migrations as $service_key => $config ) {
 	log_info( "Checking for {$config['name']} credentials...", true );
-	
-	// Check if all required settings exist
+
+	// Check if all required settings exist.
 	$has_credentials = true;
 	foreach ( $config['required'] as $required_key ) {
 		if ( empty( $settings[ $required_key ] ) ) {
@@ -175,14 +196,14 @@ foreach ( $migrations as $service_key => $config ) {
 			break;
 		}
 	}
-	
+
 	if ( ! $has_credentials ) {
 		log_info( "  No credentials found for {$config['name']}, skipping.", true );
 		$skipped_count++;
 		continue;
 	}
-	
-	// Build connection data
+
+	// Build connection data.
 	$connection_data = array(
 		'name'            => $config['name'],
 		'connection_type' => $config['type'],
@@ -190,8 +211,8 @@ foreach ( $migrations as $service_key => $config ) {
 		'enabled'         => true,
 		'cache_ttl'       => 300,
 	);
-	
-	// Get URL
+
+	// Get URL.
 	if ( isset( $config['url_key'] ) && ! empty( $settings[ $config['url_key'] ] ) ) {
 		$connection_data['url'] = $settings[ $config['url_key'] ];
 	} elseif ( isset( $config['default_url'] ) ) {
@@ -201,8 +222,8 @@ foreach ( $migrations as $service_key => $config ) {
 		$skipped_count++;
 		continue;
 	}
-	
-	// Copy field values
+
+	// Copy field values.
 	if ( isset( $config['fields'] ) ) {
 		foreach ( $config['fields'] as $connection_field => $setting_key ) {
 			if ( ! empty( $settings[ $setting_key ] ) ) {
@@ -210,51 +231,51 @@ foreach ( $migrations as $service_key => $config ) {
 			}
 		}
 	}
-	
-	// Copy boolean fields
+
+	// Copy boolean fields.
 	if ( isset( $config['boolean'] ) ) {
 		foreach ( $config['boolean'] as $connection_field => $setting_key ) {
 			$connection_data[ $connection_field ] = ! empty( $settings[ $setting_key ] );
 		}
 	}
-	
-	// Check if connection already exists
+
+	// Check if connection already exists.
 	$existing_connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
-	$connection_exists = false;
+	$connection_exists    = false;
 	foreach ( $existing_connections as $existing ) {
-		if ( isset( $existing['connection_type'] ) && 
-		     $existing['connection_type'] === $config['type'] &&
-		     isset( $existing['name'] ) &&
-		     $existing['name'] === $config['name'] ) {
+		if ( isset( $existing['connection_type'] ) &&
+			$existing['connection_type'] === $config['type'] &&
+			isset( $existing['name'] ) &&
+			$existing['name'] === $config['name'] ) {
 			$connection_exists = true;
 			break;
 		}
 	}
-	
+
 	if ( $connection_exists ) {
 		log_info( "  Connection already exists for {$config['name']}, skipping." );
 		$skipped_count++;
 		continue;
 	}
-	
-	// Display what will be migrated
+
+	// Display what will be migrated.
 	if ( $verbose ) {
 		echo "  Found credentials:\n";
 		echo "    - URL: {$connection_data['url']}\n";
 		echo "    - Type: {$connection_data['connection_type']}\n";
 		foreach ( $config['fields'] as $field => $setting_key ) {
 			$has_value = ! empty( $connection_data[ $field ] );
-			echo "    - " . ucwords( str_replace( '_', ' ', $field ) ) . ": " . ( $has_value ? '[SET]' : '[EMPTY]' ) . "\n";
+			echo '    - ' . ucwords( str_replace( '_', ' ', $field ) ) . ': ' . ( $has_value ? '[SET]' : '[EMPTY]' ) . "\n";
 		}
 	}
-	
+
 	if ( $dry_run ) {
 		log_success( "  Would create connection for {$config['name']}" );
 		$migrated_count++;
 	} else {
-		// Create the connection
+		// Create the connection.
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
-		
+
 		if ( is_wp_error( $result ) ) {
 			log_error( "  Failed to create connection: " . $result->get_error_message() );
 		} else {
@@ -264,7 +285,7 @@ foreach ( $migrations as $service_key => $config ) {
 	}
 }
 
-// Summary
+// Summary.
 echo "\n";
 echo "========================================\n";
 echo "Migration Summary\n";
