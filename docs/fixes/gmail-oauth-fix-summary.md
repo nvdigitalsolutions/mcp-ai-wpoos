@@ -1,6 +1,46 @@
 # Gmail OAuth Fix Summary
 
-## Current Issue (January 2026)
+## Latest Enhancement - PR #2883 (January 13, 2026) 🎉 **NEWEST**
+
+### What Changed in PR #2883
+**"Display OAuth redirect URI in admin to prevent redirect_uri_mismatch errors"**
+
+Added a user-friendly display field showing the exact OAuth redirect URI needed for Google Cloud Console configuration.
+
+### User-Facing Improvements
+- **New Field Added:** "Authorized Redirect URI" field now displays in Gmail and Google Drive connection settings
+- **Auto-Generated URL:** Shows the exact URL that must be configured in Google Cloud Console
+- **Direct Copy:** Users can click to select and copy the URL without manual construction
+- **Quick Access Link:** Includes "Open Google Cloud Console" link for convenience
+- **Prevents Errors:** Eliminates common `redirect_uri_mismatch` errors caused by typos or wrong URL format
+
+### Technical Implementation (PR #2883)
+**File Modified:** `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php`
+
+Added display field in the connection settings form for Gmail and Google Drive connection types:
+```php
+$gmail_redirect_uri = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback' );
+```
+
+The field shows:
+- Read-only input displaying the complete redirect URI
+- Direct link to Google Cloud Console credentials page
+- Helper text explaining what to do with the URI
+
+### User Benefits
+**Before (Hard Way):**
+- Users manually constructed redirect URIs
+- Easy to make typos or use wrong protocol (http vs https)
+- Trial-and-error to get it right
+
+**After (Easy Way):**
+- Exact URI displayed automatically
+- One-click copy and paste
+- No guessing, no mistakes
+
+---
+
+## Previous Fix - OAuth Parameter Issue (January 2026)
 
 ### Problem
 Users encountered the following error when trying to connect their Gmail account:
@@ -20,7 +60,7 @@ Google OAuth 2.0 API considers `action` a **reserved parameter name** and does n
 
 This caused Google to reject OAuth requests with "Parameter not allowed for this message type: action" error.
 
-### Solution Implemented (2026-01-13)
+### Solution Implemented (Earlier)
 
 Changed redirect URIs to use different parameter names that Google OAuth accepts:
 
@@ -214,6 +254,59 @@ If you encounter any other issues after applying this fix:
 
 ---
 
+## Quick Start Guide for Users (Post-PR #2883)
+
+This simplified guide leverages the new "Authorized Redirect URI" display field added in PR #2883.
+
+### 5-Minute Setup Process
+
+#### Step 1: Get Your Redirect URI (30 seconds)
+1. Go to **WordPress Admin → NV oOS Dashboard → Remote Sites**
+2. Edit your Gmail connection (or create new)
+3. Set **Connection Type** to **Gmail (Email Service)**
+4. Find the **"Authorized Redirect URI"** field
+5. **Click to select and copy** the displayed URL
+
+**What you'll see:**
+```
+https://your-site.com/wp-admin/admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback
+```
+
+#### Step 2: Configure Google Cloud Console (2 minutes)
+1. Click the "Open Google Cloud Console" link (or go to https://console.cloud.google.com/apis/credentials)
+2. Edit your OAuth 2.0 Client ID
+3. Under "Authorized redirect URIs", click **"+ ADD URI"**
+4. **Paste** the URL you copied
+5. Click **SAVE**
+6. Wait 30-60 seconds
+
+#### Step 3: Connect Gmail (1 minute)
+1. Back in WordPress, enter your **Client ID** and **Client Secret**
+2. Click **"Update Connection"**
+3. Click **"Connect to Gmail"**
+4. Authorize in Google's OAuth screen
+5. Done! ✅
+
+### Verification Checklist
+- ✅ Green checkmark next to refresh token field
+- ✅ Your email address displayed
+- ✅ No error messages
+- ✅ Gmail tools available in assistants
+
+### Common Issues After PR #2883
+Most users won't encounter issues thanks to the new display field, but if you do:
+
+**Issue:** Still getting `redirect_uri_mismatch`
+- **Cause:** URI wasn't added to Google Cloud Console or doesn't match exactly
+- **Fix:** Copy the URI again from the display field, ensure it matches in Google Cloud Console
+
+**Issue:** Different errors (400: invalid_request with "action" parameter)
+- **Cause:** Using an older version before the OAuth parameter fix
+- **Fix:** Update to latest version (this fix is included)
+
+---
+
 **Fix verified and tested:** ✅  
 **Ready for deployment:** ✅  
-**Documentation complete:** ✅
+**Documentation complete:** ✅  
+**PR #2883 integrated:** ✅
