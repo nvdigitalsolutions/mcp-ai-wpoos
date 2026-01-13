@@ -84,6 +84,8 @@ https://bots.nvdigital.solutions/wp-admin/admin.php?page=wp-mcp-ai-remote-sites&
 - The parameter name **must not be** `action` (Google restricts this)
 - Use `wp_mcp_ai_oauth` for core or `oauth_handler` for Pro
 - Include the **exact** query parameters as shown
+- The URL **must** match **exactly** what you enter in Google Cloud Console (including `https://` protocol)
+- **Tip:** Starting in version 1.x, the Pro plugin displays the exact redirect URI in the connection settings - simply copy it from there
 
 ### Complete Setup Steps
 
@@ -178,7 +180,33 @@ All other OAuth integrations that depend on `WP_MCP_AI_Admin_Settings` are now a
 
 ## Support
 
-If you encounter any issues after applying this fix:
+### Troubleshooting Common Errors
+
+#### Error 400: redirect_uri_mismatch
+
+This error means the redirect URI sent to Google doesn't match what's configured in Google Cloud Console.
+
+**Solution:**
+1. Go to your Gmail connection settings in **NV oOS Dashboard → Remote Sites**
+2. Look for the **"Authorized Redirect URI"** field (displays automatically for Gmail/Google Drive connections)
+3. Copy the exact URL shown in that field
+4. Go to [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
+5. Edit your OAuth 2.0 Client ID
+6. Under "Authorized redirect URIs", add the exact URL you copied (or replace the existing one)
+7. Save the changes in Google Cloud Console
+8. Wait 30 seconds for Google's systems to update
+9. Try connecting again in NV oOS
+
+**Common causes:**
+- URL not added to Google Cloud Console at all
+- HTTP vs HTTPS mismatch (must use HTTPS in production)
+- Trailing slash differences
+- Query parameter typos
+- Multiple WordPress sites using the same OAuth client (each needs its own redirect URI added)
+
+#### Other Issues
+
+If you encounter any other issues after applying this fix:
 - Check that JavaScript origins and redirect URIs match exactly
 - Ensure your site uses HTTPS (required for OAuth in production)
 - Clear browser cache and try again
