@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-research-quiz-settings',
+        'version' => 'dev-copilot/fix-research-quiz-settings',
+        'reference' => 'c34db1a92e38ae99b36454f7aeae3e9e28c947ab',
         'pretty_version' => 'dev-copilot/update-flowhub-connection-settings-again',
         'version' => 'dev-copilot/update-flowhub-connection-settings-again',
         'reference' => 'd5542f35804880d89da77d335d904eddd31cc278',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-research-quiz-settings',
+            'version' => 'dev-copilot/fix-research-quiz-settings',
+            'reference' => 'c34db1a92e38ae99b36454f7aeae3e9e28c947ab',
             'pretty_version' => 'dev-copilot/update-flowhub-connection-settings-again',
             'version' => 'dev-copilot/update-flowhub-connection-settings-again',
             'reference' => 'd5542f35804880d89da77d335d904eddd31cc278',
