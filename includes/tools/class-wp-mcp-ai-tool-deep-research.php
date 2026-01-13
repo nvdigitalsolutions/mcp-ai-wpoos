@@ -475,7 +475,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Check if there's a dedicated deep research model configured.
 		if ( ! empty( $settings['deep_research_model'] ) ) {
 			$research_model = sanitize_text_field( $settings['deep_research_model'] );
-			
+
 			// Parse provider from model string (format: "provider:model" or just "model").
 			$parts = explode( ':', $research_model, 2 );
 			if ( count( $parts ) === 2 ) {

@@ -1318,7 +1318,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	WP_CLI::add_command( 'mcp-ai token', 'WP_MCP_AI_CLI_Token_Command' );
 	WP_CLI::add_command( 'mcp-ai rabbitmq', 'WP_MCP_AI_CLI_RabbitMQ_Command' );
 	WP_CLI::add_command( 'mcp-ai stdio', 'WP_MCP_AI_CLI_STDIO_Command' );
-	
+
 	// Register DLQ and SLA commands only if the classes were successfully loaded.
 	if ( class_exists( 'WP_MCP_AI_CLI_DLQ' ) ) {
 		WP_CLI::add_command( 'mcp-ai dlq', 'WP_MCP_AI_CLI_DLQ' );

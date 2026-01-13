@@ -160,7 +160,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $connection_id ) ) {
 			$available_connections = $this->list_connections( $context );
 			$connection_list       = '';
-			
+
 			if ( ! is_wp_error( $available_connections ) && ! empty( $available_connections['connections'] ) ) {
 				$connections_formatted = array();
 				foreach ( $available_connections['connections'] as $conn ) {
@@ -326,8 +326,8 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	protected function test_connection( $connection ) {
 		// Use a simple HEAD or GET request to test connectivity.
-		$test_endpoint = isset( $connection['test_endpoint'] ) && ! empty( $connection['test_endpoint'] ) 
-			? $connection['test_endpoint'] 
+		$test_endpoint = isset( $connection['test_endpoint'] ) && ! empty( $connection['test_endpoint'] )
+			? $connection['test_endpoint']
 			: '/';
 
 		$result = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $test_endpoint, 'GET', array() );

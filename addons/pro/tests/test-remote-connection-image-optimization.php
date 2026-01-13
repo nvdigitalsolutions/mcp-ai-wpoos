@@ -154,7 +154,7 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result[0]->images );
 		$this->assertCount( 1, $result[0]->images );
-		
+
 		$image = $result[0]->images[0];
 		$this->assertIsArray( $image );
 		$this->assertArrayHasKey( 'src', $image );

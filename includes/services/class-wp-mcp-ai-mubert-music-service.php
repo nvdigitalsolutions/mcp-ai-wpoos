@@ -338,10 +338,10 @@ class WP_MCP_AI_Mubert_Music_Service {
 	protected function extract_audio_from_response( array $response, $format ) {
 		// Mubert API v3 may return different response structures.
 		// Check for success indicators and audio URL/data.
-		
+
 		// Try to find audio URL in common response structures.
 		$audio_url = '';
-		
+
 		if ( isset( $response['url'] ) ) {
 			$audio_url = $response['url'];
 		} elseif ( isset( $response['data']['url'] ) ) {
@@ -364,7 +364,7 @@ class WP_MCP_AI_Mubert_Music_Service {
 			return new WP_Error(
 				'wp_mcp_ai_missing_audio_url',
 				__( 'No audio URL found in the Mubert API response. The API may have changed its response format.', 'mcp-ai-wpoos' ),
-				array( 
+				array(
 					'status' => 500,
 					'response_keys' => array_keys( $response ),
 				)

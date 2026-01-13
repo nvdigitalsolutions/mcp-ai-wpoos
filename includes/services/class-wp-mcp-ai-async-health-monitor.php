@@ -113,8 +113,8 @@ class WP_MCP_AI_Async_Health_Monitor {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$transients = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT option_name, option_value 
-				FROM {$wpdb->options} 
+				"SELECT option_name, option_value
+				FROM {$wpdb->options}
 				WHERE option_name LIKE %s
 				AND option_name NOT LIKE %s
 				LIMIT 100",
@@ -162,8 +162,8 @@ class WP_MCP_AI_Async_Health_Monitor {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$transients = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT option_name, option_value 
-				FROM {$wpdb->options} 
+				"SELECT option_name, option_value
+				FROM {$wpdb->options}
 				WHERE option_name LIKE %s
 				AND option_name NOT LIKE %s
 				LIMIT 100",

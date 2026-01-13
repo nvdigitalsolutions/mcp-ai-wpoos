@@ -60,13 +60,13 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 					</label>
 					<div class="slider-wrapper">
 						<span class="slider-min"><?php echo esc_html( $min . $suffix ); ?></span>
-						<input 
-							type="range" 
-							id="<?php echo esc_attr( $key ); ?>" 
-							name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]" 
-							min="<?php echo esc_attr( $min ); ?>" 
-							max="<?php echo esc_attr( $max ); ?>" 
-							step="<?php echo esc_attr( $step ); ?>" 
+						<input
+							type="range"
+							id="<?php echo esc_attr( $key ); ?>"
+							name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
+							min="<?php echo esc_attr( $min ); ?>"
+							max="<?php echo esc_attr( $max ); ?>"
+							step="<?php echo esc_attr( $step ); ?>"
 							value="<?php echo esc_attr( $value ); ?>"
 							class="wp-mcp-ai-slider"
 							data-suffix="<?php echo esc_attr( $suffix ); ?>"
@@ -159,7 +159,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 							$badge_class    = $is_default ? 'default' : ( $is_recommended ? 'recommended' : '' );
 							$active_class   = $is_active ? 'active' : '';
 							?>
-							<div class="preset-card <?php echo esc_attr( $badge_class . ' ' . $active_class ); ?>" 
+							<div class="preset-card <?php echo esc_attr( $badge_class . ' ' . $active_class ); ?>"
 								data-preset="<?php echo esc_attr( $preset_id ); ?>">
 								<div class="preset-header">
 									<h4><?php echo esc_html( $preset_config['name'] ); ?></h4>
@@ -175,7 +175,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 								<?php if ( $is_active ) : ?>
 									<div class="preset-status"><?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></div>
 								<?php else : ?>
-									<button type="button" class="button button-secondary apply-preset" 
+									<button type="button" class="button button-secondary apply-preset"
 										data-preset="<?php echo esc_attr( $preset_id ); ?>"
 										aria-label="
 										<?php
@@ -189,7 +189,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 							</div>
 						<?php endforeach; ?>
 					</div>
-					<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]" 
+					<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]"
 						id="orchestration_preset" value="<?php echo esc_attr( $current_preset ); ?>" />
 				</div>
 				<?php
@@ -351,11 +351,11 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 						<?php esc_html_e( 'Memory Usage', 'mcp-ai-wpoos' ); ?>
 					</div>
 					<div class="progress-bar-wrapper">
-						<div class="progress-bar" role="progressbar" 
-							aria-valuenow="<?php echo esc_attr( round( $memory_percent ) ); ?>" 
-							aria-valuemin="0" 
+						<div class="progress-bar" role="progressbar"
+							aria-valuenow="<?php echo esc_attr( round( $memory_percent ) ); ?>"
+							aria-valuemin="0"
 							aria-valuemax="100">
-							<div class="progress-fill <?php echo esc_attr( $color_class ); ?>" 
+							<div class="progress-fill <?php echo esc_attr( $color_class ); ?>"
 								style="width: <?php echo esc_attr( min( 100, $memory_percent ) ) . '%'; ?>"></div>
 						</div>
 						<span class="progress-value">
@@ -428,7 +428,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 									<?php echo esc_html( $insight['message'] ); ?>
 									<?php if ( isset( $insight['confidence'] ) ) : ?>
 										<span class="confidence">
-											(<?php echo esc_html( absint( $insight['confidence'] ) ); ?>% 
+											(<?php echo esc_html( absint( $insight['confidence'] ) ); ?>%
 											<?php esc_html_e( 'confidence', 'mcp-ai-wpoos' ); ?>)
 										</span>
 									<?php endif; ?>

@@ -95,23 +95,23 @@ if ( $has_analytics ) {
 				if (ctx) {
 					var dailyUsage = <?php echo wp_json_encode( $trend_data['daily_usage'] ); ?>;
 					var trendInfo = <?php echo wp_json_encode( $trend_data['trend'] ); ?>;
-					
+
 					// Prepare data points for chart.
 					var labels = [];
 					var dataPoints = [];
 					var trendLine = [];
 					var dayIndex = 0;
-					
+
 					for (var date in dailyUsage) {
 						labels.push(date);
 						dataPoints.push(dailyUsage[date]);
-						
+
 						// Calculate trend line point: y = slope * x + intercept
 						var trendValue = trendInfo.slope * dayIndex + trendInfo.intercept;
 						trendLine.push(Math.max(0, trendValue));
 						dayIndex++;
 					}
-					
+
 					new Chart(ctx.getContext('2d'), {
 						type: 'line',
 						data: {

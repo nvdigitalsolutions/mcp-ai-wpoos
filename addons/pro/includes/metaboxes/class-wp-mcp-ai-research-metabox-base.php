@@ -178,14 +178,14 @@ abstract class WP_MCP_AI_Research_Metabox_Base {
 				<label for="wp-mcp-ai-research-query">
 					<?php echo esc_html( $this->get_search_label() ); ?>
 				</label>
-				<input 
-					type="text" 
-					id="wp-mcp-ai-research-query" 
-					class="widefat" 
+				<input
+					type="text"
+					id="wp-mcp-ai-research-query"
+					class="widefat"
 					placeholder="<?php echo esc_attr( $this->get_search_placeholder() ); ?>"
 				/>
-				<button 
-					type="button" 
+				<button
+					type="button"
 					class="button button-primary button-large wp-mcp-ai-research-btn"
 					style="margin-top: 10px; width: 100%;"
 				>

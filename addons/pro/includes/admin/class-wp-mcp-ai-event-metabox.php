@@ -97,11 +97,11 @@ class WP_MCP_AI_Event_Metabox {
 						<label for="event_start_date">
 							<strong><?php esc_html_e( 'Start Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label><br>
-						<input 
-							type="date" 
-							id="event_start_date" 
-							name="event_start_date" 
-							value="<?php echo esc_attr( $start_date ); ?>" 
+						<input
+							type="date"
+							id="event_start_date"
+							name="event_start_date"
+							value="<?php echo esc_attr( $start_date ); ?>"
 							class="widefat"
 							required
 						/>
@@ -112,11 +112,11 @@ class WP_MCP_AI_Event_Metabox {
 						<label for="event_start_time">
 							<strong><?php esc_html_e( 'Start Time:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label><br>
-						<input 
-							type="time" 
-							id="event_start_time" 
-							name="event_start_time" 
-							value="<?php echo esc_attr( $start_time ); ?>" 
+						<input
+							type="time"
+							id="event_start_time"
+							name="event_start_time"
+							value="<?php echo esc_attr( $start_time ); ?>"
 							class="widefat"
 						/>
 					</p>
@@ -129,11 +129,11 @@ class WP_MCP_AI_Event_Metabox {
 						<label for="event_end_date">
 							<strong><?php esc_html_e( 'End Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label><br>
-						<input 
-							type="date" 
-							id="event_end_date" 
-							name="event_end_date" 
-							value="<?php echo esc_attr( $end_date ); ?>" 
+						<input
+							type="date"
+							id="event_end_date"
+							name="event_end_date"
+							value="<?php echo esc_attr( $end_date ); ?>"
 							class="widefat"
 						/>
 					</p>
@@ -143,11 +143,11 @@ class WP_MCP_AI_Event_Metabox {
 						<label for="event_end_time">
 							<strong><?php esc_html_e( 'End Time:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label><br>
-						<input 
-							type="time" 
-							id="event_end_time" 
-							name="event_end_time" 
-							value="<?php echo esc_attr( $end_time ); ?>" 
+						<input
+							type="time"
+							id="event_end_time"
+							name="event_end_time"
+							value="<?php echo esc_attr( $end_time ); ?>"
 							class="widefat"
 						/>
 					</p>
@@ -158,11 +158,11 @@ class WP_MCP_AI_Event_Metabox {
 				<label for="event_location">
 					<strong><?php esc_html_e( 'Location:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
-				<input 
-					type="text" 
-					id="event_location" 
-					name="event_location" 
-					value="<?php echo esc_attr( $location ); ?>" 
+				<input
+					type="text"
+					id="event_location"
+					name="event_location"
+					value="<?php echo esc_attr( $location ); ?>"
 					class="widefat"
 					placeholder="<?php esc_attr_e( 'e.g., Conference Room A, Zoom Link, etc.', 'mcp-ai-wpoos-pro' ); ?>"
 				/>

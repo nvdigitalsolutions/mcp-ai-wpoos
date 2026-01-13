@@ -198,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 				<div class="notice notice-error is-dismissible">
 					<h3><?php esc_html_e( 'NV oOS Root Security Key Required', 'mcp-ai-wpoos' ); ?></h3>
 					<p><strong><?php esc_html_e( 'Plugin initialization has been blocked. A root security key is required to unlock the plugin.', 'mcp-ai-wpoos' ); ?></strong></p>
-					
+
 					<?php if ( ! empty( $status['reason'] ) ) : ?>
 						<p><strong><?php esc_html_e( 'Reason:', 'mcp-ai-wpoos' ); ?></strong> <?php echo esc_html( $status['reason'] ); ?></p>
 					<?php endif; ?>
@@ -219,10 +219,10 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 								<label for="wp_mcp_ai_root_key">
 									<?php esc_html_e( 'Enter Root Security Key:', 'mcp-ai-wpoos' ); ?>
 								</label><br>
-								<input 
-									type="password" 
-									id="wp_mcp_ai_root_key" 
-									name="wp_mcp_ai_root_key" 
+								<input
+									type="password"
+									id="wp_mcp_ai_root_key"
+									name="wp_mcp_ai_root_key"
 									class="regular-text"
 									autocomplete="off"
 									required
@@ -264,7 +264,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 					case 'invalid':
 						?>
 						<div class="notice notice-error is-dismissible">
-							<p><strong><?php esc_html_e( 'Error!', 'mcp-ai-wpoos' ); ?></strong> 
+							<p><strong><?php esc_html_e( 'Error!', 'mcp-ai-wpoos' ); ?></strong>
 							<?php
 							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just displaying error message from previous request.
 							if ( isset( $_GET['error'] ) ) {

@@ -690,15 +690,15 @@ class Test_Profession_Playbook_Seeder extends WP_UnitTestCase {
 		// Query for orphaned playbook attachments (same logic as AJAX handler).
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$orphaned_attachments = $wpdb->get_col(
-			"SELECT p.ID 
+			"SELECT p.ID
 			FROM {$wpdb->posts} p
 			WHERE p.post_type = 'attachment'
 			AND p.post_mime_type = 'text/plain'
 			AND p.post_title LIKE '%playbook%'
 			AND NOT EXISTS (
-				SELECT 1 
-				FROM {$wpdb->postmeta} pm 
-				WHERE pm.post_id = p.ID 
+				SELECT 1
+				FROM {$wpdb->postmeta} pm
+				WHERE pm.post_id = p.ID
 				AND pm.meta_key = '_wp_mcp_ai_playbook_profession_id'
 			)"
 		);

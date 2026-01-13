@@ -192,10 +192,10 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			<div class="wp-mcp-ai-cpt-assistant-info">
 				<p><?php esc_html_e( 'Get AI assistance with content creation, editing, research, and more.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
-			<button 
-				type="button" 
-				class="button button-primary button-large wp-mcp-ai-cpt-open-assistant" 
-				data-post-id="<?php echo esc_attr( $post->ID ); ?>" 
+			<button
+				type="button"
+				class="button button-primary button-large wp-mcp-ai-cpt-open-assistant"
+				data-post-id="<?php echo esc_attr( $post->ID ); ?>"
 				data-post-type="<?php echo esc_attr( $post->post_type ); ?>"
 			>
 				<span class="dashicons dashicons-format-chat"></span>
@@ -234,9 +234,9 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 							</div>
 						</div>
 						<div class="wp-mcp-ai-cpt-chat-input-wrapper">
-							<textarea 
-								id="wp-mcp-ai-cpt-chat-input" 
-								class="wp-mcp-ai-cpt-chat-input" 
+							<textarea
+								id="wp-mcp-ai-cpt-chat-input"
+								class="wp-mcp-ai-cpt-chat-input"
 								placeholder="<?php esc_attr_e( 'Ask me anything...', 'mcp-ai-wpoos-pro' ); ?>"
 								rows="3"
 							></textarea>
@@ -266,10 +266,10 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			<div class="wp-mcp-ai-cpt-assistant-info">
 				<p><?php esc_html_e( 'Get AI assistance with term descriptions, SEO metadata, and content suggestions.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
-			<button 
-				type="button" 
-				class="button button-primary button-large wp-mcp-ai-cpt-open-assistant" 
-				data-term-id="<?php echo esc_attr( $term->term_id ); ?>" 
+			<button
+				type="button"
+				class="button button-primary button-large wp-mcp-ai-cpt-open-assistant"
+				data-term-id="<?php echo esc_attr( $term->term_id ); ?>"
 				data-taxonomy="<?php echo esc_attr( $taxonomy ); ?>"
 			>
 				<span class="dashicons dashicons-format-chat"></span>
@@ -301,9 +301,9 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 							</div>
 						</div>
 						<div class="wp-mcp-ai-cpt-chat-input-wrapper">
-							<textarea 
-								id="wp-mcp-ai-cpt-chat-input-term" 
-								class="wp-mcp-ai-cpt-chat-input" 
+							<textarea
+								id="wp-mcp-ai-cpt-chat-input-term"
+								class="wp-mcp-ai-cpt-chat-input"
 								placeholder="<?php esc_attr_e( 'Ask me anything...', 'mcp-ai-wpoos-pro' ); ?>"
 								rows="3"
 							></textarea>

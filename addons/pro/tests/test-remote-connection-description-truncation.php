@@ -136,12 +136,12 @@ class Test_Remote_Connection_Tool_Description_Truncation extends WP_UnitTestCase
 
 		$this->assertIsArray( $result );
 		$this->assertCount( 1, $result );
-		
+
 		// Description should be truncated to 3 sentences.
 		$this->assertStringContainsString( 'first sentence', $result[0]->description );
 		$this->assertStringContainsString( 'third sentence', $result[0]->description );
 		$this->assertStringNotContainsString( 'fourth sentence', $result[0]->description );
-		
+
 		// Short description should be truncated to 2 sentences.
 		$this->assertStringContainsString( 'Short first sentence', $result[0]->short_description );
 		$this->assertStringContainsString( 'Short second sentence', $result[0]->short_description );

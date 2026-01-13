@@ -506,7 +506,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
                 const chartConfig = {$config_json};
                 new Chart(ctx, chartConfig);
             }
-            
+
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initChart);
             } else {

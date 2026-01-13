@@ -194,7 +194,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 			?>
 			<div class="wrap wp-mcp-ai-pro-dashboard-diagnostic">
 				<h1><?php esc_html_e( 'Pro Dashboard Diagnostic Results', 'mcp-ai-wpoos' ); ?></h1>
-				
+
 				<div class="notice notice-<?php echo esc_attr( $results['overall_status'] === 'pass' ? 'success' : 'error' ); ?>">
 					<p>
 						<strong>

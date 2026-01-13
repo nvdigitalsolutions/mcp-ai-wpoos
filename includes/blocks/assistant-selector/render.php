@@ -78,7 +78,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	<select id="<?php echo esc_attr( $unique_id ); ?>-select" class="wp-mcp-ai-assistant-selector__select">
 		<option value=""><?php esc_html_e( '— Select an assistant —', 'mcp-ai-wpoos' ); ?></option>
 		<?php foreach ( $assistants as $assistant ) : ?>
-			<option 
+			<option
 				value="<?php echo esc_attr( $assistant['id'] ); ?>"
 				data-tools="<?php echo esc_attr( wp_json_encode( $assistant['tools'] ) ); ?>"
 				data-shortcuts="<?php echo esc_attr( wp_json_encode( $assistant['shortcuts'] ) ); ?>"

@@ -95,11 +95,11 @@ class WP_MCP_AI_ECA_Metabox_Details extends WP_MCP_AI_ECA_Metabox_Base {
 				<label for="wp_mcp_ai_eca_code">
 					<strong><?php esc_html_e( 'ECA Code:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label>
-				<input 
-					type="text" 
-					id="wp_mcp_ai_eca_code" 
-					name="wp_mcp_ai_eca_code" 
-					value="<?php echo esc_attr( $eca_code ); ?>" 
+				<input
+					type="text"
+					id="wp_mcp_ai_eca_code"
+					name="wp_mcp_ai_eca_code"
+					value="<?php echo esc_attr( $eca_code ); ?>"
 					class="widefat"
 					placeholder="<?php esc_attr_e( 'e.g., ECA-001', 'mcp-ai-wpoos-pro' ); ?>"
 				/>
@@ -122,11 +122,11 @@ class WP_MCP_AI_ECA_Metabox_Details extends WP_MCP_AI_ECA_Metabox_Base {
 				<label for="wp_mcp_ai_eca_venue">
 					<strong><?php esc_html_e( 'Venue:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label>
-				<input 
-					type="text" 
-					id="wp_mcp_ai_eca_venue" 
-					name="wp_mcp_ai_eca_venue" 
-					value="<?php echo esc_attr( $venue ); ?>" 
+				<input
+					type="text"
+					id="wp_mcp_ai_eca_venue"
+					name="wp_mcp_ai_eca_venue"
+					value="<?php echo esc_attr( $venue ); ?>"
 					class="widefat"
 					placeholder="<?php esc_attr_e( 'e.g., Sports Hall', 'mcp-ai-wpoos-pro' ); ?>"
 				/>
@@ -146,10 +146,10 @@ class WP_MCP_AI_ECA_Metabox_Details extends WP_MCP_AI_ECA_Metabox_Base {
 
 			<p>
 				<label>
-					<input 
-						type="checkbox" 
-						id="wp_mcp_ai_eca_is_paid" 
-						name="wp_mcp_ai_eca_is_paid" 
+					<input
+						type="checkbox"
+						id="wp_mcp_ai_eca_is_paid"
+						name="wp_mcp_ai_eca_is_paid"
 						value="yes"
 						<?php checked( $is_paid, 'yes' ); ?>
 					/>
@@ -162,11 +162,11 @@ class WP_MCP_AI_ECA_Metabox_Details extends WP_MCP_AI_ECA_Metabox_Base {
 					<label for="wp_mcp_ai_eca_cost">
 						<strong><?php esc_html_e( 'Cost:', 'mcp-ai-wpoos-pro' ); ?></strong>
 					</label>
-					<input 
-						type="number" 
-						id="wp_mcp_ai_eca_cost" 
-						name="wp_mcp_ai_eca_cost" 
-						value="<?php echo esc_attr( $cost ); ?>" 
+					<input
+						type="number"
+						id="wp_mcp_ai_eca_cost"
+						name="wp_mcp_ai_eca_cost"
+						value="<?php echo esc_attr( $cost ); ?>"
 						min="0"
 						step="0.01"
 						class="widefat"

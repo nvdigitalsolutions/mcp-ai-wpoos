@@ -39,10 +39,10 @@ class WP_MCP_AI_Profession_Search_Helper {
 
 		?>
 		<div class="wp-mcp-ai-profession-search-wrapper" style="margin-bottom: 15px;">
-			<input 
-				type="text" 
-				id="<?php echo esc_attr( $args['id'] ); ?>" 
-				class="<?php echo esc_attr( $args['class'] ); ?>" 
+			<input
+				type="text"
+				id="<?php echo esc_attr( $args['id'] ); ?>"
+				class="<?php echo esc_attr( $args['class'] ); ?>"
 				placeholder="<?php echo esc_attr( $args['placeholder'] ); ?>"
 				aria-label="<?php echo esc_attr( $args['aria_label'] ); ?>"
 			/>
@@ -102,11 +102,11 @@ class WP_MCP_AI_Profession_Search_Helper {
 		<script type="text/javascript">
 		( function() {
 			var searchDebounceTimer = null;
-			
+
 			document.addEventListener( 'DOMContentLoaded', function() {
 				var searchInput = document.getElementById( '<?php echo esc_js( $args['search_input_id'] ); ?>' );
 				var professionRows = document.querySelectorAll( '<?php echo esc_js( $args['row_selector'] ); ?>' );
-				
+
 				// Handle search filtering.
 				if ( searchInput ) {
 					searchInput.addEventListener( 'input', function() {
@@ -115,18 +115,18 @@ class WP_MCP_AI_Profession_Search_Helper {
 						searchDebounceTimer = setTimeout( function() {
 							var searchTerm = searchInput.value.toLowerCase().trim();
 							var visibleCount = 0;
-							
+
 							professionRows.forEach( function( row ) {
 								var title = row.getAttribute( 'data-profession-title' ) || '';
 								var category = row.getAttribute( 'data-profession-category' ) || '';
 								var description = row.getAttribute( 'data-profession-description' ) || '';
-								
+
 								// Check if search term matches title, category, or description.
 								var matches = searchTerm === '' ||
 									title.indexOf( searchTerm ) !== -1 ||
 									category.indexOf( searchTerm ) !== -1 ||
 									description.indexOf( searchTerm ) !== -1;
-								
+
 								if ( matches ) {
 									row.style.display = '';
 									visibleCount++;
@@ -134,12 +134,12 @@ class WP_MCP_AI_Profession_Search_Helper {
 									row.style.display = 'none';
 								}
 							} );
-							
+
 							// Update aria-live region with results count.
 							updateSearchResults( visibleCount, professionRows.length, searchTerm );
 						}, <?php echo absint( $args['debounce_delay'] ); ?> );
 					} );
-					
+
 					// Add aria-live region for screen readers.
 					var searchWrapper = searchInput.closest( '.wp-mcp-ai-profession-search-wrapper' );
 					if ( searchWrapper && ! document.getElementById( 'wp-mcp-ai-search-results' ) ) {
@@ -152,7 +152,7 @@ class WP_MCP_AI_Profession_Search_Helper {
 					}
 				}
 			} );
-			
+
 			/**
 			 * Update search results announcement for screen readers.
 			 *
@@ -165,7 +165,7 @@ class WP_MCP_AI_Profession_Search_Helper {
 				if ( ! resultsDiv ) {
 					return;
 				}
-				
+
 				if ( searchTerm === '' ) {
 					resultsDiv.textContent = '';
 				} else if ( visibleCount === 0 ) {

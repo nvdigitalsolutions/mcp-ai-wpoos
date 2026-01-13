@@ -206,7 +206,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			// Get available connections to include in error message.
 			$available_connections = $this->list_connections( $context );
 			$connection_list       = '';
-			
+
 			if ( ! is_wp_error( $available_connections ) && ! empty( $available_connections['connections'] ) ) {
 				$connections_formatted = array();
 				foreach ( $available_connections['connections'] as $conn ) {
@@ -232,7 +232,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			// Get available connections to include in error message.
 			$available_connections = $this->list_connections( $context );
 			$connection_list       = '';
-			
+
 			if ( ! is_wp_error( $available_connections ) && ! empty( $available_connections['connections'] ) ) {
 				$connections_formatted = array();
 				foreach ( $available_connections['connections'] as $conn ) {
@@ -621,7 +621,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		// Check if we should include variations.
 		$include_variations = isset( $arguments['include_variations'] ) ? (bool) $arguments['include_variations'] : true;
-		
+
 		// Get stock_status filter if provided.
 		$filter_stock_status = ! empty( $arguments['stock_status'] ) ? sanitize_key( $arguments['stock_status'] ) : '';
 
@@ -655,10 +655,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				// Process variable products with their variations.
 				foreach ( $variable_product_ids as $product_id ) {
 					$product = $variable_products_map[ $product_id ];
-					
+
 					if ( isset( $all_variations[ $product_id ] ) && ! empty( $all_variations[ $product_id ] ) ) {
 						$has_matching_variations = false;
-						
+
 						// Add each variation with parent context.
 						foreach ( $all_variations[ $product_id ] as $variation ) {
 							if ( isset( $variation->id ) ) {
@@ -670,7 +670,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 										continue;
 									}
 								}
-								
+
 								$variation->parent_id = $product->id;
 								$variation->parent_name = isset( $product->name ) ? $product->name : '';
 								$all_products[] = $variation;
@@ -678,7 +678,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 								$has_matching_variations = true;
 							}
 						}
-						
+
 						if ( $has_matching_variations ) {
 							$parent_count++;
 						}
@@ -943,12 +943,12 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			if ( isset( $product->images ) && is_array( $product->images ) ) {
 				$optimized_images = array();
 				$image_count = 0;
-				
+
 				foreach ( $product->images as $image ) {
 					if ( $image_count >= 3 ) {
 						break; // Limit to first 3 images to save tokens.
 					}
-					
+
 					if ( is_object( $image ) && isset( $image->src ) ) {
 						$optimized_images[] = (object) array(
 							'src' => $image->src,
@@ -960,13 +960,13 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 							'alt' => isset( $image['alt'] ) ? $image['alt'] : '',
 						);
 					}
-					
+
 					$image_count++;
 				}
-				
+
 				$product->images = $optimized_images;
 			}
-			
+
 			// Optimize single image field for variations.
 			if ( isset( $product->image ) && is_object( $product->image ) && isset( $product->image->src ) ) {
 				$product->image = (object) array(

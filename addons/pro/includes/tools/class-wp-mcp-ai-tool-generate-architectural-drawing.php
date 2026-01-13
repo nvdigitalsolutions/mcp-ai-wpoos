@@ -334,7 +334,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( isset( $arguments['dimensions'] ) && is_array( $arguments['dimensions'] ) ) {
 			$dims = $arguments['dimensions'];
 			$unit = isset( $dims['unit'] ) ? sanitize_text_field( $dims['unit'] ) : 'feet';
-			
+
 			$dim_parts = array();
 			if ( isset( $dims['width'] ) ) {
 				$dim_parts[] = sprintf( 'width: %.1f %s', floatval( $dims['width'] ), $unit );
@@ -804,7 +804,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		// Vectorization options optimized for architectural drawings.
 		$presentation_style = isset( $arguments['presentation_style'] ) ? $arguments['presentation_style'] : 'technical';
-		
+
 		$vectorization_options = array(
 			'colorMode'      => ( 'line_drawing' === $presentation_style || 'technical' === $presentation_style ) ? 'binary' : 'color',
 			'colorPrecision' => 6,

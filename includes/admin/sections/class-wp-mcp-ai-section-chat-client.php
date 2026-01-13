@@ -583,7 +583,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 							<li><?php esc_html_e( 'Basic markdown', 'mcp-ai-wpoos' ); ?></li>
 							<li><?php esc_html_e( 'Moderate sanitization', 'mcp-ai-wpoos' ); ?></li>
 						</ul>
-						<button type="button" class="button button-secondary wp-mcp-ai-apply-preset" 
+						<button type="button" class="button button-secondary wp-mcp-ai-apply-preset"
 							data-preset="minimal" style="margin-top: 10px; width: 100%;">
 							<?php esc_html_e( 'Apply Preset', 'mcp-ai-wpoos' ); ?>
 						</button>
@@ -605,7 +605,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 							<li><?php esc_html_e( 'Code highlighting', 'mcp-ai-wpoos' ); ?></li>
 							<li><?php esc_html_e( 'Export & search', 'mcp-ai-wpoos' ); ?></li>
 						</ul>
-						<button type="button" class="button button-secondary wp-mcp-ai-apply-preset" 
+						<button type="button" class="button button-secondary wp-mcp-ai-apply-preset"
 							data-preset="full_featured" style="margin-top: 10px; width: 100%;">
 							<?php esc_html_e( 'Apply Preset', 'mcp-ai-wpoos' ); ?>
 						</button>
@@ -627,7 +627,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 							<li><?php esc_html_e( 'Search enabled', 'mcp-ai-wpoos' ); ?></li>
 							<li><?php esc_html_e( 'Strict sanitization', 'mcp-ai-wpoos' ); ?></li>
 						</ul>
-						<button type="button" class="button button-secondary wp-mcp-ai-apply-preset" 
+						<button type="button" class="button button-secondary wp-mcp-ai-apply-preset"
 							data-preset="professional" style="margin-top: 10px; width: 100%;">
 							<?php esc_html_e( 'Apply Preset', 'mcp-ai-wpoos' ); ?>
 						</button>
@@ -649,7 +649,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 							<li><?php esc_html_e( 'Timestamps & avatars', 'mcp-ai-wpoos' ); ?></li>
 							<li><?php esc_html_e( 'Clear visual feedback', 'mcp-ai-wpoos' ); ?></li>
 						</ul>
-						<button type="button" class="button button-secondary wp-mcp-ai-apply-preset" 
+						<button type="button" class="button button-secondary wp-mcp-ai-apply-preset"
 							data-preset="accessible" style="margin-top: 10px; width: 100%;">
 							<?php esc_html_e( 'Apply Preset', 'mcp-ai-wpoos' ); ?>
 						</button>
@@ -704,7 +704,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 							);
 							$is_active  = ( $group['id'] === $active_subtab );
 							?>
-							<a href="<?php echo esc_url( $subtab_url ); ?>" 
+							<a href="<?php echo esc_url( $subtab_url ); ?>"
 								class="wp-mcp-ai-subtab <?php echo esc_attr( $is_active ? 'wp-mcp-ai-subtab-active' : '' ); ?>"
 								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>

@@ -1477,7 +1477,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<p class="description">
 					<?php esc_html_e( 'View detailed requirements and implementation status for each compliance framework.', 'mcp-ai-wpoos' ); ?>
 				</p>
-				
+
 				<!-- Framework Tabs for Detailed View -->
 				<div class="wp-mcp-ai-framework-detail-tabs" style="margin: 20px 0;">
 					<button class="button wp-mcp-ai-framework-detail-tab active" data-framework="iso27001">
@@ -1538,11 +1538,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				// Framework detail tabs
 				$('.wp-mcp-ai-framework-detail-tab').on('click', function() {
 					var framework = $(this).data('framework');
-					
+
 					// Update tabs
 					$('.wp-mcp-ai-framework-detail-tab').removeClass('active');
 					$(this).addClass('active');
-					
+
 					// Update panels
 					$('.wp-mcp-ai-framework-detail-panel').removeClass('active');
 					$('#' + framework + '-details').addClass('active');
@@ -1605,12 +1605,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					$('.wp-mcp-ai-framework-select:checked').each(function() {
 						selected.push($(this).val());
 					});
-					
+
 					if (selected.length === 0) {
 						alert('Please select at least one framework to compare.');
 						return;
 					}
-					
+
 					// TODO: Implement comparison report generation
 					alert('Comparison report generation for: ' + selected.join(', '));
 				});
@@ -1769,7 +1769,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						<span><?php esc_html_e( 'Export', 'mcp-ai-wpoos' ); ?></span>
 					</button>
 				<?php endif; ?>
-				
+
 				<button class="button wp-mcp-ai-refresh-dashboard" title="<?php esc_attr_e( 'Refresh data', 'mcp-ai-wpoos' ); ?>">
 					<span class="dashicons dashicons-update"></span>
 					<span><?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?></span>
@@ -2494,7 +2494,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 				<label for="controls-search"><?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?></label>
 				<input type="text" id="controls-search" placeholder="<?php esc_attr_e( 'Search controls...', 'mcp-ai-wpoos' ); ?>" />
-				
+
 				<button class="button wp-mcp-ai-clear-filters" title="<?php esc_attr_e( 'Clear all filters', 'mcp-ai-wpoos' ); ?>">
 					<span class="dashicons dashicons-dismiss"></span>
 					<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
@@ -2698,7 +2698,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$event_stats   = $this->get_monitoring_event_stats();
 			$system_health = $this->get_system_health_status();
 			?>
-			
+
 			<!-- Real-time Status Metrics -->
 			<div class="wp-mcp-ai-monitoring-metrics">
 				<div class="wp-mcp-ai-metric-card" data-status="<?php echo esc_attr( $system_health['overall_status'] ); ?>">
@@ -3122,15 +3122,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			?>
 			<div class="wp-mcp-ai-frameworks-grid">
 				<?php foreach ( $frameworks as $framework ) : ?>
-					<div class="wp-mcp-ai-framework-card" 
+					<div class="wp-mcp-ai-framework-card"
 						data-status="<?php echo esc_attr( $framework['status'] ); ?>"
 						data-category="<?php echo esc_attr( $framework['category'] ?? 'security' ); ?>"
 						data-framework-id="<?php echo esc_attr( sanitize_title( $framework['name'] ) ); ?>">
-						
+
 						<div class="wp-mcp-ai-framework-checkbox">
-							<input type="checkbox" 
-								class="wp-mcp-ai-framework-select" 
-								value="<?php echo esc_attr( sanitize_title( $framework['name'] ) ); ?>" 
+							<input type="checkbox"
+								class="wp-mcp-ai-framework-select"
+								value="<?php echo esc_attr( sanitize_title( $framework['name'] ) ); ?>"
 								id="framework-<?php echo esc_attr( sanitize_title( $framework['name'] ) ); ?>" />
 						</div>
 
@@ -3272,7 +3272,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<label for="<?php echo esc_attr( $framework ); ?>-search">
 					<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
 				</label>
-				<input type="text" id="<?php echo esc_attr( $framework ); ?>-search" class="wp-mcp-ai-framework-filter-search" 
+				<input type="text" id="<?php echo esc_attr( $framework ); ?>-search" class="wp-mcp-ai-framework-filter-search"
 					placeholder="<?php esc_attr_e( 'Search controls...', 'mcp-ai-wpoos' ); ?>" style="flex: 1; max-width: 300px;" />
 
 				<button class="button wp-mcp-ai-clear-framework-control-filters" data-framework="<?php echo esc_attr( $framework ); ?>">
@@ -3330,13 +3330,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			<script>
 			jQuery(document).ready(function($) {
 				var framework = '<?php echo esc_js( $framework ); ?>';
-				
+
 				// Filter by status
 				$('#' + framework + '-status-filter').on('change', function() {
 					var status = $(this).val();
 					var $table = $('.wp-mcp-ai-framework-controls-table[data-framework="' + framework + '"]');
 					var $rows = $table.find('.wp-mcp-ai-framework-control-row');
-					
+
 					if (status === 'all') {
 						$rows.show();
 					} else {
@@ -3350,7 +3350,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					var search = $(this).val().toLowerCase();
 					var $table = $('.wp-mcp-ai-framework-controls-table[data-framework="' + framework + '"]');
 					var $rows = $table.find('.wp-mcp-ai-framework-control-row');
-					
+
 					$rows.each(function() {
 						var text = $(this).text().toLowerCase();
 						$(this).toggle(text.indexOf(search) > -1);
@@ -4413,8 +4413,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 						</thead>
 						<tbody>
 							<?php foreach ( $enriched_events as $event ) : ?>
-								<tr class="wp-mcp-ai-event-row" 
-									data-event-type="<?php echo esc_attr( $event['type'] ); ?>" 
+								<tr class="wp-mcp-ai-event-row"
+									data-event-type="<?php echo esc_attr( $event['type'] ); ?>"
 									data-event-severity="<?php echo esc_attr( $event['severity'] ); ?>"
 									data-event-timestamp="<?php echo esc_attr( $event['timestamp'] ); ?>">
 									<td class="wp-mcp-ai-event-severity">

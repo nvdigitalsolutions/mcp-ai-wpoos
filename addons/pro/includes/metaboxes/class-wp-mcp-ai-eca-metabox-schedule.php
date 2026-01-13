@@ -89,11 +89,11 @@ class WP_MCP_AI_ECA_Metabox_Schedule extends WP_MCP_AI_ECA_Metabox_Base {
 						</label>
 					</th>
 					<td>
-						<input 
-							type="text" 
-							id="wp_mcp_ai_eca_start_time" 
-							name="wp_mcp_ai_eca_start_time" 
-							value="<?php echo esc_attr( $start_time ); ?>" 
+						<input
+							type="text"
+							id="wp_mcp_ai_eca_start_time"
+							name="wp_mcp_ai_eca_start_time"
+							value="<?php echo esc_attr( $start_time ); ?>"
 							class="regular-text"
 							placeholder="<?php esc_attr_e( 'e.g., 3:30 PM', 'mcp-ai-wpoos-pro' ); ?>"
 						/>
@@ -108,11 +108,11 @@ class WP_MCP_AI_ECA_Metabox_Schedule extends WP_MCP_AI_ECA_Metabox_Base {
 						</label>
 					</th>
 					<td>
-						<input 
-							type="text" 
-							id="wp_mcp_ai_eca_end_time" 
-							name="wp_mcp_ai_eca_end_time" 
-							value="<?php echo esc_attr( $end_time ); ?>" 
+						<input
+							type="text"
+							id="wp_mcp_ai_eca_end_time"
+							name="wp_mcp_ai_eca_end_time"
+							value="<?php echo esc_attr( $end_time ); ?>"
 							class="regular-text"
 							placeholder="<?php esc_attr_e( 'e.g., 4:30 PM', 'mcp-ai-wpoos-pro' ); ?>"
 						/>
@@ -127,11 +127,11 @@ class WP_MCP_AI_ECA_Metabox_Schedule extends WP_MCP_AI_ECA_Metabox_Base {
 						</label>
 					</th>
 					<td>
-						<input 
-							type="text" 
-							id="wp_mcp_ai_eca_teachers" 
-							name="wp_mcp_ai_eca_teachers" 
-							value="<?php echo esc_attr( $teachers_str ); ?>" 
+						<input
+							type="text"
+							id="wp_mcp_ai_eca_teachers"
+							name="wp_mcp_ai_eca_teachers"
+							value="<?php echo esc_attr( $teachers_str ); ?>"
 							class="regular-text"
 						/>
 						<p class="description"><?php esc_html_e( 'Comma-separated list of teacher names', 'mcp-ai-wpoos-pro' ); ?></p>
@@ -145,11 +145,11 @@ class WP_MCP_AI_ECA_Metabox_Schedule extends WP_MCP_AI_ECA_Metabox_Base {
 						</label>
 					</th>
 					<td>
-						<input 
-							type="text" 
-							id="wp_mcp_ai_eca_year_groups" 
-							name="wp_mcp_ai_eca_year_groups" 
-							value="<?php echo esc_attr( $year_groups_str ); ?>" 
+						<input
+							type="text"
+							id="wp_mcp_ai_eca_year_groups"
+							name="wp_mcp_ai_eca_year_groups"
+							value="<?php echo esc_attr( $year_groups_str ); ?>"
 							class="regular-text"
 						/>
 						<p class="description"><?php esc_html_e( 'Comma-separated list of eligible year groups (e.g., Year 7, Year 8, Year 9)', 'mcp-ai-wpoos-pro' ); ?></p>

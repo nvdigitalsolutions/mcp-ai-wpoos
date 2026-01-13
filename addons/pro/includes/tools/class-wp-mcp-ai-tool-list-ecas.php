@@ -234,7 +234,7 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 */
 	private function get_eca_data( $post_id ) {
 		$post = get_post( $post_id );
-		
+
 		$max_students = absint( get_post_meta( $post_id, '_eca_max_students', true ) );
 		$current_enrollment = absint( get_post_meta( $post_id, '_eca_current_enrollment', true ) );
 		$is_full = $max_students > 0 && $current_enrollment >= $max_students;
