@@ -47,25 +47,29 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'query'       => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Gmail connection ID from Remote Sites. If not provided, uses settings-based credentials.', 'mcp-ai-wpoos-pro' ),
+				),
+				'query'         => array(
 					'type'        => 'string',
 					'description' => __( 'Gmail search query string. Supports the same syntax as the Gmail web interface.', 'mcp-ai-wpoos-pro' ),
 				),
-				'max_results' => array(
+				'max_results'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of messages to return (1-50).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 5,
 				),
-				'label_ids'   => array(
+				'label_ids'     => array(
 					'type'        => 'array',
 					'description' => __( 'Optional Gmail label IDs to filter the results (for example INBOX or CATEGORY_PROMOTIONS).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'page_token'  => array(
+				'page_token'    => array(
 					'type'        => 'string',
 					'description' => __( 'Page token returned by a previous Gmail search response to fetch the next page of results.', 'mcp-ai-wpoos-pro' ),
 				),
@@ -95,17 +99,69 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'wp_mcp_ai_gmail_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		// Check if connection_id is provided.
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
+		
+		$client_id       = '';
+		$client_secret   = '';
+		$refresh_token   = '';
+		$configured_user = '';
 
-		$client_id       = isset( $settings['gmail_client_id'] ) ? trim( (string) $settings['gmail_client_id'] ) : '';
-		$client_secret   = isset( $settings['gmail_client_secret'] ) ? trim( (string) $settings['gmail_client_secret'] ) : '';
-		$refresh_token   = isset( $settings['gmail_refresh_token'] ) ? trim( (string) $settings['gmail_refresh_token'] ) : '';
-		$configured_user = isset( $settings['gmail_user_email'] ) ? trim( (string) $settings['gmail_user_email'] ) : '';
+		if ( ! empty( $connection_id ) ) {
+			// Load credentials from Remote Sites connection.
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
+
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( empty( $connection ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_gmail_connection_not_found',
+					sprintf(
+						/* translators: %s: connection ID. */
+						__( 'Gmail connection "%s" not found. Please check your connection settings.', 'mcp-ai-wpoos-pro' ),
+						$connection_id
+					)
+				);
+			}
+
+			if ( ! empty( $connection['connection_type'] ) && 'gmail' !== $connection['connection_type'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_gmail_wrong_connection_type',
+					sprintf(
+						/* translators: %s: connection type. */
+						__( 'Connection "%s" is not a Gmail connection. Please use a Gmail connection type.', 'mcp-ai-wpoos-pro' ),
+						$connection['connection_type']
+					)
+				);
+			}
+
+			$client_id       = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+			$client_secret   = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
+			$refresh_token   = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
+			$configured_user = isset( $connection['user_email'] ) ? trim( (string) $connection['user_email'] ) : '';
+
+			// Decrypt encrypted fields.
+			if ( ! empty( $client_secret ) ) {
+				$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $client_secret );
+			}
+			if ( ! empty( $refresh_token ) ) {
+				$refresh_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $refresh_token );
+			}
+		} else {
+			// Fall back to settings-based credentials for backward compatibility.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			$client_id       = isset( $settings['gmail_client_id'] ) ? trim( (string) $settings['gmail_client_id'] ) : '';
+			$client_secret   = isset( $settings['gmail_client_secret'] ) ? trim( (string) $settings['gmail_client_secret'] ) : '';
+			$refresh_token   = isset( $settings['gmail_refresh_token'] ) ? trim( (string) $settings['gmail_refresh_token'] ) : '';
+			$configured_user = isset( $settings['gmail_user_email'] ) ? trim( (string) $settings['gmail_user_email'] ) : '';
+		}
 
 		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_gmail_missing_credentials',
-				__( 'Gmail API credentials are not configured. Add the client ID, client secret, and refresh token in the WP oOS settings.', 'mcp-ai-wpoos-pro' )
+				__( 'Gmail API credentials are not configured. Add the client ID, client secret, and refresh token either in a Gmail connection (Remote Sites) or in the WP oOS settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -114,6 +170,10 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( '' === $query ) {
 			return new WP_Error( 'wp_mcp_ai_gmail_missing_query', __( 'A Gmail search query is required.', 'mcp-ai-wpoos-pro' ) );
 		}
+
+		// Load timeout from settings.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$timeout  = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
 
 		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
 		if ( $max_results < 1 ) {
@@ -141,8 +201,6 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$page_token = isset( $arguments['page_token'] ) ? trim( (string) $arguments['page_token'] ) : '';
-
-		$timeout = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
 
 		$access_token = $this->request_access_token( $client_id, $client_secret, $refresh_token, $timeout );
 		if ( is_wp_error( $access_token ) ) {

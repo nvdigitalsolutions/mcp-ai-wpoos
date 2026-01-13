@@ -157,6 +157,17 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['_app_secret_encrypted'] = true;
 			}
 
+			// Preserve existing refresh_token (Gmail) if not provided.
+			if ( empty( $connection_data['refresh_token'] ) && ! empty( $existing_connection['refresh_token'] ) ) {
+				$connection_data['refresh_token'] = $existing_connection['refresh_token'];
+				$connection_data['_refresh_token_encrypted'] = true;
+			}
+
+			// Preserve existing user_email (Gmail) if not provided.
+			if ( empty( $connection_data['user_email'] ) && ! empty( $existing_connection['user_email'] ) ) {
+				$connection_data['user_email'] = $existing_connection['user_email'];
+			}
+
 			// Preserve existing location_id if not provided.
 			if ( empty( $connection_data['location_id'] ) && ! empty( $existing_connection['location_id'] ) ) {
 				$connection_data['location_id'] = $existing_connection['location_id'];
@@ -222,6 +233,9 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'enabled'         => ! empty( $connection_data['enabled'] ),
 			'created'         => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
 			'updated'         => current_time( 'mysql' ),
+			// Gmail-specific fields.
+			'refresh_token'   => isset( $connection_data['refresh_token'] ) ? $connection_data['refresh_token'] : '',
+			'user_email'      => isset( $connection_data['user_email'] ) ? sanitize_email( $connection_data['user_email'] ) : '',
 		);
 
 		// Encrypt sensitive data (only if not already encrypted).
@@ -1087,6 +1101,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 					__( 'OAuth Client ID and Client Secret are required for Google Drive connections.', 'wp-mcp-ai-pro' )
 				);
 			}
+		if ( 'gmail' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_gmail_credentials',
+					__( 'OAuth Client ID and client secret are required for Gmail connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
 		}
 
 		return true;
