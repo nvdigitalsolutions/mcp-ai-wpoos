@@ -156,6 +156,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$this->handle_gmail_oauth_callback();
 		}
 
+		// Handle Google Drive OAuth connect action.
+		if ( 'google_drive_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
+
+			if ( ! wp_verify_nonce( $nonce, 'google_drive_oauth_connect_' . $connection_id ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
+			}
+
+			$this->handle_google_drive_oauth_start( $connection_id );
+		}
+
+		// Handle Google Drive OAuth callback action.
+		if ( 'google_drive_oauth_callback' === $oauth_handler ) {
+			$this->handle_google_drive_oauth_callback();
+		}
+
 		// Handle save action.
 		if ( isset( $_POST['wp_mcp_ai_pro_save_connection'] ) && isset( $_POST['_wpnonce'] ) ) {
 			$nonce = isset( $_POST['_wpnonce'] ) ? wp_unslash( $_POST['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -296,7 +313,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Remote WordPress/WooCommerce Site Connections', 'wp-mcp-ai-pro' ); ?></h1>
+			<h1><?php esc_html_e( 'Remote Site Connections', 'wp-mcp-ai-pro' ); ?></h1>
 
 			<?php if ( isset( $_GET['saved'] ) ) : ?>
 				<div class="notice notice-success is-dismissible">
@@ -1057,6 +1074,36 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</tr>
 				<?php endif; ?>
 
+				<!-- Google Drive OAuth Connection Button -->
+				<?php if ( $is_edit && 'google_drive' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
+					<tr class="google_drive-only-field" style="display: none;">
+						<th scope="row">
+							<label><?php esc_html_e( 'OAuth Connection', 'wp-mcp-ai-pro' ); ?></label>
+						</th>
+						<td>
+							<?php
+							$oauth_url = wp_nonce_url(
+								admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=google_drive_oauth_connect&connection_id=' . $connection['id'] ),
+								'google_drive_oauth_connect_' . $connection['id']
+							);
+							?>
+							<a href="<?php echo esc_url( $oauth_url ); ?>" class="button button-secondary">
+								<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Connect to Google Drive', 'wp-mcp-ai-pro' ); ?>
+							</a>
+							<p class="description">
+								<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain a refresh token. Make sure to save the Client ID and Client Secret first.', 'wp-mcp-ai-pro' ); ?>
+							</p>
+							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
+								<p class="description" style="color: #46b450;">
+									<span class="dashicons dashicons-yes-alt"></span>
+									<?php esc_html_e( 'This connection is already authorized. Click the button above to re-authorize if needed.', 'wp-mcp-ai-pro' ); ?>
+								</p>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endif; ?>
+
 				<tr class="wordpress-only-field">
 					<th scope="row"><?php esc_html_e( 'WooCommerce', 'wp-mcp-ai-pro' ); ?></th>
 					<td>
@@ -1486,6 +1533,225 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$success_message = sprintf(
 				/* translators: %s: email address */
 				__( 'Gmail connected successfully for %s!', 'wp-mcp-ai-pro' ),
+				$email_address
+			);
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&oauth_success=' . rawurlencode( $success_message ) ) );
+		exit;
+	}
+
+	/**
+	 * Handle Google Drive OAuth start for a remote connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $connection_id Connection ID.
+	 */
+	protected function handle_google_drive_oauth_start( $connection_id ) {
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'wp-mcp-ai-pro' ) ) ) );
+			exit;
+		}
+
+		if ( 'google_drive' !== $connection['connection_type'] ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Drive connection.', 'wp-mcp-ai-pro' ) ) ) );
+			exit;
+		}
+
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'wp-mcp-ai-pro' ) ) ) );
+			exit;
+		}
+
+		// Generate OAuth state and store connection ID.
+		$state     = wp_generate_uuid4();
+		$transient = 'wp_mcp_ai_google_drive_oauth_state_' . md5( $state );
+
+		set_transient(
+			$transient,
+			array(
+				'user_id'       => get_current_user_id(),
+				'connection_id' => $connection_id,
+				'time'          => time(),
+			),
+			10 * MINUTE_IN_SECONDS
+		);
+
+		// Decrypt client_secret for OAuth flow.
+		$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+
+		$params = array(
+			'client_id'              => $connection['client_id'],
+			'redirect_uri'           => admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=google_drive_oauth_callback' ),
+			'response_type'          => 'code',
+			'scope'                  => 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
+			'access_type'            => 'offline',
+			'include_granted_scopes' => 'true',
+			'prompt'                 => 'consent',
+			'state'                  => $state,
+		);
+
+		if ( ! empty( $connection['user_email'] ) && 'me' !== strtolower( $connection['user_email'] ) ) {
+			$params['login_hint'] = $connection['user_email'];
+		}
+
+		$authorize_url = add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
+
+		wp_safe_redirect( $authorize_url );
+		exit;
+	}
+
+	/**
+	 * Handle Google Drive OAuth callback for a remote connection.
+	 *
+	 * @since 1.0.0
+	 */
+	protected function handle_google_drive_oauth_callback() {
+		// OAuth callback parameters from Google. No nonce verification required as state parameter provides CSRF protection.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+
+		if ( $error ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Google OAuth error: %s', 'wp-mcp-ai-pro' ), $error ) ) ) );
+			exit;
+		}
+
+		$transient_key = 'wp_mcp_ai_google_drive_oauth_state_' . md5( $state );
+		$state_data    = get_transient( $transient_key );
+
+		delete_transient( $transient_key );
+
+		if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'wp-mcp-ai-pro' ) ) ) );
+			exit;
+		}
+
+		if ( empty( $code ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'wp-mcp-ai-pro' ) ) ) );
+			exit;
+		}
+
+		$connection_id = $state_data['connection_id'];
+		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+		if ( ! $connection ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'wp-mcp-ai-pro' ) ) ) );
+			exit;
+		}
+
+		// Decrypt client_secret for token exchange.
+		$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+
+		// Exchange authorization code for tokens.
+		$response = wp_remote_post(
+			'https://oauth2.googleapis.com/token',
+			array(
+				'timeout' => 15,
+				'body'    => array(
+					'code'          => $code,
+					'client_id'     => $connection['client_id'],
+					'client_secret' => $client_secret,
+					'redirect_uri'  => admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=google_drive_oauth_callback' ),
+					'grant_type'    => 'authorization_code',
+				),
+				'headers' => array(
+					'Accept' => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'wp-mcp-ai-pro' ) ) ) );
+			exit;
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body        = wp_remote_retrieve_body( $response );
+
+		if ( 200 !== (int) $status_code ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'wp-mcp-ai-pro' ) ) ) );
+			exit;
+		}
+
+		$decoded = json_decode( $body, true );
+
+		if ( ! is_array( $decoded ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'wp-mcp-ai-pro' ) ) ) );
+			exit;
+		}
+
+		$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
+		$access_token  = isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '';
+
+		// If no refresh token, check if we can reuse existing one.
+		if ( '' === $refresh_token && ! empty( $connection['refresh_token'] ) ) {
+			$refresh_token = $connection['refresh_token'];
+		}
+
+		if ( '' === $refresh_token ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'wp-mcp-ai-pro' ) ) ) );
+			exit;
+		}
+
+		// Get email address from userinfo if access token is available.
+		$email_address = '';
+		if ( $access_token ) {
+			$userinfo_response = wp_remote_get(
+				'https://www.googleapis.com/oauth2/v2/userinfo',
+				array(
+					'timeout' => 15,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $access_token,
+						'Accept'        => 'application/json',
+					),
+				)
+			);
+
+			if ( ! is_wp_error( $userinfo_response ) && 200 === wp_remote_retrieve_response_code( $userinfo_response ) ) {
+				$userinfo_body = json_decode( wp_remote_retrieve_body( $userinfo_response ), true );
+				if ( isset( $userinfo_body['email'] ) ) {
+					$email_address = sanitize_email( $userinfo_body['email'] );
+				}
+			}
+		}
+
+		// Update the connection with the new refresh token and email.
+		$update_data = array(
+			'id'              => $connection_id,
+			'name'            => $connection['name'],
+			'url'             => $connection['url'],
+			'connection_type' => 'google_drive',
+			'auth_type'       => 'none',
+			'client_id'       => $connection['client_id'],
+			'client_secret'   => '', // Keep existing (don't re-encrypt).
+			'refresh_token'   => $refresh_token,
+			'user_email'      => $email_address ? $email_address : $connection['user_email'],
+			'folder_id'       => isset( $connection['folder_id'] ) ? $connection['folder_id'] : '',
+			'enabled'         => $connection['enabled'],
+		);
+
+		// Preserve encrypted client_secret.
+		$update_data['_client_secret_encrypted'] = true;
+
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $update_data );
+
+		if ( is_wp_error( $result ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( $result->get_error_message() ) ) );
+			exit;
+		}
+
+		$success_message = __( 'Google Drive connected successfully!', 'wp-mcp-ai-pro' );
+		if ( $email_address ) {
+			$success_message = sprintf(
+				/* translators: %s: email address */
+				__( 'Google Drive connected successfully for %s!', 'wp-mcp-ai-pro' ),
 				$email_address
 			);
 		}
