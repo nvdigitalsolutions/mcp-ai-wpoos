@@ -317,6 +317,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_flowhub_connection( $connection );
 		}
 
+		// Handle EZuite ERP connections separately.
+		if ( 'ezuite_erp' === $connection_type ) {
+			return self::test_ezuite_connection( $connection );
+		}
+
 		// Test basic WordPress REST API access.
 		$response = self::make_request( $connection, 'wp/v2/types' );
 
@@ -386,6 +391,139 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$results['inventory_count'] = absint( $response['total'] );
 			/* translators: %d: number of inventory items */
 			$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'wp-mcp-ai-pro' ), $results['inventory_count'] );
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Test EZuite ERP API connection.
+	 *
+	 * Makes a simple API call to verify the connection and API key.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_ezuite_connection( $connection ) {
+		// Validate required fields.
+		if ( empty( $connection['url'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_url',
+				__( 'EZuite API URL is required.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		if ( empty( $connection['api_key'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_api_key',
+				__( 'EZuite API key is required.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Decrypt the API key.
+		$api_key = self::decrypt_value( $connection['api_key'] );
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_api_key',
+				__( 'Invalid or corrupted API key.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Prepare a simple test request - use LX_ItemPull with a limit to minimize data.
+		$url = untrailingslashit( $connection['url'] );
+
+		$request_body = array(
+			'API_Key'    => $api_key,
+			'API_Action' => 'LX_ItemPull',
+			'API_Body'   => array(
+				array(
+					'Location_Code' => 'ALL',
+					'Limit'         => 1, // Only fetch 1 item to test connection.
+				),
+			),
+		);
+
+		$args = array(
+			'method'  => 'POST',
+			'timeout' => 30,
+			'headers' => array(
+				'Content-Type' => 'application/json',
+			),
+			'body'    => wp_json_encode( $request_body ),
+		);
+
+		// Make the request.
+		$response = wp_remote_request( $url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_connection_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to EZuite API: %s', 'wp-mcp-ai-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body        = wp_remote_retrieve_body( $response );
+
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_api_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'EZuite API returned error status %d. Please check your API URL and credentials.', 'wp-mcp-ai-pro' ),
+					$status_code
+				)
+			);
+		}
+
+		// Parse the JSON response.
+		$data = json_decode( $body, true );
+
+		if ( null === $data || ! is_array( $data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_response',
+				__( 'EZuite API returned invalid JSON response.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Check the response status.
+		$ezuite_status = isset( $data['Status_Code'] ) ? absint( $data['Status_Code'] ) : 0;
+
+		if ( 200 !== $ezuite_status ) {
+			$error_message = isset( $data['Message'] ) ? sanitize_text_field( $data['Message'] ) : __( 'Unknown error', 'wp-mcp-ai-pro' );
+			return new WP_Error(
+				'wp_mcp_ai_pro_ezuite_error',
+				sprintf(
+					/* translators: 1: status code, 2: error message */
+					__( 'EZuite API error (Status: %1$d): %2$s', 'wp-mcp-ai-pro' ),
+					$ezuite_status,
+					$error_message
+				)
+			);
+		}
+
+		// Connection successful!
+		$results = array(
+			'success'     => true,
+			'ezuite_erp'  => true,
+			'api_url'     => $connection['url'],
+			'message'     => __( 'EZuite ERP connection successful. API credentials verified.', 'wp-mcp-ai-pro' ),
+		);
+
+		// Add item count if available in response.
+		if ( isset( $data['Response_Body'] ) && is_array( $data['Response_Body'] ) ) {
+			$item_count = count( $data['Response_Body'] );
+			if ( $item_count > 0 ) {
+				/* translators: %d: number of items retrieved */
+				$results['message'] = sprintf( __( 'EZuite ERP connection successful. Retrieved %d test item(s).', 'wp-mcp-ai-pro' ), $item_count );
+			}
 		}
 
 		return $results;
