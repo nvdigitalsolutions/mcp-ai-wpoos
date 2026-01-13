@@ -242,98 +242,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
-				// PayHere Settings.
-				'payhere_app_id'                    => array(
-					'type'         => 'text',
-					'label'        => __( 'PayHere App ID', 'mcp-ai-wpoos' ),
-					'description'  => sprintf(
-						/* translators: %s: PayHere dashboard URL */
-						__( 'Your PayHere App ID. Required for payment retrieval tools. Get your credentials from <a href="%s" target="_blank">PayHere Settings</a> under API Keys.', 'mcp-ai-wpoos' ),
-						'https://www.payhere.lk/merchant/settings/api-keys'
-					),
-					'placeholder'  => 'app-...',
-					'autocomplete' => 'off',
-				),
-				'payhere_app_secret'                => array(
-					'type'         => 'password',
-					'label'        => __( 'PayHere App Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your PayHere App Secret. Keep this secure and never share it publicly.', 'mcp-ai-wpoos' ),
-					'placeholder'  => 'secret-...',
-					'autocomplete' => 'new-password',
-				),
-				'payhere_sandbox_mode'              => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'PayHere Sandbox Mode', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable sandbox mode for testing', 'mcp-ai-wpoos' ),
-					'description'    => __( 'When enabled, all PayHere API requests will use the sandbox environment. Disable for production use with real transactions.', 'mcp-ai-wpoos' ),
-					'default'        => false,
-				),
-
-				// Flowhub Settings.
-				'flowhub_api_key'                   => array(
-					'type'         => 'password',
-					'label'        => __( 'Flowhub API Key', 'mcp-ai-wpoos' ),
-					'description'  => sprintf(
-						/* translators: %s: Flowhub API request URL */
-						__( 'Your Flowhub API Key for cannabis dispensary integration. Required for Flowhub tools. Request credentials from <a href="%s" target="_blank">Flowhub API Integration Form</a>.', 'mcp-ai-wpoos' ),
-						'https://flowhub.com/api-integration-request'
-					),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-				),
-				'flowhub_client_id'                 => array(
-					'type'         => 'text',
-					'label'        => __( 'Flowhub Client ID', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your Flowhub OAuth2 Client ID for authentication.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'off',
-				),
-				'flowhub_client_secret'             => array(
-					'type'         => 'password',
-					'label'        => __( 'Flowhub Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your Flowhub OAuth2 Client Secret. Keep this secure and never share it publicly.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-				),
-				'flowhub_location_id'               => array(
-					'type'         => 'text',
-					'label'        => __( 'Flowhub Location ID', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your dispensary Location ID. Each location requires separate credentials.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'off',
-				),
-
-				// QuickBooks.
-				'quickbooks_api_key'                => array(
-					'type'         => 'password',
-					'label'        => __( 'QuickBooks API Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API key for QuickBooks integration.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
-				'quickbooks_company_id'             => array(
-					'type'        => 'text',
-					'label'       => __( 'QuickBooks Company ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'Your QuickBooks company (realm) ID.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => '',
-					'disabled'    => ! $is_pro_active,
-				),
-				'quickbooks_client_id'              => array(
-					'type'        => 'text',
-					'label'       => __( 'QuickBooks Client ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => '',
-					'disabled'    => ! $is_pro_active,
-				),
-				'quickbooks_client_secret'          => array(
-					'type'         => 'password',
-					'label'        => __( 'QuickBooks Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
+				// PayHere, Flowhub, iSAMS, and QuickBooks connections have been moved to Remote Sites.
+				// These settings have been removed. Please use Remote Sites page to manage these connections.
 
 				// Google Analytics.
 				'google_analytics_property_id'      => array(
@@ -433,34 +343,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
-				// iSAMS School Management System.
-				'isams_api_url'                     => array(
-					'type'        => 'text',
-					'label'       => __( 'iSAMS API URL', 'mcp-ai-wpoos' ),
-					'description' => sprintf(
-						/* translators: %s: URL to iSAMS documentation */
-						__( 'Your iSAMS instance URL (e.g., https://yourschool.isams.cloud/). Get your credentials from your iSAMS administrator. %s', 'mcp-ai-wpoos' ),
-						'<a href="https://developer.isams.com/" target="_blank">' . __( 'iSAMS API Documentation', 'mcp-ai-wpoos' ) . '</a>'
-					) . $pro_notice,
-					'placeholder' => 'https://yourschool.isams.cloud/',
-					'disabled'    => ! $is_pro_active,
-				),
-				'isams_api_key'                     => array(
-					'type'         => 'text',
-					'label'        => __( 'iSAMS API Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API key provided by your iSAMS administrator.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'off',
-					'disabled'     => ! $is_pro_active,
-				),
-				'isams_api_secret'                  => array(
-					'type'         => 'password',
-					'label'        => __( 'iSAMS API Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API secret provided by your iSAMS administrator. Keep this secure.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
+				// iSAMS, PayHere, Flowhub, and QuickBooks have been moved to Remote Sites.
+				// Use admin.php?page=wp-mcp-ai-remote-sites to manage these connections.
 			);
 		}
 
@@ -498,18 +382,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'icon'   => 'dashicons-format-audio',
 					'fields' => array( 'mubert_api_key' ),
 				),
-				'payhere'          => array(
-					'id'     => 'payhere',
-					'label'  => __( 'PayHere', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-money-alt',
-					'fields' => array( 'payhere_app_id', 'payhere_app_secret', 'payhere_sandbox_mode' ),
-				),
-				'flowhub'          => array(
-					'id'     => 'flowhub',
-					'label'  => __( 'Flowhub', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-store',
-					'fields' => array( 'flowhub_api_key', 'flowhub_client_id', 'flowhub_client_secret', 'flowhub_location_id' ),
-				),
+				// PayHere, Flowhub, iSAMS, and QuickBooks have been moved to Remote Sites.
 				'removebg'         => array(
 					'id'     => 'removebg',
 					'label'  => __( 'remove.bg', 'mcp-ai-wpoos' ),
@@ -535,13 +408,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_client_id', 'mailjet_client_secret' ),
 					'pro'    => true,
 				),
-				'quickbooks'       => array(
-					'id'     => 'quickbooks',
-					'label'  => $is_pro_active ? __( 'QuickBooks', 'mcp-ai-wpoos' ) : __( 'QuickBooks (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-money-alt',
-					'fields' => array( 'quickbooks_api_key', 'quickbooks_company_id', 'quickbooks_client_id', 'quickbooks_client_secret' ),
-					'pro'    => true,
-				),
+				// QuickBooks and iSAMS moved to Remote Sites.
 				'google_analytics' => array(
 					'id'     => 'google_analytics',
 					'label'  => $is_pro_active ? __( 'Google Analytics', 'mcp-ai-wpoos' ) : __( 'Google Analytics (Pro)', 'mcp-ai-wpoos' ),
@@ -561,13 +428,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
 				),
-				'isams'            => array(
-					'id'     => 'isams',
-					'label'  => $is_pro_active ? __( 'iSAMS', 'mcp-ai-wpoos' ) : __( 'iSAMS (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-welcome-learn-more',
-					'fields' => array( 'isams_api_url', 'isams_api_key', 'isams_api_secret' ),
-					'pro'    => true,
-				),
+				// iSAMS moved to Remote Sites.
 			);
 		}
 
@@ -653,21 +514,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				case 'mubert':
 					$this->render_mubert_footer();
 					break;
-				case 'payhere':
-					$this->render_payhere_footer();
-					break;
-				case 'flowhub':
-					$this->render_flowhub_footer();
-					break;
+				// PayHere, Flowhub, QuickBooks, and iSAMS moved to Remote Sites.
 				case 'meta':
 					$this->render_meta_footer();
 					break;
 				case 'tiktok':
 					$this->render_tiktok_footer();
 					break;
-				case 'quickbooks':
-					$this->render_quickbooks_footer();
-					break;
+				// QuickBooks and iSAMS moved to Remote Sites.
 				case 'cloudways':
 					$this->render_cloudways_footer();
 					break;
@@ -677,9 +531,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				case 'mailjet':
 					$this->render_mailjet_footer();
 					break;
-				case 'isams':
-					$this->render_isams_footer();
-					break;
+				// iSAMS moved to Remote Sites.
 			}
 		}
 
