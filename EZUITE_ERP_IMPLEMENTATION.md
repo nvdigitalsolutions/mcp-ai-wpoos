@@ -76,9 +76,9 @@ This PR adds a complete EZuite ERP integration tool to the WP MCP AI Pro addon, 
 ### Request Format
 ```json
 {
-  "API_Key": "xxx",
+  "API_Key": "YOUR_API_KEY_HERE",
   "API_Action": "LX_ItemPull",
-  "API_Body": [{"Location_Code": "MAIN"}]
+  "API_Body": [{"Location_Code": "ALL"}]
 }
 ```
 
@@ -86,8 +86,20 @@ This PR adds a complete EZuite ERP integration tool to the WP MCP AI Pro addon, 
 ```json
 {
   "Status_Code": 200,
-  "Message": "Success",
-  "Response_Body": [/* results */]
+  "Message": "LX_ItemPull API Executed Successfully.",
+  "Response_Body": [
+    {
+      "Item_Code": "C316/L16/ITM-10",
+      "Item_Name": "Bangle 1816 Crystal Gold",
+      "Barcode": "170620"
+    },
+    {
+      "Item_Code": "EZCMP316/EZLOC7/ITM-9",
+      "Item_Name": "Pure Xs Edt 100ml",
+      "Barcode": "3349668576173",
+      "Qty": 37.0
+    }
+  ]
 }
 ```
 
@@ -96,7 +108,9 @@ This PR adds a complete EZuite ERP integration tool to the WP MCP AI Pro addon, 
 1. **Setup Connection** (Admin UI):
    - Navigate to Settings → NV oOS → Remote Sites
    - Add new connection with type "EZuite ERP"
-   - Enter API URL and API key
+   - Enter API URL: `https://api.ezuite.com/api/External_Api/Action_Api/Invoke`
+   - Set Authentication Type to "None"
+   - Enter your API key
    - Enable the connection
 
 2. **Enable for Assistant**:

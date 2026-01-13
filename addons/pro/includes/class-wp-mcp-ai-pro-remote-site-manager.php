@@ -699,10 +699,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
 
 		if ( 'ezuite_erp' === $connection_type ) {
-			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
+			if ( empty( $connection['api_key'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_ezuite_credentials',
-					__( 'API key and API secret are required for EZuite ERP connections.', 'wp-mcp-ai-pro' )
+					__( 'API key is required for EZuite ERP connections.', 'wp-mcp-ai-pro' )
 				);
 			}
 		}
