@@ -671,10 +671,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		if ( 'flowhub' === $connection_type ) {
-			if ( empty( $connection['api_key'] ) || empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) || empty( $connection['location_id'] ) ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['client_id'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_flowhub_credentials',
-					__( 'API key, client ID, client secret, and location ID are required for Flowhub connections.', 'wp-mcp-ai-pro' )
+					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'wp-mcp-ai-pro' )
 				);
 			}
 		}
