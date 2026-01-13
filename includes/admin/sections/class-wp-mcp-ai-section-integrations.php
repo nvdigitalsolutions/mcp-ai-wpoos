@@ -835,7 +835,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		private function render_flowhub_footer() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$has_credentials = ! empty( $settings['flowhub_api_key'] ) && ! empty( $settings['flowhub_client_id'] ) && ! empty( $settings['flowhub_client_secret'] ) && ! empty( $settings['flowhub_location_id'] );
+			$has_credentials = ! empty( $settings['flowhub_api_key'] ) && ! empty( $settings['flowhub_client_id'] );
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Flowhub Connection', 'mcp-ai-wpoos' ); ?></th>
