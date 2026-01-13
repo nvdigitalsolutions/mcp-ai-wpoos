@@ -32,7 +32,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * @var array<string>
 	 */
-	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'none' );
+	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'oauth2', 'none' );
 
 	/**
 	 * Get all configured remote site connections.
@@ -178,6 +178,17 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['company_id'] = $existing_connection['company_id'];
 			}
 
+			// Preserve existing folder_id if not provided.
+			if ( empty( $connection_data['folder_id'] ) && ! empty( $existing_connection['folder_id'] ) ) {
+				$connection_data['folder_id'] = $existing_connection['folder_id'];
+			}
+
+			// Preserve existing refresh_token if not provided.
+			if ( empty( $connection_data['refresh_token'] ) && ! empty( $existing_connection['refresh_token'] ) ) {
+				$connection_data['refresh_token'] = $existing_connection['refresh_token'];
+				$connection_data['_refresh_token_encrypted'] = true;
+			}
+
 			// Preserve existing sandbox_mode if not provided.
 			if ( ! isset( $connection_data['sandbox_mode'] ) && isset( $existing_connection['sandbox_mode'] ) ) {
 				$connection_data['sandbox_mode'] = $existing_connection['sandbox_mode'];
@@ -215,6 +226,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'app_secret'      => isset( $connection_data['app_secret'] ) ? $connection_data['app_secret'] : '',
 			'location_id'     => isset( $connection_data['location_id'] ) ? sanitize_text_field( $connection_data['location_id'] ) : '',
 			'company_id'      => isset( $connection_data['company_id'] ) ? sanitize_text_field( $connection_data['company_id'] ) : '',
+			'folder_id'       => isset( $connection_data['folder_id'] ) ? sanitize_text_field( $connection_data['folder_id'] ) : '',
+			'refresh_token'   => isset( $connection_data['refresh_token'] ) ? $connection_data['refresh_token'] : '',
 			'sandbox_mode'    => ! empty( $connection_data['sandbox_mode'] ),
 			'has_woocommerce' => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'         => ! empty( $connection_data['enabled'] ),
@@ -338,6 +351,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// Handle EZuite ERP connections separately.
 		if ( 'ezuite_erp' === $connection_type ) {
 			return self::test_ezuite_connection( $connection );
+		}
+
+		// Handle Google Drive connections separately.
+		if ( 'google_drive' === $connection_type ) {
+			return self::test_google_drive_connection( $connection );
 		}
 
 		// Test basic WordPress REST API access.
@@ -541,6 +559,183 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( $item_count > 0 ) {
 				/* translators: %d: number of items retrieved */
 				$results['message'] = sprintf( __( 'EZuite ERP connection successful. Retrieved %d test item(s).', 'wp-mcp-ai-pro' ), $item_count );
+			}
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Test Google Drive API connection.
+	 *
+	 * Makes a simple API call to verify the OAuth credentials.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_google_drive_connection( $connection ) {
+		// Validate required fields.
+		if ( empty( $connection['url'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_url',
+				__( 'Google Drive API URL is required.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_oauth_credentials',
+				__( 'OAuth Client ID and Client Secret are required.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Check if we have a refresh token.
+		if ( empty( $connection['refresh_token'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_refresh_token',
+				__( 'OAuth refresh token is required. Please authenticate via OAuth flow first.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Decrypt the credentials.
+		$client_id     = $connection['client_id'];
+		$client_secret = self::decrypt_value( $connection['client_secret'] );
+		$refresh_token = self::decrypt_value( $connection['refresh_token'] );
+
+		if ( empty( $client_id ) || empty( $client_secret ) || empty( $refresh_token ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_credentials',
+				__( 'Invalid or corrupted OAuth credentials.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Request an access token using the refresh token.
+		$token_response = wp_remote_post(
+			'https://oauth2.googleapis.com/token',
+			array(
+				'timeout' => 30,
+				'body'    => array(
+					'client_id'     => $client_id,
+					'client_secret' => $client_secret,
+					'refresh_token' => $refresh_token,
+					'grant_type'    => 'refresh_token',
+				),
+			)
+		);
+
+		if ( is_wp_error( $token_response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_token_request_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to refresh access token: %s', 'wp-mcp-ai-pro' ),
+					$token_response->get_error_message()
+				)
+			);
+		}
+
+		$token_status = wp_remote_retrieve_response_code( $token_response );
+		if ( 200 !== $token_status ) {
+			$token_body = wp_remote_retrieve_body( $token_response );
+			return new WP_Error(
+				'wp_mcp_ai_pro_token_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'OAuth token refresh failed with status %d. Please check your credentials.', 'wp-mcp-ai-pro' ),
+					$token_status
+				)
+			);
+		}
+
+		$token_data = json_decode( wp_remote_retrieve_body( $token_response ), true );
+		if ( empty( $token_data['access_token'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_token_response',
+				__( 'Invalid token response from Google OAuth.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		$access_token = $token_data['access_token'];
+
+		// Test the Google Drive API by getting about information.
+		$test_url = 'https://www.googleapis.com/drive/v3/about?fields=storageQuota,user';
+
+		$drive_response = wp_remote_get(
+			$test_url,
+			array(
+				'timeout' => 30,
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+					'Accept'        => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $drive_response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_drive_request_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to Google Drive API: %s', 'wp-mcp-ai-pro' ),
+					$drive_response->get_error_message()
+				)
+			);
+		}
+
+		$drive_status = wp_remote_retrieve_response_code( $drive_response );
+		if ( 200 !== $drive_status ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_drive_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Google Drive API returned error status %d. Please verify your credentials and permissions.', 'wp-mcp-ai-pro' ),
+					$drive_status
+				)
+			);
+		}
+
+		$drive_data = json_decode( wp_remote_retrieve_body( $drive_response ), true );
+
+		// Connection successful!
+		$results = array(
+			'success'      => true,
+			'google_drive' => true,
+			'api_url'      => $connection['url'],
+			'message'      => __( 'Google Drive connection successful. OAuth credentials verified.', 'wp-mcp-ai-pro' ),
+		);
+
+		// Add user info if available.
+		if ( isset( $drive_data['user']['emailAddress'] ) ) {
+			$results['email'] = sanitize_email( $drive_data['user']['emailAddress'] );
+			/* translators: %s: connected email address */
+			$results['message'] = sprintf( __( 'Google Drive connection successful. Connected as %s.', 'wp-mcp-ai-pro' ), $results['email'] );
+		}
+
+		// If a folder_id is specified, verify it exists.
+		if ( ! empty( $connection['folder_id'] ) ) {
+			$folder_id  = $connection['folder_id'];
+			$folder_url = 'https://www.googleapis.com/drive/v3/files/' . rawurlencode( $folder_id ) . '?fields=id,name';
+
+			$folder_response = wp_remote_get(
+				$folder_url,
+				array(
+					'timeout' => 30,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $access_token,
+						'Accept'        => 'application/json',
+					),
+				)
+			);
+
+			if ( ! is_wp_error( $folder_response ) && 200 === wp_remote_retrieve_response_code( $folder_response ) ) {
+				$folder_data = json_decode( wp_remote_retrieve_body( $folder_response ), true );
+				if ( isset( $folder_data['name'] ) ) {
+					$results['folder_name'] = sanitize_text_field( $folder_data['name'] );
+					/* translators: 1: email address, 2: folder name */
+					$results['message'] = sprintf( __( 'Google Drive connection successful. Connected as %1$s. Scoped to folder: %2$s', 'wp-mcp-ai-pro' ), isset( $results['email'] ) ? $results['email'] : 'user', $results['folder_name'] );
+				}
 			}
 		}
 
@@ -899,6 +1094,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 		}
 
+		if ( 'google_drive' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_google_drive_credentials',
+					__( 'OAuth Client ID and Client Secret are required for Google Drive connections.', 'wp-mcp-ai-pro' )
+				);
+			}
 		if ( 'gmail' === $connection_type ) {
 			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
 				return new WP_Error(
