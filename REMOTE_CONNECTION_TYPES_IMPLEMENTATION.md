@@ -47,7 +47,6 @@ Added conditional form fields for each connection type:
 
 **EZuite ERP Fields:**
 - API Key (required)
-- API Secret (required)
 
 #### JavaScript Updates (Lines 733-804)
 Updated `toggleConnectionTypeFields()` to show/hide type-specific fields based on selected connection type.
@@ -69,7 +68,7 @@ Updated connection list view to display all connection types with distinct badge
 #### Updated Validations (Lines 652-696)
 Enhanced connection validation for all connection types:
 
-- **EZuite ERP:** Now requires both api_key AND api_secret (previously only api_key)
+- **EZuite ERP:** Requires api_key only (api_secret not needed)
 - **iSAMS:** Validates api_key and api_secret
 - **Flowhub:** Validates api_key, client_id, client_secret, and location_id
 - **PayHere:** Validates app_id and app_secret

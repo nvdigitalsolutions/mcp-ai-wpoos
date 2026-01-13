@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-ezuite-connection-settings',
+        'version' => 'dev-copilot/update-ezuite-connection-settings',
+        'reference' => '05d62ab1608a7c1e7ff98e5cfc325827141eac8f',
         'pretty_version' => 'dev-copilot/start-phase-3-integration',
         'version' => 'dev-copilot/start-phase-3-integration',
         'reference' => '37761ab60ba8d5b0821a9fe1b36dd4e3b88622a7',
@@ -35,6 +38,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-ezuite-connection-settings',
+            'version' => 'dev-copilot/update-ezuite-connection-settings',
+            'reference' => '05d62ab1608a7c1e7ff98e5cfc325827141eac8f',
             'pretty_version' => 'dev-copilot/start-phase-3-integration',
             'version' => 'dev-copilot/start-phase-3-integration',
             'reference' => '37761ab60ba8d5b0821a9fe1b36dd4e3b88622a7',
