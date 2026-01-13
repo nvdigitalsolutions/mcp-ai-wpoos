@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		// Check permissions.
-		$is_author = absint( $allergy->post_author ) === $current_user_id;
+		$is_author       = absint( $allergy->post_author ) === $current_user_id;
 		$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 		if ( ! $is_author && ! $can_edit_others ) {
@@ -150,10 +150,13 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				return new WP_Error( 'wp_mcp_ai_invalid_allergen', __( 'Allergen name cannot be empty.', 'mcp-ai-wpoos-pro' ) );
 			}
 
-			$result = wp_update_post( array(
-				'ID'         => $allergy_id,
-				'post_title' => $allergen,
-			), true );
+			$result = wp_update_post(
+				array(
+					'ID'         => $allergy_id,
+					'post_title' => $allergen,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -164,11 +167,14 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Update notes if provided.
 		if ( isset( $arguments['notes'] ) ) {
-			$notes = sanitize_textarea_field( $arguments['notes'] );
-			$result = wp_update_post( array(
-				'ID'           => $allergy_id,
-				'post_content' => $notes,
-			), true );
+			$notes  = sanitize_textarea_field( $arguments['notes'] );
+			$result = wp_update_post(
+				array(
+					'ID'           => $allergy_id,
+					'post_content' => $notes,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -179,7 +185,7 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Update type if provided.
 		if ( isset( $arguments['type'] ) ) {
-			$type = sanitize_text_field( $arguments['type'] );
+			$type        = sanitize_text_field( $arguments['type'] );
 			$valid_types = array( 'food', 'medication', 'environmental', 'insect', 'other' );
 			if ( $type && ! in_array( $type, $valid_types, true ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_type', __( 'Invalid allergy type.', 'mcp-ai-wpoos-pro' ) );
@@ -190,7 +196,7 @@ class WP_MCP_AI_Tool_Update_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Update severity if provided.
 		if ( isset( $arguments['severity'] ) ) {
-			$severity = sanitize_text_field( $arguments['severity'] );
+			$severity         = sanitize_text_field( $arguments['severity'] );
 			$valid_severities = array( 'mild', 'moderate', 'severe', 'life-threatening' );
 			if ( $severity && ! in_array( $severity, $valid_severities, true ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_severity', __( 'Invalid severity level.', 'mcp-ai-wpoos-pro' ) );

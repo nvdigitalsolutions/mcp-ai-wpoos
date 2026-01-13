@@ -43,17 +43,17 @@ class WP_MCP_AI_Tool_Delete_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'           => array(
+				'member_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID to delete (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'delete_related'      => array(
+				'delete_related' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Also delete all related records (allergies, prescriptions, checkups, medical records, policies). Default: false', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'force'               => array(
+				'force'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Force permanent deletion (bypass trash). Default: false', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -102,7 +102,7 @@ class WP_MCP_AI_Tool_Delete_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Validate inputs.
 		$member_id      = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
 		$delete_related = isset( $arguments['delete_related'] ) ? (bool) $arguments['delete_related'] : false;
-		$force           = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
+		$force          = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
 
 		if ( ! $member_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_member_id', __( 'Member ID is required.', 'mcp-ai-wpoos-pro' ) );
@@ -116,7 +116,7 @@ class WP_MCP_AI_Tool_Delete_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Check permissions: must be author or have delete_others_posts capability.
-		$is_author = absint( $member->post_author ) === $current_user_id;
+		$is_author         = absint( $member->post_author ) === $current_user_id;
 		$can_delete_others = user_can( $current_user_id, 'delete_others_posts' );
 
 		if ( ! $is_author && ! $can_delete_others ) {
@@ -179,14 +179,16 @@ class WP_MCP_AI_Tool_Delete_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		foreach ( $post_types as $post_type ) {
 			$meta_key = $this->get_meta_key_for_post_type( $post_type );
-			$query = new WP_Query( array(
-				'post_type'      => $post_type,
-				'post_status'    => 'any',
-				'meta_key'       => $meta_key,
-				'meta_value'     => $member_id,
-				'posts_per_page' => 1,
-				'fields'         => 'ids',
-			) );
+			$query    = new WP_Query(
+				array(
+					'post_type'      => $post_type,
+					'post_status'    => 'any',
+					'meta_key'       => $meta_key,
+					'meta_value'     => $member_id,
+					'posts_per_page' => 1,
+					'fields'         => 'ids',
+				)
+			);
 
 			if ( $query->have_posts() ) {
 				return true;
@@ -215,14 +217,16 @@ class WP_MCP_AI_Tool_Delete_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 
 		foreach ( $post_types as $post_type => $meta_key ) {
-			$query = new WP_Query( array(
-				'post_type'      => $post_type,
-				'post_status'    => 'any',
-				'meta_key'       => $meta_key,
-				'meta_value'     => $member_id,
-				'posts_per_page' => -1,
-				'fields'         => 'ids',
-			) );
+			$query = new WP_Query(
+				array(
+					'post_type'      => $post_type,
+					'post_status'    => 'any',
+					'meta_key'       => $meta_key,
+					'meta_value'     => $member_id,
+					'posts_per_page' => -1,
+					'fields'         => 'ids',
+				)
+			);
 
 			$count = 0;
 			if ( $query->have_posts() ) {

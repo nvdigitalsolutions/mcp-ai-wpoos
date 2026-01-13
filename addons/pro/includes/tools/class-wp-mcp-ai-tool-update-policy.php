@@ -163,7 +163,7 @@ class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Check permissions.
-		$is_author = absint( $policy->post_author ) === $current_user_id;
+		$is_author       = absint( $policy->post_author ) === $current_user_id;
 		$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 		if ( ! $is_author && ! $can_edit_others ) {
@@ -181,10 +181,12 @@ class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			}
 
 			$result = wp_update_post(
-		array(
-				'ID'         => $policy_id,
-				'post_title' => $name,
-			), true );
+				array(
+					'ID'         => $policy_id,
+					'post_title' => $name,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -196,11 +198,13 @@ class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Update coverage details if provided.
 		if ( isset( $arguments['coverage_details'] ) ) {
 			$coverage = sanitize_textarea_field( $arguments['coverage_details'] );
-			$result = wp_update_post(
-		array(
-				'ID'           => $policy_id,
-				'post_content' => $coverage,
-			), true );
+			$result   = wp_update_post(
+				array(
+					'ID'           => $policy_id,
+					'post_content' => $coverage,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;

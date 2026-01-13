@@ -30,23 +30,26 @@ class Test_Health_Wellness_Member_Tools extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Enable health wellness management.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                                      = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_health_wellness_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Create test user.
-		$this->test_user_id = $this->factory->user->create( array(
-			'role' => 'administrator',
-		) );
+		$this->test_user_id = $this->factory->user->create(
+			array(
+				'role' => 'administrator',
+			)
+		);
 
 		// Create test member.
 		$this->test_member_id = wp_insert_post(
-		array(
-			'post_type'   => 'mcp_ai_member',
-			'post_title'  => 'John Doe',
-			'post_status' => 'publish',
-			'post_author' => $this->test_user_id,
-		) );
+			array(
+				'post_type'   => 'mcp_ai_member',
+				'post_title'  => 'John Doe',
+				'post_status' => 'publish',
+				'post_author' => $this->test_user_id,
+			)
+		);
 
 		// Set member metadata.
 		update_post_meta( $this->test_member_id, '_member_date_of_birth', '1990-05-15' );
@@ -175,10 +178,10 @@ class Test_Health_Wellness_Member_Tools extends WP_UnitTestCase {
 		$tool = new WP_MCP_AI_Tool_Update_Member();
 
 		$arguments = array(
-			'member_id'     => $this->test_member_id,
-			'email'         => 'newemail@example.com',
-			'phone'         => '555-9999',
-			'blood_type'    => 'A+',
+			'member_id'  => $this->test_member_id,
+			'email'      => 'newemail@example.com',
+			'phone'      => '555-9999',
+			'blood_type' => 'A+',
 		);
 
 		$context = array(
@@ -223,9 +226,11 @@ class Test_Health_Wellness_Member_Tools extends WP_UnitTestCase {
 	 */
 	public function test_update_member_requires_permission() {
 		// Create another user without permission.
-		$other_user_id = $this->factory->user->create( array(
-			'role' => 'subscriber',
-		) );
+		$other_user_id = $this->factory->user->create(
+			array(
+				'role' => 'subscriber',
+			)
+		);
 
 		$tool = new WP_MCP_AI_Tool_Update_Member();
 
@@ -303,20 +308,22 @@ class Test_Health_Wellness_Member_Tools extends WP_UnitTestCase {
 	public function test_delete_member_deletes_related_records() {
 		// Create related allergy record.
 		$allergy_id = wp_insert_post(
-		array(
-			'post_type'   => 'mcp_ai_allergy',
-			'post_title'  => 'Peanuts',
-			'post_status' => 'publish',
-		) );
+			array(
+				'post_type'   => 'mcp_ai_allergy',
+				'post_title'  => 'Peanuts',
+				'post_status' => 'publish',
+			)
+		);
 		update_post_meta( $allergy_id, '_allergy_member_id', $this->test_member_id );
 
 		// Create related prescription.
 		$prescription_id = wp_insert_post(
-		array(
-			'post_type'   => 'mcp_ai_prescription',
-			'post_title'  => 'Test Medication',
-			'post_status' => 'publish',
-		) );
+			array(
+				'post_type'   => 'mcp_ai_prescription',
+				'post_title'  => 'Test Medication',
+				'post_status' => 'publish',
+			)
+		);
 		update_post_meta( $prescription_id, '_prescription_member_id', $this->test_member_id );
 
 		$tool = new WP_MCP_AI_Tool_Delete_Member();
@@ -350,9 +357,11 @@ class Test_Health_Wellness_Member_Tools extends WP_UnitTestCase {
 	 */
 	public function test_delete_member_requires_permission() {
 		// Create another user without permission.
-		$other_user_id = $this->factory->user->create( array(
-			'role' => 'subscriber',
-		) );
+		$other_user_id = $this->factory->user->create(
+			array(
+				'role' => 'subscriber',
+			)
+		);
 
 		$tool = new WP_MCP_AI_Tool_Delete_Member();
 
@@ -375,7 +384,7 @@ class Test_Health_Wellness_Member_Tools extends WP_UnitTestCase {
 	 */
 	public function test_tools_check_feature_enabled() {
 		// Disable health wellness management.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                                      = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_health_wellness_management'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 

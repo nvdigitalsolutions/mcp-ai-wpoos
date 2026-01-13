@@ -130,18 +130,18 @@ class WP_MCP_AI_Tool_Get_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Get related counts.
-		$allergies_count = $this->get_related_count( $member_id, 'mcp_ai_allergy', '_allergy_member_id' );
-		$prescriptions_count = $this->get_related_count( $member_id, 'mcp_ai_prescription', '_prescription_member_id' );
-		$checkups_count = $this->get_related_count( $member_id, 'mcp_ai_checkup', '_checkup_member_id' );
+		$allergies_count       = $this->get_related_count( $member_id, 'mcp_ai_allergy', '_allergy_member_id' );
+		$prescriptions_count   = $this->get_related_count( $member_id, 'mcp_ai_prescription', '_prescription_member_id' );
+		$checkups_count        = $this->get_related_count( $member_id, 'mcp_ai_checkup', '_checkup_member_id' );
 		$medical_records_count = $this->get_related_count( $member_id, 'mcp_ai_medical_record', '_record_member_id' );
-		$policies_count = $this->get_related_count( $member_id, 'mcp_ai_policy', '_policy_member_id' );
+		$policies_count        = $this->get_related_count( $member_id, 'mcp_ai_policy', '_policy_member_id' );
 
 		$member_data['related_records'] = array(
-			'allergies'        => $allergies_count,
-			'prescriptions'    => $prescriptions_count,
-			'checkups'         => $checkups_count,
-			'medical_records'  => $medical_records_count,
-			'policies'         => $policies_count,
+			'allergies'       => $allergies_count,
+			'prescriptions'   => $prescriptions_count,
+			'checkups'        => $checkups_count,
+			'medical_records' => $medical_records_count,
+			'policies'        => $policies_count,
 		);
 
 		return array(
@@ -159,14 +159,16 @@ class WP_MCP_AI_Tool_Get_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @return int Count of related records.
 	 */
 	private function get_related_count( $member_id, $post_type, $meta_key ) {
-		$query = new WP_Query( array(
-			'post_type'      => $post_type,
-			'post_status'    => 'publish',
-			'meta_key'       => $meta_key,
-			'meta_value'     => $member_id,
-			'posts_per_page' => 1,
-			'fields'         => 'ids',
-		) );
+		$query = new WP_Query(
+			array(
+				'post_type'      => $post_type,
+				'post_status'    => 'publish',
+				'meta_key'       => $meta_key,
+				'meta_value'     => $member_id,
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+			)
+		);
 
 		return (int) $query->found_posts;
 	}

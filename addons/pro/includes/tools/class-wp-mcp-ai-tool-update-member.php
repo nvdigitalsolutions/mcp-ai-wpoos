@@ -161,7 +161,7 @@ class WP_MCP_AI_Tool_Update_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Check permissions: must be author or have edit_others_posts capability.
-		$is_author = absint( $member->post_author ) === $current_user_id;
+		$is_author       = absint( $member->post_author ) === $current_user_id;
 		$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 		if ( ! $is_author && ! $can_edit_others ) {
@@ -179,10 +179,12 @@ class WP_MCP_AI_Tool_Update_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			}
 
 			$result = wp_update_post(
-		array(
-				'ID'         => $member_id,
-				'post_title' => $name,
-			), true );
+				array(
+					'ID'         => $member_id,
+					'post_title' => $name,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;

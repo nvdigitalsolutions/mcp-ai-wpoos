@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id' => array(
+				'member_id'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID to get health timeline for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -177,7 +177,7 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 
 		$checkups = get_posts( $checkup_args );
 		foreach ( $checkups as $checkup ) {
-			$date = get_post_meta( $checkup->ID, '_checkup_date', true );
+			$date     = get_post_meta( $checkup->ID, '_checkup_date', true );
 			$events[] = array(
 				'type'     => 'checkup',
 				'id'       => $checkup->ID,
@@ -224,15 +224,15 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 
 		$records = get_posts( $record_args );
 		foreach ( $records as $record ) {
-			$date = get_post_meta( $record->ID, '_medical_record_date', true );
-			$types = wp_get_post_terms( $record->ID, 'mcp_ai_record_type', array( 'fields' => 'names' ) );
+			$date     = get_post_meta( $record->ID, '_medical_record_date', true );
+			$types    = wp_get_post_terms( $record->ID, 'mcp_ai_record_type', array( 'fields' => 'names' ) );
 			$events[] = array(
-				'type'      => 'medical_record',
-				'id'        => $record->ID,
-				'date'      => $date,
-				'title'     => $record->post_title,
+				'type'        => 'medical_record',
+				'id'          => $record->ID,
+				'date'        => $date,
+				'title'       => $record->post_title,
 				'record_type' => ! empty( $types ) ? $types[0] : '',
-				'provider'  => get_post_meta( $record->ID, '_medical_record_provider', true ),
+				'provider'    => get_post_meta( $record->ID, '_medical_record_provider', true ),
 			);
 		}
 
@@ -273,7 +273,7 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 		$prescriptions = get_posts( $prescription_args );
 		foreach ( $prescriptions as $prescription ) {
 			$start_date_val = get_post_meta( $prescription->ID, '_prescription_start_date', true );
-			$events[] = array(
+			$events[]       = array(
 				'type'       => 'prescription',
 				'id'         => $prescription->ID,
 				'date'       => $start_date_val,
@@ -320,22 +320,25 @@ class WP_MCP_AI_Tool_Get_Health_Timeline implements WP_MCP_AI_Tool_Interface, WP
 		$allergies = get_posts( $allergy_args );
 		foreach ( $allergies as $allergy ) {
 			$diagnosed_date = get_post_meta( $allergy->ID, '_allergy_diagnosed_date', true );
-			$events[] = array(
-				'type'      => 'allergy',
-				'id'        => $allergy->ID,
-				'date'      => $diagnosed_date ? $diagnosed_date : $allergy->post_date,
-				'allergen'  => $allergy->post_title,
-				'severity'  => get_post_meta( $allergy->ID, '_allergy_severity', true ),
+			$events[]       = array(
+				'type'         => 'allergy',
+				'id'           => $allergy->ID,
+				'date'         => $diagnosed_date ? $diagnosed_date : $allergy->post_date,
+				'allergen'     => $allergy->post_title,
+				'severity'     => get_post_meta( $allergy->ID, '_allergy_severity', true ),
 				'allergy_type' => get_post_meta( $allergy->ID, '_allergy_type', true ),
 			);
 		}
 
 		// Sort events by date (most recent first).
-		usort( $events, function( $a, $b ) {
-			$date_a = isset( $a['date'] ) ? $a['date'] : '';
-			$date_b = isset( $b['date'] ) ? $b['date'] : '';
-			return strcmp( $date_b, $date_a );  // Descending order.
-		});
+		usort(
+			$events,
+			function ( $a, $b ) {
+				$date_a = isset( $a['date'] ) ? $a['date'] : '';
+				$date_b = isset( $b['date'] ) ? $b['date'] : '';
+				return strcmp( $date_b, $date_a );  // Descending order.
+			}
+		);
 
 		// Apply limit.
 		if ( count( $events ) > $limit ) {

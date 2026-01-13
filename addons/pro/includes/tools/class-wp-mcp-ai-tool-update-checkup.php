@@ -138,7 +138,7 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		// Check permissions.
-		$is_author = absint( $checkup->post_author ) === $current_user_id;
+		$is_author       = absint( $checkup->post_author ) === $current_user_id;
 		$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 		if ( ! $is_author && ! $can_edit_others ) {
@@ -156,10 +156,12 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			}
 
 			$result = wp_update_post(
-		array(
-				'ID'         => $checkup_id,
-				'post_title' => $title,
-			), true );
+				array(
+					'ID'         => $checkup_id,
+					'post_title' => $title,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -170,12 +172,14 @@ class WP_MCP_AI_Tool_Update_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Update notes if provided.
 		if ( isset( $arguments['notes'] ) ) {
-			$notes = sanitize_textarea_field( $arguments['notes'] );
+			$notes  = sanitize_textarea_field( $arguments['notes'] );
 			$result = wp_update_post(
-		array(
-				'ID'           => $checkup_id,
-				'post_content' => $notes,
-			), true );
+				array(
+					'ID'           => $checkup_id,
+					'post_content' => $notes,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;

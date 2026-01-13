@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_Delete_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 
 		// Validate inputs.
 		$record_id = isset( $arguments['record_id'] ) ? absint( $arguments['record_id'] ) : 0;
-		$force           = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
+		$force     = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
 
 		if ( ! $record_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_record_id', __( 'Medical record ID is required.', 'mcp-ai-wpoos-pro' ) );
@@ -109,7 +109,7 @@ class WP_MCP_AI_Tool_Delete_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Check permissions.
-		$is_author = absint( $record->post_author ) === $current_user_id;
+		$is_author         = absint( $record->post_author ) === $current_user_id;
 		$can_delete_others = user_can( $current_user_id, 'delete_others_posts' );
 
 		if ( ! $is_author && ! $can_delete_others ) {

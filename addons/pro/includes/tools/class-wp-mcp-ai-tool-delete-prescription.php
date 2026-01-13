@@ -109,7 +109,7 @@ class WP_MCP_AI_Tool_Delete_Prescription implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Check permissions.
-		$is_author = absint( $prescription->post_author ) === $current_user_id;
+		$is_author         = absint( $prescription->post_author ) === $current_user_id;
 		$can_delete_others = user_can( $current_user_id, 'delete_others_posts' );
 
 		if ( ! $is_author && ! $can_delete_others ) {

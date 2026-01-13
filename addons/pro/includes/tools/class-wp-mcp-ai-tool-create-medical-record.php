@@ -171,15 +171,15 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 
 		// Create the medical record post.
 		$record_id = wp_insert_post(
-		array(
-			'post_type'    => 'mcp_ai_medical_record',
-			'post_title'   => $title,
-			'post_content' => $description,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		),
-		true
-	);
+			array(
+				'post_type'    => 'mcp_ai_medical_record',
+				'post_title'   => $title,
+				'post_content' => $description,
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			),
+			true
+		);
 
 		if ( is_wp_error( $record_id ) ) {
 			return $record_id;

@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_List_Allergies implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				$allergy_member_id = get_post_meta( $allergy_id, '_allergy_member_id', true );
 				$member_name       = '';
 				if ( $allergy_member_id ) {
-					$member = get_post( $allergy_member_id );
+					$member      = get_post( $allergy_member_id );
 					$member_name = $member ? $member->post_title : '';
 				}
 

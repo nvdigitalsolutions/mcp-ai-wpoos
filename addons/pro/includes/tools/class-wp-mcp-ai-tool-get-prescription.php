@@ -105,7 +105,7 @@ class WP_MCP_AI_Tool_Get_Prescription implements WP_MCP_AI_Tool_Interface, WP_MC
 		$member_id   = get_post_meta( $prescription_id, '_prescription_member_id', true );
 		$member_name = '';
 		if ( $member_id ) {
-			$member = get_post( $member_id );
+			$member      = get_post( $member_id );
 			$member_name = $member ? $member->post_title : '';
 		}
 

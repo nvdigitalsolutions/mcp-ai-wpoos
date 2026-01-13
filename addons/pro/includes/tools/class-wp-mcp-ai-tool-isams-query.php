@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'endpoint'   => array(
+				'endpoint' => array(
 					'type'        => 'string',
 					'description' => __( 'API endpoint to query. Available: pupils, employees, departments, houses, terms, subjects, year_groups', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
@@ -57,17 +57,17 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 						'admission_applicants',
 					),
 				),
-				'id'         => array(
+				'id'       => array(
 					'type'        => 'string',
 					'description' => __( 'Optional specific ID to retrieve a single record', 'mcp-ai-wpoos-pro' ),
 				),
-				'page'       => array(
+				'page'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for paginated results', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 					'minimum'     => 1,
 				),
-				'limit'      => array(
+				'limit'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
@@ -143,9 +143,9 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Get settings.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$api_url  = isset( $settings['isams_api_url'] ) ? trailingslashit( $settings['isams_api_url'] ) : '';
-		$api_key  = isset( $settings['isams_api_key'] ) ? $settings['isams_api_key'] : '';
+		$settings   = get_option( 'wp_mcp_ai_settings', array() );
+		$api_url    = isset( $settings['isams_api_url'] ) ? trailingslashit( $settings['isams_api_url'] ) : '';
+		$api_key    = isset( $settings['isams_api_key'] ) ? $settings['isams_api_key'] : '';
 		$api_secret = isset( $settings['isams_api_secret'] ) ? $settings['isams_api_secret'] : '';
 
 		if ( empty( $api_url ) || empty( $api_key ) || empty( $api_secret ) ) {
@@ -221,7 +221,7 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'body'    => wp_json_encode(
 					array(
-						'apiKey' => $api_key,
+						'apiKey'    => $api_key,
 						'apiSecret' => $api_secret,
 					)
 				),

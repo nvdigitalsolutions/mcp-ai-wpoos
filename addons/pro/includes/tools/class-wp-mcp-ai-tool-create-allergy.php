@@ -43,28 +43,28 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'    => array(
+				'member_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this allergy is for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'allergen'     => array(
+				'allergen'       => array(
 					'type'        => 'string',
 					'description' => __( 'Allergen name (e.g., "Peanuts", "Penicillin", "Pollen") (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'type'         => array(
+				'type'           => array(
 					'type'        => 'string',
 					'description' => __( 'Allergy type: "food", "medication", "environmental", "insect", "other" (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'food', 'medication', 'environmental', 'insect', 'other' ),
 				),
-				'severity'     => array(
+				'severity'       => array(
 					'type'        => 'string',
 					'description' => __( 'Severity level: "mild", "moderate", "severe", "life-threatening" (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'mild', 'moderate', 'severe', 'life-threatening' ),
 				),
-				'reactions'    => array(
+				'reactions'      => array(
 					'type'        => 'string',
 					'description' => __( 'Symptoms/reactions (e.g., "hives, swelling, difficulty breathing") (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
@@ -74,7 +74,7 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Date allergy was diagnosed (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'notes'        => array(
+				'notes'          => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes, management instructions, or treatment details (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 2000,
@@ -162,13 +162,16 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		// Create the allergy post.
-		$allergy_id = wp_insert_post( array(
-			'post_type'    => 'mcp_ai_allergy',
-			'post_title'   => $allergen,
-			'post_content' => $notes,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		), true );
+		$allergy_id = wp_insert_post(
+			array(
+				'post_type'    => 'mcp_ai_allergy',
+				'post_title'   => $allergen,
+				'post_content' => $notes,
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			),
+			true
+		);
 
 		if ( is_wp_error( $allergy_id ) ) {
 			return $allergy_id;

@@ -210,15 +210,15 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Create the policy post.
 		$policy_id = wp_insert_post(
-		array(
-			'post_type'    => 'mcp_ai_policy',
-			'post_title'   => $name,
-			'post_content' => $coverage_details,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		),
-		true
-	);
+			array(
+				'post_type'    => 'mcp_ai_policy',
+				'post_title'   => $name,
+				'post_content' => $coverage_details,
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			),
+			true
+		);
 
 		if ( is_wp_error( $policy_id ) ) {
 			return $policy_id;

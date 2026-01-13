@@ -219,7 +219,7 @@ class WP_MCP_AI_Tool_List_Prescriptions implements WP_MCP_AI_Tool_Interface, WP_
 				$prescription_member_id = get_post_meta( $prescription_id, '_prescription_member_id', true );
 				$member_name            = '';
 				if ( $prescription_member_id ) {
-					$member = get_post( $prescription_member_id );
+					$member      = get_post( $prescription_member_id );
 					$member_name = $member ? $member->post_title : '';
 				}
 

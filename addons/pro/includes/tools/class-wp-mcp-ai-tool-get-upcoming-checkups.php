@@ -134,36 +134,38 @@ class WP_MCP_AI_Tool_Get_Upcoming_Checkups implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Calculate date range.
-		$today        = current_time( 'Y-m-d' );
-		$end_date     = gmdate( 'Y-m-d', strtotime( "+{$days} days" ) );
+		$today    = current_time( 'Y-m-d' );
+		$end_date = gmdate( 'Y-m-d', strtotime( "+{$days} days" ) );
 
 		// Query upcoming checkups.
-		$query = new WP_Query( array(
-			'post_type'      => 'mcp_ai_checkup',
-			'post_status'    => 'publish',
-			'meta_query'     => array(
-				'relation' => 'AND',
-				array(
-					'key'   => '_checkup_member_id',
-					'value' => $member_id,
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_checkup',
+				'post_status'    => 'publish',
+				'meta_query'     => array(
+					'relation' => 'AND',
+					array(
+						'key'   => '_checkup_member_id',
+						'value' => $member_id,
+					),
+					array(
+						'key'     => '_checkup_date',
+						'value'   => array( $today, $end_date ),
+						'compare' => 'BETWEEN',
+						'type'    => 'DATE',
+					),
+					array(
+						'key'     => '_checkup_status',
+						'value'   => 'cancelled',
+						'compare' => '!=',
+					),
 				),
-				array(
-					'key'     => '_checkup_date',
-					'value'   => array( $today, $end_date ),
-					'compare' => 'BETWEEN',
-					'type'    => 'DATE',
-				),
-				array(
-					'key'     => '_checkup_status',
-					'value'   => 'cancelled',
-					'compare' => '!=',
-				),
-			),
-			'meta_key'       => '_checkup_date',
-			'orderby'        => 'meta_value',
-			'order'          => 'ASC',
-			'posts_per_page' => $limit,
-		) );
+				'meta_key'       => '_checkup_date',
+				'orderby'        => 'meta_value',
+				'order'          => 'ASC',
+				'posts_per_page' => $limit,
+			)
+		);
 
 		$upcoming_checkups = array();
 		if ( $query->have_posts() ) {

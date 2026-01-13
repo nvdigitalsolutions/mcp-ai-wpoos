@@ -143,7 +143,7 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Check permissions.
-		$is_author = absint( $record->post_author ) === $current_user_id;
+		$is_author       = absint( $record->post_author ) === $current_user_id;
 		$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 		if ( ! $is_author && ! $can_edit_others ) {
@@ -161,10 +161,12 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 			}
 
 			$result = wp_update_post(
-		array(
-				'ID'         => $record_id,
-				'post_title' => $title,
-			), true );
+				array(
+					'ID'         => $record_id,
+					'post_title' => $title,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -176,11 +178,13 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		// Update description if provided.
 		if ( isset( $arguments['description'] ) ) {
 			$description = sanitize_textarea_field( $arguments['description'] );
-			$result = wp_update_post(
-		array(
-				'ID'           => $record_id,
-				'post_content' => $description,
-			), true );
+			$result      = wp_update_post(
+				array(
+					'ID'           => $record_id,
+					'post_content' => $description,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -191,7 +195,7 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 
 		// Update record type if provided.
 		if ( isset( $arguments['type'] ) ) {
-			$type = sanitize_key( $arguments['type'] );
+			$type        = sanitize_key( $arguments['type'] );
 			$valid_types = array( 'lab-result', 'diagnosis', 'treatment', 'vaccination', 'imaging', 'procedure', 'hospitalization' );
 			if ( ! in_array( $type, $valid_types, true ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_type', __( 'Invalid record type.', 'mcp-ai-wpoos-pro' ) );

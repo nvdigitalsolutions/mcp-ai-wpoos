@@ -148,7 +148,7 @@ class WP_MCP_AI_Tool_Update_Prescription implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Check permissions.
-		$is_author = absint( $prescription->post_author ) === $current_user_id;
+		$is_author       = absint( $prescription->post_author ) === $current_user_id;
 		$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 		if ( ! $is_author && ! $can_edit_others ) {
@@ -166,10 +166,12 @@ class WP_MCP_AI_Tool_Update_Prescription implements WP_MCP_AI_Tool_Interface, WP
 			}
 
 			$result = wp_update_post(
-		array(
-				'ID'         => $prescription_id,
-				'post_title' => $medication,
-			), true );
+				array(
+					'ID'         => $prescription_id,
+					'post_title' => $medication,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
@@ -181,11 +183,13 @@ class WP_MCP_AI_Tool_Update_Prescription implements WP_MCP_AI_Tool_Interface, WP
 		// Update instructions if provided.
 		if ( isset( $arguments['instructions'] ) ) {
 			$instructions = sanitize_textarea_field( $arguments['instructions'] );
-			$result = wp_update_post(
-		array(
-				'ID'           => $prescription_id,
-				'post_content' => $instructions,
-			), true );
+			$result       = wp_update_post(
+				array(
+					'ID'           => $prescription_id,
+					'post_content' => $instructions,
+				),
+				true
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;

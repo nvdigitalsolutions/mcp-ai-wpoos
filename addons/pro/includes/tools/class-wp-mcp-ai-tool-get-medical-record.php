@@ -109,7 +109,7 @@ class WP_MCP_AI_Tool_Get_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_
 		$member_id   = get_post_meta( $record_id, '_record_member_id', true );
 		$member_name = '';
 		if ( $member_id ) {
-			$member = get_post( $member_id );
+			$member      = get_post( $member_id );
 			$member_name = $member ? $member->post_title : '';
 		}
 

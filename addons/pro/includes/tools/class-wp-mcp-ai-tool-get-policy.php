@@ -109,7 +109,7 @@ class WP_MCP_AI_Tool_Get_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$member_id   = get_post_meta( $policy_id, '_policy_member_id', true );
 		$member_name = '';
 		if ( $member_id ) {
-			$member = get_post( $member_id );
+			$member      = get_post( $member_id );
 			$member_name = $member ? $member->post_title : '';
 		}
 

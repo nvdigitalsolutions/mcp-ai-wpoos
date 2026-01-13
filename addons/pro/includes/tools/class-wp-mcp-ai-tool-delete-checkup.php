@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_Delete_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Validate inputs.
 		$checkup_id = isset( $arguments['checkup_id'] ) ? absint( $arguments['checkup_id'] ) : 0;
-		$force           = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
+		$force      = isset( $arguments['force'] ) ? (bool) $arguments['force'] : false;
 
 		if ( ! $checkup_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_checkup_id', __( 'Checkup ID is required.', 'mcp-ai-wpoos-pro' ) );
@@ -109,7 +109,7 @@ class WP_MCP_AI_Tool_Delete_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		// Check permissions.
-		$is_author = absint( $checkup->post_author ) === $current_user_id;
+		$is_author         = absint( $checkup->post_author ) === $current_user_id;
 		$can_delete_others = user_can( $current_user_id, 'delete_others_posts' );
 
 		if ( ! $is_author && ! $can_delete_others ) {

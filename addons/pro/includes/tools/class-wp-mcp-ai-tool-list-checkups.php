@@ -212,7 +212,7 @@ class WP_MCP_AI_Tool_List_Checkups implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$checkup_member_id = get_post_meta( $checkup_id, '_checkup_member_id', true );
 				$member_name       = '';
 				if ( $checkup_member_id ) {
-					$member = get_post( $checkup_member_id );
+					$member      = get_post( $checkup_member_id );
 					$member_name = $member ? $member->post_title : '';
 				}
 

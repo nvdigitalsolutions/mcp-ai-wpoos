@@ -43,43 +43,43 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'   => array(
+				'member_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this checkup is for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'title'       => array(
+				'title'     => array(
 					'type'        => 'string',
 					'description' => __( 'Checkup title or type (e.g., "Annual Physical", "Dental Cleaning") (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'date'        => array(
+				'date'      => array(
 					'type'        => 'string',
 					'description' => __( 'Checkup date (YYYY-MM-DD) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'time'        => array(
+				'time'      => array(
 					'type'        => 'string',
 					'description' => __( 'Checkup time (HH:MM format, optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{2}:\d{2}$',
 				),
-				'provider'    => array(
+				'provider'  => array(
 					'type'        => 'string',
 					'description' => __( 'Healthcare provider name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'location'    => array(
+				'location'  => array(
 					'type'        => 'string',
 					'description' => __( 'Checkup location or facility (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'notes'       => array(
+				'notes'     => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes or instructions (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 2000,
 				),
-				'status'      => array(
+				'status'    => array(
 					'type'        => 'string',
 					'description' => __( 'Checkup status (optional, default: scheduled)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'scheduled', 'completed', 'cancelled', 'no-show' ),
@@ -87,8 +87,8 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				),
 			),
 			'required' => array(
-			'additionalProperties' => false,
-		);
+				'additionalProperties' => false,
+			);
 	}
 
 	/**
@@ -162,15 +162,15 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Create the checkup post.
 		$checkup_id = wp_insert_post(
-		array(
-			'post_type'    => 'mcp_ai_checkup',
-			'post_title'   => $title,
-			'post_content' => $notes,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		),
-		true
-	);
+			array(
+				'post_type'    => 'mcp_ai_checkup',
+				'post_title'   => $title,
+				'post_content' => $notes,
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			),
+			true
+		);
 
 		if ( is_wp_error( $checkup_id ) ) {
 			return $checkup_id;

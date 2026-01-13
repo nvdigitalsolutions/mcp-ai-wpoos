@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_List_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$policy_member_id = get_post_meta( $policy_id, '_policy_member_id', true );
 				$member_name      = '';
 				if ( $policy_member_id ) {
-					$member = get_post( $policy_member_id );
+					$member      = get_post( $policy_member_id );
 					$member_name = $member ? $member->post_title : '';
 				}
 
@@ -220,10 +220,10 @@ class WP_MCP_AI_Tool_List_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'success'    => true,
 			'policies'   => $policies,
 			'pagination' => array(
-				'total'       => $query->found_posts,
-				'per_page'    => $per_page,
+				'total'        => $query->found_posts,
+				'per_page'     => $per_page,
 				'current_page' => $page,
-				'total_pages' => $query->max_num_pages,
+				'total_pages'  => $query->max_num_pages,
 			),
 		);
 	}

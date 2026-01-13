@@ -43,17 +43,17 @@ class WP_MCP_AI_Tool_Check_Member_Allergies implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'  => array(
+				'member_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID to check allergies for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'allergen'   => array(
+				'allergen'  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional: Check for specific allergen (e.g., "Penicillin") (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'type'       => array(
+				'type'      => array(
 					'type'        => 'string',
 					'description' => __( 'Optional: Filter by allergy type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'food', 'medication', 'environmental', 'insect', 'other' ),
@@ -141,8 +141,8 @@ class WP_MCP_AI_Tool_Check_Member_Allergies implements WP_MCP_AI_Tool_Interface,
 
 		$query = new WP_Query( $query_args );
 
-		$allergies         = array();
-		$has_severe        = false;
+		$allergies            = array();
+		$has_severe           = false;
 		$has_life_threatening = false;
 
 		if ( $query->have_posts() ) {
