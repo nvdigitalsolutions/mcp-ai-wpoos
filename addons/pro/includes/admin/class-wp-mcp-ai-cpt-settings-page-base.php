@@ -286,7 +286,25 @@ abstract class WP_MCP_AI_CPT_Settings_Page_Base {
 		}
 
 		if ( isset( $input['model'] ) ) {
-			$sanitized['model'] = sanitize_text_field( $input['model'] );
+			// Define allowed models.
+			$allowed_models = array(
+				// OpenAI models.
+				'gpt-4o',
+				'gpt-4o-mini',
+				'gpt-4-turbo',
+				'gpt-3.5-turbo',
+				// Gemini models.
+				'gemini-2.0-flash',
+				'gemini-1.5-pro',
+				'gemini-1.5-flash',
+				// Ollama models.
+				'llama2',
+				'mistral',
+				'codellama',
+			);
+			
+			$model              = sanitize_text_field( $input['model'] );
+			$sanitized['model'] = in_array( $model, $allowed_models, true ) ? $model : 'gpt-4o';
 		}
 
 		return $sanitized;
