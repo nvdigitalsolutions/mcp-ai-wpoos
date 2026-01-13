@@ -109,18 +109,24 @@ class WP_MCP_AI_Quiz_Research_Page {
 	 * Render the research page.
 	 */
 	public static function render_page() {
-		// Get the first available assistant for chat.
-		$assistants = get_posts(
-			array(
-				'post_type'      => 'mcp_ai_assistant',
-				'post_status'    => 'publish',
-				'posts_per_page' => 1,
-				'orderby'        => 'date',
-				'order'          => 'DESC',
-			)
-		);
+		// Get assistant from settings.
+		$settings     = get_option( 'wp_mcp_ai_quiz_settings', array() );
+		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
 
-		$assistant_id = ! empty( $assistants ) ? $assistants[0]->ID : 0;
+		// If no assistant configured or invalid, get the first available assistant.
+		if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
+			$assistants = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'orderby'        => 'date',
+					'order'          => 'DESC',
+				)
+			);
+
+			$assistant_id = ! empty( $assistants ) ? $assistants[0]->ID : 0;
+		}
 
 		?>
 		<div class="wrap wp-mcp-ai-research-page">
