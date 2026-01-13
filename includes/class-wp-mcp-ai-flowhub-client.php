@@ -21,11 +21,42 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		const INVENTORY_ENDPOINT = 'https://api.flowhub.co/v0/inventory';
 
 		/**
+		 * Connection ID for Remote Sites connections.
+		 *
+		 * @var string|null
+		 */
+		protected $connection_id = null;
+
+		/**
+		 * Constructor.
+		 *
+		 * @param string|null $connection_id Optional connection ID.
+		 */
+		public function __construct( $connection_id = null ) {
+			$this->connection_id = $connection_id;
+		}
+
+		/**
 		 * Retrieve the configured API Key.
 		 *
+		 * @param string|null $connection_id Optional connection ID to get credentials from.
 		 * @return string
 		 */
-		public function get_api_key() {
+		public function get_api_key( $connection_id = null ) {
+			// Use instance connection_id if not provided.
+			if ( null === $connection_id ) {
+				$connection_id = $this->connection_id;
+			}
+
+			// Try to get from connection first.
+			if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( $connection && ! empty( $connection['api_key'] ) ) {
+					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] );
+				}
+			}
+
+			// Fallback to settings.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['flowhub_api_key'] ) ? $settings['flowhub_api_key'] : '';
@@ -34,9 +65,24 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		/**
 		 * Retrieve the configured Client ID.
 		 *
+		 * @param string|null $connection_id Optional connection ID to get credentials from.
 		 * @return string
 		 */
-		public function get_client_id() {
+		public function get_client_id( $connection_id = null ) {
+			// Use instance connection_id if not provided.
+			if ( null === $connection_id ) {
+				$connection_id = $this->connection_id;
+			}
+
+			// Try to get from connection first.
+			if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( $connection && ! empty( $connection['client_id'] ) ) {
+					return $connection['client_id'];
+				}
+			}
+
+			// Fallback to settings.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['flowhub_client_id'] ) ? $settings['flowhub_client_id'] : '';
@@ -45,9 +91,24 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		/**
 		 * Retrieve the configured Client Secret.
 		 *
+		 * @param string|null $connection_id Optional connection ID to get credentials from.
 		 * @return string
 		 */
-		public function get_client_secret() {
+		public function get_client_secret( $connection_id = null ) {
+			// Use instance connection_id if not provided.
+			if ( null === $connection_id ) {
+				$connection_id = $this->connection_id;
+			}
+
+			// Try to get from connection first.
+			if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( $connection && ! empty( $connection['client_secret'] ) ) {
+					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+				}
+			}
+
+			// Fallback to settings.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['flowhub_client_secret'] ) ? $settings['flowhub_client_secret'] : '';
@@ -56,9 +117,24 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 		/**
 		 * Retrieve the configured Location ID.
 		 *
+		 * @param string|null $connection_id Optional connection ID to get credentials from.
 		 * @return string
 		 */
-		public function get_location_id() {
+		public function get_location_id( $connection_id = null ) {
+			// Use instance connection_id if not provided.
+			if ( null === $connection_id ) {
+				$connection_id = $this->connection_id;
+			}
+
+			// Try to get from connection first.
+			if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( $connection && ! empty( $connection['location_id'] ) ) {
+					return $connection['location_id'];
+				}
+			}
+
+			// Fallback to settings.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['flowhub_location_id'] ) ? $settings['flowhub_location_id'] : '';
