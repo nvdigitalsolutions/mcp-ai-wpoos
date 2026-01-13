@@ -29,16 +29,11 @@ class WP_MCP_AI_Project_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 		$this->page_title  = __( 'Project Management Settings', 'mcp-ai-wpoos-pro' );
 		$this->menu_title  = __( 'Settings', 'mcp-ai-wpoos-pro' );
 		$this->page_slug   = 'project-settings';
-	}
 
-	/**
-	 * Initialize the settings page.
-	 */
-	public static function init() {
-		$instance = new self();
-		$instance->init();
+		// Call parent constructor to set up hooks.
+		parent::__construct();
 	}
 }
 
 // Initialize.
-WP_MCP_AI_Project_Settings_Page::init();
+new WP_MCP_AI_Project_Settings_Page();

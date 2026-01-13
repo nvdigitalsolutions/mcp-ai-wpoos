@@ -53,9 +53,9 @@ abstract class WP_MCP_AI_CPT_Settings_Page_Base {
 	protected $page_slug;
 
 	/**
-	 * Initialize the settings page.
+	 * Constructor - sets up hooks.
 	 */
-	public function init() {
+	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 25 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
