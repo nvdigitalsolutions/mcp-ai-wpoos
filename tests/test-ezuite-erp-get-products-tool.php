@@ -45,7 +45,13 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products_Test extends WP_UnitTestCase {
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 			// Fallback: calculate path from WP_MCP_AI_PATH.
 			if ( defined( 'WP_MCP_AI_PATH' ) ) {
-				define( 'WP_MCP_AI_PRO_PATH', WP_MCP_AI_PATH . '../addons/pro/' );
+				$pro_path = realpath( WP_MCP_AI_PATH . '../addons/pro/' );
+				if ( $pro_path ) {
+					define( 'WP_MCP_AI_PRO_PATH', trailingslashit( $pro_path ) );
+				} else {
+					$this->markTestSkipped( 'Pro addon path not found.' );
+					return;
+				}
 			} else {
 				$this->markTestSkipped( 'WP_MCP_AI_PATH or WP_MCP_AI_PRO_PATH not defined.' );
 				return;
