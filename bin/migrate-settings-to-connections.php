@@ -182,6 +182,19 @@ $migrations = array(
 		'required'  => array( 'quickbooks_client_id', 'quickbooks_client_secret' ),
 		'default_url' => 'https://quickbooks.api.intuit.com',
 	),
+	'gmail'       => array(
+		'name'      => 'Gmail Email Service',
+		'type'      => 'gmail',
+		'auth_type' => 'none',
+		'fields'    => array(
+			'client_id'     => 'gmail_client_id',
+			'client_secret' => 'gmail_client_secret',
+			'refresh_token' => 'gmail_refresh_token',
+			'user_email'    => 'gmail_user_email',
+		),
+		'required'  => array( 'gmail_client_id', 'gmail_client_secret' ),
+		'default_url' => 'https://gmail.googleapis.com',
+	),
 );
 
 // Check each service for existing credentials.
