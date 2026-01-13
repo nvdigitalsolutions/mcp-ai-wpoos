@@ -318,11 +318,12 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Build API request payload.
+		// Note: OpenAI Sora API uses 'seconds' parameter name, not 'duration'.
 		$payload = array(
 			'model'        => $model,
 			'prompt'       => $prompt,
 			'size'         => $size,
-			'duration'     => $duration,
+			'seconds'      => $duration,
 			'fps'          => $fps,
 			'aspect_ratio' => $aspect,
 		);
