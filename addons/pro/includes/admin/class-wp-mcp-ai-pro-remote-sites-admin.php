@@ -771,18 +771,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<input type="text" name="api_key" id="api_key_ezuite" class="regular-text" value="" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
-						<?php endif; ?>
-					</td>
-				</tr>
-
-				<tr class="ezuite_erp-only-field" style="display: none;">
-					<th scope="row">
-						<label for="api_secret"><?php esc_html_e( 'API Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
-					</th>
-					<td>
-						<input type="password" name="api_secret" id="api_secret_ezuite" class="regular-text" value="" autocomplete="new-password">
-						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your EZuite API key provided by EZuite.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>

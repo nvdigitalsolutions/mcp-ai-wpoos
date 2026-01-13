@@ -14,7 +14,7 @@ The **EZuite ERP** tool provides seamless integration with the EZuite ERP system
 
 To use this tool, you need to create an EZuite ERP connection:
 
-1. **API URL** - The EZuite API endpoint (typically `https://api.ezuite.com/api/External_Api/Action_Api/Invoke/`)
+1. **API URL** - The EZuite API endpoint: `https://api.ezuite.com/api/External_Api/Action_Api/Invoke`
 2. **API Key** - Your unique API key provided by EZuite
 3. **Connection Type** - Set to `ezuite_erp`
 
@@ -24,8 +24,9 @@ To use this tool, you need to create an EZuite ERP connection:
 2. Click **Add New Connection**
 3. Fill in the connection details:
    - **Name**: A friendly name for the connection (e.g., "Main ERP System")
-   - **URL**: `https://api.ezuite.com/api/External_Api/Action_Api/Invoke/`
+   - **URL**: `https://api.ezuite.com/api/External_Api/Action_Api/Invoke`
    - **Connection Type**: Select "EZuite ERP"
+   - **Authentication Type**: Select "None" (API key is sent in request body)
    - **API Key**: Enter your EZuite API key
    - **Enabled**: Check to activate the connection
 4. Save the connection
@@ -39,8 +40,8 @@ Users executing this tool must have the `edit_posts` capability, which includes:
 
 ### API Key Security
 
-- API keys are automatically encrypted when stored
-- Keys are transmitted securely over HTTPS
+- API keys are automatically encrypted when stored in WordPress
+- Keys are transmitted securely over HTTPS in the request body
 - Never share your API key publicly
 - Rotate keys regularly for security
 
@@ -151,13 +152,13 @@ Pull all items from the ERP system using connection conn_abc123
       {
         "Item_Code": "C316/L16/ITM-10",
         "Item_Name": "Bangle 1816 Crystal Gold",
-        "Barcode": "170620",
-        "Supplier_Name": "Coeur de Lion",
-        "Printing_Name": "0131/33-1816",
-        "Group_Name": "Bracelet",
-        "Remark": "0131/33-1816",
-        "Selling_Price": 11700.0,
-        "Qty": 0.0
+        "Barcode": "170620"
+      },
+      {
+        "Item_Code": "EZCMP316/EZLOC7/ITM-9",
+        "Item_Name": "Pure Xs Edt 100ml",
+        "Barcode": "3349668576173",
+        "Qty": 37.0
       }
     ]
   }

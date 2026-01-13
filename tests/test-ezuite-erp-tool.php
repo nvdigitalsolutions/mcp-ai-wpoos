@@ -329,10 +329,10 @@ class WP_MCP_AI_Tool_EZuite_ERP_Test extends WP_UnitTestCase {
 		$connections[ $connection_id ] = array(
 			'id'              => $connection_id,
 			'name'            => 'Test EZuite Connection',
-			'url'             => 'https://api.ezuite.com/api/External_Api/Action_Api/Invoke/',
+			'url'             => 'https://api.ezuite.com/api/External_Api/Action_Api/Invoke',
 			'connection_type' => $connection_type,
 			'auth_type'       => 'none',
-			'api_key'         => base64_encode( '13CF1167-AEA7-49B1-80F5-84A17F3804' ), // Mock encrypted key.
+			'api_key'         => base64_encode( 'test-api-key-123' ), // Mock encrypted key.
 			'enabled'         => true,
 			'created'         => current_time( 'mysql' ),
 			'updated'         => current_time( 'mysql' ),

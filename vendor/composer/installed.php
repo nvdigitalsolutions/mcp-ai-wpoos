@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-migration-script-remote-connections',
-        'version' => 'dev-copilot/create-migration-script-remote-connections',
-        'reference' => '0083f517b5cd96a29e5fc887e81f96551591eae2',
+        'pretty_version' => 'dev-copilot/update-ezuite-connection-settings',
+        'version' => 'dev-copilot/update-ezuite-connection-settings',
+        'reference' => '05d62ab1608a7c1e7ff98e5cfc325827141eac8f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-migration-script-remote-connections',
-            'version' => 'dev-copilot/create-migration-script-remote-connections',
-            'reference' => '0083f517b5cd96a29e5fc887e81f96551591eae2',
+            'pretty_version' => 'dev-copilot/update-ezuite-connection-settings',
+            'version' => 'dev-copilot/update-ezuite-connection-settings',
+            'reference' => '05d62ab1608a7c1e7ff98e5cfc325827141eac8f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
