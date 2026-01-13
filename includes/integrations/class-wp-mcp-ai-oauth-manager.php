@@ -2,7 +2,8 @@
 /**
  * OAuth Manager for NV oOS
  *
- * Handles OAuth flows for third-party service integrations (Gmail, Google Analytics, etc.).
+ * Handles OAuth flows for third-party service integrations.
+ * Note: Gmail OAuth has been moved to Pro's Remote Sites feature.
  *
  * @package WP_MCP_AI
  */
@@ -14,38 +15,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 	/**
 	 * Manages OAuth authentication flows for external services.
+	 * 
+	 * This class is currently preserved for future OAuth integrations.
+	 * Gmail OAuth has been migrated to the Pro addon's Remote Sites feature.
 	 */
 	class WP_MCP_AI_OAuth_Manager {
-		const GMAIL_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/gmail.readonly';
-		const GMAIL_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
-		const GMAIL_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
-		const GMAIL_PROFILE_ENDPOINT         = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
-
 		/**
-		 * Constructor - registers early admin_init hook for OAuth callback.
+		 * Constructor - placeholder for future OAuth integrations.
 		 */
 		public function __construct() {
-			// Register early admin_init hook to handle OAuth callback before any redirects.
-			add_action( 'admin_init', array( $this, 'handle_oauth_callback_request' ), 5 );
+			// OAuth integrations will be added here in the future.
+			// Gmail has been moved to Pro's Remote Sites feature.
 		}
 
 		/**
-		 * Handle OAuth callback request on admin_init.
-		 * This runs early to intercept the callback before other admin redirects.
-		 */
-		public function handle_oauth_callback_request() {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter provides CSRF protection.
-			if ( isset( $_GET['wp_mcp_ai_oauth'] ) && 'gmail_callback' === $_GET['wp_mcp_ai_oauth'] ) {
-				$this->handle_gmail_oauth_callback();
-			}
-		}
-
-		/**
-		 * Handle the start of the Gmail OAuth flow.
+		 * Allow the Google OAuth authorize endpoint host when using wp_safe_redirect().
 		 *
-		 * Redirects the user to Google's authorization page.
+		 * @param string[] $allowed_hosts Existing list of allowed hosts.
+		 * @param string   $redirect      Requested redirect destination.
+		 *
+		 * @return string[]
 		 */
-		public function handle_gmail_oauth_start() {
+		public function allow_gmail_oauth_redirect_host( $allowed_hosts, $redirect = '' ) {
+			// This method is preserved for backward compatibility.
+			// Gmail OAuth is now handled by Pro's Remote Sites feature.
+			$allowed_hosts[] = 'accounts.google.com';
+			return array_values( array_unique( $allowed_hosts ) );
+		}
+	}
+}
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}

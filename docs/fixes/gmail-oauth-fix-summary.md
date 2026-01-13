@@ -1,46 +1,89 @@
 # Gmail OAuth Fix Summary
 
-## Problem
-The Gmail "Connect" button in NV oOS was returning a **400 Bad Request** error when clicked.
+## Current Issue (January 2026)
 
-**Error URL:** 
+### Problem
+Users encountered the following error when trying to connect their Gmail account:
+
 ```
-https://bots.nvdigital.solutions/wp-admin/admin-post.php?action=wp_mcp_ai_gmail_oauth_start&_wpnonce=...
+Access blocked: Authorization Error
+vijay@nvdigitalsolutions.com
+Parameter not allowed for this message type: action
+Error 400: invalid_request
 ```
 
-## Root Cause
-The `WP_MCP_AI_Admin_Settings` class was never being instantiated during plugin initialization. This class's constructor is responsible for registering critical WordPress action hooks for OAuth flows:
+### Root Cause
+Google OAuth 2.0 API considers `action` a **reserved parameter name** and does not allow it in redirect_uri query parameters. Both the core plugin and Pro addon were using URLs with the `action` parameter:
 
-- `admin_post_wp_mcp_ai_gmail_oauth_start` - Initiates OAuth flow
-- `admin_post_wp_mcp_ai_gmail_oauth_callback` - Handles OAuth callback
+- **Core**: `admin-post.php?action=wp_mcp_ai_gmail_oauth_callback`
+- **Pro**: `admin.php?page=wp-mcp-ai-remote-sites&action=gmail_oauth_callback`
 
-Without these hooks registered, WordPress didn't know how to handle these admin-post actions, resulting in a 400 Bad Request response.
+This caused Google to reject OAuth requests with "Parameter not allowed for this message type: action" error.
 
-## Solution
-We fixed the issue by ensuring the `WP_MCP_AI_Admin_Settings` class is properly instantiated:
+### Solution Implemented (2026-01-13)
 
-1. **Added service registration** to the DI container (`includes/class-wp-mcp-ai-container.php`)
-2. **Initialized the service** during plugin bootstrap (`mcp-ai-wpoos.php`)
+Changed redirect URIs to use different parameter names that Google OAuth accepts:
 
-This ensures all OAuth hooks are registered when the plugin loads.
+| Version | Old (BROKEN) | New (FIXED) |
+|---------|--------------|-------------|
+| Core | `admin-post.php?action=wp_mcp_ai_gmail_oauth_callback` | `admin.php?wp_mcp_ai_oauth=gmail_callback` |
+| Pro | `admin.php?page=...&action=gmail_oauth_callback` | `admin.php?page=...&oauth_handler=gmail_oauth_callback` |
+
+#### Technical Implementation
+
+1. **Core Plugin (`WP_MCP_AI_OAuth_Manager`)**:
+   - Added constructor with `admin_init` hook to intercept OAuth callbacks
+   - Changed redirect URI parameter from `action` to `wp_mcp_ai_oauth`
+   - Implemented early callback handler before other admin redirects
+
+2. **Pro Addon (`WP_MCP_AI_Pro_Remote_Sites_Admin`)**:
+   - Changed OAuth parameter from `action` to `oauth_handler`
+   - Updated all redirect URIs in connect and callback flows
+
+## Previous Issue (Earlier Fix)
+
+The Gmail "Connect" button was returning a **400 Bad Request** error because the `WP_MCP_AI_Admin_Settings` class was never being instantiated during plugin initialization.
+
+### Previous Solution
+1. Added service registration to the DI container (`includes/class-wp-mcp-ai-container.php`)
+2. Initialized the service during plugin bootstrap (`mcp-ai-wpoos.php`)
 
 ## Google Cloud Console Configuration
 
-To complete the Gmail integration setup, you need to configure OAuth 2.0 credentials in Google Cloud Console.
+To complete the Gmail integration setup, you need to configure OAuth 2.0 credentials in Google Cloud Console with the **new redirect URI format**.
 
-### For site: `https://bots.nvdigital.solutions`
+### Required Configuration
 
 #### Authorized JavaScript origins (for browser requests):
 ```
-https://bots.nvdigital.solutions
+https://YOUR-SITE-URL
 ```
+**Example:** `https://bots.nvdigital.solutions`  
 **Note:** No trailing slash, just the base URL
 
 #### Authorized redirect URIs (for server-side OAuth callback):
+
+Choose the appropriate URI based on your NV oOS version:
+
+**For Core Plugin (if Gmail is in Integrations section):**
 ```
-https://bots.nvdigital.solutions/wp-admin/admin.php?wp_mcp_ai_oauth=gmail_callback
+https://YOUR-SITE-URL/wp-admin/admin.php?wp_mcp_ai_oauth=gmail_callback
 ```
-**Note:** Must include the full URL with query parameter. The parameter `wp_mcp_ai_oauth=gmail_callback` is used instead of `action=` to avoid Google OAuth restrictions.
+
+**For Pro Plugin (if Gmail is in Remote Sites section):**
+```
+https://YOUR-SITE-URL/wp-admin/admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback
+```
+
+**Example for site `bots.nvdigital.solutions` (Pro):**
+```
+https://bots.nvdigital.solutions/wp-admin/admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback
+```
+
+⚠️ **IMPORTANT:** 
+- The parameter name **must not be** `action` (Google restricts this)
+- Use `wp_mcp_ai_oauth` for core or `oauth_handler` for Pro
+- Include the **exact** query parameters as shown
 
 ### Complete Setup Steps
 
@@ -49,14 +92,23 @@ https://bots.nvdigital.solutions/wp-admin/admin.php?wp_mcp_ai_oauth=gmail_callba
    - Create or select a project
    - Enable Gmail API
    - Create OAuth 2.0 credentials (Web application type)
-   - Add the JavaScript origins and redirect URIs shown above
+   - Add the JavaScript origins and redirect URIs shown above (use the correct format for your version)
    - Copy the Client ID and Client Secret
 
 2. **NV oOS Configuration:**
+   
+   **For Core Plugin:**
    - Go to **NV oOS Dashboard** → **Tools** → **Connections** → **Gmail** tab
    - Enter your Client ID and Client Secret
    - Click **Save Settings**
    - Click **Connect Gmail Account** button
+   
+   **For Pro Plugin:**
+   - Go to **NV oOS Dashboard** → **Remote Sites**
+   - Create or edit a Gmail connection
+   - Enter your Client ID and Client Secret
+   - Click **Connect** button
+   
    - Authorize the app in Google's OAuth screen
 
 3. **Verify Connection:**
@@ -64,14 +116,32 @@ https://bots.nvdigital.solutions/wp-admin/admin.php?wp_mcp_ai_oauth=gmail_callba
    - Your email address will be displayed
    - Gmail tools will now work in your assistants
 
-## Files Modified
+## Files Modified (2026-01-13 Fix)
 
-1. `includes/class-wp-mcp-ai-container.php` - Added admin.settings service registration
-2. `mcp-ai-wpoos.php` - Initialize admin.settings on plugin load  
-3. Documentation files:
-   - [`google-oauth-setup.md`](../getting-started/installation-setup/google-oauth-setup.md) - Complete setup guide
-   - [`oauth-settings-architecture.md`](../architecture/integrations/oauth-settings-architecture.md) - Architecture documentation
-   - [`gmail-oauth-fix-summary.md`](gmail-oauth-fix-summary.md) - This fix summary
+### Core Plugin
+1. `includes/integrations/class-wp-mcp-ai-oauth-manager.php`
+   - Added constructor with `admin_init` hook registration
+   - Added `handle_oauth_callback_request()` method
+   - Updated `get_gmail_oauth_redirect_uri()` to use `wp_mcp_ai_oauth` parameter
+   - Added documentation explaining why `action` parameter is avoided
+
+2. `includes/admin/class-wp-mcp-ai-admin-settings.php`
+   - Removed `admin_post_wp_mcp_ai_gmail_oauth_callback` hook registration (now handled in OAuth manager)
+   - Added comment explaining new OAuth callback handling
+
+3. `includes/admin/sections/class-wp-mcp-ai-section-integrations.php`
+   - Updated displayed redirect URI in setup instructions
+
+### Pro Addon
+4. `addons/pro/includes/admin/class-wp-mcp-ai-pro-remote-sites-admin.php`
+   - Added `oauth_handler` parameter variable
+   - Changed OAuth action checks from `action` to `oauth_handler`
+   - Updated all redirect URIs to use `oauth_handler` parameter
+   - Updated connect button URL generation
+
+### Documentation
+5. `docs/fixes/gmail-oauth-fix-summary.md` - This document (updated with both fixes)
+6. `docs/getting-started/installation-setup/google-oauth-setup.md` - Updated with new URI format and troubleshooting
 
 ## Testing Performed
 
