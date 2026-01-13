@@ -866,7 +866,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<label for="quickbooks_client_id"><?php esc_html_e( 'Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="quickbooks_client_id" id="quickbooks_client_id" class="regular-text" value="" autocomplete="off">
+						<input type="text" name="quickbooks_client_id" id="quickbooks_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client ID.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
@@ -906,6 +906,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php else : ?>
 							<p class="description"><?php esc_html_e( 'Your EZuite API key provided by EZuite.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="ezuite_erp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="ezuite_erp_api_secret"><?php esc_html_e( 'API Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="ezuite_erp_api_secret" id="ezuite_erp_api_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your EZuite API secret provided by EZuite.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
