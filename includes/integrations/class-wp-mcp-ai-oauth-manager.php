@@ -22,6 +22,25 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		const GMAIL_PROFILE_ENDPOINT         = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
 
 		/**
+		 * Constructor - registers early admin_init hook for OAuth callback.
+		 */
+		public function __construct() {
+			// Register early admin_init hook to handle OAuth callback before any redirects.
+			add_action( 'admin_init', array( $this, 'handle_oauth_callback_request' ), 5 );
+		}
+
+		/**
+		 * Handle OAuth callback request on admin_init.
+		 * This runs early to intercept the callback before other admin redirects.
+		 */
+		public function handle_oauth_callback_request() {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter provides CSRF protection.
+			if ( isset( $_GET['wp_mcp_ai_oauth'] ) && 'gmail_callback' === $_GET['wp_mcp_ai_oauth'] ) {
+				$this->handle_gmail_oauth_callback();
+			}
+		}
+
+		/**
 		 * Handle the start of the Gmail OAuth flow.
 		 *
 		 * Redirects the user to Google's authorization page.
@@ -360,10 +379,13 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		/**
 		 * Return the OAuth redirect URI registered in the Google Cloud console.
 		 *
+		 * Uses a custom parameter 'wp_mcp_ai_oauth=gmail_callback' instead of 'action='
+		 * to avoid Google OAuth error "Parameter not allowed for this message type: action".
+		 *
 		 * @return string
 		 */
 		private function get_gmail_oauth_redirect_uri() {
-			return admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_callback' );
+			return admin_url( 'admin.php?wp_mcp_ai_oauth=gmail_callback' );
 		}
 
 		/**

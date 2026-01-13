@@ -38,9 +38,9 @@ https://bots.nvdigital.solutions
 
 #### Authorized redirect URIs (for server-side OAuth callback):
 ```
-https://bots.nvdigital.solutions/wp-admin/admin-post.php?action=wp_mcp_ai_gmail_oauth_callback
+https://bots.nvdigital.solutions/wp-admin/admin.php?wp_mcp_ai_oauth=gmail_callback
 ```
-**Note:** Must include the full URL with query parameter
+**Note:** Must include the full URL with query parameter. The parameter `wp_mcp_ai_oauth=gmail_callback` is used instead of `action=` to avoid Google OAuth restrictions.
 
 ### Complete Setup Steps
 

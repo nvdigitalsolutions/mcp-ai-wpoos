@@ -94,8 +94,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );.
 
 			// Delegate OAuth handlers to the OAuth manager component.
+			// Note: OAuth callback is now handled via admin_init in the OAuth manager itself.
+			// We only need the 'start' action here as it uses admin-post.php properly.
 			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_start', array( $this->oauth_manager, 'handle_gmail_oauth_start' ) );
-			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_callback', array( $this->oauth_manager, 'handle_gmail_oauth_callback' ) );
 			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this->settings_base, 'filter_memory_max_file_bytes' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
 			// Legacy settings page notices disabled - now handled by WP_MCP_AI_Settings_Dashboard.
