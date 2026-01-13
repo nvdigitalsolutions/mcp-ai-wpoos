@@ -13,11 +13,10 @@ Thanks for taking the time to contribute! This guide summarises the steps you ne
 ## Getting Started
 
 1. Fork the repository and clone it locally.
-2. Install PHP dependencies (including development dependencies) via Composer:
+2. Install PHP dependencies via Composer:
    ```bash
    composer install
    ```
-   **Note:** For production installations, use `composer install --no-dev` instead, but for development work you need the full set of dependencies including PHPUnit and CodeSniffer.
 3. Start your local WordPress environment and install/activate the plugin.
 4. Copy the sample assistant export if you would like quick seed data:
    ```bash
@@ -46,7 +45,7 @@ composer run format      # Attempts to autofix coding standards violations
 composer run pot         # Generates/updates languages/wp-mcp-ai.pot
 ```
 
-These commands assume that `phpcs` and `wp` are available via Composer and WP-CLI respectively. If you are missing dependencies, run `composer install` (without `--no-dev` to include development tools) and ensure WP-CLI is installed on your machine. When contributing, please make sure `composer run lint` and `composer run lint:compat` pass before opening a pull request and include any updates to the `.pot` file when strings change.
+These commands assume that `phpcs` and `wp` are available via Composer and WP-CLI respectively. If you are missing dependencies, run `composer install` and ensure WP-CLI is installed on your machine. When contributing, please make sure `composer run lint` and `composer run lint:compat` pass before opening a pull request and include any updates to the `.pot` file when strings change.
 
 ## Bootstrapping the WordPress Test Suite
 

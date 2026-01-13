@@ -56,21 +56,15 @@ This installs:
 
 ### PHP Dependencies
 
-#### Production Dependencies (Already in Repository)
+#### Production Dependencies
 
-The repository already includes production dependencies in the `vendor/` directory. For production use, you can:
+Install only production dependencies (automatically included in the repository):
 
-**Option 1: Use existing dependencies** (recommended for production):
 ```bash
-# No composer command needed - dependencies already included
+composer install --no-dev
 ```
 
-**Option 2: Reinstall production dependencies**:
-```bash
-composer install --no-dev --optimize-autoloader
-```
-
-This ensures only production dependencies are installed (~5.6 MB):
+Production packages (~5.6 MB):
 - `rahul900day/tiktoken-php` - Token counting for AI models
 - `symfony/http-client` - HTTP client for API requests
 - `symfony/validator` - Input validation framework
@@ -81,13 +75,13 @@ This ensures only production dependencies are installed (~5.6 MB):
 
 #### Development Dependencies
 
-**For development work only**, install dev dependencies:
+For development and testing, install dev dependencies:
 
 ```bash
 composer install
 ```
 
-This adds development tools (~140 MB) to the existing production dependencies:
+This adds (~140 MB):
 - PHPUnit test framework
 - PHP_CodeSniffer & WordPress Coding Standards
 - WordPress stubs for IDE support
