@@ -127,6 +127,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
+				// Mubert Music API.
+				'mubert_api_key'                    => array(
+					'type'         => 'password',
+					'label'        => __( 'Mubert API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Mubert contact */
+						__( 'API key for Mubert music generation service. Request an API key from %s.', 'mcp-ai-wpoos' ),
+						'<a href="mailto:business@mubert.com">business@mubert.com</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+
 				// Cloudflare.
 				'cloudflare_api_token'              => array(
 					'type'         => 'password',
@@ -479,6 +492,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'brave_search_api_key' ),
 				),
+				'mubert'           => array(
+					'id'     => 'mubert',
+					'label'  => __( 'Mubert', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-format-audio',
+					'fields' => array( 'mubert_api_key' ),
+				),
 				'payhere'          => array(
 					'id'     => 'payhere',
 					'label'  => __( 'PayHere', 'mcp-ai-wpoos' ),
@@ -630,6 +649,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					break;
 				case 'brave_search':
 					$this->render_brave_search_footer();
+					break;
+				case 'mubert':
+					$this->render_mubert_footer();
 					break;
 				case 'payhere':
 					$this->render_payhere_footer();
@@ -822,6 +844,42 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<p class="description">
 						<?php esc_html_e( 'Enter your Brave Search API key in the field above, then click "Test Connection" to verify it works. You can test before saving.', 'mcp-ai-wpoos' ); ?>
 					</p>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Mubert footer content.
+		 */
+		private function render_mubert_footer() {
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Mubert Connection', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-mubert-connection" class="button button-secondary">
+							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span id="wp-mcp-ai-mubert-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Enter your Mubert API key in the field above, then click "Test Connection" to verify it works. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'About Mubert Integration:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Generate royalty-free background music with 150+ genres and 50+ moods', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Request an API key from business@mubert.com', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Used by the generate_music tool for AI-powered music creation', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Supports track durations from 15 seconds to 25 minutes', 'mcp-ai-wpoos' ); ?></li>
+					</ul>
 				</td>
 			</tr>
 			<?php
