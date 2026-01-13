@@ -9,6 +9,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Ensure required classes are loaded.
+if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+}
+
+if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http-helper.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
+}
+
 if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 	/**
 	 * Provides a wrapper around PayHere Retrieval API.
