@@ -94,6 +94,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		$action = isset( $_GET['action'] ) ? sanitize_key( $_GET['action'] ) : '';
+		// Check for OAuth handler parameter (used instead of 'action' to avoid Google OAuth restrictions).
+		$oauth_handler = isset( $_GET['oauth_handler'] ) ? sanitize_key( $_GET['oauth_handler'] ) : '';
 
 		// Handle delete action.
 		if ( 'delete' === $action && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
@@ -138,7 +140,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		// Handle Gmail OAuth connect action.
-		if ( 'gmail_oauth_connect' === $action && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
+		if ( 'gmail_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
 			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
 
@@ -150,7 +152,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		// Handle Gmail OAuth callback action.
-		if ( 'gmail_oauth_callback' === $action ) {
+		if ( 'gmail_oauth_callback' === $oauth_handler ) {
 			$this->handle_gmail_oauth_callback();
 		}
 
@@ -1034,7 +1036,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<td>
 							<?php
 							$oauth_url = wp_nonce_url(
-								admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=gmail_oauth_connect&connection_id=' . $connection['id'] ),
+								admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_connect&connection_id=' . $connection['id'] ),
 								'gmail_oauth_connect_' . $connection['id']
 							);
 							?>
@@ -1318,7 +1320,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$params = array(
 			'client_id'              => $connection['client_id'],
-			'redirect_uri'           => admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=gmail_oauth_callback' ),
+			'redirect_uri'           => admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback' ),
 			'response_type'          => 'code',
 			'scope'                  => 'https://www.googleapis.com/auth/gmail.readonly',
 			'access_type'            => 'offline',
@@ -1391,7 +1393,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					'code'          => $code,
 					'client_id'     => $connection['client_id'],
 					'client_secret' => $client_secret,
-					'redirect_uri'  => admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=gmail_oauth_callback' ),
+					'redirect_uri'  => admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback' ),
 					'grant_type'    => 'authorization_code',
 				),
 				'headers' => array(

@@ -55,10 +55,10 @@ https://bots.nvdigital.solutions
 ##### **Authorized redirect URIs**
 Add the exact callback URL that Google will redirect to after authentication:
 ```
-https://bots.nvdigital.solutions/wp-admin/admin-post.php?action=wp_mcp_ai_gmail_oauth_callback
+https://bots.nvdigital.solutions/wp-admin/admin.php?wp_mcp_ai_oauth=gmail_callback
 ```
 
-**Important:** This URL must be exact, including the query parameter `action=wp_mcp_ai_gmail_oauth_callback`
+**Important:** This URL must be exact, including the query parameter `wp_mcp_ai_oauth=gmail_callback`. This specific parameter name is used instead of `action=` to avoid Google OAuth restrictions on reserved parameter names.
 
 ### 5. Save and Copy Credentials
 
@@ -81,17 +81,18 @@ https://bots.nvdigital.solutions/wp-admin/admin-post.php?action=wp_mcp_ai_gmail_
 
 ## Troubleshooting
 
-### 400 Bad Request Error
+### 400 Bad Request Error or "Parameter not allowed" Error
 
-If you encounter a "400 Bad Request" error when clicking the Connect button:
+If you encounter a "400 Bad Request" error or "Parameter not allowed for this message type: action" error when clicking the Connect button:
 
 1. **Verify the redirect URI** in Google Cloud Console exactly matches:
    ```
-   https://YOUR-SITE-URL/wp-admin/admin-post.php?action=wp_mcp_ai_gmail_oauth_callback
+   https://YOUR-SITE-URL/wp-admin/admin.php?wp_mcp_ai_oauth=gmail_callback
    ```
 2. Make sure there are no extra spaces or characters
 3. Ensure the OAuth client type is set to "Web application"
 4. Clear your browser cache and try again
+5. **Important:** Do NOT use `action=` in the redirect URI as Google OAuth restricts this parameter name. Use `wp_mcp_ai_oauth=gmail_callback` instead.
 
 ### "redirect_uri_mismatch" Error
 

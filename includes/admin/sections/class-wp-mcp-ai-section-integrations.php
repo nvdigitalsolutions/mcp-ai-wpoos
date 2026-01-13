@@ -651,7 +651,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 							printf(
 								/* translators: %s: Callback URL */
 								esc_html__( 'Set Authorized redirect URI to: %s', 'mcp-ai-wpoos' ),
-								'<br><code>' . esc_html( admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_callback' ) ) . '</code>'
+								'<br><code>' . esc_html( admin_url( 'admin.php?wp_mcp_ai_oauth=gmail_callback' ) ) . '</code>'
 							);
 							?>
 						</li>
