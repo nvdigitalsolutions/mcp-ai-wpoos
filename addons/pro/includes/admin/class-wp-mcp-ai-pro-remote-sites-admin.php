@@ -647,47 +647,35 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for Flowhub -->
 				<tr class="flowhub-only-field" style="display: none;">
 					<th scope="row">
-						<label for="api_key"><?php esc_html_e( 'API Key', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="api_key"><?php esc_html_e( 'API Key (key header)', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="api_key" id="api_key_flowhub" class="regular-text" value="" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'Your Flowhub API key. Sent as "key" header in requests.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="flowhub-only-field" style="display: none;">
 					<th scope="row">
-						<label for="client_id"><?php esc_html_e( 'Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="client_id"><?php esc_html_e( 'Client ID (clientId header)', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="client_id" id="client_id_flowhub" class="regular-text" value="" autocomplete="off">
-						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client ID.', 'wp-mcp-ai-pro' ); ?></p>
-						<?php endif; ?>
+						<input type="text" name="client_id" id="client_id_flowhub" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'Your Flowhub client identifier. Sent as "clientId" header in requests.', 'wp-mcp-ai-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<tr class="flowhub-only-field" style="display: none;">
 					<th scope="row">
-						<label for="client_secret"><?php esc_html_e( 'Client Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
-					</th>
-					<td>
-						<input type="password" name="client_secret" id="client_secret_flowhub" class="regular-text" value="" autocomplete="new-password">
-						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret.', 'wp-mcp-ai-pro' ); ?></p>
-						<?php endif; ?>
-					</td>
-				</tr>
-
-				<tr class="flowhub-only-field" style="display: none;">
-					<th scope="row">
-						<label for="location_id"><?php esc_html_e( 'Location ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="location_id"><?php esc_html_e( 'Location ID (Optional)', 'wp-mcp-ai-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" name="location_id" id="location_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['location_id'] ) ? esc_attr( $connection['location_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'The Flowhub location/dispensary ID.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Optional: The Flowhub location/dispensary ID for filtering requests.', 'wp-mcp-ai-pro' ); ?></p>
 					</td>
 				</tr>
 
