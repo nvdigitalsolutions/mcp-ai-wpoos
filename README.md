@@ -654,14 +654,16 @@ pwd  # Should show the plugins path
 npm install && composer install --no-dev --optimize-autoloader
 ```
 
+> **Note:** Production dependencies are already included in the repository. Running `composer install --no-dev` ensures no development dependencies (PHPUnit, CodeSniffer, etc.) are added. For development work, see [Development Tooling](#-development-tooling).
+
 **⚠️ Cloudways Important Notes:**
 - Always clone directly into `/home/master/applications/YOURAPP/public_html/wp-content/plugins/`
 - Do NOT clone elsewhere and then move/copy - this causes `getcwd() failed` errors
 - Replace `YOURAPP` with your actual Cloudways application name
 
-#### Option 2: Local Development or VPS
+#### Option 2: Production Setup (Local Development or VPS)
 
-For local development or standard VPS hosting:
+For production use on local development or standard VPS hosting:
 
 ```bash
 # Option A: Clone directly into WordPress plugins directory (recommended)
@@ -2081,13 +2083,13 @@ Override any of these values by exporting the environment variables `WORDPRESS_U
 
 ## 🧑‍💻 Development Tooling
 
-Install the PHP development dependencies (including PHP_CodeSniffer, the WordPress Coding Standards ruleset, and PHPUnit) with:
+**For development work only** (not production), install the PHP development dependencies (including PHP_CodeSniffer, the WordPress Coding Standards ruleset, and PHPUnit) with:
 
 ```bash
 bin/setup-dev.sh
 ```
 
-The script runs `composer install` and makes the following Composer scripts available:
+The script runs `composer install` (without `--no-dev`) to add development dependencies and makes the following Composer scripts available:
 
 | Purpose | Command |
 | --- | --- |
@@ -2101,7 +2103,7 @@ The script runs `composer install` and makes the following Composer scripts avai
 These commands automatically resolve the bundled `vendor/bin` tools (such as `phpcs`, `phpcbf`, and `phpunit`), so a global installation is no longer required.
 
 > [!NOTE]
-> The `test:install` script prefers the Composer-provided `wp-phpunit/wp-phpunit` package for the WordPress test suite. Run `composer install` before invoking it, especially on networks where `develop.svn.wordpress.org` is inaccessible.
+> The `test:install` script prefers the Composer-provided `wp-phpunit/wp-phpunit` package for the WordPress test suite. Run `composer install` (without `--no-dev`) before invoking it to install development dependencies, especially on networks where `develop.svn.wordpress.org` is inaccessible.
 
 ---
 
