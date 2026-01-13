@@ -264,13 +264,12 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	public function test_create_flowhub_connection() {
 		$connection_data = array(
 			'name'            => 'Test Flowhub Dispensary',
-			'url'             => 'https://api.flowhub.com',
+			'url'             => 'https://api.flowhub.co',
 			'connection_type' => 'flowhub',
 			'auth_type'       => 'none',
-			'api_key'         => 'test_api_key',
-			'client_id'       => 'test_client_id',
-			'client_secret'   => 'test_client_secret',
-			'location_id'     => 'test_location',
+			'api_key'         => 'test_key_placeholder',
+			'client_id'       => 'test_client_id_placeholder',
+			'location_id'     => 'test_location_placeholder',
 			'enabled'         => true,
 		);
 
