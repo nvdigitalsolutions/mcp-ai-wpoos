@@ -231,6 +231,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 				}
 			}
 		}
+
+		// Load Media Toolkit if enabled (Pro feature).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/media-toolkit-init.php';
+
 		// Load Project Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/project-management-init.php';
 
