@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/start-phase-3-integration',
+        'version' => 'dev-copilot/start-phase-3-integration',
+        'reference' => '37761ab60ba8d5b0821a9fe1b36dd4e3b88622a7',
         'pretty_version' => 'dev-copilot/fix-research-quiz-settings',
         'version' => 'dev-copilot/fix-research-quiz-settings',
         'reference' => 'c34db1a92e38ae99b36454f7aeae3e9e28c947ab',
@@ -32,6 +35,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/start-phase-3-integration',
+            'version' => 'dev-copilot/start-phase-3-integration',
+            'reference' => '37761ab60ba8d5b0821a9fe1b36dd4e3b88622a7',
             'pretty_version' => 'dev-copilot/fix-research-quiz-settings',
             'version' => 'dev-copilot/fix-research-quiz-settings',
             'reference' => 'c34db1a92e38ae99b36454f7aeae3e9e28c947ab',
