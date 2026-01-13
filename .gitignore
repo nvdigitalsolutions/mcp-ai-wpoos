@@ -43,16 +43,10 @@ composer.phar
 /vendor/composer/*.zip~
 /vendor/composer/tmp-*.zip~
 
-# Ignore composer auto-generated files (these change with every composer operation)
-# Users should run `composer install` after cloning
-/vendor/composer/installed.php
-/vendor/composer/installed.json
-/vendor/composer/autoload_classmap.php
-/vendor/composer/autoload_files.php
-/vendor/composer/autoload_psr4.php
-/vendor/composer/autoload_static.php
-/vendor/composer/autoload_namespaces.php
-/vendor/composer/platform_check.php
+# Keep installed.php and installed.json so plugin works after cloning
+# These files are needed for composer autoloader to function properly
+#!/vendor/composer/installed.php
+#!/vendor/composer/installed.json
 
 # Minified assets (generated during build)
 *.min.css
