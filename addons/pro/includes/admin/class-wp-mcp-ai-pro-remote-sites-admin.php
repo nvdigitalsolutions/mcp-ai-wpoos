@@ -629,6 +629,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="basic_auth" <?php selected( $is_edit ? $connection['auth_type'] : '', 'basic_auth' ); ?>><?php esc_html_e( 'Basic Auth', 'wp-mcp-ai-pro' ); ?></option>
 							<option value="jwt" <?php selected( $is_edit ? $connection['auth_type'] : '', 'jwt' ); ?>><?php esc_html_e( 'JWT Token', 'wp-mcp-ai-pro' ); ?></option>
 							<option value="woocommerce" <?php selected( $is_edit ? $connection['auth_type'] : '', 'woocommerce' ); ?>><?php esc_html_e( 'WooCommerce API Keys (ck_/cs_)', 'wp-mcp-ai-pro' ); ?></option>
+							<option value="oauth2" <?php selected( $is_edit ? $connection['auth_type'] : '', 'oauth2' ); ?>><?php esc_html_e( 'OAuth 2.0', 'wp-mcp-ai-pro' ); ?></option>
 						</select>
 					</td>
 				</tr>
