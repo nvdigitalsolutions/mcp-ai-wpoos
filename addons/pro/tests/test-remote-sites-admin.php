@@ -621,4 +621,532 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		unset( $_GET['page'] );
 		unset( $_GET['edit'] );
 	}
+
+	/**
+	 * Test Gmail OAuth state parameter generation and validation.
+	 *
+	 * Verifies OAuth 2.0 CSRF protection via state parameter.
+	 */
+	public function test_gmail_oauth_state_parameter_validation() {
+		// Create a test Gmail connection.
+		$connection_data = array(
+			'name'            => 'Test Gmail',
+			'url'             => 'https://gmail.googleapis.com/gmail/v1',
+			'connection_type' => 'gmail',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_client_id',
+			'client_secret'   => 'test_client_secret',
+			'enabled'         => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Mock the OAuth start by calling it directly with reflection.
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$reflection = new ReflectionClass( $admin );
+		$method = $reflection->getMethod( 'handle_gmail_oauth_start' );
+		$method->setAccessible( true );
+
+		// Capture redirect to extract state parameter.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		$this->redirect_url = '';
+
+		try {
+			$method->invoke( $admin, $connection_id );
+		} catch ( Exception $e ) {
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+
+		// Verify redirect URL contains Google OAuth endpoint.
+		$this->assertStringContainsString( 'accounts.google.com/o/oauth2/v2/auth', $redirect_url, 'Should redirect to Google OAuth endpoint' );
+
+		// Extract state parameter from redirect URL.
+		$parsed = wp_parse_url( $redirect_url );
+		parse_str( $parsed['query'], $params );
+		$this->assertArrayHasKey( 'state', $params, 'State parameter should be present' );
+
+		$state = $params['state'];
+
+		// Verify transient was set with state data.
+		$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
+		$state_data = get_transient( $transient_key );
+		$this->assertNotFalse( $state_data, 'State data transient should exist' );
+		$this->assertIsArray( $state_data, 'State data should be an array' );
+		$this->assertArrayHasKey( 'user_id', $state_data, 'State data should contain user_id' );
+		$this->assertArrayHasKey( 'connection_id', $state_data, 'State data should contain connection_id' );
+		$this->assertEquals( $connection_id, $state_data['connection_id'], 'Connection ID should match' );
+
+		// Clean up.
+		delete_transient( $transient_key );
+	}
+
+	/**
+	 * Test Gmail OAuth callback with valid authorization code.
+	 *
+	 * Verifies successful token exchange and connection update.
+	 */
+	public function test_gmail_oauth_callback_success() {
+		// Create a test Gmail connection.
+		$connection_data = array(
+			'name'            => 'Test Gmail',
+			'url'             => 'https://gmail.googleapis.com/gmail/v1',
+			'connection_type' => 'gmail',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_client_id',
+			'client_secret'   => 'test_client_secret',
+			'enabled'         => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Create state parameter and transient.
+		$state = wp_generate_uuid4();
+		$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
+		set_transient(
+			$transient_key,
+			array(
+				'user_id'       => get_current_user_id(),
+				'connection_id' => $connection_id,
+				'time'          => time(),
+			),
+			10 * MINUTE_IN_SECONDS
+		);
+
+		// Mock wp_remote_post for token exchange.
+		add_filter( 'pre_http_request', array( $this, 'mock_gmail_token_exchange' ), 10, 3 );
+
+		// Simulate OAuth callback.
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+		$_GET['oauth_handler'] = 'gmail_oauth_callback';
+		$_GET['state'] = $state;
+		$_GET['code'] = 'test_authorization_code';
+
+		// Capture redirect.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		$this->redirect_url = '';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$reflection = new ReflectionClass( $admin );
+		$method = $reflection->getMethod( 'handle_gmail_oauth_callback' );
+		$method->setAccessible( true );
+
+		try {
+			$method->invoke( $admin );
+		} catch ( Exception $e ) {
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+		remove_filter( 'pre_http_request', array( $this, 'mock_gmail_token_exchange' ) );
+
+		// Verify redirect to success page.
+		$this->assertStringContainsString( 'oauth_success=', $redirect_url, 'Should redirect to success page' );
+
+		// Verify connection was updated with refresh token.
+		$updated_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $updated_connection, 'Connection should still exist' );
+		$this->assertEquals( 'test_refresh_token_123', $updated_connection['refresh_token'], 'Refresh token should be saved' );
+		$this->assertEquals( 'test@gmail.com', $updated_connection['user_email'], 'User email should be saved' );
+
+		// Verify transient was deleted (CSRF protection cleanup).
+		$state_data = get_transient( $transient_key );
+		$this->assertFalse( $state_data, 'State transient should be deleted after use' );
+
+		// Clean up.
+		unset( $_GET['page'] );
+		unset( $_GET['oauth_handler'] );
+		unset( $_GET['state'] );
+		unset( $_GET['code'] );
+	}
+
+	/**
+	 * Test Gmail OAuth callback with invalid state parameter.
+	 *
+	 * Verifies CSRF protection rejects invalid state.
+	 */
+	public function test_gmail_oauth_callback_invalid_state() {
+		// Simulate OAuth callback with invalid state.
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+		$_GET['oauth_handler'] = 'gmail_oauth_callback';
+		$_GET['state'] = 'invalid_state_parameter';
+		$_GET['code'] = 'test_authorization_code';
+
+		// Capture redirect.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		$this->redirect_url = '';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$reflection = new ReflectionClass( $admin );
+		$method = $reflection->getMethod( 'handle_gmail_oauth_callback' );
+		$method->setAccessible( true );
+
+		try {
+			$method->invoke( $admin );
+		} catch ( Exception $e ) {
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+
+		// Verify redirect to error page.
+		$this->assertStringContainsString( 'error=', $redirect_url, 'Should redirect to error page' );
+		$this->assertStringContainsString( 'state+verification+failed', $redirect_url, 'Error message should mention state verification' );
+
+		// Clean up.
+		unset( $_GET['page'] );
+		unset( $_GET['oauth_handler'] );
+		unset( $_GET['state'] );
+		unset( $_GET['code'] );
+	}
+
+	/**
+	 * Test Gmail OAuth callback with missing authorization code.
+	 *
+	 * Verifies proper error handling when Google doesn't return a code.
+	 */
+	public function test_gmail_oauth_callback_missing_code() {
+		// Create state parameter and transient.
+		$connection_id = 'conn_test123';
+		$state = wp_generate_uuid4();
+		$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
+		set_transient(
+			$transient_key,
+			array(
+				'user_id'       => get_current_user_id(),
+				'connection_id' => $connection_id,
+				'time'          => time(),
+			),
+			10 * MINUTE_IN_SECONDS
+		);
+
+		// Simulate OAuth callback without code.
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+		$_GET['oauth_handler'] = 'gmail_oauth_callback';
+		$_GET['state'] = $state;
+		// No code parameter.
+
+		// Capture redirect.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		$this->redirect_url = '';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$reflection = new ReflectionClass( $admin );
+		$method = $reflection->getMethod( 'handle_gmail_oauth_callback' );
+		$method->setAccessible( true );
+
+		try {
+			$method->invoke( $admin );
+		} catch ( Exception $e ) {
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+
+		// Verify redirect to error page.
+		$this->assertStringContainsString( 'error=', $redirect_url, 'Should redirect to error page' );
+		$this->assertStringContainsString( 'authorization+code', $redirect_url, 'Error message should mention authorization code' );
+
+		// Clean up.
+		delete_transient( $transient_key );
+		unset( $_GET['page'] );
+		unset( $_GET['oauth_handler'] );
+		unset( $_GET['state'] );
+	}
+
+	/**
+	 * Test Google Drive OAuth state parameter generation and validation.
+	 *
+	 * Verifies OAuth 2.0 CSRF protection via state parameter.
+	 */
+	public function test_google_drive_oauth_state_parameter_validation() {
+		// Create a test Google Drive connection.
+		$connection_data = array(
+			'name'            => 'Test Google Drive',
+			'url'             => 'https://www.googleapis.com/drive/v3',
+			'connection_type' => 'google_drive',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_client_id',
+			'client_secret'   => 'test_client_secret',
+			'enabled'         => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Mock the OAuth start by calling it directly with reflection.
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$reflection = new ReflectionClass( $admin );
+		$method = $reflection->getMethod( 'handle_google_drive_oauth_start' );
+		$method->setAccessible( true );
+
+		// Capture redirect to extract state parameter.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		$this->redirect_url = '';
+
+		try {
+			$method->invoke( $admin, $connection_id );
+		} catch ( Exception $e ) {
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+
+		// Verify redirect URL contains Google OAuth endpoint.
+		$this->assertStringContainsString( 'accounts.google.com/o/oauth2/v2/auth', $redirect_url, 'Should redirect to Google OAuth endpoint' );
+
+		// Extract state parameter from redirect URL.
+		$parsed = wp_parse_url( $redirect_url );
+		parse_str( $parsed['query'], $params );
+		$this->assertArrayHasKey( 'state', $params, 'State parameter should be present' );
+
+		$state = $params['state'];
+
+		// Verify transient was set with state data.
+		$transient_key = 'wp_mcp_ai_google_drive_oauth_state_' . md5( $state );
+		$state_data = get_transient( $transient_key );
+		$this->assertNotFalse( $state_data, 'State data transient should exist' );
+		$this->assertIsArray( $state_data, 'State data should be an array' );
+		$this->assertArrayHasKey( 'user_id', $state_data, 'State data should contain user_id' );
+		$this->assertArrayHasKey( 'connection_id', $state_data, 'State data should contain connection_id' );
+		$this->assertEquals( $connection_id, $state_data['connection_id'], 'Connection ID should match' );
+
+		// Verify OAuth parameters comply with best practices.
+		$this->assertArrayHasKey( 'access_type', $params, 'Should request offline access' );
+		$this->assertEquals( 'offline', $params['access_type'], 'Should use offline access for refresh tokens' );
+		$this->assertArrayHasKey( 'prompt', $params, 'Should have prompt parameter' );
+		$this->assertEquals( 'consent', $params['prompt'], 'Should force consent for refresh token generation' );
+		$this->assertArrayHasKey( 'include_granted_scopes', $params, 'Should support incremental authorization' );
+		$this->assertEquals( 'true', $params['include_granted_scopes'], 'Should enable incremental authorization' );
+
+		// Clean up.
+		delete_transient( $transient_key );
+	}
+
+	/**
+	 * Test Google Drive OAuth callback with valid authorization code.
+	 *
+	 * Verifies successful token exchange and connection update.
+	 */
+	public function test_google_drive_oauth_callback_success() {
+		// Create a test Google Drive connection.
+		$connection_data = array(
+			'name'            => 'Test Google Drive',
+			'url'             => 'https://www.googleapis.com/drive/v3',
+			'connection_type' => 'google_drive',
+			'auth_type'       => 'none',
+			'client_id'       => 'test_client_id',
+			'client_secret'   => 'test_client_secret',
+			'enabled'         => true,
+		);
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$this->assertNotWPError( $connection_id );
+
+		// Create state parameter and transient.
+		$state = wp_generate_uuid4();
+		$transient_key = 'wp_mcp_ai_google_drive_oauth_state_' . md5( $state );
+		set_transient(
+			$transient_key,
+			array(
+				'user_id'       => get_current_user_id(),
+				'connection_id' => $connection_id,
+				'time'          => time(),
+			),
+			10 * MINUTE_IN_SECONDS
+		);
+
+		// Mock wp_remote_post for token exchange.
+		add_filter( 'pre_http_request', array( $this, 'mock_google_drive_token_exchange' ), 10, 3 );
+
+		// Simulate OAuth callback.
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+		$_GET['oauth_handler'] = 'google_drive_oauth_callback';
+		$_GET['state'] = $state;
+		$_GET['code'] = 'test_authorization_code';
+
+		// Capture redirect.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		$this->redirect_url = '';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$reflection = new ReflectionClass( $admin );
+		$method = $reflection->getMethod( 'handle_google_drive_oauth_callback' );
+		$method->setAccessible( true );
+
+		try {
+			$method->invoke( $admin );
+		} catch ( Exception $e ) {
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+		remove_filter( 'pre_http_request', array( $this, 'mock_google_drive_token_exchange' ) );
+
+		// Verify redirect to success page.
+		$this->assertStringContainsString( 'oauth_success=', $redirect_url, 'Should redirect to success page' );
+
+		// Verify connection was updated with refresh token.
+		$updated_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$this->assertNotNull( $updated_connection, 'Connection should still exist' );
+		$this->assertEquals( 'test_drive_refresh_token_456', $updated_connection['refresh_token'], 'Refresh token should be saved' );
+		$this->assertEquals( 'driveuser@gmail.com', $updated_connection['user_email'], 'User email should be saved' );
+
+		// Verify transient was deleted (CSRF protection cleanup).
+		$state_data = get_transient( $transient_key );
+		$this->assertFalse( $state_data, 'State transient should be deleted after use' );
+
+		// Clean up.
+		unset( $_GET['page'] );
+		unset( $_GET['oauth_handler'] );
+		unset( $_GET['state'] );
+		unset( $_GET['code'] );
+	}
+
+	/**
+	 * Test Google Drive OAuth callback with error from Google.
+	 *
+	 * Verifies proper error handling when user denies authorization.
+	 */
+	public function test_google_drive_oauth_callback_user_denied() {
+		// Simulate OAuth callback with error.
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+		$_GET['oauth_handler'] = 'google_drive_oauth_callback';
+		$_GET['error'] = 'access_denied';
+
+		// Capture redirect.
+		add_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ), 10, 2 );
+		$this->redirect_url = '';
+
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$reflection = new ReflectionClass( $admin );
+		$method = $reflection->getMethod( 'handle_google_drive_oauth_callback' );
+		$method->setAccessible( true );
+
+		try {
+			$method->invoke( $admin );
+		} catch ( Exception $e ) {
+			// wp_safe_redirect exits, so we catch it.
+		}
+
+		$redirect_url = $this->redirect_url;
+		remove_filter( 'wp_redirect', array( $this, 'capture_redirect_url' ) );
+
+		// Verify redirect to error page.
+		$this->assertStringContainsString( 'error=', $redirect_url, 'Should redirect to error page' );
+		$this->assertStringContainsString( 'access_denied', $redirect_url, 'Error message should contain the error from Google' );
+
+		// Clean up.
+		unset( $_GET['page'] );
+		unset( $_GET['oauth_handler'] );
+		unset( $_GET['error'] );
+	}
+
+	/**
+	 * Helper: Capture redirect URL for testing.
+	 *
+	 * @param string $location Redirect location.
+	 * @param int    $status   HTTP status code.
+	 * @return false Always returns false to prevent actual redirect.
+	 */
+	public function capture_redirect_url( $location, $status ) {
+		$this->redirect_url = $location;
+		return false; // Prevent actual redirect.
+	}
+
+	/**
+	 * Helper: Mock Gmail token exchange response.
+	 *
+	 * @param false|array|WP_Error $response    A preemptive return value of an HTTP request.
+	 * @param array                $parsed_args HTTP request arguments.
+	 * @param string               $url         The request URL.
+	 * @return array Mock HTTP response.
+	 */
+	public function mock_gmail_token_exchange( $response, $parsed_args, $url ) {
+		if ( 'https://oauth2.googleapis.com/token' === $url ) {
+			// Return mock token response.
+			return array(
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'body'     => wp_json_encode(
+					array(
+						'access_token'  => 'test_access_token_abc',
+						'refresh_token' => 'test_refresh_token_123',
+						'expires_in'    => 3600,
+						'token_type'    => 'Bearer',
+					)
+				),
+			);
+		}
+
+		if ( 'https://gmail.googleapis.com/gmail/v1/users/me/profile' === $url ) {
+			// Return mock Gmail profile response.
+			return array(
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'body'     => wp_json_encode(
+					array(
+						'emailAddress' => 'test@gmail.com',
+					)
+				),
+			);
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Helper: Mock Google Drive token exchange response.
+	 *
+	 * @param false|array|WP_Error $response    A preemptive return value of an HTTP request.
+	 * @param array                $parsed_args HTTP request arguments.
+	 * @param string               $url         The request URL.
+	 * @return array Mock HTTP response.
+	 */
+	public function mock_google_drive_token_exchange( $response, $parsed_args, $url ) {
+		if ( 'https://oauth2.googleapis.com/token' === $url ) {
+			// Return mock token response.
+			return array(
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'body'     => wp_json_encode(
+					array(
+						'access_token'  => 'test_drive_access_token_xyz',
+						'refresh_token' => 'test_drive_refresh_token_456',
+						'expires_in'    => 3600,
+						'token_type'    => 'Bearer',
+					)
+				),
+			);
+		}
+
+		if ( 'https://www.googleapis.com/oauth2/v2/userinfo' === $url ) {
+			// Return mock userinfo response.
+			return array(
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'body'     => wp_json_encode(
+					array(
+						'email' => 'driveuser@gmail.com',
+						'verified_email' => true,
+					)
+				),
+			);
+		}
+
+		return $response;
+	}
 }

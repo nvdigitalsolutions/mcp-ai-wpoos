@@ -269,6 +269,8 @@ $response = wp_remote_post(
    - Lines 1605-1815: Google Drive OAuth implementation
 2. `addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-search-gmail.php`
    - Lines 283-337: Token refresh implementation
+3. `addons/pro/tests/test-remote-sites-admin.php`
+   - Lines 626-1100: Comprehensive OAuth unit tests (Gmail and Google Drive)
 
 ### Verification Steps Performed
 1. ✅ Verified incremental authorization parameter
@@ -281,6 +283,28 @@ $response = wp_remote_post(
 8. ✅ Verified Authorization Code flow implementation
 9. ✅ Verified error handling
 10. ✅ Verified timeout configuration
+
+### Unit Test Coverage
+**Test File**: `addons/pro/tests/test-remote-sites-admin.php`
+
+#### Gmail OAuth Tests
+1. ✅ `test_gmail_oauth_state_parameter_validation()` - Verifies state parameter generation, transient storage, and CSRF protection
+2. ✅ `test_gmail_oauth_callback_success()` - Verifies successful token exchange and connection update
+3. ✅ `test_gmail_oauth_callback_invalid_state()` - Verifies CSRF protection rejects invalid state
+4. ✅ `test_gmail_oauth_callback_missing_code()` - Verifies error handling when authorization code is missing
+
+#### Google Drive OAuth Tests
+1. ✅ `test_google_drive_oauth_state_parameter_validation()` - Verifies state parameter generation, OAuth best practices parameters, and CSRF protection
+2. ✅ `test_google_drive_oauth_callback_success()` - Verifies successful token exchange and connection update
+3. ✅ `test_google_drive_oauth_callback_user_denied()` - Verifies error handling when user denies authorization
+
+#### Test Coverage Summary
+- **CSRF Protection**: State parameter validation and transient management
+- **Token Exchange**: Mock HTTP responses for token endpoint
+- **Error Handling**: Invalid state, missing code, user denial scenarios
+- **OAuth Best Practices**: Verification of `access_type=offline`, `prompt=consent`, `include_granted_scopes=true`
+- **Data Persistence**: Connection updates with refresh tokens and user emails
+- **Transient Cleanup**: Automatic deletion of state transients after use
 
 ---
 
@@ -319,6 +343,16 @@ $response = wp_remote_post(
 ---
 
 ## Changelog
+
+### January 13, 2026 - Test Coverage Added
+- Added comprehensive unit tests for Gmail OAuth handlers
+- Added comprehensive unit tests for Google Drive OAuth handlers
+- Tests verify CSRF protection (state parameter validation)
+- Tests verify token exchange with mocked HTTP responses
+- Tests verify error handling scenarios (invalid state, missing code, user denial)
+- Tests verify OAuth best practices compliance
+- Tests verify data persistence and transient cleanup
+- All 7 OAuth test cases passing
 
 ### January 13, 2026
 - Initial compliance documentation
