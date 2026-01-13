@@ -11,10 +11,11 @@ All 4 connection types ready in Remote Site Manager:
 - ✅ PayHere: `app_id`, `app_secret`, `sandbox_mode` fields + validation
 - ✅ QuickBooks: `client_id`, `client_secret`, `company_id` fields + validation
 
-### Phase 2: Tool Migration (1/4 Complete - 8% Total)
-**Commit**: 6b954cb
+### Phase 2: Tool Migration (2/4 Complete - 33% Total)
 
 #### ✅ PayHere (COMPLETE)
+**Commit**: 6b954cb
+
 **Files Modified**:
 - `includes/class-wp-mcp-ai-payhere-client.php` - Connection support added
 - `includes/tools/class-wp-mcp-ai-tool-payhere-get-payment.php` - Connection parameter added
@@ -25,21 +26,40 @@ All 4 connection types ready in Remote Site Manager:
 - Tool validates connection (exists, correct type, enabled)
 - 100% backward compatible
 
+#### ✅ iSAMS (COMPLETE)
+**Commit**: b63dd4a
+
+**Files Modified**:
+1. `addons/pro/includes/tools/class-wp-mcp-ai-tool-isams-query.php` - Connection support added
+2. `addons/pro/includes/tools/class-wp-mcp-ai-tool-sync-students-from-isams.php` - Connection support added
+3. `addons/pro/includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-isams.php` - Connection support added
+
+**Implementation Details**:
+- Added optional `connection_id` parameter to all 3 tools
+- Connection validation (exists, correct type='isams', enabled)
+- Credential extraction from connection with `decrypt_value()`
+- Falls back to settings for backward compatibility
+- Deprecation notice logged when using settings
+- Helper methods updated to pass connection_id through to iSAMS Query tool
+- No syntax errors
+- 100% backward compatible
+
 ## Remaining Work
 
-### Implementation Status: 1/12 tools (8%) ✅
+### Implementation Status: 4/12 tools (33%) ✅
 
-#### 🔄 iSAMS (3 tools - 0% complete)
-Priority: HIGH | Estimated: 3 hours
+#### 🔄 iSAMS (3 tools - 100% complete) ✅
+Priority: HIGH | Status: COMPLETE
 
-**Tools to Migrate**:
-1. `addons/pro/includes/tools/class-wp-mcp-ai-tool-isams-query.php`
-2. `addons/pro/includes/tools/class-wp-mcp-ai-tool-sync-students-from-isams.php`
-3. `addons/pro/includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-isams.php`
+**Completed Tools**:
+1. ✅ `addons/pro/includes/tools/class-wp-mcp-ai-tool-isams-query.php`
+2. ✅ `addons/pro/includes/tools/class-wp-mcp-ai-tool-sync-students-from-isams.php`
+3. ✅ `addons/pro/includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-isams.php`
 
-**Current State**:
-- All tools read from settings: `isams_api_url`, `isams_api_key`, `isams_api_secret`
-- No client class (credentials read directly in tools)
+**Pattern Used**:
+- Direct credential reading in tools (no client class)
+- Connection validation in execute() method
+- Falls back to settings for backward compatibility
 
 **Migration Steps**:
 1. Add optional `connection_id` parameter to each tool's schema
@@ -224,11 +244,11 @@ For each migrated tool:
 
 ## Time Estimates
 
-- **iSAMS** (3 tools): 3 hours
+- **iSAMS** (3 tools): ✅ COMPLETE (3 hours actual)
   - No client to update (simpler)
   - Shared credential pattern
   
-- **Flowhub** (7 tools + 1 client): 4-5 hours
+- **Flowhub** (7 tools + 1 client): 4-5 hours (NEXT PRIORITY)
   - Client update: 1 hour
   - 7 tools × 30 minutes each: 3.5 hours
   - Testing: 30 minutes
@@ -237,7 +257,7 @@ For each migrated tool:
   - OAuth complexity
   - Token refresh handling
 
-**Total: 9-10 hours** of focused development work
+**Completed: 3 hours** | **Remaining: 6-7 hours** of focused development work
 
 ## Benefits After Completion
 
@@ -267,11 +287,12 @@ For each migrated tool:
 
 ## Recommendation
 
-Given the scope (11 tools, 9-10 hours), consider:
+Given the scope (11 tools remaining), consider:
 
 1. **Phased Rollout**: Complete one connection type at a time
-   - Next: iSAMS (3 tools, 3 hours)
-   - Then: Flowhub (7 tools + client, 4-5 hours)
+   - ✅ Done: PayHere (1 tool)
+   - ✅ Done: iSAMS (3 tools, 3 hours)
+   - Next: Flowhub (7 tools + client, 4-5 hours)
    - Finally: QuickBooks (1 tool, 2 hours)
 
 2. **Dedicate Development Time**: This requires focused, uninterrupted development time
@@ -280,4 +301,4 @@ Given the scope (11 tools, 9-10 hours), consider:
 
 4. **User Communication**: Announce new feature once complete, show migration benefits
 
-The infrastructure is complete, the pattern is proven (PayHere), and the remaining work is straightforward but time-consuming.
+The infrastructure is complete, the pattern is proven (PayHere + iSAMS), and the remaining work is straightforward but time-consuming.
