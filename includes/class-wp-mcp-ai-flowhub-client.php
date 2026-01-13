@@ -378,7 +378,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 				);
 			}
 
-			$endpoint = sprintf( '/v0/locations/%s/inventoryNonZero', sanitize_text_field( $location_id ) );
+			$endpoint = sprintf( '/v0/locations/%s/inventoryNonZero', rawurlencode( sanitize_text_field( $location_id ) ) );
 
 			// Use the location-specific non-zero inventory endpoint as per Flowhub API docs.
 			return $this->make_request(
