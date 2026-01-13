@@ -186,7 +186,7 @@ class WP_MCP_AI_Place_Research_Page {
 						<div class="wp-mcp-ai-research-chat">
 							<?php
 							// Render chat interface using shortcode.
-							echo do_shortcode( '[wp_mcp_ai_chat assistant_id="' . absint( $assistant_id ) . '" height="600px" context="place_research"]' );
+							echo do_shortcode( '[mcp_ai_chat assistant="' . absint( $assistant_id ) . '"]' );
 							?>
 						</div>
 
