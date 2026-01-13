@@ -220,6 +220,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 				sprintf( 'Making %s request to Flowhub API.', $method ),
 				array(
 					'endpoint' => $endpoint,
+					'full_url' => $url,
 					'method'   => $method,
 				)
 			);
@@ -361,16 +362,27 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 				$query_params['room_id'] = sanitize_text_field( $options['room_id'] );
 			}
 
-			// Add location_id if available (endpoint is "Non-Zero Inventory By Location").
-			// FlowHub may require or filter by location_id for multi-location dispensaries.
+			// Build the endpoint with location_id in the path.
+			// Flowhub API format: /v0/locations/{location_id}/inventoryNonZero
 			$location_id = $this->get_location_id();
-			if ( ! empty( $location_id ) ) {
-				$query_params['location_id'] = sanitize_text_field( $location_id );
+			if ( empty( $location_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_location_id',
+					__( 'Flowhub Location ID is required for inventory requests.', 'mcp-ai-wpoos' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_location_id' => __( 'Add Flowhub Location ID in the NV oOS settings or Remote Sites.', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
 			}
 
-			// Use the non-zero inventory endpoint as per Flowhub API docs.
+			$endpoint = sprintf( '/v0/locations/%s/inventoryNonZero', sanitize_text_field( $location_id ) );
+
+			// Use the location-specific non-zero inventory endpoint as per Flowhub API docs.
 			return $this->make_request(
-				'/v0/inventoryNonZero',
+				$endpoint,
 				'GET',
 				array(),
 				array( 'query' => $query_params )
