@@ -129,6 +129,49 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				$connection_data['_api_key_encrypted'] = true;
 			}
 
+			// Preserve existing api_secret if not provided.
+			if ( empty( $connection_data['api_secret'] ) && ! empty( $existing_connection['api_secret'] ) ) {
+				$connection_data['api_secret'] = $existing_connection['api_secret'];
+				$connection_data['_api_secret_encrypted'] = true;
+			}
+
+			// Preserve existing client_id if not provided.
+			if ( empty( $connection_data['client_id'] ) && ! empty( $existing_connection['client_id'] ) ) {
+				$connection_data['client_id'] = $existing_connection['client_id'];
+			}
+
+			// Preserve existing client_secret if not provided.
+			if ( empty( $connection_data['client_secret'] ) && ! empty( $existing_connection['client_secret'] ) ) {
+				$connection_data['client_secret'] = $existing_connection['client_secret'];
+				$connection_data['_client_secret_encrypted'] = true;
+			}
+
+			// Preserve existing app_id if not provided.
+			if ( empty( $connection_data['app_id'] ) && ! empty( $existing_connection['app_id'] ) ) {
+				$connection_data['app_id'] = $existing_connection['app_id'];
+			}
+
+			// Preserve existing app_secret if not provided.
+			if ( empty( $connection_data['app_secret'] ) && ! empty( $existing_connection['app_secret'] ) ) {
+				$connection_data['app_secret'] = $existing_connection['app_secret'];
+				$connection_data['_app_secret_encrypted'] = true;
+			}
+
+			// Preserve existing location_id if not provided.
+			if ( empty( $connection_data['location_id'] ) && ! empty( $existing_connection['location_id'] ) ) {
+				$connection_data['location_id'] = $existing_connection['location_id'];
+			}
+
+			// Preserve existing company_id if not provided.
+			if ( empty( $connection_data['company_id'] ) && ! empty( $existing_connection['company_id'] ) ) {
+				$connection_data['company_id'] = $existing_connection['company_id'];
+			}
+
+			// Preserve existing sandbox_mode if not provided.
+			if ( ! isset( $connection_data['sandbox_mode'] ) && isset( $existing_connection['sandbox_mode'] ) ) {
+				$connection_data['sandbox_mode'] = $existing_connection['sandbox_mode'];
+			}
+
 			// Preserve created timestamp.
 			if ( ! isset( $connection_data['created'] ) && ! empty( $existing_connection['created'] ) ) {
 				$connection_data['created'] = $existing_connection['created'];
@@ -154,6 +197,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'consumer_key'    => isset( $connection_data['consumer_key'] ) ? $connection_data['consumer_key'] : '',
 			'consumer_secret' => isset( $connection_data['consumer_secret'] ) ? $connection_data['consumer_secret'] : '',
 			'api_key'         => isset( $connection_data['api_key'] ) ? $connection_data['api_key'] : '',
+			'api_secret'      => isset( $connection_data['api_secret'] ) ? $connection_data['api_secret'] : '',
+			'client_id'       => isset( $connection_data['client_id'] ) ? sanitize_text_field( $connection_data['client_id'] ) : '',
+			'client_secret'   => isset( $connection_data['client_secret'] ) ? $connection_data['client_secret'] : '',
+			'app_id'          => isset( $connection_data['app_id'] ) ? sanitize_text_field( $connection_data['app_id'] ) : '',
+			'app_secret'      => isset( $connection_data['app_secret'] ) ? $connection_data['app_secret'] : '',
+			'location_id'     => isset( $connection_data['location_id'] ) ? sanitize_text_field( $connection_data['location_id'] ) : '',
+			'company_id'      => isset( $connection_data['company_id'] ) ? sanitize_text_field( $connection_data['company_id'] ) : '',
+			'sandbox_mode'    => ! empty( $connection_data['sandbox_mode'] ),
 			'has_woocommerce' => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'         => ! empty( $connection_data['enabled'] ),
 			'created'         => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
@@ -179,6 +230,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( ! empty( $connection['api_key'] ) && empty( $connection_data['_api_key_encrypted'] ) ) {
 			$connection['api_key'] = self::encrypt_value( $connection['api_key'] );
+		}
+
+		if ( ! empty( $connection['api_secret'] ) && empty( $connection_data['_api_secret_encrypted'] ) ) {
+			$connection['api_secret'] = self::encrypt_value( $connection['api_secret'] );
+		}
+
+		if ( ! empty( $connection['client_secret'] ) && empty( $connection_data['_client_secret_encrypted'] ) ) {
+			$connection['client_secret'] = self::encrypt_value( $connection['client_secret'] );
+		}
+
+		if ( ! empty( $connection['app_secret'] ) && empty( $connection_data['_app_secret_encrypted'] ) ) {
+			$connection['app_secret'] = self::encrypt_value( $connection['app_secret'] );
 		}
 
 		$connections[ $connection_id ] = $connection;
@@ -588,11 +651,48 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Validate connection type specific requirements.
 		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
+		
 		if ( 'ezuite_erp' === $connection_type && empty( $connection['api_key'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_api_key',
 				__( 'API key is required for EZuite ERP connections.', 'wp-mcp-ai-pro' )
 			);
+		}
+
+		if ( 'isams' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_isams_credentials',
+					__( 'API key and API secret are required for iSAMS connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
+
+		if ( 'flowhub' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) || empty( $connection['location_id'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_flowhub_credentials',
+					__( 'API key, client ID, client secret, and location ID are required for Flowhub connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
+
+		if ( 'payhere' === $connection_type ) {
+			if ( empty( $connection['app_id'] ) || empty( $connection['app_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_payhere_credentials',
+					__( 'App ID and app secret are required for PayHere connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
+
+		if ( 'quickbooks' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) || empty( $connection['company_id'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_quickbooks_credentials',
+					__( 'Client ID, client secret, and company ID are required for QuickBooks connections.', 'wp-mcp-ai-pro' )
+				);
+			}
 		}
 
 		return true;
