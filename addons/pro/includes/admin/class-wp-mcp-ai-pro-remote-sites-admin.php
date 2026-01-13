@@ -964,7 +964,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php
 						$gmail_redirect_uri = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback' );
 						?>
-						<input type="text" readonly="readonly" value="<?php echo esc_attr( $gmail_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<input type="text" readonly="readonly" value="<?php echo esc_url( $gmail_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description">
 							<strong><?php esc_html_e( 'Important:', 'wp-mcp-ai-pro' ); ?></strong>
 							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'wp-mcp-ai-pro' ); ?>
@@ -1047,7 +1047,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php
 						$google_drive_redirect_uri = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=google_drive_oauth_callback' );
 						?>
-						<input type="text" readonly="readonly" value="<?php echo esc_attr( $google_drive_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
+						<input type="text" readonly="readonly" value="<?php echo esc_url( $google_drive_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description">
 							<strong><?php esc_html_e( 'Important:', 'wp-mcp-ai-pro' ); ?></strong>
 							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'wp-mcp-ai-pro' ); ?>
