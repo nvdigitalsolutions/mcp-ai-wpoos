@@ -131,21 +131,49 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
 			}
 
+			// Get connection type first to determine which fields to use.
+			$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'wordpress';
+
+			// Map connection-type-specific fields to generic field names.
+			$api_key         = '';
+			$api_secret      = '';
+			$client_id       = '';
+			$client_secret   = '';
+
+			switch ( $connection_type ) {
+				case 'isams':
+					$api_key     = isset( $_POST['isams_api_key'] ) ? wp_unslash( $_POST['isams_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_secret  = isset( $_POST['isams_api_secret'] ) ? wp_unslash( $_POST['isams_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
+				case 'flowhub':
+					$api_key     = isset( $_POST['flowhub_api_key'] ) ? wp_unslash( $_POST['flowhub_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$client_id   = isset( $_POST['flowhub_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_client_id'] ) ) : '';
+					break;
+				case 'quickbooks':
+					$client_id     = isset( $_POST['quickbooks_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['quickbooks_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['quickbooks_client_secret'] ) ? wp_unslash( $_POST['quickbooks_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
+				case 'ezuite_erp':
+					$api_key     = isset( $_POST['ezuite_erp_api_key'] ) ? wp_unslash( $_POST['ezuite_erp_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_secret  = isset( $_POST['ezuite_erp_api_secret'] ) ? wp_unslash( $_POST['ezuite_erp_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
+			}
+
 			$connection_data = array(
 				'id'              => isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '',
 				'name'            => isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '',
 				'url'             => isset( $_POST['url'] ) ? esc_url_raw( wp_unslash( $_POST['url'] ) ) : '',
-				'connection_type' => isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'wordpress',
+				'connection_type' => $connection_type,
 				'auth_type'       => isset( $_POST['auth_type'] ) ? sanitize_key( wp_unslash( $_POST['auth_type'] ) ) : 'none',
 				'username'        => isset( $_POST['username'] ) ? sanitize_text_field( wp_unslash( $_POST['username'] ) ) : '',
 				'password'        => isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'token'           => isset( $_POST['token'] ) ? wp_unslash( $_POST['token'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'consumer_key'    => isset( $_POST['consumer_key'] ) ? sanitize_text_field( wp_unslash( $_POST['consumer_key'] ) ) : '',
 				'consumer_secret' => isset( $_POST['consumer_secret'] ) ? wp_unslash( $_POST['consumer_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-				'api_key'         => isset( $_POST['api_key'] ) ? wp_unslash( $_POST['api_key'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-				'api_secret'      => isset( $_POST['api_secret'] ) ? wp_unslash( $_POST['api_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-				'client_id'       => isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '',
-				'client_secret'   => isset( $_POST['client_secret'] ) ? wp_unslash( $_POST['client_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				'api_key'         => $api_key,
+				'api_secret'      => $api_secret,
+				'client_id'       => $client_id,
+				'client_secret'   => $client_secret,
 				'app_id'          => isset( $_POST['app_id'] ) ? sanitize_text_field( wp_unslash( $_POST['app_id'] ) ) : '',
 				'app_secret'      => isset( $_POST['app_secret'] ) ? wp_unslash( $_POST['app_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'location_id'     => isset( $_POST['location_id'] ) ? sanitize_text_field( wp_unslash( $_POST['location_id'] ) ) : '',
@@ -622,10 +650,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for iSAMS -->
 				<tr class="isams-only-field" style="display: none;">
 					<th scope="row">
-						<label for="api_key"><?php esc_html_e( 'API Key', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="isams_api_key"><?php esc_html_e( 'API Key', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="api_key" id="api_key" class="regular-text" value="" autocomplete="off">
+						<input type="text" name="isams_api_key" id="isams_api_key" class="regular-text" value="" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
@@ -634,10 +662,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="isams-only-field" style="display: none;">
 					<th scope="row">
-						<label for="api_secret"><?php esc_html_e( 'API Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="isams_api_secret"><?php esc_html_e( 'API Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="password" name="api_secret" id="api_secret" class="regular-text" value="" autocomplete="new-password">
+						<input type="password" name="isams_api_secret" id="isams_api_secret" class="regular-text" value="" autocomplete="new-password">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
@@ -647,10 +675,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for Flowhub -->
 				<tr class="flowhub-only-field" style="display: none;">
 					<th scope="row">
-						<label for="api_key"><?php esc_html_e( 'API Key (key header)', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="flowhub_api_key"><?php esc_html_e( 'API Key (key header)', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="api_key" id="api_key_flowhub" class="regular-text" value="" autocomplete="off">
+						<input type="text" name="flowhub_api_key" id="flowhub_api_key" class="regular-text" value="" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php else : ?>
@@ -661,10 +689,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="flowhub-only-field" style="display: none;">
 					<th scope="row">
-						<label for="client_id"><?php esc_html_e( 'Client ID (clientId header)', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="flowhub_client_id"><?php esc_html_e( 'Client ID (clientId header)', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="client_id" id="client_id_flowhub" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<input type="text" name="flowhub_client_id" id="flowhub_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
 						<p class="description"><?php esc_html_e( 'Your Flowhub client identifier. Sent as "clientId" header in requests.', 'wp-mcp-ai-pro' ); ?></p>
 					</td>
 				</tr>
@@ -718,10 +746,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for QuickBooks -->
 				<tr class="quickbooks-only-field" style="display: none;">
 					<th scope="row">
-						<label for="client_id"><?php esc_html_e( 'Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="quickbooks_client_id"><?php esc_html_e( 'Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="client_id" id="client_id_quickbooks" class="regular-text" value="" autocomplete="off">
+						<input type="text" name="quickbooks_client_id" id="quickbooks_client_id" class="regular-text" value="" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client ID.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
@@ -730,10 +758,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="quickbooks-only-field" style="display: none;">
 					<th scope="row">
-						<label for="client_secret"><?php esc_html_e( 'Client Secret / OAuth Token', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="quickbooks_client_secret"><?php esc_html_e( 'Client Secret / OAuth Token', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<textarea name="client_secret" id="client_secret_quickbooks" class="large-text" rows="3" autocomplete="off"></textarea>
+						<textarea name="quickbooks_client_secret" id="quickbooks_client_secret" class="large-text" rows="3" autocomplete="off"></textarea>
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret/token. For OAuth, paste the complete token here.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
@@ -753,10 +781,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for EZuite ERP -->
 				<tr class="ezuite_erp-only-field" style="display: none;">
 					<th scope="row">
-						<label for="api_key"><?php esc_html_e( 'API Key', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="ezuite_erp_api_key"><?php esc_html_e( 'API Key', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="text" name="api_key" id="api_key_ezuite" class="regular-text" value="" autocomplete="off">
+						<input type="text" name="ezuite_erp_api_key" id="ezuite_erp_api_key" class="regular-text" value="" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
@@ -765,10 +793,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="ezuite_erp-only-field" style="display: none;">
 					<th scope="row">
-						<label for="api_secret"><?php esc_html_e( 'API Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="ezuite_erp_api_secret"><?php esc_html_e( 'API Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
-						<input type="password" name="api_secret" id="api_secret_ezuite" class="regular-text" value="" autocomplete="new-password">
+						<input type="password" name="ezuite_erp_api_secret" id="ezuite_erp_api_secret" class="regular-text" value="" autocomplete="new-password">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
