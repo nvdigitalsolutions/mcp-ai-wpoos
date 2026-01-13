@@ -288,8 +288,30 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<td>
 								<?php
 								$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
-								$type_label = 'wordpress' === $connection_type ? __( 'WordPress', 'wp-mcp-ai-pro' ) : __( 'Generic REST API', 'wp-mcp-ai-pro' );
-								$type_badge_color = 'wordpress' === $connection_type ? '#2271b1' : '#50575e';
+								
+								// Define labels and colors for each connection type
+								$type_labels = array(
+									'wordpress'   => __( 'WordPress', 'wp-mcp-ai-pro' ),
+									'generic'     => __( 'Generic REST API', 'wp-mcp-ai-pro' ),
+									'isams'       => __( 'iSAMS', 'wp-mcp-ai-pro' ),
+									'flowhub'     => __( 'Flowhub', 'wp-mcp-ai-pro' ),
+									'payhere'     => __( 'PayHere', 'wp-mcp-ai-pro' ),
+									'quickbooks'  => __( 'QuickBooks', 'wp-mcp-ai-pro' ),
+									'ezuite_erp'  => __( 'EZuite ERP', 'wp-mcp-ai-pro' ),
+								);
+								
+								$type_colors = array(
+									'wordpress'   => '#2271b1',
+									'generic'     => '#50575e',
+									'isams'       => '#d63638',
+									'flowhub'     => '#00a32a',
+									'payhere'     => '#f0b849',
+									'quickbooks'  => '#2c9f47',
+									'ezuite_erp'  => '#8c50a7',
+								);
+								
+								$type_label = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
+								$type_badge_color = isset( $type_colors[ $connection_type ] ) ? $type_colors[ $connection_type ] : '#50575e';
 								?>
 								<span style="display: inline-block; padding: 2px 8px; background: <?php echo esc_attr( $type_badge_color ); ?>; color: white; border-radius: 3px; font-size: 11px;">
 									<?php echo esc_html( $type_label ); ?>
@@ -503,9 +525,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="generic" <?php selected( $connection_type, 'generic' ); ?>>
 								<?php esc_html_e( 'Generic REST API', 'wp-mcp-ai-pro' ); ?>
 							</option>
+							<option value="isams" <?php selected( $connection_type, 'isams' ); ?>>
+								<?php esc_html_e( 'iSAMS (School Management)', 'wp-mcp-ai-pro' ); ?>
+							</option>
+							<option value="flowhub" <?php selected( $connection_type, 'flowhub' ); ?>>
+								<?php esc_html_e( 'Flowhub (POS/Retail)', 'wp-mcp-ai-pro' ); ?>
+							</option>
+							<option value="payhere" <?php selected( $connection_type, 'payhere' ); ?>>
+								<?php esc_html_e( 'PayHere (Payment Gateway)', 'wp-mcp-ai-pro' ); ?>
+							</option>
+							<option value="quickbooks" <?php selected( $connection_type, 'quickbooks' ); ?>>
+								<?php esc_html_e( 'QuickBooks (Accounting)', 'wp-mcp-ai-pro' ); ?>
+							</option>
+							<option value="ezuite_erp" <?php selected( $connection_type, 'ezuite_erp' ); ?>>
+								<?php esc_html_e( 'EZuite ERP (Inventory)', 'wp-mcp-ai-pro' ); ?>
+							</option>
 						</select>
 						<p class="description">
-							<?php esc_html_e( 'Select "WordPress / WooCommerce" for WordPress sites, or "Generic REST API" for any other REST API (Stripe, GitHub, custom APIs, etc.).', 'wp-mcp-ai-pro' ); ?>
+							<?php esc_html_e( 'Select the type of connection. Each type has specific authentication requirements and field configurations.', 'wp-mcp-ai-pro' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -578,6 +615,174 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<input type="password" name="consumer_secret" id="consumer_secret" class="regular-text" value="" autocomplete="new-password" placeholder="cs_...">
 						<?php if ( $is_edit ) : ?>
 							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for iSAMS -->
+				<tr class="isams-only-field" style="display: none;">
+					<th scope="row">
+						<label for="api_key"><?php esc_html_e( 'API Key', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="api_key" id="api_key" class="regular-text" value="" autocomplete="off">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="isams-only-field" style="display: none;">
+					<th scope="row">
+						<label for="api_secret"><?php esc_html_e( 'API Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="api_secret" id="api_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for Flowhub -->
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="api_key"><?php esc_html_e( 'API Key', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="api_key" id="api_key_flowhub" class="regular-text" value="" autocomplete="off">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="client_id"><?php esc_html_e( 'Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="client_id" id="client_id_flowhub" class="regular-text" value="" autocomplete="off">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client ID.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="client_secret"><?php esc_html_e( 'Client Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="client_secret" id="client_secret_flowhub" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="flowhub-only-field" style="display: none;">
+					<th scope="row">
+						<label for="location_id"><?php esc_html_e( 'Location ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="location_id" id="location_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['location_id'] ) ? esc_attr( $connection['location_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'The Flowhub location/dispensary ID.', 'wp-mcp-ai-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for PayHere -->
+				<tr class="payhere-only-field" style="display: none;">
+					<th scope="row">
+						<label for="app_id"><?php esc_html_e( 'App ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="app_id" id="app_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['app_id'] ) ? esc_attr( $connection['app_id'] ) : ''; ?>" autocomplete="off">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing App ID.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="payhere-only-field" style="display: none;">
+					<th scope="row">
+						<label for="app_secret"><?php esc_html_e( 'App Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="app_secret" id="app_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing App Secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="payhere-only-field" style="display: none;">
+					<th scope="row"><?php esc_html_e( 'Sandbox Mode', 'wp-mcp-ai-pro' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="sandbox_mode" value="1" <?php checked( $is_edit && ! empty( $connection['sandbox_mode'] ) ); ?>>
+							<?php esc_html_e( 'Enable sandbox/test mode', 'wp-mcp-ai-pro' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Use PayHere sandbox environment for testing.', 'wp-mcp-ai-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for QuickBooks -->
+				<tr class="quickbooks-only-field" style="display: none;">
+					<th scope="row">
+						<label for="client_id"><?php esc_html_e( 'Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="client_id" id="client_id_quickbooks" class="regular-text" value="" autocomplete="off">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client ID.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="quickbooks-only-field" style="display: none;">
+					<th scope="row">
+						<label for="client_secret"><?php esc_html_e( 'Client Secret / OAuth Token', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<textarea name="client_secret" id="client_secret_quickbooks" class="large-text" rows="3" autocomplete="off"></textarea>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret/token. For OAuth, paste the complete token here.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="quickbooks-only-field" style="display: none;">
+					<th scope="row">
+						<label for="company_id"><?php esc_html_e( 'Company ID (Realm ID)', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="company_id" id="company_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['company_id'] ) ? esc_attr( $connection['company_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'The QuickBooks company/realm ID.', 'wp-mcp-ai-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for EZuite ERP -->
+				<tr class="ezuite_erp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="api_key"><?php esc_html_e( 'API Key', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="api_key" id="api_key_ezuite" class="regular-text" value="" autocomplete="off">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="ezuite_erp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="api_secret"><?php esc_html_e( 'API Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="api_secret" id="api_secret_ezuite" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'wp-mcp-ai-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -664,16 +869,65 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		function toggleConnectionTypeFields(connectionType) {
 			var wordpressFields = document.querySelectorAll('.wordpress-only-field');
 			var genericFields = document.querySelectorAll('.generic-only-field');
+			var isamsFields = document.querySelectorAll('.isams-only-field');
+			var flowhubFields = document.querySelectorAll('.flowhub-only-field');
+			var payhereFields = document.querySelectorAll('.payhere-only-field');
+			var quickbooksFields = document.querySelectorAll('.quickbooks-only-field');
+			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
 
-			// Show/hide WordPress-specific fields
+			// Hide all type-specific fields first
 			wordpressFields.forEach(function(field) {
-				field.style.display = connectionType === 'wordpress' ? 'table-row' : 'none';
+				field.style.display = 'none';
+			});
+			genericFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			isamsFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			flowhubFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			payhereFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			quickbooksFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			ezuiteFields.forEach(function(field) {
+				field.style.display = 'none';
 			});
 
-			// Show/hide Generic REST API fields
-			genericFields.forEach(function(field) {
-				field.style.display = connectionType === 'generic' ? 'table-row' : 'none';
-			});
+			// Show fields for selected connection type
+			if (connectionType === 'wordpress') {
+				wordpressFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+			} else if (connectionType === 'generic') {
+				genericFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+			} else if (connectionType === 'isams') {
+				isamsFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+			} else if (connectionType === 'flowhub') {
+				flowhubFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+			} else if (connectionType === 'payhere') {
+				payhereFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+			} else if (connectionType === 'quickbooks') {
+				quickbooksFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+			} else if (connectionType === 'ezuite_erp') {
+				ezuiteFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+			}
 		}
 
 		// Initialize on page load

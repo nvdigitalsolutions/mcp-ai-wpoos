@@ -652,11 +652,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// Validate connection type specific requirements.
 		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
 
-		if ( 'ezuite_erp' === $connection_type && empty( $connection['api_key'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_pro_missing_api_key',
-				__( 'API key is required for EZuite ERP connections.', 'wp-mcp-ai-pro' )
-			);
+		if ( 'ezuite_erp' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_ezuite_credentials',
+					__( 'API key and API secret are required for EZuite ERP connections.', 'wp-mcp-ai-pro' )
+				);
+			}
 		}
 
 		if ( 'isams' === $connection_type ) {
@@ -687,10 +689,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		if ( 'quickbooks' === $connection_type ) {
-			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) || empty( $connection['company_id'] ) ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_quickbooks_credentials',
-					__( 'Client ID, client secret, and company ID are required for QuickBooks connections.', 'wp-mcp-ai-pro' )
+					__( 'Client ID and client secret are required for QuickBooks connections.', 'wp-mcp-ai-pro' )
 				);
 			}
 		}
