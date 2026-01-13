@@ -159,12 +159,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					break;
 			}
 
+			// For FlowHub connections, always use the fixed API URL and custom_header auth
+			$url = isset( $_POST['url'] ) ? esc_url_raw( wp_unslash( $_POST['url'] ) ) : '';
+			$auth_type = isset( $_POST['auth_type'] ) ? sanitize_key( wp_unslash( $_POST['auth_type'] ) ) : 'none';
+			
+			if ( 'flowhub' === $connection_type ) {
+				$url = 'https://api.flowhub.co';
+				$auth_type = 'custom_header';
+			}
+
+			// For EZuite ERP connections, always use custom_header auth
+			if ( 'ezuite_erp' === $connection_type ) {
+				$auth_type = 'custom_header';
+			}
+
 			$connection_data = array(
 				'id'              => isset( $_POST['connection_id'] ) ? sanitize_key( wp_unslash( $_POST['connection_id'] ) ) : '',
 				'name'            => isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '',
-				'url'             => isset( $_POST['url'] ) ? esc_url_raw( wp_unslash( $_POST['url'] ) ) : '',
+				'url'             => $url,
 				'connection_type' => $connection_type,
-				'auth_type'       => isset( $_POST['auth_type'] ) ? sanitize_key( wp_unslash( $_POST['auth_type'] ) ) : 'none',
+				'auth_type'       => $auth_type,
 				'username'        => isset( $_POST['username'] ) ? sanitize_text_field( wp_unslash( $_POST['username'] ) ) : '',
 				'password'        => isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'token'           => isset( $_POST['token'] ) ? wp_unslash( $_POST['token'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -534,7 +548,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<input type="url" name="url" id="url" class="regular-text" value="<?php echo $is_edit ? esc_attr( $connection['url'] ) : ''; ?>" placeholder="https://example.com" required>
-						<p class="description"><?php esc_html_e( 'The full URL of the remote site (including https://).', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description" id="url-description"><?php esc_html_e( 'The full URL of the remote site (including https://).', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description" id="url-description-flowhub" style="display: none;">
+							<?php esc_html_e( 'FlowHub uses a fixed API URL. This field is automatically set to https://api.flowhub.co', 'wp-mcp-ai-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 
@@ -882,6 +899,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var quickbooksFields = document.querySelectorAll('.quickbooks-only-field');
 			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
 			var authTypeSelect = document.getElementById('auth_type');
+			var urlField = document.getElementById('url');
+			var urlDescription = document.getElementById('url-description');
+			var urlDescriptionFlowhub = document.getElementById('url-description-flowhub');
 
 			// Hide all type-specific fields first
 			wordpressFields.forEach(function(field) {
@@ -906,6 +926,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 
+			// Reset URL field defaults
+			urlField.readOnly = false;
+			urlField.style.backgroundColor = '';
+			urlDescription.style.display = 'block';
+			urlDescriptionFlowhub.style.display = 'none';
+
 			// Show fields for selected connection type
 			if (connectionType === 'wordpress') {
 				wordpressFields.forEach(function(field) {
@@ -925,6 +951,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 				// Flowhub uses custom header authentication
 				authTypeSelect.value = 'custom_header';
+				// Flowhub uses a fixed API URL
+				urlField.value = 'https://api.flowhub.co';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
+				urlDescription.style.display = 'none';
+				urlDescriptionFlowhub.style.display = 'block';
 			} else if (connectionType === 'payhere') {
 				payhereFields.forEach(function(field) {
 					field.style.display = 'table-row';
