@@ -157,6 +157,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$api_key     = isset( $_POST['ezuite_erp_api_key'] ) ? wp_unslash( $_POST['ezuite_erp_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					$api_secret  = isset( $_POST['ezuite_erp_api_secret'] ) ? wp_unslash( $_POST['ezuite_erp_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
+				case 'google_drive':
+					$client_id     = isset( $_POST['google_drive_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['google_drive_client_secret'] ) ? wp_unslash( $_POST['google_drive_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					break;
 			}
 
 			// For FlowHub connections, always use the fixed API URL and custom_header auth
@@ -171,6 +175,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			// For EZuite ERP connections, always use custom_header auth
 			if ( 'ezuite_erp' === $connection_type ) {
 				$auth_type = 'custom_header';
+			}
+
+			// For Google Drive connections, set the API URL and use OAuth
+			if ( 'google_drive' === $connection_type ) {
+				$url = 'https://www.googleapis.com/drive/v3';
+				$auth_type = 'oauth2';
+			}
+
+			// Handle Google Drive specific fields
+			$refresh_token = '';
+			$folder_id     = '';
+			if ( 'google_drive' === $connection_type ) {
+				$refresh_token = isset( $_POST['google_drive_refresh_token'] ) ? wp_unslash( $_POST['google_drive_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				$folder_id     = isset( $_POST['google_drive_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_folder_id'] ) ) : '';
 			}
 
 			$connection_data = array(
@@ -192,6 +210,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'app_secret'      => isset( $_POST['app_secret'] ) ? wp_unslash( $_POST['app_secret'] ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'location_id'     => isset( $_POST['location_id'] ) ? sanitize_text_field( wp_unslash( $_POST['location_id'] ) ) : '',
 				'company_id'      => isset( $_POST['company_id'] ) ? sanitize_text_field( wp_unslash( $_POST['company_id'] ) ) : '',
+				'folder_id'       => $folder_id,
+				'refresh_token'   => $refresh_token,
 				'sandbox_mode'    => ! empty( $_POST['sandbox_mode'] ),
 				'has_woocommerce' => ! empty( $_POST['has_woocommerce'] ),
 				'enabled'         => ! empty( $_POST['enabled'] ),
@@ -333,23 +353,25 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								
 								// Define labels and colors for each connection type
 								$type_labels = array(
-									'wordpress'   => __( 'WordPress', 'wp-mcp-ai-pro' ),
-									'generic'     => __( 'Generic REST API', 'wp-mcp-ai-pro' ),
-									'isams'       => __( 'iSAMS', 'wp-mcp-ai-pro' ),
-									'flowhub'     => __( 'Flowhub', 'wp-mcp-ai-pro' ),
-									'payhere'     => __( 'PayHere', 'wp-mcp-ai-pro' ),
-									'quickbooks'  => __( 'QuickBooks', 'wp-mcp-ai-pro' ),
-									'ezuite_erp'  => __( 'EZuite ERP', 'wp-mcp-ai-pro' ),
+									'wordpress'    => __( 'WordPress', 'wp-mcp-ai-pro' ),
+									'generic'      => __( 'Generic REST API', 'wp-mcp-ai-pro' ),
+									'isams'        => __( 'iSAMS', 'wp-mcp-ai-pro' ),
+									'flowhub'      => __( 'Flowhub', 'wp-mcp-ai-pro' ),
+									'payhere'      => __( 'PayHere', 'wp-mcp-ai-pro' ),
+									'quickbooks'   => __( 'QuickBooks', 'wp-mcp-ai-pro' ),
+									'ezuite_erp'   => __( 'EZuite ERP', 'wp-mcp-ai-pro' ),
+									'google_drive' => __( 'Google Drive', 'wp-mcp-ai-pro' ),
 								);
 								
 								$type_colors = array(
-									'wordpress'   => '#2271b1',
-									'generic'     => '#50575e',
-									'isams'       => '#d63638',
-									'flowhub'     => '#00a32a',
-									'payhere'     => '#f0b849',
-									'quickbooks'  => '#2c9f47',
-									'ezuite_erp'  => '#8c50a7',
+									'wordpress'    => '#2271b1',
+									'generic'      => '#50575e',
+									'isams'        => '#d63638',
+									'flowhub'      => '#00a32a',
+									'payhere'      => '#f0b849',
+									'quickbooks'   => '#2c9f47',
+									'ezuite_erp'   => '#8c50a7',
+									'google_drive' => '#4285f4',
 								);
 								
 								$type_label = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
@@ -585,6 +607,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<option value="ezuite_erp" <?php selected( $connection_type, 'ezuite_erp' ); ?>>
 								<?php esc_html_e( 'EZuite ERP (Inventory)', 'wp-mcp-ai-pro' ); ?>
 							</option>
+							<option value="google_drive" <?php selected( $connection_type, 'google_drive' ); ?>>
+								<?php esc_html_e( 'Google Drive (Cloud Storage)', 'wp-mcp-ai-pro' ); ?>
+							</option>
 						</select>
 						<p class="description">
 							<?php esc_html_e( 'Select the type of connection. Each type has specific authentication requirements and field configurations.', 'wp-mcp-ai-pro' ); ?>
@@ -811,6 +836,57 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
+				<!-- Type-specific fields for Google Drive -->
+				<tr class="google_drive-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_drive_client_id"><?php esc_html_e( 'OAuth Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="text" name="google_drive_client_id" id="google_drive_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console for Google Drive API.', 'wp-mcp-ai-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="google_drive-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_drive_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+					</th>
+					<td>
+						<input type="password" name="google_drive_client_secret" id="google_drive_client_secret" class="regular-text" value="" autocomplete="new-password">
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_drive-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_drive_refresh_token"><?php esc_html_e( 'OAuth Refresh Token', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<textarea name="google_drive_refresh_token" id="google_drive_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing refresh token. Obtain via OAuth flow or paste manually.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php else : ?>
+							<p class="description"><?php esc_html_e( 'OAuth refresh token for persistent access. Obtain via OAuth flow or paste manually.', 'wp-mcp-ai-pro' ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+
+				<tr class="google_drive-only-field" style="display: none;">
+					<th scope="row">
+						<label for="google_drive_folder_id"><?php esc_html_e( 'Folder ID (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="google_drive_folder_id" id="google_drive_folder_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['folder_id'] ) ? esc_attr( $connection['folder_id'] ) : ''; ?>" autocomplete="off" placeholder="1234567890abcdefghijklmnopqrst">
+						<p class="description">
+							<?php esc_html_e( 'Optional: Specific Google Drive folder ID to scope this connection. If empty, will use the root of "My Drive". Find the folder ID in the URL when viewing a folder in Google Drive.', 'wp-mcp-ai-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+
 				<tr class="wordpress-only-field">
 					<th scope="row"><?php esc_html_e( 'WooCommerce', 'wp-mcp-ai-pro' ); ?></th>
 					<td>
@@ -898,6 +974,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var payhereFields = document.querySelectorAll('.payhere-only-field');
 			var quickbooksFields = document.querySelectorAll('.quickbooks-only-field');
 			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
+			var googleDriveFields = document.querySelectorAll('.google_drive-only-field');
 			var authTypeSelect = document.getElementById('auth_type');
 			var urlField = document.getElementById('url');
 			var urlDescription = document.getElementById('url-description');
@@ -923,6 +1000,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			ezuiteFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			googleDriveFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 
@@ -971,6 +1051,16 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				});
 				// EZuite ERP uses custom header authentication
 				authTypeSelect.value = 'custom_header';
+			} else if (connectionType === 'google_drive') {
+				googleDriveFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// Google Drive uses OAuth2 authentication
+				authTypeSelect.value = 'oauth2';
+				// Google Drive uses a fixed API URL
+				urlField.value = 'https://www.googleapis.com/drive/v3';
+				urlField.readOnly = true;
+				urlField.style.backgroundColor = '#f0f0f0';
 			}
 		}
 
