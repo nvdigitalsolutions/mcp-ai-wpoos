@@ -36,6 +36,9 @@ function wp_mcp_ai_init_project_management_admin() {
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-ai-actions.php';
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-bulk-ai.php';
 
+	// Load settings page.
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-settings-page.php';
+
 	// Initialize metaboxes.
 	WP_MCP_AI_Project_Metabox::init();
 	WP_MCP_AI_Task_Metabox::init();

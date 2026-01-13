@@ -169,6 +169,12 @@ class WP_MCP_AI_ECA_Research_Page {
 					<div class="wp-mcp-ai-research-actions">
 						<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p>
+							<button type="button" class="button button-primary button-large wp-mcp-ai-create-eca-btn-sidebar wp-mcp-ai-add-to-database-btn">
+								<span class="dashicons dashicons-database-add"></span>
+								<?php esc_html_e( 'Add to Database', 'mcp-ai-wpoos-pro' ); ?>
+							</button>
+						</p>
+						<p>
 							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_eca' ) ); ?>" class="button">
 								<?php esc_html_e( 'View All ECAs', 'mcp-ai-wpoos-pro' ); ?>
 							</a>

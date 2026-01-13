@@ -30,10 +30,10 @@
 			$(document).on('click', '.wp-mcp-ai-example-query', this.handleExampleQuery.bind(this));
 
 			// Create from research buttons
-			$(document).on('click', '.wp-mcp-ai-create-place-btn', this.handleCreatePlace.bind(this));
-			$(document).on('click', '.wp-mcp-ai-create-quiz-btn', this.handleCreateQuiz.bind(this));
-			$(document).on('click', '.wp-mcp-ai-create-eca-btn', this.handleCreateECA.bind(this));
-			$(document).on('click', '.wp-mcp-ai-create-policy-btn', this.handleCreatePolicy.bind(this));
+			$(document).on('click', '.wp-mcp-ai-create-place-btn, .wp-mcp-ai-create-place-btn-sidebar', this.handleCreatePlace.bind(this));
+			$(document).on('click', '.wp-mcp-ai-create-quiz-btn, .wp-mcp-ai-create-quiz-btn-sidebar', this.handleCreateQuiz.bind(this));
+			$(document).on('click', '.wp-mcp-ai-create-eca-btn, .wp-mcp-ai-create-eca-btn-sidebar', this.handleCreateECA.bind(this));
+			$(document).on('click', '.wp-mcp-ai-create-policy-btn, .wp-mcp-ai-create-policy-btn-sidebar', this.handleCreatePolicy.bind(this));
 
 			// Close research data preview
 			$(document).on('click', '.wp-mcp-ai-close-research', this.closeResearchPreview.bind(this));

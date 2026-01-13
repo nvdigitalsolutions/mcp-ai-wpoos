@@ -276,3 +276,13 @@
 .wp-mcp-ai-research-chat .wp-mcp-ai-chat-container {
 	max-width: 100%;
 }
+
+/* Add to Database Button - Full Width */
+.wp-mcp-ai-add-to-database-btn {
+	width: 100%;
+	text-align: center;
+}
+
+.wp-mcp-ai-add-to-database-btn .dashicons {
+	margin-top: 3px;
+}
