@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-flowhub-connection-issue',
-        'version' => 'dev-copilot/fix-flowhub-connection-issue',
-        'reference' => '539509c523a60c1ff4d1dcc8002fe15b305969b4',
+        'pretty_version' => 'dev-copilot/fix-malformed-json-issue',
+        'version' => 'dev-copilot/fix-malformed-json-issue',
+        'reference' => '5af7fb1b8823aaf3000eb901fd0b9568872adb50',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-flowhub-connection-issue',
-            'version' => 'dev-copilot/fix-flowhub-connection-issue',
-            'reference' => '539509c523a60c1ff4d1dcc8002fe15b305969b4',
+            'pretty_version' => 'dev-copilot/fix-malformed-json-issue',
+            'version' => 'dev-copilot/fix-malformed-json-issue',
+            'reference' => '5af7fb1b8823aaf3000eb901fd0b9568872adb50',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -159,6 +159,16 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 			$key       = $this->get_key();
 
 			if ( empty( $client_id ) || empty( $key ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Flowhub credentials missing or empty.',
+					array(
+						'has_client_id'    => ! empty( $client_id ),
+						'has_key'          => ! empty( $key ),
+						'connection_id'    => $this->connection_id,
+						'using_connection' => ! empty( $this->connection_id ),
+					)
+				);
+
 				return new WP_Error(
 					'wp_mcp_ai_missing_flowhub_config',
 					__( 'Flowhub Client ID and API Key must be configured.', 'mcp-ai-wpoos' ),
@@ -170,6 +180,18 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 					)
 				);
 			}
+
+			// Log credential retrieval for debugging (without exposing actual values).
+			WP_MCP_AI_Logger::log_event(
+				'flowhub_credentials_check',
+				'Flowhub credentials retrieved.',
+				array(
+					'connection_id'    => $this->connection_id,
+					'using_connection' => ! empty( $this->connection_id ),
+					'client_id_length' => strlen( $client_id ),
+					'key_length'       => strlen( $key ),
+				)
+			);
 
 			$url = trailingslashit( $this->get_api_endpoint() ) . ltrim( $endpoint, '/' );
 
@@ -215,17 +237,45 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 				);
 			}
 
-			$code    = wp_remote_retrieve_response_code( $response );
-			$body    = wp_remote_retrieve_body( $response );
-			$decoded = json_decode( $body, true );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
 
-			if ( JSON_ERROR_NONE !== json_last_error() ) {
-				WP_MCP_AI_Logger::log_error( 'Failed to decode Flowhub API response.', array( 'body' => $body ) );
-
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Flowhub returned malformed JSON.', 'mcp-ai-wpoos' ) );
-			}
-
+			// Check HTTP status code first, before attempting to parse JSON.
+			// This ensures we properly report HTTP errors (403, 500, etc.) even when
+			// the response body is HTML or other non-JSON content (e.g., nginx error pages).
 			if ( $code < 200 || $code >= 300 ) {
+				// Try to decode JSON for error details, but don't fail if it's not JSON.
+				$decoded = json_decode( $body, true );
+
+				// If JSON parsing failed, use the raw body for logging.
+				if ( JSON_ERROR_NONE !== json_last_error() ) {
+					WP_MCP_AI_Logger::log_error(
+						'Flowhub returned non-JSON error response.',
+						array(
+							'code'     => $code,
+							'endpoint' => $endpoint,
+							'body'     => $body,
+						)
+					);
+
+					// Provide a clear error message based on HTTP status code.
+					$error_message = sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'Flowhub API returned HTTP %d error.', 'mcp-ai-wpoos' ),
+						$code
+					);
+
+					return new WP_Error(
+						'wp_mcp_ai_api_error',
+						$error_message,
+						array(
+							'status' => $code,
+							'body'   => $body,
+						)
+					);
+				}
+
+				// JSON was successfully parsed, extract error message.
 				$error_message = isset( $decoded['message'] ) ? $decoded['message'] : __( 'Unexpected response from Flowhub.', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
@@ -245,6 +295,15 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 						'body'   => $decoded,
 					)
 				);
+			}
+
+			// Success response: decode JSON and validate.
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode Flowhub API response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Flowhub returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			WP_MCP_AI_Logger::log_event( 'flowhub_api_response', 'Flowhub API request completed successfully.' );
