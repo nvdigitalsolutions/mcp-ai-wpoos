@@ -32,7 +32,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * @var array<string>
 	 */
-	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'none' );
+	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'none' );
 
 	/**
 	 * Get all configured remote site connections.
