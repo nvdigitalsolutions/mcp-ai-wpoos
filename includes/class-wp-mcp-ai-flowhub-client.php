@@ -251,7 +251,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 
 			// Flowhub API wraps responses in { "status": 200, "data": [...] } format.
 			// Unwrap the data if present, otherwise return decoded response as-is.
-			if ( isset( $decoded['data'] ) ) {
+			if ( array_key_exists( 'data', $decoded ) ) {
 				return $decoded['data'];
 			}
 
