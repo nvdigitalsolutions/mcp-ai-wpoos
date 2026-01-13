@@ -411,6 +411,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Medical_Record'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-medical-record.php',
 				'WP_MCP_AI_Tool_Update_Medical_Record'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-medical-record.php',
 				'WP_MCP_AI_Tool_Delete_Medical_Record'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-medical-record.php',
+				'WP_MCP_AI_Tool_Create_Checkup'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-checkup.php',
+				'WP_MCP_AI_Tool_List_Checkups'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-checkups.php',
+				'WP_MCP_AI_Tool_Get_Checkup'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-checkup.php',
+				'WP_MCP_AI_Tool_Update_Checkup'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-checkup.php',
+				'WP_MCP_AI_Tool_Delete_Checkup'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-checkup.php',
+				'WP_MCP_AI_Tool_Get_Upcoming_Checkups'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-upcoming-checkups.php',
 				'WP_MCP_AI_Tool_Search_Policies'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-policies.php',
 				'WP_MCP_AI_Tool_Search_Prescriptions'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-prescriptions.php',
 				'WP_MCP_AI_Tool_Search_Medical_Records'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-medical-records.php',
@@ -728,6 +734,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_medical_record']         = 'wordpress-core';
 			$pro_tools['update_medical_record']      = 'wordpress-core';
 			$pro_tools['delete_medical_record']      = 'wordpress-core';
+			$pro_tools['create_checkup']             = 'wordpress-core';
+			$pro_tools['list_checkups']              = 'wordpress-core';
+			$pro_tools['get_checkup']                = 'wordpress-core';
+			$pro_tools['update_checkup']             = 'wordpress-core';
+			$pro_tools['delete_checkup']             = 'wordpress-core';
+			$pro_tools['get_upcoming_checkups']      = 'wordpress-core';
 			$pro_tools['search_policies']            = 'wordpress-core';
 			$pro_tools['search_prescriptions']       = 'wordpress-core';
 			$pro_tools['search_medical_records']     = 'wordpress-core';
