@@ -41,8 +41,8 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'member_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this checkup is for (required)', 'mcp-ai-wpoos-pro' ),
@@ -86,9 +86,8 @@ class WP_MCP_AI_Tool_Create_Checkup implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'default'     => 'scheduled',
 				),
 			),
-			'required' => array(
-				'additionalProperties' => false,
-			);
+			'required'   => array( 'member_id', 'title', 'date' ),
+		);
 	}
 
 	/**
