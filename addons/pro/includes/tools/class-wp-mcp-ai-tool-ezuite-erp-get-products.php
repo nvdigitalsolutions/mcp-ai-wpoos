@@ -24,6 +24,38 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-mana
 class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	/**
+	 * Default limit for number of products to retrieve.
+	 *
+	 * @since 1.0.0
+	 * @var int
+	 */
+	const DEFAULT_LIMIT = 10;
+
+	/**
+	 * Maximum limit for number of products to retrieve.
+	 *
+	 * @since 1.0.0
+	 * @var int
+	 */
+	const MAX_LIMIT = 100;
+
+	/**
+	 * Minimum limit for number of products to retrieve.
+	 *
+	 * @since 1.0.0
+	 * @var int
+	 */
+	const MIN_LIMIT = 1;
+
+	/**
+	 * Maximum number of requests allowed per minute per user.
+	 *
+	 * @since 1.0.0
+	 * @var int
+	 */
+	const RATE_LIMIT_PER_MINUTE = 30;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -66,10 +98,14 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 				),
 				'limit'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of products to return. Default is 10.', 'wp-mcp-ai-pro' ),
-					'minimum'     => 1,
-					'maximum'     => 100,
-					'default'     => 10,
+					'description' => sprintf(
+						/* translators: %d: default limit */
+						__( 'Maximum number of products to return. Default is %d.', 'wp-mcp-ai-pro' ),
+						self::DEFAULT_LIMIT
+					),
+					'minimum'     => self::MIN_LIMIT,
+					'maximum'     => self::MAX_LIMIT,
+					'default'     => self::DEFAULT_LIMIT,
 				),
 			),
 			'required'             => array( 'connection_id' ),
@@ -179,8 +215,8 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		// Build API request.
 		$location_code = isset( $arguments['location_code'] ) ? sanitize_text_field( $arguments['location_code'] ) : 'ALL';
 		$item_code     = isset( $arguments['item_code'] ) ? sanitize_text_field( $arguments['item_code'] ) : '';
-		$limit         = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
-		$limit         = $limit > 0 ? min( $limit, 100 ) : 10;
+		$limit         = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : self::DEFAULT_LIMIT;
+		$limit         = $limit > 0 ? min( $limit, self::MAX_LIMIT ) : self::DEFAULT_LIMIT;
 
 		// Prepare API body.
 		$api_body = array(
@@ -400,7 +436,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		$user_id        = absint( $user_id );
 		$transient_key  = 'wp_mcp_ai_pro_ezuite_erp_get_products_' . $user_id;
 		$current_count  = get_transient( $transient_key );
-		$max_per_minute = 30;
+		$max_per_minute = self::RATE_LIMIT_PER_MINUTE;
 
 		/**
 		 * Filter the maximum EZuite ERP API requests allowed per minute per user.
