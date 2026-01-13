@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-composer-no-dev-2bde75e6-8e36-4b52-8feb-1e505903661b',
-        'version' => 'dev-copilot/run-composer-no-dev-2bde75e6-8e36-4b52-8feb-1e505903661b',
-        'reference' => '3a8a8db84a64aaadea26997961e5b8a3543a4593',
+        'pretty_version' => 'dev-copilot/fix-flowhub-api-error',
+        'version' => 'dev-copilot/fix-flowhub-api-error',
+        'reference' => '1bd855005ac7f80fc16a667919b85c6a1d40c064',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-composer-no-dev-2bde75e6-8e36-4b52-8feb-1e505903661b',
-            'version' => 'dev-copilot/run-composer-no-dev-2bde75e6-8e36-4b52-8feb-1e505903661b',
-            'reference' => '3a8a8db84a64aaadea26997961e5b8a3543a4593',
+            'pretty_version' => 'dev-copilot/fix-flowhub-api-error',
+            'version' => 'dev-copilot/fix-flowhub-api-error',
+            'reference' => '1bd855005ac7f80fc16a667919b85c6a1d40c064',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
