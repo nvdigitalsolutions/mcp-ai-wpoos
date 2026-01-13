@@ -372,4 +372,52 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		$this->assertNotEmpty( $connection['consumer_key'] );
 		$this->assertNotEmpty( $connection['consumer_secret'] );
 	}
+
+	/**
+	 * Test that Flowhub client can be loaded without fatal errors.
+	 *
+	 * This test verifies that WP_MCP_AI_Flowhub_Client properly loads its dependencies
+	 * (WP_MCP_AI_Logger and WP_MCP_AI_HTTP) when instantiated.
+	 */
+	public function test_flowhub_client_loads_dependencies() {
+		// Verify the Flowhub client file exists.
+		$flowhub_client_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+		$this->assertFileExists( $flowhub_client_file );
+
+		// Load the Flowhub client (this should load dependencies automatically).
+		require_once $flowhub_client_file;
+
+		// Verify all required classes are loaded.
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Logger' ), 'WP_MCP_AI_Logger should be loaded' );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_HTTP' ), 'WP_MCP_AI_HTTP should be loaded' );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Flowhub_Client' ), 'WP_MCP_AI_Flowhub_Client should be loaded' );
+
+		// Verify Flowhub client can be instantiated.
+		$client = new WP_MCP_AI_Flowhub_Client();
+		$this->assertInstanceOf( 'WP_MCP_AI_Flowhub_Client', $client );
+	}
+
+	/**
+	 * Test that PayHere client can be loaded without fatal errors.
+	 *
+	 * This test verifies that WP_MCP_AI_PayHere_Client properly loads its dependencies
+	 * (WP_MCP_AI_Logger and WP_MCP_AI_HTTP) when instantiated.
+	 */
+	public function test_payhere_client_loads_dependencies() {
+		// Verify the PayHere client file exists.
+		$payhere_client_file = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-payhere-client.php';
+		$this->assertFileExists( $payhere_client_file );
+
+		// Load the PayHere client (this should load dependencies automatically).
+		require_once $payhere_client_file;
+
+		// Verify all required classes are loaded.
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Logger' ), 'WP_MCP_AI_Logger should be loaded' );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_HTTP' ), 'WP_MCP_AI_HTTP should be loaded' );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_PayHere_Client' ), 'WP_MCP_AI_PayHere_Client should be loaded' );
+
+		// Verify PayHere client can be instantiated.
+		$client = new WP_MCP_AI_PayHere_Client();
+		$this->assertInstanceOf( 'WP_MCP_AI_PayHere_Client', $client );
+	}
 }
