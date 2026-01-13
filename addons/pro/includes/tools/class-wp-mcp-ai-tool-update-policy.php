@@ -169,12 +169,12 @@ class WP_MCP_AI_Tool_Update_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Update metadata.
 		$meta_fields = array(
-			'policy_number'    => '_policy_number',
-			'provider'         => '_policy_provider',
-			'status'           => '_policy_status',
-			'effective_date'   => '_policy_effective_date',
-			'expiration_date'  => '_policy_expiration_date',
-			'premium'          => '_policy_premium',
+			'policy_number'   => '_policy_number',
+			'provider'        => '_policy_provider',
+			'status'          => '_policy_status',
+			'effective_date'  => '_policy_effective_date',
+			'expiration_date' => '_policy_expiration_date',
+			'premium'         => '_policy_premium',
 		);
 
 		foreach ( $meta_fields as $arg_key => $meta_key ) {

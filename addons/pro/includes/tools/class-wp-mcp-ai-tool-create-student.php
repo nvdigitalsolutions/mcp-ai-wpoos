@@ -135,10 +135,10 @@ class WP_MCP_AI_Tool_Create_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Create student post.
 		$full_name = $first_name . ' ' . $last_name;
 		$post_data = array(
-			'post_type'    => 'mcp_ai_student',
-			'post_title'   => $full_name,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
+			'post_type'   => 'mcp_ai_student',
+			'post_title'  => $full_name,
+			'post_status' => 'publish',
+			'post_author' => $current_user_id,
 		);
 
 		$student_id = wp_insert_post( $post_data, true );

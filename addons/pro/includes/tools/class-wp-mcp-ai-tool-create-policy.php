@@ -41,54 +41,54 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'         => array(
+				'member_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this policy belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'policy_number'     => array(
+				'policy_number'    => array(
 					'type'        => 'string',
 					'description' => __( 'Policy number (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 100,
 				),
-				'name'              => array(
+				'name'             => array(
 					'type'        => 'string',
 					'description' => __( 'Policy name or title (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'policy_type'       => array(
+				'policy_type'      => array(
 					'type'        => 'string',
 					'description' => __( 'Type of insurance policy (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'health-insurance', 'dental-insurance', 'vision-insurance', 'pet-insurance', 'life-insurance' ),
 				),
-				'provider'          => array(
+				'provider'         => array(
 					'type'        => 'string',
 					'description' => __( 'Insurance provider name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'status'            => array(
+				'status'           => array(
 					'type'        => 'string',
 					'description' => __( 'Policy status (optional, defaults to active)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'active', 'expired', 'pending', 'cancelled' ),
 					'default'     => 'active',
 				),
-				'effective_date'    => array(
+				'effective_date'   => array(
 					'type'        => 'string',
 					'description' => __( 'Policy effective date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'expiration_date'   => array(
+				'expiration_date'  => array(
 					'type'        => 'string',
 					'description' => __( 'Policy expiration date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'premium'           => array(
+				'premium'          => array(
 					'type'        => 'string',
 					'description' => __( 'Premium amount (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'coverage_details'  => array(
+				'coverage_details' => array(
 					'type'        => 'string',
 					'description' => __( 'Coverage details and benefits (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
@@ -134,9 +134,9 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Validate required fields.
-		$member_id      = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
-		$policy_number  = isset( $arguments['policy_number'] ) ? sanitize_text_field( $arguments['policy_number'] ) : '';
-		$policy_type    = isset( $arguments['policy_type'] ) ? sanitize_key( $arguments['policy_type'] ) : '';
+		$member_id     = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
+		$policy_number = isset( $arguments['policy_number'] ) ? sanitize_text_field( $arguments['policy_number'] ) : '';
+		$policy_type   = isset( $arguments['policy_type'] ) ? sanitize_key( $arguments['policy_type'] ) : '';
 
 		if ( ! $member_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_member', __( 'Member ID is required.', 'mcp-ai-wpoos-pro' ) );
@@ -157,13 +157,13 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Sanitize optional fields.
-		$name              = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : $policy_number;
-		$provider          = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : '';
-		$status            = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'active';
-		$effective_date    = isset( $arguments['effective_date'] ) ? sanitize_text_field( $arguments['effective_date'] ) : '';
-		$expiration_date   = isset( $arguments['expiration_date'] ) ? sanitize_text_field( $arguments['expiration_date'] ) : '';
-		$premium           = isset( $arguments['premium'] ) ? sanitize_text_field( $arguments['premium'] ) : '';
-		$coverage_details  = isset( $arguments['coverage_details'] ) ? wp_kses_post( $arguments['coverage_details'] ) : '';
+		$name             = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : $policy_number;
+		$provider         = isset( $arguments['provider'] ) ? sanitize_text_field( $arguments['provider'] ) : '';
+		$status           = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'active';
+		$effective_date   = isset( $arguments['effective_date'] ) ? sanitize_text_field( $arguments['effective_date'] ) : '';
+		$expiration_date  = isset( $arguments['expiration_date'] ) ? sanitize_text_field( $arguments['expiration_date'] ) : '';
+		$premium          = isset( $arguments['premium'] ) ? sanitize_text_field( $arguments['premium'] ) : '';
+		$coverage_details = isset( $arguments['coverage_details'] ) ? wp_kses_post( $arguments['coverage_details'] ) : '';
 
 		// Validate dates.
 		if ( $effective_date && ! $this->validate_date( $effective_date ) ) {
@@ -195,23 +195,23 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Save policy metadata.
 		update_post_meta( $policy_id, '_policy_member_id', $member_id );
 		update_post_meta( $policy_id, '_policy_number', $policy_number );
-		
+
 		if ( $provider ) {
 			update_post_meta( $policy_id, '_policy_provider', $provider );
 		}
-		
+
 		if ( $status ) {
 			update_post_meta( $policy_id, '_policy_status', $status );
 		}
-		
+
 		if ( $effective_date ) {
 			update_post_meta( $policy_id, '_policy_effective_date', $effective_date );
 		}
-		
+
 		if ( $expiration_date ) {
 			update_post_meta( $policy_id, '_policy_expiration_date', $expiration_date );
 		}
-		
+
 		if ( $premium ) {
 			update_post_meta( $policy_id, '_policy_premium', $premium );
 		}

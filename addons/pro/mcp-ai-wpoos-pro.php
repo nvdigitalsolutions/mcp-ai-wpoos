@@ -145,22 +145,22 @@ if ( ! function_exists( 'wp_mcp_ai_pro_load_textdomain' ) ) {
 		$active_plugins = (array) get_option( 'active_plugins', array() );
 		$pro_plugin     = plugin_basename( WP_MCP_AI_PRO_FILE );
 		$is_pro_active  = in_array( $pro_plugin, $active_plugins, true );
-		
+
 		// For multisite, also check network active plugins.
 		if ( is_multisite() ) {
 			$network_active = (array) get_site_option( 'active_sitewide_plugins', array() );
 			$is_pro_active  = $is_pro_active || isset( $network_active[ $pro_plugin ] );
 		}
-		
+
 		if ( ! $is_pro_active ) {
 			// Pro is bundled, not a separate plugin - load text domain manually.
 			// Use wp_normalize_path for cross-platform compatibility.
 			$languages_dir = wp_normalize_path( WP_MCP_AI_PRO_PATH . 'languages' );
 			$plugin_dir    = wp_normalize_path( WP_PLUGIN_DIR );
-			
+
 			// Calculate relative path for load_plugin_textdomain.
 			$relative_path = str_replace( trailingslashit( $plugin_dir ), '', $languages_dir );
-			
+
 			load_plugin_textdomain(
 				'mcp-ai-wpoos-pro',
 				false,
@@ -185,7 +185,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			add_action( 'admin_notices', 'wp_mcp_ai_pro_missing_core_notice' );
 			return;
 		}
-		
+
 		// Register text domain loading on init hook.
 		// This ensures translations are loaded at the correct time for WordPress 6.7+.
 		add_action( 'init', 'wp_mcp_ai_pro_load_textdomain', 1 );
@@ -272,7 +272,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 	function wp_mcp_ai_pro_register_tools( $registry ) {
 		// Get settings for conditional tool loading.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		
+
 		// Load Pro tool files.
 		$pro_tools = array(
 			// Remote WordPress/WooCommerce Connection tool.
@@ -356,21 +356,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_eca_management'] ) ) {
 			$eca_tools = array(
 				// ECA Management (CRUD).
-				'WP_MCP_AI_Tool_Create_ECA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-eca.php',
-				'WP_MCP_AI_Tool_List_ECAs'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-ecas.php',
-				'WP_MCP_AI_Tool_Get_ECA'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-eca.php',
-				'WP_MCP_AI_Tool_Update_ECA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-eca.php',
-				'WP_MCP_AI_Tool_Delete_ECA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-eca.php',
+				'WP_MCP_AI_Tool_Create_ECA'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-eca.php',
+				'WP_MCP_AI_Tool_List_ECAs'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-ecas.php',
+				'WP_MCP_AI_Tool_Get_ECA'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-eca.php',
+				'WP_MCP_AI_Tool_Update_ECA'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-eca.php',
+				'WP_MCP_AI_Tool_Delete_ECA'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-eca.php',
 				// Student Management (CRUD).
-				'WP_MCP_AI_Tool_Create_Student'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-student.php',
-				'WP_MCP_AI_Tool_List_Students'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-students.php',
-				'WP_MCP_AI_Tool_Get_Student'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-student.php',
-				'WP_MCP_AI_Tool_Update_Student'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-student.php',
-				'WP_MCP_AI_Tool_Delete_Student'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-student.php',
+				'WP_MCP_AI_Tool_Create_Student'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-student.php',
+				'WP_MCP_AI_Tool_List_Students'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-students.php',
+				'WP_MCP_AI_Tool_Get_Student'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-student.php',
+				'WP_MCP_AI_Tool_Update_Student'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-student.php',
+				'WP_MCP_AI_Tool_Delete_Student'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-student.php',
 				// Specialized ECA tools.
-				'WP_MCP_AI_Tool_Enroll_Student_ECA'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-enroll-student-eca.php',
+				'WP_MCP_AI_Tool_Enroll_Student_ECA'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-enroll-student-eca.php',
 				'WP_MCP_AI_Tool_Sync_Students_From_ISAMS' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-students-from-isams.php',
-				'WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-isams.php',
+				'WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-sync-ecas-from-isams.php',
 			);
 			$pro_tools = array_merge( $pro_tools, $eca_tools );
 		}
@@ -397,11 +397,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		// Add places management tools if enabled.
 		if ( ! empty( $settings['enable_places_management'] ) ) {
 			$places_tools = array(
-				'WP_MCP_AI_Tool_Create_Place'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-place.php',
-				'WP_MCP_AI_Tool_List_Places'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-places.php',
-				'WP_MCP_AI_Tool_Update_Place'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-place.php',
-				'WP_MCP_AI_Tool_Delete_Place'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-place.php',
-				'WP_MCP_AI_Tool_Get_Place'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-place.php',
+				'WP_MCP_AI_Tool_Create_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-place.php',
+				'WP_MCP_AI_Tool_List_Places'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-places.php',
+				'WP_MCP_AI_Tool_Update_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-place.php',
+				'WP_MCP_AI_Tool_Delete_Place'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-place.php',
+				'WP_MCP_AI_Tool_Get_Place'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-place.php',
 				'WP_MCP_AI_Tool_Search_And_Save_Places' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-and-save-places.php',
 			);
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
@@ -411,24 +411,24 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
 			$health_wellness_tools = array(
 				// Member Management (CRUD).
-				'WP_MCP_AI_Tool_Create_Member'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-member.php',
-				'WP_MCP_AI_Tool_List_Members'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-members.php',
-				'WP_MCP_AI_Tool_Get_Member'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-member.php',
-				'WP_MCP_AI_Tool_Update_Member'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-member.php',
-				'WP_MCP_AI_Tool_Delete_Member'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-member.php',
+				'WP_MCP_AI_Tool_Create_Member'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-member.php',
+				'WP_MCP_AI_Tool_List_Members'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-members.php',
+				'WP_MCP_AI_Tool_Get_Member'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-member.php',
+				'WP_MCP_AI_Tool_Update_Member'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-member.php',
+				'WP_MCP_AI_Tool_Delete_Member'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-member.php',
 				// Policy Management (CRUD + Search).
-				'WP_MCP_AI_Tool_Create_Policy'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-policy.php',
-				'WP_MCP_AI_Tool_List_Policies'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-policies.php',
-				'WP_MCP_AI_Tool_Get_Policy'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-policy.php',
-				'WP_MCP_AI_Tool_Update_Policy'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-policy.php',
-				'WP_MCP_AI_Tool_Delete_Policy'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-policy.php',
-				'WP_MCP_AI_Tool_Search_Policies'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-policies.php',
+				'WP_MCP_AI_Tool_Create_Policy'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-policy.php',
+				'WP_MCP_AI_Tool_List_Policies'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-policies.php',
+				'WP_MCP_AI_Tool_Get_Policy'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-policy.php',
+				'WP_MCP_AI_Tool_Update_Policy'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-policy.php',
+				'WP_MCP_AI_Tool_Delete_Policy'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-policy.php',
+				'WP_MCP_AI_Tool_Search_Policies'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-policies.php',
 				// Prescription Search.
-				'WP_MCP_AI_Tool_Search_Prescriptions'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-prescriptions.php',
+				'WP_MCP_AI_Tool_Search_Prescriptions'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-prescriptions.php',
 				// Medical Record Search.
-				'WP_MCP_AI_Tool_Search_Medical_Records'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-medical-records.php',
+				'WP_MCP_AI_Tool_Search_Medical_Records'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-medical-records.php',
 				// Specialized tool.
-				'WP_MCP_AI_Tool_Get_Member_Health_Summary'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-member-health-summary.php',
+				'WP_MCP_AI_Tool_Get_Member_Health_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-member-health-summary.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
 		}
@@ -720,17 +720,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		// Add ECA management tool mappings if enabled.
 		if ( ! empty( $settings['enable_eca_management'] ) ) {
 			// ECA Management (CRUD).
-			$pro_tools['create_eca']               = 'wordpress-core';
-			$pro_tools['list_ecas']                = 'wordpress-core';
-			$pro_tools['get_eca']                  = 'wordpress-core';
-			$pro_tools['update_eca']               = 'wordpress-core';
-			$pro_tools['delete_eca']               = 'wordpress-core';
+			$pro_tools['create_eca'] = 'wordpress-core';
+			$pro_tools['list_ecas']  = 'wordpress-core';
+			$pro_tools['get_eca']    = 'wordpress-core';
+			$pro_tools['update_eca'] = 'wordpress-core';
+			$pro_tools['delete_eca'] = 'wordpress-core';
 			// Student Management (CRUD).
-			$pro_tools['create_student']           = 'wordpress-core';
-			$pro_tools['list_students']            = 'wordpress-core';
-			$pro_tools['get_student']              = 'wordpress-core';
-			$pro_tools['update_student']           = 'wordpress-core';
-			$pro_tools['delete_student']           = 'wordpress-core';
+			$pro_tools['create_student'] = 'wordpress-core';
+			$pro_tools['list_students']  = 'wordpress-core';
+			$pro_tools['get_student']    = 'wordpress-core';
+			$pro_tools['update_student'] = 'wordpress-core';
+			$pro_tools['delete_student'] = 'wordpress-core';
 			// Specialized ECA tools.
 			$pro_tools['enroll_student_eca']       = 'wordpress-core';
 			$pro_tools['sync_students_from_isams'] = 'wordpress-core';
@@ -740,23 +740,23 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		// Add health and wellness management tool mappings if enabled.
 		if ( ! empty( $settings['enable_health_wellness_management'] ) ) {
 			// Member Management (CRUD).
-			$pro_tools['create_member']              = 'wordpress-core';
-			$pro_tools['list_members']               = 'wordpress-core';
-			$pro_tools['get_member']                 = 'wordpress-core';
-			$pro_tools['update_member']              = 'wordpress-core';
-			$pro_tools['delete_member']              = 'wordpress-core';
+			$pro_tools['create_member'] = 'wordpress-core';
+			$pro_tools['list_members']  = 'wordpress-core';
+			$pro_tools['get_member']    = 'wordpress-core';
+			$pro_tools['update_member'] = 'wordpress-core';
+			$pro_tools['delete_member'] = 'wordpress-core';
 			// Policy Management (CRUD + Search).
-			$pro_tools['create_policy']              = 'wordpress-core';
-			$pro_tools['list_policies']              = 'wordpress-core';
-			$pro_tools['get_policy']                 = 'wordpress-core';
-			$pro_tools['update_policy']              = 'wordpress-core';
-			$pro_tools['delete_policy']              = 'wordpress-core';
-			$pro_tools['search_policies']            = 'wordpress-core';
+			$pro_tools['create_policy']   = 'wordpress-core';
+			$pro_tools['list_policies']   = 'wordpress-core';
+			$pro_tools['get_policy']      = 'wordpress-core';
+			$pro_tools['update_policy']   = 'wordpress-core';
+			$pro_tools['delete_policy']   = 'wordpress-core';
+			$pro_tools['search_policies'] = 'wordpress-core';
 			// Prescription and Medical Record Search.
-			$pro_tools['search_prescriptions']       = 'wordpress-core';
-			$pro_tools['search_medical_records']     = 'wordpress-core';
+			$pro_tools['search_prescriptions']   = 'wordpress-core';
+			$pro_tools['search_medical_records'] = 'wordpress-core';
 			// Specialized tools.
-			$pro_tools['get_member_health_summary']  = 'wordpress-core';
+			$pro_tools['get_member_health_summary'] = 'wordpress-core';
 		}
 
 		/**

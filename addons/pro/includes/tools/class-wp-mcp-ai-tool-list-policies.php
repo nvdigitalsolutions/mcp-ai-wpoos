@@ -175,25 +175,25 @@ class WP_MCP_AI_Tool_List_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$type  = ! empty( $types ) && ! is_wp_error( $types ) ? $types[0] : '';
 
 				// Get member info.
-				$mid  = get_post_meta( $policy_id, '_policy_member_id', true );
+				$mid   = get_post_meta( $policy_id, '_policy_member_id', true );
 				$mname = '';
 				if ( $mid ) {
-					$mem = get_post( $mid );
+					$mem   = get_post( $mid );
 					$mname = $mem ? $mem->post_title : '';
 				}
 
 				$policies[] = array(
-					'id'               => $policy_id,
-					'policy_number'    => get_post_meta( $policy_id, '_policy_number', true ),
-					'name'             => get_the_title(),
-					'type'             => $type,
-					'member_id'        => $mid,
-					'member_name'      => $mname,
-					'provider'         => get_post_meta( $policy_id, '_policy_provider', true ),
-					'status'           => get_post_meta( $policy_id, '_policy_status', true ),
-					'effective_date'   => get_post_meta( $policy_id, '_policy_effective_date', true ),
-					'expiration_date'  => get_post_meta( $policy_id, '_policy_expiration_date', true ),
-					'premium'          => get_post_meta( $policy_id, '_policy_premium', true ),
+					'id'              => $policy_id,
+					'policy_number'   => get_post_meta( $policy_id, '_policy_number', true ),
+					'name'            => get_the_title(),
+					'type'            => $type,
+					'member_id'       => $mid,
+					'member_name'     => $mname,
+					'provider'        => get_post_meta( $policy_id, '_policy_provider', true ),
+					'status'          => get_post_meta( $policy_id, '_policy_status', true ),
+					'effective_date'  => get_post_meta( $policy_id, '_policy_effective_date', true ),
+					'expiration_date' => get_post_meta( $policy_id, '_policy_expiration_date', true ),
+					'premium'         => get_post_meta( $policy_id, '_policy_premium', true ),
 				);
 			}
 			wp_reset_postdata();

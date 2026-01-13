@@ -226,10 +226,10 @@ class WP_MCP_AI_Tool_Update_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Get updated member data.
-		$member     = get_post( $member_id );
-		$types      = wp_get_object_terms( $member_id, 'mcp_ai_member_type', array( 'fields' => 'slugs' ) );
-		$type       = ! empty( $types ) && ! is_wp_error( $types ) ? $types[0] : 'person';
-		$is_pet     = 'pet' === $type;
+		$member = get_post( $member_id );
+		$types  = wp_get_object_terms( $member_id, 'mcp_ai_member_type', array( 'fields' => 'slugs' ) );
+		$type   = ! empty( $types ) && ! is_wp_error( $types ) ? $types[0] : 'person';
+		$is_pet = 'pet' === $type;
 
 		$member_data = array(
 			'id'                => $member_id,

@@ -165,18 +165,18 @@ class WP_MCP_AI_Tool_List_Students implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$student_id = get_the_ID();
 
 				// Get enrollment count.
-				$enrollments = get_post_meta( $student_id, '_student_eca_enrollments', true );
+				$enrollments      = get_post_meta( $student_id, '_student_eca_enrollments', true );
 				$enrollment_count = is_array( $enrollments ) ? count( $enrollments ) : 0;
 
 				$students[] = array(
-					'id'                => $student_id,
-					'name'              => get_the_title(),
-					'first_name'        => get_post_meta( $student_id, '_student_first_name', true ),
-					'last_name'         => get_post_meta( $student_id, '_student_last_name', true ),
-					'year_group'        => get_post_meta( $student_id, '_student_year_group', true ),
-					'house'             => get_post_meta( $student_id, '_student_house', true ),
-					'email'             => get_post_meta( $student_id, '_student_email', true ),
-					'enrollment_count'  => $enrollment_count,
+					'id'               => $student_id,
+					'name'             => get_the_title(),
+					'first_name'       => get_post_meta( $student_id, '_student_first_name', true ),
+					'last_name'        => get_post_meta( $student_id, '_student_last_name', true ),
+					'year_group'       => get_post_meta( $student_id, '_student_year_group', true ),
+					'house'            => get_post_meta( $student_id, '_student_house', true ),
+					'email'            => get_post_meta( $student_id, '_student_email', true ),
+					'enrollment_count' => $enrollment_count,
 				);
 			}
 			wp_reset_postdata();

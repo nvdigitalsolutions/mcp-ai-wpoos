@@ -132,14 +132,16 @@ class WP_MCP_AI_Tool_Update_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( isset( $arguments['first_name'] ) || isset( $arguments['last_name'] ) ) {
 			$first_name = isset( $arguments['first_name'] ) ? sanitize_text_field( $arguments['first_name'] ) : get_post_meta( $student_id, '_student_first_name', true );
 			$last_name  = isset( $arguments['last_name'] ) ? sanitize_text_field( $arguments['last_name'] ) : get_post_meta( $student_id, '_student_last_name', true );
-			
+
 			$full_name = trim( $first_name . ' ' . $last_name );
-			
+
 			if ( $full_name ) {
-				wp_update_post( array(
-					'ID'         => $student_id,
-					'post_title' => $full_name,
-				) );
+				wp_update_post(
+					array(
+						'ID'         => $student_id,
+						'post_title' => $full_name,
+					)
+				);
 			}
 
 			if ( isset( $arguments['first_name'] ) ) {

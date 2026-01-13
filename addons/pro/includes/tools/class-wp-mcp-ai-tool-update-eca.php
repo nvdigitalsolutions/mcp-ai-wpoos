@@ -41,78 +41,78 @@ class WP_MCP_AI_Tool_Update_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'eca_id'         => array(
+				'eca_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'ECA ID to update (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'name'           => array(
+				'name'         => array(
 					'type'        => 'string',
 					'description' => __( 'New ECA name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'eca_code'       => array(
+				'eca_code'     => array(
 					'type'        => 'string',
 					'description' => __( 'New ECA code (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'description'    => array(
+				'description'  => array(
 					'type'        => 'string',
 					'description' => __( 'New description (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 10000,
 				),
-				'eca_type'       => array(
+				'eca_type'     => array(
 					'type'        => 'string',
 					'description' => __( 'New ECA type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'club', 'society', 'sport_squad', 'sport_academy', 'activity' ),
 				),
-				'day'            => array(
+				'day'          => array(
 					'type'        => 'string',
 					'description' => __( 'New day of the week (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ),
 				),
-				'start_time'     => array(
+				'start_time'   => array(
 					'type'        => 'string',
 					'description' => __( 'New start time (HH:MM AM/PM) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{1,2}:\d{2}\s?(AM|PM|am|pm)$',
 				),
-				'end_time'       => array(
+				'end_time'     => array(
 					'type'        => 'string',
 					'description' => __( 'New end time (HH:MM AM/PM) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{1,2}:\d{2}\s?(AM|PM|am|pm)$',
 				),
-				'venue'          => array(
+				'venue'        => array(
 					'type'        => 'string',
 					'description' => __( 'New venue/location (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'year_groups'    => array(
+				'year_groups'  => array(
 					'type'        => 'array',
 					'description' => __( 'New eligible year groups (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'max_students'   => array(
+				'max_students' => array(
 					'type'        => 'integer',
 					'description' => __( 'New maximum students (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 200,
 				),
-				'teachers'       => array(
+				'teachers'     => array(
 					'type'        => 'array',
 					'description' => __( 'New teacher names (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'cost'           => array(
+				'cost'         => array(
 					'type'        => 'number',
 					'description' => __( 'New cost (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'currency'       => array(
+				'currency'     => array(
 					'type'        => 'string',
 					'description' => __( 'New currency code (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'GBP', 'USD', 'EUR', 'AED', 'INR', 'AUD', 'CAD', 'SGD', 'ZAR' ),
 				),
-				'term'           => array(
+				'term'         => array(
 					'type'        => 'string',
 					'description' => __( 'New term (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'Term 1', 'Term 2', 'Term 3', 'Yearly' ),
@@ -189,31 +189,31 @@ class WP_MCP_AI_Tool_Update_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		// Update metadata fields.
 		$meta_fields = array(
-			'eca_code'      => '_eca_code',
-			'eca_type'      => '_eca_type',
-			'day'           => '_eca_day',
-			'start_time'    => '_eca_start_time',
-			'end_time'      => '_eca_end_time',
-			'venue'         => '_eca_venue',
-			'year_groups'   => '_eca_year_groups',
-			'max_students'  => '_eca_max_students',
-			'teachers'      => '_eca_teachers',
-			'cost'          => '_eca_cost',
-			'currency'      => '_eca_currency',
-			'term'          => '_eca_term',
+			'eca_code'     => '_eca_code',
+			'eca_type'     => '_eca_type',
+			'day'          => '_eca_day',
+			'start_time'   => '_eca_start_time',
+			'end_time'     => '_eca_end_time',
+			'venue'        => '_eca_venue',
+			'year_groups'  => '_eca_year_groups',
+			'max_students' => '_eca_max_students',
+			'teachers'     => '_eca_teachers',
+			'cost'         => '_eca_cost',
+			'currency'     => '_eca_currency',
+			'term'         => '_eca_term',
 		);
 
 		foreach ( $meta_fields as $arg_key => $meta_key ) {
 			if ( isset( $arguments[ $arg_key ] ) ) {
 				$value = $arguments[ $arg_key ];
-				
+
 				if ( is_array( $value ) ) {
 					// For arrays, sanitize each element.
 					$value = array_map( 'sanitize_text_field', $value );
 				} else {
 					$value = sanitize_text_field( $value );
 				}
-				
+
 				update_post_meta( $eca_id, $meta_key, $value );
 			}
 		}
