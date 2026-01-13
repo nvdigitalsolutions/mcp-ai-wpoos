@@ -140,18 +140,11 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			$post_types[] = 'product';
 		}
 
-		// Get settings to check for enabled Pro features.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-
-		// Add Quiz CPT if quiz system is enabled.
-		if ( ! empty( $settings['enable_quiz_system'] ) ) {
-			$post_types[] = 'mcp_ai_quiz';
-		}
-
-		// Add Place CPT if places management is enabled.
-		if ( ! empty( $settings['enable_places_management'] ) ) {
-			$post_types[] = 'mcp_ai_place';
-		}
+		// NOTE: Pro CPTs (mcp_ai_quiz, mcp_ai_place) are NOT included here
+		// because they have dedicated "Research & Add" pages with full chat interface instead.
+		// See:
+		// - WP_MCP_AI_Place_Research_Page (addons/pro/includes/admin/class-wp-mcp-ai-place-research-page.php)
+		// - WP_MCP_AI_Quiz_Research_Page (addons/pro/includes/admin/class-wp-mcp-ai-quiz-research-page.php)
 
 		// NOTE: Project Management CPTs (mcp_ai_project, mcp_ai_task, mcp_ai_event) are NOT included here
 		// because they have their own specialized AI Assistant metabox that includes quick action buttons
