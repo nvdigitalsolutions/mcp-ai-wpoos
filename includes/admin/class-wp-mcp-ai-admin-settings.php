@@ -324,6 +324,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				),
 				'gmail'            => array(
 					'label'            => __( 'Gmail', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'gmail_client_id', 'gmail_client_secret', 'gmail_refresh_token', 'gmail_user_email' ),
+					'fields'           => array(
+						'gmail_client_id'     => __( 'Client ID', 'mcp-ai-wpoos' ),
+						'gmail_client_secret' => __( 'Client Secret', 'mcp-ai-wpoos' ),
+						'gmail_refresh_token' => __( 'Refresh Token', 'mcp-ai-wpoos' ),
+						'gmail_user_email'    => __( 'Authorised Email', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Unlocks Gmail search tools so assistants can review messages within scope.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Complete this connector when assistants need to search connected Gmail inboxes.', 'mcp-ai-wpoos' ),
+				),
+			);
+		}
+
 		/**
 		 * Returns metadata about configurable chat colors.
 		 *
@@ -2401,12 +2414,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$clean['quickbooks_api_key'] = trim( sanitize_text_field( $settings['quickbooks_api_key'] ) );
 			}
 
+			if ( isset( $settings['gmail_client_id'] ) ) {
+				$clean['gmail_client_id'] = trim( sanitize_text_field( $settings['gmail_client_id'] ) );
 			}
 
+			if ( isset( $settings['gmail_client_secret'] ) ) {
+				$clean['gmail_client_secret'] = trim( sanitize_text_field( $settings['gmail_client_secret'] ) );
 			}
 
+			if ( isset( $settings['gmail_refresh_token'] ) ) {
+				$clean['gmail_refresh_token'] = trim( sanitize_text_field( $settings['gmail_refresh_token'] ) );
 			}
 
+			if ( isset( $settings['gmail_user_email'] ) ) {
+				$email = trim( (string) $settings['gmail_user_email'] );
 
 				if ( '' === $email ) {
 					$clean['gmail_user_email'] = '';
@@ -2414,6 +2435,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					$clean['gmail_user_email'] = 'me';
 				} else {
 					$sanitized_email           = sanitize_email( $email );
+					$clean['gmail_user_email'] = $sanitized_email ? $sanitized_email : '';
 				}
 			}
 
@@ -3616,6 +3638,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		/**
 		 * Render the Gmail integration section description.
 		 */
+		public function render_gmail_section_description() {
+			$settings      = self::get_settings();
 			$has_client_id = ! empty( $settings['gmail_client_id'] );
 			$has_secret    = ! empty( $settings['gmail_client_secret'] );
 			$login_url     = '';
@@ -3656,6 +3680,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		/**
 		 * Render the Gmail client ID field.
 		 */
+		public function render_gmail_client_id_field() {
+			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_client_id]" value="<?php echo esc_attr( $settings['gmail_client_id'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Enter the OAuth client ID from your Google Cloud project.', 'mcp-ai-wpoos' ); ?></p>
@@ -3665,6 +3691,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		/**
 		 * Render the Gmail client secret field.
 		 */
+		public function render_gmail_client_secret_field() {
+			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_client_secret]" value="<?php echo esc_attr( $settings['gmail_client_secret'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Enter the OAuth client secret associated with the client ID.', 'mcp-ai-wpoos' ); ?></p>
@@ -3674,6 +3702,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		/**
 		 * Render the Gmail refresh token field.
 		 */
+		public function render_gmail_refresh_token_field() {
+			$settings = self::get_settings();
 			?>
 		<textarea name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_refresh_token]" rows="3" class="large-text" autocomplete="off"><?php echo esc_textarea( $settings['gmail_refresh_token'] ); ?></textarea>
 		<p class="description"><?php esc_html_e( 'Provide a long-lived refresh token issued for the Gmail API with the https://www.googleapis.com/auth/gmail.readonly scope.', 'mcp-ai-wpoos' ); ?></p>
@@ -3683,6 +3713,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		/**
 		 * Render the Gmail user email field.
 		 */
+		public function render_gmail_user_email_field() {
+			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_user_email]" value="<?php echo esc_attr( $settings['gmail_user_email'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Specify the Gmail account email address associated with the refresh token. Leave blank or enter “me” to use the authenticated account.', 'mcp-ai-wpoos' ); ?></p>
