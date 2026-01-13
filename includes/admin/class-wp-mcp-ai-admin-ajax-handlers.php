@@ -879,13 +879,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			$api_key       = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
-			$client_id     = isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '';
-			$client_secret = isset( $_POST['client_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['client_secret'] ) ) : '';
-			$location_id   = isset( $_POST['location_id'] ) ? sanitize_text_field( wp_unslash( $_POST['location_id'] ) ) : '';
+			// Flowhub uses simple header-based authentication (clientId and key headers).
+			$client_id = isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '';
+			$api_key   = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
-			if ( empty( $api_key ) || empty( $client_id ) || empty( $client_secret ) || empty( $location_id ) ) {
-				wp_send_json_error( array( 'message' => __( 'Please provide all Flowhub credentials (API Key, Client ID, Client Secret, Location ID).', 'mcp-ai-wpoos' ) ) );
+			if ( empty( $client_id ) || empty( $api_key ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide Flowhub Client ID and API Key.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -895,71 +894,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 			$timeout      = max( 5, $timeout );
 
-			// Step 1: Test OAuth2 authentication.
-			$token_url = 'https://flowhub.auth0.com/oauth/token';
-
-			$token_response = wp_remote_post(
-				$token_url,
-				array(
-					'headers' => array(
-						'Content-Type' => 'application/json',
-					),
-					'body'    => wp_json_encode(
-						array(
-							'client_id'     => $client_id,
-							'client_secret' => $client_secret,
-							'grant_type'    => 'client_credentials',
-							'audience'      => 'https://api.flowhub.co',
-						)
-					),
-					'timeout' => $timeout,
-				)
-			);
-
-			if ( is_wp_error( $token_response ) ) {
-				wp_send_json_error(
-					array(
-						'message' => sprintf(
-							/* translators: %s: error message */
-							__( 'OAuth2 authentication failed: %s', 'mcp-ai-wpoos' ),
-							$token_response->get_error_message()
-						),
-					)
-				);
-				return;
-			}
-
-			$token_code = wp_remote_retrieve_response_code( $token_response );
-			$token_body = wp_remote_retrieve_body( $token_response );
-			$token_data = json_decode( $token_body, true );
-
-			if ( 401 === $token_code || 403 === $token_code ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid Client ID or Client Secret. Please check your OAuth2 credentials.', 'mcp-ai-wpoos' ) ) );
-				return;
-			}
-
-			if ( 200 !== $token_code || empty( $token_data['access_token'] ) ) {
-				$error_message = __( 'Failed to obtain access token.', 'mcp-ai-wpoos' );
-				if ( isset( $token_data['error_description'] ) ) {
-					$error_message = sanitize_text_field( $token_data['error_description'] );
-				}
-				wp_send_json_error( array( 'message' => $error_message ) );
-				return;
-			}
-
-			$access_token = $token_data['access_token'];
-
-			// Step 2: Test API access with inventory endpoint.
-			$inventory_url = 'https://api.flowhub.co/v0/inventory';
+			// Test API access with inventory endpoint.
+			$inventory_url = 'https://api.flowhub.co/v0/inventoryNonZero';
 
 			$api_response = wp_remote_get(
 				$inventory_url,
 				array(
 					'headers' => array(
-						'Authorization' => 'Bearer ' . $access_token,
-						'X-API-Key'     => $api_key,
-						'X-Location-ID' => $location_id,
-						'Content-Type'  => 'application/json',
+						'clientId'     => $client_id,
+						'key'          => $api_key,
+						'Accept'       => 'application/json',
+						'Content-Type' => 'application/json',
 					),
 					'timeout' => $timeout,
 				)
@@ -983,7 +928,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$api_data = json_decode( $api_body, true );
 
 			if ( 401 === $api_code || 403 === $api_code ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid API Key or Location ID. Please check your credentials.', 'mcp-ai-wpoos' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid Client ID or API Key. Please check your credentials.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -1001,13 +946,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
+			// Flowhub wraps responses in { "status": 200, "data": [...] } format.
+			// Extract the data array if present.
+			$inventory_data = $api_data;
+			if ( isset( $api_data['data'] ) && is_array( $api_data['data'] ) ) {
+				$inventory_data = $api_data['data'];
+			}
+
 			// Success message with inventory count if available.
 			$message = __( 'Successfully connected to Flowhub API!', 'mcp-ai-wpoos' );
-			if ( is_array( $api_data ) && count( $api_data ) > 0 ) {
+			if ( is_array( $inventory_data ) && count( $inventory_data ) > 0 ) {
 				$message = sprintf(
 					/* translators: %d: number of inventory items */
 					__( 'Successfully connected to Flowhub API! Found %d inventory items.', 'mcp-ai-wpoos' ),
-					count( $api_data )
+					count( $inventory_data )
 				);
 			} elseif ( 204 === $api_code ) {
 				$message = __( 'Successfully connected to Flowhub API! (No inventory items found)', 'mcp-ai-wpoos' );
