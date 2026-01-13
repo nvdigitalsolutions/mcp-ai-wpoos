@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-unique-fields-per-connection-type',
-        'version' => 'dev-copilot/add-unique-fields-per-connection-type',
-        'reference' => 'a408e86a6e118c1dbc893b63ddc8a928256e079d',
+        'pretty_version' => 'dev-copilot/add-remote-ezuite-connection-tool',
+        'version' => 'dev-copilot/add-remote-ezuite-connection-tool',
+        'reference' => '00c81f8d391cbe6e51b0d5be44c05d5389327a99',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-unique-fields-per-connection-type',
-            'version' => 'dev-copilot/add-unique-fields-per-connection-type',
-            'reference' => 'a408e86a6e118c1dbc893b63ddc8a928256e079d',
+            'pretty_version' => 'dev-copilot/add-remote-ezuite-connection-tool',
+            'version' => 'dev-copilot/add-remote-ezuite-connection-tool',
+            'reference' => '00c81f8d391cbe6e51b0d5be44c05d5389327a99',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
