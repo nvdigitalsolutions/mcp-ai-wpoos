@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rename-remote-site-connections',
-        'version' => 'dev-copilot/rename-remote-site-connections',
-        'reference' => 'ae457e670af87337db4a9262957474902553cb33',
+        'pretty_version' => 'dev-copilot/add-unique-fields-per-connection-type',
+        'version' => 'dev-copilot/add-unique-fields-per-connection-type',
+        'reference' => 'a408e86a6e118c1dbc893b63ddc8a928256e079d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rename-remote-site-connections',
-            'version' => 'dev-copilot/rename-remote-site-connections',
-            'reference' => 'ae457e670af87337db4a9262957474902553cb33',
+            'pretty_version' => 'dev-copilot/add-unique-fields-per-connection-type',
+            'version' => 'dev-copilot/add-unique-fields-per-connection-type',
+            'reference' => 'a408e86a6e118c1dbc893b63ddc8a928256e079d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
