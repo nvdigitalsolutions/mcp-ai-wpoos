@@ -265,13 +265,38 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 						$code
 					);
 
+					// Add specific guidance for common error codes.
+					$error_data = array(
+						'status' => $code,
+						'body'   => $body,
+					);
+
+					// Add actionable error messages for specific HTTP codes.
+					if ( 403 === $code ) {
+						$error_data['actions'] = array(
+							'check_credentials'     => __( 'Verify your Flowhub Client ID and API Key are correct.', 'mcp-ai-wpoos' ),
+							'check_permissions'     => __( 'Ensure your Flowhub account has API access enabled.', 'mcp-ai-wpoos' ),
+							'check_ip_whitelist'    => __( 'Confirm your server IP address is whitelisted in Flowhub.', 'mcp-ai-wpoos' ),
+							'contact_flowhub'       => __( 'Contact Flowhub support if the issue persists.', 'mcp-ai-wpoos' ),
+						);
+					} elseif ( 401 === $code ) {
+						$error_data['actions'] = array(
+							'check_credentials' => __( 'Your Flowhub credentials are invalid. Please update them.', 'mcp-ai-wpoos' ),
+						);
+					} elseif ( 429 === $code ) {
+						$error_data['actions'] = array(
+							'rate_limit' => __( 'Flowhub API rate limit exceeded. Please wait a few minutes and try again.', 'mcp-ai-wpoos' ),
+						);
+					} elseif ( $code >= 500 ) {
+						$error_data['actions'] = array(
+							'server_error' => __( 'Flowhub API is experiencing server issues. Please try again later.', 'mcp-ai-wpoos' ),
+						);
+					}
+
 					return new WP_Error(
 						'wp_mcp_ai_api_error',
 						$error_message,
-						array(
-							'status' => $code,
-							'body'   => $body,
-						)
+						$error_data
 					);
 				}
 

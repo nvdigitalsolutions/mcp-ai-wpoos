@@ -84,6 +84,12 @@ class Test_Flowhub_Non_JSON_Error_Response extends WP_UnitTestCase {
 		$this->assertIsString( $error_data['body'], 'Body should be a string' );
 		$this->assertStringContainsString( '403 Forbidden', $error_data['body'], 'Body should contain the HTML error' );
 
+		// Assert that actionable error messages are provided for 403 errors.
+		$this->assertArrayHasKey( 'actions', $error_data, 'Error data should include actionable advice' );
+		$this->assertArrayHasKey( 'check_credentials', $error_data['actions'], 'Should suggest checking credentials' );
+		$this->assertArrayHasKey( 'check_permissions', $error_data['actions'], 'Should suggest checking permissions' );
+		$this->assertArrayHasKey( 'check_ip_whitelist', $error_data['actions'], 'Should suggest checking IP whitelist' );
+
 		// Clean up.
 		delete_option( 'wp_mcp_ai_settings' );
 		remove_all_filters( 'pre_http_request' );
