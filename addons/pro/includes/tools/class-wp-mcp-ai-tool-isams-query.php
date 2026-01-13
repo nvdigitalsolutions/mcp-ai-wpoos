@@ -43,6 +43,10 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for iSAMS. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos-pro' ),
+				),
 				'endpoint'   => array(
 					'type'        => 'string',
 					'description' => __( 'API endpoint to query. Available: pupils, employees, departments, houses, terms, subjects, year_groups', 'mcp-ai-wpoos-pro' ),
@@ -142,16 +146,58 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			);
 		}
 
-		// Get settings.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$api_url  = isset( $settings['isams_api_url'] ) ? trailingslashit( $settings['isams_api_url'] ) : '';
-		$api_key  = isset( $settings['isams_api_key'] ) ? $settings['isams_api_key'] : '';
-		$api_secret = isset( $settings['isams_api_secret'] ) ? $settings['isams_api_secret'] : '';
+		// Get connection_id if provided.
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
 
+		// Try to get credentials from connection first, then fall back to settings.
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+			if ( null === $connection ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_not_found',
+					__( 'Connection not found. Please check the connection ID.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Validate connection type.
+			if ( empty( $connection['connection_type'] ) || 'isams' !== $connection['connection_type'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_wrong_connection_type',
+					__( 'This connection is not an iSAMS connection.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Check if connection is enabled.
+			if ( empty( $connection['enabled'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_disabled',
+					__( 'This connection is disabled. Please enable it in Remote Sites settings.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Get credentials from connection.
+			$api_url    = isset( $connection['url'] ) ? trailingslashit( $connection['url'] ) : '';
+			$api_key    = ! empty( $connection['api_key'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_key'] ) : '';
+			$api_secret = ! empty( $connection['api_secret'] ) ? WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['api_secret'] ) : '';
+		} else {
+			// Fallback to settings (old approach - for backward compatibility).
+			$settings   = get_option( 'wp_mcp_ai_settings', array() );
+			$api_url    = isset( $settings['isams_api_url'] ) ? trailingslashit( $settings['isams_api_url'] ) : '';
+			$api_key    = isset( $settings['isams_api_key'] ) ? $settings['isams_api_key'] : '';
+			$api_secret = isset( $settings['isams_api_secret'] ) ? $settings['isams_api_secret'] : '';
+
+			// Show deprecation notice in logs if using settings.
+			if ( ! empty( $api_url ) && ! empty( $api_key ) ) {
+				error_log( 'WP MCP AI: Settings-based iSAMS configuration is deprecated. Please migrate to Remote Sites connections.' );
+			}
+		}
+
+		// Validate credentials.
 		if ( empty( $api_url ) || empty( $api_key ) || empty( $api_secret ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_isams_not_configured',
-				__( 'iSAMS API credentials are not configured. Please configure them in Settings.', 'mcp-ai-wpoos-pro' )
+				__( 'iSAMS API credentials are not configured. Please configure them in Settings or use a Remote Sites connection.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

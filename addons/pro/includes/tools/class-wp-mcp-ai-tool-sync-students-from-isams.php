@@ -43,6 +43,10 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for iSAMS. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos-pro' ),
+				),
 				'sync_type'   => array(
 					'type'        => 'string',
 					'description' => __( 'Type of sync to perform', 'mcp-ai-wpoos-pro' ),
@@ -153,6 +157,37 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
+		// Get connection_id if provided and pass it along.
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
+
+		// Validate connection if provided.
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+			if ( null === $connection ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_not_found',
+					__( 'Connection not found. Please check the connection ID.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Validate connection type.
+			if ( empty( $connection['connection_type'] ) || 'isams' !== $connection['connection_type'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_wrong_connection_type',
+					__( 'This connection is not an iSAMS connection.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Check if connection is enabled.
+			if ( empty( $connection['enabled'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_disabled',
+					__( 'This connection is disabled. Please enable it in Remote Sites settings.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+		}
+
 		$isams_tool = new WP_MCP_AI_Tool_ISAMS_Query();
 
 		// Validate sync type.
@@ -179,7 +214,7 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 				return $this->sync_year_group( $isams_tool, $arguments, $context, $page, $limit, $update_existing );
 
 			case 'all':
-				return $this->sync_all_students( $isams_tool, $context, $page, $limit, $update_existing );
+				return $this->sync_all_students( $isams_tool, $arguments, $context, $page, $limit, $update_existing );
 
 			default:
 				return new WP_Error(
@@ -208,14 +243,19 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		// Fetch student from iSAMS.
-		$isams_result = $isams_tool->execute(
-			array(
-				'endpoint' => 'pupils',
-				'id'       => $student_id,
-			),
-			$context
+		// Prepare query arguments, including connection_id if provided.
+		$query_args = array(
+			'endpoint' => 'pupils',
+			'id'       => $student_id,
 		);
+
+		// Pass connection_id if provided.
+		if ( isset( $arguments['connection_id'] ) ) {
+			$query_args['connection_id'] = $arguments['connection_id'];
+		}
+
+		// Fetch student from iSAMS.
+		$isams_result = $isams_tool->execute( $query_args, $context );
 
 		if ( is_wp_error( $isams_result ) ) {
 			return $isams_result;
@@ -261,15 +301,20 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		// Fetch students from iSAMS (paginated).
-		$isams_result = $isams_tool->execute(
-			array(
-				'endpoint' => 'pupils',
-				'page'     => $page,
-				'limit'    => $limit,
-			),
-			$context
+		// Prepare query arguments, including connection_id if provided.
+		$query_args = array(
+			'endpoint' => 'pupils',
+			'page'     => $page,
+			'limit'    => $limit,
 		);
+
+		// Pass connection_id if provided.
+		if ( isset( $arguments['connection_id'] ) ) {
+			$query_args['connection_id'] = $arguments['connection_id'];
+		}
+
+		// Fetch students from iSAMS (paginated).
+		$isams_result = $isams_tool->execute( $query_args, $context );
 
 		if ( is_wp_error( $isams_result ) ) {
 			return $isams_result;
@@ -294,22 +339,28 @@ class WP_MCP_AI_Tool_Sync_Students_From_ISAMS implements WP_MCP_AI_Tool_Interfac
 	 * Sync all students.
 	 *
 	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      iSAMS tool instance.
+	 * @param array                       $arguments       Tool arguments.
 	 * @param array                       $context         Execution context.
 	 * @param int                         $page            Page number.
 	 * @param int                         $limit           Students per page.
 	 * @param bool                        $update_existing Whether to update existing students.
 	 * @return array|WP_Error Sync results or error.
 	 */
-	private function sync_all_students( $isams_tool, $context, $page, $limit, $update_existing ) {
-		// Fetch students from iSAMS (paginated).
-		$isams_result = $isams_tool->execute(
-			array(
-				'endpoint' => 'pupils',
-				'page'     => $page,
-				'limit'    => $limit,
-			),
-			$context
+	private function sync_all_students( $isams_tool, $arguments, $context, $page, $limit, $update_existing ) {
+		// Prepare query arguments, including connection_id if provided.
+		$query_args = array(
+			'endpoint' => 'pupils',
+			'page'     => $page,
+			'limit'    => $limit,
 		);
+
+		// Pass connection_id if provided.
+		if ( isset( $arguments['connection_id'] ) ) {
+			$query_args['connection_id'] = $arguments['connection_id'];
+		}
+
+		// Fetch students from iSAMS (paginated).
+		$isams_result = $isams_tool->execute( $query_args, $context );
 
 		if ( is_wp_error( $isams_result ) ) {
 			return $isams_result;
