@@ -151,8 +151,11 @@ wp mcp-ai plugins activate woocommerce
 
 ### Composer Commands
 ```bash
-# Install dependencies
+# Install dependencies (development - includes PHPUnit, CodeSniffer)
 composer install
+
+# Install production dependencies only (no dev tools)
+composer install --no-dev --optimize-autoloader
 
 # Run linting
 composer run lint
