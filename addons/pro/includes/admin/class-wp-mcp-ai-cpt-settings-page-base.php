@@ -64,8 +64,12 @@ abstract class WP_MCP_AI_CPT_Settings_Page_Base {
 	 * Add settings submenu page.
 	 */
 	public function add_settings_page() {
+		// For the built-in 'post' post type, the parent slug is just 'edit.php'.
+		// For all other post types, it's 'edit.php?post_type={post_type}'.
+		$parent_slug = ( 'post' === $this->post_type ) ? 'edit.php' : 'edit.php?post_type=' . $this->post_type;
+
 		add_submenu_page(
-			'edit.php?post_type=' . $this->post_type,
+			$parent_slug,
 			$this->page_title,
 			$this->menu_title,
 			'manage_options',
