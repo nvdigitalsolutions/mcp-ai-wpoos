@@ -8758,7 +8758,8 @@
             'research_quiz_topic',
             'research_place',
             'research_eca',
-            'research_policy'
+            'research_policy',
+            'research_product'
         ];
 
         if (cptTools.indexOf(toolName) === -1) {
