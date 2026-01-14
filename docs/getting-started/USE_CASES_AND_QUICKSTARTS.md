@@ -1,12 +1,13 @@
 # NV oOS Use Cases & Quickstart Guides
 
-**Version:** 1.1.0  
-**Last Updated:** January 1, 2026  
-**Estimated Reading Time:** 30 minutes
+**Version:** 1.2.0  
+**Last Updated:** January 14, 2026  
+**Estimated Reading Time:** 35 minutes
 
 ## 📑 Table of Contents
 
 - [Overview](#overview)
+- [Professional & Team Templates](#professional--team-templates)
 - [Content Creation & Management](#1-content-creation--management)
 - [E-Commerce Automation](#2-e-commerce-automation)
 - [Media Generation & Processing](#3-media-generation--processing)
@@ -21,7 +22,17 @@
 
 ## Overview
 
-NV oOS (Open Operator System) is a comprehensive AI assistant framework for WordPress that supports 159 built-in tools across multiple use cases. This guide provides practical scenarios, implementation steps, and quickstart guides for common use cases.
+NV oOS (Open Operator System) is a comprehensive AI assistant framework for WordPress that supports 193 built-in tools across multiple use cases. This guide provides practical scenarios, implementation steps, and quickstart guides for common use cases.
+
+### New: Professional & Team Templates 🎓
+
+NV oOS includes **182 pre-built professional templates** spanning 12 industry categories. Instead of manually configuring each assistant, you can deploy production-ready assistants in 3 minutes using profession templates with pre-configured:
+- Role descriptions and expertise
+- Curated tool selections
+- Industry knowledge bases
+- Recommended AI model settings
+
+**See the [Professional & Team Templates](#professional--team-templates) section below for complete details.**
 
 ### Prerequisites
 
@@ -34,15 +45,159 @@ Before starting any use case:
 
 ### Quick Reference
 
-| Use Case | Time to Setup | Cost per Session | Difficulty |
-|----------|---------------|------------------|------------|
-| Content Writing | 5 min | $0.01-0.10 | Easy |
-| E-Commerce | 10 min | $0.05-0.20 | Medium |
-| Media Generation | 5 min | $0.02-0.50 | Easy |
-| Business Operations | 15 min | $0.10-0.30 | Medium |
-| Research & Data | 5 min | $0.01-0.05 | Easy |
-| Developer Integration | 30 min | Varies | Advanced |
-| Education | 15 min | $0.05-0.15 | Medium |
+| Use Case | Time to Setup | Cost per Session | Difficulty | Templates Available |
+|----------|---------------|------------------|------------|---------------------|
+| Content Writing | 3-5 min | $0.01-0.10 | Easy | ✅ Content Writer, Technical Writer |
+| E-Commerce | 5-10 min | $0.05-0.20 | Medium | ✅ Marketing Consultant |
+| Media Generation | 3-5 min | $0.02-0.50 | Easy | ✅ Graphic Designer |
+| Business Operations | 8-15 min | $0.10-0.30 | Medium | ✅ Business Consultant, Project Manager |
+| Research & Data | 3-5 min | $0.01-0.05 | Easy | ✅ Research Scientist, Data Scientist |
+| Developer Integration | 20-30 min | Varies | Advanced | ✅ Software Developer, Systems Admin |
+| Education | 5-10 min | $0.05-0.15 | Medium | ✅ 13 IGCSE professions, 6 teams |
+
+---
+
+## Professional & Team Templates
+
+NV oOS includes an enterprise-grade **template system** for rapid assistant deployment. Instead of manually configuring each assistant from scratch, you can leverage **182 pre-built professional templates** spanning 12 industry categories.
+
+### What Are Professional Templates?
+
+Professional templates are pre-configured assistant blueprints that include:
+
+- **Role descriptions** - Pre-written expertise and context
+- **Default tools** - Curated tool selections for each profession
+- **Knowledge bases** - Industry-specific best practices and guidelines
+- **AI model defaults** - Recommended provider, model, and temperature settings
+- **Warnings & disclaimers** - Professional context and limitations
+
+### Available Categories (182 Professions)
+
+| Category | Count | Examples |
+|----------|-------|----------|
+| 🌾 Agriculture & Natural Resources | 10 | Agronomist, Environmental Scientist, Forester |
+| 🎨 Art, Media & Entertainment | 24 | Graphic Designer, Content Writer, Video Editor |
+| 💼 Business & Finance | 16 | Accountant, Financial Advisor, Marketing Consultant |
+| 🎓 Education | 10 | Mathematics Tutor, Science Teacher, Academic Advisor |
+| 🏥 Healthcare & Medicine | 25 | Registered Nurse, Physician, Pharmacist |
+| ⚖️ Law & Public Safety | 11 | Attorney, Paralegal, Mediator |
+| 🔬 Science & Engineering | 17 | Software Developer, Data Scientist, Chemical Engineer |
+| 🍽️ Service Industry | 12 | Chef, Event Planner, Customer Service Rep |
+| 💻 Technology | 12 | Web Developer, IT Support, Systems Administrator |
+| 🔧 Trades & Manual Labor | 13 | Electrician, Plumber, Carpenter |
+| 🚚 Transportation | 10 | Logistics Coordinator, Transportation Manager |
+| 📋 Miscellaneous | 22 | Project Manager, Technical Writer, Translator |
+
+### Quick Start: Creating an Assistant from a Template
+
+**Time: 3 minutes**
+
+1. **Navigate to AI Assistants → Add New**
+2. **Browse the visual profession grid:**
+   - Filter by category
+   - Search for specific roles
+   - View profession descriptions
+3. **Click "Create" on any profession**
+4. **Customize in the modal:**
+   - Assistant name (defaults to profession title)
+   - AI Provider (OpenAI, Gemini, Ollama, etc.)
+   - Model selection (auto-populated from provider)
+   - Temperature (defaults to profession recommendation)
+5. **Click "Deploy Assistant"**
+6. **Test immediately** - Click "Test Assistant" to verify
+
+**That's it!** Your assistant is ready with pre-configured tools, knowledge base, and system prompts.
+
+### Team Deployments
+
+Deploy entire teams of specialists with one click:
+
+**Pre-Built Teams:**
+- **Engineering Team** - Software, Mechanical, Electrical, Civil Engineers
+- **Pharmaceutical Development Team** - Pharmacist, Researcher, Clinical Pharmacologist
+- **Research & Data Science Team** - Data Scientist, Research Scientist, Statistician
+- **Marketing & Growth Team** - Marketing Consultant, Content Creator, Graphic Designer
+- **IGCSE Teams** - Mathematics, Science, Humanities, Languages & Technology (100% curriculum coverage)
+
+**Deploy a Team:**
+1. Navigate to **Teams → Add Team** or select pre-built team
+2. Configure team-wide settings (provider, model, temperature)
+3. Click "Deploy Team"
+4. All team member assistants are created simultaneously
+5. Test team from backend before deployment
+
+### Backend Testing
+
+Test assistants, professions, and teams safely from the WordPress admin **before** exposing to users:
+
+**Test Assistant** (Admin → AI Assistants → Test Assistant)
+- Full feature parity with frontend
+- All tools enabled (including admin-only tools)
+- File upload support
+- Transcript saving
+- Real-time streaming
+
+**Test Profession** (Admin → Professions → Test Profession)
+- Preview profession templates
+- Validate role descriptions
+- Test tool selections
+- Verify knowledge base accuracy
+
+**Test Team** (Admin → Teams → Test Team)
+- Test entire teams before deployment
+- Validate team member coordination
+- Verify shared settings
+- Multi-assistant conversations
+
+**Security:** All test pages require `manage_options` capability and are admin-only.
+
+### Creating Custom Professions
+
+**Time: 15 minutes**
+
+1. **Professions → Add New**
+2. **Set basic information:**
+   - Title (e.g., "Legal Researcher")
+   - Description
+   - Category (advisory, creative, technical, etc.)
+3. **Define expertise:**
+   - Add expertise areas (array)
+   - Write role description
+   - Add warnings/disclaimers
+4. **Configure knowledge base:**
+   - Add industry-specific content
+   - Include best practices
+   - Reference standards/frameworks
+5. **Select default tools:**
+   - Browse 193 available tools
+   - Choose relevant tools for the profession
+6. **Set AI defaults:**
+   - Recommended provider
+   - Model preference
+   - Temperature setting
+7. **Publish**
+
+**Result:** Your custom profession template is now available in the assistant creation grid.
+
+### Benefits of Using Templates
+
+**Rapid Deployment:**
+- Create assistants in 3 minutes vs. 30+ minutes manual configuration
+- Consistent configurations across similar roles
+- Professional-grade quality out of the box
+
+**Reduced Errors:**
+- Pre-tested tool combinations
+- Validated system prompts
+- Industry-appropriate defaults
+
+**Scalability:**
+- Template library grows with your organization
+- Share profession templates across sites
+- Create custom teams for your workflows
+
+**For Use Cases Below:**
+Throughout this guide, wherever you see "Create Assistant," you can now use profession templates to accelerate deployment. Look for this icon: 🎓 indicating profession templates are available for that use case.
 
 ---
 
@@ -65,8 +220,26 @@ Transform your content workflow with AI-powered writing, SEO optimization, and m
 #### Quickstart Guide (10 minutes)
 
 **Step 1: Create SEO Writer Assistant**
+
+**Option A: Using Professional Template 🎓 (Recommended - 3 minutes)**
 ```
 1. Go to AI Assistants → Add New
+2. Search for "Content Writer" or "Technical Writer" in the profession grid
+3. Click "Create" on the template
+4. Customize:
+   - Name: "SEO Blog Writer"
+   - Provider: OpenAI (or your preference)
+   - Model: gpt-4o-mini (cost-effective)
+5. Click "Deploy Assistant"
+6. Template includes pre-configured:
+   - Content writing expertise
+   - Relevant tools (search_content, web_search, save_post)
+   - Professional writing guidelines
+```
+
+**Option B: Manual Configuration (10 minutes)**
+```
+1. Go to AI Assistants → Add New (skip profession selection)
 2. Title: "SEO Blog Writer"
 3. Enable tools:
    - search_content
@@ -199,8 +372,24 @@ Streamline your online store with AI-powered product management and customer ser
 #### Quickstart Guide (15 minutes)
 
 **Step 1: Create E-Commerce Assistant**
+
+**Option A: Using Professional Template 🎓 (Recommended - 5 minutes)**
 ```
 1. AI Assistants → Add New
+2. Search for "Marketing Consultant" or "Content Writer" in the profession grid
+3. Click "Create" on the template
+4. Customize:
+   - Name: "Product Description Writer"
+   - Add WooCommerce tools (create_woo_product, get_woo_products)
+5. Add Base Knowledge:
+   - Upload brand style guide
+   - Upload product catalog template
+6. Deploy Assistant
+```
+
+**Option B: Manual Configuration (15 minutes)**
+```
+1. AI Assistants → Add New (skip profession selection)
 2. Title: "Product Description Writer"
 3. Enable tools:
    - create_woo_product
@@ -333,8 +522,27 @@ Create professional media assets with AI-powered tools.
 #### Quickstart Guide (5 minutes)
 
 **Step 1: Create Image Generator Assistant**
+
+**Option A: Using Professional Template 🎓 (Recommended - 3 minutes)**
 ```
 1. AI Assistants → Add New
+2. Search for "Graphic Designer" in the profession grid
+3. Click "Create" on the template
+4. Customize:
+   - Name: "Marketing Image Creator"
+   - Provider: OpenAI
+   - Model: gpt-4o (for better image understanding)
+5. Template includes:
+   - Design expertise and principles
+   - Image generation tools pre-configured
+   - Professional design guidelines
+6. Add brand guidelines to knowledge base (optional)
+7. Deploy Assistant
+```
+
+**Option B: Manual Configuration (10 minutes)**
+```
+1. AI Assistants → Add New (skip profession selection)
 2. Title: "Marketing Image Creator"
 3. Enable tools:
    - generate_openai_image
@@ -483,8 +691,29 @@ Pro Version: Configure Mailjet in Settings → NV oOS → Integrations
 ```
 
 **Step 2: Create Email Marketing Assistant**
+
+**Option A: Using Professional Template 🎓 (Recommended - 8 minutes)**
 ```
 1. AI Assistants → Add New
+2. Search for "Marketing Consultant" or "Content Writer" in the profession grid
+3. Click "Create" on the template
+4. Customize:
+   - Name: "Email Campaign Manager"
+   - Provider: OpenAI
+   - Model: gpt-4o-mini
+5. Enable tools:
+   - send_group_email (or send_mailjet_email)
+   - search_content
+6. Add Knowledge Base:
+   - Brand guidelines
+   - Previous successful campaigns
+   - Product/service information
+7. Deploy Assistant
+```
+
+**Option B: Manual Configuration (20 minutes)**
+```
+1. AI Assistants → Add New (skip profession selection)
 2. Title: "Email Campaign Manager"
 3. Enable tools:
    - send_group_email (or send_mailjet_email)
@@ -874,6 +1103,26 @@ Prompt: "Preview [dataset] and provide:
 
 Advanced use cases for developers and technical users.
 
+### Professional Templates for Developers 🎓
+
+NV oOS includes technical profession templates that accelerate development workflows:
+
+**Available Developer Professions:**
+- **Software Developer** - Full-stack development, code review, debugging
+- **Web Developer** - Frontend/backend web development
+- **Data Scientist** - Data analysis, ML, statistical modeling
+- **Systems Administrator** - Server management, DevOps, infrastructure
+- **IT Support Specialist** - Technical support, troubleshooting
+- **Database Administrator** - Database design, optimization, backup
+- **Computer Scientist** - Algorithms, theory, research
+- **And more...**
+
+Each template includes:
+- Development best practices
+- Code review guidelines
+- Relevant tool selections
+- Industry-standard workflows
+
 ### Use Case 6.1: Remote MCP Client Integration
 
 **Problem:** Need to connect external AI applications to WordPress.
@@ -1121,27 +1370,58 @@ Specialized assistants for education and training.
 
 **Problem:** Need curriculum-specific learning assistants for students.
 
-**Solution:** Pre-built IGCSE profession templates covering all subjects.
+**Solution:** Pre-built IGCSE profession templates and teams covering all subjects.
 
-#### Available IGCSE Teams
-- Mathematics Team (3 specialists)
-- Science Team (3 specialists)
-- Humanities Team (3 specialists)
-- Languages & Technology Team (4 specialists)
+#### Available IGCSE Teams 🎓
+
+NV oOS includes **6 specialized IGCSE teams** with **100% curriculum coverage**:
+
+- **Mathematics Team** (3 specialists)
+  - Mathematics Tutor, Mathematics Research Specialist, Mathematics Teaching Assistant
+- **Science Team** (3 specialists)
+  - Science Tutor, Science Research Specialist, Science Laboratory Assistant
+- **Humanities Team** (3 specialists)
+  - History Tutor, Geography Tutor, Social Studies Tutor
+- **Languages & Technology Team** (4 specialists)
+  - English Language Tutor, Computer Science Tutor, Foreign Language Tutor, ICT Specialist
+- **Year-Level Support Team** (varies by deployment)
+  - Academic advisors and multi-subject tutors
+- **Academic Support Team** (specialists)
+  - Study skills, exam preparation, research assistance
+
+All teams align with **Cambridge IGCSE syllabi** and include subject-specific expertise.
 
 #### Quickstart Guide (10 minutes)
 
-**Step 1: Deploy IGCSE Team**
+**Step 1: Deploy IGCSE Team 🎓**
+
+**Option A: Deploy Pre-Built Team (5 minutes - Recommended)**
 ```
-1. Go to Teams → IGCSE Teams
+1. Go to Teams → IGCSE Teams (or Teams → Add Team)
 2. Select team (e.g., "IGCSE Mathematics Team")
 3. Click "Deploy Team"
-4. Configure:
+4. Configure team-wide settings:
    - Provider: OpenAI (or Gemini)
-   - Model: gpt-4o-mini (cost-effective)
+   - Model: gpt-4o-mini (cost-effective for education)
    - Temperature: 0.5 (balanced)
 5. Click "Deploy"
-6. Team members created automatically
+6. All 3 team members created automatically with:
+   - Subject-specific expertise
+   - IGCSE curriculum alignment
+   - Appropriate tools and knowledge bases
+```
+
+**Option B: Create Individual IGCSE Assistants (10 minutes)**
+```
+1. AI Assistants → Add New
+2. Search for IGCSE professions:
+   - "Mathematics Tutor"
+   - "Science Tutor"
+   - "English Language Tutor"
+   - etc.
+3. Click "Create" on each profession
+4. Customize provider/model settings
+5. Deploy each assistant individually
 ```
 
 **Step 2: Create Student Portal**
@@ -1169,9 +1449,24 @@ Science Tutor:
 "Quiz me on [topic]"
 ```
 
+**Backend Testing Before Deployment:**
+```
+1. Navigate to Teams → Test Team
+2. Select your deployed IGCSE team
+3. Test each team member:
+   - Ask subject-specific questions
+   - Verify curriculum alignment
+   - Check tool functionality
+4. Once validated, deploy to student portal
+```
+
 **Cost Estimate:** $0.02-0.05 per tutoring session
 
 **Pro Tip:** Set up token limits to control costs (Settings → Token Manager)
+
+**Documentation:**
+- [IGCSE Implementation Summary](../../implementation-history/2025/summaries/IGCSE_IMPLEMENTATION_SUMMARY.md)
+- [Team Deployment Guide](../first-steps/team-deployment.md)
 
 ---
 
@@ -1198,8 +1493,31 @@ Science Tutor:
 ```
 
 **Step 2: Create Training Assistant**
+
+**Option A: Using Professional Template 🎓 (Recommended - 8 minutes)**
 ```
 1. AI Assistants → Add New
+2. Search for "Training Coordinator" or "Technical Writer" in the profession grid
+3. Click "Create" on the template
+4. Customize:
+   - Name: "Corporate Training Assistant"
+   - Provider: OpenAI
+   - Model: gpt-4o-mini
+5. Enable tools:
+   - search_content
+   - search_attachments
+6. Add Base Knowledge:
+   - Select all documentation files from Media Library
+7. System Prompt Enhancement (template provides foundation):
+   "You are a corporate training assistant. Help employees 
+   find information, understand processes, and answer policy 
+   questions. Always cite specific documents when answering."
+8. Deploy Assistant
+```
+
+**Option B: Manual Configuration (20 minutes)**
+```
+1. AI Assistants → Add New (skip profession selection)
 2. Title: "Corporate Training Assistant"
 3. Enable tools:
    - search_content
@@ -1212,6 +1530,18 @@ Science Tutor:
    questions. Always cite specific documents when answering."
 ```
 
+**Step 3: Test in Backend 🧪**
+```
+1. Click "Test Assistant" in sidebar
+2. Ask common employee questions:
+   - "What is our vacation policy?"
+   - "How do I submit an expense report?"
+   - "What are the steps for [process]?"
+3. Verify responses cite correct documents
+4. Adjust knowledge base or prompts if needed
+5. Once validated, proceed to deployment
+```
+
 **Step 3: Deploy for Employees**
 ```
 1. Create internal page: "Employee Resources"
@@ -1219,6 +1549,8 @@ Science Tutor:
 3. Restrict page to logged-in users
 4. Link from company intranet
 ```
+
+**Backend Testing Complete?** Deploy with confidence knowing your assistant has been validated.
 
 **Employee Usage Examples:**
 ```
@@ -1518,11 +1850,19 @@ Third prompt: "Add real-world examples"
 
 Now that you understand the major use cases, explore:
 
-1. **[5-Minute Quick Start](QUICK_START_5_MINUTES.md)** - Get started immediately
-2. **[Tool Reference](../reference/tools/tool-reference.md)** - All 159 tools documented
-3. **[Token Management Guide](../features/performance/TOKEN_MANAGEMENT_GUIDE.md)** - Control costs
-4. **[Security Best Practices](../features/security/SECURITY_HARDENING.md)** - Secure your installation
-5. **[Professional Templates](../guides/user/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md)** - Use pre-built assistants
+1. **[Professional Templates Guide](../guides/user/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md)** - Deep dive into the profession system
+2. **[5-Minute Quick Start](QUICK_START_5_MINUTES.md)** - Get started immediately
+3. **[Tool Reference](../reference/tools/tool-reference.md)** - All 193 tools documented
+4. **[Token Management Guide](../features/performance/TOKEN_MANAGEMENT_GUIDE.md)** - Control costs
+5. **[Security Best Practices](../features/security/SECURITY_HARDENING.md)** - Secure your installation
+6. **[Team Deployment Guide](../guides/user/teams/team-deployment.md)** - Deploy specialist teams
+
+### Professional Template Resources
+
+- **[Profession Knowledge Base System](../guides/user/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md)** - Complete architecture guide
+- **[IGCSE Implementation Summary](../../implementation-history/2025/summaries/IGCSE_IMPLEMENTATION_SUMMARY.md)** - Education team example
+- **[Dynamic Assistant System](../archive/VISUAL_GUIDE_DYNAMIC_ASSISTANTS.md)** - Visual guide to templates
+- **[Backend Testing Guide](../guides/user/assistants/test-assistant-enhancements.md)** - Test before deployment
 
 ---
 
@@ -1536,6 +1876,8 @@ Now that you understand the major use cases, explore:
 
 ---
 
-**Last Updated:** January 1, 2026  
+**Last Updated:** January 14, 2026  
 **Plugin Version:** 1.1.0  
+**Professions:** 182 templates across 12 categories  
+**Teams:** 10+ pre-built teams including 6 IGCSE teams  
 **Maintained by:** [NV Digital Solutions](https://nvdigitalsolutions.com/wpoos)
