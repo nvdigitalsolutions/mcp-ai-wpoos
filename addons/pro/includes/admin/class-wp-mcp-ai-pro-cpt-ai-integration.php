@@ -142,13 +142,13 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 		// NOTE: Pro CPTs (mcp_ai_quiz, mcp_ai_place) are NOT included here
 		// because they have dedicated "Research & Add" pages with full chat interface instead.
 		// See:
-		// - WP_MCP_AI_Place_Research_Page (addons/pro/includes/admin/class-wp-mcp-ai-place-research-page.php)
-		// - WP_MCP_AI_Quiz_Research_Page (addons/pro/includes/admin/class-wp-mcp-ai-quiz-research-page.php)
+		// - WP_MCP_AI_Place_Research_Page (addons/pro/includes/admin/class-wp-mcp-ai-place-research-page.php).
+		// - WP_MCP_AI_Quiz_Research_Page (addons/pro/includes/admin/class-wp-mcp-ai-quiz-research-page.php).
 
 		// NOTE: Project Management CPTs (mcp_ai_project, mcp_ai_task, mcp_ai_event) are NOT included here
 		// because they have their own specialized AI Assistant metabox that includes quick action buttons
 		// and context-aware features specific to project management. See:
-		// - WP_MCP_AI_Project_Management_AI_Assistant_Metabox (includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php)
+		// - WP_MCP_AI_Project_Management_AI_Assistant_Metabox (includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php).
 
 		/**
 		 * Filter the supported post types for AI assistant integration.
