@@ -175,12 +175,6 @@ class WP_MCP_AI_Place_Research_Page {
 					<div class="wp-mcp-ai-research-actions">
 						<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p>
-							<button type="button" class="button button-primary button-large wp-mcp-ai-create-place-btn-sidebar wp-mcp-ai-add-to-database-btn">
-								<span class="dashicons dashicons-database-add"></span>
-								<?php esc_html_e( 'Add to Database', 'mcp-ai-wpoos-pro' ); ?>
-							</button>
-						</p>
-						<p>
 							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_place' ) ); ?>" class="button">
 								<?php esc_html_e( 'View All Places', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
@@ -197,19 +191,9 @@ class WP_MCP_AI_Place_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Define CPT action buttons for place creation.
-							$cpt_actions = array(
-								array(
-									'label'   => __( 'Add to Database', 'mcp-ai-wpoos-pro' ),
-									'action'  => 'create_place',
-									'classes' => 'button button-primary button-large',
-									'icon'    => 'dashicons-database-add',
-								),
-							);
-
-							// Render chat interface with CPT action buttons.
+							// Render chat interface.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" cpt_actions="' . esc_attr( base64_encode( wp_json_encode( $cpt_actions ) ) ) . '"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '"]'
 							);
 							?>
 						</div>
