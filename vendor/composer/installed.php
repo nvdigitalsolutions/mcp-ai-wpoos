@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-gmail-connection-error',
-        'version' => 'dev-copilot/fix-gmail-connection-error',
-        'reference' => '629fb6b23b50e7b02250ac3dbc857f0f45c34ec2',
+        'pretty_version' => 'dev-copilot/fix-add-to-database-button',
+        'version' => 'dev-copilot/fix-add-to-database-button',
+        'reference' => '893fedc0fd6f9a9f74ce5da337c59270e50f7704',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-gmail-connection-error',
-            'version' => 'dev-copilot/fix-gmail-connection-error',
-            'reference' => '629fb6b23b50e7b02250ac3dbc857f0f45c34ec2',
+            'pretty_version' => 'dev-copilot/fix-add-to-database-button',
+            'version' => 'dev-copilot/fix-add-to-database-button',
+            'reference' => '893fedc0fd6f9a9f74ce5da337c59270e50f7704',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

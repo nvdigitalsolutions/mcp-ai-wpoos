@@ -896,11 +896,11 @@ class WP_MCP_AI_Shortcode {
 						</svg>
 						<span class="screen-reader-text"><?php esc_html_e( 'Start new conversation', 'mcp-ai-wpoos' ); ?></span>
 					</button>
+					<?php if ( ! empty( $cpt_actions ) ) : ?>
+					<div class="wp-mcp-ai-chat__cpt-actions" role="group" aria-label="<?php echo esc_attr__( 'Post type actions', 'mcp-ai-wpoos' ); ?>"></div>
+					<?php endif; ?>
 				</div>
 			</div>
-			<?php if ( ! empty( $cpt_actions ) ) : ?>
-			<div class="wp-mcp-ai-chat__cpt-actions" role="group" aria-label="<?php echo esc_attr__( 'Post type actions', 'mcp-ai-wpoos' ); ?>"></div>
-			<?php endif; ?>
 			<section class="wp-mcp-ai-chat__history" id="<?php echo esc_attr( $instance_id ); ?>-history" hidden aria-label="<?php esc_attr_e( 'Previous conversations', 'mcp-ai-wpoos' ); ?>">
 				<div class="wp-mcp-ai-chat__history-header">
 					<button type="button" class="wp-mcp-ai-chat__history-refresh" aria-label="<?php echo esc_attr__( 'Refresh conversation history', 'mcp-ai-wpoos' ); ?>" title="<?php echo esc_attr__( 'Refresh conversation history', 'mcp-ai-wpoos' ); ?>">
