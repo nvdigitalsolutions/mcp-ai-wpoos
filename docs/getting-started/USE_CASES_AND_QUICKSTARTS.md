@@ -196,8 +196,60 @@ Test assistants, professions, and teams safely from the WordPress admin **before
 - Share profession templates across sites
 - Create custom teams for your workflows
 
+### Customizing Professional Templates ⚙️
+
+**Important:** While professional templates provide excellent starting points, **every business has unique ways of doing things**. After deploying a template, you should customize it to match your specific:
+
+- **Brand voice and tone** - Add your company's communication style
+- **Business processes** - Include your specific workflows and procedures
+- **Industry terminology** - Use your organization's preferred terms
+- **Compliance requirements** - Add necessary disclaimers or legal language
+- **Quality standards** - Define your specific quality metrics and expectations
+
+**How to Customize:**
+
+1. **Enhance System Prompts:**
+   ```
+   After creating from template, edit the assistant and add:
+   "Additionally, follow our brand guidelines: [specific guidance].
+   Use [terminology] instead of [generic term]. Always include
+   [required disclaimer]. Follow our [specific process] workflow."
+   ```
+
+2. **Add Custom Knowledge Base:**
+   - Upload your internal style guides
+   - Add company-specific documentation
+   - Include product/service details
+   - Attach process workflows and SOPs
+
+3. **Adjust Tool Selection:**
+   - Enable additional tools for your workflows
+   - Disable tools that don't fit your use case
+   - Configure tool-specific settings
+
+4. **Fine-tune Settings:**
+   - Adjust temperature for your desired creativity level
+   - Set token limits based on your budget
+   - Configure capability restrictions
+
+**Example Customization:**
+```
+Professional Template: "Content Writer"
+Base: General content writing expertise
+
+Your Customization:
++ "Write in [Brand Name]'s friendly yet authoritative voice"
++ "Always mention our key differentiator: [USP]"
++ "Include [industry-specific compliance statement]"
++ "Follow our content process: Draft → Review → SEO Check → Publish"
++ Add: Brand style guide (PDF)
++ Add: Product catalog with approved descriptions
+```
+
+**Pro Tip:** Start with the professional template for structure and best practices, then layer in your business-specific requirements. This gives you the best of both worlds: professional quality with personalized execution.
+
 **For Use Cases Below:**
-Throughout this guide, wherever you see "Create Assistant," you can now use profession templates to accelerate deployment. Look for this icon: 🎓 indicating profession templates are available for that use case.
+Throughout this guide, wherever you see "Create Assistant," you can now use profession templates to accelerate deployment. Look for this icon: 🎓 indicating profession templates are available for that use case. Remember to customize templates to match your business needs!
 
 ---
 
@@ -235,6 +287,10 @@ Transform your content workflow with AI-powered writing, SEO optimization, and m
    - Content writing expertise
    - Relevant tools (search_content, web_search, save_post)
    - Professional writing guidelines
+7. **Customize for your business:**
+   - Add to System Prompt: Your brand voice, tone guidelines
+   - Upload: Brand style guide, content templates, approved terminology
+   - Specify: Your SEO requirements, target audience, content formats
 ```
 
 **Option B: Manual Configuration (10 minutes)**
@@ -384,7 +440,12 @@ Streamline your online store with AI-powered product management and customer ser
 5. Add Base Knowledge:
    - Upload brand style guide
    - Upload product catalog template
-6. Deploy Assistant
+6. **Customize for your business:**
+   - Add to System Prompt: Your brand personality, product voice
+   - Specify: Required product information structure
+   - Include: Industry-specific terminology, compliance disclaimers
+   - Define: Your target customer persona and messaging approach
+7. Deploy Assistant
 ```
 
 **Option B: Manual Configuration (15 minutes)**
@@ -536,7 +597,11 @@ Create professional media assets with AI-powered tools.
    - Design expertise and principles
    - Image generation tools pre-configured
    - Professional design guidelines
-6. Add brand guidelines to knowledge base (optional)
+6. **Customize for your business:**
+   - Upload: Brand guidelines (colors, fonts, logo usage)
+   - Add to System Prompt: Your brand aesthetic and visual identity
+   - Specify: Required image elements, prohibited styles
+   - Include: Target audience preferences, industry standards
 7. Deploy Assistant
 ```
 
@@ -708,7 +773,12 @@ Pro Version: Configure Mailjet in Settings → NV oOS → Integrations
    - Brand guidelines
    - Previous successful campaigns
    - Product/service information
-7. Deploy Assistant
+7. **Customize for your business:**
+   - Add to System Prompt: Your email tone, formatting preferences
+   - Specify: Required email elements (headers, footers, disclaimers)
+   - Include: Audience segments and personalization rules
+   - Define: Call-to-action standards and link policies
+8. Deploy Assistant
 ```
 
 **Option B: Manual Configuration (20 minutes)**
@@ -1409,6 +1479,11 @@ All teams align with **Cambridge IGCSE syllabi** and include subject-specific ex
    - Subject-specific expertise
    - IGCSE curriculum alignment
    - Appropriate tools and knowledge bases
+7. **Customize for your school:**
+   - Add to System Prompts: Your teaching philosophy, school values
+   - Include: School-specific resources, textbooks, curriculum modifications
+   - Specify: Homework policy, assessment criteria, communication style
+   - Upload: School guidelines, course syllabi, supplementary materials
 ```
 
 **Option B: Create Individual IGCSE Assistants (10 minutes)**
@@ -1508,10 +1583,11 @@ Science Tutor:
    - search_attachments
 6. Add Base Knowledge:
    - Select all documentation files from Media Library
-7. System Prompt Enhancement (template provides foundation):
-   "You are a corporate training assistant. Help employees 
-   find information, understand processes, and answer policy 
-   questions. Always cite specific documents when answering."
+7. **Customize for your business:**
+   - Add to System Prompt: Your company culture and communication style
+   - Specify: Internal processes, approval workflows, escalation paths
+   - Include: Company-specific terminology, acronyms, department names
+   - Define: Response formats, citation requirements, privacy guidelines
 8. Deploy Assistant
 ```
 
@@ -1693,6 +1769,34 @@ Settings → NV oOS → Usage Tracking
 ---
 
 ## Best Practices
+
+### 0. Customize Professional Templates
+
+**Even with professional templates, customization is essential:**
+
+Professional templates provide excellent foundations with industry best practices, but they're designed to be generic. To get the most value:
+
+✅ **Always customize system prompts** with your business-specific requirements
+✅ **Add your knowledge base** (style guides, processes, documentation)
+✅ **Define your terminology** and preferred language
+✅ **Include compliance requirements** specific to your industry
+✅ **Specify your quality standards** and output formats
+✅ **Train assistants** with examples of successful outputs from your business
+
+**Example:**
+```
+Template System Prompt:
+"You are a professional content writer..."
+
+Your Enhancement:
+"You are a professional content writer for [Company Name], 
+a [industry] company targeting [audience]. Follow our brand 
+voice: [description]. Always include [required elements]. 
+Use [terminology] instead of generic terms. Adhere to 
+[industry regulations]. Format responses using [structure]."
+```
+
+**Remember:** Templates save time on technical setup and best practices, but your business expertise makes them truly effective.
 
 ### 1. Prompt Engineering
 
