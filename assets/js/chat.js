@@ -11633,15 +11633,57 @@
                     //
                     // Solution: Keep streaming element, finalize it with buttons, add to conversation manually,
                     // and RETURN EARLY to avoid calling handleChatResponse which would create duplicate.
+                    //
+                    // CRITICAL: Extract final content from finalData if no streaming content received.
+                    // This handles cases where the complete response arrives without streaming chunks.
+                    let finalContent = streamResult.content || '';
+                    
+                    // If no streaming content, extract from finalData structure
+                    if (!finalContent && streamResult.finalData && streamResult.finalData.data) {
+                        const chatData = streamResult.finalData.data;
+                        if (chatData.choices && chatData.choices[0] && chatData.choices[0].message) {
+                            finalContent = extractTextFromContent(chatData.choices[0].message.content) || '';
+                        } else if (chatData.content) {
+                            finalContent = extractTextFromContent(chatData.content) || '';
+                        }
+                        
+                        // Log extraction for debugging
+                        if (finalContent && window.console && console.log) {
+                            console.log('[NV oOS] Extracted final content from finalData (no streaming chunks):', {
+                                contentLength: finalContent.length,
+                                contentSample: finalContent.substring(0, 100)
+                            });
+                        }
+                    }
+                    
                     const shouldKeepStreamingElement = streamingMessageElement && 
                                                       streamingMessageElement.parentNode &&
-                                                      streamResult.content &&
-                                                      streamResult.content.trim();
+                                                      finalContent &&
+                                                      finalContent.trim();
                     
                     if (shouldKeepStreamingElement) {
                         // Streaming element has the final content - keep it and finalize
                         if (window.console && console.log) {
-                            console.log('[NV oOS] Keeping streaming element (has content) and finalizing with buttons');
+                            console.log('[NV oOS] Keeping streaming element (has content) and finalizing with buttons:', {
+                                finalContentLength: finalContent.length,
+                                wasExtractedFromFinalData: !streamResult.content,
+                                streamingElementInDOM: streamingMessageElement.parentNode !== null
+                            });
+                        }
+                        
+                        // Update streaming element with final content if we extracted it from finalData
+                        // This ensures the bubble displays the complete message text
+                        if (finalContent && (!streamResult.content || finalContent !== streamResult.content)) {
+                            const renderedHtml = renderMarkdown(finalContent);
+                            if (renderedHtml && renderedHtml.trim()) {
+                                streamingMessageElement.innerHTML = renderedHtml;
+                            } else {
+                                streamingMessageElement.innerHTML = escapeHtml(finalContent).replace(/\n/g, '<br />');
+                            }
+                            
+                            if (window.console && console.log) {
+                                console.log('[NV oOS] Updated streaming element with final content from finalData');
+                            }
                         }
                         
                         // Extract usage/cost/capability flags from finalData (Phase 7 Enhancement)
@@ -11762,8 +11804,8 @@
                         }
                         
                         // Finalize the streaming element with buttons and badges
-                        attachSpeechButton(streamingMessageElement, state, streamResult.content);
-                        attachCopyButton(streamingMessageElement, streamResult.content);
+                        attachSpeechButton(streamingMessageElement, state, finalContent);
+                        attachCopyButton(streamingMessageElement, finalContent);
                         attachDeleteButton(streamingMessageElement, state, 'assistant');
                         
                         // Attach usage and cost badges if data is available (Phase 7 Enhancement)
@@ -11775,13 +11817,13 @@
                         }
                         
                         // Add the assistant message to conversation with usage/cost metadata
-                        const displayPayload = { text: streamResult.content };
+                        const displayPayload = { text: finalContent };
                         const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload, {
                             usage: aggregatedUsage,
                             cost: aggregatedCost,
                             capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null
                         });
-                        const assistantMessage = createConversationMessage('assistant', streamResult.content, displayMetadata);
+                        const assistantMessage = createConversationMessage('assistant', finalContent, displayMetadata);
                         state.conversation.push(assistantMessage);
                         
                         // Process tool_results if present (add them to conversation)
