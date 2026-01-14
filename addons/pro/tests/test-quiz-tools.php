@@ -1133,4 +1133,15 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertEquals( 'wp_mcp_ai_forbidden', $result->get_error_code() );
 	}
+
+	/**
+	 * Test research_quiz_topic tool is instantiatable.
+	 */
+	public function test_research_quiz_topic_tool_exists() {
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Tool_Research_Quiz_Topic' ), 'WP_MCP_AI_Tool_Research_Quiz_Topic class should exist' );
+
+		$tool = new WP_MCP_AI_Tool_Research_Quiz_Topic();
+		$this->assertEquals( 'research_quiz_topic', $tool->get_slug(), 'Tool slug should be research_quiz_topic' );
+		$this->assertEquals( 'Research Quiz Topic', $tool->get_name(), 'Tool name should be Research Quiz Topic' );
+	}
 }

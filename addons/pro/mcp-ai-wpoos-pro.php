@@ -406,6 +406,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Quiz_Submissions' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-submissions.php',
 				'WP_MCP_AI_Tool_Get_Quiz_Results'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
 				'WP_MCP_AI_Tool_Get_Quiz_Analytics'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-analytics.php',
+				'WP_MCP_AI_Tool_Research_Quiz_Topic'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-quiz-topic.php',
 			);
 			$pro_tools  = array_merge( $pro_tools, $quiz_tools );
 		}
