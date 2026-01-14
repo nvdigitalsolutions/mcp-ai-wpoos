@@ -4269,12 +4269,21 @@
 
         // Check for structured tool results first
         const toolResults = {};
+        console.log('[NV oOS] Extracting tool results from state.lastToolResults:', {
+            exists: !!(state.lastToolResults),
+            type: typeof state.lastToolResults,
+            keys: state.lastToolResults ? Object.keys(state.lastToolResults) : []
+        });
+        
         if (state.lastToolResults && typeof state.lastToolResults === 'object') {
             for (const toolName in state.lastToolResults) {
                 if (Object.prototype.hasOwnProperty.call(state.lastToolResults, toolName)) {
                     toolResults[toolName] = state.lastToolResults[toolName].result;
+                    console.log('[NV oOS] Added tool result:', toolName);
                 }
             }
+        } else {
+            console.log('[NV oOS] No lastToolResults in state, checking conversation messages for tool results');
         }
 
         const messages = state.conversation;
@@ -4291,6 +4300,25 @@
 
             const role = msg.role || '';
             let content = '';
+
+            // Check for tool messages and extract their results
+            if (role === 'tool' && msg.content && msg.name) {
+                console.log('[NV oOS] Found tool message:', msg.name);
+                try {
+                    // Try to parse tool result as JSON
+                    const toolResult = JSON.parse(msg.content);
+                    toolResults[msg.name] = toolResult;
+                    console.log('[NV oOS] Parsed tool result for:', msg.name, {
+                        success: toolResult.success,
+                        hasQuestions: !!(toolResult.questions),
+                        questionCount: (toolResult.questions || []).length
+                    });
+                } catch (e) {
+                    console.warn('[NV oOS] Failed to parse tool result as JSON:', msg.name, e);
+                    // Store as plain text if not JSON
+                    toolResults[msg.name] = msg.content;
+                }
+            }
 
             if (typeof msg.content === 'string') {
                 content = msg.content;
@@ -4316,6 +4344,8 @@
                 }
             }
         }
+
+        console.log('[NV oOS] Extraction complete. Tool results found:', Object.keys(toolResults));
 
         return {
             messages: state.conversation,
