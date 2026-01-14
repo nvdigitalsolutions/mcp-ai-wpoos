@@ -133,12 +133,11 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	 * @return array
 	 */
 	private function get_supported_post_types() {
-		$post_types = array( 'post', 'page' );
+		// Removed 'post', 'page', and 'product' from default supported post types.
+		// The AI Assistant metabox will no longer appear on posts, pages, and products by default.
+		$post_types = array();
 
-		// Add WooCommerce product if active.
-		if ( class_exists( 'WooCommerce' ) ) {
-			$post_types[] = 'product';
-		}
+		// NOTE: WooCommerce 'product' post type is also excluded by default.
 
 		// NOTE: Pro CPTs (mcp_ai_quiz, mcp_ai_place) are NOT included here
 		// because they have dedicated "Research & Add" pages with full chat interface instead.
@@ -165,13 +164,12 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	 * @return array
 	 */
 	private function get_supported_taxonomies() {
-		$taxonomies = array( 'category', 'post_tag' );
+		// Removed all taxonomies from default supported taxonomies.
+		// The AI Assistant metabox will no longer appear on any taxonomy edit screens by default.
+		$taxonomies = array();
 
-		// Add WooCommerce taxonomies if active.
-		if ( class_exists( 'WooCommerce' ) ) {
-			$taxonomies[] = 'product_cat';
-			$taxonomies[] = 'product_tag';
-		}
+		// NOTE: WooCommerce taxonomies (product_cat, product_tag) are also excluded by default.
+		// NOTE: Core taxonomies (category, post_tag) are also excluded by default.
 
 		/**
 		 * Filter the supported taxonomies for AI assistant integration.
