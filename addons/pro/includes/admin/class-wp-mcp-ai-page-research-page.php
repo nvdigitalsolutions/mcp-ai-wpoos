@@ -80,7 +80,7 @@ class WP_MCP_AI_Page_Research_Page {
 		wp_enqueue_script(
 			'wp-mcp-ai-research-page',
 			WP_MCP_AI_PRO_URL . 'assets/js/research-page.js',
-			array( 'jquery', 'wp-api' ),
+			array( 'jquery', 'wp-api', WP_MCP_AI_Shortcode::SCRIPT_HANDLE ),
 			WP_MCP_AI_PRO_VERSION,
 			true
 		);
