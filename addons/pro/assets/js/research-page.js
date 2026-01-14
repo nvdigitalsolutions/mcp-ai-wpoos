@@ -40,6 +40,8 @@
 			$(document).on('click', '.wp-mcp-ai-create-quiz-btn, .wp-mcp-ai-create-quiz-btn-sidebar', this.handleCreateQuiz.bind(this));
 			$(document).on('click', '.wp-mcp-ai-create-eca-btn, .wp-mcp-ai-create-eca-btn-sidebar', this.handleCreateECA.bind(this));
 			$(document).on('click', '.wp-mcp-ai-create-policy-btn, .wp-mcp-ai-create-policy-btn-sidebar', this.handleCreatePolicy.bind(this));
+			$(document).on('click', '.wp-mcp-ai-create-post-btn, .wp-mcp-ai-create-post-btn-sidebar', this.handleCreatePost.bind(this));
+			$(document).on('click', '.wp-mcp-ai-create-page-btn, .wp-mcp-ai-create-page-btn-sidebar', this.handleCreatePage.bind(this));
 		},
 
 		/**
@@ -372,6 +374,12 @@
 				case 'create_policy':
 					this.handleCreatePolicyFromConversation(conversation, button);
 					break;
+				case 'create_post':
+					this.handleCreatePostFromConversation(conversation, button);
+					break;
+				case 'create_page':
+					this.handleCreatePageFromConversation(conversation, button);
+					break;
 				default:
 					console.warn('[Research Page] Unknown CPT action:', action);
 			}
@@ -557,6 +565,376 @@
 				type: 'POST',
 				data: {
 					action: 'wp_mcp_ai_create_quiz_from_research',
+					nonce: wpMcpAiResearchPage.nonce,
+					research_data: JSON.stringify(researchData)
+				}
+			});
+		},
+
+		/**
+		 * Handle place creation from conversation data.
+		 *
+		 * @param {Object} conversation Extracted conversation data
+		 * @param {HTMLElement} button The button element
+		 */
+		handleCreatePlaceFromConversation: function(conversation, button) {
+			if (!conversation) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			// Parse research data from conversation text
+			if (!conversation.lastAssistantMessage && !conversation.fullText) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			const text = conversation.lastAssistantMessage || conversation.fullText || '';
+			const researchData = this.parseResearchDataForPlace(text);
+
+			// Confirm with user
+			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
+				return;
+			}
+
+			// Disable button and show loading state
+			const $button = $(button);
+			const originalText = $button.html();
+			$button.prop('disabled', true).html(
+				'<span class="dashicons dashicons-update dashicons-spin"></span> ' + 
+				wpMcpAiResearchPage.strings.creating
+			);
+
+			// Send to add-to-database method
+			this.addPlaceToDatabase(researchData).then((response) => {
+				if (response.success) {
+					this.showSuccess(response.data.message);
+					
+					// Redirect to edit page after short delay
+					setTimeout(() => {
+						if (response.data.edit_url) {
+							window.location.href = response.data.edit_url;
+						}
+					}, 1500);
+				} else {
+					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+					$button.prop('disabled', false).html(originalText);
+				}
+			}).catch((error) => {
+				console.error('[Research Page] Place creation failed:', error);
+				this.showError(wpMcpAiResearchPage.strings.error);
+				$button.prop('disabled', false).html(originalText);
+			});
+		},
+
+		/**
+		 * Add place to database via AJAX.
+		 *
+		 * @param {Object} researchData Place data package
+		 * @return {Promise} Promise resolving to AJAX response
+		 */
+		addPlaceToDatabase: function(researchData) {
+			return $.ajax({
+				url: wpMcpAiResearchPage.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_create_place_from_research',
+					nonce: wpMcpAiResearchPage.nonce,
+					research_data: JSON.stringify(researchData)
+				}
+			});
+		},
+
+		/**
+		 * Handle ECA creation from conversation data.
+		 *
+		 * @param {Object} conversation Extracted conversation data
+		 * @param {HTMLElement} button The button element
+		 */
+		handleCreateECAFromConversation: function(conversation, button) {
+			if (!conversation) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			// Parse research data from conversation text
+			if (!conversation.lastAssistantMessage && !conversation.fullText) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			const text = conversation.lastAssistantMessage || conversation.fullText || '';
+			const researchData = this.parseResearchDataForECA(text);
+
+			// Confirm with user
+			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
+				return;
+			}
+
+			// Disable button and show loading state
+			const $button = $(button);
+			const originalText = $button.html();
+			$button.prop('disabled', true).html(
+				'<span class="dashicons dashicons-update dashicons-spin"></span> ' + 
+				wpMcpAiResearchPage.strings.creating
+			);
+
+			// Send to add-to-database method
+			this.addECAToDatabase(researchData).then((response) => {
+				if (response.success) {
+					this.showSuccess(response.data.message);
+					
+					// Redirect to edit page after short delay
+					setTimeout(() => {
+						if (response.data.edit_url) {
+							window.location.href = response.data.edit_url;
+						}
+					}, 1500);
+				} else {
+					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+					$button.prop('disabled', false).html(originalText);
+				}
+			}).catch((error) => {
+				console.error('[Research Page] ECA creation failed:', error);
+				this.showError(wpMcpAiResearchPage.strings.error);
+				$button.prop('disabled', false).html(originalText);
+			});
+		},
+
+		/**
+		 * Add ECA to database via AJAX.
+		 *
+		 * @param {Object} researchData ECA data package
+		 * @return {Promise} Promise resolving to AJAX response
+		 */
+		addECAToDatabase: function(researchData) {
+			return $.ajax({
+				url: wpMcpAiResearchPage.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_create_eca_from_research',
+					nonce: wpMcpAiResearchPage.nonce,
+					research_data: JSON.stringify(researchData)
+				}
+			});
+		},
+
+		/**
+		 * Handle policy creation from conversation data.
+		 *
+		 * @param {Object} conversation Extracted conversation data
+		 * @param {HTMLElement} button The button element
+		 */
+		handleCreatePolicyFromConversation: function(conversation, button) {
+			if (!conversation) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			// Parse research data from conversation text
+			if (!conversation.lastAssistantMessage && !conversation.fullText) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			const text = conversation.lastAssistantMessage || conversation.fullText || '';
+			const researchData = this.parseResearchDataForPolicy(text);
+
+			// Confirm with user
+			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
+				return;
+			}
+
+			// Disable button and show loading state
+			const $button = $(button);
+			const originalText = $button.html();
+			$button.prop('disabled', true).html(
+				'<span class="dashicons dashicons-update dashicons-spin"></span> ' + 
+				wpMcpAiResearchPage.strings.creating
+			);
+
+			// Send to add-to-database method
+			this.addPolicyToDatabase(researchData).then((response) => {
+				if (response.success) {
+					this.showSuccess(response.data.message);
+					
+					// Redirect to edit page after short delay
+					setTimeout(() => {
+						if (response.data.edit_url) {
+							window.location.href = response.data.edit_url;
+						}
+					}, 1500);
+				} else {
+					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+					$button.prop('disabled', false).html(originalText);
+				}
+			}).catch((error) => {
+				console.error('[Research Page] Policy creation failed:', error);
+				this.showError(wpMcpAiResearchPage.strings.error);
+				$button.prop('disabled', false).html(originalText);
+			});
+		},
+
+		/**
+		 * Add policy to database via AJAX.
+		 *
+		 * @param {Object} researchData Policy data package
+		 * @return {Promise} Promise resolving to AJAX response
+		 */
+		addPolicyToDatabase: function(researchData) {
+			return $.ajax({
+				url: wpMcpAiResearchPage.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_create_policy_from_research',
+					nonce: wpMcpAiResearchPage.nonce,
+					research_data: JSON.stringify(researchData)
+				}
+			});
+		},
+
+		/**
+		 * Handle post creation from conversation data.
+		 *
+		 * @param {Object} conversation Extracted conversation data
+		 * @param {HTMLElement} button The button element
+		 */
+		handleCreatePostFromConversation: function(conversation, button) {
+			if (!conversation) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			// Parse research data from conversation text
+			if (!conversation.lastAssistantMessage && !conversation.fullText) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			const text = conversation.lastAssistantMessage || conversation.fullText || '';
+			const researchData = this.parseResearchDataForPost(text);
+
+			// Confirm with user
+			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
+				return;
+			}
+
+			// Disable button and show loading state
+			const $button = $(button);
+			const originalText = $button.html();
+			$button.prop('disabled', true).html(
+				'<span class="dashicons dashicons-update dashicons-spin"></span> ' + 
+				wpMcpAiResearchPage.strings.creating
+			);
+
+			// Send to add-to-database method
+			this.addPostToDatabase(researchData).then((response) => {
+				if (response.success) {
+					this.showSuccess(response.data.message);
+					
+					// Redirect to edit page after short delay
+					setTimeout(() => {
+						if (response.data.edit_url) {
+							window.location.href = response.data.edit_url;
+						}
+					}, 1500);
+				} else {
+					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+					$button.prop('disabled', false).html(originalText);
+				}
+			}).catch((error) => {
+				console.error('[Research Page] Post creation failed:', error);
+				this.showError(wpMcpAiResearchPage.strings.error);
+				$button.prop('disabled', false).html(originalText);
+			});
+		},
+
+		/**
+		 * Add post to database via AJAX.
+		 *
+		 * @param {Object} researchData Post data package
+		 * @return {Promise} Promise resolving to AJAX response
+		 */
+		addPostToDatabase: function(researchData) {
+			return $.ajax({
+				url: wpMcpAiResearchPage.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_create_post_from_research',
+					nonce: wpMcpAiResearchPage.nonce,
+					research_data: JSON.stringify(researchData)
+				}
+			});
+		},
+
+		/**
+		 * Handle page creation from conversation data.
+		 *
+		 * @param {Object} conversation Extracted conversation data
+		 * @param {HTMLElement} button The button element
+		 */
+		handleCreatePageFromConversation: function(conversation, button) {
+			if (!conversation) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			// Parse research data from conversation text
+			if (!conversation.lastAssistantMessage && !conversation.fullText) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			const text = conversation.lastAssistantMessage || conversation.fullText || '';
+			const researchData = this.parseResearchDataForPage(text);
+
+			// Confirm with user
+			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
+				return;
+			}
+
+			// Disable button and show loading state
+			const $button = $(button);
+			const originalText = $button.html();
+			$button.prop('disabled', true).html(
+				'<span class="dashicons dashicons-update dashicons-spin"></span> ' + 
+				wpMcpAiResearchPage.strings.creating
+			);
+
+			// Send to add-to-database method
+			this.addPageToDatabase(researchData).then((response) => {
+				if (response.success) {
+					this.showSuccess(response.data.message);
+					
+					// Redirect to edit page after short delay
+					setTimeout(() => {
+						if (response.data.edit_url) {
+							window.location.href = response.data.edit_url;
+						}
+					}, 1500);
+				} else {
+					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+					$button.prop('disabled', false).html(originalText);
+				}
+			}).catch((error) => {
+				console.error('[Research Page] Page creation failed:', error);
+				this.showError(wpMcpAiResearchPage.strings.error);
+				$button.prop('disabled', false).html(originalText);
+			});
+		},
+
+		/**
+		 * Add page to database via AJAX.
+		 *
+		 * @param {Object} researchData Page data package
+		 * @return {Promise} Promise resolving to AJAX response
+		 */
+		addPageToDatabase: function(researchData) {
+			return $.ajax({
+				url: wpMcpAiResearchPage.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_create_page_from_research',
 					nonce: wpMcpAiResearchPage.nonce,
 					research_data: JSON.stringify(researchData)
 				}
@@ -791,7 +1169,163 @@
 		},
 
 		/**
-		 * Parse research data for ECA creation.
+		 * Handle create place from research (legacy method for old buttons).
+		 *
+		 * @param {Event} e Click event
+		 */
+		handleCreatePlace: function(e) {
+			e.preventDefault();
+			
+			const $button = $(e.currentTarget);
+			
+			if (!this.currentResearchData) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			// Confirm with user
+			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
+				return;
+			}
+
+			// Disable button and show loading
+			$button.prop('disabled', true).text(wpMcpAiResearchPage.strings.creating);
+
+			// Extract research data
+			const researchData = this.parseResearchDataForPlace(this.currentResearchData.text);
+
+			// Use the same add-to-database method
+			this.addPlaceToDatabase(researchData).then((response) => {
+				if (response.success) {
+					this.showSuccess(response.data.message);
+					
+					// Redirect to edit page after short delay
+					setTimeout(() => {
+						if (response.data.edit_url) {
+							window.location.href = response.data.edit_url;
+						}
+					}, 1500);
+				} else {
+					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
+				}
+			}).catch(() => {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
+			});
+
+			// Store original button text
+			if (!$button.data('original-text')) {
+				$button.data('original-text', $button.text());
+			}
+		},
+
+		/**
+		 * Handle create post from research (legacy method for old buttons).
+		 *
+		 * @param {Event} e Click event
+		 */
+		handleCreatePost: function(e) {
+			e.preventDefault();
+			
+			const $button = $(e.currentTarget);
+			
+			if (!this.currentResearchData) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			// Confirm with user
+			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
+				return;
+			}
+
+			// Disable button and show loading
+			$button.prop('disabled', true).text(wpMcpAiResearchPage.strings.creating);
+
+			// Extract research data
+			const researchData = this.parseResearchDataForPost(this.currentResearchData.text);
+
+			// Use the same add-to-database method
+			this.addPostToDatabase(researchData).then((response) => {
+				if (response.success) {
+					this.showSuccess(response.data.message);
+					
+					// Redirect to edit page after short delay
+					setTimeout(() => {
+						if (response.data.edit_url) {
+							window.location.href = response.data.edit_url;
+						}
+					}, 1500);
+				} else {
+					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
+				}
+			}).catch(() => {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
+			});
+
+			// Store original button text
+			if (!$button.data('original-text')) {
+				$button.data('original-text', $button.text());
+			}
+		},
+
+		/**
+		 * Handle create page from research (legacy method for old buttons).
+		 *
+		 * @param {Event} e Click event
+		 */
+		handleCreatePage: function(e) {
+			e.preventDefault();
+			
+			const $button = $(e.currentTarget);
+			
+			if (!this.currentResearchData) {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				return;
+			}
+
+			// Confirm with user
+			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
+				return;
+			}
+
+			// Disable button and show loading
+			$button.prop('disabled', true).text(wpMcpAiResearchPage.strings.creating);
+
+			// Extract research data
+			const researchData = this.parseResearchDataForPage(this.currentResearchData.text);
+
+			// Use the same add-to-database method
+			this.addPageToDatabase(researchData).then((response) => {
+				if (response.success) {
+					this.showSuccess(response.data.message);
+					
+					// Redirect to edit page after short delay
+					setTimeout(() => {
+						if (response.data.edit_url) {
+							window.location.href = response.data.edit_url;
+						}
+					}, 1500);
+				} else {
+					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
+				}
+			}).catch(() => {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
+			});
+
+			// Store original button text
+			if (!$button.data('original-text')) {
+				$button.data('original-text', $button.text());
+			}
+		},
+
+		/**
+		 * Parse research data for place creation.
 		 *
 		 * @param {string} text Research text
 		 * @return {Object} Parsed data
@@ -826,6 +1360,64 @@
 				deductible: this.extractField(text, ['deductible:']),
 				premium_range: this.extractField(text, ['premium:', 'cost:'])
 			};
+
+			return data;
+		},
+
+		/**
+		 * Parse research data for post creation.
+		 *
+		 * @param {string} text Research text
+		 * @return {Object} Parsed data
+		 */
+		parseResearchDataForPost: function(text) {
+			// Basic parsing - extract key information
+			const data = {
+				title: this.extractField(text, ['title:', 'post title:', 'name:']),
+				content: this.extractField(text, ['content:', 'body:', 'text:']),
+				excerpt: this.extractField(text, ['excerpt:', 'summary:']),
+				category: this.extractField(text, ['category:', 'categories:']),
+				tags: this.extractField(text, ['tags:', 'tag:']),
+				raw_text: text // Include raw text for fallback processing
+			};
+
+			// If no title extracted, generate a default
+			if (!data.title) {
+				data.title = 'Post from Research';
+			}
+
+			// If no content but we have raw text, use the full text as content
+			if (!data.content && text) {
+				data.content = text;
+			}
+
+			return data;
+		},
+
+		/**
+		 * Parse research data for page creation.
+		 *
+		 * @param {string} text Research text
+		 * @return {Object} Parsed data
+		 */
+		parseResearchDataForPage: function(text) {
+			// Basic parsing - extract key information
+			const data = {
+				title: this.extractField(text, ['title:', 'page title:', 'name:']),
+				content: this.extractField(text, ['content:', 'body:', 'text:']),
+				excerpt: this.extractField(text, ['excerpt:', 'summary:']),
+				raw_text: text // Include raw text for fallback processing
+			};
+
+			// If no title extracted, generate a default
+			if (!data.title) {
+				data.title = 'Page from Research';
+			}
+
+			// If no content but we have raw text, use the full text as content
+			if (!data.content && text) {
+				data.content = text;
+			}
 
 			return data;
 		},
