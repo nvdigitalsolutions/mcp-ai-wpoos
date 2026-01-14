@@ -19,6 +19,7 @@
 		 */
 		init: function() {
 			this.bindEvents();
+			this.initPreview();
 		},
 
 		/**
@@ -31,11 +32,161 @@
 			// Listen for CPT action events from chat UI
 			$(document).on('wp-mcp-ai-cpt-action', this.handleCptAction.bind(this));
 
+			// Listen for tool result storage events to update preview
+			$(document).on('wp-mcp-ai-tool-result-stored', this.handleToolResultStored.bind(this));
+
 			// Legacy support for old buttons (if any still exist)
 			$(document).on('click', '.wp-mcp-ai-create-place-btn, .wp-mcp-ai-create-place-btn-sidebar', this.handleCreatePlace.bind(this));
 			$(document).on('click', '.wp-mcp-ai-create-quiz-btn, .wp-mcp-ai-create-quiz-btn-sidebar', this.handleCreateQuiz.bind(this));
 			$(document).on('click', '.wp-mcp-ai-create-eca-btn, .wp-mcp-ai-create-eca-btn-sidebar', this.handleCreateECA.bind(this));
 			$(document).on('click', '.wp-mcp-ai-create-policy-btn, .wp-mcp-ai-create-policy-btn-sidebar', this.handleCreatePolicy.bind(this));
+		},
+
+		/**
+		 * Initialize preview panel.
+		 */
+		initPreview: function() {
+			// Hide preview initially
+			$('#wp-mcp-ai-quiz-preview').hide();
+		},
+
+		/**
+		 * Handle tool result stored event.
+		 * Updates the sidebar preview when research tools complete.
+		 *
+		 * @param {Event} e Custom event with tool result data
+		 */
+		handleToolResultStored: function(e) {
+			if (!e.originalEvent || !e.originalEvent.detail) {
+				return;
+			}
+
+			const detail = e.originalEvent.detail;
+			const toolName = detail.toolName;
+			const result = detail.result;
+
+			// Only handle research_quiz_topic results
+			if (toolName !== 'research_quiz_topic') {
+				return;
+			}
+
+			// Update preview with structured data
+			this.updatePreview(result);
+		},
+
+		/**
+		 * Update preview panel with quiz data.
+		 *
+		 * @param {Object} data Quiz data from research tool
+		 */
+		updatePreview: function(data) {
+			const $preview = $('#wp-mcp-ai-quiz-preview');
+			const $loading = $preview.find('.wp-mcp-ai-preview-loading');
+			const $data = $preview.find('.wp-mcp-ai-preview-data');
+
+			// Show preview panel
+			$preview.slideDown(300);
+
+			// Show loading state briefly
+			$loading.show();
+			$data.hide();
+
+			// Validate data
+			if (!data || !data.success) {
+				$loading.html('<p class="wp-mcp-ai-preview-error">Failed to load quiz data</p>');
+				return;
+			}
+
+			// Build preview HTML
+			setTimeout(() => {
+				// Update title
+				$data.find('.wp-mcp-ai-preview-title').text(data.title || 'Untitled Quiz');
+
+				// Update meta information
+				const metaParts = [];
+				if (data.difficulty) {
+					metaParts.push('Difficulty: ' + data.difficulty);
+				}
+				if (data.questions && data.questions.length) {
+					metaParts.push(data.questions.length + ' Questions');
+				}
+				if (data.time_limit) {
+					metaParts.push('Time: ' + data.time_limit + ' min');
+				}
+				if (data.pass_score) {
+					metaParts.push('Pass: ' + data.pass_score + '%');
+				}
+				$data.find('.wp-mcp-ai-preview-meta').text(metaParts.join(' • '));
+
+				// Update questions preview (show first 3)
+				const $questions = $data.find('.wp-mcp-ai-preview-questions');
+				$questions.empty();
+
+				if (data.questions && data.questions.length > 0) {
+					const questionsToShow = data.questions.slice(0, 3);
+					
+					questionsToShow.forEach((q, index) => {
+						const $questionBlock = $('<div class="wp-mcp-ai-preview-question"></div>');
+						
+						// Question text
+						const $questionText = $('<p class="wp-mcp-ai-preview-question-text"></p>');
+						$questionText.html('<strong>' + (index + 1) + '.</strong> ' + this.escapeHtml(q.question));
+						$questionBlock.append($questionText);
+
+						// Options
+						if (q.options && typeof q.options === 'object') {
+							const $optionsList = $('<ul class="wp-mcp-ai-preview-options"></ul>');
+							
+							for (const key in q.options) {
+								if (q.options.hasOwnProperty(key)) {
+									const isCorrect = key === q.correct_answer;
+									const $option = $('<li></li>');
+									$option.html(
+										'<strong>' + key + ')</strong> ' + 
+										this.escapeHtml(q.options[key]) +
+										(isCorrect ? ' <span class="wp-mcp-ai-correct-badge">✓</span>' : '')
+									);
+									if (isCorrect) {
+										$option.addClass('wp-mcp-ai-correct-option');
+									}
+									$optionsList.append($option);
+								}
+							}
+							
+							$questionBlock.append($optionsList);
+						}
+
+						$questions.append($questionBlock);
+					});
+
+					// Add "and X more" if there are more questions
+					if (data.questions.length > 3) {
+						const remaining = data.questions.length - 3;
+						const $more = $('<p class="wp-mcp-ai-preview-more"></p>');
+						$more.text('...and ' + remaining + ' more question' + (remaining > 1 ? 's' : ''));
+						$questions.append($more);
+					}
+				}
+
+				// Show data, hide loading
+				$loading.hide();
+				$data.show();
+
+				// Scroll sidebar to preview
+				$preview[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			}, 500);
+		},
+
+		/**
+		 * Escape HTML for safe display.
+		 *
+		 * @param {string} text Text to escape
+		 * @return {string} Escaped text
+		 */
+		escapeHtml: function(text) {
+			const div = document.createElement('div');
+			div.textContent = text;
+			return div.innerHTML;
 		},
 
 		/**

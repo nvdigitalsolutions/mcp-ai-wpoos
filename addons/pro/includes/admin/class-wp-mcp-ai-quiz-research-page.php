@@ -172,6 +172,23 @@ class WP_MCP_AI_Quiz_Research_Page {
 						</ul>
 					</div>
 
+					<div class="wp-mcp-ai-research-preview" id="wp-mcp-ai-quiz-preview" style="display: none;">
+						<h3><?php esc_html_e( 'Quiz Preview', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<div class="wp-mcp-ai-preview-content">
+							<div class="wp-mcp-ai-preview-loading">
+								<span class="spinner is-active"></span>
+								<p><?php esc_html_e( 'Building quiz...', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div class="wp-mcp-ai-preview-data" style="display: none;">
+								<div class="wp-mcp-ai-preview-header">
+									<h4 class="wp-mcp-ai-preview-title"></h4>
+									<p class="wp-mcp-ai-preview-meta"></p>
+								</div>
+								<div class="wp-mcp-ai-preview-questions"></div>
+							</div>
+						</div>
+					</div>
+
 					<div class="wp-mcp-ai-research-actions">
 						<h3><?php esc_html_e( 'Quick Links', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p>
