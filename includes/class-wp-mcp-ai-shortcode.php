@@ -669,9 +669,21 @@ class WP_MCP_AI_Shortcode {
 			// Parse CPT action buttons if provided.
 			$cpt_actions = array();
 			if ( ! empty( $atts['cpt_actions'] ) ) {
-				$decoded_actions = json_decode( $atts['cpt_actions'], true );
-				if ( is_array( $decoded_actions ) ) {
-					$cpt_actions = $decoded_actions;
+				// Try to decode as base64 first (new format to avoid shortcode bracket conflicts).
+				$decoded_json = base64_decode( $atts['cpt_actions'], true );
+				if ( false !== $decoded_json ) {
+					$decoded_actions = json_decode( $decoded_json, true );
+					if ( is_array( $decoded_actions ) ) {
+						$cpt_actions = $decoded_actions;
+					}
+				}
+				
+				// Fallback to direct JSON decode for backwards compatibility.
+				if ( empty( $cpt_actions ) ) {
+					$decoded_actions = json_decode( $atts['cpt_actions'], true );
+					if ( is_array( $decoded_actions ) ) {
+						$cpt_actions = $decoded_actions;
+					}
 				}
 			}
 			if ( ! empty( $cpt_actions ) ) {
