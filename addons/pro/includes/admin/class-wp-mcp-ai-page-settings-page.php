@@ -63,7 +63,7 @@ class WP_MCP_AI_Page_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 			<input
 				type="checkbox"
 				name="<?php echo esc_attr( $this->option_name ); ?>[enable_research]"
-				id="enable_research"
+				id="enable_research_page"
 				value="1"
 				<?php checked( $value, true ); ?>
 			/>
