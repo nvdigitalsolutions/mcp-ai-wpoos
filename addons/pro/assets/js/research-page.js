@@ -30,10 +30,12 @@
 			$(document).on('click', '.wp-mcp-ai-example-query', this.handleExampleQuery.bind(this));
 
 			// Listen for CPT action events from chat UI
-			$(document).on('wp-mcp-ai-cpt-action', this.handleCptAction.bind(this));
+			// Use native addEventListener for CustomEvent compatibility
+			document.addEventListener('wp-mcp-ai-cpt-action', this.handleCptActionNative.bind(this));
 
 			// Listen for tool result storage events to update preview
-			$(document).on('wp-mcp-ai-tool-result-stored', this.handleToolResultStored.bind(this));
+			// Use native addEventListener for CustomEvent compatibility
+			document.addEventListener('wp-mcp-ai-tool-result-stored', this.handleToolResultStoredNative.bind(this));
 
 			// Legacy support for old buttons (if any still exist)
 			$(document).on('click', '.wp-mcp-ai-create-place-btn, .wp-mcp-ai-create-place-btn-sidebar', this.handleCreatePlace.bind(this));
@@ -95,7 +97,73 @@
 		},
 
 		/**
-		 * Handle tool result stored event.
+		 * Handle CPT action event (native CustomEvent version).
+		 * This is the main entry point for CPT action buttons.
+		 *
+		 * @param {CustomEvent} e Native custom event
+		 */
+		handleCptActionNative: function(e) {
+			if (!e.detail) {
+				return;
+			}
+
+			const detail = e.detail;
+			const action = detail.action;
+			const conversation = detail.conversation;
+			const button = detail.button;
+
+			// Route to appropriate handler based on action type
+			switch (action) {
+				case 'create_quiz':
+					this.handleCreateQuizFromConversation(conversation, button);
+					break;
+				case 'create_place':
+					this.handleCreatePlaceFromConversation(conversation, button);
+					break;
+				case 'create_eca':
+					this.handleCreateECAFromConversation(conversation, button);
+					break;
+				case 'create_policy':
+					this.handleCreatePolicyFromConversation(conversation, button);
+					break;
+				case 'create_post':
+					this.handleCreatePostFromConversation(conversation, button);
+					break;
+				case 'create_page':
+					this.handleCreatePageFromConversation(conversation, button);
+					break;
+				default:
+					console.warn('[Research Page] Unknown CPT action:', action);
+			}
+		},
+
+		/**
+		 * Handle tool result stored event (native CustomEvent version).
+		 * Updates the sidebar preview when research tools complete.
+		 *
+		 * @param {CustomEvent} e Native custom event
+		 */
+		handleToolResultStoredNative: function(e) {
+			if (!e.detail) {
+				return;
+			}
+
+			const detail = e.detail;
+			const toolName = detail.toolName;
+			const result = detail.result;
+
+			// Only handle research_quiz_topic results
+			// create_quiz directly creates the quiz, so no preview needed
+			if (toolName !== 'research_quiz_topic') {
+				return;
+			}
+
+			// Update preview with structured data
+			this.updatePreview(result);
+		},
+
+		/**
+		 * Handle tool result stored event (jQuery version - deprecated).
 		 * Updates the sidebar preview when research tools complete.
 		 *
 		 * @param {Event} e Custom event with tool result data
@@ -1430,7 +1498,7 @@
 		 * @return {string} Extracted value
 		 */
 		extractField: function(text, labels) {
-			for (let label of labels) {
+			for (const label of labels) {
 				const regex = new RegExp(label + '\\s*([^\\n]+)', 'i');
 				const match = text.match(regex);
 				if (match && match[1]) {
