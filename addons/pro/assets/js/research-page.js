@@ -108,6 +108,7 @@
 			const result = detail.result;
 
 			// Only handle research_quiz_topic results
+			// create_quiz directly creates the quiz, so no preview needed
 			if (toolName !== 'research_quiz_topic') {
 				return;
 			}
