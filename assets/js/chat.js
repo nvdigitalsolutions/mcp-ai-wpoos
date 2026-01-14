@@ -4225,14 +4225,16 @@
         });
         
         // Trigger custom event that can be handled by page-specific JavaScript
+        const eventDetail = {
+            action: actionType,
+            conversation: conversationData,
+            state: state,
+            button: button
+        };
+        
         const event = new CustomEvent('wp-mcp-ai-cpt-action', {
             bubbles: true,
-            detail: {
-                action: actionType,
-                conversation: conversationData,
-                state: state,
-                button: button
-            }
+            detail: eventDetail
         });
         
         console.log('[NV oOS] Dispatching wp-mcp-ai-cpt-action event');
@@ -4247,12 +4249,7 @@
         // Also dispatch on document for compatibility with listeners attached to document
         const documentEvent = new CustomEvent('wp-mcp-ai-cpt-action', {
             bubbles: true,
-            detail: {
-                action: actionType,
-                conversation: conversationData,
-                state: state,
-                button: button
-            }
+            detail: eventDetail
         });
         document.dispatchEvent(documentEvent);
         
