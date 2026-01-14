@@ -4225,14 +4225,16 @@
         });
         
         // Trigger custom event that can be handled by page-specific JavaScript
+        const eventDetail = {
+            action: actionType,
+            conversation: conversationData,
+            state: state,
+            button: button
+        };
+        
         const event = new CustomEvent('wp-mcp-ai-cpt-action', {
             bubbles: true,
-            detail: {
-                action: actionType,
-                conversation: conversationData,
-                state: state,
-                button: button
-            }
+            detail: eventDetail
         });
         
         console.log('[NV oOS] Dispatching wp-mcp-ai-cpt-action event');
@@ -4241,7 +4243,16 @@
         const hasResearchPage = document.querySelector('.wp-mcp-ai-research-page');
         console.log('[NV oOS] Research page element present:', !!hasResearchPage);
         
+        // Dispatch on both container and document to ensure reliable delivery.
+        // Event bubbling from container to document is not always reliable due to
+        // timing issues and DOM attachment state, so we dispatch on both targets.
         state.container.dispatchEvent(event);
+        
+        const documentEvent = new CustomEvent('wp-mcp-ai-cpt-action', {
+            bubbles: true,
+            detail: eventDetail
+        });
+        document.dispatchEvent(documentEvent);
         
         // Add a small delay to check if event was handled
         setTimeout(() => {
