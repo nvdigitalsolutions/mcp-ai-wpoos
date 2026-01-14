@@ -23,29 +23,29 @@
 	min-width: 300px;
 }
 
-.wp-mcp-ai-research-intro,
-.wp-mcp-ai-research-tips,
-.wp-mcp-ai-research-examples,
-.wp-mcp-ai-research-actions,
-.wp-mcp-ai-research-preview {
-	background: #fff;
-	border: 1px solid #ccd0d4;
+.wrap .wp-mcp-ai-research-intro,
+.wrap .wp-mcp-ai-research-tips,
+.wrap .wp-mcp-ai-research-examples,
+.wrap .wp-mcp-ai-research-actions,
+.wrap .wp-mcp-ai-research-preview {
+	background: #fff !important;
+	border: 1px solid #ccd0d4 !important;
 	border-radius: 4px;
 	padding: 20px;
 	margin-bottom: 20px;
 	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 }
 
-.wp-mcp-ai-research-preview {
-	border-color: #2271b1;
-	background: #f0f6fc;
+.wrap .wp-mcp-ai-research-preview {
+	border-color: #2271b1 !important;
+	background: #f0f6fc !important;
 }
 
-.wp-mcp-ai-research-intro h2,
-.wp-mcp-ai-research-tips h3,
-.wp-mcp-ai-research-examples h3,
-.wp-mcp-ai-research-actions h3,
-.wp-mcp-ai-research-preview h3 {
+.wrap .wp-mcp-ai-research-intro h2,
+.wrap .wp-mcp-ai-research-tips h3,
+.wrap .wp-mcp-ai-research-examples h3,
+.wrap .wp-mcp-ai-research-actions h3,
+.wrap .wp-mcp-ai-research-preview h3 {
 	margin-top: 0;
 	margin-bottom: 15px;
 	font-size: 14px;
@@ -54,7 +54,7 @@
 	color: #1d2327;
 }
 
-.wp-mcp-ai-research-preview h3 {
+.wrap .wp-mcp-ai-research-preview h3 {
 	color: #2271b1;
 }
 
@@ -130,9 +130,9 @@
 	min-width: 0;
 }
 
-.wp-mcp-ai-research-chat {
-	background: #fff;
-	border: 1px solid #ccd0d4;
+.wrap .wp-mcp-ai-research-chat {
+	background: #fff !important;
+	border: 1px solid #ccd0d4 !important;
 	border-radius: 4px;
 	padding: 20px;
 	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
