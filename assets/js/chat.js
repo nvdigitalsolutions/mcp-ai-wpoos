@@ -4199,6 +4199,7 @@
      */
     function handleCptActionClick(state, action, button) {
         if (!state || !action) {
+            console.warn('[NV oOS] CPT action click - missing state or action');
             return;
         }
 
@@ -4211,8 +4212,12 @@
             return;
         }
 
+        console.log('[NV oOS] CPT action button clicked:', actionType);
+
         // Get conversation data
         const conversationData = extractConversationData(state);
+        
+        console.log('[NV oOS] Conversation data extracted:', conversationData);
         
         // Trigger custom event that can be handled by page-specific JavaScript
         const event = new CustomEvent('wp-mcp-ai-cpt-action', {
@@ -4225,6 +4230,7 @@
             }
         });
         
+        console.log('[NV oOS] Dispatching wp-mcp-ai-cpt-action event');
         state.container.dispatchEvent(event);
     }
 

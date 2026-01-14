@@ -103,7 +103,10 @@
 		 * @param {CustomEvent} e Native custom event
 		 */
 		handleCptActionNative: function(e) {
+			console.log('[Research Page] Received wp-mcp-ai-cpt-action event', e.detail);
+			
 			if (!e.detail) {
+				console.warn('[Research Page] Event detail is missing');
 				return;
 			}
 
@@ -111,6 +114,8 @@
 			const action = detail.action;
 			const conversation = detail.conversation;
 			const button = detail.button;
+
+			console.log('[Research Page] Processing action:', action);
 
 			// Route to appropriate handler based on action type
 			switch (action) {
@@ -1011,53 +1016,26 @@
 
 		/**
 		 * Handle create quiz from research (legacy method for old buttons).
+		 * 
+		 * For sidebar buttons, this delegates to the CPT action button in the chat UI.
+		 * This ensures we use the same conversation extraction logic and avoid code duplication.
 		 *
 		 * @param {Event} e Click event
 		 */
 		handleCreateQuiz: function(e) {
 			e.preventDefault();
 			
-			const $button = $(e.currentTarget);
+			// Find the CPT action button in the chat UI and trigger it
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_quiz"]');
 			
-			if (!this.currentResearchData) {
+			if (cptButton) {
+				// Delegate to the CPT action button which has access to conversation state
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
+			} else {
+				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
-				return;
-			}
-
-			// Confirm with user
-			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
-				return;
-			}
-
-			// Disable button and show loading
-			$button.prop('disabled', true).text(wpMcpAiResearchPage.strings.creating);
-
-			// Extract research data
-			const researchData = this.parseResearchDataForQuiz(this.currentResearchData.text);
-
-			// Use the same add-to-database method
-			this.addQuizToDatabase(researchData).then((response) => {
-				if (response.success) {
-					this.showSuccess(response.data.message);
-					
-					// Redirect to edit page after short delay
-					setTimeout(() => {
-						if (response.data.edit_url) {
-							window.location.href = response.data.edit_url;
-						}
-					}, 1500);
-				} else {
-					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
-					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-				}
-			}).catch(() => {
-				this.showError(wpMcpAiResearchPage.strings.error);
-				$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-			});
-
-			// Store original button text
-			if (!$button.data('original-text')) {
-				$button.data('original-text', $button.text());
+				console.warn('[Research Page] No CPT action button found for create_quiz action');
 			}
 		},
 
@@ -1113,282 +1091,127 @@
 		},
 
 		/**
-		 * Handle create ECA from research.
+		 * Handle create ECA from research (legacy method for old buttons).
+		 * 
+		 * For sidebar buttons, this delegates to the CPT action button in the chat UI.
+		 * This ensures we use the same conversation extraction logic and avoid code duplication.
 		 *
 		 * @param {Event} e Click event
 		 */
 		handleCreateECA: function(e) {
 			e.preventDefault();
 			
-			const $button = $(e.currentTarget);
+			// Find the CPT action button in the chat UI and trigger it
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_eca"]');
 			
-			if (!this.currentResearchData) {
+			if (cptButton) {
+				// Delegate to the CPT action button which has access to conversation state
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
+			} else {
+				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
-				return;
-			}
-
-			// Confirm with user
-			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
-				return;
-			}
-
-			// Disable button and show loading
-			$button.prop('disabled', true).text(wpMcpAiResearchPage.strings.creating);
-
-			// Extract research data
-			const researchData = this.parseResearchDataForECA(this.currentResearchData.text);
-
-			// Send AJAX request
-			$.ajax({
-				url: wpMcpAiResearchPage.ajaxUrl,
-				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_create_eca_from_research',
-					nonce: wpMcpAiResearchPage.nonce,
-					research_data: JSON.stringify(researchData)
-				},
-				success: (response) => {
-					if (response.success) {
-						this.showSuccess(response.data.message);
-						
-						// Redirect to edit page after short delay
-						setTimeout(() => {
-							if (response.data.edit_url) {
-								window.location.href = response.data.edit_url;
-							}
-						}, 1500);
-					} else {
-						this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
-						$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-					}
-				},
-				error: () => {
-					this.showError(wpMcpAiResearchPage.strings.error);
-					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-				}
-			});
-
-			// Store original button text
-			if (!$button.data('original-text')) {
-				$button.data('original-text', $button.text());
+				console.warn('[Research Page] No CPT action button found for create_eca action');
 			}
 		},
 
 		/**
-		 * Handle create policy from research.
+		 * Handle create policy from research (legacy method for old buttons).
+		 * 
+		 * For sidebar buttons, this delegates to the CPT action button in the chat UI.
+		 * This ensures we use the same conversation extraction logic and avoid code duplication.
 		 *
 		 * @param {Event} e Click event
 		 */
 		handleCreatePolicy: function(e) {
 			e.preventDefault();
 			
-			const $button = $(e.currentTarget);
+			// Find the CPT action button in the chat UI and trigger it
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_policy"]');
 			
-			if (!this.currentResearchData) {
+			if (cptButton) {
+				// Delegate to the CPT action button which has access to conversation state
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
+			} else {
+				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
-				return;
-			}
-
-			// Confirm with user
-			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
-				return;
-			}
-
-			// Disable button and show loading
-			$button.prop('disabled', true).text(wpMcpAiResearchPage.strings.creating);
-
-			// Extract research data
-			const researchData = this.parseResearchDataForPolicy(this.currentResearchData.text);
-
-			// Send AJAX request
-			$.ajax({
-				url: wpMcpAiResearchPage.ajaxUrl,
-				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_create_policy_from_research',
-					nonce: wpMcpAiResearchPage.nonce,
-					research_data: JSON.stringify(researchData)
-				},
-				success: (response) => {
-					if (response.success) {
-						this.showSuccess(response.data.message);
-						
-						// Redirect to edit page after short delay
-						setTimeout(() => {
-							if (response.data.edit_url) {
-								window.location.href = response.data.edit_url;
-							}
-						}, 1500);
-					} else {
-						this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
-						$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-					}
-				},
-				error: () => {
-					this.showError(wpMcpAiResearchPage.strings.error);
-					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-				}
-			});
-
-			// Store original button text
-			if (!$button.data('original-text')) {
-				$button.data('original-text', $button.text());
+				console.warn('[Research Page] No CPT action button found for create_policy action');
 			}
 		},
 
 		/**
 		 * Handle create place from research (legacy method for old buttons).
+		 * 
+		 * For sidebar buttons, this delegates to the CPT action button in the chat UI.
+		 * This ensures we use the same conversation extraction logic and avoid code duplication.
 		 *
 		 * @param {Event} e Click event
 		 */
 		handleCreatePlace: function(e) {
 			e.preventDefault();
 			
-			const $button = $(e.currentTarget);
+			// Find the CPT action button in the chat UI and trigger it
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_place"]');
 			
-			if (!this.currentResearchData) {
+			if (cptButton) {
+				// Delegate to the CPT action button which has access to conversation state
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
+			} else {
+				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
-				return;
-			}
-
-			// Confirm with user
-			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
-				return;
-			}
-
-			// Disable button and show loading
-			$button.prop('disabled', true).text(wpMcpAiResearchPage.strings.creating);
-
-			// Extract research data
-			const researchData = this.parseResearchDataForPlace(this.currentResearchData.text);
-
-			// Use the same add-to-database method
-			this.addPlaceToDatabase(researchData).then((response) => {
-				if (response.success) {
-					this.showSuccess(response.data.message);
-					
-					// Redirect to edit page after short delay
-					setTimeout(() => {
-						if (response.data.edit_url) {
-							window.location.href = response.data.edit_url;
-						}
-					}, 1500);
-				} else {
-					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
-					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-				}
-			}).catch(() => {
-				this.showError(wpMcpAiResearchPage.strings.error);
-				$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-			});
-
-			// Store original button text
-			if (!$button.data('original-text')) {
-				$button.data('original-text', $button.text());
+				console.warn('[Research Page] No CPT action button found for create_place action');
 			}
 		},
 
 		/**
 		 * Handle create post from research (legacy method for old buttons).
+		 * 
+		 * For sidebar buttons, this delegates to the CPT action button in the chat UI.
+		 * This ensures we use the same conversation extraction logic and avoid code duplication.
 		 *
 		 * @param {Event} e Click event
 		 */
 		handleCreatePost: function(e) {
 			e.preventDefault();
 			
-			const $button = $(e.currentTarget);
+			// Find the CPT action button in the chat UI and trigger it
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_post"]');
 			
-			if (!this.currentResearchData) {
+			if (cptButton) {
+				// Delegate to the CPT action button which has access to conversation state
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
+			} else {
+				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
-				return;
-			}
-
-			// Confirm with user
-			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
-				return;
-			}
-
-			// Disable button and show loading
-			$button.prop('disabled', true).text(wpMcpAiResearchPage.strings.creating);
-
-			// Extract research data
-			const researchData = this.parseResearchDataForPost(this.currentResearchData.text);
-
-			// Use the same add-to-database method
-			this.addPostToDatabase(researchData).then((response) => {
-				if (response.success) {
-					this.showSuccess(response.data.message);
-					
-					// Redirect to edit page after short delay
-					setTimeout(() => {
-						if (response.data.edit_url) {
-							window.location.href = response.data.edit_url;
-						}
-					}, 1500);
-				} else {
-					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
-					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-				}
-			}).catch(() => {
-				this.showError(wpMcpAiResearchPage.strings.error);
-				$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-			});
-
-			// Store original button text
-			if (!$button.data('original-text')) {
-				$button.data('original-text', $button.text());
+				console.warn('[Research Page] No CPT action button found for create_post action');
 			}
 		},
 
 		/**
 		 * Handle create page from research (legacy method for old buttons).
+		 * 
+		 * For sidebar buttons, this delegates to the CPT action button in the chat UI.
+		 * This ensures we use the same conversation extraction logic and avoid code duplication.
 		 *
 		 * @param {Event} e Click event
 		 */
 		handleCreatePage: function(e) {
 			e.preventDefault();
 			
-			const $button = $(e.currentTarget);
+			// Find the CPT action button in the chat UI and trigger it
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_page"]');
 			
-			if (!this.currentResearchData) {
+			if (cptButton) {
+				// Delegate to the CPT action button which has access to conversation state
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
+			} else {
+				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
-				return;
-			}
-
-			// Confirm with user
-			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
-				return;
-			}
-
-			// Disable button and show loading
-			$button.prop('disabled', true).text(wpMcpAiResearchPage.strings.creating);
-
-			// Extract research data
-			const researchData = this.parseResearchDataForPage(this.currentResearchData.text);
-
-			// Use the same add-to-database method
-			this.addPageToDatabase(researchData).then((response) => {
-				if (response.success) {
-					this.showSuccess(response.data.message);
-					
-					// Redirect to edit page after short delay
-					setTimeout(() => {
-						if (response.data.edit_url) {
-							window.location.href = response.data.edit_url;
-						}
-					}, 1500);
-				} else {
-					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
-					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-				}
-			}).catch(() => {
-				this.showError(wpMcpAiResearchPage.strings.error);
-				$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-			});
-
-			// Store original button text
-			if (!$button.data('original-text')) {
-				$button.data('original-text', $button.text());
+				console.warn('[Research Page] No CPT action button found for create_page action');
 			}
 		},
 
