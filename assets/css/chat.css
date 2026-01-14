@@ -33,6 +33,50 @@
     gap: 0.5rem;
 }
 
+/* CPT Action Buttons */
+.wp-mcp-ai-chat__cpt-actions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--wp-mcp-ai-color-container-border, #e5e7eb);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.wp-mcp-ai-chat__cpt-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-chat__cpt-action .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+}
+
+.wp-mcp-ai-chat__cpt-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wp-mcp-ai-chat__cpt-action:active {
+    transform: translateY(0);
+}
+
+.wp-mcp-ai-chat__cpt-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .wp-mcp-ai-chat__history-toggle,
 .wp-mcp-ai-chat__new-chat,
 .wp-mcp-ai-chat__export,

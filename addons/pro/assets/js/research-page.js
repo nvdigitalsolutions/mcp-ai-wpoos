@@ -19,7 +19,6 @@
 		 */
 		init: function() {
 			this.bindEvents();
-			this.monitorChatMessages();
 		},
 
 		/**
@@ -29,14 +28,14 @@
 			// Example query buttons
 			$(document).on('click', '.wp-mcp-ai-example-query', this.handleExampleQuery.bind(this));
 
-			// Create from research buttons
+			// Listen for CPT action events from chat UI
+			$(document).on('wp-mcp-ai-cpt-action', this.handleCptAction.bind(this));
+
+			// Legacy support for old buttons (if any still exist)
 			$(document).on('click', '.wp-mcp-ai-create-place-btn, .wp-mcp-ai-create-place-btn-sidebar', this.handleCreatePlace.bind(this));
 			$(document).on('click', '.wp-mcp-ai-create-quiz-btn, .wp-mcp-ai-create-quiz-btn-sidebar', this.handleCreateQuiz.bind(this));
 			$(document).on('click', '.wp-mcp-ai-create-eca-btn, .wp-mcp-ai-create-eca-btn-sidebar', this.handleCreateECA.bind(this));
 			$(document).on('click', '.wp-mcp-ai-create-policy-btn, .wp-mcp-ai-create-policy-btn-sidebar', this.handleCreatePolicy.bind(this));
-
-			// Close research data preview
-			$(document).on('click', '.wp-mcp-ai-close-research', this.closeResearchPreview.bind(this));
 		},
 
 		/**
@@ -53,143 +52,87 @@
 			}
 
 			// Find the chat input and set the query
-			const $chatInput = $('.wp-mcp-ai-chat-input');
+			const $chatInput = $('.wp-mcp-ai-chat__input');
 			if ($chatInput.length) {
 				$chatInput.val(query).focus();
 				
-				// Trigger send button if available
-				const $sendBtn = $('.wp-mcp-ai-send-button');
-				if ($sendBtn.length) {
-					$sendBtn.trigger('click');
+				// Trigger form submission
+				const $chatForm = $('.wp-mcp-ai-chat__form');
+				if ($chatForm.length) {
+					$chatForm.trigger('submit');
 				}
 			}
 		},
 
 		/**
-		 * Monitor chat messages for research results.
+		 * Handle CPT action event from chat UI.
+		 * This is the main entry point for CPT action buttons.
+		 *
+		 * @param {Event} e Custom event
 		 */
-		monitorChatMessages: function() {
-			// Check for new messages periodically
-			setInterval(() => {
-				this.checkForResearchData();
-			}, 2000);
-		},
-
-		/**
-		 * Check chat messages for research data.
-		 */
-		checkForResearchData: function() {
-			const $messages = $('.wp-mcp-ai-message');
-			if ($messages.length === 0) {
+		handleCptAction: function(e) {
+			if (!e.originalEvent || !e.originalEvent.detail) {
 				return;
 			}
 
-			// Get the last assistant message
-			const $lastMessage = $messages.filter('.wp-mcp-ai-message--assistant').last();
-			if ($lastMessage.length === 0) {
-				return;
-			}
+			const detail = e.originalEvent.detail;
+			const action = detail.action;
+			const conversation = detail.conversation;
+			const button = detail.button;
 
-			const messageText = $lastMessage.text();
-			
-			// Check if message contains research results (simple heuristic)
-			// You can make this more sophisticated based on your needs
-			if (this.looksLikeResearchData(messageText)) {
-				this.extractAndShowResearchData($lastMessage);
-			}
-		},
-
-		/**
-		 * Check if message looks like research data.
-		 *
-		 * @param {string} text Message text
-		 * @return {boolean} True if looks like research data
-		 */
-		looksLikeResearchData: function(text) {
-			// Check for common research data indicators
-			const indicators = [
-				'address:', 'latitude:', 'longitude:',
-				'phone:', 'website:', 'rating:',
-				'question:', 'answer:', 'correct:',
-				'hours:', 'location:', 'amenities:'
-			];
-
-			const lowerText = text.toLowerCase();
-			let matchCount = 0;
-
-			indicators.forEach(indicator => {
-				if (lowerText.includes(indicator)) {
-					matchCount++;
-				}
-			});
-
-			// If we have 3 or more indicators, likely research data
-			return matchCount >= 3;
-		},
-
-		/**
-		 * Extract and show research data.
-		 *
-		 * @param {jQuery} $message Message element
-		 */
-		extractAndShowResearchData: function($message) {
-			const messageText = $message.text();
-			const messageHtml = $message.html();
-
-			// Store research data
-			this.currentResearchData = {
-				text: messageText,
-				html: messageHtml,
-				timestamp: new Date().getTime()
-			};
-
-			// Show the research data preview
-			this.showResearchPreview(messageHtml);
-		},
-
-		/**
-		 * Show research data preview section.
-		 *
-		 * @param {string} dataHtml Research data HTML
-		 */
-		showResearchPreview: function(dataHtml) {
-			const $previewSection = $('.wp-mcp-ai-research-create-section');
-			const $dataContent = $('#wp-mcp-ai-research-data-content');
-
-			if ($previewSection.length && $dataContent.length) {
-				$dataContent.html(dataHtml);
-				$previewSection.slideDown(300);
-
-				// Scroll to preview
-				$('html, body').animate({
-					scrollTop: $previewSection.offset().top - 100
-				}, 500);
+			// Route to appropriate handler based on action type
+			switch (action) {
+				case 'create_quiz':
+					this.handleCreateQuizFromConversation(conversation, button);
+					break;
+				case 'create_place':
+					this.handleCreatePlaceFromConversation(conversation, button);
+					break;
+				case 'create_eca':
+					this.handleCreateECAFromConversation(conversation, button);
+					break;
+				case 'create_policy':
+					this.handleCreatePolicyFromConversation(conversation, button);
+					break;
+				default:
+					console.warn('[Research Page] Unknown CPT action:', action);
 			}
 		},
 
 		/**
-		 * Close research preview.
+		 * Handle quiz creation from conversation data.
+		 * Builds the data package and sends it to the add-to-database method.
 		 *
-		 * @param {Event} e Click event
+		 * @param {Object} conversation Extracted conversation data
+		 * @param {HTMLElement} button The button element
 		 */
-		closeResearchPreview: function(e) {
-			e.preventDefault();
-			$('.wp-mcp-ai-research-create-section').slideUp(300);
-		},
-
-		/**
-		 * Handle create place from research.
-		 *
-		 * @param {Event} e Click event
-		 */
-		handleCreatePlace: function(e) {
-			e.preventDefault();
-			
-			const $button = $(e.currentTarget);
-			
-			if (!this.currentResearchData) {
+		handleCreateQuizFromConversation: function(conversation, button) {
+			if (!conversation) {
 				this.showError(wpMcpAiResearchPage.strings.error);
 				return;
+			}
+
+			// Check if we have structured data from research_quiz_topic tool
+			let researchData = null;
+			if (conversation.toolResults && conversation.toolResults.research_quiz_topic) {
+				researchData = conversation.toolResults.research_quiz_topic;
+				
+				// Validate structured data
+				if (!researchData || !researchData.success) {
+					console.warn('[Research Page] research_quiz_topic tool result not successful');
+					researchData = null;
+				}
+			}
+
+			// If no structured data, fall back to text parsing
+			if (!researchData) {
+				if (!conversation.lastAssistantMessage && !conversation.fullText) {
+					this.showError(wpMcpAiResearchPage.strings.error);
+					return;
+				}
+				
+				// Build data package from text
+				researchData = this.buildQuizDataPackage(conversation);
 			}
 
 			// Confirm with user
@@ -197,50 +140,153 @@
 				return;
 			}
 
-			// Disable button and show loading
-			$button.prop('disabled', true).text(wpMcpAiResearchPage.strings.creating);
+			// Disable button and show loading state
+			const $button = $(button);
+			const originalText = $button.html();
+			$button.prop('disabled', true).html(
+				'<span class="dashicons dashicons-update dashicons-spin"></span> ' + 
+				wpMcpAiResearchPage.strings.creating
+			);
 
-			// Extract research data
-			const researchData = this.parseResearchDataForPlace(this.currentResearchData.text);
-
-			// Send AJAX request
-			$.ajax({
-				url: wpMcpAiResearchPage.ajaxUrl,
-				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_create_place_from_research',
-					nonce: wpMcpAiResearchPage.nonce,
-					research_data: JSON.stringify(researchData)
-				},
-				success: (response) => {
-					if (response.success) {
-						this.showSuccess(response.data.message);
-						
-						// Redirect to edit page after short delay
-						setTimeout(() => {
-							if (response.data.edit_url) {
-								window.location.href = response.data.edit_url;
-							}
-						}, 1500);
-					} else {
-						this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
-						$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-					}
-				},
-				error: () => {
-					this.showError(wpMcpAiResearchPage.strings.error);
-					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
+			// Send to add-to-database method
+			this.addQuizToDatabase(researchData).then((response) => {
+				if (response.success) {
+					this.showSuccess(response.data.message);
+					
+					// Redirect to edit page after short delay
+					setTimeout(() => {
+						if (response.data.edit_url) {
+							window.location.href = response.data.edit_url;
+						}
+					}, 1500);
+				} else {
+					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+					$button.prop('disabled', false).html(originalText);
 				}
+			}).catch((error) => {
+				console.error('[Research Page] Quiz creation failed:', error);
+				this.showError(wpMcpAiResearchPage.strings.error);
+				$button.prop('disabled', false).html(originalText);
 			});
-
-			// Store original button text
-			if (!$button.data('original-text')) {
-				$button.data('original-text', $button.text());
-			}
 		},
 
 		/**
-		 * Handle create quiz from research.
+		 * Build quiz data package from conversation.
+		 * Extracts and structures the information needed for quiz creation.
+		 *
+		 * @param {Object} conversation Conversation data from chat
+		 * @return {Object} Structured quiz data package
+		 */
+		buildQuizDataPackage: function(conversation) {
+			const text = conversation.lastAssistantMessage || conversation.fullText || '';
+			
+			// Parse quiz data from text
+			const data = {
+				title: this.extractField(text, ['title:', 'quiz title:', 'name:']),
+				description: this.extractField(text, ['description:', 'about:']),
+				subject: this.extractField(text, ['subject:', 'topic:', 'category:']),
+				difficulty: this.extractField(text, ['difficulty:', 'level:']),
+				time_limit: this.extractField(text, ['time limit:', 'duration:']),
+				passing_score: this.extractField(text, ['passing score:', 'pass mark:']),
+				questions: this.extractQuestions(text),
+				raw_text: text // Include raw text for fallback processing
+			};
+
+			// If no title extracted, generate one from subject or use default
+			if (!data.title && data.subject) {
+				data.title = data.subject + ' Quiz';
+			} else if (!data.title) {
+				data.title = 'Quiz from Research';
+			}
+
+			return data;
+		},
+
+		/**
+		 * Extract quiz questions from text.
+		 * Parses question blocks with answers from the conversation.
+		 *
+		 * @param {string} text Text to parse
+		 * @return {Array} Array of question objects
+		 */
+		extractQuestions: function(text) {
+			const questions = [];
+			
+			// Try to match numbered questions
+			// Pattern: "1. Question text?" or "Question 1:" etc.
+			const questionPattern = /(?:^|\n)(?:\d+[\.\)]\s+|Question\s+\d+:\s*)(.+?)(?=\n(?:\d+[\.\)]|\n|Question\s+\d+:|$))/gis;
+			const matches = text.matchAll(questionPattern);
+			
+			for (const match of matches) {
+				const questionBlock = match[1].trim();
+				
+				// Extract question text (first line typically)
+				const lines = questionBlock.split('\n');
+				const questionText = lines[0].trim();
+				
+				// Try to extract answers
+				const answers = this.extractAnswers(questionBlock);
+				
+				if (questionText && answers.length > 0) {
+					questions.push({
+						question: questionText,
+						answers: answers
+					});
+				}
+			}
+
+			return questions;
+		},
+
+		/**
+		 * Extract answers from question block.
+		 *
+		 * @param {string} text Question block text
+		 * @return {Array} Array of answer objects
+		 */
+		extractAnswers: function(text) {
+			const answers = [];
+			
+			// Pattern: "A) answer" or "a. answer" or "- answer"
+			const answerPattern = /(?:^|\n)\s*(?:[A-Da-d][\.\)]\s*|\-\s+)(.+?)(?=\n|$)/g;
+			const matches = text.matchAll(answerPattern);
+			
+			for (const match of matches) {
+				const answerText = match[1].trim();
+				
+				// Check if marked as correct (contains "correct", "*", etc.)
+				const isCorrect = /\(correct\)|\*|✓|✔/i.test(answerText);
+				
+				answers.push({
+					text: answerText.replace(/\(correct\)|\*|✓|✔/gi, '').trim(),
+					is_correct: isCorrect
+				});
+			}
+
+			return answers;
+		},
+
+		/**
+		 * Add quiz to database via AJAX.
+		 * This is the final method that actually creates the CPT.
+		 *
+		 * @param {Object} researchData Quiz data package
+		 * @return {Promise} Promise resolving to AJAX response
+		 */
+		addQuizToDatabase: function(researchData) {
+			return $.ajax({
+				url: wpMcpAiResearchPage.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_create_quiz_from_research',
+					nonce: wpMcpAiResearchPage.nonce,
+					research_data: JSON.stringify(researchData)
+				}
+			});
+		},
+
+		/**
+		 * Handle create quiz from research (legacy method for old buttons).
 		 *
 		 * @param {Event} e Click event
 		 */
@@ -265,34 +311,24 @@
 			// Extract research data
 			const researchData = this.parseResearchDataForQuiz(this.currentResearchData.text);
 
-			// Send AJAX request
-			$.ajax({
-				url: wpMcpAiResearchPage.ajaxUrl,
-				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_create_quiz_from_research',
-					nonce: wpMcpAiResearchPage.nonce,
-					research_data: JSON.stringify(researchData)
-				},
-				success: (response) => {
-					if (response.success) {
-						this.showSuccess(response.data.message);
-						
-						// Redirect to edit page after short delay
-						setTimeout(() => {
-							if (response.data.edit_url) {
-								window.location.href = response.data.edit_url;
-							}
-						}, 1500);
-					} else {
-						this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
-						$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
-					}
-				},
-				error: () => {
-					this.showError(wpMcpAiResearchPage.strings.error);
+			// Use the same add-to-database method
+			this.addQuizToDatabase(researchData).then((response) => {
+				if (response.success) {
+					this.showSuccess(response.data.message);
+					
+					// Redirect to edit page after short delay
+					setTimeout(() => {
+						if (response.data.edit_url) {
+							window.location.href = response.data.edit_url;
+						}
+					}, 1500);
+				} else {
+					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
 					$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
 				}
+			}).catch(() => {
+				this.showError(wpMcpAiResearchPage.strings.error);
+				$button.prop('disabled', false).html('<span class="dashicons dashicons-plus-alt"></span> ' + $button.data('original-text'));
 			});
 
 			// Store original button text
