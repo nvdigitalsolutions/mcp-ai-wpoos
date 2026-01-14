@@ -215,6 +215,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 				// Load Research & Add pages for Posts and Pages.
 				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-post-research-page.php';
 				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-page-research-page.php';
+
+				// Load Settings pages for Posts and Pages.
+				$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+				if ( ! $is_base ) {
+					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-post-settings-page.php';
+					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-page-settings-page.php';
+				}
 			}
 		}
 
@@ -245,6 +252,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 			if ( ! $is_base && class_exists( 'WooCommerce' ) ) {
 				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-research-page.php';
+				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-product-settings-page.php';
 			}
 		}
 

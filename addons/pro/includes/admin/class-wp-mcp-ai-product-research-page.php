@@ -115,8 +115,8 @@ class WP_MCP_AI_Product_Research_Page {
 	 */
 	public static function render_page() {
 		// Get assistant from settings.
-		$settings     = get_option( 'wp_mcp_ai_pro_settings', array() );
-		$assistant_id = isset( $settings['woocommerce_assistant_id'] ) ? absint( $settings['woocommerce_assistant_id'] ) : 0;
+		$settings     = get_option( 'wp_mcp_ai_product_settings', array() );
+		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
 
 		// If no assistant configured or invalid, get the first available assistant.
 		if ( ! $assistant_id || 'publish' !== get_post_status( $assistant_id ) ) {
