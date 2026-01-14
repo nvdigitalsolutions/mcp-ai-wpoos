@@ -11350,6 +11350,11 @@
             payload.professional_prompt = state.config.professionalPrompt;
         }
 
+        // Include additional tools if provided (for context-specific tools like research pages).
+        if (state.config.additionalTools && Array.isArray(state.config.additionalTools)) {
+            payload.additional_tools = state.config.additionalTools;
+        }
+
         // Include provider/model/temperature overrides if provided (for professional selector usage).
         if (state.config.provider || state.config.model || state.config.temperature) {
             payload.options = payload.options || {};

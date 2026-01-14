@@ -235,8 +235,9 @@ class WP_MCP_AI_Quiz_Research_Page {
 
 							// Render chat interface with CPT action buttons.
 							// Base64 encode the JSON to avoid shortcode parsing issues with brackets.
+							// Also ensure research_quiz_topic tool is always available on this page.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" cpt_actions="' . esc_attr( base64_encode( wp_json_encode( $cpt_actions ) ) ) . '"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" cpt_actions="' . esc_attr( base64_encode( wp_json_encode( $cpt_actions ) ) ) . '" additional_tools="research_quiz_topic"]'
 							);
 							?>
 						</div>

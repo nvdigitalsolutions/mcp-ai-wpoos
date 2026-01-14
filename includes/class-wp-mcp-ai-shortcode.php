@@ -447,6 +447,7 @@ class WP_MCP_AI_Shortcode {
 					'allow_sensitive_tools' => 'false',
 					'template'              => 'classic',
 					'cpt_actions'           => '', // JSON-encoded array of CPT action buttons.
+					'additional_tools'      => '', // Comma-separated list of tool slugs to make available regardless of assistant config.
 				),
 				$atts,
 				$tag
@@ -688,6 +689,18 @@ class WP_MCP_AI_Shortcode {
 			}
 			if ( ! empty( $cpt_actions ) ) {
 				$config['cptActions'] = $cpt_actions;
+			}
+
+			// Parse additional tools if provided.
+			// These tools will be available regardless of the assistant's configured tools.
+			if ( ! empty( $atts['additional_tools'] ) ) {
+				$additional_tools_raw = sanitize_text_field( $atts['additional_tools'] );
+				$additional_tools     = array_map( 'trim', explode( ',', $additional_tools_raw ) );
+				$additional_tools     = array_filter( array_map( 'sanitize_key', $additional_tools ) );
+				
+				if ( ! empty( $additional_tools ) ) {
+					$config['additionalTools'] = array_values( $additional_tools );
+				}
 			}
 
 			if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
