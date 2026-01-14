@@ -4217,7 +4217,12 @@
         // Get conversation data
         const conversationData = extractConversationData(state);
         
-        console.log('[NV oOS] Conversation data extracted:', conversationData);
+        console.log('[NV oOS] Conversation data extracted:', {
+            action: actionType,
+            message_count: (conversationData.messages || []).length,
+            has_tool_results: Object.keys(conversationData.toolResults || {}).length > 0,
+            tool_names: Object.keys(conversationData.toolResults || {}).join(', ')
+        });
         
         // Trigger custom event that can be handled by page-specific JavaScript
         const event = new CustomEvent('wp-mcp-ai-cpt-action', {
@@ -4231,7 +4236,17 @@
         });
         
         console.log('[NV oOS] Dispatching wp-mcp-ai-cpt-action event');
+        
+        // Check if any event listeners are registered (for debugging)
+        const hasResearchPage = document.querySelector('.wp-mcp-ai-research-page');
+        console.log('[NV oOS] Research page element present:', !!hasResearchPage);
+        
         state.container.dispatchEvent(event);
+        
+        // Add a small delay to check if event was handled
+        setTimeout(() => {
+            console.log('[NV oOS] Event dispatched. If no handler logs appear above, the research page JavaScript may not be loaded.');
+        }, 100);
     }
 
     /**
