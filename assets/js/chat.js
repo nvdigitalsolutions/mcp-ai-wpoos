@@ -4243,10 +4243,11 @@
         const hasResearchPage = document.querySelector('.wp-mcp-ai-research-page');
         console.log('[NV oOS] Research page element present:', !!hasResearchPage);
         
-        // Dispatch on both container and document to ensure event listeners on document receive it
+        // Dispatch on both container and document to ensure reliable delivery.
+        // Event bubbling from container to document is not always reliable due to
+        // timing issues and DOM attachment state, so we dispatch on both targets.
         state.container.dispatchEvent(event);
         
-        // Also dispatch on document for compatibility with listeners attached to document
         const documentEvent = new CustomEvent('wp-mcp-ai-cpt-action', {
             bubbles: true,
             detail: eventDetail
