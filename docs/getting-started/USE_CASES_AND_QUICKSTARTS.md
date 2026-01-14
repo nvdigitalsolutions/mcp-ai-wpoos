@@ -2,7 +2,7 @@
 
 **Version:** 1.2.0  
 **Last Updated:** January 14, 2026  
-**Estimated Reading Time:** 35 minutes
+**Estimated Reading Time:** 37 minutes
 
 ## 📑 Table of Contents
 
