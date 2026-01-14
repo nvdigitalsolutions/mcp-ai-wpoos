@@ -48,6 +48,48 @@
 		initPreview: function() {
 			// Hide preview initially
 			$('#wp-mcp-ai-quiz-preview').hide();
+			
+			// Initialize preview state
+			this.previewState = {
+				currentPage: 1,
+				questionsPerPage: 3,
+				totalQuestions: 0,
+				quizData: null
+			};
+			
+			// Bind pagination events
+			$(document).on('click', '.wp-mcp-ai-preview-prev', this.handlePrevPage.bind(this));
+			$(document).on('click', '.wp-mcp-ai-preview-next', this.handleNextPage.bind(this));
+		},
+
+		/**
+		 * Handle previous page button.
+		 *
+		 * @param {Event} e Click event
+		 */
+		handlePrevPage: function(e) {
+			e.preventDefault();
+			
+			if (this.previewState.currentPage > 1) {
+				this.previewState.currentPage--;
+				this.renderQuestions();
+			}
+		},
+
+		/**
+		 * Handle next page button.
+		 *
+		 * @param {Event} e Click event
+		 */
+		handleNextPage: function(e) {
+			e.preventDefault();
+			
+			const totalPages = Math.ceil(this.previewState.totalQuestions / this.previewState.questionsPerPage);
+			
+			if (this.previewState.currentPage < totalPages) {
+				this.previewState.currentPage++;
+				this.renderQuestions();
+			}
 		},
 
 		/**
@@ -76,6 +118,7 @@
 
 		/**
 		 * Update preview panel with quiz data.
+		 * Supports multiple updates during conversation with smooth transitions.
 		 *
 		 * @param {Object} data Quiz data from research tool
 		 */
@@ -84,97 +127,180 @@
 			const $loading = $preview.find('.wp-mcp-ai-preview-loading');
 			const $data = $preview.find('.wp-mcp-ai-preview-data');
 
-			// Show preview panel
-			$preview.slideDown(300);
+			// Check if this is an update (preview already visible) or initial load
+			const isUpdate = $preview.is(':visible') && $data.is(':visible');
 
-			// Show loading state briefly
-			$loading.show();
-			$data.hide();
+			// Show preview panel if hidden
+			if (!$preview.is(':visible')) {
+				$preview.slideDown(300);
+			}
 
 			// Validate data
 			if (!data || !data.success) {
+				$loading.show();
 				$loading.html('<p class="wp-mcp-ai-preview-error">Failed to load quiz data</p>');
+				$data.hide();
 				return;
 			}
 
-			// Build preview HTML
+			// Store quiz data in state
+			this.previewState.quizData = data;
+			this.previewState.totalQuestions = (data.questions && data.questions.length) || 0;
+			
+			// Reset to page 1 if questions changed significantly
+			if (isUpdate) {
+				const totalPages = Math.ceil(this.previewState.totalQuestions / this.previewState.questionsPerPage);
+				if (this.previewState.currentPage > totalPages) {
+					this.previewState.currentPage = 1;
+				}
+			} else {
+				this.previewState.currentPage = 1;
+			}
+
+			// Show brief loading for updates, or longer for initial load
+			const loadingDelay = isUpdate ? 200 : 500;
+			
+			if (!isUpdate) {
+				$loading.show();
+				$data.hide();
+			} else {
+				// Add updating indicator for smooth transitions
+				$data.css('opacity', '0.6');
+			}
+
+			// Build preview HTML after delay
 			setTimeout(() => {
-				// Update title
-				$data.find('.wp-mcp-ai-preview-title').text(data.title || 'Untitled Quiz');
-
-				// Update meta information
-				const metaParts = [];
-				if (data.difficulty) {
-					metaParts.push('Difficulty: ' + data.difficulty);
-				}
-				if (data.questions && data.questions.length) {
-					metaParts.push(data.questions.length + ' Questions');
-				}
-				if (data.time_limit) {
-					metaParts.push('Time: ' + data.time_limit + ' min');
-				}
-				if (data.pass_score) {
-					metaParts.push('Pass: ' + data.pass_score + '%');
-				}
-				$data.find('.wp-mcp-ai-preview-meta').text(metaParts.join(' • '));
-
-				// Update questions preview (show first 3)
-				const $questions = $data.find('.wp-mcp-ai-preview-questions');
-				$questions.empty();
-
-				if (data.questions && data.questions.length > 0) {
-					const questionsToShow = data.questions.slice(0, 3);
-					
-					questionsToShow.forEach((q, index) => {
-						const $questionBlock = $('<div class="wp-mcp-ai-preview-question"></div>');
-						
-						// Question text
-						const $questionText = $('<p class="wp-mcp-ai-preview-question-text"></p>');
-						$questionText.html('<strong>' + (index + 1) + '.</strong> ' + this.escapeHtml(q.question));
-						$questionBlock.append($questionText);
-
-						// Options
-						if (q.options && typeof q.options === 'object') {
-							const $optionsList = $('<ul class="wp-mcp-ai-preview-options"></ul>');
-							
-							for (const key in q.options) {
-								if (q.options.hasOwnProperty(key)) {
-									const isCorrect = key === q.correct_answer;
-									const $option = $('<li></li>');
-									$option.html(
-										'<strong>' + key + ')</strong> ' + 
-										this.escapeHtml(q.options[key]) +
-										(isCorrect ? ' <span class="wp-mcp-ai-correct-badge">✓</span>' : '')
-									);
-									if (isCorrect) {
-										$option.addClass('wp-mcp-ai-correct-option');
-									}
-									$optionsList.append($option);
-								}
-							}
-							
-							$questionBlock.append($optionsList);
-						}
-
-						$questions.append($questionBlock);
-					});
-
-					// Add "and X more" if there are more questions
-					if (data.questions.length > 3) {
-						const remaining = data.questions.length - 3;
-						const $more = $('<p class="wp-mcp-ai-preview-more"></p>');
-						$more.text('...and ' + remaining + ' more question' + (remaining > 1 ? 's' : ''));
-						$questions.append($more);
-					}
-				}
+				// Update header
+				this.updatePreviewHeader(data);
+				
+				// Render questions for current page
+				this.renderQuestions();
+				
+				// Update pagination
+				this.updatePagination();
 
 				// Show data, hide loading
 				$loading.hide();
-				$data.show();
+				$data.css('opacity', '1').show();
 
-				// Scroll sidebar to preview
-				$preview[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-			}, 500);
+				// Scroll to preview only on initial load
+				if (!isUpdate) {
+					$preview[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				}
+			}, loadingDelay);
+		},
+
+		/**
+		 * Update preview header with quiz metadata.
+		 *
+		 * @param {Object} data Quiz data
+		 */
+		updatePreviewHeader: function(data) {
+			const $data = $('.wp-mcp-ai-preview-data');
+			
+			// Update title
+			$data.find('.wp-mcp-ai-preview-title').text(data.title || 'Untitled Quiz');
+
+			// Update meta information
+			const metaParts = [];
+			if (data.difficulty) {
+				metaParts.push('Difficulty: ' + data.difficulty);
+			}
+			if (data.questions && data.questions.length) {
+				metaParts.push(data.questions.length + ' Question' + (data.questions.length !== 1 ? 's' : ''));
+			}
+			if (data.time_limit) {
+				metaParts.push('Time: ' + data.time_limit + ' min');
+			}
+			if (data.pass_score) {
+				metaParts.push('Pass: ' + data.pass_score + '%');
+			}
+			$data.find('.wp-mcp-ai-preview-meta').text(metaParts.join(' • '));
+		},
+
+		/**
+		 * Render questions for current page.
+		 */
+		renderQuestions: function() {
+			const data = this.previewState.quizData;
+			const $questions = $('.wp-mcp-ai-preview-questions');
+			
+			if (!data || !data.questions || data.questions.length === 0) {
+				$questions.html('<p class="wp-mcp-ai-preview-empty">No questions available yet.</p>');
+				return;
+			}
+
+			// Calculate pagination
+			const startIndex = (this.previewState.currentPage - 1) * this.previewState.questionsPerPage;
+			const endIndex = Math.min(startIndex + this.previewState.questionsPerPage, data.questions.length);
+			const questionsToShow = data.questions.slice(startIndex, endIndex);
+
+			// Clear existing questions
+			$questions.empty();
+
+			// Render questions for current page
+			questionsToShow.forEach((q, relativeIndex) => {
+				const absoluteIndex = startIndex + relativeIndex;
+				const $questionBlock = $('<div class="wp-mcp-ai-preview-question"></div>');
+				
+				// Question text
+				const $questionText = $('<p class="wp-mcp-ai-preview-question-text"></p>');
+				$questionText.html('<strong>' + (absoluteIndex + 1) + '.</strong> ' + this.escapeHtml(q.question));
+				$questionBlock.append($questionText);
+
+				// Options
+				if (q.options && typeof q.options === 'object') {
+					const $optionsList = $('<ul class="wp-mcp-ai-preview-options"></ul>');
+					
+					for (const key in q.options) {
+						if (q.options.hasOwnProperty(key)) {
+							const isCorrect = key === q.correct_answer;
+							const $option = $('<li></li>');
+							$option.html(
+								'<strong>' + key + ')</strong> ' + 
+								this.escapeHtml(q.options[key]) +
+								(isCorrect ? ' <span class="wp-mcp-ai-correct-badge">✓</span>' : '')
+							);
+							if (isCorrect) {
+								$option.addClass('wp-mcp-ai-correct-option');
+							}
+							$optionsList.append($option);
+						}
+					}
+					
+					$questionBlock.append($optionsList);
+				}
+
+				$questions.append($questionBlock);
+			});
+		},
+
+		/**
+		 * Update pagination controls.
+		 */
+		updatePagination: function() {
+			const $pagination = $('.wp-mcp-ai-preview-pagination');
+			const $prev = $('.wp-mcp-ai-preview-prev');
+			const $next = $('.wp-mcp-ai-preview-next');
+			const $currentPage = $('.wp-mcp-ai-preview-current-page');
+			const $totalPages = $('.wp-mcp-ai-preview-total-pages');
+
+			const totalPages = Math.ceil(this.previewState.totalQuestions / this.previewState.questionsPerPage);
+
+			// Show pagination if more than one page
+			if (totalPages > 1) {
+				$pagination.show();
+				
+				// Update page numbers
+				$currentPage.text(this.previewState.currentPage);
+				$totalPages.text(totalPages);
+
+				// Update button states
+				$prev.prop('disabled', this.previewState.currentPage === 1);
+				$next.prop('disabled', this.previewState.currentPage === totalPages);
+			} else {
+				$pagination.hide();
+			}
 		},
 
 		/**

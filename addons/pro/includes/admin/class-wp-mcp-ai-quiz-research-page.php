@@ -185,6 +185,21 @@ class WP_MCP_AI_Quiz_Research_Page {
 									<p class="wp-mcp-ai-preview-meta"></p>
 								</div>
 								<div class="wp-mcp-ai-preview-questions"></div>
+								<div class="wp-mcp-ai-preview-pagination" style="display: none;">
+									<button type="button" class="button wp-mcp-ai-preview-prev" disabled>
+										<span class="dashicons dashicons-arrow-left-alt2"></span>
+										<?php esc_html_e( 'Previous', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+									<span class="wp-mcp-ai-preview-page-info">
+										<span class="wp-mcp-ai-preview-current-page">1</span>
+										<?php esc_html_e( 'of', 'mcp-ai-wpoos-pro' ); ?>
+										<span class="wp-mcp-ai-preview-total-pages">1</span>
+									</span>
+									<button type="button" class="button wp-mcp-ai-preview-next">
+										<?php esc_html_e( 'Next', 'mcp-ai-wpoos-pro' ); ?>
+										<span class="dashicons dashicons-arrow-right-alt2"></span>
+									</button>
+								</div>
 							</div>
 						</div>
 					</div>
