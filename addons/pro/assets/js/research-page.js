@@ -18,19 +18,24 @@
 		 * Initialize the research page.
 		 */
 		init: function() {
+			console.log('[Research Page] Initializing research page');
 			this.bindEvents();
 			this.initPreview();
+			console.log('[Research Page] Research page initialized successfully');
 		},
 
 		/**
 		 * Bind event handlers.
 		 */
 		bindEvents: function() {
+			console.log('[Research Page] Binding event handlers');
+			
 			// Example query buttons
 			$(document).on('click', '.wp-mcp-ai-example-query', this.handleExampleQuery.bind(this));
 
 			// Listen for CPT action events from chat UI
 			// Use native addEventListener for CustomEvent compatibility
+			console.log('[Research Page] Registering wp-mcp-ai-cpt-action event listener');
 			document.addEventListener('wp-mcp-ai-cpt-action', this.handleCptActionNative.bind(this));
 
 			// Listen for tool result storage events to update preview
@@ -44,6 +49,8 @@
 			$(document).on('click', '.wp-mcp-ai-create-policy-btn, .wp-mcp-ai-create-policy-btn-sidebar', this.handleCreatePolicy.bind(this));
 			$(document).on('click', '.wp-mcp-ai-create-post-btn, .wp-mcp-ai-create-post-btn-sidebar', this.handleCreatePost.bind(this));
 			$(document).on('click', '.wp-mcp-ai-create-page-btn, .wp-mcp-ai-create-page-btn-sidebar', this.handleCreatePage.bind(this));
+			
+			console.log('[Research Page] Event handlers bound successfully');
 		},
 
 		/**
@@ -466,38 +473,69 @@
 		 * @param {HTMLElement} button The button element
 		 */
 		handleCreateQuizFromConversation: function(conversation, button) {
+			console.log('[Research Page] handleCreateQuizFromConversation called');
+			
 			if (!conversation) {
+				console.error('[Research Page] No conversation data provided');
 				this.showError(wpMcpAiResearchPage.strings.error);
 				return;
 			}
 
+			console.log('[Research Page] Conversation received:', {
+				hasToolResults: !!(conversation.toolResults),
+				toolResultKeys: conversation.toolResults ? Object.keys(conversation.toolResults) : [],
+				hasLastAssistantMessage: !!(conversation.lastAssistantMessage),
+				hasFullText: !!(conversation.fullText),
+				messageCount: (conversation.messages || []).length
+			});
+
 			// Check if we have structured data from research_quiz_topic tool
 			let researchData = null;
 			if (conversation.toolResults && conversation.toolResults.research_quiz_topic) {
+				console.log('[Research Page] Found research_quiz_topic tool result');
 				researchData = conversation.toolResults.research_quiz_topic;
 				
 				// Validate structured data
 				if (!researchData || !researchData.success) {
-					console.warn('[Research Page] research_quiz_topic tool result not successful');
+					console.warn('[Research Page] research_quiz_topic tool result not successful:', researchData);
 					researchData = null;
+				} else {
+					console.log('[Research Page] Using structured data from research_quiz_topic tool:', {
+						hasQuestions: !!(researchData.questions),
+						questionCount: (researchData.questions || []).length,
+						title: researchData.title
+					});
 				}
+			} else {
+				console.log('[Research Page] No research_quiz_topic tool result found, will use text parsing');
 			}
 
 			// If no structured data, fall back to text parsing
 			if (!researchData) {
 				if (!conversation.lastAssistantMessage && !conversation.fullText) {
+					console.error('[Research Page] No text content available for parsing');
 					this.showError(wpMcpAiResearchPage.strings.error);
 					return;
 				}
 				
+				console.log('[Research Page] Building quiz data from text parsing');
 				// Build data package from text
 				researchData = this.buildQuizDataPackage(conversation);
+				console.log('[Research Page] Built quiz data package:', {
+					hasTitle: !!(researchData.title),
+					title: researchData.title,
+					hasQuestions: !!(researchData.questions),
+					questionCount: (researchData.questions || []).length
+				});
 			}
 
 			// Confirm with user
+			console.log('[Research Page] Prompting user confirmation');
 			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
+				console.log('[Research Page] User cancelled quiz creation');
 				return;
 			}
+			console.log('[Research Page] User confirmed quiz creation');
 
 			// Disable button and show loading state
 			const $button = $(button);
@@ -507,23 +545,33 @@
 				wpMcpAiResearchPage.strings.creating
 			);
 
+			console.log('[Research Page] Sending quiz to database via AJAX');
 			// Send to add-to-database method
 			this.addQuizToDatabase(researchData).then((response) => {
+				console.log('[Research Page] AJAX response received:', {
+					success: response.success,
+					hasData: !!(response.data),
+					message: response.data ? response.data.message : null
+				});
+				
 				if (response.success) {
+					console.log('[Research Page] Quiz created successfully');
 					this.showSuccess(response.data.message);
 					
 					// Redirect to edit page after short delay
 					setTimeout(() => {
 						if (response.data.edit_url) {
+							console.log('[Research Page] Redirecting to edit page:', response.data.edit_url);
 							window.location.href = response.data.edit_url;
 						}
 					}, 1500);
 				} else {
+					console.error('[Research Page] Quiz creation failed:', response.data);
 					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
 					$button.prop('disabled', false).html(originalText);
 				}
 			}).catch((error) => {
-				console.error('[Research Page] Quiz creation failed:', error);
+				console.error('[Research Page] AJAX request failed:', error);
 				this.showError(wpMcpAiResearchPage.strings.error);
 				$button.prop('disabled', false).html(originalText);
 			});
