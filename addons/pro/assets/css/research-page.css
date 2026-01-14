@@ -202,7 +202,7 @@
 }
 
 /* Responsive Design */
-@media screen and (max-width: 1280px) {
+@media screen and (max-width: 960px) {
 	.wp-mcp-ai-research-container {
 		flex-direction: column;
 	}
