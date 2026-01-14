@@ -169,10 +169,11 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		// Create quiz post.
 		$quiz_data = array(
-			'post_type'   => 'mcp_ai_quiz',
-			'post_title'  => $title,
-			'post_status' => 'publish',
-			'post_author' => $current_user_id,
+			'post_type'    => 'mcp_ai_quiz',
+			'post_title'   => $title,
+			'post_content' => $description,
+			'post_status'  => 'publish',
+			'post_author'  => $current_user_id,
 		);
 
 		$quiz_id = wp_insert_post( $quiz_data, true );
