@@ -372,6 +372,15 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Web_Browser'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-browser.php',
 		);
 
+		// Add AI CPT Management tools if enabled.
+		if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
+			$cpt_research_tools = array(
+				'WP_MCP_AI_Tool_Research_Post' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-post.php',
+				'WP_MCP_AI_Tool_Research_Page' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-page.php',
+			);
+			$pro_tools          = array_merge( $pro_tools, $cpt_research_tools );
+		}
+
 		// Add ECA management tools if enabled.
 		if ( ! empty( $settings['enable_eca_management'] ) ) {
 			$eca_tools = array(

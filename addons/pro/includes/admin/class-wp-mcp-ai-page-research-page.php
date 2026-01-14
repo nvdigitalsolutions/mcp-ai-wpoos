@@ -93,7 +93,7 @@ class WP_MCP_AI_Page_Research_Page {
 				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
 				'nonce'         => wp_create_nonce( 'wp_mcp_ai_research_page' ),
 				'addNewUrl'     => admin_url( 'post-new.php?post_type=page' ),
-				'researchTool'  => 'search_content',
+				'researchTool'  => 'research_page',
 				'strings'       => array(
 					'researching'       => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
 					'error'             => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
