@@ -100,22 +100,6 @@ abstract class WP_MCP_AI_CPT_Settings_Page_Base {
 			$this->option_name,
 			$this->option_name . '_section'
 		);
-
-		add_settings_field(
-			'provider',
-			__( 'AI Provider', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_provider_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-
-		add_settings_field(
-			'model',
-			__( 'Model', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_model_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
 	}
 
 	/**
@@ -151,12 +135,8 @@ abstract class WP_MCP_AI_CPT_Settings_Page_Base {
 
 			<div class="card" style="max-width: 800px; margin-top: 20px;">
 				<h2><?php esc_html_e( 'How This Works', 'mcp-ai-wpoos-pro' ); ?></h2>
-				<p><?php esc_html_e( 'These settings control which AI assistant, provider, and model are used for the Research & Add functionality.', 'mcp-ai-wpoos-pro' ); ?></p>
-				<ul>
-					<li><strong><?php esc_html_e( 'Assistant:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'The AI assistant that will be used in the research chat interface.', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><strong><?php esc_html_e( 'Provider:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'The AI service provider (OpenAI, Gemini, or Ollama).', 'mcp-ai-wpoos-pro' ); ?></li>
-					<li><strong><?php esc_html_e( 'Model:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'The specific AI model to use for generating content.', 'mcp-ai-wpoos-pro' ); ?></li>
-				</ul>
+				<p><?php esc_html_e( 'These settings control which AI assistant is used for the Research & Add functionality.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'The assistant you select will be used in the research chat interface. The assistant\'s own provider and model configuration will be used for generating content.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
 		</div>
 		<?php
@@ -203,70 +183,6 @@ abstract class WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
-	 * Render provider selection field.
-	 */
-	public function render_provider_field() {
-		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['provider'] ) ? sanitize_text_field( $options['provider'] ) : 'openai';
-
-		$providers = array(
-			'openai' => __( 'OpenAI', 'mcp-ai-wpoos-pro' ),
-			'gemini' => __( 'Google Gemini', 'mcp-ai-wpoos-pro' ),
-			'ollama' => __( 'Ollama (Local)', 'mcp-ai-wpoos-pro' ),
-		);
-
-		?>
-		<select name="<?php echo esc_attr( $this->option_name ); ?>[provider]" id="provider">
-			<?php foreach ( $providers as $key => $label ) : ?>
-				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $value, $key ); ?>>
-					<?php echo esc_html( $label ); ?>
-				</option>
-			<?php endforeach; ?>
-		</select>
-		<p class="description">
-			<?php esc_html_e( 'Select the AI provider to use for content generation.', 'mcp-ai-wpoos-pro' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Render model selection field.
-	 */
-	public function render_model_field() {
-		$options = get_option( $this->option_name, array() );
-		$value   = isset( $options['model'] ) ? sanitize_text_field( $options['model'] ) : 'gpt-4o';
-
-		$models = array(
-			// OpenAI models.
-			'gpt-4o'              => __( 'GPT-4o (OpenAI)', 'mcp-ai-wpoos-pro' ),
-			'gpt-4o-mini'         => __( 'GPT-4o Mini (OpenAI)', 'mcp-ai-wpoos-pro' ),
-			'gpt-4-turbo'         => __( 'GPT-4 Turbo (OpenAI)', 'mcp-ai-wpoos-pro' ),
-			'gpt-3.5-turbo'       => __( 'GPT-3.5 Turbo (OpenAI)', 'mcp-ai-wpoos-pro' ),
-			// Gemini models.
-			'gemini-2.0-flash'    => __( 'Gemini 2.0 Flash (Google)', 'mcp-ai-wpoos-pro' ),
-			'gemini-1.5-pro'      => __( 'Gemini 1.5 Pro (Google)', 'mcp-ai-wpoos-pro' ),
-			'gemini-1.5-flash'    => __( 'Gemini 1.5 Flash (Google)', 'mcp-ai-wpoos-pro' ),
-			// Ollama models.
-			'llama2'              => __( 'Llama 2 (Ollama)', 'mcp-ai-wpoos-pro' ),
-			'mistral'             => __( 'Mistral (Ollama)', 'mcp-ai-wpoos-pro' ),
-			'codellama'           => __( 'Code Llama (Ollama)', 'mcp-ai-wpoos-pro' ),
-		);
-
-		?>
-		<select name="<?php echo esc_attr( $this->option_name ); ?>[model]" id="model">
-			<?php foreach ( $models as $key => $label ) : ?>
-				<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $value, $key ); ?>>
-					<?php echo esc_html( $label ); ?>
-				</option>
-			<?php endforeach; ?>
-		</select>
-		<p class="description">
-			<?php esc_html_e( 'Select the AI model to use. Make sure the model matches the provider selected above.', 'mcp-ai-wpoos-pro' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
 	 * Sanitize settings.
 	 *
 	 * @param array $input Settings input.
@@ -277,34 +193,6 @@ abstract class WP_MCP_AI_CPT_Settings_Page_Base {
 
 		if ( isset( $input['assistant_id'] ) ) {
 			$sanitized['assistant_id'] = absint( $input['assistant_id'] );
-		}
-
-		if ( isset( $input['provider'] ) ) {
-			$allowed_providers           = array( 'openai', 'gemini', 'ollama' );
-			$provider                    = sanitize_text_field( $input['provider'] );
-			$sanitized['provider']       = in_array( $provider, $allowed_providers, true ) ? $provider : 'openai';
-		}
-
-		if ( isset( $input['model'] ) ) {
-			// Define allowed models.
-			$allowed_models = array(
-				// OpenAI models.
-				'gpt-4o',
-				'gpt-4o-mini',
-				'gpt-4-turbo',
-				'gpt-3.5-turbo',
-				// Gemini models.
-				'gemini-2.0-flash',
-				'gemini-1.5-pro',
-				'gemini-1.5-flash',
-				// Ollama models.
-				'llama2',
-				'mistral',
-				'codellama',
-			);
-			
-			$model              = sanitize_text_field( $input['model'] );
-			$sanitized['model'] = in_array( $model, $allowed_models, true ) ? $model : 'gpt-4o';
 		}
 
 		return $sanitized;

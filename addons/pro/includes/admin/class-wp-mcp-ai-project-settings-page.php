@@ -38,7 +38,7 @@ class WP_MCP_AI_Project_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 * Register settings.
 	 */
 	public function register_settings() {
-		// Call parent to register base fields (assistant, provider, model).
+		// Call parent to register base fields (assistant).
 		parent::register_settings();
 	}
 
