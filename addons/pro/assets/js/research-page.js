@@ -103,7 +103,10 @@
 		 * @param {CustomEvent} e Native custom event
 		 */
 		handleCptActionNative: function(e) {
+			console.log('[Research Page] Received wp-mcp-ai-cpt-action event', e.detail);
+			
 			if (!e.detail) {
+				console.warn('[Research Page] Event detail is missing');
 				return;
 			}
 
@@ -111,6 +114,8 @@
 			const action = detail.action;
 			const conversation = detail.conversation;
 			const button = detail.button;
+
+			console.log('[Research Page] Processing action:', action);
 
 			// Route to appropriate handler based on action type
 			switch (action) {
@@ -1021,11 +1026,12 @@
 			e.preventDefault();
 			
 			// Find the CPT action button in the chat UI and trigger it
-			const $cptButton = $('.wp-mcp-ai-chat__cpt-action[data-action="create_quiz"]');
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_quiz"]');
 			
-			if ($cptButton.length > 0) {
+			if (cptButton) {
 				// Delegate to the CPT action button which has access to conversation state
-				$cptButton.trigger('click');
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
 			} else {
 				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
@@ -1096,11 +1102,12 @@
 			e.preventDefault();
 			
 			// Find the CPT action button in the chat UI and trigger it
-			const $cptButton = $('.wp-mcp-ai-chat__cpt-action[data-action="create_eca"]');
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_eca"]');
 			
-			if ($cptButton.length > 0) {
+			if (cptButton) {
 				// Delegate to the CPT action button which has access to conversation state
-				$cptButton.trigger('click');
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
 			} else {
 				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
@@ -1120,11 +1127,12 @@
 			e.preventDefault();
 			
 			// Find the CPT action button in the chat UI and trigger it
-			const $cptButton = $('.wp-mcp-ai-chat__cpt-action[data-action="create_policy"]');
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_policy"]');
 			
-			if ($cptButton.length > 0) {
+			if (cptButton) {
 				// Delegate to the CPT action button which has access to conversation state
-				$cptButton.trigger('click');
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
 			} else {
 				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
@@ -1144,11 +1152,12 @@
 			e.preventDefault();
 			
 			// Find the CPT action button in the chat UI and trigger it
-			const $cptButton = $('.wp-mcp-ai-chat__cpt-action[data-action="create_place"]');
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_place"]');
 			
-			if ($cptButton.length > 0) {
+			if (cptButton) {
 				// Delegate to the CPT action button which has access to conversation state
-				$cptButton.trigger('click');
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
 			} else {
 				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
@@ -1168,11 +1177,12 @@
 			e.preventDefault();
 			
 			// Find the CPT action button in the chat UI and trigger it
-			const $cptButton = $('.wp-mcp-ai-chat__cpt-action[data-action="create_post"]');
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_post"]');
 			
-			if ($cptButton.length > 0) {
+			if (cptButton) {
 				// Delegate to the CPT action button which has access to conversation state
-				$cptButton.trigger('click');
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
 			} else {
 				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
@@ -1192,11 +1202,12 @@
 			e.preventDefault();
 			
 			// Find the CPT action button in the chat UI and trigger it
-			const $cptButton = $('.wp-mcp-ai-chat__cpt-action[data-action="create_page"]');
+			const cptButton = document.querySelector('.wp-mcp-ai-chat__cpt-action[data-action="create_page"]');
 			
-			if ($cptButton.length > 0) {
+			if (cptButton) {
 				// Delegate to the CPT action button which has access to conversation state
-				$cptButton.trigger('click');
+				// Use native click() method since the button uses native addEventListener
+				cptButton.click();
 			} else {
 				// No CPT action button found - show error
 				this.showError(wpMcpAiResearchPage.strings.error);
