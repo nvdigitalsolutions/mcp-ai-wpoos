@@ -446,6 +446,7 @@ class WP_MCP_AI_Shortcode {
 					'enable_streaming'      => 'true',
 					'allow_sensitive_tools' => 'false',
 					'template'              => 'classic',
+					'cpt_actions'           => '', // JSON-encoded array of CPT action buttons.
 				),
 				$atts,
 				$tag
@@ -663,6 +664,18 @@ class WP_MCP_AI_Shortcode {
 			$tool_shortcuts         = self::get_assistant_tool_shortcuts( $shortcuts_assistant_id );
 			if ( ! empty( $tool_shortcuts ) ) {
 				$config['toolShortcuts'] = $tool_shortcuts;
+			}
+
+			// Parse CPT action buttons if provided.
+			$cpt_actions = array();
+			if ( ! empty( $atts['cpt_actions'] ) ) {
+				$decoded_actions = json_decode( $atts['cpt_actions'], true );
+				if ( is_array( $decoded_actions ) ) {
+					$cpt_actions = $decoded_actions;
+				}
+			}
+			if ( ! empty( $cpt_actions ) ) {
+				$config['cptActions'] = $cpt_actions;
 			}
 
 			if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
@@ -885,6 +898,9 @@ class WP_MCP_AI_Shortcode {
 					</button>
 				</div>
 			</div>
+			<?php if ( ! empty( $cpt_actions ) ) : ?>
+			<div class="wp-mcp-ai-chat__cpt-actions" role="group" aria-label="<?php echo esc_attr__( 'Post type actions', 'mcp-ai-wpoos' ); ?>"></div>
+			<?php endif; ?>
 			<section class="wp-mcp-ai-chat__history" id="<?php echo esc_attr( $instance_id ); ?>-history" hidden aria-label="<?php esc_attr_e( 'Previous conversations', 'mcp-ai-wpoos' ); ?>">
 				<div class="wp-mcp-ai-chat__history-header">
 					<button type="button" class="wp-mcp-ai-chat__history-refresh" aria-label="<?php echo esc_attr__( 'Refresh conversation history', 'mcp-ai-wpoos' ); ?>" title="<?php echo esc_attr__( 'Refresh conversation history', 'mcp-ai-wpoos' ); ?>">

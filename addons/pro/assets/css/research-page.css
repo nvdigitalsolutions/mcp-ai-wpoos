@@ -26,7 +26,8 @@
 .wp-mcp-ai-research-intro,
 .wp-mcp-ai-research-tips,
 .wp-mcp-ai-research-examples,
-.wp-mcp-ai-research-actions {
+.wp-mcp-ai-research-actions,
+.wp-mcp-ai-research-preview {
 	background: #fff;
 	border: 1px solid #ccd0d4;
 	border-radius: 4px;
@@ -35,16 +36,26 @@
 	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
 }
 
+.wp-mcp-ai-research-preview {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
 .wp-mcp-ai-research-intro h2,
 .wp-mcp-ai-research-tips h3,
 .wp-mcp-ai-research-examples h3,
-.wp-mcp-ai-research-actions h3 {
+.wp-mcp-ai-research-actions h3,
+.wp-mcp-ai-research-preview h3 {
 	margin-top: 0;
 	margin-bottom: 15px;
 	font-size: 14px;
 	font-weight: 600;
 	text-transform: uppercase;
 	color: #1d2327;
+}
+
+.wp-mcp-ai-research-preview h3 {
+	color: #2271b1;
 }
 
 .wp-mcp-ai-research-intro ol {
@@ -285,4 +296,161 @@
 
 .wp-mcp-ai-add-to-database-btn .dashicons {
 	margin-top: 3px;
+}
+
+/* Quiz Preview Styles */
+.wp-mcp-ai-preview-content {
+	background: #fff;
+	border-radius: 4px;
+	padding: 15px;
+	margin-top: 10px;
+}
+
+.wp-mcp-ai-preview-loading {
+	text-align: center;
+	padding: 20px;
+}
+
+.wp-mcp-ai-preview-loading .spinner {
+	float: none;
+	margin: 0 auto 10px;
+}
+
+.wp-mcp-ai-preview-loading p {
+	margin: 0;
+	color: #646970;
+	font-size: 13px;
+}
+
+.wp-mcp-ai-preview-error {
+	color: #d63638;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-preview-header {
+	margin-bottom: 15px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.wp-mcp-ai-preview-title {
+	margin: 0 0 8px 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-preview-meta {
+	margin: 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+.wp-mcp-ai-preview-question {
+	margin-bottom: 15px;
+	padding: 12px;
+	background: #f9fafb;
+	border-radius: 4px;
+	border-left: 3px solid #2271b1;
+}
+
+.wp-mcp-ai-preview-question-text {
+	margin: 0 0 10px 0;
+	font-size: 13px;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-preview-options {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.wp-mcp-ai-preview-options li {
+	margin-bottom: 6px;
+	font-size: 12px;
+	color: #50575e;
+	padding: 6px 8px;
+	background: #fff;
+	border-radius: 3px;
+	border: 1px solid #e5e7eb;
+}
+
+.wp-mcp-ai-preview-options li.wp-mcp-ai-correct-option {
+	background: #d7f1de;
+	border-color: #00a32a;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-correct-badge {
+	color: #00a32a;
+	font-weight: bold;
+	margin-left: 4px;
+}
+
+.wp-mcp-ai-preview-more {
+	margin: 10px 0 0 0;
+	padding: 10px;
+	text-align: center;
+	font-size: 12px;
+	color: #646970;
+	font-style: italic;
+	background: #f9fafb;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-preview-empty {
+	margin: 0;
+	padding: 20px;
+	text-align: center;
+	font-size: 13px;
+	color: #646970;
+	font-style: italic;
+}
+
+/* Pagination Controls */
+.wp-mcp-ai-preview-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 15px;
+	padding-top: 15px;
+	border-top: 1px solid #e5e7eb;
+}
+
+.wp-mcp-ai-preview-pagination .button {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 12px;
+	font-size: 12px;
+}
+
+.wp-mcp-ai-preview-pagination .button .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
+
+.wp-mcp-ai-preview-pagination .button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.wp-mcp-ai-preview-page-info {
+	font-size: 12px;
+	color: #646970;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-preview-page-info .wp-mcp-ai-preview-current-page {
+	color: #2271b1;
+	font-weight: 600;
+}
+
+/* Smooth transition for updates */
+.wp-mcp-ai-preview-data {
+	transition: opacity 0.3s ease;
 }

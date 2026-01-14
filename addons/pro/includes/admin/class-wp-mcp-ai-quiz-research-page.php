@@ -172,14 +172,40 @@ class WP_MCP_AI_Quiz_Research_Page {
 						</ul>
 					</div>
 
+					<div class="wp-mcp-ai-research-preview" id="wp-mcp-ai-quiz-preview" style="display: none;">
+						<h3><?php esc_html_e( 'Quiz Preview', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<div class="wp-mcp-ai-preview-content">
+							<div class="wp-mcp-ai-preview-loading">
+								<span class="spinner is-active"></span>
+								<p><?php esc_html_e( 'Building quiz...', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<div class="wp-mcp-ai-preview-data" style="display: none;">
+								<div class="wp-mcp-ai-preview-header">
+									<h4 class="wp-mcp-ai-preview-title"></h4>
+									<p class="wp-mcp-ai-preview-meta"></p>
+								</div>
+								<div class="wp-mcp-ai-preview-questions"></div>
+								<div class="wp-mcp-ai-preview-pagination" style="display: none;">
+									<button type="button" class="button wp-mcp-ai-preview-prev" disabled>
+										<span class="dashicons dashicons-arrow-left-alt2"></span>
+										<?php esc_html_e( 'Previous', 'mcp-ai-wpoos-pro' ); ?>
+									</button>
+									<span class="wp-mcp-ai-preview-page-info">
+										<span class="wp-mcp-ai-preview-current-page">1</span>
+										<?php esc_html_e( 'of', 'mcp-ai-wpoos-pro' ); ?>
+										<span class="wp-mcp-ai-preview-total-pages">1</span>
+									</span>
+									<button type="button" class="button wp-mcp-ai-preview-next">
+										<?php esc_html_e( 'Next', 'mcp-ai-wpoos-pro' ); ?>
+										<span class="dashicons dashicons-arrow-right-alt2"></span>
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
 					<div class="wp-mcp-ai-research-actions">
-						<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
-						<p>
-							<button type="button" class="button button-primary button-large wp-mcp-ai-create-quiz-btn-sidebar wp-mcp-ai-add-to-database-btn">
-								<span class="dashicons dashicons-database-add"></span>
-								<?php esc_html_e( 'Add to Database', 'mcp-ai-wpoos-pro' ); ?>
-							</button>
-						</p>
+						<h3><?php esc_html_e( 'Quick Links', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p>
 							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_quiz' ) ); ?>" class="button">
 								<?php esc_html_e( 'View All Quizzes', 'mcp-ai-wpoos-pro' ); ?>
@@ -197,26 +223,23 @@ class WP_MCP_AI_Quiz_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface using shortcode.
-							echo do_shortcode( '[mcp_ai_chat assistant="' . absint( $assistant_id ) . '"]' );
+							// Define CPT action buttons for quiz creation.
+							$cpt_actions = array(
+								array(
+									'label'   => __( 'Add to Database', 'mcp-ai-wpoos-pro' ),
+									'action'  => 'create_quiz',
+									'classes' => 'button button-primary button-large',
+									'icon'    => 'dashicons-database-add',
+								),
+							);
+
+							// Render chat interface with CPT action buttons.
+							echo do_shortcode(
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" cpt_actions="' . esc_attr( wp_json_encode( $cpt_actions ) ) . '"]'
+							);
 							?>
 						</div>
 
-						<div class="wp-mcp-ai-research-create-section" style="display: none;">
-							<div class="wp-mcp-ai-research-data-preview">
-								<h3><?php esc_html_e( 'Researched Questions', 'mcp-ai-wpoos-pro' ); ?></h3>
-								<div id="wp-mcp-ai-research-data-content"></div>
-							</div>
-							<div class="wp-mcp-ai-research-create-actions">
-								<button type="button" class="button button-primary button-hero wp-mcp-ai-create-quiz-btn">
-									<span class="dashicons dashicons-plus-alt" style="margin-top: 8px;"></span>
-									<?php esc_html_e( 'Create Quiz from Research', 'mcp-ai-wpoos-pro' ); ?>
-								</button>
-								<p class="description">
-									<?php esc_html_e( 'This will create a new quiz using the questions from your research conversation.', 'mcp-ai-wpoos-pro' ); ?>
-								</p>
-							</div>
-						</div>
 					<?php else : ?>
 						<div class="notice notice-error">
 							<p>
