@@ -211,6 +211,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
 				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-cpt-ai-integration.php';
 				WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
+
+				// Load Research & Add pages for Posts and Pages.
+				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-post-research-page.php';
+				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-page-research-page.php';
 			}
 		}
 
