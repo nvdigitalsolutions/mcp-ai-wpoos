@@ -38,28 +38,8 @@ class WP_MCP_AI_Project_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 * Register settings.
 	 */
 	public function register_settings() {
-		register_setting(
-			$this->option_name . '_group',
-			$this->option_name,
-			array(
-				'sanitize_callback' => array( $this, 'sanitize_settings' ),
-			)
-		);
-
-		add_settings_section(
-			$this->option_name . '_section',
-			__( 'AI Assistant Configuration', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_section_description' ),
-			$this->option_name
-		);
-
-		add_settings_field(
-			'assistant_id',
-			__( 'Assistant', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_assistant_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
+		// Call parent to register base fields (assistant).
+		parent::register_settings();
 	}
 
 	/**
@@ -76,13 +56,8 @@ class WP_MCP_AI_Project_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 * @return array Sanitized settings.
 	 */
 	public function sanitize_settings( $input ) {
-		$sanitized = array();
-
-		if ( isset( $input['assistant_id'] ) ) {
-			$sanitized['assistant_id'] = absint( $input['assistant_id'] );
-		}
-
-		return $sanitized;
+		// Call parent sanitization for base fields.
+		return parent::sanitize_settings( $input );
 	}
 }
 

@@ -38,29 +38,10 @@ class WP_MCP_AI_Policy_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 * Register settings.
 	 */
 	public function register_settings() {
-		register_setting(
-			$this->option_name . '_group',
-			$this->option_name,
-			array(
-				'sanitize_callback' => array( $this, 'sanitize_settings' ),
-			)
-		);
+		// Call parent to register base fields (assistant).
+		parent::register_settings();
 
-		add_settings_section(
-			$this->option_name . '_section',
-			__( 'Research & Add Configuration', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_section_description' ),
-			$this->option_name
-		);
-
-		add_settings_field(
-			'assistant_id',
-			__( 'Assistant', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_assistant_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
-
+		// Add policy-specific settings.
 		add_settings_field(
 			'enable_research',
 			__( 'Enable Research & Add', 'mcp-ai-wpoos-pro' ),
@@ -101,12 +82,10 @@ class WP_MCP_AI_Policy_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 * @return array Sanitized settings.
 	 */
 	public function sanitize_settings( $input ) {
-		$sanitized = array();
+		// Call parent sanitization for base fields.
+		$sanitized = parent::sanitize_settings( $input );
 
-		if ( isset( $input['assistant_id'] ) ) {
-			$sanitized['assistant_id'] = absint( $input['assistant_id'] );
-		}
-
+		// Add policy-specific sanitization.
 		if ( isset( $input['enable_research'] ) ) {
 			$sanitized['enable_research'] = (bool) $input['enable_research'];
 		} else {

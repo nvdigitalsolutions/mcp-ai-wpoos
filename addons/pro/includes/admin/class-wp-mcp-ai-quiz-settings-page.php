@@ -38,28 +38,8 @@ class WP_MCP_AI_Quiz_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 * Register settings.
 	 */
 	public function register_settings() {
-		register_setting(
-			$this->option_name . '_group',
-			$this->option_name,
-			array(
-				'sanitize_callback' => array( $this, 'sanitize_settings' ),
-			)
-		);
-
-		add_settings_section(
-			$this->option_name . '_section',
-			__( 'Research & Add Configuration', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_section_description' ),
-			$this->option_name
-		);
-
-		add_settings_field(
-			'assistant_id',
-			__( 'Assistant', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_assistant_field' ),
-			$this->option_name,
-			$this->option_name . '_section'
-		);
+		// Call parent to register base fields (assistant).
+		parent::register_settings();
 
 		// Add quiz-specific settings section.
 		add_settings_section(
@@ -179,12 +159,10 @@ class WP_MCP_AI_Quiz_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 * @return array Sanitized settings.
 	 */
 	public function sanitize_settings( $input ) {
-		$sanitized = array();
+		// Call parent sanitization for base fields.
+		$sanitized = parent::sanitize_settings( $input );
 
-		if ( isset( $input['assistant_id'] ) ) {
-			$sanitized['assistant_id'] = absint( $input['assistant_id'] );
-		}
-
+		// Add quiz-specific sanitization.
 		if ( isset( $input['default_time_limit'] ) ) {
 			$sanitized['default_time_limit'] = absint( $input['default_time_limit'] );
 		}
