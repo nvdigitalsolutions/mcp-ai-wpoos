@@ -137,7 +137,7 @@ To ensure optimal performance and prevent content bloat:
 
 ### Trait: `WP_MCP_AI_Tool_Content_Media`
 
-Located at: `/addons/pro/includes/tools/trait-wp-mcp-ai-tool-content-media.php`
+Located at: `/includes/tools/trait-wp-mcp-ai-tool-content-media.php`
 
 **Methods:**
 

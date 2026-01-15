@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-content-media.php';
 
 /**
  * Creates a new ECA (Extra-Curricular Activity).
