@@ -110,6 +110,20 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	}
 
 	/**
+	 * Get tool definition for LLM payload.
+	 *
+	 * @return array Tool definition including name, description, parameters, and required capability.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                => $this->get_name(),
+			'description'         => $this->get_description(),
+			'parameters'          => $this->get_parameters_schema(),
+			'required_capability' => 'edit_posts',
+		);
+	}
+
+	/**
 	 * Execute the tool.
 	 *
 	 * @param array $arguments Tool arguments.
