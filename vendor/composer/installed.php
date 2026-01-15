@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/regenerate-vendor-metadata-again',
-        'version' => 'dev-copilot/regenerate-vendor-metadata-again',
-        'reference' => '6650758bf03cd83828e267b3001a0682853c31b8',
+        'pretty_version' => 'dev-copilot/regenerate-vendor-metadata-another-one',
+        'version' => 'dev-copilot/regenerate-vendor-metadata-another-one',
+        'reference' => 'fed370a248f52ec3be58d43a51fc7657a83021d1',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/regenerate-vendor-metadata-again',
-            'version' => 'dev-copilot/regenerate-vendor-metadata-again',
-            'reference' => '6650758bf03cd83828e267b3001a0682853c31b8',
+            'pretty_version' => 'dev-copilot/regenerate-vendor-metadata-another-one',
+            'version' => 'dev-copilot/regenerate-vendor-metadata-another-one',
+            'reference' => 'fed370a248f52ec3be58d43a51fc7657a83021d1',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
