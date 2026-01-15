@@ -85,9 +85,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
 				'wp_ajax_wp_mcp_ai_delete_old_playbooks'   => 'handle_delete_old_playbooks',
 				'wp_ajax_wp_mcp_ai_get_models_for_provider' => 'handle_get_models_for_provider',
-				'wp_ajax_wp_mcp_ai_filter_orchestration_tools' => 'handle_filter_orchestration_tools',
-				'wp_ajax_wp_mcp_ai_filter_token_manager_tools' => 'handle_filter_token_manager_tools',
-				'wp_ajax_wp_mcp_ai_filter_tools_manager'   => 'handle_filter_tools_manager',
 			);
 
 			$action         = current_action();
