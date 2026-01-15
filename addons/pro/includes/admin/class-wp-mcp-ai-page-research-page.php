@@ -56,7 +56,7 @@ class WP_MCP_AI_Page_Research_Page {
 	 */
 	public static function enqueue_assets( $hook ) {
 		// Only load on our research page.
-		if ( 'page_page_' . self::PAGE_SLUG !== $hook ) {
+		if ( 'edit-page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 
