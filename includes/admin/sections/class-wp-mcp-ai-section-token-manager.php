@@ -891,6 +891,210 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 
 		/**
+		 * Render per-tool view table for AJAX requests.
+		 *
+		 * This method renders only the table content for AJAX filtering.
+		 *
+		 * @return void
+		 */
+		public function render_per_tool_view_table() {
+			// Get all available tools.
+			$all_tools = $this->get_all_available_tools();
+
+			// Get search and filter parameters.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only operation.
+			$search = isset( $_GET['tool_search'] ) ? sanitize_text_field( wp_unslash( $_GET['tool_search'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only operation.
+			$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( $_GET['tool_group'] ) : '';
+
+			?>
+		<div class="wp-mcp-ai-table-wrapper">
+		<table class="wp-list-table widefat fixed striped">
+			<thead>
+				<tr>
+					<th style="width: 18%;"><?php esc_html_e( 'Tool Name', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 12%;"><?php esc_html_e( 'Tool Slug', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 15%;" class="wp-mcp-ai-tooltip" title="<?php esc_attr_e( 'Preferred AI model for this tool', 'mcp-ai-wpoos' ); ?>">
+						<?php esc_html_e( 'Preferred Model', 'mcp-ai-wpoos' ); ?>
+						<span class="dashicons dashicons-info" style="font-size: 14px; vertical-align: middle;"></span>
+					</th>
+					<th style="width: 8%;" class="wp-mcp-ai-tooltip" title="<?php esc_attr_e( 'Multiplier applied to base tier limits for this tool', 'mcp-ai-wpoos' ); ?>">
+						<?php esc_html_e( 'Multiplier', 'mcp-ai-wpoos' ); ?>
+						<span class="dashicons dashicons-info" style="font-size: 14px; vertical-align: middle;"></span>
+					</th>
+					<th style="width: 12%;"><?php esc_html_e( 'Effective Limits', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 8%;"><?php esc_html_e( 'Total Users', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 8%;"><?php esc_html_e( 'Total Requests', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 9%;"><?php esc_html_e( 'Tokens Used', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 10%;"><?php esc_html_e( 'Usage %', 'mcp-ai-wpoos' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php
+				// Apply category filter if provided.
+				if ( ! empty( $filter_group ) ) {
+					$registry  = WP_MCP_AI_Tool_Registry::get_instance();
+					$group_map = $registry->get_tool_group_map();
+
+					$all_tools = array_filter(
+						$all_tools,
+						function ( $tool_name, $tool_slug ) use ( $filter_group, $group_map ) {
+							// Check if tool belongs to the selected category.
+							$tool_group = isset( $group_map[ $tool_slug ] ) ? $group_map[ $tool_slug ] : 'other';
+							return $tool_group === $filter_group;
+						},
+						ARRAY_FILTER_USE_BOTH
+					);
+				}
+
+				// Apply search filter if provided.
+				if ( ! empty( $search ) ) {
+					$all_tools = array_filter(
+						$all_tools,
+						function ( $tool_name, $tool_slug ) use ( $search ) {
+							$search_term = strtolower( trim( $search ) );
+							return false !== stripos( $tool_slug, $search_term ) ||
+									false !== stripos( $tool_name, $search_term );
+						},
+						ARRAY_FILTER_USE_BOTH
+					);
+				}
+
+				if ( empty( $all_tools ) ) :
+					?>
+					<tr>
+						<td colspan="9" style="text-align: center; padding: 20px;">
+							<?php
+							if ( ! empty( $search ) || ! empty( $filter_group ) ) {
+								esc_html_e( 'No tools found matching your filters. Try adjusting your search or category filter.', 'mcp-ai-wpoos' );
+							} else {
+								esc_html_e( 'No tools found.', 'mcp-ai-wpoos' );
+							}
+							?>
+						</td>
+					</tr>
+					<?php
+				endif;
+
+				// Get model service.
+				$model_service = new WP_MCP_AI_Model_Service();
+
+				foreach ( $all_tools as $tool_slug => $tool_name ) :
+					// Get tool stats.
+					$tool_stats = WP_MCP_AI_Tool_Token_Limits::get_tool_usage_stats( $tool_slug );
+
+					// Get tool multiplier.
+					$multiplier = WP_MCP_AI_Tool_Token_Limits::get_tool_token_multiplier( $tool_slug );
+
+					// Get effective limits using base limits and multiplier.
+					$free_limit       = absint( 50000 * $multiplier );
+					$pro_limit        = absint( 200000 * $multiplier );
+					$enterprise_limit = absint( 1000000 * $multiplier );
+
+					// Get recommendation for this tool.
+					$recommendation = WP_MCP_AI_Tool_Recommendations::get_tool_recommendation( $tool_slug );
+					$match_status   = WP_MCP_AI_Tool_Recommendations::check_tool_match( $tool_slug );
+
+					// Get tool's preferred model.
+					$model_preference = WP_MCP_AI_Tool_Token_Limits::get_tool_model_preference( $tool_slug );
+
+					// Get available models.
+					$available_models = $model_service->get_all_models_grouped();
+
+					// Calculate usage percentage.
+					$total_tokens = isset( $tool_stats['total_tokens'] ) ? $tool_stats['total_tokens'] : 0;
+					$usage_pct    = $free_limit > 0 ? min( 100, absint( ( $total_tokens / $free_limit ) * 100 ) ) : 0;
+					$usage_color  = $usage_pct >= 90 ? '#dc3232' : ( $usage_pct >= 70 ? '#f0b849' : '#46b450' );
+					?>
+					<tr>
+						<td><strong><?php echo esc_html( $tool_name ); ?></strong></td>
+						<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
+						<td>
+							<select
+								class="wp-mcp-ai-tool-model-preference"
+								data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
+								style="width: 100%; max-width: 200px;"
+							>
+								<?php
+								foreach ( $available_models as $group_key => $group_data ) :
+									// Handle optgroup or single option.
+									if ( is_array( $group_data ) && isset( $group_data['label'] ) && isset( $group_data['options'] ) ) {
+										?>
+										<optgroup label="<?php echo esc_attr( $group_data['label'] ); ?>">
+											<?php foreach ( $group_data['options'] as $model_id => $model_label ) : ?>
+												<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $model_preference, $model_id ); ?>>
+													<?php echo esc_html( $model_label ); ?>
+												</option>
+											<?php endforeach; ?>
+										</optgroup>
+										<?php
+									} else {
+										// Single option (like "default").
+										?>
+										<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $model_preference, $group_key ); ?>>
+											<?php echo esc_html( $group_data ); ?>
+										</option>
+										<?php
+									}
+								endforeach;
+								?>
+							</select>
+						</td>
+						<td>
+							<div style="position: relative; display: inline-block;">
+								<input
+									type="number"
+									class="wp-mcp-ai-tool-multiplier-input"
+									data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
+									data-recommended="<?php echo esc_attr( $recommendation['multiplier'] ); ?>"
+									value="<?php echo esc_attr( $multiplier ); ?>"
+									min="0.1"
+									max="10"
+									step="0.1"
+									style="width: 70px;"
+								/>×
+								<?php if ( ! $match_status['multiplier_matches'] ) : ?>
+									<span class="wp-mcp-ai-recommended-value" style="display: block; font-size: 10px; color: #f0b849; font-style: italic;">
+										<?php
+										/* translators: %s: recommended multiplier value */
+										printf( esc_html__( 'Rec: %s×', 'mcp-ai-wpoos' ), esc_html( $recommendation['multiplier'] ) );
+										?>
+									</span>
+								<?php endif; ?>
+							</div>
+						</td>
+						<td style="font-size: 11px;">
+							<div title="<?php esc_attr_e( 'Free tier limit', 'mcp-ai-wpoos' ); ?>">
+								<span style="color: #999;">F:</span> <?php echo esc_html( number_format_i18n( $free_limit ) ); ?>
+							</div>
+							<div title="<?php esc_attr_e( 'Pro tier limit', 'mcp-ai-wpoos' ); ?>">
+								<span style="color: #0073aa;">P:</span> <?php echo esc_html( number_format_i18n( $pro_limit ) ); ?>
+							</div>
+							<div title="<?php esc_attr_e( 'Enterprise tier limit', 'mcp-ai-wpoos' ); ?>">
+								<span style="color: #46b450;">E:</span> <?php echo esc_html( number_format_i18n( $enterprise_limit ) ); ?>
+							</div>
+						</td>
+						<td><?php echo esc_html( number_format_i18n( $tool_stats['total_users'] ) ); ?></td>
+						<td><?php echo esc_html( number_format_i18n( $tool_stats['total_requests'] ) ); ?></td>
+						<td><?php echo esc_html( number_format_i18n( $tool_stats['total_tokens'] ) ); ?></td>
+						<td>
+							<div class="wp-mcp-ai-usage-bar" style="background: #f0f0f0; border-radius: 3px; overflow: hidden; height: 20px; position: relative;">
+								<div style="background: <?php echo esc_attr( $usage_color ); ?>; width: <?php echo esc_attr( $usage_pct ); ?>%; height: 100%; transition: width 0.3s ease;"></div>
+								<span style="position: absolute; left: 0; right: 0; top: 0; text-align: center; line-height: 20px; font-size: 11px; font-weight: bold; color: #333;">
+									<?php echo esc_html( $usage_pct ); ?>%
+								</span>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		</div>
+			<?php
+		}
+
+
+		/**
 		 * Render per-site token statistics view.
 		 */
 		private function render_per_site_view() {

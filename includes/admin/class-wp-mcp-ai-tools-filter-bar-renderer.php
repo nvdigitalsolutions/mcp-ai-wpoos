@@ -119,45 +119,111 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 
 				<script>
 				(function($) {
+					// Determine AJAX action based on context
+					var ajaxAction = '';
+					var targetContainer = '';
+					
+					<?php if ( 'orchestration' === $args['tab'] && 'tools' === $args['view'] ) : ?>
+					ajaxAction = 'wp_mcp_ai_filter_orchestration_tools';
+					targetContainer = '.wp-mcp-ai-tools-orchestration-table';
+					<?php elseif ( 'token_manager' === $args['tab'] && 'per_tool' === $args['view'] ) : ?>
+					ajaxAction = 'wp_mcp_ai_filter_token_manager_tools';
+					targetContainer = '.wp-mcp-ai-table-wrapper';
+					<?php elseif ( 'tools' === $args['tab'] && 'tools_manager' === $args['subtab'] ) : ?>
+					ajaxAction = 'wp_mcp_ai_filter_tools_manager';
+					targetContainer = '.wp-mcp-ai-tools-manager';
+					<?php endif; ?>
+
 					$('#wp-mcp-ai-filter-tools').on('click', function() {
 						const $button = $(this);
-
-						// Add loading state
-						$button.addClass('is-loading').prop('disabled', true);
-
 						const search = $('#tool_search').val();
 						const group = $('#tool_group').val();
-						const url = new URL(window.location.href);
 
-						// Update URL parameters.
-						url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
+						// Add loading state
+						$button.addClass('is-loading').prop('disabled', true).text('<?php echo esc_js( __( 'Filtering...', 'mcp-ai-wpoos' ) ); ?>');
 
-						<?php if ( ! empty( $args['tab'] ) ) : ?>
-						url.searchParams.set('tab', '<?php echo esc_js( $args['tab'] ); ?>');
-						<?php endif; ?>
+						// If AJAX action is configured, use AJAX
+						if (ajaxAction && targetContainer) {
+							// Show loading indicator on target container
+							$(targetContainer).css('opacity', '0.5');
 
-						<?php if ( ! empty( $args['view'] ) ) : ?>
-						url.searchParams.set('view', '<?php echo esc_js( $args['view'] ); ?>');
-						<?php endif; ?>
+							$.ajax({
+								url: ajaxurl,
+								type: 'POST',
+								data: {
+									action: ajaxAction,
+									nonce: '<?php echo esc_js( wp_create_nonce( 'wp-mcp-ai-filter-tools' ) ); ?>',
+									search: search,
+									filter_group: group
+								},
+								success: function(response) {
+									if (response.success && response.data.html) {
+										// Update the content
+										$(targetContainer).html(response.data.html).css('opacity', '1');
 
-						<?php if ( ! empty( $args['subtab'] ) ) : ?>
-						url.searchParams.set('subtab', '<?php echo esc_js( $args['subtab'] ); ?>');
-						<?php endif; ?>
+										// Update URL without reload
+										const url = new URL(window.location.href);
+										if (search) {
+											url.searchParams.set('tool_search', search);
+										} else {
+											url.searchParams.delete('tool_search');
+										}
+										if (group) {
+											url.searchParams.set('tool_group', group);
+										} else {
+											url.searchParams.delete('tool_group');
+										}
+										window.history.pushState({}, '', url.toString());
 
-						if (search) {
-							url.searchParams.set('tool_search', search);
+										// Show success message
+										if (response.data.tool_count !== undefined) {
+											// Show count if available
+											console.log('Filtered to ' + response.data.tool_count + ' tools');
+										}
+									} else {
+										alert(response.data && response.data.message ? response.data.message : '<?php echo esc_js( __( 'Failed to filter tools. Please try again.', 'mcp-ai-wpoos' ) ); ?>');
+										$(targetContainer).css('opacity', '1');
+									}
+								},
+								error: function() {
+									alert('<?php echo esc_js( __( 'An error occurred. Please refresh the page and try again.', 'mcp-ai-wpoos' ) ); ?>');
+									$(targetContainer).css('opacity', '1');
+								},
+								complete: function() {
+									$button.removeClass('is-loading').prop('disabled', false).text('<?php echo esc_js( __( 'Filter', 'mcp-ai-wpoos' ) ); ?>');
+								}
+							});
 						} else {
-							url.searchParams.delete('tool_search');
-						}
+							// Fallback to page reload for unsupported contexts
+							const url = new URL(window.location.href);
+							url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
 
-						if (group) {
-							url.searchParams.set('tool_group', group);
-						} else {
-							url.searchParams.delete('tool_group');
-						}
+							<?php if ( ! empty( $args['tab'] ) ) : ?>
+							url.searchParams.set('tab', '<?php echo esc_js( $args['tab'] ); ?>');
+							<?php endif; ?>
 
-						// Navigate to filtered URL.
-						window.location.href = url.toString();
+							<?php if ( ! empty( $args['view'] ) ) : ?>
+							url.searchParams.set('view', '<?php echo esc_js( $args['view'] ); ?>');
+							<?php endif; ?>
+
+							<?php if ( ! empty( $args['subtab'] ) ) : ?>
+							url.searchParams.set('subtab', '<?php echo esc_js( $args['subtab'] ); ?>');
+							<?php endif; ?>
+
+							if (search) {
+								url.searchParams.set('tool_search', search);
+							} else {
+								url.searchParams.delete('tool_search');
+							}
+
+							if (group) {
+								url.searchParams.set('tool_group', group);
+							} else {
+								url.searchParams.delete('tool_group');
+							}
+
+							window.location.href = url.toString();
+						}
 					});
 
 					// Allow Enter key to trigger filter.

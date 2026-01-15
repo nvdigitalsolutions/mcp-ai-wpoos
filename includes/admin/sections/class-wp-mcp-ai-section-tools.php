@@ -1527,33 +1527,61 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					(function($) {
 						$('#wp-mcp-ai-filter-tools').on('click', function() {
 							const $button = $(this);
-
-							// Add loading state
-							$button.addClass('is-loading').prop('disabled', true);
-
 							const search = $('#tool_search').val();
 							const group = $('#tool_group').val();
-							const url = new URL(window.location.href);
 
-							// Update URL parameters.
-							url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
-							url.searchParams.set('tab', 'tools');
-							url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
+							// Add loading state
+							$button.addClass('is-loading').prop('disabled', true).text('<?php echo esc_js( __( 'Filtering...', 'mcp-ai-wpoos' ) ); ?>');
 
-							if (search) {
-								url.searchParams.set('tool_search', search);
-							} else {
-								url.searchParams.delete('tool_search');
-							}
+							// Show loading indicator
+							$('.wp-mcp-ai-tools-category').css('opacity', '0.5');
 
-							if (group) {
-								url.searchParams.set('tool_group', group);
-							} else {
-								url.searchParams.delete('tool_group');
-							}
+							$.ajax({
+								url: ajaxurl,
+								type: 'POST',
+								data: {
+									action: 'wp_mcp_ai_filter_tools_manager',
+									nonce: '<?php echo esc_js( wp_create_nonce( 'wp-mcp-ai-filter-tools' ) ); ?>',
+									search: search,
+									filter_group: group
+								},
+								success: function(response) {
+									if (response.success && response.data.html) {
+										// Update the tools content
+										$('.wp-mcp-ai-tools-manager').html(response.data.html).css('opacity', '1');
 
-							// Navigate to filtered URL.
-							window.location.href = url.toString();
+										// Update URL without reload
+										const url = new URL(window.location.href);
+										url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
+										url.searchParams.set('tab', 'tools');
+										url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
+
+										if (search) {
+											url.searchParams.set('tool_search', search);
+										} else {
+											url.searchParams.delete('tool_search');
+										}
+
+										if (group) {
+											url.searchParams.set('tool_group', group);
+										} else {
+											url.searchParams.delete('tool_group');
+										}
+
+										window.history.pushState({}, '', url.toString());
+									} else {
+										alert(response.data && response.data.message ? response.data.message : '<?php echo esc_js( __( 'Failed to filter tools. Please try again.', 'mcp-ai-wpoos' ) ); ?>');
+										$('.wp-mcp-ai-tools-category').css('opacity', '1');
+									}
+								},
+								error: function() {
+									alert('<?php echo esc_js( __( 'An error occurred. Please refresh the page and try again.', 'mcp-ai-wpoos' ) ); ?>');
+									$('.wp-mcp-ai-tools-category').css('opacity', '1');
+								},
+								complete: function() {
+									$button.removeClass('is-loading').prop('disabled', false).text('<?php echo esc_js( __( 'Filter', 'mcp-ai-wpoos' ) ); ?>');
+								}
+							});
 						});
 
 						// Allow Enter key to trigger filter.
@@ -1749,6 +1777,193 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<?php $this->render_pro_banner(); ?>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Render tools manager content for AJAX requests.
+		 *
+		 * This method renders only the tools content without the filter bar,
+		 * suitable for AJAX updates.
+		 */
+		public function render_tools_manager_content() {
+			$registry      = WP_MCP_AI_Tool_Registry::get_instance();
+			$all_tools     = $registry->get_tools();
+			$tool_groups   = $registry->get_tool_group_map();
+			$group_labels  = $registry->get_tool_group_labels();
+
+			// Group tools by category.
+			$categorized_tools = array(
+				'wordpress-core'    => array(),
+				'wordpress-plugins' => array(),
+				'external-tools'    => array(),
+				'other'             => array(),
+			);
+
+			foreach ( $all_tools as $tool ) {
+				$slug  = $tool->get_slug();
+				$group = isset( $tool_groups[ $slug ] ) ? $tool_groups[ $slug ] : 'other';
+
+				if ( ! isset( $categorized_tools[ $group ] ) ) {
+					$categorized_tools[ $group ] = array();
+				}
+
+				$categorized_tools[ $group ][] = $tool;
+			}
+
+			// Get search/filter parameters.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
+			$search = isset( $_GET['tool_search'] ) ? sanitize_text_field( wp_unslash( $_GET['tool_search'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
+			$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( $_GET['tool_group'] ) : '';
+
+			// Output only the categorized tools tables
+			foreach ( $categorized_tools as $category => $tools ) :
+				// Skip if category is empty or filtered out.
+				if ( empty( $tools ) || ( ! empty( $filter_group ) && $filter_group !== $category ) ) {
+					continue;
+				}
+
+				// Apply search filter.
+				if ( ! empty( $search ) ) {
+					$tools = array_filter(
+						$tools,
+						function ( $tool ) use ( $search ) {
+							$slug        = $tool->get_slug();
+							$description = $tool->get_description();
+							$name        = $this->get_tool_display_name( $slug );
+							$search_term = strtolower( $search );
+
+							return false !== stripos( $slug, $search_term ) ||
+									false !== stripos( $description, $search_term ) ||
+									false !== stripos( $name, $search_term );
+						}
+					);
+
+					if ( empty( $tools ) ) {
+						continue;
+					}
+				}
+
+				$category_label = isset( $group_labels[ $category ] ) ? $group_labels[ $category ] : __( 'Other', 'mcp-ai-wpoos' );
+				?>
+
+				<div class="wp-mcp-ai-tools-category" style="margin-bottom: 30px;">
+					<h4 style="margin-bottom: 10px; padding: 10px; background: #f0f0f0; border-left: 4px solid #0073aa;">
+						<?php echo esc_html( $category_label ); ?>
+						<span class="badge" style="background: #0073aa; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px; margin-left: 10px;">
+							<?php echo esc_html( count( $tools ) ); ?>
+						</span>
+					</h4>
+
+					<table class="wp-list-table widefat fixed striped" style="margin-bottom: 20px;">
+						<thead>
+							<tr>
+								<th style="width: 20%;"><?php esc_html_e( 'Tool Name', 'mcp-ai-wpoos' ); ?></th>
+								<th style="width: 15%;"><?php esc_html_e( 'Slug', 'mcp-ai-wpoos' ); ?></th>
+								<th style="width: 55%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+								<th style="width: 10%;"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php
+							foreach ( $tools as $tool ) :
+								$slug        = $tool->get_slug();
+								$description = $tool->get_description();
+								$name        = $this->get_tool_display_name( $slug );
+
+								// Check if tool has dependencies.
+								$dependencies = $this->check_tool_dependencies( $slug );
+								$is_available = $dependencies['available'];
+
+								// Check if tool is enabled.
+								$is_enabled   = $registry->is_tool_enabled( $slug );
+								$status_text  = $is_enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' );
+								$status_color = $is_enabled ? '#46b450' : '#999';
+
+								// If tool is unavailable due to dependencies, override status.
+								if ( ! $is_available ) {
+									$status_text  = __( 'Unavailable', 'mcp-ai-wpoos' );
+									$status_color = '#dc3232';
+								}
+								?>
+								<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>">
+									<td>
+										<strong><?php echo esc_html( $name ); ?></strong>
+									</td>
+									<td>
+										<code style="font-size: 11px;"><?php echo esc_html( $slug ); ?></code>
+									</td>
+									<td>
+										<?php echo esc_html( $description ); ?>
+										<?php if ( ! empty( $dependencies['missing'] ) ) : ?>
+											<div style="margin-top: 5px; font-size: 12px; color: #dc3232;">
+												<strong><?php esc_html_e( 'Missing:', 'mcp-ai-wpoos' ); ?></strong>
+												<?php echo esc_html( implode( ', ', $dependencies['missing'] ) ); ?>
+											</div>
+										<?php endif; ?>
+									</td>
+									<td>
+										<?php if ( $is_available ) : ?>
+											<label class="wp-mcp-ai-toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+												<input type="checkbox"
+														class="wp-mcp-ai-tool-toggle"
+														data-tool-slug="<?php echo esc_attr( $slug ); ?>"
+														<?php checked( $is_enabled ); ?>
+														style="opacity: 0; width: 0; height: 0;">
+												<span class="wp-mcp-ai-toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 24px; transition: .4s;"></span>
+											</label>
+										<?php else : ?>
+											<span class="dashicons dashicons-warning" style="color: #dc3232;" title="<?php esc_attr_e( 'Tool is unavailable due to missing dependencies', 'mcp-ai-wpoos' ); ?>"></span>
+										<?php endif; ?>
+									</td>
+								</tr>
+								<?php
+								// Badge row - always show to display status.
+								$has_pro_badge    = $this->is_pro_tool( $slug );
+								$status_label     = $this->get_tool_status_label( $slug );
+								$has_status_label = ! empty( $status_label );
+								?>
+								<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>-badges" class="wp-mcp-ai-tool-badges-row">
+									<td colspan="4" style="padding-top: 0; padding-bottom: 8px; border-top: 0;">
+										<!-- Status Badge (always shown) -->
+										<span class="wp-mcp-ai-tool-status" style="display: inline-block; margin-right: 6px; padding: 2px 5px; background: <?php echo esc_attr( $status_color ); ?>; color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+											<?php echo esc_html( $status_text ); ?>
+										</span>
+										<?php if ( $has_pro_badge ) : ?>
+											<span class="wp-mcp-ai-pro-badge" style="display: inline-block; margin-right: 6px; padding: 2px 5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+												<?php esc_html_e( 'Pro', 'mcp-ai-wpoos' ); ?>
+											</span>
+										<?php endif; ?>
+										<?php
+										if ( $has_status_label ) :
+											$label_config = $this->get_status_label_config( $status_label );
+											?>
+											<span class="wp-mcp-ai-tool-status-label <?php echo esc_attr( $label_config['class'] ); ?>" style="display: inline-block; padding: 2px 5px; background: <?php echo esc_attr( $label_config['color'] ); ?>; color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+												<?php echo esc_html( $label_config['text'] ); ?>
+											</span>
+										<?php endif; ?>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+
+			<?php endforeach; ?>
+
+			<?php if ( ! empty( $search ) && empty( array_filter( $categorized_tools ) ) ) : ?>
+				<div class="notice notice-warning inline">
+					<p>
+						<?php
+						printf(
+							/* translators: %s: Search term */
+							esc_html__( 'No tools found matching "%s". Try a different search term.', 'mcp-ai-wpoos' ),
+							esc_html( $search )
+						);
+						?>
+					</p>
+				</div>
+			<?php endif; ?>
 		}
 
 		/**
