@@ -12,12 +12,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
+
 /**
  * Product Research Admin Page
  *
  * Adds a submenu page under Products menu for AI-powered product research.
  */
 class WP_MCP_AI_Product_Research_Page {
+	use WP_MCP_AI_Research_Page_Featured_Image;
 
 	/**
 	 * Page slug.
@@ -266,6 +269,10 @@ class WP_MCP_AI_Product_Research_Page {
 		if ( empty( $research_data ) || empty( $research_data['reference'] ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid research data. Product reference is required.', 'mcp-ai-wpoos-pro' ) ) );
 		}
+
+		// Process featured image generation request.
+		$title = isset( $research_data['title'] ) ? $research_data['title'] : $research_data['reference'];
+		$research_data = self::process_featured_image_request( $research_data, $title, 'a product' );
 
 		// Use the create_woo_product tool to create the product.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Woo_Product' ) ) {
