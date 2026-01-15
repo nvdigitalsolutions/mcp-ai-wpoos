@@ -109,9 +109,6 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		return $schema;
 	}
-			'additionalProperties' => false,
-		);
-	}
 
 	/**
 	 * Execute the tool.
