@@ -1,9 +1,6 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-missing-handle-elementor-method',
-        'version' => 'dev-copilot/fix-missing-handle-elementor-method',
-        'reference' => 'df9e40d10b3dabf7c443f62ed171f35d58eb1aba',
         'pretty_version' => 'dev-copilot/update-tab-name-to-github-oauth',
         'version' => 'dev-copilot/update-tab-name-to-github-oauth',
         'reference' => 'da9a4bcf1861f9fe1697e50e61fa7c30aaa68ee3',
@@ -50,9 +47,6 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-missing-handle-elementor-method',
-            'version' => 'dev-copilot/fix-missing-handle-elementor-method',
-            'reference' => 'df9e40d10b3dabf7c443f62ed171f35d58eb1aba',
             'pretty_version' => 'dev-copilot/update-tab-name-to-github-oauth',
             'version' => 'dev-copilot/update-tab-name-to-github-oauth',
             'reference' => 'da9a4bcf1861f9fe1697e50e61fa7c30aaa68ee3',
