@@ -515,6 +515,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'icon'   => 'dashicons-list-view',
 					'fields' => array(), // Custom rendering, no form fields.
 				),
+				'features'       => array(
+					'id'     => 'features',
+					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-admin-tools',
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management' ),
+				),
 				'configuration'  => array(
 					'id'     => 'configuration',
 					'label'  => __( 'Configuration', 'mcp-ai-wpoos' ),
@@ -529,7 +535,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 				'external_tools' => array(
 					'id'     => 'external_tools',
-					'label'  => __( 'External Tools', 'mcp-ai-wpoos' ),
+					'label'  => __( 'GitHub OAuth', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-site-alt3',
 					'fields' => array(
 						'github_client_id',
@@ -546,12 +552,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						'enable_woocommerce_tools',
 						'enable_elementor_widgets',
 					),
-				),
-				'features'       => array(
-					'id'     => 'features',
-					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management' ),
 				),
 				'media'          => array(
 					'id'     => 'media',
@@ -669,7 +669,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		}
 
 		/**
-		 * Render External Tools footer content.
+		 * Render GitHub OAuth footer content.
 		 */
 		private function render_external_tools_footer() {
 			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
@@ -808,11 +808,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<th scope="row"></th>
 				<td>
 					<p class="description">
-						<strong><?php esc_html_e( 'About External Tools:', 'mcp-ai-wpoos' ); ?></strong>
+						<strong><?php esc_html_e( 'About GitHub OAuth:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						echo wp_kses_post(
 							__(
-								'External tools are third-party service integrations that extend AI capabilities beyond WordPress. Configure API credentials here to enable tools that interact with external platforms and services.',
+								'GitHub OAuth integration allows AI assistants to interact with your GitHub repositories, create Codespaces, and develop custom tools. Configure your OAuth credentials to enable GitHub integration.',
 								'mcp-ai-wpoos'
 							)
 						);
