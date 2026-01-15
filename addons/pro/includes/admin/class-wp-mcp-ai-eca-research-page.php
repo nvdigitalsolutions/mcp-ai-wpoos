@@ -12,12 +12,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
+
 /**
  * ECA Research Admin Page
  *
  * Adds a submenu page under ECAs menu for AI-powered activity research.
  */
 class WP_MCP_AI_ECA_Research_Page {
+	use WP_MCP_AI_Research_Page_Featured_Image;
 
 	/**
 	 * Page slug.
@@ -238,6 +241,9 @@ class WP_MCP_AI_ECA_Research_Page {
 		if ( empty( $research_data ) || empty( $research_data['title'] ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid research data.', 'mcp-ai-wpoos-pro' ) ) );
 		}
+
+		// Process featured image generation request.
+		$research_data = self::process_featured_image_request( $research_data, $research_data['title'], 'an extra-curricular activity' );
 
 		// Use the create_eca tool to create the ECA.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_ECA' ) ) {
