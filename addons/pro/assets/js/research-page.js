@@ -935,38 +935,40 @@
 			const text = conversation.lastAssistantMessage || conversation.fullText || '';
 			const researchData = this.parseResearchDataForPost(text);
 
-			// Confirm with user
-			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
-				return;
-			}
+			// Show confirmation dialog with image generation option
+			this.showCreateConfirmation({
+				title: wpMcpAiResearchPage.strings.confirmCreate,
+				postType: 'post',
+				onConfirm: (options) => {
+					// Disable button and show loading state
+					const $button = $(button);
+					const originalText = $button.html();
+					$button.prop('disabled', true).html(
+						'<span class="dashicons dashicons-update dashicons-spin"></span> ' + 
+						wpMcpAiResearchPage.strings.creating
+					);
 
-			// Disable button and show loading state
-			const $button = $(button);
-			const originalText = $button.html();
-			$button.prop('disabled', true).html(
-				'<span class="dashicons dashicons-update dashicons-spin"></span> ' + 
-				wpMcpAiResearchPage.strings.creating
-			);
-
-			// Send to add-to-database method
-			this.addPostToDatabase(researchData).then((response) => {
-				if (response.success) {
-					this.showSuccess(response.data.message);
-					
-					// Redirect to edit page after short delay
-					setTimeout(() => {
-						if (response.data.edit_url) {
-							window.location.href = response.data.edit_url;
+					// Send to add-to-database method
+					this.addPostToDatabase(researchData, options).then((response) => {
+						if (response.success) {
+							this.showSuccess(response.data.message);
+							
+							// Redirect to edit page after short delay
+							setTimeout(() => {
+								if (response.data.edit_url) {
+									window.location.href = response.data.edit_url;
+								}
+							}, 1500);
+						} else {
+							this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+							$button.prop('disabled', false).html(originalText);
 						}
-					}, 1500);
-				} else {
-					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
-					$button.prop('disabled', false).html(originalText);
+					}).catch((error) => {
+						console.error('[Research Page] Post creation failed:', error);
+						this.showError(wpMcpAiResearchPage.strings.error);
+						$button.prop('disabled', false).html(originalText);
+					});
 				}
-			}).catch((error) => {
-				console.error('[Research Page] Post creation failed:', error);
-				this.showError(wpMcpAiResearchPage.strings.error);
-				$button.prop('disabled', false).html(originalText);
 			});
 		},
 
@@ -974,17 +976,30 @@
 		 * Add post to database via AJAX.
 		 *
 		 * @param {Object} researchData Post data package
+		 * @param {Object} options Additional options like image generation
 		 * @return {Promise} Promise resolving to AJAX response
 		 */
-		addPostToDatabase: function(researchData) {
+		addPostToDatabase: function(researchData, options) {
+			options = options || {};
+			
+			const data = {
+				action: 'wp_mcp_ai_create_post_from_research',
+				nonce: wpMcpAiResearchPage.nonce,
+				research_data: JSON.stringify(researchData)
+			};
+
+			// Add image generation options if specified
+			if (options.generateFeaturedImage) {
+				data.generate_featured_image = 'true';
+				if (options.imagePrompt) {
+					data.image_prompt = options.imagePrompt;
+				}
+			}
+
 			return $.ajax({
 				url: wpMcpAiResearchPage.ajaxUrl,
 				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_create_post_from_research',
-					nonce: wpMcpAiResearchPage.nonce,
-					research_data: JSON.stringify(researchData)
-				}
+				data: data
 			});
 		},
 
@@ -1009,38 +1024,40 @@
 			const text = conversation.lastAssistantMessage || conversation.fullText || '';
 			const researchData = this.parseResearchDataForPage(text);
 
-			// Confirm with user
-			if (!confirm(wpMcpAiResearchPage.strings.confirmCreate)) {
-				return;
-			}
+			// Show confirmation dialog with image generation option
+			this.showCreateConfirmation({
+				title: wpMcpAiResearchPage.strings.confirmCreate,
+				postType: 'page',
+				onConfirm: (options) => {
+					// Disable button and show loading state
+					const $button = $(button);
+					const originalText = $button.html();
+					$button.prop('disabled', true).html(
+						'<span class="dashicons dashicons-update dashicons-spin"></span> ' + 
+						wpMcpAiResearchPage.strings.creating
+					);
 
-			// Disable button and show loading state
-			const $button = $(button);
-			const originalText = $button.html();
-			$button.prop('disabled', true).html(
-				'<span class="dashicons dashicons-update dashicons-spin"></span> ' + 
-				wpMcpAiResearchPage.strings.creating
-			);
-
-			// Send to add-to-database method
-			this.addPageToDatabase(researchData).then((response) => {
-				if (response.success) {
-					this.showSuccess(response.data.message);
-					
-					// Redirect to edit page after short delay
-					setTimeout(() => {
-						if (response.data.edit_url) {
-							window.location.href = response.data.edit_url;
+					// Send to add-to-database method
+					this.addPageToDatabase(researchData, options).then((response) => {
+						if (response.success) {
+							this.showSuccess(response.data.message);
+							
+							// Redirect to edit page after short delay
+							setTimeout(() => {
+								if (response.data.edit_url) {
+									window.location.href = response.data.edit_url;
+								}
+							}, 1500);
+						} else {
+							this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
+							$button.prop('disabled', false).html(originalText);
 						}
-					}, 1500);
-				} else {
-					this.showError(response.data.message || wpMcpAiResearchPage.strings.error);
-					$button.prop('disabled', false).html(originalText);
+					}).catch((error) => {
+						console.error('[Research Page] Page creation failed:', error);
+						this.showError(wpMcpAiResearchPage.strings.error);
+						$button.prop('disabled', false).html(originalText);
+					});
 				}
-			}).catch((error) => {
-				console.error('[Research Page] Page creation failed:', error);
-				this.showError(wpMcpAiResearchPage.strings.error);
-				$button.prop('disabled', false).html(originalText);
 			});
 		},
 
@@ -1048,17 +1065,30 @@
 		 * Add page to database via AJAX.
 		 *
 		 * @param {Object} researchData Page data package
+		 * @param {Object} options Additional options like image generation
 		 * @return {Promise} Promise resolving to AJAX response
 		 */
-		addPageToDatabase: function(researchData) {
+		addPageToDatabase: function(researchData, options) {
+			options = options || {};
+			
+			const data = {
+				action: 'wp_mcp_ai_create_page_from_research',
+				nonce: wpMcpAiResearchPage.nonce,
+				research_data: JSON.stringify(researchData)
+			};
+
+			// Add image generation options if specified
+			if (options.generateFeaturedImage) {
+				data.generate_featured_image = 'true';
+				if (options.imagePrompt) {
+					data.image_prompt = options.imagePrompt;
+				}
+			}
+
 			return $.ajax({
 				url: wpMcpAiResearchPage.ajaxUrl,
 				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_create_page_from_research',
-					nonce: wpMcpAiResearchPage.nonce,
-					research_data: JSON.stringify(researchData)
-				}
+				data: data
 			});
 		},
 
@@ -1377,6 +1407,81 @@
 				}
 			}
 			return '';
+		},
+
+		/**
+		 * Show confirmation dialog for creating post/page with image options.
+		 *
+		 * @param {Object} config Configuration object
+		 * @param {string} config.title Dialog title
+		 * @param {string} config.postType Post type being created
+		 * @param {Function} config.onConfirm Callback when confirmed
+		 */
+		showCreateConfirmation: function(config) {
+			// Remove any existing dialogs
+			$('.wp-mcp-ai-create-dialog').remove();
+
+			// Create dialog HTML
+			const dialogHtml = `
+				<div class="wp-mcp-ai-create-dialog" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100000; display: flex; align-items: center; justify-content: center;">
+					<div class="wp-mcp-ai-dialog-content" style="background: white; padding: 20px; border-radius: 4px; max-width: 500px; width: 90%;">
+						<h3>${config.title}</h3>
+						<div style="margin: 20px 0;">
+							<label style="display: block; margin-bottom: 10px;">
+								<input type="checkbox" id="wp-mcp-ai-generate-image" style="margin-right: 5px;">
+								<strong>Generate Featured Image</strong>
+							</label>
+							<div id="wp-mcp-ai-image-prompt-container" style="display: none; margin-top: 10px;">
+								<label style="display: block; margin-bottom: 5px;">Image Description (optional):</label>
+								<input type="text" id="wp-mcp-ai-image-prompt" placeholder="Leave empty to auto-generate from title" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px;">
+								<p style="font-size: 12px; color: #666; margin-top: 5px;">Describe the image you want, or leave empty to generate based on the ${config.postType} title.</p>
+							</div>
+						</div>
+						<div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+							<button type="button" class="button" id="wp-mcp-ai-dialog-cancel">Cancel</button>
+							<button type="button" class="button button-primary" id="wp-mcp-ai-dialog-confirm">Create ${config.postType.charAt(0).toUpperCase() + config.postType.slice(1)}</button>
+						</div>
+					</div>
+				</div>
+			`;
+
+			const $dialog = $(dialogHtml);
+			$('body').append($dialog);
+
+			// Toggle image prompt visibility
+			$dialog.find('#wp-mcp-ai-generate-image').on('change', function() {
+				$dialog.find('#wp-mcp-ai-image-prompt-container').toggle(this.checked);
+			});
+
+			// Handle cancel
+			$dialog.find('#wp-mcp-ai-dialog-cancel').on('click', function() {
+				$dialog.remove();
+			});
+
+			// Handle confirm
+			$dialog.find('#wp-mcp-ai-dialog-confirm').on('click', function() {
+				const options = {
+					generateFeaturedImage: $dialog.find('#wp-mcp-ai-generate-image').is(':checked'),
+					imagePrompt: $dialog.find('#wp-mcp-ai-image-prompt').val()
+				};
+				$dialog.remove();
+				config.onConfirm(options);
+			});
+
+			// Close on escape key
+			$(document).on('keydown.wp-mcp-ai-dialog', function(e) {
+				if (e.key === 'Escape') {
+					$dialog.remove();
+					$(document).off('keydown.wp-mcp-ai-dialog');
+				}
+			});
+
+			// Close on backdrop click
+			$dialog.on('click', function(e) {
+				if ($(e.target).hasClass('wp-mcp-ai-create-dialog')) {
+					$dialog.remove();
+				}
+			});
 		},
 
 		/**

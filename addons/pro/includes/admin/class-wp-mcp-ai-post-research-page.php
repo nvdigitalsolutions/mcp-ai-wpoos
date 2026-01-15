@@ -239,6 +239,18 @@ class WP_MCP_AI_Post_Research_Page {
 			wp_send_json_error( array( 'message' => __( 'Invalid research data.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
+		// Check if featured image generation is requested.
+		$generate_image = isset( $_POST['generate_featured_image'] ) && 'true' === $_POST['generate_featured_image'];
+		$image_prompt   = isset( $_POST['image_prompt'] ) ? sanitize_text_field( wp_unslash( $_POST['image_prompt'] ) ) : '';
+
+		// Generate featured image if requested.
+		if ( $generate_image ) {
+			$image_attachment_id = self::generate_featured_image( $image_prompt, $research_data['title'] );
+			if ( $image_attachment_id && ! is_wp_error( $image_attachment_id ) ) {
+				$research_data['featured_image_id'] = $image_attachment_id;
+			}
+		}
+
 		// Use the create_post tool to create the post.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Post' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Create post tool not available.', 'mcp-ai-wpoos-pro' ) ) );
@@ -268,6 +280,58 @@ class WP_MCP_AI_Post_Research_Page {
 				'edit_url' => $edit_url,
 			)
 		);
+	}
+
+	/**
+	 * Generate featured image using AI.
+	 *
+	 * @param string $prompt Custom prompt or empty to use title.
+	 * @param string $title  Post title for fallback prompt.
+	 * @return int|WP_Error Attachment ID on success, WP_Error on failure.
+	 */
+	private static function generate_featured_image( $prompt, $title ) {
+		// Use provided prompt or generate from title.
+		if ( empty( $prompt ) ) {
+			$prompt = sprintf(
+				/* translators: %s: Post title */
+				__( 'A professional featured image for a blog post about: %s', 'mcp-ai-wpoos-pro' ),
+				$title
+			);
+		}
+
+		// Try OpenAI image generation first.
+		if ( class_exists( 'WP_MCP_AI_Tool_Generate_OpenAI_Image' ) ) {
+			$tool = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+			$result = $tool->execute(
+				array(
+					'prompt' => $prompt,
+					'size'   => '1792x1024', // 16:9 aspect ratio.
+				),
+				array( 'user_id' => get_current_user_id() )
+			);
+
+			if ( ! is_wp_error( $result ) && isset( $result['attachment_id'] ) ) {
+				return $result['attachment_id'];
+			}
+		}
+
+		// Fallback to Gemini image generation.
+		if ( class_exists( 'WP_MCP_AI_Tool_Generate_Gemini_Image' ) ) {
+			$tool = new WP_MCP_AI_Tool_Generate_Gemini_Image();
+			$result = $tool->execute(
+				array(
+					'prompt'       => $prompt,
+					'aspect_ratio' => '16:9',
+				),
+				array( 'user_id' => get_current_user_id() )
+			);
+
+			if ( ! is_wp_error( $result ) && isset( $result['attachment_id'] ) ) {
+				return $result['attachment_id'];
+			}
+		}
+
+		return new WP_Error( 'image_generation_failed', __( 'Failed to generate featured image.', 'mcp-ai-wpoos-pro' ) );
 	}
 }
 
