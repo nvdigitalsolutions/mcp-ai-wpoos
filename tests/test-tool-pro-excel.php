@@ -69,10 +69,9 @@ class WP_MCP_AI_Tool_Pro_Excel_Tests extends WP_UnitTestCase {
 		$this->assertEquals( 'object', $schema['type'] );
 		$this->assertArrayHasKey( 'properties', $schema );
 		$this->assertArrayHasKey( 'operation', $schema['properties'] );
-		$this->assertArrayHasKey( 'prompt', $schema['properties'] );
+		$this->assertArrayHasKey( 'description', $schema['properties'] );
 		$this->assertArrayHasKey( 'required', $schema );
 		$this->assertContains( 'operation', $schema['required'] );
-		$this->assertContains( 'prompt', $schema['required'] );
 	}
 
 	/**
@@ -147,8 +146,8 @@ class WP_MCP_AI_Tool_Pro_Excel_Tests extends WP_UnitTestCase {
 		wp_set_current_user( $subscriber_id );
 
 		$arguments = array(
-			'operation' => 'generate',
-			'prompt'    => 'Calculate sum of A1:A10',
+			'operation'   => 'generate',
+			'description' => 'Calculate sum of A1:A10',
 		);
 
 		$context = array( 'user_id' => $subscriber_id );
@@ -163,7 +162,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Tests extends WP_UnitTestCase {
 	 */
 	public function test_missing_required_parameters() {
 		$arguments = array(
-			// Missing 'operation' and 'prompt'.
+			// Missing 'operation' and 'description'.
 		);
 
 		$context = array( 'user_id' => $this->user_id );
@@ -178,8 +177,8 @@ class WP_MCP_AI_Tool_Pro_Excel_Tests extends WP_UnitTestCase {
 	 */
 	public function test_invalid_operation() {
 		$arguments = array(
-			'operation' => 'invalid_operation',
-			'prompt'    => 'Test prompt',
+			'operation'   => 'invalid_operation',
+			'description' => 'Test description',
 		);
 
 		$context = array( 'user_id' => $this->user_id );
@@ -195,7 +194,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Tests extends WP_UnitTestCase {
 	public function test_invalid_excel_version() {
 		$arguments = array(
 			'operation'     => 'generate',
-			'prompt'        => 'Calculate sum',
+			'description'   => 'Calculate sum',
 			'excel_version' => 'invalid_version',
 		);
 
