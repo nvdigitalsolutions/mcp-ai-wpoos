@@ -15,11 +15,13 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
 
 /**
  * Creates draft WooCommerce products using a reference identifier.
  */
 class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Content_Media;
 	/**
 	 * Determine whether WooCommerce is available.
 	 *
@@ -215,6 +217,11 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			'required'             => array( 'reference' ),
 			'additionalProperties' => false,
 		);
+
+		// Merge content media parameters.
+		$schema['properties'] = array_merge( $schema['properties'], $this->get_content_media_parameters() );
+
+		return $schema;
 	}
 
 	/**
@@ -278,7 +285,8 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		$product->set_sku( $reference );
 
 		if ( '' !== $description ) {
-			$product->set_description( $description );
+			$description_with_media = $this->embed_content_media( $description, $arguments );
+			$product->set_description( $description_with_media );
 		}
 
 		if ( '' !== $description2 ) {
