@@ -24,7 +24,7 @@ class WP_MCP_AI_Page_Research_Page {
 	 *
 	 * @var string
 	 */
-	const PAGE_SLUG = 'research-page';
+	const PAGE_SLUG = 'page-research-page';
 
 	/**
 	 * Initialize the page.
