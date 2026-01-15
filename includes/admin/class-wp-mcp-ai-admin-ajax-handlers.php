@@ -2967,19 +2967,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$search       = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
 			$filter_group = isset( $_POST['filter_group'] ) ? sanitize_key( $_POST['filter_group'] ) : '';
 
-			// Load section class if not already loaded.
-			if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
-				require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-token-manager.php';
-			}
-
 			// Get the partial HTML by rendering with filter parameters.
 			// We'll use a temporary output buffer to capture the rendered content.
 			$_GET['tool_search'] = $search;
 			$_GET['tool_group']  = $filter_group;
 
 			ob_start();
-			// Render just the tools table portion.
-			$section = new WP_MCP_AI_Section_Token_Manager();
+			// Get section from container to respect singleton pattern and filters.
+			$section = wp_mcp_ai_container()->get( 'section.token_manager' );
 			if ( method_exists( $section, 'render_per_tool_view_table' ) ) {
 				$section->render_per_tool_view_table();
 			}
@@ -3023,14 +3018,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$_GET['tool_search'] = $search;
 			$_GET['tool_group']  = $filter_group;
 
-			// Load section class if not already loaded.
-			if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
-				require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-tools.php';
-			}
-
 			ob_start();
-			// Render the tools manager content.
-			$section = new WP_MCP_AI_Section_Tools();
+			// Get section from container to respect singleton pattern and filters.
+			$section = wp_mcp_ai_container()->get( 'section.tools' );
 			if ( method_exists( $section, 'render_tools_manager_content' ) ) {
 				$section->render_tools_manager_content();
 			}
