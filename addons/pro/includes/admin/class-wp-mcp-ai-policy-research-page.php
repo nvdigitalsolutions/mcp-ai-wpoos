@@ -12,12 +12,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
+
 /**
  * Policy Research Admin Page
  *
  * Adds a submenu page under Policies menu for AI-powered policy research.
  */
 class WP_MCP_AI_Policy_Research_Page {
+	use WP_MCP_AI_Research_Page_Featured_Image;
 
 	/**
 	 * Page slug.
@@ -238,6 +241,9 @@ class WP_MCP_AI_Policy_Research_Page {
 		if ( empty( $research_data ) || empty( $research_data['policy_name'] ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid research data.', 'mcp-ai-wpoos-pro' ) ) );
 		}
+
+		// Process featured image generation request.
+		$research_data = self::process_featured_image_request( $research_data, $research_data['policy_name'], 'a policy' );
 
 		// Use the create_policy tool to create the policy.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Policy' ) ) {
