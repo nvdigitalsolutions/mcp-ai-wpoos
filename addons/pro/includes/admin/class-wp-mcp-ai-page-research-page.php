@@ -56,7 +56,8 @@ class WP_MCP_AI_Page_Research_Page {
 	 */
 	public static function enqueue_assets( $hook ) {
 		// Only load on our research page.
-		if ( 'edit-page_' . self::PAGE_SLUG !== $hook ) {
+		// For the built-in 'page' post type, WordPress uses 'page_page_{slug}' format.
+		if ( 'page_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 
