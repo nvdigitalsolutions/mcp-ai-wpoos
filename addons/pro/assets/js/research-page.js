@@ -752,17 +752,30 @@
 		 * Add place to database via AJAX.
 		 *
 		 * @param {Object} researchData Place data package
+		 * @param {Object} options Additional options like image generation
 		 * @return {Promise} Promise resolving to AJAX response
 		 */
-		addPlaceToDatabase: function(researchData) {
+		addPlaceToDatabase: function(researchData, options) {
+			options = options || {};
+			
+			const data = {
+				action: 'wp_mcp_ai_create_place_from_research',
+				nonce: wpMcpAiResearchPage.nonce,
+				research_data: JSON.stringify(researchData)
+			};
+
+			// Add image generation options if specified
+			if (options.generateFeaturedImage) {
+				data.generate_featured_image = 'true';
+				if (options.imagePrompt) {
+					data.image_prompt = options.imagePrompt;
+				}
+			}
+
 			return $.ajax({
 				url: wpMcpAiResearchPage.ajaxUrl,
 				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_create_place_from_research',
-					nonce: wpMcpAiResearchPage.nonce,
-					research_data: JSON.stringify(researchData)
-				}
+				data: data
 			});
 		},
 
@@ -826,17 +839,30 @@
 		 * Add ECA to database via AJAX.
 		 *
 		 * @param {Object} researchData ECA data package
+		 * @param {Object} options Additional options like image generation
 		 * @return {Promise} Promise resolving to AJAX response
 		 */
-		addECAToDatabase: function(researchData) {
+		addECAToDatabase: function(researchData, options) {
+			options = options || {};
+			
+			const data = {
+				action: 'wp_mcp_ai_create_eca_from_research',
+				nonce: wpMcpAiResearchPage.nonce,
+				research_data: JSON.stringify(researchData)
+			};
+
+			// Add image generation options if specified
+			if (options.generateFeaturedImage) {
+				data.generate_featured_image = 'true';
+				if (options.imagePrompt) {
+					data.image_prompt = options.imagePrompt;
+				}
+			}
+
 			return $.ajax({
 				url: wpMcpAiResearchPage.ajaxUrl,
 				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_create_eca_from_research',
-					nonce: wpMcpAiResearchPage.nonce,
-					research_data: JSON.stringify(researchData)
-				}
+				data: data
 			});
 		},
 
@@ -900,17 +926,30 @@
 		 * Add policy to database via AJAX.
 		 *
 		 * @param {Object} researchData Policy data package
+		 * @param {Object} options Additional options like image generation
 		 * @return {Promise} Promise resolving to AJAX response
 		 */
-		addPolicyToDatabase: function(researchData) {
+		addPolicyToDatabase: function(researchData, options) {
+			options = options || {};
+			
+			const data = {
+				action: 'wp_mcp_ai_create_policy_from_research',
+				nonce: wpMcpAiResearchPage.nonce,
+				research_data: JSON.stringify(researchData)
+			};
+
+			// Add image generation options if specified
+			if (options.generateFeaturedImage) {
+				data.generate_featured_image = 'true';
+				if (options.imagePrompt) {
+					data.image_prompt = options.imagePrompt;
+				}
+			}
+
 			return $.ajax({
 				url: wpMcpAiResearchPage.ajaxUrl,
 				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_create_policy_from_research',
-					nonce: wpMcpAiResearchPage.nonce,
-					research_data: JSON.stringify(researchData)
-				}
+				data: data
 			});
 		},
 
