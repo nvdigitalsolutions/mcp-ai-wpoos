@@ -9,10 +9,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
+
 /**
  * Creates a new insurance policy.
  */
 class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Content_Media;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -97,6 +100,11 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'required'             => array( 'member_id', 'policy_number', 'policy_type' ),
 			'additionalProperties' => false,
 		);
+
+		// Merge content media parameters.
+		$schema['properties'] = array_merge( $schema['properties'], $this->get_content_media_parameters() );
+
+		return $schema;
 	}
 
 	/**
@@ -178,7 +186,7 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$post_data = array(
 			'post_type'    => 'mcp_ai_policy',
 			'post_title'   => $name,
-			'post_content' => $coverage_details,
+			'post_content' => $this->embed_content_media( $coverage_details, $arguments ),
 			'post_status'  => 'publish',
 			'post_author'  => $current_user_id,
 		);

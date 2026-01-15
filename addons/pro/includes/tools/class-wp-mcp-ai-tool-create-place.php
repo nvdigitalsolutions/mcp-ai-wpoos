@@ -12,10 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
+
 /**
  * Creates a new place with comprehensive location and business data.
  */
 class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Content_Media;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -157,6 +160,11 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'required'             => array( 'name' ),
 			'additionalProperties' => false,
 		);
+
+		// Merge content media parameters.
+		$schema['properties'] = array_merge( $schema['properties'], $this->get_content_media_parameters() );
+
+		return $schema;
 	}
 
 	/**
@@ -254,7 +262,7 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$post_data = array(
 			'post_type'    => 'mcp_ai_place',
 			'post_title'   => $name,
-			'post_content' => $description,
+			'post_content' => $this->embed_content_media( $description, $arguments ),
 			'post_status'  => 'publish',
 			'post_author'  => $current_user_id,
 		);

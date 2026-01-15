@@ -9,10 +9,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
+
 /**
  * Creates a new quiz with questions.
  */
 class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Content_Media;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -38,7 +41,7 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
-		return array(
+		$schema = array(
 			'type'                 => 'object',
 			'properties'           => array(
 				'title'         => array(
@@ -98,6 +101,14 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 			),
 			'required'             => array( 'title', 'questions' ),
+			'additionalProperties' => false,
+		);
+
+		// Merge content media parameters.
+		$schema['properties'] = array_merge( $schema['properties'], $this->get_content_media_parameters() );
+
+		return $schema;
+	}
 			'additionalProperties' => false,
 		);
 	}
@@ -171,7 +182,7 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$quiz_data = array(
 			'post_type'    => 'mcp_ai_quiz',
 			'post_title'   => $title,
-			'post_content' => $description,
+			'post_content' => $this->embed_content_media( $description, $arguments ),
 			'post_status'  => 'publish',
 			'post_author'  => $current_user_id,
 		);
