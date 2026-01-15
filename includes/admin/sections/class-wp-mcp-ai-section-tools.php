@@ -1621,7 +1621,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								foreach ( $tools as $tool ) :
 									$slug        = $tool->get_slug();
 									$description = $tool->get_description();
-									$name        = $this->get_tool_display_name( $slug );
+									$name        = $this->get_tool_display_name( $slug, $tool );
 
 									// Check if tool has dependencies.
 									$dependencies = $this->check_tool_dependencies( $slug );
@@ -1754,11 +1754,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		/**
 		 * Get display name for a tool.
 		 *
-		 * @param string $slug Tool slug.
+		 * @param string                   $slug Tool slug.
+		 * @param WP_MCP_AI_Tool_Interface $tool Optional. Tool instance to get name from.
 		 * @return string Display name.
 		 */
-		private function get_tool_display_name( $slug ) {
-			// Convert slug to title case.
+		private function get_tool_display_name( $slug, $tool = null ) {
+			// If tool instance provided, use its get_name() method.
+			if ( $tool && method_exists( $tool, 'get_name' ) ) {
+				return $tool->get_name();
+			}
+
+			// Fallback: convert slug to title case.
 			$name = str_replace( '_', ' ', $slug );
 			return ucwords( $name );
 		}
