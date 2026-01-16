@@ -78,6 +78,10 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-gemini-vide
 
 // Load async tool orchestration services.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-tool-orchestrator.php';
+
+// Load agent coordination services (DeepSeek V4 enhancements - Phase 1).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-communication-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-team-orchestrator.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-async-executor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-health-monitor.php';
 

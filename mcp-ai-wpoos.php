@@ -464,6 +464,9 @@ require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
 // This includes token budget manager and performance monitor services.
 require_once WP_MCP_AI_PATH . 'includes/services-init.php';
 
+// Load agent roles (DeepSeek V4 orchestration enhancements - Phase 1).
+require_once WP_MCP_AI_PATH . 'includes/agents-init.php';
+
 // Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
