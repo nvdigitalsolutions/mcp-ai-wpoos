@@ -968,6 +968,11 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
 		);
 	}
 
+	// Seed media template presets if media toolkit is enabled.
+	if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
+		WP_MCP_AI_Media_Template_Presets::seed_presets();
+	}
+
 	flush_rewrite_rules();
 }
 
