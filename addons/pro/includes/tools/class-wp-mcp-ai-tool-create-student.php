@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Create_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new student with personal details, year group, and house information. Students can then be enrolled in Extra-Curricular Activities.', 'mcp-ai-wpoos-pro' );
+		return __( 'Creates a new student or updates an existing one if student_id is provided. Includes personal details, year group, and house information. Students can then be enrolled in Extra-Curricular Activities.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -41,6 +41,10 @@ class WP_MCP_AI_Tool_Create_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'student_id' => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional student ID. If provided, updates the existing student instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'first_name' => array(
 					'type'        => 'string',
 					'description' => __( 'Student first name (required)', 'mcp-ai-wpoos-pro' ),
@@ -113,6 +117,29 @@ class WP_MCP_AI_Tool_Create_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create students.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Check if this is an update operation.
+		$student_id = isset( $arguments['student_id'] ) ? absint( $arguments['student_id'] ) : 0;
+		$is_update  = false;
+
+		if ( $student_id ) {
+			// Verify student exists and user has permission to update it.
+			$existing_student = get_post( $student_id );
+
+			if ( ! $existing_student || 'mcp_ai_student' !== $existing_student->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_student_not_found', __( 'Student not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author = absint( $existing_student->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this student.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Validate required fields.
 		$first_name = isset( $arguments['first_name'] ) ? sanitize_text_field( $arguments['first_name'] ) : '';
 		$last_name  = isset( $arguments['last_name'] ) ? sanitize_text_field( $arguments['last_name'] ) : '';
@@ -132,59 +159,117 @@ class WP_MCP_AI_Tool_Create_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			return new WP_Error( 'wp_mcp_ai_invalid_email', __( 'Invalid email address.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Create student post.
 		$full_name = $first_name . ' ' . $last_name;
-		$post_data = array(
-			'post_type'   => 'mcp_ai_student',
-			'post_title'  => $full_name,
-			'post_status' => 'publish',
-			'post_author' => $current_user_id,
-		);
 
-		$student_id = wp_insert_post( $post_data, true );
+		if ( $is_update ) {
+			// Update existing student.
+			$post_data = array(
+				'ID'         => $student_id,
+				'post_title' => $full_name,
+			);
 
-		if ( is_wp_error( $student_id ) ) {
-			return $student_id;
+			$result = wp_update_post( $post_data, true );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Update student metadata.
+			update_post_meta( $student_id, '_student_first_name', $first_name );
+			update_post_meta( $student_id, '_student_last_name', $last_name );
+
+			if ( $year_group ) {
+				update_post_meta( $student_id, '_student_year_group', $year_group );
+			}
+
+			if ( $house ) {
+				update_post_meta( $student_id, '_student_house', $house );
+			}
+
+			if ( $email ) {
+				update_post_meta( $student_id, '_student_email', $email );
+			}
+
+			if ( $isams_id ) {
+				update_post_meta( $student_id, '_student_isams_id', $isams_id );
+			}
+
+			$student = get_post( $student_id );
+
+			return array(
+				'success'    => true,
+				'message'    => __( 'Student updated successfully.', 'mcp-ai-wpoos-pro' ),
+				'student_id' => $student_id,
+				'student'    => array(
+					'id'         => $student_id,
+					'name'       => $full_name,
+					'first_name' => $first_name,
+					'last_name'  => $last_name,
+					'year_group' => $year_group,
+					'house'      => $house,
+					'email'      => $email,
+					'isams_id'   => $isams_id,
+					'updated_at' => $student->post_modified,
+				),
+				'updated'    => true,
+			);
+		} else {
+			// Create student post.
+			$post_data = array(
+				'post_type'   => 'mcp_ai_student',
+				'post_title'  => $full_name,
+				'post_status' => 'publish',
+				'post_author' => $current_user_id,
+			);
+
+			$student_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $student_id ) ) {
+				return $student_id;
+			}
+
+			// Save student metadata.
+			update_post_meta( $student_id, '_student_first_name', $first_name );
+			update_post_meta( $student_id, '_student_last_name', $last_name );
+
+			if ( $year_group ) {
+				update_post_meta( $student_id, '_student_year_group', $year_group );
+			}
+
+			if ( $house ) {
+				update_post_meta( $student_id, '_student_house', $house );
+			}
+
+			if ( $email ) {
+				update_post_meta( $student_id, '_student_email', $email );
+			}
+
+			if ( $isams_id ) {
+				update_post_meta( $student_id, '_student_isams_id', $isams_id );
+			}
+
+			// Initialize empty enrollments array.
+			update_post_meta( $student_id, '_student_eca_enrollments', array() );
+
+			$student = get_post( $student_id );
+
+			return array(
+				'success'    => true,
+				'message'    => __( 'Student created successfully.', 'mcp-ai-wpoos-pro' ),
+				'student_id' => $student_id,
+				'student'    => array(
+					'id'         => $student_id,
+					'name'       => $full_name,
+					'first_name' => $first_name,
+					'last_name'  => $last_name,
+					'year_group' => $year_group,
+					'house'      => $house,
+					'email'      => $email,
+					'isams_id'   => $isams_id,
+					'created_at' => $student->post_date,
+				),
+				'updated'    => false,
+			);
 		}
-
-		// Save student metadata.
-		update_post_meta( $student_id, '_student_first_name', $first_name );
-		update_post_meta( $student_id, '_student_last_name', $last_name );
-
-		if ( $year_group ) {
-			update_post_meta( $student_id, '_student_year_group', $year_group );
-		}
-
-		if ( $house ) {
-			update_post_meta( $student_id, '_student_house', $house );
-		}
-
-		if ( $email ) {
-			update_post_meta( $student_id, '_student_email', $email );
-		}
-
-		if ( $isams_id ) {
-			update_post_meta( $student_id, '_student_isams_id', $isams_id );
-		}
-
-		// Initialize empty enrollments array.
-		update_post_meta( $student_id, '_student_eca_enrollments', array() );
-
-		return array(
-			'success'    => true,
-			'message'    => __( 'Student created successfully.', 'mcp-ai-wpoos-pro' ),
-			'student_id' => $student_id,
-			'student'    => array(
-				'id'         => $student_id,
-				'name'       => $full_name,
-				'first_name' => $first_name,
-				'last_name'  => $last_name,
-				'year_group' => $year_group,
-				'house'      => $house,
-				'email'      => $email,
-				'isams_id'   => $isams_id,
-				'created_at' => current_time( 'mysql' ),
-			),
-		);
 	}
 }
