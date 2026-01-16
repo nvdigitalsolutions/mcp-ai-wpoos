@@ -29,6 +29,39 @@ public function __construct() {
 }
 
 /**
+ * Handle Gmail OAuth start request.
+ * 
+ * This is a stub method that redirects to Pro upgrade page.
+ * Gmail OAuth functionality has been moved to Pro's Remote Sites feature.
+ */
+public function handle_gmail_oauth_start() {
+// Check nonce for security.
+if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wp_mcp_ai_gmail_oauth_start' ) ) {
+wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos' ) );
+}
+
+// Check user capability.
+if ( ! current_user_can( 'manage_options' ) ) {
+wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
+}
+
+// Redirect back to settings page with Pro upgrade message.
+wp_safe_redirect(
+add_query_arg(
+array(
+'page'                => 'wp-mcp-ai-dashboard',
+'tab'                 => 'tools',
+'subtab'              => 'connections',
+'connection'          => 'gmail',
+'gmail_requires_pro'  => '1',
+),
+admin_url( 'admin.php' )
+)
+);
+exit;
+}
+
+/**
  * Allow the Google OAuth authorize endpoint host when using wp_safe_redirect().
  * Preserved for backward compatibility.
  *
