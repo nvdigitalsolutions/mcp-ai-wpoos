@@ -30,13 +30,15 @@ All provider dropdowns now use `WP_MCP_AI_Admin_Settings::get_available_provider
 
 | Provider | Enable Check | Credential Check | Default Enabled |
 |----------|-------------|------------------|-----------------|
-| OpenAI | enable_openai | openai_api_key | Yes (true) |
-| Anthropic | enable_anthropic | anthropic_api_key | Yes (true) |
-| Gemini | enable_gemini | gemini_api_key | Yes (true) |
-| Ollama | enable_ollama | ollama_endpoint_url | Yes (true) |
-| LM Studio | enable_lm_studio | lm_studio_endpoint_url | Yes (true) |
+| OpenAI | enable_openai | openai_api_key | No (false) |
+| Anthropic | enable_anthropic | anthropic_api_key | No (false) |
+| Gemini | enable_gemini | gemini_api_key | No (false) |
+| Ollama | enable_ollama | ollama_endpoint_url | No (false) |
+| LM Studio | enable_lm_studio | lm_studio_endpoint_url | No (false) |
 | Cloudflare | enable_cloudflare | cloudflare_api_token + cloudflare_account_id | No (false) |
 | Huggingface | enable_huggingface | huggingface_api_key | No (false) |
+
+**Important**: All providers default to disabled (false) to ensure that on fresh installations, users must explicitly enable each provider before it appears in dropdowns. This prevents confusion and failed requests when credentials haven't been configured yet.
 
 ## Files Modified
 

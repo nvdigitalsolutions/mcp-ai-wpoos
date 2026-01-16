@@ -2128,32 +2128,32 @@ class WP_MCP_AI_Model_Config {
 		$settings  = get_option( 'wp_mcp_ai_settings', array() );
 		$providers = array();
 
-		// Check enable_openai setting (defaults to true if not set).
-		$enable_openai = isset( $settings['enable_openai'] ) ? $settings['enable_openai'] : true;
+		// Check enable_openai setting (defaults to false if not set).
+		$enable_openai = isset( $settings['enable_openai'] ) ? $settings['enable_openai'] : false;
 		if ( $enable_openai && ! empty( $settings['openai_api_key'] ) ) {
 			$providers['openai'] = __( 'OpenAI', 'mcp-ai-wpoos' );
 		}
 
-		// Check enable_anthropic setting (defaults to true if not set).
-		$enable_anthropic = isset( $settings['enable_anthropic'] ) ? $settings['enable_anthropic'] : true;
+		// Check enable_anthropic setting (defaults to false if not set).
+		$enable_anthropic = isset( $settings['enable_anthropic'] ) ? $settings['enable_anthropic'] : false;
 		if ( $enable_anthropic && ! empty( $settings['anthropic_api_key'] ) ) {
 			$providers['anthropic'] = __( 'Anthropic (Claude)', 'mcp-ai-wpoos' );
 		}
 
-		// Check enable_gemini setting (defaults to true if not set).
-		$enable_gemini = isset( $settings['enable_gemini'] ) ? $settings['enable_gemini'] : true;
+		// Check enable_gemini setting (defaults to false if not set).
+		$enable_gemini = isset( $settings['enable_gemini'] ) ? $settings['enable_gemini'] : false;
 		if ( $enable_gemini && ! empty( $settings['gemini_api_key'] ) ) {
 			$providers['gemini'] = __( 'Google Gemini', 'mcp-ai-wpoos' );
 		}
 
-		// Check enable_ollama setting (defaults to true if not set).
-		$enable_ollama = isset( $settings['enable_ollama'] ) ? $settings['enable_ollama'] : true;
+		// Check enable_ollama setting (defaults to false if not set).
+		$enable_ollama = isset( $settings['enable_ollama'] ) ? $settings['enable_ollama'] : false;
 		if ( $enable_ollama && ! empty( $settings['ollama_endpoint_url'] ) ) {
 			$providers['ollama'] = __( 'Ollama (Local)', 'mcp-ai-wpoos' );
 		}
 
-		// Check enable_lm_studio setting (defaults to true if not set).
-		$enable_lm_studio = isset( $settings['enable_lm_studio'] ) ? $settings['enable_lm_studio'] : true;
+		// Check enable_lm_studio setting (defaults to false if not set).
+		$enable_lm_studio = isset( $settings['enable_lm_studio'] ) ? $settings['enable_lm_studio'] : false;
 		if ( $enable_lm_studio && ! empty( $settings['lm_studio_endpoint_url'] ) ) {
 			$providers['lm_studio'] = __( 'LM Studio (Local)', 'mcp-ai-wpoos' );
 		}
