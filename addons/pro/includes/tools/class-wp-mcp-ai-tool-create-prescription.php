@@ -240,9 +240,7 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 				update_post_meta( $prescription_id, '_prescription_end_date', $end_date );
 			}
 
-			if ( $refills_remaining > 0 ) {
-				update_post_meta( $prescription_id, '_prescription_refills_remaining', $refills_remaining );
-			}
+			update_post_meta( $prescription_id, '_prescription_refills_remaining', $refills_remaining );
 
 			$prescription = get_post( $prescription_id );
 
@@ -301,9 +299,7 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 				update_post_meta( $prescription_id, '_prescription_end_date', $end_date );
 			}
 
-			if ( $refills_remaining > 0 ) {
-				update_post_meta( $prescription_id, '_prescription_refills_remaining', $refills_remaining );
-			}
+			update_post_meta( $prescription_id, '_prescription_refills_remaining', $refills_remaining );
 
 			$prescription = get_post( $prescription_id );
 
