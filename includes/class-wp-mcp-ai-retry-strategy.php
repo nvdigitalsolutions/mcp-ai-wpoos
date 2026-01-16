@@ -105,39 +105,39 @@ class WP_MCP_AI_Retry_Strategy {
 	public static function get_config( $type ) {
 		$configs = array(
 			'webhook'    => array(
-				'initial_delay' => 10,    // 10 seconds.
-				'multiplier'    => 2.0,   // Double each time.
-				'max_delay'     => 300,   // 5 minutes max.
-				'max_attempts'  => 3,
-				'jitter_factor' => 0.2,   // ±20% randomness.
+				'initial_delay'  => 10,    // 10 seconds.
+				'multiplier'     => 2.0,   // Double each time.
+				'max_delay'      => 300,   // 5 minutes max.
+				'max_attempts'   => 3,
+				'jitter_factor'  => 0.2,   // ±20% randomness.
 			),
 			'cron_job'   => array(
-				'initial_delay' => 30,    // 30 seconds.
-				'multiplier'    => 2.0,
-				'max_delay'     => 600,   // 10 minutes max.
-				'max_attempts'  => 3,
-				'jitter_factor' => 0.15,  // ±15% randomness.
+				'initial_delay'  => 30,    // 30 seconds.
+				'multiplier'     => 2.0,
+				'max_delay'      => 600,   // 10 minutes max.
+				'max_attempts'   => 3,
+				'jitter_factor'  => 0.15,  // ±15% randomness.
 			),
 			'async_tool' => array(
-				'initial_delay' => 15,    // 15 seconds.
-				'multiplier'    => 2.0,
-				'max_delay'     => 300,   // 5 minutes max.
-				'max_attempts'  => 3,
-				'jitter_factor' => 0.1,   // ±10% randomness.
+				'initial_delay'  => 15,    // 15 seconds.
+				'multiplier'     => 2.0,
+				'max_delay'      => 300,   // 5 minutes max.
+				'max_attempts'   => 3,
+				'jitter_factor'  => 0.1,   // ±10% randomness.
 			),
 			'crawl4ai'   => array(
-				'initial_delay' => 30,    // 30 seconds.
-				'multiplier'    => 2.0,
-				'max_delay'     => 300,   // 5 minutes max.
-				'max_attempts'  => 3,
-				'jitter_factor' => 0.1,   // ±10% randomness.
+				'initial_delay'  => 30,    // 30 seconds.
+				'multiplier'     => 2.0,
+				'max_delay'      => 300,   // 5 minutes max.
+				'max_attempts'   => 3,
+				'jitter_factor'  => 0.1,   // ±10% randomness.
 			),
 			'default'    => array(
-				'initial_delay' => self::DEFAULT_INITIAL_DELAY,
-				'multiplier'    => self::DEFAULT_MULTIPLIER,
-				'max_delay'     => self::DEFAULT_MAX_DELAY,
-				'max_attempts'  => self::DEFAULT_MAX_ATTEMPTS,
-				'jitter_factor' => self::DEFAULT_JITTER_FACTOR,
+				'initial_delay'  => self::DEFAULT_INITIAL_DELAY,
+				'multiplier'     => self::DEFAULT_MULTIPLIER,
+				'max_delay'      => self::DEFAULT_MAX_DELAY,
+				'max_attempts'   => self::DEFAULT_MAX_ATTEMPTS,
+				'jitter_factor'  => self::DEFAULT_JITTER_FACTOR,
 			),
 		);
 

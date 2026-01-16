@@ -817,15 +817,15 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 					'done'    => false,
 				),
 				array(
-					'model'             => 'llama2',
-					'message'           => array(
+					'model'              => 'llama2',
+					'message'            => array(
 						'role'    => 'assistant',
 						'content' => '', // Final chunk often has empty content.
 					),
-					'done'              => true,
-					'done_reason'       => 'stop',
-					'prompt_eval_count' => 10,
-					'eval_count'        => 15,
+					'done'               => true,
+					'done_reason'        => 'stop',
+					'prompt_eval_count'  => 10,
+					'eval_count'         => 15,
 				),
 			);
 
@@ -966,3 +966,4 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( 0, $response['usage']['completion_tokens'] );
 	}
 }
+

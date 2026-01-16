@@ -153,12 +153,12 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 				// Store this image as a potential fallback.
 				// We store images in order found (which typically means most recent first in the messages array).
 				$found_images[] = array(
-					'url'            => $segment_url,
+					'url'           => $segment_url,
 					'url_normalized' => $segment_url_normalized,
-					'attachment_id'  => isset( $segment['attachment_id'] ) ? absint( $segment['attachment_id'] ) : 0,
-					'file_name'      => isset( $segment['file_name'] ) ? sanitize_text_field( $segment['file_name'] ) : '',
-					'mime_type'      => isset( $segment['mime_type'] ) ? sanitize_text_field( $segment['mime_type'] ) : '',
-					'bytes'          => isset( $segment['bytes'] ) ? absint( $segment['bytes'] ) : 0,
+					'attachment_id' => isset( $segment['attachment_id'] ) ? absint( $segment['attachment_id'] ) : 0,
+					'file_name'     => isset( $segment['file_name'] ) ? sanitize_text_field( $segment['file_name'] ) : '',
+					'mime_type'     => isset( $segment['mime_type'] ) ? sanitize_text_field( $segment['mime_type'] ) : '',
+					'bytes'         => isset( $segment['bytes'] ) ? absint( $segment['bytes'] ) : 0,
 				);
 			}
 		}
@@ -168,7 +168,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		// it's likely a hallucinated/incorrect URL. Use the most recent image instead.
 		if ( ! empty( $found_images ) ) {
 			// Check if the target URL domain matches any found image domains.
-			$target_domain         = $this->extract_domain_from_url( $target_url );
+			$target_domain = $this->extract_domain_from_url( $target_url );
 			$found_matching_domain = false;
 
 			foreach ( $found_images as $image ) {

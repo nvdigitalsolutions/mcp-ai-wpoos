@@ -174,14 +174,7 @@ class WP_MCP_AI_Project_Management_Admin_Test extends WP_UnitTestCase {
 	 * Test that admin columns are registered for projects.
 	 */
 	public function test_project_admin_columns_registered() {
-		$columns = WP_MCP_AI_Project_Management_Admin_Columns::project_columns(
-			array(
-				'cb'     => 'CB',
-				'title'  => 'Title',
-				'author' => 'Author',
-				'date'   => 'Date',
-			)
-		);
+		$columns = WP_MCP_AI_Project_Management_Admin_Columns::project_columns( array( 'cb' => 'CB', 'title' => 'Title', 'author' => 'Author', 'date' => 'Date' ) );
 
 		$this->assertArrayHasKey( 'status', $columns );
 		$this->assertArrayHasKey( 'start_date', $columns );
@@ -193,14 +186,7 @@ class WP_MCP_AI_Project_Management_Admin_Test extends WP_UnitTestCase {
 	 * Test that admin columns are registered for tasks.
 	 */
 	public function test_task_admin_columns_registered() {
-		$columns = WP_MCP_AI_Project_Management_Admin_Columns::task_columns(
-			array(
-				'cb'     => 'CB',
-				'title'  => 'Title',
-				'author' => 'Author',
-				'date'   => 'Date',
-			)
-		);
+		$columns = WP_MCP_AI_Project_Management_Admin_Columns::task_columns( array( 'cb' => 'CB', 'title' => 'Title', 'author' => 'Author', 'date' => 'Date' ) );
 
 		$this->assertArrayHasKey( 'status', $columns );
 		$this->assertArrayHasKey( 'priority', $columns );
@@ -213,14 +199,7 @@ class WP_MCP_AI_Project_Management_Admin_Test extends WP_UnitTestCase {
 	 * Test that admin columns are registered for events.
 	 */
 	public function test_event_admin_columns_registered() {
-		$columns = WP_MCP_AI_Project_Management_Admin_Columns::event_columns(
-			array(
-				'cb'     => 'CB',
-				'title'  => 'Title',
-				'author' => 'Author',
-				'date'   => 'Date',
-			)
-		);
+		$columns = WP_MCP_AI_Project_Management_Admin_Columns::event_columns( array( 'cb' => 'CB', 'title' => 'Title', 'author' => 'Author', 'date' => 'Date' ) );
 
 		$this->assertArrayHasKey( 'type', $columns );
 		$this->assertArrayHasKey( 'start_date', $columns );

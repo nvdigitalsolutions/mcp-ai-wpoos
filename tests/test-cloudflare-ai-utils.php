@@ -26,9 +26,9 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 
 		// Mock settings with valid credentials.
 		$settings = array(
-			'cloudflare_api_token'  => 'test_token_12345',
+			'cloudflare_api_token' => 'test_token_12345',
 			'cloudflare_account_id' => 'test_account_id',
-			'cloudflare_model'      => '@cf/meta/llama-3.1-8b-instruct',
+			'cloudflare_model' => '@cf/meta/llama-3.1-8b-instruct',
 		);
 		update_option( 'wp_mcp_ai_settings', $settings );
 	}
@@ -53,7 +53,7 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	public function test_run_with_tools_returns_error_with_empty_tools() {
 		$messages = array(
 			array(
-				'role'    => 'user',
+				'role' => 'user',
 				'content' => 'Hello',
 			),
 		);
@@ -69,19 +69,19 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	 */
 	public function test_validate_tool_arguments_checks_required_parameters() {
 		$function_name = 'get_weather';
-		$arguments     = array(); // Missing required parameter.
+		$arguments = array(); // Missing required parameter.
 
 		$tool_definitions = array(
 			array(
-				'type'     => 'function',
+				'type' => 'function',
 				'function' => array(
-					'name'       => 'get_weather',
+					'name' => 'get_weather',
 					'parameters' => array(
-						'type'       => 'object',
+						'type' => 'object',
 						'properties' => array(
 							'city' => array( 'type' => 'string' ),
 						),
-						'required'   => array( 'city' ),
+						'required' => array( 'city' ),
 					),
 				),
 			),
@@ -89,7 +89,7 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'validate_tool_arguments' );
+		$method = $reflection->getMethod( 'validate_tool_arguments' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $function_name, $arguments, $tool_definitions );
@@ -103,19 +103,19 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	 */
 	public function test_validate_tool_arguments_passes_with_valid_parameters() {
 		$function_name = 'get_weather';
-		$arguments     = array( 'city' => 'Mumbai' );
+		$arguments = array( 'city' => 'Mumbai' );
 
 		$tool_definitions = array(
 			array(
-				'type'     => 'function',
+				'type' => 'function',
 				'function' => array(
-					'name'       => 'get_weather',
+					'name' => 'get_weather',
 					'parameters' => array(
-						'type'       => 'object',
+						'type' => 'object',
 						'properties' => array(
 							'city' => array( 'type' => 'string' ),
 						),
-						'required'   => array( 'city' ),
+						'required' => array( 'city' ),
 					),
 				),
 			),
@@ -123,7 +123,7 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'validate_tool_arguments' );
+		$method = $reflection->getMethod( 'validate_tool_arguments' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $function_name, $arguments, $tool_definitions );
@@ -136,19 +136,19 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	 */
 	public function test_validate_tool_arguments_fails_with_type_mismatch() {
 		$function_name = 'get_weather';
-		$arguments     = array( 'city' => 12345 ); // Should be string, not number.
+		$arguments = array( 'city' => 12345 ); // Should be string, not number.
 
 		$tool_definitions = array(
 			array(
-				'type'     => 'function',
+				'type' => 'function',
 				'function' => array(
-					'name'       => 'get_weather',
+					'name' => 'get_weather',
 					'parameters' => array(
-						'type'       => 'object',
+						'type' => 'object',
 						'properties' => array(
 							'city' => array( 'type' => 'string' ),
 						),
-						'required'   => array( 'city' ),
+						'required' => array( 'city' ),
 					),
 				),
 			),
@@ -156,7 +156,7 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'validate_tool_arguments' );
+		$method = $reflection->getMethod( 'validate_tool_arguments' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $function_name, $arguments, $tool_definitions );
@@ -171,35 +171,35 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	public function test_auto_trim_tools_keeps_relevant_tools() {
 		$messages = array(
 			array(
-				'role'    => 'user',
+				'role' => 'user',
 				'content' => 'What is the weather like in Mumbai?',
 			),
 		);
 
 		$tools = array(
 			array(
-				'name'        => 'get-weather',
+				'name' => 'get-weather',
 				'description' => 'Gets weather information for a city',
-				'parameters'  => array(
-					'type'       => 'object',
+				'parameters' => array(
+					'type' => 'object',
 					'properties' => array(
 						'city' => array( 'type' => 'string' ),
 					),
 				),
-				'function'    => function ( $args ) {
+				'function' => function( $args ) {
 					return 'Sunny';
 				},
 			),
 			array(
-				'name'        => 'search-database',
+				'name' => 'search-database',
 				'description' => 'Search the database for records',
-				'parameters'  => array(
-					'type'       => 'object',
+				'parameters' => array(
+					'type' => 'object',
 					'properties' => array(
 						'query' => array( 'type' => 'string' ),
 					),
 				),
-				'function'    => function ( $args ) {
+				'function' => function( $args ) {
 					return 'No results';
 				},
 			),
@@ -207,7 +207,7 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'auto_trim_tools' );
+		$method = $reflection->getMethod( 'auto_trim_tools' );
 		$method->setAccessible( true );
 
 		$trimmed = $method->invoke( $this->client, $messages, $tools );
@@ -222,23 +222,23 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	public function test_auto_trim_tools_keeps_minimum_tools() {
 		$messages = array(
 			array(
-				'role'    => 'user',
+				'role' => 'user',
 				'content' => 'Tell me about quantum physics',
 			),
 		);
 
 		$tools = array(
 			array(
-				'name'        => 'get-weather',
+				'name' => 'get-weather',
 				'description' => 'Gets weather information',
-				'function'    => function ( $args ) {
+				'function' => function( $args ) {
 					return 'Sunny';
 				},
 			),
 			array(
-				'name'        => 'search-database',
+				'name' => 'search-database',
 				'description' => 'Search database',
-				'function'    => function ( $args ) {
+				'function' => function( $args ) {
 					return 'No results';
 				},
 			),
@@ -246,7 +246,7 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'auto_trim_tools' );
+		$method = $reflection->getMethod( 'auto_trim_tools' );
 		$method->setAccessible( true );
 
 		$trimmed = $method->invoke( $this->client, $messages, $tools );
@@ -261,31 +261,31 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	public function test_tool_definitions_format() {
 		$tools = array(
 			array(
-				'name'        => 'test-tool',
+				'name' => 'test-tool',
 				'description' => 'Test tool description',
-				'parameters'  => array(
-					'type'       => 'object',
+				'parameters' => array(
+					'type' => 'object',
 					'properties' => array(
 						'param1' => array( 'type' => 'string' ),
 					),
-					'required'   => array( 'param1' ),
+					'required' => array( 'param1' ),
 				),
-				'function'    => function ( $args ) {
+				'function' => function( $args ) {
 					return 'test result';
 				},
 			),
 		);
 
 		// This would normally be done in run_with_tools, but we test the format.
-		$tool_name  = $tools[0]['name'];
+		$tool_name = $tools[0]['name'];
 		$definition = array(
-			'name'        => $tool_name,
+			'name' => $tool_name,
 			'description' => $tools[0]['description'],
-			'parameters'  => $tools[0]['parameters'],
+			'parameters' => $tools[0]['parameters'],
 		);
 
 		$tool_definition = array(
-			'type'     => 'function',
+			'type' => 'function',
 			'function' => $definition,
 		);
 
@@ -301,27 +301,27 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	public function test_verbose_logging_option() {
 		$messages = array(
 			array(
-				'role'    => 'user',
+				'role' => 'user',
 				'content' => 'Test message',
 			),
 		);
 
 		$tools = array(
 			array(
-				'name'        => 'test-tool',
+				'name' => 'test-tool',
 				'description' => 'Test',
-				'parameters'  => array(
-					'type'       => 'object',
+				'parameters' => array(
+					'type' => 'object',
 					'properties' => array(),
 				),
-				'function'    => function ( $args ) {
+				'function' => function( $args ) {
 					return 'result';
 				},
 			),
 		);
 
 		$options = array(
-			'verbose'              => true,
+			'verbose' => true,
 			'maxRecursiveToolRuns' => 1,
 		);
 
@@ -335,12 +335,12 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	 */
 	public function test_configuration_options_are_handled() {
 		$options = array(
-			'strictValidation'     => false,
+			'strictValidation' => false,
 			'maxRecursiveToolRuns' => 10,
-			'streamFinalResponse'  => true,
-			'verbose'              => true,
-			'autoTrimTools'        => true,
-			'maxTools'             => 5,
+			'streamFinalResponse' => true,
+			'verbose' => true,
+			'autoTrimTools' => true,
+			'maxTools' => 5,
 		);
 
 		// Test that options can be set and retrieved.
@@ -357,19 +357,19 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	 */
 	public function test_type_validation_allows_integer_for_number() {
 		$function_name = 'calculate';
-		$arguments     = array( 'value' => 42 ); // Integer should be valid for number type.
+		$arguments = array( 'value' => 42 ); // Integer should be valid for number type.
 
 		$tool_definitions = array(
 			array(
-				'type'     => 'function',
+				'type' => 'function',
 				'function' => array(
-					'name'       => 'calculate',
+					'name' => 'calculate',
 					'parameters' => array(
-						'type'       => 'object',
+						'type' => 'object',
 						'properties' => array(
 							'value' => array( 'type' => 'number' ),
 						),
-						'required'   => array( 'value' ),
+						'required' => array( 'value' ),
 					),
 				),
 			),
@@ -377,7 +377,7 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'validate_tool_arguments' );
+		$method = $reflection->getMethod( 'validate_tool_arguments' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $function_name, $arguments, $tool_definitions );
@@ -391,7 +391,7 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	public function test_auto_trim_respects_max_tools_option() {
 		$messages = array(
 			array(
-				'role'    => 'user',
+				'role' => 'user',
 				'content' => 'weather database search calculate email phone',
 			),
 		);
@@ -400,9 +400,9 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 		$tools = array();
 		for ( $i = 1; $i <= 15; $i++ ) {
 			$tools[] = array(
-				'name'        => 'tool-' . $i,
+				'name' => 'tool-' . $i,
 				'description' => 'Tool ' . $i . ' description',
-				'function'    => function ( $args ) {
+				'function' => function( $args ) {
 					return 'result';
 				},
 			);
@@ -412,7 +412,7 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'auto_trim_tools' );
+		$method = $reflection->getMethod( 'auto_trim_tools' );
 		$method->setAccessible( true );
 
 		$trimmed = $method->invoke( $this->client, $messages, $tools, $options );
@@ -426,10 +426,10 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 	 */
 	public function test_tool_function_must_be_callable() {
 		$valid_tool = array(
-			'name'        => 'valid-tool',
+			'name' => 'valid-tool',
 			'description' => 'Valid tool',
-			'parameters'  => array(),
-			'function'    => function ( $args ) {
+			'parameters' => array(),
+			'function' => function( $args ) {
 				return 'result';
 			},
 		);
@@ -437,10 +437,10 @@ class Test_Cloudflare_AI_Utils extends WP_UnitTestCase {
 		$this->assertTrue( is_callable( $valid_tool['function'] ) );
 
 		$invalid_tool = array(
-			'name'        => 'invalid-tool',
+			'name' => 'invalid-tool',
 			'description' => 'Invalid tool',
-			'parameters'  => array(),
-			'function'    => 'not_a_real_function_name',
+			'parameters' => array(),
+			'function' => 'not_a_real_function_name',
 		);
 
 		$this->assertFalse( is_callable( $invalid_tool['function'] ) );

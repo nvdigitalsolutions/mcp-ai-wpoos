@@ -23,7 +23,7 @@ class WP_MCP_AI_Cost_Calculator {
 	 * Source: Official provider pricing pages and Hugging Face Inference API.
 	 */
 	const PRICING = array(
-		'openai'      => array(
+		'openai'    => array(
 			'gpt-5'                                   => array(
 				'input'  => 10.00,
 				'output' => 30.00,
@@ -170,7 +170,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'per_second' => 0.20, // $0.20 per second of generated video (estimated).
 			),
 		),
-		'gemini'      => array(
+		'gemini'    => array(
 			// Gemini 2.5 series (November 2025).
 			'gemini-2.5-pro'         => array(
 				'input'  => 1.20,
@@ -227,7 +227,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'per_second' => 0.020,  // $0.020 per second of generated video.
 			),
 		),
-		'anthropic'   => array(
+		'anthropic' => array(
 			// Claude 4.5 series (November 2025).
 			'claude-sonnet-4.5'          => array(
 				'input'  => 3.00,
@@ -280,7 +280,7 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 1.25,
 			),
 		),
-		'ollama'      => array(
+		'ollama'    => array(
 			'default' => array(
 				'input'  => 0.00,
 				'output' => 0.00,
@@ -294,17 +294,17 @@ class WP_MCP_AI_Cost_Calculator {
 		),
 		'huggingface' => array(
 			// DeepSeek V3.2 (January 2026).
-			'deepseek-ai/DeepSeek-V3.2'          => array(
+			'deepseek-ai/DeepSeek-V3.2'         => array(
 				'input'  => 0.28, // $0.28 per 1M tokens (cache miss).
 				'output' => 0.42, // $0.42 per 1M tokens.
 			),
 			// Llama 3.3 70B Instruct.
-			'meta-llama/Llama-3.3-70B-Instruct'  => array(
+			'meta-llama/Llama-3.3-70B-Instruct' => array(
 				'input'  => 1.00, // $1.00 per 1M tokens ($0.001 per 1K).
 				'output' => 1.00,
 			),
 			// Llama 3.1 8B Instruct.
-			'meta-llama/Llama-3.1-8B-Instruct'   => array(
+			'meta-llama/Llama-3.1-8B-Instruct'  => array(
 				'input'  => 0.30, // $0.30 per 1M tokens ($0.0003 per 1K).
 				'output' => 0.30,
 			),
@@ -314,23 +314,23 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 0.20,
 			),
 			// Phi-3 Mini 4K Instruct.
-			'microsoft/Phi-3-mini-4k-instruct'   => array(
+			'microsoft/Phi-3-mini-4k-instruct'  => array(
 				'input'  => 0.10, // $0.10 per 1M tokens ($0.0001 per 1K).
 				'output' => 0.10,
 			),
 			// Qwen 2.5 72B Instruct.
-			'Qwen/Qwen2.5-72B-Instruct'          => array(
+			'Qwen/Qwen2.5-72B-Instruct'         => array(
 				'input'  => 1.00, // $1.00 per 1M tokens ($0.001 per 1K).
 				'output' => 1.00,
 			),
 			// Qwen 2.5 7B Instruct.
-			'Qwen/Qwen2.5-7B-Instruct'           => array(
+			'Qwen/Qwen2.5-7B-Instruct'          => array(
 				'input'  => 0.20, // $0.20 per 1M tokens ($0.0002 per 1K).
 				'output' => 0.20,
 			),
 			// Default fallback for unknown Hugging Face models.
 			// Uses average pricing for estimation when specific model is not listed.
-			'default'                            => array(
+			'default'                           => array(
 				'input'  => 0.50, // $0.50 per 1M tokens (estimated average).
 				'output' => 0.50, // $0.50 per 1M tokens (estimated average).
 			),

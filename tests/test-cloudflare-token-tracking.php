@@ -36,7 +36,7 @@ class Test_Cloudflare_Token_Tracking extends WP_UnitTestCase {
 	 */
 	public function test_usage_extraction_from_api_response() {
 		$api_response = array(
-			'result'  => array(
+			'result' => array(
 				'response' => 'This is a test response from Cloudflare Workers AI.',
 			),
 			'usage'   => array(

@@ -40,8 +40,8 @@ class WP_MCP_AI_PayHere_API_Test extends WP_UnitTestCase {
 			array_merge(
 				WP_MCP_AI_Admin_Settings::get_default_settings(),
 				array(
-					'payhere_app_id'       => $test_app_id,
-					'payhere_app_secret'   => $test_app_secret,
+					'payhere_app_id'     => $test_app_id,
+					'payhere_app_secret' => $test_app_secret,
 					'payhere_sandbox_mode' => true,
 				)
 			)

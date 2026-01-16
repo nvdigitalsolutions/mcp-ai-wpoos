@@ -93,9 +93,7 @@ class WP_MCP_AI_Tool_Update_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',
-			'database-write',
-		);
+			'pro', 'database-write' );
 	}
 
 	/**

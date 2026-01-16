@@ -251,12 +251,12 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 			$expires_in    = isset( $decoded['expires_in'] ) ? absint( $decoded['expires_in'] ) : 3600;
 
 			// Store the tokens and realmId.
-			$settings['quickbooks_access_token']     = $access_token;
-			$settings['quickbooks_refresh_token']    = $refresh_token;
-			$settings['quickbooks_token_expires_at'] = time() + $expires_in;
-			$settings['quickbooks_company_id']       = $realm_id; // Store the realmId as company_id.
-			$settings['quickbooks_connected']        = true;
-			$settings['quickbooks_connection_time']  = time();
+			$settings['quickbooks_access_token']      = $access_token;
+			$settings['quickbooks_refresh_token']     = $refresh_token;
+			$settings['quickbooks_token_expires_at']  = time() + $expires_in;
+			$settings['quickbooks_company_id']        = $realm_id; // Store the realmId as company_id.
+			$settings['quickbooks_connected']         = true;
+			$settings['quickbooks_connection_time']   = time();
 
 			update_option( 'wp_mcp_ai_settings', $settings );
 

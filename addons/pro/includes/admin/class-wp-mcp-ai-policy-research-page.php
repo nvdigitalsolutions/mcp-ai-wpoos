@@ -93,16 +93,16 @@ class WP_MCP_AI_Policy_Research_Page {
 			'wp-mcp-ai-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_policy' ),
-				'addNewUrl'    => admin_url( 'post-new.php?post_type=mcp_ai_policy' ),
-				'researchTool' => 'research_policy',
-				'strings'      => array(
-					'researching'   => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
-					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'      => __( 'Creating policy...', 'mcp-ai-wpoos-pro' ),
-					'created'       => __( 'Policy created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate' => __( 'Create a policy with the researched information?', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+				'nonce'         => wp_create_nonce( 'wp_mcp_ai_research_policy' ),
+				'addNewUrl'     => admin_url( 'post-new.php?post_type=mcp_ai_policy' ),
+				'researchTool'  => 'research_policy',
+				'strings'       => array(
+					'researching'       => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
+					'error'             => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'creating'          => __( 'Creating policy...', 'mcp-ai-wpoos-pro' ),
+					'created'           => __( 'Policy created successfully!', 'mcp-ai-wpoos-pro' ),
+					'confirmCreate'     => __( 'Create a policy with the researched information?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);

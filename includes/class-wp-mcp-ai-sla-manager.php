@@ -312,8 +312,8 @@ class WP_MCP_AI_SLA_Manager {
 		$stats = WP_MCP_AI_Job_Queue_Manager::get_queue_stats();
 
 		// Calculate metrics for the tier.
-		$priority       = self::get_priority( $tier );
-		$sla_target     = self::get_sla_target( $tier );
+		$priority      = self::get_priority( $tier );
+		$sla_target    = self::get_sla_target( $tier );
 		$max_concurrent = self::get_default_concurrent( $tier );
 
 		// Estimate arrival rate (jobs per second) based on recent activity.
@@ -329,10 +329,10 @@ class WP_MCP_AI_SLA_Manager {
 		return array_merge(
 			$capacity,
 			array(
-				'current_stats'  => $stats,
-				'max_concurrent' => $max_concurrent,
-				'over_capacity'  => $stats['pending'] > $capacity['recommended_workers'],
-				'meets_sla'      => $stats['pending'] <= $capacity['system_capacity'],
+				'current_stats'   => $stats,
+				'max_concurrent'  => $max_concurrent,
+				'over_capacity'   => $stats['pending'] > $capacity['recommended_workers'],
+				'meets_sla'       => $stats['pending'] <= $capacity['system_capacity'],
 			)
 		);
 	}
@@ -423,15 +423,15 @@ class WP_MCP_AI_SLA_Manager {
 
 		if ( empty( $compliance_data ) ) {
 			return array(
-				'total_jobs'      => 0,
-				'compliant_jobs'  => 0,
-				'violated_jobs'   => 0,
-				'compliance_rate' => 0,
-				'avg_actual_time' => 0,
-				'avg_target_time' => 0,
-				'p50_actual_time' => 0,
-				'p95_actual_time' => 0,
-				'p99_actual_time' => 0,
+				'total_jobs'        => 0,
+				'compliant_jobs'    => 0,
+				'violated_jobs'     => 0,
+				'compliance_rate'   => 0,
+				'avg_actual_time'   => 0,
+				'avg_target_time'   => 0,
+				'p50_actual_time'   => 0,
+				'p95_actual_time'   => 0,
+				'p99_actual_time'   => 0,
 			);
 		}
 
@@ -456,15 +456,15 @@ class WP_MCP_AI_SLA_Manager {
 
 		if ( empty( $filtered ) ) {
 			return array(
-				'total_jobs'      => 0,
-				'compliant_jobs'  => 0,
-				'violated_jobs'   => 0,
-				'compliance_rate' => 0,
-				'avg_actual_time' => 0,
-				'avg_target_time' => 0,
-				'p50_actual_time' => 0,
-				'p95_actual_time' => 0,
-				'p99_actual_time' => 0,
+				'total_jobs'        => 0,
+				'compliant_jobs'    => 0,
+				'violated_jobs'     => 0,
+				'compliance_rate'   => 0,
+				'avg_actual_time'   => 0,
+				'avg_target_time'   => 0,
+				'p50_actual_time'   => 0,
+				'p95_actual_time'   => 0,
+				'p99_actual_time'   => 0,
 			);
 		}
 
@@ -486,8 +486,8 @@ class WP_MCP_AI_SLA_Manager {
 			$actual = isset( $entry['actual_time'] ) ? floatval( $entry['actual_time'] ) : 0;
 			$target = isset( $entry['target_time'] ) ? floatval( $entry['target_time'] ) : 0;
 
-			$total_actual  += $actual;
-			$total_target  += $target;
+			$total_actual   += $actual;
+			$total_target   += $target;
 			$actual_times[] = $actual;
 		}
 

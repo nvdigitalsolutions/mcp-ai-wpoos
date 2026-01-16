@@ -553,7 +553,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 			foreach ( $models_by_provider as $provider => $provider_models ) {
 				if ( ! empty( $provider_models ) ) {
-					$label                          = isset( $provider_labels[ $provider ] ) ? $provider_labels[ $provider ] : ucfirst( $provider );
+					$label = isset( $provider_labels[ $provider ] ) ? $provider_labels[ $provider ] : ucfirst( $provider );
 					$models[ $provider . '_group' ] = array(
 						'label'   => $label,
 						'options' => $provider_models,

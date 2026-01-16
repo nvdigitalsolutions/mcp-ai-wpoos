@@ -48,35 +48,35 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'topic'       => array(
+				'topic'            => array(
 					'type'        => 'string',
 					'description' => __( 'The page purpose/topic (e.g., "About Us page for tech company", "Privacy Policy for e-commerce", "Contact page with business hours")', 'mcp-ai-wpoos-pro' ),
 				),
-				'page_type'   => array(
+				'page_type'        => array(
 					'type'        => 'string',
 					'description' => __( 'Type of page to create', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'about', 'contact', 'services', 'privacy-policy', 'terms-conditions', 'faq', 'landing', 'custom' ),
 					'default'     => 'custom',
 				),
-				'word_count'  => array(
+				'word_count'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Target word count for the content', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 100,
 					'maximum'     => 3000,
 					'default'     => 800,
 				),
-				'template'    => array(
+				'template'         => array(
 					'type'        => 'string',
 					'description' => __( 'Template format for content', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'block-editor', 'classic-editor', 'elementor' ),
 					'default'     => 'block-editor',
 				),
-				'include_seo' => array(
+				'include_seo'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include SEO metadata (meta description, keywords)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'tone'        => array(
+				'tone'             => array(
 					'type'        => 'string',
 					'description' => __( 'Tone of voice for the content', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'professional', 'friendly', 'formal', 'welcoming', 'corporate' ),
@@ -413,7 +413,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$prompt .= "}\n";
 		$prompt .= "```\n\n";
 
-		$prompt .= 'Research if needed to provide accurate, up-to-date information. ';
+		$prompt .= "Research if needed to provide accurate, up-to-date information. ";
 		$prompt .= "Include source URLs in the 'sources' array if research was used. ";
 		$prompt .= "Ensure content is clear, professional, and appropriate for a static WordPress page.\n";
 

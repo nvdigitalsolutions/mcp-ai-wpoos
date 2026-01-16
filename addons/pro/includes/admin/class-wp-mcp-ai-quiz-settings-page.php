@@ -168,7 +168,7 @@ class WP_MCP_AI_Quiz_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 		}
 
 		if ( isset( $input['default_passing_score'] ) ) {
-			$passing_score                      = absint( $input['default_passing_score'] );
+			$passing_score                     = absint( $input['default_passing_score'] );
 			$sanitized['default_passing_score'] = max( 0, min( 100, $passing_score ) );
 		}
 

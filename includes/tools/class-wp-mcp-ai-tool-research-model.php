@@ -53,11 +53,11 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'model_id'       => array(
+				'model_id'   => array(
 					'type'        => 'string',
 					'description' => __( 'Model identifier (e.g., gpt-4.5-turbo, claude-opus-4.2, gemini-3-pro).', 'mcp-ai-wpoos' ),
 				),
-				'provider'       => array(
+				'provider'   => array(
 					'type'        => 'string',
 					'description' => __( 'AI provider name.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ),
@@ -231,10 +231,10 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$prompt .= "9. **Description**: Brief description of the model's purpose and use cases\n\n";
 
 		if ( $use_search ) {
-			$prompt .= 'Use web search to find the official documentation for this model. ';
+			$prompt .= "Use web search to find the official documentation for this model. ";
 			$prompt .= "Look for the provider's official documentation, pricing pages, and API reference.\n\n";
 		} else {
-			$prompt .= 'Use your knowledge of this model from training data. ';
+			$prompt .= "Use your knowledge of this model from training data. ";
 			$prompt .= "If you don't have reliable information, indicate that with 'unknown' values.\n\n";
 		}
 
@@ -278,8 +278,8 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$prompt .= "}\n";
 		$prompt .= "```\n\n";
 
-		$prompt .= 'Use reasonable defaults if exact values are not available. ';
-		$prompt .= 'Include a confidence score (0-100) indicating how certain you are about the information. ';
+		$prompt .= "Use reasonable defaults if exact values are not available. ";
+		$prompt .= "Include a confidence score (0-100) indicating how certain you are about the information. ";
 		$prompt .= "List your sources if web search was used.\n";
 
 		return $prompt;
@@ -294,9 +294,9 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	protected function perform_ai_research( $prompt, $context ) {
 		// Get a suitable AI model for research.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$provider = $this->get_research_provider( $settings );
-		$model    = $this->get_research_model( $provider, $settings );
+		$settings    = get_option( 'wp_mcp_ai_settings', array() );
+		$provider    = $this->get_research_provider( $settings );
+		$model       = $this->get_research_model( $provider, $settings );
 
 		if ( is_wp_error( $provider ) ) {
 			return $provider;
@@ -540,14 +540,14 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Add metadata for reference.
 		$config['_research_metadata'] = array(
-			'researched_at'     => current_time( 'mysql' ),
-			'research_model'    => $research_result['model'],
+			'researched_at'    => current_time( 'mysql' ),
+			'research_model'   => $research_result['model'],
 			'research_provider' => $research_result['provider'],
-			'confidence'        => isset( $data['confidence'] ) ? absint( $data['confidence'] ) : 0,
-			'sources'           => isset( $data['sources'] ) && is_array( $data['sources'] ) ? $data['sources'] : array(),
-			'capabilities'      => isset( $data['capabilities'] ) && is_array( $data['capabilities'] ) ? $data['capabilities'] : array(),
-			'description'       => isset( $data['description'] ) ? sanitize_text_field( $data['description'] ) : '',
-			'release_date'      => isset( $data['release_date'] ) ? sanitize_text_field( $data['release_date'] ) : '',
+			'confidence'       => isset( $data['confidence'] ) ? absint( $data['confidence'] ) : 0,
+			'sources'          => isset( $data['sources'] ) && is_array( $data['sources'] ) ? $data['sources'] : array(),
+			'capabilities'     => isset( $data['capabilities'] ) && is_array( $data['capabilities'] ) ? $data['capabilities'] : array(),
+			'description'      => isset( $data['description'] ) ? sanitize_text_field( $data['description'] ) : '',
+			'release_date'     => isset( $data['release_date'] ) ? sanitize_text_field( $data['release_date'] ) : '',
 		);
 
 		return $config;

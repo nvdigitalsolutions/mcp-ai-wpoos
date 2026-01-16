@@ -41,12 +41,10 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 		$this->admin_tool->method( 'get_slug' )->willReturn( 'admin_tool' );
 		$this->admin_tool->method( 'get_name' )->willReturn( 'Admin Tool' );
 		$this->admin_tool->method( 'get_description' )->willReturn( 'A tool requiring admin capabilities' );
-		$this->admin_tool->method( 'get_parameters_schema' )->willReturn(
-			array(
-				'type'       => 'object',
-				'properties' => array(),
-			)
-		);
+		$this->admin_tool->method( 'get_parameters_schema' )->willReturn( array(
+			'type'       => 'object',
+			'properties' => array(),
+		) );
 		$this->admin_tool->method( 'get_required_capability' )->willReturn( 'manage_options' );
 
 		// Create mock public tool.
@@ -57,12 +55,10 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 		$this->public_tool->method( 'get_slug' )->willReturn( 'public_tool' );
 		$this->public_tool->method( 'get_name' )->willReturn( 'Public Tool' );
 		$this->public_tool->method( 'get_description' )->willReturn( 'A public tool' );
-		$this->public_tool->method( 'get_parameters_schema' )->willReturn(
-			array(
-				'type'       => 'object',
-				'properties' => array(),
-			)
-		);
+		$this->public_tool->method( 'get_parameters_schema' )->willReturn( array(
+			'type'       => 'object',
+			'properties' => array(),
+		) );
 
 		// Get tool registry.
 		$this->registry = WP_MCP_AI_Container::get( 'tool_registry' );
@@ -85,7 +81,7 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 		// Unregister mock tools.
 		if ( $this->registry ) {
 			// Tool registry doesn't have unregister method, so we'll just reset.
-			$reflection     = new ReflectionClass( $this->registry );
+			$reflection = new ReflectionClass( $this->registry );
 			$tools_property = $reflection->getProperty( 'tools' );
 			$tools_property->setAccessible( true );
 			$tools = $tools_property->getValue( $this->registry );
@@ -112,7 +108,7 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 
 		// Call build_tools_payload via reflection.
 		$reflection = new ReflectionClass( $this->rest_controller );
-		$method     = $reflection->getMethod( 'build_tools_payload' );
+		$method = $reflection->getMethod( 'build_tools_payload' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->rest_controller, $assistant_config );
@@ -139,7 +135,7 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 
 		// Call build_tools_payload via reflection.
 		$reflection = new ReflectionClass( $this->rest_controller );
-		$method     = $reflection->getMethod( 'build_tools_payload' );
+		$method = $reflection->getMethod( 'build_tools_payload' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->rest_controller, $assistant_config );
@@ -169,7 +165,7 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 
 		// Call build_tools_payload via reflection.
 		$reflection = new ReflectionClass( $this->rest_controller );
-		$method     = $reflection->getMethod( 'build_tools_payload' );
+		$method = $reflection->getMethod( 'build_tools_payload' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->rest_controller, $assistant_config );
@@ -196,7 +192,7 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 
 		// Call build_tools_payload via reflection.
 		$reflection = new ReflectionClass( $this->rest_controller );
-		$method     = $reflection->getMethod( 'build_tools_payload' );
+		$method = $reflection->getMethod( 'build_tools_payload' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->rest_controller, $assistant_config );
@@ -225,19 +221,16 @@ class Test_Tool_Capability_Filtering extends WP_UnitTestCase {
 
 		// Call build_tools_payload via reflection.
 		$reflection = new ReflectionClass( $this->rest_controller );
-		$method     = $reflection->getMethod( 'build_tools_payload' );
+		$method = $reflection->getMethod( 'build_tools_payload' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->rest_controller, $assistant_config );
 
 		// Check logs.
-		$logs          = get_option( 'wp_mcp_ai_recent_activity', array() );
-		$filtered_logs = array_filter(
-			$logs,
-			function ( $log ) {
-				return isset( $log['event'] ) && 'tool_filtered_by_capability' === $log['event'];
-			}
-		);
+		$logs = get_option( 'wp_mcp_ai_recent_activity', array() );
+		$filtered_logs = array_filter( $logs, function( $log ) {
+			return isset( $log['event'] ) && 'tool_filtered_by_capability' === $log['event'];
+		} );
 
 		$this->assertNotEmpty( $filtered_logs, 'Should log when tool is filtered by capability' );
 	}

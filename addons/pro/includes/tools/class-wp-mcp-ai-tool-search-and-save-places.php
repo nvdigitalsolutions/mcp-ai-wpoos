@@ -43,35 +43,35 @@ class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'query'           => array(
+				'query'          => array(
 					'type'        => 'string',
 					'description' => __( 'Search query text or keywords', 'mcp-ai-wpoos-pro' ),
 				),
-				'latitude'        => array(
+				'latitude'       => array(
 					'type'        => 'number',
 					'description' => __( 'Center latitude for search', 'mcp-ai-wpoos-pro' ),
 				),
-				'longitude'       => array(
+				'longitude'      => array(
 					'type'        => 'number',
 					'description' => __( 'Center longitude for search', 'mcp-ai-wpoos-pro' ),
 				),
-				'radius'          => array(
+				'radius'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Search radius in meters (max 50000)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 50000,
 					'default'     => 1500,
 				),
-				'type'            => array(
+				'type'           => array(
 					'type'        => 'string',
 					'description' => __( 'Place type (e.g., restaurant, cafe, hotel)', 'mcp-ai-wpoos-pro' ),
 				),
-				'save_results'    => array(
+				'save_results'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Save search results to database (default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'skip_existing'   => array(
+				'skip_existing'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Skip places that already exist in database (default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -91,11 +91,7 @@ class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',
-			'external-api',
-			'database-write',
-			'requires-capability',
-		);
+			'pro', 'external-api', 'database-write', 'requires-capability' );
 	}
 
 	/**
@@ -206,13 +202,13 @@ class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return array(
-			'success'         => true,
-			'found_count'     => isset( $result['results'] ) ? count( $result['results'] ) : 0,
-			'saved_count'     => $saved_count,
-			'updated_count'   => $updated_count,
-			'skipped_count'   => $skipped_count,
+			'success'        => true,
+			'found_count'    => isset( $result['results'] ) ? count( $result['results'] ) : 0,
+			'saved_count'    => $saved_count,
+			'updated_count'  => $updated_count,
+			'skipped_count'  => $skipped_count,
 			'saved_place_ids' => $saved_ids,
-			'results'         => $result['results'],
+			'results'        => $result['results'],
 		);
 	}
 
@@ -248,12 +244,12 @@ class WP_MCP_AI_Tool_Search_And_Save_Places implements WP_MCP_AI_Tool_Interface,
 	 * @return int|false Place ID or false on failure.
 	 */
 	private function create_place_from_api_data( $place_data, $user_id ) {
-		$name       = isset( $place_data['name'] ) ? sanitize_text_field( $place_data['name'] ) : '';
-		$address    = isset( $place_data['formatted_address'] ) ? sanitize_text_field( $place_data['formatted_address'] ) : '';
-		$latitude   = isset( $place_data['geometry']['location']['lat'] ) ? floatval( $place_data['geometry']['location']['lat'] ) : null;
-		$longitude  = isset( $place_data['geometry']['location']['lng'] ) ? floatval( $place_data['geometry']['location']['lng'] ) : null;
-		$types      = isset( $place_data['types'] ) && is_array( $place_data['types'] ) ? $place_data['types'] : array();
-		$place_type = ! empty( $types ) ? sanitize_text_field( $types[0] ) : '';
+		$name        = isset( $place_data['name'] ) ? sanitize_text_field( $place_data['name'] ) : '';
+		$address     = isset( $place_data['formatted_address'] ) ? sanitize_text_field( $place_data['formatted_address'] ) : '';
+		$latitude    = isset( $place_data['geometry']['location']['lat'] ) ? floatval( $place_data['geometry']['location']['lat'] ) : null;
+		$longitude   = isset( $place_data['geometry']['location']['lng'] ) ? floatval( $place_data['geometry']['location']['lng'] ) : null;
+		$types       = isset( $place_data['types'] ) && is_array( $place_data['types'] ) ? $place_data['types'] : array();
+		$place_type  = ! empty( $types ) ? sanitize_text_field( $types[0] ) : '';
 
 		$post_data = array(
 			'post_type'   => 'mcp_ai_place',

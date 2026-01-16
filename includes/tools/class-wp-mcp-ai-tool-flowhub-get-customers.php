@@ -55,24 +55,24 @@ class WP_MCP_AI_Tool_Flowhub_Get_Customers implements WP_MCP_AI_Tool_Interface, 
 					'type'        => 'string',
 					'description' => __( 'Optional Remote Sites connection ID for Flowhub. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos' ),
 				),
-				'limit'         => array(
+				'limit'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of customers to retrieve (1-100).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
-				'offset'        => array(
+				'offset'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of customers to skip for pagination.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'search'        => array(
+				'search'  => array(
 					'type'        => 'string',
 					'description' => __( 'Search query to filter customers by name, email, or phone.', 'mcp-ai-wpoos' ),
 				),
-				'timeout'       => array(
+				'timeout' => array(
 					'type'        => 'integer',
 					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,

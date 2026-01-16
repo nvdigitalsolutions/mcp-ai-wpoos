@@ -58,10 +58,7 @@ class WP_MCP_AI_Tool_Delete_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',
-			'database-write',
-			'requires-capability',
-		);
+			'pro', 'database-write', 'requires-capability' );
 	}
 
 	/**

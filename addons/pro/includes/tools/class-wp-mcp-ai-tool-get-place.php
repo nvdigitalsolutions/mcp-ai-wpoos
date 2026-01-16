@@ -58,9 +58,7 @@ class WP_MCP_AI_Tool_Get_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',
-			'read-only',
-		);
+			'pro', 'read-only' );
 	}
 
 	/**
@@ -106,8 +104,8 @@ class WP_MCP_AI_Tool_Get_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$tags  = wp_get_object_terms( $place_id, 'mcp_ai_place_tag', array( 'fields' => 'names' ) );
 
 		$place_data = array(
-			'success' => true,
-			'place'   => array(
+			'success'            => true,
+			'place'              => array(
 				'id'                 => $place_id,
 				'name'               => get_the_title( $place ),
 				'description'        => $place->post_content,

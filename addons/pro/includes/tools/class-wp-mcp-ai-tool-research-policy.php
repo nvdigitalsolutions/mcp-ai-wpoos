@@ -48,11 +48,11 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'query'              => array(
+				'query'            => array(
 					'type'        => 'string',
 					'description' => __( 'The policy type to research (e.g., "Pet Health Insurance", "Life Insurance for Families", "Dental Insurance with Orthodontics")', 'mcp-ai-wpoos-pro' ),
 				),
-				'coverage_focus'     => array(
+				'coverage_focus'   => array(
 					'type'        => 'string',
 					'description' => __( 'Specific coverage areas to focus on (e.g., "preventive care", "major medical", "orthodontic coverage")', 'mcp-ai-wpoos-pro' ),
 				),
@@ -265,9 +265,9 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$prompt .= "}\n";
 		$prompt .= "```\n\n";
 
-		$prompt .= 'Use web search to find accurate, up-to-date information from reputable insurance sources. ';
+		$prompt .= "Use web search to find accurate, up-to-date information from reputable insurance sources. ";
 		$prompt .= "Include source URLs in the 'sources' array. ";
-		$prompt .= 'If information is not available, use null for that field. ';
+		$prompt .= "If information is not available, use null for that field. ";
 		$prompt .= "Provide general information; do not recommend specific insurance companies or plans.\n";
 
 		return $prompt;
@@ -486,24 +486,24 @@ class WP_MCP_AI_Tool_Research_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		// Build policy data structure.
 		$policy_data = array(
-			'success'           => true,
-			'query'             => $query,
-			'policy_name'       => sanitize_text_field( $data['policy_name'] ),
-			'description'       => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
-			'policy_type'       => isset( $data['policy_type'] ) ? sanitize_text_field( $data['policy_type'] ) : '',
-			'coverage_details'  => isset( $data['coverage_details'] ) ? wp_kses_post( $data['coverage_details'] ) : '',
-			'coverage_limits'   => isset( $data['coverage_limits'] ) ? sanitize_text_field( $data['coverage_limits'] ) : '',
-			'deductible'        => isset( $data['deductible'] ) ? sanitize_text_field( $data['deductible'] ) : '',
-			'premium_range'     => isset( $data['premium_range'] ) ? sanitize_text_field( $data['premium_range'] ) : '',
-			'waiting_period'    => isset( $data['waiting_period'] ) ? sanitize_text_field( $data['waiting_period'] ) : '',
-			'exclusions'        => isset( $data['exclusions'] ) && is_array( $data['exclusions'] ) ? array_map( 'sanitize_text_field', $data['exclusions'] ) : array(),
-			'requirements'      => isset( $data['requirements'] ) && is_array( $data['requirements'] ) ? array_map( 'sanitize_text_field', $data['requirements'] ) : array(),
-			'benefits'          => isset( $data['benefits'] ) && is_array( $data['benefits'] ) ? array_map( 'sanitize_text_field', $data['benefits'] ) : array(),
-			'claim_process'     => isset( $data['claim_process'] ) ? wp_kses_post( $data['claim_process'] ) : '',
-			'comparison'        => isset( $data['comparison'] ) ? wp_kses_post( $data['comparison'] ) : '',
-			'sources'           => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
-			'researched_at'     => current_time( 'mysql' ),
-			'research_model'    => $research_result['model'],
+			'success'          => true,
+			'query'            => $query,
+			'policy_name'      => sanitize_text_field( $data['policy_name'] ),
+			'description'      => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
+			'policy_type'      => isset( $data['policy_type'] ) ? sanitize_text_field( $data['policy_type'] ) : '',
+			'coverage_details' => isset( $data['coverage_details'] ) ? wp_kses_post( $data['coverage_details'] ) : '',
+			'coverage_limits'  => isset( $data['coverage_limits'] ) ? sanitize_text_field( $data['coverage_limits'] ) : '',
+			'deductible'       => isset( $data['deductible'] ) ? sanitize_text_field( $data['deductible'] ) : '',
+			'premium_range'    => isset( $data['premium_range'] ) ? sanitize_text_field( $data['premium_range'] ) : '',
+			'waiting_period'   => isset( $data['waiting_period'] ) ? sanitize_text_field( $data['waiting_period'] ) : '',
+			'exclusions'       => isset( $data['exclusions'] ) && is_array( $data['exclusions'] ) ? array_map( 'sanitize_text_field', $data['exclusions'] ) : array(),
+			'requirements'     => isset( $data['requirements'] ) && is_array( $data['requirements'] ) ? array_map( 'sanitize_text_field', $data['requirements'] ) : array(),
+			'benefits'         => isset( $data['benefits'] ) && is_array( $data['benefits'] ) ? array_map( 'sanitize_text_field', $data['benefits'] ) : array(),
+			'claim_process'    => isset( $data['claim_process'] ) ? wp_kses_post( $data['claim_process'] ) : '',
+			'comparison'       => isset( $data['comparison'] ) ? wp_kses_post( $data['comparison'] ) : '',
+			'sources'          => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
+			'researched_at'    => current_time( 'mysql' ),
+			'research_model'   => $research_result['model'],
 			'research_provider' => $research_result['provider'],
 		);
 

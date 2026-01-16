@@ -44,10 +44,10 @@ class WP_MCP_AI_Place_Metabox_Details extends WP_MCP_AI_Place_Metabox_Base {
 			return;
 		}
 
-		$rating          = get_post_meta( $post->ID, '_place_rating', true );
-		$price_level     = get_post_meta( $post->ID, '_place_price_level', true );
-		$business_hours  = get_post_meta( $post->ID, '_place_business_hours', true );
-		$amenities       = get_post_meta( $post->ID, '_place_amenities', true );
+		$rating         = get_post_meta( $post->ID, '_place_rating', true );
+		$price_level    = get_post_meta( $post->ID, '_place_price_level', true );
+		$business_hours = get_post_meta( $post->ID, '_place_business_hours', true );
+		$amenities      = get_post_meta( $post->ID, '_place_amenities', true );
 		$google_place_id = get_post_meta( $post->ID, '_place_google_place_id', true );
 
 		if ( ! is_array( $business_hours ) ) {

@@ -43,44 +43,44 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'   => array(
+				'member_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by member ID (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'policy_type' => array(
+				'policy_type'  => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by policy type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'health-insurance', 'dental-insurance', 'vision-insurance', 'pet-insurance', 'life-insurance', '' ),
 				),
-				'provider'    => array(
+				'provider'     => array(
 					'type'        => 'string',
 					'description' => __( 'Search by insurance provider name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'status'      => array(
+				'status'       => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by policy status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'active', 'expired', 'pending', 'cancelled', '' ),
 				),
-				'active_only' => array(
+				'active_only'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Only show currently active policies (optional, default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'search'      => array(
+				'search'       => array(
 					'type'        => 'string',
 					'description' => __( 'Search policies by policy number or name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'per_page'    => array(
+				'per_page'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of policies to return per page (optional, default: 20, max: 100)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'page'        => array(
+				'page'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination (optional, default: 1)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
@@ -231,14 +231,14 @@ class WP_MCP_AI_Tool_Search_Policies implements WP_MCP_AI_Tool_Interface, WP_MCP
 				$policy_id = get_the_ID();
 
 				// Get policy type.
-				$types            = wp_get_object_terms( $policy_id, 'mcp_ai_policy_type', array( 'fields' => 'slugs' ) );
+				$types = wp_get_object_terms( $policy_id, 'mcp_ai_policy_type', array( 'fields' => 'slugs' ) );
 				$policy_type_slug = ! empty( $types ) && ! is_wp_error( $types ) ? $types[0] : '';
 
 				// Get member info.
-				$member_id   = get_post_meta( $policy_id, '_policy_member_id', true );
+				$member_id = get_post_meta( $policy_id, '_policy_member_id', true );
 				$member_name = '';
 				if ( $member_id ) {
-					$member      = get_post( $member_id );
+					$member = get_post( $member_id );
 					$member_name = $member ? $member->post_title : '';
 				}
 

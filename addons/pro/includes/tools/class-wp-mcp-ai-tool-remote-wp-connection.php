@@ -72,9 +72,9 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'action'             => array(
+			'type'       => 'object',
+			'properties' => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs before any other action.', 'wp-mcp-ai-pro' ),
 					'enum'        => array(
@@ -94,49 +94,49 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 					),
 					'default'     => 'list_connections',
 				),
-				'connection_id'      => array(
+				'connection_id' => array(
 					'type'        => 'string',
 					'description' => __( 'REQUIRED (except for list_connections action). The connection ID obtained from calling list_connections first. Format: conn_XXXX. You must call list_connections before using any other action to get this ID.', 'wp-mcp-ai-pro' ),
 				),
-				'post_type'          => array(
+				'post_type'     => array(
 					'type'        => 'string',
 					'description' => __( 'Post type to query (for get_posts action). Defaults to "post".', 'wp-mcp-ai-pro' ),
 					'default'     => 'post',
 				),
-				'post_id'            => array(
+				'post_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Post or product ID for single item queries.', 'wp-mcp-ai-pro' ),
 				),
-				'order_id'           => array(
+				'order_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'WooCommerce order ID for order queries.', 'wp-mcp-ai-pro' ),
 				),
-				'per_page'           => array(
+				'per_page'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of items to retrieve per page. Default: 25 for get_wc_products (10 for other actions), Max: 100. Products are automatically sorted with in-stock items first.', 'wp-mcp-ai-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'page'               => array(
+				'page'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
 					'default'     => 1,
 					'minimum'     => 1,
 				),
-				'search'             => array(
+				'search'        => array(
 					'type'        => 'string',
 					'description' => __( 'Search term to filter results.', 'wp-mcp-ai-pro' ),
 				),
-				'status'             => array(
+				'status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by status (publish, draft, etc. for posts; completed, processing, etc. for orders).', 'wp-mcp-ai-pro' ),
 				),
-				'sku'                => array(
+				'sku'           => array(
 					'type'        => 'string',
 					'description' => __( 'Product SKU for WooCommerce product queries.', 'wp-mcp-ai-pro' ),
 				),
-				'stock_status'       => array(
+				'stock_status'  => array(
 					'type'        => 'string',
 					'description' => __( 'Filter products by stock status (e.g., instock, outofstock, onbackorder) for WooCommerce product queries. When used with variable products, automatically filters variations to only show those matching the stock status.', 'wp-mcp-ai-pro' ),
 				),
@@ -145,11 +145,11 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'For get_wc_products: Whether to include product variations in results. AUTOMATICALLY ENABLED BY DEFAULT (true). When enabled, variable products are represented ONLY by their variations (not the parent product) to avoid stock confusion. Each variation includes parent_id, parent_name, stock_quantity, stock_status, sku, price, and attributes. Set to false only if you want parent products without variations. To get variations for a specific product, use get_wc_product_variations instead.', 'wp-mcp-ai-pro' ),
 					'default'     => true,
 				),
-				'category'           => array(
+				'category'      => array(
 					'type'        => 'string',
 					'description' => __( 'Filter products by category slug or ID for WooCommerce product queries.', 'wp-mcp-ai-pro' ),
 				),
-				'type'               => array(
+				'type'          => array(
 					'type'        => 'string',
 					'description' => __( 'Filter products by type (e.g., simple, variable, grouped, external) for WooCommerce product queries.', 'wp-mcp-ai-pro' ),
 				),
@@ -412,9 +412,9 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * @return array|WP_Error Posts data.
 	 */
 	protected function get_posts( $connection, $arguments ) {
-		$per_page  = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
-		$per_page  = min( max( $per_page, 1 ), 100 );
-		$page      = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
+		$per_page = min( max( $per_page, 1 ), 100 );
+		$page = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
 
 		$params = array(
@@ -470,7 +470,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		$post_id   = absint( $arguments['post_id'] );
+		$post_id = absint( $arguments['post_id'] );
 		$post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
 
 		$endpoint = 'wp/v2/' . $post_type . '/' . $post_id;
@@ -513,7 +513,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	protected function get_media( $connection, $arguments ) {
 		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
 		$per_page = min( max( $per_page, 1 ), 100 );
-		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+		$page = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 
 		$params = array(
 			'per_page' => $per_page,
@@ -562,7 +562,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 25;
 		$per_page = min( max( $per_page, 1 ), 100 );
-		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+		$page = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 
 		$params = array(
 			'per_page' => $per_page,
@@ -625,22 +625,22 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		// Get stock_status filter if provided.
 		$filter_stock_status = ! empty( $arguments['stock_status'] ) ? sanitize_key( $arguments['stock_status'] ) : '';
 
-		$all_products    = array();
+		$all_products = array();
 		$variation_count = 0;
-		$parent_count    = 0;
+		$parent_count = 0;
 
 		if ( $include_variations ) {
 			// Optimize: Collect all variable product IDs first, then fetch variations in batch.
-			$variable_product_ids  = array();
+			$variable_product_ids = array();
 			$variable_products_map = array();
-			$simple_products       = array();
+			$simple_products = array();
 
 			foreach ( $products as $product ) {
-				$is_variable    = isset( $product->type ) && 'variable' === $product->type;
+				$is_variable = isset( $product->type ) && 'variable' === $product->type;
 				$has_product_id = isset( $product->id );
 
 				if ( $is_variable && $has_product_id ) {
-					$variable_product_ids[]                = $product->id;
+					$variable_product_ids[] = $product->id;
 					$variable_products_map[ $product->id ] = $product;
 				} else {
 					// Non-variable products (simple, grouped, external, etc.).
@@ -671,21 +671,21 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 									}
 								}
 
-								$variation->parent_id   = $product->id;
+								$variation->parent_id = $product->id;
 								$variation->parent_name = isset( $product->name ) ? $product->name : '';
-								$all_products[]         = $variation;
-								++$variation_count;
+								$all_products[] = $variation;
+								$variation_count++;
 								$has_matching_variations = true;
 							}
 						}
 
 						if ( $has_matching_variations ) {
-							++$parent_count;
+							$parent_count++;
 						}
 					} else {
 						// If fetching variations failed or no variations exist, include the parent product.
 						$all_products[] = $product;
-						++$parent_count;
+						$parent_count++;
 					}
 				}
 			}
@@ -693,13 +693,13 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			// Add all simple/non-variable products.
 			foreach ( $simple_products as $product ) {
 				$all_products[] = $product;
-				++$parent_count;
+				$parent_count++;
 			}
 		} else {
 			// If variations are not requested, just add all products as-is.
 			foreach ( $products as $product ) {
 				$all_products[] = $product;
-				++$parent_count;
+				$parent_count++;
 			}
 		}
 
@@ -720,10 +720,10 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'summary'         => $summary,
-			'products'        => $all_products,
-			'count'           => count( $all_products ),
-			'parent_count'    => $parent_count,
+			'summary'  => $summary,
+			'products' => $all_products,
+			'count'    => count( $all_products ),
+			'parent_count' => $parent_count,
 			'variation_count' => $variation_count,
 		);
 	}
@@ -753,7 +753,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$product_id = absint( $arguments['post_id'] );
-		$endpoint   = 'wc/v3/products/' . $product_id;
+		$endpoint = 'wc/v3/products/' . $product_id;
 
 		$product = WP_MCP_AI_Pro_Remote_Site_Manager::make_request( $connection, $endpoint );
 
@@ -766,7 +766,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			$product_array = array( $product );
 			$product_array = $this->optimize_product_images( $product_array );
 			$product_array = $this->truncate_product_descriptions( $product_array );
-			$product       = $product_array[0];
+			$product = $product_array[0];
 		}
 
 		return array(
@@ -898,7 +898,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			}
 
 			$endpoint = 'wc/v3/products/' . $product_id . '/variations';
-			$params   = array(
+			$params = array(
 				'per_page' => 100,
 				'_fields'  => self::VARIATION_FIELDS,
 			);
@@ -942,7 +942,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			// Optimize images array - keep only src and alt, removing all date fields.
 			if ( isset( $product->images ) && is_array( $product->images ) ) {
 				$optimized_images = array();
-				$image_count      = 0;
+				$image_count = 0;
 
 				foreach ( $product->images as $image ) {
 					if ( $image_count >= 3 ) {
@@ -961,7 +961,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 						);
 					}
 
-					++$image_count;
+					$image_count++;
 				}
 
 				$product->images = $optimized_images;
@@ -1039,9 +1039,9 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		// Define stock status priority (lower number = higher priority).
 		$stock_priority = array(
-			'instock'     => 1,
-			'onbackorder' => 2,
-			'outofstock'  => 3,
+			'instock'      => 1,
+			'onbackorder'  => 2,
+			'outofstock'   => 3,
 		);
 
 		// Define product type priority (lower number = higher priority).
@@ -1115,7 +1115,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		// Reconstruct with limited number of sentences.
 		$result_sentences = array_slice( $sentences, 0, $sentence_count );
-		$result           = implode( ' ', array_map( 'trim', $result_sentences ) );
+		$result = implode( ' ', array_map( 'trim', $result_sentences ) );
 
 		// If we truncated (more sentences exist than we included), add ellipsis.
 		if ( count( $sentences ) > $sentence_count ) {
@@ -1144,7 +1144,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
 		$per_page = min( max( $per_page, 1 ), 100 );
-		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+		$page = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 
 		$params = array(
 			'per_page' => $per_page,
@@ -1236,7 +1236,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
 		$per_page = min( max( $per_page, 1 ), 100 );
-		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+		$page = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 
 		$params = array(
 			'per_page' => $per_page,
@@ -1285,7 +1285,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 
 		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 10;
 		$per_page = min( max( $per_page, 1 ), 100 );
-		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+		$page = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 
 		$params = array(
 			'per_page' => $per_page,

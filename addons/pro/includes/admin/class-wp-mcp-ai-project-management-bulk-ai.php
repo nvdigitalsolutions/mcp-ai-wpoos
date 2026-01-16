@@ -72,7 +72,7 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 		foreach ( $post_ids as $post_id ) {
 			$result = self::process_single_item( $post_id, $action );
 			if ( ! is_wp_error( $result ) ) {
-				++$processed;
+				$processed++;
 			}
 		}
 
@@ -381,10 +381,10 @@ class WP_MCP_AI_Project_Management_Bulk_AI {
 		foreach ( $post_ids as $post_id ) {
 			$result = self::process_single_item( $post_id, $action );
 			if ( is_wp_error( $result ) ) {
-				++$results['failed'];
+				$results['failed']++;
 				$results['errors'][] = $result->get_error_message();
 			} else {
-				++$results['processed'];
+				$results['processed']++;
 			}
 		}
 

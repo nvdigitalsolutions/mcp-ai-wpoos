@@ -115,7 +115,7 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WooCommerce is not available in the test environment.' );
 		}
 
-		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$all_tools = $registry->get_tools();
 
 		$woo_tool_slugs = array( 'woo_products', 'woo_orders', 'woo_customers', 'woo_coupons' );
@@ -132,19 +132,19 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 				// Verify tool has required methods.
 				$this->assertTrue(
 					method_exists( $tool, 'get_slug' ),
-					'Tool should have get_slug() method'
+					"Tool should have get_slug() method"
 				);
 				$this->assertTrue(
 					method_exists( $tool, 'get_name' ),
-					'Tool should have get_name() method'
+					"Tool should have get_name() method"
 				);
 				$this->assertTrue(
 					method_exists( $tool, 'get_description' ),
-					'Tool should have get_description() method'
+					"Tool should have get_description() method"
 				);
 				$this->assertTrue(
 					method_exists( $tool, 'execute' ),
-					'Tool should have execute() method'
+					"Tool should have execute() method"
 				);
 			}
 		}
@@ -159,7 +159,7 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 			$this->markTestSkipped( 'WooCommerce is not available in the test environment.' );
 		}
 
-		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$all_tools = $registry->get_tools();
 
 		$woo_tool_slugs = array( 'woo_products', 'woo_orders', 'woo_customers', 'woo_coupons' );
@@ -259,13 +259,13 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 		}
 
 		// Test with setting disabled.
-		$settings                             = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_woocommerce_tools'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Force re-registration of tools by clearing the instance.
-		$registry          = WP_MCP_AI_Tool_Registry::get_instance();
-		$reflection        = new ReflectionClass( $registry );
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$reflection = new ReflectionClass( $registry );
 		$instance_property = $reflection->getProperty( 'instance' );
 		$instance_property->setAccessible( true );
 		$instance_property->setValue( null, null );
@@ -277,7 +277,7 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
 		// Get all registered tools.
-		$all_tools        = $registry->get_tools();
+		$all_tools = $registry->get_tools();
 		$registered_slugs = array_map(
 			function ( $tool ) {
 				return $tool->get_slug();
@@ -305,7 +305,7 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 		$tools_property->setValue( $registry, null );
 
 		// Get all registered tools again.
-		$all_tools        = $registry->get_tools();
+		$all_tools = $registry->get_tools();
 		$registered_slugs = array_map(
 			function ( $tool ) {
 				return $tool->get_slug();
@@ -336,19 +336,19 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 		}
 
 		// Test with setting disabled.
-		$settings                           = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_jetengine_tools'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Force re-registration.
-		$registry          = WP_MCP_AI_Tool_Registry::get_instance();
-		$reflection        = new ReflectionClass( $registry );
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$reflection = new ReflectionClass( $registry );
 		$instance_property = $reflection->getProperty( 'instance' );
 		$instance_property->setAccessible( true );
 		$instance_property->setValue( null, null );
 
-		$registry         = WP_MCP_AI_Tool_Registry::get_instance();
-		$all_tools        = $registry->get_tools();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$all_tools = $registry->get_tools();
 		$registered_slugs = array_map(
 			function ( $tool ) {
 				return $tool->get_slug();
@@ -369,8 +369,8 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 
 		// Force re-registration.
 		$instance_property->setValue( null, null );
-		$registry         = WP_MCP_AI_Tool_Registry::get_instance();
-		$all_tools        = $registry->get_tools();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$all_tools = $registry->get_tools();
 		$registered_slugs = array_map(
 			function ( $tool ) {
 				return $tool->get_slug();
@@ -399,19 +399,19 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 		}
 
 		// Test with setting disabled.
-		$settings                             = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_elementor_widgets'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		// Force re-registration.
-		$registry          = WP_MCP_AI_Tool_Registry::get_instance();
-		$reflection        = new ReflectionClass( $registry );
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$reflection = new ReflectionClass( $registry );
 		$instance_property = $reflection->getProperty( 'instance' );
 		$instance_property->setAccessible( true );
 		$instance_property->setValue( null, null );
 
-		$registry         = WP_MCP_AI_Tool_Registry::get_instance();
-		$all_tools        = $registry->get_tools();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$all_tools = $registry->get_tools();
 		$registered_slugs = array_map(
 			function ( $tool ) {
 				return $tool->get_slug();
@@ -432,8 +432,8 @@ class Test_Plugin_Integration_Tools_Settings extends WP_UnitTestCase {
 
 		// Force re-registration.
 		$instance_property->setValue( null, null );
-		$registry         = WP_MCP_AI_Tool_Registry::get_instance();
-		$all_tools        = $registry->get_tools();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$all_tools = $registry->get_tools();
 		$registered_slugs = array_map(
 			function ( $tool ) {
 				return $tool->get_slug();

@@ -82,8 +82,8 @@ class WP_MCP_AI_Security_Audit_Admin {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos' ) );
 		}
 
-		$audit_system  = WP_MCP_AI_Security_Audit::get_instance();
-		$stats         = $audit_system->get_audit_statistics();
+		$audit_system = WP_MCP_AI_Security_Audit::get_instance();
+		$stats = $audit_system->get_audit_statistics();
 		$recent_audits = $audit_system->get_recent_audits( 10 );
 		?>
 		<div class="wrap wp-mcp-ai-security-audit-admin">
@@ -158,11 +158,11 @@ class WP_MCP_AI_Security_Audit_Admin {
 					<tbody>
 						<?php foreach ( $recent_audits as $audit ) : ?>
 							<?php
-							$audit_date     = get_post_meta( $audit->ID, '_wp_mcp_ai_audit_date', true );
-							$audit_type     = get_post_meta( $audit->ID, '_wp_mcp_ai_audit_type', true );
-							$audit_status   = get_post_meta( $audit->ID, '_wp_mcp_ai_audit_status', true );
-							$auditor        = get_post_meta( $audit->ID, '_wp_mcp_ai_auditor', true );
-							$findings       = get_post_meta( $audit->ID, '_wp_mcp_ai_audit_findings', true );
+							$audit_date = get_post_meta( $audit->ID, '_wp_mcp_ai_audit_date', true );
+							$audit_type = get_post_meta( $audit->ID, '_wp_mcp_ai_audit_type', true );
+							$audit_status = get_post_meta( $audit->ID, '_wp_mcp_ai_audit_status', true );
+							$auditor = get_post_meta( $audit->ID, '_wp_mcp_ai_auditor', true );
+							$findings = get_post_meta( $audit->ID, '_wp_mcp_ai_audit_findings', true );
 							$findings_count = is_array( $findings ) ? count( $findings ) : 0;
 							?>
 							<tr>

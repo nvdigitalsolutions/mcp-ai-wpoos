@@ -678,7 +678,7 @@ class WP_MCP_AI_Shortcode {
 						$cpt_actions = $decoded_actions;
 					}
 				}
-
+				
 				// Fallback to direct JSON decode for backwards compatibility.
 				if ( empty( $cpt_actions ) ) {
 					$decoded_actions = json_decode( $atts['cpt_actions'], true );
@@ -697,7 +697,7 @@ class WP_MCP_AI_Shortcode {
 				$additional_tools_raw = sanitize_text_field( $atts['additional_tools'] );
 				$additional_tools     = array_map( 'trim', explode( ',', $additional_tools_raw ) );
 				$additional_tools     = array_filter( array_map( 'sanitize_key', $additional_tools ) );
-
+				
 				if ( ! empty( $additional_tools ) ) {
 					$config['additionalTools'] = array_values( $additional_tools );
 				}

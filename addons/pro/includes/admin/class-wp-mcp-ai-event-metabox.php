@@ -49,15 +49,15 @@ class WP_MCP_AI_Event_Metabox {
 	 */
 	public static function render_metabox( $post ) {
 		// Get existing values.
-		$start_date = get_post_meta( $post->ID, '_event_start_date', true );
-		$start_time = get_post_meta( $post->ID, '_event_start_time', true );
-		$end_date   = get_post_meta( $post->ID, '_event_end_date', true );
-		$end_time   = get_post_meta( $post->ID, '_event_end_time', true );
-		$all_day    = get_post_meta( $post->ID, '_event_all_day', true );
-		$location   = get_post_meta( $post->ID, '_event_location', true );
-		$type       = get_post_meta( $post->ID, '_event_type', true );
-		$project_id = get_post_meta( $post->ID, '_event_project_id', true );
-		$attendees  = get_post_meta( $post->ID, '_event_attendees', true );
+		$start_date  = get_post_meta( $post->ID, '_event_start_date', true );
+		$start_time  = get_post_meta( $post->ID, '_event_start_time', true );
+		$end_date    = get_post_meta( $post->ID, '_event_end_date', true );
+		$end_time    = get_post_meta( $post->ID, '_event_end_time', true );
+		$all_day     = get_post_meta( $post->ID, '_event_all_day', true );
+		$location    = get_post_meta( $post->ID, '_event_location', true );
+		$type        = get_post_meta( $post->ID, '_event_type', true );
+		$project_id  = get_post_meta( $post->ID, '_event_project_id', true );
+		$attendees   = get_post_meta( $post->ID, '_event_attendees', true );
 
 		// Set defaults.
 		if ( empty( $type ) ) {
@@ -258,7 +258,7 @@ class WP_MCP_AI_Event_Metabox {
 
 		// Save event type.
 		if ( isset( $_POST['event_type'] ) ) {
-			$type        = sanitize_key( $_POST['event_type'] );
+			$type = sanitize_key( $_POST['event_type'] );
 			$valid_types = array( 'meeting', 'deadline', 'milestone', 'reminder', 'other' );
 			if ( in_array( $type, $valid_types, true ) ) {
 				update_post_meta( $post_id, '_event_type', $type );

@@ -130,7 +130,7 @@ class Test_SLA_Manager extends WP_UnitTestCase {
 		$this->assertTrue( WP_MCP_AI_SLA_Manager::is_enabled() );
 
 		// Disable via setting.
-		$settings                               = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['sla_prioritization_enabled'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 

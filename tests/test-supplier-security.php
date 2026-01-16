@@ -63,11 +63,11 @@ class Test_Supplier_Security extends WP_UnitTestCase {
 	 */
 	public function test_upsert_supplier() {
 		$new_supplier = array(
-			'name'       => 'Test Supplier',
-			'service'    => 'Test Service',
-			'category'   => 'low_risk',
-			'risk_level' => 'low',
-			'status'     => 'pending',
+			'name'        => 'Test Supplier',
+			'service'     => 'Test Service',
+			'category'    => 'low_risk',
+			'risk_level'  => 'low',
+			'status'      => 'pending',
 		);
 
 		$result = $this->supplier_security->upsert_supplier( 'test_supplier', $new_supplier );
@@ -102,13 +102,10 @@ class Test_Supplier_Security extends WP_UnitTestCase {
 	 */
 	public function test_delete_supplier() {
 		// Add a test supplier first.
-		$this->supplier_security->upsert_supplier(
-			'test_delete',
-			array(
-				'name'    => 'Delete Me',
-				'service' => 'Test',
-			)
-		);
+		$this->supplier_security->upsert_supplier( 'test_delete', array(
+			'name'    => 'Delete Me',
+			'service' => 'Test',
+		) );
 
 		$result = $this->supplier_security->delete_supplier( 'test_delete' );
 
@@ -149,14 +146,11 @@ class Test_Supplier_Security extends WP_UnitTestCase {
 	 */
 	public function test_get_suppliers_due_for_review() {
 		// Add a supplier with past review date.
-		$this->supplier_security->upsert_supplier(
-			'test_overdue',
-			array(
-				'name'        => 'Overdue Supplier',
-				'service'     => 'Test',
-				'next_review' => date( 'Y-m-d', strtotime( '-1 day' ) ),
-			)
-		);
+		$this->supplier_security->upsert_supplier( 'test_overdue', array(
+			'name'        => 'Overdue Supplier',
+			'service'     => 'Test',
+			'next_review' => date( 'Y-m-d', strtotime( '-1 day' ) ),
+		) );
 
 		$due = $this->supplier_security->get_suppliers_due_for_review();
 

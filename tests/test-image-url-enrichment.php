@@ -338,8 +338,8 @@ class Test_Image_URL_Enrichment extends WP_UnitTestCase {
 					'role'    => 'user',
 					'content' => array(
 						array(
-							'type'          => 'image_url',
-							'image_url'     => array(
+							'type'      => 'image_url',
+							'image_url' => array(
 								'url' => $correct_url,
 							),
 							'attachment_id' => 789,

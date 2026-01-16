@@ -261,7 +261,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 		);
 
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
-		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		// Password should be encrypted in storage.
 		$this->assertNotEquals( 'my_secret_password_123', $connection['password'] );
@@ -276,7 +276,7 @@ class Test_Remote_Site_Manager extends WP_UnitTestCase {
 	public function test_build_api_url() {
 		// Test WordPress REST API URL.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Remote_Site_Manager' );
-		$method     = $reflection->getMethod( 'build_api_url' );
+		$method = $reflection->getMethod( 'build_api_url' );
 		$method->setAccessible( true );
 
 		$url = $method->invokeArgs( null, array( 'https://example.com', 'wp/v2/posts' ) );

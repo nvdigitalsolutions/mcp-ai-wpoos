@@ -41,32 +41,32 @@ class WP_MCP_AI_Tool_Update_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'record_id' => array(
+				'record_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Record ID to update (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'title'     => array(
+				'title'       => array(
 					'type'        => 'string',
 					'description' => __( 'Record title (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'date'      => array(
+				'date'        => array(
 					'type'        => 'string',
 					'description' => __( 'Date of record (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'provider'  => array(
+				'provider'    => array(
 					'type'        => 'string',
 					'description' => __( 'Healthcare provider or facility name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'details'   => array(
+				'details'     => array(
 					'type'        => 'string',
 					'description' => __( 'Detailed information about the medical record (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 10000,
 				),
-				'notes'     => array(
+				'notes'       => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,

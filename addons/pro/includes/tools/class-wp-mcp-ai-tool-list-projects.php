@@ -79,9 +79,7 @@ class WP_MCP_AI_Tool_List_Projects implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',
-			'read-only',
-		);
+			'pro', 'read-only' );
 	}
 
 	/**

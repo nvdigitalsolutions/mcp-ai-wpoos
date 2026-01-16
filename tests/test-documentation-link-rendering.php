@@ -16,16 +16,16 @@ class Test_Documentation_Link_Rendering extends WP_UnitTestCase {
 	 * @var array
 	 */
 	private $sections_with_docs = array(
-		'general'        => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/getting-started/QUICK_START_5_MINUTES.md',
-		'authentication' => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/authentication.md',
-		'chat-client'    => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/chat/chat-client-settings.md',
-		'advanced'       => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/settings/new-settings-december-2025.md',
-		'providers'      => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#providers-tab',
-		'orchestration'  => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md',
-		'overview'       => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/QUICK_REFERENCE.md',
-		'tools'          => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/tools/tool-reference.md',
-		'token-manager'  => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/performance/TOKEN_MANAGEMENT_GUIDE.md',
-		'integrations'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/integrations/oauth-settings-architecture.md',
+		'general'               => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/getting-started/QUICK_START_5_MINUTES.md',
+		'authentication'        => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/authentication.md',
+		'chat-client'           => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/chat/chat-client-settings.md',
+		'advanced'              => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/settings/new-settings-december-2025.md',
+		'providers'             => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#providers-tab',
+		'orchestration'         => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md',
+		'overview'              => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/QUICK_REFERENCE.md',
+		'tools'                 => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/tools/tool-reference.md',
+		'token-manager'         => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/performance/TOKEN_MANAGEMENT_GUIDE.md',
+		'integrations'          => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/integrations/oauth-settings-architecture.md',
 	);
 
 	/**

@@ -617,7 +617,7 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 	 * Test update_quiz requires permission.
 	 */
 	public function test_update_quiz_requires_permission() {
-		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$admin_user  = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		$other_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
 		// Create a quiz as admin.
@@ -865,7 +865,7 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 		$quiz_id = $quiz_result['quiz_id'];
 
 		// Step 2: Student submits answers.
-		$submit_tool       = new WP_MCP_AI_Tool_Submit_Quiz_Answer();
+		$submit_tool      = new WP_MCP_AI_Tool_Submit_Quiz_Answer();
 		$submission_result = $submit_tool->execute(
 			array(
 				'quiz_id' => $quiz_id,
@@ -1106,7 +1106,7 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 	 * Test analytics requires permission.
 	 */
 	public function test_quiz_analytics_requires_permission() {
-		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$admin_user  = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		$other_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
 		// Create a quiz as admin.

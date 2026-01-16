@@ -412,12 +412,12 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				'cloudflare_response_structure',
 				'Cloudflare API response received',
 				array(
-					'has_result'       => isset( $decoded['result'] ),
-					'has_tool_calls'   => isset( $decoded['result']['tool_calls'] ),
-					'tool_calls_type'  => isset( $decoded['result']['tool_calls'] ) ? gettype( $decoded['result']['tool_calls'] ) : 'N/A',
+					'has_result'      => isset( $decoded['result'] ),
+					'has_tool_calls'  => isset( $decoded['result']['tool_calls'] ),
+					'tool_calls_type' => isset( $decoded['result']['tool_calls'] ) ? gettype( $decoded['result']['tool_calls'] ) : 'N/A',
 					'tool_calls_empty' => isset( $decoded['result']['tool_calls'] ) ? empty( $decoded['result']['tool_calls'] ) : 'N/A',
-					'response_keys'    => isset( $decoded['result'] ) ? array_keys( $decoded['result'] ) : array(),
-					'model'            => $model,
+					'response_keys'   => isset( $decoded['result'] ) ? array_keys( $decoded['result'] ) : array(),
+					'model'           => $model,
 				)
 			);
 
@@ -454,9 +454,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				'cloudflare_payload_build',
 				'Building payload for Cloudflare API (OpenAI format)',
 				array(
-					'input_message_count'      => count( $messages ),
-					'normalized_message_count' => count( $normalized_messages ),
-					'first_message_role'       => isset( $normalized_messages[0]['role'] ) ? $normalized_messages[0]['role'] : 'none',
+					'input_message_count'       => count( $messages ),
+					'normalized_message_count'  => count( $normalized_messages ),
+					'first_message_role'        => isset( $normalized_messages[0]['role'] ) ? $normalized_messages[0]['role'] : 'none',
 				)
 			);
 
@@ -713,7 +713,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				if ( ! empty( $parsed_tool_calls ) ) {
 					// Use the parsed tool calls as if they came from the API properly formatted.
 					$result['tool_calls'] = $parsed_tool_calls;
-					$tool_calls_found     = true;
+					$tool_calls_found = true;
 
 					// Remove XML from content since it's now converted to tool_calls.
 					$message['content'] = '';
@@ -725,7 +725,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 							'model'            => $model,
 							'tool_call_count'  => count( $parsed_tool_calls ),
 							'tool_names'       => array_map(
-								function ( $tc ) {
+								function( $tc ) {
 									return isset( $tc['function']['name'] ) ? $tc['function']['name'] : 'unknown';
 								},
 								$parsed_tool_calls
@@ -745,7 +745,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				if ( ! empty( $parsed_tool_calls ) ) {
 					// Use the parsed tool calls as if they came from the API properly formatted.
 					$result['tool_calls'] = $parsed_tool_calls;
-					$tool_calls_found     = true;
+					$tool_calls_found = true;
 
 					// Remove JSON from content since it's now converted to tool_calls.
 					$message['content'] = '';
@@ -757,7 +757,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 							'model'            => $model,
 							'tool_call_count'  => count( $parsed_tool_calls ),
 							'tool_names'       => array_map(
-								function ( $tc ) {
+								function( $tc ) {
 									return isset( $tc['function']['name'] ) ? $tc['function']['name'] : 'unknown';
 								},
 								$parsed_tool_calls
@@ -783,9 +783,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 
 					// Check for OpenAI format first (function.name).
 					if ( isset( $tool_call['function'] ) &&
-						is_array( $tool_call['function'] ) &&
-						isset( $tool_call['function']['name'] ) &&
-						! empty( $tool_call['function']['name'] ) ) {
+						 is_array( $tool_call['function'] ) &&
+						 isset( $tool_call['function']['name'] ) &&
+						 ! empty( $tool_call['function']['name'] ) ) {
 						// Already in OpenAI format, use as-is.
 						$normalized_tool_call = $tool_call;
 					} elseif ( isset( $tool_call['name'] ) && ! empty( $tool_call['name'] ) ) {
@@ -841,7 +841,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 						array(
 							'tool_call_count' => count( $valid_tool_calls ),
 							'tool_names'      => array_map(
-								function ( $tc ) {
+								function( $tc ) {
 									return isset( $tc['function']['name'] ) ? $tc['function']['name'] : 'unknown';
 								},
 								$valid_tool_calls
@@ -1255,16 +1255,16 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				}
 
 				return array(
-					'image'     => $image_data,
-					'format'    => 'png', // Most Cloudflare models return PNG.
-					'mime_type' => 'image/png',
-					'model'     => $model,
-					'created'   => time(),
-					'bytes'     => strlen( $image_data ),
-					'width'     => isset( $payload['width'] ) ? $payload['width'] : null,
-					'height'    => isset( $payload['height'] ) ? $payload['height'] : null,
-					'num_steps' => isset( $payload['num_steps'] ) ? $payload['num_steps'] : null,
-					'provider'  => 'cloudflare',
+					'image'      => $image_data,
+					'format'     => 'png', // Most Cloudflare models return PNG.
+					'mime_type'  => 'image/png',
+					'model'      => $model,
+					'created'    => time(),
+					'bytes'      => strlen( $image_data ),
+					'width'      => isset( $payload['width'] ) ? $payload['width'] : null,
+					'height'     => isset( $payload['height'] ) ? $payload['height'] : null,
+					'num_steps'  => isset( $payload['num_steps'] ) ? $payload['num_steps'] : null,
+					'provider'   => 'cloudflare',
 				);
 			} else {
 				// Binary image data (PNG, JPEG, etc.).
@@ -1296,16 +1296,16 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				}
 
 				return array(
-					'image'     => $image_data,
-					'format'    => $format,
-					'mime_type' => $mime_type,
-					'model'     => $model,
-					'created'   => time(),
-					'bytes'     => strlen( $image_data ),
-					'width'     => isset( $payload['width'] ) ? $payload['width'] : null,
-					'height'    => isset( $payload['height'] ) ? $payload['height'] : null,
-					'num_steps' => isset( $payload['num_steps'] ) ? $payload['num_steps'] : null,
-					'provider'  => 'cloudflare',
+					'image'      => $image_data,
+					'format'     => $format,
+					'mime_type'  => $mime_type,
+					'model'      => $model,
+					'created'    => time(),
+					'bytes'      => strlen( $image_data ),
+					'width'      => isset( $payload['width'] ) ? $payload['width'] : null,
+					'height'     => isset( $payload['height'] ) ? $payload['height'] : null,
+					'num_steps'  => isset( $payload['num_steps'] ) ? $payload['num_steps'] : null,
+					'provider'   => 'cloudflare',
 				);
 			}
 		}
@@ -1338,22 +1338,22 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		 */
 		public function run_with_tools( array $messages, array $tools = array(), array $options = array() ) {
 			// Configuration options with defaults.
-			$strict_validation     = isset( $options['strictValidation'] ) ? (bool) $options['strictValidation'] : true;
-			$max_recursive_runs    = isset( $options['maxRecursiveToolRuns'] ) ? absint( $options['maxRecursiveToolRuns'] ) : 5;
-			$stream_final_response = isset( $options['streamFinalResponse'] ) ? (bool) $options['streamFinalResponse'] : false;
-			$verbose               = isset( $options['verbose'] ) ? (bool) $options['verbose'] : false;
-			$auto_trim_tools       = isset( $options['autoTrimTools'] ) ? (bool) $options['autoTrimTools'] : false;
+			$strict_validation       = isset( $options['strictValidation'] ) ? (bool) $options['strictValidation'] : true;
+			$max_recursive_runs      = isset( $options['maxRecursiveToolRuns'] ) ? absint( $options['maxRecursiveToolRuns'] ) : 5;
+			$stream_final_response   = isset( $options['streamFinalResponse'] ) ? (bool) $options['streamFinalResponse'] : false;
+			$verbose                 = isset( $options['verbose'] ) ? (bool) $options['verbose'] : false;
+			$auto_trim_tools         = isset( $options['autoTrimTools'] ) ? (bool) $options['autoTrimTools'] : false;
 
 			if ( $verbose ) {
 				WP_MCP_AI_Logger::log_event(
 					'cloudflare_run_with_tools_start',
 					'Starting Cloudflare Workers AI embedded function calling.',
 					array(
-						'message_count'      => count( $messages ),
-						'tool_count'         => count( $tools ),
-						'strict_validation'  => $strict_validation,
-						'max_recursive_runs' => $max_recursive_runs,
-						'auto_trim_tools'    => $auto_trim_tools,
+						'message_count'       => count( $messages ),
+						'tool_count'          => count( $tools ),
+						'strict_validation'   => $strict_validation,
+						'max_recursive_runs'  => $max_recursive_runs,
+						'auto_trim_tools'     => $auto_trim_tools,
 					)
 				);
 			}
@@ -1410,7 +1410,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			}
 
 			// Prepare options with tools.
-			$request_options          = $options;
+			$request_options = $options;
 			$request_options['tools'] = $tool_definitions;
 
 			// Execute recursive tool calling loop.
@@ -1740,7 +1740,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 
 				// Check name relevance.
 				if ( isset( $tool['name'] ) ) {
-					$tool_name  = strtolower( str_replace( array( '-', '_' ), ' ', $tool['name'] ) );
+					$tool_name = strtolower( str_replace( array( '-', '_' ), ' ', $tool['name'] ) );
 					$name_words = explode( ' ', $tool_name );
 					foreach ( $name_words as $word ) {
 						if ( ! empty( $word ) && false !== strpos( $last_user_message, $word ) ) {
@@ -1867,9 +1867,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 							'cloudflare_xml_tool_call_parse_error',
 							'Found XML tool call but arguments JSON is invalid',
 							array(
-								'tool_name'      => $tool_name,
-								'arguments_json' => $arguments_json,
-								'json_error'     => json_last_error_msg(),
+								'tool_name'       => $tool_name,
+								'arguments_json'  => $arguments_json,
+								'json_error'      => json_last_error_msg(),
 							)
 						);
 						continue;
@@ -1934,7 +1934,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Check for function call pattern with type and name fields.
 			// Accept both "parameters" and "arguments" field names.
 			if ( isset( $decoded['type'] ) && 'function' === $decoded['type'] &&
-				isset( $decoded['name'] ) && is_string( $decoded['name'] ) ) {
+			     isset( $decoded['name'] ) && is_string( $decoded['name'] ) ) {
 				return true;
 			}
 
@@ -2191,11 +2191,11 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				WP_MCP_AI_Logger::log_error(
 					'Cloudflare Workers AI audio transcription error.',
 					array(
-						'status'      => $code,
-						'body'        => $body,
-						'model'       => $model,
-						'account_id'  => $account_id,
-						'request_url' => $url,
+						'status'       => $code,
+						'body'         => $body,
+						'model'        => $model,
+						'account_id'   => $account_id,
+						'request_url'  => $url,
 					)
 				);
 
@@ -2227,9 +2227,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				'cloudflare_transcribe_audio_success',
 				'Successfully transcribed audio with Cloudflare Workers AI.',
 				array(
-					'model'         => $model,
-					'has_text'      => isset( $decoded['result']['text'] ),
-					'response_keys' => is_array( $decoded ) ? array_keys( $decoded ) : array(),
+					'model'          => $model,
+					'has_text'       => isset( $decoded['result']['text'] ),
+					'response_keys'  => is_array( $decoded ) ? array_keys( $decoded ) : array(),
 				)
 			);
 
@@ -2452,10 +2452,10 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				'cloudflare_vad_success',
 				'Successfully detected turn completion with Cloudflare Workers AI.',
 				array(
-					'model'         => $model,
-					'is_complete'   => isset( $decoded['result']['is_complete'] ) ? $decoded['result']['is_complete'] : null,
-					'probability'   => isset( $decoded['result']['probability'] ) ? $decoded['result']['probability'] : null,
-					'response_keys' => is_array( $decoded ) ? array_keys( $decoded ) : array(),
+					'model'          => $model,
+					'is_complete'    => isset( $decoded['result']['is_complete'] ) ? $decoded['result']['is_complete'] : null,
+					'probability'    => isset( $decoded['result']['probability'] ) ? $decoded['result']['probability'] : null,
+					'response_keys'  => is_array( $decoded ) ? array_keys( $decoded ) : array(),
 				)
 			);
 

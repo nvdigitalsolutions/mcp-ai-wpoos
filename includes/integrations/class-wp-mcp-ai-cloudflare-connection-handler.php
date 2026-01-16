@@ -19,9 +19,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 	 * 1-click connection testing/verification instead of OAuth flow.
 	 */
 	class WP_MCP_AI_Cloudflare_Connection_Handler {
-		const CLOUDFLARE_API_BASE        = 'https://api.cloudflare.com/client/v4';
-		const CLOUDFLARE_VERIFY_ENDPOINT = 'https://api.cloudflare.com/client/v4/user/tokens/verify';
-		const CLOUDFLARE_ZONES_ENDPOINT  = 'https://api.cloudflare.com/client/v4/zones';
+		const CLOUDFLARE_API_BASE         = 'https://api.cloudflare.com/client/v4';
+		const CLOUDFLARE_VERIFY_ENDPOINT  = 'https://api.cloudflare.com/client/v4/user/tokens/verify';
+		const CLOUDFLARE_ZONES_ENDPOINT   = 'https://api.cloudflare.com/client/v4/zones';
 
 		/**
 		 * Handle the 1-click connection test for Cloudflare.
@@ -90,14 +90,14 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 				}
 
 				// Store zone information.
-				$settings['cloudflare_zone_name']   = isset( $zone_verification['name'] ) ? $zone_verification['name'] : '';
-				$settings['cloudflare_zone_status'] = isset( $zone_verification['status'] ) ? $zone_verification['status'] : '';
+				$settings['cloudflare_zone_name']     = isset( $zone_verification['name'] ) ? $zone_verification['name'] : '';
+				$settings['cloudflare_zone_status']   = isset( $zone_verification['status'] ) ? $zone_verification['status'] : '';
 			}
 
 			// Store connection status.
-			$settings['cloudflare_connected']       = true;
+			$settings['cloudflare_connected']      = true;
 			$settings['cloudflare_connection_time'] = time();
-			$settings['cloudflare_token_status']    = isset( $token_verification['status'] ) ? $token_verification['status'] : 'active';
+			$settings['cloudflare_token_status']   = isset( $token_verification['status'] ) ? $token_verification['status'] : 'active';
 
 			update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -185,7 +185,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 			$body        = wp_remote_retrieve_body( $response );
 
 			if ( 200 !== (int) $status_code ) {
-				$decoded       = json_decode( $body, true );
+				$decoded = json_decode( $body, true );
 				$error_message = '';
 
 				if ( is_array( $decoded ) && isset( $decoded['errors'][0]['message'] ) ) {
@@ -253,7 +253,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 			$body        = wp_remote_retrieve_body( $response );
 
 			if ( 200 !== (int) $status_code ) {
-				$decoded       = json_decode( $body, true );
+				$decoded = json_decode( $body, true );
 				$error_message = '';
 
 				if ( is_array( $decoded ) && isset( $decoded['errors'][0]['message'] ) ) {

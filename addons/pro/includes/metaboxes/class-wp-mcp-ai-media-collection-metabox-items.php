@@ -268,8 +268,8 @@ class WP_MCP_AI_Media_Collection_Metabox_Items extends WP_MCP_AI_Media_Template_
 		// Save collection items.
 		if ( isset( $_POST['wp_mcp_ai_collection_items'] ) ) {
 			$items_json = sanitize_textarea_field( wp_unslash( $_POST['wp_mcp_ai_collection_items'] ) );
-			$items      = json_decode( $items_json, true );
-
+			$items = json_decode( $items_json, true );
+			
 			if ( json_last_error() === JSON_ERROR_NONE && is_array( $items ) ) {
 				// Validate each item is a valid attachment ID.
 				$valid_items = array();

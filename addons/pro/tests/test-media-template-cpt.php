@@ -187,8 +187,8 @@ class Test_Media_Template_CPT_Admin_Notice extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'last_used', $new_columns );
 
 		// Verify order (columns should be after title).
-		$keys            = array_keys( $new_columns );
-		$title_index     = array_search( 'title', $keys, true );
+		$keys = array_keys( $new_columns );
+		$title_index = array_search( 'title', $keys, true );
 		$operation_index = array_search( 'operation', $keys, true );
 
 		$this->assertGreaterThan( $title_index, $operation_index );

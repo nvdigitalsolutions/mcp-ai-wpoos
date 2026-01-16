@@ -47,26 +47,26 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'prompt'    => array(
+				'prompt'          => array(
 					'type'        => 'string',
 					'description' => __( 'Description of the desired music (e.g., "upbeat jazz piano trio" or "cinematic orchestral soundtrack").', 'mcp-ai-wpoos' ),
 				),
-				'duration'  => array(
+				'duration'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Duration of the music in seconds (15-1500). Mubert supports up to 25 minutes.', 'mcp-ai-wpoos' ),
 					'default'     => WP_MCP_AI_Mubert_Music_Service::DEFAULT_DURATION,
 					'minimum'     => WP_MCP_AI_Mubert_Music_Service::MIN_DURATION,
 					'maximum'     => WP_MCP_AI_Mubert_Music_Service::MAX_DURATION,
 				),
-				'genre'     => array(
+				'genre'           => array(
 					'type'        => 'string',
 					'description' => __( 'Optional music genre from 150+ available (e.g., "jazz", "rock", "classical", "electronic", "ambient").', 'mcp-ai-wpoos' ),
 				),
-				'mood'      => array(
+				'mood'            => array(
 					'type'        => 'string',
 					'description' => __( 'Optional mood from 50+ available (e.g., "upbeat", "calm", "dramatic", "mysterious", "energetic").', 'mcp-ai-wpoos' ),
 				),
-				'file_name' => array(
+				'file_name'       => array(
 					'type'        => 'string',
 					'description' => __( 'Optional base file name for the saved audio attachment.', 'mcp-ai-wpoos' ),
 				),

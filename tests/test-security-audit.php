@@ -112,17 +112,13 @@ class Test_Security_Audit extends WP_UnitTestCase {
 			)
 		);
 		update_post_meta( $audit1, '_wp_mcp_ai_audit_status', 'completed' );
-		update_post_meta(
-			$audit1,
-			'_wp_mcp_ai_audit_findings',
+		update_post_meta( $audit1, '_wp_mcp_ai_audit_findings', array(
 			array(
-				array(
-					'control'  => 'A.5.1',
-					'severity' => 'high',
-					'status'   => 'open',
-				),
-			)
-		);
+				'control'  => 'A.5.1',
+				'severity' => 'high',
+				'status'   => 'open',
+			),
+		) );
 
 		$audit2 = wp_insert_post(
 			array(
@@ -132,25 +128,21 @@ class Test_Security_Audit extends WP_UnitTestCase {
 			)
 		);
 		update_post_meta( $audit2, '_wp_mcp_ai_audit_status', 'in_progress' );
-		update_post_meta(
-			$audit2,
-			'_wp_mcp_ai_audit_findings',
+		update_post_meta( $audit2, '_wp_mcp_ai_audit_findings', array(
 			array(
-				array(
-					'control'  => 'A.6.1',
-					'severity' => 'medium',
-					'status'   => 'open',
-				),
-				array(
-					'control'  => 'A.7.1',
-					'severity' => 'low',
-					'status'   => 'resolved',
-				),
-			)
-		);
+				'control'  => 'A.6.1',
+				'severity' => 'medium',
+				'status'   => 'open',
+			),
+			array(
+				'control'  => 'A.7.1',
+				'severity' => 'low',
+				'status'   => 'resolved',
+			),
+		) );
 
 		$audit_system = WP_MCP_AI_Security_Audit::get_instance();
-		$stats        = $audit_system->get_audit_statistics();
+		$stats = $audit_system->get_audit_statistics();
 
 		$this->assertIsArray( $stats );
 		$this->assertArrayHasKey( 'total_audits', $stats );
@@ -182,7 +174,7 @@ class Test_Security_Audit extends WP_UnitTestCase {
 			);
 		}
 
-		$audit_system  = WP_MCP_AI_Security_Audit::get_instance();
+		$audit_system = WP_MCP_AI_Security_Audit::get_instance();
 		$recent_audits = $audit_system->get_recent_audits( 3 );
 
 		$this->assertIsArray( $recent_audits );

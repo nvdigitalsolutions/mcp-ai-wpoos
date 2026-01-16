@@ -83,9 +83,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list if Model Config unavailable.
 			if ( empty( $openai_models ) ) {
 				$openai_models = array(
-					'gpt-4o'      => 'GPT-4o',
-					'gpt-4o-mini' => 'GPT-4o Mini',
-					'gpt-4-turbo' => 'GPT-4 Turbo',
+					'gpt-4o'        => 'GPT-4o',
+					'gpt-4o-mini'   => 'GPT-4o Mini',
+					'gpt-4-turbo'   => 'GPT-4 Turbo',
 				);
 			}
 
@@ -336,7 +336,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'vad_audio_threshold'                => array(
 					'type'        => 'number',
 					'label'       => __( 'VAD Audio Level Threshold (dB)', 'mcp-ai-wpoos' ),
-					'description' => __( 'Audio level threshold for detecting speech vs silence. Default: -50dB. Lower values (e.g., -60dB) are more sensitive and detect quieter speech. Higher values (e.g., -40dB) require louder speech and ignore more background noise.', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Audio level threshold for detecting speech vs silence. Default: -50dB. Lower values (e.g., -60dB) are more sensitive and detect quieter speech. Higher values (e.g., -40dB) require louder speech and ignore more background noise.', 'mcp-ai-wpoos' ),
 					'default'     => '-50',
 					'min'         => '-70',
 					'max'         => '-30',
@@ -714,12 +714,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Stable Diffusion XL Base is recommended for general purpose use.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Recommended)',
-						'@cf/bytedance/stable-diffusion-xl-lightning' => 'Stable Diffusion XL Lightning (Fast)',
-						'@cf/black-forest-labs/flux-1-schnell' => 'Flux-1 Schnell',
-						'@cf/black-forest-labs/flux-2-dev' => 'Flux-2 Dev',
-						'@cf/leonardo/lucid-origin'        => 'Leonardo Lucid Origin',
-						'@cf/leonardo/phoenix-1.0'         => 'Leonardo Phoenix 1.0',
-						'@cf/lykon/dreamshaper-8-lcm'      => 'Dreamshaper 8 LCM',
+						'@cf/bytedance/stable-diffusion-xl-lightning'  => 'Stable Diffusion XL Lightning (Fast)',
+						'@cf/black-forest-labs/flux-1-schnell'         => 'Flux-1 Schnell',
+						'@cf/black-forest-labs/flux-2-dev'             => 'Flux-2 Dev',
+						'@cf/leonardo/lucid-origin'                    => 'Leonardo Lucid Origin',
+						'@cf/leonardo/phoenix-1.0'                     => 'Leonardo Phoenix 1.0',
+						'@cf/lykon/dreamshaper-8-lcm'                  => 'Dreamshaper 8 LCM',
 					),
 					'default'     => '@cf/stabilityai/stable-diffusion-xl-base-1.0',
 				),
@@ -766,8 +766,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Cloudflare STT Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Speech-to-Text model for audio transcription. Whisper provides standard transcription. Deepgram Flux offers advanced features with turn detection for conversational AI.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'@cf/openai/whisper' => __( 'Whisper (Standard - OpenAI Whisper)', 'mcp-ai-wpoos' ),
-						'@cf/deepgram/flux'  => __( 'Deepgram Flux (Advanced - Turn Detection)', 'mcp-ai-wpoos' ),
+						'@cf/openai/whisper'   => __( 'Whisper (Standard - OpenAI Whisper)', 'mcp-ai-wpoos' ),
+						'@cf/deepgram/flux'    => __( 'Deepgram Flux (Advanced - Turn Detection)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => '@cf/openai/whisper',
 				),
@@ -815,9 +815,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Formula Optimization', 'mcp-ai-wpoos' ),
 					'description' => __( 'Choose how formulas are optimized. Readability prioritizes clear, maintainable code. Performance focuses on calculation speed and efficiency. Balanced provides a compromise between the two.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'readability' => __( 'Readability (Clear, maintainable formulas)', 'mcp-ai-wpoos' ),
-						'performance' => __( 'Performance (Fast, efficient calculations)', 'mcp-ai-wpoos' ),
-						'balanced'    => __( 'Balanced (Compromise between both)', 'mcp-ai-wpoos' ),
+						'readability'  => __( 'Readability (Clear, maintainable formulas)', 'mcp-ai-wpoos' ),
+						'performance'  => __( 'Performance (Fast, efficient calculations)', 'mcp-ai-wpoos' ),
+						'balanced'     => __( 'Balanced (Compromise between both)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'balanced',
 				),
@@ -1162,7 +1162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				}
 			}
 
-			$sanitized = array();
+			$sanitized       = array();
 
 			if ( ! is_array( $priority_list ) ) {
 				return $valid_providers;

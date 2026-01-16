@@ -203,7 +203,7 @@ class WP_MCP_AI_ECA_Metabox_Enrollment extends WP_MCP_AI_ECA_Metabox_Base {
 		// Save booking type.
 		if ( isset( $_POST['wp_mcp_ai_eca_booking_type'] ) ) {
 			$booking_type = sanitize_key( $_POST['wp_mcp_ai_eca_booking_type'] );
-			$valid_types  = array( 'first_come_first_served', 'preference_based', 'preselected', 'signup' );
+			$valid_types = array( 'first_come_first_served', 'preference_based', 'preselected', 'signup' );
 			if ( in_array( $booking_type, $valid_types, true ) ) {
 				update_post_meta( $post_id, '_eca_booking_type', $booking_type );
 			}

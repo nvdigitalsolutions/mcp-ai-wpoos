@@ -94,19 +94,15 @@ class WP_MCP_AI_Health_Wellness_CPT {
 
 		// Check if we're on a health wellness post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type               = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		$is_health_wellness_page = in_array(
-			$post_type,
-			array(
-				self::MEMBER_POST_TYPE,
-				self::POLICY_POST_TYPE,
-				self::MEDICAL_RECORD_POST_TYPE,
-				self::CHECKUP_POST_TYPE,
-				self::PRESCRIPTION_POST_TYPE,
-				self::ALLERGY_POST_TYPE,
-			),
-			true
-		);
+		$post_type = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$is_health_wellness_page = in_array( $post_type, array(
+			self::MEMBER_POST_TYPE,
+			self::POLICY_POST_TYPE,
+			self::MEDICAL_RECORD_POST_TYPE,
+			self::CHECKUP_POST_TYPE,
+			self::PRESCRIPTION_POST_TYPE,
+			self::ALLERGY_POST_TYPE,
+		), true );
 
 		if ( ! $is_health_wellness_page ) {
 			return;
@@ -537,12 +533,12 @@ class WP_MCP_AI_Health_Wellness_CPT {
 
 		// Register default record types.
 		$default_record_types = array(
-			'lab-result'      => __( 'Lab Result', 'mcp-ai-wpoos-pro' ),
-			'diagnosis'       => __( 'Diagnosis', 'mcp-ai-wpoos-pro' ),
-			'treatment'       => __( 'Treatment', 'mcp-ai-wpoos-pro' ),
-			'vaccination'     => __( 'Vaccination', 'mcp-ai-wpoos-pro' ),
-			'imaging'         => __( 'Imaging', 'mcp-ai-wpoos-pro' ),
-			'procedure'       => __( 'Procedure', 'mcp-ai-wpoos-pro' ),
+			'lab-result'    => __( 'Lab Result', 'mcp-ai-wpoos-pro' ),
+			'diagnosis'     => __( 'Diagnosis', 'mcp-ai-wpoos-pro' ),
+			'treatment'     => __( 'Treatment', 'mcp-ai-wpoos-pro' ),
+			'vaccination'   => __( 'Vaccination', 'mcp-ai-wpoos-pro' ),
+			'imaging'       => __( 'Imaging', 'mcp-ai-wpoos-pro' ),
+			'procedure'     => __( 'Procedure', 'mcp-ai-wpoos-pro' ),
 			'hospitalization' => __( 'Hospitalization', 'mcp-ai-wpoos-pro' ),
 		);
 

@@ -3118,8 +3118,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			// Build request payload for Google Speech-to-Text API.
 			$payload = array(
 				'config' => array(
-					'encoding'                   => 'LINEAR16', // Will be overridden by auto-detection.
-					'languageCode'               => $language_code,
+					'encoding'        => 'LINEAR16', // Will be overridden by auto-detection.
+					'languageCode'    => $language_code,
 					'enableAutomaticPunctuation' => true,
 				),
 				'audio'  => array(
@@ -3222,9 +3222,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'google_transcribe_audio_success',
 				'Successfully transcribed audio with Google Speech-to-Text.',
 				array(
-					'language'     => $language_code,
-					'text_length'  => strlen( $text ),
-					'result_count' => isset( $decoded['results'] ) ? count( $decoded['results'] ) : 0,
+					'language'      => $language_code,
+					'text_length'   => strlen( $text ),
+					'result_count'  => isset( $decoded['results'] ) ? count( $decoded['results'] ) : 0,
 				)
 			);
 
@@ -3286,10 +3286,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			// Build request payload for Google Text-to-Speech API.
 			$payload = array(
-				'input'       => array(
+				'input' => array(
 					'text' => $text,
 				),
-				'voice'       => array(
+				'voice' => array(
 					'languageCode' => $language_code,
 					'name'         => $voice_name,
 				),
@@ -3300,8 +3300,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			// Add speaking rate if provided.
 			if ( isset( $options['speed'] ) && '' !== $options['speed'] ) {
-				$speed                                  = floatval( $options['speed'] );
-				$speed                                  = max( 0.25, min( 4.0, $speed ) );
+				$speed                           = floatval( $options['speed'] );
+				$speed                           = max( 0.25, min( 4.0, $speed ) );
 				$payload['audioConfig']['speakingRate'] = $speed;
 			}
 

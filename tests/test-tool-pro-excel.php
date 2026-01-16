@@ -98,7 +98,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Tests extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'excel_version', $schema['properties'] );
 		$this->assertArrayHasKey( 'enum', $schema['properties']['excel_version'] );
 
-		$versions          = $schema['properties']['excel_version']['enum'];
+		$versions = $schema['properties']['excel_version']['enum'];
 		$expected_versions = array( 'modern', 'legacy', 'online' );
 
 		foreach ( $expected_versions as $version ) {
@@ -294,7 +294,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Tests extends WP_UnitTestCase {
 	 * Test tool group assignment.
 	 */
 	public function test_tool_group_assignment() {
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 		$tool_groups = $registry->get_tool_group_map();
 
@@ -402,7 +402,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Tests extends WP_UnitTestCase {
 		// This test ensures the tool works with different providers.
 		// Since we can't actually call the APIs in tests, we verify the tool
 		// is properly configured to use provider-agnostic execution.
-
+		
 		$definition = $this->tool->get_definition();
 		$flags      = $this->tool->get_capability_flags();
 

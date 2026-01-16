@@ -47,7 +47,7 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 		);
 
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'normalize_response' );
+		$method = $reflection->getMethod( 'normalize_response' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
@@ -88,7 +88,7 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 		);
 
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'normalize_response' );
+		$method = $reflection->getMethod( 'normalize_response' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
@@ -113,7 +113,7 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 		);
 
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'normalize_response' );
+		$method = $reflection->getMethod( 'normalize_response' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
@@ -165,7 +165,7 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 		);
 
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'normalize_response' );
+		$method = $reflection->getMethod( 'normalize_response' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
@@ -192,7 +192,7 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 		);
 
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'normalize_response' );
+		$method = $reflection->getMethod( 'normalize_response' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
@@ -227,7 +227,7 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 		);
 
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'normalize_response' );
+		$method = $reflection->getMethod( 'normalize_response' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
@@ -258,19 +258,16 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 		);
 
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'normalize_response' );
+		$method = $reflection->getMethod( 'normalize_response' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
 
 		// Check logs.
-		$logs           = get_option( 'wp_mcp_ai_recent_activity', array() );
-		$malformed_logs = array_filter(
-			$logs,
-			function ( $log ) {
-				return isset( $log['event'] ) && 'cloudflare_invalid_tool_call' === $log['event'];
-			}
-		);
+		$logs = get_option( 'wp_mcp_ai_recent_activity', array() );
+		$malformed_logs = array_filter( $logs, function( $log ) {
+			return isset( $log['event'] ) && 'cloudflare_invalid_tool_call' === $log['event'];
+		} );
 
 		$this->assertNotEmpty( $malformed_logs, 'Should log when malformed tool_call is detected' );
 	}
@@ -295,7 +292,7 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 		);
 
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'normalize_response' );
+		$method = $reflection->getMethod( 'normalize_response' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );
@@ -350,7 +347,7 @@ class Test_Cloudflare_Tool_Calls_Validation extends WP_UnitTestCase {
 		);
 
 		$reflection = new ReflectionClass( $this->client );
-		$method     = $reflection->getMethod( 'normalize_response' );
+		$method = $reflection->getMethod( 'normalize_response' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->client, $decoded, '@cf/meta/llama-3.1-8b-instruct' );

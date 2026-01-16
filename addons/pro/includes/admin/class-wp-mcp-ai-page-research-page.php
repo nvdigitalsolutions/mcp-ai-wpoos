@@ -94,16 +94,16 @@ class WP_MCP_AI_Page_Research_Page {
 			'wp-mcp-ai-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_page' ),
-				'addNewUrl'    => admin_url( 'post-new.php?post_type=page' ),
-				'researchTool' => 'research_page',
-				'strings'      => array(
-					'researching'   => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
-					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'      => __( 'Creating page...', 'mcp-ai-wpoos-pro' ),
-					'created'       => __( 'Page created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate' => __( 'Create a page with the researched information?', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+				'nonce'         => wp_create_nonce( 'wp_mcp_ai_research_page' ),
+				'addNewUrl'     => admin_url( 'post-new.php?post_type=page' ),
+				'researchTool'  => 'research_page',
+				'strings'       => array(
+					'researching'       => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
+					'error'             => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'creating'          => __( 'Creating page...', 'mcp-ai-wpoos-pro' ),
+					'created'           => __( 'Page created successfully!', 'mcp-ai-wpoos-pro' ),
+					'confirmCreate'     => __( 'Create a page with the researched information?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);

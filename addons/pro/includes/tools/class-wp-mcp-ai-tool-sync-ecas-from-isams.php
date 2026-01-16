@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 		$isams_tool = new WP_MCP_AI_Tool_ISAMS_Query();
 
 		// Validate sync type.
-		$sync_type        = isset( $arguments['sync_type'] ) ? sanitize_key( $arguments['sync_type'] ) : 'all';
+		$sync_type = isset( $arguments['sync_type'] ) ? sanitize_key( $arguments['sync_type'] ) : 'all';
 		$valid_sync_types = array( 'single', 'all' );
 		if ( ! in_array( $sync_type, $valid_sync_types, true ) ) {
 			return new WP_Error(
@@ -197,9 +197,9 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$update_existing = isset( $arguments['update_existing'] ) ? (bool) $arguments['update_existing'] : true;
-		$page            = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
-		$limit           = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 20;
-		$limit           = min( $limit, 100 ); // Cap at 100.
+		$page = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+		$limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 20;
+		$limit = min( $limit, 100 ); // Cap at 100.
 
 		// Handle different sync types.
 		switch ( $sync_type ) {
@@ -221,9 +221,9 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 	 * Sync a single ECA by ID.
 	 *
 	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      iSAMS tool instance.
-	 * @param array                      $arguments       Tool arguments.
-	 * @param array                      $context         Execution context.
-	 * @param bool                       $update_existing Whether to update existing ECAs.
+	 * @param array                       $arguments       Tool arguments.
+	 * @param array                       $context         Execution context.
+	 * @param bool                        $update_existing Whether to update existing ECAs.
 	 * @return array|WP_Error Sync results or error.
 	 */
 	private function sync_single_eca( $isams_tool, $arguments, $context, $update_existing ) {
@@ -263,14 +263,14 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$eca_data = $isams_result['data'];
-		$result   = $this->create_or_update_eca( $eca_data, $update_existing, $context );
+		$result = $this->create_or_update_eca( $eca_data, $update_existing, $context );
 
 		return array(
-			'success'     => true,
-			'sync_type'   => 'single',
-			'ecas_synced' => 1,
-			'eca'         => $result,
-			'message'     => __( 'ECA synced successfully.', 'mcp-ai-wpoos-pro' ),
+			'success'      => true,
+			'sync_type'    => 'single',
+			'ecas_synced'  => 1,
+			'eca'          => $result,
+			'message'      => __( 'ECA synced successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -278,11 +278,11 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 	 * Sync all ECAs from iSAMS.
 	 *
 	 * @param WP_MCP_AI_Tool_ISAMS_Query $isams_tool      iSAMS tool instance.
-	 * @param array                      $arguments       Tool arguments.
-	 * @param array                      $context         Execution context.
-	 * @param int                        $page            Page number.
-	 * @param int                        $limit           ECAs per page.
-	 * @param bool                       $update_existing Whether to update existing ECAs.
+	 * @param array                       $arguments       Tool arguments.
+	 * @param array                       $context         Execution context.
+	 * @param int                         $page            Page number.
+	 * @param int                         $limit           ECAs per page.
+	 * @param bool                        $update_existing Whether to update existing ECAs.
 	 * @return array|WP_Error Sync results or error.
 	 */
 	private function sync_all_ecas( $isams_tool, $arguments, $context, $page, $limit, $update_existing ) {
@@ -307,21 +307,21 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 
 		if ( empty( $isams_result['data'] ) ) {
 			return array(
-				'success'     => true,
-				'sync_type'   => 'all',
-				'ecas_synced' => 0,
-				'page'        => $page,
-				'message'     => __( 'No ECAs found to sync.', 'mcp-ai-wpoos-pro' ),
+				'success'      => true,
+				'sync_type'    => 'all',
+				'ecas_synced'  => 0,
+				'page'         => $page,
+				'message'      => __( 'No ECAs found to sync.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
-		$ecas_data   = is_array( $isams_result['data'] ) ? $isams_result['data'] : array( $isams_result['data'] );
+		$ecas_data = is_array( $isams_result['data'] ) ? $isams_result['data'] : array( $isams_result['data'] );
 		$synced_ecas = array();
-		$errors      = array();
+		$errors = array();
 
 		foreach ( $ecas_data as $eca_data ) {
 			try {
-				$result        = $this->create_or_update_eca( $eca_data, $update_existing, $context );
+				$result = $this->create_or_update_eca( $eca_data, $update_existing, $context );
 				$synced_ecas[] = $result;
 			} catch ( Exception $e ) {
 				$errors[] = array(
@@ -332,14 +332,14 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'success'     => true,
-			'sync_type'   => 'all',
-			'ecas_synced' => count( $synced_ecas ),
-			'page'        => $page,
-			'ecas'        => $synced_ecas,
-			'errors'      => $errors,
-			'has_more'    => count( $ecas_data ) === $limit,
-			'message'     => sprintf(
+			'success'      => true,
+			'sync_type'    => 'all',
+			'ecas_synced'  => count( $synced_ecas ),
+			'page'         => $page,
+			'ecas'         => $synced_ecas,
+			'errors'       => $errors,
+			'has_more'     => count( $ecas_data ) === $limit,
+			'message'      => sprintf(
 				/* translators: %d: Number of ECAs synced */
 				__( '%d ECAs synced successfully.', 'mcp-ai-wpoos-pro' ),
 				count( $synced_ecas )
@@ -420,7 +420,7 @@ class WP_MCP_AI_Tool_Sync_ECAs_From_ISAMS implements WP_MCP_AI_Tool_Interface, W
 			}
 
 			$post_id = $existing_post_id;
-			$action  = 'updated';
+			$action = 'updated';
 		} else {
 			// Create new ECA.
 			$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();

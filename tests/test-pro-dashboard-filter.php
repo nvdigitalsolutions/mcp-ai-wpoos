@@ -123,7 +123,7 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 		$dashboard = new WP_MCP_AI_Pro_Dashboard();
 
 		// Add custom callback that checks a condition.
-		$callback = function () {
+		$callback = function() {
 			return get_option( 'custom_pro_enabled', false );
 		};
 
@@ -170,9 +170,9 @@ class Test_Pro_Dashboard_Filter extends WP_UnitTestCase {
 		$test_events = array(
 			// Complete event with all expected keys.
 			array(
-				'icon'    => 'shield',
-				'message' => 'Test event with all keys',
-				'time'    => '2025-01-05 10:00:00',
+				'icon'      => 'shield',
+				'message'   => 'Test event with all keys',
+				'time'      => '2025-01-05 10:00:00',
 			),
 			// Event with timestamp key (actual data structure).
 			array(

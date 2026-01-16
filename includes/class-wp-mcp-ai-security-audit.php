@@ -34,33 +34,33 @@ class WP_MCP_AI_Security_Audit {
 	/**
 	 * Audit status constants
 	 */
-	public const STATUS_SCHEDULED   = 'scheduled';
+	public const STATUS_SCHEDULED = 'scheduled';
 	public const STATUS_IN_PROGRESS = 'in_progress';
-	public const STATUS_COMPLETED   = 'completed';
-	public const STATUS_OVERDUE     = 'overdue';
+	public const STATUS_COMPLETED = 'completed';
+	public const STATUS_OVERDUE = 'overdue';
 
 	/**
 	 * Finding severity constants
 	 */
-	public const SEVERITY_CRITICAL    = 'critical';
-	public const SEVERITY_HIGH        = 'high';
-	public const SEVERITY_MEDIUM      = 'medium';
-	public const SEVERITY_LOW         = 'low';
+	public const SEVERITY_CRITICAL = 'critical';
+	public const SEVERITY_HIGH = 'high';
+	public const SEVERITY_MEDIUM = 'medium';
+	public const SEVERITY_LOW = 'low';
 	public const SEVERITY_OBSERVATION = 'observation';
 
 	/**
 	 * Finding status constants
 	 */
-	public const FINDING_OPEN        = 'open';
+	public const FINDING_OPEN = 'open';
 	public const FINDING_IN_PROGRESS = 'in_progress';
-	public const FINDING_RESOLVED    = 'resolved';
-	public const FINDING_ACCEPTED    = 'accepted';
+	public const FINDING_RESOLVED = 'resolved';
+	public const FINDING_ACCEPTED = 'accepted';
 
 	/**
 	 * Audit type constants
 	 */
-	public const TYPE_INTERNAL          = 'internal';
-	public const TYPE_EXTERNAL          = 'external';
+	public const TYPE_INTERNAL = 'internal';
+	public const TYPE_EXTERNAL = 'external';
 	public const TYPE_MANAGEMENT_REVIEW = 'management_review';
 
 	/**
@@ -108,12 +108,12 @@ class WP_MCP_AI_Security_Audit {
 		);
 
 		$args = array(
-			'labels'           => $labels,
-			'public'           => false,
-			'show_ui'          => true,
-			'show_in_menu'     => 'nvoos-pro-dashboard',
-			'capability_type'  => 'post',
-			'capabilities'     => array(
+			'labels'              => $labels,
+			'public'              => false,
+			'show_ui'             => true,
+			'show_in_menu'        => 'nvoos-pro-dashboard',
+			'capability_type'     => 'post',
+			'capabilities'        => array(
 				'edit_post'          => 'manage_options',
 				'read_post'          => 'manage_options',
 				'delete_post'        => 'manage_options',
@@ -123,15 +123,15 @@ class WP_MCP_AI_Security_Audit {
 				'publish_posts'      => 'manage_options',
 				'read_private_posts' => 'manage_options',
 			),
-			'has_archive'      => false,
-			'hierarchical'     => false,
-			'menu_position'    => null,
-			'menu_icon'        => 'dashicons-shield-alt',
-			'supports'         => array( 'title', 'editor', 'author' ),
-			'rewrite'          => false,
-			'query_var'        => false,
-			'can_export'       => true,
-			'delete_with_user' => false,
+			'has_archive'         => false,
+			'hierarchical'        => false,
+			'menu_position'       => null,
+			'menu_icon'           => 'dashicons-shield-alt',
+			'supports'            => array( 'title', 'editor', 'author' ),
+			'rewrite'             => false,
+			'query_var'           => false,
+			'can_export'          => true,
+			'delete_with_user'    => false,
 		);
 
 		register_post_type( 'mcp_ai_audit', $args );
@@ -171,11 +171,11 @@ class WP_MCP_AI_Security_Audit {
 	public function render_audit_details_meta_box( $post ) {
 		wp_nonce_field( 'wp_mcp_ai_audit_meta', 'wp_mcp_ai_audit_meta_nonce' );
 
-		$audit_date        = get_post_meta( $post->ID, '_wp_mcp_ai_audit_date', true );
-		$audit_type        = get_post_meta( $post->ID, '_wp_mcp_ai_audit_type', true );
-		$audit_status      = get_post_meta( $post->ID, '_wp_mcp_ai_audit_status', true );
-		$auditor           = get_post_meta( $post->ID, '_wp_mcp_ai_auditor', true );
-		$scope             = get_post_meta( $post->ID, '_wp_mcp_ai_audit_scope', true );
+		$audit_date = get_post_meta( $post->ID, '_wp_mcp_ai_audit_date', true );
+		$audit_type = get_post_meta( $post->ID, '_wp_mcp_ai_audit_type', true );
+		$audit_status = get_post_meta( $post->ID, '_wp_mcp_ai_audit_status', true );
+		$auditor = get_post_meta( $post->ID, '_wp_mcp_ai_auditor', true );
+		$scope = get_post_meta( $post->ID, '_wp_mcp_ai_audit_scope', true );
 		$controls_reviewed = get_post_meta( $post->ID, '_wp_mcp_ai_controls_reviewed', true );
 		?>
 		<table class="form-table">
@@ -322,12 +322,12 @@ class WP_MCP_AI_Security_Audit {
 	 * @return void
 	 */
 	private function render_finding_row( $index, $finding ) {
-		$control        = isset( $finding['control'] ) ? $finding['control'] : '';
-		$severity       = isset( $finding['severity'] ) ? $finding['severity'] : '';
-		$status         = isset( $finding['status'] ) ? $finding['status'] : '';
-		$description    = isset( $finding['description'] ) ? $finding['description'] : '';
+		$control = isset( $finding['control'] ) ? $finding['control'] : '';
+		$severity = isset( $finding['severity'] ) ? $finding['severity'] : '';
+		$status = isset( $finding['status'] ) ? $finding['status'] : '';
+		$description = isset( $finding['description'] ) ? $finding['description'] : '';
 		$recommendation = isset( $finding['recommendation'] ) ? $finding['recommendation'] : '';
-		$due_date       = isset( $finding['due_date'] ) ? $finding['due_date'] : '';
+		$due_date = isset( $finding['due_date'] ) ? $finding['due_date'] : '';
 		?>
 		<div class="wp-mcp-ai-finding-row">
 			<h4>
@@ -550,21 +550,21 @@ class WP_MCP_AI_Security_Audit {
 	 */
 	private function get_next_quarter_start() {
 		$current_month = (int) gmdate( 'n' );
-		$current_year  = (int) gmdate( 'Y' );
+		$current_year = (int) gmdate( 'Y' );
 
 		// Determine next quarter start month.
 		if ( $current_month <= 3 ) {
 			$next_quarter_month = 4;
-			$next_quarter_year  = $current_year;
+			$next_quarter_year = $current_year;
 		} elseif ( $current_month <= 6 ) {
 			$next_quarter_month = 7;
-			$next_quarter_year  = $current_year;
+			$next_quarter_year = $current_year;
 		} elseif ( $current_month <= 9 ) {
 			$next_quarter_month = 10;
-			$next_quarter_year  = $current_year;
+			$next_quarter_year = $current_year;
 		} else {
 			$next_quarter_month = 1;
-			$next_quarter_year  = $current_year + 1;
+			$next_quarter_year = $current_year + 1;
 		}
 
 		return strtotime( sprintf( '%d-%02d-01 00:00:00', $next_quarter_year, $next_quarter_month ) );
@@ -608,7 +608,7 @@ class WP_MCP_AI_Security_Audit {
 	 */
 	private function notify_audit_scheduled( $audit_id ) {
 		$admin_email = get_option( 'admin_email' );
-		$subject     = sprintf(
+		$subject = sprintf(
 			/* translators: %s: Site name */
 			__( '[%s] Quarterly Security Audit Scheduled', 'mcp-ai-wpoos' ),
 			get_bloginfo( 'name' )
@@ -635,14 +635,14 @@ class WP_MCP_AI_Security_Audit {
 			'fields'         => 'ids',
 		);
 
-		$audits         = get_posts( $args );
-		$total_audits   = count( $audits );
-		$completed      = 0;
-		$in_progress    = 0;
-		$scheduled      = 0;
-		$overdue        = 0;
+		$audits = get_posts( $args );
+		$total_audits = count( $audits );
+		$completed = 0;
+		$in_progress = 0;
+		$scheduled = 0;
+		$overdue = 0;
 		$total_findings = 0;
-		$open_findings  = 0;
+		$open_findings = 0;
 
 		foreach ( $audits as $audit_id ) {
 			$status = get_post_meta( $audit_id, '_wp_mcp_ai_audit_status', true );

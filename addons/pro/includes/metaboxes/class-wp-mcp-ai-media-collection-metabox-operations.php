@@ -171,7 +171,7 @@ class WP_MCP_AI_Media_Collection_Metabox_Operations extends WP_MCP_AI_Media_Temp
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$post_id   = get_the_ID();
+				$post_id = get_the_ID();
 				$operation = get_post_meta( $post_id, '_mcp_ai_template_operation', true );
 
 				$templates[ $post_id ] = array(

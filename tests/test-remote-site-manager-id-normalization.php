@@ -22,7 +22,7 @@ class Test_Remote_Site_Manager_ID_Normalization extends WP_UnitTestCase {
 		// Create a connection with mixed-case ID directly in the database
 		// to simulate the old behavior.
 		$mixed_case_id = 'conn_AbCdEfGhIjKl';
-		$connections   = array(
+		$connections = array(
 			$mixed_case_id => array(
 				'id'              => $mixed_case_id,
 				'name'            => 'Test Connection',

@@ -226,11 +226,11 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_OAuth_Handler' ) ) {
 			$expires_in    = isset( $decoded['expires_in'] ) ? absint( $decoded['expires_in'] ) : 3600;
 
 			// Store the tokens.
-			$settings['mailjet_access_token']     = $access_token;
-			$settings['mailjet_refresh_token']    = $refresh_token;
-			$settings['mailjet_token_expires_at'] = time() + $expires_in;
-			$settings['mailjet_connected']        = true;
-			$settings['mailjet_connection_time']  = time();
+			$settings['mailjet_access_token']       = $access_token;
+			$settings['mailjet_refresh_token']      = $refresh_token;
+			$settings['mailjet_token_expires_at']   = time() + $expires_in;
+			$settings['mailjet_connected']          = true;
+			$settings['mailjet_connection_time']    = time();
 
 			update_option( 'wp_mcp_ai_settings', $settings );
 

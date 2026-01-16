@@ -93,7 +93,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'get_supported_post_types' );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
 		$method->setAccessible( true );
 
 		$post_types = $method->invoke( $integration );
@@ -120,7 +120,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'get_supported_taxonomies' );
+		$method = $reflection->getMethod( 'get_supported_taxonomies' );
 		$method->setAccessible( true );
 
 		$taxonomies = $method->invoke( $integration );
@@ -157,7 +157,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'build_system_message' );
+		$method = $reflection->getMethod( 'build_system_message' );
 		$method->setAccessible( true );
 
 		$message = $method->invoke( $integration, $context );
@@ -193,7 +193,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'build_system_message' );
+		$method = $reflection->getMethod( 'build_system_message' );
 		$method->setAccessible( true );
 
 		$message = $method->invoke( $integration, $context );
@@ -253,7 +253,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 		WP_MCP_AI_Pro_CPT_AI_Integration::get_instance();
 
 		// Set up AJAX request with valid nonce.
-		$_POST['nonce']   = wp_create_nonce( 'wp_mcp_ai_cpt_chat' );
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_cpt_chat' );
 		$_POST['message'] = 'Test message';
 
 		// Capture output.
@@ -295,7 +295,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'get_supported_post_types' );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
 		$method->setAccessible( true );
 
 		$post_types = $method->invoke( $integration );
@@ -322,7 +322,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'get_supported_post_types' );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
 		$method->setAccessible( true );
 
 		$post_types = $method->invoke( $integration );
@@ -349,7 +349,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'get_supported_post_types' );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
 		$method->setAccessible( true );
 
 		$post_types = $method->invoke( $integration );
@@ -366,8 +366,8 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_ai_cpt_management' => true,
-				'enable_places_management' => true,
+				'enable_ai_cpt_management'   => true,
+				'enable_places_management'   => true,
 			)
 		);
 
@@ -376,7 +376,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'get_supported_post_types' );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
 		$method->setAccessible( true );
 
 		$post_types = $method->invoke( $integration );
@@ -404,7 +404,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'get_supported_post_types' );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
 		$method->setAccessible( true );
 
 		$post_types = $method->invoke( $integration );
@@ -431,7 +431,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'get_supported_post_types' );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
 		$method->setAccessible( true );
 
 		$post_types = $method->invoke( $integration );
@@ -462,7 +462,7 @@ class Test_AI_CPT_Management_Integration extends WP_UnitTestCase {
 
 		// Use reflection to access private method.
 		$reflection = new ReflectionClass( $integration );
-		$method     = $reflection->getMethod( 'get_supported_post_types' );
+		$method = $reflection->getMethod( 'get_supported_post_types' );
 		$method->setAccessible( true );
 
 		$post_types = $method->invoke( $integration );

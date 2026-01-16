@@ -131,7 +131,7 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 			// Get credentials from connection.
 			$company_id = ! empty( $connection['company_id'] ) ? trim( (string) $connection['company_id'] ) : '';
 			$api_key    = ! empty( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
-
+			
 			// QuickBooks uses OAuth tokens, check for client_secret as the token
 			if ( ! empty( $connection['client_secret'] ) ) {
 				$api_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );

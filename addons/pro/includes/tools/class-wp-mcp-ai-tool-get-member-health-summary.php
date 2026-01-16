@@ -44,7 +44,7 @@ class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'       => array(
+				'member_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -133,25 +133,23 @@ class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Get allergies.
-		$allergies_query = new WP_Query(
-			array(
-				'post_type'      => 'mcp_ai_allergy',
-				'post_status'    => 'publish',
-				'meta_key'       => '_allergy_member_id',
-				'meta_value'     => $member_id,
-				'posts_per_page' => -1,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-			)
-		);
+		$allergies_query = new WP_Query( array(
+			'post_type'      => 'mcp_ai_allergy',
+			'post_status'    => 'publish',
+			'meta_key'       => '_allergy_member_id',
+			'meta_value'     => $member_id,
+			'posts_per_page' => -1,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+		) );
 
 		$allergies = array();
 		if ( $allergies_query->have_posts() ) {
 			while ( $allergies_query->have_posts() ) {
 				$allergies_query->the_post();
-				$allergy_id     = get_the_ID();
+				$allergy_id = get_the_ID();
 				$severity_terms = wp_get_object_terms( $allergy_id, 'mcp_ai_allergy_severity', array( 'fields' => 'names' ) );
-				$allergies[]    = array(
+				$allergies[] = array(
 					'id'       => $allergy_id,
 					'allergen' => get_the_title(),
 					'severity' => ! empty( $severity_terms ) && ! is_wp_error( $severity_terms ) ? $severity_terms[0] : '',
@@ -162,27 +160,25 @@ class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Get active prescriptions.
-		$prescriptions_query = new WP_Query(
-			array(
-				'post_type'      => 'mcp_ai_prescription',
-				'post_status'    => 'publish',
-				'meta_query'     => array(
-					array(
-						'key'   => '_prescription_member_id',
-						'value' => $member_id,
-					),
-					array(
-						'key'     => '_prescription_end_date',
-						'value'   => current_time( 'Y-m-d' ),
-						'compare' => '>=',
-						'type'    => 'DATE',
-					),
+		$prescriptions_query = new WP_Query( array(
+			'post_type'      => 'mcp_ai_prescription',
+			'post_status'    => 'publish',
+			'meta_query'     => array(
+				array(
+					'key'   => '_prescription_member_id',
+					'value' => $member_id,
 				),
-				'posts_per_page' => -1,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-			)
-		);
+				array(
+					'key'     => '_prescription_end_date',
+					'value'   => current_time( 'Y-m-d' ),
+					'compare' => '>=',
+					'type'    => 'DATE',
+				),
+			),
+			'posts_per_page' => -1,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+		) );
 
 		$prescriptions = array();
 		if ( $prescriptions_query->have_posts() ) {
@@ -202,35 +198,33 @@ class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Get upcoming checkups (next 90 days).
-		$upcoming_date  = gmdate( 'Y-m-d', strtotime( '+90 days' ) );
-		$checkups_query = new WP_Query(
-			array(
-				'post_type'      => 'mcp_ai_checkup',
-				'post_status'    => 'publish',
-				'meta_query'     => array(
-					array(
-						'key'   => '_checkup_member_id',
-						'value' => $member_id,
-					),
-					array(
-						'key'     => '_checkup_date',
-						'value'   => array( current_time( 'Y-m-d' ), $upcoming_date ),
-						'compare' => 'BETWEEN',
-						'type'    => 'DATE',
-					),
+		$upcoming_date = gmdate( 'Y-m-d', strtotime( '+90 days' ) );
+		$checkups_query = new WP_Query( array(
+			'post_type'      => 'mcp_ai_checkup',
+			'post_status'    => 'publish',
+			'meta_query'     => array(
+				array(
+					'key'   => '_checkup_member_id',
+					'value' => $member_id,
 				),
-				'meta_key'       => '_checkup_date',
-				'orderby'        => 'meta_value',
-				'order'          => 'ASC',
-				'posts_per_page' => 10,
-			)
-		);
+				array(
+					'key'     => '_checkup_date',
+					'value'   => array( current_time( 'Y-m-d' ), $upcoming_date ),
+					'compare' => 'BETWEEN',
+					'type'    => 'DATE',
+				),
+			),
+			'meta_key'       => '_checkup_date',
+			'orderby'        => 'meta_value',
+			'order'          => 'ASC',
+			'posts_per_page' => 10,
+		) );
 
 		$upcoming_checkups = array();
 		if ( $checkups_query->have_posts() ) {
 			while ( $checkups_query->have_posts() ) {
 				$checkups_query->the_post();
-				$checkup_id          = get_the_ID();
+				$checkup_id = get_the_ID();
 				$upcoming_checkups[] = array(
 					'id'       => $checkup_id,
 					'title'    => get_the_title(),
@@ -245,33 +239,31 @@ class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interfa
 
 		// Build response.
 		$response = array(
-			'success'              => true,
-			'member'               => $demographics,
-			'allergies'            => $allergies,
+			'success'           => true,
+			'member'            => $demographics,
+			'allergies'         => $allergies,
 			'active_prescriptions' => $prescriptions,
-			'upcoming_checkups'    => $upcoming_checkups,
+			'upcoming_checkups' => $upcoming_checkups,
 		);
 
 		// Get recent medical records if requested.
 		if ( $include_records ) {
-			$records_query = new WP_Query(
-				array(
-					'post_type'      => 'mcp_ai_medical_record',
-					'post_status'    => 'publish',
-					'meta_key'       => '_record_member_id',
-					'meta_value'     => $member_id,
-					'posts_per_page' => 10,
-					'orderby'        => 'date',
-					'order'          => 'DESC',
-				)
-			);
+			$records_query = new WP_Query( array(
+				'post_type'      => 'mcp_ai_medical_record',
+				'post_status'    => 'publish',
+				'meta_key'       => '_record_member_id',
+				'meta_value'     => $member_id,
+				'posts_per_page' => 10,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			) );
 
 			$recent_records = array();
 			if ( $records_query->have_posts() ) {
 				while ( $records_query->have_posts() ) {
 					$records_query->the_post();
-					$record_id        = get_the_ID();
-					$record_types     = wp_get_object_terms( $record_id, 'mcp_ai_record_type', array( 'fields' => 'names' ) );
+					$record_id = get_the_ID();
+					$record_types = wp_get_object_terms( $record_id, 'mcp_ai_record_type', array( 'fields' => 'names' ) );
 					$recent_records[] = array(
 						'id'          => $record_id,
 						'title'       => get_the_title(),

@@ -18,9 +18,9 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-eca-cpt.php';
 // Load ECA Research & Add page.
 if ( is_admin() ) {
 	// Check if ECA management is enabled and not in base version.
-	$settings   = get_option( 'wp_mcp_ai_settings', array() );
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
 	$is_enabled = ! empty( $settings['enable_eca_management'] );
-	$is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 
 	if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-eca-research-page.php';

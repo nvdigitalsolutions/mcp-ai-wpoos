@@ -853,19 +853,19 @@ class WP_MCP_AI_Mesh_Router {
 			$total_queue_length += $queue_length;
 		}
 
-		$total_peers  = count( $peer_sites );
+		$total_peers = count( $peer_sites );
 		$active_peers = $healthy_peer_count + $degraded_peer_count;
 
 		return array(
-			'total_peers'        => $total_peers,
-			'healthy_peers'      => $healthy_peer_count,
-			'degraded_peers'     => $degraded_peer_count,
-			'down_peers'         => $down_peer_count,
-			'avg_capacity_score' => $active_peers > 0 ? ( $total_capacity / $active_peers ) : 0,
-			'avg_utilization'    => $active_peers > 0 ? ( $total_utilization / $active_peers ) : 0,
-			'total_queue_length' => $total_queue_length,
-			'mesh_health'        => self::calculate_mesh_health_status( $healthy_peer_count, $degraded_peer_count, $down_peer_count ),
-			'recommended_action' => self::get_mesh_recommendation( $healthy_peer_count, $degraded_peer_count, $down_peer_count, $total_utilization / max( 1, $active_peers ) ),
+			'total_peers'         => $total_peers,
+			'healthy_peers'       => $healthy_peer_count,
+			'degraded_peers'      => $degraded_peer_count,
+			'down_peers'          => $down_peer_count,
+			'avg_capacity_score'  => $active_peers > 0 ? ( $total_capacity / $active_peers ) : 0,
+			'avg_utilization'     => $active_peers > 0 ? ( $total_utilization / $active_peers ) : 0,
+			'total_queue_length'  => $total_queue_length,
+			'mesh_health'         => self::calculate_mesh_health_status( $healthy_peer_count, $degraded_peer_count, $down_peer_count ),
+			'recommended_action'  => self::get_mesh_recommendation( $healthy_peer_count, $degraded_peer_count, $down_peer_count, $total_utilization / max( 1, $active_peers ) ),
 		);
 	}
 

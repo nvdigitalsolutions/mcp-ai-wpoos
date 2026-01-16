@@ -63,7 +63,7 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 	public function render_meta_box( $post ) {
 		wp_nonce_field( 'wp_mcp_ai_pro_remote_connections', 'wp_mcp_ai_pro_remote_connections_nonce' );
 
-		$connections         = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 		$enabled_connections = get_post_meta( $post->ID, self::META_KEY, true );
 
 		if ( ! is_array( $enabled_connections ) ) {
@@ -89,8 +89,8 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 			<?php foreach ( $connections as $connection_key => $connection ) : ?>
 				<?php
 				// Use the array key as the connection ID (most reliable).
-				$connection_id     = is_string( $connection_key ) ? $connection_key : ( isset( $connection['id'] ) ? $connection['id'] : '' );
-				$is_enabled        = in_array( $connection_id, $enabled_connections, true );
+				$connection_id = is_string( $connection_key ) ? $connection_key : ( isset( $connection['id'] ) ? $connection['id'] : '' );
+				$is_enabled = in_array( $connection_id, $enabled_connections, true );
 				$connection_status = ! empty( $connection['enabled'] ) ? 'enabled' : 'disabled';
 				?>
 				<div style="margin-bottom: 10px; padding: 8px; background: #f9f9f9; border-left: 3px solid <?php echo 'enabled' === $connection_status ? '#46b450' : '#dc3232'; ?>;">

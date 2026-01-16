@@ -25,14 +25,14 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess
 class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 
-	const DEFAULT_MODEL         = 'gpt-image-1.5';
-	const DEFAULT_PROVIDER      = 'openai';
-	const DEFAULT_DRAWING_TYPE  = 'floor_plan';
-	const DEFAULT_STYLE         = 'technical';
-	const DEFAULT_SIZE          = '1024x1536';
-	const DEFAULT_QUALITY       = 'high';
-	const DEFAULT_SCALE         = '1/4"=1\'-0"';
-	const DEFAULT_OUTPUT_FORMAT = 'png';
+	const DEFAULT_MODEL            = 'gpt-image-1.5';
+	const DEFAULT_PROVIDER         = 'openai';
+	const DEFAULT_DRAWING_TYPE     = 'floor_plan';
+	const DEFAULT_STYLE            = 'technical';
+	const DEFAULT_SIZE             = '1024x1536';
+	const DEFAULT_QUALITY          = 'high';
+	const DEFAULT_SCALE            = '1/4"=1\'-0"';
+	const DEFAULT_OUTPUT_FORMAT    = 'png';
 
 	/**
 	 * {@inheritdoc}
@@ -320,7 +320,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		$presentation_style = isset( $arguments['presentation_style'] ) ? sanitize_text_field( $arguments['presentation_style'] ) : self::DEFAULT_STYLE;
 
 		// Start with drawing type specific instruction.
-		$type_instructions  = $this->get_drawing_type_instructions( $drawing_type );
+		$type_instructions = $this->get_drawing_type_instructions( $drawing_type );
 		$style_instructions = $this->get_style_instructions( $presentation_style );
 
 		$prompt_parts = array(
@@ -353,7 +353,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		// Add scale notation if provided.
 		if ( isset( $arguments['scale'] ) ) {
-			$scale          = sanitize_text_field( $arguments['scale'] );
+			$scale = sanitize_text_field( $arguments['scale'] );
 			$prompt_parts[] = sprintf( 'Scale: %s.', $scale );
 		}
 
@@ -367,7 +367,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		// Add building code reference if provided.
 		if ( isset( $arguments['building_code'] ) && 'none' !== $arguments['building_code'] ) {
-			$code           = strtoupper( sanitize_text_field( $arguments['building_code'] ) );
+			$code = strtoupper( sanitize_text_field( $arguments['building_code'] ) );
 			$prompt_parts[] = sprintf( 'Comply with %s building code requirements.', $code );
 		}
 
@@ -388,16 +388,16 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	 */
 	protected function get_drawing_type_instructions( $drawing_type ) {
 		$instructions = array(
-			'floor_plan'             => 'Show the layout from above with walls, doors, windows, and room labels. Include furniture placement and circulation paths.',
-			'elevation'              => 'Show the exterior view of the building facade with accurate proportions, material indications, and vertical dimensions.',
-			'section'                => 'Show a vertical cut through the building revealing interior structure, floor levels, ceiling heights, and construction assemblies.',
-			'detail'                 => 'Show an enlarged view of a specific building component with precise construction details, material layers, and connection methods.',
-			'site_plan'              => 'Show the building placement on the site with property boundaries, landscaping, parking, and site access.',
-			'reflected_ceiling_plan' => 'Show the ceiling layout from below with lighting fixtures, HVAC diffusers, and ceiling grid.',
-			'roof_plan'              => 'Show the roof layout from above with roof slopes, drainage, penetrations, and roofing materials.',
-			'3d_axonometric'         => 'Show a three-dimensional view with parallel projection showing multiple faces of the building simultaneously.',
-			'isometric'              => 'Show a three-dimensional view with 30-degree angles showing the building in isometric projection.',
-			'construction_detail'    => 'Show precise construction assembly details with material layers, fasteners, and installation sequences.',
+			'floor_plan'              => 'Show the layout from above with walls, doors, windows, and room labels. Include furniture placement and circulation paths.',
+			'elevation'               => 'Show the exterior view of the building facade with accurate proportions, material indications, and vertical dimensions.',
+			'section'                 => 'Show a vertical cut through the building revealing interior structure, floor levels, ceiling heights, and construction assemblies.',
+			'detail'                  => 'Show an enlarged view of a specific building component with precise construction details, material layers, and connection methods.',
+			'site_plan'               => 'Show the building placement on the site with property boundaries, landscaping, parking, and site access.',
+			'reflected_ceiling_plan'  => 'Show the ceiling layout from below with lighting fixtures, HVAC diffusers, and ceiling grid.',
+			'roof_plan'               => 'Show the roof layout from above with roof slopes, drainage, penetrations, and roofing materials.',
+			'3d_axonometric'          => 'Show a three-dimensional view with parallel projection showing multiple faces of the building simultaneously.',
+			'isometric'               => 'Show a three-dimensional view with 30-degree angles showing the building in isometric projection.',
+			'construction_detail'     => 'Show precise construction assembly details with material layers, fasteners, and installation sequences.',
 		);
 
 		return isset( $instructions[ $drawing_type ] ) ? $instructions[ $drawing_type ] : '';
@@ -411,12 +411,12 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	 */
 	protected function get_style_instructions( $style ) {
 		$instructions = array(
-			'technical'    => 'Use precise line weights, architectural symbols, and professional drafting conventions. Black lines on white background.',
-			'sketched'     => 'Use hand-drawn sketch style with loose linework and artistic shading. Convey design intent with expressive strokes.',
-			'rendered'     => 'Use realistic rendering with materials, lighting, shadows, and textures. Show depth and three-dimensional qualities.',
-			'line_drawing' => 'Use clean, uniform line work without shading or color. Focus on clarity and readability.',
-			'annotated'    => 'Use technical style with extensive annotations, dimension lines, notes, and material callouts.',
-			'schematic'    => 'Use simplified diagrammatic representation focusing on key elements and relationships without detailed ornamentation.',
+			'technical'     => 'Use precise line weights, architectural symbols, and professional drafting conventions. Black lines on white background.',
+			'sketched'      => 'Use hand-drawn sketch style with loose linework and artistic shading. Convey design intent with expressive strokes.',
+			'rendered'      => 'Use realistic rendering with materials, lighting, shadows, and textures. Show depth and three-dimensional qualities.',
+			'line_drawing'  => 'Use clean, uniform line work without shading or color. Focus on clarity and readability.',
+			'annotated'     => 'Use technical style with extensive annotations, dimension lines, notes, and material callouts.',
+			'schematic'     => 'Use simplified diagrammatic representation focusing on key elements and relationships without detailed ornamentation.',
 		);
 
 		return isset( $instructions[ $style ] ) ? $instructions[ $style ] : '';
@@ -568,7 +568,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( ! empty( $job_id ) ) {
 			$file_name = sprintf( 'architectural-drawing-%s.%s', $job_id, $format );
 		} else {
-			$base      = ! empty( $file_name ) ? sanitize_file_name( $file_name ) : 'architectural-drawing';
+			$base = ! empty( $file_name ) ? sanitize_file_name( $file_name ) : 'architectural-drawing';
 			$file_name = sprintf( '%s-%s.%s', $base, gmdate( 'Ymd-His' ), $format );
 		}
 
@@ -682,7 +682,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		if ( ! empty( $job_id ) ) {
 			$file_name = sprintf( 'architectural-drawing-%s.%s', $job_id, $extension );
 		} else {
-			$base      = ! empty( $file_name ) ? sanitize_file_name( $file_name ) : 'architectural-drawing';
+			$base = ! empty( $file_name ) ? sanitize_file_name( $file_name ) : 'architectural-drawing';
 			$file_name = sprintf( '%s-%s.%s', $base, gmdate( 'Ymd-His' ), $extension );
 		}
 

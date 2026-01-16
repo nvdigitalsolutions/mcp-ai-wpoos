@@ -70,8 +70,8 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 */
 	protected function get_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs.', 'wp-mcp-ai-pro' ),

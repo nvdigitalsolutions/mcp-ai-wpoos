@@ -19,11 +19,11 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 // Register the Cloudways OAuth handler with the container.
 add_action(
 	'wp_mcp_ai_register_services',
-	function ( $container ) {
+	function( $container ) {
 		if ( ! $container->has( 'integrations.cloudways_oauth' ) ) {
 			$container->singleton(
 				'integrations.cloudways_oauth',
-				function () {
+				function() {
 					return new WP_MCP_AI_Cloudways_OAuth_Handler();
 				}
 			);
@@ -35,7 +35,7 @@ add_action(
 // Register OAuth action hooks.
 add_action(
 	'admin_init',
-	function () {
+	function() {
 		$container = wp_mcp_ai_container();
 
 		if ( ! $container->has( 'integrations.cloudways_oauth' ) ) {
@@ -53,7 +53,7 @@ add_action(
 // Display admin notices for Cloudways OAuth actions.
 add_action(
 	'admin_notices',
-	function () {
+	function() {
 		$notice = get_transient( 'wp_mcp_ai_cloudways_oauth_notice' );
 
 		if ( ! $notice || ! is_array( $notice ) ) {

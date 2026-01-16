@@ -93,16 +93,16 @@ class WP_MCP_AI_Quiz_Research_Page {
 			'wp-mcp-ai-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_quiz' ),
-				'addNewUrl'    => admin_url( 'post-new.php?post_type=mcp_ai_quiz' ),
-				'researchTool' => 'research_quiz_topic',
-				'strings'      => array(
-					'researching'   => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
-					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'      => __( 'Creating quiz...', 'mcp-ai-wpoos-pro' ),
-					'created'       => __( 'Quiz created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate' => __( 'Create a quiz with the researched information?', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
+				'nonce'         => wp_create_nonce( 'wp_mcp_ai_research_quiz' ),
+				'addNewUrl'     => admin_url( 'post-new.php?post_type=mcp_ai_quiz' ),
+				'researchTool'  => 'research_quiz_topic',
+				'strings'       => array(
+					'researching'       => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
+					'error'             => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'creating'          => __( 'Creating quiz...', 'mcp-ai-wpoos-pro' ),
+					'created'           => __( 'Quiz created successfully!', 'mcp-ai-wpoos-pro' ),
+					'confirmCreate'     => __( 'Create a quiz with the researched information?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -294,7 +294,7 @@ class WP_MCP_AI_Quiz_Research_Page {
 		}
 
 		// Return success with quiz ID and edit URL.
-		$quiz_id  = isset( $result['quiz_id'] ) ? $result['quiz_id'] : 0;
+		$quiz_id = isset( $result['quiz_id'] ) ? $result['quiz_id'] : 0;
 		$edit_url = $quiz_id > 0 ? admin_url( 'post.php?post=' . $quiz_id . '&action=edit' ) : '';
 
 		wp_send_json_success(

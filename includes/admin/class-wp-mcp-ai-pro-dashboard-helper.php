@@ -221,7 +221,7 @@ class WP_MCP_AI_Pro_Dashboard_Helper {
 			'responsive'          => true,
 			'maintainAspectRatio' => true,
 			'plugins'             => array(
-				'legend'  => array(
+				'legend' => array(
 					'display'  => true,
 					'position' => 'bottom',
 				),

@@ -53,7 +53,7 @@ class WP_MCP_AI_Incident_Learning {
 		register_post_type(
 			'mcp_ai_lesson',
 			array(
-				'labels'               => array(
+				'labels'              => array(
 					'name'               => __( 'Lessons Learned', 'mcp-ai-wpoos' ),
 					'singular_name'      => __( 'Lesson Learned', 'mcp-ai-wpoos' ),
 					'add_new'            => __( 'Add New Lesson', 'mcp-ai-wpoos' ),
@@ -66,11 +66,11 @@ class WP_MCP_AI_Incident_Learning {
 					'not_found_in_trash' => __( 'No lessons learned found in trash', 'mcp-ai-wpoos' ),
 					'menu_name'          => __( 'Lessons Learned', 'mcp-ai-wpoos' ),
 				),
-				'public'               => false,
-				'show_ui'              => true,
-				'show_in_menu'         => 'nvoos-pro-dashboard',
-				'capability_type'      => 'post',
-				'capabilities'         => array(
+				'public'              => false,
+				'show_ui'             => true,
+				'show_in_menu'        => 'nvoos-pro-dashboard',
+				'capability_type'     => 'post',
+				'capabilities'        => array(
 					'edit_post'          => 'manage_options',
 					'read_post'          => 'manage_options',
 					'delete_post'        => 'manage_options',
@@ -80,12 +80,12 @@ class WP_MCP_AI_Incident_Learning {
 					'publish_posts'      => 'manage_options',
 					'read_private_posts' => 'manage_options',
 				),
-				'hierarchical'         => false,
-				'supports'             => array( 'title', 'editor', 'author' ),
-				'has_archive'          => false,
-				'rewrite'              => false,
-				'query_var'            => false,
-				'menu_icon'            => 'dashicons-book-alt',
+				'hierarchical'        => false,
+				'supports'            => array( 'title', 'editor', 'author' ),
+				'has_archive'         => false,
+				'rewrite'             => false,
+				'query_var'           => false,
+				'menu_icon'           => 'dashicons-book-alt',
 				'register_meta_box_cb' => array( $this, 'add_meta_boxes' ),
 			)
 		);
@@ -113,21 +113,21 @@ class WP_MCP_AI_Incident_Learning {
 	public function render_details_meta_box( $post ) {
 		wp_nonce_field( 'wp_mcp_ai_lesson_nonce', 'wp_mcp_ai_lesson_nonce' );
 
-		$incident_id       = get_post_meta( $post->ID, '_incident_id', true );
-		$incident_date     = get_post_meta( $post->ID, '_incident_date', true );
-		$root_cause        = get_post_meta( $post->ID, '_root_cause', true );
+		$incident_id     = get_post_meta( $post->ID, '_incident_id', true );
+		$incident_date   = get_post_meta( $post->ID, '_incident_date', true );
+		$root_cause      = get_post_meta( $post->ID, '_root_cause', true );
 		$corrective_action = get_post_meta( $post->ID, '_corrective_action', true );
 		$preventive_action = get_post_meta( $post->ID, '_preventive_action', true );
-		$category          = get_post_meta( $post->ID, '_category', true );
-		$severity          = get_post_meta( $post->ID, '_severity', true );
+		$category        = get_post_meta( $post->ID, '_category', true );
+		$severity        = get_post_meta( $post->ID, '_severity', true );
 		?>
 		<table class="form-table">
 			<tr>
 				<th><label for="incident_id"><?php esc_html_e( 'Related Incident ID', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<input type="text" id="incident_id" name="incident_id"
-							value="<?php echo esc_attr( $incident_id ); ?>"
-							class="regular-text">
+						   value="<?php echo esc_attr( $incident_id ); ?>"
+						   class="regular-text">
 					<p class="description"><?php esc_html_e( 'Reference to the security incident', 'mcp-ai-wpoos' ); ?></p>
 				</td>
 			</tr>
@@ -135,7 +135,7 @@ class WP_MCP_AI_Incident_Learning {
 				<th><label for="incident_date"><?php esc_html_e( 'Incident Date', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<input type="date" id="incident_date" name="incident_date"
-							value="<?php echo esc_attr( $incident_date ); ?>">
+						   value="<?php echo esc_attr( $incident_date ); ?>">
 				</td>
 			</tr>
 			<tr>
@@ -198,7 +198,7 @@ class WP_MCP_AI_Incident_Learning {
 	public function save_lesson_meta( $post_id ) {
 		// Check nonce.
 		if ( ! isset( $_POST['wp_mcp_ai_lesson_nonce'] ) ||
-			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_lesson_nonce'] ) ), 'wp_mcp_ai_lesson_nonce' ) ) {
+			 ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_lesson_nonce'] ) ), 'wp_mcp_ai_lesson_nonce' ) ) {
 			return;
 		}
 

@@ -289,7 +289,7 @@ class Test_ECA_Tools_Integration extends WP_UnitTestCase {
 		update_post_meta( $eca_id, '_eca_current_enrollment', 7 );
 
 		// Verify via list tool.
-		$list_tool   = new WP_MCP_AI_Tool_List_ECAs();
+		$list_tool = new WP_MCP_AI_Tool_List_ECAs();
 		$list_result = $list_tool->execute( array(), array( 'user_id' => $this->admin_user ) );
 
 		$found_eca = null;

@@ -79,8 +79,8 @@ class Test_Pro_Textdomain_Loading extends WP_UnitTestCase {
 		global $wp_filter;
 
 		// Find wp_mcp_ai_register_project_management_post_types priority.
-		$cpt_priority        = null;
-		$textdomain_priority = null;
+		$cpt_priority         = null;
+		$textdomain_priority  = null;
 
 		if ( isset( $wp_filter['init'] ) ) {
 			foreach ( $wp_filter['init'] as $priority => $callbacks ) {

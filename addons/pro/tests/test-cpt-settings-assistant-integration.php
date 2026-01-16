@@ -89,12 +89,12 @@ class Test_CPT_Settings_Assistant_Integration extends WP_UnitTestCase {
 		$settings_page = new WP_MCP_AI_Quiz_Settings_Page();
 
 		// Test upper bound.
-		$input     = array( 'default_passing_score' => '150' );
+		$input = array( 'default_passing_score' => '150' );
 		$sanitized = $settings_page->sanitize_settings( $input );
 		$this->assertEquals( 100, $sanitized['default_passing_score'] );
 
 		// Test lower bound.
-		$input     = array( 'default_passing_score' => '-10' );
+		$input = array( 'default_passing_score' => '-10' );
 		$sanitized = $settings_page->sanitize_settings( $input );
 		$this->assertEquals( 0, $sanitized['default_passing_score'] );
 	}
@@ -218,12 +218,12 @@ class Test_CPT_Settings_Assistant_Integration extends WP_UnitTestCase {
 		$settings_page = new WP_MCP_AI_Quiz_Settings_Page();
 
 		// Test with invalid string.
-		$input     = array( 'assistant_id' => 'invalid' );
+		$input = array( 'assistant_id' => 'invalid' );
 		$sanitized = $settings_page->sanitize_settings( $input );
 		$this->assertEquals( 0, $sanitized['assistant_id'] );
 
 		// Test with negative number.
-		$input     = array( 'assistant_id' => '-5' );
+		$input = array( 'assistant_id' => '-5' );
 		$sanitized = $settings_page->sanitize_settings( $input );
 		$this->assertEquals( 0, $sanitized['assistant_id'] );
 	}

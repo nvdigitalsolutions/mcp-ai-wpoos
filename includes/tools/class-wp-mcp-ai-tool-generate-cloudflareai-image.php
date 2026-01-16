@@ -22,11 +22,11 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess
 class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 
-	const DEFAULT_MODEL     = '@cf/stabilityai/stable-diffusion-xl-base-1.0';
-	const DEFAULT_WIDTH     = 1024;
-	const DEFAULT_HEIGHT    = 1024;
+	const DEFAULT_MODEL = '@cf/stabilityai/stable-diffusion-xl-base-1.0';
+	const DEFAULT_WIDTH = 1024;
+	const DEFAULT_HEIGHT = 1024;
 	const DEFAULT_NUM_STEPS = 20;
-	const DEFAULT_GUIDANCE  = 7.5;
+	const DEFAULT_GUIDANCE = 7.5;
 
 	/**
 	 * {@inheritdoc}
@@ -229,14 +229,14 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 		$defaults = $this->get_configured_defaults();
 
 		// Process parameters.
-		$model     = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : $defaults['model'];
-		$width     = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : $defaults['width'];
-		$height    = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : $defaults['height'];
-		$num_steps = isset( $arguments['num_steps'] ) ? absint( $arguments['num_steps'] ) : $defaults['num_steps'];
-		$guidance  = isset( $arguments['guidance'] ) ? (float) $arguments['guidance'] : $defaults['guidance'];
-		$seed      = isset( $arguments['seed'] ) ? absint( $arguments['seed'] ) : null;
-		$file_name = isset( $arguments['file_name'] ) ? sanitize_file_name( $arguments['file_name'] ) : '';
-		$timeout   = isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 0;
+		$model      = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : $defaults['model'];
+		$width      = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : $defaults['width'];
+		$height     = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : $defaults['height'];
+		$num_steps  = isset( $arguments['num_steps'] ) ? absint( $arguments['num_steps'] ) : $defaults['num_steps'];
+		$guidance   = isset( $arguments['guidance'] ) ? (float) $arguments['guidance'] : $defaults['guidance'];
+		$seed       = isset( $arguments['seed'] ) ? absint( $arguments['seed'] ) : null;
+		$file_name  = isset( $arguments['file_name'] ) ? sanitize_file_name( $arguments['file_name'] ) : '';
+		$timeout    = isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 0;
 
 		// Validate and clamp values.
 		$width     = max( 256, min( 2048, $width ) );
@@ -831,8 +831,8 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 				'required'  => false,
 			),
 			'parameter_constraints' => array(
-				'required_fields'   => array( 'prompt' ),
-				'optional_fields'   => array( 'model', 'width', 'height', 'num_steps', 'guidance', 'seed', 'file_name', 'output_format', 'timeout' ),
+				'required_fields' => array( 'prompt' ),
+				'optional_fields' => array( 'model', 'width', 'height', 'num_steps', 'guidance', 'seed', 'file_name', 'output_format', 'timeout' ),
 				'max_prompt_length' => 4000,
 			),
 			'rate_limits'           => array(

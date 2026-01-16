@@ -219,7 +219,7 @@ class WP_MCP_AI_ECA_Metabox_Details extends WP_MCP_AI_ECA_Metabox_Base {
 
 		// Save ECA type.
 		if ( isset( $_POST['wp_mcp_ai_eca_type'] ) ) {
-			$eca_type    = sanitize_key( $_POST['wp_mcp_ai_eca_type'] );
+			$eca_type = sanitize_key( $_POST['wp_mcp_ai_eca_type'] );
 			$valid_types = array( 'club', 'society', 'sport_squad', 'sport_academy', 'activity' );
 			if ( in_array( $eca_type, $valid_types, true ) ) {
 				update_post_meta( $post_id, '_eca_type', $eca_type );
@@ -233,7 +233,7 @@ class WP_MCP_AI_ECA_Metabox_Details extends WP_MCP_AI_ECA_Metabox_Base {
 
 		// Save status.
 		if ( isset( $_POST['wp_mcp_ai_eca_status'] ) ) {
-			$status         = sanitize_key( $_POST['wp_mcp_ai_eca_status'] );
+			$status = sanitize_key( $_POST['wp_mcp_ai_eca_status'] );
 			$valid_statuses = array( 'active', 'inactive', 'full', 'cancelled' );
 			if ( in_array( $status, $valid_statuses, true ) ) {
 				update_post_meta( $post_id, '_eca_status', $status );
@@ -252,7 +252,7 @@ class WP_MCP_AI_ECA_Metabox_Details extends WP_MCP_AI_ECA_Metabox_Base {
 			}
 
 			if ( isset( $_POST['wp_mcp_ai_eca_cost_period'] ) ) {
-				$cost_period   = sanitize_key( $_POST['wp_mcp_ai_eca_cost_period'] );
+				$cost_period = sanitize_key( $_POST['wp_mcp_ai_eca_cost_period'] );
 				$valid_periods = array( 'term', 'month', 'session', 'year' );
 				if ( in_array( $cost_period, $valid_periods, true ) ) {
 					update_post_meta( $post_id, '_eca_cost_period', $cost_period );

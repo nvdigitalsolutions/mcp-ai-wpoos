@@ -163,11 +163,11 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 
 		// Prepare vectorization options.
 		$options = array(
-			'colorMode'      => isset( $arguments['color_mode'] ) ? sanitize_text_field( $arguments['color_mode'] ) : 'color',
-			'colorPrecision' => isset( $arguments['color_precision'] ) ? absint( $arguments['color_precision'] ) : 6,
-			'filterSpeckle'  => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
-			'mode'           => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
-			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
+			'colorMode'        => isset( $arguments['color_mode'] ) ? sanitize_text_field( $arguments['color_mode'] ) : 'color',
+			'colorPrecision'   => isset( $arguments['color_precision'] ) ? absint( $arguments['color_precision'] ) : 6,
+			'filterSpeckle'    => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
+			'mode'             => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
+			'hierarchical'     => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
 		);
 
 		// Execute vectorization script.
@@ -221,19 +221,19 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 
 		// Build response.
 		$response = array(
-			'attachment_id' => $storage['attachment_id'],
-			'url'           => $storage['url'],
-			'file_name'     => $storage['file_name'],
-			'mime_type'     => 'image/svg+xml',
-			'bytes'         => $storage['bytes'],
-			'title'         => $storage['title'],
-			'source_format' => $image_editor->get_mime_type(),
-			'source_size'   => isset( $result['input_size'] ) ? $result['input_size'] : 0,
-			'svg_size'      => isset( $result['output_size'] ) ? $result['output_size'] : $storage['bytes'],
-			'size_ratio'    => isset( $result['size_ratio'] ) ? $result['size_ratio'] : '0',
-			'duration_ms'   => isset( $result['duration_ms'] ) ? $result['duration_ms'] : 0,
-			'options'       => $options,
-			'text'          => sprintf(
+			'attachment_id'  => $storage['attachment_id'],
+			'url'            => $storage['url'],
+			'file_name'      => $storage['file_name'],
+			'mime_type'      => 'image/svg+xml',
+			'bytes'          => $storage['bytes'],
+			'title'          => $storage['title'],
+			'source_format'  => $image_editor->get_mime_type(),
+			'source_size'    => isset( $result['input_size'] ) ? $result['input_size'] : 0,
+			'svg_size'       => isset( $result['output_size'] ) ? $result['output_size'] : $storage['bytes'],
+			'size_ratio'     => isset( $result['size_ratio'] ) ? $result['size_ratio'] : '0',
+			'duration_ms'    => isset( $result['duration_ms'] ) ? $result['duration_ms'] : 0,
+			'options'        => $options,
+			'text'           => sprintf(
 				/* translators: 1: attachment ID, 2: file name */
 				__( 'Successfully vectorized image to SVG format. Attachment ID: %1$d, File: %2$s', 'mcp-ai-wpoos' ),
 				$storage['attachment_id'],

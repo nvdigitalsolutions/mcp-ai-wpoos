@@ -21,7 +21,6 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess
  */
 class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
-
 	const DEFAULT_MODEL           = 'gpt-image-1.5';
 	const DEFAULT_SIZE            = '1024x1024';
 	const DEFAULT_QUALITY         = 'medium'; // Default for gpt-image-1/1.5. DALL-E uses 'standard'.

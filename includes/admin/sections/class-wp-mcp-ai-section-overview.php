@@ -413,7 +413,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 			// Get tool count from registry.
 			$available_tools = 0;
 			if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-				$registry = WP_MCP_AI_Tool_Registry::get_instance();
+				$registry        = WP_MCP_AI_Tool_Registry::get_instance();
 				$registry->init();
 				$tools           = $registry->get_tools();
 				$available_tools = count( $tools );

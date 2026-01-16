@@ -48,29 +48,29 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'topic'       => array(
+				'topic'            => array(
 					'type'        => 'string',
 					'description' => __( 'The topic to research (e.g., "AI technology trends", "Sustainable living tips", "Starting a podcast")', 'mcp-ai-wpoos-pro' ),
 				),
-				'word_count'  => array(
+				'word_count'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Target word count for the content', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 100,
 					'maximum'     => 5000,
 					'default'     => 1000,
 				),
-				'template'    => array(
+				'template'         => array(
 					'type'        => 'string',
 					'description' => __( 'Template format for content', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'block-editor', 'classic-editor', 'elementor' ),
 					'default'     => 'block-editor',
 				),
-				'include_seo' => array(
+				'include_seo'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include SEO metadata (meta description, keywords)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'tone'        => array(
+				'tone'             => array(
 					'type'        => 'string',
 					'description' => __( 'Tone of voice for the content', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'professional', 'casual', 'friendly', 'authoritative', 'conversational' ),
@@ -341,9 +341,9 @@ class WP_MCP_AI_Tool_Research_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$prompt .= "}\n";
 		$prompt .= "```\n\n";
 
-		$prompt .= 'Use web search to find accurate, up-to-date information. ';
+		$prompt .= "Use web search to find accurate, up-to-date information. ";
 		$prompt .= "Include source URLs in the 'sources' array. ";
-		$prompt .= 'Ensure content is original, informative, and well-researched. ';
+		$prompt .= "Ensure content is original, informative, and well-researched. ";
 		$prompt .= "Make the content engaging and valuable to readers.\n";
 
 		return $prompt;

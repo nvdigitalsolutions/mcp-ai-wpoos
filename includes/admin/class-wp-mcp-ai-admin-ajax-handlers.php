@@ -841,8 +841,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$service = new WP_MCP_AI_Mubert_Music_Service();
 
 			// Temporarily override the API key for testing.
-			$original_settings               = WP_MCP_AI_Admin_Settings::get_settings();
-			$test_settings                   = $original_settings;
+			$original_settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$test_settings     = $original_settings;
 			$test_settings['mubert_api_key'] = $api_key;
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $test_settings );
 
@@ -1057,15 +1057,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Test a simple API call with the token to verify it works.
-			$test_url      = $api_url . 'api/school/terms';
+			$test_url = $api_url . 'api/school/terms';
 			$test_response = wp_remote_get(
-				add_query_arg(
-					array(
-						'page'     => 1,
-						'pageSize' => 1,
-					),
-					$test_url
-				),
+				add_query_arg( array( 'page' => 1, 'pageSize' => 1 ), $test_url ),
 				array(
 					'headers' => array(
 						'Authorization' => 'Bearer ' . $data['token'],

@@ -126,8 +126,8 @@ class WP_MCP_AI_Mubert_Music_Service {
 		}
 
 		if ( $status_code !== 200 && $status_code !== 201 ) {
-			$body          = wp_remote_retrieve_body( $response );
-			$data          = json_decode( $body, true );
+			$body = wp_remote_retrieve_body( $response );
+			$data = json_decode( $body, true );
 			$error_message = isset( $data['error'] ) ? $data['error'] : __( 'Unknown error', 'mcp-ai-wpoos' );
 
 			return new WP_Error(
@@ -365,7 +365,7 @@ class WP_MCP_AI_Mubert_Music_Service {
 				'wp_mcp_ai_missing_audio_url',
 				__( 'No audio URL found in the Mubert API response. The API may have changed its response format.', 'mcp-ai-wpoos' ),
 				array(
-					'status'        => 500,
+					'status' => 500,
 					'response_keys' => array_keys( $response ),
 				)
 			);

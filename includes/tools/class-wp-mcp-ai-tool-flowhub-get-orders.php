@@ -55,24 +55,24 @@ class WP_MCP_AI_Tool_Flowhub_Get_Orders implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'string',
 					'description' => __( 'Optional Remote Sites connection ID for Flowhub. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos' ),
 				),
-				'limit'         => array(
+				'limit'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of orders to retrieve (1-100).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
-				'offset'        => array(
+				'offset'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of orders to skip for pagination.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'status'        => array(
+				'status'  => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by order status (e.g., "completed", "pending", "cancelled").', 'mcp-ai-wpoos' ),
 				),
-				'timeout'       => array(
+				'timeout' => array(
 					'type'        => 'integer',
 					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,

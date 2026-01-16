@@ -95,7 +95,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'auth_type' => 'none',
 			'enabled'   => true,
 		);
-		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
 		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 
@@ -129,7 +129,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'auth_type' => 'none',
 			'enabled'   => true,
 		);
-		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
 		// Verify it exists.
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
@@ -138,10 +138,10 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 
 		// Simulate delete action.
-		$_GET['page']          = 'wp-mcp-ai-remote-sites';
-		$_GET['action']        = 'delete';
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+		$_GET['action'] = 'delete';
 		$_GET['connection_id'] = $connection_id;
-		$_GET['_wpnonce']      = wp_create_nonce( 'delete_connection_' . $connection_id );
+		$_GET['_wpnonce'] = wp_create_nonce( 'delete_connection_' . $connection_id );
 
 		// Handle the action (this should redirect, but we can't test that directly).
 		// Instead, we'll just verify the connection is deleted.
@@ -171,10 +171,10 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		$connection_id = 'conn_nonexistent';
 
 		// Simulate delete action.
-		$_GET['page']          = 'wp-mcp-ai-remote-sites';
-		$_GET['action']        = 'delete';
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
+		$_GET['action'] = 'delete';
 		$_GET['connection_id'] = $connection_id;
-		$_GET['_wpnonce']      = wp_create_nonce( 'delete_connection_' . $connection_id );
+		$_GET['_wpnonce'] = wp_create_nonce( 'delete_connection_' . $connection_id );
 
 		// Since handle_actions() will call wp_safe_redirect() which calls wp_redirect()
 		// and then exit, we need to catch the redirect headers.
@@ -229,7 +229,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		// Simulate accessing add page.
 		$_GET['page'] = 'wp-mcp-ai-remote-sites';
-		$_GET['add']  = '1';
+		$_GET['add'] = '1';
 
 		// Capture output.
 		ob_start();
@@ -389,7 +389,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'api_key'         => 'test',
 			'enabled'         => true,
 		);
-		$result          = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertInstanceOf( 'WP_Error', $result );
 
 		// Test Flowhub - missing client_id (should fail).
@@ -401,7 +401,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'api_key'         => 'test',
 			'enabled'         => true,
 		);
-		$result          = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertInstanceOf( 'WP_Error', $result );
 		$this->assertStringContainsString( 'client ID', $result->get_error_message() );
 
@@ -415,7 +415,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'client_id'       => 'test_client_id',
 			'enabled'         => true,
 		);
-		$result          = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertIsString( $result, 'Flowhub connection with api_key and client_id should save successfully' );
 
 		// Test PayHere - missing app_secret.
@@ -427,7 +427,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'app_id'          => 'test',
 			'enabled'         => true,
 		);
-		$result          = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertInstanceOf( 'WP_Error', $result );
 	}
 
@@ -497,7 +497,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 * Test that new connection type "google_drive" appears in dropdown.
 	 */
 	public function test_google_drive_connection_type_in_dropdown() {
-		$admin        = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 		$_GET['page'] = 'wp-mcp-ai-remote-sites';
 
 		ob_start();
@@ -516,16 +516,16 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 */
 	public function test_create_google_drive_connection() {
 		$connection_data = array(
-			'name'            => 'Test Google Drive Connection',
-			'url'             => 'https://www.googleapis.com/drive/v3',
-			'connection_type' => 'google_drive',
-			'auth_type'       => 'none',
-			'client_id'       => 'google_drive_client_id_123',
-			'client_secret'   => 'google_drive_client_secret_456',
-			'refresh_token'   => 'google_drive_refresh_token_789',
-			'folder_id'       => '1a2b3c4d5e6f7g8h9i0j',
-			'user_email'      => 'test@example.com',
-			'enabled'         => true,
+			'name'             => 'Test Google Drive Connection',
+			'url'              => 'https://www.googleapis.com/drive/v3',
+			'connection_type'  => 'google_drive',
+			'auth_type'        => 'none',
+			'client_id'        => 'google_drive_client_id_123',
+			'client_secret'    => 'google_drive_client_secret_456',
+			'refresh_token'    => 'google_drive_refresh_token_789',
+			'folder_id'        => '1a2b3c4d5e6f7g8h9i0j',
+			'user_email'       => 'test@example.com',
+			'enabled'          => true,
 		);
 
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
@@ -598,23 +598,23 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	public function test_google_drive_connection_fields_populate_on_edit() {
 		// Create a Google Drive connection with all fields filled.
 		$connection_data = array(
-			'name'            => 'My Google Drive',
-			'url'             => 'https://www.googleapis.com/drive/v3',
-			'connection_type' => 'google_drive',
-			'auth_type'       => 'none',
-			'client_id'       => 'test_client_id_abc123',
-			'client_secret'   => 'test_client_secret_xyz789',
-			'refresh_token'   => 'test_refresh_token_def456',
-			'folder_id'       => '1a2b3c4d5e6f7g8h',
-			'user_email'      => 'testuser@gmail.com',
-			'enabled'         => true,
+			'name'             => 'My Google Drive',
+			'url'              => 'https://www.googleapis.com/drive/v3',
+			'connection_type'  => 'google_drive',
+			'auth_type'        => 'none',
+			'client_id'        => 'test_client_id_abc123',
+			'client_secret'    => 'test_client_secret_xyz789',
+			'refresh_token'    => 'test_refresh_token_def456',
+			'folder_id'        => '1a2b3c4d5e6f7g8h',
+			'user_email'       => 'testuser@gmail.com',
+			'enabled'          => true,
 		);
 
 		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertNotWPError( $connection_id );
 
 		// Simulate editing the connection.
-		$admin        = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 		$_GET['page'] = 'wp-mcp-ai-remote-sites';
 		$_GET['edit'] = $connection_id;
 
@@ -659,13 +659,13 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'client_secret'   => 'test_client_secret',
 			'enabled'         => true,
 		);
-		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertNotWPError( $connection_id );
 
 		// Mock the OAuth start by calling it directly with reflection.
-		$admin      = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 		$reflection = new ReflectionClass( $admin );
-		$method     = $reflection->getMethod( 'handle_gmail_oauth_start' );
+		$method = $reflection->getMethod( 'handle_gmail_oauth_start' );
 		$method->setAccessible( true );
 
 		// Capture redirect to extract state parameter.
@@ -693,7 +693,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		// Verify transient was set with state data.
 		$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
-		$state_data    = get_transient( $transient_key );
+		$state_data = get_transient( $transient_key );
 		$this->assertNotFalse( $state_data, 'State data transient should exist' );
 		$this->assertIsArray( $state_data, 'State data should be an array' );
 		$this->assertArrayHasKey( 'user_id', $state_data, 'State data should contain user_id' );
@@ -720,11 +720,11 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'client_secret'   => 'test_client_secret',
 			'enabled'         => true,
 		);
-		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertNotWPError( $connection_id );
 
 		// Create state parameter and transient.
-		$state         = wp_generate_uuid4();
+		$state = wp_generate_uuid4();
 		$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
 		set_transient(
 			$transient_key,
@@ -740,18 +740,18 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		add_filter( 'pre_http_request', array( $this, 'mock_gmail_token_exchange' ), 10, 3 );
 
 		// Simulate OAuth callback.
-		$_GET['page']          = 'wp-mcp-ai-remote-sites';
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
 		$_GET['oauth_handler'] = 'gmail_oauth_callback';
-		$_GET['state']         = $state;
-		$_GET['code']          = 'test_authorization_code';
+		$_GET['state'] = $state;
+		$_GET['code'] = 'test_authorization_code';
 
 		// Capture redirect.
 		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
-		$admin      = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 		$reflection = new ReflectionClass( $admin );
-		$method     = $reflection->getMethod( 'handle_gmail_oauth_callback' );
+		$method = $reflection->getMethod( 'handle_gmail_oauth_callback' );
 		$method->setAccessible( true );
 
 		try {
@@ -791,18 +791,18 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 */
 	public function test_gmail_oauth_callback_invalid_state() {
 		// Simulate OAuth callback with invalid state.
-		$_GET['page']          = 'wp-mcp-ai-remote-sites';
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
 		$_GET['oauth_handler'] = 'gmail_oauth_callback';
-		$_GET['state']         = 'invalid_state_parameter';
-		$_GET['code']          = 'test_authorization_code';
+		$_GET['state'] = 'invalid_state_parameter';
+		$_GET['code'] = 'test_authorization_code';
 
 		// Capture redirect.
 		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
-		$admin      = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 		$reflection = new ReflectionClass( $admin );
-		$method     = $reflection->getMethod( 'handle_gmail_oauth_callback' );
+		$method = $reflection->getMethod( 'handle_gmail_oauth_callback' );
 		$method->setAccessible( true );
 
 		try {
@@ -833,7 +833,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	public function test_gmail_oauth_callback_missing_code() {
 		// Create state parameter and transient with non-existent connection ID.
 		$connection_id = 'conn_test_nonexistent_' . wp_generate_uuid4();
-		$state         = wp_generate_uuid4();
+		$state = wp_generate_uuid4();
 		$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
 		set_transient(
 			$transient_key,
@@ -846,18 +846,18 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		);
 
 		// Simulate OAuth callback without code.
-		$_GET['page']          = 'wp-mcp-ai-remote-sites';
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
 		$_GET['oauth_handler'] = 'gmail_oauth_callback';
-		$_GET['state']         = $state;
+		$_GET['state'] = $state;
 		// No code parameter.
 
 		// Capture redirect.
 		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
-		$admin      = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 		$reflection = new ReflectionClass( $admin );
-		$method     = $reflection->getMethod( 'handle_gmail_oauth_callback' );
+		$method = $reflection->getMethod( 'handle_gmail_oauth_callback' );
 		$method->setAccessible( true );
 
 		try {
@@ -896,13 +896,13 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'client_secret'   => 'test_client_secret',
 			'enabled'         => true,
 		);
-		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertNotWPError( $connection_id );
 
 		// Mock the OAuth start by calling it directly with reflection.
-		$admin      = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 		$reflection = new ReflectionClass( $admin );
-		$method     = $reflection->getMethod( 'handle_google_drive_oauth_start' );
+		$method = $reflection->getMethod( 'handle_google_drive_oauth_start' );
 		$method->setAccessible( true );
 
 		// Capture redirect to extract state parameter.
@@ -930,7 +930,7 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 
 		// Verify transient was set with state data.
 		$transient_key = 'wp_mcp_ai_google_drive_oauth_state_' . md5( $state );
-		$state_data    = get_transient( $transient_key );
+		$state_data = get_transient( $transient_key );
 		$this->assertNotFalse( $state_data, 'State data transient should exist' );
 		$this->assertIsArray( $state_data, 'State data should be an array' );
 		$this->assertArrayHasKey( 'user_id', $state_data, 'State data should contain user_id' );
@@ -965,11 +965,11 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 			'client_secret'   => 'test_client_secret',
 			'enabled'         => true,
 		);
-		$connection_id   = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+		$connection_id = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 		$this->assertNotWPError( $connection_id );
 
 		// Create state parameter and transient.
-		$state         = wp_generate_uuid4();
+		$state = wp_generate_uuid4();
 		$transient_key = 'wp_mcp_ai_google_drive_oauth_state_' . md5( $state );
 		set_transient(
 			$transient_key,
@@ -985,18 +985,18 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 		add_filter( 'pre_http_request', array( $this, 'mock_google_drive_token_exchange' ), 10, 3 );
 
 		// Simulate OAuth callback.
-		$_GET['page']          = 'wp-mcp-ai-remote-sites';
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
 		$_GET['oauth_handler'] = 'google_drive_oauth_callback';
-		$_GET['state']         = $state;
-		$_GET['code']          = 'test_authorization_code';
+		$_GET['state'] = $state;
+		$_GET['code'] = 'test_authorization_code';
 
 		// Capture redirect.
 		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
-		$admin      = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 		$reflection = new ReflectionClass( $admin );
-		$method     = $reflection->getMethod( 'handle_google_drive_oauth_callback' );
+		$method = $reflection->getMethod( 'handle_google_drive_oauth_callback' );
 		$method->setAccessible( true );
 
 		try {
@@ -1036,17 +1036,17 @@ class Test_Remote_Sites_Admin extends WP_UnitTestCase {
 	 */
 	public function test_google_drive_oauth_callback_user_denied() {
 		// Simulate OAuth callback with error.
-		$_GET['page']          = 'wp-mcp-ai-remote-sites';
+		$_GET['page'] = 'wp-mcp-ai-remote-sites';
 		$_GET['oauth_handler'] = 'google_drive_oauth_callback';
-		$_GET['error']         = 'access_denied';
+		$_GET['error'] = 'access_denied';
 
 		// Capture redirect.
 		add_filter( 'wp_redirect', array( $this, 'capture_redirect' ), 10, 2 );
 		$this->redirect_url = '';
 
-		$admin      = new WP_MCP_AI_Pro_Remote_Sites_Admin();
+		$admin = new WP_MCP_AI_Pro_Remote_Sites_Admin();
 		$reflection = new ReflectionClass( $admin );
-		$method     = $reflection->getMethod( 'handle_google_drive_oauth_callback' );
+		$method = $reflection->getMethod( 'handle_google_drive_oauth_callback' );
 		$method->setAccessible( true );
 
 		try {
