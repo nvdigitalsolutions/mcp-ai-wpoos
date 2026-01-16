@@ -343,9 +343,27 @@ class WP_MCP_AI_Team_CPT {
 	 */
 	public function render_defaults_meta_box( $post ) {
 		// Enqueue model selector JavaScript.
-		// Script is registered globally in WP_MCP_AI_Admin_Scripts with localization.
-		// We just need to enqueue it here for this metabox.
-		wp_enqueue_script( 'wp-mcp-ai-model-selector' );
+		if ( ! wp_script_is( 'wp-mcp-ai-model-selector', 'enqueued' ) ) {
+			wp_enqueue_script(
+				'wp-mcp-ai-model-selector',
+				WP_MCP_AI_URL . 'assets/js/admin-model-selector.js',
+				array( 'jquery' ),
+				WP_MCP_AI_VERSION,
+				true
+			);
+
+			// Localize script for AJAX (only once).
+			wp_localize_script(
+				'wp-mcp-ai-model-selector',
+				'wpMcpAiModelSelector',
+				array(
+					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
+					'selectModelText' => __( '— Select Model —', 'mcp-ai-wpoos' ),
+					'errorMessage'    => __( 'Failed to load models. Please try again.', 'mcp-ai-wpoos' ),
+				)
+			);
+		}
 
 		wp_nonce_field( 'wp_mcp_ai_team_defaults_meta', 'wp_mcp_ai_team_defaults_meta_nonce' );
 
