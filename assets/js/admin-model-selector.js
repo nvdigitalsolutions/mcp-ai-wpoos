@@ -39,7 +39,7 @@
 
 				if ( $modelField.length ) {
 					// Initialize the model field for this provider.
-					ModelSelector.initModelField( $providerSelect, $modelField );
+					ModelSelector.initModelField( $providerSelect );
 
 					// Bind change event.
 					$providerSelect.on( 'change', function() {
@@ -59,11 +59,12 @@
 		 * Initialize model field for a provider select.
 		 *
 		 * @param {jQuery} $providerSelect Provider select element.
-		 * @param {jQuery} $modelField     Model field element.
 		 */
-		initModelField: function( $providerSelect, $modelField ) {
+		initModelField: function( $providerSelect ) {
 			// If model field is still a text input, we're good - it will be replaced on first load.
 			// If it's already a select, it's been previously converted.
+			
+			// eslint-disable-next-line no-console
 			console.log( 'WP MCP AI: Initialized model selector for provider field:', $providerSelect.attr( 'id' ) );
 		},
 
