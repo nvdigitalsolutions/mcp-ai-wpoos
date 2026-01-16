@@ -88,6 +88,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 			);
 
 			if ( $elementor_active ) {
+				$fields['enable_elementor_widgets'] = array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Elementor Widgets', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Elementor AI widgets', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enable AI Chat widgets for Elementor page builder. Part of base plugin (no Pro addon required).', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				);
+
 				$fields['elementor_widgets_list'] = array(
 					'type'    => 'html',
 					'content' => $this->get_widgets_list_content(),
@@ -149,47 +157,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 			$content .= '<li>' . esc_html__( 'Markdown rendering and code syntax highlighting', 'mcp-ai-wpoos' ) . '</li>';
 			$content .= '</ul>';
 
-			// Debug information.
-			// Check if integrations (including Elementor) should be loaded.
-			// This returns true when either in full version mode OR when Pro addon is active.
-			$integrations_enabled = wp_mcp_ai_should_load_integrations();
-			$is_base_version      = wp_mcp_ai_is_base_version();
-			$is_pro_active        = defined( 'WP_MCP_AI_PRO_VERSION' );
-			$constant_defined     = defined( 'WP_MCP_AI_BASE_VERSION' );
-			$constant_value       = $constant_defined ? WP_MCP_AI_BASE_VERSION : 'not defined';
-
-			$content .= '<div style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 1rem; margin-top: 1rem;">';
-			$content .= '<p style="margin: 0;"><strong>' . esc_html__( 'Current Configuration:', 'mcp-ai-wpoos' ) . '</strong></p>';
-			$content .= '<ul style="margin: 0.5rem 0 0 1.5rem;">';
-			$content .= '<li><strong>WP_MCP_AI_BASE_VERSION:</strong> ';
-			if ( $constant_defined ) {
-				$content .= '<code>' . esc_html( $constant_value ? 'true' : 'false' ) . '</code>';
-			} else {
-				$content .= '<code>not defined</code> (defaults to full version)';
-			}
-			$content .= '</li>';
-			if ( $is_pro_active ) {
-				$content .= '<li><strong>Pro Addon:</strong> <code>active</code></li>';
-			}
-			$content .= '<li><strong>Integration Mode:</strong> ';
-			if ( $integrations_enabled ) {
-				if ( $is_base_version && $is_pro_active ) {
-					$content .= '<strong style="color: #0a5f1a;">Base + Pro</strong> (widgets enabled via Pro addon)';
-				} else {
-					$content .= '<strong style="color: #0a5f1a;">Full Version</strong> (widgets enabled)';
-				}
-			} else {
-				$content .= '<strong style="color: #8b6c00;">Base Version</strong> (widgets disabled)';
-			}
-			$content .= '</li>';
-			$content .= '</ul>';
-			$content .= '</div>';
-
-			if ( ! $integrations_enabled ) {
-				$content .= '<p style="margin-top: 1rem; background: #fef7e0; border-left: 4px solid #8b6c00; padding: 1rem;"><strong>' . esc_html__( 'To Enable Elementor Widgets:', 'mcp-ai-wpoos' ) . '</strong><br>' . esc_html__( 'You have two options:', 'mcp-ai-wpoos' ) . '<br><strong>1.</strong> ' . esc_html__( 'Set full version mode by adding to wp-config.php:', 'mcp-ai-wpoos' ) . '<br><code style="background: #fff; padding: 0.25rem 0.5rem; display: inline-block; margin-top: 0.5rem;">define( \'WP_MCP_AI_BASE_VERSION\', false );</code><br><strong>2.</strong> ' . esc_html__( 'Or install the Pro addon which enables integrations in base version mode.', 'mcp-ai-wpoos' ) . '</p>';
-			} else {
-				$content .= '<p style="margin-top: 1rem; background: #d5f0db; border-left: 4px solid #0a5f1a; padding: 1rem;"><strong style="color: #0a5f1a;">✓ ' . esc_html__( 'Elementor Widgets Enabled', 'mcp-ai-wpoos' ) . '</strong><br>' . esc_html__( 'Integration mode is active. All Elementor widgets are available.', 'mcp-ai-wpoos' ) . '</p>';
-			}
+			// Elementor widgets are part of the base plugin and do not require Pro addon.
+			// Check the "Enable Elementor Widgets" checkbox above to make them available in the editor.
+			$content .= '<p style="margin-top: 1rem; background: #d5f0db; border-left: 4px solid #0a5f1a; padding: 1rem;"><strong style="color: #0a5f1a;">✓ ' . esc_html__( 'Part of Base Plugin', 'mcp-ai-wpoos' ) . '</strong><br>' . esc_html__( 'Elementor widgets are included in the base plugin (no Pro addon required). Check the "Enable Elementor Widgets" checkbox above to make them available in the Elementor editor.', 'mcp-ai-wpoos' ) . '</p>';
 
 			$content .= '</div>';
 

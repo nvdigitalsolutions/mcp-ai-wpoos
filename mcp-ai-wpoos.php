@@ -573,7 +573,6 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php';
 	// Performance monitor CCT is now loaded via services-init.php.
 	require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-performance-blocks.php';
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-simple-jwt-login-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php';
@@ -589,6 +588,11 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/mailjet-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php';
 }
+
+// Load Elementor integration for all versions (base and full).
+// Elementor widgets are part of the base plugin and do not require Pro addon.
+// Widgets are automatically available when Elementor plugin is installed.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 
 // Load assistant builder blocks for all versions (base and full).
 // These blocks provide Gutenberg block editor support for the AI Chat, Assistant Selector,.
@@ -1129,8 +1133,8 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 * at the correct time according to WordPress 6.7+ requirements.
 		 * This prevents "_load_textdomain_just_in_time was called incorrectly" warnings.
 		 *
-		 * Elementor widgets are automatically enabled when Elementor plugin is active.
-		 * No settings check is needed - if the integration class is loaded, widgets should be available.
+		 * Elementor integration is part of the base plugin (not requiring Pro addon).
+		 * Widgets can be enabled/disabled via the settings checkbox.
 		 *
 		 * @since 1.1.0
 		 */
@@ -1139,9 +1143,14 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				return;
 			}
 
-			// Initialize Elementor integration if class is available.
-			// Widgets are automatically available when Elementor is installed.
-			WP_MCP_AI_Elementor_Integration::maybe_init();
+			// Check if Elementor widgets are enabled in settings.
+			// Defaults to true for backward compatibility.
+			$settings        = get_option( 'wp_mcp_ai_settings', array() );
+			$widgets_enabled = isset( $settings['enable_elementor_widgets'] ) ? (bool) $settings['enable_elementor_widgets'] : true;
+
+			if ( $widgets_enabled ) {
+				WP_MCP_AI_Elementor_Integration::maybe_init();
+			}
 		}
 
 		/**
