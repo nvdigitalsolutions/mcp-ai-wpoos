@@ -45,8 +45,9 @@ class WP_MCP_AI_Quiz_CPT {
 	 * Initialize the class.
 	 */
 	public static function init() {
-		// Only available in Full Version (not Base Version).
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Only available in Full Version (not Base Version), unless Pro addon is active.
+		// When Pro addon is active (WP_MCP_AI_PRO_VERSION defined), features should work even in base mode.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			// Still show notice if accessing quiz pages.
 			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
 			return;
@@ -90,8 +91,8 @@ class WP_MCP_AI_Quiz_CPT {
 			return;
 		}
 
-		// Check if in Base Version.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Check if in Base Version without Pro addon.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			?>
 			<div class="notice notice-warning">
 				<p>
@@ -344,8 +345,8 @@ class WP_MCP_AI_Quiz_CPT {
 	 * @param WP_Post $post    Post object.
 	 */
 	public static function sync_quiz_to_cct( $post_id, $post ) {
-		// Only sync in Full Version when JetEngine is available.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Only sync in Full Version when JetEngine is available, unless Pro addon is active.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return;
 		}
 
@@ -443,8 +444,8 @@ class WP_MCP_AI_Quiz_CPT {
 	 * @param WP_Post $post    Post object.
 	 */
 	public static function sync_submission_to_cct( $post_id, $post ) {
-		// Only sync in Full Version when JetEngine is available.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Only sync in Full Version when JetEngine is available, unless Pro addon is active.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return;
 		}
 
