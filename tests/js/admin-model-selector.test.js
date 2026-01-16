@@ -329,12 +329,12 @@ describe( 'Admin Model Selector', () => {
 			// subsequent changes will work because jQuery re-queries the DOM.
 
 			// Before the fix:
-			// Line 46: $providerSelect.on('change', function() {
+			// $providerSelect.on('change', function() {
 			//   ModelSelector.handleProviderChange($providerSelect, $modelField); // <-- stale $modelField
 			// });
 
 			// After the fix:
-			// Line 47-49: $providerSelect.on('change', function() {
+			// $providerSelect.on('change', function() {
 			//   ModelSelector.handleProviderChange($providerSelect); // <-- no $modelField parameter
 			// });
 			// handleProviderChange then does: $( $providerSelect.data('model-target') )
