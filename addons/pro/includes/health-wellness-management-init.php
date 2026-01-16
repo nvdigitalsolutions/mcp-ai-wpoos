@@ -18,12 +18,13 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-cpt.
 
 // Load Policy Research & Add page.
 if ( is_admin() ) {
-	// Check if health and wellness management is enabled and not in base version.
+	// Check if health and wellness management is enabled and not in base version (unless Pro addon is active).
 	$settings = get_option( 'wp_mcp_ai_settings', array() );
 	$is_enabled = ! empty( $settings['enable_health_wellness_management'] );
 	$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-	if ( $is_enabled && ! $is_base ) {
+	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-policy-research-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-policy-settings-page.php';
 	}
