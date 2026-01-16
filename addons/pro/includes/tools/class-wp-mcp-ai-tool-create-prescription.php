@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new prescription for a member with medication details, dosage, and schedule information.', 'mcp-ai-wpoos-pro' );
+		return __( 'Creates a new prescription or updates an existing one if prescription_id is provided. Includes medication details, dosage, and schedule information.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -41,6 +41,10 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'prescription_id'    => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional prescription ID. If provided, updates the existing prescription instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'member_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this prescription belongs to (required)', 'mcp-ai-wpoos-pro' ),
@@ -135,6 +139,29 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create prescriptions.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Check if this is an update operation.
+		$prescription_id = isset( $arguments['prescription_id'] ) ? absint( $arguments['prescription_id'] ) : 0;
+		$is_update       = false;
+
+		if ( $prescription_id ) {
+			// Verify prescription exists and user has permission to update it.
+			$existing_prescription = get_post( $prescription_id );
+
+			if ( ! $existing_prescription || 'mcp_ai_prescription' !== $existing_prescription->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_prescription_not_found', __( 'Prescription not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author = absint( $existing_prescription->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this prescription.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Validate required fields.
 		$member_id       = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
 		$medication_name = isset( $arguments['medication_name'] ) ? sanitize_text_field( $arguments['medication_name'] ) : '';
@@ -180,63 +207,123 @@ class WP_MCP_AI_Tool_Create_Prescription implements WP_MCP_AI_Tool_Interface, WP
 			return new WP_Error( 'wp_mcp_ai_invalid_date', __( 'Invalid end date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Create prescription post.
-		$post_data = array(
-			'post_type'    => 'mcp_ai_prescription',
-			'post_title'   => $medication_name,
-			'post_content' => $notes,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		);
+		if ( $is_update ) {
+			// Update existing prescription.
+			$post_data = array(
+				'ID'           => $prescription_id,
+				'post_title'   => $medication_name,
+				'post_content' => $notes,
+			);
 
-		$prescription_id = wp_insert_post( $post_data, true );
+			$result = wp_update_post( $post_data, true );
 
-		if ( is_wp_error( $prescription_id ) ) {
-			return $prescription_id;
-		}
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
 
-		// Save prescription metadata.
-		update_post_meta( $prescription_id, '_prescription_member_id', $member_id );
-		update_post_meta( $prescription_id, '_prescription_medication_name', $medication_name );
-		update_post_meta( $prescription_id, '_prescription_dosage', $dosage );
-		update_post_meta( $prescription_id, '_prescription_frequency', $frequency );
-		update_post_meta( $prescription_id, '_prescription_status', $status );
+			// Update prescription metadata.
+			update_post_meta( $prescription_id, '_prescription_member_id', $member_id );
+			update_post_meta( $prescription_id, '_prescription_medication_name', $medication_name );
+			update_post_meta( $prescription_id, '_prescription_dosage', $dosage );
+			update_post_meta( $prescription_id, '_prescription_frequency', $frequency );
+			update_post_meta( $prescription_id, '_prescription_status', $status );
 
-		if ( $prescribing_doctor ) {
-			update_post_meta( $prescription_id, '_prescription_doctor', $prescribing_doctor );
-		}
+			if ( $prescribing_doctor ) {
+				update_post_meta( $prescription_id, '_prescription_doctor', $prescribing_doctor );
+			}
 
-		if ( $start_date ) {
-			update_post_meta( $prescription_id, '_prescription_start_date', $start_date );
-		}
+			if ( $start_date ) {
+				update_post_meta( $prescription_id, '_prescription_start_date', $start_date );
+			}
 
-		if ( $end_date ) {
-			update_post_meta( $prescription_id, '_prescription_end_date', $end_date );
-		}
+			if ( $end_date ) {
+				update_post_meta( $prescription_id, '_prescription_end_date', $end_date );
+			}
 
-		if ( $refills_remaining > 0 ) {
 			update_post_meta( $prescription_id, '_prescription_refills_remaining', $refills_remaining );
-		}
 
-		return array(
-			'success'         => true,
-			'message'         => __( 'Prescription created successfully.', 'mcp-ai-wpoos-pro' ),
-			'prescription_id' => $prescription_id,
-			'prescription'    => array(
-				'id'                 => $prescription_id,
-				'member_id'          => $member_id,
-				'medication_name'    => $medication_name,
-				'dosage'             => $dosage,
-				'frequency'          => $frequency,
-				'prescribing_doctor' => $prescribing_doctor,
-				'start_date'         => $start_date,
-				'end_date'           => $end_date,
-				'status'             => $status,
-				'notes'              => $notes,
-				'refills_remaining'  => $refills_remaining,
-				'created_at'         => current_time( 'mysql' ),
-			),
-		);
+			$prescription = get_post( $prescription_id );
+
+			return array(
+				'success'         => true,
+				'message'         => __( 'Prescription updated successfully.', 'mcp-ai-wpoos-pro' ),
+				'prescription_id' => $prescription_id,
+				'prescription'    => array(
+					'id'                 => $prescription_id,
+					'member_id'          => $member_id,
+					'medication_name'    => $medication_name,
+					'dosage'             => $dosage,
+					'frequency'          => $frequency,
+					'prescribing_doctor' => $prescribing_doctor,
+					'start_date'         => $start_date,
+					'end_date'           => $end_date,
+					'status'             => $status,
+					'notes'              => $notes,
+					'refills_remaining'  => $refills_remaining,
+					'updated_at'         => $prescription->post_modified,
+				),
+				'updated'         => true,
+			);
+		} else {
+			// Create prescription post.
+			$post_data = array(
+				'post_type'    => 'mcp_ai_prescription',
+				'post_title'   => $medication_name,
+				'post_content' => $notes,
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			);
+
+			$prescription_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $prescription_id ) ) {
+				return $prescription_id;
+			}
+
+			// Save prescription metadata.
+			update_post_meta( $prescription_id, '_prescription_member_id', $member_id );
+			update_post_meta( $prescription_id, '_prescription_medication_name', $medication_name );
+			update_post_meta( $prescription_id, '_prescription_dosage', $dosage );
+			update_post_meta( $prescription_id, '_prescription_frequency', $frequency );
+			update_post_meta( $prescription_id, '_prescription_status', $status );
+
+			if ( $prescribing_doctor ) {
+				update_post_meta( $prescription_id, '_prescription_doctor', $prescribing_doctor );
+			}
+
+			if ( $start_date ) {
+				update_post_meta( $prescription_id, '_prescription_start_date', $start_date );
+			}
+
+			if ( $end_date ) {
+				update_post_meta( $prescription_id, '_prescription_end_date', $end_date );
+			}
+
+			update_post_meta( $prescription_id, '_prescription_refills_remaining', $refills_remaining );
+
+			$prescription = get_post( $prescription_id );
+
+			return array(
+				'success'         => true,
+				'message'         => __( 'Prescription created successfully.', 'mcp-ai-wpoos-pro' ),
+				'prescription_id' => $prescription_id,
+				'prescription'    => array(
+					'id'                 => $prescription_id,
+					'member_id'          => $member_id,
+					'medication_name'    => $medication_name,
+					'dosage'             => $dosage,
+					'frequency'          => $frequency,
+					'prescribing_doctor' => $prescribing_doctor,
+					'start_date'         => $start_date,
+					'end_date'           => $end_date,
+					'status'             => $status,
+					'notes'              => $notes,
+					'refills_remaining'  => $refills_remaining,
+					'created_at'         => $prescription->post_date,
+				),
+				'updated'         => false,
+			);
+		}
 	}
 
 	/**
