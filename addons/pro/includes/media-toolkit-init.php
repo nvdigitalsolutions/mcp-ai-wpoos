@@ -18,6 +18,9 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-media-template-cpt.p
 // Load Media Collection CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-media-collection-cpt.php';
 
+// Load Media Template Presets class.
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-media-template-presets.php';
+
 // Initialize Media Toolkit system.
 add_action(
 	'init',

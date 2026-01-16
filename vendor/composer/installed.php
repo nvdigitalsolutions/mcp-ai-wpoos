@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-elementor-widgets-issue',
-        'version' => 'dev-copilot/fix-elementor-widgets-issue',
-        'reference' => 'c6603c3000d6ef19c81d0356e317161a0294ecd5',
+        'pretty_version' => 'dev-copilot/enhance-media-pro-toolkit',
+        'version' => 'dev-copilot/enhance-media-pro-toolkit',
+        'reference' => 'd2820ad6fd05c9ce5c5ee0b3e3f22099cb2a92a8',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-elementor-widgets-issue',
-            'version' => 'dev-copilot/fix-elementor-widgets-issue',
-            'reference' => 'c6603c3000d6ef19c81d0356e317161a0294ecd5',
+            'pretty_version' => 'dev-copilot/enhance-media-pro-toolkit',
+            'version' => 'dev-copilot/enhance-media-pro-toolkit',
+            'reference' => 'd2820ad6fd05c9ce5c5ee0b3e3f22099cb2a92a8',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
