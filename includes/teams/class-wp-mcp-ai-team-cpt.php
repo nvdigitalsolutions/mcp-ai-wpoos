@@ -377,12 +377,14 @@ class WP_MCP_AI_Team_CPT {
 				</label><br>
 				<select name="wp_mcp_ai_default_provider" id="wp-mcp-ai-default-provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#wp-mcp-ai-default-model">
 					<option value=""><?php esc_html_e( '-- Use Professional Default --', 'mcp-ai-wpoos' ); ?></option>
-					<option value="openai" <?php selected( $default_provider, 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'mcp-ai-wpoos' ); ?></option>
-					<option value="gemini" <?php selected( $default_provider, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'mcp-ai-wpoos' ); ?></option>
-					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'mcp-ai-wpoos' ); ?></option>
-					<option value="ollama" <?php selected( $default_provider, 'ollama' ); ?>><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></option>
-					<option value="lm_studio" <?php selected( $default_provider, 'lm_studio' ); ?>><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></option>
-					<option value="cloudflare" <?php selected( $default_provider, 'cloudflare' ); ?>><?php esc_html_e( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ); ?></option>
+					<?php
+					$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
+					foreach ( $available_providers as $provider_slug => $provider_label ) {
+						?>
+						<option value="<?php echo esc_attr( $provider_slug ); ?>" <?php selected( $default_provider, $provider_slug ); ?>><?php echo esc_html( $provider_label ); ?></option>
+						<?php
+					}
+					?>
 				</select>
 			</p>
 

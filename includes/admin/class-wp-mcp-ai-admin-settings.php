@@ -989,10 +989,37 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		/**
 		 * Returns the list of available provider choices.
 		 *
-		 * @return array
+		 * This method returns only providers that are both enabled (via enable_* checkbox)
+		 * and properly configured (have required API keys/endpoints). Works in both base
+		 * and pro modes, and handles cases where Model_Config may not be loaded.
+		 *
+		 * @since 1.0.0
+		 * @return array Associative array of provider slug => label for enabled providers.
 		 */
 		public static function get_available_providers() {
-			return array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			// Try to use Model_Config if available for accurate filtering.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$model_config_path = trailingslashit( WP_MCP_AI_PATH ) . 'includes' . DIRECTORY_SEPARATOR . 'class-wp-mcp-ai-model-config.php';
+				if ( file_exists( $model_config_path ) ) {
+					require_once $model_config_path;
+				}
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) && method_exists( 'WP_MCP_AI_Model_Config', 'get_available_providers' ) ) {
+				return WP_MCP_AI_Model_Config::get_available_providers();
+			}
+
+			// Fallback: Return all providers if Model_Config is not available.
+			// This ensures backward compatibility and prevents breaking the UI.
+			return array(
+				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
+				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+				'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
+				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
+				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
+				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**

@@ -109,9 +109,21 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 			$provider = $default_provider;
 		}
 
-		$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ) );
-		if ( ! is_array( $provider_choices ) ) {
-			$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+		// Get enabled providers from centralized function.
+		$provider_choices = WP_MCP_AI_Admin_Settings::get_available_providers();
+
+		// Apply filter for third-party extensions (maintains backward compatibility).
+		$provider_slugs = array_keys( $provider_choices );
+		$provider_slugs = apply_filters( 'wp_mcp_ai_allowed_providers', $provider_slugs );
+		
+		// Filter the provider choices based on allowed slugs.
+		if ( is_array( $provider_slugs ) && ! empty( $provider_slugs ) ) {
+			$provider_choices = array_intersect_key( $provider_choices, array_flip( $provider_slugs ) );
+		}
+
+		// Fallback to all if filtering results in empty array.
+		if ( empty( $provider_choices ) ) {
+			$provider_choices = WP_MCP_AI_Admin_Settings::get_available_providers();
 		}
 
 		if ( '' === $temperature ) {
@@ -133,23 +145,11 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 		<label for="wp-mcp-ai-provider"><strong><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></strong></label>
 		<select id="wp-mcp-ai-provider" name="wp_mcp_ai_provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#wp-mcp-ai-model">
 			<?php
-			foreach ( $provider_choices as $choice ) {
+			foreach ( $provider_choices as $choice => $label ) {
 				$choice = sanitize_key( $choice );
 				if ( '' === $choice ) {
 					continue;
 				}
-
-				$provider_labels = array(
-					'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
-					'anthropic'   => __( 'Anthropic', 'mcp-ai-wpoos' ),
-					'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
-					'huggingface' => __( 'Huggingface', 'mcp-ai-wpoos' ),
-					'ollama'      => __( 'Ollama', 'mcp-ai-wpoos' ),
-					'lm_studio'   => __( 'LM Studio', 'mcp-ai-wpoos' ),
-					'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
-				);
-
-				$label = isset( $provider_labels[ $choice ] ) ? $provider_labels[ $choice ] : ucfirst( str_replace( '_', ' ', $choice ) );
 				?>
 				<option value="<?php echo esc_attr( $choice ); ?>" <?php selected( $provider, $choice ); ?>><?php echo esc_html( $label ); ?></option>
 				<?php
