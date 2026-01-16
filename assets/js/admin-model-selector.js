@@ -42,8 +42,10 @@
 					ModelSelector.initModelField( $providerSelect );
 
 					// Bind change event.
+					// Don't pass $modelField to avoid capturing stale reference in closure.
+					// handleProviderChange will re-select it from DOM using data-model-target.
 					$providerSelect.on( 'change', function() {
-						ModelSelector.handleProviderChange( $providerSelect, $modelField );
+						ModelSelector.handleProviderChange( $providerSelect );
 					} );
 
 					// Load initial models for the selected provider only if not already loaded.
@@ -100,23 +102,26 @@
 		 * Handle provider change event.
 		 *
 		 * @param {jQuery} $providerSelect Provider select element.
-		 * @param {jQuery} $modelField     Model field element (may be stale).
 		 */
-		handleProviderChange: function( $providerSelect, $modelField ) {
+		handleProviderChange: function( $providerSelect ) {
 			const provider = $providerSelect.val();
 			
-			// Re-select the model field from the DOM in case it was replaced.
-			// This ensures we're working with the current element, not a stale reference.
-			// The parameter $modelField may reference a detached DOM element after replaceWith().
+			// Always re-select the model field from the DOM to avoid stale references.
+			// This is critical because replaceWith() detaches the original element from DOM.
 			const targetSelector = $providerSelect.data( 'model-target' );
 			
-			// Validate target selector exists before attempting to select.
-			if ( targetSelector ) {
-				const $currentModelField = $( targetSelector );
-				
-				if ( $currentModelField.length ) {
-					$modelField = $currentModelField;
-				}
+			if ( ! targetSelector ) {
+				// eslint-disable-next-line no-console
+				console.error( 'WP MCP AI: Provider select is missing data-model-target attribute' );
+				return;
+			}
+			
+			const $modelField = $( targetSelector );
+			
+			if ( ! $modelField.length ) {
+				// eslint-disable-next-line no-console
+				console.error( 'WP MCP AI: Model field not found with selector:', targetSelector );
+				return;
 			}
 
 			if ( ! provider ) {
