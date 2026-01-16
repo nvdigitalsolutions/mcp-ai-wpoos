@@ -825,12 +825,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['delete_policy']   = 'wordpress-core';
 			$pro_tools['search_policies'] = 'wordpress-core';
 			// Prescription Management (CRUD + Search).
-			$pro_tools['create_prescription']   = 'wordpress-core';
-			$pro_tools['list_prescriptions']    = 'wordpress-core';
-			$pro_tools['get_prescription']      = 'wordpress-core';
-			$pro_tools['update_prescription']   = 'wordpress-core';
-			$pro_tools['delete_prescription']   = 'wordpress-core';
-			$pro_tools['search_prescriptions']  = 'wordpress-core';
+			$pro_tools['create_prescription']  = 'wordpress-core';
+			$pro_tools['list_prescriptions']   = 'wordpress-core';
+			$pro_tools['get_prescription']     = 'wordpress-core';
+			$pro_tools['update_prescription']  = 'wordpress-core';
+			$pro_tools['delete_prescription']  = 'wordpress-core';
+			$pro_tools['search_prescriptions'] = 'wordpress-core';
 			// Medical Record Management (CRUD + Search).
 			$pro_tools['create_medical_record']  = 'wordpress-core';
 			$pro_tools['list_medical_records']   = 'wordpress-core';
@@ -839,12 +839,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['delete_medical_record']  = 'wordpress-core';
 			$pro_tools['search_medical_records'] = 'wordpress-core';
 			// Checkup/Appointment Management (CRUD + Specialized).
-			$pro_tools['create_checkup']         = 'wordpress-core';
-			$pro_tools['list_checkups']          = 'wordpress-core';
-			$pro_tools['get_checkup']            = 'wordpress-core';
-			$pro_tools['update_checkup']         = 'wordpress-core';
-			$pro_tools['delete_checkup']         = 'wordpress-core';
-			$pro_tools['get_upcoming_checkups']  = 'wordpress-core';
+			$pro_tools['create_checkup']        = 'wordpress-core';
+			$pro_tools['list_checkups']         = 'wordpress-core';
+			$pro_tools['get_checkup']           = 'wordpress-core';
+			$pro_tools['update_checkup']        = 'wordpress-core';
+			$pro_tools['delete_checkup']        = 'wordpress-core';
+			$pro_tools['get_upcoming_checkups'] = 'wordpress-core';
 			// Allergy Management (CRUD).
 			$pro_tools['create_allergy'] = 'wordpress-core';
 			$pro_tools['list_allergies'] = 'wordpress-core';

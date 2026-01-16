@@ -926,10 +926,10 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 				WP_MCP_AI_Logger::log_error(
 					'Hugging Face audio transcription error.',
 					array(
-						'status'      => $code,
-						'body'        => $body,
-						'model'       => $model,
-						'endpoint'    => $url,
+						'status'   => $code,
+						'body'     => $body,
+						'model'    => $model,
+						'endpoint' => $url,
 					)
 				);
 
@@ -940,9 +940,9 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 						'status'  => $code,
 						'body'    => $body,
 						'actions' => array(
-							'verify_model_name'      => __( 'Check that the Whisper model name is correct (e.g., openai/whisper-large-v3).', 'mcp-ai-wpoos' ),
-							'check_api_key'          => __( 'Verify your Hugging Face API key has access to the model.', 'mcp-ai-wpoos' ),
-							'use_custom_endpoint'    => __( 'For dedicated Inference Endpoints, configure huggingface_endpoint_url in settings.', 'mcp-ai-wpoos' ),
+							'verify_model_name'   => __( 'Check that the Whisper model name is correct (e.g., openai/whisper-large-v3).', 'mcp-ai-wpoos' ),
+							'check_api_key'       => __( 'Verify your Hugging Face API key has access to the model.', 'mcp-ai-wpoos' ),
+							'use_custom_endpoint' => __( 'For dedicated Inference Endpoints, configure huggingface_endpoint_url in settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);

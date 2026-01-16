@@ -538,19 +538,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Render Gmail footer content.
 		 */
-	/**
-	 * Render Gmail footer content.
-	 */
-	private function render_gmail_footer() {
-		$settings        = WP_MCP_AI_Admin_Settings::get_settings();
-		$gmail_connected = ! empty( $settings['gmail_refresh_token'] );
-		$gmail_email     = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
-		$has_credentials = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
-		$oauth_connect_url = wp_nonce_url(
-			admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
-			'wp_mcp_ai_gmail_oauth_start'
-		);
-		?>
+		/**
+		 * Render Gmail footer content.
+		 */
+		private function render_gmail_footer() {
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$gmail_connected   = ! empty( $settings['gmail_refresh_token'] );
+			$gmail_email       = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
+			$has_credentials   = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
+			$oauth_connect_url = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
+				'wp_mcp_ai_gmail_oauth_start'
+			);
+			?>
 		<tr>
 			<th scope="row"><?php esc_html_e( 'Gmail Connection', 'mcp-ai-wpoos' ); ?></th>
 			<td>
@@ -676,8 +676,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</ul>
 			</td>
 		</tr>
-		<?php
-	}
+			<?php
+		}
 
 		/**
 		 * Render Brave Search footer content.
@@ -741,9 +741,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render PayHere footer content.
 		 */
 		private function render_payhere_footer() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
 			$has_credentials = ! empty( $settings['payhere_app_id'] ) && ! empty( $settings['payhere_app_secret'] );
-			$is_sandbox = ! empty( $settings['payhere_sandbox_mode'] );
+			$is_sandbox      = ! empty( $settings['payhere_sandbox_mode'] );
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'PayHere Configuration', 'mcp-ai-wpoos' ); ?></th>
@@ -834,7 +834,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Flowhub footer content.
 		 */
 		private function render_flowhub_footer() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
 			$has_credentials = ! empty( $settings['flowhub_api_key'] ) && ! empty( $settings['flowhub_client_id'] );
 			?>
 			<tr>
@@ -944,10 +944,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Meta footer content.
 		 */
 		private function render_meta_footer() {
-			$settings         = WP_MCP_AI_Admin_Settings::get_settings();
-			$meta_connected   = ! empty( $settings['meta_access_token'] );
-			$meta_user_name   = isset( $settings['meta_connected_user_name'] ) ? $settings['meta_connected_user_name'] : '';
-			$has_credentials  = ! empty( $settings['meta_app_id'] ) && ! empty( $settings['meta_app_secret'] );
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$meta_connected    = ! empty( $settings['meta_access_token'] );
+			$meta_user_name    = isset( $settings['meta_connected_user_name'] ) ? $settings['meta_connected_user_name'] : '';
+			$has_credentials   = ! empty( $settings['meta_app_id'] ) && ! empty( $settings['meta_app_secret'] );
 			$oauth_connect_url = wp_nonce_url(
 				admin_url( 'admin-post.php?action=wp_mcp_ai_meta_oauth_start' ),
 				'wp_mcp_ai_meta_oauth_start'
@@ -1017,11 +1017,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 							// Get scopes from OAuth handler constant.
 							$scopes             = WP_MCP_AI_Meta_OAuth_Handler::META_OAUTH_SCOPES;
 							$scope_descriptions = array(
-								'pages_manage_posts'              => __( 'Manage Facebook Page posts', 'mcp-ai-wpoos' ),
-								'instagram_basic'                 => __( 'Access Instagram account information', 'mcp-ai-wpoos' ),
-								'instagram_content_publish'       => __( 'Publish Instagram content', 'mcp-ai-wpoos' ),
-								'whatsapp_business_management'    => __( 'Manage WhatsApp Business account', 'mcp-ai-wpoos' ),
-								'whatsapp_business_messaging'     => __( 'Send WhatsApp Business messages', 'mcp-ai-wpoos' ),
+								'pages_manage_posts' => __( 'Manage Facebook Page posts', 'mcp-ai-wpoos' ),
+								'instagram_basic'    => __( 'Access Instagram account information', 'mcp-ai-wpoos' ),
+								'instagram_content_publish' => __( 'Publish Instagram content', 'mcp-ai-wpoos' ),
+								'whatsapp_business_management' => __( 'Manage WhatsApp Business account', 'mcp-ai-wpoos' ),
+								'whatsapp_business_messaging' => __( 'Send WhatsApp Business messages', 'mcp-ai-wpoos' ),
 							);
 							foreach ( explode( ',', $scopes ) as $scope ) {
 								$scope       = trim( $scope );

@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Get_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'student_id' => array(
+				'student_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress post ID of the student (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -115,12 +115,12 @@ class WP_MCP_AI_Tool_Get_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$include_schedule = isset( $arguments['include_schedule'] ) ? (bool) $arguments['include_schedule'] : true;
 
 		// Get student basic info.
-		$first_name = get_post_meta( $student_id, '_student_first_name', true );
-		$last_name = get_post_meta( $student_id, '_student_last_name', true );
-		$year_group = get_post_meta( $student_id, '_student_year_group', true );
-		$house = get_post_meta( $student_id, '_student_house', true );
-		$email = get_post_meta( $student_id, '_student_email', true );
-		$isams_id = get_post_meta( $student_id, '_student_isams_id', true );
+		$first_name   = get_post_meta( $student_id, '_student_first_name', true );
+		$last_name    = get_post_meta( $student_id, '_student_last_name', true );
+		$year_group   = get_post_meta( $student_id, '_student_year_group', true );
+		$house        = get_post_meta( $student_id, '_student_house', true );
+		$email        = get_post_meta( $student_id, '_student_email', true );
+		$isams_id     = get_post_meta( $student_id, '_student_isams_id', true );
 		$isams_synced = get_post_meta( $student_id, '_student_isams_synced', true ) === 'yes';
 
 		// Get enrollments.
@@ -129,7 +129,7 @@ class WP_MCP_AI_Tool_Get_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$enrollments = array();
 		}
 
-		$enrolled_ecas = array();
+		$enrolled_ecas   = array();
 		$weekly_schedule = array();
 
 		foreach ( $enrollments as $eca_id => $enrollment_data ) {
@@ -174,7 +174,7 @@ class WP_MCP_AI_Tool_Get_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		// Sort schedule by day.
 		if ( $include_schedule ) {
-			$day_order = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
+			$day_order       = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
 			$sorted_schedule = array();
 			foreach ( $day_order as $day ) {
 				if ( isset( $weekly_schedule[ $day ] ) ) {
@@ -185,19 +185,19 @@ class WP_MCP_AI_Tool_Get_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		$result = array(
-			'success'          => true,
-			'student_id'       => $student_id,
-			'name'             => $student->post_title,
-			'first_name'       => $first_name,
-			'last_name'        => $last_name,
-			'year_group'       => $year_group,
-			'house'            => $house,
-			'email'            => $email,
+			'success'           => true,
+			'student_id'        => $student_id,
+			'name'              => $student->post_title,
+			'first_name'        => $first_name,
+			'last_name'         => $last_name,
+			'year_group'        => $year_group,
+			'house'             => $house,
+			'email'             => $email,
 			'total_enrollments' => count( $enrolled_ecas ),
-			'enrolled_ecas'    => $enrolled_ecas,
-			'isams_id'         => $isams_id,
-			'isams_synced'     => $isams_synced,
-			'url'              => get_permalink( $student_id ),
+			'enrolled_ecas'     => $enrolled_ecas,
+			'isams_id'          => $isams_id,
+			'isams_synced'      => $isams_synced,
+			'url'               => get_permalink( $student_id ),
 		);
 
 		if ( $include_schedule ) {

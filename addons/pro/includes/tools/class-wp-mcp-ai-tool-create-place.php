@@ -19,6 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-content-media
  */
 class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -47,69 +48,69 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'name'                => array(
+				'name'            => array(
 					'type'        => 'string',
 					'description' => __( 'Place name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'description'         => array(
+				'description'     => array(
 					'type'        => 'string',
 					'description' => __( 'Place description (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
-				'place_type'          => array(
+				'place_type'      => array(
 					'type'        => 'string',
 					'description' => __( 'Type of place (e.g., restaurant, hotel, attraction, museum, park, business)', 'mcp-ai-wpoos-pro' ),
 				),
-				'address'             => array(
+				'address'         => array(
 					'type'        => 'string',
 					'description' => __( 'Full street address', 'mcp-ai-wpoos-pro' ),
 				),
-				'latitude'            => array(
+				'latitude'        => array(
 					'type'        => 'number',
 					'description' => __( 'Latitude coordinate (-90 to 90)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => -90,
 					'maximum'     => 90,
 				),
-				'longitude'           => array(
+				'longitude'       => array(
 					'type'        => 'number',
 					'description' => __( 'Longitude coordinate (-180 to 180)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => -180,
 					'maximum'     => 180,
 				),
-				'auto_geocode'        => array(
+				'auto_geocode'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true and latitude/longitude not provided, automatically geocode the address', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'phone'               => array(
+				'phone'           => array(
 					'type'        => 'string',
 					'description' => __( 'Phone number', 'mcp-ai-wpoos-pro' ),
 				),
-				'email'               => array(
+				'email'           => array(
 					'type'        => 'string',
 					'description' => __( 'Email address', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'email',
 				),
-				'website'             => array(
+				'website'         => array(
 					'type'        => 'string',
 					'description' => __( 'Website URL', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'uri',
 				),
-				'rating'              => array(
+				'rating'          => array(
 					'type'        => 'number',
 					'description' => __( 'Rating (0-5)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 5,
 				),
-				'price_level'         => array(
+				'price_level'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Price level (1-4, where 1 is least expensive)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 4,
 				),
-				'business_hours'      => array(
+				'business_hours'  => array(
 					'type'        => 'object',
 					'description' => __( 'Business hours by day of week', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -122,37 +123,37 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 						'sunday'    => array( 'type' => 'string' ),
 					),
 				),
-				'amenities'           => array(
+				'amenities'       => array(
 					'type'        => 'array',
 					'description' => __( 'List of amenities/features (e.g., "wifi", "parking", "wheelchair_accessible")', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'tags'                => array(
+				'tags'            => array(
 					'type'        => 'array',
 					'description' => __( 'Custom tags for categorization', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'google_place_id'     => array(
+				'google_place_id' => array(
 					'type'        => 'string',
 					'description' => __( 'Google Place ID for API integration', 'mcp-ai-wpoos-pro' ),
 				),
-				'street'              => array(
+				'street'          => array(
 					'type'        => 'string',
 					'description' => __( 'Street address component', 'mcp-ai-wpoos-pro' ),
 				),
-				'city'                => array(
+				'city'            => array(
 					'type'        => 'string',
 					'description' => __( 'City', 'mcp-ai-wpoos-pro' ),
 				),
-				'state'               => array(
+				'state'           => array(
 					'type'        => 'string',
 					'description' => __( 'State/Province', 'mcp-ai-wpoos-pro' ),
 				),
-				'country'             => array(
+				'country'         => array(
 					'type'        => 'string',
 					'description' => __( 'Country', 'mcp-ai-wpoos-pro' ),
 				),
-				'postal_code'         => array(
+				'postal_code'     => array(
 					'type'        => 'string',
 					'description' => __( 'Postal/ZIP code', 'mcp-ai-wpoos-pro' ),
 				),
@@ -172,7 +173,10 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro', 'database-write', 'requires-capability' );
+			'pro',
+			'database-write',
+			'requires-capability',
+		);
 	}
 
 	/**
@@ -227,7 +231,7 @@ class WP_MCP_AI_Tool_Create_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			if ( $auto_geocode ) {
 				// Attempt to geocode the address.
 				if ( class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
-					$maps_client = new WP_MCP_AI_Google_Maps_Client();
+					$maps_client    = new WP_MCP_AI_Google_Maps_Client();
 					$geocode_result = $maps_client->geocode( $address );
 
 					if ( ! is_wp_error( $geocode_result ) && isset( $geocode_result['latitude'], $geocode_result['longitude'] ) ) {

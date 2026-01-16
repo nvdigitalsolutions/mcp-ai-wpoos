@@ -228,14 +228,14 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 				$record_id = get_the_ID();
 
 				// Get record type.
-				$types = wp_get_object_terms( $record_id, 'mcp_ai_record_type', array( 'fields' => 'names' ) );
+				$types            = wp_get_object_terms( $record_id, 'mcp_ai_record_type', array( 'fields' => 'names' ) );
 				$record_type_name = ! empty( $types ) && ! is_wp_error( $types ) ? $types[0] : '';
 
 				// Get member info.
-				$member_id = get_post_meta( $record_id, '_record_member_id', true );
+				$member_id   = get_post_meta( $record_id, '_record_member_id', true );
 				$member_name = '';
 				if ( $member_id ) {
-					$member = get_post( $member_id );
+					$member      = get_post( $member_id );
 					$member_name = $member ? $member->post_title : '';
 				}
 

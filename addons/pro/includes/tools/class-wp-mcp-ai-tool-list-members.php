@@ -157,7 +157,7 @@ class WP_MCP_AI_Tool_List_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				$member_id = get_the_ID();
 
 				// Get member type.
-				$types      = wp_get_object_terms( $member_id, 'mcp_ai_member_type', array( 'fields' => 'slugs' ) );
+				$types       = wp_get_object_terms( $member_id, 'mcp_ai_member_type', array( 'fields' => 'slugs' ) );
 				$member_type = ! empty( $types ) && ! is_wp_error( $types ) ? $types[0] : 'person';
 
 				// Build member data.
@@ -185,10 +185,10 @@ class WP_MCP_AI_Tool_List_Members implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'success'    => true,
 			'members'    => $members,
 			'pagination' => array(
-				'total'       => $query->found_posts,
-				'total_pages' => $query->max_num_pages,
+				'total'        => $query->found_posts,
+				'total_pages'  => $query->max_num_pages,
 				'current_page' => $page,
-				'per_page'    => $per_page,
+				'per_page'     => $per_page,
 			),
 		);
 	}

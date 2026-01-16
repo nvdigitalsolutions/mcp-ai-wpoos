@@ -329,9 +329,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Get asset files (automatically uses minified in production, unminified in debug mode).
 			$responsive_css = $this->get_asset_file( 'assets/css/admin-responsive-utilities.css' );
-			$dashboard_css = $this->get_asset_file( 'assets/css/settings-dashboard.css' );
-			$ajax_error_js = $this->get_asset_file( 'assets/js/ajax-error-service.js' );
-			$dashboard_js  = $this->get_asset_file( 'assets/js/settings-dashboard.js' );
+			$dashboard_css  = $this->get_asset_file( 'assets/css/settings-dashboard.css' );
+			$ajax_error_js  = $this->get_asset_file( 'assets/js/ajax-error-service.js' );
+			$dashboard_js   = $this->get_asset_file( 'assets/js/settings-dashboard.js' );
 
 			// Enqueue responsive utilities first (base styles).
 			wp_enqueue_style(

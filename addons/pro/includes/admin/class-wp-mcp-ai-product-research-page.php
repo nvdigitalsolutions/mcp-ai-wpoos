@@ -98,16 +98,16 @@ class WP_MCP_AI_Product_Research_Page {
 			'wp-mcp-ai-product-research-page',
 			'wpMcpAiProductResearchPage',
 			array(
-				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-				'nonce'         => wp_create_nonce( 'wp_mcp_ai_research_product' ),
-				'addNewUrl'     => admin_url( 'post-new.php?post_type=product' ),
-				'researchTool'  => 'research_product',
-				'strings'       => array(
-					'researching'       => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
-					'error'             => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'          => __( 'Creating product...', 'mcp-ai-wpoos-pro' ),
-					'created'           => __( 'Product created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate'     => __( 'Create a product with the researched information?', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_product' ),
+				'addNewUrl'    => admin_url( 'post-new.php?post_type=product' ),
+				'researchTool' => 'research_product',
+				'strings'      => array(
+					'researching'   => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
+					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'creating'      => __( 'Creating product...', 'mcp-ai-wpoos-pro' ),
+					'created'       => __( 'Product created successfully!', 'mcp-ai-wpoos-pro' ),
+					'confirmCreate' => __( 'Create a product with the researched information?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -271,7 +271,7 @@ class WP_MCP_AI_Product_Research_Page {
 		}
 
 		// Process featured image generation request.
-		$title = isset( $research_data['title'] ) ? $research_data['title'] : $research_data['reference'];
+		$title         = isset( $research_data['title'] ) ? $research_data['title'] : $research_data['reference'];
 		$research_data = self::process_featured_image_request( $research_data, $title, 'a product' );
 
 		// Use the create_woo_product tool to create the product.

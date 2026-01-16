@@ -64,10 +64,10 @@ class WP_MCP_AI_Media_Collection_Metabox_Stats extends WP_MCP_AI_Media_Template_
 			return;
 		}
 
-		$items           = get_post_meta( $post->ID, '_mcp_ai_collection_items', true );
-		$templates       = get_post_meta( $post->ID, '_mcp_ai_collection_templates', true );
-		$process_count   = get_post_meta( $post->ID, '_mcp_ai_collection_process_count', true );
-		$last_processed  = get_post_meta( $post->ID, '_mcp_ai_collection_last_processed', true );
+		$items          = get_post_meta( $post->ID, '_mcp_ai_collection_items', true );
+		$templates      = get_post_meta( $post->ID, '_mcp_ai_collection_templates', true );
+		$process_count  = get_post_meta( $post->ID, '_mcp_ai_collection_process_count', true );
+		$last_processed = get_post_meta( $post->ID, '_mcp_ai_collection_last_processed', true );
 
 		$item_count     = is_array( $items ) ? count( $items ) : 0;
 		$template_count = is_array( $templates ) ? count( $templates ) : 0;

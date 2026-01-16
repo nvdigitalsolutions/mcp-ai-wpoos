@@ -113,7 +113,9 @@ class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro', 'read-only' );
+			'pro',
+			'read-only',
+		);
 	}
 
 	/**
@@ -258,11 +260,14 @@ class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 			// Sort by distance if location-based search.
 			if ( isset( $arguments['latitude'], $arguments['longitude'] ) ) {
-				usort( $places, function( $a, $b ) {
-					$a_dist = isset( $a['distance_km'] ) ? $a['distance_km'] : PHP_FLOAT_MAX;
-					$b_dist = isset( $b['distance_km'] ) ? $b['distance_km'] : PHP_FLOAT_MAX;
-					return $a_dist <=> $b_dist;
-				});
+				usort(
+					$places,
+					function ( $a, $b ) {
+						$a_dist = isset( $a['distance_km'] ) ? $a['distance_km'] : PHP_FLOAT_MAX;
+						$b_dist = isset( $b['distance_km'] ) ? $b['distance_km'] : PHP_FLOAT_MAX;
+						return $a_dist <=> $b_dist;
+					}
+				);
 			}
 		}
 
@@ -285,25 +290,25 @@ class WP_MCP_AI_Tool_List_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$tags  = wp_get_object_terms( $place_id, 'mcp_ai_place_tag', array( 'fields' => 'names' ) );
 
 		return array(
-			'id'                => $place_id,
-			'name'              => get_the_title(),
-			'description'       => get_the_content(),
-			'type'              => ! empty( $types ) ? $types[0] : '',
-			'tags'              => $tags,
-			'address'           => get_post_meta( $place_id, '_place_address', true ) ?: '',
-			'latitude'          => (float) get_post_meta( $place_id, '_place_latitude', true ),
-			'longitude'         => (float) get_post_meta( $place_id, '_place_longitude', true ),
-			'phone'             => get_post_meta( $place_id, '_place_phone', true ) ?: '',
-			'email'             => get_post_meta( $place_id, '_place_email', true ) ?: '',
-			'website'           => get_post_meta( $place_id, '_place_website', true ) ?: '',
-			'rating'            => (float) get_post_meta( $place_id, '_place_rating', true ),
-			'price_level'       => (int) get_post_meta( $place_id, '_place_price_level', true ),
-			'business_hours'    => get_post_meta( $place_id, '_place_business_hours', true ) ?: array(),
-			'amenities'         => get_post_meta( $place_id, '_place_amenities', true ) ?: array(),
-			'google_place_id'   => get_post_meta( $place_id, '_place_google_place_id', true ) ?: '',
+			'id'                 => $place_id,
+			'name'               => get_the_title(),
+			'description'        => get_the_content(),
+			'type'               => ! empty( $types ) ? $types[0] : '',
+			'tags'               => $tags,
+			'address'            => get_post_meta( $place_id, '_place_address', true ) ?: '',
+			'latitude'           => (float) get_post_meta( $place_id, '_place_latitude', true ),
+			'longitude'          => (float) get_post_meta( $place_id, '_place_longitude', true ),
+			'phone'              => get_post_meta( $place_id, '_place_phone', true ) ?: '',
+			'email'              => get_post_meta( $place_id, '_place_email', true ) ?: '',
+			'website'            => get_post_meta( $place_id, '_place_website', true ) ?: '',
+			'rating'             => (float) get_post_meta( $place_id, '_place_rating', true ),
+			'price_level'        => (int) get_post_meta( $place_id, '_place_price_level', true ),
+			'business_hours'     => get_post_meta( $place_id, '_place_business_hours', true ) ?: array(),
+			'amenities'          => get_post_meta( $place_id, '_place_amenities', true ) ?: array(),
+			'google_place_id'    => get_post_meta( $place_id, '_place_google_place_id', true ) ?: '',
 			'address_components' => get_post_meta( $place_id, '_place_address_components', true ) ?: array(),
-			'created_at'        => get_the_date( 'c' ),
-			'updated_at'        => get_the_modified_date( 'c' ),
+			'created_at'         => get_the_date( 'c' ),
+			'updated_at'         => get_the_modified_date( 'c' ),
 		);
 	}
 

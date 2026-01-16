@@ -159,10 +159,10 @@ class WP_MCP_AI_Media_Template_Metabox_Operation extends WP_MCP_AI_Media_Templat
 				</ul>
 				<p><strong><?php esc_html_e( 'Example:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
 				<pre style="background: #fff; padding: 10px; border: 1px solid #ddd; overflow-x: auto;"><code>{
-  "logo_attachment_id": 123,
-  "logo_position": "bottom-right",
-  "logo_scale": 0.2,
-  "logo_margin": 30
+	"logo_attachment_id": 123,
+	"logo_position": "bottom-right",
+	"logo_scale": 0.2,
+	"logo_margin": 30
 }</code></pre>
 			</div>
 
@@ -177,10 +177,10 @@ class WP_MCP_AI_Media_Template_Metabox_Operation extends WP_MCP_AI_Media_Templat
 				</ul>
 				<p><strong><?php esc_html_e( 'Example:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
 				<pre style="background: #fff; padding: 10px; border: 1px solid #ddd; overflow-x: auto;"><code>{
-  "target_width": 1920,
-  "target_height": 1080,
-  "output_format": "webp",
-  "quality": 85
+	"target_width": 1920,
+	"target_height": 1080,
+	"output_format": "webp",
+	"quality": 85
 }</code></pre>
 			</div>
 
@@ -193,9 +193,9 @@ class WP_MCP_AI_Media_Template_Metabox_Operation extends WP_MCP_AI_Media_Templat
 				</ul>
 				<p><strong><?php esc_html_e( 'Example:', 'mcp-ai-wpoos-pro' ); ?></strong></p>
 				<pre style="background: #fff; padding: 10px; border: 1px solid #ddd; overflow-x: auto;"><code>{
-  "prompt": "enhance brightness and contrast, improve colors",
-  "model": "gemini-2.0-flash-exp",
-  "aspect_ratio": "16:9"
+	"prompt": "enhance brightness and contrast, improve colors",
+	"model": "gemini-2.0-flash-exp",
+	"aspect_ratio": "16:9"
 }</code></pre>
 			</div>
 
@@ -240,7 +240,7 @@ class WP_MCP_AI_Media_Template_Metabox_Operation extends WP_MCP_AI_Media_Templat
 		// Save and validate parameters.
 		if ( isset( $_POST['wp_mcp_ai_template_parameters'] ) ) {
 			$parameters = sanitize_textarea_field( wp_unslash( $_POST['wp_mcp_ai_template_parameters'] ) );
-			
+
 			// Validate JSON.
 			if ( ! empty( $parameters ) ) {
 				$decoded = json_decode( $parameters, true );
@@ -252,7 +252,7 @@ class WP_MCP_AI_Media_Template_Metabox_Operation extends WP_MCP_AI_Media_Templat
 					$parameters = '';
 				}
 			}
-			
+
 			update_post_meta( $post_id, '_mcp_ai_template_parameters', $parameters );
 		}
 	}

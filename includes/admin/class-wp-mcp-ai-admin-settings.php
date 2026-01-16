@@ -4614,9 +4614,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			// Final fallback to minimal hardcoded list.
 			$choices = array(
-				'gpt-4o'        => __( 'GPT-4o', 'mcp-ai-wpoos' ),
-				'gpt-4o-mini'   => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
-				'gpt-4-turbo'   => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
+				'gpt-4o'      => __( 'GPT-4o', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini' => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
+				'gpt-4-turbo' => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
 			);
 
 			/**

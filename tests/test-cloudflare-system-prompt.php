@@ -298,4 +298,3 @@ class Test_Cloudflare_System_Prompt extends WP_UnitTestCase {
 		$this->assertEquals( 'messages', $keys[1], 'Second field should be messages' );
 	}
 }
-

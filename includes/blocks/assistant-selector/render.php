@@ -58,7 +58,7 @@ $unique_id = wp_unique_id( 'wp-mcp-ai-assistant-selector-' );
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
-			'class' => 'wp-block-mcp-ai-wpoos-assistant-selector',
+			'class'         => 'wp-block-mcp-ai-wpoos-assistant-selector',
 			'data-block-id' => $unique_id,
 		)
 	);

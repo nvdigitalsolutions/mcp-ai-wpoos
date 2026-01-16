@@ -152,7 +152,7 @@ class WP_MCP_AI_Project_Metabox {
 
 		// Save status.
 		if ( isset( $_POST['project_status'] ) ) {
-			$status = sanitize_key( $_POST['project_status'] );
+			$status         = sanitize_key( $_POST['project_status'] );
 			$valid_statuses = array( 'planning', 'active', 'on-hold', 'completed', 'cancelled' );
 			if ( in_array( $status, $valid_statuses, true ) ) {
 				update_post_meta( $post_id, '_project_status', $status );

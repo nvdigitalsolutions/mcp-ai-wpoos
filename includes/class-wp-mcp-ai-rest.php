@@ -2292,13 +2292,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'rest_chat_assistant_config_loaded',
 				'Assistant configuration loaded in handle_chat_request',
 				array(
-					'assistant_id'                => $assistant_id,
-					'has_system_prompt'           => ! empty( $assistant_config['system_prompt'] ),
-					'system_prompt_length'        => ! empty( $assistant_config['system_prompt'] ) ? strlen( $assistant_config['system_prompt'] ) : 0,
-					'system_prompt_preview'       => ! empty( $assistant_config['system_prompt'] ) ? substr( $assistant_config['system_prompt'], 0, 200 ) : '',
-					'provider'                    => isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : '',
-					'model'                       => isset( $assistant_config['model'] ) ? $assistant_config['model'] : '',
-					'tools_count'                 => isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) ? count( $assistant_config['tools'] ) : 0,
+					'assistant_id'          => $assistant_id,
+					'has_system_prompt'     => ! empty( $assistant_config['system_prompt'] ),
+					'system_prompt_length'  => ! empty( $assistant_config['system_prompt'] ) ? strlen( $assistant_config['system_prompt'] ) : 0,
+					'system_prompt_preview' => ! empty( $assistant_config['system_prompt'] ) ? substr( $assistant_config['system_prompt'], 0, 200 ) : '',
+					'provider'              => isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : '',
+					'model'                 => isset( $assistant_config['model'] ) ? $assistant_config['model'] : '',
+					'tools_count'           => isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) ? count( $assistant_config['tools'] ) : 0,
 				)
 			);
 
@@ -2325,7 +2325,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! empty( $additional_tools ) && is_array( $additional_tools ) ) {
 				// Sanitize the additional tools array.
 				$additional_tools = array_filter( array_map( 'sanitize_key', $additional_tools ) );
-				
+
 				if ( ! empty( $additional_tools ) ) {
 					// Merge with existing tools, ensuring no duplicates.
 					if ( ! isset( $assistant_config['tools'] ) || ! is_array( $assistant_config['tools'] ) ) {
@@ -2968,7 +2968,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				)
 			);
 
-			$transcript_context['request_started_at']    = microtime( true );
+			$transcript_context['request_started_at'] = microtime( true );
 
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
@@ -3361,8 +3361,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'sse_streaming_before_llm_call',
 					'About to call LLM again with tool results',
 					array(
-						'iteration'    => $iteration,
-						'assistant_id' => $assistant_id,
+						'iteration'     => $iteration,
+						'assistant_id'  => $assistant_id,
 						'message_count' => count( $messages ),
 					)
 				);

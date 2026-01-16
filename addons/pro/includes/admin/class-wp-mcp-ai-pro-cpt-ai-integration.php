@@ -380,9 +380,9 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			'wp-mcp-ai-cpt-assistant',
 			'wpMcpAiCpt',
 			array(
-				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-				'nonce'         => wp_create_nonce( 'wp_mcp_ai_cpt_chat' ),
-				'i18n'          => array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_cpt_chat' ),
+				'i18n'    => array(
 					'error'        => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
 					'sending'      => __( 'Sending...', 'mcp-ai-wpoos-pro' ),
 					'thinking'     => __( 'AI is thinking...', 'mcp-ai-wpoos-pro' ),
@@ -405,11 +405,11 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 		}
 
 		// Get and sanitize input.
-		$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
-		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		$message   = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
+		$post_id   = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 		$post_type = isset( $_POST['post_type'] ) ? sanitize_key( wp_unslash( $_POST['post_type'] ) ) : '';
-		$term_id = isset( $_POST['term_id'] ) ? absint( $_POST['term_id'] ) : 0;
-		$taxonomy = isset( $_POST['taxonomy'] ) ? sanitize_key( wp_unslash( $_POST['taxonomy'] ) ) : '';
+		$term_id   = isset( $_POST['term_id'] ) ? absint( $_POST['term_id'] ) : 0;
+		$taxonomy  = isset( $_POST['taxonomy'] ) ? sanitize_key( wp_unslash( $_POST['taxonomy'] ) ) : '';
 
 		if ( empty( $message ) ) {
 			wp_send_json_error( array( 'message' => __( 'Message is required.', 'mcp-ai-wpoos-pro' ) ) );
@@ -423,20 +423,20 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 		if ( $post_id > 0 ) {
 			$post = get_post( $post_id );
 			if ( $post ) {
-				$context['post_id'] = $post_id;
-				$context['post_type'] = $post->post_type;
-				$context['post_title'] = $post->post_title;
+				$context['post_id']      = $post_id;
+				$context['post_type']    = $post->post_type;
+				$context['post_title']   = $post->post_title;
 				$context['post_content'] = $post->post_content;
-				$context['post_status'] = $post->post_status;
+				$context['post_status']  = $post->post_status;
 			}
 		}
 
 		if ( $term_id > 0 && $taxonomy ) {
 			$term = get_term( $term_id, $taxonomy );
 			if ( $term && ! is_wp_error( $term ) ) {
-				$context['term_id'] = $term_id;
-				$context['taxonomy'] = $taxonomy;
-				$context['term_name'] = $term->name;
+				$context['term_id']          = $term_id;
+				$context['taxonomy']         = $taxonomy;
+				$context['term_name']        = $term->name;
 				$context['term_description'] = $term->description;
 			}
 		}

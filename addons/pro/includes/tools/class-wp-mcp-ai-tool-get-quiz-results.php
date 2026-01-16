@@ -218,12 +218,12 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array Chart.js configuration.
 	 */
 	private function generate_results_chart( $detailed_results, $questions ) {
-		$labels         = array();
-		$points_earned  = array();
-		$points_max     = array();
+		$labels        = array();
+		$points_earned = array();
+		$points_max    = array();
 
 		foreach ( $detailed_results as $result ) {
-			$q_num = $result['question_number'];
+			$q_num    = $result['question_number'];
 			$labels[] = sprintf( __( 'Q%d', 'mcp-ai-wpoos-pro' ), $q_num );
 
 			$earned = isset( $result['points_earned'] ) ? floatval( $result['points_earned'] ) : 0;
@@ -234,8 +234,8 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return array(
-			'type' => 'bar',
-			'data' => array(
+			'type'    => 'bar',
+			'data'    => array(
 				'labels'   => $labels,
 				'datasets' => array(
 					array(
@@ -257,7 +257,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Results implements WP_MCP_AI_Tool_Interface, WP_MC
 			'options' => array(
 				'responsive' => true,
 				'plugins'    => array(
-					'title' => array(
+					'title'  => array(
 						'display' => true,
 						'text'    => __( 'Your Performance by Question', 'mcp-ai-wpoos-pro' ),
 					),

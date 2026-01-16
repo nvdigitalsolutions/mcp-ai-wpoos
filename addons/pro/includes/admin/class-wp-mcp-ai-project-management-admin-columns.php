@@ -45,14 +45,14 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 	 */
 	public static function project_columns( $columns ) {
 		$new_columns = array(
-			'cb'           => $columns['cb'],
-			'title'        => $columns['title'],
-			'status'       => __( 'Status', 'mcp-ai-wpoos-pro' ),
-			'start_date'   => __( 'Start Date', 'mcp-ai-wpoos-pro' ),
-			'end_date'     => __( 'End Date', 'mcp-ai-wpoos-pro' ),
-			'assigned_to'  => __( 'Team Members', 'mcp-ai-wpoos-pro' ),
-			'author'       => $columns['author'],
-			'date'         => $columns['date'],
+			'cb'          => $columns['cb'],
+			'title'       => $columns['title'],
+			'status'      => __( 'Status', 'mcp-ai-wpoos-pro' ),
+			'start_date'  => __( 'Start Date', 'mcp-ai-wpoos-pro' ),
+			'end_date'    => __( 'End Date', 'mcp-ai-wpoos-pro' ),
+			'assigned_to' => __( 'Team Members', 'mcp-ai-wpoos-pro' ),
+			'author'      => $columns['author'],
+			'date'        => $columns['date'],
 		);
 		return $new_columns;
 	}
@@ -75,7 +75,7 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 						'completed' => __( 'Completed', 'mcp-ai-wpoos-pro' ),
 						'cancelled' => __( 'Cancelled', 'mcp-ai-wpoos-pro' ),
 					);
-					$label = isset( $status_labels[ $status ] ) ? $status_labels[ $status ] : ucfirst( $status );
+					$label         = isset( $status_labels[ $status ] ) ? $status_labels[ $status ] : ucfirst( $status );
 					printf( '<span class="wp-mcp-ai-status wp-mcp-ai-status-%s">%s</span>', esc_attr( $status ), esc_html( $label ) );
 				} else {
 					echo '—';
@@ -162,7 +162,7 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 						'completed'   => __( 'Completed', 'mcp-ai-wpoos-pro' ),
 						'cancelled'   => __( 'Cancelled', 'mcp-ai-wpoos-pro' ),
 					);
-					$label = isset( $status_labels[ $status ] ) ? $status_labels[ $status ] : ucfirst( $status );
+					$label         = isset( $status_labels[ $status ] ) ? $status_labels[ $status ] : ucfirst( $status );
 					printf( '<span class="wp-mcp-ai-status wp-mcp-ai-status-%s">%s</span>', esc_attr( $status ), esc_html( $label ) );
 				} else {
 					echo '—';
@@ -178,7 +178,7 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 						'high'   => __( 'High', 'mcp-ai-wpoos-pro' ),
 						'urgent' => __( 'Urgent', 'mcp-ai-wpoos-pro' ),
 					);
-					$label = isset( $priority_labels[ $priority ] ) ? $priority_labels[ $priority ] : ucfirst( $priority );
+					$label           = isset( $priority_labels[ $priority ] ) ? $priority_labels[ $priority ] : ucfirst( $priority );
 					printf( '<span class="wp-mcp-ai-priority wp-mcp-ai-priority-%s">%s</span>', esc_attr( $priority ), esc_html( $label ) );
 				} else {
 					echo '—';
@@ -285,7 +285,7 @@ class WP_MCP_AI_Project_Management_Admin_Columns {
 						'reminder'  => __( 'Reminder', 'mcp-ai-wpoos-pro' ),
 						'other'     => __( 'Other', 'mcp-ai-wpoos-pro' ),
 					);
-					$label = isset( $type_labels[ $type ] ) ? $type_labels[ $type ] : ucfirst( $type );
+					$label       = isset( $type_labels[ $type ] ) ? $type_labels[ $type ] : ucfirst( $type );
 					printf( '<span class="wp-mcp-ai-event-type wp-mcp-ai-event-type-%s">%s</span>', esc_attr( $type ), esc_html( $label ) );
 				} else {
 					echo '—';

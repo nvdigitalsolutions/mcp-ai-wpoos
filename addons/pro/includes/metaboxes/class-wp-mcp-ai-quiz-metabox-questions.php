@@ -105,11 +105,11 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 	 * @return void
 	 */
 	protected function render_question_row( $index, $question = array() ) {
-		$question_text   = isset( $question['question'] ) ? $question['question'] : '';
-		$type            = isset( $question['type'] ) ? $question['type'] : 'multiple_choice';
-		$points          = isset( $question['points'] ) ? $question['points'] : 1;
-		$correct_answer  = isset( $question['correct_answer'] ) ? $question['correct_answer'] : '';
-		$options         = isset( $question['options'] ) && is_array( $question['options'] ) ? $question['options'] : array( '', '', '' );
+		$question_text  = isset( $question['question'] ) ? $question['question'] : '';
+		$type           = isset( $question['type'] ) ? $question['type'] : 'multiple_choice';
+		$points         = isset( $question['points'] ) ? $question['points'] : 1;
+		$correct_answer = isset( $question['correct_answer'] ) ? $question['correct_answer'] : '';
+		$options        = isset( $question['options'] ) && is_array( $question['options'] ) ? $question['options'] : array( '', '', '' );
 		?>
 		<div class="quiz-question-row" data-index="<?php echo esc_attr( $index ); ?>">
 			<div class="question-header">
@@ -229,8 +229,8 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 		}
 
 		// Process questions.
-		$questions     = array();
-		$total_points  = 0;
+		$questions    = array();
+		$total_points = 0;
 
 		if ( isset( $_POST['wp_mcp_ai_questions'] ) && is_array( $_POST['wp_mcp_ai_questions'] ) ) {
 			foreach ( $_POST['wp_mcp_ai_questions'] as $question_data ) {

@@ -67,7 +67,7 @@ class WP_MCP_AI_Place_CPT {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$post_type    = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type     = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_place_page = ( $post_type === self::POST_TYPE );
 
 		if ( ! $is_place_page ) {
@@ -269,8 +269,8 @@ class WP_MCP_AI_Place_CPT {
 				break;
 
 			case 'location':
-				$address = get_post_meta( $post_id, '_place_address', true );
-				$city    = '';
+				$address    = get_post_meta( $post_id, '_place_address', true );
+				$city       = '';
 				$components = get_post_meta( $post_id, '_place_address_components', true );
 				if ( is_array( $components ) && ! empty( $components['city'] ) ) {
 					$city = $components['city'];

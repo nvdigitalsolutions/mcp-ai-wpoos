@@ -43,49 +43,49 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'     => array(
+				'member_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by member ID (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'medication'    => array(
+				'medication'  => array(
 					'type'        => 'string',
 					'description' => __( 'Search by medication name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'prescriber'    => array(
+				'prescriber'  => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by prescriber name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'active_only'   => array(
+				'active_only' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Only show currently active prescriptions (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'start_date'    => array(
+				'start_date'  => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by prescriptions starting on or after this date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'end_date'      => array(
+				'end_date'    => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by prescriptions ending on or before this date (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'search'        => array(
+				'search'      => array(
 					'type'        => 'string',
 					'description' => __( 'Search prescriptions by any text (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'per_page'      => array(
+				'per_page'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of prescriptions to return per page (optional, default: 20, max: 100)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'page'          => array(
+				'page'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination (optional, default: 1)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
@@ -238,30 +238,30 @@ class WP_MCP_AI_Tool_Search_Prescriptions implements WP_MCP_AI_Tool_Interface, W
 				$prescription_id = get_the_ID();
 
 				// Get member info.
-				$member_id = get_post_meta( $prescription_id, '_prescription_member_id', true );
+				$member_id   = get_post_meta( $prescription_id, '_prescription_member_id', true );
 				$member_name = '';
 				if ( $member_id ) {
-					$member = get_post( $member_id );
+					$member      = get_post( $member_id );
 					$member_name = $member ? $member->post_title : '';
 				}
 
 				// Check if currently active.
-				$start = get_post_meta( $prescription_id, '_prescription_start_date', true );
-				$end = get_post_meta( $prescription_id, '_prescription_end_date', true );
-				$today = current_time( 'Y-m-d' );
+				$start     = get_post_meta( $prescription_id, '_prescription_start_date', true );
+				$end       = get_post_meta( $prescription_id, '_prescription_end_date', true );
+				$today     = current_time( 'Y-m-d' );
 				$is_active = ( ! $start || $start <= $today ) && ( ! $end || $end >= $today );
 
 				$prescriptions[] = array(
-					'id'          => $prescription_id,
-					'medication'  => get_the_title(),
-					'member_id'   => $member_id,
-					'member_name' => $member_name,
-					'dosage'      => get_post_meta( $prescription_id, '_prescription_dosage', true ),
-					'frequency'   => get_post_meta( $prescription_id, '_prescription_frequency', true ),
-					'prescriber'  => get_post_meta( $prescription_id, '_prescription_prescriber', true ),
-					'start_date'  => $start,
-					'end_date'    => $end,
-					'is_active'   => $is_active,
+					'id'           => $prescription_id,
+					'medication'   => get_the_title(),
+					'member_id'    => $member_id,
+					'member_name'  => $member_name,
+					'dosage'       => get_post_meta( $prescription_id, '_prescription_dosage', true ),
+					'frequency'    => get_post_meta( $prescription_id, '_prescription_frequency', true ),
+					'prescriber'   => get_post_meta( $prescription_id, '_prescription_prescriber', true ),
+					'start_date'   => $start,
+					'end_date'     => $end,
+					'is_active'    => $is_active,
 					'instructions' => wp_trim_words( get_the_content(), 20 ),
 				);
 			}
