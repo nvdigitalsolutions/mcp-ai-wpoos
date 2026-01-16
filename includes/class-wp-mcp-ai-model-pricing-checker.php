@@ -17,6 +17,10 @@ class WP_MCP_AI_Model_Pricing_Checker {
 	const OPTION_LAST_CHECK    = 'wp_mcp_ai_last_pricing_check';
 	const OPTION_PRICE_CHANGES = 'wp_mcp_ai_price_changes';
 
+	// Pricing validation constants (per 1K tokens).
+	const MIN_PRICING_VALUE = 0.0;
+	const MAX_PRICING_VALUE = 10.0;
+
 	/**
 	 * Bootstrap the pricing checker.
 	 */
@@ -294,12 +298,15 @@ class WP_MCP_AI_Model_Pricing_Checker {
 			$new_input_cost  = floatval( $change['new_input'] );
 			$new_output_cost = floatval( $change['new_output'] );
 
-			// Ensure pricing values are within reasonable ranges (0 to $10 per 1K tokens).
-			if ( $new_input_cost < 0 || $new_input_cost > 10 || $new_output_cost < 0 || $new_output_cost > 10 ) {
+			// Ensure pricing values are within reasonable ranges.
+			if ( $new_input_cost < self::MIN_PRICING_VALUE || $new_input_cost > self::MAX_PRICING_VALUE ||
+			     $new_output_cost < self::MIN_PRICING_VALUE || $new_output_cost > self::MAX_PRICING_VALUE ) {
 				$errors[] = sprintf(
-					/* translators: %s: model name */
-					__( 'Invalid pricing values for model: %s (must be between $0 and $10 per 1K)', 'mcp-ai-wpoos' ),
-					$model_name
+					/* translators: 1: model name, 2: minimum price, 3: maximum price */
+					__( 'Invalid pricing values for model: %1$s (must be between $%2$.2f and $%3$.2f per 1K)', 'mcp-ai-wpoos' ),
+					$model_name,
+					self::MIN_PRICING_VALUE,
+					self::MAX_PRICING_VALUE
 				);
 				continue;
 			}
@@ -360,7 +367,10 @@ class WP_MCP_AI_Model_Pricing_Checker {
 		// Clear price changes after successful update.
 		if ( $updated_count > 0 ) {
 			delete_option( self::OPTION_PRICE_CHANGES );
-			// Also reset the dismissed notice counter for all users.
+			// Reset the dismissed notice counter for all users so they can see.
+			// new pricing change notifications. This is intentional: when prices.
+			// are updated via the button, all users should be re-notified if new.
+			// changes are detected in the future.
 			delete_metadata( 'user', 0, 'wp_mcp_ai_dismissed_price_notice', '', true );
 		}
 
