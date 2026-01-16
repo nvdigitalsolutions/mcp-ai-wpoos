@@ -16,6 +16,18 @@
 	 */
 	const ModelSelector = {
 		/**
+		 * Re-select a model field from the DOM by its ID.
+		 * 
+		 * Helper method to get the current DOM element after potential replacement.
+		 * 
+		 * @param {string} fieldId The ID of the field to select.
+		 * @return {jQuery} The jQuery object for the field, or empty jQuery object if not found.
+		 */
+		getModelFieldById: function( fieldId ) {
+			return $( '#' + fieldId );
+		},
+		
+		/**
 		 * Initialize model selector functionality.
 		 */
 		init: function() {
@@ -27,7 +39,7 @@
 
 				if ( $modelField.length ) {
 					// Initialize the model field for this provider.
-					ModelSelector.initModelField( $providerSelect, $modelField );
+					ModelSelector.initModelField( $providerSelect );
 
 					// Bind change event.
 					$providerSelect.on( 'change', function() {
@@ -47,11 +59,12 @@
 		 * Initialize model field for a provider select.
 		 *
 		 * @param {jQuery} $providerSelect Provider select element.
-		 * @param {jQuery} $modelField     Model field element.
 		 */
-		initModelField: function( $providerSelect, $modelField ) {
+		initModelField: function( $providerSelect ) {
 			// If model field is still a text input, we're good - it will be replaced on first load.
 			// If it's already a select, it's been previously converted.
+			
+			// eslint-disable-next-line no-console
 			console.log( 'WP MCP AI: Initialized model selector for provider field:', $providerSelect.attr( 'id' ) );
 		},
 
@@ -87,10 +100,24 @@
 		 * Handle provider change event.
 		 *
 		 * @param {jQuery} $providerSelect Provider select element.
-		 * @param {jQuery} $modelField     Model field element.
+		 * @param {jQuery} $modelField     Model field element (may be stale).
 		 */
 		handleProviderChange: function( $providerSelect, $modelField ) {
 			const provider = $providerSelect.val();
+			
+			// Re-select the model field from the DOM in case it was replaced.
+			// This ensures we're working with the current element, not a stale reference.
+			// The parameter $modelField may reference a detached DOM element after replaceWith().
+			const targetSelector = $providerSelect.data( 'model-target' );
+			
+			// Validate target selector exists before attempting to select.
+			if ( targetSelector ) {
+				const $currentModelField = $( targetSelector );
+				
+				if ( $currentModelField.length ) {
+					$modelField = $currentModelField;
+				}
+			}
 
 			if ( ! provider ) {
 				// If no provider selected, show text input.
@@ -132,6 +159,10 @@
 					provider: provider
 				},
 				success: function( response ) {
+					// Re-select the model field from DOM to get the current element.
+					// This is important in case the field was replaced since the AJAX call started.
+					$modelField = ModelSelector.getModelFieldById( fieldId );
+					
 					if ( response.success && response.data.models ) {
 						// Convert to select dropdown with models.
 						ModelSelector.convertToSelect( $modelField, response.data.models, currentValue, fieldId, fieldName, fieldClasses );
@@ -143,6 +174,9 @@
 					}
 				},
 				error: function() {
+					// Re-select the model field from DOM to get the current element.
+					$modelField = ModelSelector.getModelFieldById( fieldId );
+					
 					// Show error and keep as text input.
 					ModelSelector.showError( $modelField, wpMcpAiModelSelector.errorMessage );
 					ModelSelector.convertToTextInput( $modelField, currentValue, fieldId, fieldName, fieldClasses );
