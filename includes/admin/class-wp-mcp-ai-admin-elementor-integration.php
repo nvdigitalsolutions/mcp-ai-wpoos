@@ -171,9 +171,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 
 						<?php
 						// Debug information to help diagnose configuration issues.
-						$is_base_version  = wp_mcp_ai_is_base_version();
-						$constant_defined = defined( 'WP_MCP_AI_BASE_VERSION' );
-						$constant_value   = $constant_defined ? WP_MCP_AI_BASE_VERSION : 'not defined';
+						// Check if integrations (including Elementor) should be loaded.
+						// This returns true when either in full version mode OR when Pro addon is active.
+						$integrations_enabled = wp_mcp_ai_should_load_integrations();
+						$is_base_version      = wp_mcp_ai_is_base_version();
+						$is_pro_active        = defined( 'WP_MCP_AI_PRO_VERSION' );
+						$constant_defined     = defined( 'WP_MCP_AI_BASE_VERSION' );
+						$constant_value       = $constant_defined ? WP_MCP_AI_BASE_VERSION : 'not defined';
 						?>
 
 						<div style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 1rem; margin-top: 1.5rem;">
@@ -185,35 +189,52 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 									if ( $constant_defined ) {
 										echo '<code>' . esc_html( $constant_value ? 'true' : 'false' ) . '</code>';
 									} else {
-										echo '<code>not defined</code> (defaults to base version)';
+										echo '<code>not defined</code> (defaults to full version)';
 									}
 									?>
 								</li>
+								<?php if ( $is_pro_active ) : ?>
+									<li><strong>Pro Addon:</strong> <code>active</code></li>
+								<?php endif; ?>
 								<li>
-									<strong>Mode:</strong>
-									<?php echo wp_kses_post( $is_base_version ? '<strong style="color: #8b6c00;">Base Version</strong> (Elementor widgets disabled)' : '<strong style="color: #0a5f1a;">Full Version</strong> (Elementor widgets enabled)' ); ?>
+									<strong>Integration Mode:</strong>
+									<?php
+									if ( $integrations_enabled ) {
+										if ( $is_base_version && $is_pro_active ) {
+											echo wp_kses_post( '<strong style="color: #0a5f1a;">Base + Pro</strong> (Elementor widgets enabled via Pro addon)' );
+										} else {
+											echo wp_kses_post( '<strong style="color: #0a5f1a;">Full Version</strong> (Elementor widgets enabled)' );
+										}
+									} else {
+										echo wp_kses_post( '<strong style="color: #8b6c00;">Base Version</strong> (Elementor widgets disabled)' );
+									}
+									?>
 								</li>
 							</ul>
 						</div>
 
-						<?php if ( $is_base_version ) : ?>
+						<?php if ( ! $integrations_enabled ) : ?>
 							<div style="background: #fef7e0; border-left: 4px solid #8b6c00; padding: 1rem; margin-top: 1.5rem;">
 								<p style="margin: 0;"><strong><?php esc_html_e( 'To Enable Elementor Widgets:', 'mcp-ai-wpoos' ); ?></strong></p>
 								<p style="margin: 0.5rem 0;">
-									<?php esc_html_e( 'Add this line to your wp-config.php file (before the "stop editing" comment):', 'mcp-ai-wpoos' ); ?>
+									<?php esc_html_e( 'You have two options:', 'mcp-ai-wpoos' ); ?>
 								</p>
 								<p style="margin: 0.5rem 0 0 0;">
-									<code style="background: #fff; padding: 0.25rem 0.5rem; display: inline-block;">define( 'WP_MCP_AI_BASE_VERSION', false );</code>
+									<strong>1.</strong> <?php esc_html_e( 'Set full version mode by adding to wp-config.php:', 'mcp-ai-wpoos' ); ?><br>
+									<code style="background: #fff; padding: 0.25rem 0.5rem; display: inline-block; margin-top: 0.5rem;">define( 'WP_MCP_AI_BASE_VERSION', false );</code>
+								</p>
+								<p style="margin: 0.5rem 0 0 0;">
+									<strong>2.</strong> <?php esc_html_e( 'Or install the Pro addon which enables integrations in base version mode.', 'mcp-ai-wpoos' ); ?>
 								</p>
 								<p style="margin: 0.5rem 0 0 0; font-size: 0.9em; color: #646970;">
-									<?php esc_html_e( 'After adding this line, refresh this page to verify the change.', 'mcp-ai-wpoos' ); ?>
+									<?php esc_html_e( 'After making changes, refresh this page to verify.', 'mcp-ai-wpoos' ); ?>
 								</p>
 							</div>
 						<?php else : ?>
 							<div style="background: #d5f0db; border-left: 4px solid #0a5f1a; padding: 1rem; margin-top: 1.5rem;">
 								<p style="margin: 0;"><strong style="color: #0a5f1a;">✓ <?php esc_html_e( 'Elementor Widgets Enabled', 'mcp-ai-wpoos' ); ?></strong></p>
 								<p style="margin: 0.5rem 0 0 0;">
-									<?php esc_html_e( 'Full Version mode is active. All Elementor widgets are available in the editor.', 'mcp-ai-wpoos' ); ?>
+									<?php esc_html_e( 'Integration mode is active. All Elementor widgets are available in the editor.', 'mcp-ai-wpoos' ); ?>
 								</p>
 							</div>
 						<?php endif; ?>
