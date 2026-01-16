@@ -38,24 +38,27 @@ class WP_MCP_AI_Media_Collection_CPT {
 	 * Initialize the class.
 	 */
 	public static function init() {
+		// Always register post type and show notices, so admin pages are visible.
+		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
+		add_action( 'init', array( __CLASS__, 'register_taxonomy' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
+
+		// Check if feature is available and enabled before initializing full functionality.
 		// Only available in Full Version (not Base Version), unless Pro addon is active.
 		// When Pro addon is active (WP_MCP_AI_PRO_VERSION defined), features should work even in base mode.
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-			// Still show notice if accessing media collection pages.
-			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
+			// Base version without Pro - only show notices, don't initialize functionality.
 			return;
 		}
 
-		// Only initialize if media toolkit is enabled.
+		// Check if media toolkit is enabled in settings.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			// Show notice if trying to access media collection pages when disabled.
-			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
+			// Feature disabled - only show notices, don't initialize functionality.
 			return;
 		}
 
-		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
-		add_action( 'init', array( __CLASS__, 'register_taxonomy' ) );
+		// Feature is available and enabled - initialize full functionality.
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register_meta_boxes' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'save_collection_meta' ), 5, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'show_info_notice' ) );

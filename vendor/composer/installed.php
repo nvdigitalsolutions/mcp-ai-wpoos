@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-quiz-tool-functionality',
-        'version' => 'dev-copilot/update-quiz-tool-functionality',
-        'reference' => '62b6627ce15ee6477d6d9b8067e5ba518e95bd59',
+        'pretty_version' => 'dev-copilot/fix-plugin-page-visibility',
+        'version' => 'dev-copilot/fix-plugin-page-visibility',
+        'reference' => '00bf87753b0b22ab4b4a17d84783e976a2c7cdab',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-quiz-tool-functionality',
-            'version' => 'dev-copilot/update-quiz-tool-functionality',
-            'reference' => '62b6627ce15ee6477d6d9b8067e5ba518e95bd59',
+            'pretty_version' => 'dev-copilot/fix-plugin-page-visibility',
+            'version' => 'dev-copilot/fix-plugin-page-visibility',
+            'reference' => '00bf87753b0b22ab4b4a17d84783e976a2c7cdab',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
