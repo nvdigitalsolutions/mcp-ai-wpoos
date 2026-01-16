@@ -52,6 +52,10 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for PayHere. If not provided, uses settings-based configuration.', 'mcp-ai-wpoos' ),
+				),
 				'order_id' => array(
 					'type'        => 'string',
 					'description' => __( 'The PayHere order ID to retrieve payment details for (e.g., "LP8006126139").', 'mcp-ai-wpoos' ),
@@ -102,8 +106,47 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
+		// Get connection_id if provided.
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
+
+		// Validate connection if provided.
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+			if ( null === $connection ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_not_found',
+					sprintf(
+						/* translators: %s: connection ID */
+						__( 'PayHere connection "%s" not found.', 'mcp-ai-wpoos' ),
+						$connection_id
+					)
+				);
+			}
+
+			// Validate connection type.
+			if ( empty( $connection['connection_type'] ) || 'payhere' !== $connection['connection_type'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_wrong_connection_type',
+					__( 'This connection is not a PayHere connection.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Check if enabled.
+			if ( empty( $connection['enabled'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_disabled',
+					sprintf(
+						/* translators: %s: connection name */
+						__( 'PayHere connection "%s" is disabled.', 'mcp-ai-wpoos' ),
+						$connection['name']
+					)
+				);
+			}
+		}
+
 		$order_id = sanitize_text_field( $arguments['order_id'] );
-		$client   = new WP_MCP_AI_PayHere_Client();
+		$client   = new WP_MCP_AI_PayHere_Client( $connection_id );
 		$options  = array();
 
 		if ( isset( $arguments['timeout'] ) ) {

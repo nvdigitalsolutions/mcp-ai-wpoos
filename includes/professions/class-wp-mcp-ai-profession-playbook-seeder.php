@@ -353,7 +353,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 				"SELECT p.ID, pm_hash.meta_value as hash
 				FROM {$wpdb->posts} p
 				INNER JOIN {$wpdb->postmeta} pm_hash ON p.ID = pm_hash.post_id
-				LEFT JOIN {$wpdb->postmeta} pm_prof ON p.ID = pm_prof.post_id 
+				LEFT JOIN {$wpdb->postmeta} pm_prof ON p.ID = pm_prof.post_id
 					AND pm_prof.meta_key = '_wp_mcp_ai_playbook_profession_id'
 				WHERE p.post_type = 'attachment'
 				AND p.post_status = 'inherit'

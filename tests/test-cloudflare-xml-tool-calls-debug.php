@@ -145,7 +145,7 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 		$parse_method = $reflection->getMethod( 'parse_xml_tool_calls' );
 		$parse_method->setAccessible( true );
 		$parsed = $parse_method->invoke( $this->client, $content );
-		
+
 		$this->assertIsArray( $parsed );
 		$this->assertNotEmpty( $parsed );
 		$this->assertEquals( 'get_weather', $parsed[0]['function']['name'] );

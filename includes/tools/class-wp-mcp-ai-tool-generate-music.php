@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool that generates music using Google Gemini Lyria model.
+ * Tool that generates music using Mubert API.
  *
  * @package WP_MCP_AI
  */
@@ -10,12 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-music-service.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-mubert-music-service.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
- * Provides a tool for generating music via Google Gemini Lyria.
+ * Provides a tool for generating royalty-free background music via Mubert API.
  */
 class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
@@ -37,7 +37,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates instrumental music from a text description using Google Gemini Lyria model and saves it to the Media Library.', 'mcp-ai-wpoos' );
+		return __( 'Generates royalty-free background music from a text description using Mubert API and saves it to the Media Library. Supports 150+ genres and 50+ moods.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -53,40 +53,18 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				),
 				'duration'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Duration of the music in seconds (1-300).', 'mcp-ai-wpoos' ),
-					'default'     => WP_MCP_AI_Gemini_Music_Service::DEFAULT_DURATION,
-					'minimum'     => 1,
-					'maximum'     => WP_MCP_AI_Gemini_Music_Service::MAX_DURATION,
+					'description' => __( 'Duration of the music in seconds (15-1500). Mubert supports up to 25 minutes.', 'mcp-ai-wpoos' ),
+					'default'     => WP_MCP_AI_Mubert_Music_Service::DEFAULT_DURATION,
+					'minimum'     => WP_MCP_AI_Mubert_Music_Service::MIN_DURATION,
+					'maximum'     => WP_MCP_AI_Mubert_Music_Service::MAX_DURATION,
 				),
 				'genre'           => array(
 					'type'        => 'string',
-					'description' => __( 'Optional music genre (e.g., "jazz", "rock", "classical", "electronic").', 'mcp-ai-wpoos' ),
+					'description' => __( 'Optional music genre from 150+ available (e.g., "jazz", "rock", "classical", "electronic", "ambient").', 'mcp-ai-wpoos' ),
 				),
 				'mood'            => array(
 					'type'        => 'string',
-					'description' => __( 'Optional mood or atmosphere (e.g., "upbeat", "calm", "dramatic", "mysterious").', 'mcp-ai-wpoos' ),
-				),
-				'instrumentation' => array(
-					'type'        => 'string',
-					'description' => __( 'Optional instruments to feature (e.g., "piano and strings", "acoustic guitar", "synthesizers").', 'mcp-ai-wpoos' ),
-				),
-				'bpm'             => array(
-					'type'        => 'integer',
-					'description' => __( 'Optional tempo in beats per minute (20-300).', 'mcp-ai-wpoos' ),
-					'default'     => WP_MCP_AI_Gemini_Music_Service::DEFAULT_BPM,
-					'minimum'     => 20,
-					'maximum'     => 300,
-				),
-				'key'             => array(
-					'type'        => 'string',
-					'description' => __( 'Optional musical key (e.g., "C major", "A minor", "D major").', 'mcp-ai-wpoos' ),
-				),
-				'temperature'     => array(
-					'type'        => 'number',
-					'description' => __( 'Optional creativity level (0.0-2.0, higher = more random).', 'mcp-ai-wpoos' ),
-					'default'     => WP_MCP_AI_Gemini_Music_Service::DEFAULT_TEMPERATURE,
-					'minimum'     => 0.0,
-					'maximum'     => 2.0,
+					'description' => __( 'Optional mood from 50+ available (e.g., "upbeat", "calm", "dramatic", "mysterious", "energetic").', 'mcp-ai-wpoos' ),
 				),
 				'file_name'       => array(
 					'type'        => 'string',
@@ -161,24 +139,8 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			$options['mood'] = sanitize_text_field( $arguments['mood'] );
 		}
 
-		if ( isset( $arguments['instrumentation'] ) && ! empty( $arguments['instrumentation'] ) ) {
-			$options['instrumentation'] = sanitize_text_field( $arguments['instrumentation'] );
-		}
-
-		if ( isset( $arguments['bpm'] ) ) {
-			$options['bpm'] = absint( $arguments['bpm'] );
-		}
-
-		if ( isset( $arguments['key'] ) && ! empty( $arguments['key'] ) ) {
-			$options['key'] = sanitize_text_field( $arguments['key'] );
-		}
-
-		if ( isset( $arguments['temperature'] ) ) {
-			$options['temperature'] = floatval( $arguments['temperature'] );
-		}
-
-		// Generate music using the service.
-		$service = new WP_MCP_AI_Gemini_Music_Service();
+		// Generate music using Mubert service.
+		$service = new WP_MCP_AI_Mubert_Music_Service();
 		$result  = $service->generate_music( $prompt, $options );
 
 		if ( is_wp_error( $result ) ) {
@@ -188,7 +150,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $result['audio'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_audio',
-				__( 'Gemini returned an empty audio response.', 'mcp-ai-wpoos' )
+				__( 'Mubert returned an empty audio response.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -212,7 +174,7 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'duration'      => $result['duration'],
 			'sample_rate'   => $result['sample_rate'],
 			'prompt'        => $prompt,
-			'model'         => $result['model'],
+			'provider'      => 'mubert',
 		);
 
 		if ( ! empty( $storage['duration_formatted'] ) ) {
@@ -230,16 +192,10 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( isset( $options['mood'] ) ) {
 			$output['mood'] = $options['mood'];
 		}
-		if ( isset( $options['bpm'] ) ) {
-			$output['bpm'] = $options['bpm'];
-		}
-		if ( isset( $options['key'] ) ) {
-			$output['key'] = $options['key'];
-		}
 
 		WP_MCP_AI_Logger::log_event(
 			'music_generated',
-			'Stored music generation as a media attachment.',
+			'Stored Mubert music generation as a media attachment.',
 			array(
 				'attachment_id' => $storage['attachment_id'],
 				'duration'      => $result['duration'],
@@ -286,13 +242,13 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'flac' => 'audio/flac',
 		);
 
-		$mime_type = isset( $mime_types[ $format ] ) ? $mime_types[ $format ] : 'audio/wav';
+		$mime_type = isset( $mime_types[ $format ] ) ? $mime_types[ $format ] : 'audio/mpeg';
 		$extension = $format;
 
 		// Use job_id for filename if available, otherwise use file_name or default.
 		$job_id = isset( $context['parent_job_id'] ) ? sanitize_key( $context['parent_job_id'] ) : '';
 		if ( ! empty( $job_id ) ) {
-			$file_name = sprintf( 'gemini-music-%s.%s', $job_id, $extension );
+			$file_name = sprintf( 'mubert-music-%s.%s', $job_id, $extension );
 		} else {
 			$file_stem = $this->normalize_file_stem( $file_name );
 			$file_name = sprintf( '%s-%s.%s', $file_stem, gmdate( 'Ymd-His' ), $extension );
@@ -376,8 +332,11 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Store job_id if available - allows correlation between job IDs and files.
 		if ( ! empty( $job_id ) ) {
-			update_post_meta( $attachment_id, '_gemini_music_job_id', $job_id );
+			update_post_meta( $attachment_id, '_mubert_music_job_id', $job_id );
 		}
+
+		// Store provider information.
+		update_post_meta( $attachment_id, '_music_provider', 'mubert' );
 
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
 

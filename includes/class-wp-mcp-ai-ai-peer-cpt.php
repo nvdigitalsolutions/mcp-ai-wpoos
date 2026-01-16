@@ -404,8 +404,8 @@ class WP_MCP_AI_AI_Peer_CPT {
 						location.reload();
 					},
 					error: function(xhr) {
-						var message = xhr.responseJSON && xhr.responseJSON.message 
-							? xhr.responseJSON.message 
+						var message = xhr.responseJSON && xhr.responseJSON.message
+							? xhr.responseJSON.message
 							: '<?php esc_html_e( 'Verification failed. Check the error log.', 'mcp-ai-wpoos' ); ?>';
 						alert(message);
 						button.prop('disabled', false).text('<?php esc_html_e( 'Verify Now', 'mcp-ai-wpoos' ); ?>');

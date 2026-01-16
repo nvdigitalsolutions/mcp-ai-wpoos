@@ -39,7 +39,7 @@ class Test_Remote_Site_Manager_ID_Normalization extends WP_UnitTestCase {
 				'updated'         => current_time( 'mysql' ),
 			),
 		);
-		
+
 		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 
 		// Get all connections - this should trigger migration.

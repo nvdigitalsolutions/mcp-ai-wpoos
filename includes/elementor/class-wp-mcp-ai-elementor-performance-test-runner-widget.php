@@ -208,7 +208,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 				// Handle null, undefined, and objects.
 				if (text === null || text === undefined) return '';
 				if (typeof text === 'object') return '';
-				
+
 				var map = {
 					'&': '&amp;',
 					'<': '&lt;',
@@ -256,10 +256,10 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 									if (typeof response.data === 'object') {
 										// Extract message from object.
 										errorMessage = response.data.message || errorMessage;
-										
+
 										// Build detailed error HTML with proper escaping.
 										var errorHtml = '<p class="wp-mcp-ai-error"><?php echo esc_js( __( 'Test failed:', 'mcp-ai-wpoos' ) ); ?> ' + escapeHtml(errorMessage) + '</p>';
-										
+
 										// Add additional details if available.
 										if (response.data.details) {
 											errorHtml += '<p class="wp-mcp-ai-error-details">' + escapeHtml(response.data.details) + '</p>';
@@ -278,7 +278,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 										if (response.data.setup_command) {
 											errorHtml += '<p class="wp-mcp-ai-setup-command"><strong><?php echo esc_js( __( 'Setup Command:', 'mcp-ai-wpoos' ) ); ?></strong> <code>' + escapeHtml(response.data.setup_command) + '</code></p>';
 										}
-										
+
 										statusDiv.html(errorHtml);
 									} else {
 										// Handle string error.

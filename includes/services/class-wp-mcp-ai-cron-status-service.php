@@ -278,9 +278,9 @@ class WP_MCP_AI_Cron_Status_Service {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$transient_keys = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT REPLACE(option_name, '_transient_', '') as transient_key 
-				FROM {$wpdb->options} 
-				WHERE option_name LIKE %s 
+				"SELECT REPLACE(option_name, '_transient_', '') as transient_key
+				FROM {$wpdb->options}
+				WHERE option_name LIKE %s
 				LIMIT 50",
 				$wpdb->esc_like( '_transient_' . $prefix ) . '%'
 			)
@@ -348,9 +348,9 @@ class WP_MCP_AI_Cron_Status_Service {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$transient_keys = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT REPLACE(option_name, '_transient_', '') as transient_key 
-				FROM {$wpdb->options} 
-				WHERE option_name LIKE %s 
+				"SELECT REPLACE(option_name, '_transient_', '') as transient_key
+				FROM {$wpdb->options}
+				WHERE option_name LIKE %s
 				LIMIT 50",
 				$wpdb->esc_like( '_transient_' . $prefix ) . '%'
 			)

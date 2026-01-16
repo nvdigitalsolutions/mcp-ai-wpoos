@@ -125,8 +125,8 @@ class WP_MCP_AI_Incident_Learning {
 			<tr>
 				<th><label for="incident_id"><?php esc_html_e( 'Related Incident ID', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
-					<input type="text" id="incident_id" name="incident_id" 
-						   value="<?php echo esc_attr( $incident_id ); ?>" 
+					<input type="text" id="incident_id" name="incident_id"
+						   value="<?php echo esc_attr( $incident_id ); ?>"
 						   class="regular-text">
 					<p class="description"><?php esc_html_e( 'Reference to the security incident', 'mcp-ai-wpoos' ); ?></p>
 				</td>
@@ -134,7 +134,7 @@ class WP_MCP_AI_Incident_Learning {
 			<tr>
 				<th><label for="incident_date"><?php esc_html_e( 'Incident Date', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
-					<input type="date" id="incident_date" name="incident_date" 
+					<input type="date" id="incident_date" name="incident_date"
 						   value="<?php echo esc_attr( $incident_date ); ?>">
 				</td>
 			</tr>

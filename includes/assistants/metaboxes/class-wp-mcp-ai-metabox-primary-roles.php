@@ -146,9 +146,9 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 							?>
 							<tr class="wp-mcp-ai-profession-row" <?php echo WP_MCP_AI_Profession_Search_Helper::get_profession_data_attributes( $profession ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 								<td>
-									<input 
-										type="checkbox" 
-										name="wp_mcp_ai_primary_roles[]" 
+									<input
+										type="checkbox"
+										name="wp_mcp_ai_primary_roles[]"
 										value="<?php echo esc_attr( $profession->ID ); ?>"
 										class="wp-mcp-ai-primary-role-checkbox"
 										<?php checked( $is_selected ); ?>
@@ -197,15 +197,15 @@ class WP_MCP_AI_Metabox_Primary_Roles extends WP_MCP_AI_Metabox_Base {
 				<script type="text/javascript">
 				( function() {
 					var maxRoles = 3;
-					
+
 					document.addEventListener( 'DOMContentLoaded', function() {
 						var checkboxes = document.querySelectorAll( '.wp-mcp-ai-primary-role-checkbox' );
-						
+
 						// Handle checkbox selection with max limit.
 						checkboxes.forEach( function( checkbox ) {
 							checkbox.addEventListener( 'change', function() {
 								var checked = document.querySelectorAll( '.wp-mcp-ai-primary-role-checkbox:checked' );
-								
+
 								if ( checked.length > maxRoles ) {
 									// Uncheck the first checked item.
 									checked[0].checked = false;

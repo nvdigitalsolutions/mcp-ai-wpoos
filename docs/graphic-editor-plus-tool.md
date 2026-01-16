@@ -62,7 +62,28 @@ Smart resize with format conversion and quality control.
 - "Make it 500px tall, maintain aspect ratio"
 
 #### 3. Expand Scene (`expand_scene`)
-*Currently not implemented - reserved for future enhancement.*
+Expand the canvas of an image in any direction with customizable background color.
+
+**Parameters:**
+- `expand_direction`: Direction to expand (all, top, bottom, left, right, horizontal, vertical) - Default: all
+- `expand_pixels`: Number of pixels to expand - Default: 50
+- `background_color`: Background color as hex (e.g., #FF0000) or "transparent" - Default: transparent
+
+**Example:**
+```json
+{
+  "operation": "expand_scene",
+  "attachment_id": 123,
+  "expand_direction": "all",
+  "expand_pixels": 100,
+  "background_color": "#FFFFFF"
+}
+```
+
+**Chat Examples:**
+- "Expand canvas by 100 pixels on all sides with white background"
+- "Add 50px transparent border to the left"
+- "Expand horizontally by 75 pixels"
 
 ### AI-POWERED OPERATIONS (Intelligent, Using Gemini)
 
@@ -263,7 +284,7 @@ POST /wp-json/mcp-ai/v1/tools
 ## Future Enhancements
 
 ### Planned Features
-- **Expand Scene**: Local canvas expansion with solid colors or intelligent AI outpainting
+- **Advanced Expand Scene**: AI-powered intelligent outpainting for seamless scene expansion
 - **Batch Operations**: Process multiple images in one call
 - **Preset Templates**: Save commonly used operation configurations
 - **Advanced Compositing**: Layer multiple images with blend modes
@@ -273,3 +294,9 @@ POST /wp-json/mcp-ai/v1/tools
 - **AI Restoration**: Restore old/damaged photos
 - **AI Color Grading**: Professional color correction
 - **AI Object Removal**: Remove unwanted objects intelligently
+
+## Implementation Status
+
+- ✅ **Phase 1 Complete**: Local operations (add_logo, resize_graphic)
+- ✅ **Phase 2 Complete**: AI-powered operations (ai_enhance, ai_style, ai_background, ai_retouch)
+- ✅ **Phase 3 Complete**: Canvas expansion (expand_scene) with both transparent and solid color backgrounds

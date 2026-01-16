@@ -43,7 +43,7 @@ if ( $has_analytics ) {
 			<div style="font-weight: 600; margin-bottom: 10px;">
 				<?php esc_html_e( 'Key Insights', 'mcp-ai-wpoos' ); ?>
 			</div>
-			
+
 			<!-- Peak Hours -->
 			<?php if ( ! empty( $pattern_data['peak_hours'] ) ) : ?>
 				<div style="margin-bottom: 8px;">
@@ -97,7 +97,7 @@ if ( $has_analytics ) {
 					for (var i = 0; i < 24; i++) {
 						hourLabels.push(i.toString().padStart(2, '0') + ':00');
 					}
-					
+
 					new Chart(hourlyCtx.getContext('2d'), {
 						type: 'bar',
 						data: {
@@ -151,7 +151,7 @@ if ( $has_analytics ) {
 				if (dailyCtx) {
 					var dailyPattern = <?php echo wp_json_encode( array_values( $pattern_data['daily_pattern'] ) ); ?>;
 					var dayLabels = ['<?php echo esc_js( __( 'Sun', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Mon', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Tue', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Wed', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Thu', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Fri', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Sat', 'mcp-ai-wpoos' ) ); ?>'];
-					
+
 					new Chart(dailyCtx.getContext('2d'), {
 						type: 'bar',
 						data: {

@@ -146,10 +146,10 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							<tr>
 								<td><strong><?php esc_html_e( 'Supported Methods', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td>
-									<code>initialize</code>, 
-									<code>tools/list</code>, 
-									<code>tools/call</code>, 
-									<code>resources/list</code>, 
+									<code>initialize</code>,
+									<code>tools/list</code>,
+									<code>tools/call</code>,
+									<code>resources/list</code>,
 									<code>prompts/list</code>
 								</td>
 							</tr>
@@ -163,13 +163,13 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					<p class="description">
 						<?php esc_html_e( 'Test basic connectivity to the MCP REST endpoint.', 'mcp-ai-wpoos' ); ?>
 					</p>
-					
+
 					<div id="mcp-endpoint-test-result" style="margin: 15px 0;"></div>
-					
+
 					<button type="button" class="button button-primary" id="test-mcp-endpoint">
 						<?php esc_html_e( 'Test MCP Endpoint', 'mcp-ai-wpoos' ); ?>
 					</button>
-					
+
 					<div style="margin-top: 15px;">
 						<h3><?php esc_html_e( 'Expected Response Format (JSON-RPC 2.0)', 'mcp-ai-wpoos' ); ?></h3>
 						<pre style="background: #f5f5f5; padding: 10px; overflow-x: auto;"><code>{
@@ -221,10 +221,10 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 						<div class="mcp-method-test" style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; background: #fafafa;">
 							<h3><?php echo esc_html( $config['label'] ); ?> <code><?php echo esc_html( $method ); ?></code></h3>
 							<p><?php echo esc_html( $config['description'] ); ?></p>
-							
-							<button 
-								type="button" 
-								class="button button-secondary test-mcp-method" 
+
+							<button
+								type="button"
+								class="button button-secondary test-mcp-method"
 								data-method="<?php echo esc_attr( $method ); ?>"
 								data-method-id="<?php echo esc_attr( $method_id ); ?>">
 								<?php
@@ -235,7 +235,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 								);
 								?>
 							</button>
-							
+
 							<div id="result-<?php echo esc_attr( $method_id ); ?>" class="mcp-test-result" style="margin-top: 10px;"></div>
 						</div>
 					<?php endforeach; ?>
@@ -321,7 +321,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							);
 							?>
 						</p>
-						
+
 						<?php if ( $tools_count > 0 ) : ?>
 							<details style="margin-top: 15px;">
 								<summary style="cursor: pointer; font-weight: bold;">
@@ -435,7 +435,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 									</td>
 									<td>
 										<?php if ( ! empty( $settings['enable_federation'] ) ) : ?>
-											<?php esc_html_e( 'Region:', 'mcp-ai-wpoos' ); ?> 
+											<?php esc_html_e( 'Region:', 'mcp-ai-wpoos' ); ?>
 											<code><?php echo esc_html( isset( $settings['federation_regions'] ) ? $settings['federation_regions'] : 'global' ); ?></code>
 										<?php endif; ?>
 									</td>
@@ -573,7 +573,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				<!-- Troubleshooting Guide -->
 				<div class="card">
 					<h2><?php esc_html_e( '10. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
-					
+
 					<h3><?php esc_html_e( 'Common Issues:', 'mcp-ai-wpoos' ); ?></h3>
 					<ul>
 						<li>

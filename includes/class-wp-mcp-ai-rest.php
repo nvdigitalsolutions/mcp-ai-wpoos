@@ -2320,6 +2320,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// If additional_tools are provided (for context-specific tools like research pages), merge them into the assistant's tools.
+			$additional_tools = $request->get_param( 'additional_tools' );
+			if ( ! empty( $additional_tools ) && is_array( $additional_tools ) ) {
+				// Sanitize the additional tools array.
+				$additional_tools = array_filter( array_map( 'sanitize_key', $additional_tools ) );
+				
+				if ( ! empty( $additional_tools ) ) {
+					// Merge with existing tools, ensuring no duplicates.
+					if ( ! isset( $assistant_config['tools'] ) || ! is_array( $assistant_config['tools'] ) ) {
+						$assistant_config['tools'] = array();
+					}
+					$assistant_config['tools'] = array_values( array_unique( array_merge( $assistant_config['tools'], $additional_tools ) ) );
+				}
+			}
+
 			$options = $this->validator->sanitize_options( $request->get_param( 'options' ), $assistant_config );
 
 			$limit_context = $this->build_chat_limit_context( $assistant_id, $options );
@@ -2954,7 +2969,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 
 			$transcript_context['request_started_at']    = microtime( true );
-			
+
 			// Wrap LLM call in try-catch to handle any uncaught exceptions
 			// and ensure SSE stream completes properly even on fatal errors.
 			try {
@@ -3000,7 +3015,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$this->send_sse_done();
 				exit;
 			}
-			
+
 			$transcript_context['response_completed_at'] = microtime( true );
 
 			if ( ! is_wp_error( $response ) ) {

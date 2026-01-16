@@ -420,7 +420,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						</div>
 					</div>
 				</div>
-				
+
 				<style>
 					.wp-mcp-ai-performance-dashboard {
 						background: #fff;

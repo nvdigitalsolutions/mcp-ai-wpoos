@@ -104,10 +104,10 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 							<!-- Search and Filter Controls -->
 							<div class="profession-tools-controls" style="margin-bottom: 15px;">
 								<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px;">
-									<input 
-										type="text" 
-										id="profession-tools-search" 
-										class="regular-text" 
+									<input
+										type="text"
+										id="profession-tools-search"
+										class="regular-text"
 										placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
 										aria-label="<?php esc_attr_e( 'Search tools', 'mcp-ai-wpoos' ); ?>"
 										style="flex: 1; min-width: 200px;"
@@ -142,7 +142,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 											$count_color = '#d63638'; // Red - too few.
 										}
 										?>
-										<strong style="color: <?php echo esc_attr( $count_color ); ?>;" id="tools-count-number"><?php echo esc_html( $current_count ); ?></strong> 
+										<strong style="color: <?php echo esc_attr( $count_color ); ?>;" id="tools-count-number"><?php echo esc_html( $current_count ); ?></strong>
 										<span id="tools-count-label"><?php esc_html_e( 'selected', 'mcp-ai-wpoos' ); ?></span>
 										<small style="color: #999; margin-left: 5px;">
 											(
@@ -165,20 +165,20 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 									$tool_desc  = method_exists( $tool, 'get_description' ) ? $tool->get_description() : '';
 									$is_checked = in_array( $tool_slug, $default_tools, true );
 									?>
-									<div class="profession-tool-item" 
+									<div class="profession-tool-item"
 										style="margin-bottom: 8px; padding: 8px; background: #f9f9f9; border-radius: 3px;"
 										data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
 										data-tool-name="<?php echo esc_attr( strtolower( $tool_name ) ); ?>"
 										data-tool-description="<?php echo esc_attr( strtolower( $tool_desc ) ); ?>"
 										data-initially-checked="<?php echo $is_checked ? '1' : '0'; ?>">
 										<label style="display: inline-flex; align-items: flex-start; cursor: pointer; width: 100%;">
-											<input 
-												type="checkbox" 
+											<input
+												type="checkbox"
 												class="profession-tool-checkbox"
-												name="profession_default_tools[]" 
-												value="<?php echo esc_attr( $tool_slug ); ?>" 
-												<?php checked( $is_checked ); ?> 
-												style="margin-right: 8px; margin-top: 2px;" 
+												name="profession_default_tools[]"
+												value="<?php echo esc_attr( $tool_slug ); ?>"
+												<?php checked( $is_checked ); ?>
+												style="margin-right: 8px; margin-top: 2px;"
 											/>
 											<span style="flex: 1;">
 												<strong><?php echo esc_html( $tool_name ); ?></strong>

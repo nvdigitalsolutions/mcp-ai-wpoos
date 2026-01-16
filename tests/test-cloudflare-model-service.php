@@ -37,12 +37,12 @@ class Test_Cloudflare_Model_Service extends WP_UnitTestCase {
 
 		// Verify we have a reasonable number of models (at least 5).
 		$this->assertGreaterThanOrEqual( 5, count( $models ), 'Should have at least 5 Cloudflare models' );
-		
+
 		// Verify we have models from each family (Llama, Mistral, Qwen).
 		$has_llama   = false;
 		$has_mistral = false;
 		$has_qwen    = false;
-		
+
 		foreach ( array_keys( $models ) as $model_id ) {
 			if ( strpos( $model_id, '@cf/meta/llama' ) === 0 ) {
 				$has_llama = true;
@@ -54,7 +54,7 @@ class Test_Cloudflare_Model_Service extends WP_UnitTestCase {
 				$has_qwen = true;
 			}
 		}
-		
+
 		$this->assertTrue( $has_llama, 'Should have at least one Llama model' );
 		$this->assertTrue( $has_mistral, 'Should have at least one Mistral model' );
 		$this->assertTrue( $has_qwen, 'Should have at least one Qwen model' );

@@ -9,6 +9,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Ensure required classes are loaded.
+if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+}
+
+if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http-helper.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
+}
+
 if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 	/**
 	 * Provides a wrapper around PayHere Retrieval API.
@@ -22,35 +32,93 @@ if ( ! class_exists( 'WP_MCP_AI_PayHere_Client' ) ) {
 		const API_ENDPOINT_LIVE      = 'https://www.payhere.lk/merchant/v1/payments';
 
 		/**
+		 * Connection ID for Remote Sites connections.
+		 *
+		 * @var string|null
+		 */
+		protected $connection_id = null;
+
+		/**
+		 * Constructor.
+		 *
+		 * @param string|null $connection_id Optional connection ID.
+		 */
+		public function __construct( $connection_id = null ) {
+			$this->connection_id = $connection_id;
+		}
+
+		/**
 		 * Retrieve the configured App ID.
 		 *
+		 * @param string|null $connection_id Optional connection ID to get credentials from.
 		 * @return string
 		 */
-		public function get_app_id() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		public function get_app_id( $connection_id = null ) {
+			// Use instance connection_id if not provided.
+			if ( null === $connection_id ) {
+				$connection_id = $this->connection_id;
+			}
 
+			// Try connection first if provided.
+			if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( $connection && ! empty( $connection['app_id'] ) ) {
+					return $connection['app_id'];
+				}
+			}
+
+			// Fallback to settings.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			return isset( $settings['payhere_app_id'] ) ? $settings['payhere_app_id'] : '';
 		}
 
 		/**
 		 * Retrieve the configured App Secret.
 		 *
+		 * @param string|null $connection_id Optional connection ID to get credentials from.
 		 * @return string
 		 */
-		public function get_app_secret() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		public function get_app_secret( $connection_id = null ) {
+			// Use instance connection_id if not provided.
+			if ( null === $connection_id ) {
+				$connection_id = $this->connection_id;
+			}
 
+			// Try connection first if provided.
+			if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( $connection && ! empty( $connection['app_secret'] ) ) {
+					return WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['app_secret'] );
+				}
+			}
+
+			// Fallback to settings.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			return isset( $settings['payhere_app_secret'] ) ? $settings['payhere_app_secret'] : '';
 		}
 
 		/**
 		 * Check if sandbox mode is enabled.
 		 *
+		 * @param string|null $connection_id Optional connection ID to get settings from.
 		 * @return bool
 		 */
-		public function is_sandbox_mode() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		public function is_sandbox_mode( $connection_id = null ) {
+			// Use instance connection_id if not provided.
+			if ( null === $connection_id ) {
+				$connection_id = $this->connection_id;
+			}
 
+			// Try connection first if provided.
+			if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+				if ( $connection && isset( $connection['sandbox_mode'] ) ) {
+					return ! empty( $connection['sandbox_mode'] );
+				}
+			}
+
+			// Fallback to settings.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			return ! empty( $settings['payhere_sandbox_mode'] );
 		}
 

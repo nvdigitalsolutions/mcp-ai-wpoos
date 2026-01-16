@@ -134,11 +134,11 @@ class WP_MCP_AI_Information_Labelling {
 		<div class="wp-mcp-ai-classification-selector">
 			<?php foreach ( $levels as $level => $data ) : ?>
 				<label class="wp-mcp-ai-classification-option">
-					<input type="radio" 
-						   name="wp_mcp_ai_classification" 
+					<input type="radio"
+						   name="wp_mcp_ai_classification"
 						   value="<?php echo esc_attr( $level ); ?>"
 						   <?php checked( $current_classification, $level ); ?>>
-					<span class="wp-mcp-ai-classification-label" 
+					<span class="wp-mcp-ai-classification-label"
 						  style="color: <?php echo esc_attr( $data['color'] ); ?>;">
 						<span class="wp-mcp-ai-classification-icon"><?php echo esc_html( $data['icon'] ); ?></span>
 						<strong><?php echo esc_html( $data['label'] ); ?></strong>

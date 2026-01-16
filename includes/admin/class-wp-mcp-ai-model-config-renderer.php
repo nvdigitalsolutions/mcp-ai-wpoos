@@ -51,10 +51,10 @@ class WP_MCP_AI_Model_Config_Renderer {
 								<?php esc_html_e( 'Search Models', 'mcp-ai-wpoos' ); ?>
 							</label>
 							<div style="position: relative;">
-								<input 
-									type="text" 
-									id="wp-mcp-ai-model-search" 
-									class="regular-text" 
+								<input
+									type="text"
+									id="wp-mcp-ai-model-search"
+									class="regular-text"
 									placeholder="<?php esc_attr_e( 'Search by model name, provider, or ID...', 'mcp-ai-wpoos' ); ?>"
 									style="width: 100%; padding-right: 30px;"
 								/>
@@ -243,8 +243,8 @@ class WP_MCP_AI_Model_Config_Renderer {
 				</span>
 			</td>
 			<td>
-				<input 
-					type="number" 
+				<input
+					type="number"
 					class="wp-mcp-ai-model-config-input"
 					data-model="<?php echo esc_attr( $model_id ); ?>"
 					data-field="tpm"
@@ -253,8 +253,8 @@ class WP_MCP_AI_Model_Config_Renderer {
 				/>
 			</td>
 			<td>
-				<input 
-					type="number" 
+				<input
+					type="number"
 					class="wp-mcp-ai-model-config-input"
 					data-model="<?php echo esc_attr( $model_id ); ?>"
 					data-field="rpm"
@@ -266,7 +266,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 				<?php echo esc_html( number_format_i18n( $context ) ); ?>
 			</td>
 			<td>
-				<select 
+				<select
 					class="wp-mcp-ai-model-config-input wp-mcp-ai-fallback-model-select"
 					data-model="<?php echo esc_attr( $model_id ); ?>"
 					data-field="fallback_model"
@@ -302,8 +302,8 @@ class WP_MCP_AI_Model_Config_Renderer {
 				</span>
 			</td>
 			<td>
-				<button 
-					type="button" 
+				<button
+					type="button"
 					class="button button-small wp-mcp-ai-save-model-config"
 					data-model="<?php echo esc_attr( $model_id ); ?>"
 				>
@@ -426,11 +426,11 @@ class WP_MCP_AI_Model_Config_Renderer {
 			// Handle save button clicks.
 			$('.wp-mcp-ai-save-model-config').on('click', function(e) {
 				e.preventDefault();
-				
+
 				var $button = $(this);
 				var modelId = $button.data('model');
 				var $row = $button.closest('tr');
-				
+
 				// Collect all input values for this model.
 				var config = {};
 				$row.find('.wp-mcp-ai-model-config-input').each(function() {
@@ -458,7 +458,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 							// Show success feedback.
 							$button.text('<?php esc_html_e( 'Saved!', 'mcp-ai-wpoos' ); ?>');
 							$row.css('background-color', '#d4edda');
-							
+
 							setTimeout(function() {
 								$button.prop('disabled', false).text('<?php esc_html_e( 'Save', 'mcp-ai-wpoos' ); ?>');
 								$row.css('background-color', '');
@@ -467,7 +467,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 							// Show error.
 							$button.prop('disabled', false).text('<?php esc_html_e( 'Error', 'mcp-ai-wpoos' ); ?>');
 							alert(response.data || '<?php esc_html_e( 'Failed to save model configuration.', 'mcp-ai-wpoos' ); ?>');
-							
+
 							setTimeout(function() {
 								$button.text('<?php esc_html_e( 'Save', 'mcp-ai-wpoos' ); ?>');
 							}, 2000);
@@ -476,7 +476,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 					error: function() {
 						$button.prop('disabled', false).text('<?php esc_html_e( 'Error', 'mcp-ai-wpoos' ); ?>');
 						alert('<?php esc_html_e( 'AJAX request failed', 'mcp-ai-wpoos' ); ?>');
-						
+
 						setTimeout(function() {
 							$button.text('<?php esc_html_e( 'Save', 'mcp-ai-wpoos' ); ?>');
 						}, 2000);
@@ -509,7 +509,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 						var modelId = $row.attr('data-model-id') || '';
 						var modelName = $row.find('td:eq(0)').text().toLowerCase();
 						var provider = $row.find('td:eq(1)').text().toLowerCase();
-						
+
 						// Search in model ID, name, and provider.
 						if (modelId.toLowerCase().indexOf(searchTerm) > -1 ||
 							modelName.indexOf(searchTerm) > -1 ||

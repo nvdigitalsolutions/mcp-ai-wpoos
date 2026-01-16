@@ -17,7 +17,7 @@
 # NOTE: Tools marked with "bug" status are automatically disabled
 # to prevent usage until issues are resolved.
 #
-# Last Updated: January 2, 2026
+# Last Updated: January 12, 2026
 # Total Tools: 215 (Base: 149, Pro: 66)
 
 
@@ -37,7 +37,7 @@ edit_gemini_image_validated = stable
 generate_gemini_image_validated = stable
 generate_image_alt_text_validated = stable
 generate_image_caption_validated = stable
-generate_music_validated = stable
+generate_music = stable
 generate_openai_image_validated = stable
 generate_openai_speech_validated = stable
 generate_sora_video_validated = stable
@@ -157,7 +157,7 @@ woo_customers = beta
 woo_orders = beta
 woo_products = beta
 
-# DEV (60 tools)
+# DEV (58 tools)
 analyze_file_suitability = dev
 analyze_video = dev
 check_video_status = dev
@@ -183,7 +183,6 @@ generic_rest = dev
 generic_rest_api = dev
 get_cron_job = dev
 get_profession = dev
-get_profession_stats = dev
 get_vector_store = dev
 grade_quiz = dev
 install_and_activate_plugin = dev
@@ -215,7 +214,6 @@ send_telegram_message = dev
 send_whatsapp_message = dev
 submit_quiz_answer = dev
 update_event = dev
-update_option = dev
 update_project = dev
 update_task = dev
 
@@ -227,7 +225,7 @@ gemini_geospatial_query = experimental
 generate_auth0_token = experimental
 generate_gemini_image = experimental
 generate_jukebox_music = experimental
-generate_music = experimental
+generate_music_validated = experimental
 generate_openai_image = experimental
 generate_simple_jwt_token = experimental
 generate_sora_video = experimental
@@ -241,8 +239,10 @@ submit_document_prompt = experimental
 vision_object_localization = experimental
 vision_product_search = experimental
 
-# BUG (3 tools)
+# BUG (5 tools)
 get_import_duty = bug
+get_profession_stats = bug
 probe_chat = bug
 probe_remote_mcp = bug
+update_option = bug
 

@@ -76,11 +76,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 								</span>
 							<?php endif; ?>
 						</label>
-						<input type="search" 
-								id="tool_search" 
-								name="tool_search" 
-								value="<?php echo esc_attr( $args['search'] ); ?>" 
-								placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>" 
+						<input type="search"
+								id="tool_search"
+								name="tool_search"
+								value="<?php echo esc_attr( $args['search'] ); ?>"
+								placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
 								style="width: 100%;">
 					</div>
 
@@ -121,45 +121,45 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 				(function($) {
 					$('#wp-mcp-ai-filter-tools').on('click', function() {
 						const $button = $(this);
-						
+
 						// Add loading state
 						$button.addClass('is-loading').prop('disabled', true);
-						
+
 						const search = $('#tool_search').val();
 						const group = $('#tool_group').val();
 						const url = new URL(window.location.href);
-						
+
 						// Update URL parameters.
 						url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
-						
+
 						<?php if ( ! empty( $args['tab'] ) ) : ?>
 						url.searchParams.set('tab', '<?php echo esc_js( $args['tab'] ); ?>');
 						<?php endif; ?>
-						
+
 						<?php if ( ! empty( $args['view'] ) ) : ?>
 						url.searchParams.set('view', '<?php echo esc_js( $args['view'] ); ?>');
 						<?php endif; ?>
-						
+
 						<?php if ( ! empty( $args['subtab'] ) ) : ?>
 						url.searchParams.set('subtab', '<?php echo esc_js( $args['subtab'] ); ?>');
 						<?php endif; ?>
-						
+
 						if (search) {
 							url.searchParams.set('tool_search', search);
 						} else {
 							url.searchParams.delete('tool_search');
 						}
-						
+
 						if (group) {
 							url.searchParams.set('tool_group', group);
 						} else {
 							url.searchParams.delete('tool_group');
 						}
-						
+
 						// Navigate to filtered URL.
 						window.location.href = url.toString();
 					});
-					
+
 					// Allow Enter key to trigger filter.
 					$('#tool_search, #tool_group').on('keypress', function(e) {
 						if (e.which === 13) {

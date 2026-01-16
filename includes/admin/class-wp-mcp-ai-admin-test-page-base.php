@@ -165,6 +165,19 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 			? WP_MCP_AI_Shortcode::get_async_tool_timeout_ms()
 			: 300000;
 
+		// Get plugin settings for cost display and capability flags configuration.
+		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+		$show_usage_costs = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
+
+		// Allow filtering of cost display setting.
+		$show_usage_costs = apply_filters( 'wp_mcp_ai_show_usage_costs', $show_usage_costs, get_current_user_id() );
+
+		// Get capability flags display setting.
+		$show_capability_flags = isset( $settings['show_capability_flags'] ) ? (bool) $settings['show_capability_flags'] : false;
+
+		// Allow filtering of capability flags display setting.
+		$show_capability_flags = apply_filters( 'wp_mcp_ai_show_capability_flags', $show_capability_flags, get_current_user_id() );
+
 		wp_localize_script(
 			'wp-mcp-ai-chat',
 			'wpMcpAiChat',
@@ -176,6 +189,8 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 				'historyPerPage'      => 20,
 				'currentUserId'       => get_current_user_id(),
 				'nonce'               => wp_create_nonce( 'wp_rest' ),
+				'showUsageCosts'      => $show_usage_costs,
+				'showCapabilityFlags' => $show_capability_flags,
 				'asyncToolTimeout'    => $async_timeout_ms,
 				'strings'             => $this->get_chat_strings(),
 			)

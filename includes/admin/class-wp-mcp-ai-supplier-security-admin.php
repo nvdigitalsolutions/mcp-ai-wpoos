@@ -94,7 +94,7 @@ class WP_MCP_AI_Supplier_Security_Admin {
 				<?php esc_html_e( 'Supplier Security Management', 'mcp-ai-wpoos' ); ?>
 				<span class="wp-mcp-ai-badge wp-mcp-ai-badge-iso">🛡️ ISO 27001</span>
 			</h1>
-			
+
 			<p class="description">
 				<?php esc_html_e( 'Manage third-party vendor security assessments, monitoring, and compliance. Implements ISO 27001:2022 controls A.5.19-A.5.22.', 'mcp-ai-wpoos' ); ?>
 			</p>
@@ -246,7 +246,7 @@ class WP_MCP_AI_Supplier_Security_Admin {
 								<?php echo esc_html( WP_MCP_AI_Supplier_Security::RISK_LEVELS[ $risk ] ?? $risk ); ?>
 							</div>
 							<div class="wp-mcp-ai-risk-bar-container">
-								<div class="wp-mcp-ai-risk-bar-fill wp-mcp-ai-risk-<?php echo esc_attr( $risk ); ?>" 
+								<div class="wp-mcp-ai-risk-bar-fill wp-mcp-ai-risk-<?php echo esc_attr( $risk ); ?>"
 								     style="width: <?php echo esc_attr( $stats['total'] > 0 ? ( $count / $stats['total'] * 100 ) : 0 ); ?>%;">
 								</div>
 							</div>

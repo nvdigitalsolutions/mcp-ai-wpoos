@@ -89,6 +89,8 @@ if ( ! class_exists( 'WC_Product' ) ) {
 				'permalink'      => '',
 				'date_created'   => new DateTimeImmutable( 'now', new DateTimeZone( 'UTC' ) ),
 				'date_modified'  => new DateTimeImmutable( 'now', new DateTimeZone( 'UTC' ) ),
+				'children'       => array(),
+				'attributes'     => array(),
 			);
 
 			$this->data = wp_parse_args( $data, $defaults );
@@ -108,6 +110,10 @@ if ( ! class_exists( 'WC_Product' ) ) {
 
 		public function get_type() {
 			return $this->data['type'];
+		}
+
+		public function is_type( $type ) {
+			return $this->data['type'] === $type;
 		}
 
 		public function get_status() {
@@ -148,6 +154,14 @@ if ( ! class_exists( 'WC_Product' ) ) {
 
 		public function get_date_modified() {
 			return $this->data['date_modified'];
+		}
+
+		public function get_children() {
+			return isset( $this->data['children'] ) ? $this->data['children'] : array();
+		}
+
+		public function get_attributes() {
+			return isset( $this->data['attributes'] ) ? $this->data['attributes'] : array();
 		}
 	}
 }
@@ -223,6 +237,24 @@ if ( ! function_exists( 'wc_get_products' ) ) {
 					'date_modified'  => new DateTimeImmutable( '2024-01-20 12:00:00', new DateTimeZone( 'UTC' ) ),
 				)
 			),
+			new WC_Product(
+				array(
+					'id'             => 503,
+					'name'           => 'Variable T-Shirt',
+					'sku'            => 'VAR-TSHIRT',
+					'type'           => 'variable',
+					'price'          => '25.00',
+					'regular_price'  => '25.00',
+					'sale_price'     => '',
+					'stock_status'   => 'instock',
+					'stock_quantity' => null,
+					'manage_stock'   => false,
+					'permalink'      => 'https://example.com/product/variable-tshirt',
+					'date_created'   => new DateTimeImmutable( '2024-03-01 10:00:00', new DateTimeZone( 'UTC' ) ),
+					'date_modified'  => new DateTimeImmutable( '2024-03-05 10:00:00', new DateTimeZone( 'UTC' ) ),
+					'children'       => array( 5031, 5032, 5033 ),
+				)
+			),
 		);
 
 		if ( isset( $args['limit'] ) ) {
@@ -230,5 +262,82 @@ if ( ! function_exists( 'wc_get_products' ) ) {
 		}
 
 		return $products;
+	}
+}
+
+if ( ! function_exists( 'wc_get_product' ) ) {
+	function wc_get_product( $product_id ) {
+		// Return variations for the variable product.
+		$variations = array(
+			5031 => new WC_Product(
+				array(
+					'id'             => 5031,
+					'name'           => 'Variable T-Shirt - Small Blue',
+					'sku'            => 'VAR-TSHIRT-S-BLUE',
+					'type'           => 'variation',
+					'price'          => '25.00',
+					'regular_price'  => '25.00',
+					'sale_price'     => '',
+					'stock_status'   => 'instock',
+					'stock_quantity' => 10,
+					'manage_stock'   => true,
+					'permalink'      => 'https://example.com/product/variable-tshirt/?attribute_size=small&attribute_color=blue',
+					'date_created'   => new DateTimeImmutable( '2024-03-01 10:00:00', new DateTimeZone( 'UTC' ) ),
+					'date_modified'  => new DateTimeImmutable( '2024-03-05 10:00:00', new DateTimeZone( 'UTC' ) ),
+					'attributes'     => array(
+						'size'  => 'Small',
+						'color' => 'Blue',
+					),
+				)
+			),
+			5032 => new WC_Product(
+				array(
+					'id'             => 5032,
+					'name'           => 'Variable T-Shirt - Medium Blue',
+					'sku'            => 'VAR-TSHIRT-M-BLUE',
+					'type'           => 'variation',
+					'price'          => '25.00',
+					'regular_price'  => '25.00',
+					'sale_price'     => '',
+					'stock_status'   => 'instock',
+					'stock_quantity' => 5,
+					'manage_stock'   => true,
+					'permalink'      => 'https://example.com/product/variable-tshirt/?attribute_size=medium&attribute_color=blue',
+					'date_created'   => new DateTimeImmutable( '2024-03-01 10:00:00', new DateTimeZone( 'UTC' ) ),
+					'date_modified'  => new DateTimeImmutable( '2024-03-05 10:00:00', new DateTimeZone( 'UTC' ) ),
+					'attributes'     => array(
+						'size'  => 'Medium',
+						'color' => 'Blue',
+					),
+				)
+			),
+			5033 => new WC_Product(
+				array(
+					'id'             => 5033,
+					'name'           => 'Variable T-Shirt - Large Blue',
+					'sku'            => 'VAR-TSHIRT-L-BLUE',
+					'type'           => 'variation',
+					'price'          => '27.00',
+					'regular_price'  => '27.00',
+					'sale_price'     => '',
+					'stock_status'   => 'outofstock',
+					'stock_quantity' => 0,
+					'manage_stock'   => true,
+					'permalink'      => 'https://example.com/product/variable-tshirt/?attribute_size=large&attribute_color=blue',
+					'date_created'   => new DateTimeImmutable( '2024-03-01 10:00:00', new DateTimeZone( 'UTC' ) ),
+					'date_modified'  => new DateTimeImmutable( '2024-03-05 10:00:00', new DateTimeZone( 'UTC' ) ),
+					'attributes'     => array(
+						'size'  => 'Large',
+						'color' => 'Blue',
+					),
+				)
+			),
+		);
+
+		if ( isset( $variations[ $product_id ] ) ) {
+			return $variations[ $product_id ];
+		}
+
+		return false;
 	}
 }

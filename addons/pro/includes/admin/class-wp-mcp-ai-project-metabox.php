@@ -83,11 +83,11 @@ class WP_MCP_AI_Project_Metabox {
 				<label for="project_start_date">
 					<strong><?php esc_html_e( 'Start Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
-				<input 
-					type="date" 
-					id="project_start_date" 
-					name="project_start_date" 
-					value="<?php echo esc_attr( $start_date ); ?>" 
+				<input
+					type="date"
+					id="project_start_date"
+					name="project_start_date"
+					value="<?php echo esc_attr( $start_date ); ?>"
 					class="widefat"
 				/>
 			</p>
@@ -96,11 +96,11 @@ class WP_MCP_AI_Project_Metabox {
 				<label for="project_end_date">
 					<strong><?php esc_html_e( 'End Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
-				<input 
-					type="date" 
-					id="project_end_date" 
-					name="project_end_date" 
-					value="<?php echo esc_attr( $end_date ); ?>" 
+				<input
+					type="date"
+					id="project_end_date"
+					name="project_end_date"
+					value="<?php echo esc_attr( $end_date ); ?>"
 					class="widefat"
 				/>
 			</p>

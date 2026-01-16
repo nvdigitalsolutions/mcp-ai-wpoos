@@ -350,6 +350,25 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
+	/**
+	 * Determine whether third-party plugin integrations should be loaded.
+	 *
+	 * Integrations are loaded when:
+	 * - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
+	 * - Pro addon is active (WP_MCP_AI_PRO_VERSION is defined)
+	 *
+	 * This ensures that when using base + pro as separate plugins, JetEngine
+	 * integrations are available for chat transcript storage and other Pro features.
+	 *
+	 * @since 1.1.0
+	 * @return bool Whether integrations should be loaded.
+	 */
+	function wp_mcp_ai_should_load_integrations() {
+		return ! wp_mcp_ai_is_base_version() || defined( 'WP_MCP_AI_PRO_VERSION' );
+	}
+}
+
 // Start output buffering early to catch any warnings/notices from includes.
 // Suppress any output that could break JSON responses later.
 // Skip buffering during Elementor AJAX requests and editor page loads to avoid interfering with Elementor operations.
@@ -536,7 +555,9 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-r
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
 
 // Load third-party plugin integrations only when not in base version mode.
-if ( ! wp_mcp_ai_is_base_version() ) {
+// However, if Pro addon is active (even with base version), load JetEngine integrations
+// since Pro features may depend on them for chat transcript storage and other functionality.
+if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php';
@@ -558,6 +579,7 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-media.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php';
+	// Google Drive OAuth removed - now handled in PRO addon's Remote Sites feature.
 	require_once WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudways-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudflare-integration-init.php';
@@ -763,7 +785,9 @@ WP_MCP_AI_REST_API_Context_Fix::init();
 WP_MCP_AI_HTTP::bootstrap();
 
 // Initialize third-party plugin integrations only when not in base version mode.
-if ( ! wp_mcp_ai_is_base_version() ) {
+// However, if Pro addon is active (even with base version), initialize integrations
+// since Pro features may depend on them.
+if ( wp_mcp_ai_should_load_integrations() ) {
 	if ( class_exists( 'WP_MCP_AI_JetEngine_Tool_Handlers' ) ) {
 		WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
 	}

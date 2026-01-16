@@ -133,30 +133,22 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	 * @return array
 	 */
 	private function get_supported_post_types() {
-		$post_types = array( 'post', 'page' );
+		// Removed 'post', 'page', and 'product' from default supported post types.
+		// The AI Assistant metabox will no longer appear on posts, pages, and products by default.
+		$post_types = array();
 
-		// Add WooCommerce product if active.
-		if ( class_exists( 'WooCommerce' ) ) {
-			$post_types[] = 'product';
-		}
+		// NOTE: WooCommerce 'product' post type is also excluded by default.
 
-		// Get settings to check for enabled Pro features.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-
-		// Add Quiz CPT if quiz system is enabled.
-		if ( ! empty( $settings['enable_quiz_system'] ) ) {
-			$post_types[] = 'mcp_ai_quiz';
-		}
-
-		// Add Place CPT if places management is enabled.
-		if ( ! empty( $settings['enable_places_management'] ) ) {
-			$post_types[] = 'mcp_ai_place';
-		}
+		// NOTE: Pro CPTs (mcp_ai_quiz, mcp_ai_place) are NOT included here
+		// because they have dedicated "Research & Add" pages with full chat interface instead.
+		// See:
+		// - WP_MCP_AI_Place_Research_Page (addons/pro/includes/admin/class-wp-mcp-ai-place-research-page.php).
+		// - WP_MCP_AI_Quiz_Research_Page (addons/pro/includes/admin/class-wp-mcp-ai-quiz-research-page.php).
 
 		// NOTE: Project Management CPTs (mcp_ai_project, mcp_ai_task, mcp_ai_event) are NOT included here
 		// because they have their own specialized AI Assistant metabox that includes quick action buttons
 		// and context-aware features specific to project management. See:
-		// - WP_MCP_AI_Project_Management_AI_Assistant_Metabox (includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php)
+		// - WP_MCP_AI_Project_Management_AI_Assistant_Metabox (includes/metaboxes/class-wp-mcp-ai-project-management-ai-assistant-metabox.php).
 
 		/**
 		 * Filter the supported post types for AI assistant integration.
@@ -172,13 +164,12 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 	 * @return array
 	 */
 	private function get_supported_taxonomies() {
-		$taxonomies = array( 'category', 'post_tag' );
+		// Removed all taxonomies from default supported taxonomies.
+		// The AI Assistant metabox will no longer appear on any taxonomy edit screens by default.
+		$taxonomies = array();
 
-		// Add WooCommerce taxonomies if active.
-		if ( class_exists( 'WooCommerce' ) ) {
-			$taxonomies[] = 'product_cat';
-			$taxonomies[] = 'product_tag';
-		}
+		// NOTE: WooCommerce taxonomies (product_cat, product_tag) are also excluded by default.
+		// NOTE: Core taxonomies (category, post_tag) are also excluded by default.
 
 		/**
 		 * Filter the supported taxonomies for AI assistant integration.
@@ -199,10 +190,10 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			<div class="wp-mcp-ai-cpt-assistant-info">
 				<p><?php esc_html_e( 'Get AI assistance with content creation, editing, research, and more.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
-			<button 
-				type="button" 
-				class="button button-primary button-large wp-mcp-ai-cpt-open-assistant" 
-				data-post-id="<?php echo esc_attr( $post->ID ); ?>" 
+			<button
+				type="button"
+				class="button button-primary button-large wp-mcp-ai-cpt-open-assistant"
+				data-post-id="<?php echo esc_attr( $post->ID ); ?>"
 				data-post-type="<?php echo esc_attr( $post->post_type ); ?>"
 			>
 				<span class="dashicons dashicons-format-chat"></span>
@@ -241,9 +232,9 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 							</div>
 						</div>
 						<div class="wp-mcp-ai-cpt-chat-input-wrapper">
-							<textarea 
-								id="wp-mcp-ai-cpt-chat-input" 
-								class="wp-mcp-ai-cpt-chat-input" 
+							<textarea
+								id="wp-mcp-ai-cpt-chat-input"
+								class="wp-mcp-ai-cpt-chat-input"
 								placeholder="<?php esc_attr_e( 'Ask me anything...', 'mcp-ai-wpoos-pro' ); ?>"
 								rows="3"
 							></textarea>
@@ -273,10 +264,10 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 			<div class="wp-mcp-ai-cpt-assistant-info">
 				<p><?php esc_html_e( 'Get AI assistance with term descriptions, SEO metadata, and content suggestions.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
-			<button 
-				type="button" 
-				class="button button-primary button-large wp-mcp-ai-cpt-open-assistant" 
-				data-term-id="<?php echo esc_attr( $term->term_id ); ?>" 
+			<button
+				type="button"
+				class="button button-primary button-large wp-mcp-ai-cpt-open-assistant"
+				data-term-id="<?php echo esc_attr( $term->term_id ); ?>"
 				data-taxonomy="<?php echo esc_attr( $taxonomy ); ?>"
 			>
 				<span class="dashicons dashicons-format-chat"></span>
@@ -308,9 +299,9 @@ class WP_MCP_AI_Pro_CPT_AI_Integration {
 							</div>
 						</div>
 						<div class="wp-mcp-ai-cpt-chat-input-wrapper">
-							<textarea 
-								id="wp-mcp-ai-cpt-chat-input-term" 
-								class="wp-mcp-ai-cpt-chat-input" 
+							<textarea
+								id="wp-mcp-ai-cpt-chat-input-term"
+								class="wp-mcp-ai-cpt-chat-input"
 								placeholder="<?php esc_attr_e( 'Ask me anything...', 'mcp-ai-wpoos-pro' ); ?>"
 								rows="3"
 							></textarea>

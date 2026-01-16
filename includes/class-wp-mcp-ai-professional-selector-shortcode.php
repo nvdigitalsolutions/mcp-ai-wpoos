@@ -154,16 +154,16 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 							<?php esc_html_e( 'Assistant', 'mcp-ai-wpoos' ); ?>
 							<span class="required">*</span>
 						</label>
-						<select 
-							id="<?php echo esc_attr( $instance_id ); ?>-assistant" 
-							name="assistant" 
+						<select
+							id="<?php echo esc_attr( $instance_id ); ?>-assistant"
+							name="assistant"
 							class="wp-mcp-ai-professional-selector__select"
 							required
 							data-assistant-select
 						>
 							<option value=""><?php esc_html_e( '— Select Assistant —', 'mcp-ai-wpoos' ); ?></option>
 							<?php foreach ( $assistants as $assistant_id => $assistant_title ) : ?>
-								<option 
+								<option
 									value="<?php echo esc_attr( $assistant_id ); ?>"
 									<?php selected( $assistant, $assistant_id ); ?>
 								>
@@ -178,16 +178,16 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 							<?php esc_html_e( 'Professional', 'mcp-ai-wpoos' ); ?>
 							<span class="required">*</span>
 						</label>
-						<select 
-							id="<?php echo esc_attr( $instance_id ); ?>-professional" 
-							name="professional" 
+						<select
+							id="<?php echo esc_attr( $instance_id ); ?>-professional"
+							name="professional"
 							class="wp-mcp-ai-professional-selector__select"
 							required
 							data-professional-select
 						>
 							<option value=""><?php esc_html_e( '— Select Professional —', 'mcp-ai-wpoos' ); ?></option>
 							<?php foreach ( $professionals as $prof_id => $prof_title ) : ?>
-								<option 
+								<option
 									value="<?php echo esc_attr( $prof_id ); ?>"
 									<?php selected( $default_professional, $prof_id ); ?>
 								>
@@ -202,16 +202,16 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 							<?php esc_html_e( 'AI Provider', 'mcp-ai-wpoos' ); ?>
 							<span class="required">*</span>
 						</label>
-						<select 
-							id="<?php echo esc_attr( $instance_id ); ?>-provider" 
-							name="provider" 
+						<select
+							id="<?php echo esc_attr( $instance_id ); ?>-provider"
+							name="provider"
 							class="wp-mcp-ai-professional-selector__select"
 							required
 							data-provider-select
 						>
 							<option value=""><?php esc_html_e( '— Select Provider —', 'mcp-ai-wpoos' ); ?></option>
 							<?php foreach ( $providers as $provider_key => $provider_label ) : ?>
-								<option 
+								<option
 									value="<?php echo esc_attr( $provider_key ); ?>"
 									<?php selected( $default_provider, $provider_key ); ?>
 								>
@@ -226,9 +226,9 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 							<?php esc_html_e( 'AI Model', 'mcp-ai-wpoos' ); ?>
 							<span class="required">*</span>
 						</label>
-						<select 
-							id="<?php echo esc_attr( $instance_id ); ?>-model" 
-							name="model" 
+						<select
+							id="<?php echo esc_attr( $instance_id ); ?>-model"
+							name="model"
 							class="wp-mcp-ai-professional-selector__select"
 							required
 							data-model-select
@@ -251,10 +251,10 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 						<label for="<?php echo esc_attr( $instance_id ); ?>-temperature">
 							<?php esc_html_e( 'Temperature', 'mcp-ai-wpoos' ); ?>
 						</label>
-						<input 
-							type="number" 
-							id="<?php echo esc_attr( $instance_id ); ?>-temperature" 
-							name="temperature" 
+						<input
+							type="number"
+							id="<?php echo esc_attr( $instance_id ); ?>-temperature"
+							name="temperature"
 							class="wp-mcp-ai-professional-selector__input"
 							min="0"
 							max="2"
