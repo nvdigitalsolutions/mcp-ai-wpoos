@@ -605,6 +605,9 @@ if ( ! $skip_buffering ) {
 // Frontend AJAX handlers for Performance widgets are now only available with Pro addon.
 
 if ( is_admin() ) {
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-scripts.php';
+	WP_MCP_AI_Admin_Scripts::init();
+
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-token-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-crawl4ai-monitor.php';
