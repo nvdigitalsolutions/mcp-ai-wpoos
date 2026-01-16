@@ -453,10 +453,10 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$keywords = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT keyword, position, clicks, impressions 
-					FROM `{$wpdb->prefix}rank_math_analytics_objects` 
-					WHERE object_id = %d 
-					ORDER BY impressions DESC 
+					"SELECT keyword, position, clicks, impressions
+					FROM `{$wpdb->prefix}rank_math_analytics_objects`
+					WHERE object_id = %d
+					ORDER BY impressions DESC
 					LIMIT 10",
 					$post_id
 				)

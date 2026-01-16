@@ -147,7 +147,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 									<img src="<?php echo esc_url( $thumbnail_url ); ?>" alt="<?php echo esc_attr( $profession->post_title ); ?>">
 								</div>
 							<?php endif; ?>
-							
+
 							<div class="professional-header">
 								<h3><?php echo esc_html( $profession->post_title ); ?></h3>
 								<?php if ( $category ) : ?>
@@ -217,7 +217,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 				<div class="wp-mcp-ai-modal-body">
 					<form id="wp-mcp-ai-create-form">
 						<input type="hidden" name="profession_id" id="profession-id" value="">
-						
+
 						<p>
 							<label for="assistant-title">
 								<strong><?php esc_html_e( 'Assistant Title', 'mcp-ai-wpoos' ); ?> <span class="required">*</span></strong>

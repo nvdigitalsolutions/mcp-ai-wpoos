@@ -133,7 +133,7 @@ class WP_MCP_AI_Speed_Benchmarks_Test extends WP_UnitTestCase {
 		update_post_meta( $assistant_id, 'model', 'gpt-3.5-turbo' );
 
 		// Simulate rendering shortcode.
-		$shortcode_content = do_shortcode( '[wp_mcp_ai_chat assistant_id="' . $assistant_id . '"]' );
+		$shortcode_content = do_shortcode( '[mcp_ai_chat assistant="' . $assistant_id . '"]' );
 
 		$end_time   = microtime( true );
 		$end_memory = memory_get_usage();

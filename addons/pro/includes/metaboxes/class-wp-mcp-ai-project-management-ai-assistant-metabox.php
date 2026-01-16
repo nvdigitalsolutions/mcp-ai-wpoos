@@ -315,10 +315,10 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			<?php $this->render_ai_quick_actions( $post ); ?>
 
 			<!-- Open Assistant button -->
-			<button 
-				type="button" 
-				class="button button-primary button-large wp-mcp-ai-pm-open-assistant" 
-				data-post-id="<?php echo esc_attr( $post->ID ); ?>" 
+			<button
+				type="button"
+				class="button button-primary button-large wp-mcp-ai-pm-open-assistant"
+				data-post-id="<?php echo esc_attr( $post->ID ); ?>"
 				data-post-type="<?php echo esc_attr( $post->post_type ); ?>"
 				disabled
 			>

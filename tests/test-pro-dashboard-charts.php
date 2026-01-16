@@ -29,7 +29,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'risks', $chart_data );
 		$this->assertArrayHasKey( 'metrics', $chart_data );
 	}
-	
+
 	/**
 	 * Test that controls data has required fields.
 	 */
@@ -61,7 +61,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$sum = $controls['implemented'] + $controls['partial'] + $controls['planned'] + $controls['not_applicable'];
 		$this->assertEquals( $controls['total'], $sum );
 	}
-	
+
 	/**
 	 * Test that risks data has required fields.
 	 */
@@ -87,7 +87,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertIsInt( $risks['medium'] );
 		$this->assertIsInt( $risks['low'] );
 	}
-	
+
 	/**
 	 * Test that metrics data has required fields.
 	 */
@@ -113,7 +113,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertCount( 6, $metrics['incidents'] );
 		$this->assertCount( 6, $metrics['vulnerabilities_fixed'] );
 	}
-	
+
 	/**
 	 * Test REST API endpoint returns chart data.
 	 */
@@ -143,7 +143,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'not_applicable', $controls );
 		$this->assertArrayHasKey( 'total', $controls );
 	}
-	
+
 	/**
 	 * Test that ISO 27001 controls can be retrieved.
 	 */
@@ -172,7 +172,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'applicable', $first_control );
 		}
 	}
-	
+
 	/**
 	 * Test that calculate_controls_stats works correctly.
 	 */
@@ -209,7 +209,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertEquals( 1, $stats['not_applicable'] );
 		$this->assertEquals( 5, $stats['total'] );
 	}
-	
+
 	/**
 	 * Test that chart data is passed to JavaScript via wp_localize_script.
 	 */
@@ -240,7 +240,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'wpMcpAiProDashboard', $data );
 		$this->assertStringContainsString( 'chartData', $data );
 	}
-	
+
 	/**
 	 * Test that get_risk_data returns proper structure.
 	 */
@@ -266,7 +266,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertIsInt( $risk_data['medium'] );
 		$this->assertIsInt( $risk_data['low'] );
 	}
-	
+
 	/**
 	 * Test that get_metrics_data returns proper structure.
 	 */
@@ -292,7 +292,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertCount( 6, $metrics_data['incidents'] );
 		$this->assertCount( 6, $metrics_data['vulnerabilities_fixed'] );
 	}
-	
+
 	/**
 	 * Test that helper methods can use stored options.
 	 */
@@ -323,7 +323,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		// Clean up.
 		delete_option( 'wp_mcp_ai_risk_data' );
 	}
-	
+
 	/**
 	 * Test that chart data uses helper methods.
 	 */
@@ -350,7 +350,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		// Clean up.
 		delete_option( 'wp_mcp_ai_metrics_data' );
 	}
-	
+
 	/**
 	 * Test REST API endpoint for getting risk chart data.
 	 */
@@ -375,7 +375,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'medium', $data['data'] );
 		$this->assertArrayHasKey( 'low', $data['data'] );
 	}
-	
+
 	/**
 	 * Test REST API endpoint for updating risk chart data.
 	 */
@@ -412,7 +412,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		// Clean up.
 		delete_option( 'wp_mcp_ai_risk_data' );
 	}
-	
+
 	/**
 	 * Test REST API endpoint for getting metrics chart data.
 	 */
@@ -439,7 +439,7 @@ class Test_Pro_Dashboard_Charts extends WP_UnitTestCase {
 		$this->assertCount( 6, $data['data']['incidents'] );
 		$this->assertCount( 6, $data['data']['vulnerabilities_fixed'] );
 	}
-	
+
 	/**
 	 * Test REST API endpoint for updating metrics chart data.
 	 */

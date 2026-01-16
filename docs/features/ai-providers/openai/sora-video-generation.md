@@ -203,6 +203,15 @@ cinematic composition"
 POST https://api.openai.com/v1/videos
 ```
 
+### API Parameter Mapping
+The plugin's user-facing parameter `duration` is mapped to the OpenAI Sora API parameter `seconds`. This maintains consistency with other video generation tools while complying with the OpenAI API specification.
+
+**Tool Parameter → API Parameter**
+- `duration` → `seconds` (video length in seconds)
+- `aspect_ratio` → `aspect_ratio`
+- `size` → `size` (resolution)
+- `fps` → `fps` (frames per second)
+
 ### Response Format
 The API returns a URL to download the generated video. The plugin automatically downloads and saves it to the Media Library.
 

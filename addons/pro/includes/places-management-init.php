@@ -131,3 +131,16 @@ add_action( 'init', 'wp_mcp_ai_register_places_management_post_type' );
 
 // Load Place CPT admin enhancements.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-place-cpt.php';
+
+// Load Place Research & Add page.
+if ( is_admin() ) {
+	// Check if places management is enabled and not in base version.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	$is_enabled = ! empty( $settings['enable_places_management'] );
+	$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+
+	if ( $is_enabled && ! $is_base ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-place-research-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-place-settings-page.php';
+	}
+}

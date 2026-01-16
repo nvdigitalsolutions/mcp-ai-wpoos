@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
+
 /**
  * Creates a new WordPress post.
  *
@@ -16,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * post creation, not updates. Use save_post for update operations.
  */
 class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Content_Media;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -155,6 +158,11 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'required'             => array( 'title', 'content' ),
 			'additionalProperties' => false,
 		);
+
+		// Merge content media parameters.
+		$schema['properties'] = array_merge( $schema['properties'], $this->get_content_media_parameters() );
+
+		return $schema;
 	}
 
 	/**
@@ -224,6 +232,9 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( post_type_supports( $post_type, 'editor' ) && function_exists( 'use_block_editor_for_post_type' ) && use_block_editor_for_post_type( $post_type ) ) {
 			$sanitized_content = $this->ensure_post_content_uses_blocks( $sanitized_content, $content );
 		}
+
+		// Embed content media (images and charts).
+		$sanitized_content = $this->embed_content_media( $sanitized_content, $arguments );
 
 		// Prepare post data.
 		$post_data = array(

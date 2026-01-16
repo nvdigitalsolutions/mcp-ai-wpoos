@@ -48,6 +48,26 @@ composer.phar
 #!/vendor/composer/installed.php
 #!/vendor/composer/installed.json
 
+# Exclude test and development files from vendor packages
+/vendor/*/*/tests/
+/vendor/*/*/Tests/
+/vendor/*/*/Test/
+/vendor/*/*/*/tests/
+/vendor/*/*/*/Tests/
+/vendor/*/*/*/Test/
+/vendor/*/*/.github/
+/vendor/*/*/*/.github/
+/vendor/*/*/phpunit.xml*
+/vendor/*/*/*/phpunit.xml*
+/vendor/*/*/phpstan.neon*
+/vendor/*/*/*/phpstan.neon*
+/vendor/*/*/.editorconfig
+/vendor/*/*/*/.editorconfig
+/vendor/*/*/.gitignore
+/vendor/*/*/*/.gitignore
+/vendor/*/*/.gitattributes
+/vendor/*/*/*/.gitattributes
+
 # Minified assets (generated during build)
 *.min.css
 *.min.js

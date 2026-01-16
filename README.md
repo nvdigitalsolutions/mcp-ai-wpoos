@@ -213,6 +213,17 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (January 2026)
 
+> **📌 JANUARY 13, 2026 UPDATE:** **PR #2883 - Gmail OAuth UX Enhancement** - Added auto-display of OAuth redirect URI in Gmail/Google Drive connection settings, eliminating `redirect_uri_mismatch` errors. Users can now copy the exact URI directly from the admin interface. [Details](docs/fixes/gmail-oauth-fix-summary.md)
+
+> **📌 JANUARY 13, 2026 UPDATE:** **Root Directory Organization** - Consolidated 14 markdown files from root to organized subdirectories:
+> - 9 migration/implementation reports → `docs/implementation-history/2026/migrations/`
+> - 2 FlowHub fixes → `docs/fixes/`
+> - 2 Gmail OAuth files (consolidated into existing docs) → `docs/fixes/gmail-oauth-fix-summary.md`
+> - 1 settings change report → `docs/implementation-history/2026/settings/`
+> - 1 PHPCS tracking file → `docs/development/`
+> 
+> Repository root now contains only 6 essential files: README, CHANGELOG, CONTRIBUTING, SECURITY, LICENSE, and BUILD.
+
 > **📌 JANUARY 8, 2026 UPDATE:** [Root Directory Consolidation](ROOT-DOCS-REORGANIZATION.md) - Organized 19 temporary fix documentation files into proper documentation hierarchy. Chart.js and Pro Dashboard fixes consolidated into [single reference document](docs/implementation-history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md). Repository root now contains only essential documentation files.
 
 > **📌 JANUARY 6, 2026 UPDATE (WEEK 2):** [Weekly Summary (Dec 30 - Jan 6)](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md) - **100% ISO 27001:2022 Compliance Achieved** + SOC 2 (100%) and HIPAA (98%) frameworks, Pro Dashboard modernization, PM Assistant fixes, WordPress 6.7+ compatibility, and production-ready deployment.

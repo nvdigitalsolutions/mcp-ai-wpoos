@@ -124,11 +124,11 @@ class WP_MCP_AI_Task_Metabox {
 				<label for="task_due_date">
 					<strong><?php esc_html_e( 'Due Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
-				<input 
-					type="date" 
-					id="task_due_date" 
-					name="task_due_date" 
-					value="<?php echo esc_attr( $due_date ); ?>" 
+				<input
+					type="date"
+					id="task_due_date"
+					name="task_due_date"
+					value="<?php echo esc_attr( $due_date ); ?>"
 					class="widefat"
 				/>
 			</p>

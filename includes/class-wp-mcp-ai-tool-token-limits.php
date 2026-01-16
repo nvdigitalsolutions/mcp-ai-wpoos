@@ -2379,7 +2379,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! $tier_index_exists ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin manages its own indexes for performance optimization.
 			$wpdb->query(
-				"ALTER TABLE {$wpdb->usermeta} 
+				"ALTER TABLE {$wpdb->usermeta}
 				ADD INDEX idx_wp_mcp_ai_token_tier (meta_key(191), meta_value(20))"
 			);
 		}
@@ -2395,7 +2395,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! $usage_index_exists ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Plugin manages its own indexes for performance optimization.
 			$wpdb->query(
-				"ALTER TABLE {$wpdb->usermeta} 
+				"ALTER TABLE {$wpdb->usermeta}
 				ADD INDEX idx_wp_mcp_ai_usage (meta_key(191), user_id)"
 			);
 		}

@@ -49,7 +49,7 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 							<?php esc_html_e( 'CUSTOM', 'mcp-ai-wpoos' ); ?>
 						</span>
 					<?php endif; ?>
-					
+
 					<?php if ( $force_sync ) : ?>
 						<span class="wp-mcp-ai-force-sync-indicator" style="display: inline-block; padding: 2px 6px; background: #d63638; color: white; border-radius: 3px; font-size: 10px; margin-right: 5px; font-weight: bold;">
 							<?php esc_html_e( 'FORCE SYNC', 'mcp-ai-wpoos' ); ?>
@@ -84,8 +84,8 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 				<div class="wp-mcp-ai-capability-flags-edit" style="display: none;">
 					<div style="margin-bottom: 10px;">
 						<label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-							<input type="checkbox" 
-									class="wp-mcp-ai-force-sync-checkbox" 
+							<input type="checkbox"
+									class="wp-mcp-ai-force-sync-checkbox"
 									data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
 									<?php checked( $force_sync ); ?>>
 							<strong style="color: #d63638;"><?php esc_html_e( 'Force Synchronous Execution', 'mcp-ai-wpoos' ); ?></strong>
@@ -110,9 +110,9 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 								<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
 									<?php foreach ( $group_data['flags'] as $flag_key => $flag_label ) : ?>
 										<label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-											<input type="checkbox" 
-													class="wp-mcp-ai-capability-flag-checkbox" 
-													name="capability_flags[]" 
+											<input type="checkbox"
+													class="wp-mcp-ai-capability-flag-checkbox"
+													name="capability_flags[]"
 													value="<?php echo esc_attr( $flag_key ); ?>"
 													<?php checked( in_array( $flag_key, $capability_flags, true ) ); ?>>
 											<span><?php echo esc_html( $flag_label ); ?></span>

@@ -217,7 +217,7 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test AJAX handler security checks.
-	 * 
+	 *
 	 * Note: AJAX handler was removed in favor of inline rendering.
 	 * This test is kept for reference but marked as skipped.
 	 */
@@ -227,7 +227,7 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test AJAX handler returns config and instance ID.
-	 * 
+	 *
 	 * Note: AJAX handler was removed in favor of inline rendering.
 	 * This test is kept for reference but marked as skipped.
 	 */

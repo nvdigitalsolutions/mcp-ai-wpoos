@@ -84,11 +84,11 @@ class WP_MCP_AI_Quiz_Metabox_Details extends WP_MCP_AI_Quiz_Metabox_Base {
 				<label for="wp_mcp_ai_quiz_time_limit">
 					<strong><?php esc_html_e( 'Time Limit (minutes):', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label>
-				<input 
-					type="number" 
-					id="wp_mcp_ai_quiz_time_limit" 
-					name="wp_mcp_ai_quiz_time_limit" 
-					value="<?php echo esc_attr( $time_limit ); ?>" 
+				<input
+					type="number"
+					id="wp_mcp_ai_quiz_time_limit"
+					name="wp_mcp_ai_quiz_time_limit"
+					value="<?php echo esc_attr( $time_limit ); ?>"
 					min="0"
 					step="1"
 					class="widefat"
@@ -100,11 +100,11 @@ class WP_MCP_AI_Quiz_Metabox_Details extends WP_MCP_AI_Quiz_Metabox_Base {
 				<label for="wp_mcp_ai_quiz_passing_score">
 					<strong><?php esc_html_e( 'Passing Score (%):', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label>
-				<input 
-					type="number" 
-					id="wp_mcp_ai_quiz_passing_score" 
-					name="wp_mcp_ai_quiz_passing_score" 
-					value="<?php echo esc_attr( $passing_score ); ?>" 
+				<input
+					type="number"
+					id="wp_mcp_ai_quiz_passing_score"
+					name="wp_mcp_ai_quiz_passing_score"
+					value="<?php echo esc_attr( $passing_score ); ?>"
 					min="0"
 					max="100"
 					step="1"

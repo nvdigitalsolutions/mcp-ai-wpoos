@@ -107,128 +107,30 @@ class WP_MCP_AI_Gemini_Music_Service {
 			);
 		}
 
-		// Prepare options with defaults.
-		$duration    = isset( $options['duration'] ) ? absint( $options['duration'] ) : self::DEFAULT_DURATION;
-		$duration    = max( 1, min( $duration, self::MAX_DURATION ) );
-		$bpm         = isset( $options['bpm'] ) ? absint( $options['bpm'] ) : self::DEFAULT_BPM;
-		$bpm         = max( 20, min( $bpm, 300 ) ); // Reasonable BPM range.
-		$temperature = isset( $options['temperature'] ) ? floatval( $options['temperature'] ) : self::DEFAULT_TEMPERATURE;
-		$temperature = max( 0.0, min( $temperature, 2.0 ) );
-		$model       = isset( $options['model'] ) && ! empty( $options['model'] ) ? sanitize_text_field( $options['model'] ) : self::DEFAULT_MODEL;
-		$timeout     = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : 120;
-
-		// Build the full prompt with optional modifiers.
-		$full_prompt = $this->build_full_prompt( $prompt, $options );
-
-		// Build request payload.
-		$payload = array(
-			'instances'  => array(
-				array(
-					'prompt'      => $full_prompt,
-					'duration'    => $duration,
-					'temperature' => $temperature,
-				),
-			),
-			'parameters' => array(
-				'bpm'         => $bpm,
-				'sample_rate' => 48000, // Standard 48kHz.
-			),
+		// Return clear error about API unavailability.
+		WP_MCP_AI_Logger::log_error(
+			'Lyria music generation attempted but API not available.',
+			array( 'prompt' => $prompt )
 		);
 
-		// Add optional parameters if provided.
-		if ( isset( $options['key'] ) && ! empty( $options['key'] ) ) {
-			$payload['parameters']['key'] = sanitize_text_field( $options['key'] );
-		}
-
-		WP_MCP_AI_Logger::log_event(
-			'gemini_music_request',
-			'Generating music with Gemini Lyria.',
+		return new WP_Error(
+			'wp_mcp_ai_lyria_api_unavailable',
+			__( 'Google Lyria music generation is not currently available. The Lyria API requires either Vertex AI (Google Cloud Platform project with credentials) or WebSocket streaming, which are not supported by this plugin at this time. For music generation, please consider alternative services or wait for Google to release a REST API endpoint for Lyria.', 'mcp-ai-wpoos' ),
 			array(
-				'prompt'      => $full_prompt,
-				'duration'    => $duration,
-				'bpm'         => $bpm,
-				'temperature' => $temperature,
+				'status'  => 501,
+				'details' => array(
+					'reason'       => 'api_not_implemented',
+					'requirements' => array(
+						'Vertex AI (requires GCP project and service account credentials)',
+						'Or: WebSocket streaming (real-time only, complex implementation)',
+					),
+					'alternatives' => array(
+						'OpenAI Jukebox (requires separate GPU server)',
+						'Third-party music generation APIs',
+					),
+				),
 			)
 		);
-
-		// Make API request.
-		// Note: This is a simplified implementation. In production, you would use.
-
-		// the Vertex AI endpoint: https://LOCATION-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/LOCATION/publishers/google/models/MODEL_ID:predict.
-
-		$endpoint = $this->get_music_endpoint( $model );
-		$response = wp_remote_post(
-			$endpoint,
-			array(
-				'headers' => array(
-					'Content-Type'   => 'application/json',
-					'x-goog-api-key' => $api_key,
-				),
-				'body'    => wp_json_encode( $payload ),
-				'timeout' => $timeout,
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			WP_MCP_AI_Logger::log_error( 'Gemini music generation request failed.', array( 'error' => $response->get_error_message() ) );
-			return new WP_Error(
-				'wp_mcp_ai_http_error',
-				__( 'The music generation request failed to complete.', 'mcp-ai-wpoos' ),
-				array( 'status' => 500 )
-			);
-		}
-
-		$status_code = wp_remote_retrieve_response_code( $response );
-		$body        = wp_remote_retrieve_body( $response );
-
-		if ( $status_code < 200 || $status_code >= 300 ) {
-			WP_MCP_AI_Logger::log_error(
-				'Gemini music generation API error.',
-				array(
-					'status_code' => $status_code,
-					'body'        => $body,
-				)
-			);
-
-			return new WP_Error(
-				'wp_mcp_ai_api_error',
-				sprintf(
-					/* translators: %d: HTTP status code */
-					__( 'Music generation failed with status %d.', 'mcp-ai-wpoos' ),
-					$status_code
-				),
-				array( 'status' => $status_code )
-			);
-		}
-
-		$data = json_decode( $body, true );
-		if ( empty( $data ) || ! is_array( $data ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_response',
-				__( 'Music generation returned an invalid response.', 'mcp-ai-wpoos' ),
-				array( 'status' => 500 )
-			);
-		}
-
-		// Extract audio data from response.
-		// Note: The actual response structure may vary. This is a simplified example.
-		$audio_data = $this->extract_audio_from_response( $data );
-
-		if ( is_wp_error( $audio_data ) ) {
-			return $audio_data;
-		}
-
-		WP_MCP_AI_Logger::log_event(
-			'gemini_music_success',
-			'Music generated successfully.',
-			array(
-				'duration'    => $audio_data['duration'],
-				'format'      => $audio_data['format'],
-				'sample_rate' => $audio_data['sample_rate'],
-			)
-		);
-
-		return $audio_data;
 	}
 
 	/**

@@ -182,7 +182,7 @@ class WP_MCP_AI_Security_Audit {
 			<tr>
 				<th><label for="wp_mcp_ai_audit_date"><?php esc_html_e( 'Audit Date', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
-					<input type="date" id="wp_mcp_ai_audit_date" name="wp_mcp_ai_audit_date" 
+					<input type="date" id="wp_mcp_ai_audit_date" name="wp_mcp_ai_audit_date"
 						value="<?php echo esc_attr( $audit_date ); ?>" class="regular-text" required />
 				</td>
 			</tr>
@@ -226,7 +226,7 @@ class WP_MCP_AI_Security_Audit {
 			<tr>
 				<th><label for="wp_mcp_ai_auditor"><?php esc_html_e( 'Auditor', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
-					<input type="text" id="wp_mcp_ai_auditor" name="wp_mcp_ai_auditor" 
+					<input type="text" id="wp_mcp_ai_auditor" name="wp_mcp_ai_auditor"
 						value="<?php echo esc_attr( $auditor ); ?>" class="regular-text" />
 					<p class="description"><?php esc_html_e( 'Name of the internal or external auditor', 'mcp-ai-wpoos' ); ?></p>
 				</td>
@@ -234,7 +234,7 @@ class WP_MCP_AI_Security_Audit {
 			<tr>
 				<th><label for="wp_mcp_ai_audit_scope"><?php esc_html_e( 'Audit Scope', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
-					<textarea id="wp_mcp_ai_audit_scope" name="wp_mcp_ai_audit_scope" 
+					<textarea id="wp_mcp_ai_audit_scope" name="wp_mcp_ai_audit_scope"
 						class="large-text" rows="4"><?php echo esc_textarea( $scope ); ?></textarea>
 					<p class="description"><?php esc_html_e( 'Controls, processes, or areas included in this audit', 'mcp-ai-wpoos' ); ?></p>
 				</td>
@@ -242,7 +242,7 @@ class WP_MCP_AI_Security_Audit {
 			<tr>
 				<th><label for="wp_mcp_ai_controls_reviewed"><?php esc_html_e( 'Controls Reviewed', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
-					<input type="number" id="wp_mcp_ai_controls_reviewed" name="wp_mcp_ai_controls_reviewed" 
+					<input type="number" id="wp_mcp_ai_controls_reviewed" name="wp_mcp_ai_controls_reviewed"
 						value="<?php echo esc_attr( $controls_reviewed ); ?>" min="0" max="93" class="small-text" />
 					<p class="description"><?php esc_html_e( 'Number of ISO 27001 controls reviewed', 'mcp-ai-wpoos' ); ?></p>
 				</td>
@@ -278,13 +278,13 @@ class WP_MCP_AI_Security_Audit {
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
 			let findingIndex = <?php echo count( $findings ); ?>;
-			
+
 			$('#wp-mcp-ai-add-finding').on('click', function() {
 				const template = `<?php echo $this->get_finding_template(); ?>`.replace(/INDEX/g, findingIndex);
 				$('#wp-mcp-ai-findings-list').append(template);
 				findingIndex++;
 			});
-			
+
 			$(document).on('click', '.wp-mcp-ai-remove-finding', function() {
 				if (confirm('<?php esc_html_e( 'Are you sure you want to remove this finding?', 'mcp-ai-wpoos' ); ?>')) {
 					$(this).closest('.wp-mcp-ai-finding-row').remove();
@@ -339,8 +339,8 @@ class WP_MCP_AI_Security_Audit {
 			</h4>
 			<div class="wp-mcp-ai-finding-field">
 				<label><?php esc_html_e( 'Control ID', 'mcp-ai-wpoos' ); ?></label>
-				<input type="text" name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][control]" 
-					value="<?php echo esc_attr( $control ); ?>" class="regular-text" 
+				<input type="text" name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][control]"
+					value="<?php echo esc_attr( $control ); ?>" class="regular-text"
 					placeholder="A.5.1" />
 			</div>
 			<div class="wp-mcp-ai-finding-field">
@@ -384,17 +384,17 @@ class WP_MCP_AI_Security_Audit {
 			</div>
 			<div class="wp-mcp-ai-finding-field">
 				<label><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></label>
-				<textarea name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][description]" 
+				<textarea name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][description]"
 					class="large-text" rows="3"><?php echo esc_textarea( $description ); ?></textarea>
 			</div>
 			<div class="wp-mcp-ai-finding-field">
 				<label><?php esc_html_e( 'Recommendation', 'mcp-ai-wpoos' ); ?></label>
-				<textarea name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][recommendation]" 
+				<textarea name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][recommendation]"
 					class="large-text" rows="3"><?php echo esc_textarea( $recommendation ); ?></textarea>
 			</div>
 			<div class="wp-mcp-ai-finding-field">
 				<label><?php esc_html_e( 'Due Date', 'mcp-ai-wpoos' ); ?></label>
-				<input type="date" name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][due_date]" 
+				<input type="date" name="wp_mcp_ai_findings[<?php echo esc_attr( $index ); ?>][due_date]"
 					value="<?php echo esc_attr( $due_date ); ?>" class="regular-text" />
 			</div>
 		</div>
@@ -551,7 +551,7 @@ class WP_MCP_AI_Security_Audit {
 	private function get_next_quarter_start() {
 		$current_month = (int) gmdate( 'n' );
 		$current_year = (int) gmdate( 'Y' );
-		
+
 		// Determine next quarter start month.
 		if ( $current_month <= 3 ) {
 			$next_quarter_month = 4;
@@ -566,7 +566,7 @@ class WP_MCP_AI_Security_Audit {
 			$next_quarter_month = 1;
 			$next_quarter_year = $current_year + 1;
 		}
-		
+
 		return strtotime( sprintf( '%d-%02d-01 00:00:00', $next_quarter_year, $next_quarter_month ) );
 	}
 
@@ -646,7 +646,7 @@ class WP_MCP_AI_Security_Audit {
 
 		foreach ( $audits as $audit_id ) {
 			$status = get_post_meta( $audit_id, '_wp_mcp_ai_audit_status', true );
-			
+
 			switch ( $status ) {
 				case self::STATUS_COMPLETED:
 					++$completed;

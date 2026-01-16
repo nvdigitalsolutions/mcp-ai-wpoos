@@ -1,8 +1,8 @@
 # Built-in tool reference
 
-**Status:** ✅ VERIFIED - January 7, 2025  
-**Tool Count:** 145 unique tools (118 base + 27 Pro addon)  
-**Last Updated:** January 7, 2025
+**Status:** ✅ VERIFIED - January 15, 2025  
+**Tool Count:** 146 unique tools (119 base + 27 Pro addon)  
+**Last Updated:** January 15, 2025
 
 NV oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 
@@ -181,6 +181,64 @@ Perfect for construction workflows where accurate dimensions, code compliance, a
 ## Data visualization
 
 - **Create Chart** (`create_chart`) creates interactive charts using Chart.js. Supports bar, line, pie, doughnut, radar, and polar area charts. Returns HTML/JavaScript or saves as attachment.【F:includes/tools/class-wp-mcp-ai-tool-create-chart.php†L17-L300】
+
+## Spreadsheet & Data Analysis
+
+- **Pro Excel** (`pro_excel`) generates and manipulates Microsoft Excel formulas using AI-powered natural language processing. Recognizes Excel as a Turing-complete programming language (since Excel 2021 with LAMBDA functions) and provides comprehensive spreadsheet automation capabilities. Supports 6 operations:
+  - **Generate**: Creates Excel formulas from natural language descriptions (e.g., "sum A1 to A10" → `=SUM(A1:A10)`)
+  - **Explain**: Provides step-by-step explanations of complex formulas with plain English descriptions of each component
+  - **Debug**: Identifies and fixes errors in formulas, suggesting corrections and best practices
+  - **Document**: Adds inline comments and documentation to formulas for maintainability
+  - **Convert**: Transforms formulas between Excel versions (legacy → modern, traditional → LAMBDA-based)
+  - **Lambda**: Generates custom LAMBDA functions for recursive, reusable, and advanced calculations (Excel 2021+/Microsoft 365 only)
+  
+  **Excel Version Targeting**: Supports three Excel version modes:
+  - `modern` (default): Excel 2021+/Microsoft 365 with LAMBDA, LET, XLOOKUP, XMATCH, FILTER, SORT, UNIQUE, SEQUENCE
+  - `legacy`: Excel 2019 and earlier with traditional formulas (VLOOKUP, INDEX/MATCH, nested IFs)
+  - `online`: Excel Online cloud-specific features and web compatibility
+  
+  **LAMBDA Functions & Turing Completeness**: When `excel_enable_lambda` is enabled (default), the tool can generate custom LAMBDA functions that make Excel Turing-complete. These enable:
+  - Custom reusable functions with named parameters
+  - Recursive calculations (factorial, Fibonacci, tree traversal)
+  - Functional programming patterns (MAP, REDUCE, FILTER operations)
+  - Complex algorithms requiring iteration and state management
+  - Modular formula libraries that can be shared across workbooks
+  
+  **Formula Complexity Control**: The `excel_max_complexity` setting controls formula sophistication:
+  - `simple`: Basic formulas for beginners (SUM, AVERAGE, IF, VLOOKUP)
+  - `moderate` (default): Nested functions with 2-3 levels (SUMIFS, INDEX/MATCH combinations)
+  - `complex`: Advanced multi-step calculations (array formulas, complex conditionals)
+  - `advanced`: Expert-level formulas with LAMBDA, LET, recursive logic, and cutting-edge features
+  
+  **Formula Comments**: When `excel_include_comments` is enabled (default), generated formulas include inline explanatory comments for each step, making complex calculations easier to understand and maintain.
+  
+  **Optimization Modes**: The `excel_optimization_level` setting balances readability vs. performance:
+  - `readability`: Clear, maintainable formulas with descriptive intermediate steps
+  - `balanced` (default): Compromise between clarity and efficiency
+  - `performance`: Optimized for calculation speed using array formulas and minimal operations
+  
+  **Provider Integration**: Works with all supported AI providers (OpenAI, Google Gemini, Ollama) using provider-agnostic execution. Settings can be configured per-provider in the Providers tab (OpenAI/Gemini/Ollama subtabs).
+  
+  **JSON Response Format**: Returns structured responses with:
+  - `formula`: The generated Excel formula
+  - `explanation`: Plain English description of how it works
+  - `complexity`: Estimated difficulty level
+  - `excel_version`: Target Excel version
+  - `alternative_approaches`: Optional suggestions for different solution methods
+  - `warnings`: Potential issues or performance considerations
+  
+  **Capability Flags**: Marked as `pro`, `requires-credentials`, `requires-model`, `consumes-tokens`, `requires-capability` (edit_posts). Integrates with agentic workflows for multi-step formula development and debugging.
+  
+  **Use Cases**:
+  - Financial modeling: Generate complex financial formulas (NPV, IRR, amortization schedules)
+  - Data analysis: Create dynamic reports with FILTER, SORT, UNIQUE, and aggregation functions
+  - Business intelligence: Build dashboard formulas with conditional formatting and data validation
+  - Scientific calculations: Develop custom mathematical functions using LAMBDA
+  - Legacy migration: Convert old Excel formulas to modern equivalents for better performance
+  - Formula debugging: Diagnose and fix errors in existing spreadsheets
+  - Training: Generate documented formulas as learning resources for Excel users
+  
+  【F:includes/tools/class-wp-mcp-ai-tool-pro-excel.php†L1-L840】
 
 ## External data and automations
 

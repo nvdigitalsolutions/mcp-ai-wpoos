@@ -446,6 +446,8 @@ class WP_MCP_AI_Shortcode {
 					'enable_streaming'      => 'true',
 					'allow_sensitive_tools' => 'false',
 					'template'              => 'classic',
+					'cpt_actions'           => '', // JSON-encoded array of CPT action buttons.
+					'additional_tools'      => '', // Comma-separated list of tool slugs to make available regardless of assistant config.
 				),
 				$atts,
 				$tag
@@ -663,6 +665,42 @@ class WP_MCP_AI_Shortcode {
 			$tool_shortcuts         = self::get_assistant_tool_shortcuts( $shortcuts_assistant_id );
 			if ( ! empty( $tool_shortcuts ) ) {
 				$config['toolShortcuts'] = $tool_shortcuts;
+			}
+
+			// Parse CPT action buttons if provided.
+			$cpt_actions = array();
+			if ( ! empty( $atts['cpt_actions'] ) ) {
+				// Try to decode as base64 first (new format to avoid shortcode bracket conflicts).
+				$decoded_json = base64_decode( $atts['cpt_actions'], true );
+				if ( false !== $decoded_json ) {
+					$decoded_actions = json_decode( $decoded_json, true );
+					if ( is_array( $decoded_actions ) ) {
+						$cpt_actions = $decoded_actions;
+					}
+				}
+				
+				// Fallback to direct JSON decode for backwards compatibility.
+				if ( empty( $cpt_actions ) ) {
+					$decoded_actions = json_decode( $atts['cpt_actions'], true );
+					if ( is_array( $decoded_actions ) ) {
+						$cpt_actions = $decoded_actions;
+					}
+				}
+			}
+			if ( ! empty( $cpt_actions ) ) {
+				$config['cptActions'] = $cpt_actions;
+			}
+
+			// Parse additional tools if provided.
+			// These tools will be available regardless of the assistant's configured tools.
+			if ( ! empty( $atts['additional_tools'] ) ) {
+				$additional_tools_raw = sanitize_text_field( $atts['additional_tools'] );
+				$additional_tools     = array_map( 'trim', explode( ',', $additional_tools_raw ) );
+				$additional_tools     = array_filter( array_map( 'sanitize_key', $additional_tools ) );
+				
+				if ( ! empty( $additional_tools ) ) {
+					$config['additionalTools'] = array_values( $additional_tools );
+				}
 			}
 
 			if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
@@ -883,6 +921,9 @@ class WP_MCP_AI_Shortcode {
 						</svg>
 						<span class="screen-reader-text"><?php esc_html_e( 'Start new conversation', 'mcp-ai-wpoos' ); ?></span>
 					</button>
+					<?php if ( ! empty( $cpt_actions ) ) : ?>
+					<div class="wp-mcp-ai-chat__cpt-actions" role="group" aria-label="<?php echo esc_attr__( 'Post type actions', 'mcp-ai-wpoos' ); ?>"></div>
+					<?php endif; ?>
 				</div>
 			</div>
 			<section class="wp-mcp-ai-chat__history" id="<?php echo esc_attr( $instance_id ); ?>-history" hidden aria-label="<?php esc_attr_e( 'Previous conversations', 'mcp-ai-wpoos' ); ?>">

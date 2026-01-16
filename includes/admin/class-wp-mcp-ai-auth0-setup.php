@@ -115,11 +115,11 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 								<th><?php esc_html_e( 'Enable Auth0 GitHub Bridge', 'mcp-ai-wpoos' ); ?></th>
 								<td>
 									<label for="enable-auth0-github-bridge">
-										<input 
-											type="checkbox" 
-											id="enable-auth0-github-bridge" 
-											name="enable_auth0_github_bridge" 
-											value="1" 
+										<input
+											type="checkbox"
+											id="enable-auth0-github-bridge"
+											name="enable_auth0_github_bridge"
+											value="1"
 											<?php checked( $bridge_enabled ); ?>
 										/>
 										<?php esc_html_e( 'Resolve Auth0 GitHub identities into WordPress users', 'mcp-ai-wpoos' ); ?>
@@ -136,15 +136,15 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 					<div class="card">
 						<h2><?php esc_html_e( 'Step 1: Auto-Configure from Auth0 Token', 'mcp-ai-wpoos' ); ?></h2>
 						<p><?php esc_html_e( 'Paste an Auth0 bearer token to automatically extract and configure your Auth0 domain and audience.', 'mcp-ai-wpoos' ); ?></p>
-						
+
 						<div class="setup-step">
 							<label for="auth0-token">
 								<?php esc_html_e( 'Auth0 Bearer Token', 'mcp-ai-wpoos' ); ?>
 							</label>
-							<textarea 
-								id="auth0-token" 
-								class="large-text code" 
-								rows="4" 
+							<textarea
+								id="auth0-token"
+								class="large-text code"
+								rows="4"
 								placeholder="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
 							></textarea>
 							<p class="description">
@@ -220,32 +220,32 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 			<style>
 				.wp-mcp-ai-setup-wizard { max-width: 900px; }
 				.wp-mcp-ai-setup-wizard .card { margin-bottom: 20px; }
-				.status-badge { 
-					padding: 4px 12px; 
-					border-radius: 3px; 
+				.status-badge {
+					padding: 4px 12px;
+					border-radius: 3px;
 					font-weight: 600;
 					display: inline-block;
 				}
-				.status-badge.enabled { 
-					background: #4caf50; 
-					color: white; 
+				.status-badge.enabled {
+					background: #4caf50;
+					color: white;
 				}
-				.status-badge.disabled { 
-					background: #ccc; 
-					color: #666; 
+				.status-badge.disabled {
+					background: #ccc;
+					color: #666;
 				}
 				.setup-step { margin: 20px 0; }
-				.setup-checklist { 
-					line-height: 1.6; 
+				.setup-checklist {
+					line-height: 1.6;
 					margin-left: 20px;
 				}
-				.setup-checklist li { 
-					margin-bottom: 20px; 
+				.setup-checklist li {
+					margin-bottom: 20px;
 				}
-				.setup-checklist code { 
-					background: #f5f5f5; 
-					padding: 2px 6px; 
-					border-radius: 3px; 
+				.setup-checklist code {
+					background: #f5f5f5;
+					padding: 2px 6px;
+					border-radius: 3px;
 				}
 				#auto-configure-result.success {
 					padding: 12px;

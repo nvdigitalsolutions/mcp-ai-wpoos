@@ -63,7 +63,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 					}
 				}
 				?>
-				
+
 				<div class="card">
 					<h2><?php esc_html_e( '1. Constants', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
@@ -333,7 +333,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 						<p><?php esc_html_e( 'Expected behavior: Top-level menu "NV oOS" with Auth0 submenu', 'mcp-ai-wpoos' ); ?></p>
 						<p><strong><?php esc_html_e( 'Dashboard:', 'mcp-ai-wpoos' ); ?></strong> <?php echo $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>'; ?></p>
 						<p><strong><?php esc_html_e( 'Auth0 Setup:', 'mcp-ai-wpoos' ); ?></strong> <?php echo $found_auth0 ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>'; ?></p>
-						
+
 						<?php if ( ! $found_new ) : ?>
 							<hr>
 							<h3 style="color: red;"><?php esc_html_e( 'Issue Detected: Dashboard Not Loading', 'mcp-ai-wpoos' ); ?></h3>
@@ -344,7 +344,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 								<li><?php esc_html_e( 'Hook timing issue', 'mcp-ai-wpoos' ); ?></li>
 								<li><?php esc_html_e( 'WordPress version incompatibility', 'mcp-ai-wpoos' ); ?></li>
 							</ul>
-							
+
 							<h4><?php esc_html_e( 'Troubleshooting Steps:', 'mcp-ai-wpoos' ); ?></h4>
 							<ol>
 								<li><?php esc_html_e( 'Check WordPress error log (wp-content/debug.log if WP_DEBUG_LOG is enabled)', 'mcp-ai-wpoos' ); ?></li>

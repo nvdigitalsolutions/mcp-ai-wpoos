@@ -42,8 +42,8 @@ $current_stats = isset( $data['current_stats'] ) ? $data['current_stats'] : arra
 				// Following SoC: Pass data to canvas via data attribute, not inline JS.
 				$gauge_data = isset( $data['gauge'] ) ? $data['gauge'] : array();
 				?>
-				<canvas 
-					id="wp-mcp-ai-dashboard-usage-gauge" 
+				<canvas
+					id="wp-mcp-ai-dashboard-usage-gauge"
 					data-gauge-data="<?php echo esc_attr( wp_json_encode( $gauge_data ) ); ?>">
 				</canvas>
 			</div>
@@ -100,9 +100,9 @@ $current_stats = isset( $data['current_stats'] ) ? $data['current_stats'] : arra
 		<?php
 		// Following SoC: Pass data to canvas via data attribute, chart init happens in JS.
 		?>
-		<canvas 
-			id="wp-mcp-ai-dashboard-usage-trend" 
-			width="400" 
+		<canvas
+			id="wp-mcp-ai-dashboard-usage-trend"
+			width="400"
 			height="200"
 			data-chart-data="<?php echo esc_attr( wp_json_encode( $data['trend'] ?? array() ) ); ?>">
 		</canvas>

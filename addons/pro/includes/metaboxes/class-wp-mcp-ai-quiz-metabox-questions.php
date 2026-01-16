@@ -125,8 +125,8 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 					<label>
 						<strong><?php esc_html_e( 'Question Text:', 'mcp-ai-wpoos-pro' ); ?></strong>
 					</label>
-					<textarea 
-						name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][question]" 
+					<textarea
+						name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][question]"
 						class="widefat question-text"
 						rows="3"
 						required
@@ -149,10 +149,10 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 						<label>
 							<strong><?php esc_html_e( 'Points:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label>
-						<input 
-							type="number" 
-							name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][points]" 
-							value="<?php echo esc_attr( $points ); ?>" 
+						<input
+							type="number"
+							name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][points]"
+							value="<?php echo esc_attr( $points ); ?>"
 							min="1"
 							step="1"
 							class="small-text"
@@ -168,10 +168,10 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 						foreach ( $options as $opt_index => $option_value ) {
 							?>
 							<div class="option-row">
-								<input 
-									type="text" 
-									name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][options][]" 
-									value="<?php echo esc_attr( $option_value ); ?>" 
+								<input
+									type="text"
+									name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][options][]"
+									value="<?php echo esc_attr( $option_value ); ?>"
 									placeholder="<?php esc_attr_e( 'Option text', 'mcp-ai-wpoos-pro' ); ?>"
 									class="widefat"
 								/>
@@ -191,10 +191,10 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 					<label>
 						<strong><?php esc_html_e( 'Correct Answer (for grading reference):', 'mcp-ai-wpoos-pro' ); ?></strong>
 					</label>
-					<input 
-						type="text" 
-						name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][correct_answer]" 
-						value="<?php echo esc_attr( $correct_answer ); ?>" 
+					<input
+						type="text"
+						name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][correct_answer]"
+						value="<?php echo esc_attr( $correct_answer ); ?>"
 						class="widefat"
 						placeholder="<?php esc_attr_e( 'Optional: Enter the correct answer', 'mcp-ai-wpoos-pro' ); ?>"
 					/>

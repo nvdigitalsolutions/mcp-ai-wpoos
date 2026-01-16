@@ -342,7 +342,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		public function get_compliance_status() {
 			// Get actual controls data from Statement of Applicability.
 			$controls = $this->get_iso27001_controls();
-			
+
 			// Check if controls were loaded successfully.
 			if ( empty( $controls ) ) {
 				return new WP_Error(
@@ -351,7 +351,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					array( 'status' => 500 )
 				);
 			}
-			
+
 			$stats = $this->calculate_controls_stats( $controls );
 
 			// Calculate overall percentage.
@@ -965,7 +965,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		 */
 		public function get_risk_chart_data() {
 			$risk_data = $this->get_risk_data();
-			
+
 			return rest_ensure_response(
 				array(
 					'success' => true,
@@ -1014,7 +1014,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		 */
 		public function get_metrics_chart_data() {
 			$metrics_data = $this->get_metrics_data();
-			
+
 			return rest_ensure_response(
 				array(
 					'success' => true,
@@ -1072,7 +1072,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		private function get_risk_data() {
 			// Try to get from stored option first.
 			$stored_risks = get_option( 'wp_mcp_ai_risk_data', false );
-			
+
 			if ( false !== $stored_risks && is_array( $stored_risks ) ) {
 				return wp_parse_args(
 					$stored_risks,
@@ -1106,7 +1106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		private function get_metrics_data() {
 			// Try to get from stored option first.
 			$stored_metrics = get_option( 'wp_mcp_ai_metrics_data', false );
-			
+
 			if ( false !== $stored_metrics && is_array( $stored_metrics ) ) {
 				return wp_parse_args(
 					$stored_metrics,

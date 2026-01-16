@@ -320,7 +320,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							);
 							$is_active  = ( $group['id'] === $active_subtab );
 							?>
-							<a href="<?php echo esc_url( $subtab_url ); ?>" 
+							<a href="<?php echo esc_url( $subtab_url ); ?>"
 								class="wp-mcp-ai-subtab <?php echo esc_attr( $is_active ? 'wp-mcp-ai-subtab-active' : '' ); ?>"
 								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
@@ -535,7 +535,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<?php if ( $draft_count > 0 ) : ?>
 							<li><strong><?php esc_html_e( 'Draft Professions:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $draft_count ); ?></li>
 						<?php endif; ?>
-						<li><strong><?php esc_html_e( 'Initially Seeded:', 'mcp-ai-wpoos' ); ?></strong> 
+						<li><strong><?php esc_html_e( 'Initially Seeded:', 'mcp-ai-wpoos' ); ?></strong>
 							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $seeded_class ); ?>">
 								<?php echo esc_html( $seeded_text ); ?>
 							</span>
@@ -597,7 +597,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<ul style="margin: 10px 0; padding-left: 20px;">
 							<li><strong><?php esc_html_e( 'Total Playbook Attachments:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $playbook_stats['total_attachments'] ); ?></li>
 							<li><strong><?php esc_html_e( 'Professions with Playbooks:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $playbook_stats['professions_with_playbooks'] ); ?> / <?php echo absint( $total_count ); ?></li>
-							<li><strong><?php esc_html_e( 'Playbooks Seeded:', 'mcp-ai-wpoos' ); ?></strong> 
+							<li><strong><?php esc_html_e( 'Playbooks Seeded:', 'mcp-ai-wpoos' ); ?></strong>
 								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $playbook_stats['seeded'] ? 'success' : 'warning' ); ?>">
 									<?php echo esc_html( $playbook_stats['seeded'] ? __( 'Yes', 'mcp-ai-wpoos' ) : __( 'No', 'mcp-ai-wpoos' ) ); ?>
 								</span>
@@ -788,7 +788,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<?php if ( $team_draft_count > 0 ) : ?>
 							<li><strong><?php esc_html_e( 'Draft Teams:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $team_draft_count ); ?></li>
 						<?php endif; ?>
-						<li><strong><?php esc_html_e( 'Initially Seeded:', 'mcp-ai-wpoos' ); ?></strong> 
+						<li><strong><?php esc_html_e( 'Initially Seeded:', 'mcp-ai-wpoos' ); ?></strong>
 							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $team_seeded_class ); ?>">
 								<?php echo esc_html( $team_seeded_text ); ?>
 							</span>

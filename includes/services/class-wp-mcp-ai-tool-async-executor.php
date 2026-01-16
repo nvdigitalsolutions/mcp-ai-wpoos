@@ -809,9 +809,9 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$expired = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT option_name FROM {$wpdb->options} 
-				WHERE option_name LIKE %s 
-				AND option_value < %d 
+				"SELECT option_name FROM {$wpdb->options}
+				WHERE option_name LIKE %s
+				AND option_value < %d
 				LIMIT 100",
 				$wpdb->esc_like( '_transient_timeout_' . $prefix ) . '%',
 				time()
