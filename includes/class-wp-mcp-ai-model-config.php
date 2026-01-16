@@ -2158,8 +2158,9 @@ class WP_MCP_AI_Model_Config {
 			$providers['lm_studio'] = __( 'LM Studio (Local)', 'mcp-ai-wpoos' );
 		}
 
-		// Cloudflare already checks enable_cloudflare (defaults to false).
-		if ( ! empty( $settings['enable_cloudflare'] ) && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
+		// Check enable_cloudflare setting (defaults to false if not set).
+		$enable_cloudflare = isset( $settings['enable_cloudflare'] ) ? $settings['enable_cloudflare'] : false;
+		if ( $enable_cloudflare && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
 			$providers['cloudflare'] = __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' );
 		}
 

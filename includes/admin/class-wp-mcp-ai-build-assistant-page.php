@@ -524,11 +524,10 @@ class WP_MCP_AI_Build_Assistant_Page {
 										$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
 										$first               = true;
 										foreach ( $available_providers as $provider_slug => $provider_label ) {
-											$selected_attr = $first ? ' selected' : '';
-											$first         = false;
 											?>
-											<option value="<?php echo esc_attr( $provider_slug ); ?>"<?php echo $selected_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html( $provider_label ); ?></option>
+											<option value="<?php echo esc_attr( $provider_slug ); ?>"<?php echo $first ? ' selected' : ''; ?>><?php echo esc_html( $provider_label ); ?></option>
 											<?php
+											$first = false;
 										}
 										?>
 									</select>

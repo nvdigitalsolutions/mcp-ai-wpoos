@@ -999,7 +999,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public static function get_available_providers() {
 			// Try to use Model_Config if available for accurate filtering.
 			if ( ! class_exists( 'WP_MCP_AI_Model_Config' ) ) {
-				$model_config_path = WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
+				$model_config_path = trailingslashit( WP_MCP_AI_PATH ) . 'includes' . DIRECTORY_SEPARATOR . 'class-wp-mcp-ai-model-config.php';
 				if ( file_exists( $model_config_path ) ) {
 					require_once $model_config_path;
 				}
