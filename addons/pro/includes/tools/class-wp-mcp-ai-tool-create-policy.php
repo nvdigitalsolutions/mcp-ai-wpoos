@@ -34,7 +34,7 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new insurance policy (health, dental, vision, pet, or life insurance) for a member.', 'mcp-ai-wpoos-pro' );
+		return __( 'Creates a new insurance policy (health, dental, vision, pet, or life insurance) for a member or updates an existing one if policy_id is provided.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -44,6 +44,10 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'policy_id'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional policy ID. If provided, updates the existing policy instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'member_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this policy belongs to (required)', 'mcp-ai-wpoos-pro' ),
@@ -141,6 +145,30 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create policies.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Check if this is an update operation.
+		$policy_id       = isset( $arguments['policy_id'] ) ? absint( $arguments['policy_id'] ) : 0;
+		$is_update       = false;
+		$existing_policy = null;
+
+		if ( $policy_id ) {
+			// Verify policy exists and user has permission to update it.
+			$existing_policy = get_post( $policy_id );
+
+			if ( ! $existing_policy || 'mcp_ai_policy' !== $existing_policy->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_policy_not_found', __( 'Policy not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author = absint( $existing_policy->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this policy.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Validate required fields.
 		$member_id     = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
 		$policy_number = isset( $arguments['policy_number'] ) ? sanitize_text_field( $arguments['policy_number'] ) : '';
@@ -182,67 +210,137 @@ class WP_MCP_AI_Tool_Create_Policy implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return new WP_Error( 'wp_mcp_ai_invalid_date', __( 'Invalid expiration date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Create policy post.
-		$post_data = array(
-			'post_type'    => 'mcp_ai_policy',
-			'post_title'   => $name,
-			'post_content' => $this->embed_content_media( $coverage_details, $arguments ),
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		);
+		if ( $is_update ) {
+			// Update existing policy.
+			$post_data = array(
+				'ID'           => $policy_id,
+				'post_title'   => $name,
+				'post_content' => $this->embed_content_media( $coverage_details, $arguments ),
+			);
 
-		$policy_id = wp_insert_post( $post_data, true );
+			$result = wp_update_post( $post_data, true );
 
-		if ( is_wp_error( $policy_id ) ) {
-			return $policy_id;
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Set policy type taxonomy.
+			wp_set_object_terms( $policy_id, $policy_type, 'mcp_ai_policy_type' );
+
+			// Update policy metadata.
+			update_post_meta( $policy_id, '_policy_member_id', $member_id );
+			update_post_meta( $policy_id, '_policy_number', $policy_number );
+
+			if ( $provider ) {
+				update_post_meta( $policy_id, '_policy_provider', $provider );
+			}
+
+			if ( $status ) {
+				update_post_meta( $policy_id, '_policy_status', $status );
+			}
+
+			if ( $effective_date ) {
+				update_post_meta( $policy_id, '_policy_effective_date', $effective_date );
+			}
+
+			if ( $expiration_date ) {
+				update_post_meta( $policy_id, '_policy_expiration_date', $expiration_date );
+			}
+
+			if ( $premium ) {
+				update_post_meta( $policy_id, '_policy_premium', $premium );
+			}
+
+			$policy = get_post( $policy_id );
+
+			return array(
+				'success'   => true,
+				'message'   => sprintf(
+					/* translators: %s: policy number */
+					__( 'Policy updated: %s', 'mcp-ai-wpoos-pro' ),
+					$policy_number
+				),
+				'policy_id' => $policy_id,
+				'policy'    => array(
+					'id'               => $policy_id,
+					'member_id'        => $member_id,
+					'policy_number'    => $policy_number,
+					'name'             => $name,
+					'type'             => $policy_type,
+					'provider'         => $provider,
+					'status'           => $status,
+					'effective_date'   => $effective_date,
+					'expiration_date'  => $expiration_date,
+					'premium'          => $premium,
+					'coverage_details' => $coverage_details,
+					'updated_at'       => $policy->post_modified,
+				),
+				'updated'   => true,
+			);
+		} else {
+			// Create policy post.
+			$post_data = array(
+				'post_type'    => 'mcp_ai_policy',
+				'post_title'   => $name,
+				'post_content' => $this->embed_content_media( $coverage_details, $arguments ),
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			);
+
+			$policy_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $policy_id ) ) {
+				return $policy_id;
+			}
+
+			// Set policy type taxonomy.
+			wp_set_object_terms( $policy_id, $policy_type, 'mcp_ai_policy_type' );
+
+			// Save policy metadata.
+			update_post_meta( $policy_id, '_policy_member_id', $member_id );
+			update_post_meta( $policy_id, '_policy_number', $policy_number );
+
+			if ( $provider ) {
+				update_post_meta( $policy_id, '_policy_provider', $provider );
+			}
+
+			if ( $status ) {
+				update_post_meta( $policy_id, '_policy_status', $status );
+			}
+
+			if ( $effective_date ) {
+				update_post_meta( $policy_id, '_policy_effective_date', $effective_date );
+			}
+
+			if ( $expiration_date ) {
+				update_post_meta( $policy_id, '_policy_expiration_date', $expiration_date );
+			}
+
+			if ( $premium ) {
+				update_post_meta( $policy_id, '_policy_premium', $premium );
+			}
+
+			return array(
+				'success'   => true,
+				'message'   => __( 'Policy created successfully.', 'mcp-ai-wpoos-pro' ),
+				'policy_id' => $policy_id,
+				'policy'    => array(
+					'id'               => $policy_id,
+					'member_id'        => $member_id,
+					'policy_number'    => $policy_number,
+					'name'             => $name,
+					'type'             => $policy_type,
+					'provider'         => $provider,
+					'status'           => $status,
+					'effective_date'   => $effective_date,
+					'expiration_date'  => $expiration_date,
+					'premium'          => $premium,
+					'coverage_details' => $coverage_details,
+					'created_at'       => current_time( 'mysql' ),
+				),
+				'updated'   => false,
+			);
 		}
-
-		// Set policy type taxonomy.
-		wp_set_object_terms( $policy_id, $policy_type, 'mcp_ai_policy_type' );
-
-		// Save policy metadata.
-		update_post_meta( $policy_id, '_policy_member_id', $member_id );
-		update_post_meta( $policy_id, '_policy_number', $policy_number );
-
-		if ( $provider ) {
-			update_post_meta( $policy_id, '_policy_provider', $provider );
-		}
-
-		if ( $status ) {
-			update_post_meta( $policy_id, '_policy_status', $status );
-		}
-
-		if ( $effective_date ) {
-			update_post_meta( $policy_id, '_policy_effective_date', $effective_date );
-		}
-
-		if ( $expiration_date ) {
-			update_post_meta( $policy_id, '_policy_expiration_date', $expiration_date );
-		}
-
-		if ( $premium ) {
-			update_post_meta( $policy_id, '_policy_premium', $premium );
-		}
-
-		return array(
-			'success'   => true,
-			'message'   => __( 'Policy created successfully.', 'mcp-ai-wpoos-pro' ),
-			'policy_id' => $policy_id,
-			'policy'    => array(
-				'id'               => $policy_id,
-				'member_id'        => $member_id,
-				'policy_number'    => $policy_number,
-				'name'             => $name,
-				'type'             => $policy_type,
-				'provider'         => $provider,
-				'status'           => $status,
-				'effective_date'   => $effective_date,
-				'expiration_date'  => $expiration_date,
-				'premium'          => $premium,
-				'coverage_details' => $coverage_details,
-				'created_at'       => current_time( 'mysql' ),
-			),
-		);
 	}
 
 	/**

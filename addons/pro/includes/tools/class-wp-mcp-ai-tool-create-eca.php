@@ -36,7 +36,7 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new Extra-Curricular Activity (ECA) with schedule, venue, capacity, teacher assignments, and cost information. Supports clubs, societies, and sports activities.', 'mcp-ai-wpoos-pro' );
+		return __( 'Creates a new Extra-Curricular Activity (ECA) or updates an existing one if eca_id is provided. Includes schedule, venue, capacity, teacher assignments, and cost information. Supports clubs, societies, and sports activities.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -46,6 +46,10 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'eca_id'         => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional ECA ID. If provided, updates the existing ECA instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'name'           => array(
 					'type'        => 'string',
 					'description' => __( 'ECA name (required)', 'mcp-ai-wpoos-pro' ),
@@ -215,6 +219,30 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			);
 		}
 
+		// Check if this is an update operation.
+		$eca_id       = isset( $arguments['eca_id'] ) ? absint( $arguments['eca_id'] ) : 0;
+		$is_update    = false;
+		$existing_eca = null;
+
+		if ( $eca_id ) {
+			// Verify ECA exists and user has permission to update it.
+			$existing_eca = get_post( $eca_id );
+
+			if ( ! $existing_eca || 'mcp_ai_eca' !== $existing_eca->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_eca_not_found', __( 'ECA not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author = absint( $existing_eca->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this ECA.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Validate and sanitize inputs.
 		$name = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : '';
 		if ( '' === $name ) {
@@ -278,88 +306,198 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$cost_period = 'term';
 		}
 
-		// Create the ECA post.
-		$post_data = array(
-			'post_title'   => $name,
-			'post_content' => $this->embed_content_media( $description, $arguments ),
-			'post_status'  => 'publish',
-			'post_type'    => 'mcp_ai_eca',
-			'post_author'  => $current_user_id,
-		);
-
-		$post_id = wp_insert_post( $post_data, true );
-
-		if ( is_wp_error( $post_id ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_create_failed',
-				sprintf(
-					/* translators: %s: error message */
-					__( 'Failed to create ECA: %s', 'mcp-ai-wpoos-pro' ),
-					$post_id->get_error_message()
-				)
+		if ( $is_update ) {
+			// Update existing ECA.
+			$post_data = array(
+				'ID'           => $eca_id,
+				'post_title'   => $name,
+				'post_content' => $this->embed_content_media( $description, $arguments ),
 			);
-		}
 
-		// Save all meta fields.
-		if ( $eca_code ) {
-			update_post_meta( $post_id, '_eca_code', $eca_code );
-		}
-		update_post_meta( $post_id, '_eca_type', $eca_type );
-		if ( $day ) {
-			update_post_meta( $post_id, '_eca_day', $day );
-		}
-		if ( $start_time ) {
-			update_post_meta( $post_id, '_eca_start_time', $start_time );
-		}
-		if ( $end_time ) {
-			update_post_meta( $post_id, '_eca_end_time', $end_time );
-		}
-		if ( $venue ) {
-			update_post_meta( $post_id, '_eca_venue', $venue );
-		}
-		if ( $max_students > 0 ) {
-			update_post_meta( $post_id, '_eca_max_students', $max_students );
-		}
-		if ( ! empty( $year_groups ) ) {
-			update_post_meta( $post_id, '_eca_year_groups', $year_groups );
-		}
-		if ( ! empty( $teachers ) ) {
-			update_post_meta( $post_id, '_eca_teachers', $teachers );
-		}
-		update_post_meta( $post_id, '_eca_is_paid', $is_paid ? 'yes' : 'no' );
-		if ( $is_paid && $cost > 0 ) {
-			update_post_meta( $post_id, '_eca_cost', $cost );
-			update_post_meta( $post_id, '_eca_cost_period', $cost_period );
-		}
-		update_post_meta( $post_id, '_eca_requires_audition', $requires_audition ? 'yes' : 'no' );
-		update_post_meta( $post_id, '_eca_booking_type', $booking_type );
-		update_post_meta( $post_id, '_eca_status', $status );
-		if ( $isams_sync_id ) {
-			update_post_meta( $post_id, '_eca_isams_sync_id', $isams_sync_id );
-		}
+			$result = wp_update_post( $post_data, true );
 
-		// Initialize enrollment count.
-		update_post_meta( $post_id, '_eca_current_enrollment', 0 );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
 
-		// Try to sync with iSAMS if sync ID is provided and iSAMS is configured.
-		$sync_status = null;
-		if ( $isams_sync_id ) {
-			$sync_result = $this->sync_with_isams( $post_id, $isams_sync_id );
-			if ( ! is_wp_error( $sync_result ) ) {
-				$sync_status = array(
-					'synced' => true,
-					'message' => __( 'Successfully synced with iSAMS.', 'mcp-ai-wpoos-pro' ),
-				);
-			} else {
-				$sync_status = array(
-					'synced' => false,
-					'message' => $sync_result->get_error_message(),
+			$post_id = $eca_id;
+
+			// Save all meta fields.
+			if ( $eca_code ) {
+				update_post_meta( $post_id, '_eca_code', $eca_code );
+			}
+			update_post_meta( $post_id, '_eca_type', $eca_type );
+			if ( $day ) {
+				update_post_meta( $post_id, '_eca_day', $day );
+			}
+			if ( $start_time ) {
+				update_post_meta( $post_id, '_eca_start_time', $start_time );
+			}
+			if ( $end_time ) {
+				update_post_meta( $post_id, '_eca_end_time', $end_time );
+			}
+			if ( $venue ) {
+				update_post_meta( $post_id, '_eca_venue', $venue );
+			}
+			if ( $max_students > 0 ) {
+				update_post_meta( $post_id, '_eca_max_students', $max_students );
+			}
+			if ( ! empty( $year_groups ) ) {
+				update_post_meta( $post_id, '_eca_year_groups', $year_groups );
+			}
+			if ( ! empty( $teachers ) ) {
+				update_post_meta( $post_id, '_eca_teachers', $teachers );
+			}
+			update_post_meta( $post_id, '_eca_is_paid', $is_paid ? 'yes' : 'no' );
+			if ( $is_paid && $cost > 0 ) {
+				update_post_meta( $post_id, '_eca_cost', $cost );
+				update_post_meta( $post_id, '_eca_cost_period', $cost_period );
+			}
+			update_post_meta( $post_id, '_eca_requires_audition', $requires_audition ? 'yes' : 'no' );
+			update_post_meta( $post_id, '_eca_booking_type', $booking_type );
+			update_post_meta( $post_id, '_eca_status', $status );
+			if ( $isams_sync_id ) {
+				update_post_meta( $post_id, '_eca_isams_sync_id', $isams_sync_id );
+			}
+
+			// Try to sync with iSAMS if sync ID is provided and iSAMS is configured.
+			$sync_status = null;
+			if ( $isams_sync_id ) {
+				$sync_result = $this->sync_with_isams( $post_id, $isams_sync_id );
+				if ( ! is_wp_error( $sync_result ) ) {
+					$sync_status = array(
+						'synced'  => true,
+						'message' => __( 'Successfully synced with iSAMS.', 'mcp-ai-wpoos-pro' ),
+					);
+				} else {
+					$sync_status = array(
+						'synced'  => false,
+						'message' => $sync_result->get_error_message(),
+					);
+				}
+			}
+
+			// Get the updated ECA details.
+			$eca = get_post( $post_id );
+
+			// Get current enrollment count.
+			$current_enrollment = get_post_meta( $post_id, '_eca_current_enrollment', true );
+
+			$result = array(
+				'success'            => true,
+				'eca_id'             => $post_id,
+				'name'               => $eca->post_title,
+				'eca_code'           => $eca_code,
+				'type'               => $eca_type,
+				'day'                => $day,
+				'start_time'         => $start_time,
+				'end_time'           => $end_time,
+				'venue'              => $venue,
+				'max_students'       => $max_students,
+				'current_enrollment' => absint( $current_enrollment ),
+				'year_groups'        => $year_groups,
+				'teachers'           => $teachers,
+				'is_paid'            => $is_paid,
+				'cost'               => $is_paid ? $cost : 0,
+				'status'             => $status,
+				'url'                => get_permalink( $post_id ),
+				'edit_url'           => get_edit_post_link( $post_id, 'raw' ),
+				'message'            => sprintf(
+					/* translators: %s: ECA name */
+					__( 'ECA updated: %s', 'mcp-ai-wpoos-pro' ),
+					$name
+				),
+				'updated'            => true,
+			);
+
+			if ( $sync_status ) {
+				$result['isams_sync'] = $sync_status;
+			}
+
+			return $result;
+		} else {
+			// Create the ECA post.
+			$post_data = array(
+				'post_title'   => $name,
+				'post_content' => $this->embed_content_media( $description, $arguments ),
+				'post_status'  => 'publish',
+				'post_type'    => 'mcp_ai_eca',
+				'post_author'  => $current_user_id,
+			);
+
+			$post_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $post_id ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_create_failed',
+					sprintf(
+						/* translators: %s: error message */
+						__( 'Failed to create ECA: %s', 'mcp-ai-wpoos-pro' ),
+						$post_id->get_error_message()
+					)
 				);
 			}
-		}
 
-		// Get the created ECA details.
-		$eca = get_post( $post_id );
+			// Save all meta fields.
+			if ( $eca_code ) {
+				update_post_meta( $post_id, '_eca_code', $eca_code );
+			}
+			update_post_meta( $post_id, '_eca_type', $eca_type );
+			if ( $day ) {
+				update_post_meta( $post_id, '_eca_day', $day );
+			}
+			if ( $start_time ) {
+				update_post_meta( $post_id, '_eca_start_time', $start_time );
+			}
+			if ( $end_time ) {
+				update_post_meta( $post_id, '_eca_end_time', $end_time );
+			}
+			if ( $venue ) {
+				update_post_meta( $post_id, '_eca_venue', $venue );
+			}
+			if ( $max_students > 0 ) {
+				update_post_meta( $post_id, '_eca_max_students', $max_students );
+			}
+			if ( ! empty( $year_groups ) ) {
+				update_post_meta( $post_id, '_eca_year_groups', $year_groups );
+			}
+			if ( ! empty( $teachers ) ) {
+				update_post_meta( $post_id, '_eca_teachers', $teachers );
+			}
+			update_post_meta( $post_id, '_eca_is_paid', $is_paid ? 'yes' : 'no' );
+			if ( $is_paid && $cost > 0 ) {
+				update_post_meta( $post_id, '_eca_cost', $cost );
+				update_post_meta( $post_id, '_eca_cost_period', $cost_period );
+			}
+			update_post_meta( $post_id, '_eca_requires_audition', $requires_audition ? 'yes' : 'no' );
+			update_post_meta( $post_id, '_eca_booking_type', $booking_type );
+			update_post_meta( $post_id, '_eca_status', $status );
+			if ( $isams_sync_id ) {
+				update_post_meta( $post_id, '_eca_isams_sync_id', $isams_sync_id );
+			}
+
+			// Initialize enrollment count.
+			update_post_meta( $post_id, '_eca_current_enrollment', 0 );
+
+			// Try to sync with iSAMS if sync ID is provided and iSAMS is configured.
+			$sync_status = null;
+			if ( $isams_sync_id ) {
+				$sync_result = $this->sync_with_isams( $post_id, $isams_sync_id );
+				if ( ! is_wp_error( $sync_result ) ) {
+					$sync_status = array(
+						'synced'  => true,
+						'message' => __( 'Successfully synced with iSAMS.', 'mcp-ai-wpoos-pro' ),
+					);
+				} else {
+					$sync_status = array(
+						'synced'  => false,
+						'message' => $sync_result->get_error_message(),
+					);
+				}
+			}
+
+			// Get the created ECA details.
+			$eca = get_post( $post_id );
 
 		$result = array(
 			'success'     => true,
@@ -381,6 +519,7 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'url'         => get_permalink( $post_id ),
 			'edit_url'    => get_edit_post_link( $post_id, 'raw' ),
 			'message'     => __( 'ECA created successfully.', 'mcp-ai-wpoos-pro' ),
+			'updated'     => false,
 		);
 
 		if ( $sync_status ) {
@@ -388,6 +527,7 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		return $result;
+		}
 	}
 
 	/**

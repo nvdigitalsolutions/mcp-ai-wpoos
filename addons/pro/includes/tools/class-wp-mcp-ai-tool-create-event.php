@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new calendar event. Events can be meetings, deadlines, milestones, or any time-based activities. Supports all-day events and time-specific events.', 'mcp-ai-wpoos-pro' );
+		return __( 'Creates a new calendar event or updates an existing one if event_id is provided. Events can be meetings, deadlines, milestones, or any time-based activities. Supports all-day events and time-specific events.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,6 +43,10 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'event_id'    => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional event ID. If provided, updates the existing event instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'title'       => array(
 					'type'        => 'string',
 					'description' => __( 'Event title (required)', 'mcp-ai-wpoos-pro' ),
@@ -142,6 +146,30 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Check if this is an update operation.
+		$event_id       = isset( $arguments['event_id'] ) ? absint( $arguments['event_id'] ) : 0;
+		$is_update      = false;
+		$existing_event = null;
+
+		if ( $event_id ) {
+			// Verify event exists and user has permission to update it.
+			$existing_event = get_post( $event_id );
+
+			if ( ! $existing_event || 'mcp_ai_event' !== $existing_event->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_event_not_found', __( 'Event not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author = absint( $existing_event->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this event.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Validate and sanitize inputs.
 		$title       = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
 		$description = isset( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
@@ -204,67 +232,137 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		// Determine if all-day event.
 		$all_day = empty( $start_time ) && empty( $end_time );
 
-		// Create event post.
-		$post_data = array(
-			'post_type'    => 'mcp_ai_event',
-			'post_title'   => $title,
-			'post_content' => $description,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		);
+		if ( $is_update ) {
+			// Update existing event.
+			$post_data = array(
+				'ID'           => $event_id,
+				'post_title'   => $title,
+				'post_content' => $description,
+			);
 
-		$event_id = wp_insert_post( $post_data, true );
+			$result = wp_update_post( $post_data, true );
 
-		if ( is_wp_error( $event_id ) ) {
-			return $event_id;
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Update event metadata.
+			update_post_meta( $event_id, '_event_start_date', $start_date );
+			update_post_meta( $event_id, '_event_end_date', $end_date );
+			update_post_meta( $event_id, '_event_type', $type );
+			update_post_meta( $event_id, '_event_all_day', $all_day ? '1' : '0' );
+
+			if ( $project_id > 0 ) {
+				update_post_meta( $event_id, '_event_project_id', $project_id );
+			}
+
+			if ( $start_time ) {
+				update_post_meta( $event_id, '_event_start_time', $start_time );
+			}
+
+			if ( $end_time ) {
+				update_post_meta( $event_id, '_event_end_time', $end_time );
+			}
+
+			if ( $location ) {
+				update_post_meta( $event_id, '_event_location', $location );
+			}
+
+			if ( ! empty( $attendees ) ) {
+				update_post_meta( $event_id, '_event_attendees', $attendees );
+			}
+
+			$event = get_post( $event_id );
+
+			return array(
+				'success'  => true,
+				'message'  => sprintf(
+					/* translators: %s: event title */
+					__( 'Event updated: %s', 'mcp-ai-wpoos-pro' ),
+					$title
+				),
+				'event_id' => $event_id,
+				'event'    => array(
+					'id'          => $event_id,
+					'title'       => $title,
+					'description' => $description,
+					'project_id'  => $project_id ?: null,
+					'start_date'  => $start_date,
+					'start_time'  => $start_time,
+					'end_date'    => $end_date,
+					'end_time'    => $end_time,
+					'all_day'     => $all_day,
+					'location'    => $location,
+					'type'        => $type,
+					'attendees'   => $attendees,
+					'updated_at'  => $event->post_modified,
+				),
+				'updated'  => true,
+			);
+		} else {
+			// Create event post.
+			$post_data = array(
+				'post_type'    => 'mcp_ai_event',
+				'post_title'   => $title,
+				'post_content' => $description,
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			);
+
+			$event_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $event_id ) ) {
+				return $event_id;
+			}
+
+			// Save event metadata.
+			update_post_meta( $event_id, '_event_start_date', $start_date );
+			update_post_meta( $event_id, '_event_end_date', $end_date );
+			update_post_meta( $event_id, '_event_type', $type );
+			update_post_meta( $event_id, '_event_all_day', $all_day ? '1' : '0' );
+
+			if ( $project_id > 0 ) {
+				update_post_meta( $event_id, '_event_project_id', $project_id );
+			}
+
+			if ( $start_time ) {
+				update_post_meta( $event_id, '_event_start_time', $start_time );
+			}
+
+			if ( $end_time ) {
+				update_post_meta( $event_id, '_event_end_time', $end_time );
+			}
+
+			if ( $location ) {
+				update_post_meta( $event_id, '_event_location', $location );
+			}
+
+			if ( ! empty( $attendees ) ) {
+				update_post_meta( $event_id, '_event_attendees', $attendees );
+			}
+
+			return array(
+				'success'  => true,
+				'message'  => __( 'Event created successfully.', 'mcp-ai-wpoos-pro' ),
+				'event_id' => $event_id,
+				'event'    => array(
+					'id'          => $event_id,
+					'title'       => $title,
+					'description' => $description,
+					'project_id'  => $project_id ?: null,
+					'start_date'  => $start_date,
+					'start_time'  => $start_time,
+					'end_date'    => $end_date,
+					'end_time'    => $end_time,
+					'all_day'     => $all_day,
+					'location'    => $location,
+					'type'        => $type,
+					'attendees'   => $attendees,
+					'created_at'  => current_time( 'mysql' ),
+				),
+				'updated'  => false,
+			);
 		}
-
-		// Save event metadata.
-		update_post_meta( $event_id, '_event_start_date', $start_date );
-		update_post_meta( $event_id, '_event_end_date', $end_date );
-		update_post_meta( $event_id, '_event_type', $type );
-		update_post_meta( $event_id, '_event_all_day', $all_day ? '1' : '0' );
-
-		if ( $project_id > 0 ) {
-			update_post_meta( $event_id, '_event_project_id', $project_id );
-		}
-
-		if ( $start_time ) {
-			update_post_meta( $event_id, '_event_start_time', $start_time );
-		}
-
-		if ( $end_time ) {
-			update_post_meta( $event_id, '_event_end_time', $end_time );
-		}
-
-		if ( $location ) {
-			update_post_meta( $event_id, '_event_location', $location );
-		}
-
-		if ( ! empty( $attendees ) ) {
-			update_post_meta( $event_id, '_event_attendees', $attendees );
-		}
-
-		return array(
-			'success'  => true,
-			'message'  => __( 'Event created successfully.', 'mcp-ai-wpoos-pro' ),
-			'event_id' => $event_id,
-			'event'    => array(
-				'id'          => $event_id,
-				'title'       => $title,
-				'description' => $description,
-				'project_id'  => $project_id ?: null,
-				'start_date'  => $start_date,
-				'start_time'  => $start_time,
-				'end_date'    => $end_date,
-				'end_time'    => $end_time,
-				'all_day'     => $all_day,
-				'location'    => $location,
-				'type'        => $type,
-				'attendees'   => $attendees,
-				'created_at'  => current_time( 'mysql' ),
-			),
-		);
 	}
 
 	/**
