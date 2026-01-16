@@ -285,6 +285,25 @@ class WP_MCP_AI_Model_Pricing_Checker {
 
 			$model_name = sanitize_text_field( $change['model'] );
 
+			// Validate model name is not empty.
+			if ( empty( $model_name ) ) {
+				continue;
+			}
+
+			// Validate and sanitize pricing values.
+			$new_input_cost  = floatval( $change['new_input'] );
+			$new_output_cost = floatval( $change['new_output'] );
+
+			// Ensure pricing values are within reasonable ranges (0 to $10 per 1K tokens).
+			if ( $new_input_cost < 0 || $new_input_cost > 10 || $new_output_cost < 0 || $new_output_cost > 10 ) {
+				$errors[] = sprintf(
+					/* translators: %s: model name */
+					__( 'Invalid pricing values for model: %s (must be between $0 and $10 per 1K)', 'mcp-ai-wpoos' ),
+					$model_name
+				);
+				continue;
+			}
+
 			// Query for the model.
 			$items = $factory->db->query(
 				array(
@@ -303,9 +322,9 @@ class WP_MCP_AI_Model_Pricing_Checker {
 
 			$model_data = reset( $items );
 
-			// Update the costs.
-			$model_data['cost_per_1k_input_tokens']  = floatval( $change['new_input'] );
-			$model_data['cost_per_1k_output_tokens'] = floatval( $change['new_output'] );
+			// Update the costs with validated values.
+			$model_data['cost_per_1k_input_tokens']  = $new_input_cost;
+			$model_data['cost_per_1k_output_tokens'] = $new_output_cost;
 
 			// Update in database.
 			try {

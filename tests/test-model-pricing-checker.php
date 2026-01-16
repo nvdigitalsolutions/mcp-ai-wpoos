@@ -201,4 +201,50 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		// Verify error response.
 		$this->assertStringContainsString( 'No pricing changes', $output );
 	}
+
+	/**
+	 * Test update_model_costs validates pricing values.
+	 */
+	public function test_update_model_costs_validates_pricing() {
+		// Create admin user.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		// Set invalid price changes (negative and too high values).
+		$invalid_changes = array(
+			array(
+				'model'      => 'test-model-negative',
+				'provider'   => 'test',
+				'old_input'  => 0.001,
+				'new_input'  => -0.5, // Invalid: negative.
+				'old_output' => 0.002,
+				'new_output' => 0.003,
+			),
+			array(
+				'model'      => 'test-model-too-high',
+				'provider'   => 'test',
+				'old_input'  => 0.001,
+				'new_input'  => 15.0, // Invalid: too high.
+				'old_output' => 0.002,
+				'new_output' => 0.003,
+			),
+		);
+		update_option( WP_MCP_AI_Model_Pricing_Checker::OPTION_PRICE_CHANGES, $invalid_changes );
+
+		// Simulate AJAX request.
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_update_model_costs' );
+
+		// Capture output.
+		ob_start();
+		try {
+			WP_MCP_AI_Model_Pricing_Checker::update_model_costs();
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		// Verify error response mentions invalid pricing.
+		$this->assertStringContainsString( 'Invalid pricing values', $output );
+	}
 }
+
