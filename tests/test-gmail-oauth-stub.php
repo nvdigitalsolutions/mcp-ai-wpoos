@@ -37,10 +37,10 @@ class Test_Gmail_OAuth_Stub extends WP_UnitTestCase {
 	public function test_method_signature() {
 		$oauth_manager = new WP_MCP_AI_OAuth_Manager();
 		$reflection    = new ReflectionMethod( $oauth_manager, 'handle_gmail_oauth_start' );
-		
+
 		// Verify method is public.
 		$this->assertTrue( $reflection->isPublic(), 'Method should be public' );
-		
+
 		// Verify method has no required parameters.
 		$this->assertEquals( 0, $reflection->getNumberOfRequiredParameters(), 'Method should have no required parameters' );
 	}
