@@ -88,14 +88,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 			);
 
 			if ( $elementor_active ) {
-				$fields['enable_elementor_widgets'] = array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Elementor Widgets', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable Elementor widgets', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Activate AI Chat widget for Elementor page builder with SSE streaming support.', 'mcp-ai-wpoos' ),
-					'default'        => true,
-				);
-
 				$fields['elementor_widgets_list'] = array(
 					'type'    => 'html',
 					'content' => $this->get_widgets_list_content(),
@@ -116,8 +108,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 			$content = '<div style="background: ' . ( $elementor_active ? '#d5f0db' : '#f0f0f1' ) . '; border-left: 4px solid ' . ( $elementor_active ? '#0a5f1a' : '#646970' ) . '; padding: 1rem; margin: 1rem 0;">';
 
 			if ( $elementor_active ) {
-				$content .= '<h4 style="margin-top: 0; color: #0a5f1a;">' . esc_html__( '✓ Elementor Active', 'mcp-ai-wpoos' ) . '</h4>';
-				$content .= '<p>' . esc_html__( 'Elementor is installed and active. AI Chat widgets are available.', 'mcp-ai-wpoos' ) . '</p>';
+				$content .= '<h4 style="margin-top: 0; color: #0a5f1a;">' . esc_html__( '✓ Elementor Active - Widgets Automatically Enabled', 'mcp-ai-wpoos' ) . '</h4>';
+				$content .= '<p>' . esc_html__( 'Elementor is installed and active. All AI Chat widgets are automatically available in the Elementor editor.', 'mcp-ai-wpoos' ) . '</p>';
 				if ( defined( 'ELEMENTOR_VERSION' ) ) {
 					$content .= '<p><strong>' . esc_html__( 'Version:', 'mcp-ai-wpoos' ) . '</strong> ' . esc_html( ELEMENTOR_VERSION ) . '</p>';
 				}
@@ -127,7 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 				$content .= '<ol>';
 				$content .= '<li>' . esc_html__( 'Install Elementor plugin from WordPress.org', 'mcp-ai-wpoos' ) . '</li>';
 				$content .= '<li>' . esc_html__( 'Activate the plugin', 'mcp-ai-wpoos' ) . '</li>';
-				$content .= '<li>' . esc_html__( 'Return to this page to configure integration settings', 'mcp-ai-wpoos' ) . '</li>';
+				$content .= '<li>' . esc_html__( 'Widgets will be automatically available in Elementor editor', 'mcp-ai-wpoos' ) . '</li>';
 				$content .= '</ol>';
 			}
 

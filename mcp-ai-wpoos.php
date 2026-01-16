@@ -1129,6 +1129,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 * at the correct time according to WordPress 6.7+ requirements.
 		 * This prevents "_load_textdomain_just_in_time was called incorrectly" warnings.
 		 *
+		 * Elementor widgets are automatically enabled when Elementor plugin is active.
+		 * No settings check is needed - if the integration class is loaded, widgets should be available.
+		 *
 		 * @since 1.1.0
 		 */
 		public function init_elementor_integration() {
@@ -1136,14 +1139,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				return;
 			}
 
-			// Check if Elementor widgets are enabled in settings.
-			// Defaults to true for backward compatibility.
-			$settings        = get_option( 'wp_mcp_ai_settings', array() );
-			$widgets_enabled = isset( $settings['enable_elementor_widgets'] ) ? (bool) $settings['enable_elementor_widgets'] : true;
-
-			if ( $widgets_enabled ) {
-				WP_MCP_AI_Elementor_Integration::maybe_init();
-			}
+			// Initialize Elementor integration if class is available.
+			// Widgets are automatically available when Elementor is installed.
+			WP_MCP_AI_Elementor_Integration::maybe_init();
 		}
 
 		/**
