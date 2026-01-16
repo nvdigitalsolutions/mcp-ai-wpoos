@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-media-pro-toolkit',
-        'version' => 'dev-copilot/enhance-media-pro-toolkit',
-        'reference' => 'd2820ad6fd05c9ce5c5ee0b3e3f22099cb2a92a8',
+        'pretty_version' => 'dev-copilot/add-seeding-on-plugin-activation',
+        'version' => 'dev-copilot/add-seeding-on-plugin-activation',
+        'reference' => 'b1aeaecb5d6053ed847eadcc0d5ce05ec907670e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-media-pro-toolkit',
-            'version' => 'dev-copilot/enhance-media-pro-toolkit',
-            'reference' => 'd2820ad6fd05c9ce5c5ee0b3e3f22099cb2a92a8',
+            'pretty_version' => 'dev-copilot/add-seeding-on-plugin-activation',
+            'version' => 'dev-copilot/add-seeding-on-plugin-activation',
+            'reference' => 'b1aeaecb5d6053ed847eadcc0d5ce05ec907670e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
