@@ -91,6 +91,15 @@
 		 */
 		handleProviderChange: function( $providerSelect, $modelField ) {
 			const provider = $providerSelect.val();
+			
+			// Re-select the model field from the DOM in case it was replaced.
+			// This ensures we're working with the current element, not a stale reference.
+			const targetSelector = $providerSelect.data( 'model-target' );
+			const $currentModelField = $( targetSelector );
+			
+			if ( $currentModelField.length ) {
+				$modelField = $currentModelField;
+			}
 
 			if ( ! provider ) {
 				// If no provider selected, show text input.
@@ -132,6 +141,10 @@
 					provider: provider
 				},
 				success: function( response ) {
+					// Re-select the model field from DOM to get the current element.
+					// This is important in case the field was replaced since the AJAX call started.
+					$modelField = $( '#' + fieldId );
+					
 					if ( response.success && response.data.models ) {
 						// Convert to select dropdown with models.
 						ModelSelector.convertToSelect( $modelField, response.data.models, currentValue, fieldId, fieldName, fieldClasses );
@@ -143,6 +156,9 @@
 					}
 				},
 				error: function() {
+					// Re-select the model field from DOM to get the current element.
+					$modelField = $( '#' + fieldId );
+					
 					// Show error and keep as text input.
 					ModelSelector.showError( $modelField, wpMcpAiModelSelector.errorMessage );
 					ModelSelector.convertToTextInput( $modelField, currentValue, fieldId, fieldName, fieldClasses );
