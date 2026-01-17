@@ -116,7 +116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				WP_MCP_AI_Admin_Settings::OPTION_NAME,
 				array(
 					'type'              => 'array',
-					'sanitize_callback' => null, // We handle sanitization in handle_save_settings().
+					'sanitize_callback' => array( $this, 'sanitize_settings' ),
 				)
 			);
 		}
