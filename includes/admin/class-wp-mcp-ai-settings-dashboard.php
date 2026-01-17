@@ -241,6 +241,20 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
+			// Check if media toolkit was just enabled and seed presets if needed.
+			$was_toolkit_disabled = empty( $existing_settings['enable_media_toolkit'] );
+			$is_toolkit_enabled   = ! empty( $merged_settings['enable_media_toolkit'] );
+			if ( $was_toolkit_disabled && $is_toolkit_enabled ) {
+				// Media toolkit was just enabled, seed the template presets.
+				if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
+					WP_MCP_AI_Media_Template_Presets::seed_presets();
+
+					if ( $enable_logging ) {
+						error_log( '[NV oOS Settings] Media toolkit enabled - triggered template preset seeding' );
+					}
+				}
+			}
+
 			// Clear caches when settings are updated.
 			if ( 'orchestration' === $active_tab ) {
 				// Clear orchestration-related caches using Cache Helper.
