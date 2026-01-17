@@ -61,8 +61,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 			);
 
 			// Test 4: Check if Chart.js file exists.
-			$chart_js_path   = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
-			$chart_js_exists = file_exists( $chart_js_path );
+			$chart_js_path                    = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
+			$chart_js_exists                  = file_exists( $chart_js_path );
 			$results['tests']['chartjs_file'] = array(
 				'name'    => 'Chart.js File',
 				'status'  => $chart_js_exists ? 'pass' : 'fail',
@@ -71,8 +71,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 			);
 
 			// Test 5: Check if pro-dashboard.js file exists.
-			$pro_dashboard_js_path   = WP_MCP_AI_PATH . 'assets/js/pro-dashboard.js';
-			$pro_dashboard_js_exists = file_exists( $pro_dashboard_js_path );
+			$pro_dashboard_js_path                     = WP_MCP_AI_PATH . 'assets/js/pro-dashboard.js';
+			$pro_dashboard_js_exists                   = file_exists( $pro_dashboard_js_path );
 			$results['tests']['pro_dashboard_js_file'] = array(
 				'name'    => 'Pro Dashboard JS File',
 				'status'  => $pro_dashboard_js_exists ? 'pass' : 'fail',
@@ -82,8 +82,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 
 			// Test 6: Check if ISO 27001 controls can be loaded.
 			if ( class_exists( 'WP_MCP_AI_Compliance_Data' ) ) {
-				$controls        = WP_MCP_AI_Compliance_Data::get_iso27001_controls();
-				$controls_loaded = is_array( $controls ) && count( $controls ) > 0;
+				$controls                              = WP_MCP_AI_Compliance_Data::get_iso27001_controls();
+				$controls_loaded                       = is_array( $controls ) && count( $controls ) > 0;
 				$results['tests']['iso27001_controls'] = array(
 					'name'    => 'ISO 27001 Controls Data',
 					'status'  => $controls_loaded ? 'pass' : 'fail',

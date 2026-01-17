@@ -83,20 +83,20 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'connection_id'  => array(
+				'connection_id' => array(
 					'type'        => 'string',
 					'description' => __( 'The EZuite ERP connection ID. Call ezuite_erp tool with action "list_connections" first to get available connection IDs.', 'wp-mcp-ai-pro' ),
 				),
-				'location_code'  => array(
+				'location_code' => array(
 					'type'        => 'string',
 					'description' => __( 'Location code to filter products by (e.g., "MAIN", "WAREHOUSE1"). Use "ALL" to retrieve all products. Default is "ALL".', 'wp-mcp-ai-pro' ),
 					'default'     => 'ALL',
 				),
-				'item_code'      => array(
+				'item_code'     => array(
 					'type'        => 'string',
 					'description' => __( 'Optional specific item code to retrieve a single product.', 'wp-mcp-ai-pro' ),
 				),
-				'limit'          => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => sprintf(
 						/* translators: %d: default limit */
@@ -393,7 +393,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 			}
 
 			$products[] = $product;
-			$count++;
+			++$count;
 		}
 
 		return $products;

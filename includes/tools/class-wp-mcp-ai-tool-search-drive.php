@@ -16,8 +16,8 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php
  * Provides an assistant tool for searching Google Drive files via the Drive REST API.
  */
 class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
-	const TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
-	const DRIVE_API_BASE     = 'https://www.googleapis.com/drive/v3';
+	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
+	const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 
 	/**
 	 * {@inheritdoc}
@@ -98,7 +98,7 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Check if connection_id is provided.
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
-		
+
 		$client_id       = '';
 		$client_secret   = '';
 		$refresh_token   = '';
@@ -335,20 +335,20 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$mime_type = isset( $file['mimeType'] ) ? (string) $file['mimeType'] : '';
 
 		return array(
-			'id'                => $file_id,
-			'name'              => $file_name,
-			'mimeType'          => $mime_type,
-			'createdTime'       => isset( $file['createdTime'] ) ? (string) $file['createdTime'] : '',
-			'modifiedTime'      => isset( $file['modifiedTime'] ) ? (string) $file['modifiedTime'] : '',
-			'size'              => isset( $file['size'] ) ? (int) $file['size'] : 0,
-			'webViewLink'       => isset( $file['webViewLink'] ) ? (string) $file['webViewLink'] : '',
-			'webContentLink'    => isset( $file['webContentLink'] ) ? (string) $file['webContentLink'] : '',
-			'iconLink'          => isset( $file['iconLink'] ) ? (string) $file['iconLink'] : '',
-			'thumbnailLink'     => isset( $file['thumbnailLink'] ) ? (string) $file['thumbnailLink'] : '',
-			'owners'            => isset( $file['owners'] ) ? $file['owners'] : array(),
-			'permissions'       => isset( $file['permissions'] ) ? $file['permissions'] : array(),
-			'shared'            => isset( $file['shared'] ) ? (bool) $file['shared'] : false,
-			'description'       => isset( $file['description'] ) ? (string) $file['description'] : '',
+			'id'             => $file_id,
+			'name'           => $file_name,
+			'mimeType'       => $mime_type,
+			'createdTime'    => isset( $file['createdTime'] ) ? (string) $file['createdTime'] : '',
+			'modifiedTime'   => isset( $file['modifiedTime'] ) ? (string) $file['modifiedTime'] : '',
+			'size'           => isset( $file['size'] ) ? (int) $file['size'] : 0,
+			'webViewLink'    => isset( $file['webViewLink'] ) ? (string) $file['webViewLink'] : '',
+			'webContentLink' => isset( $file['webContentLink'] ) ? (string) $file['webContentLink'] : '',
+			'iconLink'       => isset( $file['iconLink'] ) ? (string) $file['iconLink'] : '',
+			'thumbnailLink'  => isset( $file['thumbnailLink'] ) ? (string) $file['thumbnailLink'] : '',
+			'owners'         => isset( $file['owners'] ) ? $file['owners'] : array(),
+			'permissions'    => isset( $file['permissions'] ) ? $file['permissions'] : array(),
+			'shared'         => isset( $file['shared'] ) ? (bool) $file['shared'] : false,
+			'description'    => isset( $file['description'] ) ? (string) $file['description'] : '',
 		);
 	}
 
@@ -364,10 +364,10 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$base = self::DRIVE_API_BASE . '/files';
 
 		$params = array(
-			'q'          => $query,
-			'pageSize'   => $max_results,
-			'fields'     => 'nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, size, webViewLink, webContentLink, iconLink, thumbnailLink, owners, permissions, shared, description)',
-			'orderBy'    => 'modifiedTime desc',
+			'q'        => $query,
+			'pageSize' => $max_results,
+			'fields'   => 'nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, size, webViewLink, webContentLink, iconLink, thumbnailLink, owners, permissions, shared, description)',
+			'orderBy'  => 'modifiedTime desc',
 		);
 
 		if ( '' !== $page_token ) {

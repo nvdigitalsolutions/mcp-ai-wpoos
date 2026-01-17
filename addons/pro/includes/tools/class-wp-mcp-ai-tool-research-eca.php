@@ -48,11 +48,11 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'query'            => array(
+				'query'              => array(
 					'type'        => 'string',
 					'description' => __( 'The ECA to research (e.g., "Robotics Club for High School", "Debate Team Middle School", "Art Program Elementary")', 'mcp-ai-wpoos-pro' ),
 				),
-				'age_group'        => array(
+				'age_group'          => array(
 					'type'        => 'string',
 					'description' => __( 'Target age group (e.g., "Elementary", "Middle School", "High School", "Mixed Ages")', 'mcp-ai-wpoos-pro' ),
 				),
@@ -268,7 +268,7 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$prompt .= "}\n";
 		$prompt .= "```\n\n";
 
-		$prompt .= "Use web search to find accurate, up-to-date information from reputable educational sources. ";
+		$prompt .= 'Use web search to find accurate, up-to-date information from reputable educational sources. ';
 		$prompt .= "Include source URLs in the 'sources' array. ";
 		$prompt .= "If information is not available, use null for that field.\n";
 
@@ -488,26 +488,26 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Build ECA data structure.
 		$eca_data = array(
-			'success'                => true,
-			'query'                  => $query,
-			'title'                  => sanitize_text_field( $data['title'] ),
-			'description'            => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
-			'category'               => isset( $data['category'] ) ? sanitize_text_field( $data['category'] ) : '',
-			'age_range'              => isset( $data['age_range'] ) ? sanitize_text_field( $data['age_range'] ) : '',
-			'duration'               => isset( $data['duration'] ) ? sanitize_text_field( $data['duration'] ) : '',
-			'session_length'         => isset( $data['session_length'] ) ? sanitize_text_field( $data['session_length'] ) : '',
-			'frequency'              => isset( $data['frequency'] ) ? sanitize_text_field( $data['frequency'] ) : '',
-			'group_size'             => isset( $data['group_size'] ) ? sanitize_text_field( $data['group_size'] ) : '',
-			'learning_objectives'    => isset( $data['learning_objectives'] ) && is_array( $data['learning_objectives'] ) ? array_map( 'sanitize_text_field', $data['learning_objectives'] ) : array(),
-			'materials'              => isset( $data['materials'] ) && is_array( $data['materials'] ) ? array_map( 'sanitize_text_field', $data['materials'] ) : array(),
-			'space_requirements'     => isset( $data['space_requirements'] ) ? sanitize_text_field( $data['space_requirements'] ) : '',
+			'success'                 => true,
+			'query'                   => $query,
+			'title'                   => sanitize_text_field( $data['title'] ),
+			'description'             => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
+			'category'                => isset( $data['category'] ) ? sanitize_text_field( $data['category'] ) : '',
+			'age_range'               => isset( $data['age_range'] ) ? sanitize_text_field( $data['age_range'] ) : '',
+			'duration'                => isset( $data['duration'] ) ? sanitize_text_field( $data['duration'] ) : '',
+			'session_length'          => isset( $data['session_length'] ) ? sanitize_text_field( $data['session_length'] ) : '',
+			'frequency'               => isset( $data['frequency'] ) ? sanitize_text_field( $data['frequency'] ) : '',
+			'group_size'              => isset( $data['group_size'] ) ? sanitize_text_field( $data['group_size'] ) : '',
+			'learning_objectives'     => isset( $data['learning_objectives'] ) && is_array( $data['learning_objectives'] ) ? array_map( 'sanitize_text_field', $data['learning_objectives'] ) : array(),
+			'materials'               => isset( $data['materials'] ) && is_array( $data['materials'] ) ? array_map( 'sanitize_text_field', $data['materials'] ) : array(),
+			'space_requirements'      => isset( $data['space_requirements'] ) ? sanitize_text_field( $data['space_requirements'] ) : '',
 			'instructor_requirements' => isset( $data['instructor_requirements'] ) ? sanitize_text_field( $data['instructor_requirements'] ) : '',
-			'curriculum_outline'     => isset( $data['curriculum_outline'] ) ? wp_kses_post( $data['curriculum_outline'] ) : '',
-			'sample_session'         => isset( $data['sample_session'] ) ? wp_kses_post( $data['sample_session'] ) : '',
-			'sources'                => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
-			'researched_at'          => current_time( 'mysql' ),
-			'research_model'         => $research_result['model'],
-			'research_provider'      => $research_result['provider'],
+			'curriculum_outline'      => isset( $data['curriculum_outline'] ) ? wp_kses_post( $data['curriculum_outline'] ) : '',
+			'sample_session'          => isset( $data['sample_session'] ) ? wp_kses_post( $data['sample_session'] ) : '',
+			'sources'                 => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
+			'researched_at'           => current_time( 'mysql' ),
+			'research_model'          => $research_result['model'],
+			'research_provider'       => $research_result['provider'],
 		);
 
 		return $eca_data;

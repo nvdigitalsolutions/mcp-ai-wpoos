@@ -48,11 +48,11 @@ class WP_MCP_AI_Tool_Add_Model_Config implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'model_id'          => array(
+				'model_id'  => array(
 					'type'        => 'string',
 					'description' => __( 'Unique model identifier (e.g., gpt-4.5-turbo).', 'mcp-ai-wpoos' ),
 				),
-				'config'            => array(
+				'config'    => array(
 					'type'        => 'object',
 					'description' => __( 'Model configuration object with specifications.', 'mcp-ai-wpoos' ),
 					'properties'  => array(
@@ -101,7 +101,7 @@ class WP_MCP_AI_Tool_Add_Model_Config implements WP_MCP_AI_Tool_Interface, WP_MC
 					),
 					'required'    => array( 'name', 'provider', 'context_window' ),
 				),
-				'overwrite'         => array(
+				'overwrite' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to overwrite existing configuration if model already exists.', 'mcp-ai-wpoos' ),
 					'default'     => false,
@@ -213,10 +213,10 @@ class WP_MCP_AI_Tool_Add_Model_Config implements WP_MCP_AI_Tool_Interface, WP_MC
 			$sanitized_config['_metadata'] = array();
 		}
 
-		$sanitized_config['_metadata']['added_by']     = $user_id;
-		$sanitized_config['_metadata']['added_at']     = current_time( 'mysql' );
-		$sanitized_config['_metadata']['added_via']    = 'add_model_config_tool';
-		$sanitized_config['_metadata']['is_custom']    = true;
+		$sanitized_config['_metadata']['added_by']  = $user_id;
+		$sanitized_config['_metadata']['added_at']  = current_time( 'mysql' );
+		$sanitized_config['_metadata']['added_via'] = 'add_model_config_tool';
+		$sanitized_config['_metadata']['is_custom'] = true;
 
 		// If updating, preserve original metadata.
 		if ( $existing_config && isset( $existing_config['_metadata'] ) ) {

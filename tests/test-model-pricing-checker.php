@@ -247,4 +247,3 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Invalid pricing values', $output );
 	}
 }
-

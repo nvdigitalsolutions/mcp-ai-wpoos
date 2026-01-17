@@ -109,7 +109,7 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 	 */
 	public function test_template_creation_and_application_workflow() {
 		// Step 1: Create a template.
-		$create_tool = new WP_MCP_AI_Tool_Create_Media_Template();
+		$create_tool   = new WP_MCP_AI_Tool_Create_Media_Template();
 		$create_result = $create_tool->execute(
 			array(
 				'title'       => 'Test Resize Template',
@@ -131,7 +131,7 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 		$template_id = $create_result['template_id'];
 
 		// Step 2: List templates and verify the created one appears.
-		$list_tool = new WP_MCP_AI_Tool_List_Media_Templates();
+		$list_tool   = new WP_MCP_AI_Tool_List_Media_Templates();
 		$list_result = $list_tool->execute(
 			array(),
 			array( 'user_id' => $this->admin_user )
@@ -139,7 +139,7 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 
 		$this->assertTrue( $list_result['success'], 'List templates should succeed' );
 		$this->assertNotEmpty( $list_result['templates'] );
-		
+
 		$found = false;
 		foreach ( $list_result['templates'] as $template ) {
 			if ( $template['id'] === $template_id ) {
@@ -154,7 +154,7 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 
 		// Step 3: Apply template to an image (this will fail without Graphic Editor Plus mock).
 		// We'll just verify the validation logic works.
-		$apply_tool = new WP_MCP_AI_Tool_Apply_Media_Template();
+		$apply_tool   = new WP_MCP_AI_Tool_Apply_Media_Template();
 		$apply_result = $apply_tool->execute(
 			array(
 				'template_id'   => $template_id,
@@ -174,13 +174,16 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 	public function test_template_filtering_workflow() {
 		// Create multiple templates with different operations and categories.
 		$create_tool = new WP_MCP_AI_Tool_Create_Media_Template();
-		
+
 		// Resize template.
 		$resize_result = $create_tool->execute(
 			array(
 				'title'      => 'Resize Template',
 				'operation'  => 'resize_graphic',
-				'parameters' => array( 'target_width' => 1080, 'target_height' => 1080 ),
+				'parameters' => array(
+					'target_width'  => 1080,
+					'target_height' => 1080,
+				),
 				'categories' => array( 'social-media' ),
 			),
 			array( 'user_id' => $this->admin_user )
@@ -192,7 +195,10 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 			array(
 				'title'      => 'Logo Template',
 				'operation'  => 'add_logo',
-				'parameters' => array( 'logo_position' => 'bottom-right', 'logo_scale' => 0.15 ),
+				'parameters' => array(
+					'logo_position' => 'bottom-right',
+					'logo_scale'    => 0.15,
+				),
 				'categories' => array( 'branding' ),
 			),
 			array( 'user_id' => $this->admin_user )
@@ -200,7 +206,7 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 		$this->assertTrue( $logo_result['success'] );
 
 		// Test filtering by operation.
-		$list_tool = new WP_MCP_AI_Tool_List_Media_Templates();
+		$list_tool     = new WP_MCP_AI_Tool_List_Media_Templates();
 		$resize_filter = $list_tool->execute(
 			array( 'operation' => 'resize_graphic' ),
 			array( 'user_id' => $this->admin_user )
@@ -226,12 +232,15 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 	 */
 	public function test_collection_workflow() {
 		// Create templates first.
-		$create_tool = new WP_MCP_AI_Tool_Create_Media_Template();
+		$create_tool     = new WP_MCP_AI_Tool_Create_Media_Template();
 		$template_result = $create_tool->execute(
 			array(
 				'title'      => 'Collection Test Template',
 				'operation'  => 'resize_graphic',
-				'parameters' => array( 'target_width' => 800, 'target_height' => 600 ),
+				'parameters' => array(
+					'target_width'  => 800,
+					'target_height' => 600,
+				),
 			),
 			array( 'user_id' => $this->admin_user )
 		);
@@ -250,7 +259,7 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 
 		// Apply template to collection (with process=false to avoid Graphic Editor Plus dependency).
 		$apply_collection_tool = new WP_MCP_AI_Tool_Apply_Collection_Template();
-		$result = $apply_collection_tool->execute(
+		$result                = $apply_collection_tool->execute(
 			array(
 				'collection_id' => $collection_id,
 				'template_ids'  => array( $template_id ),
@@ -276,11 +285,14 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 	public function test_template_usage_statistics() {
 		// Create a template.
 		$create_tool = new WP_MCP_AI_Tool_Create_Media_Template();
-		$result = $create_tool->execute(
+		$result      = $create_tool->execute(
 			array(
 				'title'      => 'Usage Test Template',
 				'operation'  => 'resize_graphic',
-				'parameters' => array( 'target_width' => 500, 'target_height' => 500 ),
+				'parameters' => array(
+					'target_width'  => 500,
+					'target_height' => 500,
+				),
 			),
 			array( 'user_id' => $this->admin_user )
 		);
@@ -303,7 +315,7 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 	public function test_error_handling_invalid_ids() {
 		// Test apply_media_template with invalid template ID.
 		$apply_tool = new WP_MCP_AI_Tool_Apply_Media_Template();
-		$result = $apply_tool->execute(
+		$result     = $apply_tool->execute(
 			array(
 				'template_id'   => 99999,
 				'attachment_id' => $this->test_attachments[0],
@@ -315,12 +327,15 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Invalid template', $result['error'] );
 
 		// Test with invalid attachment ID.
-		$create_tool = new WP_MCP_AI_Tool_Create_Media_Template();
+		$create_tool     = new WP_MCP_AI_Tool_Create_Media_Template();
 		$template_result = $create_tool->execute(
 			array(
 				'title'      => 'Error Test Template',
 				'operation'  => 'resize_graphic',
-				'parameters' => array( 'target_width' => 800, 'target_height' => 600 ),
+				'parameters' => array(
+					'target_width'  => 800,
+					'target_height' => 600,
+				),
 			),
 			array( 'user_id' => $this->admin_user )
 		);
@@ -377,13 +392,16 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 	public function test_template_list_pagination() {
 		// Create multiple templates.
 		$create_tool = new WP_MCP_AI_Tool_Create_Media_Template();
-		
+
 		for ( $i = 1; $i <= 5; $i++ ) {
 			$result = $create_tool->execute(
 				array(
 					'title'      => "Template $i",
 					'operation'  => 'resize_graphic',
-					'parameters' => array( 'target_width' => 800 * $i, 'target_height' => 600 * $i ),
+					'parameters' => array(
+						'target_width'  => 800 * $i,
+						'target_height' => 600 * $i,
+					),
 				),
 				array( 'user_id' => $this->admin_user )
 			);
@@ -392,7 +410,7 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 
 		// List with pagination.
 		$list_tool = new WP_MCP_AI_Tool_List_Media_Templates();
-		$result = $list_tool->execute(
+		$result    = $list_tool->execute(
 			array(
 				'per_page' => 3,
 				'page'     => 1,
@@ -424,12 +442,15 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 	public function test_template_search() {
 		// Create templates with specific titles.
 		$create_tool = new WP_MCP_AI_Tool_Create_Media_Template();
-		
+
 		$create_tool->execute(
 			array(
 				'title'      => 'Instagram Square Post',
 				'operation'  => 'resize_graphic',
-				'parameters' => array( 'target_width' => 1080, 'target_height' => 1080 ),
+				'parameters' => array(
+					'target_width'  => 1080,
+					'target_height' => 1080,
+				),
 			),
 			array( 'user_id' => $this->admin_user )
 		);
@@ -438,14 +459,17 @@ class Test_Media_Toolkit_Integration extends WP_UnitTestCase {
 			array(
 				'title'      => 'Facebook Cover Photo',
 				'operation'  => 'resize_graphic',
-				'parameters' => array( 'target_width' => 820, 'target_height' => 312 ),
+				'parameters' => array(
+					'target_width'  => 820,
+					'target_height' => 312,
+				),
 			),
 			array( 'user_id' => $this->admin_user )
 		);
 
 		// Search for "Instagram".
 		$list_tool = new WP_MCP_AI_Tool_List_Media_Templates();
-		$result = $list_tool->execute(
+		$result    = $list_tool->execute(
 			array( 'search' => 'Instagram' ),
 			array( 'user_id' => $this->admin_user )
 		);

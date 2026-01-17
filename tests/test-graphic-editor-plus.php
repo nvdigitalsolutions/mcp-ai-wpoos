@@ -332,18 +332,18 @@ class WP_MCP_AI_Graphic_Editor_Plus_Test extends WP_UnitTestCase {
 	 * Test position calculation for different positions.
 	 */
 	public function test_calculate_position() {
-		$tool        = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
-		$image_size  = array(
+		$tool       = new WP_MCP_AI_Tool_Graphic_Editor_Plus();
+		$image_size = array(
 			'width'  => 1000,
 			'height' => 800,
 		);
-		$logo_size   = array(
+		$logo_size  = array(
 			'width'  => 200,
 			'height' => 100,
 		);
-		$margin      = 20;
-		$reflection  = new ReflectionClass( $tool );
-		$method      = $reflection->getMethod( 'calculate_position' );
+		$margin     = 20;
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'calculate_position' );
 		$method->setAccessible( true );
 
 		// Test bottom-left.

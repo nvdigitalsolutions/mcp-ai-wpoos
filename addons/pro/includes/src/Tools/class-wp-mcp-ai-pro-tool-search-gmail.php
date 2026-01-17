@@ -101,7 +101,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Check if connection_id is provided.
 		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
-		
+
 		$client_id       = '';
 		$client_secret   = '';
 		$refresh_token   = '';

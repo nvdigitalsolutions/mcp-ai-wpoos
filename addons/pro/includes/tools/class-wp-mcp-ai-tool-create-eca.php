@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-content-media
  */
 class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -46,83 +47,83 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'eca_id'         => array(
+				'eca_id'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional ECA ID. If provided, updates the existing ECA instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
-				'name'           => array(
+				'name'              => array(
 					'type'        => 'string',
 					'description' => __( 'ECA name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'eca_code'       => array(
+				'eca_code'          => array(
 					'type'        => 'string',
 					'description' => __( 'ECA code/identifier (optional, e.g., "1", "ECA-001")', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'description'    => array(
+				'description'       => array(
 					'type'        => 'string',
 					'description' => __( 'ECA description and details (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 10000,
 				),
-				'eca_type'       => array(
+				'eca_type'          => array(
 					'type'        => 'string',
 					'description' => __( 'Type of ECA', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'club', 'society', 'sport_squad', 'sport_academy', 'activity' ),
 					'default'     => 'club',
 				),
-				'day'            => array(
+				'day'               => array(
 					'type'        => 'string',
 					'description' => __( 'Day of the week the ECA takes place', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ),
 				),
-				'start_time'     => array(
+				'start_time'        => array(
 					'type'        => 'string',
 					'description' => __( 'Start time in HH:MM AM/PM format (e.g., "2:45 PM")', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{1,2}:\d{2}\s?(AM|PM|am|pm)$',
 				),
-				'end_time'       => array(
+				'end_time'          => array(
 					'type'        => 'string',
 					'description' => __( 'End time in HH:MM AM/PM format (e.g., "3:30 PM")', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{1,2}:\d{2}\s?(AM|PM|am|pm)$',
 				),
-				'venue'          => array(
+				'venue'             => array(
 					'type'        => 'string',
 					'description' => __( 'Venue/location where the ECA takes place', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'year_groups'    => array(
+				'year_groups'       => array(
 					'type'        => 'array',
 					'description' => __( 'Array of year groups eligible (e.g., ["Year 7", "Year 8", "Year 9"])', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'max_students'   => array(
+				'max_students'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of students that can enroll', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 200,
 				),
-				'teachers'       => array(
+				'teachers'          => array(
 					'type'        => 'array',
 					'description' => __( 'Array of teacher names in charge', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'is_paid'        => array(
+				'is_paid'           => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether this is a paid activity', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'cost'           => array(
+				'cost'              => array(
 					'type'        => 'number',
 					'description' => __( 'Cost per student (if paid activity)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'cost_period'    => array(
+				'cost_period'       => array(
 					'type'        => 'string',
 					'description' => __( 'Billing period for cost (if paid)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'term', 'month', 'session', 'year' ),
@@ -133,19 +134,19 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'description' => __( 'Whether the ECA requires an audition/tryout', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'booking_type'   => array(
+				'booking_type'      => array(
 					'type'        => 'string',
 					'description' => __( 'How enrollment is handled', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'first_come_first_served', 'preference_based', 'preselected', 'signup' ),
 					'default'     => 'first_come_first_served',
 				),
-				'status'         => array(
+				'status'            => array(
 					'type'        => 'string',
 					'description' => __( 'ECA status', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'active', 'inactive', 'full', 'cancelled' ),
 					'default'     => 'active',
 				),
-				'isams_sync_id'  => array(
+				'isams_sync_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'iSAMS/SOCS system ID for synchronization', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
@@ -233,7 +234,7 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			}
 
 			// Check permissions: must be author or have edit_others_posts capability.
-			$is_author = absint( $existing_eca->post_author ) === $current_user_id;
+			$is_author       = absint( $existing_eca->post_author ) === $current_user_id;
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {
@@ -252,21 +253,21 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			);
 		}
 
-		$eca_code        = isset( $arguments['eca_code'] ) ? sanitize_text_field( $arguments['eca_code'] ) : '';
-		$description     = isset( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
-		$eca_type        = isset( $arguments['eca_type'] ) ? sanitize_key( $arguments['eca_type'] ) : 'club';
-		$day             = isset( $arguments['day'] ) ? sanitize_text_field( $arguments['day'] ) : '';
-		$start_time      = isset( $arguments['start_time'] ) ? sanitize_text_field( $arguments['start_time'] ) : '';
-		$end_time        = isset( $arguments['end_time'] ) ? sanitize_text_field( $arguments['end_time'] ) : '';
-		$venue           = isset( $arguments['venue'] ) ? sanitize_text_field( $arguments['venue'] ) : '';
-		$max_students    = isset( $arguments['max_students'] ) ? absint( $arguments['max_students'] ) : 0;
-		$is_paid         = isset( $arguments['is_paid'] ) ? (bool) $arguments['is_paid'] : false;
-		$cost            = isset( $arguments['cost'] ) ? floatval( $arguments['cost'] ) : 0;
-		$cost_period     = isset( $arguments['cost_period'] ) ? sanitize_key( $arguments['cost_period'] ) : 'term';
+		$eca_code          = isset( $arguments['eca_code'] ) ? sanitize_text_field( $arguments['eca_code'] ) : '';
+		$description       = isset( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
+		$eca_type          = isset( $arguments['eca_type'] ) ? sanitize_key( $arguments['eca_type'] ) : 'club';
+		$day               = isset( $arguments['day'] ) ? sanitize_text_field( $arguments['day'] ) : '';
+		$start_time        = isset( $arguments['start_time'] ) ? sanitize_text_field( $arguments['start_time'] ) : '';
+		$end_time          = isset( $arguments['end_time'] ) ? sanitize_text_field( $arguments['end_time'] ) : '';
+		$venue             = isset( $arguments['venue'] ) ? sanitize_text_field( $arguments['venue'] ) : '';
+		$max_students      = isset( $arguments['max_students'] ) ? absint( $arguments['max_students'] ) : 0;
+		$is_paid           = isset( $arguments['is_paid'] ) ? (bool) $arguments['is_paid'] : false;
+		$cost              = isset( $arguments['cost'] ) ? floatval( $arguments['cost'] ) : 0;
+		$cost_period       = isset( $arguments['cost_period'] ) ? sanitize_key( $arguments['cost_period'] ) : 'term';
 		$requires_audition = isset( $arguments['requires_audition'] ) ? (bool) $arguments['requires_audition'] : false;
-		$booking_type    = isset( $arguments['booking_type'] ) ? sanitize_key( $arguments['booking_type'] ) : 'first_come_first_served';
-		$status          = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'active';
-		$isams_sync_id   = isset( $arguments['isams_sync_id'] ) ? sanitize_text_field( $arguments['isams_sync_id'] ) : '';
+		$booking_type      = isset( $arguments['booking_type'] ) ? sanitize_key( $arguments['booking_type'] ) : 'first_come_first_served';
+		$status            = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'active';
+		$isams_sync_id     = isset( $arguments['isams_sync_id'] ) ? sanitize_text_field( $arguments['isams_sync_id'] ) : '';
 
 		// Sanitize arrays.
 		$year_groups = isset( $arguments['year_groups'] ) && is_array( $arguments['year_groups'] )
@@ -499,34 +500,34 @@ class WP_MCP_AI_Tool_Create_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			// Get the created ECA details.
 			$eca = get_post( $post_id );
 
-		$result = array(
-			'success'     => true,
-			'eca_id'      => $post_id,
-			'name'        => $eca->post_title,
-			'eca_code'    => $eca_code,
-			'type'        => $eca_type,
-			'day'         => $day,
-			'start_time'  => $start_time,
-			'end_time'    => $end_time,
-			'venue'       => $venue,
-			'max_students' => $max_students,
-			'current_enrollment' => 0,
-			'year_groups' => $year_groups,
-			'teachers'    => $teachers,
-			'is_paid'     => $is_paid,
-			'cost'        => $is_paid ? $cost : 0,
-			'status'      => $status,
-			'url'         => get_permalink( $post_id ),
-			'edit_url'    => get_edit_post_link( $post_id, 'raw' ),
-			'message'     => __( 'ECA created successfully.', 'mcp-ai-wpoos-pro' ),
-			'updated'     => false,
-		);
+			$result = array(
+				'success'            => true,
+				'eca_id'             => $post_id,
+				'name'               => $eca->post_title,
+				'eca_code'           => $eca_code,
+				'type'               => $eca_type,
+				'day'                => $day,
+				'start_time'         => $start_time,
+				'end_time'           => $end_time,
+				'venue'              => $venue,
+				'max_students'       => $max_students,
+				'current_enrollment' => 0,
+				'year_groups'        => $year_groups,
+				'teachers'           => $teachers,
+				'is_paid'            => $is_paid,
+				'cost'               => $is_paid ? $cost : 0,
+				'status'             => $status,
+				'url'                => get_permalink( $post_id ),
+				'edit_url'           => get_edit_post_link( $post_id, 'raw' ),
+				'message'            => __( 'ECA created successfully.', 'mcp-ai-wpoos-pro' ),
+				'updated'            => false,
+			);
 
-		if ( $sync_status ) {
-			$result['isams_sync'] = $sync_status;
-		}
+			if ( $sync_status ) {
+				$result['isams_sync'] = $sync_status;
+			}
 
-		return $result;
+			return $result;
 		}
 	}
 

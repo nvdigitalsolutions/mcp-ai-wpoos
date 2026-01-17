@@ -146,8 +146,8 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Get the apply_media_template tool.
-		$registry    = WP_MCP_AI_Tool_Registry::get_instance();
-		$apply_tool  = $registry->get_tool( 'apply_media_template' );
+		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
+		$apply_tool = $registry->get_tool( 'apply_media_template' );
 
 		if ( ! $apply_tool ) {
 			return array(
@@ -157,7 +157,7 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Process each item with each template.
-		$results      = array();
+		$results       = array();
 		$success_count = 0;
 		$error_count   = 0;
 
@@ -169,7 +169,7 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 					'success'       => false,
 					'error'         => __( 'Invalid or non-image attachment.', 'mcp-ai-wpoos-pro' ),
 				);
-				$error_count++;
+				++$error_count;
 				continue;
 			}
 
@@ -190,11 +190,11 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 				);
 
 				if ( ! empty( $result['success'] ) ) {
-					$success_count++;
-					$item_result['output_id'] = isset( $result['attachment_id'] ) ? $result['attachment_id'] : null;
+					++$success_count;
+					$item_result['output_id']  = isset( $result['attachment_id'] ) ? $result['attachment_id'] : null;
 					$item_result['output_url'] = isset( $result['url'] ) ? $result['url'] : null;
 				} else {
-					$error_count++;
+					++$error_count;
 					$item_result['error'] = isset( $result['error'] ) ? $result['error'] : __( 'Unknown error', 'mcp-ai-wpoos-pro' );
 				}
 
@@ -211,9 +211,9 @@ class WP_MCP_AI_Tool_Process_Collection implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'success'    => true,
 			'collection' => array(
-				'id'              => $collection_id,
-				'title'           => $collection->post_title,
-				'process_count'   => $process_count + 1,
+				'id'            => $collection_id,
+				'title'         => $collection->post_title,
+				'process_count' => $process_count + 1,
 			),
 			'statistics' => array(
 				'total_operations' => count( $results ),

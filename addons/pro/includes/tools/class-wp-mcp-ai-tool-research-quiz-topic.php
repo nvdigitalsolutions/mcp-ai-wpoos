@@ -48,18 +48,18 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'topic'            => array(
+				'topic'                => array(
 					'type'        => 'string',
 					'description' => __( 'The topic to research (e.g., "World War II", "Basic Algebra", "Shakespeare Works")', 'mcp-ai-wpoos-pro' ),
 				),
-				'question_count'   => array(
+				'question_count'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of questions to generate', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 10,
 				),
-				'difficulty'       => array(
+				'difficulty'           => array(
 					'type'        => 'string',
 					'description' => __( 'Difficulty level for questions', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'beginner', 'intermediate', 'advanced' ),
@@ -132,9 +132,9 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		$topic              = sanitize_text_field( $arguments['topic'] );
-		$question_count     = isset( $arguments['question_count'] ) ? absint( $arguments['question_count'] ) : 10;
-		$difficulty         = isset( $arguments['difficulty'] ) ? sanitize_key( $arguments['difficulty'] ) : 'intermediate';
+		$topic                = sanitize_text_field( $arguments['topic'] );
+		$question_count       = isset( $arguments['question_count'] ) ? absint( $arguments['question_count'] ) : 10;
+		$difficulty           = isset( $arguments['difficulty'] ) ? sanitize_key( $arguments['difficulty'] ) : 'intermediate';
 		$include_explanations = isset( $arguments['include_explanations'] ) ? (bool) $arguments['include_explanations'] : true;
 
 		// Validate question count.
@@ -299,7 +299,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 		$prompt .= "}\n";
 		$prompt .= "```\n\n";
 
-		$prompt .= "Use web search to find accurate, up-to-date information. ";
+		$prompt .= 'Use web search to find accurate, up-to-date information. ';
 		$prompt .= "Include source URLs in the 'sources' array. ";
 		$prompt .= "Ensure all questions are factually correct and educationally sound.\n";
 
@@ -528,18 +528,18 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 
 		// Build quiz data structure.
 		$quiz_data = array(
-			'success'        => true,
-			'topic'          => $topic,
-			'title'          => sanitize_text_field( $data['title'] ),
-			'description'    => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
-			'subject'        => isset( $data['subject'] ) ? sanitize_text_field( $data['subject'] ) : '',
-			'difficulty'     => $difficulty,
-			'time_limit'     => isset( $data['time_limit'] ) ? absint( $data['time_limit'] ) : 30,
-			'pass_score'     => isset( $data['pass_score'] ) ? absint( $data['pass_score'] ) : 70,
-			'questions'      => array(),
-			'sources'        => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
-			'researched_at'  => current_time( 'mysql' ),
-			'research_model' => $research_result['model'],
+			'success'           => true,
+			'topic'             => $topic,
+			'title'             => sanitize_text_field( $data['title'] ),
+			'description'       => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
+			'subject'           => isset( $data['subject'] ) ? sanitize_text_field( $data['subject'] ) : '',
+			'difficulty'        => $difficulty,
+			'time_limit'        => isset( $data['time_limit'] ) ? absint( $data['time_limit'] ) : 30,
+			'pass_score'        => isset( $data['pass_score'] ) ? absint( $data['pass_score'] ) : 70,
+			'questions'         => array(),
+			'sources'           => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
+			'researched_at'     => current_time( 'mysql' ),
+			'research_model'    => $research_result['model'],
 			'research_provider' => $research_result['provider'],
 		);
 

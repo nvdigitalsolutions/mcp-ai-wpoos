@@ -215,8 +215,14 @@ class Test_Cloudflare_Message_Normalization extends WP_UnitTestCase {
 			array(
 				'role'    => 'assistant',
 				'content' => array(
-					array( 'type' => 'text', 'text' => 'Array' ),
-					array( 'type' => 'text', 'text' => 'format' ),
+					array(
+						'type' => 'text',
+						'text' => 'Array',
+					),
+					array(
+						'type' => 'text',
+						'text' => 'format',
+					),
 				),
 			),
 			array(

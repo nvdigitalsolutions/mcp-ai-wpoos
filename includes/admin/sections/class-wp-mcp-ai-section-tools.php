@@ -1671,8 +1671,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 									</tr>
 									<?php
 									// Badge row - always show to display status.
-									$has_pro_badge   = $this->is_pro_tool( $slug );
-									$status_label    = $this->get_tool_status_label( $slug );
+									$has_pro_badge    = $this->is_pro_tool( $slug );
+									$status_label     = $this->get_tool_status_label( $slug );
 									$has_status_label = ! empty( $status_label );
 									?>
 									<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>-badges" class="wp-mcp-ai-tool-badges-row">
@@ -1686,7 +1686,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 													<?php esc_html_e( 'Pro', 'mcp-ai-wpoos' ); ?>
 												</span>
 											<?php endif; ?>
-											<?php if ( $has_status_label ) :
+											<?php
+											if ( $has_status_label ) :
 												$label_config = $this->get_status_label_config( $status_label );
 												?>
 												<span class="wp-mcp-ai-tool-status-label <?php echo esc_attr( $label_config['class'] ); ?>" style="display: inline-block; padding: 2px 5px; background: <?php echo esc_attr( $label_config['color'] ); ?>; color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">

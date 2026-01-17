@@ -321,10 +321,10 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 		 * @param string $tool_slug  Tool slug.
 		 * @return string
 		 */
-	private function get_tool_template_content( $class_name, $tool_slug ) {
-		ob_start();
-		?>
-<?php echo '<?php'; ?>
+		private function get_tool_template_content( $class_name, $tool_slug ) {
+			ob_start();
+			?>
+			<?php echo '<?php'; ?>
 
 /**
  * Custom Tool: <?php echo esc_html( $class_name ); ?>
@@ -396,11 +396,11 @@ class <?php echo esc_html( $class_name ); ?> implements WP_MCP_AI_Tool_Interface
 		);
 	}
 }
-<?php
-		$template = ob_get_clean();
+			<?php
+			$template = ob_get_clean();
 
-		return $template;
-	}
+			return $template;
+		}
 
 
 

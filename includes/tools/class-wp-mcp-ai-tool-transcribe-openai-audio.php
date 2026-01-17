@@ -287,7 +287,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 				$client = new WP_MCP_AI_Cloudflare_Client();
 				// Set model to configured Cloudflare STT model if not specified.
 				if ( self::DEFAULT_MODEL === $options['model'] ) {
-					$settings = WP_MCP_AI_Admin_Settings::get_settings();
+					$settings         = WP_MCP_AI_Admin_Settings::get_settings();
 					$configured_model = isset( $settings['cloudflare_audio_model'] ) && '' !== $settings['cloudflare_audio_model']
 						? $settings['cloudflare_audio_model']
 						: '@cf/openai/whisper';

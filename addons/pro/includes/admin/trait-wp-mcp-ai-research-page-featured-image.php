@@ -34,7 +34,7 @@ trait WP_MCP_AI_Research_Page_Featured_Image {
 
 		// Try OpenAI image generation first.
 		if ( class_exists( 'WP_MCP_AI_Tool_Generate_OpenAI_Image' ) ) {
-			$tool = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+			$tool   = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 			$result = $tool->execute(
 				array(
 					'prompt' => $prompt,
@@ -50,7 +50,7 @@ trait WP_MCP_AI_Research_Page_Featured_Image {
 
 		// Fallback to Gemini image generation.
 		if ( class_exists( 'WP_MCP_AI_Tool_Generate_Gemini_Image' ) ) {
-			$tool = new WP_MCP_AI_Tool_Generate_Gemini_Image();
+			$tool   = new WP_MCP_AI_Tool_Generate_Gemini_Image();
 			$result = $tool->execute(
 				array(
 					'prompt'       => $prompt,
@@ -66,7 +66,7 @@ trait WP_MCP_AI_Research_Page_Featured_Image {
 
 		// Fallback to Cloudflare AI image generation.
 		if ( class_exists( 'WP_MCP_AI_Tool_Generate_CloudflareAI_Image' ) ) {
-			$tool = new WP_MCP_AI_Tool_Generate_CloudflareAI_Image();
+			$tool   = new WP_MCP_AI_Tool_Generate_CloudflareAI_Image();
 			$result = $tool->execute(
 				array(
 					'prompt' => $prompt,

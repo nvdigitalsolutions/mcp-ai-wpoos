@@ -180,7 +180,7 @@ class WP_MCP_AI_Task_Metabox {
 
 		// Save status.
 		if ( isset( $_POST['task_status'] ) ) {
-			$status = sanitize_key( $_POST['task_status'] );
+			$status         = sanitize_key( $_POST['task_status'] );
 			$valid_statuses = array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' );
 			if ( in_array( $status, $valid_statuses, true ) ) {
 				update_post_meta( $post_id, '_task_status', $status );
@@ -189,7 +189,7 @@ class WP_MCP_AI_Task_Metabox {
 
 		// Save priority.
 		if ( isset( $_POST['task_priority'] ) ) {
-			$priority = sanitize_key( $_POST['task_priority'] );
+			$priority         = sanitize_key( $_POST['task_priority'] );
 			$valid_priorities = array( 'low', 'medium', 'high', 'urgent' );
 			if ( in_array( $priority, $valid_priorities, true ) ) {
 				update_post_meta( $post_id, '_task_priority', $priority );

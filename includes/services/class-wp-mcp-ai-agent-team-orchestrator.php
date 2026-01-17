@@ -85,14 +85,14 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		// Create team structure.
 		$team = array(
-			'team_id'       => $this->generate_team_id(),
-			'task_type'     => $task_type,
-			'template'      => $template['name'],
-			'members'       => $team_members,
-			'workflow'      => $template['workflow'],
-			'created_at'    => current_time( 'mysql' ),
-			'status'        => 'assembled',
-			'requirements'  => $task_requirements,
+			'team_id'      => $this->generate_team_id(),
+			'task_type'    => $task_type,
+			'template'     => $template['name'],
+			'members'      => $team_members,
+			'workflow'     => $template['workflow'],
+			'created_at'   => current_time( 'mysql' ),
+			'status'       => 'assembled',
+			'requirements' => $task_requirements,
 		);
 
 		// Store team configuration.
@@ -191,7 +191,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 */
 	public function track_team_metrics( $team_id, $execution_data ) {
 		$metrics_key = 'wp_mcp_ai_team_metrics_' . sanitize_key( $team_id );
-		
+
 		$metrics = array(
 			'team_id'        => $team_id,
 			'execution_time' => isset( $execution_data['execution_time'] ) ? $execution_data['execution_time'] : 0,
@@ -257,7 +257,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 */
 	protected function execute_delegation_step( $agent, $step, $task, $context ) {
 		$subtask = isset( $step['subtask'] ) ? $step['subtask'] : $task;
-		
+
 		// In production, this would actually delegate to the agent.
 		// For now, return a placeholder result.
 		return array(
@@ -278,7 +278,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 */
 	protected function execute_aggregation_step( $previous_results, $step ) {
 		$strategy = isset( $step['strategy'] ) ? $step['strategy'] : 'consensus';
-		
+
 		// Extract results to aggregate.
 		$results_to_aggregate = array();
 		foreach ( $previous_results as $result ) {

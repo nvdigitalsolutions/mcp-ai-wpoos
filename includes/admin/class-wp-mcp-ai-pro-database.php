@@ -210,51 +210,51 @@ class WP_MCP_AI_Pro_Database {
 		// Sample controls from each category (full 93 would be in migration).
 		$initial_controls = array(
 			array(
-				'control_id'    => 'A.5.1',
-				'category'      => 'A.5',
-				'name'          => 'Policies for information security',
-				'description'   => 'Information security policy and topic-specific policies shall be defined, approved by management, published, communicated to and acknowledged by relevant personnel and relevant interested parties, and reviewed at planned intervals and if significant changes occur.',
-				'status'        => 'implemented',
+				'control_id'          => 'A.5.1',
+				'category'            => 'A.5',
+				'name'                => 'Policies for information security',
+				'description'         => 'Information security policy and topic-specific policies shall be defined, approved by management, published, communicated to and acknowledged by relevant personnel and relevant interested parties, and reviewed at planned intervals and if significant changes occur.',
+				'status'              => 'implemented',
 				'implementation_date' => '2024-01-15',
 				'last_review_date'    => '2025-10-01',
 				'next_review_date'    => '2026-10-01',
 			),
 			array(
-				'control_id'    => 'A.5.2',
-				'category'      => 'A.5',
-				'name'          => 'Information security roles and responsibilities',
-				'description'   => 'Information security roles and responsibilities shall be defined and allocated according to the organizational needs.',
-				'status'        => 'implemented',
+				'control_id'          => 'A.5.2',
+				'category'            => 'A.5',
+				'name'                => 'Information security roles and responsibilities',
+				'description'         => 'Information security roles and responsibilities shall be defined and allocated according to the organizational needs.',
+				'status'              => 'implemented',
 				'implementation_date' => '2024-01-15',
 				'last_review_date'    => '2025-10-01',
 				'next_review_date'    => '2026-10-01',
 			),
 			array(
-				'control_id'    => 'A.8.1',
-				'category'      => 'A.8',
-				'name'          => 'User endpoint devices',
-				'description'   => 'Information stored on, processed by or accessible via user endpoint devices shall be protected.',
-				'status'        => 'implemented',
+				'control_id'          => 'A.8.1',
+				'category'            => 'A.8',
+				'name'                => 'User endpoint devices',
+				'description'         => 'Information stored on, processed by or accessible via user endpoint devices shall be protected.',
+				'status'              => 'implemented',
 				'implementation_date' => '2024-03-01',
 				'last_review_date'    => '2025-11-15',
 				'next_review_date'    => '2026-11-15',
 			),
 			array(
-				'control_id'    => 'A.8.2',
-				'category'      => 'A.8',
-				'name'          => 'Privileged access rights',
-				'description'   => 'The allocation and use of privileged access rights shall be restricted and managed.',
-				'status'        => 'implemented',
+				'control_id'          => 'A.8.2',
+				'category'            => 'A.8',
+				'name'                => 'Privileged access rights',
+				'description'         => 'The allocation and use of privileged access rights shall be restricted and managed.',
+				'status'              => 'implemented',
 				'implementation_date' => '2024-02-01',
 				'last_review_date'    => '2025-11-01',
 				'next_review_date'    => '2026-11-01',
 			),
 			array(
-				'control_id'    => 'A.8.5',
-				'category'      => 'A.8',
-				'name'          => 'Secure authentication',
-				'description'   => 'Secure authentication technologies and procedures shall be implemented based on information access restrictions and the topic-specific policy on access control.',
-				'status'        => 'implemented',
+				'control_id'          => 'A.8.5',
+				'category'            => 'A.8',
+				'name'                => 'Secure authentication',
+				'description'         => 'Secure authentication technologies and procedures shall be implemented based on information access restrictions and the topic-specific policy on access control.',
+				'status'              => 'implemented',
 				'implementation_date' => '2024-01-01',
 				'last_review_date'    => '2025-12-01',
 				'next_review_date'    => '2026-12-01',
@@ -547,9 +547,9 @@ class WP_MCP_AI_Pro_Database {
 	 */
 	public static function run_compliance_check( $check_type, $check_name, $control_id = '' ) {
 		$result = array(
-			'status' => 'completed',
-			'result' => 'pass',
-			'score'  => 100,
+			'status'  => 'completed',
+			'result'  => 'pass',
+			'score'   => 100,
 			'details' => '',
 		);
 
@@ -568,7 +568,7 @@ class WP_MCP_AI_Pro_Database {
 				$result = self::check_backup();
 				break;
 			default:
-				$result['result'] = 'unknown';
+				$result['result']  = 'unknown';
 				$result['details'] = 'Check type not implemented';
 				break;
 		}
@@ -580,15 +580,15 @@ class WP_MCP_AI_Pro_Database {
 		$wpdb->insert(
 			$checks_table,
 			array(
-				'check_type'  => $check_type,
-				'check_name'  => $check_name,
-				'control_id'  => $control_id,
-				'status'      => $result['status'],
-				'result'      => $result['result'],
-				'score'       => $result['score'],
-				'details'     => $result['details'],
-				'last_run'    => current_time( 'mysql' ),
-				'next_run'    => date( 'Y-m-d H:i:s', strtotime( '+1 day' ) ),
+				'check_type' => $check_type,
+				'check_name' => $check_name,
+				'control_id' => $control_id,
+				'status'     => $result['status'],
+				'result'     => $result['result'],
+				'score'      => $result['score'],
+				'details'    => $result['details'],
+				'last_run'   => current_time( 'mysql' ),
+				'next_run'   => date( 'Y-m-d H:i:s', strtotime( '+1 day' ) ),
 			),
 			array( '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s' )
 		);
@@ -608,24 +608,24 @@ class WP_MCP_AI_Pro_Database {
 		// Check if multiple auth methods are enabled.
 		$auth_methods = 0;
 		if ( get_option( 'wp_mcp_ai_enable_jwt', false ) ) {
-			$auth_methods++;
+			++$auth_methods;
 		}
 		if ( get_option( 'wp_mcp_ai_enable_auth0', false ) ) {
-			$auth_methods++;
+			++$auth_methods;
 		}
 		if ( get_option( 'wp_mcp_ai_enable_guest_tokens', false ) ) {
-			$auth_methods++;
+			++$auth_methods;
 		}
 
 		if ( $auth_methods < 2 ) {
-			$score   -= 20;
+			$score    -= 20;
 			$details[] = 'Less than 2 authentication methods enabled';
 		}
 
 		// Check for root security key.
 		$root_key = get_option( 'wp_mcp_ai_root_security_key', '' );
 		if ( empty( $root_key ) || strlen( $root_key ) < 32 ) {
-			$score   -= 30;
+			$score    -= 30;
 			$details[] = 'Root security key not configured or too weak';
 		}
 
@@ -650,14 +650,14 @@ class WP_MCP_AI_Pro_Database {
 
 		// Check if HTTPS is enforced.
 		if ( ! is_ssl() && ! defined( 'FORCE_SSL_ADMIN' ) ) {
-			$score   -= 40;
+			$score    -= 40;
 			$details[] = 'HTTPS not enforced';
 		}
 
 		// Check encryption settings.
 		$encryption_enabled = get_option( 'wp_mcp_ai_enable_encryption', false );
 		if ( ! $encryption_enabled ) {
-			$score   -= 30;
+			$score    -= 30;
 			$details[] = 'Data encryption not enabled';
 		}
 
@@ -683,14 +683,14 @@ class WP_MCP_AI_Pro_Database {
 		// Check if logging is enabled.
 		$logging_enabled = get_option( 'wp_mcp_ai_enable_logging', false );
 		if ( ! $logging_enabled ) {
-			$score   -= 50;
+			$score    -= 50;
 			$details[] = 'Security logging not enabled';
 		}
 
 		// Check recent activity.
 		$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
 		if ( empty( $recent_activity ) ) {
-			$score   -= 20;
+			$score    -= 20;
 			$details[] = 'No recent activity logged';
 		}
 
@@ -716,10 +716,10 @@ class WP_MCP_AI_Pro_Database {
 		// Check if backup is configured.
 		$last_backup = get_option( 'wp_mcp_ai_last_backup_date', '' );
 		if ( empty( $last_backup ) ) {
-			$score   -= 40;
+			$score    -= 40;
 			$details[] = 'No backup history found';
 		} elseif ( strtotime( $last_backup ) < strtotime( '-7 days' ) ) {
-			$score   -= 20;
+			$score    -= 20;
 			$details[] = 'Last backup older than 7 days';
 		}
 

@@ -70,7 +70,7 @@ function wp_mcp_ai_get_agent_role( $role_type ) {
  */
 function wp_mcp_ai_get_assistant_role( $assistant_id ) {
 	$role_type = get_post_meta( $assistant_id, '_wp_mcp_ai_agent_role', true );
-	
+
 	if ( empty( $role_type ) ) {
 		return null;
 	}

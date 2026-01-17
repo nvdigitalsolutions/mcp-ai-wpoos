@@ -64,19 +64,19 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			}
 
 			// Get settings.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$client_id = isset( $settings['gmail_client_id'] ) ? trim( $settings['gmail_client_id'] ) : '';
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['gmail_client_id'] ) ? trim( $settings['gmail_client_id'] ) : '';
 			$client_secret = isset( $settings['gmail_client_secret'] ) ? trim( $settings['gmail_client_secret'] ) : '';
 
 			if ( empty( $client_id ) || empty( $client_secret ) ) {
 				wp_safe_redirect(
 					add_query_arg(
 						array(
-							'page'               => 'wp-mcp-ai-dashboard',
-							'tab'                => 'tools',
-							'subtab'             => 'connections',
-							'connection'         => 'gmail',
-							'gmail_error'        => rawurlencode( __( 'Please save your Gmail Client ID and Client Secret before connecting.', 'mcp-ai-wpoos' ) ),
+							'page'        => 'wp-mcp-ai-dashboard',
+							'tab'         => 'tools',
+							'subtab'      => 'connections',
+							'connection'  => 'gmail',
+							'gmail_error' => rawurlencode( __( 'Please save your Gmail Client ID and Client Secret before connecting.', 'mcp-ai-wpoos' ) ),
 						),
 						admin_url( 'admin.php' )
 					)
@@ -167,8 +167,8 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			}
 
 			// Get settings.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$client_id = isset( $settings['gmail_client_id'] ) ? trim( $settings['gmail_client_id'] ) : '';
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['gmail_client_id'] ) ? trim( $settings['gmail_client_id'] ) : '';
 			$client_secret = isset( $settings['gmail_client_secret'] ) ? trim( $settings['gmail_client_secret'] ) : '';
 
 			if ( empty( $client_id ) || empty( $client_secret ) ) {
@@ -306,19 +306,19 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			}
 
 			// Get settings.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$client_id = isset( $settings['google_drive_client_id'] ) ? trim( $settings['google_drive_client_id'] ) : '';
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['google_drive_client_id'] ) ? trim( $settings['google_drive_client_id'] ) : '';
 			$client_secret = isset( $settings['google_drive_client_secret'] ) ? trim( $settings['google_drive_client_secret'] ) : '';
 
 			if ( empty( $client_id ) || empty( $client_secret ) ) {
 				wp_safe_redirect(
 					add_query_arg(
 						array(
-							'page'               => 'wp-mcp-ai-dashboard',
-							'tab'                => 'tools',
-							'subtab'             => 'connections',
-							'connection'         => 'google_drive',
-							'drive_error'        => rawurlencode( __( 'Please save your Google Drive Client ID and Client Secret before connecting.', 'mcp-ai-wpoos' ) ),
+							'page'        => 'wp-mcp-ai-dashboard',
+							'tab'         => 'tools',
+							'subtab'      => 'connections',
+							'connection'  => 'google_drive',
+							'drive_error' => rawurlencode( __( 'Please save your Google Drive Client ID and Client Secret before connecting.', 'mcp-ai-wpoos' ) ),
 						),
 						admin_url( 'admin.php' )
 					)
@@ -410,8 +410,8 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			}
 
 			// Get settings.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$client_id = isset( $settings['google_drive_client_id'] ) ? trim( $settings['google_drive_client_id'] ) : '';
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['google_drive_client_id'] ) ? trim( $settings['google_drive_client_id'] ) : '';
 			$client_secret = isset( $settings['google_drive_client_secret'] ) ? trim( $settings['google_drive_client_secret'] ) : '';
 
 			if ( empty( $client_id ) || empty( $client_secret ) ) {

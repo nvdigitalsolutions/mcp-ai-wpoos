@@ -300,7 +300,7 @@ class WP_MCP_AI_Model_Pricing_Checker {
 
 			// Ensure pricing values are within reasonable ranges.
 			if ( $new_input_cost < self::MIN_PRICING_VALUE || $new_input_cost > self::MAX_PRICING_VALUE ||
-			     $new_output_cost < self::MIN_PRICING_VALUE || $new_output_cost > self::MAX_PRICING_VALUE ) {
+				$new_output_cost < self::MIN_PRICING_VALUE || $new_output_cost > self::MAX_PRICING_VALUE ) {
 				$errors[] = sprintf(
 					/* translators: 1: model name, 2: minimum price, 3: maximum price */
 					__( 'Invalid pricing values for model: %1$s (must be between $%2$.2f and $%3$.2f per 1K)', 'mcp-ai-wpoos' ),

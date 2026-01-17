@@ -55,33 +55,33 @@ class WP_MCP_AI_Tool_Flowhub_Manage_Customer implements WP_MCP_AI_Tool_Interface
 					'type'        => 'string',
 					'description' => __( 'Optional Remote Sites connection ID for Flowhub. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos' ),
 				),
-				'action'       => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: "create" or "update".', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'create', 'update' ),
 				),
-				'customer_id'  => array(
+				'customer_id'   => array(
 					'type'        => 'string',
 					'description' => __( 'Customer ID (required for update action).', 'mcp-ai-wpoos' ),
 				),
-				'first_name'   => array(
+				'first_name'    => array(
 					'type'        => 'string',
 					'description' => __( 'Customer first name.', 'mcp-ai-wpoos' ),
 				),
-				'last_name'    => array(
+				'last_name'     => array(
 					'type'        => 'string',
 					'description' => __( 'Customer last name.', 'mcp-ai-wpoos' ),
 				),
-				'email'        => array(
+				'email'         => array(
 					'type'        => 'string',
 					'description' => __( 'Customer email address.', 'mcp-ai-wpoos' ),
 					'format'      => 'email',
 				),
-				'phone'        => array(
+				'phone'         => array(
 					'type'        => 'string',
 					'description' => __( 'Customer phone number.', 'mcp-ai-wpoos' ),
 				),
-				'address'      => array(
+				'address'       => array(
 					'type'        => 'object',
 					'description' => __( 'Customer address details.', 'mcp-ai-wpoos' ),
 					'properties'  => array(
@@ -97,11 +97,11 @@ class WP_MCP_AI_Tool_Flowhub_Manage_Customer implements WP_MCP_AI_Tool_Interface
 					'description' => __( 'Date of birth (YYYY-MM-DD format).', 'mcp-ai-wpoos' ),
 					'format'      => 'date',
 				),
-				'medical_id'   => array(
+				'medical_id'    => array(
 					'type'        => 'string',
 					'description' => __( 'Medical cannabis ID number.', 'mcp-ai-wpoos' ),
 				),
-				'timeout'      => array(
+				'timeout'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,

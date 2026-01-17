@@ -41,7 +41,7 @@ $type_names = array_map(
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
-			'class' => 'wp-block-mcp-ai-wpoos-knowledge-base',
+			'class'              => 'wp-block-mcp-ai-wpoos-knowledge-base',
 			'data-block-id'      => $unique_id,
 			'data-allowed-types' => $allowed_types,
 			'data-max-files'     => $max_files,

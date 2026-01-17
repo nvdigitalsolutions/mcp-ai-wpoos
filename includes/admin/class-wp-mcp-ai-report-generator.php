@@ -116,8 +116,8 @@ class WP_MCP_AI_Report_Generator {
 
 		if ( 'full' === $scope ) {
 			$data['compliance_status'] = $this->get_compliance_status();
-			$data['evidence'] = $this->get_evidence_summary();
-			$data['frameworks'] = $this->get_frameworks_status();
+			$data['evidence']          = $this->get_evidence_summary();
+			$data['frameworks']        = $this->get_frameworks_status();
 		}
 
 		return $data;
@@ -139,18 +139,18 @@ class WP_MCP_AI_Report_Generator {
 		// Fallback to sample data.
 		return array(
 			array(
-				'control_id'   => 'A.5.1',
-				'category'     => 'A.5',
-				'name'         => 'Policies for information security',
-				'status'       => 'implemented',
+				'control_id'          => 'A.5.1',
+				'category'            => 'A.5',
+				'name'                => 'Policies for information security',
+				'status'              => 'implemented',
 				'implementation_date' => '2024-01-15',
 				'last_review_date'    => '2025-10-01',
 			),
 			array(
-				'control_id'   => 'A.8.2',
-				'category'     => 'A.8',
-				'name'         => 'Privileged access rights',
-				'status'       => 'implemented',
+				'control_id'          => 'A.8.2',
+				'category'            => 'A.8',
+				'name'                => 'Privileged access rights',
+				'status'              => 'implemented',
 				'implementation_date' => '2024-02-01',
 				'last_review_date'    => '2025-11-01',
 			),
@@ -173,26 +173,26 @@ class WP_MCP_AI_Report_Generator {
 		// Fallback to sample data.
 		return array(
 			array(
-				'risk_id'      => 'R-001',
-				'title'        => 'Unauthorized access to API keys',
-				'category'     => 'authentication',
-				'likelihood'   => 3,
-				'impact'       => 5,
-				'risk_score'   => 15,
-				'risk_level'   => 'high',
-				'treatment'    => 'reduce',
-				'status'       => 'open',
+				'risk_id'    => 'R-001',
+				'title'      => 'Unauthorized access to API keys',
+				'category'   => 'authentication',
+				'likelihood' => 3,
+				'impact'     => 5,
+				'risk_score' => 15,
+				'risk_level' => 'high',
+				'treatment'  => 'reduce',
+				'status'     => 'open',
 			),
 			array(
-				'risk_id'      => 'R-002',
-				'title'        => 'Data loss from third-party AI provider',
-				'category'     => 'third_party',
-				'likelihood'   => 2,
-				'impact'       => 4,
-				'risk_score'   => 8,
-				'risk_level'   => 'medium',
-				'treatment'    => 'reduce',
-				'status'       => 'open',
+				'risk_id'    => 'R-002',
+				'title'      => 'Data loss from third-party AI provider',
+				'category'   => 'third_party',
+				'likelihood' => 2,
+				'impact'     => 4,
+				'risk_score' => 8,
+				'risk_level' => 'medium',
+				'treatment'  => 'reduce',
+				'status'     => 'open',
 			),
 		);
 	}
@@ -264,8 +264,14 @@ class WP_MCP_AI_Report_Generator {
 	 */
 	private function get_frameworks_status() {
 		return array(
-			'iso27001' => array( 'status' => 'compliant', 'percentage' => 56 ),
-			'gdpr'     => array( 'status' => 'compliant', 'percentage' => 95 ),
+			'iso27001' => array(
+				'status'     => 'compliant',
+				'percentage' => 56,
+			),
+			'gdpr'     => array(
+				'status'     => 'compliant',
+				'percentage' => 95,
+			),
 		);
 	}
 
@@ -277,7 +283,7 @@ class WP_MCP_AI_Report_Generator {
 	 * @return array
 	 */
 	private function generate_html_report( $data, $report_id ) {
-		$upload_dir = wp_upload_dir();
+		$upload_dir  = wp_upload_dir();
 		$reports_dir = $upload_dir['basedir'] . '/mcp-ai-reports';
 
 		if ( ! file_exists( $reports_dir ) ) {

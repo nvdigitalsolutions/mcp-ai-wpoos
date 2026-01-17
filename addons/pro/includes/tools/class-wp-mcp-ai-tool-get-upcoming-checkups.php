@@ -108,8 +108,8 @@ class WP_MCP_AI_Tool_Get_Upcoming_Checkups implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Calculate date range.
-		$now       = current_time( 'Y-m-d H:i' );
-		$end_date  = date( 'Y-m-d H:i', strtotime( "+{$days} days", current_time( 'timestamp' ) ) );
+		$now      = current_time( 'Y-m-d H:i' );
+		$end_date = date( 'Y-m-d H:i', strtotime( "+{$days} days", current_time( 'timestamp' ) ) );
 
 		// Build query for upcoming checkups.
 		$query_args = array(
@@ -160,12 +160,12 @@ class WP_MCP_AI_Tool_Get_Upcoming_Checkups implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		return array(
-			'success'      => true,
-			'member_id'    => $member_id,
-			'member_name'  => $member->post_title,
-			'checkups'     => $checkups,
-			'total'        => count( $checkups ),
-			'date_range'   => array(
+			'success'     => true,
+			'member_id'   => $member_id,
+			'member_name' => $member->post_title,
+			'checkups'    => $checkups,
+			'total'       => count( $checkups ),
+			'date_range'  => array(
 				'start' => $now,
 				'end'   => $end_date,
 				'days'  => $days,

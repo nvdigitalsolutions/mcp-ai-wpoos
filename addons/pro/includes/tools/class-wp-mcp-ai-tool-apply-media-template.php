@@ -42,12 +42,12 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'template_id'    => array(
+				'template_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the media template to apply', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'attachment_id'  => array(
+				'attachment_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the image attachment to process', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -104,8 +104,8 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Validate arguments.
-		$template_id    = isset( $arguments['template_id'] ) ? absint( $arguments['template_id'] ) : 0;
-		$attachment_id  = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
+		$template_id     = isset( $arguments['template_id'] ) ? absint( $arguments['template_id'] ) : 0;
+		$attachment_id   = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
 		$override_params = isset( $arguments['override_params'] ) ? $arguments['override_params'] : array();
 
 		if ( empty( $template_id ) ) {

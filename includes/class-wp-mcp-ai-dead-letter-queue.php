@@ -35,11 +35,11 @@ class WP_MCP_AI_Dead_Letter_Queue {
 	/**
 	 * Item types.
 	 */
-	const TYPE_CRON_JOB    = 'cron_job';
-	const TYPE_WEBHOOK     = 'webhook';
-	const TYPE_ASYNC_TOOL  = 'async_tool';
-	const TYPE_JOB_QUEUE   = 'job_queue';
-	const TYPE_MESH_QUERY  = 'mesh_query';
+	const TYPE_CRON_JOB   = 'cron_job';
+	const TYPE_WEBHOOK    = 'webhook';
+	const TYPE_ASYNC_TOOL = 'async_tool';
+	const TYPE_JOB_QUEUE  = 'job_queue';
+	const TYPE_MESH_QUERY = 'mesh_query';
 
 	/**
 	 * Add an item to the dead letter queue.
@@ -80,16 +80,16 @@ class WP_MCP_AI_Dead_Letter_Queue {
 		$item_id = self::generate_item_id( $type, $identifier );
 
 		$items[ $item_id ] = array(
-			'id'             => $item_id,
-			'type'           => $type,
-			'identifier'     => $identifier,
-			'data'           => $data,
-			'failure_reason' => sanitize_textarea_field( $failure_reason ),
-			'retry_history'  => is_array( $retry_history ) ? $retry_history : array(),
-			'retry_count'    => count( $retry_history ),
-			'added_at'       => current_time( 'mysql', true ),
+			'id'              => $item_id,
+			'type'            => $type,
+			'identifier'      => $identifier,
+			'data'            => $data,
+			'failure_reason'  => sanitize_textarea_field( $failure_reason ),
+			'retry_history'   => is_array( $retry_history ) ? $retry_history : array(),
+			'retry_count'     => count( $retry_history ),
+			'added_at'        => current_time( 'mysql', true ),
 			'added_timestamp' => time(),
-			'dismissed'      => false,
+			'dismissed'       => false,
 		);
 
 		$saved = self::save_items( $items );
@@ -215,11 +215,11 @@ class WP_MCP_AI_Dead_Letter_Queue {
 			$items = self::get_all();
 			if ( isset( $items[ $item_id ] ) ) {
 				$items[ $item_id ]['retry_history'][] = array(
-					'timestamp'      => time(),
-					'result'         => 'failed',
-					'error_message'  => $result->get_error_message(),
+					'timestamp'     => time(),
+					'result'        => 'failed',
+					'error_message' => $result->get_error_message(),
 				);
-				$items[ $item_id ]['retry_count'] = count( $items[ $item_id ]['retry_history'] );
+				$items[ $item_id ]['retry_count']     = count( $items[ $item_id ]['retry_history'] );
 				self::save_items( $items );
 			}
 
@@ -381,7 +381,7 @@ class WP_MCP_AI_Dead_Letter_Queue {
 			return false;
 		}
 
-		$items[ $item_id ]['dismissed'] = true;
+		$items[ $item_id ]['dismissed']    = true;
 		$items[ $item_id ]['dismissed_at'] = current_time( 'mysql', true );
 
 		return self::save_items( $items );

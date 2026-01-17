@@ -212,8 +212,8 @@ trait WP_MCP_AI_SVG_Vectorizer {
 	/**
 	 * Add vectorization metadata to result if SVG output was used.
 	 *
-	 * @param array $result_data Result data array.
-	 * @param array $storage     Storage data from save_svg_as_attachment.
+	 * @param array  $result_data Result data array.
+	 * @param array  $storage     Storage data from save_svg_as_attachment.
 	 * @param string $output_format Output format selected.
 	 * @return array Updated result data.
 	 */

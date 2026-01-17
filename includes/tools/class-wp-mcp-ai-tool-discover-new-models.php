@@ -386,7 +386,7 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 			foreach ( $result['models'] as $model ) {
 				if ( isset( $model['name'] ) ) {
 					// Extract model ID from full name (e.g., "models/gemini-pro" -> "gemini-pro").
-					$model_id           = str_replace( 'models/', '', $model['name'] );
+					$model_id            = str_replace( 'models/', '', $model['name'] );
 					$models[ $model_id ] = array(
 						'name' => isset( $model['displayName'] ) ? $model['displayName'] : $model_id,
 					);

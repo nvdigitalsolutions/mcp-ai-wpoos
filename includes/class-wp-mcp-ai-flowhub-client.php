@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 	 * See: https://flowhub.stoplight.io/docs/public-developer-portal/
 	 */
 	class WP_MCP_AI_Flowhub_Client {
-		const API_ENDPOINT  = 'https://api.flowhub.co';
+		const API_ENDPOINT = 'https://api.flowhub.co';
 
 		/**
 		 * Connection ID for Remote Sites connections.
@@ -286,10 +286,10 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 					WP_MCP_AI_Logger::log_error(
 						'Flowhub returned non-JSON error response.',
 						array(
-							'code'          => $code,
-							'endpoint'      => $endpoint,
-							'body'          => $sanitized_body,
-							'content_type'  => wp_remote_retrieve_header( $response, 'content-type' ),
+							'code'         => $code,
+							'endpoint'     => $endpoint,
+							'body'         => $sanitized_body,
+							'content_type' => wp_remote_retrieve_header( $response, 'content-type' ),
 						)
 					);
 
@@ -310,10 +310,10 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 					// Add actionable error messages for specific HTTP codes.
 					if ( 403 === $code ) {
 						$error_data['actions'] = array(
-							'check_credentials'     => __( 'Verify your Flowhub Client ID and API Key are correct.', 'mcp-ai-wpoos' ),
-							'check_permissions'     => __( 'Ensure your Flowhub account has API access enabled.', 'mcp-ai-wpoos' ),
-							'check_ip_whitelist'    => __( 'Confirm your server IP address is whitelisted in Flowhub.', 'mcp-ai-wpoos' ),
-							'contact_flowhub'       => __( 'Contact Flowhub support if the issue persists.', 'mcp-ai-wpoos' ),
+							'check_credentials'  => __( 'Verify your Flowhub Client ID and API Key are correct.', 'mcp-ai-wpoos' ),
+							'check_permissions'  => __( 'Ensure your Flowhub account has API access enabled.', 'mcp-ai-wpoos' ),
+							'check_ip_whitelist' => __( 'Confirm your server IP address is whitelisted in Flowhub.', 'mcp-ai-wpoos' ),
+							'contact_flowhub'    => __( 'Contact Flowhub support if the issue persists.', 'mcp-ai-wpoos' ),
 						);
 					} elseif ( 401 === $code ) {
 						$error_data['actions'] = array(

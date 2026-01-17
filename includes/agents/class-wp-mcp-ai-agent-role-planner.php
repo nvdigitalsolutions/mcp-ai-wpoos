@@ -206,13 +206,13 @@ class WP_MCP_AI_Agent_Role_Planner extends WP_MCP_AI_Agent_Role_Base {
 	 */
 	protected function create_subtask( $type, $description, $order ) {
 		return array(
-			'id'          => uniqid( 'subtask_', true ),
-			'type'        => $type,
-			'description' => $description,
-			'order'       => $order,
-			'status'      => 'pending',
+			'id'           => uniqid( 'subtask_', true ),
+			'type'         => $type,
+			'description'  => $description,
+			'order'        => $order,
+			'status'       => 'pending',
 			'dependencies' => array(),
-			'assigned_to' => null,
+			'assigned_to'  => null,
 		);
 	}
 

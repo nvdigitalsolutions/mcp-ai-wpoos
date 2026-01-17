@@ -19,11 +19,11 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Connection_Handler' ) ) {
 // Register the Cloudflare connection handler with the container.
 add_action(
 	'wp_mcp_ai_register_services',
-	function( $container ) {
+	function ( $container ) {
 		if ( ! $container->has( 'integrations.cloudflare_connection' ) ) {
 			$container->singleton(
 				'integrations.cloudflare_connection',
-				function() {
+				function () {
 					return new WP_MCP_AI_Cloudflare_Connection_Handler();
 				}
 			);
@@ -35,7 +35,7 @@ add_action(
 // Register connection test action hooks.
 add_action(
 	'admin_init',
-	function() {
+	function () {
 		$container = wp_mcp_ai_container();
 
 		if ( ! $container->has( 'integrations.cloudflare_connection' ) ) {
@@ -53,7 +53,7 @@ add_action(
 // Display admin notices for Cloudflare connection actions.
 add_action(
 	'admin_notices',
-	function() {
+	function () {
 		$notice = get_transient( 'wp_mcp_ai_cloudflare_connection_notice' );
 
 		if ( ! $notice || ! is_array( $notice ) ) {

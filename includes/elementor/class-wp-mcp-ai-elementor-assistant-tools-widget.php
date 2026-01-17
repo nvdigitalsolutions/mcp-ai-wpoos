@@ -261,27 +261,27 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		?>
 <style>
 .wp-mcp-ai-assistant-tools__copy-button {
-    background: none;
-    border: 0;
-    padding: 0;
-    font: inherit;
-    color: inherit;
-    display: inline-flex;
-    align-items: center;
-    cursor: pointer;
+	background: none;
+	border: 0;
+	padding: 0;
+	font: inherit;
+	color: inherit;
+	display: inline-flex;
+	align-items: center;
+	cursor: pointer;
 }
 
 .wp-mcp-ai-assistant-tools__copy-button:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
 }
 
 .wp-mcp-ai-assistant-tools__copy-feedback {
-    margin-left: 0.5rem;
-    font-size: 0.85em;
+	margin-left: 0.5rem;
+	font-size: 0.85em;
 }
 </style>
-<?php
+		<?php
 		$style = ob_get_clean();
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS output is static content above.
@@ -290,116 +290,116 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		ob_start();
 		?>
 ( function() {
-    var selector = '.wp-mcp-ai-assistant-tools__copy-button';
+	var selector = '.wp-mcp-ai-assistant-tools__copy-button';
 
-    function setFeedback( button, isSuccess ) {
-        var feedback = button.querySelector( '.wp-mcp-ai-assistant-tools__copy-feedback' );
+	function setFeedback( button, isSuccess ) {
+		var feedback = button.querySelector( '.wp-mcp-ai-assistant-tools__copy-feedback' );
 
-        if ( ! feedback ) {
-            return;
-        }
+		if ( ! feedback ) {
+			return;
+		}
 
-        var message = isSuccess ? button.getAttribute( 'data-success-message' ) : button.getAttribute( 'data-failure-message' );
+		var message = isSuccess ? button.getAttribute( 'data-success-message' ) : button.getAttribute( 'data-failure-message' );
 
-        if ( ! message ) {
-            return;
-        }
+		if ( ! message ) {
+			return;
+		}
 
-        feedback.textContent = message;
-        feedback.style.display = '';
-        feedback.setAttribute( 'aria-hidden', 'false' );
+		feedback.textContent = message;
+		feedback.style.display = '';
+		feedback.setAttribute( 'aria-hidden', 'false' );
 
-        clearTimeout( button._wpMcpAiCopyTimeout );
-        button._wpMcpAiCopyTimeout = setTimeout( function() {
-            feedback.style.display = 'none';
-            feedback.setAttribute( 'aria-hidden', 'true' );
-        }, 2000 );
-    }
+		clearTimeout( button._wpMcpAiCopyTimeout );
+		button._wpMcpAiCopyTimeout = setTimeout( function() {
+			feedback.style.display = 'none';
+			feedback.setAttribute( 'aria-hidden', 'true' );
+		}, 2000 );
+	}
 
-    function copyWithFallback( text ) {
-        return new Promise( function( resolve, reject ) {
-            try {
-                var textarea = document.createElement( 'textarea' );
-                textarea.value = text;
-                textarea.setAttribute( 'readonly', '' );
-                textarea.style.position = 'absolute';
-                textarea.style.left = '-9999px';
-                document.body.appendChild( textarea );
-                textarea.select();
+	function copyWithFallback( text ) {
+		return new Promise( function( resolve, reject ) {
+			try {
+				var textarea = document.createElement( 'textarea' );
+				textarea.value = text;
+				textarea.setAttribute( 'readonly', '' );
+				textarea.style.position = 'absolute';
+				textarea.style.left = '-9999px';
+				document.body.appendChild( textarea );
+				textarea.select();
 
-                var successful = document.execCommand( 'copy' );
-                document.body.removeChild( textarea );
+				var successful = document.execCommand( 'copy' );
+				document.body.removeChild( textarea );
 
-                if ( successful ) {
-                    resolve();
-                    return;
-                }
+				if ( successful ) {
+					resolve();
+					return;
+				}
 
-                reject();
-            } catch ( error ) {
-                reject( error );
-            }
-        } );
-    }
+				reject();
+			} catch ( error ) {
+				reject( error );
+			}
+		} );
+	}
 
-    function copySlug( slug ) {
-        if ( navigator.clipboard && navigator.clipboard.writeText ) {
-            return navigator.clipboard.writeText( slug ).catch( function() {
-                return copyWithFallback( slug );
-            } );
-        }
+	function copySlug( slug ) {
+		if ( navigator.clipboard && navigator.clipboard.writeText ) {
+			return navigator.clipboard.writeText( slug ).catch( function() {
+				return copyWithFallback( slug );
+			} );
+		}
 
-        return copyWithFallback( slug );
-    }
+		return copyWithFallback( slug );
+	}
 
-    function bindCopy( button ) {
-        if ( button.dataset.wpMcpAiCopyBound ) {
-            return;
-        }
+	function bindCopy( button ) {
+		if ( button.dataset.wpMcpAiCopyBound ) {
+			return;
+		}
 
-        button.dataset.wpMcpAiCopyBound = '1';
+		button.dataset.wpMcpAiCopyBound = '1';
 
-        button.addEventListener( 'click', function() {
-            var slug = button.getAttribute( 'data-slug' );
+		button.addEventListener( 'click', function() {
+			var slug = button.getAttribute( 'data-slug' );
 
-            if ( ! slug ) {
-                return;
-            }
+			if ( ! slug ) {
+				return;
+			}
 
-            copySlug( slug )
-                .then( function() {
-                    setFeedback( button, true );
-                } )
-                .catch( function() {
-                    setFeedback( button, false );
-                } );
-        } );
-    }
+			copySlug( slug )
+				.then( function() {
+					setFeedback( button, true );
+				} )
+				.catch( function() {
+					setFeedback( button, false );
+				} );
+		} );
+	}
 
-    function init( context ) {
-        var scope = context || document;
-        var buttons = scope.querySelectorAll( selector );
+	function init( context ) {
+		var scope = context || document;
+		var buttons = scope.querySelectorAll( selector );
 
-        if ( ! buttons.length ) {
-            return;
-        }
+		if ( ! buttons.length ) {
+			return;
+		}
 
-        buttons.forEach( bindCopy );
-    }
+		buttons.forEach( bindCopy );
+	}
 
-    if ( document.readyState !== 'loading' ) {
-        init();
-    } else {
-        document.addEventListener( 'DOMContentLoaded', function() {
-            init();
-        } );
-    }
+	if ( document.readyState !== 'loading' ) {
+		init();
+	} else {
+		document.addEventListener( 'DOMContentLoaded', function() {
+			init();
+		} );
+	}
 
-    document.addEventListener( 'elementor/popup/show', function( event ) {
-        init( event && event.target ? event.target : document );
-    } );
+	document.addEventListener( 'elementor/popup/show', function( event ) {
+		init( event && event.target ? event.target : document );
+	} );
 } )();
-<?php
+		<?php
 		$script = ob_get_clean();
 
 		if ( function_exists( 'wp_print_inline_script_tag' ) ) {

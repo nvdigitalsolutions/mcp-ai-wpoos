@@ -93,16 +93,16 @@ class WP_MCP_AI_Media_Design_Page {
 			'wp-mcp-ai-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-				'nonce'         => wp_create_nonce( 'wp_mcp_ai_design_media' ),
-				'addNewUrl'     => admin_url( 'post-new.php?post_type=mcp_ai_media_tpl' ),
-				'researchTool'  => 'create_media_template',
-				'strings'       => array(
-					'researching'       => __( 'Designing...', 'mcp-ai-wpoos-pro' ),
-					'error'             => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'          => __( 'Creating media template...', 'mcp-ai-wpoos-pro' ),
-					'created'           => __( 'Media template created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate'     => __( 'Create a media template with the designed configuration?', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'wp_mcp_ai_design_media' ),
+				'addNewUrl'    => admin_url( 'post-new.php?post_type=mcp_ai_media_tpl' ),
+				'researchTool' => 'create_media_template',
+				'strings'      => array(
+					'researching'   => __( 'Designing...', 'mcp-ai-wpoos-pro' ),
+					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'creating'      => __( 'Creating media template...', 'mcp-ai-wpoos-pro' ),
+					'created'       => __( 'Media template created successfully!', 'mcp-ai-wpoos-pro' ),
+					'confirmCreate' => __( 'Create a media template with the designed configuration?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);

@@ -88,7 +88,7 @@ class WP_MCP_AI_Media_Collection_CPT {
 
 		// Check if we're on a media collection post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type   = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type          = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_collection_page = ( $post_type === self::POST_TYPE );
 		if ( ! $is_collection_page && $screen->post_type !== self::POST_TYPE ) {
 			return;
@@ -349,8 +349,8 @@ class WP_MCP_AI_Media_Collection_CPT {
 			$new_columns[ $key ] = $label;
 
 			if ( 'title' === $key ) {
-				$new_columns['item_count']   = __( 'Items', 'mcp-ai-wpoos-pro' );
-				$new_columns['templates']    = __( 'Templates', 'mcp-ai-wpoos-pro' );
+				$new_columns['item_count']     = __( 'Items', 'mcp-ai-wpoos-pro' );
+				$new_columns['templates']      = __( 'Templates', 'mcp-ai-wpoos-pro' );
 				$new_columns['last_processed'] = __( 'Last Processed', 'mcp-ai-wpoos-pro' );
 			}
 		}
@@ -434,9 +434,9 @@ class WP_MCP_AI_Media_Collection_CPT {
 				);
 
 				if ( ! empty( $result['success'] ) ) {
-					$processed++;
+					++$processed;
 				} else {
-					$errors++;
+					++$errors;
 				}
 			}
 

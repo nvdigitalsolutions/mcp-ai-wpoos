@@ -56,7 +56,7 @@ class WP_MCP_AI_Places_Management_CPT_Registration_Test extends WP_UnitTestCase 
 	 */
 	public function test_cpt_registered_when_enabled() {
 		// Enable places management.
-		$settings                            = $this->original_settings;
+		$settings                             = $this->original_settings;
 		$settings['enable_places_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -72,7 +72,7 @@ class WP_MCP_AI_Places_Management_CPT_Registration_Test extends WP_UnitTestCase 
 	 */
 	public function test_cpt_not_registered_when_disabled() {
 		// Disable places management.
-		$settings                            = $this->original_settings;
+		$settings                             = $this->original_settings;
 		$settings['enable_places_management'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -88,7 +88,7 @@ class WP_MCP_AI_Places_Management_CPT_Registration_Test extends WP_UnitTestCase 
 	 */
 	public function test_place_cpt_shows_in_menu() {
 		// Enable places management.
-		$settings                            = $this->original_settings;
+		$settings                             = $this->original_settings;
 		$settings['enable_places_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -108,7 +108,7 @@ class WP_MCP_AI_Places_Management_CPT_Registration_Test extends WP_UnitTestCase 
 	 */
 	public function test_taxonomies_registered() {
 		// Enable places management.
-		$settings                            = $this->original_settings;
+		$settings                             = $this->original_settings;
 		$settings['enable_places_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -125,7 +125,7 @@ class WP_MCP_AI_Places_Management_CPT_Registration_Test extends WP_UnitTestCase 
 	 */
 	public function test_default_place_types_created() {
 		// Enable places management.
-		$settings                            = $this->original_settings;
+		$settings                             = $this->original_settings;
 		$settings['enable_places_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -146,7 +146,7 @@ class WP_MCP_AI_Places_Management_CPT_Registration_Test extends WP_UnitTestCase 
 	 */
 	public function test_place_type_taxonomy_is_hierarchical() {
 		// Enable places management.
-		$settings                            = $this->original_settings;
+		$settings                             = $this->original_settings;
 		$settings['enable_places_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -162,7 +162,7 @@ class WP_MCP_AI_Places_Management_CPT_Registration_Test extends WP_UnitTestCase 
 	 */
 	public function test_place_tag_taxonomy_not_hierarchical() {
 		// Enable places management.
-		$settings                            = $this->original_settings;
+		$settings                             = $this->original_settings;
 		$settings['enable_places_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -178,7 +178,7 @@ class WP_MCP_AI_Places_Management_CPT_Registration_Test extends WP_UnitTestCase 
 	 */
 	public function test_cpt_visibility_settings() {
 		// Enable places management.
-		$settings                            = $this->original_settings;
+		$settings                             = $this->original_settings;
 		$settings['enable_places_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -198,7 +198,7 @@ class WP_MCP_AI_Places_Management_CPT_Registration_Test extends WP_UnitTestCase 
 	 */
 	public function test_cpt_supports() {
 		// Enable places management.
-		$settings                            = $this->original_settings;
+		$settings                             = $this->original_settings;
 		$settings['enable_places_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
