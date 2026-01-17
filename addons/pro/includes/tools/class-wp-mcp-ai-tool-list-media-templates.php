@@ -95,6 +95,20 @@ class WP_MCP_AI_Tool_List_Media_Templates implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',                  // Pro tier tool.
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires 'upload_files' capability.
+			'cacheable',            // Results can be cached.
+			'paginated',            // Supports pagination.
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
