@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_media_toolkit'] ) ) {
