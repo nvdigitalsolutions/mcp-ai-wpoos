@@ -6,7 +6,7 @@
  * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
- * Tested up to: 6.7.1
+ * Tested up to: 6.7
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
@@ -1060,15 +1060,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// Check if this is an Elementor action.
 			if ( strpos( $action, 'elementor' ) === 0 ) {
-				// Suppress display_errors to prevent debug output from breaking JSON responses.
-				// We cannot use WP_DEBUG_DISPLAY here because we need to suppress errors.
-				// specifically for Elementor AJAX requests to prevent breaking the editor.
-				// Error suppression is intentional: some hosts disable ini_set changes,
-				// and we prefer graceful degradation over throwing warnings.
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed, WordPress.PHP.NoSilencedErrors.Discouraged -- Required for Elementor editor compatibility.
-					@ini_set( 'display_errors', '0' );
-				}
+				// Note: Previously we suppressed display_errors via ini_set for Elementor compatibility.
+				// This has been removed per WordPress.org plugin guidelines.
+				// Elementor handles its own error suppression when needed.
 
 				// Track the current buffer level before starting our buffer.
 				// This allows us to clean only the buffer(s) we create.
@@ -1176,16 +1170,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			if ( 'elementor' === $action && current_user_can( 'edit_posts' ) ) {
 				remove_action( 'admin_enqueue_scripts', 'wp_auth_check_load' );
 
-				// Prevent debug output from breaking Elementor's JSON responses.
-				// When WP_DEBUG is enabled, PHP warnings/notices can break the editor.
-				// We cannot use WP_DEBUG_DISPLAY here because we need to suppress errors.
-				// specifically for Elementor editor to prevent breaking the UI.
-				// Error suppression is intentional: some hosts disable ini_set changes,
-				// and we prefer graceful degradation over throwing warnings.
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed, WordPress.PHP.NoSilencedErrors.Discouraged -- Required for Elementor editor compatibility.
-					@ini_set( 'display_errors', '0' );
-				}
+				// Note: Previously we suppressed display_errors via ini_set for Elementor compatibility.
+				// This has been removed per WordPress.org plugin guidelines.
+				// Elementor handles its own error suppression when needed.
 			}
 		}
 	}
