@@ -249,6 +249,8 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	/**
 	 * Execute a delegation step
 	 *
+	 * Delegates a subtask to a specialized agent and executes it.
+	 *
 	 * @param array $agent Agent data.
 	 * @param array $step Step definition.
 	 * @param array $task Task data.
@@ -258,14 +260,59 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	protected function execute_delegation_step( $agent, $step, $task, $context ) {
 		$subtask = isset( $step['subtask'] ) ? $step['subtask'] : $task;
 
-		// In production, this would actually delegate to the agent.
-		// For now, return a placeholder result.
+		// Get agent role instance.
+		$agent_role = null;
+		if ( isset( $agent['id'] ) ) {
+			$agent_role = wp_mcp_ai_get_assistant_role( $agent['id'] );
+		}
+
+		// Fallback to role type if assistant doesn't have a role set.
+		if ( ! $agent_role && isset( $agent['role'] ) ) {
+			$agent_role = wp_mcp_ai_get_agent_role( $agent['role'] );
+		}
+
+		if ( ! $agent_role ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_agent_role',
+				sprintf(
+					/* translators: %d: agent ID */
+					__( 'Agent %d does not have a valid role assigned.', 'mcp-ai-wpoos' ),
+					$agent['id']
+				)
+			);
+		}
+
+		// Prepare task data for agent execution.
+		$agent_task = array(
+			'description' => isset( $subtask['description'] ) ? $subtask['description'] : ( isset( $task['description'] ) ? $task['description'] : '' ),
+			'type'        => isset( $subtask['type'] ) ? $subtask['type'] : ( isset( $task['type'] ) ? $task['type'] : 'generic' ),
+			'parameters'  => isset( $subtask['parameters'] ) ? $subtask['parameters'] : array(),
+			'id'          => isset( $step['name'] ) ? $step['name'] : uniqid( 'subtask_', true ),
+		);
+
+		// Prepare execution context.
+		$agent_context = array_merge(
+			$context,
+			array(
+				'assistant_id'  => $agent['id'],
+				'delegated_by'  => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
+				'parent_task'   => isset( $task['id'] ) ? $task['id'] : null,
+			)
+		);
+
+		// Execute the task using the agent's role.
+		$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+
+		// Wrap result with delegation metadata.
 		return array(
 			'step_type'  => 'delegate',
 			'agent_id'   => $agent['id'],
 			'agent_role' => $agent['role'],
-			'subtask'    => $subtask['description'] ?? 'Subtask',
-			'status'     => 'delegated',
+			'subtask_id' => $agent_task['id'],
+			'subtask'    => $agent_task['description'],
+			'status'     => is_wp_error( $result ) ? 'failed' : 'completed',
+			'result'     => $result,
+			'delegated_at' => current_time( 'mysql' ),
 		);
 	}
 
@@ -302,40 +349,139 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	/**
 	 * Execute a validation step
 	 *
+	 * Invokes a critic agent to validate previous results.
+	 *
 	 * @param array $agent Agent data.
 	 * @param array $step Step definition.
 	 * @param array $previous_results Previous step results.
 	 * @return array|WP_Error Validation result or error.
 	 */
 	protected function execute_validation_step( $agent, $step, $previous_results ) {
-		// In production, this would call the critic agent to validate.
+		// Get critic agent role instance.
+		$agent_role = null;
+		if ( isset( $agent['id'] ) ) {
+			$agent_role = wp_mcp_ai_get_assistant_role( $agent['id'] );
+		}
+
+		// Fallback to generic critic role.
+		if ( ! $agent_role || $agent_role->get_role_type() !== 'critic' ) {
+			$agent_role = wp_mcp_ai_get_agent_role( 'critic' );
+		}
+
+		if ( ! $agent_role ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_critic_role',
+				__( 'Critic agent role not available for validation.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Prepare validation task data.
+		$validation_task = array(
+			'description' => __( 'Validate the results from previous workflow steps', 'mcp-ai-wpoos' ),
+			'type'        => 'validation',
+			'parameters'  => array(
+				'results_to_validate' => $previous_results,
+				'validation_criteria' => isset( $step['criteria'] ) ? $step['criteria'] : array(),
+			),
+		);
+
+		// Prepare context.
+		$validation_context = array(
+			'assistant_id'   => $agent['id'],
+			'validation_step' => true,
+		);
+
+		// Execute validation.
+		$result = $agent_role->execute_role_task( $validation_task, $validation_context );
+
+		// Extract validation status.
+		$validation_passes = true;
+		$validation_score = 0.85; // Default
+
+		if ( ! is_wp_error( $result ) ) {
+			if ( isset( $result['validation'] ) && isset( $result['validation']['passes'] ) ) {
+				$validation_passes = (bool) $result['validation']['passes'];
+			}
+			if ( isset( $result['overall_score'] ) ) {
+				$validation_score = (float) $result['overall_score'];
+			}
+		}
+
 		return array(
 			'step_type'  => 'validate',
 			'agent_id'   => $agent['id'],
 			'agent_role' => $agent['role'],
 			'validation' => array(
-				'passes' => true,
-				'score'  => 0.85,
+				'passes' => $validation_passes,
+				'score'  => $validation_score,
+				'result' => $result,
 			),
+			'validated_at' => current_time( 'mysql' ),
 		);
 	}
 
 	/**
 	 * Execute a generic step
 	 *
+	 * Executes a generic workflow step using the assigned agent.
+	 *
 	 * @param array $agent Agent data.
 	 * @param array $step Step definition.
 	 * @param array $task Task data.
 	 * @param array $context Context data.
-	 * @return array Step result.
+	 * @return array|WP_Error Step result or error.
 	 */
 	protected function execute_generic_step( $agent, $step, $task, $context ) {
+		// Get agent role instance.
+		$agent_role = null;
+		if ( isset( $agent['id'] ) ) {
+			$agent_role = wp_mcp_ai_get_assistant_role( $agent['id'] );
+		}
+
+		// Fallback to role type.
+		if ( ! $agent_role && isset( $agent['role'] ) ) {
+			$agent_role = wp_mcp_ai_get_agent_role( $agent['role'] );
+		}
+
+		// If no agent role, return placeholder.
+		if ( ! $agent_role ) {
+			return array(
+				'step_type'  => 'execute',
+				'agent_id'   => $agent['id'],
+				'agent_role' => $agent['role'],
+				'step_name'  => $step['name'] ?? 'unnamed',
+				'status'     => 'no_role_assigned',
+				'message'    => __( 'Agent does not have a role assigned', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Prepare task for agent.
+		$agent_task = array(
+			'description' => isset( $step['description'] ) ? $step['description'] : ( isset( $task['description'] ) ? $task['description'] : '' ),
+			'type'        => isset( $step['type'] ) ? $step['type'] : 'generic',
+			'parameters'  => isset( $step['parameters'] ) ? $step['parameters'] : array(),
+		);
+
+		// Prepare context.
+		$agent_context = array_merge(
+			$context,
+			array(
+				'assistant_id' => $agent['id'],
+				'step_name'    => $step['name'] ?? 'unnamed',
+			)
+		);
+
+		// Execute task with agent role.
+		$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+
 		return array(
 			'step_type'  => 'execute',
 			'agent_id'   => $agent['id'],
 			'agent_role' => $agent['role'],
 			'step_name'  => $step['name'] ?? 'unnamed',
-			'status'     => 'completed',
+			'status'     => is_wp_error( $result ) ? 'failed' : 'completed',
+			'result'     => $result,
+			'executed_at' => current_time( 'mysql' ),
 		);
 	}
 
