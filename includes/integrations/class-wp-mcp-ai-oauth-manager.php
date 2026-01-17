@@ -3,7 +3,7 @@
  * OAuth Manager for NV oOS
  *
  * Handles OAuth flows for third-party service integrations.
- * Note: Gmail OAuth has been moved to Pro's Remote Sites feature.
+ * Base version supports 1 Gmail connection. Pro addon extends with multiple connections.
  *
  * @package WP_MCP_AI
  */
@@ -271,8 +271,6 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		 * @return string[]
 		 */
 		public function allow_gmail_oauth_redirect_host( $allowed_hosts ) {
-			// This method is preserved for backward compatibility.
-			// Gmail OAuth is now handled by Pro's Remote Sites feature.
 			$allowed_hosts[] = 'accounts.google.com';
 			return array_values( array_unique( $allowed_hosts ) );
 		}
