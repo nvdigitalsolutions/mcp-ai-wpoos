@@ -2,10 +2,11 @@
 <ruleset name="WP MCP AI">
 <description>PHP_CodeSniffer ruleset for NV oOS WordPress plugin</description>
 
-<!-- Use WordPress Coding Standards -->
+<arg value="p"/>
+<arg name="extensions" value="php"/>
+
 <rule ref="WordPress"/>
 
-<!-- Exclude vendor and node_modules -->
 <exclude-pattern>*/vendor/*</exclude-pattern>
 <exclude-pattern>*/node_modules/*</exclude-pattern>
 <exclude-pattern>*/assets/examples/*</exclude-pattern>
@@ -13,13 +14,17 @@
 <exclude-pattern>*/tests/helpers/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
 
-<!-- Main plugin file must be named mcp-ai-wpoos.php per WordPress requirements -->
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
 </rule>
 
-<!-- Main plugin bootstrap file contains both functions and OO structures -->
 <rule ref="Universal.Files.SeparateFunctionsFromOO">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
 </rule>
+
+<rule ref="Squiz.Commenting.FileComment">
+<exclude-pattern>*/tests/*</exclude-pattern>
+</rule>
+
+<file>.</file>
 </ruleset>
