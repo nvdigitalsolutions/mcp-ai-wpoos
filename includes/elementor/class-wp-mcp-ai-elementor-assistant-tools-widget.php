@@ -175,8 +175,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 				$empty_output = $this->format_text_inline( $empty_message );
 
 				if ( '' !== $empty_output ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
-					echo '<p class="wp-mcp-ai-assistant-tools__notice">' . $empty_output . '</p>';
+					echo '<p class="wp-mcp-ai-assistant-tools__notice">' . wp_kses_post( $empty_output ) . '</p>';
 				}
 			}
 		} else {

@@ -152,8 +152,7 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 			$title_output = $this->format_text_inline( $title );
 
 			if ( '' !== $title_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
-				echo '<h3 class="wp-mcp-ai-assistant-defaults__title">' . $title_output . '</h3>';
+				echo '<h3 class="wp-mcp-ai-assistant-defaults__title">' . wp_kses_post( $title_output ) . '</h3>';
 			}
 		}
 
