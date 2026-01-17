@@ -74,6 +74,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
+			// Check if Pro addon is active.
+			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+
 			// Get dynamic model choices from Model Config.
 			$openai_models = array();
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
@@ -775,7 +778,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				// Excel and Spreadsheet Tools Settings.
 				'excel_default_version'              => array(
 					'type'        => 'select',
-					'label'       => __( 'Excel Version Target', 'mcp-ai-wpoos' ),
+					'label'       => $is_pro_active ? __( 'Excel Version Target', 'mcp-ai-wpoos' ) : __( 'Excel Version Target (Pro)', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default Excel version for formula generation. Modern (Excel 2021+/Microsoft 365) supports LAMBDA, LET, XLOOKUP, and other advanced functions. Legacy (Excel 2019 and earlier) uses traditional formulas. Excel Online supports cloud-specific features.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'modern' => __( 'Modern (Excel 2021+/Microsoft 365 - LAMBDA supported)', 'mcp-ai-wpoos' ),
@@ -786,7 +789,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 				'excel_enable_lambda'                => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable LAMBDA Functions', 'mcp-ai-wpoos' ),
+					'label'          => $is_pro_active ? __( 'Enable LAMBDA Functions', 'mcp-ai-wpoos' ) : __( 'Enable LAMBDA Functions (Pro)', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Generate LAMBDA and custom functions for advanced Excel scenarios', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, the Pro Excel tool can generate LAMBDA functions for custom, reusable, and recursive formulas. LAMBDA makes Excel Turing-complete, enabling advanced programming capabilities. Requires Excel 2021+ or Microsoft 365.', 'mcp-ai-wpoos' ),
 					'default'        => true,
