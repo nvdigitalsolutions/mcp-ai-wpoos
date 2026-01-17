@@ -132,14 +132,66 @@ The system provides contextual admin notices:
 1. `mcp_ai_tpl_category`: Template categories (hierarchical)
 2. `mcp_ai_coll_category`: Collection categories (hierarchical)
 
-## Future Enhancements (Not Yet Implemented)
+## AI Assistant Tools (Phase 3) ✅
 
-### Phase 3: Pro Tools
-- `apply_media_template`: Apply template to single image via AI
-- `list_media_templates`: List available templates
-- `create_media_template`: Create template via AI
-- `process_collection`: Batch process collection items
-- `apply_collection_template`: Apply templates to entire collection
+The following tools enable programmatic interaction with Media Templates and Collections via AI assistants:
+
+### 1. `list_media_templates`
+List available media templates with optional filtering.
+
+**Parameters**:
+- `operation` (optional): Filter by operation type (add_logo, resize_graphic, etc.)
+- `category` (optional): Filter by category slug
+- `search` (optional): Search by title or description
+- `include_preset` (optional): Include preset templates (default: true)
+- `per_page` (optional): Results per page (default: 20, max: 100)
+- `page` (optional): Page number (default: 1)
+
+**Returns**: Array of templates with ID, title, description, operation, parameters, usage stats, and categories.
+
+### 2. `create_media_template`
+Create a new media template via AI.
+
+**Parameters**:
+- `title` (required): Template title
+- `description` (optional): Template description
+- `operation` (required): Operation type (add_logo, resize_graphic, expand_scene, ai_enhance, ai_style, ai_background, ai_retouch)
+- `parameters` (required): Operation parameters as JSON object
+- `categories` (optional): Array of category slugs/names
+
+**Returns**: Created template ID and details.
+
+### 3. `apply_media_template`
+Apply a template to a single image.
+
+**Parameters**:
+- `template_id` (required): ID of template to apply
+- `attachment_id` (required): ID of image to process
+- `override_params` (optional): Parameters to override template defaults
+
+**Returns**: Processed image details and updated template usage statistics.
+
+### 4. `process_collection`
+Batch process all items in a collection using assigned templates.
+
+**Parameters**:
+- `collection_id` (required): ID of collection to process
+- `template_ids` (optional): Specific templates to use (overrides collection templates)
+
+**Returns**: Processing statistics and results for each item/template combination.
+
+### 5. `apply_collection_template`
+Assign templates to a collection and optionally process immediately.
+
+**Parameters**:
+- `collection_id` (required): ID of collection
+- `template_ids` (required): Array of template IDs to assign
+- `append` (optional): Append to existing templates (default: false)
+- `process` (optional): Process immediately after assigning (default: true)
+
+**Returns**: Collection details, assigned templates, and processing results if processed.
+
+## Future Enhancements (Not Yet Implemented)
 
 ### Additional Features
 - Template presets (common configurations)
@@ -153,13 +205,22 @@ The system provides contextual admin notices:
 
 ## Testing
 
-**Test File**: `addons/pro/tests/test-media-template-cpt.php`
+**Test Files**: 
+- `addons/pro/tests/test-media-template-cpt.php` - CPT functionality
+- `addons/pro/tests/test-media-template-presets.php` - Preset seeding
+- `addons/pro/tests/test-media-toolkit-tools.php` - AI assistant tools
 
 **Tests Cover**:
 - Admin notices (enabled/disabled states)
-- CPT registration
+- CPT registration and taxonomy
 - Template meta save/retrieve
 - Admin columns
+- Preset template seeding and management
+- Tool parameter validation
+- Tool execution with various filters
+- Category assignment and filtering
+- Error handling and edge cases
+- Capability requirements
 
 ## Integration Points
 
@@ -170,20 +231,31 @@ The system provides contextual admin notices:
 
 ## Known Limitations
 
-1. **No Tools Yet**: AI assistant tools not yet implemented (Phase 3)
-2. **No Batch Processing**: Collection processing logic not yet implemented
+1. ~~**No Tools Yet**: AI assistant tools not yet implemented (Phase 3)~~ ✅ Completed
+2. ~~**No Batch Processing**: Collection processing logic not yet implemented~~ ✅ Completed
 3. **No History Tracking**: Operation history not yet tracked
-4. **Manual Only**: Currently admin-only, no programmatic API
+4. ~~**Manual Only**: Currently admin-only, no programmatic API~~ ✅ Completed - AI tools now available
 
 ## Migration Path
 
-If implementing the remaining phases:
+Phase 3 (AI Tools) has been completed. Remaining work:
 
-1. **Phase 3**: Create AI tools for template/collection operations
+1. ~~**Phase 3**: Create AI tools for template/collection operations~~ ✅ Completed
 2. **Phase 5**: Add integration tests, validate all features
 3. **Phase 6**: Complete documentation with examples
 
 ## Changelog
+
+### Version 1.1.0 (Phase 3 - AI Tools)
+- ✅ AI assistant tools for programmatic access
+- ✅ `list_media_templates` - List and filter templates
+- ✅ `create_media_template` - Create templates via AI
+- ✅ `apply_media_template` - Apply template to single image
+- ✅ `process_collection` - Batch process collection items
+- ✅ `apply_collection_template` - Assign and process templates
+- ✅ Comprehensive unit tests for all tools
+- ✅ Template usage statistics tracking
+- ✅ Integration with Graphic Editor Plus tool
 
 ### Version 1.0.0 (Initial Implementation)
 - ✅ Media Template CPT with operation configuration
