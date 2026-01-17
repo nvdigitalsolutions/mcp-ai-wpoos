@@ -47,6 +47,27 @@ class WP_MCP_AI_Team_CPT {
 	const META_DEFAULT_TEMPERATURE = '_wp_mcp_ai_team_default_temperature';
 
 	/**
+	 * Meta key for orchestration mode (single, sequential, parallel, swarm).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_ORCHESTRATION_MODE = '_wp_mcp_ai_team_orchestration_mode';
+
+	/**
+	 * Meta key for workflow template (JSON: workflow steps and dependencies).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_WORKFLOW_TEMPLATE = '_wp_mcp_ai_team_workflow_template';
+
+	/**
+	 * Meta key for result aggregation strategy (consensus, weighted, hierarchical, first, best).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_RESULT_AGGREGATION_STRATEGY = '_wp_mcp_ai_team_result_aggregation';
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -173,6 +194,69 @@ class WP_MCP_AI_Team_CPT {
 				'show_in_rest'      => false,
 			)
 		);
+
+		// Orchestration mode.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_ORCHESTRATION_MODE,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Multi-agent orchestration mode', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'default'           => 'single',
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Workflow template.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_WORKFLOW_TEMPLATE,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Workflow template for multi-agent coordination', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'default'           => '{}',
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Result aggregation strategy.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_RESULT_AGGREGATION_STRATEGY,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Strategy for aggregating results from multiple agents', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'default'           => 'consensus',
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+	}
+
+	/**
+	 * Sanitize JSON field.
+	 *
+	 * @param string $value Raw JSON value.
+	 * @return string Validated JSON string.
+	 * @since 1.9.0
+	 */
+	public function sanitize_json_field( $value ) {
+		// Decode to validate JSON syntax.
+		$decoded = json_decode( $value, true );
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			// Invalid JSON, return empty object.
+			return '{}';
+		}
+		// Re-encode for consistency.
+		return wp_json_encode( $decoded );
 	}
 
 	/**
@@ -256,6 +340,15 @@ class WP_MCP_AI_Team_CPT {
 		);
 
 		add_meta_box(
+			'wp-mcp-ai-team-orchestration',
+			__( 'Multi-Agent Orchestration', 'mcp-ai-wpoos' ),
+			array( $this, 'render_orchestration_meta_box' ),
+			self::POST_TYPE,
+			'normal',
+			'default'
+		);
+
+		add_meta_box(
 			'wp-mcp-ai-team-defaults',
 			__( 'Default Settings', 'mcp-ai-wpoos' ),
 			array( $this, 'render_defaults_meta_box' ),
@@ -332,6 +425,153 @@ class WP_MCP_AI_Team_CPT {
 					?>
 				</p>
 			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the multi-agent orchestration meta box.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @since 1.9.0
+	 */
+	public function render_orchestration_meta_box( $post ) {
+		wp_nonce_field( 'wp_mcp_ai_team_orchestration_meta', 'wp_mcp_ai_team_orchestration_meta_nonce' );
+
+		$orchestration_mode   = get_post_meta( $post->ID, self::META_ORCHESTRATION_MODE, true ) ?: 'single';
+		$workflow_template    = get_post_meta( $post->ID, self::META_WORKFLOW_TEMPLATE, true ) ?: '{}';
+		$aggregation_strategy = get_post_meta( $post->ID, self::META_RESULT_AGGREGATION_STRATEGY, true ) ?: 'consensus';
+
+		// Format JSON for display.
+		$decoded_workflow = json_decode( $workflow_template, true );
+		if ( json_last_error() === JSON_ERROR_NONE ) {
+			$workflow_template = wp_json_encode( $decoded_workflow, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+		}
+
+		?>
+		<div class="wp-mcp-ai-team-orchestration">
+			<p class="description" style="margin-bottom: 20px;">
+				<?php
+				esc_html_e(
+					'Configure how team members coordinate in multi-agent workflows. Orchestration mode determines execution pattern (single, sequential, parallel, or swarm). Result aggregation defines how outputs from multiple agents are combined.',
+					'mcp-ai-wpoos'
+				);
+				?>
+			</p>
+
+			<style>
+				.wp-mcp-ai-team-orchestration-field {
+					margin-bottom: 20px;
+				}
+				.wp-mcp-ai-team-orchestration-field label {
+					display: block;
+					font-weight: 600;
+					margin-bottom: 8px;
+				}
+				.wp-mcp-ai-team-orchestration-field textarea {
+					width: 100%;
+					font-family: 'Courier New', Courier, monospace;
+					font-size: 13px;
+				}
+				.wp-mcp-ai-team-orchestration-field .description {
+					margin-top: 5px;
+					font-style: italic;
+				}
+			</style>
+
+			<!-- Orchestration Mode -->
+			<div class="wp-mcp-ai-team-orchestration-field">
+				<label for="wp_mcp_ai_orchestration_mode">
+					<?php esc_html_e( 'Orchestration Mode', 'mcp-ai-wpoos' ); ?>
+					<span class="required" style="color: #dc3232;">*</span>
+				</label>
+				<select 
+					name="wp_mcp_ai_orchestration_mode" 
+					id="wp_mcp_ai_orchestration_mode" 
+					class="widefat"
+					style="max-width: 400px;"
+				>
+					<option value="single" <?php selected( $orchestration_mode, 'single' ); ?>>
+						<?php esc_html_e( 'Single - One agent handles entire task', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="sequential" <?php selected( $orchestration_mode, 'sequential' ); ?>>
+						<?php esc_html_e( 'Sequential - Agents execute in order (pipeline)', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="parallel" <?php selected( $orchestration_mode, 'parallel' ); ?>>
+						<?php esc_html_e( 'Parallel - Agents execute simultaneously', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="swarm" <?php selected( $orchestration_mode, 'swarm' ); ?>>
+						<?php esc_html_e( 'Swarm - Redundant agents for consensus/validation', 'mcp-ai-wpoos' ); ?>
+					</option>
+				</select>
+				<p class="description">
+					<?php esc_html_e( 'Execution pattern for team members. Sequential chains outputs (A→B→C), parallel runs concurrently, swarm uses redundancy for validation.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<!-- Workflow Template -->
+			<div class="wp-mcp-ai-team-orchestration-field">
+				<label for="wp_mcp_ai_workflow_template">
+					<?php esc_html_e( 'Workflow Template (JSON)', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<textarea 
+					name="wp_mcp_ai_workflow_template" 
+					id="wp_mcp_ai_workflow_template" 
+					rows="10"
+					placeholder='{"workflow_name": "research_pipeline", "steps": [{"step_id": "1", "agent_role": "planner"}, {"step_id": "2", "agent_role": "executor", "depends_on": "1"}]}'
+				><?php echo esc_textarea( $workflow_template ); ?></textarea>
+				<p class="description">
+					<?php
+					esc_html_e(
+						'Define workflow steps, agent role assignments, and dependencies. Example: {"workflow_name": "research", "steps": [{"step_id": "1", "agent_role": "planner", "action": "decompose"}, {"step_id": "2", "agent_role": "executor", "depends_on": "1"}]}',
+						'mcp-ai-wpoos'
+					);
+					?>
+				</p>
+			</div>
+
+			<!-- Result Aggregation Strategy -->
+			<div class="wp-mcp-ai-team-orchestration-field">
+				<label for="wp_mcp_ai_result_aggregation">
+					<?php esc_html_e( 'Result Aggregation Strategy', 'mcp-ai-wpoos' ); ?>
+					<span class="required" style="color: #dc3232;">*</span>
+				</label>
+				<select 
+					name="wp_mcp_ai_result_aggregation" 
+					id="wp_mcp_ai_result_aggregation" 
+					class="widefat"
+					style="max-width: 400px;"
+				>
+					<option value="consensus" <?php selected( $aggregation_strategy, 'consensus' ); ?>>
+						<?php esc_html_e( 'Consensus - Majority agreement from all agents', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="weighted" <?php selected( $aggregation_strategy, 'weighted' ); ?>>
+						<?php esc_html_e( 'Weighted - Agents weighted by confidence scores', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="hierarchical" <?php selected( $aggregation_strategy, 'hierarchical' ); ?>>
+						<?php esc_html_e( 'Hierarchical - Priority order (planner > specialist > executor)', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="first" <?php selected( $aggregation_strategy, 'first' ); ?>>
+						<?php esc_html_e( 'First - Use first successful result', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="best" <?php selected( $aggregation_strategy, 'best' ); ?>>
+						<?php esc_html_e( 'Best - Highest confidence score wins', 'mcp-ai-wpoos' ); ?>
+					</option>
+				</select>
+				<p class="description">
+					<?php esc_html_e( 'How to combine outputs from multiple agents. Consensus requires agreement, weighted uses confidence scores, hierarchical respects role priority.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<p class="description" style="margin-top: 20px; padding: 10px; background: #f0f0f1; border-left: 4px solid #2271b1;">
+				<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
+				<?php
+				esc_html_e(
+					'These settings enable DeepSeek V4 multi-agent orchestration. Team members should have assigned agent roles (planner/executor/critic/specialist) via the Profession CPT. Use create_agent_team tool to deploy teams with orchestration.',
+					'mcp-ai-wpoos'
+				);
+				?>
+			</p>
 		</div>
 		<?php
 	}
@@ -476,6 +716,28 @@ class WP_MCP_AI_Team_CPT {
 				delete_post_meta( $post_id, self::META_DEFAULT_TEMPERATURE );
 			} else {
 				update_post_meta( $post_id, self::META_DEFAULT_TEMPERATURE, $default_temperature );
+			}
+		}
+
+		// Save orchestration settings.
+		if ( isset( $_POST['wp_mcp_ai_team_orchestration_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_team_orchestration_meta_nonce'] ) ), 'wp_mcp_ai_team_orchestration_meta' ) ) {
+			// Orchestration mode.
+			if ( isset( $_POST['wp_mcp_ai_orchestration_mode'] ) ) {
+				$orchestration_mode = sanitize_key( wp_unslash( $_POST['wp_mcp_ai_orchestration_mode'] ) );
+				update_post_meta( $post_id, self::META_ORCHESTRATION_MODE, $orchestration_mode );
+			}
+
+			// Workflow template (JSON).
+			if ( isset( $_POST['wp_mcp_ai_workflow_template'] ) ) {
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by sanitize_json_field callback.
+				$workflow_template = wp_unslash( $_POST['wp_mcp_ai_workflow_template'] );
+				update_post_meta( $post_id, self::META_WORKFLOW_TEMPLATE, $workflow_template );
+			}
+
+			// Result aggregation strategy.
+			if ( isset( $_POST['wp_mcp_ai_result_aggregation'] ) ) {
+				$aggregation_strategy = sanitize_key( wp_unslash( $_POST['wp_mcp_ai_result_aggregation'] ) );
+				update_post_meta( $post_id, self::META_RESULT_AGGREGATION_STRATEGY, $aggregation_strategy );
 			}
 		}
 	}
