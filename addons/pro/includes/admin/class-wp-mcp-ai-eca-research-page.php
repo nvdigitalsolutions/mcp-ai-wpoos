@@ -144,19 +144,20 @@ class WP_MCP_AI_ECA_Research_Page {
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
-							<li><?php esc_html_e( 'Use the AI assistant to research an extra-curricular activity or program', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Ask questions like "Research a coding club curriculum for middle school"', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Review the research results including schedule, materials, and objectives', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Click "Create ECA from Research" to add it to your database', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Search existing ECAs or research new activities on the web', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Use calendar view to check schedules and conflicts', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create ECAs with schedules and enrollment options', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Enroll students directly from the chat interface', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ol>
 					</div>
 
 					<div class="wp-mcp-ai-research-tips">
 						<h3><?php esc_html_e( 'Research Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
-							<li><strong><?php esc_html_e( 'Be specific:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Include age group and activity focus', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Ask for details:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Request schedule, materials, and learning objectives', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Consider logistics:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Ask about space, equipment, and instructor requirements', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Search first:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'List existing ECAs to avoid duplicates', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Check calendar:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'View schedule conflicts before creating', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Web research:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Find curriculum ideas and best practices', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Enroll students:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Add students directly after creating ECA', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
@@ -194,9 +195,10 @@ class WP_MCP_AI_ECA_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface.
+							// Render chat interface with comprehensive ECA tools.
+							// Includes research, creation, enrollment, calendar, and management tools.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_eca,create_eca,list_ecas,get_eca,enroll_student_eca,get_calendar_view,web_search,search_content"]'
 							);
 							?>
 						</div>
