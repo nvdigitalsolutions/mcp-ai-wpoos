@@ -168,7 +168,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 
 				$allowed_ips = trim( (string) $auth_settings->getAllowedIps() );
 				if ( $allowed_ips ) {
-					$sanitized_server = isset( $_SERVER ) && is_array( $_SERVER ) ? map_deep( $_SERVER, 'sanitize_text_field' ) : array();
+					$sanitized_server = is_array( $_SERVER ) ? map_deep( $_SERVER, 'sanitize_text_field' ) : array();
 					$server_helper    = new \SimpleJWTLogin\Helpers\ServerHelper( $sanitized_server );
 					if ( ! $server_helper->isClientIpInList( $allowed_ips ) ) {
 						return new WP_Error(

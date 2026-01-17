@@ -209,7 +209,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 				);
 			}
 
-			$server                = isset( $_SERVER ) && is_array( $_SERVER ) ? map_deep( $_SERVER, 'sanitize_text_field' ) : array();
+			$server                = is_array( $_SERVER ) ? map_deep( $_SERVER, 'sanitize_text_field' ) : array();
 			$header_name           = $settings->getGeneralSettings()->getRequestKeyHeader();
 			$server_key            = $this->normalise_header_key( $header_name );
 			$server[ $server_key ] = 'Bearer ' . $token;
