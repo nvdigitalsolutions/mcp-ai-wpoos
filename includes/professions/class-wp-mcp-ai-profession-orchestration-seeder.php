@@ -56,14 +56,14 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		);
 
 		// Seed agent roles.
-		$role_result = $this->seed_agent_roles();
+		$role_result                     = $this->seed_agent_roles();
 		$results['agent_roles_assigned'] = $role_result['count'];
-		$results['errors'] = array_merge( $results['errors'], $role_result['errors'] );
+		$results['errors']               = array_merge( $results['errors'], $role_result['errors'] );
 
 		// Seed task patterns for top professions.
-		$pattern_result = $this->seed_task_patterns();
+		$pattern_result                   = $this->seed_task_patterns();
 		$results['task_patterns_created'] = $pattern_result['count'];
-		$results['errors'] = array_merge( $results['errors'], $pattern_result['errors'] );
+		$results['errors']                = array_merge( $results['errors'], $pattern_result['errors'] );
 
 		// Update version.
 		update_option( self::VERSION_OPTION, self::SEEDER_VERSION );
@@ -105,10 +105,10 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 			try {
 				$role = $this->determine_agent_role( $profession );
 				update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, $role );
-				$seeded++;
+				++$seeded;
 
 				// Batch processing - flush cache every 50 items.
-				if ( $seeded % 50 === 0 ) {
+				if ( 0 === $seeded % 50 ) {
 					wp_cache_flush();
 				}
 			} catch ( Exception $e ) {
@@ -152,14 +152,14 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 
 		// Check for planner keywords.
 		if ( $this->has_keywords( $title, array( 'project manager', 'coordinator', 'planner', 'strategist', 'product manager' ) ) ||
-		     $this->has_keywords( $expertise_lower, array( 'project management', 'coordination', 'planning', 'strategy' ) ) ||
-		     'advisory' === $category ) {
+			$this->has_keywords( $expertise_lower, array( 'project management', 'coordination', 'planning', 'strategy' ) ) ||
+			'advisory' === $category ) {
 			return 'planner';
 		}
 
 		// Check for critic keywords.
 		if ( $this->has_keywords( $title, array( 'editor', 'reviewer', 'qa', 'quality', 'validator', 'inspector', 'auditor' ) ) ||
-		     $this->has_keywords( $expertise_lower, array( 'editing', 'reviewing', 'quality assurance', 'validation', 'inspection' ) ) ) {
+			$this->has_keywords( $expertise_lower, array( 'editing', 'reviewing', 'quality assurance', 'validation', 'inspection' ) ) ) {
 			return 'critic';
 		}
 
@@ -170,7 +170,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 
 		// Check for specialist keywords.
 		if ( $this->has_keywords( $title, array( 'attorney', 'lawyer', 'doctor', 'physician', 'surgeon', 'analyst', 'consultant' ) ) ||
-		     $this->has_keywords( $expertise_lower, array( 'legal', 'medical', 'financial', 'compliance', 'regulatory' ) ) ) {
+			$this->has_keywords( $expertise_lower, array( 'legal', 'medical', 'financial', 'compliance', 'regulatory' ) ) ) {
 			return 'specialist';
 		}
 
@@ -231,7 +231,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 			}
 
 			update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, wp_json_encode( $pattern_config ) );
-			$seeded++;
+			++$seeded;
 		}
 
 		return array(
@@ -247,7 +247,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 	 */
 	protected function get_default_task_patterns() {
 		return array(
-			'data_scientist' => array(
+			'data_scientist'     => array(
 				'data_analysis' => array(
 					'steps'         => array( 'get_dataset', 'analyze_data', 'create_chart', 'interpret_results' ),
 					'dependencies'  => array(
@@ -259,7 +259,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'get_recent_posts', 'create_chart', 'save_post' ),
 				),
 			),
-			'content_writer' => array(
+			'content_writer'     => array(
 				'article_writing' => array(
 					'steps'        => array( 'research_topic', 'create_outline', 'write_draft', 'polish' ),
 					'dependencies' => array(
@@ -281,14 +281,14 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'parallel_safe' => false,
 				),
 			),
-			'project_manager' => array(
+			'project_manager'    => array(
 				'project_planning' => array(
-					'steps'        => array( 'define_scope', 'break_down_tasks', 'assign_resources', 'create_timeline' ),
+					'steps'         => array( 'define_scope', 'break_down_tasks', 'assign_resources', 'create_timeline' ),
 					'parallel_safe' => true,
-					'tools'        => array( 'create_post', 'save_post' ),
+					'tools'         => array( 'create_post', 'save_post' ),
 				),
 			),
-			'technical_editor' => array(
+			'technical_editor'   => array(
 				'content_review' => array(
 					'steps'        => array( 'read_content', 'check_accuracy', 'verify_quality', 'provide_feedback' ),
 					'dependencies' => array(
@@ -299,7 +299,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'        => array( 'get_post', 'save_post' ),
 				),
 			),
-			'research_analyst' => array(
+			'research_analyst'   => array(
 				'research_task' => array(
 					'steps'         => array( 'gather_sources', 'analyze_data', 'synthesize_findings', 'document_results' ),
 					'dependencies'  => array(

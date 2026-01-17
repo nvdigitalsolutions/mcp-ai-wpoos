@@ -493,7 +493,7 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 	 */
 	public function test_end_to_end_workflow() {
 		// 1. Create team with coordination tools.
-		$tool_registry   = WP_MCP_AI_Tool_Registry::get_instance();
+		$tool_registry    = WP_MCP_AI_Tool_Registry::get_instance();
 		$create_team_tool = $tool_registry->get_tool( 'create_agent_team' );
 
 		$team_args = array(

@@ -229,7 +229,7 @@ class WP_MCP_AI_Profession_Service {
 		}
 
 		// Add orchestration configuration.
-		$orchestration = $this->get_orchestration_config( $profession['id'] );
+		$orchestration               = $this->get_orchestration_config( $profession['id'] );
 		$profession['orchestration'] = $orchestration;
 
 		// If role filter specified, validate it matches.
@@ -278,8 +278,8 @@ class WP_MCP_AI_Profession_Service {
 
 		$professions = array();
 		foreach ( $query->posts as $post ) {
-			$profession = $this->transform_profession_for_display( $post );
-			$profession['orchestration'] = $this->get_orchestration_config( $post->ID );
+			$profession                      = $this->transform_profession_for_display( $post );
+			$profession['orchestration']     = $this->get_orchestration_config( $post->ID );
 			$professions[ $post->post_name ] = $profession;
 		}
 
@@ -298,13 +298,13 @@ class WP_MCP_AI_Profession_Service {
 	 */
 	public function get_orchestration_config( $profession_id ) {
 		return array(
-			'agent_role'              => get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ?: 'generalist',
-			'task_patterns'           => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ?: '{}', true ),
-			'decision_criteria'       => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ?: '{}', true ),
-			'orchestration_rules'     => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ?: '{}', true ),
-			'quality_metrics'         => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ?: '{}', true ),
-			'tool_execution_order'    => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ?: '[]', true ),
-			'confidence_thresholds'   => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ?: '{}', true ),
+			'agent_role'            => get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) : 'generalist',
+			'task_patterns'         => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) : '{}', true ),
+			'decision_criteria'     => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) : '{}', true ),
+			'orchestration_rules'   => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) : '{}', true ),
+			'quality_metrics'       => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) : '{}', true ),
+			'tool_execution_order'  => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) : '[]', true ),
+			'confidence_thresholds' => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) : '{}', true ),
 		);
 	}
 
@@ -325,32 +325,32 @@ class WP_MCP_AI_Profession_Service {
 		}
 
 		if ( isset( $config['task_patterns'] ) ) {
-			$json = is_array( $config['task_patterns'] ) ? wp_json_encode( $config['task_patterns'] ) : $config['task_patterns'];
+			$json    = is_array( $config['task_patterns'] ) ? wp_json_encode( $config['task_patterns'] ) : $config['task_patterns'];
 			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, $json );
 		}
 
 		if ( isset( $config['decision_criteria'] ) ) {
-			$json = is_array( $config['decision_criteria'] ) ? wp_json_encode( $config['decision_criteria'] ) : $config['decision_criteria'];
+			$json    = is_array( $config['decision_criteria'] ) ? wp_json_encode( $config['decision_criteria'] ) : $config['decision_criteria'];
 			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, $json );
 		}
 
 		if ( isset( $config['orchestration_rules'] ) ) {
-			$json = is_array( $config['orchestration_rules'] ) ? wp_json_encode( $config['orchestration_rules'] ) : $config['orchestration_rules'];
+			$json    = is_array( $config['orchestration_rules'] ) ? wp_json_encode( $config['orchestration_rules'] ) : $config['orchestration_rules'];
 			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, $json );
 		}
 
 		if ( isset( $config['quality_metrics'] ) ) {
-			$json = is_array( $config['quality_metrics'] ) ? wp_json_encode( $config['quality_metrics'] ) : $config['quality_metrics'];
+			$json    = is_array( $config['quality_metrics'] ) ? wp_json_encode( $config['quality_metrics'] ) : $config['quality_metrics'];
 			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, $json );
 		}
 
 		if ( isset( $config['tool_execution_order'] ) ) {
-			$json = is_array( $config['tool_execution_order'] ) ? wp_json_encode( $config['tool_execution_order'] ) : $config['tool_execution_order'];
+			$json    = is_array( $config['tool_execution_order'] ) ? wp_json_encode( $config['tool_execution_order'] ) : $config['tool_execution_order'];
 			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, $json );
 		}
 
 		if ( isset( $config['confidence_thresholds'] ) ) {
-			$json = is_array( $config['confidence_thresholds'] ) ? wp_json_encode( $config['confidence_thresholds'] ) : $config['confidence_thresholds'];
+			$json    = is_array( $config['confidence_thresholds'] ) ? wp_json_encode( $config['confidence_thresholds'] ) : $config['confidence_thresholds'];
 			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, $json );
 		}
 

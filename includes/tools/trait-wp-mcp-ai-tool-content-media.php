@@ -255,20 +255,20 @@ trait WP_MCP_AI_Tool_Content_Media {
 		$html       .= '</div>' . "\n";
 		$chartjs_url = esc_url( plugins_url( 'assets/js/vendor/chart.min.js', WP_MCP_AI_FILE ) );
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Building HTML string with inline scripts
-		$html       .= '<script src="' . $chartjs_url . '"></script>' . "\n";
-		$html       .= '<script>' . "\n";
-		$html       .= 'document.addEventListener("DOMContentLoaded", function() {' . "\n";
-		$html       .= '  const ctx = document.getElementById("' . esc_js( $chart_id ) . '");' . "\n";
-		$html       .= '  if (ctx) {' . "\n";
-		$html       .= '    new Chart(ctx, {' . "\n";
-		$html       .= '      type: "' . esc_js( $chart_type ) . '",' . "\n";
-		$html       .= '      data: ' . $chart_data . ',' . "\n";
-		$html       .= '      options: { responsive: true, maintainAspectRatio: true }' . "\n";
-		$html       .= '    });' . "\n";
-		$html       .= '  }' . "\n";
-		$html       .= '});' . "\n";
-		$html       .= '</script>' . "\n";
-		$html       .= '<!-- /wp:html -->' . "\n\n";
+		$html .= '<script src="' . $chartjs_url . '"></script>' . "\n";
+		$html .= '<script>' . "\n";
+		$html .= 'document.addEventListener("DOMContentLoaded", function() {' . "\n";
+		$html .= '  const ctx = document.getElementById("' . esc_js( $chart_id ) . '");' . "\n";
+		$html .= '  if (ctx) {' . "\n";
+		$html .= '    new Chart(ctx, {' . "\n";
+		$html .= '      type: "' . esc_js( $chart_type ) . '",' . "\n";
+		$html .= '      data: ' . $chart_data . ',' . "\n";
+		$html .= '      options: { responsive: true, maintainAspectRatio: true }' . "\n";
+		$html .= '    });' . "\n";
+		$html .= '  }' . "\n";
+		$html .= '});' . "\n";
+		$html .= '</script>' . "\n";
+		$html .= '<!-- /wp:html -->' . "\n\n";
 
 		return $html;
 	}

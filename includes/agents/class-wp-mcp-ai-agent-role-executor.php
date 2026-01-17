@@ -55,13 +55,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	 * @return string Additional system prompt text.
 	 */
 	public function get_system_prompt_additions() {
-		return __(
-			'You are an Executor agent responsible for performing specific tasks using the tools available to you. ' .
-			'When assigned a task, focus on executing it efficiently and accurately. ' .
-			'Use the appropriate tools for the job and return structured, detailed results. ' .
-			'If you encounter errors, handle them gracefully and provide clear error information.',
-			'mcp-ai-wpoos'
-		);
+		return __( 'You are an Executor agent responsible for performing specific tasks using the tools available to you. When assigned a task, focus on executing it efficiently and accurately. Use the appropriate tools for the job and return structured, detailed results. If you encounter errors, handle them gracefully and provide clear error information.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -181,13 +175,13 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	protected function execute_research_task( $task, $context ) {
 		$description = isset( $task['description'] ) ? $task['description'] : '';
 		$parameters  = isset( $task['parameters'] ) ? $task['parameters'] : array();
-		
+
 		// Build execution plan with recommended tools and steps.
 		$execution_plan = array(
 			'type'        => 'research',
 			'description' => $description,
 			'plan'        => array(
-				'steps' => array(
+				'steps'                => array(
 					array(
 						'step'        => 1,
 						'action'      => 'search_and_gather',
@@ -211,7 +205,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 				'parallel_execution'   => false,
 			),
 		);
-		
+
 		// Add task-specific parameters.
 		if ( ! empty( $parameters['query'] ) ) {
 			$execution_plan['query'] = $parameters['query'];
@@ -219,7 +213,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 		if ( ! empty( $parameters['sources'] ) ) {
 			$execution_plan['sources'] = $parameters['sources'];
 		}
-		
+
 		return $execution_plan;
 	}
 
@@ -235,13 +229,13 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	protected function execute_analysis_task( $task, $context ) {
 		$description = isset( $task['description'] ) ? $task['description'] : '';
 		$parameters  = isset( $task['parameters'] ) ? $task['parameters'] : array();
-		
+
 		// Build execution plan for analysis.
 		$execution_plan = array(
 			'type'        => 'analysis',
 			'description' => $description,
 			'plan'        => array(
-				'steps' => array(
+				'steps'                => array(
 					array(
 						'step'        => 1,
 						'action'      => 'retrieve_data',
@@ -265,7 +259,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 				'parallel_execution'   => false,
 			),
 		);
-		
+
 		// Add task-specific parameters.
 		if ( ! empty( $parameters['dataset'] ) ) {
 			$execution_plan['dataset'] = $parameters['dataset'];
@@ -273,7 +267,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 		if ( ! empty( $parameters['metrics'] ) ) {
 			$execution_plan['metrics'] = $parameters['metrics'];
 		}
-		
+
 		return $execution_plan;
 	}
 
@@ -289,13 +283,13 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	protected function execute_creation_task( $task, $context ) {
 		$description = isset( $task['description'] ) ? $task['description'] : '';
 		$parameters  = isset( $task['parameters'] ) ? $task['parameters'] : array();
-		
+
 		// Build execution plan for creation.
 		$execution_plan = array(
 			'type'        => 'creation',
 			'description' => $description,
 			'plan'        => array(
-				'steps' => array(
+				'steps'                => array(
 					array(
 						'step'        => 1,
 						'action'      => 'research_content',
@@ -319,7 +313,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 				'parallel_execution'   => false,
 			),
 		);
-		
+
 		// Add task-specific parameters.
 		if ( ! empty( $parameters['content_type'] ) ) {
 			$execution_plan['content_type'] = $parameters['content_type'];
@@ -327,7 +321,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 		if ( ! empty( $parameters['requirements'] ) ) {
 			$execution_plan['requirements'] = $parameters['requirements'];
 		}
-		
+
 		return $execution_plan;
 	}
 }

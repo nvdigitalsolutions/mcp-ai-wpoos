@@ -122,10 +122,10 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		$agent_results   = $arguments['agent_results'];
-		$strategy        = isset( $arguments['strategy'] ) ? sanitize_key( $arguments['strategy'] ) : 'consensus';
-		$weights         = isset( $arguments['weights'] ) ? $arguments['weights'] : array();
-		$priority_order  = isset( $arguments['priority_order'] ) ? $arguments['priority_order'] : array( 'critic', 'planner', 'executor' );
+		$agent_results  = $arguments['agent_results'];
+		$strategy       = isset( $arguments['strategy'] ) ? sanitize_key( $arguments['strategy'] ) : 'consensus';
+		$weights        = isset( $arguments['weights'] ) ? $arguments['weights'] : array();
+		$priority_order = isset( $arguments['priority_order'] ) ? $arguments['priority_order'] : array( 'critic', 'planner', 'executor' );
 
 		// Get communication service.
 		if ( ! class_exists( 'WP_MCP_AI_Agent_Communication_Service' ) ) {
@@ -141,7 +141,7 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 		$prepared_results = array();
 		foreach ( $agent_results as $result_data ) {
 			if ( ! isset( $result_data['agent_id'] ) || ! isset( $result_data['result'] ) ) {
-				continue; // Skip invalid results
+				continue; // Skip invalid results.
 			}
 
 			$prepared_results[] = array(
@@ -182,15 +182,15 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 
 		// Format aggregated result.
 		return array(
-			'success'      => true,
-			'message'      => __( 'Results aggregated successfully.', 'mcp-ai-wpoos' ),
-			'aggregation'  => array(
-				'strategy'        => $strategy,
-				'agent_count'     => count( $prepared_results ),
-				'result'          => $aggregated['result'],
-				'confidence'      => $aggregated['confidence'],
+			'success'     => true,
+			'message'     => __( 'Results aggregated successfully.', 'mcp-ai-wpoos' ),
+			'aggregation' => array(
+				'strategy'            => $strategy,
+				'agent_count'         => count( $prepared_results ),
+				'result'              => $aggregated['result'],
+				'confidence'          => $aggregated['confidence'],
 				'contributing_agents' => array_map(
-					function( $result ) {
+					function ( $result ) {
 						return array(
 							'agent_id'   => $result['agent_id'],
 							'agent_role' => $result['agent_role'],
@@ -198,9 +198,9 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 					},
 					$prepared_results
 				),
-				'metadata'        => isset( $aggregated['metadata'] ) ? $aggregated['metadata'] : array(),
+				'metadata'            => isset( $aggregated['metadata'] ) ? $aggregated['metadata'] : array(),
 			),
-			'explanation'  => $this->get_strategy_explanation( $strategy ),
+			'explanation' => $this->get_strategy_explanation( $strategy ),
 		);
 	}
 
@@ -227,17 +227,17 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'              => true,  // Read-only aggregation
-			'local-only'        => true,  // No external API calls
-			'read-only'         => true,  // Does not write data
-			'idempotent'        => true,  // Same inputs = same output
-			'cacheable'         => true,  // Results can be cached
-			'requires-auth'     => false, // Can be used by any authenticated user
-			'blocking'          => false, // Fast operation
-			'uses-network'      => false, // No network calls
-			'modifies-wp'       => false, // No database writes
-			'expensive'         => false, // Low cost operation
-			'requires-approval' => false, // Auto-approved
+			'safe'              => true,  // Read-only aggregation.
+			'local-only'        => true,  // No external API calls.
+			'read-only'         => true,  // Does not write data.
+			'idempotent'        => true,  // Same inputs = same output.
+			'cacheable'         => true,  // Results can be cached.
+			'requires-auth'     => false, // Can be used by any authenticated user.
+			'blocking'          => false, // Fast operation.
+			'uses-network'      => false, // No network calls.
+			'modifies-wp'       => false, // No database writes.
+			'expensive'         => false, // Low cost operation.
+			'requires-approval' => false, // Auto-approved.
 		);
 	}
 }

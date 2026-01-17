@@ -242,7 +242,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Get original image title for variations.
-		$original_title  = get_the_title( $original_id );
+		$original_title = get_the_title( $original_id );
 		/* translators: %s: Original image title */
 		$variation_title = $original_title ? sprintf( __( '%s - Variation', 'mcp-ai-wpoos' ), $original_title ) : __( 'Image Variation', 'mcp-ai-wpoos' );
 
