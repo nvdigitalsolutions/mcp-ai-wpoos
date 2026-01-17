@@ -149,34 +149,37 @@ class WP_MCP_AI_Product_Research_Page {
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
-							<li><?php esc_html_e( 'Use the AI assistant to research a product', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Ask for product details like "Research Nike Air Max 270 shoes"', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Review the generated product information', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Click "Create Product from Research" to add it to your store', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Search your catalog or the web for product ideas', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Scrape competitor products or research with AI', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate product images and optimize descriptions', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create products directly in your WooCommerce store', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ol>
 					</div>
 
 					<div class="wp-mcp-ai-research-tips">
 						<h3><?php esc_html_e( 'Research Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
-							<li><strong><?php esc_html_e( 'Be specific:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Include brand, model, and product type', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Request details:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Ask for pricing, descriptions, and specifications', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Review content:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Verify accuracy before creating products', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Include images:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Request product image URLs when available', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Search catalog:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Check existing products before adding duplicates', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Scrape competitors:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Import product data from competitor URLs', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Generate images:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Create product images with AI if needed', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Optimize content:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Generate alt text for accessibility and SEO', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
 					<div class="wp-mcp-ai-research-examples">
 						<h3><?php esc_html_e( 'Example Queries', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul class="wp-mcp-ai-example-list">
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research Nike Air Max 270 shoes with pricing and images">
-								<?php esc_html_e( '"Research Nike Air Max 270 shoes..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="List all products in my catalog">
+								<?php esc_html_e( '"List all products..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Find details for Apple MacBook Pro 16-inch M3 with specifications">
-								<?php esc_html_e( '"Find MacBook Pro details..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Scrape product from https://example.com/product-page">
+								<?php esc_html_e( '"Scrape product from URL..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research Sony WH-1000XM5 headphones with features and pricing">
-								<?php esc_html_e( '"Research Sony headphones..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research Nike Air Max 270 shoes with pricing">
+								<?php esc_html_e( '"Research Nike shoes..."', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate a product image of wireless headphones">
+								<?php esc_html_e( '"Generate product image..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>
@@ -221,10 +224,10 @@ class WP_MCP_AI_Product_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with research tool.
-							// Ensure research_product tool is always available on this page.
+							// Render chat interface with comprehensive product tools.
+							// Includes research, creation, competitor analysis, and catalog management.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_product,create_woo_product"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_product,create_woo_product,scrape_product,get_woo_products,get_woo_recent_orders,web_search,search_content,generate_openai_image,generate_image_alt_text"]'
 							);
 							?>
 						</div>

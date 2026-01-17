@@ -144,33 +144,37 @@ class WP_MCP_AI_Quiz_Research_Page {
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
-							<li><?php esc_html_e( 'Use the AI assistant to research a quiz topic', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Ask for quiz questions like "Create quiz questions about World War II"', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Review the generated questions and answers', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Click "Create Quiz from Research" to add it to your database', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Search the web or existing quizzes for inspiration', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Use AI to research quiz topics and generate questions', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Review and refine the generated content', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create the quiz directly or save for later editing', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ol>
 					</div>
 
 					<div class="wp-mcp-ai-research-tips">
 						<h3><?php esc_html_e( 'Research Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
+							<li><strong><?php esc_html_e( 'Search first:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Find existing quizzes or web content for ideas', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Be specific:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Specify difficulty level and question count', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Set parameters:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Request time limits and passing scores', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Review content:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Verify accuracy of questions and answers', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Review content:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Verify accuracy before creating quiz', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
 					<div class="wp-mcp-ai-research-examples">
 						<h3><?php esc_html_e( 'Example Queries', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul class="wp-mcp-ai-example-list">
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="List all existing quizzes">
+								<?php esc_html_e( '"List existing quizzes"', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Search the web for latest information about climate change">
+								<?php esc_html_e( '"Search web for climate change..."', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Create 10 intermediate level questions about World War II">
-								<?php esc_html_e( '"Create 10 intermediate questions about WWII"', 'mcp-ai-wpoos-pro' ); ?>
+								<?php esc_html_e( '"Create 10 WWII questions..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate basic algebra quiz with 15 questions">
-								<?php esc_html_e( '"Generate basic algebra quiz..."', 'mcp-ai-wpoos-pro' ); ?>
-							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Make a challenging quiz about Shakespeare's works">
-								<?php esc_html_e( '"Make quiz about Shakespeare..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Find similar quizzes about mathematics">
+								<?php esc_html_e( '"Find similar math quizzes..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>
@@ -226,10 +230,10 @@ class WP_MCP_AI_Quiz_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with research tool.
-							// Ensure research_quiz_topic tool is always available on this page.
+							// Render chat interface with comprehensive quiz tools.
+							// Includes research, creation, discovery, and content search tools.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_quiz_topic"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_quiz_topic,create_quiz,list_quizzes,get_quiz,web_search,search_content,semantic_content_search"]'
 							);
 							?>
 						</div>
