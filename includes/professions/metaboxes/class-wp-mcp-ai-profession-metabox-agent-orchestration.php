@@ -35,7 +35,7 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Agent Orchestration (DeepSeek V4)', 'mcp-ai-wpoos' );
+		return __( 'Agent Orchestration', 'mcp-ai-wpoos' );
 	}
 
 	/**

@@ -341,7 +341,7 @@ class WP_MCP_AI_Team_CPT {
 
 		add_meta_box(
 			'wp-mcp-ai-team-orchestration',
-			__( 'Multi-Agent Orchestration (DeepSeek V4)', 'mcp-ai-wpoos' ),
+			__( 'Multi-Agent Orchestration', 'mcp-ai-wpoos' ),
 			array( $this, 'render_orchestration_meta_box' ),
 			self::POST_TYPE,
 			'normal',
