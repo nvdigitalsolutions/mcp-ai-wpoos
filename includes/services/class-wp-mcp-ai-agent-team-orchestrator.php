@@ -396,7 +396,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		// Extract validation status.
 		$validation_passes = true;
-		$validation_score  = 0.85; // Default
+		$validation_score  = 0.85; // Default.
 
 		if ( ! is_wp_error( $result ) ) {
 			if ( isset( $result['validation'] ) && isset( $result['validation']['passes'] ) ) {

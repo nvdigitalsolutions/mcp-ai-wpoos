@@ -298,13 +298,13 @@ class WP_MCP_AI_Profession_Service {
 	 */
 	public function get_orchestration_config( $profession_id ) {
 		return array(
-			'agent_role'            => get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ?: 'generalist',
-			'task_patterns'         => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ?: '{}', true ),
-			'decision_criteria'     => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ?: '{}', true ),
-			'orchestration_rules'   => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ?: '{}', true ),
-			'quality_metrics'       => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ?: '{}', true ),
-			'tool_execution_order'  => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ?: '[]', true ),
-			'confidence_thresholds' => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ?: '{}', true ),
+			'agent_role'            => get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) : 'generalist',
+			'task_patterns'         => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) : '{}', true ),
+			'decision_criteria'     => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) : '{}', true ),
+			'orchestration_rules'   => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) : '{}', true ),
+			'quality_metrics'       => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) : '{}', true ),
+			'tool_execution_order'  => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) : '[]', true ),
+			'confidence_thresholds' => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) : '{}', true ),
 		);
 	}
 

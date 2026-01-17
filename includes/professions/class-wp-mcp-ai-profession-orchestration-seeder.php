@@ -108,7 +108,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 				++$seeded;
 
 				// Batch processing - flush cache every 50 items.
-				if ( $seeded % 50 === 0 ) {
+				if ( 0 === $seeded % 50 ) {
 					wp_cache_flush();
 				}
 			} catch ( Exception $e ) {

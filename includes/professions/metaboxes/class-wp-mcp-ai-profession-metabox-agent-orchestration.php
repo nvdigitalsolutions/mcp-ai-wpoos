@@ -79,13 +79,13 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
 
 		// Get current values.
-		$agent_role            = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ?: 'generalist';
-		$task_patterns         = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ?: '{}';
-		$decision_criteria     = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ?: '{}';
-		$orchestration_rules   = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ?: '{}';
-		$quality_metrics       = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ?: '{}';
-		$tool_execution_order  = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ?: '[]';
-		$confidence_thresholds = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ?: '{}';
+		$agent_role            = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ? get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) : 'generalist';
+		$task_patterns         = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ? get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) : '{}';
+		$decision_criteria     = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ? get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) : '{}';
+		$orchestration_rules   = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ? get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) : '{}';
+		$quality_metrics       = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ? get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) : '{}';
+		$tool_execution_order  = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ? get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) : '[]';
+		$confidence_thresholds = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ? get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) : '{}';
 
 		// Format JSON for display.
 		$task_patterns         = $this->format_json( $task_patterns );
