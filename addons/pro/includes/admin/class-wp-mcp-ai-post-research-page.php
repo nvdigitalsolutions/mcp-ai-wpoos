@@ -144,19 +144,20 @@ class WP_MCP_AI_Post_Research_Page {
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
-							<li><?php esc_html_e( 'Use the AI assistant to research a topic for your post', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Ask questions like "Research the latest trends in AI technology"', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Review the research results and generated content', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Click "Create Post from Research" to add it to your site', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Search existing posts or research new topics on the web', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Use deep research for comprehensive topic analysis', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate content with SEO optimization', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create posts directly or save for later editing', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ol>
 					</div>
 
 					<div class="wp-mcp-ai-research-tips">
 						<h3><?php esc_html_e( 'Research Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
-							<li><strong><?php esc_html_e( 'Be specific:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Include keywords and target audience', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Set length:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Request specific word count or structure', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Review content:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Always review and edit AI-generated content', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Search first:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Check existing posts to avoid duplicates', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Deep research:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Use for comprehensive topic analysis', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'SEO optimize:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Get SEO analysis with Rank Math integration', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Add images:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Generate captions for featured images', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
@@ -194,9 +195,10 @@ class WP_MCP_AI_Post_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface.
+							// Render chat interface with comprehensive post tools.
+							// Includes creation, management, research, and content discovery tools.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_post,save_post,get_recent_posts,web_search,deep_research,search_content,semantic_content_search,get_rankmath_seo,generate_image_caption"]'
 							);
 							?>
 						</div>
