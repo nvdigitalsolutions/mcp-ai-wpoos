@@ -17,6 +17,8 @@
  *
  * @package WP_MCP_AI
  *
+ * phpcs:disable WordPress.Files.FileName.InvalidClassFileName
+ *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
  */
@@ -844,6 +846,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 	/**
 	 * Main plugin container class.
 	 */
+	// phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed,Squiz.Commenting.ClassComment.Missing -- Plugin container class documented in file header
 	final class WP_MCP_AI {
 		/**
 		 * Singleton instance.
