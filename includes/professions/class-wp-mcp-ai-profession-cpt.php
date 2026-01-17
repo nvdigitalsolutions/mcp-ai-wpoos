@@ -88,6 +88,55 @@ class WP_MCP_AI_Profession_CPT {
 	const META_PREFERRED_DATASETS = '_wp_mcp_ai_profession_preferred_datasets';
 
 	/**
+	 * Meta key for agent role (planner, executor, critic, specialist, generalist).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_AGENT_ROLE = '_wp_mcp_ai_profession_agent_role';
+
+	/**
+	 * Meta key for task patterns (JSON: workflow templates).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_TASK_PATTERNS = '_wp_mcp_ai_profession_task_patterns';
+
+	/**
+	 * Meta key for decision criteria (JSON: condition→action mappings).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_DECISION_CRITERIA = '_wp_mcp_ai_profession_decision_criteria';
+
+	/**
+	 * Meta key for orchestration rules (JSON: coordination rules).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_ORCHESTRATION_RULES = '_wp_mcp_ai_profession_orchestration_rules';
+
+	/**
+	 * Meta key for quality metrics (JSON: success criteria).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_QUALITY_METRICS = '_wp_mcp_ai_profession_quality_metrics';
+
+	/**
+	 * Meta key for tool execution order (JSON: tool chains with dependencies).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_TOOL_EXECUTION_ORDER = '_wp_mcp_ai_profession_tool_execution_order';
+
+	/**
+	 * Meta key for confidence thresholds (JSON: escalation rules).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_CONFIDENCE_THRESHOLDS = '_wp_mcp_ai_profession_confidence_thresholds';
+
+	/**
 	 * Metabox instances.
 	 *
 	 * @var array<string, WP_MCP_AI_Metabox_Base>
@@ -353,6 +402,111 @@ class WP_MCP_AI_Profession_CPT {
 				'default'           => array(),
 			)
 		);
+
+		// Agent role (orchestration).
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_AGENT_ROLE,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Agent role for multi-agent orchestration (planner, executor, critic, specialist, generalist)', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => 'generalist',
+			)
+		);
+
+		// Task patterns (orchestration).
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_TASK_PATTERNS,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Task patterns and workflow templates (JSON)', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '{}',
+			)
+		);
+
+		// Decision criteria (orchestration).
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_DECISION_CRITERIA,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Decision criteria for autonomous operation (JSON)', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '{}',
+			)
+		);
+
+		// Orchestration rules.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_ORCHESTRATION_RULES,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Orchestration and coordination rules (JSON)', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '{}',
+			)
+		);
+
+		// Quality metrics.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_QUALITY_METRICS,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Quality metrics and success criteria (JSON)', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '{}',
+			)
+		);
+
+		// Tool execution order.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_TOOL_EXECUTION_ORDER,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Tool execution order and dependencies (JSON)', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '[]',
+			)
+		);
+
+		// Confidence thresholds.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_CONFIDENCE_THRESHOLDS,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Confidence thresholds and escalation rules (JSON)', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '{}',
+			)
+		);
 	}
 
 	/**
@@ -445,6 +599,35 @@ class WP_MCP_AI_Profession_CPT {
 		}
 
 		return sanitize_text_field( $value );
+	}
+
+	/**
+	 * Sanitize JSON field meta value.
+	 *
+	 * Validates JSON format and returns valid JSON string or default empty object/array.
+	 *
+	 * @param mixed $value Raw JSON value.
+	 * @return string Sanitized JSON string.
+	 */
+	public function sanitize_json_field( $value ) {
+		if ( empty( $value ) ) {
+			return '{}';
+		}
+
+		if ( ! is_string( $value ) ) {
+			return '{}';
+		}
+
+		// Try to decode JSON to validate it.
+		$decoded = json_decode( $value, true );
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			// Invalid JSON, return empty object.
+			return '{}';
+		}
+
+		// Re-encode to ensure consistent formatting.
+		return wp_json_encode( $decoded );
 	}
 
 	/**
