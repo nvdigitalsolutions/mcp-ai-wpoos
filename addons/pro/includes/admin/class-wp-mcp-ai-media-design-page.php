@@ -156,6 +156,7 @@ class WP_MCP_AI_Media_Design_Page {
 						<h3><?php esc_html_e( 'Design Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
 							<li><strong><?php esc_html_e( 'Generate images:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Ask AI to create images from text descriptions', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'AI editing:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Use AI to edit existing images with natural language instructions', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Be specific:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Specify operation type and exact parameters', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Use templates:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Create reusable templates for common operations', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Use collections:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Group images and apply templates to entire collections', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -168,6 +169,9 @@ class WP_MCP_AI_Media_Design_Page {
 						<ul class="wp-mcp-ai-example-list">
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate an image of a sunset over mountains">
 								<?php esc_html_e( '"Generate sunset image..."', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Edit image 123 to add clouds to the sky">
+								<?php esc_html_e( '"AI edit: add clouds..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Resize the image to 1920x1080 for Instagram">
 								<?php esc_html_e( '"Resize for Instagram..."', 'mcp-ai-wpoos-pro' ); ?>
@@ -211,9 +215,9 @@ class WP_MCP_AI_Media_Design_Page {
 						<div class="wp-mcp-ai-research-chat">
 							<?php
 							// Render chat interface with comprehensive media tools.
-							// Includes tools for image generation, editing, templates, and collections.
+							// Includes tools for image generation, AI editing, templates, and collections.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="graphic_editor_plus,generate_openai_image,generate_gemini_image,generate_cloudflareai_image,create_media_template,apply_media_template,list_media_templates,create_media_collection,process_collection,apply_collection_template"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="graphic_editor_plus,generate_openai_image,generate_gemini_image,generate_cloudflareai_image,edit_openai_image,edit_gemini_image,create_media_template,apply_media_template,list_media_templates,create_media_collection,process_collection,apply_collection_template"]'
 							);
 							?>
 						</div>
