@@ -546,6 +546,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		$gmail_connected   = ! empty( $settings['gmail_refresh_token'] );
 		$gmail_email       = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
 		$has_credentials   = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
+		$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
 		$oauth_connect_url = wp_nonce_url(
 			admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
 			'wp_mcp_ai_gmail_oauth_start'
@@ -555,7 +556,36 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 		$gmail_requires_pro = isset( $_GET['gmail_requires_pro'] ) && '1' === $_GET['gmail_requires_pro'];
 		?>
-		<?php if ( $gmail_requires_pro ) : ?>
+		<?php if ( ! $is_pro_active ) : ?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div class="notice notice-warning inline" style="margin: 0 0 15px;">
+						<p>
+							<strong><?php esc_html_e( 'Gmail Integration Requires NV oOS Pro', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<p>
+							<?php
+							echo wp_kses_post(
+								__(
+									'Gmail OAuth integration has been moved to the Pro addon. To connect your Gmail account and use Gmail tools, please upgrade to NV oOS Pro.',
+									'mcp-ai-wpoos'
+								)
+							);
+							?>
+						</p>
+						<p>
+							<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary">
+								<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
+							</a>
+							<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
+								<?php esc_html_e( 'Learn More', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					</div>
+				</td>
+			</tr>
+		<?php elseif ( $gmail_requires_pro ) : ?>
 			<tr>
 				<th scope="row"></th>
 				<td>
@@ -585,6 +615,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</td>
 			</tr>
 		<?php endif; ?>
+		<?php if ( $is_pro_active ) : ?>
 		<tr>
 			<th scope="row"><?php esc_html_e( 'Gmail Connection', 'mcp-ai-wpoos' ); ?></th>
 			<td>
@@ -710,6 +741,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</ul>
 			</td>
 		</tr>
+		<?php endif; ?>
 		<?php
 	}
 
