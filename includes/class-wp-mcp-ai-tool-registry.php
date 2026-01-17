@@ -917,6 +917,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Profession'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-profession.php',
 				'WP_MCP_AI_Tool_Save_Profession'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-profession.php',
 				'WP_MCP_AI_Tool_Profession_Stats'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-profession-stats.php',
+				// Agent coordination tools (DeepSeek V4 multi-agent orchestration).
+				'WP_MCP_AI_Tool_Create_Agent_Team'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-agent-team.php',
+				'WP_MCP_AI_Tool_Delegate_To_Agent'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delegate-to-agent.php',
+				'WP_MCP_AI_Tool_Aggregate_Agent_Results'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-aggregate-agent-results.php',
 				// Google Maps Platform tools.
 				'WP_MCP_AI_Tool_Geocode_Address'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-geocode-address.php',
 				'WP_MCP_AI_Tool_Search_Places'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-places.php',
