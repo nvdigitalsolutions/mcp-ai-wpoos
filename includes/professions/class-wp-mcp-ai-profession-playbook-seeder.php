@@ -466,7 +466,9 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		}
 
 		// Generate attachment metadata.
-		require_once ABSPATH . 'wp-admin/includes/image.php';
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
 		$attach_data = wp_generate_attachment_metadata( $attachment_id, $target_file );
 		wp_update_attachment_metadata( $attachment_id, $attach_data );
 

@@ -178,7 +178,9 @@ class WP_MCP_AI_Pro_Database {
 			KEY last_run (last_run)
 		) $charset_collate;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( ! function_exists( 'dbDelta' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $controls_sql );
 		dbDelta( $evidence_sql );
 		dbDelta( $audit_sql );

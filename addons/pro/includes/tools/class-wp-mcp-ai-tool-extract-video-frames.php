@@ -575,7 +575,9 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 
 			if ( ! is_wp_error( $attachment_id ) ) {
 				// Generate attachment metadata.
-				require_once ABSPATH . 'wp-admin/includes/image.php';
+				if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/image.php';
+				}
 				$attach_data = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
 				wp_update_attachment_metadata( $attachment_id, $attach_data );
 
