@@ -39,6 +39,16 @@ function wp_mcp_ai_init_project_management_admin() {
 	// Load settings page.
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-settings-page.php';
 
+	// Load Project Research & Add page.
+	$project_settings = get_option( 'wp_mcp_ai_project_settings', array() );
+	$is_enabled       = ! empty( $settings['enable_project_management'] );
+	$is_base          = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$is_pro_active    = defined( 'WP_MCP_AI_PRO_VERSION' );
+
+	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-research-page.php';
+	}
+
 	// Initialize metaboxes.
 	WP_MCP_AI_Project_Metabox::init();
 	WP_MCP_AI_Task_Metabox::init();
