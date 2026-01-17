@@ -191,6 +191,87 @@ Assign templates to a collection and optionally process immediately.
 
 **Returns**: Collection details, assigned templates, and processing results if processed.
 
+## Usage Examples
+
+### Example 1: List All Social Media Templates
+```json
+{
+  "tool": "list_media_templates",
+  "arguments": {
+    "category": "social-media",
+    "per_page": 10
+  }
+}
+```
+
+### Example 2: Create a New Instagram Template
+```json
+{
+  "tool": "create_media_template",
+  "arguments": {
+    "title": "Instagram Story Format",
+    "description": "Perfect size for Instagram stories",
+    "operation": "resize_graphic",
+    "parameters": {
+      "target_width": 1080,
+      "target_height": 1920,
+      "output_format": "jpg",
+      "maintain_ratio": false,
+      "quality": 90
+    },
+    "categories": ["social-media", "instagram"]
+  }
+}
+```
+
+### Example 3: Apply a Logo Template to an Image
+```json
+{
+  "tool": "apply_media_template",
+  "arguments": {
+    "template_id": 123,
+    "attachment_id": 456,
+    "override_params": {
+      "logo_attachment_id": 789
+    }
+  }
+}
+```
+
+### Example 4: Batch Process a Collection
+```json
+{
+  "tool": "process_collection",
+  "arguments": {
+    "collection_id": 101
+  }
+}
+```
+
+### Example 5: Assign Templates and Process
+```json
+{
+  "tool": "apply_collection_template",
+  "arguments": {
+    "collection_id": 101,
+    "template_ids": [123, 124, 125],
+    "append": false,
+    "process": true
+  }
+}
+```
+
+### Example 6: Search for Logo Templates
+```json
+{
+  "tool": "list_media_templates",
+  "arguments": {
+    "operation": "add_logo",
+    "search": "watermark"
+  }
+}
+```
+
 ## Future Enhancements (Not Yet Implemented)
 
 ### Additional Features
