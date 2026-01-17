@@ -321,9 +321,9 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 		 * @param string $tool_slug  Tool slug.
 		 * @return string
 		 */
-private function get_tool_template_content( $class_name, $tool_slug ) {
-ob_start();
-?>
+	private function get_tool_template_content( $class_name, $tool_slug ) {
+		ob_start();
+		?>
 <?php echo '<?php'; ?>
 
 /**
