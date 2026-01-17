@@ -700,10 +700,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<li><?php esc_html_e( 'Create OAuth 2.0 credentials (Web application type)', 'mcp-ai-wpoos' ); ?></li>
 						<li>
 							<?php
+							$gmail_redirect_uri = add_query_arg(
+								array( 'wp_mcp_ai_oauth' => 'gmail_callback' ),
+								admin_url( 'admin.php' )
+							);
 							printf(
 								/* translators: %s: Callback URL */
 								esc_html__( 'Set Authorized redirect URI to: %s', 'mcp-ai-wpoos' ),
-								'<br><code>' . esc_html( admin_url( 'admin.php?wp_mcp_ai_oauth=gmail_callback' ) ) . '</code>'
+								'<br><code>' . esc_html( $gmail_redirect_uri ) . '</code>'
 							);
 							?>
 						</li>
@@ -869,10 +873,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<li><?php esc_html_e( 'Create OAuth 2.0 credentials (Web application type)', 'mcp-ai-wpoos' ); ?></li>
 						<li>
 							<?php
+							$drive_redirect_uri = add_query_arg(
+								array( 'wp_mcp_ai_oauth' => 'google_drive_callback' ),
+								admin_url( 'admin.php' )
+							);
 							printf(
 								/* translators: %s: Callback URL */
 								esc_html__( 'Set Authorized redirect URI to: %s', 'mcp-ai-wpoos' ),
-								'<br><code>' . esc_html( admin_url( 'admin.php?wp_mcp_ai_oauth=google_drive_callback' ) ) . '</code>'
+								'<br><code>' . esc_html( $drive_redirect_uri ) . '</code>'
 							);
 							?>
 						</li>

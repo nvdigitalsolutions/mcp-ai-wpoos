@@ -98,9 +98,15 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			);
 
 			// Build OAuth authorization URL.
+			// Note: Build redirect_uri using add_query_arg to ensure proper URL encoding.
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'gmail_callback' ),
+				admin_url( 'admin.php' )
+			);
+
 			$params = array(
 				'client_id'              => $client_id,
-				'redirect_uri'           => admin_url( 'admin.php?wp_mcp_ai_oauth=gmail_callback' ),
+				'redirect_uri'           => $redirect_uri,
 				'response_type'          => 'code',
 				'scope'                  => 'https://www.googleapis.com/auth/gmail.readonly',
 				'access_type'            => 'offline',
@@ -171,6 +177,12 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			}
 
 			// Exchange authorization code for tokens.
+			// Note: redirect_uri must match exactly what was sent in the authorization request.
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'gmail_callback' ),
+				admin_url( 'admin.php' )
+			);
+
 			$response = wp_remote_post(
 				'https://oauth2.googleapis.com/token',
 				array(
@@ -179,7 +191,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 						'code'          => $code,
 						'client_id'     => $client_id,
 						'client_secret' => $client_secret,
-						'redirect_uri'  => admin_url( 'admin.php?wp_mcp_ai_oauth=gmail_callback' ),
+						'redirect_uri'  => $redirect_uri,
 						'grant_type'    => 'authorization_code',
 					),
 					'headers' => array(
@@ -328,9 +340,15 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			);
 
 			// Build OAuth authorization URL.
+			// Note: Build redirect_uri using add_query_arg to ensure proper URL encoding.
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'google_drive_callback' ),
+				admin_url( 'admin.php' )
+			);
+
 			$params = array(
 				'client_id'              => $client_id,
-				'redirect_uri'           => admin_url( 'admin.php?wp_mcp_ai_oauth=google_drive_callback' ),
+				'redirect_uri'           => $redirect_uri,
 				'response_type'          => 'code',
 				'scope'                  => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly',
 				'access_type'            => 'offline',
@@ -402,6 +420,12 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			}
 
 			// Exchange authorization code for tokens.
+			// Note: redirect_uri must match exactly what was sent in the authorization request.
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'google_drive_callback' ),
+				admin_url( 'admin.php' )
+			);
+
 			$response = wp_remote_post(
 				'https://oauth2.googleapis.com/token',
 				array(
@@ -410,7 +434,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 						'code'          => $code,
 						'client_id'     => $client_id,
 						'client_secret' => $client_secret,
-						'redirect_uri'  => admin_url( 'admin.php?wp_mcp_ai_oauth=google_drive_callback' ),
+						'redirect_uri'  => $redirect_uri,
 						'grant_type'    => 'authorization_code',
 					),
 					'headers' => array(
