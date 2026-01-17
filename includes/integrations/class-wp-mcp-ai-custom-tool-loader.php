@@ -321,11 +321,14 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 		 * @param string $tool_slug  Tool slug.
 		 * @return string
 		 */
-		private function get_tool_template_content( $class_name, $tool_slug ) {
-			$template = <<<PHP
-<?php
+	private function get_tool_template_content( $class_name, $tool_slug ) {
+		ob_start();
+		?>
+<?php echo '<?php'; ?>
+
 /**
- * Custom Tool: {$class_name}
+ * Custom Tool: <?php echo esc_html( $class_name ); ?>
+
  *
  * @package WP_MCP_AI
  */
@@ -339,19 +342,19 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Custom tool implementation.
  */
-class {$class_name} implements WP_MCP_AI_Tool_Interface {
+class <?php echo esc_html( $class_name ); ?> implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return '{$tool_slug}';
+		return '<?php echo esc_js( $tool_slug ); ?>';
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Custom Tool: {$tool_slug}', 'mcp-ai-wpoos' );
+		return __( 'Custom Tool: <?php echo esc_js( $tool_slug ); ?>', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -393,11 +396,13 @@ class {$class_name} implements WP_MCP_AI_Tool_Interface {
 		);
 	}
 }
+<?php
+		$template = ob_get_clean();
 
-PHP;
+		return $template;
+	}
 
-			return $template;
-		}
+
 
 		/**
 		 * Delete a custom tool file.

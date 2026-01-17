@@ -209,7 +209,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 				);
 			}
 
-			$server                = isset( $_SERVER ) && is_array( $_SERVER ) ? $_SERVER : array();
+			$server                = is_array( $_SERVER ) ? map_deep( $_SERVER, 'sanitize_text_field' ) : array();
 			$header_name           = $settings->getGeneralSettings()->getRequestKeyHeader();
 			$server_key            = $this->normalise_header_key( $header_name );
 			$server[ $server_key ] = 'Bearer ' . $token;
@@ -226,8 +226,8 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 					->withServerHelper( new \SimpleJWTLogin\Helpers\ServerHelper( $server ) )
 					->withRequestMethod( $server['REQUEST_METHOD'] )
 					->withRequest( array() )
-					->withCookies( isset( $_COOKIE ) ? (array) $_COOKIE : array() )
-					->withSession( isset( $_SESSION ) ? (array) $_SESSION : array() )
+					->withCookies( isset( $_COOKIE ) ? map_deep( $_COOKIE, 'sanitize_text_field' ) : array() )
+					->withSession( isset( $_SESSION ) ? map_deep( $_SESSION, 'sanitize_text_field' ) : array() )
 					->makeAction();
 			} catch ( \Exception $exception ) {
 				$fallback = $this->fallback_validate_token( $token, $settings, $wordpress_data, $exception );

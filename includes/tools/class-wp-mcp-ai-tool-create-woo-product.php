@@ -735,9 +735,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		if ( '' !== $base_url ) {
-			if ( ! class_exists( 'WP_Http' ) ) {
-				require_once ABSPATH . WPINC . '/class-http.php';
-			}
+			// WP_Http is autoloaded in WordPress core, no require needed.
 			$absolute = WP_Http::make_absolute_url( $candidate, $base_url );
 			if ( $absolute && wp_http_validate_url( $absolute ) ) {
 				return esc_url_raw( $absolute );

@@ -24,7 +24,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
 
 	const CHARTJS_VERSION = '4.4.0';
-	const CHARTJS_CDN_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
 
 	/**
 	 * {@inheritdoc}
@@ -461,16 +460,17 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	protected function generate_chart_html( array $config, $width, $height ) {
 		$chart_id    = 'chart-' . wp_generate_password( 8, false );
 		$config_json = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
-		$chartjs_url = esc_url( self::CHARTJS_CDN_URL );
+		$chartjs_url = esc_url( plugins_url( 'assets/js/vendor/chart.min.js', WP_MCP_AI_FILE ) );
 
-		$html = <<<HTML
+		ob_start();
+		?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chart</title>
-    <script src="{$chartjs_url}"></script>
+    <script src="<?php echo esc_url( $chartjs_url ); ?>"></script>
     <style>
         body {
             margin: 0;
@@ -493,7 +493,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 </head>
 <body>
     <div class="chart-container">
-        <canvas id="{$chart_id}" width="{$width}" height="{$height}"></canvas>
+        <canvas id="<?php echo esc_attr( $chart_id ); ?>" width="<?php echo esc_attr( $width ); ?>" height="<?php echo esc_attr( $height ); ?>"></canvas>
     </div>
     <script>
         (function() {
@@ -502,8 +502,8 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
                     setTimeout(initChart, 50);
                     return;
                 }
-                const ctx = document.getElementById('{$chart_id}').getContext('2d');
-                const chartConfig = {$config_json};
+                const ctx = document.getElementById(<?php echo wp_json_encode( $chart_id ); ?>).getContext('2d');
+                const chartConfig = <?php echo $config_json; ?>;
                 new Chart(ctx, chartConfig);
             }
 
@@ -516,7 +516,8 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
     </script>
 </body>
 </html>
-HTML;
+<?php
+		$html = ob_get_clean();
 
 		return $html;
 	}
@@ -675,9 +676,7 @@ HTML;
 			'read-only',       // Does not modify site data (unless saving attachment).
 			'requires-capability',  // Requires user capabilities.
 			'write',           // Can create attachments when save_as_attachment is true.
-			'local-only',      // Works entirely locally, Chart.js loaded from CDN.
-			'external-api',    // Loads Chart.js from CDN.
-			'network-dependent', // Requires internet for Chart.js CDN.
+			'local-only',      // Works entirely locally, Chart.js loaded from local assets.
 		);
 	}
 
@@ -703,13 +702,7 @@ HTML;
 			),
 			'dependencies'          => array(
 				'required_extensions' => array(), // No PHP extensions required.
-				'external_services'   => array(
-					'chartjs_cdn' => array(
-						'url'      => self::CHARTJS_CDN_URL,
-						'required' => true,
-						'purpose'  => 'Chart.js library loading',
-					),
-				),
+				'external_services'   => array(),
 			),
 			'orchestration_hints'   => array(
 				'can_run_parallel' => true,   // Multiple charts can be generated simultaneously.

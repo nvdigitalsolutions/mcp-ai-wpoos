@@ -187,8 +187,7 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 			$no_files_output = $this->format_text_inline( $no_files_message );
 
 			if ( '' !== $no_files_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
-				echo '<p class="wp-mcp-ai-assistant-base-knowledge__notice">' . $no_files_output . '</p>';
+				echo '<p class="wp-mcp-ai-assistant-base-knowledge__notice">' . wp_kses_post( $no_files_output ) . '</p>';
 			}
 		} else {
 			echo '<ul class="wp-mcp-ai-assistant-base-knowledge__files">';

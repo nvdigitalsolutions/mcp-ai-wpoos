@@ -203,7 +203,7 @@ class WP_MCP_AI_Supplier_Security_Admin {
 									$next_review = isset( $supplier['next_review'] ) ? $supplier['next_review'] : '';
 									$is_overdue  = $next_review && $next_review < current_time( 'Y-m-d' );
 									?>
-									<span class="<?php echo $is_overdue ? 'wp-mcp-ai-overdue' : ''; ?>">
+									<span class="<?php echo esc_attr( $is_overdue ? 'wp-mcp-ai-overdue' : '' ); ?>">
 										<?php echo $next_review ? esc_html( date_i18n( get_option( 'date_format' ), strtotime( $next_review ) ) ) : '—'; ?>
 									</span>
 								</td>

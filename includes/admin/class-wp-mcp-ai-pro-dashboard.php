@@ -1289,7 +1289,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 								<span class="dashicons dashicons-warning" style="color: #d63638;"></span>
 								<strong><?php esc_html_e( 'Security Alerts', 'mcp-ai-wpoos' ); ?></strong>
 							</td>
-							<td style="text-align: center; font-weight: bold; font-size: 16px; color: <?php echo $event_stats['security_events'] > 0 ? '#d63638' : '#46b450'; ?>;">
+							<td style="text-align: center; font-weight: bold; font-size: 16px; color: <?php echo esc_attr( $event_stats['security_events'] > 0 ? '#d63638' : '#46b450' ); ?>;">
 								<?php echo esc_html( $event_stats['security_events'] ); ?>
 							</td>
 							<td style="text-align: center;">
@@ -1807,7 +1807,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$is_certified          = get_option( 'wp_mcp_ai_iso27001_certified', false );
 			?>
 			<div class="wp-mcp-ai-compliance-status">
-				<div class="wp-mcp-ai-status-badge <?php echo $is_certified ? 'certified' : 'compliant'; ?>">
+				<div class="wp-mcp-ai-status-badge <?php echo esc_attr( $is_certified ? 'certified' : 'compliant' ); ?>">
 					<?php if ( $is_certified ) : ?>
 						<span class="dashicons dashicons-yes-alt"></span>
 						<?php esc_html_e( 'ISO 27001 Certified', 'mcp-ai-wpoos' ); ?>

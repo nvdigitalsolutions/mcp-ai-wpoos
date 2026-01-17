@@ -108,9 +108,15 @@ class WP_MCP_AI_File_Service {
 		}
 
 		// Use WordPress file upload handler.
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-		require_once ABSPATH . 'wp-admin/includes/media.php';
+		if ( ! function_exists( 'wp_handle_upload' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+		if ( ! function_exists( 'wp_read_audio_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+		}
 
 		$upload_overrides = array(
 			'test_form' => false,

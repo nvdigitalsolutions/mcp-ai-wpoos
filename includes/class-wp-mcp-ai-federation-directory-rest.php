@@ -166,7 +166,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'report_peer' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'check_user_permission' ),
 				'args'                => array(
 					'id'      => array(
 						'required'          => true,
@@ -221,6 +221,27 @@ class WP_MCP_AI_Federation_Directory_REST {
 				'rest_forbidden',
 				__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check if user is logged in (for reporting and other user actions).
+	 *
+	 * Requires authentication but not admin capabilities.
+	 * Used for endpoints that any logged-in user can access.
+	 *
+	 * @param WP_REST_Request|null $request Request object.
+	 * @return bool|WP_Error True if user is logged in, WP_Error otherwise.
+	 */
+	public function check_user_permission( $request = null ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You must be logged in to perform this action.', 'mcp-ai-wpoos' ),
+				array( 'status' => 401 )
 			);
 		}
 

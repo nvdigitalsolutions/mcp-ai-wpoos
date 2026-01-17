@@ -73,7 +73,7 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 		// We just need to enqueue it here for this metabox.
 		wp_enqueue_script( 'wp-mcp-ai-model-selector' );
 
-		wp_nonce_field( 'wp_mcp_ai_save_profession_defaults', 'wp_mcp_ai_profession_defaults_nonce' );
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
 
 		$default_provider     = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_provider', true );
 		$default_model        = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_model', true );
@@ -191,19 +191,7 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
-		if ( ! isset( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) ) {
-			return;
-		}
-
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) ), 'wp_mcp_ai_save_profession_defaults' ) ) {
-			return;
-		}
-
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return;
-		}
-
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		if ( ! $this->can_save( $post_id ) ) {
 			return;
 		}
 

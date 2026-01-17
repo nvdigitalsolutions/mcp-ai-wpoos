@@ -205,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 								printf(
 									/* translators: %d: Number of failed tests */
 									esc_html__( '✗ %d test(s) failed. See details below.', 'mcp-ai-wpoos' ),
-									isset( $results['failed_count'] ) ? $results['failed_count'] : 0
+									isset( $results['failed_count'] ) ? absint( $results['failed_count'] ) : 0
 								);
 							}
 							?>

@@ -68,6 +68,8 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 			wp_die( esc_html__( 'You do not have permission to edit this profession.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
 		}
 
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
+
 		// Enqueue media library scripts.
 		wp_enqueue_media();
 		wp_enqueue_script( 'jquery' );

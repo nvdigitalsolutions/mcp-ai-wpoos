@@ -113,7 +113,9 @@ class WP_MCP_AI_Token_Tracking_Database {
 			KEY user_timestamp (user_id,timestamp)
 		) $charset_collate;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( ! function_exists( 'dbDelta' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $sql );
 
 		// Verify table was created.

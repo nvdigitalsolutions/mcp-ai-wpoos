@@ -178,7 +178,9 @@ class WP_MCP_AI_Pro_Database {
 			KEY last_run (last_run)
 		) $charset_collate;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( ! function_exists( 'dbDelta' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $controls_sql );
 		dbDelta( $evidence_sql );
 		dbDelta( $audit_sql );
@@ -436,8 +438,8 @@ class WP_MCP_AI_Pro_Database {
 			'object_type'    => sanitize_text_field( $object_type ),
 			'object_id'      => sanitize_text_field( $object_id ),
 			'user_id'        => get_current_user_id(),
-			'user_ip'        => $_SERVER['REMOTE_ADDR'] ?? '',
-			'user_agent'     => $_SERVER['HTTP_USER_AGENT'] ?? '',
+			'user_ip'        => isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '',
+			'user_agent'     => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
 			'description'    => sanitize_textarea_field( $description ),
 			'old_value'      => is_string( $old_value ) ? $old_value : wp_json_encode( $old_value ),
 			'new_value'      => is_string( $new_value ) ? $new_value : wp_json_encode( $new_value ),

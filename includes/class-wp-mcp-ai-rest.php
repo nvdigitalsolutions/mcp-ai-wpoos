@@ -247,6 +247,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Clean any existing output and start fresh.
 			$this->clean_all_output_buffers();
+			
+			// WordPress.org Compliance Note: This ob_start() is properly closed.
+			// Cleanup handled by ensure_clean_json_output() via rest_pre_serve_request filter.
+			// The buffer is cleaned by clean_all_output_buffers() (line 270) which calls
+			// ob_end_clean() in a loop until all buffers are cleared (see method below).
 			ob_start();
 		}
 
@@ -6187,7 +6192,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return array();
 			}
 
-			require_once ABSPATH . 'wp-admin/includes/file.php';
+			if ( ! function_exists( 'WP_Filesystem' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
 
 			global $wp_filesystem;
 

@@ -50,7 +50,7 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 	 * @return void
 	 */
 	public function render( $post ) {
-		wp_nonce_field( 'wp_mcp_ai_save_profession', 'wp_mcp_ai_profession_nonce' );
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
 
 		$category         = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
 		$role_description = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
@@ -180,6 +180,10 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
+		if ( ! $this->can_save( $post_id ) ) {
+			return;
+		}
+
 		// Save category.
 		if ( isset( $_POST['profession_category'] ) ) {
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, sanitize_key( wp_unslash( $_POST['profession_category'] ) ) );
