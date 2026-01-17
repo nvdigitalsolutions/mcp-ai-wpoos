@@ -50,9 +50,9 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		}
 
 		$results = array(
-			'agent_roles_assigned' => 0,
+			'agent_roles_assigned'  => 0,
 			'task_patterns_created' => 0,
-			'errors' => array(),
+			'errors'                => array(),
 		);
 
 		// Seed agent roles.
