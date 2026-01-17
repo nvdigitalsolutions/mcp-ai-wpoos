@@ -50,6 +50,8 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 	 * @return void
 	 */
 	public function render( $post ) {
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
+
 		$expertise      = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
 		$default_tools  = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
 		$knowledge_base = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true );
@@ -403,6 +405,10 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
+		if ( ! $this->can_save( $post_id ) ) {
+			return;
+		}
+
 		// Save expertise.
 		if ( isset( $_POST['profession_expertise'] ) && is_array( $_POST['profession_expertise'] ) ) {
 			$expertise = array_map( 'sanitize_text_field', wp_unslash( $_POST['profession_expertise'] ) );

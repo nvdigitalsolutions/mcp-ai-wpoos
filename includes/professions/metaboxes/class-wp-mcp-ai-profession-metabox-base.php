@@ -95,7 +95,23 @@ abstract class WP_MCP_AI_Profession_Metabox_Base {
 	 * @return bool
 	 */
 	public function can_save( $post_id ) {
-		return current_user_can( 'edit_post', $post_id );
+		// Check if nonce is set and valid.
+		$nonce_name = $this->get_id() . '_nonce';
+		if ( ! isset( $_POST[ $nonce_name ] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ $nonce_name ] ) ), $this->get_id() . '_save' ) ) {
+			return false;
+		}
+
+		// Check if user has permission.
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return false;
+		}
+
+		// Check if this is an autosave.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
