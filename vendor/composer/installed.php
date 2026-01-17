@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-oauth-redirect-uri-mismatch',
-        'version' => 'dev-copilot/fix-oauth-redirect-uri-mismatch',
-        'reference' => '18428c1b34e7796522d71f9095ad568a8a392978',
+        'pretty_version' => 'dev-copilot/review-plugin-compliance-issues',
+        'version' => 'dev-copilot/review-plugin-compliance-issues',
+        'reference' => '5c025b3bd6ea40c17bd438f3e5b92a2d32f204db',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-oauth-redirect-uri-mismatch',
-            'version' => 'dev-copilot/fix-oauth-redirect-uri-mismatch',
-            'reference' => '18428c1b34e7796522d71f9095ad568a8a392978',
+            'pretty_version' => 'dev-copilot/review-plugin-compliance-issues',
+            'version' => 'dev-copilot/review-plugin-compliance-issues',
+            'reference' => '5c025b3bd6ea40c17bd438f3e5b92a2d32f204db',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

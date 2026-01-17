@@ -463,14 +463,15 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$config_json = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 		$chartjs_url = esc_url( self::CHARTJS_CDN_URL );
 
-		$html = <<<HTML
+		ob_start();
+		?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chart</title>
-    <script src="{$chartjs_url}"></script>
+    <script src="<?php echo $chartjs_url; ?>"></script>
     <style>
         body {
             margin: 0;
@@ -493,7 +494,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 </head>
 <body>
     <div class="chart-container">
-        <canvas id="{$chart_id}" width="{$width}" height="{$height}"></canvas>
+        <canvas id="<?php echo esc_attr( $chart_id ); ?>" width="<?php echo esc_attr( $width ); ?>" height="<?php echo esc_attr( $height ); ?>"></canvas>
     </div>
     <script>
         (function() {
@@ -502,8 +503,8 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
                     setTimeout(initChart, 50);
                     return;
                 }
-                const ctx = document.getElementById('{$chart_id}').getContext('2d');
-                const chartConfig = {$config_json};
+                const ctx = document.getElementById(<?php echo wp_json_encode( $chart_id ); ?>).getContext('2d');
+                const chartConfig = <?php echo $config_json; ?>;
                 new Chart(ctx, chartConfig);
             }
 
@@ -516,7 +517,8 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
     </script>
 </body>
 </html>
-HTML;
+<?php
+		$html = ob_get_clean();
 
 		return $html;
 	}

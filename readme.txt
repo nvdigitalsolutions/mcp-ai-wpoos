@@ -264,7 +264,11 @@ Initial release. Welcome to Open Operator System!
 
 == External Services ==
 
-**IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. Below is a complete list of external services, what data is sent, when, and links to their terms and privacy policies.
+**IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. 
+
+**📖 Complete Documentation:** For comprehensive details about all 16 external services, data transmission, and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md).
+
+Below is a summary of the most commonly used services:
 
 = AI Provider Services (Required - At Least One Must Be Configured) =
 

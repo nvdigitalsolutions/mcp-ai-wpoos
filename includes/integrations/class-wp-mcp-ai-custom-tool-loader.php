@@ -321,17 +321,20 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 		 * @param string $tool_slug  Tool slug.
 		 * @return string
 		 */
-		private function get_tool_template_content( $class_name, $tool_slug ) {
-			$template = <<<PHP
-<?php
+private function get_tool_template_content( $class_name, $tool_slug ) {
+ob_start();
+?>
+<?php echo '<?php'; ?>
+
 /**
- * Custom Tool: {$class_name}
+ * Custom Tool: <?php echo esc_html( $class_name ); ?>
+
  *
  * @package WP_MCP_AI
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+exit;
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
@@ -339,65 +342,65 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 /**
  * Custom tool implementation.
  */
-class {$class_name} implements WP_MCP_AI_Tool_Interface {
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_slug() {
-		return '{$tool_slug}';
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_name() {
-		return __( 'Custom Tool: {$tool_slug}', 'mcp-ai-wpoos' );
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_description() {
-		return __( 'Description of your custom tool.', 'mcp-ai-wpoos' );
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_parameters_schema() {
-		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'example_param' => array(
-					'type'        => 'string',
-					'description' => __( 'Example parameter description.', 'mcp-ai-wpoos' ),
-				),
-			),
-			'required'             => array(),
-			'additionalProperties' => false,
-		);
-	}
-
-	/**
-	 * Execute the tool.
-	 *
-	 * @param array $arguments Tool arguments.
-	 * @param array $context   Execution context including user_id.
-	 * @return array|WP_Error Tool results or error.
-	 */
-	public function execute( array $arguments = array(), array $context = array() ) {
-		// Implement your tool logic here.
-		return array(
-			'success' => true,
-			'message' => __( 'Tool executed successfully.', 'mcp-ai-wpoos' ),
-		);
-	}
+class <?php echo esc_html( $class_name ); ?> implements WP_MCP_AI_Tool_Interface {
+/**
+ * {@inheritdoc}
+ */
+public function get_slug() {
+return '<?php echo esc_js( $tool_slug ); ?>';
 }
 
-PHP;
+/**
+ * {@inheritdoc}
+ */
+public function get_name() {
+return __( 'Custom Tool: <?php echo esc_js( $tool_slug ); ?>', 'mcp-ai-wpoos' );
+}
 
-			return $template;
-		}
+/**
+ * {@inheritdoc}
+ */
+public function get_description() {
+return __( 'Description of your custom tool.', 'mcp-ai-wpoos' );
+}
+
+/**
+ * {@inheritdoc}
+ */
+public function get_parameters_schema() {
+return array(
+'type'                 => 'object',
+'properties'           => array(
+'example_param' => array(
+'type'        => 'string',
+'description' => __( 'Example parameter description.', 'mcp-ai-wpoos' ),
+),
+),
+'required'             => array(),
+'additionalProperties' => false,
+);
+}
+
+/**
+ * Execute the tool.
+ *
+ * @param array $arguments Tool arguments.
+ * @param array $context   Execution context including user_id.
+ * @return array|WP_Error Tool results or error.
+ */
+public function execute( array $arguments = array(), array $context = array() ) {
+// Implement your tool logic here.
+return array(
+'success' => true,
+'message' => __( 'Tool executed successfully.', 'mcp-ai-wpoos' ),
+);
+}
+}
+<?php
+$template = ob_get_clean();
+
+return $template;
+}
 
 		/**
 		 * Delete a custom tool file.

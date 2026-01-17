@@ -258,7 +258,9 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 		$printed = true;
 
-		$style = <<<'CSS'
+		ob_start();
+		?>
+<style>
 .wp-mcp-ai-assistant-tools__copy-button {
     background: none;
     border: 0;
@@ -279,12 +281,16 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
     margin-left: 0.5rem;
     font-size: 0.85em;
 }
-CSS;
+</style>
+<?php
+		$style = ob_get_clean();
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS is hardcoded above.
-		echo '<style>' . $style . '</style>';
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS output is static content above.
+		echo $style;
 
-		$script = <<<'JS'
+		ob_start();
+		?>
+<script>
 ( function() {
     var selector = '.wp-mcp-ai-assistant-tools__copy-button';
 
@@ -395,15 +401,19 @@ CSS;
         init( event && event.target ? event.target : document );
     } );
 } )();
-JS;
+</script>
+<?php
+		$script = ob_get_clean();
 
 		if ( function_exists( 'wp_print_inline_script_tag' ) ) {
-			wp_print_inline_script_tag( $script );
+			// Extract just the JS content without the script tags.
+			$script_content = preg_replace( '/<script>|<\/script>/', '', $script );
+			wp_print_inline_script_tag( trim( $script_content ) );
 			return;
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript is hardcoded above.
-		echo '<script>' . $script . '</script>';
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript output is static content above.
+		echo $script;
 	}
 
 	/**
