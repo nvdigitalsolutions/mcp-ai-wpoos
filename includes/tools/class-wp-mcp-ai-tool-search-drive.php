@@ -18,7 +18,6 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php
 class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 	const DRIVE_API_BASE     = 'https://www.googleapis.com/drive/v3';
-	const DRIVE_API_BASE_V2  = 'https://www.googleapis.com/drive/v2';
 
 	/**
 	 * {@inheritdoc}

@@ -342,6 +342,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			$authorize_url = add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
 
 			// Add Google OAuth domain to allowed redirect hosts.
+			// Note: Reusing Gmail's filter as both use the same Google OAuth domain (accounts.google.com).
 			add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) );
 
 			wp_safe_redirect( $authorize_url );
