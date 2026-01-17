@@ -172,54 +172,162 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	/**
 	 * Execute a research task
 	 *
+	 * Provides execution plan for research tasks using available tools.
+	 *
 	 * @param array $task Task data.
 	 * @param array $context Execution context.
-	 * @return array Research results.
+	 * @return array Research execution plan with tool recommendations.
 	 */
 	protected function execute_research_task( $task, $context ) {
-		return array(
+		$description = isset( $task['description'] ) ? $task['description'] : '';
+		$parameters  = isset( $task['parameters'] ) ? $task['parameters'] : array();
+		
+		// Build execution plan with recommended tools and steps.
+		$execution_plan = array(
 			'type'        => 'research',
-			'description' => $task['description'],
-			'findings'    => array(
-				'status' => 'ready_for_research',
-				'note'   => __( 'Research task prepared for AI model execution with web_search tool', 'mcp-ai-wpoos' ),
+			'description' => $description,
+			'plan'        => array(
+				'steps' => array(
+					array(
+						'step'        => 1,
+						'action'      => 'search_and_gather',
+						'tools'       => array( 'web_search', 'crawl4ai' ),
+						'description' => __( 'Search for information and gather relevant data', 'mcp-ai-wpoos' ),
+					),
+					array(
+						'step'        => 2,
+						'action'      => 'analyze_sources',
+						'tools'       => array(),
+						'description' => __( 'Analyze gathered information for relevance and quality', 'mcp-ai-wpoos' ),
+					),
+					array(
+						'step'        => 3,
+						'action'      => 'synthesize',
+						'tools'       => array( 'save_post' ),
+						'description' => __( 'Synthesize findings into structured results', 'mcp-ai-wpoos' ),
+					),
+				),
+				'estimated_tool_calls' => 3,
+				'parallel_execution'   => false,
 			),
 		);
+		
+		// Add task-specific parameters.
+		if ( ! empty( $parameters['query'] ) ) {
+			$execution_plan['query'] = $parameters['query'];
+		}
+		if ( ! empty( $parameters['sources'] ) ) {
+			$execution_plan['sources'] = $parameters['sources'];
+		}
+		
+		return $execution_plan;
 	}
 
 	/**
 	 * Execute an analysis task
 	 *
+	 * Provides execution plan for analysis tasks using available tools.
+	 *
 	 * @param array $task Task data.
 	 * @param array $context Execution context.
-	 * @return array Analysis results.
+	 * @return array Analysis execution plan with tool recommendations.
 	 */
 	protected function execute_analysis_task( $task, $context ) {
-		return array(
+		$description = isset( $task['description'] ) ? $task['description'] : '';
+		$parameters  = isset( $task['parameters'] ) ? $task['parameters'] : array();
+		
+		// Build execution plan for analysis.
+		$execution_plan = array(
 			'type'        => 'analysis',
-			'description' => $task['description'],
-			'analysis'    => array(
-				'status' => 'ready_for_analysis',
-				'note'   => __( 'Analysis task prepared for AI model execution', 'mcp-ai-wpoos' ),
+			'description' => $description,
+			'plan'        => array(
+				'steps' => array(
+					array(
+						'step'        => 1,
+						'action'      => 'retrieve_data',
+						'tools'       => array( 'get_recent_posts', 'search_content' ),
+						'description' => __( 'Retrieve data to be analyzed', 'mcp-ai-wpoos' ),
+					),
+					array(
+						'step'        => 2,
+						'action'      => 'perform_analysis',
+						'tools'       => array( 'create_chart' ),
+						'description' => __( 'Analyze data and identify patterns or insights', 'mcp-ai-wpoos' ),
+					),
+					array(
+						'step'        => 3,
+						'action'      => 'generate_report',
+						'tools'       => array( 'save_post' ),
+						'description' => __( 'Generate analysis report with findings', 'mcp-ai-wpoos' ),
+					),
+				),
+				'estimated_tool_calls' => 3,
+				'parallel_execution'   => false,
 			),
 		);
+		
+		// Add task-specific parameters.
+		if ( ! empty( $parameters['dataset'] ) ) {
+			$execution_plan['dataset'] = $parameters['dataset'];
+		}
+		if ( ! empty( $parameters['metrics'] ) ) {
+			$execution_plan['metrics'] = $parameters['metrics'];
+		}
+		
+		return $execution_plan;
 	}
 
 	/**
 	 * Execute a creation task
 	 *
+	 * Provides execution plan for content/resource creation tasks.
+	 *
 	 * @param array $task Task data.
 	 * @param array $context Execution context.
-	 * @return array Creation results.
+	 * @return array Creation execution plan with tool recommendations.
 	 */
 	protected function execute_creation_task( $task, $context ) {
-		return array(
+		$description = isset( $task['description'] ) ? $task['description'] : '';
+		$parameters  = isset( $task['parameters'] ) ? $task['parameters'] : array();
+		
+		// Build execution plan for creation.
+		$execution_plan = array(
 			'type'        => 'creation',
-			'description' => $task['description'],
-			'created'     => array(
-				'status' => 'ready_for_creation',
-				'note'   => __( 'Creation task prepared for AI model execution with appropriate tools', 'mcp-ai-wpoos' ),
+			'description' => $description,
+			'plan'        => array(
+				'steps' => array(
+					array(
+						'step'        => 1,
+						'action'      => 'research_content',
+						'tools'       => array( 'web_search', 'get_recent_posts' ),
+						'description' => __( 'Research and gather information for creation', 'mcp-ai-wpoos' ),
+					),
+					array(
+						'step'        => 2,
+						'action'      => 'create_draft',
+						'tools'       => array( 'create_post' ),
+						'description' => __( 'Create initial draft or prototype', 'mcp-ai-wpoos' ),
+					),
+					array(
+						'step'        => 3,
+						'action'      => 'refine_and_publish',
+						'tools'       => array( 'save_post' ),
+						'description' => __( 'Refine and finalize the created content', 'mcp-ai-wpoos' ),
+					),
+				),
+				'estimated_tool_calls' => 3,
+				'parallel_execution'   => false,
 			),
 		);
+		
+		// Add task-specific parameters.
+		if ( ! empty( $parameters['content_type'] ) ) {
+			$execution_plan['content_type'] = $parameters['content_type'];
+		}
+		if ( ! empty( $parameters['requirements'] ) ) {
+			$execution_plan['requirements'] = $parameters['requirements'];
+		}
+		
+		return $execution_plan;
 	}
 }
