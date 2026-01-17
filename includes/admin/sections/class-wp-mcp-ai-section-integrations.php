@@ -77,25 +77,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		public function get_fields() {
 			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-			$pro_notice    = $is_pro_active ? '' : ' ' . __( '<strong>(Requires Pro addon)</strong>', 'mcp-ai-wpoos' );
+			$gmail_notice  = $is_pro_active ? ' ' . __( '<em>(Pro also supports multiple connections via Remote Sites.)</em>', 'mcp-ai-wpoos' ) : ' ' . __( '<em>(Base supports 1 connection. Pro enables multiple via Remote Sites.)</em>', 'mcp-ai-wpoos' );
 
 			return array(
 				// Gmail OAuth.
 				'gmail_client_id'                   => array(
 					'type'         => 'text',
 					'label'        => __( 'Gmail OAuth Client ID', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'mcp-ai-wpoos' ) . $gmail_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'off',
-					'disabled'     => ! $is_pro_active,
 				),
 				'gmail_client_secret'               => array(
 					'type'         => 'password',
 					'label'        => __( 'Gmail OAuth Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $gmail_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
 				),
 
 				// Crawl4AI.
@@ -546,41 +544,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		$gmail_connected   = ! empty( $settings['gmail_refresh_token'] );
 		$gmail_email       = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
 		$has_credentials   = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
+		$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
 		$oauth_connect_url = wp_nonce_url(
 			admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
 			'wp_mcp_ai_gmail_oauth_start'
 		);
 
-		// Check if user just tried to connect and was redirected with Pro requirement.
+		// Check for success or error messages.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-		$gmail_requires_pro = isset( $_GET['gmail_requires_pro'] ) && '1' === $_GET['gmail_requires_pro'];
+		$gmail_success = isset( $_GET['gmail_success'] ) ? sanitize_text_field( wp_unslash( $_GET['gmail_success'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+		$gmail_error = isset( $_GET['gmail_error'] ) ? sanitize_text_field( wp_unslash( $_GET['gmail_error'] ) ) : '';
 		?>
-		<?php if ( $gmail_requires_pro ) : ?>
+		<?php if ( $gmail_success ) : ?>
 			<tr>
 				<th scope="row"></th>
 				<td>
-					<div class="notice notice-info inline" style="margin: 0 0 15px;">
-						<p>
-							<strong><?php esc_html_e( 'Gmail Integration Requires NV oOS Pro', 'mcp-ai-wpoos' ); ?></strong>
-						</p>
-						<p>
-							<?php
-							echo wp_kses_post(
-								__(
-									'Gmail OAuth integration has been moved to the Pro addon. To connect your Gmail account and use Gmail tools, please upgrade to NV oOS Pro.',
-									'mcp-ai-wpoos'
-								)
-							);
-							?>
-						</p>
-						<p>
-							<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary">
-								<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
-							</a>
-							<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
-								<?php esc_html_e( 'Learn More', 'mcp-ai-wpoos' ); ?>
-							</a>
-						</p>
+					<div class="notice notice-success inline" style="margin: 0 0 15px;">
+						<p><?php echo esc_html( $gmail_success ); ?></p>
+					</div>
+				</td>
+			</tr>
+		<?php endif; ?>
+		<?php if ( $gmail_error ) : ?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div class="notice notice-error inline" style="margin: 0 0 15px;">
+						<p><?php echo esc_html( $gmail_error ); ?></p>
 					</div>
 				</td>
 			</tr>
