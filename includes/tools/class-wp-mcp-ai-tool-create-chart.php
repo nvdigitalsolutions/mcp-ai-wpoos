@@ -24,7 +24,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
 
 	const CHARTJS_VERSION = '4.4.0';
-	const CHARTJS_CDN_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
 
 	/**
 	 * {@inheritdoc}
@@ -461,7 +460,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	protected function generate_chart_html( array $config, $width, $height ) {
 		$chart_id    = 'chart-' . wp_generate_password( 8, false );
 		$config_json = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
-		$chartjs_url = esc_url( self::CHARTJS_CDN_URL );
+		$chartjs_url = esc_url( plugins_url( 'assets/js/vendor/chart.min.js', WP_MCP_AI_FILE ) );
 
 		ob_start();
 		?>
@@ -677,9 +676,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'read-only',       // Does not modify site data (unless saving attachment).
 			'requires-capability',  // Requires user capabilities.
 			'write',           // Can create attachments when save_as_attachment is true.
-			'local-only',      // Works entirely locally, Chart.js loaded from CDN.
-			'external-api',    // Loads Chart.js from CDN.
-			'network-dependent', // Requires internet for Chart.js CDN.
+			'local-only',      // Works entirely locally, Chart.js loaded from local assets.
 		);
 	}
 
@@ -705,13 +702,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			),
 			'dependencies'          => array(
 				'required_extensions' => array(), // No PHP extensions required.
-				'external_services'   => array(
-					'chartjs_cdn' => array(
-						'url'      => self::CHARTJS_CDN_URL,
-						'required' => true,
-						'purpose'  => 'Chart.js library loading',
-					),
-				),
+				'external_services'   => array(),
 			),
 			'orchestration_hints'   => array(
 				'can_run_parallel' => true,   // Multiple charts can be generated simultaneously.

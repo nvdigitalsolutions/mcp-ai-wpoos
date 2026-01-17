@@ -253,7 +253,8 @@ trait WP_MCP_AI_Tool_Content_Media {
 		
 		$html .= '<canvas id="' . esc_attr( $chart_id ) . '"></canvas>' . "\n";
 		$html .= '</div>' . "\n";
-		$html .= '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>' . "\n";
+		$chartjs_url = esc_url( plugins_url( 'assets/js/vendor/chart.min.js', WP_MCP_AI_FILE ) );
+		$html .= '<script src="' . $chartjs_url . '"></script>' . "\n";
 		$html .= '<script>' . "\n";
 		$html .= 'document.addEventListener("DOMContentLoaded", function() {' . "\n";
 		$html .= '  const ctx = document.getElementById("' . esc_js( $chart_id ) . '");' . "\n";
