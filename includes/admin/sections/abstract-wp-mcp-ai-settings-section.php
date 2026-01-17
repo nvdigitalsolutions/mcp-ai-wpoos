@@ -264,6 +264,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$required     = isset( $field['required'] ) ? $field['required'] : false;
 			$autocomplete = isset( $field['autocomplete'] ) ? $field['autocomplete'] : '';
 			$disabled     = isset( $field['disabled'] ) ? $field['disabled'] : false;
+			$pro_badge    = isset( $field['pro_badge'] ) ? $field['pro_badge'] : false;
 
 			?>
 			<tr>
@@ -272,6 +273,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						<?php echo esc_html( $label ); ?>
 						<?php if ( $required ) : ?>
 							<span class="required">*</span>
+						<?php endif; ?>
+						<?php if ( $pro_badge ) : ?>
+							<span class="wp-mcp-ai-pro-badge" style="display: inline-block; margin-left: 8px; padding: 3px 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle;">
+								<?php esc_html_e( 'PRO', 'mcp-ai-wpoos' ); ?>
+							</span>
 						<?php endif; ?>
 					</label>
 				</th>

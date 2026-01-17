@@ -783,6 +783,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'online' => __( 'Excel Online (Cloud features)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'modern',
+					'pro_badge'   => true,
 				),
 				'excel_enable_lambda'                => array(
 					'type'           => 'checkbox',
@@ -790,6 +791,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'checkbox_label' => __( 'Generate LAMBDA and custom functions for advanced Excel scenarios', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, the Pro Excel tool can generate LAMBDA functions for custom, reusable, and recursive formulas. LAMBDA makes Excel Turing-complete, enabling advanced programming capabilities. Requires Excel 2021+ or Microsoft 365.', 'mcp-ai-wpoos' ),
 					'default'        => true,
+					'pro_badge'      => true,
 				),
 				'excel_max_complexity'               => array(
 					'type'        => 'select',
@@ -802,6 +804,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'advanced' => __( 'Advanced (LAMBDA, recursive, expert-level)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'moderate',
+					'pro_badge'   => true,
 				),
 				'excel_include_comments'             => array(
 					'type'           => 'checkbox',
@@ -809,6 +812,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'checkbox_label' => __( 'Add explanatory comments to generated formulas', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, generated formulas include inline comments explaining each step and component. This makes formulas easier to understand and maintain, especially for complex calculations.', 'mcp-ai-wpoos' ),
 					'default'        => true,
+					'pro_badge'      => true,
 				),
 				'excel_optimization_level'           => array(
 					'type'        => 'select',
@@ -820,6 +824,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'balanced'    => __( 'Balanced (Compromise between both)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'balanced',
+					'pro_badge'   => true,
 				),
 
 				// Google Maps Settings.
