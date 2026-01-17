@@ -86,13 +86,20 @@ Created manual testing guide with:
 3. **Fatal Error:** White screen / error page
 4. No way to proceed
 
-### After (Fixed)
+### After Initial Fix (v1)
 1. User enters Gmail OAuth credentials  
 2. User clicks "Connect Gmail Account"
 3. **Smooth Redirect:** Back to Gmail settings page
 4. **Clear Message:** "Gmail Integration Requires NV oOS Pro"
 5. **Call to Action:** Upgrade buttons provided
 6. No errors, graceful degradation
+
+### After UX Improvement (v2 - Current)
+1. User opens Gmail integration settings
+2. **Immediate Warning:** "Gmail Integration Requires NV oOS Pro" shown upfront
+3. **Call to Action:** Upgrade buttons provided immediately
+4. **Connection UI Hidden:** No confusing "Connect" button when Pro is not active
+5. Clear, upfront communication - no multi-step confusion
 
 ## Security
 
@@ -146,10 +153,15 @@ Users who need Gmail integration should:
 
 ## Files Changed
 
+### Initial Fix (v1)
 - `includes/integrations/class-wp-mcp-ai-oauth-manager.php` - Added stub method
-- `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` - Added UI notice
+- `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` - Added UI notice on redirect
 - `tests/test-gmail-oauth-stub.php` - New unit tests
 - `bin/verify-gmail-oauth-fix.sh` - New verification script
+
+### UX Improvement (v2 - Current)
+- `includes/admin/sections/class-wp-mcp-ai-section-integrations.php` - Show Pro requirement upfront, hide connection UI when Pro not active
+- `docs/fixes/gmail-oauth-connection-error-fix.md` - Updated documentation
 
 ## Related Documentation
 
@@ -165,6 +177,19 @@ If users encounter issues after this fix:
 3. Ensure they have admin (manage_options) capability
 4. Try clearing browser cache and cookies
 5. For Gmail functionality, recommend upgrading to Pro
+
+## UX Improvement Update (January 2026)
+
+**Issue:** While the initial fix prevented fatal errors, users still encountered a confusing flow where they could see disabled Gmail fields and connection buttons, only to be redirected to a Pro upgrade message after clicking.
+
+**Solution:** Updated `render_gmail_footer()` to:
+- Check `WP_MCP_AI_PRO_VERSION` constant upfront
+- When Pro is NOT active: Show clear warning notice immediately with upgrade CTAs
+- When Pro IS active: Show full connection UI (unchanged)
+- Changed notice style to `notice-warning` for better visibility
+- Hides all connection UI when Pro is not active
+
+**Result:** Clear, upfront communication that Gmail requires Pro, eliminating user confusion and improving upgrade conversion potential.
 
 ---
 
