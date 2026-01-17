@@ -22,6 +22,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
  */
 class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
+
 	/**
 	 * Determine whether WooCommerce is available.
 	 *
@@ -244,7 +245,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 						'description' => __( 'Optional alt text for accessibility', 'mcp-ai-wpoos' ),
 					),
 				),
-				'required' => array( 'source' ),
+				'required'   => array( 'source' ),
 			),
 			'maxItems'    => 2,
 		);
@@ -269,7 +270,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 						'description' => __( 'Chart data with labels and datasets', 'mcp-ai-wpoos' ),
 					),
 				),
-				'required' => array( 'type', 'data' ),
+				'required'   => array( 'type', 'data' ),
 			),
 			'maxItems'    => 1,
 		);
@@ -290,7 +291,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 						'minimum'     => 1,
 					),
 				),
-				'required' => array( 'variation_attributes', 'image_id' ),
+				'required'   => array( 'variation_attributes', 'image_id' ),
 			),
 		);
 
@@ -358,14 +359,14 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		$product->set_sku( $reference );
 
 		if ( '' !== $description ) {
-			// Embed content media in long description
+			// Embed content media in long description.
 			$description_with_media = $this->embed_content_media( $description, $arguments );
 			$product->set_description( $description_with_media );
 		}
 
 		if ( '' !== $description2 ) {
-			// Support content media in short description as well
-			// Use separate parameters with limits (2 images, 1 chart max)
+			// Support content media in short description as well.
+			// Use separate parameters with limits (2 images, 1 chart max).
 			$short_desc_args = array();
 			if ( isset( $arguments['short_description_images'] ) ) {
 				$short_desc_args['content_images'] = array_slice( $arguments['short_description_images'], 0, 2 );
@@ -373,7 +374,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			if ( isset( $arguments['short_description_charts'] ) ) {
 				$short_desc_args['content_charts'] = array_slice( $arguments['short_description_charts'], 0, 1 );
 			}
-			
+
 			if ( ! empty( $short_desc_args ) ) {
 				$description2_with_media = $this->embed_content_media( $description2, $short_desc_args );
 				$product->set_short_description( $description2_with_media );
@@ -1067,14 +1068,14 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	protected function assign_variation_images( $product_id, $variation_images, &$messages ) {
 		$product = wc_get_product( $product_id );
-		
+
 		if ( ! $product || ! $product->is_type( 'variable' ) ) {
 			$messages[] = __( 'Variation images can only be assigned to variable products.', 'mcp-ai-wpoos' );
 			return;
 		}
 
 		$variations = $product->get_children();
-		
+
 		if ( empty( $variations ) ) {
 			$messages[] = __( 'No variations found to assign images to.', 'mcp-ai-wpoos' );
 			return;
@@ -1103,7 +1104,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			// Find matching variation.
 			foreach ( $variations as $variation_id ) {
 				$variation = wc_get_product( $variation_id );
-				
+
 				if ( ! $variation ) {
 					continue;
 				}
@@ -1114,9 +1115,9 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 				// Check if all target attributes match this variation.
 				foreach ( $target_attributes as $attr_name => $attr_value ) {
 					$attr_key = 'attribute_' . sanitize_title( $attr_name );
-					
-					if ( ! isset( $variation_attrs[ $attr_key ] ) || 
-					     sanitize_title( $variation_attrs[ $attr_key ] ) !== sanitize_title( $attr_value ) ) {
+
+					if ( ! isset( $variation_attrs[ $attr_key ] ) ||
+						sanitize_title( $variation_attrs[ $attr_key ] ) !== sanitize_title( $attr_value ) ) {
 						$matches = false;
 						break;
 					}
@@ -1125,7 +1126,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 				if ( $matches ) {
 					$variation->set_image_id( $image_id );
 					$variation->save();
-					$assigned_count++;
+					++$assigned_count;
 					break;
 				}
 			}

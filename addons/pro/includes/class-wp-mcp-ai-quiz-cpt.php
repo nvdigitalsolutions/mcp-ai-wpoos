@@ -85,7 +85,7 @@ class WP_MCP_AI_Quiz_CPT {
 
 		// Check if we're on a quiz or submission post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type   = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type    = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_quiz_page = ( $post_type === self::POST_TYPE || $post_type === self::SUBMISSION_POST_TYPE );
 		if ( ! $is_quiz_page ) {
 			return;

@@ -153,7 +153,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 		$output_tokens = absint( $output_tokens );
 		$total_tokens  = $input_tokens + $output_tokens;
 
-		if ( ! $user_id || ! $provider || ! $model || $total_tokens === 0 ) {
+		if ( ! $user_id || ! $provider || ! $model || 0 === $total_tokens ) {
 			return false;
 		}
 

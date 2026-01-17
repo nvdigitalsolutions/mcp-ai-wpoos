@@ -563,27 +563,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Render Gmail footer content.
 		 */
-	/**
-	 * Render Gmail footer content.
-	 */
-	private function render_gmail_footer() {
-		$settings          = WP_MCP_AI_Admin_Settings::get_settings();
-		$gmail_connected   = ! empty( $settings['gmail_refresh_token'] );
-		$gmail_email       = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
-		$has_credentials   = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
-		$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
-		$oauth_connect_url = wp_nonce_url(
-			admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
-			'wp_mcp_ai_gmail_oauth_start'
-		);
+		/**
+		 * Render Gmail footer content.
+		 */
+		private function render_gmail_footer() {
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$gmail_connected   = ! empty( $settings['gmail_refresh_token'] );
+			$gmail_email       = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
+			$has_credentials   = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
+			$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$oauth_connect_url = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
+				'wp_mcp_ai_gmail_oauth_start'
+			);
 
-		// Check for success or error messages.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-		$gmail_success = isset( $_GET['gmail_success'] ) ? sanitize_text_field( wp_unslash( $_GET['gmail_success'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-		$gmail_error = isset( $_GET['gmail_error'] ) ? sanitize_text_field( wp_unslash( $_GET['gmail_error'] ) ) : '';
-		?>
-		<?php if ( $gmail_success ) : ?>
+			// Check for success or error messages.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$gmail_success = isset( $_GET['gmail_success'] ) ? sanitize_text_field( wp_unslash( $_GET['gmail_success'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$gmail_error = isset( $_GET['gmail_error'] ) ? sanitize_text_field( wp_unslash( $_GET['gmail_error'] ) ) : '';
+			?>
+			<?php if ( $gmail_success ) : ?>
 			<tr>
 				<th scope="row"></th>
 				<td>
@@ -593,7 +593,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</td>
 			</tr>
 		<?php endif; ?>
-		<?php if ( $gmail_error ) : ?>
+			<?php if ( $gmail_error ) : ?>
 			<tr>
 				<th scope="row"></th>
 				<td>
@@ -732,30 +732,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</ul>
 			</td>
 		</tr>
-		<?php
-	}
+			<?php
+		}
 
-	/**
-	 * Render Google Drive footer content.
-	 */
-	private function render_google_drive_footer() {
-		$settings               = WP_MCP_AI_Admin_Settings::get_settings();
-		$drive_connected        = ! empty( $settings['google_drive_refresh_token'] );
-		$drive_email            = isset( $settings['google_drive_user_email'] ) ? $settings['google_drive_user_email'] : '';
-		$has_credentials        = ! empty( $settings['google_drive_client_id'] ) && ! empty( $settings['google_drive_client_secret'] );
-		$is_pro_active          = defined( 'WP_MCP_AI_PRO_VERSION' );
-		$oauth_connect_url      = wp_nonce_url(
-			admin_url( 'admin-post.php?action=wp_mcp_ai_google_drive_oauth_start' ),
-			'wp_mcp_ai_google_drive_oauth_start'
-		);
+		/**
+		 * Render Google Drive footer content.
+		 */
+		private function render_google_drive_footer() {
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$drive_connected   = ! empty( $settings['google_drive_refresh_token'] );
+			$drive_email       = isset( $settings['google_drive_user_email'] ) ? $settings['google_drive_user_email'] : '';
+			$has_credentials   = ! empty( $settings['google_drive_client_id'] ) && ! empty( $settings['google_drive_client_secret'] );
+			$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$oauth_connect_url = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_google_drive_oauth_start' ),
+				'wp_mcp_ai_google_drive_oauth_start'
+			);
 
-		// Check for success or error messages.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-		$drive_success = isset( $_GET['drive_success'] ) ? sanitize_text_field( wp_unslash( $_GET['drive_success'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-		$drive_error = isset( $_GET['drive_error'] ) ? sanitize_text_field( wp_unslash( $_GET['drive_error'] ) ) : '';
-		?>
-		<?php if ( $drive_success ) : ?>
+			// Check for success or error messages.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$drive_success = isset( $_GET['drive_success'] ) ? sanitize_text_field( wp_unslash( $_GET['drive_success'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$drive_error = isset( $_GET['drive_error'] ) ? sanitize_text_field( wp_unslash( $_GET['drive_error'] ) ) : '';
+			?>
+			<?php if ( $drive_success ) : ?>
 			<tr>
 				<th scope="row"></th>
 				<td>
@@ -765,7 +765,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</td>
 			</tr>
 		<?php endif; ?>
-		<?php if ( $drive_error ) : ?>
+			<?php if ( $drive_error ) : ?>
 			<tr>
 				<th scope="row"></th>
 				<td>
@@ -902,7 +902,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					<li><?php esc_html_e( 'Access tokens are automatically refreshed when expired', 'mcp-ai-wpoos' ); ?></li>
 					<li><?php esc_html_e( 'Supports searching and reading Drive files', 'mcp-ai-wpoos' ); ?></li>
 					<li><?php esc_html_e( 'Requires drive.readonly and drive.metadata.readonly scopes for read access', 'mcp-ai-wpoos' ); ?></li>
-					<?php if ( $is_pro_active ) : ?>
+						<?php if ( $is_pro_active ) : ?>
 						<li><?php esc_html_e( 'Pro users can configure multiple Google Drive connections via Remote Sites', 'mcp-ai-wpoos' ); ?></li>
 					<?php else : ?>
 						<li><?php esc_html_e( 'Base version supports 1 connection. Upgrade to Pro for multiple connections', 'mcp-ai-wpoos' ); ?></li>
@@ -910,8 +910,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</ul>
 			</td>
 		</tr>
-		<?php
-	}
+			<?php
+		}
 
 		/**
 		 * Render Brave Search footer content.
@@ -975,9 +975,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render PayHere footer content.
 		 */
 		private function render_payhere_footer() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
 			$has_credentials = ! empty( $settings['payhere_app_id'] ) && ! empty( $settings['payhere_app_secret'] );
-			$is_sandbox = ! empty( $settings['payhere_sandbox_mode'] );
+			$is_sandbox      = ! empty( $settings['payhere_sandbox_mode'] );
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'PayHere Configuration', 'mcp-ai-wpoos' ); ?></th>
@@ -1068,7 +1068,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Flowhub footer content.
 		 */
 		private function render_flowhub_footer() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
 			$has_credentials = ! empty( $settings['flowhub_api_key'] ) && ! empty( $settings['flowhub_client_id'] );
 			?>
 			<tr>
@@ -1178,10 +1178,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Meta footer content.
 		 */
 		private function render_meta_footer() {
-			$settings         = WP_MCP_AI_Admin_Settings::get_settings();
-			$meta_connected   = ! empty( $settings['meta_access_token'] );
-			$meta_user_name   = isset( $settings['meta_connected_user_name'] ) ? $settings['meta_connected_user_name'] : '';
-			$has_credentials  = ! empty( $settings['meta_app_id'] ) && ! empty( $settings['meta_app_secret'] );
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$meta_connected    = ! empty( $settings['meta_access_token'] );
+			$meta_user_name    = isset( $settings['meta_connected_user_name'] ) ? $settings['meta_connected_user_name'] : '';
+			$has_credentials   = ! empty( $settings['meta_app_id'] ) && ! empty( $settings['meta_app_secret'] );
 			$oauth_connect_url = wp_nonce_url(
 				admin_url( 'admin-post.php?action=wp_mcp_ai_meta_oauth_start' ),
 				'wp_mcp_ai_meta_oauth_start'
@@ -1251,11 +1251,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 							// Get scopes from OAuth handler constant.
 							$scopes             = WP_MCP_AI_Meta_OAuth_Handler::META_OAUTH_SCOPES;
 							$scope_descriptions = array(
-								'pages_manage_posts'              => __( 'Manage Facebook Page posts', 'mcp-ai-wpoos' ),
-								'instagram_basic'                 => __( 'Access Instagram account information', 'mcp-ai-wpoos' ),
-								'instagram_content_publish'       => __( 'Publish Instagram content', 'mcp-ai-wpoos' ),
-								'whatsapp_business_management'    => __( 'Manage WhatsApp Business account', 'mcp-ai-wpoos' ),
-								'whatsapp_business_messaging'     => __( 'Send WhatsApp Business messages', 'mcp-ai-wpoos' ),
+								'pages_manage_posts' => __( 'Manage Facebook Page posts', 'mcp-ai-wpoos' ),
+								'instagram_basic'    => __( 'Access Instagram account information', 'mcp-ai-wpoos' ),
+								'instagram_content_publish' => __( 'Publish Instagram content', 'mcp-ai-wpoos' ),
+								'whatsapp_business_management' => __( 'Manage WhatsApp Business account', 'mcp-ai-wpoos' ),
+								'whatsapp_business_messaging' => __( 'Send WhatsApp Business messages', 'mcp-ai-wpoos' ),
 							);
 							foreach ( explode( ',', $scopes ) as $scope ) {
 								$scope       = trim( $scope );

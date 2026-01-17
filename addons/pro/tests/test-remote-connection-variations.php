@@ -188,7 +188,7 @@ class Test_Remote_Connection_Tool_Variations extends WP_UnitTestCase {
 			'has_woocommerce' => false,
 		);
 
-		$result = WP_MCP_AI_Pro_Remote_Site_Manager::add_connection( $connection_data );
+		$result              = WP_MCP_AI_Pro_Remote_Site_Manager::add_connection( $connection_data );
 		$no_wc_connection_id = $result['id'];
 
 		// Enable for assistant.

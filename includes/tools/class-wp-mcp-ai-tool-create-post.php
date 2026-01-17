@@ -19,6 +19,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
  */
 class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
+
 	/**
 	 * {@inheritdoc}
 	 */

@@ -43,26 +43,26 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'eca_type'      => array(
+				'eca_type'         => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by ECA type', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'club', 'society', 'sport_squad', 'sport_academy', 'activity' ),
 				),
-				'day'           => array(
+				'day'              => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by day of the week', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ),
 				),
-				'year_group'    => array(
+				'year_group'       => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by year group eligibility', 'mcp-ai-wpoos-pro' ),
 				),
-				'status'        => array(
+				'status'           => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by ECA status', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'active', 'inactive', 'full', 'cancelled' ),
 				),
-				'is_paid'       => array(
+				'is_paid'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Filter by paid/free activities', 'mcp-ai-wpoos-pro' ),
 				),
@@ -70,18 +70,18 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 					'type'        => 'boolean',
 					'description' => __( 'Filter to show only ECAs with available spots', 'mcp-ai-wpoos-pro' ),
 				),
-				'search'        => array(
+				'search'           => array(
 					'type'        => 'string',
 					'description' => __( 'Search by ECA name or description', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'page'          => array(
+				'page'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 					'minimum'     => 1,
 				),
-				'per_page'      => array(
+				'per_page'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of ECAs per page', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
@@ -132,7 +132,7 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		}
 
 		// Get pagination parameters.
-		$page = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
+		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 		$per_page = isset( $arguments['per_page'] ) ? absint( $arguments['per_page'] ) : 20;
 		$per_page = min( $per_page, 100 );
 
@@ -216,13 +216,13 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		}
 
 		return array(
-			'success'       => true,
-			'ecas'          => $ecas,
-			'total'         => $query->found_posts,
-			'page'          => $page,
-			'per_page'      => $per_page,
-			'total_pages'   => $query->max_num_pages,
-			'has_more'      => $page < $query->max_num_pages,
+			'success'     => true,
+			'ecas'        => $ecas,
+			'total'       => $query->found_posts,
+			'page'        => $page,
+			'per_page'    => $per_page,
+			'total_pages' => $query->max_num_pages,
+			'has_more'    => $page < $query->max_num_pages,
 		);
 	}
 
@@ -235,37 +235,37 @@ class WP_MCP_AI_Tool_List_ECAs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	private function get_eca_data( $post_id ) {
 		$post = get_post( $post_id );
 
-		$max_students = absint( get_post_meta( $post_id, '_eca_max_students', true ) );
+		$max_students       = absint( get_post_meta( $post_id, '_eca_max_students', true ) );
 		$current_enrollment = absint( get_post_meta( $post_id, '_eca_current_enrollment', true ) );
-		$is_full = $max_students > 0 && $current_enrollment >= $max_students;
-		$available_spots = $max_students > 0 ? max( 0, $max_students - $current_enrollment ) : null;
+		$is_full            = $max_students > 0 && $current_enrollment >= $max_students;
+		$available_spots    = $max_students > 0 ? max( 0, $max_students - $current_enrollment ) : null;
 
 		$is_paid = get_post_meta( $post_id, '_eca_is_paid', true ) === 'yes';
-		$cost = $is_paid ? floatval( get_post_meta( $post_id, '_eca_cost', true ) ) : 0;
+		$cost    = $is_paid ? floatval( get_post_meta( $post_id, '_eca_cost', true ) ) : 0;
 
 		return array(
-			'eca_id'              => $post_id,
-			'name'                => $post->post_title,
-			'eca_code'            => get_post_meta( $post_id, '_eca_code', true ),
-			'description'         => $post->post_content,
-			'type'                => get_post_meta( $post_id, '_eca_type', true ),
-			'day'                 => get_post_meta( $post_id, '_eca_day', true ),
-			'start_time'          => get_post_meta( $post_id, '_eca_start_time', true ),
-			'end_time'            => get_post_meta( $post_id, '_eca_end_time', true ),
-			'venue'               => get_post_meta( $post_id, '_eca_venue', true ),
-			'year_groups'         => get_post_meta( $post_id, '_eca_year_groups', true ),
-			'teachers'            => get_post_meta( $post_id, '_eca_teachers', true ),
-			'max_students'        => $max_students,
-			'current_enrollment'  => $current_enrollment,
-			'available_spots'     => $available_spots,
-			'is_full'             => $is_full,
-			'is_paid'             => $is_paid,
-			'cost'                => $cost,
-			'cost_period'         => get_post_meta( $post_id, '_eca_cost_period', true ),
-			'requires_audition'   => get_post_meta( $post_id, '_eca_requires_audition', true ) === 'yes',
-			'booking_type'        => get_post_meta( $post_id, '_eca_booking_type', true ),
-			'status'              => get_post_meta( $post_id, '_eca_status', true ),
-			'url'                 => get_permalink( $post_id ),
+			'eca_id'             => $post_id,
+			'name'               => $post->post_title,
+			'eca_code'           => get_post_meta( $post_id, '_eca_code', true ),
+			'description'        => $post->post_content,
+			'type'               => get_post_meta( $post_id, '_eca_type', true ),
+			'day'                => get_post_meta( $post_id, '_eca_day', true ),
+			'start_time'         => get_post_meta( $post_id, '_eca_start_time', true ),
+			'end_time'           => get_post_meta( $post_id, '_eca_end_time', true ),
+			'venue'              => get_post_meta( $post_id, '_eca_venue', true ),
+			'year_groups'        => get_post_meta( $post_id, '_eca_year_groups', true ),
+			'teachers'           => get_post_meta( $post_id, '_eca_teachers', true ),
+			'max_students'       => $max_students,
+			'current_enrollment' => $current_enrollment,
+			'available_spots'    => $available_spots,
+			'is_full'            => $is_full,
+			'is_paid'            => $is_paid,
+			'cost'               => $cost,
+			'cost_period'        => get_post_meta( $post_id, '_eca_cost_period', true ),
+			'requires_audition'  => get_post_meta( $post_id, '_eca_requires_audition', true ) === 'yes',
+			'booking_type'       => get_post_meta( $post_id, '_eca_booking_type', true ),
+			'status'             => get_post_meta( $post_id, '_eca_status', true ),
+			'url'                => get_permalink( $post_id ),
 		);
 	}
 }

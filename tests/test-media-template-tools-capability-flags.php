@@ -15,7 +15,7 @@ class Test_Media_Template_Tools_Capability_Flags extends WP_UnitTestCase {
 	 */
 	public function test_list_media_templates_has_capability_flags() {
 		$class_file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-list-media-templates.php';
-		
+
 		if ( ! file_exists( $class_file ) ) {
 			$this->markTestSkipped( 'Media template tools not available (Pro addon)' );
 		}
@@ -52,7 +52,7 @@ class Test_Media_Template_Tools_Capability_Flags extends WP_UnitTestCase {
 	 */
 	public function test_create_media_template_has_capability_flags() {
 		$class_file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-create-media-template.php';
-		
+
 		if ( ! file_exists( $class_file ) ) {
 			$this->markTestSkipped( 'Media template tools not available (Pro addon)' );
 		}
@@ -89,7 +89,7 @@ class Test_Media_Template_Tools_Capability_Flags extends WP_UnitTestCase {
 	 */
 	public function test_apply_media_template_has_capability_flags() {
 		$class_file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/class-wp-mcp-ai-tool-apply-media-template.php';
-		
+
 		if ( ! file_exists( $class_file ) ) {
 			$this->markTestSkipped( 'Media template tools not available (Pro addon)' );
 		}
@@ -126,23 +126,23 @@ class Test_Media_Template_Tools_Capability_Flags extends WP_UnitTestCase {
 	 */
 	public function test_all_media_template_tools_can_be_instantiated() {
 		$tools = array(
-			'list_media_templates'   => 'class-wp-mcp-ai-tool-list-media-templates.php',
-			'create_media_template'  => 'class-wp-mcp-ai-tool-create-media-template.php',
-			'apply_media_template'   => 'class-wp-mcp-ai-tool-apply-media-template.php',
+			'list_media_templates'  => 'class-wp-mcp-ai-tool-list-media-templates.php',
+			'create_media_template' => 'class-wp-mcp-ai-tool-create-media-template.php',
+			'apply_media_template'  => 'class-wp-mcp-ai-tool-apply-media-template.php',
 		);
 
 		foreach ( $tools as $tool_name => $filename ) {
 			$class_file = WP_MCP_AI_PATH . 'addons/pro/includes/tools/' . $filename;
-			
+
 			if ( ! file_exists( $class_file ) ) {
 				continue;
 			}
 
 			require_once $class_file;
-			
+
 			// Convert filename to class name.
 			$class_name = 'WP_MCP_AI_Tool_' . str_replace( ' ', '_', ucwords( str_replace( array( 'class-wp-mcp-ai-tool-', '.php', '-' ), array( '', '', ' ' ), $filename ) ) );
-			
+
 			// Test that the class exists.
 			$this->assertTrue(
 				class_exists( $class_name ),

@@ -84,6 +84,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 				$method->invoke( null, $post->ID );
 			} catch ( ReflectionException $e ) {
 				// Silently fail if method doesn't exist - backwards compatibility.
+				unset( $e );
 			}
 		}
 

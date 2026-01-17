@@ -17,6 +17,8 @@
  *
  * @package WP_MCP_AI
  *
+ * phpcs:disable WordPress.Files.FileName.InvalidClassFileName
+ *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
  */
@@ -746,7 +748,7 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-chart-settings.php';
-	
+
 	// Initialize Pro Dashboard components.
 	new WP_MCP_AI_Pro_Database();
 	new WP_MCP_AI_Pro_License();
@@ -844,6 +846,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 	/**
 	 * Main plugin container class.
 	 */
+	// phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed,Squiz.Commenting.ClassComment.Missing -- Plugin container class documented in file header
 	final class WP_MCP_AI {
 		/**
 		 * Singleton instance.

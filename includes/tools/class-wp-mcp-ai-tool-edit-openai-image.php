@@ -97,6 +97,9 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments The tool arguments.
+	 * @param array $context   The tool context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate image_id.

@@ -386,7 +386,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// OpenAI Sora API returns an async job response, not the video directly.
-		// Response format: {"id": "video_123", "object": "video", "status": "queued", ...}
+		// Response format: {"id": "video_123", "object": "video", "status": "queued", ...}.
 		if ( empty( $data['id'] ) || empty( $data['status'] ) ) {
 			WP_MCP_AI_Logger::log_error(
 				'Sora API returned unexpected response format',

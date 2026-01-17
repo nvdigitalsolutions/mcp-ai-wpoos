@@ -304,7 +304,7 @@ class Test_Cloudflare_Response_Format extends WP_UnitTestCase {
 		);
 
 		$options = array(
-			'tools'            => array(
+			'tools'           => array(
 				array(
 					'type'     => 'function',
 					'function' => array(

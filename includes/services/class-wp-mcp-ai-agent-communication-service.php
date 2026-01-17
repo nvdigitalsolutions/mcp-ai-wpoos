@@ -122,7 +122,7 @@ class WP_MCP_AI_Agent_Communication_Service {
 			);
 		}
 
-		$strategy = sanitize_key( $strategy );
+		$strategy           = sanitize_key( $strategy );
 		$allowed_strategies = array( 'consensus', 'weighted', 'hierarchical', 'first', 'best' );
 
 		if ( ! in_array( $strategy, $allowed_strategies, true ) ) {
@@ -262,7 +262,7 @@ class WP_MCP_AI_Agent_Communication_Service {
 
 		foreach ( $results as $result ) {
 			$weight = isset( $result['weight'] ) ? floatval( $result['weight'] ) : 1.0;
-			
+
 			$weighted[] = array(
 				'result' => isset( $result['result'] ) ? $result['result'] : $result,
 				'weight' => $weight,
@@ -333,7 +333,7 @@ class WP_MCP_AI_Agent_Communication_Service {
 
 		foreach ( $results as $result ) {
 			$score = isset( $result['score'] ) ? floatval( $result['score'] ) : 0.5;
-			
+
 			if ( $score > $best_score ) {
 				$best_score  = $score;
 				$best_result = $result;

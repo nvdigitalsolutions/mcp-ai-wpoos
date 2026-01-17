@@ -58,20 +58,20 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'operation'   => array(
+				'operation'     => array(
 					'type'        => 'string',
 					'enum'        => array( 'generate', 'explain', 'debug', 'document', 'convert', 'lambda' ),
 					'description' => __( 'Operation to perform: "generate" (create formula from description), "explain" (explain existing formula), "debug" (fix problematic formula), "document" (add documentation), "convert" (convert multi-step to LAMBDA), "lambda" (create custom LAMBDA function).', 'mcp-ai-wpoos' ),
 				),
-				'description' => array(
+				'description'   => array(
 					'type'        => 'string',
 					'description' => __( 'Natural language description of what you want the formula to do (for generate/lambda operations).', 'mcp-ai-wpoos' ),
 				),
-				'formula'     => array(
+				'formula'       => array(
 					'type'        => 'string',
 					'description' => __( 'Existing Excel formula to explain, debug, or document.', 'mcp-ai-wpoos' ),
 				),
-				'context'     => array(
+				'context'       => array(
 					'type'        => 'string',
 					'description' => __( 'Additional context about your spreadsheet structure, data ranges, or specific requirements.', 'mcp-ai-wpoos' ),
 				),
@@ -81,7 +81,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 					'description' => __( 'Excel version target: "modern" (Microsoft 365 with LAMBDA), "legacy" (older Excel without LAMBDA), "online" (Excel Online). Default: modern.', 'mcp-ai-wpoos' ),
 					'default'     => 'modern',
 				),
-				'model'       => array(
+				'model'         => array(
 					'type'        => 'string',
 					'description' => __( 'AI model to use for generation. If not specified, uses assistant default or global default.', 'mcp-ai-wpoos' ),
 				),
@@ -161,7 +161,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			);
 		}
 
-		$operation = sanitize_text_field( $arguments['operation'] );
+		$operation        = sanitize_text_field( $arguments['operation'] );
 		$valid_operations = array( 'generate', 'explain', 'debug', 'document', 'convert', 'lambda' );
 
 		if ( ! in_array( $operation, $valid_operations, true ) ) {
@@ -223,9 +223,9 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			);
 		}
 
-		$description = sanitize_textarea_field( $arguments['description'] );
+		$description  = sanitize_textarea_field( $arguments['description'] );
 		$user_context = isset( $arguments['context'] ) ? sanitize_textarea_field( $arguments['context'] ) : '';
-		$operation = sanitize_text_field( $arguments['operation'] );
+		$operation    = sanitize_text_field( $arguments['operation'] );
 
 		// Build the system prompt based on operation type and Excel version.
 		$system_prompt = $this->build_generation_system_prompt( $operation, $excel_version );
@@ -242,13 +242,13 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 
 		// Parse and format the response.
 		return array(
-			'operation'      => $operation,
-			'excel_version'  => $excel_version,
-			'description'    => $description,
-			'formula'        => $ai_response['formula'] ?? $ai_response['content'],
-			'explanation'    => $ai_response['explanation'] ?? '',
-			'usage_notes'    => $ai_response['usage_notes'] ?? '',
-			'text'           => sprintf(
+			'operation'     => $operation,
+			'excel_version' => $excel_version,
+			'description'   => $description,
+			'formula'       => $ai_response['formula'] ?? $ai_response['content'],
+			'explanation'   => $ai_response['explanation'] ?? '',
+			'usage_notes'   => $ai_response['usage_notes'] ?? '',
+			'text'          => sprintf(
 				/* translators: 1: operation type, 2: formula description */
 				__( 'Generated Excel %1$s for: %2$s', 'mcp-ai-wpoos' ),
 				'lambda' === $operation ? 'LAMBDA function' : 'formula',
@@ -272,14 +272,14 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			);
 		}
 
-		$formula = sanitize_textarea_field( $arguments['formula'] );
+		$formula      = sanitize_textarea_field( $arguments['formula'] );
 		$user_context = isset( $arguments['context'] ) ? sanitize_textarea_field( $arguments['context'] ) : '';
 
 		// Build the system prompt.
 		$system_prompt = $this->build_explain_system_prompt();
 
 		// Build the user prompt.
-		$user_prompt = "Please explain this Excel formula in detail:\n\n";
+		$user_prompt  = "Please explain this Excel formula in detail:\n\n";
 		$user_prompt .= "Formula: {$formula}\n\n";
 		if ( $user_context ) {
 			$user_prompt .= "Context: {$user_context}\n\n";
@@ -288,7 +288,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$user_prompt .= "1. Overall purpose\n";
 		$user_prompt .= "2. How it works step-by-step\n";
 		$user_prompt .= "3. What each function/operator does\n";
-		$user_prompt .= "4. Any potential issues or edge cases";
+		$user_prompt .= '4. Any potential issues or edge cases';
 
 		// Get AI response.
 		$ai_response = $this->call_ai_model( $system_prompt, $user_prompt, $arguments, $context );
@@ -325,14 +325,14 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			);
 		}
 
-		$formula = sanitize_textarea_field( $arguments['formula'] );
+		$formula      = sanitize_textarea_field( $arguments['formula'] );
 		$user_context = isset( $arguments['context'] ) ? sanitize_textarea_field( $arguments['context'] ) : '';
 
 		// Build the system prompt.
 		$system_prompt = $this->build_debug_system_prompt( $excel_version );
 
 		// Build the user prompt.
-		$user_prompt = "Please debug this Excel formula and provide a corrected version:\n\n";
+		$user_prompt  = "Please debug this Excel formula and provide a corrected version:\n\n";
 		$user_prompt .= "Formula: {$formula}\n\n";
 		if ( $user_context ) {
 			$user_prompt .= "Issue/Context: {$user_context}\n\n";
@@ -340,7 +340,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$user_prompt .= "Provide:\n";
 		$user_prompt .= "1. Identified issues\n";
 		$user_prompt .= "2. Corrected formula\n";
-		$user_prompt .= "3. Explanation of fixes";
+		$user_prompt .= '3. Explanation of fixes';
 
 		// Get AI response.
 		$ai_response = $this->call_ai_model( $system_prompt, $user_prompt, $arguments, $context );
@@ -376,14 +376,14 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			);
 		}
 
-		$formula = sanitize_textarea_field( $arguments['formula'] );
+		$formula      = sanitize_textarea_field( $arguments['formula'] );
 		$user_context = isset( $arguments['context'] ) ? sanitize_textarea_field( $arguments['context'] ) : '';
 
 		// Build the system prompt.
 		$system_prompt = $this->build_document_system_prompt();
 
 		// Build the user prompt.
-		$user_prompt = "Please create professional documentation for this Excel formula:\n\n";
+		$user_prompt  = "Please create professional documentation for this Excel formula:\n\n";
 		$user_prompt .= "Formula: {$formula}\n\n";
 		if ( $user_context ) {
 			$user_prompt .= "Context: {$user_context}\n\n";
@@ -393,7 +393,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$user_prompt .= "2. Input requirements\n";
 		$user_prompt .= "3. Expected output\n";
 		$user_prompt .= "4. Usage instructions\n";
-		$user_prompt .= "5. Maintenance notes";
+		$user_prompt .= '5. Maintenance notes';
 
 		// Get AI response.
 		$ai_response = $this->call_ai_model( $system_prompt, $user_prompt, $arguments, $context );
@@ -433,8 +433,8 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			);
 		}
 
-		$description = isset( $arguments['description'] ) ? sanitize_textarea_field( $arguments['description'] ) : '';
-		$formula = isset( $arguments['formula'] ) ? sanitize_textarea_field( $arguments['formula'] ) : '';
+		$description  = isset( $arguments['description'] ) ? sanitize_textarea_field( $arguments['description'] ) : '';
+		$formula      = isset( $arguments['formula'] ) ? sanitize_textarea_field( $arguments['formula'] ) : '';
 		$user_context = isset( $arguments['context'] ) ? sanitize_textarea_field( $arguments['context'] ) : '';
 
 		// Build the system prompt.
@@ -454,7 +454,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$user_prompt .= "Provide:\n";
 		$user_prompt .= "1. Consolidated LAMBDA function\n";
 		$user_prompt .= "2. How to use it\n";
-		$user_prompt .= "3. Benefits of consolidation";
+		$user_prompt .= '3. Benefits of consolidation';
 
 		// Get AI response.
 		$ai_response = $this->call_ai_model( $system_prompt, $user_prompt, $arguments, $context );
@@ -525,7 +525,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$prompt .= "\n";
 		$prompt .= '  "usage_notes": "How to use it in Excel"';
 		$prompt .= "\n";
-		$prompt .= "}";
+		$prompt .= '}';
 
 		return $prompt;
 	}
@@ -554,7 +554,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			$prompt .= $context . "\n\n";
 		}
 
-		$prompt .= "Provide the formula with explanation and usage notes.";
+		$prompt .= 'Provide the formula with explanation and usage notes.';
 
 		return $prompt;
 	}
@@ -565,7 +565,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 * @return string System prompt.
 	 */
 	protected function build_explain_system_prompt() {
-		$prompt = "You are an expert Excel formula analyst.\n\n";
+		$prompt  = "You are an expert Excel formula analyst.\n\n";
 		$prompt .= "Task: Explain Excel formulas in clear, accessible language.\n\n";
 		$prompt .= "Your explanations should:\n";
 		$prompt .= "- Break down complex formulas step-by-step\n";
@@ -578,7 +578,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$prompt .= "- LAMBDA for custom functions\n";
 		$prompt .= "- Recursive capabilities\n";
 		$prompt .= "- Functional programming patterns\n";
-		$prompt .= "- Dynamic arrays and spilling";
+		$prompt .= '- Dynamic arrays and spilling';
 
 		return $prompt;
 	}
@@ -590,8 +590,8 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 * @return string System prompt.
 	 */
 	protected function build_debug_system_prompt( $excel_version ) {
-		$prompt = "You are an expert Excel formula debugger.\n\n";
-		$prompt .= "Target: " . ucfirst( $excel_version ) . " Excel\n\n";
+		$prompt  = "You are an expert Excel formula debugger.\n\n";
+		$prompt .= 'Target: ' . ucfirst( $excel_version ) . " Excel\n\n";
 		$prompt .= "Task: Identify and fix issues in Excel formulas.\n\n";
 		$prompt .= "Common issues to check:\n";
 		$prompt .= "- Syntax errors (missing parentheses, commas)\n";
@@ -611,7 +611,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$prompt .= "\n";
 		$prompt .= '  "content": "Full explanation"';
 		$prompt .= "\n";
-		$prompt .= "}";
+		$prompt .= '}';
 
 		return $prompt;
 	}
@@ -622,7 +622,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 * @return string System prompt.
 	 */
 	protected function build_document_system_prompt() {
-		$prompt = "You are an expert technical writer specializing in Excel documentation.\n\n";
+		$prompt  = "You are an expert technical writer specializing in Excel documentation.\n\n";
 		$prompt .= "Task: Create professional, maintainable documentation for Excel formulas.\n\n";
 		$prompt .= "Documentation should include:\n";
 		$prompt .= "- Clear purpose statement\n";
@@ -632,7 +632,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$prompt .= "- Edge cases and limitations\n";
 		$prompt .= "- Maintenance considerations\n";
 		$prompt .= "- Performance notes\n\n";
-		$prompt .= "Write for an audience that may not have created the formula but needs to maintain it.";
+		$prompt .= 'Write for an audience that may not have created the formula but needs to maintain it.';
 
 		return $prompt;
 	}
@@ -643,7 +643,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 * @return string System prompt.
 	 */
 	protected function build_convert_system_prompt() {
-		$prompt = "You are an expert in Excel's LAMBDA functions and formula optimization.\n\n";
+		$prompt  = "You are an expert in Excel's LAMBDA functions and formula optimization.\n\n";
 		$prompt .= "Task: Convert multi-step calculations into single, reusable LAMBDA functions.\n\n";
 		$prompt .= "Benefits of LAMBDA consolidation:\n";
 		$prompt .= "- Eliminate helper columns\n";
@@ -661,7 +661,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$prompt .= "\n";
 		$prompt .= '  "content": "Full explanation"';
 		$prompt .= "\n";
-		$prompt .= "}";
+		$prompt .= '}';
 
 		return $prompt;
 	}
@@ -683,7 +683,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		if ( empty( $model ) ) {
 			if ( isset( $context['assistant_id'] ) ) {
 				$assistant_id = absint( $context['assistant_id'] );
-				$model = get_post_meta( $assistant_id, '_wp_mcp_ai_model', true );
+				$model        = get_post_meta( $assistant_id, '_wp_mcp_ai_model', true );
 			}
 
 			if ( empty( $model ) ) {
@@ -720,7 +720,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 
 		// Try to parse JSON response if present.
 		$content = $response['content'] ?? '';
-		$parsed = $this->try_parse_json_response( $content );
+		$parsed  = $this->try_parse_json_response( $content );
 
 		if ( $parsed ) {
 			// JSON response successfully parsed.

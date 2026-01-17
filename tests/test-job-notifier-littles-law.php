@@ -131,7 +131,7 @@ class Test_Job_Notifier_Littles_Law extends WP_UnitTestCase {
 	 * Test different SLA targets for different tool types.
 	 */
 	public function test_different_sla_targets_per_tool() {
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Job_Notifier' );
+		$reflection  = new ReflectionClass( 'WP_MCP_AI_Job_Notifier' );
 		$tier_method = $reflection->getMethod( 'infer_sla_tier_from_tool' );
 		$tier_method->setAccessible( true );
 		$target_method = $reflection->getMethod( 'get_sla_target_for_tier' );

@@ -397,7 +397,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 
 			// Try to get from database first.
 			if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
-				$args     = array();
+				$args = array();
 				if ( ! empty( $category ) ) {
 					$args['category'] = $category;
 				}
@@ -419,7 +419,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			if ( ! empty( $category ) ) {
 				$controls = array_filter(
 					$controls,
-					function( $control ) use ( $category ) {
+					function ( $control ) use ( $category ) {
 						return $control['category'] === $category;
 					}
 				);
@@ -429,7 +429,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			if ( ! empty( $status ) ) {
 				$controls = array_filter(
 					$controls,
-					function( $control ) use ( $status ) {
+					function ( $control ) use ( $status ) {
 						return $control['status'] === $status;
 					}
 				);
@@ -481,34 +481,34 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			// Fallback to sample risk data.
 			$risks = array(
 				array(
-					'id'          => 'RISK-001',
-					'title'       => 'API Key Exposure',
-					'likelihood'  => 2,
-					'impact'      => 5,
-					'score'       => 10,
-					'treatment'   => 'reduce',
-					'status'      => 'mitigated',
-					'owner'       => 'Security Team',
+					'id'         => 'RISK-001',
+					'title'      => 'API Key Exposure',
+					'likelihood' => 2,
+					'impact'     => 5,
+					'score'      => 10,
+					'treatment'  => 'reduce',
+					'status'     => 'mitigated',
+					'owner'      => 'Security Team',
 				),
 				array(
-					'id'          => 'RISK-002',
-					'title'       => 'Data Loss',
-					'likelihood'  => 2,
-					'impact'      => 4,
-					'score'       => 8,
-					'treatment'   => 'reduce',
-					'status'      => 'active',
-					'owner'       => 'Operations',
+					'id'         => 'RISK-002',
+					'title'      => 'Data Loss',
+					'likelihood' => 2,
+					'impact'     => 4,
+					'score'      => 8,
+					'treatment'  => 'reduce',
+					'status'     => 'active',
+					'owner'      => 'Operations',
 				),
 				array(
-					'id'          => 'RISK-003',
-					'title'       => 'Vendor Service Disruption',
-					'likelihood'  => 3,
-					'impact'      => 3,
-					'score'       => 9,
-					'treatment'   => 'share',
-					'status'      => 'active',
-					'owner'       => 'DevOps',
+					'id'         => 'RISK-003',
+					'title'      => 'Vendor Service Disruption',
+					'likelihood' => 3,
+					'impact'     => 3,
+					'score'      => 9,
+					'treatment'  => 'share',
+					'status'     => 'active',
+					'owner'      => 'DevOps',
 				),
 			);
 
@@ -617,9 +617,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 		 * @return WP_REST_Response|WP_Error Response object or error.
 		 */
 		public function add_evidence( $request ) {
-			$control_id = $request->get_param( 'control_id' );
-			$title      = $request->get_param( 'title' );
-			$description = $request->get_param( 'description' );
+			$control_id    = $request->get_param( 'control_id' );
+			$title         = $request->get_param( 'title' );
+			$description   = $request->get_param( 'description' );
 			$evidence_type = $request->get_param( 'evidence_type' );
 
 			if ( empty( $title ) ) {
@@ -688,7 +688,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 			$matrix = array();
 			for ( $likelihood = 1; $likelihood <= 5; $likelihood++ ) {
 				for ( $impact = 1; $impact <= 5; $impact++ ) {
-					$key = sprintf( '%d-%d', $likelihood, $impact );
+					$key            = sprintf( '%d-%d', $likelihood, $impact );
 					$matrix[ $key ] = array(
 						'likelihood' => $likelihood,
 						'impact'     => $impact,
@@ -729,7 +729,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 				$key        = sprintf( '%d-%d', $likelihood, $impact );
 
 				if ( isset( $matrix[ $key ] ) ) {
-					$matrix[ $key ]['count']++;
+					++$matrix[ $key ]['count'];
 					$matrix[ $key ]['risks'][] = array(
 						'id'    => $risk['risk_id'],
 						'title' => $risk['title'],
@@ -743,9 +743,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					'matrix' => array_values( $matrix ),
 					'totals' => array(
 						'total_risks' => count( $risks ),
-						'high_risks'  => count( array_filter( $risks, function( $r ) {
-							return ( $r['risk_level'] ?? '' ) === 'high';
-						} ) ),
+						'high_risks'  => count(
+							array_filter(
+								$risks,
+								function ( $r ) {
+									return ( $r['risk_level'] ?? '' ) === 'high';
+								}
+							)
+						),
 					),
 				)
 			);
@@ -914,11 +919,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 					} elseif ( strpos( $status_text, 'Planned' ) !== false ) {
 						$current_control['status_key'] = 'planned';
 					} elseif ( strpos( $status_text, 'Not Applicable' ) !== false ) {
-						$current_control['status_key']  = 'not_applicable';
+						$current_control['status_key'] = 'not_applicable';
 						$current_control['applicable'] = false;
 					}
 				} elseif ( $current_control && preg_match( '/^\*\*Applicability:\*\*\s+(.+)$/', $line, $matches ) ) {
-					$applicable_text                = trim( $matches[1] );
+					$applicable_text               = trim( $matches[1] );
 					$current_control['applicable'] = ( strcasecmp( $applicable_text, 'Yes' ) === 0 );
 				} elseif ( $current_control && preg_match( '/^\*\*Justification:\*\*\s+(.+)$/', $line, $matches ) ) {
 					$current_control['justification'] = trim( $matches[1] );

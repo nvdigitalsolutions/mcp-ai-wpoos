@@ -90,7 +90,7 @@ class WP_MCP_AI_Media_Template_CPT {
 
 		// Check if we're on a media template post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type   = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type        = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_template_page = ( $post_type === self::POST_TYPE );
 		if ( ! $is_template_page && $screen->post_type !== self::POST_TYPE ) {
 			return;
@@ -454,7 +454,7 @@ class WP_MCP_AI_Media_Template_CPT {
 			$duplicated = 0;
 			foreach ( $post_ids as $post_id ) {
 				if ( self::duplicate_template( $post_id ) ) {
-					$duplicated++;
+					++$duplicated;
 				}
 			}
 			$redirect_to = add_query_arg( 'duplicated_templates', $duplicated, $redirect_to );
@@ -605,14 +605,14 @@ class WP_MCP_AI_Media_Template_CPT {
 			'mcp-ai-media-template-admin',
 			'mcpAiMediaTemplate',
 			array(
-				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-				'nonce'         => wp_create_nonce( 'mcp_ai_media_template_admin' ),
-				'i18n'          => array(
-					'previewError'    => __( 'Failed to generate preview.', 'mcp-ai-wpoos-pro' ),
-					'applySuccess'    => __( 'Template applied successfully!', 'mcp-ai-wpoos-pro' ),
-					'applyError'      => __( 'Failed to apply template.', 'mcp-ai-wpoos-pro' ),
-					'selectImage'     => __( 'Select an image to apply this template.', 'mcp-ai-wpoos-pro' ),
-					'processing'      => __( 'Processing...', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'mcp_ai_media_template_admin' ),
+				'i18n'    => array(
+					'previewError'     => __( 'Failed to generate preview.', 'mcp-ai-wpoos-pro' ),
+					'applySuccess'     => __( 'Template applied successfully!', 'mcp-ai-wpoos-pro' ),
+					'applyError'       => __( 'Failed to apply template.', 'mcp-ai-wpoos-pro' ),
+					'selectImage'      => __( 'Select an image to apply this template.', 'mcp-ai-wpoos-pro' ),
+					'processing'       => __( 'Processing...', 'mcp-ai-wpoos-pro' ),
 					'confirmDuplicate' => __( 'Are you sure you want to duplicate this template?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
@@ -746,7 +746,7 @@ class WP_MCP_AI_Media_Template_CPT {
 					'ai_background' => __( 'AI background modification', 'mcp-ai-wpoos-pro' ),
 					'ai_retouch'    => __( 'AI-powered retouching', 'mcp-ai-wpoos-pro' ),
 				);
-				$summary = isset( $operations[ $operation ] ) ? $operations[ $operation ] : __( 'AI operation', 'mcp-ai-wpoos-pro' );
+				$summary    = isset( $operations[ $operation ] ) ? $operations[ $operation ] : __( 'AI operation', 'mcp-ai-wpoos-pro' );
 				break;
 
 			default:

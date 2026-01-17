@@ -47,11 +47,11 @@ class WP_MCP_AI_ECA_Metabox_Schedule extends WP_MCP_AI_ECA_Metabox_Base {
 		}
 
 		// Get existing values.
-		$day           = get_post_meta( $post->ID, '_eca_day', true );
-		$start_time    = get_post_meta( $post->ID, '_eca_start_time', true );
-		$end_time      = get_post_meta( $post->ID, '_eca_end_time', true );
-		$teachers      = get_post_meta( $post->ID, '_eca_teachers', true );
-		$year_groups   = get_post_meta( $post->ID, '_eca_year_groups', true );
+		$day         = get_post_meta( $post->ID, '_eca_day', true );
+		$start_time  = get_post_meta( $post->ID, '_eca_start_time', true );
+		$end_time    = get_post_meta( $post->ID, '_eca_end_time', true );
+		$teachers    = get_post_meta( $post->ID, '_eca_teachers', true );
+		$year_groups = get_post_meta( $post->ID, '_eca_year_groups', true );
 
 		// Convert arrays to strings for display.
 		$teachers_str    = is_array( $teachers ) ? implode( ', ', $teachers ) : '';
@@ -185,7 +185,7 @@ class WP_MCP_AI_ECA_Metabox_Schedule extends WP_MCP_AI_ECA_Metabox_Base {
 
 		// Save day.
 		if ( isset( $_POST['wp_mcp_ai_eca_day'] ) ) {
-			$day = sanitize_text_field( $_POST['wp_mcp_ai_eca_day'] );
+			$day        = sanitize_text_field( $_POST['wp_mcp_ai_eca_day'] );
 			$valid_days = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
 			if ( in_array( $day, $valid_days, true ) || '' === $day ) {
 				update_post_meta( $post_id, '_eca_day', $day );
@@ -205,16 +205,16 @@ class WP_MCP_AI_ECA_Metabox_Schedule extends WP_MCP_AI_ECA_Metabox_Base {
 		// Save teachers (convert comma-separated string to array).
 		if ( isset( $_POST['wp_mcp_ai_eca_teachers'] ) ) {
 			$teachers_str = sanitize_text_field( $_POST['wp_mcp_ai_eca_teachers'] );
-			$teachers = array_map( 'trim', explode( ',', $teachers_str ) );
-			$teachers = array_filter( $teachers ); // Remove empty values.
+			$teachers     = array_map( 'trim', explode( ',', $teachers_str ) );
+			$teachers     = array_filter( $teachers ); // Remove empty values.
 			update_post_meta( $post_id, '_eca_teachers', $teachers );
 		}
 
 		// Save year groups (convert comma-separated string to array).
 		if ( isset( $_POST['wp_mcp_ai_eca_year_groups'] ) ) {
 			$year_groups_str = sanitize_text_field( $_POST['wp_mcp_ai_eca_year_groups'] );
-			$year_groups = array_map( 'trim', explode( ',', $year_groups_str ) );
-			$year_groups = array_filter( $year_groups ); // Remove empty values.
+			$year_groups     = array_map( 'trim', explode( ',', $year_groups_str ) );
+			$year_groups     = array_filter( $year_groups ); // Remove empty values.
 			update_post_meta( $post_id, '_eca_year_groups', $year_groups );
 		}
 	}

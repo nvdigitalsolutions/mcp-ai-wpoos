@@ -41,27 +41,27 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'allergy_id' => array(
+				'allergy_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional allergy ID. If provided, updates the existing allergy instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
-				'member_id' => array(
+				'member_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this allergy belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'allergen'  => array(
+				'allergen'       => array(
 					'type'        => 'string',
 					'description' => __( 'Allergen name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'severity'  => array(
+				'severity'       => array(
 					'type'        => 'string',
 					'description' => __( 'Severity level (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'mild', 'moderate', 'severe' ),
 				),
-				'reactions' => array(
+				'reactions'      => array(
 					'type'        => 'string',
 					'description' => __( 'Typical reactions (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
@@ -71,7 +71,7 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Date diagnosed (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'notes'     => array(
+				'notes'          => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
@@ -129,7 +129,7 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			}
 
 			// Check permissions: must be author or have edit_others_posts capability.
-			$is_author = absint( $existing_allergy->post_author ) === $current_user_id;
+			$is_author       = absint( $existing_allergy->post_author ) === $current_user_id;
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {

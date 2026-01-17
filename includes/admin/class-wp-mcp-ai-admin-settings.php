@@ -25,16 +25,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 	 * - WP_MCP_AI_Settings_Validator: Input validation
 	 */
 	class WP_MCP_AI_Admin_Settings {
-		const DEFAULT_MEMORY_MAX_FILE_BYTES  = 5242880; // 5 MB.
-		const OPTION_NAME                    = 'wp_mcp_ai_settings';
-		const SETTINGS_GROUP                 = 'wp_mcp_ai_settings_group';
-		const PAGE_SLUG                      = 'wp-mcp-ai-settings';
-		const SIMPLE_JWT_LOGIN_PLUGIN        = 'simple-jwt-login/simple-jwt-login.php';
-		const GMAIL_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/gmail.readonly';
-		const GMAIL_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
-		const GMAIL_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
-		const GMAIL_PROFILE_ENDPOINT         = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
-		const GOOGLE_DRIVE_OAUTH_SCOPE       = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly';
+		const DEFAULT_MEMORY_MAX_FILE_BYTES         = 5242880; // 5 MB.
+		const OPTION_NAME                           = 'wp_mcp_ai_settings';
+		const SETTINGS_GROUP                        = 'wp_mcp_ai_settings_group';
+		const PAGE_SLUG                             = 'wp-mcp-ai-settings';
+		const SIMPLE_JWT_LOGIN_PLUGIN               = 'simple-jwt-login/simple-jwt-login.php';
+		const GMAIL_OAUTH_SCOPE                     = 'https://www.googleapis.com/auth/gmail.readonly';
+		const GMAIL_OAUTH_AUTHORIZE_ENDPOINT        = 'https://accounts.google.com/o/oauth2/v2/auth';
+		const GMAIL_OAUTH_TOKEN_ENDPOINT            = 'https://oauth2.googleapis.com/token';
+		const GMAIL_PROFILE_ENDPOINT                = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
+		const GOOGLE_DRIVE_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly';
 		const GOOGLE_DRIVE_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 		const GOOGLE_DRIVE_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 
@@ -4645,9 +4645,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			// Final fallback to minimal hardcoded list.
 			$choices = array(
-				'gpt-4o'        => __( 'GPT-4o', 'mcp-ai-wpoos' ),
-				'gpt-4o-mini'   => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
-				'gpt-4-turbo'   => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
+				'gpt-4o'      => __( 'GPT-4o', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini' => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
+				'gpt-4-turbo' => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
 			);
 
 			/**

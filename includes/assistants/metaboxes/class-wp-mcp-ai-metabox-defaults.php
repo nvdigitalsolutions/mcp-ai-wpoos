@@ -115,7 +115,7 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 		// Apply filter for third-party extensions (maintains backward compatibility).
 		$provider_slugs = array_keys( $provider_choices );
 		$provider_slugs = apply_filters( 'wp_mcp_ai_allowed_providers', $provider_slugs );
-		
+
 		// Filter the provider choices based on allowed slugs.
 		if ( is_array( $provider_slugs ) && ! empty( $provider_slugs ) ) {
 			$provider_choices = array_intersect_key( $provider_choices, array_flip( $provider_slugs ) );

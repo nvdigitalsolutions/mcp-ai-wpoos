@@ -229,7 +229,7 @@ class WP_MCP_AI_Agent_Role_Critic extends WP_MCP_AI_Agent_Role_Base {
 	 */
 	protected function calculate_overall_score( $validation ) {
 		$scores = array_column( $validation, 'score' );
-		
+
 		if ( empty( $scores ) ) {
 			return 0.0;
 		}

@@ -34,6 +34,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 		 * Render the complete tools orchestration view.
 		 *
 		 * @return string HTML output or fallback on error.
+		 * @throws Exception If the tool registry is not available.
 		 */
 		public static function render_tools_view() {
 			try {

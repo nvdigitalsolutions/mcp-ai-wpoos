@@ -111,7 +111,9 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro', 'database-write' );
+			'pro',
+			'database-write',
+		);
 	}
 
 	/**
@@ -160,7 +162,7 @@ class WP_MCP_AI_Tool_Create_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			}
 
 			// Check permissions: must be author or have edit_others_posts capability.
-			$is_author = absint( $existing_event->post_author ) === $current_user_id;
+			$is_author       = absint( $existing_event->post_author ) === $current_user_id;
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {

@@ -130,7 +130,7 @@ class WP_MCP_AI_Tool_Create_Student implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			}
 
 			// Check permissions: must be author or have edit_others_posts capability.
-			$is_author = absint( $existing_student->post_author ) === $current_user_id;
+			$is_author       = absint( $existing_student->post_author ) === $current_user_id;
 			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 			if ( ! $is_author && ! $can_edit_others ) {

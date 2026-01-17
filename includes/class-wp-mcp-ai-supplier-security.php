@@ -129,155 +129,155 @@ class WP_MCP_AI_Supplier_Security {
 	protected function get_default_suppliers() {
 		return array(
 			'openai'   => array(
-				'id'               => 'openai',
-				'name'             => 'OpenAI',
-				'service'          => 'GPT API for AI Assistance',
-				'category'         => 'critical',
-				'risk_level'       => 'medium',
-				'status'           => 'approved',
-				'certifications'   => array( 'SOC 2 Type II' ),
-				'compliance'       => array( 'GDPR', 'CCPA' ),
-				'data_access'      => array( 'User prompts', 'Chat transcripts' ),
-				'encryption'       => array(
+				'id'              => 'openai',
+				'name'            => 'OpenAI',
+				'service'         => 'GPT API for AI Assistance',
+				'category'        => 'critical',
+				'risk_level'      => 'medium',
+				'status'          => 'approved',
+				'certifications'  => array( 'SOC 2 Type II' ),
+				'compliance'      => array( 'GDPR', 'CCPA' ),
+				'data_access'     => array( 'User prompts', 'Chat transcripts' ),
+				'encryption'      => array(
 					'at_rest'    => 'AES-256',
 					'in_transit' => 'TLS 1.2+',
 				),
-				'sla'              => array(
-					'uptime'                 => '99.9%',
-					'incident_notification'  => '24 hours',
-					'support_response'       => '4 hours',
+				'sla'             => array(
+					'uptime'                => '99.9%',
+					'incident_notification' => '24 hours',
+					'support_response'      => '4 hours',
 				),
-				'last_assessment'  => current_time( 'mysql' ),
-				'next_review'      => date( 'Y-m-d', strtotime( '+12 months' ) ),
-				'contact_email'    => 'support@openai.com',
-				'documentation'    => 'https://openai.com/security',
-				'incidents'        => array(),
-				'performance'      => array(
+				'last_assessment' => current_time( 'mysql' ),
+				'next_review'     => date( 'Y-m-d', strtotime( '+12 months' ) ),
+				'contact_email'   => 'support@openai.com',
+				'documentation'   => 'https://openai.com/security',
+				'incidents'       => array(),
+				'performance'     => array(
 					'uptime_actual' => 99.95,
 					'incidents_ytd' => 0,
 				),
 			),
 			'google'   => array(
-				'id'               => 'google',
-				'name'             => 'Google (Gemini)',
-				'service'          => 'Gemini AI API',
-				'category'         => 'critical',
-				'risk_level'       => 'low',
-				'status'           => 'approved',
-				'certifications'   => array( 'ISO 27001', 'SOC 2 Type II', 'SOC 3' ),
-				'compliance'       => array( 'GDPR', 'CCPA', 'HIPAA' ),
-				'data_access'      => array( 'User prompts', 'Chat transcripts' ),
-				'encryption'       => array(
+				'id'              => 'google',
+				'name'            => 'Google (Gemini)',
+				'service'         => 'Gemini AI API',
+				'category'        => 'critical',
+				'risk_level'      => 'low',
+				'status'          => 'approved',
+				'certifications'  => array( 'ISO 27001', 'SOC 2 Type II', 'SOC 3' ),
+				'compliance'      => array( 'GDPR', 'CCPA', 'HIPAA' ),
+				'data_access'     => array( 'User prompts', 'Chat transcripts' ),
+				'encryption'      => array(
 					'at_rest'    => 'AES-256',
 					'in_transit' => 'TLS 1.3',
 				),
-				'sla'              => array(
-					'uptime'                 => '99.95%',
-					'incident_notification'  => '24 hours',
-					'support_response'       => '1 hour',
+				'sla'             => array(
+					'uptime'                => '99.95%',
+					'incident_notification' => '24 hours',
+					'support_response'      => '1 hour',
 				),
-				'last_assessment'  => current_time( 'mysql' ),
-				'next_review'      => date( 'Y-m-d', strtotime( '+12 months' ) ),
-				'contact_email'    => 'cloud-support@google.com',
-				'documentation'    => 'https://cloud.google.com/security',
-				'incidents'        => array(),
-				'performance'      => array(
+				'last_assessment' => current_time( 'mysql' ),
+				'next_review'     => date( 'Y-m-d', strtotime( '+12 months' ) ),
+				'contact_email'   => 'cloud-support@google.com',
+				'documentation'   => 'https://cloud.google.com/security',
+				'incidents'       => array(),
+				'performance'     => array(
 					'uptime_actual' => 99.97,
 					'incidents_ytd' => 0,
 				),
 			),
 			'github'   => array(
-				'id'               => 'github',
-				'name'             => 'GitHub',
-				'service'          => 'Version Control and CI/CD',
-				'category'         => 'important',
-				'risk_level'       => 'low',
-				'status'           => 'approved',
-				'certifications'   => array( 'SOC 2 Type II' ),
-				'compliance'       => array( 'GDPR' ),
-				'data_access'      => array( 'Source code', 'Configuration files' ),
-				'encryption'       => array(
+				'id'              => 'github',
+				'name'            => 'GitHub',
+				'service'         => 'Version Control and CI/CD',
+				'category'        => 'important',
+				'risk_level'      => 'low',
+				'status'          => 'approved',
+				'certifications'  => array( 'SOC 2 Type II' ),
+				'compliance'      => array( 'GDPR' ),
+				'data_access'     => array( 'Source code', 'Configuration files' ),
+				'encryption'      => array(
 					'at_rest'    => 'AES-256',
 					'in_transit' => 'TLS 1.2+',
 				),
-				'sla'              => array(
-					'uptime'                 => '99.95%',
-					'incident_notification'  => '1 hour',
-					'support_response'       => '8 hours',
+				'sla'             => array(
+					'uptime'                => '99.95%',
+					'incident_notification' => '1 hour',
+					'support_response'      => '8 hours',
 				),
-				'last_assessment'  => current_time( 'mysql' ),
-				'next_review'      => date( 'Y-m-d', strtotime( '+12 months' ) ),
-				'contact_email'    => 'support@github.com',
-				'documentation'    => 'https://github.com/security',
-				'incidents'        => array(),
-				'performance'      => array(
+				'last_assessment' => current_time( 'mysql' ),
+				'next_review'     => date( 'Y-m-d', strtotime( '+12 months' ) ),
+				'contact_email'   => 'support@github.com',
+				'documentation'   => 'https://github.com/security',
+				'incidents'       => array(),
+				'performance'     => array(
 					'uptime_actual' => 99.96,
 					'incidents_ytd' => 2,
 				),
 			),
 			'composer' => array(
-				'id'               => 'composer',
-				'name'             => 'Composer/Packagist',
-				'service'          => 'PHP Dependency Management',
-				'category'         => 'important',
-				'risk_level'       => 'medium',
-				'status'           => 'approved',
-				'certifications'   => array(),
-				'compliance'       => array(),
-				'data_access'      => array( 'Public packages only' ),
-				'encryption'       => array(
+				'id'              => 'composer',
+				'name'            => 'Composer/Packagist',
+				'service'         => 'PHP Dependency Management',
+				'category'        => 'important',
+				'risk_level'      => 'medium',
+				'status'          => 'approved',
+				'certifications'  => array(),
+				'compliance'      => array(),
+				'data_access'     => array( 'Public packages only' ),
+				'encryption'      => array(
 					'at_rest'    => 'N/A',
 					'in_transit' => 'HTTPS',
 				),
-				'sla'              => array(
-					'uptime'                 => 'Best effort',
-					'incident_notification'  => 'Public announcements',
-					'support_response'       => 'Community support',
+				'sla'             => array(
+					'uptime'                => 'Best effort',
+					'incident_notification' => 'Public announcements',
+					'support_response'      => 'Community support',
 				),
-				'last_assessment'  => current_time( 'mysql' ),
-				'next_review'      => date( 'Y-m-d', strtotime( '+12 months' ) ),
-				'contact_email'    => 'security@packagist.org',
-				'documentation'    => 'https://packagist.org/about',
-				'incidents'        => array(),
-				'performance'      => array(
+				'last_assessment' => current_time( 'mysql' ),
+				'next_review'     => date( 'Y-m-d', strtotime( '+12 months' ) ),
+				'contact_email'   => 'security@packagist.org',
+				'documentation'   => 'https://packagist.org/about',
+				'incidents'       => array(),
+				'performance'     => array(
 					'uptime_actual' => 99.8,
 					'incidents_ytd' => 3,
 				),
-				'mitigation'       => array(
+				'mitigation'      => array(
 					'Lock file usage',
 					'Vulnerability scanning via Dependabot',
 					'Manual package review before updates',
 				),
 			),
 			'npm'      => array(
-				'id'               => 'npm',
-				'name'             => 'NPM Registry',
-				'service'          => 'JavaScript Dependency Management',
-				'category'         => 'important',
-				'risk_level'       => 'medium',
-				'status'           => 'approved',
-				'certifications'   => array(),
-				'compliance'       => array(),
-				'data_access'      => array( 'Public packages only' ),
-				'encryption'       => array(
+				'id'              => 'npm',
+				'name'            => 'NPM Registry',
+				'service'         => 'JavaScript Dependency Management',
+				'category'        => 'important',
+				'risk_level'      => 'medium',
+				'status'          => 'approved',
+				'certifications'  => array(),
+				'compliance'      => array(),
+				'data_access'     => array( 'Public packages only' ),
+				'encryption'      => array(
 					'at_rest'    => 'N/A',
 					'in_transit' => 'HTTPS',
 				),
-				'sla'              => array(
-					'uptime'                 => 'Best effort',
-					'incident_notification'  => 'Public announcements',
-					'support_response'       => 'Community support',
+				'sla'             => array(
+					'uptime'                => 'Best effort',
+					'incident_notification' => 'Public announcements',
+					'support_response'      => 'Community support',
 				),
-				'last_assessment'  => current_time( 'mysql' ),
-				'next_review'      => date( 'Y-m-d', strtotime( '+12 months' ) ),
-				'contact_email'    => 'security@npmjs.com',
-				'documentation'    => 'https://docs.npmjs.com/security',
-				'incidents'        => array(),
-				'performance'      => array(
+				'last_assessment' => current_time( 'mysql' ),
+				'next_review'     => date( 'Y-m-d', strtotime( '+12 months' ) ),
+				'contact_email'   => 'security@npmjs.com',
+				'documentation'   => 'https://docs.npmjs.com/security',
+				'incidents'       => array(),
+				'performance'     => array(
 					'uptime_actual' => 99.9,
 					'incidents_ytd' => 1,
 				),
-				'mitigation'       => array(
+				'mitigation'      => array(
 					'Lock file usage',
 					'npm audit scanning',
 					'Minimal dependencies philosophy',
@@ -485,12 +485,12 @@ class WP_MCP_AI_Supplier_Security {
 			$supplier['incidents'] = array();
 		}
 
-		$incident['timestamp'] = current_time( 'mysql' );
+		$incident['timestamp']   = current_time( 'mysql' );
 		$supplier['incidents'][] = $incident;
 
 		// Increment YTD incident count.
 		if ( isset( $supplier['performance']['incidents_ytd'] ) ) {
-			$supplier['performance']['incidents_ytd']++;
+			++$supplier['performance']['incidents_ytd'];
 		}
 
 		return $this->upsert_supplier( $supplier_id, $supplier );
@@ -534,17 +534,17 @@ class WP_MCP_AI_Supplier_Security {
 		foreach ( $suppliers as $supplier ) {
 			// Count by category.
 			if ( isset( $supplier['category'] ) && isset( $stats['by_category'][ $supplier['category'] ] ) ) {
-				$stats['by_category'][ $supplier['category'] ]++;
+				++$stats['by_category'][ $supplier['category'] ];
 			}
 
 			// Count by risk level.
 			if ( isset( $supplier['risk_level'] ) && isset( $stats['by_risk'][ $supplier['risk_level'] ] ) ) {
-				$stats['by_risk'][ $supplier['risk_level'] ]++;
+				++$stats['by_risk'][ $supplier['risk_level'] ];
 			}
 
 			// Count by status.
 			if ( isset( $supplier['status'] ) && isset( $stats['by_status'][ $supplier['status'] ] ) ) {
-				$stats['by_status'][ $supplier['status'] ]++;
+				++$stats['by_status'][ $supplier['status'] ];
 			}
 
 			// Count incidents.
@@ -555,7 +555,7 @@ class WP_MCP_AI_Supplier_Security {
 			// Calculate average uptime.
 			if ( isset( $supplier['performance']['uptime_actual'] ) ) {
 				$total_uptime += $supplier['performance']['uptime_actual'];
-				$uptime_count++;
+				++$uptime_count;
 			}
 		}
 
@@ -590,10 +590,13 @@ class WP_MCP_AI_Supplier_Security {
 		}
 
 		// Store scan results.
-		update_option( 'wp_mcp_ai_last_dependency_scan', array(
-			'timestamp' => current_time( 'mysql' ),
-			'results'   => $results,
-		) );
+		update_option(
+			'wp_mcp_ai_last_dependency_scan',
+			array(
+				'timestamp' => current_time( 'mysql' ),
+				'results'   => $results,
+			)
+		);
 
 		return $results;
 	}
@@ -607,16 +610,19 @@ class WP_MCP_AI_Supplier_Security {
 		$composer_lock = WP_MCP_AI_PATH . 'composer.lock';
 
 		if ( ! file_exists( $composer_lock ) ) {
-			return array( 'status' => 'error', 'message' => 'composer.lock not found' );
+			return array(
+				'status'  => 'error',
+				'message' => 'composer.lock not found',
+			);
 		}
 
 		// In production, this would call `composer audit` or integrate with vulnerability databases.
 		// For now, return placeholder data.
 		return array(
-			'status'           => 'success',
-			'packages'         => 0, // Would count actual packages.
-			'vulnerabilities'  => 0,
-			'scan_method'      => 'Manual review required',
+			'status'          => 'success',
+			'packages'        => 0, // Would count actual packages.
+			'vulnerabilities' => 0,
+			'scan_method'     => 'Manual review required',
 		);
 	}
 
@@ -629,16 +635,19 @@ class WP_MCP_AI_Supplier_Security {
 		$package_lock = WP_MCP_AI_PATH . 'package-lock.json';
 
 		if ( ! file_exists( $package_lock ) ) {
-			return array( 'status' => 'error', 'message' => 'package-lock.json not found' );
+			return array(
+				'status'  => 'error',
+				'message' => 'package-lock.json not found',
+			);
 		}
 
 		// In production, this would call `npm audit` or integrate with vulnerability databases.
 		// For now, return placeholder data.
 		return array(
-			'status'           => 'success',
-			'packages'         => 0, // Would count actual packages.
-			'vulnerabilities'  => 0,
-			'scan_method'      => 'Manual review required',
+			'status'          => 'success',
+			'packages'        => 0, // Would count actual packages.
+			'vulnerabilities' => 0,
+			'scan_method'     => 'Manual review required',
 		);
 	}
 
@@ -649,9 +658,9 @@ class WP_MCP_AI_Supplier_Security {
 	 */
 	public function generate_sbom() {
 		$sbom = array(
-			'timestamp' => current_time( 'mysql' ),
-			'format'    => 'CycloneDX',
-			'version'   => '1.4',
+			'timestamp'  => current_time( 'mysql' ),
+			'format'     => 'CycloneDX',
+			'version'    => '1.4',
 			'components' => array(),
 		);
 

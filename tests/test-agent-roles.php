@@ -36,7 +36,7 @@ class Test_Agent_Roles extends WP_UnitTestCase {
 		$this->assertNotEmpty( $planner->get_role_name() );
 		$this->assertNotEmpty( $planner->get_role_description() );
 		$this->assertTrue( $planner->can_delegate() );
-		
+
 		$capabilities = $planner->get_capabilities();
 		$this->assertIsArray( $capabilities );
 		$this->assertContains( 'can-delegate', $capabilities );
@@ -54,7 +54,7 @@ class Test_Agent_Roles extends WP_UnitTestCase {
 		$this->assertNotEmpty( $executor->get_role_name() );
 		$this->assertNotEmpty( $executor->get_role_description() );
 		$this->assertFalse( $executor->can_delegate() );
-		
+
 		$capabilities = $executor->get_capabilities();
 		$this->assertIsArray( $capabilities );
 		$this->assertContains( 'requires-tools', $capabilities );
@@ -71,7 +71,7 @@ class Test_Agent_Roles extends WP_UnitTestCase {
 		$this->assertNotEmpty( $critic->get_role_name() );
 		$this->assertNotEmpty( $critic->get_role_description() );
 		$this->assertFalse( $critic->can_delegate() );
-		
+
 		$capabilities = $critic->get_capabilities();
 		$this->assertIsArray( $capabilities );
 		$this->assertContains( 'can-validate', $capabilities );

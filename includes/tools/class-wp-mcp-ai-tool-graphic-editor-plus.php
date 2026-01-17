@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'operation'         => array(
+					'operation'          => array(
 						'type'        => 'string',
 						'description' => __( 'Operation to perform. LOCAL: add_logo, resize_graphic, expand_scene. AI-POWERED: ai_enhance, ai_style, ai_background, ai_retouch', 'mcp-ai-wpoos' ),
 						'enum'        => array(
@@ -84,25 +84,25 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 						'description' => __( 'Attachment ID of logo image. Required for add_logo.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 					),
-					'logo_url'          => array(
+					'logo_url'           => array(
 						'type'        => 'string',
 						'description' => __( 'URL of logo image. Alternative to logo_attachment_id.', 'mcp-ai-wpoos' ),
 						'format'      => 'uri',
 					),
-					'logo_position'     => array(
+					'logo_position'      => array(
 						'type'        => 'string',
 						'description' => __( 'Logo position: top-left, top-right, bottom-left, bottom-right, center. Default: bottom-left', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'center' ),
 						'default'     => 'bottom-left',
 					),
-					'logo_scale'        => array(
+					'logo_scale'         => array(
 						'type'        => 'number',
 						'description' => __( 'Logo scale relative to image width (0.05-0.5). Default: 0.15', 'mcp-ai-wpoos' ),
 						'minimum'     => 0.05,
 						'maximum'     => 0.5,
 						'default'     => 0.15,
 					),
-					'logo_margin'       => array(
+					'logo_margin'        => array(
 						'type'        => 'integer',
 						'description' => __( 'Margin in pixels from edge. Default: 20', 'mcp-ai-wpoos' ),
 						'minimum'     => 0,
@@ -110,30 +110,30 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 						'default'     => 20,
 					),
 					// Resize parameters (for resize_graphic operation).
-					'target_width'      => array(
+					'target_width'       => array(
 						'type'        => 'integer',
 						'description' => __( 'Target width in pixels for resize_graphic.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 10000,
 					),
-					'target_height'     => array(
+					'target_height'      => array(
 						'type'        => 'integer',
 						'description' => __( 'Target height in pixels for resize_graphic.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 10000,
 					),
-					'output_format'     => array(
+					'output_format'      => array(
 						'type'        => 'string',
 						'description' => __( 'Output format: png, jpg, webp. Default: png', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'png', 'jpg', 'jpeg', 'webp' ),
 						'default'     => 'png',
 					),
-					'maintain_ratio'    => array(
+					'maintain_ratio'     => array(
 						'type'        => 'boolean',
 						'description' => __( 'Maintain aspect ratio when resizing. Default: true', 'mcp-ai-wpoos' ),
 						'default'     => true,
 					),
-					'quality'           => array(
+					'quality'            => array(
 						'type'        => 'integer',
 						'description' => __( 'Output quality for JPG/WebP (1-100). Default: 90', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
@@ -141,35 +141,35 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 						'default'     => 90,
 					),
 					// Expand scene parameters (for expand_scene operation).
-					'expand_direction'  => array(
+					'expand_direction'   => array(
 						'type'        => 'string',
 						'description' => __( 'Expansion direction: all, top, bottom, left, right, horizontal, vertical. Default: all', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'all', 'top', 'bottom', 'left', 'right', 'horizontal', 'vertical' ),
 						'default'     => 'all',
 					),
-					'expand_pixels'     => array(
+					'expand_pixels'      => array(
 						'type'        => 'integer',
 						'description' => __( 'Pixels to expand. Default: 50', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 2000,
 						'default'     => 50,
 					),
-					'background_color'  => array(
+					'background_color'   => array(
 						'type'        => 'string',
 						'description' => __( 'Background color (hex like #FF0000 or "transparent"). Default: transparent', 'mcp-ai-wpoos' ),
 						'default'     => 'transparent',
 					),
 					// AI operation parameters (for AI-powered operations).
-					'prompt'            => array(
+					'prompt'             => array(
 						'type'        => 'string',
 						'description' => __( 'Instruction for AI operations (ai_enhance, ai_style, ai_background, ai_retouch). Examples: "remove background", "convert to watercolor", "enhance brightness"', 'mcp-ai-wpoos' ),
 					),
-					'model'             => array(
+					'model'              => array(
 						'type'        => 'string',
 						'description' => __( 'Gemini model for AI operations. Default: gemini-2.0-flash-exp', 'mcp-ai-wpoos' ),
 						'default'     => 'gemini-2.0-flash-exp',
 					),
-					'aspect_ratio'      => array(
+					'aspect_ratio'       => array(
 						'type'        => 'string',
 						'description' => __( 'Aspect ratio for AI operations: 1:1, 16:9, 4:3, 3:2, 9:16. Default: 1:1', 'mcp-ai-wpoos' ),
 						'enum'        => array( '1:1', '16:9', '4:3', '3:2', '2:3', '9:16', '3:4' ),
@@ -382,7 +382,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		}
 
 		// Get image as base64.
-		$temp_file = wp_tempnam();
+		$temp_file   = wp_tempnam();
 		$save_result = $image_editor->save( $temp_file );
 
 		if ( is_wp_error( $save_result ) ) {
@@ -628,8 +628,8 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 				$width = (int) round( $original_size['width'] * $ratio );
 			}
 		} else {
-			$width  = $width ?: $original_size['width'];
-			$height = $height ?: $original_size['height'];
+			$width  = ! empty( $width ) ? $width : $original_size['width'];
+			$height = ! empty( $height ) ? $height : $original_size['height'];
 		}
 
 		$result = $image_editor->resize( $width, $height, false );
@@ -661,7 +661,10 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			return $storage;
 		}
 
-		$new_size = isset( $storage['size'] ) ? $storage['size'] : array( 'width' => $width, 'height' => $height );
+		$new_size = isset( $storage['size'] ) ? $storage['size'] : array(
+			'width'  => $width,
+			'height' => $height,
+		);
 
 		return array(
 			'attachment_id'   => $storage['attachment_id'],
@@ -788,11 +791,17 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 	 * @return array Coordinates.
 	 */
 	protected function calculate_position( $image_size, $overlay_size, $position, $margin ) {
-		$coords = array( 'x' => 0, 'y' => 0 );
+		$coords = array(
+			'x' => 0,
+			'y' => 0,
+		);
 
 		switch ( $position ) {
 			case 'top-left':
-				$coords = array( 'x' => $margin, 'y' => $margin );
+				$coords = array(
+					'x' => $margin,
+					'y' => $margin,
+				);
 				break;
 			case 'top-right':
 				$coords['x'] = $image_size['width'] - $overlay_size['width'] - $margin;

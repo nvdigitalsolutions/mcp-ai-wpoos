@@ -96,7 +96,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Rate limiting: Check for too many submissions in a short time.
-		$rate_limit_key = 'wp_mcp_ai_quiz_submit_' . $current_user_id;
+		$rate_limit_key     = 'wp_mcp_ai_quiz_submit_' . $current_user_id;
 		$recent_submissions = get_transient( $rate_limit_key );
 
 		if ( false === $recent_submissions ) {

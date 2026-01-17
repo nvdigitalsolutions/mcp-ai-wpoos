@@ -93,16 +93,16 @@ class WP_MCP_AI_Place_Research_Page {
 			'wp-mcp-ai-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-				'nonce'         => wp_create_nonce( 'wp_mcp_ai_research_place' ),
-				'addNewUrl'     => admin_url( 'post-new.php?post_type=mcp_ai_place' ),
-				'researchTool'  => 'research_place',
-				'strings'       => array(
-					'researching'       => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
-					'error'             => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'          => __( 'Creating place...', 'mcp-ai-wpoos-pro' ),
-					'created'           => __( 'Place created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate'     => __( 'Create a place with the researched information?', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_place' ),
+				'addNewUrl'    => admin_url( 'post-new.php?post_type=mcp_ai_place' ),
+				'researchTool' => 'research_place',
+				'strings'      => array(
+					'researching'   => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
+					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'creating'      => __( 'Creating place...', 'mcp-ai-wpoos-pro' ),
+					'created'       => __( 'Place created successfully!', 'mcp-ai-wpoos-pro' ),
+					'confirmCreate' => __( 'Create a place with the researched information?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);

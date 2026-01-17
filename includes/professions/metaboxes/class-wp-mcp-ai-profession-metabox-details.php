@@ -184,6 +184,11 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 			return;
 		}
 
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_details_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_details_nonce'] ) ), 'wp_mcp_ai_profession_details_save' ) ) {
+			return;
+		}
+
 		// Save category.
 		if ( isset( $_POST['profession_category'] ) ) {
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, sanitize_key( wp_unslash( $_POST['profession_category'] ) ) );

@@ -147,7 +147,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	protected function execute_task_logic( $task, $context ) {
 		// Default implementation - in production this would intelligently
 		// select and execute appropriate tools based on task type.
-		
+
 		$task_type = isset( $task['type'] ) ? $task['type'] : 'generic';
 
 		switch ( $task_type ) {

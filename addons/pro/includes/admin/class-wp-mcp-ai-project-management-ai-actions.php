@@ -429,20 +429,20 @@ class WP_MCP_AI_Project_Management_AI_Actions {
 		);
 
 		$task_summary = array(
-			'total'      => count( $tasks ),
-			'completed'  => 0,
+			'total'       => count( $tasks ),
+			'completed'   => 0,
 			'in_progress' => 0,
-			'todo'       => 0,
+			'todo'        => 0,
 		);
 
 		foreach ( $tasks as $task ) {
 			$task_status = get_post_meta( $task->ID, '_task_status', true );
 			if ( 'completed' === $task_status ) {
-				$task_summary['completed']++;
+				++$task_summary['completed'];
 			} elseif ( 'in-progress' === $task_status ) {
-				$task_summary['in_progress']++;
+				++$task_summary['in_progress'];
 			} else {
-				$task_summary['todo']++;
+				++$task_summary['todo'];
 			}
 		}
 

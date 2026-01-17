@@ -309,6 +309,11 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 			return;
 		}
 
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_datasets_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_datasets_nonce'] ) ), 'wp_mcp_ai_profession_datasets_save' ) ) {
+			return;
+		}
+
 		// Get selected datasets from form.
 		$selected_datasets = array();
 		if ( isset( $_POST['profession_preferred_datasets'] ) && is_array( $_POST['profession_preferred_datasets'] ) ) {

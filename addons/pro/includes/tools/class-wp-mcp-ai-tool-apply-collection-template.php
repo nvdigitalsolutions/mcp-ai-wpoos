@@ -174,9 +174,9 @@ class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interfa
 		$response = array(
 			'success'    => true,
 			'collection' => array(
-				'id'            => $collection_id,
-				'title'         => $collection->post_title,
-				'template_ids'  => $final_template_ids,
+				'id'                 => $collection_id,
+				'title'              => $collection->post_title,
+				'template_ids'       => $final_template_ids,
 				'templates_assigned' => count( $final_template_ids ),
 			),
 			'message'    => sprintf(
@@ -189,8 +189,8 @@ class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interfa
 
 		// Process collection if requested.
 		if ( $process ) {
-			$registry      = WP_MCP_AI_Tool_Registry::get_instance();
-			$process_tool  = $registry->get_tool( 'process_collection' );
+			$registry     = WP_MCP_AI_Tool_Registry::get_instance();
+			$process_tool = $registry->get_tool( 'process_collection' );
 
 			if ( ! $process_tool ) {
 				$response['warning'] = __( 'Templates assigned but could not process collection: Process Collection tool is not available.', 'mcp-ai-wpoos-pro' );
@@ -211,7 +211,7 @@ class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interfa
 					'statistics' => isset( $process_result['statistics'] ) ? $process_result['statistics'] : array(),
 					'results'    => isset( $process_result['results'] ) ? $process_result['results'] : array(),
 				);
-				$response['message'] .= ' ' . ( isset( $process_result['message'] ) ? $process_result['message'] : __( 'Collection processed.', 'mcp-ai-wpoos-pro' ) );
+				$response['message']   .= ' ' . ( isset( $process_result['message'] ) ? $process_result['message'] : __( 'Collection processed.', 'mcp-ai-wpoos-pro' ) );
 			} else {
 				$response['warning'] = sprintf(
 					/* translators: %s: error message */

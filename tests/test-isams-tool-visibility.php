@@ -115,7 +115,7 @@ class Test_ISAMS_Tool_Visibility extends WP_UnitTestCase {
 		$found_count = 0;
 		foreach ( $project_tools as $tool_slug ) {
 			if ( isset( $all_tools[ $tool_slug ] ) ) {
-				$found_count++;
+				++$found_count;
 			}
 		}
 

@@ -64,22 +64,22 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'limit'        => array(
+				'limit'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of products to retrieve.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 20,
 					'default'     => 5,
 				),
-				'sku'          => array(
+				'sku'                => array(
 					'type'        => 'string',
 					'description' => __( 'Optional product SKU to filter by.', 'mcp-ai-wpoos' ),
 				),
-				'status'       => array(
+				'status'             => array(
 					'type'        => 'string',
 					'description' => __( 'Optional product status to filter by (e.g. publish, draft).', 'mcp-ai-wpoos' ),
 				),
-				'stock_status' => array(
+				'stock_status'       => array(
 					'type'        => 'string',
 					'description' => __( 'Optional stock status to filter by (e.g. instock, outofstock). When used, variable products automatically include their variations with accurate stock quantities.', 'mcp-ai-wpoos' ),
 				),
@@ -156,9 +156,9 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			$include_variations = (bool) $arguments['include_variations'];
 		}
 
-		$results = array();
+		$results         = array();
 		$variation_count = 0;
-		$parent_count = 0;
+		$parent_count    = 0;
 
 		if ( $include_variations ) {
 			// Process products and expand variable products to their variations.
@@ -185,8 +185,8 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 							}
 
 							// Build variation data with parent context.
-							$variation_data = $this->format_product_data( $variation );
-							$variation_data['parent_id'] = $product->get_id();
+							$variation_data                = $this->format_product_data( $variation );
+							$variation_data['parent_id']   = $product->get_id();
 							$variation_data['parent_name'] = $product->get_name();
 
 							// Get variation attributes (e.g., Size: Large, Color: Red).
@@ -198,18 +198,18 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 							}
 
 							$results[] = $variation_data;
-							$variation_count++;
+							++$variation_count;
 						}
-						$parent_count++;
+						++$parent_count;
 					} else {
 						// Variable product with no variations - include the parent.
 						$results[] = $this->format_product_data( $product );
-						$parent_count++;
+						++$parent_count;
 					}
 				} else {
 					// Non-variable product (simple, grouped, external, etc.).
 					$results[] = $this->format_product_data( $product );
-					$parent_count++;
+					++$parent_count;
 				}
 			}
 		} else {

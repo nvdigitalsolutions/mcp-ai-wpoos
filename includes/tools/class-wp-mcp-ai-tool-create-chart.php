@@ -467,56 +467,57 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chart</title>
-    <script src="<?php echo esc_url( $chartjs_url ); ?>"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-            background-color: #f5f5f5;
-        }
-        .chart-container {
-            max-width: 100%;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        canvas {
-            max-width: 100%;
-        }
-    </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Chart</title>
+	<?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
+	<script src="<?php echo esc_url( $chartjs_url ); ?>"></script>
+	<style>
+		body {
+			margin: 0;
+			padding: 20px;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+			background-color: #f5f5f5;
+		}
+		.chart-container {
+			max-width: 100%;
+			margin: 0 auto;
+			background: white;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+		canvas {
+			max-width: 100%;
+		}
+	</style>
 </head>
 <body>
-    <div class="chart-container">
-        <canvas id="<?php echo esc_attr( $chart_id ); ?>" width="<?php echo esc_attr( $width ); ?>" height="<?php echo esc_attr( $height ); ?>"></canvas>
-    </div>
-    <script>
-        (function() {
-            function initChart() {
-                if (typeof Chart === 'undefined') {
-                    setTimeout(initChart, 50);
-                    return;
-                }
-                const ctx = document.getElementById(<?php echo wp_json_encode( $chart_id ); ?>).getContext('2d');
-                const chartConfig = <?php echo $config_json; ?>;
-                new Chart(ctx, chartConfig);
-            }
+	<div class="chart-container">
+		<canvas id="<?php echo esc_attr( $chart_id ); ?>" width="<?php echo esc_attr( $width ); ?>" height="<?php echo esc_attr( $height ); ?>"></canvas>
+	</div>
+	<script>
+		(function() {
+			function initChart() {
+				if (typeof Chart === 'undefined') {
+					setTimeout(initChart, 50);
+					return;
+				}
+				const ctx = document.getElementById(<?php echo wp_json_encode( $chart_id ); ?>).getContext('2d');
+				const chartConfig = <?php echo wp_json_encode( json_decode( $config_json, true ) ); ?>;
+				new Chart(ctx, chartConfig);
+			}
 
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initChart);
-            } else {
-                initChart();
-            }
-        })();
-    </script>
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', initChart);
+			} else {
+				initChart();
+			}
+		})();
+	</script>
 </body>
 </html>
-<?php
+		<?php
 		$html = ob_get_clean();
 
 		return $html;

@@ -150,7 +150,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 											(
 											<?php
 											/* translators: %d: Recommended tool count */
-											printf( esc_html__( 'recommended: %d', 'mcp-ai-wpoos' ), $recommended_count );
+											printf( esc_html__( 'recommended: %d', 'mcp-ai-wpoos' ), absint( $recommended_count ) );
 											?>
 											)
 										</small>
@@ -205,7 +205,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 								printf(
 									/* translators: %d: Recommended tool count from settings */
 									esc_html__( 'Select the default tools that should be pre-selected when creating assistants with this profession. Recommended: %d tools (configurable in Settings → Advanced). Aim for tools that align with this profession\'s expertise.', 'mcp-ai-wpoos' ),
-									$recommended_count
+									absint( $recommended_count )
 								);
 								?>
 							</p>
@@ -406,6 +406,11 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 	 */
 	public function save( $post_id, $post ) {
 		if ( ! $this->can_save( $post_id ) ) {
+			return;
+		}
+
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_expertise_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_expertise_nonce'] ) ), 'wp_mcp_ai_profession_expertise_save' ) ) {
 			return;
 		}
 

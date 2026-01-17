@@ -56,11 +56,11 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 					'type'        => 'string',
 					'description' => __( 'Optional Remote Sites connection ID for PayHere. If not provided, uses settings-based configuration.', 'mcp-ai-wpoos' ),
 				),
-				'order_id' => array(
+				'order_id'      => array(
 					'type'        => 'string',
 					'description' => __( 'The PayHere order ID to retrieve payment details for (e.g., "LP8006126139").', 'mcp-ai-wpoos' ),
 				),
-				'timeout'  => array(
+				'timeout'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,
