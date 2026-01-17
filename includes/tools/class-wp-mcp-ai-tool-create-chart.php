@@ -470,7 +470,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chart</title>
-    <script src="<?php echo $chartjs_url; ?>"></script>
+    <script src="<?php echo esc_url( $chartjs_url ); ?>"></script>
     <style>
         body {
             margin: 0;
