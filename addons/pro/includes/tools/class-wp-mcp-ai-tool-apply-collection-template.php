@@ -87,6 +87,23 @@ class WP_MCP_AI_Tool_Apply_Collection_Template implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',                  // Pro tier tool.
+			'write',                // Modifies collection configuration and media items.
+			'state-changing',       // Updates collection templates and statistics.
+			'local-only',           // No external API calls (uses internal tools).
+			'requires-capability',  // Requires upload_files capability.
+			'async',                // May take significant time to process collections.
+			'long-running',         // Processing multiple items can take minutes.
+			'reversible',           // Changes can be undone via WordPress.
+			'consumes-tokens',      // Uses AI via process_collection tool.
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
