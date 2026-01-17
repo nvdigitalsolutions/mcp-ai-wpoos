@@ -771,6 +771,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$role_counts = array();
 			$roles       = array( 'planner', 'executor', 'critic', 'specialist', 'generalist' );
 			foreach ( $roles as $role ) {
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Complex query requiring meta_query.
 				$query         = new WP_Query(
 					array(
 						'post_type'   => 'mcp_ai_profession',
@@ -1452,6 +1453,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$last_sync_timestamp = get_option( 'wp_mcp_ai_playbooks_last_sync', 0 );
 			$last_sync           = '';
 			if ( $last_sync_timestamp ) {
+				// phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested -- Legitimate timestamp usage for comparison.
 				$last_sync = human_time_diff( $last_sync_timestamp, current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'mcp-ai-wpoos' );
 			}
 

@@ -262,6 +262,7 @@ class WP_MCP_AI_Profession_Service {
 			'post_type'      => 'mcp_ai_profession',
 			'posts_per_page' => -1,
 			'post_status'    => 'publish',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Required for querying by agent role meta.
 			'meta_query'     => array(
 				array(
 					'key'   => WP_MCP_AI_Profession_CPT::META_AGENT_ROLE,
@@ -297,14 +298,22 @@ class WP_MCP_AI_Profession_Service {
 	 * @return array Orchestration config with all fields.
 	 */
 	public function get_orchestration_config( $profession_id ) {
+		$agent_role_val            = get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true );
+		$task_patterns_val         = get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true );
+		$decision_criteria_val     = get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true );
+		$orchestration_rules_val   = get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true );
+		$quality_metrics_val       = get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true );
+		$tool_execution_order_val  = get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true );
+		$confidence_thresholds_val = get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true );
+
 		return array(
-			'agent_role'              => get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ?: 'generalist',
-			'task_patterns'           => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ?: '{}', true ),
-			'decision_criteria'       => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ?: '{}', true ),
-			'orchestration_rules'     => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ?: '{}', true ),
-			'quality_metrics'         => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ?: '{}', true ),
-			'tool_execution_order'    => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ?: '[]', true ),
-			'confidence_thresholds'   => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ?: '{}', true ),
+			'agent_role'              => ! empty( $agent_role_val ) ? $agent_role_val : 'generalist',
+			'task_patterns'           => json_decode( ! empty( $task_patterns_val ) ? $task_patterns_val : '{}', true ),
+			'decision_criteria'       => json_decode( ! empty( $decision_criteria_val ) ? $decision_criteria_val : '{}', true ),
+			'orchestration_rules'     => json_decode( ! empty( $orchestration_rules_val ) ? $orchestration_rules_val : '{}', true ),
+			'quality_metrics'         => json_decode( ! empty( $quality_metrics_val ) ? $quality_metrics_val : '{}', true ),
+			'tool_execution_order'    => json_decode( ! empty( $tool_execution_order_val ) ? $tool_execution_order_val : '[]', true ),
+			'confidence_thresholds'   => json_decode( ! empty( $confidence_thresholds_val ) ? $confidence_thresholds_val : '{}', true ),
 		);
 	}
 

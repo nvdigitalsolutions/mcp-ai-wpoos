@@ -79,13 +79,21 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
 
 		// Get current values.
-		$agent_role              = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ?: 'generalist';
-		$task_patterns           = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ?: '{}';
-		$decision_criteria       = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ?: '{}';
-		$orchestration_rules     = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ?: '{}';
-		$quality_metrics         = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ?: '{}';
-		$tool_execution_order    = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ?: '[]';
-		$confidence_thresholds   = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ?: '{}';
+		$agent_role_value        = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true );
+		$task_patterns_value     = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true );
+		$decision_criteria_value = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true );
+		$orchestration_rules_value = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true );
+		$quality_metrics_value   = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true );
+		$tool_execution_order_value = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true );
+		$confidence_thresholds_value = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true );
+
+		$agent_role              = ! empty( $agent_role_value ) ? $agent_role_value : 'generalist';
+		$task_patterns           = ! empty( $task_patterns_value ) ? $task_patterns_value : '{}';
+		$decision_criteria       = ! empty( $decision_criteria_value ) ? $decision_criteria_value : '{}';
+		$orchestration_rules     = ! empty( $orchestration_rules_value ) ? $orchestration_rules_value : '{}';
+		$quality_metrics         = ! empty( $quality_metrics_value ) ? $quality_metrics_value : '{}';
+		$tool_execution_order    = ! empty( $tool_execution_order_value ) ? $tool_execution_order_value : '[]';
+		$confidence_thresholds   = ! empty( $confidence_thresholds_value ) ? $confidence_thresholds_value : '{}';
 
 		// Format JSON for display.
 		$task_patterns         = $this->format_json( $task_patterns );

@@ -141,7 +141,7 @@ class WP_MCP_AI_Tool_Aggregate_Agent_Results implements WP_MCP_AI_Tool_Interface
 		$prepared_results = array();
 		foreach ( $agent_results as $result_data ) {
 			if ( ! isset( $result_data['agent_id'] ) || ! isset( $result_data['result'] ) ) {
-				continue; // Skip invalid results
+				continue; // Skip invalid results.
 			}
 
 			$prepared_results[] = array(

@@ -177,6 +177,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		if ( is_wp_error( $attachment_id ) ) {
 			// Log error but don't fail the entire seeding.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging for development.
 				error_log( 'WP_MCP_AI: Failed to create playbook attachment for profession ' . $slug . ': ' . $attachment_id->get_error_message() );
 			}
 			return;
@@ -202,6 +203,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			'posts_per_page' => 1,
 			'orderby'        => 'ID',
 			'order'          => 'DESC',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Required for querying by playbook profession meta.
 			'meta_query'     => array(
 				array(
 					'key'     => '_wp_mcp_ai_playbook_profession_id',
@@ -233,6 +235,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			'posts_per_page' => -1,
 			'orderby'        => 'ID',
 			'order'          => 'DESC',
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Required for querying by playbook profession meta.
 			'meta_query'     => array(
 				array(
 					'key'     => '_wp_mcp_ai_playbook_profession_id',

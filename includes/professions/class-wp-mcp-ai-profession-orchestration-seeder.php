@@ -153,7 +153,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		// Check for planner keywords.
 		if ( $this->has_keywords( $title, array( 'project manager', 'coordinator', 'planner', 'strategist', 'product manager' ) ) ||
 		     $this->has_keywords( $expertise_lower, array( 'project management', 'coordination', 'planning', 'strategy' ) ) ||
-		     'advisory' === $category ) {
+		     $category === 'advisory' ) {
 			return 'planner';
 		}
 

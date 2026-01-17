@@ -56,10 +56,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	 */
 	public function get_system_prompt_additions() {
 		return __(
-			'You are an Executor agent responsible for performing specific tasks using the tools available to you. ' .
-			'When assigned a task, focus on executing it efficiently and accurately. ' .
-			'Use the appropriate tools for the job and return structured, detailed results. ' .
-			'If you encounter errors, handle them gracefully and provide clear error information.',
+			'You are an Executor agent responsible for performing specific tasks using the tools available to you. When assigned a task, focus on executing it efficiently and accurately. Use the appropriate tools for the job and return structured, detailed results. If you encounter errors, handle them gracefully and provide clear error information.',
 			'mcp-ai-wpoos'
 		);
 	}

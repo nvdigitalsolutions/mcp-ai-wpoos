@@ -396,7 +396,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		// Extract validation status.
 		$validation_passes = true;
-		$validation_score = 0.85; // Default
+		$validation_score = 0.85; // Default.
 
 		if ( ! is_wp_error( $result ) ) {
 			if ( isset( $result['validation'] ) && isset( $result['validation']['passes'] ) ) {
@@ -517,6 +517,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		foreach ( $roles as $role ) {
 			// Query for assistants with this role.
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Required for querying by agent role meta.
 			$query = new WP_Query(
 				array(
 					'post_type'      => 'mcp_ai_assistant',
