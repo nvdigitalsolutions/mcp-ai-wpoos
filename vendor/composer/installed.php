@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/enhance-media-toolkit-again',
+        'version' => 'dev-copilot/enhance-media-toolkit-again',
+        'reference' => 'dc50b4a1afe93a36889159f4bfcfe812fb0f71c8',
         'pretty_version' => 'dev-copilot/fix-gmail-oauth-error',
         'version' => 'dev-copilot/fix-gmail-oauth-error',
         'reference' => '28ff5758b238b395e54190951e14e41fb9c578b0',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/enhance-media-toolkit-again',
+            'version' => 'dev-copilot/enhance-media-toolkit-again',
+            'reference' => 'dc50b4a1afe93a36889159f4bfcfe812fb0f71c8',
             'pretty_version' => 'dev-copilot/fix-gmail-oauth-error',
             'version' => 'dev-copilot/fix-gmail-oauth-error',
             'reference' => '28ff5758b238b395e54190951e14e41fb9c578b0',
