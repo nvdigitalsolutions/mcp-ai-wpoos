@@ -402,6 +402,7 @@ $template = ob_get_clean();
 return $template;
 }
 
+
 		/**
 		 * Delete a custom tool file.
 		 *
