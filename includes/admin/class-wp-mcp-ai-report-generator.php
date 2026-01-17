@@ -365,12 +365,12 @@ class WP_MCP_AI_Report_Generator {
 					</tr>
 					<tr>
 						<td>ISO 27001:2022</td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['implemented']; ?></td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['partial']; ?></td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['planned']; ?></td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['na']; ?></td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['total']; ?></td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['percentage']; ?>%</td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['implemented'] ); ?></td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['partial'] ); ?></td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['planned'] ); ?></td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['na'] ); ?></td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['total'] ); ?></td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['percentage'] ); ?>%</td>
 					</tr>
 				</table>
 			<?php endif; ?>
@@ -420,9 +420,9 @@ class WP_MCP_AI_Report_Generator {
 							<td><?php echo esc_html( $risk['risk_id'] ); ?></td>
 							<td><?php echo esc_html( $risk['title'] ); ?></td>
 							<td><?php echo esc_html( $risk['category'] ); ?></td>
-							<td><?php echo (int) $risk['likelihood']; ?></td>
-							<td><?php echo (int) $risk['impact']; ?></td>
-							<td><?php echo (int) $risk['risk_score']; ?></td>
+							<td><?php echo absint( $risk['likelihood'] ); ?></td>
+							<td><?php echo absint( $risk['impact'] ); ?></td>
+							<td><?php echo absint( $risk['risk_score'] ); ?></td>
 							<td class="risk-<?php echo esc_attr( $risk['risk_level'] ); ?>">
 								<?php echo esc_html( ucfirst( $risk['risk_level'] ) ); ?>
 							</td>
