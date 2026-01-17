@@ -78,6 +78,21 @@ class WP_MCP_AI_Tool_Apply_Media_Template implements WP_MCP_AI_Tool_Interface, W
 	/**
 	 * {@inheritdoc}
 	 */
+	public function get_capability_flags() {
+		return array(
+			'pro',                  // Pro tier tool.
+			'write',                // Creates new media files.
+			'requires-capability',  // Requires upload_files capability.
+			'state-changing',       // Modifies media library.
+			'mixed-mode',           // Uses Graphic Editor Plus (some ops local, some external).
+			'idempotent',           // Can be called multiple times safely.
+			'performance-impact',   // Large images may temporarily affect performance.
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if media toolkit is enabled.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
