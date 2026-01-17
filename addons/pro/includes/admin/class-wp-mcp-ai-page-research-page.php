@@ -94,16 +94,16 @@ class WP_MCP_AI_Page_Research_Page {
 			'wp-mcp-ai-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-				'nonce'         => wp_create_nonce( 'wp_mcp_ai_research_page' ),
-				'addNewUrl'     => admin_url( 'post-new.php?post_type=page' ),
-				'researchTool'  => 'research_page',
-				'strings'       => array(
-					'researching'       => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
-					'error'             => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'          => __( 'Creating page...', 'mcp-ai-wpoos-pro' ),
-					'created'           => __( 'Page created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate'     => __( 'Create a page with the researched information?', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_page' ),
+				'addNewUrl'    => admin_url( 'post-new.php?post_type=page' ),
+				'researchTool' => 'research_page',
+				'strings'      => array(
+					'researching'   => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
+					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'creating'      => __( 'Creating page...', 'mcp-ai-wpoos-pro' ),
+					'created'       => __( 'Page created successfully!', 'mcp-ai-wpoos-pro' ),
+					'confirmCreate' => __( 'Create a page with the researched information?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -145,19 +145,20 @@ class WP_MCP_AI_Page_Research_Page {
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
-							<li><?php esc_html_e( 'Use the AI assistant to research content for your page', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Ask questions like "Create an About Us page for a tech company"', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Review the research results and generated content', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Click "Create Page from Research" to add it to your site', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Search existing pages or use Elementor templates', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Research page content with web search or deep analysis', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate content with SEO optimization', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create pages directly with optional Elementor integration', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ol>
 					</div>
 
 					<div class="wp-mcp-ai-research-tips">
 						<h3><?php esc_html_e( 'Research Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
-							<li><strong><?php esc_html_e( 'Be specific:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Include page purpose and key information', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Define structure:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Request sections and layout preferences', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Review content:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Always review and edit AI-generated content', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Search pages:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Find existing pages for reference', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Use templates:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Browse Elementor templates for design ideas', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'SEO optimize:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Get SEO analysis before publishing', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Add visuals:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Generate image captions for better accessibility', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
@@ -195,9 +196,10 @@ class WP_MCP_AI_Page_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface.
+							// Render chat interface with comprehensive page tools.
+							// Includes creation, management, Elementor, research, and SEO tools.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_post,save_post,web_search,deep_research,search_content,semantic_content_search,get_elementor_templates,import_elementor_template_kit,get_rankmath_seo,generate_image_caption"]'
 							);
 							?>
 						</div>

@@ -32,11 +32,11 @@ class WP_MCP_AI_Security_Training {
 	 * @var array
 	 */
 	const TRAINING_ROLES = array(
-		'developer'      => 'Developer',
-		'administrator'  => 'Administrator',
-		'security_team'  => 'Security Team',
-		'support_staff'  => 'Support Staff',
-		'all_users'      => 'All Users',
+		'developer'     => 'Developer',
+		'administrator' => 'Administrator',
+		'security_team' => 'Security Team',
+		'support_staff' => 'Support Staff',
+		'all_users'     => 'All Users',
 	);
 
 	/**
@@ -96,18 +96,18 @@ class WP_MCP_AI_Security_Training {
 		register_post_type(
 			'mcp_ai_training',
 			array(
-				'labels'              => array(
+				'labels'               => array(
 					'name'          => __( 'Security Training', 'mcp-ai-wpoos' ),
 					'singular_name' => __( 'Training Module', 'mcp-ai-wpoos' ),
 					'add_new'       => __( 'Add Training Module', 'mcp-ai-wpoos' ),
 					'add_new_item'  => __( 'Add New Training Module', 'mcp-ai-wpoos' ),
 					'edit_item'     => __( 'Edit Training Module', 'mcp-ai-wpoos' ),
 				),
-				'public'              => false,
-				'show_ui'             => true,
-				'show_in_menu'        => 'nvoos-pro-dashboard',
-				'capability_type'     => 'post',
-				'capabilities'        => array(
+				'public'               => false,
+				'show_ui'              => true,
+				'show_in_menu'         => 'nvoos-pro-dashboard',
+				'capability_type'      => 'post',
+				'capabilities'         => array(
 					'edit_post'          => 'manage_options',
 					'edit_posts'         => 'manage_options',
 					'edit_others_posts'  => 'manage_options',
@@ -116,7 +116,7 @@ class WP_MCP_AI_Security_Training {
 					'read_private_posts' => 'manage_options',
 					'delete_post'        => 'manage_options',
 				),
-				'supports'            => array( 'title', 'editor', 'excerpt' ),
+				'supports'             => array( 'title', 'editor', 'excerpt' ),
 				'register_meta_box_cb' => array( $this, 'add_meta_boxes' ),
 			)
 		);
@@ -203,43 +203,43 @@ class WP_MCP_AI_Security_Training {
 
 		$modules = array(
 			array(
-				'title'    => 'ISO 27001 Security Awareness',
-				'content'  => $this->get_iso27001_content(),
-				'role'     => 'all_users',
-				'type'     => 'awareness',
-				'duration' => 30,
+				'title'     => 'ISO 27001 Security Awareness',
+				'content'   => $this->get_iso27001_content(),
+				'role'      => 'all_users',
+				'type'      => 'awareness',
+				'duration'  => 30,
 				'mandatory' => true,
 			),
 			array(
-				'title'    => 'Secure Coding Practices',
-				'content'  => $this->get_secure_coding_content(),
-				'role'     => 'developer',
-				'type'     => 'technical',
-				'duration' => 60,
+				'title'     => 'Secure Coding Practices',
+				'content'   => $this->get_secure_coding_content(),
+				'role'      => 'developer',
+				'type'      => 'technical',
+				'duration'  => 60,
 				'mandatory' => true,
 			),
 			array(
-				'title'    => 'WordPress Security Best Practices',
-				'content'  => $this->get_wordpress_security_content(),
-				'role'     => 'administrator',
-				'type'     => 'technical',
-				'duration' => 45,
+				'title'     => 'WordPress Security Best Practices',
+				'content'   => $this->get_wordpress_security_content(),
+				'role'      => 'administrator',
+				'type'      => 'technical',
+				'duration'  => 45,
 				'mandatory' => true,
 			),
 			array(
-				'title'    => 'Incident Response Procedures',
-				'content'  => $this->get_incident_response_content(),
-				'role'     => 'security_team',
-				'type'     => 'incident',
-				'duration' => 45,
+				'title'     => 'Incident Response Procedures',
+				'content'   => $this->get_incident_response_content(),
+				'role'      => 'security_team',
+				'type'      => 'incident',
+				'duration'  => 45,
 				'mandatory' => true,
 			),
 			array(
-				'title'    => 'Data Protection and Privacy',
-				'content'  => $this->get_data_protection_content(),
-				'role'     => 'all_users',
-				'type'     => 'compliance',
-				'duration' => 30,
+				'title'     => 'Data Protection and Privacy',
+				'content'   => $this->get_data_protection_content(),
+				'role'      => 'all_users',
+				'type'      => 'compliance',
+				'duration'  => 30,
 				'mandatory' => true,
 			),
 		);
@@ -388,16 +388,19 @@ class WP_MCP_AI_Security_Training {
 		$subject = __( 'Annual Security Training Reminder', 'mcp-ai-wpoos' );
 		$message = sprintf(
 			/* translators: %s: user display name */
-			__( 'Hi %s,
+			__(
+				'Hi %1$s,
 
 This is a reminder that your annual security training is due. Please complete the required training modules at your earliest convenience.
 
-You can access your training dashboard at: %s
+You can access your training dashboard at: %2$s
 
 Thank you for helping maintain our security standards.
 
 Best regards,
-Security Team', 'mcp-ai-wpoos' ),
+Security Team',
+				'mcp-ai-wpoos'
+			),
 			$user->display_name,
 			admin_url( 'admin.php?page=nvoos-security-training' )
 		);

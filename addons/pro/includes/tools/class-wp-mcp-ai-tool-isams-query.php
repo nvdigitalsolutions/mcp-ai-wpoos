@@ -47,7 +47,7 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'string',
 					'description' => __( 'Optional Remote Sites connection ID for iSAMS. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos-pro' ),
 				),
-				'endpoint'   => array(
+				'endpoint'      => array(
 					'type'        => 'string',
 					'description' => __( 'API endpoint to query. Available: pupils, employees, departments, houses, terms, subjects, year_groups', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
@@ -61,17 +61,17 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 						'admission_applicants',
 					),
 				),
-				'id'         => array(
+				'id'            => array(
 					'type'        => 'string',
 					'description' => __( 'Optional specific ID to retrieve a single record', 'mcp-ai-wpoos-pro' ),
 				),
-				'page'       => array(
+				'page'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for paginated results', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 					'minimum'     => 1,
 				),
-				'limit'      => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
@@ -267,7 +267,7 @@ class WP_MCP_AI_Tool_ISAMS_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'body'    => wp_json_encode(
 					array(
-						'apiKey' => $api_key,
+						'apiKey'    => $api_key,
 						'apiSecret' => $api_secret,
 					)
 				),

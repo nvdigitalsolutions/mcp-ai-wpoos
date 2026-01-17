@@ -295,9 +295,9 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		);
 
 		if ( function_exists( 'jet_engine' ) ) {
-			$engine = jet_engine();
-			$info['jetengine_object']        = is_object( $engine );
-			$info['jetengine_has_modules']   = is_object( $engine ) && property_exists( $engine, 'modules' );
+			$engine                        = jet_engine();
+			$info['jetengine_object']      = is_object( $engine );
+			$info['jetengine_has_modules'] = is_object( $engine ) && property_exists( $engine, 'modules' );
 
 			if ( is_object( $engine ) && property_exists( $engine, 'modules' ) && is_object( $engine->modules ) ) {
 				$info['cct_module_active'] = method_exists( $engine->modules, 'is_module_active' )

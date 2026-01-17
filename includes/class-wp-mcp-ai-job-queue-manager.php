@@ -80,8 +80,8 @@ class WP_MCP_AI_Job_Queue_Manager {
 		}
 
 		// Determine priority using SLA Manager if available and enabled.
-		$priority  = self::PRIORITY_NORMAL;
-		$sla_tier  = null;
+		$priority = self::PRIORITY_NORMAL;
+		$sla_tier = null;
 
 		if ( class_exists( 'WP_MCP_AI_SLA_Manager' ) && WP_MCP_AI_SLA_Manager::is_enabled() ) {
 			// Check for explicit SLA tier.

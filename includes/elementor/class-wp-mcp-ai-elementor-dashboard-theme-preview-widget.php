@@ -149,7 +149,7 @@ class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widg
 			}
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $container_css is escaped in build_container_style.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $container_css is already escaped in build_container_style method.
 		echo '<div class="wp-mcp-ai-theme-preview__chat"' . $container_css . '>';
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_sample_message.
 		echo $this->render_sample_message( __( 'Assistant response preview', 'mcp-ai-wpoos' ), 'assistant', $colors );

@@ -124,11 +124,11 @@ class WP_MCP_AI_Asset_Inventory {
 		$assets = array();
 
 		$code_locations = array(
-			'includes'   => WP_MCP_AI_PATH . 'includes',
-			'assets'     => WP_MCP_AI_PATH . 'assets',
-			'core'       => WP_MCP_AI_PATH . 'core',
-			'shared'     => WP_MCP_AI_PATH . 'shared',
-			'addons'     => WP_MCP_AI_PATH . 'addons',
+			'includes' => WP_MCP_AI_PATH . 'includes',
+			'assets'   => WP_MCP_AI_PATH . 'assets',
+			'core'     => WP_MCP_AI_PATH . 'core',
+			'shared'   => WP_MCP_AI_PATH . 'shared',
+			'addons'   => WP_MCP_AI_PATH . 'addons',
 		);
 
 		foreach ( $code_locations as $name => $path ) {
@@ -193,14 +193,14 @@ class WP_MCP_AI_Asset_Inventory {
 		$assets = array();
 
 		$integrations = array(
-			'openai'       => array( 'OpenAI GPT API', 'confidential' ),
-			'gemini'       => array( 'Google Gemini API', 'confidential' ),
-			'ollama'       => array( 'Ollama Local AI', 'internal' ),
-			'huggingface'  => array( 'Hugging Face API', 'internal' ),
-			'wordpress'    => array( 'WordPress Core', 'internal' ),
-			'jetengine'    => array( 'JetEngine Integration', 'internal' ),
-			'woocommerce'  => array( 'WooCommerce Integration', 'internal' ),
-			'elementor'    => array( 'Elementor Integration', 'internal' ),
+			'openai'      => array( 'OpenAI GPT API', 'confidential' ),
+			'gemini'      => array( 'Google Gemini API', 'confidential' ),
+			'ollama'      => array( 'Ollama Local AI', 'internal' ),
+			'huggingface' => array( 'Hugging Face API', 'internal' ),
+			'wordpress'   => array( 'WordPress Core', 'internal' ),
+			'jetengine'   => array( 'JetEngine Integration', 'internal' ),
+			'woocommerce' => array( 'WooCommerce Integration', 'internal' ),
+			'elementor'   => array( 'Elementor Integration', 'internal' ),
 		);
 
 		foreach ( $integrations as $key => $info ) {
@@ -452,8 +452,8 @@ class WP_MCP_AI_Asset_Inventory {
 
 		if ( ! $inventory || ! isset( $inventory['assets'] ) ) {
 			return array(
-				'total'           => 0,
-				'by_type'         => array(),
+				'total'             => 0,
+				'by_type'           => array(),
 				'by_classification' => array(),
 			);
 		}
@@ -472,13 +472,13 @@ class WP_MCP_AI_Asset_Inventory {
 			if ( ! isset( $stats['by_type'][ $type ] ) ) {
 				$stats['by_type'][ $type ] = 0;
 			}
-			$stats['by_type'][ $type ]++;
+			++$stats['by_type'][ $type ];
 
 			$classification = $asset['classification'] ?? 'unknown';
 			if ( ! isset( $stats['by_classification'][ $classification ] ) ) {
 				$stats['by_classification'][ $classification ] = 0;
 			}
-			$stats['by_classification'][ $classification ]++;
+			++$stats['by_classification'][ $classification ];
 		}
 
 		return $stats;

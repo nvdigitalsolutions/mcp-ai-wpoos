@@ -16,6 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-content-media
  */
 class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Content_Media;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -34,7 +35,7 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new quiz with questions. Supports multiple choice, true/false, and short answer formats. Optionally includes a time limit.', 'mcp-ai-wpoos-pro' );
+		return __( 'Creates a new quiz with questions or updates an existing one if quiz_id is provided. Supports multiple choice, true/false, and short answer formats. Optionally includes a time limit.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -44,6 +45,10 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$schema = array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'quiz_id'       => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional quiz ID. If provided, updates the existing quiz instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'title'         => array(
 					'type'        => 'string',
 					'description' => __( 'Title of the quiz.', 'mcp-ai-wpoos-pro' ),
@@ -124,6 +129,30 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create quizzes.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Check if this is an update operation.
+		$quiz_id       = isset( $arguments['quiz_id'] ) ? absint( $arguments['quiz_id'] ) : 0;
+		$is_update     = false;
+		$existing_quiz = null;
+
+		if ( $quiz_id ) {
+			// Verify quiz exists and user has permission to update it.
+			$existing_quiz = get_post( $quiz_id );
+
+			if ( ! $existing_quiz || 'mcp_ai_quiz' !== $existing_quiz->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author       = absint( $existing_quiz->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this quiz.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Validate and sanitize inputs.
 		$title         = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
 		$description   = isset( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
@@ -175,47 +204,99 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			$validated_questions[] = $validated_question;
 		}
 
-		// Create quiz post.
-		$quiz_data = array(
-			'post_type'    => 'mcp_ai_quiz',
-			'post_title'   => $title,
-			'post_content' => $this->embed_content_media( $description, $arguments ),
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		);
+		if ( $is_update ) {
+			// Update existing quiz.
+			$quiz_data = array(
+				'ID'           => $quiz_id,
+				'post_title'   => $title,
+				'post_content' => $this->embed_content_media( $description, $arguments ),
+			);
 
-		$quiz_id = wp_insert_post( $quiz_data, true );
+			$result = wp_update_post( $quiz_data, true );
 
-		if ( is_wp_error( $quiz_id ) ) {
-			return $quiz_id;
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Update quiz metadata.
+			update_post_meta( $quiz_id, '_mcp_ai_quiz_description', $description );
+			update_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', $time_limit );
+			update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $validated_questions );
+			update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', $total_points );
+			update_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', $passing_score );
+
+			// Trigger CCT sync by touching the post.
+			wp_update_post(
+				array(
+					'ID'            => $quiz_id,
+					'post_modified' => current_time( 'mysql' ),
+				)
+			);
+
+			$quiz = get_post( $quiz_id );
+
+			return array(
+				'summary'        => sprintf(
+					/* translators: 1: quiz title, 2: quiz ID */
+					__( 'Quiz updated: %1$s (ID: %2$d)', 'mcp-ai-wpoos-pro' ),
+					$title,
+					$quiz_id
+				),
+				'quiz_id'        => $quiz_id,
+				'title'          => $title,
+				'description'    => $description,
+				'time_limit'     => $time_limit,
+				'question_count' => count( $validated_questions ),
+				'total_points'   => $total_points,
+				'passing_score'  => $passing_score,
+				'author_id'      => absint( $quiz->post_author ),
+				'updated_at'     => $quiz->post_modified,
+				'updated'        => true,
+			);
+		} else {
+			// Create new quiz post.
+			$quiz_data = array(
+				'post_type'    => 'mcp_ai_quiz',
+				'post_title'   => $title,
+				'post_content' => $this->embed_content_media( $description, $arguments ),
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			);
+
+			$quiz_id = wp_insert_post( $quiz_data, true );
+
+			if ( is_wp_error( $quiz_id ) ) {
+				return $quiz_id;
+			}
+
+			// Store quiz metadata.
+			update_post_meta( $quiz_id, '_mcp_ai_quiz_description', $description );
+			update_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', $time_limit );
+			update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $validated_questions );
+			update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', $total_points );
+			update_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', $passing_score );
+
+			$quiz = get_post( $quiz_id );
+
+			return array(
+				'summary'        => sprintf(
+					/* translators: 1: quiz title, 2: quiz ID */
+					__( 'Quiz created: %1$s (ID: %2$d)', 'mcp-ai-wpoos-pro' ),
+					$title,
+					$quiz_id
+				),
+				'quiz_id'        => $quiz_id,
+				'title'          => $title,
+				'description'    => $description,
+				'time_limit'     => $time_limit,
+				'question_count' => count( $validated_questions ),
+				'total_points'   => $total_points,
+				'passing_score'  => $passing_score,
+				'author_id'      => $current_user_id,
+				'created_at'     => $quiz->post_date,
+				'updated'        => false,
+			);
 		}
-
-		// Store quiz metadata.
-		update_post_meta( $quiz_id, '_mcp_ai_quiz_description', $description );
-		update_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', $time_limit );
-		update_post_meta( $quiz_id, '_mcp_ai_quiz_questions', $validated_questions );
-		update_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', $total_points );
-		update_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', $passing_score );
-
-		$quiz = get_post( $quiz_id );
-
-		return array(
-			'summary'        => sprintf(
-				/* translators: 1: quiz title, 2: quiz ID */
-				__( 'Quiz created: %1$s (ID: %2$d)', 'mcp-ai-wpoos-pro' ),
-				$title,
-				$quiz_id
-			),
-			'quiz_id'        => $quiz_id,
-			'title'          => $title,
-			'description'    => $description,
-			'time_limit'     => $time_limit,
-			'question_count' => count( $validated_questions ),
-			'total_points'   => $total_points,
-			'passing_score'  => $passing_score,
-			'author_id'      => $current_user_id,
-			'created_at'     => $quiz->post_date,
-		);
 	}
 
 	/**

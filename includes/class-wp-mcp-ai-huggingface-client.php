@@ -583,6 +583,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			}
 
 			// Apply resource-aware max_tokens if not explicitly set.
+			// Hugging Face uses max_completion_tokens (OpenAI-compatible) for output token limit.
 			if ( ! isset( $options['max_tokens'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$max_tokens   = $resource_mgr->get_max_tokens();
@@ -595,11 +596,31 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 				 */
 				$max_tokens = apply_filters( 'wp_mcp_ai_huggingface_max_tokens', $max_tokens, $options );
 
+				// Get model-specific limit from model config.
+				$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
+				if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
+					$model_limit = absint( $model_config['max_completion_tokens'] );
+					// Respect model limit.
+					$max_tokens = min( $max_tokens, $model_limit );
+				}
+
 				if ( $max_tokens > 0 ) {
-					$payload['max_tokens'] = $max_tokens;
+					// Hugging Face Inference API uses max_completion_tokens (OpenAI-compatible).
+					$payload['max_completion_tokens'] = $max_tokens;
 				}
 			} else {
-				$payload['max_tokens'] = absint( $options['max_tokens'] );
+				$max_tokens = absint( $options['max_tokens'] );
+
+				// Get model-specific limit from model config.
+				$model_config = WP_MCP_AI_Model_Config::get_model_config( $model );
+				if ( $model_config && isset( $model_config['max_completion_tokens'] ) ) {
+					$model_limit = absint( $model_config['max_completion_tokens'] );
+					// Respect model limit.
+					$max_tokens = min( $max_tokens, $model_limit );
+				}
+
+				// Hugging Face Inference API uses max_completion_tokens (OpenAI-compatible).
+				$payload['max_completion_tokens'] = $max_tokens;
 			}
 
 			return $payload;
@@ -926,10 +947,10 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 				WP_MCP_AI_Logger::log_error(
 					'Hugging Face audio transcription error.',
 					array(
-						'status'      => $code,
-						'body'        => $body,
-						'model'       => $model,
-						'endpoint'    => $url,
+						'status'   => $code,
+						'body'     => $body,
+						'model'    => $model,
+						'endpoint' => $url,
 					)
 				);
 
@@ -940,9 +961,9 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 						'status'  => $code,
 						'body'    => $body,
 						'actions' => array(
-							'verify_model_name'      => __( 'Check that the Whisper model name is correct (e.g., openai/whisper-large-v3).', 'mcp-ai-wpoos' ),
-							'check_api_key'          => __( 'Verify your Hugging Face API key has access to the model.', 'mcp-ai-wpoos' ),
-							'use_custom_endpoint'    => __( 'For dedicated Inference Endpoints, configure huggingface_endpoint_url in settings.', 'mcp-ai-wpoos' ),
+							'verify_model_name'   => __( 'Check that the Whisper model name is correct (e.g., openai/whisper-large-v3).', 'mcp-ai-wpoos' ),
+							'check_api_key'       => __( 'Verify your Hugging Face API key has access to the model.', 'mcp-ai-wpoos' ),
+							'use_custom_endpoint' => __( 'For dedicated Inference Endpoints, configure huggingface_endpoint_url in settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);

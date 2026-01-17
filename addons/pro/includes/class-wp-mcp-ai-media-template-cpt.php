@@ -38,29 +38,41 @@ class WP_MCP_AI_Media_Template_CPT {
 	 * Initialize the class.
 	 */
 	public static function init() {
-		// Only available in Full Version (not Base Version).
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
-			// Still show notice if accessing media template pages.
-			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
-			return;
-		}
-
-		// Only initialize if media toolkit is enabled.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			// Show notice if trying to access media template pages when disabled.
-			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
-			return;
-		}
-
+		// Always register post type and show notices, so admin pages are visible.
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 		add_action( 'init', array( __CLASS__, 'register_taxonomy' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
+
+		// Check if feature is available and enabled before initializing full functionality.
+		// Only available in Full Version (not Base Version), unless Pro addon is active.
+		// When Pro addon is active (WP_MCP_AI_PRO_VERSION defined), features should work even in base mode.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			// Base version without Pro - only show notices, don't initialize functionality.
+			return;
+		}
+
+		// Check if media toolkit is enabled in settings.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_media_toolkit'] ) ) {
+			// Feature disabled - only show notices, don't initialize functionality.
+			return;
+		}
+
+		// Feature is available and enabled - initialize full functionality.
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register_meta_boxes' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'save_template_meta' ), 5, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'show_info_notice' ) );
 		add_filter( 'manage_' . self::POST_TYPE . '_posts_columns', array( __CLASS__, 'add_admin_columns' ) );
 		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( __CLASS__, 'render_admin_columns' ), 10, 2 );
 		add_filter( 'post_row_actions', array( __CLASS__, 'add_row_actions' ), 10, 2 );
+
+		// Phase 4: Bulk actions and admin enhancements.
+		add_filter( 'bulk_actions-edit-' . self::POST_TYPE, array( __CLASS__, 'add_bulk_actions' ) );
+		add_filter( 'handle_bulk_actions-edit-' . self::POST_TYPE, array( __CLASS__, 'handle_bulk_actions' ), 10, 3 );
+		add_action( 'admin_action_duplicate_media_template', array( __CLASS__, 'handle_duplicate_template' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
+		add_action( 'wp_ajax_mcp_ai_preview_template', array( __CLASS__, 'ajax_preview_template' ) );
+		add_action( 'wp_ajax_mcp_ai_quick_apply_template', array( __CLASS__, 'ajax_quick_apply_template' ) );
 
 		// Load metabox classes.
 		self::load_metabox_classes();
@@ -78,14 +90,14 @@ class WP_MCP_AI_Media_Template_CPT {
 
 		// Check if we're on a media template post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type   = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type        = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_template_page = ( $post_type === self::POST_TYPE );
 		if ( ! $is_template_page && $screen->post_type !== self::POST_TYPE ) {
 			return;
 		}
 
-		// Check if in Base Version.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Check if in Base Version without Pro addon.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			?>
 			<div class="notice notice-warning">
 				<p>
@@ -415,5 +427,332 @@ class WP_MCP_AI_Media_Template_CPT {
 		}
 
 		return $actions;
+	}
+
+	/**
+	 * Add bulk actions for media templates (Phase 4).
+	 *
+	 * @param array $actions Existing bulk actions.
+	 * @return array Modified bulk actions.
+	 */
+	public static function add_bulk_actions( $actions ) {
+		$actions['duplicate_templates'] = __( 'Duplicate', 'mcp-ai-wpoos-pro' );
+		$actions['export_templates']    = __( 'Export', 'mcp-ai-wpoos-pro' );
+		return $actions;
+	}
+
+	/**
+	 * Handle bulk actions for media templates (Phase 4).
+	 *
+	 * @param string $redirect_to Redirect URL.
+	 * @param string $doaction    Action being taken.
+	 * @param array  $post_ids    Array of post IDs.
+	 * @return string Modified redirect URL.
+	 */
+	public static function handle_bulk_actions( $redirect_to, $doaction, $post_ids ) {
+		if ( 'duplicate_templates' === $doaction ) {
+			$duplicated = 0;
+			foreach ( $post_ids as $post_id ) {
+				if ( self::duplicate_template( $post_id ) ) {
+					++$duplicated;
+				}
+			}
+			$redirect_to = add_query_arg( 'duplicated_templates', $duplicated, $redirect_to );
+		} elseif ( 'export_templates' === $doaction ) {
+			// Export templates as JSON.
+			$templates = array();
+			foreach ( $post_ids as $post_id ) {
+				$post = get_post( $post_id );
+				if ( $post && self::POST_TYPE === $post->post_type ) {
+					$templates[] = array(
+						'title'       => $post->post_title,
+						'description' => $post->post_content,
+						'operation'   => get_post_meta( $post_id, '_mcp_ai_template_operation', true ),
+						'parameters'  => get_post_meta( $post_id, '_mcp_ai_template_parameters', true ),
+						'categories'  => wp_get_object_terms( $post_id, self::TAXONOMY_CATEGORY, array( 'fields' => 'names' ) ),
+					);
+				}
+			}
+
+			if ( ! empty( $templates ) ) {
+				// Store in transient for download.
+				$transient_key = 'mcp_ai_template_export_' . get_current_user_id();
+				set_transient( $transient_key, wp_json_encode( $templates, JSON_PRETTY_PRINT ), HOUR_IN_SECONDS );
+				$redirect_to = add_query_arg( 'exported_templates', count( $templates ), $redirect_to );
+				$redirect_to = add_query_arg( 'export_key', $transient_key, $redirect_to );
+			}
+		}
+
+		return $redirect_to;
+	}
+
+	/**
+	 * Handle duplicate template admin action (Phase 4).
+	 */
+	public static function handle_duplicate_template() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce checked below.
+		if ( ! isset( $_GET['post_id'] ) ) {
+			wp_die( esc_html__( 'No template ID specified.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$post_id = absint( $_GET['post_id'] );
+
+		// Verify nonce.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking nonce here.
+		if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'duplicate_media_template_' . $post_id ) ) {
+			wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Check permissions.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( esc_html__( 'You do not have permission to duplicate templates.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$new_id = self::duplicate_template( $post_id );
+
+		if ( $new_id ) {
+			wp_safe_redirect( admin_url( 'post.php?action=edit&post=' . $new_id ) );
+			exit;
+		} else {
+			wp_die( esc_html__( 'Failed to duplicate template.', 'mcp-ai-wpoos-pro' ) );
+		}
+	}
+
+	/**
+	 * Duplicate a template (Phase 4).
+	 *
+	 * @param int $post_id Template post ID.
+	 * @return int|false New template ID or false on failure.
+	 */
+	protected static function duplicate_template( $post_id ) {
+		$post = get_post( $post_id );
+
+		if ( ! $post || self::POST_TYPE !== $post->post_type ) {
+			return false;
+		}
+
+		// Create duplicate.
+		$new_post = array(
+			'post_type'    => self::POST_TYPE,
+			'post_title'   => $post->post_title . ' ' . __( '(Copy)', 'mcp-ai-wpoos-pro' ),
+			'post_content' => $post->post_content,
+			'post_status'  => 'draft',
+			'post_author'  => get_current_user_id(),
+		);
+
+		$new_id = wp_insert_post( $new_post );
+
+		if ( is_wp_error( $new_id ) || ! $new_id ) {
+			return false;
+		}
+
+		// Copy meta.
+		$meta_keys = array(
+			'_mcp_ai_template_operation',
+			'_mcp_ai_template_parameters',
+		);
+
+		foreach ( $meta_keys as $meta_key ) {
+			$value = get_post_meta( $post_id, $meta_key, true );
+			if ( ! empty( $value ) ) {
+				update_post_meta( $new_id, $meta_key, $value );
+			}
+		}
+
+		// Initialize usage stats.
+		update_post_meta( $new_id, '_mcp_ai_template_usage_count', 0 );
+		update_post_meta( $new_id, '_mcp_ai_template_last_used', '' );
+
+		// Copy taxonomy terms.
+		$terms = wp_get_object_terms( $post_id, self::TAXONOMY_CATEGORY, array( 'fields' => 'ids' ) );
+		if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
+			wp_set_object_terms( $new_id, $terms, self::TAXONOMY_CATEGORY );
+		}
+
+		return $new_id;
+	}
+
+	/**
+	 * Enqueue admin assets (Phase 4).
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public static function enqueue_admin_assets( $hook ) {
+		$screen = get_current_screen();
+		if ( ! $screen || ! in_array( $screen->id, array( self::POST_TYPE, 'edit-' . self::POST_TYPE ), true ) ) {
+			return;
+		}
+
+		// Enqueue admin CSS.
+		wp_enqueue_style(
+			'mcp-ai-media-template-admin',
+			WP_MCP_AI_PRO_URL . 'assets/css/media-template-admin.css',
+			array(),
+			WP_MCP_AI_PRO_VERSION
+		);
+
+		// Enqueue admin JS.
+		wp_enqueue_script(
+			'mcp-ai-media-template-admin',
+			WP_MCP_AI_PRO_URL . 'assets/js/media-template-admin.js',
+			array( 'jquery' ),
+			WP_MCP_AI_PRO_VERSION,
+			true
+		);
+
+		// Localize script.
+		wp_localize_script(
+			'mcp-ai-media-template-admin',
+			'mcpAiMediaTemplate',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'mcp_ai_media_template_admin' ),
+				'i18n'    => array(
+					'previewError'     => __( 'Failed to generate preview.', 'mcp-ai-wpoos-pro' ),
+					'applySuccess'     => __( 'Template applied successfully!', 'mcp-ai-wpoos-pro' ),
+					'applyError'       => __( 'Failed to apply template.', 'mcp-ai-wpoos-pro' ),
+					'selectImage'      => __( 'Select an image to apply this template.', 'mcp-ai-wpoos-pro' ),
+					'processing'       => __( 'Processing...', 'mcp-ai-wpoos-pro' ),
+					'confirmDuplicate' => __( 'Are you sure you want to duplicate this template?', 'mcp-ai-wpoos-pro' ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler for template preview (Phase 4).
+	 */
+	public static function ajax_preview_template() {
+		// Check nonce.
+		check_ajax_referer( 'mcp_ai_media_template_admin', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get template ID.
+		$template_id = isset( $_POST['template_id'] ) ? absint( $_POST['template_id'] ) : 0;
+		if ( ! $template_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid template ID.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get template data.
+		$post = get_post( $template_id );
+		if ( ! $post || self::POST_TYPE !== $post->post_type ) {
+			wp_send_json_error( array( 'message' => __( 'Template not found.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$operation  = get_post_meta( $template_id, '_mcp_ai_template_operation', true );
+		$parameters = get_post_meta( $template_id, '_mcp_ai_template_parameters', true );
+
+		// Build preview data.
+		$preview = array(
+			'title'      => $post->post_title,
+			'operation'  => $operation,
+			'parameters' => json_decode( $parameters, true ),
+			'summary'    => self::generate_template_summary( $operation, $parameters ),
+		);
+
+		wp_send_json_success( $preview );
+	}
+
+	/**
+	 * AJAX handler for quick apply template (Phase 4).
+	 */
+	public static function ajax_quick_apply_template() {
+		// Check nonce.
+		check_ajax_referer( 'mcp_ai_media_template_admin', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get parameters.
+		$template_id   = isset( $_POST['template_id'] ) ? absint( $_POST['template_id'] ) : 0;
+		$attachment_id = isset( $_POST['attachment_id'] ) ? absint( $_POST['attachment_id'] ) : 0;
+
+		if ( ! $template_id || ! $attachment_id ) {
+			wp_send_json_error( array( 'message' => __( 'Missing required parameters.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Use the apply_media_template tool.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Apply_Media_Template' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-media-template.php';
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Apply_Media_Template();
+		$result = $tool->execute(
+			array(
+				'template_id'   => $template_id,
+				'attachment_id' => $attachment_id,
+			),
+			array( 'user_id' => get_current_user_id() )
+		);
+
+		if ( ! empty( $result['success'] ) ) {
+			wp_send_json_success( $result );
+		} else {
+			wp_send_json_error( $result );
+		}
+	}
+
+	/**
+	 * Generate human-readable template summary (Phase 4).
+	 *
+	 * @param string $operation  Operation type.
+	 * @param string $parameters JSON parameters.
+	 * @return string Summary text.
+	 */
+	protected static function generate_template_summary( $operation, $parameters ) {
+		$params = json_decode( $parameters, true );
+		if ( ! is_array( $params ) ) {
+			return __( 'No parameters configured', 'mcp-ai-wpoos-pro' );
+		}
+
+		$summary = '';
+
+		switch ( $operation ) {
+			case 'resize_graphic':
+				$width  = isset( $params['target_width'] ) ? $params['target_width'] : '?';
+				$height = isset( $params['target_height'] ) ? $params['target_height'] : '?';
+				$format = isset( $params['output_format'] ) ? strtoupper( $params['output_format'] ) : 'PNG';
+				/* translators: 1: width, 2: height, 3: format */
+				$summary = sprintf( __( 'Resize to %1$s × %2$s, Output: %3$s', 'mcp-ai-wpoos-pro' ), $width, $height, $format );
+				break;
+
+			case 'add_logo':
+				$position = isset( $params['logo_position'] ) ? $params['logo_position'] : 'bottom-right';
+				$scale    = isset( $params['logo_scale'] ) ? ( $params['logo_scale'] * 100 ) . '%' : '15%';
+				/* translators: 1: position, 2: scale */
+				$summary = sprintf( __( 'Add logo at %1$s, Scale: %2$s', 'mcp-ai-wpoos-pro' ), $position, $scale );
+				break;
+
+			case 'expand_scene':
+				$direction = isset( $params['expand_direction'] ) ? $params['expand_direction'] : 'all';
+				$pixels    = isset( $params['expand_pixels'] ) ? $params['expand_pixels'] : '100';
+				/* translators: 1: direction, 2: pixels */
+				$summary = sprintf( __( 'Expand %1$s by %2$s pixels', 'mcp-ai-wpoos-pro' ), $direction, $pixels );
+				break;
+
+			case 'ai_enhance':
+			case 'ai_style':
+			case 'ai_background':
+			case 'ai_retouch':
+				$operations = array(
+					'ai_enhance'    => __( 'AI-powered photo enhancement', 'mcp-ai-wpoos-pro' ),
+					'ai_style'      => __( 'AI style transfer', 'mcp-ai-wpoos-pro' ),
+					'ai_background' => __( 'AI background modification', 'mcp-ai-wpoos-pro' ),
+					'ai_retouch'    => __( 'AI-powered retouching', 'mcp-ai-wpoos-pro' ),
+				);
+				$summary    = isset( $operations[ $operation ] ) ? $operations[ $operation ] : __( 'AI operation', 'mcp-ai-wpoos-pro' );
+				break;
+
+			default:
+				$summary = __( 'Custom operation', 'mcp-ai-wpoos-pro' );
+		}
+
+		return $summary;
 	}
 }

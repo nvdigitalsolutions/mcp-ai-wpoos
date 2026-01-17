@@ -19,11 +19,11 @@ if ( ! class_exists( 'WP_MCP_AI_QuickBooks_OAuth_Handler' ) ) {
 // Register the QuickBooks OAuth handler with the container.
 add_action(
 	'wp_mcp_ai_register_services',
-	function( $container ) {
+	function ( $container ) {
 		if ( ! $container->has( 'integrations.quickbooks_oauth' ) ) {
 			$container->singleton(
 				'integrations.quickbooks_oauth',
-				function() {
+				function () {
 					return new WP_MCP_AI_QuickBooks_OAuth_Handler();
 				}
 			);
@@ -35,7 +35,7 @@ add_action(
 // Register OAuth action hooks.
 add_action(
 	'admin_init',
-	function() {
+	function () {
 		$container = wp_mcp_ai_container();
 
 		if ( ! $container->has( 'integrations.quickbooks_oauth' ) ) {
@@ -54,7 +54,7 @@ add_action(
 // Display admin notices for QuickBooks OAuth actions.
 add_action(
 	'admin_notices',
-	function() {
+	function () {
 		$notice = get_transient( 'wp_mcp_ai_quickbooks_oauth_notice' );
 
 		if ( ! $notice || ! is_array( $notice ) ) {

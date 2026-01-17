@@ -62,8 +62,9 @@ class WP_MCP_AI_Health_Wellness_CPT {
 	 * Initialize the class.
 	 */
 	public static function init() {
-		// Only available in Full Version (not Base Version).
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Only available in Full Version (not Base Version), unless Pro addon is active.
+		// When Pro addon is active (WP_MCP_AI_PRO_VERSION defined), features should work even in base mode.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			// Still show notice if accessing health wellness pages.
 			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
 			return;
@@ -94,22 +95,26 @@ class WP_MCP_AI_Health_Wellness_CPT {
 
 		// Check if we're on a health wellness post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		$is_health_wellness_page = in_array( $post_type, array(
-			self::MEMBER_POST_TYPE,
-			self::POLICY_POST_TYPE,
-			self::MEDICAL_RECORD_POST_TYPE,
-			self::CHECKUP_POST_TYPE,
-			self::PRESCRIPTION_POST_TYPE,
-			self::ALLERGY_POST_TYPE,
-		), true );
+		$post_type               = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$is_health_wellness_page = in_array(
+			$post_type,
+			array(
+				self::MEMBER_POST_TYPE,
+				self::POLICY_POST_TYPE,
+				self::MEDICAL_RECORD_POST_TYPE,
+				self::CHECKUP_POST_TYPE,
+				self::PRESCRIPTION_POST_TYPE,
+				self::ALLERGY_POST_TYPE,
+			),
+			true
+		);
 
 		if ( ! $is_health_wellness_page ) {
 			return;
 		}
 
-		// Check if in Base Version.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Check if in Base Version without Pro addon.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			?>
 			<div class="notice notice-warning">
 				<p>
@@ -533,12 +538,12 @@ class WP_MCP_AI_Health_Wellness_CPT {
 
 		// Register default record types.
 		$default_record_types = array(
-			'lab-result'    => __( 'Lab Result', 'mcp-ai-wpoos-pro' ),
-			'diagnosis'     => __( 'Diagnosis', 'mcp-ai-wpoos-pro' ),
-			'treatment'     => __( 'Treatment', 'mcp-ai-wpoos-pro' ),
-			'vaccination'   => __( 'Vaccination', 'mcp-ai-wpoos-pro' ),
-			'imaging'       => __( 'Imaging', 'mcp-ai-wpoos-pro' ),
-			'procedure'     => __( 'Procedure', 'mcp-ai-wpoos-pro' ),
+			'lab-result'      => __( 'Lab Result', 'mcp-ai-wpoos-pro' ),
+			'diagnosis'       => __( 'Diagnosis', 'mcp-ai-wpoos-pro' ),
+			'treatment'       => __( 'Treatment', 'mcp-ai-wpoos-pro' ),
+			'vaccination'     => __( 'Vaccination', 'mcp-ai-wpoos-pro' ),
+			'imaging'         => __( 'Imaging', 'mcp-ai-wpoos-pro' ),
+			'procedure'       => __( 'Procedure', 'mcp-ai-wpoos-pro' ),
 			'hospitalization' => __( 'Hospitalization', 'mcp-ai-wpoos-pro' ),
 		);
 

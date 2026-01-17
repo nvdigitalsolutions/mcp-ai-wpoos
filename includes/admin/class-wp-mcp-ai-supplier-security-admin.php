@@ -67,9 +67,9 @@ class WP_MCP_AI_Supplier_Security_Admin {
 			'wp-mcp-ai-supplier-security',
 			'wpMcpAiSupplierSecurity',
 			array(
-				'restUrl'   => rest_url( 'mcp-ai/v1/suppliers' ),
-				'nonce'     => wp_create_nonce( 'wp_rest' ),
-				'strings'   => array(
+				'restUrl' => rest_url( 'mcp-ai/v1/suppliers' ),
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
+				'strings' => array(
 					'confirmDelete' => __( 'Are you sure you want to delete this supplier?', 'mcp-ai-wpoos' ),
 					'updateSuccess' => __( 'Supplier updated successfully', 'mcp-ai-wpoos' ),
 					'updateError'   => __( 'Failed to update supplier', 'mcp-ai-wpoos' ),
@@ -203,13 +203,13 @@ class WP_MCP_AI_Supplier_Security_Admin {
 									$next_review = isset( $supplier['next_review'] ) ? $supplier['next_review'] : '';
 									$is_overdue  = $next_review && $next_review < current_time( 'Y-m-d' );
 									?>
-									<span class="<?php echo $is_overdue ? 'wp-mcp-ai-overdue' : ''; ?>">
+									<span class="<?php echo esc_attr( $is_overdue ? 'wp-mcp-ai-overdue' : '' ); ?>">
 										<?php echo $next_review ? esc_html( date_i18n( get_option( 'date_format' ), strtotime( $next_review ) ) ) : '—'; ?>
 									</span>
 								</td>
 								<td>
 									<?php
-									$uptime = isset( $supplier['performance']['uptime_actual'] ) ? $supplier['performance']['uptime_actual'] : 0;
+									$uptime       = isset( $supplier['performance']['uptime_actual'] ) ? $supplier['performance']['uptime_actual'] : 0;
 									$uptime_class = $uptime >= 99.9 ? 'good' : ( $uptime >= 99 ? 'warning' : 'critical' );
 									?>
 									<span class="wp-mcp-ai-uptime wp-mcp-ai-uptime-<?php echo esc_attr( $uptime_class ); ?>">
@@ -247,7 +247,7 @@ class WP_MCP_AI_Supplier_Security_Admin {
 							</div>
 							<div class="wp-mcp-ai-risk-bar-container">
 								<div class="wp-mcp-ai-risk-bar-fill wp-mcp-ai-risk-<?php echo esc_attr( $risk ); ?>"
-								     style="width: <?php echo esc_attr( $stats['total'] > 0 ? ( $count / $stats['total'] * 100 ) : 0 ); ?>%;">
+									style="width: <?php echo esc_attr( $stats['total'] > 0 ? ( $count / $stats['total'] * 100 ) : 0 ); ?>%;">
 								</div>
 							</div>
 							<div class="wp-mcp-ai-risk-bar-count"><?php echo esc_html( $count ); ?></div>

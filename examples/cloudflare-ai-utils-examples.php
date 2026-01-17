@@ -37,7 +37,7 @@ function wp_mcp_ai_example_basic_weather_tool() {
 			),
 			'required'   => array( 'city' ),
 		),
-		'function'    => function( $args ) {
+		'function'    => function ( $args ) {
 			$city = sanitize_text_field( $args['city'] );
 
 			// In a real implementation, you would call a weather API here.
@@ -115,7 +115,7 @@ function wp_mcp_ai_example_database_query_tool() {
 			),
 			'required'   => array( 'keyword' ),
 		),
-		'function'    => function( $args ) {
+		'function'    => function ( $args ) {
 			// Check user capabilities.
 			if ( ! current_user_can( 'read' ) ) {
 				return 'Permission denied: You do not have permission to query posts.';
@@ -148,7 +148,7 @@ function wp_mcp_ai_example_database_query_tool() {
 				);
 			}
 
-			return "Found " . count( $posts ) . " posts matching '{$keyword}':\n\n" . wp_json_encode( $results, JSON_PRETTY_PRINT );
+			return 'Found ' . count( $posts ) . " posts matching '{$keyword}':\n\n" . wp_json_encode( $results, JSON_PRETTY_PRINT );
 		},
 	);
 
@@ -205,7 +205,7 @@ function wp_mcp_ai_example_multiple_tools_with_trimming() {
 				),
 				'required'   => array( 'city' ),
 			),
-			'function'    => function( $args ) {
+			'function'    => function ( $args ) {
 				return "Weather in {$args['city']}: Sunny, 25°C";
 			},
 		),
@@ -220,7 +220,7 @@ function wp_mcp_ai_example_multiple_tools_with_trimming() {
 				),
 				'required'   => array( 'user_id' ),
 			),
-			'function'    => function( $args ) {
+			'function'    => function ( $args ) {
 				$user = get_userdata( absint( $args['user_id'] ) );
 				if ( ! $user ) {
 					return 'User not found';
@@ -242,7 +242,7 @@ function wp_mcp_ai_example_multiple_tools_with_trimming() {
 				),
 				'required'   => array( 'status' ),
 			),
-			'function'    => function( $args ) {
+			'function'    => function ( $args ) {
 				$count  = wp_count_posts();
 				$status = $args['status'];
 				return "There are {$count->$status} posts with status '{$status}'.";
@@ -261,7 +261,7 @@ function wp_mcp_ai_example_multiple_tools_with_trimming() {
 					),
 				),
 			),
-			'function'    => function( $args ) {
+			'function'    => function ( $args ) {
 				$format = isset( $args['format'] ) ? $args['format'] : 'Y-m-d H:i:s';
 				return 'Current time: ' . current_time( $format );
 			},
@@ -333,7 +333,7 @@ function wp_mcp_ai_example_calculator_tool() {
 			),
 			'required'   => array( 'operation', 'operand_a', 'operand_b' ),
 		),
-		'function'    => function( $args ) {
+		'function'    => function ( $args ) {
 			$a  = floatval( $args['operand_a'] );
 			$b  = floatval( $args['operand_b'] );
 			$op = $args['operation'];

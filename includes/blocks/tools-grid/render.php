@@ -108,7 +108,7 @@ if ( empty( $groups ) ) {
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
-			'class' => 'wp-block-mcp-ai-wpoos-tools-grid',
+			'class'         => 'wp-block-mcp-ai-wpoos-tools-grid',
 			'data-block-id' => $unique_id,
 		)
 	);

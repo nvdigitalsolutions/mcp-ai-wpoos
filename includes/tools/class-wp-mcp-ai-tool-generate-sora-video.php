@@ -386,7 +386,7 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// OpenAI Sora API returns an async job response, not the video directly.
-		// Response format: {"id": "video_123", "object": "video", "status": "queued", ...}
+		// Response format: {"id": "video_123", "object": "video", "status": "queued", ...}.
 		if ( empty( $data['id'] ) || empty( $data['status'] ) ) {
 			WP_MCP_AI_Logger::log_error(
 				'Sora API returned unexpected response format',
@@ -751,7 +751,9 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Generate attachment metadata.
-		require_once ABSPATH . 'wp-admin/includes/image.php';
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
 		$attach_data = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
 		wp_update_attachment_metadata( $attachment_id, $attach_data );
 

@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new member (person or pet) in the health and wellness system. Members can have profiles with demographic info, contact details, and emergency contacts.', 'mcp-ai-wpoos-pro' );
+		return __( 'Creates a new member (person or pet) or updates an existing one if member_id is provided. Members can have profiles with demographic info, contact details, and emergency contacts.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,6 +43,10 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'member_id'         => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional member ID. If provided, updates the existing member instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'name'              => array(
 					'type'        => 'string',
 					'description' => __( 'Member name (required)', 'mcp-ai-wpoos-pro' ),
@@ -150,6 +154,29 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Check if this is an update operation.
+		$member_id = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
+		$is_update = false;
+
+		if ( $member_id ) {
+			// Verify member exists and user has permission to update it.
+			$existing_member = get_post( $member_id );
+
+			if ( ! $existing_member || 'mcp_ai_member' !== $existing_member->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_member_not_found', __( 'Member not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author       = absint( $existing_member->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this member.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Validate and sanitize inputs.
 		$name              = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : '';
 		$type              = isset( $arguments['type'] ) ? sanitize_key( $arguments['type'] ) : 'person';
@@ -183,85 +210,171 @@ class WP_MCP_AI_Tool_Create_Member implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			return new WP_Error( 'wp_mcp_ai_invalid_email', __( 'Invalid email address.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Create member post.
-		$post_data = array(
-			'post_type'    => 'mcp_ai_member',
-			'post_title'   => $name,
-			'post_content' => $description,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		);
+		if ( $is_update ) {
+			// Update existing member.
+			$post_data = array(
+				'ID'           => $member_id,
+				'post_title'   => $name,
+				'post_content' => $description,
+			);
 
-		$member_id = wp_insert_post( $post_data, true );
+			$result = wp_update_post( $post_data, true );
 
-		if ( is_wp_error( $member_id ) ) {
-			return $member_id;
-		}
-
-		// Set member type taxonomy.
-		wp_set_object_terms( $member_id, $type, 'mcp_ai_member_type' );
-
-		// Save member metadata.
-		if ( $date_of_birth ) {
-			update_post_meta( $member_id, '_member_date_of_birth', $date_of_birth );
-		}
-
-		if ( $gender ) {
-			update_post_meta( $member_id, '_member_gender', $gender );
-		}
-
-		if ( $blood_type ) {
-			update_post_meta( $member_id, '_member_blood_type', $blood_type );
-		}
-
-		if ( $email ) {
-			update_post_meta( $member_id, '_member_email', $email );
-		}
-
-		if ( $phone ) {
-			update_post_meta( $member_id, '_member_phone', $phone );
-		}
-
-		if ( $address ) {
-			update_post_meta( $member_id, '_member_address', $address );
-		}
-
-		if ( $emergency_contact ) {
-			update_post_meta( $member_id, '_member_emergency_contact', $emergency_contact );
-		}
-
-		// Pet-specific fields.
-		if ( 'pet' === $type ) {
-			if ( $species ) {
-				update_post_meta( $member_id, '_pet_species', $species );
+			if ( is_wp_error( $result ) ) {
+				return $result;
 			}
 
-			if ( $breed ) {
-				update_post_meta( $member_id, '_pet_breed', $breed );
-			}
-		}
+			// Set member type taxonomy.
+			wp_set_object_terms( $member_id, $type, 'mcp_ai_member_type' );
 
-		return array(
-			'success'   => true,
-			'message'   => __( 'Member created successfully.', 'mcp-ai-wpoos-pro' ),
-			'member_id' => $member_id,
-			'member'    => array(
-				'id'                => $member_id,
-				'name'              => $name,
-				'type'              => $type,
-				'description'       => $description,
-				'date_of_birth'     => $date_of_birth,
-				'gender'            => $gender,
-				'blood_type'        => $blood_type,
-				'email'             => $email,
-				'phone'             => $phone,
-				'address'           => $address,
-				'emergency_contact' => $emergency_contact,
-				'species'           => $species,
-				'breed'             => $breed,
-				'created_at'        => current_time( 'mysql' ),
-			),
-		);
+			// Update member metadata.
+			if ( $date_of_birth ) {
+				update_post_meta( $member_id, '_member_date_of_birth', $date_of_birth );
+			}
+
+			if ( $gender ) {
+				update_post_meta( $member_id, '_member_gender', $gender );
+			}
+
+			if ( $blood_type ) {
+				update_post_meta( $member_id, '_member_blood_type', $blood_type );
+			}
+
+			if ( $email ) {
+				update_post_meta( $member_id, '_member_email', $email );
+			}
+
+			if ( $phone ) {
+				update_post_meta( $member_id, '_member_phone', $phone );
+			}
+
+			if ( $address ) {
+				update_post_meta( $member_id, '_member_address', $address );
+			}
+
+			if ( $emergency_contact ) {
+				update_post_meta( $member_id, '_member_emergency_contact', $emergency_contact );
+			}
+
+			// Pet-specific fields.
+			if ( 'pet' === $type ) {
+				if ( $species ) {
+					update_post_meta( $member_id, '_pet_species', $species );
+				}
+
+				if ( $breed ) {
+					update_post_meta( $member_id, '_pet_breed', $breed );
+				}
+			}
+
+			$member = get_post( $member_id );
+
+			return array(
+				'success'   => true,
+				'message'   => __( 'Member updated successfully.', 'mcp-ai-wpoos-pro' ),
+				'member_id' => $member_id,
+				'member'    => array(
+					'id'                => $member_id,
+					'name'              => $name,
+					'type'              => $type,
+					'description'       => $description,
+					'date_of_birth'     => $date_of_birth,
+					'gender'            => $gender,
+					'blood_type'        => $blood_type,
+					'email'             => $email,
+					'phone'             => $phone,
+					'address'           => $address,
+					'emergency_contact' => $emergency_contact,
+					'species'           => $species,
+					'breed'             => $breed,
+					'updated_at'        => $member->post_modified,
+				),
+				'updated'   => true,
+			);
+		} else {
+			// Create member post.
+			$post_data = array(
+				'post_type'    => 'mcp_ai_member',
+				'post_title'   => $name,
+				'post_content' => $description,
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			);
+
+			$member_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $member_id ) ) {
+				return $member_id;
+			}
+
+			// Set member type taxonomy.
+			wp_set_object_terms( $member_id, $type, 'mcp_ai_member_type' );
+
+			// Save member metadata.
+			if ( $date_of_birth ) {
+				update_post_meta( $member_id, '_member_date_of_birth', $date_of_birth );
+			}
+
+			if ( $gender ) {
+				update_post_meta( $member_id, '_member_gender', $gender );
+			}
+
+			if ( $blood_type ) {
+				update_post_meta( $member_id, '_member_blood_type', $blood_type );
+			}
+
+			if ( $email ) {
+				update_post_meta( $member_id, '_member_email', $email );
+			}
+
+			if ( $phone ) {
+				update_post_meta( $member_id, '_member_phone', $phone );
+			}
+
+			if ( $address ) {
+				update_post_meta( $member_id, '_member_address', $address );
+			}
+
+			if ( $emergency_contact ) {
+				update_post_meta( $member_id, '_member_emergency_contact', $emergency_contact );
+			}
+
+			// Pet-specific fields.
+			if ( 'pet' === $type ) {
+				if ( $species ) {
+					update_post_meta( $member_id, '_pet_species', $species );
+				}
+
+				if ( $breed ) {
+					update_post_meta( $member_id, '_pet_breed', $breed );
+				}
+			}
+
+			$member = get_post( $member_id );
+
+			return array(
+				'success'   => true,
+				'message'   => __( 'Member created successfully.', 'mcp-ai-wpoos-pro' ),
+				'member_id' => $member_id,
+				'member'    => array(
+					'id'                => $member_id,
+					'name'              => $name,
+					'type'              => $type,
+					'description'       => $description,
+					'date_of_birth'     => $date_of_birth,
+					'gender'            => $gender,
+					'blood_type'        => $blood_type,
+					'email'             => $email,
+					'phone'             => $phone,
+					'address'           => $address,
+					'emergency_contact' => $emergency_contact,
+					'species'           => $species,
+					'breed'             => $breed,
+					'created_at'        => $member->post_date,
+				),
+				'updated'   => false,
+			);
+		}
 	}
 
 	/**

@@ -39,7 +39,7 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 	 */
 	public function test_optimize_product_images_basic() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'optimize_product_images' );
+		$method     = $reflection->getMethod( 'optimize_product_images' );
 		$method->setAccessible( true );
 
 		$products = array(
@@ -98,7 +98,7 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 	 */
 	public function test_optimize_product_images_limit_to_three() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'optimize_product_images' );
+		$method     = $reflection->getMethod( 'optimize_product_images' );
 		$method->setAccessible( true );
 
 		$images = array();
@@ -132,7 +132,7 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 	 */
 	public function test_optimize_product_images_array_format() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'optimize_product_images' );
+		$method     = $reflection->getMethod( 'optimize_product_images' );
 		$method->setAccessible( true );
 
 		$products = array(
@@ -168,7 +168,7 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 	 */
 	public function test_optimize_product_images_single_image() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'optimize_product_images' );
+		$method     = $reflection->getMethod( 'optimize_product_images' );
 		$method->setAccessible( true );
 
 		$variations = array(
@@ -176,11 +176,11 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 				'id'    => 1,
 				'sku'   => 'VAR-001',
 				'image' => (object) array(
-					'id'                => 201,
-					'date_created'      => '2024-01-01T00:00:00',
-					'src'               => 'https://example.com/variation1.jpg',
-					'alt'               => 'Variation alt',
-					'name'              => 'Variation Image',
+					'id'           => 201,
+					'date_created' => '2024-01-01T00:00:00',
+					'src'          => 'https://example.com/variation1.jpg',
+					'alt'          => 'Variation alt',
+					'name'         => 'Variation Image',
 				),
 			),
 		);
@@ -204,7 +204,7 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 	 */
 	public function test_optimize_product_images_no_images() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'optimize_product_images' );
+		$method     = $reflection->getMethod( 'optimize_product_images' );
 		$method->setAccessible( true );
 
 		$products = array(
@@ -226,7 +226,7 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 	 */
 	public function test_optimize_product_images_empty_images() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'optimize_product_images' );
+		$method     = $reflection->getMethod( 'optimize_product_images' );
 		$method->setAccessible( true );
 
 		$products = array(
@@ -248,7 +248,7 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 	 */
 	public function test_optimize_product_images_non_array() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'optimize_product_images' );
+		$method     = $reflection->getMethod( 'optimize_product_images' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->tool, null );
@@ -261,7 +261,7 @@ class Test_Remote_Connection_Tool_Image_Optimization extends WP_UnitTestCase {
 	 */
 	public function test_optimize_product_images_missing_alt() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'optimize_product_images' );
+		$method     = $reflection->getMethod( 'optimize_product_images' );
 		$method->setAccessible( true );
 
 		$products = array(

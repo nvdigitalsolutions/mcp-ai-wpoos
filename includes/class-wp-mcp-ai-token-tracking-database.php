@@ -113,7 +113,9 @@ class WP_MCP_AI_Token_Tracking_Database {
 			KEY user_timestamp (user_id,timestamp)
 		) $charset_collate;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( ! function_exists( 'dbDelta' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $sql );
 
 		// Verify table was created.
@@ -151,7 +153,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 		$output_tokens = absint( $output_tokens );
 		$total_tokens  = $input_tokens + $output_tokens;
 
-		if ( ! $user_id || ! $provider || ! $model || $total_tokens === 0 ) {
+		if ( ! $user_id || ! $provider || ! $model || 0 === $total_tokens ) {
 			return false;
 		}
 

@@ -51,15 +51,15 @@ class WP_MCP_AI_Tool_Flowhub_Create_Order implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'connection_id' => array(
+				'connection_id'  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional Remote Sites connection ID for Flowhub. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos' ),
 				),
-				'customer_id'   => array(
+				'customer_id'    => array(
 					'type'        => 'string',
 					'description' => __( 'Flowhub customer ID for the order.', 'mcp-ai-wpoos' ),
 				),
-				'items'         => array(
+				'items'          => array(
 					'type'        => 'array',
 					'description' => __( 'Array of order line items with product_id, quantity, and price.', 'mcp-ai-wpoos' ),
 					'items'       => array(
@@ -87,11 +87,11 @@ class WP_MCP_AI_Tool_Flowhub_Create_Order implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'string',
 					'description' => __( 'Payment method (e.g., "cash", "debit", "credit").', 'mcp-ai-wpoos' ),
 				),
-				'notes'         => array(
+				'notes'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional order notes or special instructions.', 'mcp-ai-wpoos' ),
 				),
-				'timeout'       => array(
+				'timeout'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,

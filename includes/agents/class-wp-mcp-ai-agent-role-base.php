@@ -1,0 +1,218 @@
+<?php
+/**
+ * Base Agent Role Class
+ *
+ * Abstract base class for all agent role implementations.
+ * Provides common functionality and helper methods.
+ *
+ * @package WP_MCP_AI
+ * @since 1.1.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Abstract base class for agent roles
+ *
+ * Provides default implementations for common role functionality.
+ * Specific role types should extend this class and override methods as needed.
+ *
+ * @since 1.1.0
+ */
+abstract class WP_MCP_AI_Agent_Role_Base implements WP_MCP_AI_Agent_Role_Interface {
+
+	/**
+	 * Role type identifier
+	 *
+	 * @var string
+	 */
+	protected $role_type;
+
+	/**
+	 * Role name for display
+	 *
+	 * @var string
+	 */
+	protected $role_name;
+
+	/**
+	 * Role description
+	 *
+	 * @var string
+	 */
+	protected $role_description;
+
+	/**
+	 * Role capabilities
+	 *
+	 * @var array<string>
+	 */
+	protected $capabilities = array();
+
+	/**
+	 * Recommended tools for this role
+	 *
+	 * @var array<string>
+	 */
+	protected $recommended_tools = array();
+
+	/**
+	 * Get the role type identifier
+	 *
+	 * @return string Role type identifier.
+	 */
+	public function get_role_type() {
+		return $this->role_type;
+	}
+
+	/**
+	 * Get the human-readable role name
+	 *
+	 * @return string Role name for UI display.
+	 */
+	public function get_role_name() {
+		return $this->role_name;
+	}
+
+	/**
+	 * Get the role description
+	 *
+	 * @return string Description of what this role does.
+	 */
+	public function get_role_description() {
+		return $this->role_description;
+	}
+
+	/**
+	 * Get capabilities specific to this role
+	 *
+	 * @return array<string> Array of capability flags.
+	 */
+	public function get_capabilities() {
+		return $this->capabilities;
+	}
+
+	/**
+	 * Check if this role can delegate tasks
+	 *
+	 * @return bool True if role can delegate to other agents.
+	 */
+	public function can_delegate() {
+		return in_array( 'can-delegate', $this->capabilities, true );
+	}
+
+	/**
+	 * Get recommended tools for this role
+	 *
+	 * @return array<string> Array of recommended tool slugs.
+	 */
+	public function get_recommended_tools() {
+		/**
+		 * Filters recommended tools for an agent role.
+		 *
+		 * @param array  $tools     Recommended tool slugs.
+		 * @param string $role_type Role type identifier.
+		 */
+		return apply_filters(
+			'wp_mcp_ai_agent_role_recommended_tools',
+			$this->recommended_tools,
+			$this->role_type
+		);
+	}
+
+	/**
+	 * Get recommended system prompt additions for this role
+	 *
+	 * Returns empty string by default. Override in subclasses.
+	 *
+	 * @return string Additional system prompt text.
+	 */
+	public function get_system_prompt_additions() {
+		return '';
+	}
+
+	/**
+	 * Execute a role-specific task
+	 *
+	 * Default implementation returns an error.
+	 * Subclasses should override this method.
+	 *
+	 * @param array $task Task data including description, context, requirements.
+	 * @param array $context Execution context including assistant_id, user_id, etc.
+	 * @return array|WP_Error Task result or error.
+	 */
+	public function execute_role_task( $task, $context ) {
+		return new WP_Error(
+			'wp_mcp_ai_role_not_implemented',
+			sprintf(
+				/* translators: %s: role type */
+				__( 'Task execution not implemented for role: %s', 'mcp-ai-wpoos' ),
+				$this->role_type
+			)
+		);
+	}
+
+	/**
+	 * Validate task structure
+	 *
+	 * Helper method to ensure task has required fields.
+	 *
+	 * @param array $task Task data to validate.
+	 * @return true|WP_Error True if valid, WP_Error otherwise.
+	 */
+	protected function validate_task( $task ) {
+		if ( empty( $task['description'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_task',
+				__( 'Task description is required.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Validate execution context
+	 *
+	 * Helper method to ensure context has required fields.
+	 *
+	 * @param array $context Execution context to validate.
+	 * @return true|WP_Error True if valid, WP_Error otherwise.
+	 */
+	protected function validate_context( $context ) {
+		if ( empty( $context['assistant_id'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_context',
+				__( 'Assistant ID is required in context.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Log role activity
+	 *
+	 * Helper method to log role-specific activities.
+	 *
+	 * @param string $message Log message.
+	 * @param string $level Log level (info, warning, error).
+	 * @param array  $data Additional data to log.
+	 */
+	protected function log( $message, $level = 'info', $data = array() ) {
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log(
+				$message,
+				array_merge(
+					$data,
+					array(
+						'role_type' => $this->role_type,
+					)
+				),
+				$level
+			);
+		}
+	}
+}

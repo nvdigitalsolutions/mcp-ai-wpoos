@@ -39,10 +39,10 @@ class Test_Remote_Connection_Tool_Description_Truncation extends WP_UnitTestCase
 	 */
 	public function test_truncate_to_sentences_basic() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'truncate_to_sentences' );
+		$method     = $reflection->getMethod( 'truncate_to_sentences' );
 		$method->setAccessible( true );
 
-		$text = 'This is the first sentence. This is the second sentence. This is the third sentence. This is the fourth sentence.';
+		$text   = 'This is the first sentence. This is the second sentence. This is the third sentence. This is the fourth sentence.';
 		$result = $method->invoke( $this->tool, $text, 2 );
 
 		// Should contain first two sentences only.
@@ -57,10 +57,10 @@ class Test_Remote_Connection_Tool_Description_Truncation extends WP_UnitTestCase
 	 */
 	public function test_truncate_to_sentences_strips_html() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'truncate_to_sentences' );
+		$method     = $reflection->getMethod( 'truncate_to_sentences' );
 		$method->setAccessible( true );
 
-		$text = '<p>This is a <strong>formatted</strong> sentence.</p><p>This is another sentence.</p>';
+		$text   = '<p>This is a <strong>formatted</strong> sentence.</p><p>This is another sentence.</p>';
 		$result = $method->invoke( $this->tool, $text, 2 );
 
 		// HTML should be stripped.
@@ -74,10 +74,10 @@ class Test_Remote_Connection_Tool_Description_Truncation extends WP_UnitTestCase
 	 */
 	public function test_truncate_to_sentences_various_punctuation() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'truncate_to_sentences' );
+		$method     = $reflection->getMethod( 'truncate_to_sentences' );
 		$method->setAccessible( true );
 
-		$text = 'This is a question? This is an exclamation! This is a statement. More text here.';
+		$text   = 'This is a question? This is an exclamation! This is a statement. More text here.';
 		$result = $method->invoke( $this->tool, $text, 3 );
 
 		$this->assertStringContainsString( 'question?', $result );
@@ -91,10 +91,10 @@ class Test_Remote_Connection_Tool_Description_Truncation extends WP_UnitTestCase
 	 */
 	public function test_truncate_to_sentences_short_text() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'truncate_to_sentences' );
+		$method     = $reflection->getMethod( 'truncate_to_sentences' );
 		$method->setAccessible( true );
 
-		$text = 'This is a single sentence.';
+		$text   = 'This is a single sentence.';
 		$result = $method->invoke( $this->tool, $text, 3 );
 
 		// Should not add ellipsis if text is not truncated.
@@ -107,7 +107,7 @@ class Test_Remote_Connection_Tool_Description_Truncation extends WP_UnitTestCase
 	 */
 	public function test_truncate_to_sentences_empty_text() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'truncate_to_sentences' );
+		$method     = $reflection->getMethod( 'truncate_to_sentences' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->tool, '', 3 );
@@ -120,14 +120,14 @@ class Test_Remote_Connection_Tool_Description_Truncation extends WP_UnitTestCase
 	 */
 	public function test_truncate_product_descriptions() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'truncate_product_descriptions' );
+		$method     = $reflection->getMethod( 'truncate_product_descriptions' );
 		$method->setAccessible( true );
 
 		$products = array(
 			(object) array(
-				'id' => 1,
-				'name' => 'Test Product',
-				'description' => 'This is the first sentence. This is the second sentence. This is the third sentence. This is the fourth sentence.',
+				'id'                => 1,
+				'name'              => 'Test Product',
+				'description'       => 'This is the first sentence. This is the second sentence. This is the third sentence. This is the fourth sentence.',
 				'short_description' => 'Short first sentence. Short second sentence. Short third sentence.',
 			),
 		);
@@ -153,12 +153,12 @@ class Test_Remote_Connection_Tool_Description_Truncation extends WP_UnitTestCase
 	 */
 	public function test_truncate_product_descriptions_missing_descriptions() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'truncate_product_descriptions' );
+		$method     = $reflection->getMethod( 'truncate_product_descriptions' );
 		$method->setAccessible( true );
 
 		$products = array(
 			(object) array(
-				'id' => 1,
+				'id'   => 1,
 				'name' => 'Test Product',
 			),
 		);
@@ -175,7 +175,7 @@ class Test_Remote_Connection_Tool_Description_Truncation extends WP_UnitTestCase
 	 */
 	public function test_truncate_product_descriptions_non_array() {
 		$reflection = new ReflectionClass( $this->tool );
-		$method = $reflection->getMethod( 'truncate_product_descriptions' );
+		$method     = $reflection->getMethod( 'truncate_product_descriptions' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( $this->tool, null );

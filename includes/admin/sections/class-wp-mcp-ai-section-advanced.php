@@ -226,7 +226,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 			// Check POST data first (when form is being submitted), then fall back to GET.
 			// Use section-specific field name to avoid conflicts with other sections.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			$subtab_field_name = 'subtab_' . $this->get_id();
 			if ( isset( $_POST[ $subtab_field_name ] ) ) {
 				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
@@ -236,6 +236,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			} elseif ( isset( $_GET['subtab'] ) ) {
 				$subtab = sanitize_key( $_GET['subtab'] );
 			}
+			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
 
 			// Default to 'performance_monitoring' if not set or invalid.
 			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
@@ -758,6 +759,188 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						animation: spin 1s linear infinite;
 					}
 				</style>
+			</div>
+
+			<!-- AGENT ORCHESTRATION SEEDING SECTION -->
+			<?php
+			// Get orchestration seeding status.
+			$orchestration_version = get_option( 'wp_mcp_ai_profession_orchestration_version', false );
+			$orchestration_seeded  = $orchestration_version ? __( 'Yes', 'mcp-ai-wpoos' ) . ' (v' . esc_html( $orchestration_version ) . ')' : __( 'No', 'mcp-ai-wpoos' );
+			$orchestration_class   = $orchestration_version ? 'success' : 'warning';
+
+			// Get role distribution.
+			$role_counts = array();
+			$roles       = array( 'planner', 'executor', 'critic', 'specialist', 'generalist' );
+			foreach ( $roles as $role ) {
+				$query                = new WP_Query(
+					array(
+						'post_type'   => 'mcp_ai_profession',
+						'post_status' => 'publish',
+						'meta_query'  => array(
+							array(
+								'key'     => '_wp_mcp_ai_profession_agent_role',
+								'value'   => $role,
+								'compare' => '=',
+							),
+						),
+						'fields'      => 'ids',
+					)
+				);
+				$role_counts[ $role ] = $query->post_count;
+				wp_reset_postdata();
+			}
+			$total_with_roles = array_sum( $role_counts );
+			?>
+			<div class="wp-mcp-ai-orchestration-seeding-section" style="margin-top: 50px;">
+				<h3><?php esc_html_e( 'Agent Orchestration Configuration', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Configure multi-agent orchestration settings for professions. This assigns agent roles (planner, executor, critic, specialist, generalist) and task patterns to enable coordinated multi-agent workflows.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<div class="wp-mcp-ai-orchestration-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></h4>
+					<ul style="margin: 10px 0; padding-left: 20px;">
+						<li><strong><?php esc_html_e( 'Orchestration Seeded:', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $orchestration_class ); ?>">
+								<?php echo esc_html( $orchestration_seeded ); ?>
+							</span>
+						</li>
+						<li><strong><?php esc_html_e( 'Professions with Agent Roles:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $total_with_roles ); ?> / <?php echo absint( $total_count ); ?></li>
+						<?php if ( $total_with_roles > 0 ) : ?>
+							<li style="margin-left: 20px;">
+								<strong><?php esc_html_e( 'Role Distribution:', 'mcp-ai-wpoos' ); ?></strong>
+								<ul style="margin: 5px 0 0 20px;">
+									<?php foreach ( $role_counts as $role => $count ) : ?>
+										<?php if ( $count > 0 ) : ?>
+											<li><?php echo esc_html( ucfirst( $role ) ); ?>: <?php echo absint( $count ); ?></li>
+										<?php endif; ?>
+									<?php endforeach; ?>
+								</ul>
+							</li>
+						<?php endif; ?>
+					</ul>
+					<p class="description" style="margin: 10px 0 0 0;">
+						<?php
+						printf(
+							/* translators: %s: Link to professions page */
+							esc_html__( 'Edit individual profession orchestration settings in the %s metabox.', 'mcp-ai-wpoos' ),
+							'<a href="' . esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'Agent Orchestration', 'mcp-ai-wpoos' ) . '</a>'
+						);
+						?>
+					</p>
+				</div>
+
+				<div class="wp-mcp-ai-orchestration-seed-actions" style="margin-top: 20px;">
+					<h4><?php esc_html_e( 'Seed Orchestration Settings', 'mcp-ai-wpoos' ); ?></h4>
+					<p class="description">
+						<?php esc_html_e( 'Automatically assign agent roles to all professions based on their category and expertise. Task patterns will be created for common professions.', 'mcp-ai-wpoos' ); ?>
+					</p>
+
+					<div style="margin: 15px 0;">
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-seed-orchestration-btn">
+								<span class="dashicons dashicons-networking" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Seed Agent Orchestration', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Assigns agent roles to all professions using category-based and keyword-based heuristics. Safe to run multiple times (idempotent).', 'mcp-ai-wpoos' ); ?>
+							</span>
+						</p>
+
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-seed-orchestration-force-btn">
+								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Force Re-seed Orchestration', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Re-assigns all agent roles and task patterns, overwriting any existing orchestration settings.', 'mcp-ai-wpoos' ); ?>
+							</span>
+						</p>
+					</div>
+
+					<div id="wp-mcp-ai-orchestration-seed-message" class="notice" style="display: none; margin: 15px 0;">
+						<p></p>
+					</div>
+				</div>
+
+				<script type="text/javascript">
+				jQuery(document).ready(function($) {
+					function performOrchestrationSeed(force, buttonId) {
+						var $button = $(buttonId);
+						var $message = $('#wp-mcp-ai-orchestration-seed-message');
+						var originalText = $button.html();
+
+						// Disable both buttons.
+						$('#wp-mcp-ai-seed-orchestration-btn, #wp-mcp-ai-seed-orchestration-force-btn')
+							.prop('disabled', true)
+							.addClass('disabled');
+
+						// Update button text.
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'mcp-ai-wpoos' ) ); ?>');
+
+						// Hide any previous messages.
+						$message.hide().removeClass('notice-success notice-error notice-warning');
+
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: 'wp_mcp_ai_seed_orchestration',
+								force: force,
+								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_seed_orchestration' ) ); ?>
+							},
+							success: function(response) {
+								if (response.success) {
+									$message
+										.removeClass('notice-error notice-warning')
+										.addClass('notice-success')
+										.find('p').html(response.data.message);
+									$message.show();
+
+									// Reload stats after a short delay.
+									setTimeout(function() {
+										location.reload();
+									}, 2000);
+								} else {
+									$message
+										.removeClass('notice-success notice-warning')
+										.addClass('notice-error')
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								// Re-enable buttons and restore text.
+								$('#wp-mcp-ai-seed-orchestration-btn, #wp-mcp-ai-seed-orchestration-force-btn')
+									.prop('disabled', false)
+									.removeClass('disabled');
+								$button.html(originalText);
+							}
+						});
+					}
+
+					$('#wp-mcp-ai-seed-orchestration-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will assign agent roles to all professions based on their category and expertise. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
+							performOrchestrationSeed(false, '#wp-mcp-ai-seed-orchestration-btn');
+						}
+					});
+
+					$('#wp-mcp-ai-seed-orchestration-force-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will overwrite all existing orchestration settings. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
+							performOrchestrationSeed(true, '#wp-mcp-ai-seed-orchestration-force-btn');
+						}
+					});
+				});
+				</script>
 			</div>
 
 			<!-- TEAM DATA MANAGEMENT SECTION -->

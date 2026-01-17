@@ -520,12 +520,16 @@ class WP_MCP_AI_Build_Assistant_Page {
 								</th>
 								<td>
 									<select id="assistant-provider" name="provider" class="regular-text">
-										<option value="openai" selected><?php esc_html_e( 'OpenAI (Default)', 'mcp-ai-wpoos' ); ?></option>
-										<option value="gemini"><?php esc_html_e( 'Google Gemini', 'mcp-ai-wpoos' ); ?></option>
-										<option value="anthropic"><?php esc_html_e( 'Anthropic Claude', 'mcp-ai-wpoos' ); ?></option>
-										<option value="ollama"><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></option>
-										<option value="lm_studio"><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></option>
-										<option value="cloudflare"><?php esc_html_e( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ); ?></option>
+										<?php
+										$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
+										$first               = true;
+										foreach ( $available_providers as $provider_slug => $provider_label ) {
+											?>
+											<option value="<?php echo esc_attr( $provider_slug ); ?>"<?php echo $first ? ' selected' : ''; ?>><?php echo esc_html( $provider_label ); ?></option>
+											<?php
+											$first = false;
+										}
+										?>
 									</select>
 								</td>
 							</tr>

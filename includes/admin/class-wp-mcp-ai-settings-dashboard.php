@@ -71,6 +71,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_toggle_tool', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reseed_professions', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reseed_teams', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_seed_orchestration', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_regenerate_playbook', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_sync_all_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -116,7 +117,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				WP_MCP_AI_Admin_Settings::OPTION_NAME,
 				array(
 					'type'              => 'array',
-					'sanitize_callback' => null, // We handle sanitization in handle_save_settings().
+					'sanitize_callback' => array( $this, 'sanitize_settings' ),
 				)
 			);
 		}
@@ -241,6 +242,20 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
+			// Check if media toolkit was just enabled and seed presets if needed.
+			$was_toolkit_disabled = empty( $existing_settings['enable_media_toolkit'] );
+			$is_toolkit_enabled   = ! empty( $merged_settings['enable_media_toolkit'] );
+			if ( $was_toolkit_disabled && $is_toolkit_enabled ) {
+				// Media toolkit was just enabled, seed the template presets.
+				if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
+					WP_MCP_AI_Media_Template_Presets::seed_presets();
+
+					if ( $enable_logging ) {
+						error_log( '[NV oOS Settings] Media toolkit enabled - triggered template preset seeding' );
+					}
+				}
+			}
+
 			// Clear caches when settings are updated.
 			if ( 'orchestration' === $active_tab ) {
 				// Clear orchestration-related caches using Cache Helper.
@@ -329,9 +344,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Get asset files (automatically uses minified in production, unminified in debug mode).
 			$responsive_css = $this->get_asset_file( 'assets/css/admin-responsive-utilities.css' );
-			$dashboard_css = $this->get_asset_file( 'assets/css/settings-dashboard.css' );
-			$ajax_error_js = $this->get_asset_file( 'assets/js/ajax-error-service.js' );
-			$dashboard_js  = $this->get_asset_file( 'assets/js/settings-dashboard.js' );
+			$dashboard_css  = $this->get_asset_file( 'assets/css/settings-dashboard.css' );
+			$ajax_error_js  = $this->get_asset_file( 'assets/js/ajax-error-service.js' );
+			$dashboard_js   = $this->get_asset_file( 'assets/js/settings-dashboard.js' );
 
 			// Enqueue responsive utilities first (base styles).
 			wp_enqueue_style(

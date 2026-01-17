@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new allergy record for a member with allergen, severity, and reaction information.', 'mcp-ai-wpoos-pro' );
+		return __( 'Creates a new allergy record or updates an existing one if allergy_id is provided. Records include member info, allergen, severity, and reaction information.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -41,23 +41,27 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id' => array(
+				'allergy_id'     => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional allergy ID. If provided, updates the existing allergy instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
+				'member_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this allergy belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'allergen'  => array(
+				'allergen'       => array(
 					'type'        => 'string',
 					'description' => __( 'Allergen name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'severity'  => array(
+				'severity'       => array(
 					'type'        => 'string',
 					'description' => __( 'Severity level (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'mild', 'moderate', 'severe' ),
 				),
-				'reactions' => array(
+				'reactions'      => array(
 					'type'        => 'string',
 					'description' => __( 'Typical reactions (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
@@ -67,7 +71,7 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'description' => __( 'Date diagnosed (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'notes'     => array(
+				'notes'          => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
@@ -112,6 +116,29 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create allergies.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Check if this is an update operation.
+		$allergy_id = isset( $arguments['allergy_id'] ) ? absint( $arguments['allergy_id'] ) : 0;
+		$is_update  = false;
+
+		if ( $allergy_id ) {
+			// Verify allergy exists and user has permission to update it.
+			$existing_allergy = get_post( $allergy_id );
+
+			if ( ! $existing_allergy || 'mcp_ai_allergy' !== $existing_allergy->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_allergy_not_found', __( 'Allergy not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author       = absint( $existing_allergy->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this allergy.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Validate required fields.
 		$member_id = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
 		$allergen  = isset( $arguments['allergen'] ) ? sanitize_text_field( $arguments['allergen'] ) : '';
@@ -145,52 +172,105 @@ class WP_MCP_AI_Tool_Create_Allergy implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			return new WP_Error( 'wp_mcp_ai_invalid_date', __( 'Invalid diagnosed date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Create allergy post.
-		$post_data = array(
-			'post_type'    => 'mcp_ai_allergy',
-			'post_title'   => $allergen,
-			'post_content' => $notes,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		);
+		if ( $is_update ) {
+			// Update existing allergy.
+			$post_data = array(
+				'ID'           => $allergy_id,
+				'post_title'   => $allergen,
+				'post_content' => $notes,
+			);
 
-		$allergy_id = wp_insert_post( $post_data, true );
+			$result = wp_update_post( $post_data, true );
 
-		if ( is_wp_error( $allergy_id ) ) {
-			return $allergy_id;
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Set severity taxonomy.
+			wp_set_object_terms( $allergy_id, $severity, 'mcp_ai_allergy_severity' );
+
+			// Update allergy metadata.
+			update_post_meta( $allergy_id, '_allergy_member_id', $member_id );
+			update_post_meta( $allergy_id, '_allergy_allergen', $allergen );
+			update_post_meta( $allergy_id, '_allergy_severity', $severity );
+
+			if ( $reactions ) {
+				update_post_meta( $allergy_id, '_allergy_reactions', $reactions );
+			}
+
+			if ( $diagnosed_date ) {
+				update_post_meta( $allergy_id, '_allergy_diagnosed_date', $diagnosed_date );
+			}
+
+			$allergy = get_post( $allergy_id );
+
+			return array(
+				'success'    => true,
+				'message'    => __( 'Allergy updated successfully.', 'mcp-ai-wpoos-pro' ),
+				'allergy_id' => $allergy_id,
+				'allergy'    => array(
+					'id'             => $allergy_id,
+					'member_id'      => $member_id,
+					'allergen'       => $allergen,
+					'severity'       => $severity,
+					'reactions'      => $reactions,
+					'diagnosed_date' => $diagnosed_date,
+					'notes'          => $notes,
+					'updated_at'     => $allergy->post_modified,
+				),
+				'updated'    => true,
+			);
+		} else {
+			// Create allergy post.
+			$post_data = array(
+				'post_type'    => 'mcp_ai_allergy',
+				'post_title'   => $allergen,
+				'post_content' => $notes,
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			);
+
+			$allergy_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $allergy_id ) ) {
+				return $allergy_id;
+			}
+
+			// Set severity taxonomy.
+			wp_set_object_terms( $allergy_id, $severity, 'mcp_ai_allergy_severity' );
+
+			// Save allergy metadata.
+			update_post_meta( $allergy_id, '_allergy_member_id', $member_id );
+			update_post_meta( $allergy_id, '_allergy_allergen', $allergen );
+			update_post_meta( $allergy_id, '_allergy_severity', $severity );
+
+			if ( $reactions ) {
+				update_post_meta( $allergy_id, '_allergy_reactions', $reactions );
+			}
+
+			if ( $diagnosed_date ) {
+				update_post_meta( $allergy_id, '_allergy_diagnosed_date', $diagnosed_date );
+			}
+
+			$allergy = get_post( $allergy_id );
+
+			return array(
+				'success'    => true,
+				'message'    => __( 'Allergy created successfully.', 'mcp-ai-wpoos-pro' ),
+				'allergy_id' => $allergy_id,
+				'allergy'    => array(
+					'id'             => $allergy_id,
+					'member_id'      => $member_id,
+					'allergen'       => $allergen,
+					'severity'       => $severity,
+					'reactions'      => $reactions,
+					'diagnosed_date' => $diagnosed_date,
+					'notes'          => $notes,
+					'created_at'     => $allergy->post_date,
+				),
+				'updated'    => false,
+			);
 		}
-
-		// Set severity taxonomy.
-		wp_set_object_terms( $allergy_id, $severity, 'mcp_ai_allergy_severity' );
-
-		// Save allergy metadata.
-		update_post_meta( $allergy_id, '_allergy_member_id', $member_id );
-		update_post_meta( $allergy_id, '_allergy_allergen', $allergen );
-		update_post_meta( $allergy_id, '_allergy_severity', $severity );
-
-		if ( $reactions ) {
-			update_post_meta( $allergy_id, '_allergy_reactions', $reactions );
-		}
-
-		if ( $diagnosed_date ) {
-			update_post_meta( $allergy_id, '_allergy_diagnosed_date', $diagnosed_date );
-		}
-
-		return array(
-			'success'    => true,
-			'message'    => __( 'Allergy created successfully.', 'mcp-ai-wpoos-pro' ),
-			'allergy_id' => $allergy_id,
-			'allergy'    => array(
-				'id'             => $allergy_id,
-				'member_id'      => $member_id,
-				'allergen'       => $allergen,
-				'severity'       => $severity,
-				'reactions'      => $reactions,
-				'diagnosed_date' => $diagnosed_date,
-				'notes'          => $notes,
-				'created_at'     => current_time( 'mysql' ),
-			),
-		);
 	}
 
 	/**

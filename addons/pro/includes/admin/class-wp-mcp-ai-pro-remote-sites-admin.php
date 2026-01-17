@@ -106,7 +106,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
 			}
 
-			$deleted       = WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
+			$deleted = WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
 
 			if ( $deleted ) {
 				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&deleted=1' ) );
@@ -125,7 +125,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
 			}
 
-			$result       = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
+			$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
 
 			$redirect_url = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&connection_id=' . $connection_id );
 
@@ -182,53 +182,53 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			}
 
 			// Get connection type first to determine which fields to use.
-			$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'wordpress';
+			$connection_type = isset( $_POST['connection_type'] ) ? sanitize_key( wp_unslash( $_POST['connection_type'] ) ) : 'WordPress';
 
 			// Map connection-type-specific fields to generic field names.
-			$api_key         = '';
-			$api_secret      = '';
-			$client_id       = '';
-			$client_secret   = '';
-			$refresh_token   = '';
-			$user_email      = '';
+			$api_key       = '';
+			$api_secret    = '';
+			$client_id     = '';
+			$client_secret = '';
+			$refresh_token = '';
+			$user_email    = '';
 
 			switch ( $connection_type ) {
 				case 'isams':
-					$api_key     = isset( $_POST['isams_api_key'] ) ? wp_unslash( $_POST['isams_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$api_secret  = isset( $_POST['isams_api_secret'] ) ? wp_unslash( $_POST['isams_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_key    = isset( $_POST['isams_api_key'] ) ? wp_unslash( $_POST['isams_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_secret = isset( $_POST['isams_api_secret'] ) ? wp_unslash( $_POST['isams_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'flowhub':
-					$api_key     = isset( $_POST['flowhub_api_key'] ) ? wp_unslash( $_POST['flowhub_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$client_id   = isset( $_POST['flowhub_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_client_id'] ) ) : '';
+					$api_key   = isset( $_POST['flowhub_api_key'] ) ? wp_unslash( $_POST['flowhub_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$client_id = isset( $_POST['flowhub_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_client_id'] ) ) : '';
 					break;
 				case 'quickbooks':
 					$client_id     = isset( $_POST['quickbooks_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['quickbooks_client_id'] ) ) : '';
 					$client_secret = isset( $_POST['quickbooks_client_secret'] ) ? wp_unslash( $_POST['quickbooks_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'ezuite_erp':
-					$api_key     = isset( $_POST['ezuite_erp_api_key'] ) ? wp_unslash( $_POST['ezuite_erp_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$api_secret  = isset( $_POST['ezuite_erp_api_secret'] ) ? wp_unslash( $_POST['ezuite_erp_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_key    = isset( $_POST['ezuite_erp_api_key'] ) ? wp_unslash( $_POST['ezuite_erp_api_key'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$api_secret = isset( $_POST['ezuite_erp_api_secret'] ) ? wp_unslash( $_POST['ezuite_erp_api_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
 				case 'gmail':
-					$client_id      = isset( $_POST['gmail_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['gmail_client_id'] ) ) : '';
-					$client_secret  = isset( $_POST['gmail_client_secret'] ) ? wp_unslash( $_POST['gmail_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$refresh_token  = isset( $_POST['gmail_refresh_token'] ) ? wp_unslash( $_POST['gmail_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$user_email     = isset( $_POST['gmail_user_email'] ) ? sanitize_email( wp_unslash( $_POST['gmail_user_email'] ) ) : '';
+					$client_id     = isset( $_POST['gmail_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['gmail_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['gmail_client_secret'] ) ? wp_unslash( $_POST['gmail_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$refresh_token = isset( $_POST['gmail_refresh_token'] ) ? wp_unslash( $_POST['gmail_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$user_email    = isset( $_POST['gmail_user_email'] ) ? sanitize_email( wp_unslash( $_POST['gmail_user_email'] ) ) : '';
 					break;
 				case 'google_drive':
-					$client_id      = isset( $_POST['google_drive_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_client_id'] ) ) : '';
-					$client_secret  = isset( $_POST['google_drive_client_secret'] ) ? wp_unslash( $_POST['google_drive_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$refresh_token  = isset( $_POST['google_drive_refresh_token'] ) ? wp_unslash( $_POST['google_drive_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-					$user_email     = isset( $_POST['google_drive_user_email'] ) ? sanitize_email( wp_unslash( $_POST['google_drive_user_email'] ) ) : '';
+					$client_id     = isset( $_POST['google_drive_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_client_id'] ) ) : '';
+					$client_secret = isset( $_POST['google_drive_client_secret'] ) ? wp_unslash( $_POST['google_drive_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$refresh_token = isset( $_POST['google_drive_refresh_token'] ) ? wp_unslash( $_POST['google_drive_refresh_token'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+					$user_email    = isset( $_POST['google_drive_user_email'] ) ? sanitize_email( wp_unslash( $_POST['google_drive_user_email'] ) ) : '';
 					break;
 			}
 
 			// For FlowHub connections, always use the fixed API URL and custom_header auth
-			$url = isset( $_POST['url'] ) ? esc_url_raw( wp_unslash( $_POST['url'] ) ) : '';
+			$url       = isset( $_POST['url'] ) ? esc_url_raw( wp_unslash( $_POST['url'] ) ) : '';
 			$auth_type = isset( $_POST['auth_type'] ) ? sanitize_key( wp_unslash( $_POST['auth_type'] ) ) : 'none';
-			
+
 			if ( 'flowhub' === $connection_type ) {
-				$url = 'https://api.flowhub.co';
+				$url       = 'https://api.flowhub.co';
 				$auth_type = 'custom_header';
 			}
 
@@ -239,13 +239,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 			// For Gmail connections, always use the Gmail API URL
 			if ( 'gmail' === $connection_type ) {
-				$url = 'https://gmail.googleapis.com';
+				$url       = 'https://gmail.googleapis.com';
 				$auth_type = 'none'; // Gmail uses OAuth, not standard auth types
 			}
 
 			// For Google Drive connections, always use the Google Drive API URL
 			if ( 'google_drive' === $connection_type ) {
-				$url = 'https://www.googleapis.com/drive/v3';
+				$url       = 'https://www.googleapis.com/drive/v3';
 				$auth_type = 'none'; // Google Drive uses OAuth, not standard auth types
 			}
 
@@ -280,7 +280,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'folder_id'       => isset( $_POST['google_drive_folder_id'] ) ? sanitize_text_field( wp_unslash( $_POST['google_drive_folder_id'] ) ) : '',
 			);
 
-			$result          = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
+			$result = WP_MCP_AI_Pro_Remote_Site_Manager::save_connection( $connection_data );
 
 			if ( is_wp_error( $result ) ) {
 				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( $result->get_error_message() ) ) );
@@ -297,8 +297,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 * @since 1.0.0
 	 */
 	public function render_admin_page() {
-		$connections = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
-		$editing = isset( $_GET['edit'] ) ? sanitize_key( $_GET['edit'] ) : '';
+		$connections        = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+		$editing            = isset( $_GET['edit'] ) ? sanitize_key( $_GET['edit'] ) : '';
 		$connection_to_edit = null;
 
 		if ( $editing ) {
@@ -306,7 +306,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 			// If editing but connection not found, show error and list instead.
 			if ( null === $connection_to_edit ) {
-				$editing = '';
+				$editing       = '';
 				$_GET['error'] = __( 'Connection not found.', 'wp-mcp-ai-pro' );
 			}
 		}
@@ -410,15 +410,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<?php
 						// Use the array key as the connection ID (most reliable).
 						// Fall back to $connection['id'] if key is numeric (shouldn't happen, but defensive).
-						$connection_id = is_string( $connection_key ) ? $connection_key : ( isset( $connection['id'] ) ? $connection['id'] : '' );
+						$connection_id  = is_string( $connection_key ) ? $connection_key : ( isset( $connection['id'] ) ? $connection['id'] : '' );
 						$health_metrics = WP_MCP_AI_Pro_Remote_Site_Manager::get_health_metrics( $connection_id );
 						?>
 						<tr>
 							<td><strong><?php echo esc_html( $connection['name'] ); ?></strong></td>
 							<td>
 								<?php
-								$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
-								
+								$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
+
 								// Define labels and colors for each connection type
 								$type_labels = array(
 									'wordpress'    => __( 'WordPress', 'wp-mcp-ai-pro' ),
@@ -431,7 +431,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'gmail'        => __( 'Gmail', 'wp-mcp-ai-pro' ),
 									'google_drive' => __( 'Google Drive', 'wp-mcp-ai-pro' ),
 								);
-								
+
 								$type_colors = array(
 									'wordpress'    => '#2271b1',
 									'generic'      => '#50575e',
@@ -443,14 +443,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'gmail'        => '#ea4335', // Google red color
 									'google_drive' => '#4285f4', // Google blue color
 								);
-								
-								$type_label = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
+
+								$type_label       = isset( $type_labels[ $connection_type ] ) ? $type_labels[ $connection_type ] : $connection_type;
 								$type_badge_color = isset( $type_colors[ $connection_type ] ) ? $type_colors[ $connection_type ] : '#50575e';
 								?>
 								<span style="display: inline-block; padding: 2px 8px; background: <?php echo esc_attr( $type_badge_color ); ?>; color: white; border-radius: 3px; font-size: 11px;">
 									<?php echo esc_html( $type_label ); ?>
 								</span>
-								<?php if ( 'wordpress' === $connection_type && ! empty( $connection['has_woocommerce'] ) ) : ?>
+								<?php if ( 'WordPress' === $connection_type && ! empty( $connection['has_woocommerce'] ) ) : ?>
 									<span style="display: inline-block; padding: 2px 8px; background: #96588a; color: white; border-radius: 3px; font-size: 11px; margin-left: 4px;">WC</span>
 								<?php endif; ?>
 							</td>
@@ -459,12 +459,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<td>
 								<?php
 								$status_colors = array(
-									'healthy' => '#46b450',
-									'degraded' => '#ffb900',
+									'healthy'   => '#46b450',
+									'degraded'  => '#ffb900',
 									'unhealthy' => '#dc3232',
-									'unknown' => '#8c8f94',
+									'unknown'   => '#8c8f94',
 								);
-								$status_color = isset( $status_colors[ $health_metrics['status'] ] ) ? $status_colors[ $health_metrics['status'] ] : $status_colors['unknown'];
+								$status_color  = isset( $status_colors[ $health_metrics['status'] ] ) ? $status_colors[ $health_metrics['status'] ] : $status_colors['unknown'];
 								?>
 								<span style="color: <?php echo esc_attr( $status_color ); ?>;">●</span>
 								<?php
@@ -653,10 +653,10 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<?php
-						$connection_type = $is_edit && isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
+						$connection_type = $is_edit && isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
 						?>
 						<select name="connection_type" id="connection_type" class="regular-text" required>
-							<option value="wordpress" <?php selected( $connection_type, 'wordpress' ); ?>>
+							<option value="wordpress" <?php selected( $connection_type, 'WordPress' ); ?>>
 								<?php esc_html_e( 'WordPress / WooCommerce', 'wp-mcp-ai-pro' ); ?>
 							</option>
 							<option value="generic" <?php selected( $connection_type, 'generic' ); ?>>
@@ -1290,14 +1290,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 			// Show/hide auth_type field based on connection type
 			// Only show for WordPress and Generic API connections
-			if (connectionType === 'wordpress' || connectionType === 'generic') {
+			if (connectionType === 'WordPress' || connectionType === 'generic') {
 				authTypeRow.style.display = 'table-row';
 			} else {
 				authTypeRow.style.display = 'none';
 			}
 
 			// Show fields for selected connection type
-			if (connectionType === 'wordpress') {
+			if (connectionType === 'WordPress') {
 				wordpressFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});

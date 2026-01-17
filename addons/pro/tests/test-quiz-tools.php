@@ -71,6 +71,143 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test create_quiz can update existing quiz.
+	 */
+	public function test_create_quiz_with_quiz_id_updates_existing() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		// First create a quiz.
+		$create_args = array(
+			'title'         => 'Original Quiz',
+			'description'   => 'Original description',
+			'time_limit'    => 30,
+			'passing_score' => 70,
+			'questions'     => array(
+				array(
+					'question'       => 'Original question?',
+					'type'           => 'multiple_choice',
+					'options'        => array( 'A', 'B', 'C' ),
+					'correct_answer' => 'A',
+					'points'         => 1,
+				),
+			),
+		);
+
+		$tool          = new WP_MCP_AI_Tool_Create_Quiz();
+		$create_result = $tool->execute( $create_args, array( 'user_id' => $admin_user ) );
+
+		$this->assertNotInstanceOf( 'WP_Error', $create_result );
+		$this->assertArrayHasKey( 'quiz_id', $create_result );
+		$this->assertFalse( $create_result['updated'] );
+
+		$quiz_id = $create_result['quiz_id'];
+
+		// Now update the quiz using create_quiz with quiz_id.
+		$update_args = array(
+			'quiz_id'       => $quiz_id,
+			'title'         => 'Updated Quiz',
+			'description'   => 'Updated description',
+			'time_limit'    => 60,
+			'passing_score' => 80,
+			'questions'     => array(
+				array(
+					'question'       => 'Updated question?',
+					'type'           => 'true_false',
+					'correct_answer' => 'true',
+					'points'         => 2,
+				),
+			),
+		);
+
+		$update_result = $tool->execute( $update_args, array( 'user_id' => $admin_user ) );
+
+		$this->assertNotInstanceOf( 'WP_Error', $update_result );
+		$this->assertEquals( $quiz_id, $update_result['quiz_id'] );
+		$this->assertEquals( 'Updated Quiz', $update_result['title'] );
+		$this->assertEquals( 'Updated description', $update_result['description'] );
+		$this->assertEquals( 60, $update_result['time_limit'] );
+		$this->assertEquals( 80, $update_result['passing_score'] );
+		$this->assertEquals( 1, $update_result['question_count'] );
+		$this->assertEquals( 2, $update_result['total_points'] );
+		$this->assertTrue( $update_result['updated'] );
+		$this->assertArrayHasKey( 'updated_at', $update_result );
+	}
+
+	/**
+	 * Test create_quiz update requires permission.
+	 */
+	public function test_create_quiz_update_requires_permission() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$editor     = $this->factory->user->create( array( 'role' => 'editor' ) );
+
+		// Create a quiz as admin.
+		$quiz_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_quiz',
+				'post_title'  => 'Admin Quiz',
+				'post_status' => 'publish',
+				'post_author' => $admin_user,
+			)
+		);
+
+		update_post_meta(
+			$quiz_id,
+			'_mcp_ai_quiz_questions',
+			array(
+				array(
+					'question' => 'Test?',
+					'type'     => 'short_answer',
+					'points'   => 1,
+				),
+			)
+		);
+
+		// Try to update as a different user without edit_others_posts capability.
+		$arguments = array(
+			'quiz_id'   => $quiz_id,
+			'title'     => 'Updated Quiz',
+			'questions' => array(
+				array(
+					'question' => 'Updated?',
+					'type'     => 'short_answer',
+					'points'   => 1,
+				),
+			),
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Create_Quiz();
+		$result = $tool->execute( $arguments, array( 'user_id' => $editor ) );
+
+		// Editor should be able to update (has edit_others_posts).
+		$this->assertNotInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'Updated Quiz', $result['title'] );
+	}
+
+	/**
+	 * Test create_quiz update with invalid quiz_id.
+	 */
+	public function test_create_quiz_update_with_invalid_quiz_id() {
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		$arguments = array(
+			'quiz_id'   => 99999,
+			'title'     => 'Test Quiz',
+			'questions' => array(
+				array(
+					'question' => 'Test?',
+					'type'     => 'short_answer',
+				),
+			),
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Create_Quiz();
+		$result = $tool->execute( $arguments, array( 'user_id' => $admin_user ) );
+
+		$this->assertInstanceOf( 'WP_Error', $result );
+		$this->assertEquals( 'wp_mcp_ai_quiz_not_found', $result->get_error_code() );
+	}
+
+	/**
 	 * Test get_quiz tool.
 	 */
 	public function test_get_quiz() {
@@ -617,7 +754,7 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 	 * Test update_quiz requires permission.
 	 */
 	public function test_update_quiz_requires_permission() {
-		$admin_user  = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		$other_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
 		// Create a quiz as admin.
@@ -865,7 +1002,7 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 		$quiz_id = $quiz_result['quiz_id'];
 
 		// Step 2: Student submits answers.
-		$submit_tool      = new WP_MCP_AI_Tool_Submit_Quiz_Answer();
+		$submit_tool       = new WP_MCP_AI_Tool_Submit_Quiz_Answer();
 		$submission_result = $submit_tool->execute(
 			array(
 				'quiz_id' => $quiz_id,
@@ -1106,7 +1243,7 @@ class Test_Quiz_Tools extends WP_UnitTestCase {
 	 * Test analytics requires permission.
 	 */
 	public function test_quiz_analytics_requires_permission() {
-		$admin_user  = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		$other_user = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
 		// Create a quiz as admin.
