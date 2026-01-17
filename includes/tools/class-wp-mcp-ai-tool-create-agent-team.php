@@ -51,12 +51,12 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'task_type'      => array(
+				'task_type'              => array(
 					'type'        => 'string',
 					'description' => __( 'Type of task the team will handle', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'research', 'content', 'ecommerce', 'development', 'analysis', 'creative', 'technical', 'generic' ),
 				),
-				'requirements'   => array(
+				'requirements'           => array(
 					'type'        => 'object',
 					'description' => __( 'Task requirements and constraints', 'mcp-ai-wpoos' ),
 					'properties'  => array(
@@ -82,16 +82,16 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 					'type'        => 'object',
 					'description' => __( 'Optional profession preferences for team roles', 'mcp-ai-wpoos' ),
 					'properties'  => array(
-						'planner_slug'    => array(
+						'planner_slug'   => array(
 							'type'        => 'string',
 							'description' => __( 'Preferred planner profession slug', 'mcp-ai-wpoos' ),
 						),
-						'executor_slugs'  => array(
+						'executor_slugs' => array(
 							'type'        => 'array',
 							'description' => __( 'Preferred executor profession slugs', 'mcp-ai-wpoos' ),
 							'items'       => array( 'type' => 'string' ),
 						),
-						'critic_slug'     => array(
+						'critic_slug'    => array(
 							'type'        => 'string',
 							'description' => __( 'Preferred critic profession slug', 'mcp-ai-wpoos' ),
 						),
@@ -176,19 +176,19 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		return array(
-			'success'       => true,
-			'message'       => __( 'Agent team created successfully.', 'mcp-ai-wpoos' ),
-			'team'          => array(
-				'team_id'       => $team['team_id'],
-				'task_type'     => $team['task_type'],
-				'template'      => $team['template'],
-				'member_count'  => count( $formatted_members ),
-				'members'       => $formatted_members,
-				'workflow'      => $workflow_steps,
-				'status'        => $team['status'],
-				'created_at'    => $team['created_at'],
+			'success'    => true,
+			'message'    => __( 'Agent team created successfully.', 'mcp-ai-wpoos' ),
+			'team'       => array(
+				'team_id'      => $team['team_id'],
+				'task_type'    => $team['task_type'],
+				'template'     => $team['template'],
+				'member_count' => count( $formatted_members ),
+				'members'      => $formatted_members,
+				'workflow'     => $workflow_steps,
+				'status'       => $team['status'],
+				'created_at'   => $team['created_at'],
 			),
-			'next_steps'    => array(
+			'next_steps' => array(
 				__( 'Use delegate_to_agent to assign subtasks to team members', 'mcp-ai-wpoos' ),
 				__( 'Use aggregate_agent_results to combine outputs from multiple agents', 'mcp-ai-wpoos' ),
 			),

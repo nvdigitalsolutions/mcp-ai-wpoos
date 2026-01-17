@@ -82,12 +82,12 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 					'type'        => 'object',
 					'description' => __( 'Description of expected output format', 'mcp-ai-wpoos' ),
 					'properties'  => array(
-						'format'      => array(
+						'format' => array(
 							'type'        => 'string',
 							'description' => __( 'Expected format: text, json, html, markdown', 'mcp-ai-wpoos' ),
 							'enum'        => array( 'text', 'json', 'html', 'markdown' ),
 						),
-						'fields'      => array(
+						'fields' => array(
 							'type'        => 'array',
 							'description' => __( 'Required fields in the output', 'mcp-ai-wpoos' ),
 							'items'       => array( 'type' => 'string' ),
@@ -158,9 +158,9 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Format delegation result.
 		return array(
-			'success'       => true,
-			'message'       => __( 'Task successfully delegated to agent.', 'mcp-ai-wpoos' ),
-			'delegation'    => array(
+			'success'    => true,
+			'message'    => __( 'Task successfully delegated to agent.', 'mcp-ai-wpoos' ),
+			'delegation' => array(
 				'delegation_id' => $result['delegation_id'],
 				'agent_id'      => $agent_id,
 				'agent_name'    => $result['agent_name'],
@@ -169,7 +169,7 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 				'status'        => $result['status'],
 				'delegated_at'  => $result['delegated_at'],
 			),
-			'next_steps'    => array(
+			'next_steps' => array(
 				__( 'Wait for agent to complete the task', 'mcp-ai-wpoos' ),
 				__( 'Check delegation status if needed', 'mcp-ai-wpoos' ),
 				__( 'Use aggregate_agent_results to combine with other agent outputs', 'mcp-ai-wpoos' ),

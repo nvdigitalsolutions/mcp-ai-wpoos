@@ -771,7 +771,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$role_counts = array();
 			$roles       = array( 'planner', 'executor', 'critic', 'specialist', 'generalist' );
 			foreach ( $roles as $role ) {
-				$query         = new WP_Query(
+				$query                = new WP_Query(
 					array(
 						'post_type'   => 'mcp_ai_profession',
 						'post_status' => 'publish',

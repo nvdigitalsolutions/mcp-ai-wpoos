@@ -269,7 +269,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 
 		// Keep the first (most recent) attachment, remove the rest from profession.
 		$keep_attachment_id = $attachments[0]->ID;
-		$attachment_count  = count( $attachments );
+		$attachment_count   = count( $attachments );
 
 		for ( $i = 1; $i < $attachment_count; $i++ ) {
 			$attachment_id = $attachments[ $i ]->ID;

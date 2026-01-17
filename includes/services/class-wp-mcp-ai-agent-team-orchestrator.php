@@ -294,9 +294,9 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		$agent_context = array_merge(
 			$context,
 			array(
-				'assistant_id'  => $agent['id'],
-				'delegated_by'  => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
-				'parent_task'   => isset( $task['id'] ) ? $task['id'] : null,
+				'assistant_id' => $agent['id'],
+				'delegated_by' => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
+				'parent_task'  => isset( $task['id'] ) ? $task['id'] : null,
 			)
 		);
 
@@ -305,13 +305,13 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		// Wrap result with delegation metadata.
 		return array(
-			'step_type'  => 'delegate',
-			'agent_id'   => $agent['id'],
-			'agent_role' => $agent['role'],
-			'subtask_id' => $agent_task['id'],
-			'subtask'    => $agent_task['description'],
-			'status'     => is_wp_error( $result ) ? 'failed' : 'completed',
-			'result'     => $result,
+			'step_type'    => 'delegate',
+			'agent_id'     => $agent['id'],
+			'agent_role'   => $agent['role'],
+			'subtask_id'   => $agent_task['id'],
+			'subtask'      => $agent_task['description'],
+			'status'       => is_wp_error( $result ) ? 'failed' : 'completed',
+			'result'       => $result,
 			'delegated_at' => current_time( 'mysql' ),
 		);
 	}
@@ -387,7 +387,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		// Prepare context.
 		$validation_context = array(
-			'assistant_id'   => $agent['id'],
+			'assistant_id'    => $agent['id'],
 			'validation_step' => true,
 		);
 
@@ -396,7 +396,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		// Extract validation status.
 		$validation_passes = true;
-		$validation_score = 0.85; // Default
+		$validation_score  = 0.85; // Default
 
 		if ( ! is_wp_error( $result ) ) {
 			if ( isset( $result['validation'] ) && isset( $result['validation']['passes'] ) ) {
@@ -408,10 +408,10 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		}
 
 		return array(
-			'step_type'  => 'validate',
-			'agent_id'   => $agent['id'],
-			'agent_role' => $agent['role'],
-			'validation' => array(
+			'step_type'    => 'validate',
+			'agent_id'     => $agent['id'],
+			'agent_role'   => $agent['role'],
+			'validation'   => array(
 				'passes' => $validation_passes,
 				'score'  => $validation_score,
 				'result' => $result,
@@ -475,12 +475,12 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		$result = $agent_role->execute_role_task( $agent_task, $agent_context );
 
 		return array(
-			'step_type'  => 'execute',
-			'agent_id'   => $agent['id'],
-			'agent_role' => $agent['role'],
-			'step_name'  => $step['name'] ?? 'unnamed',
-			'status'     => is_wp_error( $result ) ? 'failed' : 'completed',
-			'result'     => $result,
+			'step_type'   => 'execute',
+			'agent_id'    => $agent['id'],
+			'agent_role'  => $agent['role'],
+			'step_name'   => $step['name'] ?? 'unnamed',
+			'status'      => is_wp_error( $result ) ? 'failed' : 'completed',
+			'result'      => $result,
 			'executed_at' => current_time( 'mysql' ),
 		);
 	}

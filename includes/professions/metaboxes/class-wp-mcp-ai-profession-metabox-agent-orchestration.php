@@ -79,13 +79,13 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
 
 		// Get current values.
-		$agent_role              = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ?: 'generalist';
-		$task_patterns           = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ?: '{}';
-		$decision_criteria       = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ?: '{}';
-		$orchestration_rules     = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ?: '{}';
-		$quality_metrics         = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ?: '{}';
-		$tool_execution_order    = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ?: '[]';
-		$confidence_thresholds   = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ?: '{}';
+		$agent_role            = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ?: 'generalist';
+		$task_patterns         = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ?: '{}';
+		$decision_criteria     = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ?: '{}';
+		$orchestration_rules   = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ?: '{}';
+		$quality_metrics       = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ?: '{}';
+		$tool_execution_order  = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ?: '[]';
+		$confidence_thresholds = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ?: '{}';
 
 		// Format JSON for display.
 		$task_patterns         = $this->format_json( $task_patterns );
@@ -325,7 +325,7 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 	public function save( $post_id, $post ) {
 		// Verify nonce.
 		if ( ! isset( $_POST[ $this->get_id() . '_nonce' ] ) ||
-		     ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ $this->get_id() . '_nonce' ] ) ), $this->get_id() . '_save' ) ) {
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST[ $this->get_id() . '_nonce' ] ) ), $this->get_id() . '_save' ) ) {
 			return;
 		}
 
@@ -347,12 +347,12 @@ class WP_MCP_AI_Profession_Metabox_Agent_Orchestration extends WP_MCP_AI_Profess
 
 		// Save JSON fields (they will be validated by the sanitize_json_field callback).
 		$json_fields = array(
-			'wp_mcp_ai_task_patterns'           => WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS,
-			'wp_mcp_ai_decision_criteria'       => WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA,
-			'wp_mcp_ai_orchestration_rules'     => WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES,
-			'wp_mcp_ai_quality_metrics'         => WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS,
-			'wp_mcp_ai_tool_execution_order'    => WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER,
-			'wp_mcp_ai_confidence_thresholds'   => WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS,
+			'wp_mcp_ai_task_patterns'         => WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS,
+			'wp_mcp_ai_decision_criteria'     => WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA,
+			'wp_mcp_ai_orchestration_rules'   => WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES,
+			'wp_mcp_ai_quality_metrics'       => WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS,
+			'wp_mcp_ai_tool_execution_order'  => WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER,
+			'wp_mcp_ai_confidence_thresholds' => WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS,
 		);
 
 		foreach ( $json_fields as $field_name => $meta_key ) {
