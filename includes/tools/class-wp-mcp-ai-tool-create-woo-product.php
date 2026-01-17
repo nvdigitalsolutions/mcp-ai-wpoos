@@ -359,14 +359,14 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		$product->set_sku( $reference );
 
 		if ( '' !== $description ) {
-			// Embed content media in long description
+			// Embed content media in long description.
 			$description_with_media = $this->embed_content_media( $description, $arguments );
 			$product->set_description( $description_with_media );
 		}
 
 		if ( '' !== $description2 ) {
-			// Support content media in short description as well
-			// Use separate parameters with limits (2 images, 1 chart max)
+			// Support content media in short description as well.
+			// Use separate parameters with limits (2 images, 1 chart max).
 			$short_desc_args = array();
 			if ( isset( $arguments['short_description_images'] ) ) {
 				$short_desc_args['content_images'] = array_slice( $arguments['short_description_images'], 0, 2 );

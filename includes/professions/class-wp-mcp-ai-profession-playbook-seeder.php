@@ -269,8 +269,9 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 
 		// Keep the first (most recent) attachment, remove the rest from profession.
 		$keep_attachment_id = $attachments[0]->ID;
+		$attachment_count  = count( $attachments );
 
-		for ( $i = 1; $i < count( $attachments ); $i++ ) {
+		for ( $i = 1; $i < $attachment_count; $i++ ) {
 			$attachment_id = $attachments[ $i ]->ID;
 
 			// Remove from profession's memory files.
@@ -379,7 +380,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			// Safety checks: Only delete if:
 			// 1. Has playbook hash (system-created)
 			// 2. No profession association (orphaned)
-			// 3. File is in the system playbook directory
+			// 3. File is in the system playbook directory.
 			if ( empty( $hash ) || ! empty( $profession_id ) ) {
 				$skipped_ids[] = $attachment_id;
 				continue;

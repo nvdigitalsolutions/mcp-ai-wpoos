@@ -628,8 +628,8 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 				$width = (int) round( $original_size['width'] * $ratio );
 			}
 		} else {
-			$width  = $width ?: $original_size['width'];
-			$height = $height ?: $original_size['height'];
+			$width  = ! empty( $width ) ? $width : $original_size['width'];
+			$height = ! empty( $height ) ? $height : $original_size['height'];
 		}
 
 		$result = $image_editor->resize( $width, $height, false );

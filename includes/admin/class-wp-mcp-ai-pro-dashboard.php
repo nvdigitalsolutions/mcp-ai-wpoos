@@ -458,6 +458,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				array_unshift( $pro_submenu, $overview_item );
 
 				// Update the global submenu array.
+				// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Required to reorder admin menu items
 				$submenu[ self::PAGE_SLUG ] = $pro_submenu;
 			}
 		}
@@ -1978,9 +1979,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 							<span class="dashicons dashicons-<?php echo esc_attr( $check['icon'] ); ?>"></span>
 							<span class="wp-mcp-ai-health-label"><?php echo esc_html( $check['label'] ); ?></span>
 							<span class="wp-mcp-ai-health-status wp-mcp-ai-health-<?php echo esc_attr( $check['status'] ); ?>">
-								<?php if ( $check['status'] === 'good' ) : ?>
+								<?php if ( 'good' === $check['status'] ) : ?>
 									<span class="dashicons dashicons-yes-alt"></span>
-								<?php elseif ( $check['status'] === 'warning' ) : ?>
+								<?php elseif ( 'warning' === $check['status'] ) : ?>
 									<span class="dashicons dashicons-warning"></span>
 								<?php else : ?>
 									<span class="dashicons dashicons-dismiss"></span>
@@ -3158,7 +3159,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 								</small>
 							</div>
 						<?php endif; ?>
-						<?php if ( ! $this->is_pro_active() && $framework['status'] === 'pending' ) : ?>
+						<?php if ( ! $this->is_pro_active() && 'pending' === $framework['status'] ) : ?>
 							<p class="wp-mcp-ai-framework-cta">
 								<small><?php esc_html_e( 'Pro feature', 'mcp-ai-wpoos' ); ?></small>
 							</p>
@@ -3312,7 +3313,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 							<td><?php echo esc_html( $control['category'] ?? '' ); ?></td>
 							<td>
 								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $control['status_key'] ); ?>">
-									<?php echo esc_html( $control['status_key'] === 'not_applicable' ? 'N/A' : ucfirst( $control['status_key'] ) ); ?>
+									<?php echo esc_html( 'not_applicable' === $control['status_key'] ? 'N/A' : ucfirst( $control['status_key'] ) ); ?>
 								</span>
 							</td>
 							<td style="text-align: center;">

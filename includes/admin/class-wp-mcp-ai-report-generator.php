@@ -243,11 +243,11 @@ class WP_MCP_AI_Report_Generator {
 		if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
 			global $wpdb;
 			$evidence_table = $wpdb->prefix . 'mcp_ai_evidence';
-			$count          = $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table" );
+			$count          = $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is hardcoded
 
 			return array(
 				'total_evidence' => (int) $count,
-				'valid_evidence' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table WHERE is_valid = 1" ),
+				'valid_evidence' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table WHERE is_valid = 1" ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is hardcoded
 			);
 		}
 
@@ -290,7 +290,7 @@ class WP_MCP_AI_Report_Generator {
 			wp_mkdir_p( $reports_dir );
 		}
 
-		$filename = sprintf( 'compliance-report-%s.html', date( 'Y-m-d-His' ) );
+		$filename = sprintf( 'compliance-report-%s.html', gmdate( 'Y-m-d-His' ) );
 		$filepath = $reports_dir . '/' . $filename;
 
 		$html = $this->build_html_report( $data );
@@ -484,7 +484,7 @@ class WP_MCP_AI_Report_Generator {
 			wp_mkdir_p( $reports_dir );
 		}
 
-		$filename = sprintf( 'compliance-report-%s.csv', date( 'Y-m-d-His' ) );
+		$filename = sprintf( 'compliance-report-%s.csv', gmdate( 'Y-m-d-His' ) );
 		$filepath = $reports_dir . '/' . $filename;
 
 		$fp = fopen( $filepath, 'w' );
@@ -572,7 +572,7 @@ class WP_MCP_AI_Report_Generator {
 			wp_mkdir_p( $reports_dir );
 		}
 
-		$filename = sprintf( 'compliance-report-%s.json', date( 'Y-m-d-His' ) );
+		$filename = sprintf( 'compliance-report-%s.json', gmdate( 'Y-m-d-His' ) );
 		$filepath = $reports_dir . '/' . $filename;
 
 		$json = wp_json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );

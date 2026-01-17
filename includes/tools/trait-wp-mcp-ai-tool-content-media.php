@@ -254,6 +254,7 @@ trait WP_MCP_AI_Tool_Content_Media {
 		$html       .= '<canvas id="' . esc_attr( $chart_id ) . '"></canvas>' . "\n";
 		$html       .= '</div>' . "\n";
 		$chartjs_url = esc_url( plugins_url( 'assets/js/vendor/chart.min.js', WP_MCP_AI_FILE ) );
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Building HTML string with inline scripts
 		$html       .= '<script src="' . $chartjs_url . '"></script>' . "\n";
 		$html       .= '<script>' . "\n";
 		$html       .= 'document.addEventListener("DOMContentLoaded", function() {' . "\n";

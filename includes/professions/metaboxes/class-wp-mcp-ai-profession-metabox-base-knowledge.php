@@ -402,6 +402,11 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 			return;
 		}
 
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_base_knowledge_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_base_knowledge_nonce'] ) ), 'wp_mcp_ai_profession_base_knowledge_save' ) ) {
+			return;
+		}
+
 		// Save memory files.
 		if ( isset( $_POST['wp_mcp_ai_profession_memory_files'] ) ) {
 			$memory_files = array_map( 'absint', (array) $_POST['wp_mcp_ai_profession_memory_files'] );
@@ -422,7 +427,7 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 
 		// Save supported MIME types.
 		if ( isset( $_POST['wp_mcp_ai_profession_mime_types'] ) ) {
-			$mime_types = array_map( 'sanitize_text_field', (array) $_POST['wp_mcp_ai_profession_mime_types'] );
+			$mime_types = array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['wp_mcp_ai_profession_mime_types'] ) );
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES, $mime_types );
 		} else {
 			delete_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES );

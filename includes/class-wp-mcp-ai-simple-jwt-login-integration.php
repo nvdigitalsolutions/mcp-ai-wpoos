@@ -406,8 +406,8 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 					array(
 						'status'  => 401,
 						'details' => array(
-							'message' => wp_strip_all_tags( $fallback_exception->getMessage() ?: $exception->getMessage() ),
-							'code'    => $fallback_exception->getCode() ?: $exception->getCode(),
+							'message' => wp_strip_all_tags( ! empty( $fallback_exception->getMessage() ) ? $fallback_exception->getMessage() : $exception->getMessage() ),
+							'code'    => ! empty( $fallback_exception->getCode() ) ? $fallback_exception->getCode() : $exception->getCode(),
 						),
 					)
 				);

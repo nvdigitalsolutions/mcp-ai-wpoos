@@ -470,6 +470,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Chart</title>
+	<?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
 	<script src="<?php echo esc_url( $chartjs_url ); ?>"></script>
 	<style>
 		body {
@@ -503,7 +504,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					return;
 				}
 				const ctx = document.getElementById(<?php echo wp_json_encode( $chart_id ); ?>).getContext('2d');
-				const chartConfig = <?php echo $config_json; ?>;
+				const chartConfig = <?php echo wp_json_encode( json_decode( $config_json, true ) ); ?>;
 				new Chart(ctx, chartConfig);
 			}
 

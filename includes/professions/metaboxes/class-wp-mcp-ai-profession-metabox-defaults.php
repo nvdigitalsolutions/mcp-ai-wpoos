@@ -195,6 +195,11 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 			return;
 		}
 
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) ), 'wp_mcp_ai_profession_defaults_save' ) ) {
+			return;
+		}
+
 		// Save associated assistant.
 		if ( isset( $_POST['profession_associated_assistant'] ) ) {
 			$associated_assistant = absint( wp_unslash( $_POST['profession_associated_assistant'] ) );

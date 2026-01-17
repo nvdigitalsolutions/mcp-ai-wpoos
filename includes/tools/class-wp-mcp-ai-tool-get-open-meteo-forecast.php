@@ -796,7 +796,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 	<script>
 		document.addEventListener('DOMContentLoaded', function() {
 			const ctx = document.getElementById(<?php echo wp_json_encode( $chart_id ); ?>).getContext('2d');
-			const chartConfig = <?php echo $config_json; ?>;
+			const chartConfig = <?php echo wp_json_encode( json_decode( $config_json, true ) ); ?>;
 			new Chart(ctx, chartConfig);
 		});
 	</script>

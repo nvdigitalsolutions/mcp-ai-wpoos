@@ -170,7 +170,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 			$failed_tests = array_filter(
 				$results['tests'],
 				function ( $test ) {
-					return $test['status'] === 'fail';
+					return 'fail' === $test['status'];
 				}
 			);
 
@@ -195,11 +195,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 			<div class="wrap wp-mcp-ai-pro-dashboard-diagnostic">
 				<h1><?php esc_html_e( 'Pro Dashboard Diagnostic Results', 'mcp-ai-wpoos' ); ?></h1>
 
-				<div class="notice notice-<?php echo esc_attr( $results['overall_status'] === 'pass' ? 'success' : 'error' ); ?>">
+				<div class="notice notice-<?php echo esc_attr( 'pass' === $results['overall_status'] ? 'success' : 'error' ); ?>">
 					<p>
 						<strong>
 							<?php
-							if ( $results['overall_status'] === 'pass' ) {
+							if ( 'pass' === $results['overall_status'] ) {
 								esc_html_e( '✓ All tests passed! Charts should be working.', 'mcp-ai-wpoos' );
 							} else {
 								printf(
@@ -226,9 +226,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 							<tr>
 								<td style="text-align: center;">
 									<?php
-									if ( $test['status'] === 'pass' ) {
+									if ( 'pass' === $test['status'] ) {
 										echo '<span style="color: #46b450; font-size: 20px;">✓</span>';
-									} elseif ( $test['status'] === 'fail' ) {
+									} elseif ( 'fail' === $test['status'] ) {
 										echo '<span style="color: #dc3232; font-size: 20px;">✗</span>';
 									} else {
 										echo '<span style="color: #ffb900; font-size: 20px;">⚠</span>';
