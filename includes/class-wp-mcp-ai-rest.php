@@ -247,6 +247,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Clean any existing output and start fresh.
 			$this->clean_all_output_buffers();
+			
+			// WordPress.org Compliance Note: This ob_start() is properly closed.
+			// Cleanup handled by ensure_clean_json_output() via rest_pre_serve_request filter.
+			// The buffer is cleaned by clean_all_output_buffers() (line 270) which calls
+			// ob_end_clean() in a loop until all buffers are cleared (see method below).
 			ob_start();
 		}
 

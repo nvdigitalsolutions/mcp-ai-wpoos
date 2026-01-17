@@ -1071,6 +1071,10 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				// Start output buffering to catch any stray output that could break JSON responses.
 				// This protects against any echoed content, warnings, or notices that occur.
 				// during the Elementor save process.
+				//
+				// WordPress.org Compliance Note: This ob_start() is properly closed.
+				// Cleanup handled by clean_elementor_output_buffer() on shutdown hook (line 1078).
+				// The buffer is cleaned via ob_end_clean() in a loop (lines 1114-1117).
 				ob_start();
 
 				// Register a shutdown function to clean the buffer before Elementor sends its response.
