@@ -166,7 +166,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'report_peer' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'check_user_permission' ),
 				'args'                => array(
 					'id'      => array(
 						'required'          => true,
