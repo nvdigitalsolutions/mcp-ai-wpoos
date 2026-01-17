@@ -144,38 +144,39 @@ class WP_MCP_AI_Media_Design_Page {
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
-							<li><?php esc_html_e( 'Upload an image or select from Media Library', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Generate new images with AI or upload/select existing ones', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><?php esc_html_e( 'Use the AI assistant to design and apply graphic edits', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Ask for operations like "Resize to 1920x1080" or "Add logo to bottom right"', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Create templates for reuse or work with collections for batch processing', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Preview the result and save as new image or update existing', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Ask for operations like "Generate an image of..." or "Resize to 1920x1080"', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create collections to group images for batch processing', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create templates for reuse or work with collections for batch operations', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ol>
 					</div>
 
 					<div class="wp-mcp-ai-research-tips">
 						<h3><?php esc_html_e( 'Design Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
+							<li><strong><?php esc_html_e( 'Generate images:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Ask AI to create images from text descriptions', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Be specific:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Specify operation type and exact parameters', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Use templates:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Create reusable templates for common operations', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Use collections:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Group images and apply templates to entire collections', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Batch processing:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Apply same operation to multiple images at once', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Create collections:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Organize generated or edited images into collections', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
 					<div class="wp-mcp-ai-research-examples">
 						<h3><?php esc_html_e( 'Example Queries', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul class="wp-mcp-ai-example-list">
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Generate an image of a sunset over mountains">
+								<?php esc_html_e( '"Generate sunset image..."', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Resize the image to 1920x1080 for Instagram">
 								<?php esc_html_e( '"Resize for Instagram..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Add a watermark logo to the bottom right corner">
-								<?php esc_html_e( '"Add watermark logo..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Create a collection called Product Photos and add images 123, 124, 125">
+								<?php esc_html_e( '"Create collection..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Process collection 5 with template 12">
 								<?php esc_html_e( '"Process collection..."', 'mcp-ai-wpoos-pro' ); ?>
-							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Enhance the image quality using AI">
-								<?php esc_html_e( '"AI enhance quality"', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>
@@ -209,10 +210,10 @@ class WP_MCP_AI_Media_Design_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with graphic editor tools.
-							// Includes tools for templates, collections, and direct image operations.
+							// Render chat interface with comprehensive media tools.
+							// Includes tools for image generation, editing, templates, and collections.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="graphic_editor_plus,create_media_template,apply_media_template,list_media_templates,process_collection,apply_collection_template"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="graphic_editor_plus,generate_openai_image,generate_gemini_image,generate_cloudflareai_image,create_media_template,apply_media_template,list_media_templates,create_media_collection,process_collection,apply_collection_template"]'
 							);
 							?>
 						</div>
