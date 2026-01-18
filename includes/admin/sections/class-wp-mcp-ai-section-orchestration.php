@@ -65,6 +65,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
+			// Cache provider options to avoid duplicate method calls.
+			$provider_options = array( '' => __( '-- Use Global Default --', 'mcp-ai-wpoos' ) ) + WP_MCP_AI_Admin_Settings::get_available_providers();
+			
 			return array(
 				'orchestration_intro'             => array(
 					'type'    => 'html',
@@ -154,7 +157,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'        => 'select',
 					'label'       => __( 'Professions Default Provider', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default AI provider for all professions. Individual professions can override this setting.', 'mcp-ai-wpoos' ),
-					'options'     => array( '' => __( '-- Use Global Default --', 'mcp-ai-wpoos' ) ) + WP_MCP_AI_Admin_Settings::get_available_providers(),
+					'options'     => $provider_options,
 					'default'     => '',
 				),
 				'profession_default_model'        => array(
@@ -176,7 +179,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'        => 'select',
 					'label'       => __( 'Teams Default Provider', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default AI provider for all team members. Individual teams can override this setting.', 'mcp-ai-wpoos' ),
-					'options'     => array( '' => __( '-- Use Global Default --', 'mcp-ai-wpoos' ) ) + WP_MCP_AI_Admin_Settings::get_available_providers(),
+					'options'     => $provider_options,
 					'default'     => '',
 				),
 				'team_default_model'              => array(
@@ -3713,6 +3716,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$secondary_roles_array = array();
 				if ( ! empty( $secondary_roles ) ) {
 					$decoded = is_string( $secondary_roles ) ? json_decode( $secondary_roles, true ) : $secondary_roles;
+					// Check for JSON errors.
+					if ( is_string( $secondary_roles ) && json_last_error() !== JSON_ERROR_NONE ) {
+						$decoded = array();
+					}
 					if ( is_array( $decoded ) ) {
 						$secondary_roles_array = array_map( 'strtolower', array_map( 'trim', $decoded ) );
 					}
