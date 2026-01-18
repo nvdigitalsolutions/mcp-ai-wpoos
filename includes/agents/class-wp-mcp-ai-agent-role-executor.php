@@ -27,6 +27,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 
 	/**
+	 * Tool registry instance
+	 *
+	 * @var WP_MCP_AI_Tool_Registry
+	 */
+	protected $tool_registry;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -47,6 +54,9 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 			'create_post',
 			'save_post',
 		);
+
+		// Initialize tool registry.
+		$this->tool_registry = WP_MCP_AI_Tool_Registry::instance();
 	}
 
 	/**
@@ -166,109 +176,303 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	/**
 	 * Execute a research task
 	 *
-	 * Provides execution plan for research tasks using available tools.
+	 * Executes research using web_search or crawl4ai, analyzes results, and saves findings.
 	 *
 	 * @param array $task Task data.
 	 * @param array $context Execution context.
-	 * @return array Research execution plan with tool recommendations.
+	 * @return array Research results with gathered data and saved content.
 	 */
 	protected function execute_research_task( $task, $context ) {
 		$description = isset( $task['description'] ) ? $task['description'] : '';
 		$parameters  = isset( $task['parameters'] ) ? $task['parameters'] : array();
+		$query       = isset( $parameters['query'] ) ? $parameters['query'] : $description;
 
-		// Build execution plan with recommended tools and steps.
-		$execution_plan = array(
+		$results = array(
 			'type'        => 'research',
 			'description' => $description,
-			'plan'        => array(
-				'steps'                => array(
-					array(
-						'step'        => 1,
-						'action'      => 'search_and_gather',
-						'tools'       => array( 'web_search', 'crawl4ai' ),
-						'description' => __( 'Search for information and gather relevant data', 'mcp-ai-wpoos' ),
-					),
-					array(
-						'step'        => 2,
-						'action'      => 'analyze_sources',
-						'tools'       => array(),
-						'description' => __( 'Analyze gathered information for relevance and quality', 'mcp-ai-wpoos' ),
-					),
-					array(
-						'step'        => 3,
-						'action'      => 'synthesize',
-						'tools'       => array( 'save_post' ),
-						'description' => __( 'Synthesize findings into structured results', 'mcp-ai-wpoos' ),
-					),
-				),
-				'estimated_tool_calls' => 3,
-				'parallel_execution'   => false,
+			'query'       => $query,
+			'steps'       => array(),
+		);
+
+		// Step 1: Search for information.
+		$search_tool = $this->tool_registry->is_tool_registered( 'web_search' ) ? 'web_search' : 'search_content';
+		
+		$search_result = $this->execute_tool_with_context(
+			$search_tool,
+			array(
+				'query' => $query,
+				'limit' => isset( $parameters['limit'] ) ? $parameters['limit'] : 10,
+			),
+			$context
+		);
+
+		$results['steps'][] = array(
+			'step'   => 1,
+			'action' => 'search_and_gather',
+			'tool'   => $search_tool,
+			'status' => is_wp_error( $search_result ) ? 'failed' : 'completed',
+			'result' => $search_result,
+		);
+
+		if ( is_wp_error( $search_result ) ) {
+			$results['status'] = 'partial';
+			$results['error']  = $search_result->get_error_message();
+			return $results;
+		}
+
+		// Step 2: Analyze sources (extract key information).
+		$sources = array();
+		if ( isset( $search_result['results'] ) && is_array( $search_result['results'] ) ) {
+			foreach ( $search_result['results'] as $result ) {
+				$sources[] = array(
+					'title'   => isset( $result['title'] ) ? $result['title'] : '',
+					'url'     => isset( $result['url'] ) ? $result['url'] : '',
+					'snippet' => isset( $result['snippet'] ) ? $result['snippet'] : '',
+				);
+			}
+		}
+
+		$results['steps'][] = array(
+			'step'    => 2,
+			'action'  => 'analyze_sources',
+			'status'  => 'completed',
+			'sources' => $sources,
+			'count'   => count( $sources ),
+		);
+
+		// Step 3: Synthesize findings (optionally save as post).
+		$synthesis = array(
+			'query'         => $query,
+			'sources_found' => count( $sources ),
+			'sources'       => $sources,
+			'summary'       => sprintf(
+				/* translators: 1: query, 2: number of sources */
+				__( 'Research on "%1$s" yielded %2$d sources.', 'mcp-ai-wpoos' ),
+				$query,
+				count( $sources )
 			),
 		);
 
-		// Add task-specific parameters.
-		if ( ! empty( $parameters['query'] ) ) {
-			$execution_plan['query'] = $parameters['query'];
-		}
-		if ( ! empty( $parameters['sources'] ) ) {
-			$execution_plan['sources'] = $parameters['sources'];
+		// Save results if requested.
+		if ( ! empty( $parameters['save_results'] ) && count( $sources ) > 0 ) {
+			$post_title   = isset( $parameters['title'] ) ? $parameters['title'] : sprintf( __( 'Research: %s', 'mcp-ai-wpoos' ), $query );
+			$post_content = $this->format_research_content( $query, $sources );
+
+			$save_result = $this->execute_tool_with_context(
+				'save_post',
+				array(
+					'title'   => $post_title,
+					'content' => $post_content,
+					'status'  => 'draft',
+				),
+				$context
+			);
+
+			$synthesis['saved'] = ! is_wp_error( $save_result );
+			if ( ! is_wp_error( $save_result ) && isset( $save_result['post_id'] ) ) {
+				$synthesis['post_id'] = $save_result['post_id'];
+			}
 		}
 
-		return $execution_plan;
+		$results['steps'][] = array(
+			'step'      => 3,
+			'action'    => 'synthesize',
+			'status'    => 'completed',
+			'synthesis' => $synthesis,
+		);
+
+		$results['status'] = 'completed';
+		return $results;
+	}
+
+	/**
+	 * Format research content for saving
+	 *
+	 * @param string $query Research query.
+	 * @param array  $sources Array of sources.
+	 * @return string Formatted HTML content.
+	 */
+	protected function format_research_content( $query, $sources ) {
+		$content = '<h2>' . esc_html( sprintf( __( 'Research Results: %s', 'mcp-ai-wpoos' ), $query ) ) . '</h2>';
+		$content .= '<p>' . esc_html( sprintf( __( 'Found %d relevant sources:', 'mcp-ai-wpoos' ), count( $sources ) ) ) . '</p>';
+		$content .= '<ol>';
+
+		foreach ( $sources as $source ) {
+			$title   = isset( $source['title'] ) ? $source['title'] : __( 'Untitled', 'mcp-ai-wpoos' );
+			$url     = isset( $source['url'] ) ? $source['url'] : '';
+			$snippet = isset( $source['snippet'] ) ? $source['snippet'] : '';
+
+			$content .= '<li>';
+			if ( $url ) {
+				$content .= '<strong><a href="' . esc_url( $url ) . '">' . esc_html( $title ) . '</a></strong>';
+			} else {
+				$content .= '<strong>' . esc_html( $title ) . '</strong>';
+			}
+			if ( $snippet ) {
+				$content .= '<p>' . esc_html( $snippet ) . '</p>';
+			}
+			$content .= '</li>';
+		}
+
+		$content .= '</ol>';
+		return $content;
 	}
 
 	/**
 	 * Execute an analysis task
 	 *
-	 * Provides execution plan for analysis tasks using available tools.
+	 * Executes data analysis using get_recent_posts or search_content, creates visualizations.
 	 *
 	 * @param array $task Task data.
 	 * @param array $context Execution context.
-	 * @return array Analysis execution plan with tool recommendations.
+	 * @return array Analysis results with data and visualizations.
 	 */
 	protected function execute_analysis_task( $task, $context ) {
 		$description = isset( $task['description'] ) ? $task['description'] : '';
 		$parameters  = isset( $task['parameters'] ) ? $task['parameters'] : array();
 
-		// Build execution plan for analysis.
-		$execution_plan = array(
+		$results = array(
 			'type'        => 'analysis',
 			'description' => $description,
-			'plan'        => array(
-				'steps'                => array(
-					array(
-						'step'        => 1,
-						'action'      => 'retrieve_data',
-						'tools'       => array( 'get_recent_posts', 'search_content' ),
-						'description' => __( 'Retrieve data to be analyzed', 'mcp-ai-wpoos' ),
-					),
-					array(
-						'step'        => 2,
-						'action'      => 'perform_analysis',
-						'tools'       => array( 'create_chart' ),
-						'description' => __( 'Analyze data and identify patterns or insights', 'mcp-ai-wpoos' ),
-					),
-					array(
-						'step'        => 3,
-						'action'      => 'generate_report',
-						'tools'       => array( 'save_post' ),
-						'description' => __( 'Generate analysis report with findings', 'mcp-ai-wpoos' ),
+			'steps'       => array(),
+		);
+
+		// Step 1: Gather data to analyze.
+		$data_source = isset( $parameters['data_source'] ) ? $parameters['data_source'] : 'get_recent_posts';
+		
+		if ( 'get_recent_posts' === $data_source ) {
+			$data_result = $this->execute_tool_with_context(
+				'get_recent_posts',
+				array(
+					'post_type' => isset( $parameters['post_type'] ) ? $parameters['post_type'] : 'post',
+					'limit'     => isset( $parameters['limit'] ) ? $parameters['limit'] : 20,
+				),
+				$context
+			);
+		} else {
+			$data_result = $this->execute_tool_with_context(
+				'search_content',
+				array(
+					'query'     => isset( $parameters['query'] ) ? $parameters['query'] : '',
+					'post_type' => isset( $parameters['post_type'] ) ? $parameters['post_type'] : 'post',
+				),
+				$context
+			);
+		}
+
+		$results['steps'][] = array(
+			'step'   => 1,
+			'action' => 'gather_data',
+			'tool'   => $data_source,
+			'status' => is_wp_error( $data_result ) ? 'failed' : 'completed',
+			'result' => $data_result,
+		);
+
+		if ( is_wp_error( $data_result ) ) {
+			$results['status'] = 'partial';
+			$results['error']  = $data_result->get_error_message();
+			return $results;
+		}
+
+		// Step 2: Analyze the data.
+		$posts = isset( $data_result['posts'] ) ? $data_result['posts'] : array();
+		$analysis = $this->analyze_data( $posts, $parameters );
+
+		$results['steps'][] = array(
+			'step'     => 2,
+			'action'   => 'analyze_data',
+			'status'   => 'completed',
+			'analysis' => $analysis,
+		);
+
+		// Step 3: Create visualization (if chart tool available).
+		if ( $this->tool_registry->is_tool_registered( 'create_chart' ) && ! empty( $analysis['chart_data'] ) ) {
+			$chart_result = $this->execute_tool_with_context(
+				'create_chart',
+				array(
+					'type' => isset( $parameters['chart_type'] ) ? $parameters['chart_type'] : 'bar',
+					'data' => $analysis['chart_data'],
+					'options' => array(
+						'title' => isset( $parameters['chart_title'] ) ? $parameters['chart_title'] : __( 'Analysis Results', 'mcp-ai-wpoos' ),
 					),
 				),
-				'estimated_tool_calls' => 3,
-				'parallel_execution'   => false,
+				$context
+			);
+
+			$results['steps'][] = array(
+				'step'   => 3,
+				'action' => 'create_visualization',
+				'tool'   => 'create_chart',
+				'status' => is_wp_error( $chart_result ) ? 'failed' : 'completed',
+				'result' => $chart_result,
+			);
+
+			if ( ! is_wp_error( $chart_result ) ) {
+				$analysis['chart'] = $chart_result;
+			}
+		} else {
+			$results['steps'][] = array(
+				'step'   => 3,
+				'action' => 'create_visualization',
+				'status' => 'skipped',
+				'reason' => __( 'Chart tool not available or no chart data', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$results['analysis'] = $analysis;
+		$results['status'] = 'completed';
+		return $results;
+	}
+
+	/**
+	 * Analyze data from posts
+	 *
+	 * @param array $posts Array of post data.
+	 * @param array $parameters Analysis parameters.
+	 * @return array Analysis results.
+	 */
+	protected function analyze_data( $posts, $parameters ) {
+		$analysis = array(
+			'total_posts' => count( $posts ),
+			'post_types'  => array(),
+			'date_range'  => array(),
+			'summary'     => '',
+		);
+
+		if ( empty( $posts ) ) {
+			$analysis['summary'] = __( 'No posts found for analysis.', 'mcp-ai-wpoos' );
+			return $analysis;
+		}
+
+		// Analyze post types distribution.
+		foreach ( $posts as $post ) {
+			$post_type = isset( $post['post_type'] ) ? $post['post_type'] : 'unknown';
+			if ( ! isset( $analysis['post_types'][ $post_type ] ) ) {
+				$analysis['post_types'][ $post_type ] = 0;
+			}
+			++$analysis['post_types'][ $post_type ];
+		}
+
+		// Prepare chart data.
+		$analysis['chart_data'] = array(
+			'labels'   => array_keys( $analysis['post_types'] ),
+			'datasets' => array(
+				array(
+					'label' => __( 'Posts by Type', 'mcp-ai-wpoos' ),
+					'data'  => array_values( $analysis['post_types'] ),
+				),
 			),
 		);
 
-		// Add task-specific parameters.
-		if ( ! empty( $parameters['dataset'] ) ) {
-			$execution_plan['dataset'] = $parameters['dataset'];
-		}
-		if ( ! empty( $parameters['metrics'] ) ) {
-			$execution_plan['metrics'] = $parameters['metrics'];
-		}
+		// Generate summary.
+		$analysis['summary'] = sprintf(
+			/* translators: %d: number of posts */
+			__( 'Analyzed %d posts across %d post types.', 'mcp-ai-wpoos' ),
+			$analysis['total_posts'],
+			count( $analysis['post_types'] )
+		);
 
-		return $execution_plan;
+		return $analysis;
 	}
 
 	/**
@@ -323,5 +527,70 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 		}
 
 		return $execution_plan;
+	}
+
+	/**
+	 * Execute a tool with proper context and error handling
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @param array  $arguments Tool arguments.
+	 * @param array  $context Execution context.
+	 * @return array|WP_Error Tool execution result or error.
+	 */
+	protected function execute_tool_with_context( $tool_slug, $arguments, $context ) {
+		// Ensure tool registry is available.
+		if ( ! $this->tool_registry ) {
+			return new WP_Error(
+				'wp_mcp_ai_no_tool_registry',
+				__( 'Tool registry not available for executor agent.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Check if tool exists.
+		if ( ! $this->tool_registry->is_tool_registered( $tool_slug ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_tool_not_found',
+				sprintf(
+					/* translators: %s: tool slug */
+					__( 'Tool "%s" not found in registry.', 'mcp-ai-wpoos' ),
+					$tool_slug
+				)
+			);
+		}
+
+		$this->log(
+			sprintf( 'Executing tool: %s', $tool_slug ),
+			'debug',
+			array(
+				'tool'      => $tool_slug,
+				'arguments' => $arguments,
+			)
+		);
+
+		// Execute the tool.
+		$result = $this->tool_registry->execute_tool( $tool_slug, $arguments, $context );
+
+		// Log result.
+		if ( is_wp_error( $result ) ) {
+			$this->log(
+				sprintf( 'Tool execution failed: %s', $tool_slug ),
+				'error',
+				array(
+					'tool'  => $tool_slug,
+					'error' => $result->get_error_message(),
+				)
+			);
+		} else {
+			$this->log(
+				sprintf( 'Tool execution succeeded: %s', $tool_slug ),
+				'debug',
+				array(
+					'tool'   => $tool_slug,
+					'result' => is_array( $result ) && isset( $result['message'] ) ? $result['message'] : 'Success',
+				)
+			);
+		}
+
+		return $result;
 	}
 }
