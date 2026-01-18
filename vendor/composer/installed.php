@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-ai-document-creation-tools',
+        'version' => 'dev-copilot/add-ai-document-creation-tools',
+        'reference' => 'e8eb1052aa1cabcf495498e406d3dbbf0f5c4796',
         'pretty_version' => 'dev-copilot/fix-teams-error-testing',
         'version' => 'dev-copilot/fix-teams-error-testing',
         'reference' => '06612f58627c7a00acf0ceab273cc1a1a8e508f6',
@@ -36,6 +39,9 @@
             'version' => 'dev-copilot/fix-teams-error-testing',
             'reference' => '06612f58627c7a00acf0ceab273cc1a1a8e508f6',
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-ai-document-creation-tools',
+            'version' => 'dev-copilot/add-ai-document-creation-tools',
+            'reference' => 'e8eb1052aa1cabcf495498e406d3dbbf0f5c4796',
             'pretty_version' => 'dev-copilot/fix-image-rotation-error',
             'version' => 'dev-copilot/fix-image-rotation-error',
             'reference' => '303c19e9cc557c8df2a0afe5fc18cf5cf3e6dbac',
