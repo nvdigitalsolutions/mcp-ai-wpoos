@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-documentation-and-readmes',
-        'version' => 'dev-copilot/update-documentation-and-readmes',
-        'reference' => '9585fb56971c892f608d381ff6f5de74e515f16b',
+        'pretty_version' => 'dev-copilot/fix-chat-client-endpoint',
+        'version' => 'dev-copilot/fix-chat-client-endpoint',
+        'reference' => 'b115ee579afc87bb1be3c68415e6750bd755fea2',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-documentation-and-readmes',
-            'version' => 'dev-copilot/update-documentation-and-readmes',
-            'reference' => '9585fb56971c892f608d381ff6f5de74e515f16b',
+            'pretty_version' => 'dev-copilot/fix-chat-client-endpoint',
+            'version' => 'dev-copilot/fix-chat-client-endpoint',
+            'reference' => 'b115ee579afc87bb1be3c68415e6750bd755fea2',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
