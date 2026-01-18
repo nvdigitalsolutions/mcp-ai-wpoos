@@ -15,12 +15,14 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides a tool for generating images via Gemini and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
@@ -246,6 +248,9 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			strtoupper( isset( $image['format'] ) ? $image['format'] : $this->map_mime_type_to_format( $storage['mime_type'] ) )
 		);
 
+		$text    = implode( ' ', $text_parts );
+		$message = $text;
+
 		$result = array(
 			'attachment_id'  => $storage['attachment_id'],
 			'url'            => $storage['url'],
@@ -261,7 +266,8 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			'revised_prompt' => isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
 			'created'        => isset( $image['created'] ) ? $image['created'] : time(),
 			'provider'       => 'gemini', // Track provider for accurate cost attribution.
-			'text'           => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
+			'text'           => $text, // Descriptive message for LLM and chat UI.
+			'message'        => $message,
 		);
 
 		// Include usage metadata if available for accurate cost tracking.

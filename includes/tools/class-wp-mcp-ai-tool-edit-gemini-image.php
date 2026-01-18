@@ -17,6 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides a tool for editing images via Gemini Nano Banana and storing them as attachments.
@@ -25,6 +26,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
@@ -284,6 +286,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$prompt,
 			'svg' === $output_format ? ' and converted to SVG' : ''
 		);
+		$message = $text;
 
 		$result = array(
 			'attachment_id'     => $storage['attachment_id'],
@@ -301,6 +304,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'provider'          => 'gemini', // Track provider for accurate cost attribution.
 			'output_format'     => $output_format,
 			'text'              => $text, // Descriptive message for LLM and chat UI.
+			'message'           => $message,
 		);
 
 		// Add vectorization metadata if SVG output was used.
