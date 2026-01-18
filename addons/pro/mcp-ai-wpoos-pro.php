@@ -190,6 +190,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// This ensures translations are loaded at the correct time for WordPress 6.7+.
 		add_action( 'init', 'wp_mcp_ai_pro_load_textdomain', 1 );
 
+		// Load NPM integration filter handlers.
+		// This enables Node.js microservice integration for Prettier, MJML, and fluent-ffmpeg.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/npm-integration-filters.php';
+
 		// Load Pro tool interfaces (extend Core interfaces).
 		// Pro tools can implement additional interfaces for advanced features.
 
