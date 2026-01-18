@@ -2,7 +2,27 @@
 
 **Date:** January 18, 2026  
 **Status:** Phase 1 is 85-90% Complete (NOT 60%)  
-**Critical Finding:** Documentation significantly underestimated actual implementation progress
+**Critical Finding:** Documentation significantly underestimated actual implementation progress  
+**Last Updated:** January 18, 2026 - Fixed fatal error in orchestration layer
+
+---
+
+## Recent Fixes (January 18, 2026)
+
+### Fixed: Fatal Error in Orchestration Overview Page
+
+**Issue:** Fatal error when accessing the orchestration layer overview page:
+```
+Fatal error: Call to undefined method WP_MCP_AI_Tool_Registry::instance()
+```
+
+**Root Cause:** Two files were calling the incorrect method name `instance()` instead of `get_instance()`:
+1. `includes/agents/class-wp-mcp-ai-agent-role-executor.php` (line 59)
+2. `includes/services/class-wp-mcp-ai-tool-load-monitor.php` (line 516)
+
+**Resolution:** ✅ Both files updated to use correct `WP_MCP_AI_Tool_Registry::get_instance()` method
+
+**Impact:** Orchestration overview page now loads without errors, allowing proper visibility into agent roles and team configuration.
 
 ---
 

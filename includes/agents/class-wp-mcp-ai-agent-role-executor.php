@@ -56,7 +56,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 		);
 
 		// Initialize tool registry.
-		$this->tool_registry = WP_MCP_AI_Tool_Registry::instance();
+		$this->tool_registry = WP_MCP_AI_Tool_Registry::get_instance();
 	}
 
 	/**
