@@ -1,12 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-systematic-tool-review-process',
-        'version' => 'dev-copilot/create-systematic-tool-review-process',
-        'reference' => '18806bb417cd078c3556d2de1ada929d9af2b1ca',
-        'pretty_version' => 'dev-copilot/fix-chat-client-endpoint',
-        'version' => 'dev-copilot/fix-chat-client-endpoint',
-        'reference' => 'b115ee579afc87bb1be3c68415e6750bd755fea2',
+        'pretty_version' => 'dev-copilot/add-ai-document-creation-tools',
+        'version' => 'dev-copilot/add-ai-document-creation-tools',
+        'reference' => 'e8eb1052aa1cabcf495498e406d3dbbf0f5c4796',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -14,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-systematic-tool-review-process',
-            'version' => 'dev-copilot/create-systematic-tool-review-process',
-            'reference' => '18806bb417cd078c3556d2de1ada929d9af2b1ca',
+            'pretty_version' => 'dev-copilot/add-ai-document-creation-tools',
+            'version' => 'dev-copilot/add-ai-document-creation-tools',
+            'reference' => 'e8eb1052aa1cabcf495498e406d3dbbf0f5c4796',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
