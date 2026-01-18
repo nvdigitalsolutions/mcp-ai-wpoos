@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-formatting-errors',
-        'version' => 'dev-copilot/fix-formatting-errors',
-        'reference' => 'df7fb84c5d93043ceb6037a4140c123c44b972bd',
+        'pretty_version' => 'dev-copilot/update-project-management-toolkit',
+        'version' => 'dev-copilot/update-project-management-toolkit',
+        'reference' => 'd432a6d7bb62e7065add23635224c4c6d4d85919',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-formatting-errors',
-            'version' => 'dev-copilot/fix-formatting-errors',
-            'reference' => 'df7fb84c5d93043ceb6037a4140c123c44b972bd',
+            'pretty_version' => 'dev-copilot/update-project-management-toolkit',
+            'version' => 'dev-copilot/update-project-management-toolkit',
+            'reference' => 'd432a6d7bb62e7065add23635224c4c6d4d85919',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
