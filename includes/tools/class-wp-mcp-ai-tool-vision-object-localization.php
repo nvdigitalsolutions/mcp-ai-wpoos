@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
  * demonstrating what happens when Vision API calls are made without proper auth.
  */
 class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	const DEFAULT_REQUIRED_CAPABILITY = 'manage_options';
 	const VISION_API_ENDPOINT         = 'https://vision.googleapis.com/v1/images:annotate';
 
