@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-teams-error-testing',
+        'version' => 'dev-copilot/fix-teams-error-testing',
+        'reference' => '06612f58627c7a00acf0ceab273cc1a1a8e508f6',
         'pretty_version' => 'dev-copilot/fix-image-rotation-error',
         'version' => 'dev-copilot/fix-image-rotation-error',
         'reference' => '303c19e9cc557c8df2a0afe5fc18cf5cf3e6dbac',
@@ -28,24 +31,10 @@
             'aliases' => array(),
             'dev_requirement' => true,
         ),
-        'dealerdirect/phpcodesniffer-composer-installer' => array(
-            'pretty_version' => 'v1.2.0',
-            'version' => '1.2.0.0',
-            'reference' => '845eb62303d2ca9b289ef216356568ccc075ffd1',
-            'type' => 'composer-plugin',
-            'install_path' => __DIR__ . '/../dealerdirect/phpcodesniffer-composer-installer',
-            'aliases' => array(),
-            'dev_requirement' => true,
-        ),
-        'doctrine/instantiator' => array(
-            'pretty_version' => '2.0.0',
-            'version' => '2.0.0.0',
-            'reference' => 'c6222283fa3f4ac679f8b9ced9a4e23f163e80d0',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../doctrine/instantiator',
-            'aliases' => array(),
-            'dev_requirement' => true,
-        ),
+        'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-teams-error-testing',
+            'version' => 'dev-copilot/fix-teams-error-testing',
+            'reference' => '06612f58627c7a00acf0ceab273cc1a1a8e508f6',
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-image-rotation-error',
             'version' => 'dev-copilot/fix-image-rotation-error',
