@@ -107,7 +107,7 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
-		$angle           = isset( $arguments['angle'] ) ? floatval( $arguments['angle'] ) : 0;
+		$angle           = isset( $arguments['angle'] ) ? floatval( $arguments['angle'] ) : 0.0;
 		$flip_horizontal = isset( $arguments['flip_horizontal'] ) ? (bool) $arguments['flip_horizontal'] : false;
 		$flip_vertical   = isset( $arguments['flip_vertical'] ) ? (bool) $arguments['flip_vertical'] : false;
 
@@ -116,7 +116,7 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 			return new WP_Error( 'wp_mcp_ai_invalid_angle', __( 'The angle parameter must be a valid number.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
-		if ( 0 === $angle && ! $flip_horizontal && ! $flip_vertical ) {
+		if ( 0.0 === $angle && ! $flip_horizontal && ! $flip_vertical ) {
 			return new WP_Error( 'wp_mcp_ai_no_operation', __( 'At least one of angle, flip_horizontal, or flip_vertical must be specified.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 
 		// Apply rotation.
 		// WordPress rotates counter-clockwise for positive angles, so negate for clockwise rotation.
-		if ( 0 !== $angle ) {
+		if ( 0.0 !== $angle ) {
 			$result = $image_editor->rotate( -$angle );
 			if ( is_wp_error( $result ) ) {
 				if ( isset( $image_editor->temp_file ) ) {
