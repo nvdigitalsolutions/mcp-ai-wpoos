@@ -327,6 +327,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Update_Project'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-project.php',
 			'WP_MCP_AI_Tool_Delete_Project'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-project.php',
 			'WP_MCP_AI_Tool_List_Projects'                => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-projects.php',
+			'WP_MCP_AI_Tool_Research_Project'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-project.php',
 			'WP_MCP_AI_Tool_Create_Task'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-task.php',
 			'WP_MCP_AI_Tool_Update_Task'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-update-task.php',
 			'WP_MCP_AI_Tool_Delete_Task'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-task.php',
