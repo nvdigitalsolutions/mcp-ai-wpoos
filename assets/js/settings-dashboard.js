@@ -805,7 +805,9 @@
 				success: function(response) {
 					if (response.success) {
 						alert(response.data.message || 'Preset applied successfully!');
-						window.location.reload();
+						// Use window.location.href instead of reload() to prevent browser form resubmission
+						// This ensures we don't trigger POST form resubmission warnings or cached form data
+						window.location.href = window.location.href;
 					} else {
 						alert(response.data.message || 'Failed to apply preset.');
 						$button.prop('disabled', false).text('Apply Preset');
