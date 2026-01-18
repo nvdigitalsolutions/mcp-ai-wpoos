@@ -790,9 +790,17 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Validate assistant access.
-		$assistant_post = $main_controller->validate_assistant_access( $assistant_id );
-		if ( is_wp_error( $assistant_post ) ) {
-			return $assistant_post;
+		// Allow virtual team assistant IDs (unified_team_* or team_*_member_*) for team testing.
+		// These are constructed by the Test Team interface and don't correspond to real assistant posts.
+		$is_virtual_team_assistant = is_string( $assistant_id ) && 
+			( 0 === strpos( $assistant_id, 'unified_team_' ) || 0 === strpos( $assistant_id, 'team_' ) );
+		
+		if ( ! $is_virtual_team_assistant ) {
+			// For real assistant IDs, validate that the post exists and user has access.
+			$assistant_post = $main_controller->validate_assistant_access( $assistant_id );
+			if ( is_wp_error( $assistant_post ) ) {
+				return $assistant_post;
+			}
 		}
 
 		// Sanitize messages.

@@ -3633,7 +3633,35 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// that might be nested in tool results or response data.
 			$payload = $this->normalize_data_recursive( $payload );
 
+			// Log final SSE message sending for diagnostics.
+			WP_MCP_AI_Logger::log_event(
+				'sse_final_message_sending',
+				'Sending final SSE message event to client',
+				array(
+					'assistant_id'           => $assistant_id,
+					'has_data'               => isset( $payload['data'] ),
+					'has_tool_results'       => isset( $payload['tool_results'] ),
+					'has_session_key'        => isset( $payload['sessionKey'] ),
+					'has_cost'               => isset( $payload['cost'] ),
+					'payload_keys'           => array_keys( $payload ),
+					'data_has_choices'       => isset( $payload['data']['choices'] ),
+					'data_has_message'       => isset( $payload['data']['choices'][0]['message'] ),
+					'endpoint'               => $request->get_route(),
+				)
+			);
+
 			$this->send_sse_event( 'message', $payload );
+			
+			// Log that [DONE] marker is being sent.
+			WP_MCP_AI_Logger::log_event(
+				'sse_done_marker_sending',
+				'Sending SSE [DONE] marker',
+				array(
+					'assistant_id' => $assistant_id,
+					'endpoint'     => $request->get_route(),
+				)
+			);
+			
 			$this->send_sse_done();
 
 			exit;
