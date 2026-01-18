@@ -173,6 +173,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 								$default_model    = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_DEFAULT_MODEL, true );
 								$edit_url         = get_edit_post_link( $team->ID );
 
+								// Check for driver assistant.
+								$driver_assistant_id = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_DRIVER_ASSISTANT, true );
+								if ( ! $driver_assistant_id ) {
+									$driver_assistant_id = get_option( 'wp_mcp_ai_team_default_driver_assistant', 0 );
+								}
+								$has_driver_assistant = (bool) $driver_assistant_id;
+
 								// Get orchestration settings for multi-agent coordination.
 								$orchestration_mode  = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
 								$result_aggregation  = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
@@ -241,12 +248,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 								<tr>
 									<td>
 										<strong><?php echo esc_html( $team->post_title ); ?></strong>
+										<?php if ( ! $has_driver_assistant ) : ?>
+											<span class="dashicons dashicons-warning" style="color: #d63638;" title="<?php esc_attr_e( 'Missing driver assistant', 'mcp-ai-wpoos' ); ?>"></span>
+										<?php endif; ?>
 										<div class="row-actions">
 											<span class="edit">
 												<a href="<?php echo esc_url( $edit_url ); ?>">
 													<?php echo esc_html__( 'Edit', 'mcp-ai-wpoos' ); ?>
 												</a>
 											</span>
+											<?php if ( ! $has_driver_assistant ) : ?>
+												<span class="configure-driver">
+													| <a href="<?php echo esc_url( $edit_url ); ?>" style="color: #d63638;">
+														<?php echo esc_html__( 'Configure Driver', 'mcp-ai-wpoos' ); ?>
+													</a>
+												</span>
+											<?php endif; ?>
 										</div>
 									</td>
 									<td>
@@ -279,9 +296,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 											data-team-title="<?php echo esc_attr( $team->post_title ); ?>"
 											data-team-data="<?php echo esc_attr( wp_json_encode( $team_data ) ); ?>"
 											<?php disabled( 0, $member_count ); ?>
+											<?php disabled( ! $has_driver_assistant ); ?>
 										>
 											<?php echo esc_html__( 'Test', 'mcp-ai-wpoos' ); ?>
 										</button>
+										<?php if ( ! $has_driver_assistant && $member_count > 0 ) : ?>
+											<p class="description" style="color: #d63638; margin-top: 5px;">
+												<?php esc_html_e( 'Missing driver assistant', 'mcp-ai-wpoos' ); ?>
+											</p>
+										<?php endif; ?>
 									</td>
 								</tr>
 							<?php endforeach; ?>

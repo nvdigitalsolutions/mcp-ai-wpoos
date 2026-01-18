@@ -190,6 +190,12 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 		// Get team post to access title.
 		$team_post = get_post( $team_id );
 
+		// Get driver assistant.
+		$driver_assistant_id = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_DRIVER_ASSISTANT, true );
+		if ( ! $driver_assistant_id ) {
+			$driver_assistant_id = get_option( 'wp_mcp_ai_team_default_driver_assistant', 0 );
+		}
+
 		// Get team members from meta.
 		$team_members = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
 
@@ -266,12 +272,14 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 			array(
 				'team_id'                  => $team_id,
 				'team_title'               => $team_post ? $team_post->post_title : '',
+				'driver_assistant_id'      => $driver_assistant_id ? absint( $driver_assistant_id ) : 0,
+				'has_driver_assistant'     => (bool) $driver_assistant_id,
 				'members'                  => $members,
 				'count'                    => count( $members ),
 				'orchestration_mode'       => $orchestration_mode ? $orchestration_mode : 'sequential',
 				'result_aggregation'       => $result_aggregation ? $result_aggregation : 'consensus',
 				'multi_agent_enabled'      => $enable_multi_agent_teams,
-				'supports_unified_mode'    => $enable_multi_agent_teams && count( $members ) > 1,
+				'supports_unified_mode'    => $enable_multi_agent_teams && count( $members ) > 1 && (bool) $driver_assistant_id,
 			),
 			200
 		);
