@@ -321,6 +321,13 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			return $storage;
 		}
 
+		$message = sprintf(
+			/* translators: 1: operation name, 2: prompt */
+			__( 'Successfully applied %1$s using AI: "%2$s"', 'mcp-ai-wpoos' ),
+			str_replace( '_', ' ', $operation ),
+			$base_prompt
+		);
+
 		$result = array(
 			'attachment_id' => $storage['attachment_id'],
 			'url'           => $storage['url'],
@@ -331,12 +338,8 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			'operation'     => $operation,
 			'prompt'        => $prompt,
 			'model'         => $model,
-			'text'          => sprintf(
-				/* translators: 1: operation name, 2: prompt */
-				__( 'Successfully applied %1$s using AI: "%2$s"', 'mcp-ai-wpoos' ),
-				str_replace( '_', ' ', $operation ),
-				$base_prompt
-			),
+			'text'          => $message,
+			'message'       => $message,
 		);
 
 		/**
@@ -575,6 +578,12 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			return $storage;
 		}
 
+		$message = sprintf(
+			/* translators: %s: logo position */
+			__( 'Successfully added logo at %s position.', 'mcp-ai-wpoos' ),
+			$position
+		);
+
 		return array(
 			'attachment_id' => $storage['attachment_id'],
 			'url'           => $storage['url'],
@@ -585,11 +594,8 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			'operation'     => 'add_logo',
 			'logo_position' => $position,
 			'logo_scale'    => $scale,
-			'text'          => sprintf(
-				/* translators: %s: logo position */
-				__( 'Successfully added logo at %s position.', 'mcp-ai-wpoos' ),
-				$position
-			),
+			'text'          => $message,
+			'message'       => $message,
 		);
 	}
 
@@ -666,6 +672,14 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			'height' => $height,
 		);
 
+		$message = sprintf(
+			/* translators: 1: original dimensions, 2: new dimensions, 3: format */
+			__( 'Successfully resized from %1$s to %2$s (%3$s)', 'mcp-ai-wpoos' ),
+			$original_size['width'] . 'x' . $original_size['height'],
+			$new_size['width'] . 'x' . $new_size['height'],
+			strtoupper( $output_format )
+		);
+
 		return array(
 			'attachment_id'   => $storage['attachment_id'],
 			'url'             => $storage['url'],
@@ -679,13 +693,8 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			'new_height'      => $new_size['height'],
 			'output_format'   => $output_format,
 			'operation'       => 'resize_graphic',
-			'text'            => sprintf(
-				/* translators: 1: original dimensions, 2: new dimensions, 3: format */
-				__( 'Successfully resized from %1$s to %2$s (%3$s)', 'mcp-ai-wpoos' ),
-				$original_size['width'] . 'x' . $original_size['height'],
-				$new_size['width'] . 'x' . $new_size['height'],
-				strtoupper( $output_format )
-			),
+			'text'            => $message,
+			'message'         => $message,
 		);
 	}
 
@@ -756,6 +765,15 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			return $storage;
 		}
 
+		$message = sprintf(
+			/* translators: 1: direction, 2: pixels, 3: original dimensions, 4: new dimensions */
+			__( 'Successfully expanded canvas %1$s by %2$d pixels from %3$s to %4$s.', 'mcp-ai-wpoos' ),
+			$direction,
+			$pixels,
+			$original_size['width'] . 'x' . $original_size['height'],
+			$expansion['new_width'] . 'x' . $expansion['new_height']
+		);
+
 		return array(
 			'attachment_id'   => $storage['attachment_id'],
 			'url'             => $storage['url'],
@@ -770,14 +788,8 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 			'original_height' => $original_size['height'],
 			'new_width'       => $expansion['new_width'],
 			'new_height'      => $expansion['new_height'],
-			'text'            => sprintf(
-				/* translators: 1: direction, 2: pixels, 3: original dimensions, 4: new dimensions */
-				__( 'Successfully expanded canvas %1$s by %2$d pixels from %3$s to %4$s.', 'mcp-ai-wpoos' ),
-				$direction,
-				$pixels,
-				$original_size['width'] . 'x' . $original_size['height'],
-				$expansion['new_width'] . 'x' . $expansion['new_height']
-			),
+			'text'            => $message,
+			'message'         => $message,
 		);
 	}
 

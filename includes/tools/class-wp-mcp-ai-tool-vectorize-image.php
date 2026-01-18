@@ -220,6 +220,13 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 		}
 
 		// Build response.
+		$message = sprintf(
+			/* translators: 1: attachment ID, 2: file name */
+			__( 'Successfully vectorized image to SVG format. Attachment ID: %1$d, File: %2$s', 'mcp-ai-wpoos' ),
+			$storage['attachment_id'],
+			$storage['file_name']
+		);
+
 		$response = array(
 			'attachment_id' => $storage['attachment_id'],
 			'url'           => $storage['url'],
@@ -233,12 +240,8 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 			'size_ratio'    => isset( $result['size_ratio'] ) ? $result['size_ratio'] : '0',
 			'duration_ms'   => isset( $result['duration_ms'] ) ? $result['duration_ms'] : 0,
 			'options'       => $options,
-			'text'          => sprintf(
-				/* translators: 1: attachment ID, 2: file name */
-				__( 'Successfully vectorized image to SVG format. Attachment ID: %1$d, File: %2$s', 'mcp-ai-wpoos' ),
-				$storage['attachment_id'],
-				$storage['file_name']
-			),
+			'text'          => $message,
+			'message'       => $message,
 		);
 
 		// Add image_url structure for agentic workflow and chat client display.
