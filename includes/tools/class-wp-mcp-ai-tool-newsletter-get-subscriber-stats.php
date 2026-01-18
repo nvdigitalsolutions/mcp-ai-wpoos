@@ -9,10 +9,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 /**
  * Provides functionality to get Newsletter plugin subscriber statistics.
  */
 class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether Newsletter plugin is available.
 	 *
@@ -134,7 +137,10 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 			$result['active_lists_count']  = count( $list_stats );
 		}
 
-		return $result;
+		return $this->ensure_response_message(
+			$result,
+			__( 'Successfully retrieved newsletter subscriber statistics', 'mcp-ai-wpoos' )
+		);
 	}
 
 	/**

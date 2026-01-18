@@ -11,11 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Analyzes if a file is suitable for OpenAI processing.
  */
 class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum file sizes for different purposes (in bytes).
@@ -97,9 +99,9 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate file_id.
 		if ( empty( $arguments['file_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The file_id parameter is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'missing_file_id',
+				__( 'The file_id parameter is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -107,25 +109,25 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 		$file_path = get_attached_file( $file_id );
 
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The file could not be found.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'file_not_found',
+				__( 'The file could not be found.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		// Validate purpose.
 		if ( empty( $arguments['purpose'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The purpose parameter is required.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'missing_purpose',
+				__( 'The purpose parameter is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		$purpose = sanitize_key( $arguments['purpose'] );
 		if ( ! isset( self::MAX_FILE_SIZES[ $purpose ] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid purpose specified.', 'mcp-ai-wpoos' ),
+			return new WP_Error(
+				'invalid_purpose',
+				__( 'Invalid purpose specified.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -134,10 +136,24 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 		// Perform analysis.
 		$analysis = $this->analyze_file( $file_id, $file_path, $purpose, $check_content );
 
-		return array(
-			'success' => true,
-			'data'    => $analysis,
-		);
+		// Generate user-facing message based on analysis.
+		if ( $analysis['suitable'] ) {
+			$message = sprintf(
+				/* translators: 1: file type, 2: purpose */
+				__( 'File (type: %1$s) is suitable for %2$s purpose.', 'mcp-ai-wpoos' ),
+				$analysis['file_type'],
+				$purpose
+			);
+		} else {
+			$warning_count = count( $analysis['warnings'] );
+			$message       = sprintf(
+				/* translators: %d: number of warnings */
+				_n( 'File has %d warning preventing use.', 'File has %d warnings preventing use.', $warning_count, 'mcp-ai-wpoos' ),
+				$warning_count
+			);
+		}
+
+		return $this->format_chat_response( $analysis, $message );
 	}
 
 	/**

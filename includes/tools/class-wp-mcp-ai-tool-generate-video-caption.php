@@ -11,12 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Generates descriptive captions for videos using AI vision models with video understanding.
  */
 class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -184,8 +186,12 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 			$caption = substr( $caption, 0, $max_length - 3 ) . '...';
 		}
 
+		$message = __( 'Successfully generated video caption.', 'mcp-ai-wpoos' );
+
 		$result = array(
 			'caption' => $caption,
+			'text'    => $message,
+			'message' => $message,
 			'success' => true,
 		);
 

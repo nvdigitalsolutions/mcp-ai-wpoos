@@ -183,6 +183,13 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 			return $storage;
 		}
 
+		$message = sprintf(
+			/* translators: 1: list of operations performed, 2: output format */
+			__( 'Successfully transformed image: %1$s%2$s.', 'mcp-ai-wpoos' ),
+			implode( ', ', $operations ),
+			'svg' === $output_format ? ' and converted to SVG' : ''
+		);
+
 		$result_data = array(
 			'attachment_id'   => $storage['attachment_id'],
 			'url'             => $storage['url'],
@@ -195,12 +202,8 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 			'flip_vertical'   => $flip_vertical,
 			'operation'       => 'rotate',
 			'output_format'   => $output_format,
-			'text'            => sprintf(
-				/* translators: 1: list of operations performed, 2: output format */
-				__( 'Successfully transformed image: %1$s%2$s.', 'mcp-ai-wpoos' ),
-				implode( ', ', $operations ),
-				'svg' === $output_format ? ' and converted to SVG' : ''
-			),
+			'text'            => $message,
+			'message'         => $message,
 		);
 
 		// Add vectorization metadata if SVG output was used.

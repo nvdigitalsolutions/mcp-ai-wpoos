@@ -161,13 +161,18 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 				'svg_size'        => isset( $storage['svg_size'] ) ? $storage['svg_size'] : $storage['bytes'],
 				'source_size'     => isset( $storage['source_size'] ) ? $storage['source_size'] : 0,
 				'duration_ms'     => isset( $storage['duration_ms'] ) ? $storage['duration_ms'] : 0,
-				'text'            => sprintf(
-					/* translators: 1: original format, 2: new format */
-					__( 'Successfully converted image from %1$s to %2$s.', 'mcp-ai-wpoos' ),
-					strtoupper( $this->mime_to_format( $original_mime ) ),
-					'SVG'
-				),
 			);
+
+			$message = sprintf(
+				/* translators: 1: original format, 2: new format */
+				__( 'Successfully converted image from %1$s to %2$s.', 'mcp-ai-wpoos' ),
+				strtoupper( $this->mime_to_format( $original_mime ) ),
+				'SVG'
+			);
+
+			// Add text field for LLM context and message for chat display.
+			$result_data['text']    = $message;
+			$result_data['message'] = $message;
 
 			// Add image_url structure for agentic workflow and chat client display.
 			if ( ! empty( $storage['url'] ) ) {
@@ -233,13 +238,18 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 			'new_format'      => $format,
 			'quality'         => in_array( $format, array( 'jpeg', 'webp' ), true ) ? $quality : null,
 			'operation'       => 'convert',
-			'text'            => sprintf(
-				/* translators: 1: original format, 2: new format */
-				__( 'Successfully converted image from %1$s to %2$s.', 'mcp-ai-wpoos' ),
-				strtoupper( $this->mime_to_format( $original_mime ) ),
-				strtoupper( $format )
-			),
 		);
+
+		$message = sprintf(
+			/* translators: 1: original format, 2: new format */
+			__( 'Successfully converted image from %1$s to %2$s.', 'mcp-ai-wpoos' ),
+			strtoupper( $this->mime_to_format( $original_mime ) ),
+			strtoupper( $format )
+		);
+
+		// Add text field for LLM context and message for chat display.
+		$result_data['text']    = $message;
+		$result_data['message'] = $message;
 
 		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included
 		// in the default response to prevent bloating tool results sent to chat clients and LLMs.
