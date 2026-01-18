@@ -11,11 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides an assistant tool for searching Gmail messages via the Gmail REST API.
  */
 class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1';
 
@@ -272,10 +274,15 @@ class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			}
 		}
 
-		return array(
-			'messages'             => $messages,
-			'result_size_estimate' => isset( $list_payload['resultSizeEstimate'] ) ? absint( $list_payload['resultSizeEstimate'] ) : count( $messages ),
-			'next_page_token'      => isset( $list_payload['nextPageToken'] ) ? (string) $list_payload['nextPageToken'] : '',
+		$result_size_estimate = isset( $list_payload['resultSizeEstimate'] ) ? absint( $list_payload['resultSizeEstimate'] ) : count( $messages );
+
+		return $this->format_collection_response(
+			$messages,
+			$result_size_estimate,
+			'message',
+			array(
+				'next_page_token' => isset( $list_payload['nextPageToken'] ) ? (string) $list_payload['nextPageToken'] : '',
+			)
 		);
 	}
 

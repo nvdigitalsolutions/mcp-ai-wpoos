@@ -11,11 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides analytics on OpenAI API usage.
  */
 class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Cost per 1K tokens for different models (input/output).
@@ -136,19 +138,22 @@ class WP_MCP_AI_Tool_OpenAI_Usage_Analytics implements WP_MCP_AI_Tool_Interface,
 			$stats = $this->calculate_costs( $stats, $group_by );
 		}
 
-		return array(
-			'success' => true,
-			'data'    => array(
-				'period'         => $period,
-				'start_date'     => $date_range['start'],
-				'end_date'       => $date_range['end'],
-				'total_requests' => $stats['total_requests'],
-				'total_tokens'   => $stats['total_tokens'],
-				'estimated_cost' => $include_cost ? $stats['estimated_cost'] : null,
-				'breakdown'      => $stats['breakdown'],
-				'top_models'     => $stats['top_models'],
-				'top_tools'      => isset( $stats['top_tools'] ) ? $stats['top_tools'] : array(),
+		return $this->ensure_response_message(
+			array(
+				'success' => true,
+				'data'    => array(
+					'period'         => $period,
+					'start_date'     => $date_range['start'],
+					'end_date'       => $date_range['end'],
+					'total_requests' => $stats['total_requests'],
+					'total_tokens'   => $stats['total_tokens'],
+					'estimated_cost' => $include_cost ? $stats['estimated_cost'] : null,
+					'breakdown'      => $stats['breakdown'],
+					'top_models'     => $stats['top_models'],
+					'top_tools'      => isset( $stats['top_tools'] ) ? $stats['top_tools'] : array(),
+				),
 			),
+			__( 'Successfully retrieved OpenAI usage analytics', 'mcp-ai-wpoos' )
 		);
 	}
 

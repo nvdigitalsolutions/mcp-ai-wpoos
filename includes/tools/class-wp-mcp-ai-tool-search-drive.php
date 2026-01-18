@@ -11,11 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides an assistant tool for searching Google Drive files via the Drive REST API.
  */
 class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 
@@ -258,10 +260,14 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			}
 		}
 
-		return array(
-			'files'           => $files,
-			'next_page_token' => isset( $list_payload['nextPageToken'] ) ? (string) $list_payload['nextPageToken'] : '',
-			'connection'      => $configured_user ? $configured_user : __( 'Connected', 'mcp-ai-wpoos' ),
+		return $this->format_collection_response(
+			$files,
+			count( $files ),
+			'file',
+			array(
+				'next_page_token' => isset( $list_payload['nextPageToken'] ) ? (string) $list_payload['nextPageToken'] : '',
+				'connection'      => $configured_user ? $configured_user : __( 'Connected', 'mcp-ai-wpoos' ),
+			)
 		);
 	}
 

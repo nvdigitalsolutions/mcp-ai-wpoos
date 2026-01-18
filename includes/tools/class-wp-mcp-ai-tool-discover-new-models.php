@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 /**
  * Discover New Models Tool
  *
@@ -20,6 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * recommends models to add to the configuration.
  */
 class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -173,7 +176,14 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 			)
 		);
 
-		return $results;
+		return $this->ensure_response_message(
+			$results,
+			sprintf(
+				/* translators: %d: number of new models discovered */
+				__( 'Found %d new models', 'mcp-ai-wpoos' ),
+				count( $results['discovered'] )
+			)
+		);
 	}
 
 	/**
