@@ -190,10 +190,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 					'args'                => array(
 						'assistant_id'      => array(
-							'description'       => __( 'ID of the assistant for this chat transcript.', 'mcp-ai-wpoos' ),
-							'type'              => 'integer',
+							'description'       => __( 'ID of the assistant for this chat transcript. Can be an integer assistant ID or a string like "unified_team_123" or "team_123_member_456".', 'mcp-ai-wpoos' ),
+							'type'              => array( 'integer', 'string' ),
 							'required'          => true,
-							'sanitize_callback' => 'absint',
 						),
 						'session_key'       => array(
 							'description'       => __( 'Session key for this conversation.', 'mcp-ai-wpoos' ),
@@ -267,10 +266,10 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'sanitize_callback' => 'absint',
 						),
 						'assistant_id' => array(
-							'description'       => __( 'Assistant ID to filter transcripts by.', 'mcp-ai-wpoos' ),
-							'type'              => 'integer',
+							'description'       => __( 'Assistant ID to filter transcripts by. Can be an integer or string like "unified_team_123" or "team_123_member_456".', 'mcp-ai-wpoos' ),
+							'type'              => array( 'integer', 'string' ),
 							'required'          => false,
-							'sanitize_callback' => 'absint',
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
 				),
@@ -639,8 +638,15 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		$session_key  = $main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
-		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+		$session_key     = $main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+		$assistant_id_raw = $request->get_param( 'assistant_id' );
+		
+		// Handle both integer and string assistant IDs (for unified teams and team members).
+		if ( is_string( $assistant_id_raw ) && ! empty( $assistant_id_raw ) ) {
+			$assistant_id = sanitize_text_field( $assistant_id_raw );
+		} else {
+			$assistant_id = absint( $assistant_id_raw );
+		}
 
 		WP_MCP_AI_Logger::log_event(
 			'debug',
