@@ -1836,12 +1836,101 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 	 * Shows profession details, assigned roles, tools, and expertise.
 	 */
 	private function render_professions_view() {
+		$professions = $this->get_professions_list();
+		$health      = $this->get_orchestration_health_metrics();
+		$role_counts = $this->count_professions_by_role( $professions );
+		
 		?>
 		<div class="wp-mcp-ai-professions-view">
-			<h3><?php esc_html_e( 'AI Professions & Specialists', 'mcp-ai-wpoos' ); ?></h3>
-			<p class="description">
-				<?php esc_html_e( 'Professions are configured AI assistants with specific roles, expertise, tools, and knowledge bases. They are the deployable agents used in multi-agent teams and workflows.', 'mcp-ai-wpoos' ); ?>
-			</p>
+			<!-- Header with Status -->
+			<div class="orchestration-header">
+				<div class="header-left">
+					<h3><?php esc_html_e( 'AI Professions & Specialist Workforce', 'mcp-ai-wpoos' ); ?></h3>
+					<p class="description">
+						<?php esc_html_e( 'Manage your deployable AI workforce. Professions are configured assistants with specific roles, expertise, tools, and knowledge bases ready for multi-agent coordination.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</div>
+				<div class="header-right">
+					<div class="health-indicator health-<?php echo esc_attr( $health['memory_status'] ); ?>">
+						<span class="dashicons dashicons-businessperson"></span>
+						<span class="health-label"><?php esc_html_e( 'Workforce Status', 'mcp-ai-wpoos' ); ?></span>
+						<span class="health-value"><?php echo esc_html( count( $professions ) ); ?> <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Key Metrics Cards -->
+			<div class="orchestration-metrics-grid">
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-groups"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Total Professions', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value"><?php echo esc_html( count( $professions ) ); ?></div>
+						<div class="metric-subtitle"><?php esc_html_e( 'Configured Agents', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-admin-tools"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Avg Tools per Profession', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value">
+							<?php
+							$total_tools = 0;
+							foreach ( $professions as $prof ) {
+								$total_tools += $prof['tools_count'];
+							}
+							$avg_tools = count( $professions ) > 0 ? round( $total_tools / count( $professions ), 1 ) : 0;
+							echo esc_html( $avg_tools );
+							?>
+						</div>
+						<div class="metric-subtitle"><?php esc_html_e( 'Tool Assignments', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-chart-line"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Specialization Rate', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value">
+							<?php
+							$specialist_count = isset( $role_counts['specialist'] ) ? $role_counts['specialist'] : 0;
+							$spec_rate        = count( $professions ) > 0 ? round( ( $specialist_count / count( $professions ) ) * 100 ) : 0;
+							echo esc_html( $spec_rate );
+							?>%
+						</div>
+						<div class="metric-subtitle"><?php esc_html_e( 'Domain Experts', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-networking"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Team Readiness', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value">
+							<?php
+							// Team ready if we have at least planner, executor, and critic
+							$has_planner  = isset( $role_counts['planner'] ) && $role_counts['planner'] > 0;
+							$has_executor = isset( $role_counts['executor'] ) && $role_counts['executor'] > 0;
+							$has_critic   = isset( $role_counts['critic'] ) && $role_counts['critic'] > 0;
+							$team_ready   = $has_planner && $has_executor && $has_critic;
+							?>
+							<span class="dashicons dashicons-<?php echo $team_ready ? 'yes-alt' : 'warning'; ?>" style="color: <?php echo $team_ready ? '#4CAF50' : '#FF9800'; ?>"></span>
+						</div>
+						<div class="metric-subtitle status-<?php echo $team_ready ? 'good' : 'warning'; ?>">
+							<?php echo $team_ready ? esc_html__( 'Ready', 'mcp-ai-wpoos' ) : esc_html__( 'Incomplete', 'mcp-ai-wpoos' ); ?>
+						</div>
+					</div>
+				</div>
+			</div>
 
 			<div class="notice notice-info inline" style="margin: 20px 0;">
 				<p>
@@ -1852,34 +1941,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</div>
 
 			<?php
-			// Get professions.
-			$professions = $this->get_professions_list();
-			
 			if ( ! empty( $professions ) ) {
 				?>
-				<div class="professions-stats" style="margin: 20px 0;">
-					<div class="stats-summary">
-						<span class="stat-item">
-							<strong><?php echo esc_html( count( $professions ) ); ?></strong>
-							<?php esc_html_e( 'Total Professions', 'mcp-ai-wpoos' ); ?>
-						</span>
-						<?php
-						$role_counts = $this->count_professions_by_role( $professions );
-						foreach ( $role_counts as $role => $count ) :
-							if ( $count > 0 ) :
-								?>
-								<span class="stat-item">
-									<strong><?php echo esc_html( $count ); ?></strong>
-									<?php echo esc_html( ucfirst( $role ) . 's' ); ?>
-								</span>
-								<?php
-							endif;
-						endforeach;
-						?>
+				<!-- Charts Section -->
+				<div class="orchestration-charts-section">
+					<h4>
+						<span class="dashicons dashicons-chart-bar"></span>
+						<?php esc_html_e( 'Profession Analytics', 'mcp-ai-wpoos' ); ?>
+					</h4>
+					
+					<div class="charts-row">
+						<div class="chart-container chart-half">
+							<h5><?php esc_html_e( 'Role Distribution', 'mcp-ai-wpoos' ); ?></h5>
+							<p class="chart-description">
+								<?php esc_html_e( 'Breakdown of your AI workforce by assigned agent role type.', 'mcp-ai-wpoos' ); ?>
+							</p>
+							<canvas id="wp-mcp-ai-profession-role-chart" height="250"></canvas>
+						</div>
+						
+						<div class="chart-container chart-half">
+							<h5><?php esc_html_e( 'Tool Distribution', 'mcp-ai-wpoos' ); ?></h5>
+							<p class="chart-description">
+								<?php esc_html_e( 'Number of professions by tool count assigned to them.', 'mcp-ai-wpoos' ); ?>
+							</p>
+							<canvas id="wp-mcp-ai-profession-tools-chart" height="250"></canvas>
+						</div>
 					</div>
 				</div>
 
-				<div class="wp-mcp-ai-professions-grid">
+				<!-- Professions Grid -->
 					<?php foreach ( $professions as $profession ) : ?>
 						<div class="wp-mcp-ai-profession-card">
 							<div class="profession-card-header">
@@ -2189,6 +2279,109 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					margin-bottom: 15px;
 				}
 			</style>
+			
+			<!-- Chart.js Initialization for Professions -->
+			<script type="text/javascript">
+			/* <![CDATA[ */
+			jQuery(document).ready(function($) {
+				// Only initialize if Chart.js is loaded
+				if (typeof Chart === 'undefined') {
+					console.warn('Chart.js not loaded - profession charts will not display');
+					return;
+				}
+				
+				// Chart data
+				var professionChartData = {
+					roleDistribution: <?php echo wp_json_encode( $this->get_agent_role_distribution_data() ); ?>,
+					toolDistribution: <?php echo wp_json_encode( $this->get_profession_tool_distribution_data() ); ?>
+				};
+				
+				// Profession Role Distribution Doughnut Chart
+				var profRoleCanvas = document.getElementById('wp-mcp-ai-profession-role-chart');
+				if (profRoleCanvas && professionChartData.roleDistribution.datasets[0].data.length > 0) {
+					new Chart(profRoleCanvas.getContext('2d'), {
+						type: 'doughnut',
+						data: professionChartData.roleDistribution,
+						options: {
+							responsive: true,
+							maintainAspectRatio: false,
+							plugins: {
+								legend: {
+									display: true,
+									position: 'right',
+									labels: {
+										padding: 15,
+										font: {
+											size: 12
+										}
+									}
+								},
+								tooltip: {
+									callbacks: {
+										label: function(context) {
+											var label = context.label || '';
+											var value = context.parsed || 0;
+											var total = context.dataset.data.reduce((a, b) => a + b, 0);
+											var percentage = ((value / total) * 100).toFixed(1);
+											return label + ': ' + value + ' (' + percentage + '%)';
+										}
+									}
+								}
+							}
+						}
+					});
+				} else if (profRoleCanvas) {
+					profRoleCanvas.parentElement.innerHTML = '<p style="text-align:center;color:#999;padding:50px 0;"><?php esc_html_e( 'No profession data available.', 'mcp-ai-wpoos' ); ?></p>';
+				}
+				
+				// Tool Distribution Bar Chart
+				var toolCanvas = document.getElementById('wp-mcp-ai-profession-tools-chart');
+				if (toolCanvas) {
+					new Chart(toolCanvas.getContext('2d'), {
+						type: 'bar',
+						data: professionChartData.toolDistribution,
+						options: {
+							responsive: true,
+							maintainAspectRatio: false,
+							plugins: {
+								legend: {
+									display: false
+								},
+								tooltip: {
+									callbacks: {
+										label: function(context) {
+											return context.parsed.y + ' professions';
+										}
+									}
+								}
+							},
+							scales: {
+								y: {
+									beginAtZero: true,
+									ticks: {
+										stepSize: 1,
+										callback: function(value) {
+											return Number.isInteger(value) ? value : '';
+										}
+									},
+									title: {
+										display: true,
+										text: '<?php esc_html_e( 'Number of Professions', 'mcp-ai-wpoos' ); ?>'
+									}
+								},
+								x: {
+									title: {
+										display: true,
+										text: '<?php esc_html_e( 'Tools Assigned', 'mcp-ai-wpoos' ); ?>'
+									}
+								}
+							}
+						}
+					});
+				}
+			});
+			/* ]]> */
+			</script>
 		</div>
 		<?php
 	}
@@ -2392,6 +2585,64 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		}
 		
 		return $health;
+	}
+
+	/**
+	 * Get profession tool distribution data.
+	 *
+	 * @return array Chart.js formatted data.
+	 */
+	private function get_profession_tool_distribution_data() {
+		$professions = $this->get_professions_list();
+		
+		// Group professions by tool count ranges.
+		$ranges = array(
+			'0'      => 0,
+			'1-3'    => 0,
+			'4-6'    => 0,
+			'7-10'   => 0,
+			'10+'    => 0,
+		);
+		
+		foreach ( $professions as $profession ) {
+			$tool_count = $profession['tools_count'];
+			
+			if ( 0 === $tool_count ) {
+				++$ranges['0'];
+			} elseif ( $tool_count >= 1 && $tool_count <= 3 ) {
+				++$ranges['1-3'];
+			} elseif ( $tool_count >= 4 && $tool_count <= 6 ) {
+				++$ranges['4-6'];
+			} elseif ( $tool_count >= 7 && $tool_count <= 10 ) {
+				++$ranges['7-10'];
+			} else {
+				++$ranges['10+'];
+			}
+		}
+		
+		return array(
+			'labels'   => array(
+				__( 'No Tools', 'mcp-ai-wpoos' ),
+				__( '1-3 Tools', 'mcp-ai-wpoos' ),
+				__( '4-6 Tools', 'mcp-ai-wpoos' ),
+				__( '7-10 Tools', 'mcp-ai-wpoos' ),
+				__( '10+ Tools', 'mcp-ai-wpoos' ),
+			),
+			'datasets' => array(
+				array(
+					'label'           => __( 'Profession Count', 'mcp-ai-wpoos' ),
+					'data'            => array_values( $ranges ),
+					'backgroundColor' => array(
+						'rgba(158, 158, 158, 0.8)', // Gray - No tools.
+						'rgba(255, 193, 7, 0.8)',   // Amber - Few tools.
+						'rgba(33, 150, 243, 0.8)',  // Blue - Moderate.
+						'rgba(76, 175, 80, 0.8)',   // Green - Good.
+						'rgba(156, 39, 176, 0.8)',  // Purple - Many.
+					),
+					'borderWidth'     => 1,
+				),
+			),
+		);
 	}
 
 	/**
