@@ -2758,6 +2758,46 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					margin-right: 5px;
 				}
 				
+				.charts-row {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+					gap: 20px;
+					margin-top: 20px;
+				}
+				
+				.chart-container {
+					background: #f8f9fa;
+					border: 1px solid #e0e0e0;
+					border-radius: 4px;
+					padding: 15px;
+					position: relative;
+				}
+				
+				.chart-container canvas {
+					max-height: 300px;
+				}
+				
+				.chart-container.chart-half {
+					min-height: 300px;
+				}
+				
+				.chart-container.chart-third {
+					min-height: 250px;
+				}
+				
+				.chart-container h5 {
+					margin: 0 0 5px 0;
+					color: #1d2327;
+					font-size: 14px;
+					font-weight: 600;
+				}
+				
+				.chart-description {
+					font-size: 12px;
+					color: #666;
+					margin: 0 0 15px 0;
+				}
+				
 				.wp-mcp-ai-professions-grid {
 					display: grid;
 					grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -3064,11 +3104,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$tools        = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
 				$description  = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
 
+				// Normalize role to lowercase for consistency.
+				$normalized_role = $agent_role ? strtolower( trim( $agent_role ) ) : 'generalist';
+
 				$professions[] = array(
 					'id'          => $post_id,
 					'title'       => get_the_title(),
 					'description' => $description ? $description : get_the_excerpt(),
-					'role'        => $agent_role ? $agent_role : 'generalist',
+					'role'        => $normalized_role,
 					'expertise'   => is_array( $expertise ) ? $expertise : array(),
 					'tools_count' => is_array( $tools ) ? count( $tools ) : 0,
 					'edit_url'    => get_edit_post_link( $post_id ),
