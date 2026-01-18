@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Searches published content using WP_Query with optional filters.
  */
 class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -211,15 +212,15 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			);
 		}
 
-		return array(
-			'summary' => sprintf(
+		// Use trait method to ensure proper message field for chat client
+		return $this->format_collection_response(
+			$results,
+			sprintf(
 				/* translators: 1: number of results, 2: search term */
 				__( 'Found %1$d result(s) for "%2$s"', 'mcp-ai-wpoos' ),
 				count( $results ),
 				$search_term
-			),
-			'results' => $results,
-			'count'   => count( $results ),
+			)
 		);
 	}
 
@@ -308,7 +309,10 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		if ( empty( $tax_query ) ) {
-			return array();
+			// Use trait method to handle empty results properly
+			return $this->format_empty_result_response(
+				__( 'No taxonomy filters matched.', 'mcp-ai-wpoos' )
+			);
 		}
 
 		if ( count( $tax_query ) > 1 || 'AND' !== $relation ) {
