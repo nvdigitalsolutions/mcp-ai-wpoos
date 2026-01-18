@@ -54,7 +54,8 @@
 				const teamTitle = $btn.data('team-title');
 				const teamDataJson = $btn.data('team-data');
 				
-				// Parse team data
+				// Parse team data. jQuery's data() may return either a string or parsed object
+				// depending on whether it recognizes the attribute value as valid JSON.
 				let teamData = {};
 				if (teamDataJson) {
 					try {

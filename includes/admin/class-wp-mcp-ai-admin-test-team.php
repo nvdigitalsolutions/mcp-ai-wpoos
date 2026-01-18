@@ -278,7 +278,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 											data-team-id="<?php echo esc_attr( $team->ID ); ?>"
 											data-team-title="<?php echo esc_attr( $team->post_title ); ?>"
 											data-team-data="<?php echo esc_attr( wp_json_encode( $team_data ) ); ?>"
-											<?php echo ( 0 === $member_count ) ? 'disabled' : ''; ?>
+											<?php disabled( 0, $member_count ); ?>
 										>
 											<?php echo esc_html__( 'Test', 'mcp-ai-wpoos' ); ?>
 										</button>
