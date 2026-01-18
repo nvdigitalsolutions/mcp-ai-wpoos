@@ -1,0 +1,24 @@
+{
+	"name": "mcp-ai-wpoos-pro",
+	"version": "1.0.0",
+	"description": "Pro Add-on for NV Digital Open Operator System (oOS) - Document Generation Toolkit",
+	"private": true,
+	"scripts": {
+		"postinstall": "echo 'Pro addon dependencies installed successfully'"
+	},
+	"dependencies": {
+		"docx": "^9.5.1",
+		"exceljs": "^4.4.0",
+		"pdfkit": "^0.17.2"
+	},
+	"keywords": [
+		"wordpress",
+		"ai",
+		"document-generation",
+		"pdf",
+		"word",
+		"excel"
+	],
+	"author": "NV Digital Solutions",
+	"license": "SEE LICENSE IN LICENSE"
+}

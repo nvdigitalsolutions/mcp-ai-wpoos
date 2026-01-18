@@ -419,10 +419,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Excel and Spreadsheet Tools - Pro features.
 				'pro_excel'                          => 'external-tools',
 
-				// Document Generation Tools - Pro features.
-				'pro_pdf'                            => 'external-tools',
-				'pro_word'                           => 'external-tools',
-
 				// Assistant management.
 				'create_assistant'                   => 'wordpress-core',
 
@@ -957,9 +953,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Deep_Research'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-deep-research.php',
 				// Excel and Spreadsheet Tools - Pro feature for AI-powered formula generation.
 				'WP_MCP_AI_Tool_Pro_Excel'                 => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-pro-excel.php',
-				// Document Generation Tools - Pro features for AI-powered PDF and Word document creation.
-				'WP_MCP_AI_Tool_Pro_PDF'                   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-pro-pdf.php',
-				'WP_MCP_AI_Tool_Pro_Word'                  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-pro-word.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.

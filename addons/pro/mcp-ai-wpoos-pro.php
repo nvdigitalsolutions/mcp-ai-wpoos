@@ -546,6 +546,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools           = array_merge( $pro_tools, $media_toolkit_tools );
 		}
 
+		// Add Document Generation Toolkit tools if enabled.
+		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
+			$document_generation_tools = array(
+				'WP_MCP_AI_Tool_Pro_PDF'            => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-pdf.php',
+				'WP_MCP_AI_Tool_Pro_Word'           => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-word.php',
+				'WP_MCP_AI_Tool_Pro_Excel_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/document-generation/class-wp-mcp-ai-tool-pro-excel-document.php',
+			);
+			$pro_tools                 = array_merge( $pro_tools, $document_generation_tools );
+		}
+
 		/**
 		 * Filter the list of Pro tools to register.
 		 *
@@ -868,6 +878,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// Specialized Health & Wellness Tools.
 			$pro_tools['get_member_health_summary'] = 'wordpress-core';
 			$pro_tools['get_medication_schedule']   = 'wordpress-core';
+		}
+
+		// Add Document Generation Toolkit tool mappings if enabled.
+		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
+			$pro_tools['pro_pdf']            = 'external-tools';
+			$pro_tools['pro_word']           = 'external-tools';
+			$pro_tools['pro_excel_document'] = 'external-tools';
 		}
 
 		/**
