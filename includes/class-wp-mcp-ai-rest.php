@@ -914,7 +914,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $request->get_param( 'assistant_id' );
 			if ( $assistant_id ) {
-				$assistant_id = absint( $assistant_id );
+				// Use the shared sanitization method from Tools Controller.
+				require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
+				require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
+				$assistant_id = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( $assistant_id );
 			}
 
 			// Get status summary and counts with optional assistant filter.
