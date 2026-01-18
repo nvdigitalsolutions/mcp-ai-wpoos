@@ -802,6 +802,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 </a>
 				<?php
 			endif;
+			
+			// Conditionally show Teams tab if multi-agent teams are enabled.
+			$enable_multi_agent_teams = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
+			if ( $enable_multi_agent_teams ) :
+				?>
+<a href="<?php echo esc_url( $this->get_view_url( 'teams' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'teams' === $active_view ? 'active' : ''; ?>">
+<span class="dashicons dashicons-networking"></span>
+			<?php esc_html_e( 'Teams', 'mcp-ai-wpoos' ); ?>
+</a>
+				<?php
+			endif;
 			?>
 </nav>
 
@@ -841,6 +852,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					} else {
 						echo '<div class="notice notice-warning inline"><p>';
 						esc_html_e( 'AI Professions are currently disabled. Enable them in Settings to view this dashboard.', 'mcp-ai-wpoos' );
+						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
+						echo '</p></div>';
+					}
+					break;
+				case 'teams':
+					// Check if multi-agent teams are enabled.
+					$enable_multi_agent_teams = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
+					if ( $enable_multi_agent_teams ) {
+						$this->render_teams_view();
+					} else {
+						echo '<div class="notice notice-warning inline"><p>';
+						esc_html_e( 'Multi-Agent Teams are currently disabled. Enable them in Settings to view this dashboard.', 'mcp-ai-wpoos' );
 						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
 						echo '</p></div>';
 					}
@@ -1388,6 +1411,36 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					gap: 10px;
 					margin-bottom: 20px;
 					font-size: 18px;
+				}
+				
+				.executive-charts .charts-row {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+					gap: 20px;
+					margin-top: 20px;
+				}
+				
+				.executive-charts .chart-container {
+					background: #f8f9fa;
+					border: 1px solid #e0e0e0;
+					border-radius: 4px;
+					padding: 15px;
+					position: relative;
+				}
+				
+				.executive-charts .chart-container canvas {
+					max-height: 250px;
+				}
+				
+				.executive-charts .chart-container.chart-third {
+					min-height: 250px;
+				}
+				
+				.executive-charts .chart-container h5 {
+					margin: 0 0 10px 0;
+					color: #1d2327;
+					font-size: 14px;
+					font-weight: 600;
 				}
 				
 				.chart-third {
@@ -3073,6 +3126,377 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</script>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Render teams view.
+	 *
+	 * Displays all configured AI teams (groups of professions).
+	 * Shows team details, assigned professions, orchestration mode, and workflow.
+	 */
+	private function render_teams_view() {
+		$teams = $this->get_teams_list();
+		$health = $this->get_orchestration_health_metrics();
+		
+		?>
+		<div class="wp-mcp-ai-teams-view">
+			<!-- Header with Status -->
+			<div class="orchestration-header">
+				<div class="header-left">
+					<h3><?php esc_html_e( 'AI Teams & Multi-Agent Coordination', 'mcp-ai-wpoos' ); ?></h3>
+					<p class="description">
+						<?php esc_html_e( 'Manage teams of AI professions that work together on complex tasks. Teams coordinate agents with different roles for collaborative problem-solving and workflow orchestration.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</div>
+				<div class="header-right">
+					<div class="health-indicator health-<?php echo esc_attr( $health['memory_status'] ); ?>">
+						<span class="dashicons dashicons-networking"></span>
+						<span class="health-label"><?php esc_html_e( 'Teams Status', 'mcp-ai-wpoos' ); ?></span>
+						<span class="health-value"><?php echo esc_html( count( $teams ) ); ?> <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Key Metrics Cards -->
+			<div class="orchestration-metrics-grid">
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-networking"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Total Teams', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value"><?php echo esc_html( count( $teams ) ); ?></div>
+						<div class="metric-subtitle"><?php esc_html_e( 'Configured Teams', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-groups"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Avg Members per Team', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value">
+							<?php
+							$total_members = 0;
+							foreach ( $teams as $team ) {
+								$total_members += $team['member_count'];
+							}
+							$avg_members = count( $teams ) > 0 ? round( $total_members / count( $teams ), 1 ) : 0;
+							echo esc_html( $avg_members );
+							?>
+						</div>
+						<div class="metric-subtitle"><?php esc_html_e( 'Team Size', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-admin-settings"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Orchestration Modes', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value">
+							<?php
+							$modes = array();
+							foreach ( $teams as $team ) {
+								if ( ! empty( $team['orchestration_mode'] ) ) {
+									$modes[] = $team['orchestration_mode'];
+								}
+							}
+							echo esc_html( count( array_unique( $modes ) ) );
+							?>
+						</div>
+						<div class="metric-subtitle"><?php esc_html_e( 'Different Strategies', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-yes-alt"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Team Readiness', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value">
+							<?php
+							$ready_teams = 0;
+							foreach ( $teams as $team ) {
+								if ( $team['member_count'] >= 2 ) {
+									++$ready_teams;
+								}
+							}
+							echo esc_html( $ready_teams . '/' . count( $teams ) );
+							?>
+						</div>
+						<div class="metric-subtitle"><?php esc_html_e( 'Ready for Deployment', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+			</div>
+
+			<?php if ( ! empty( $teams ) ) : ?>
+				<!-- Teams Grid -->
+				<div class="wp-mcp-ai-teams-grid">
+					<?php foreach ( $teams as $team ) : ?>
+						<div class="wp-mcp-ai-team-card">
+							<div class="team-card-header">
+								<div class="team-icon-title">
+									<span class="dashicons dashicons-networking"></span>
+									<div>
+										<h4><?php echo esc_html( $team['title'] ); ?></h4>
+										<?php if ( ! empty( $team['orchestration_mode'] ) ) : ?>
+											<span class="team-mode-badge <?php echo esc_attr( $team['orchestration_mode'] ); ?>">
+												<?php echo esc_html( ucfirst( $team['orchestration_mode'] ) ); ?>
+											</span>
+										<?php endif; ?>
+									</div>
+								</div>
+								<a href="<?php echo esc_url( $team['edit_url'] ); ?>" class="button button-small">
+									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+								</a>
+							</div>
+							
+							<div class="team-card-body">
+								<?php if ( ! empty( $team['description'] ) ) : ?>
+									<p class="team-description"><?php echo esc_html( wp_trim_words( $team['description'], 20 ) ); ?></p>
+								<?php endif; ?>
+
+								<div class="team-meta">
+									<span class="dashicons dashicons-groups"></span>
+									<?php
+									printf(
+										/* translators: %d: number of team members */
+										esc_html( _n( '%d member', '%d members', $team['member_count'], 'mcp-ai-wpoos' ) ),
+										esc_html( $team['member_count'] )
+									);
+									?>
+								</div>
+								
+								<?php if ( ! empty( $team['result_aggregation'] ) ) : ?>
+									<div class="team-aggregation">
+										<strong><?php esc_html_e( 'Result Aggregation:', 'mcp-ai-wpoos' ); ?></strong>
+										<?php echo esc_html( ucfirst( str_replace( '_', ' ', $team['result_aggregation'] ) ) ); ?>
+									</div>
+								<?php endif; ?>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			<?php else : ?>
+				<div class="notice notice-warning inline">
+					<p>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: link to create team */
+								__( 'No teams found. %s to start coordinating multiple AI professions for complex workflows.', 'mcp-ai-wpoos' ),
+								'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_team' ) ) . '">' . esc_html__( 'Create your first team', 'mcp-ai-wpoos' ) . '</a>'
+							)
+						);
+						?>
+					</p>
+				</div>
+			<?php endif; ?>
+
+			<!-- Team Management Section -->
+			<div class="wp-mcp-ai-team-management" style="margin-top: 30px;">
+				<h3><?php esc_html_e( 'Team Management', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Create and configure AI teams to enable multi-agent collaboration.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<div class="management-grid">
+					<div class="management-card">
+						<span class="dashicons dashicons-plus-alt" style="font-size: 48px; color: #2271b1;"></span>
+						<h4><?php esc_html_e( 'Create New Team', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description"><?php esc_html_e( 'Build a new multi-agent team with coordinated professions and workflow.', 'mcp-ai-wpoos' ); ?></p>
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_team' ) ); ?>" class="button button-primary">
+							<?php esc_html_e( 'Create Team', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</div>
+
+					<div class="management-card">
+						<span class="dashicons dashicons-list-view" style="font-size: 48px; color: #2271b1;"></span>
+						<h4><?php esc_html_e( 'Manage All Teams', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description"><?php esc_html_e( 'View, edit, and organize all configured AI teams.', 'mcp-ai-wpoos' ); ?></p>
+						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_team' ) ); ?>" class="button button-secondary">
+							<?php esc_html_e( 'View All', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</div>
+
+					<div class="management-card">
+						<span class="dashicons dashicons-businessperson" style="font-size: 48px; color: #2271b1;"></span>
+						<h4><?php esc_html_e( 'Manage Professions', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description"><?php esc_html_e( 'Configure professions that can be assigned to teams.', 'mcp-ai-wpoos' ); ?></p>
+						<a href="<?php echo esc_url( $this->get_view_url( 'professions' ) ); ?>" class="button button-secondary">
+							<?php esc_html_e( 'View Professions', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Styling -->
+			<style>
+				.wp-mcp-ai-teams-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+					gap: 20px;
+					margin: 20px 0;
+				}
+				
+				.wp-mcp-ai-team-card {
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					padding: 20px;
+					box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+					transition: box-shadow 0.2s;
+				}
+				
+				.wp-mcp-ai-team-card:hover {
+					box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+				}
+				
+				.team-card-header {
+					display: flex;
+					justify-content: space-between;
+					align-items: flex-start;
+					margin-bottom: 15px;
+					padding-bottom: 15px;
+					border-bottom: 1px solid #eee;
+				}
+				
+				.team-icon-title {
+					display: flex;
+					align-items: flex-start;
+					gap: 12px;
+					flex: 1;
+				}
+				
+				.team-icon-title .dashicons {
+					font-size: 32px;
+					width: 32px;
+					height: 32px;
+					color: #2271b1;
+					flex-shrink: 0;
+				}
+				
+				.team-card-header h4 {
+					margin: 0 0 5px 0;
+					color: #1d2327;
+					font-size: 16px;
+				}
+				
+				.team-mode-badge {
+					display: inline-block;
+					padding: 2px 8px;
+					border-radius: 3px;
+					font-size: 11px;
+					font-weight: 600;
+					text-transform: uppercase;
+				}
+				
+				.team-mode-badge.sequential {
+					background: #e3f2fd;
+					color: #1976d2;
+				}
+				
+				.team-mode-badge.parallel {
+					background: #fff3e0;
+					color: #f57c00;
+				}
+				
+				.team-mode-badge.swarm {
+					background: #f3e5f5;
+					color: #7b1fa2;
+				}
+				
+				.team-mode-badge.single {
+					background: #e8f5e9;
+					color: #388e3c;
+				}
+				
+				.team-card-body {
+					font-size: 14px;
+				}
+				
+				.team-description {
+					margin: 0 0 15px 0;
+					color: #666;
+					line-height: 1.6;
+				}
+				
+				.team-meta {
+					margin-top: 10px;
+					padding-top: 10px;
+					border-top: 1px solid #f0f0f0;
+					color: #666;
+					font-size: 13px;
+					display: flex;
+					align-items: center;
+					gap: 5px;
+				}
+				
+				.team-meta .dashicons {
+					font-size: 16px;
+					width: 16px;
+					height: 16px;
+				}
+				
+				.team-aggregation {
+					margin-top: 10px;
+					padding: 8px;
+					background: #f9f9f9;
+					border-radius: 3px;
+					font-size: 12px;
+				}
+			</style>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get list of teams.
+	 *
+	 * @return array Array of team data.
+	 */
+	private function get_teams_list() {
+		$teams = array();
+
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_team',
+				'post_status'    => 'publish',
+				'posts_per_page' => 100,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		if ( $query->have_posts() ) {
+			while ( $query->have_posts() ) {
+				$query->the_post();
+				$post_id = get_the_ID();
+
+				// Get team metadata.
+				$members              = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
+				$description          = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_TEAM_DESCRIPTION, true );
+				$orchestration_mode   = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
+				$result_aggregation   = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
+
+				$teams[] = array(
+					'id'                  => $post_id,
+					'title'               => get_the_title(),
+					'description'         => $description ? $description : get_the_excerpt(),
+					'member_count'        => is_array( $members ) ? count( $members ) : 0,
+					'orchestration_mode'  => $orchestration_mode ? $orchestration_mode : 'sequential',
+					'result_aggregation'  => $result_aggregation ? $result_aggregation : '',
+					'edit_url'            => get_edit_post_link( $post_id ),
+				);
+			}
+			wp_reset_postdata();
+		}
+
+		return $teams;
 	}
 
 	/**
