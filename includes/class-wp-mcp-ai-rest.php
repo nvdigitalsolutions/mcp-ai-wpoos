@@ -4861,17 +4861,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
-		 * Extract profession ID from assistant_id parameter if it has profession_ prefix.
+		 * Extract profession ID from assistant_id parameter if it has profession_ prefix
+		 * or team_XXX_member_YYY pattern.
 		 *
 		 * @param mixed $assistant_id Assistant ID parameter from request.
 		 * @return int|false Profession ID or false if not a profession test request.
 		 */
 		protected function extract_profession_id( $assistant_id ) {
-			if ( ! is_string( $assistant_id ) || 0 !== strpos( $assistant_id, 'profession_' ) ) {
+			if ( ! is_string( $assistant_id ) ) {
 				return false;
 			}
 
-			$profession_id = absint( str_replace( 'profession_', '', $assistant_id ) );
+			$profession_id = false;
+
+			// Check for team_XXX_member_YYY pattern (individual team member testing).
+			if ( preg_match( '/^team_(\d+)_member_(\d+)$/', $assistant_id, $matches ) ) {
+				$profession_id = absint( $matches[2] );
+			} elseif ( 0 === strpos( $assistant_id, 'profession_' ) ) {
+				// Check for profession_XXX pattern (direct profession testing).
+				$profession_id = absint( str_replace( 'profession_', '', $assistant_id ) );
+			}
+
 			if ( ! $profession_id ) {
 				return false;
 			}

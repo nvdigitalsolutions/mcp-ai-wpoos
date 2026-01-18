@@ -111,6 +111,10 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 		$result = $method->invoke( $this->rest_controller, 'profession_' . $this->profession_id );
 		$this->assertEquals( $this->profession_id, $result, 'Should extract profession ID from string' );
 
+		// Test with team_XXX_member_YYY format (individual team member testing).
+		$result = $method->invoke( $this->rest_controller, 'team_8876_member_' . $this->profession_id );
+		$this->assertEquals( $this->profession_id, $result, 'Should extract profession ID from team_XXX_member_YYY format' );
+
 		// Test with invalid format.
 		$result = $method->invoke( $this->rest_controller, 'invalid_format' );
 		$this->assertFalse( $result, 'Should return false for invalid format' );
@@ -122,6 +126,10 @@ class Test_Profession_Integration extends WP_UnitTestCase {
 		// Test with non-existent profession ID.
 		$result = $method->invoke( $this->rest_controller, 'profession_99999' );
 		$this->assertFalse( $result, 'Should return false for non-existent profession' );
+
+		// Test with team_XXX_member_YYY format where member ID is non-existent.
+		$result = $method->invoke( $this->rest_controller, 'team_123_member_99999' );
+		$this->assertFalse( $result, 'Should return false for non-existent team member' );
 	}
 
 	/**
