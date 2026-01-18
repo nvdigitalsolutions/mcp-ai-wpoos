@@ -279,7 +279,7 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 				'orchestration_mode'       => $orchestration_mode ? $orchestration_mode : 'sequential',
 				'result_aggregation'       => $result_aggregation ? $result_aggregation : 'consensus',
 				'multi_agent_enabled'      => $enable_multi_agent_teams,
-				'supports_unified_mode'    => $enable_multi_agent_teams && count( $members ) > 1 && (bool) $driver_assistant_id,
+				'supports_unified_mode'    => $enable_multi_agent_teams && count( $members ) > 1,
 			),
 			200
 		);

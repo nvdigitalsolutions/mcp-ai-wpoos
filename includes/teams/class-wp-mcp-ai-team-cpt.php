@@ -631,7 +631,7 @@ class WP_MCP_AI_Team_CPT {
 		?>
 		<div class="wp-mcp-ai-driver-assistant">
 			<p class="description">
-				<?php esc_html_e( 'The driver assistant orchestrates the team and coordinates member responses. Required for team testing.', 'mcp-ai-wpoos' ); ?>
+				<?php esc_html_e( 'Optional: Associate an assistant ID for tracking and logging team coordination activities.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<?php if ( empty( $assistants ) ) : ?>

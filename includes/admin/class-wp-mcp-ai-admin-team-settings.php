@@ -144,7 +144,7 @@ class WP_MCP_AI_Admin_Team_Settings {
 										<?php endforeach; ?>
 									</select>
 									<p class="description">
-										<?php esc_html_e( 'The driver assistant orchestrates team coordination and is required for team testing. If not set globally, each team must have a driver assistant assigned.', 'mcp-ai-wpoos' ); ?>
+										<?php esc_html_e( 'Optional: The driver assistant ID can be used for tracking and logging team coordination activities.', 'mcp-ai-wpoos' ); ?>
 									</p>
 								<?php endif; ?>
 							</td>
