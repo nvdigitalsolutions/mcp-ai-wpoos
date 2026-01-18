@@ -311,15 +311,8 @@ class WP_MCP_AI_Cron_Status_Service {
 			if ( null !== $assistant_id ) {
 				$job_assistant_id = isset( $metadata['context']['assistant_id'] ) ? $metadata['context']['assistant_id'] : null;
 				
-				// Normalize both IDs for comparison.
-				// If assistant_id filter is string (e.g., "unified_team_123"), keep it as string.
-				// If job has string assistant_id, keep it as string.
-				// Otherwise convert to int for comparison.
-				if ( is_string( $assistant_id ) ) {
-					$job_assistant_id = isset( $metadata['context']['assistant_id'] ) ? sanitize_text_field( $metadata['context']['assistant_id'] ) : '';
-				} else {
-					$job_assistant_id = isset( $metadata['context']['assistant_id'] ) ? absint( $metadata['context']['assistant_id'] ) : 0;
-				}
+				// Normalize job assistant ID to match the filter type (string or int).
+				$job_assistant_id = $this->normalize_assistant_id_for_comparison( $job_assistant_id, $assistant_id );
 
 				if ( $job_assistant_id !== $assistant_id ) {
 					continue;
@@ -391,15 +384,8 @@ class WP_MCP_AI_Cron_Status_Service {
 			if ( null !== $assistant_id ) {
 				$job_assistant_id = isset( $metadata['args']['assistant_id'] ) ? $metadata['args']['assistant_id'] : null;
 				
-				// Normalize both IDs for comparison.
-				// If assistant_id filter is string (e.g., "unified_team_123"), keep it as string.
-				// If job has string assistant_id, keep it as string.
-				// Otherwise convert to int for comparison.
-				if ( is_string( $assistant_id ) ) {
-					$job_assistant_id = isset( $metadata['args']['assistant_id'] ) ? sanitize_text_field( $metadata['args']['assistant_id'] ) : '';
-				} else {
-					$job_assistant_id = isset( $metadata['args']['assistant_id'] ) ? absint( $metadata['args']['assistant_id'] ) : 0;
-				}
+				// Normalize job assistant ID to match the filter type (string or int).
+				$job_assistant_id = $this->normalize_assistant_id_for_comparison( $job_assistant_id, $assistant_id );
 
 				if ( $job_assistant_id !== $assistant_id ) {
 					continue;
@@ -1231,5 +1217,26 @@ class WP_MCP_AI_Cron_Status_Service {
 		$result['tool_results'] = array( $tool_message );
 
 		return $result;
+	}
+
+	/**
+	 * Normalize assistant ID for comparison.
+	 *
+	 * Handles both integer and string-based assistant IDs (e.g., "unified_team_123").
+	 * When the filter is a string, jobs are compared as strings.
+	 * When the filter is an integer, jobs are compared as integers.
+	 *
+	 * @param mixed      $job_assistant_id The assistant ID from the job metadata.
+	 * @param int|string $filter_assistant_id The assistant ID filter to match against.
+	 * @return int|string Normalized assistant ID for comparison.
+	 */
+	private function normalize_assistant_id_for_comparison( $job_assistant_id, $filter_assistant_id ) {
+		// If the filter is a string, normalize the job ID as a string.
+		if ( is_string( $filter_assistant_id ) ) {
+			return $job_assistant_id ? sanitize_text_field( $job_assistant_id ) : '';
+		}
+
+		// Otherwise, normalize as integer.
+		return $job_assistant_id ? absint( $job_assistant_id ) : 0;
 	}
 }

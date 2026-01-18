@@ -95,33 +95,28 @@ class Test_Cron_Status_Unified_Team_ID extends WP_UnitTestCase {
 	 * Test sanitize_assistant_id helper method in Tools Controller.
 	 */
 	public function test_sanitize_assistant_id_method() {
-		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
-		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
-
-		$controller = new WP_MCP_AI_REST_Tools_Controller();
-
 		// Test integer input.
-		$result = $controller->sanitize_assistant_id( 8901 );
+		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( 8901 );
 		$this->assertSame( 8901, $result );
 
 		// Test numeric string input.
-		$result = $controller->sanitize_assistant_id( '8901' );
+		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( '8901' );
 		$this->assertSame( 8901, $result );
 
 		// Test unified team ID.
-		$result = $controller->sanitize_assistant_id( 'unified_team_8901' );
+		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( 'unified_team_8901' );
 		$this->assertSame( 'unified_team_8901', $result );
 
 		// Test profession ID.
-		$result = $controller->sanitize_assistant_id( 'profession_123' );
+		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( 'profession_123' );
 		$this->assertSame( 'profession_123', $result );
 
 		// Test empty input.
-		$result = $controller->sanitize_assistant_id( '' );
+		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( '' );
 		$this->assertNull( $result );
 
 		// Test null input.
-		$result = $controller->sanitize_assistant_id( null );
+		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( null );
 		$this->assertNull( $result );
 	}
 
@@ -148,17 +143,12 @@ class Test_Cron_Status_Unified_Team_ID extends WP_UnitTestCase {
 	 * Test that malicious input is sanitized.
 	 */
 	public function test_sanitize_assistant_id_blocks_malicious_input() {
-		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
-		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
-
-		$controller = new WP_MCP_AI_REST_Tools_Controller();
-
 		// Test path traversal attempt.
-		$result = $controller->sanitize_assistant_id( '../../../etc/passwd' );
+		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( '../../../etc/passwd' );
 		$this->assertNotContains( '/', $result );
 
 		// Test script tag.
-		$result = $controller->sanitize_assistant_id( '<script>alert("xss")</script>' );
+		$result = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( '<script>alert("xss")</script>' );
 		$this->assertNotContains( '<', $result );
 		$this->assertNotContains( '>', $result );
 	}

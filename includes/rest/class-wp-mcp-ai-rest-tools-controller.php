@@ -233,7 +233,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Filter jobs by assistant ID for multi-widget isolation. Can be an integer assistant ID or a string like "unified_team_123" for unified team chats.', 'mcp-ai-wpoos' ),
 							'type'              => array( 'integer', 'string' ),
 							'required'          => false,
-							'sanitize_callback' => 'sanitize_text_field',
+							'sanitize_callback' => array( 'WP_MCP_AI_REST_Tools_Controller', 'sanitize_assistant_id' ),
 						),
 						'limit'        => array(
 							'description'       => __( 'Maximum number of jobs to return.', 'mcp-ai-wpoos' ),
@@ -661,7 +661,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		
 		// Sanitize assistant_id: keep as string if it's a unified team ID, otherwise convert to int.
 		if ( $assistant_id ) {
-			$assistant_id = $this->sanitize_assistant_id( $assistant_id );
+			$assistant_id = self::sanitize_assistant_id( $assistant_id );
 		}
 
 		$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id ?: null );
@@ -747,7 +747,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @param mixed $assistant_id Assistant ID to sanitize.
 	 * @return int|string|null Sanitized assistant ID (int for numeric, string for prefixed IDs).
 	 */
-	public function sanitize_assistant_id( $assistant_id ) {
+	public static function sanitize_assistant_id( $assistant_id ) {
 		if ( empty( $assistant_id ) ) {
 			return null;
 		}
