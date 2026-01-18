@@ -337,6 +337,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Delete_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-event.php',
 			'WP_MCP_AI_Tool_List_Events'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-events.php',
 			'WP_MCP_AI_Tool_Get_Calendar_View'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-calendar-view.php',
+			// ICS calendar export tool (enhanced with NPM package).
+			'WP_MCP_AI_Tool_Export_Calendar_ICS'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-calendar-ics.php',
 			// Product Actualization tool.
 			'WP_MCP_AI_Pro_Tool_Product_Actualization'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-product-actualization.php',
 			// Product Price Lookup tool.
@@ -437,6 +439,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Quiz_Results'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-results.php',
 				'WP_MCP_AI_Tool_Get_Quiz_Analytics'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quiz-analytics.php',
 				'WP_MCP_AI_Tool_Research_Quiz_Topic'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-quiz-topic.php',
+				// KaTeX math rendering tool (enhanced with NPM package).
+				'WP_MCP_AI_Tool_Render_Math_Equation' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-render-math-equation.php',
 			);
 			$pro_tools  = array_merge( $pro_tools, $quiz_tools );
 		}
@@ -451,6 +455,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Place'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-place.php',
 				'WP_MCP_AI_Tool_Search_And_Save_Places' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-and-save-places.php',
 				'WP_MCP_AI_Tool_Research_Place'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-place.php',
+				// Turf.js geospatial analysis tool (enhanced with NPM package).
+				'WP_MCP_AI_Tool_Analyze_Geospatial'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-geospatial.php',
 			);
 			$pro_tools    = array_merge( $pro_tools, $places_tools );
 		}
@@ -502,6 +508,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Member_Health_Summary' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-member-health-summary.php',
 				'WP_MCP_AI_Tool_Get_Medication_Schedule'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-medication-schedule.php',
 				'WP_MCP_AI_Tool_Research_Policy'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-policy.php',
+				// Chart.js data visualization tool (enhanced with NPM package).
+				'WP_MCP_AI_Tool_Generate_Health_Chart'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-health-chart.php',
 			);
 			$pro_tools             = array_merge( $pro_tools, $health_wellness_tools );
 		}
@@ -542,6 +550,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Create_Media_Template'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-media-template.php',
 				'WP_MCP_AI_Tool_Process_Collection'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-process-collection.php',
 				'WP_MCP_AI_Tool_Apply_Collection_Template' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-collection-template.php',
+				// Sharp image optimization tool (enhanced with NPM package).
+				'WP_MCP_AI_Tool_Optimize_Image_Sharp'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-optimize-image-sharp.php',
 			);
 			$pro_tools           = array_merge( $pro_tools, $media_toolkit_tools );
 		}
