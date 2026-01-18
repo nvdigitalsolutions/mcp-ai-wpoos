@@ -488,7 +488,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					<h2><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></h2>
 					<div class="health-status health-status-<?php echo esc_attr( $report['overall_health'] ); ?>">
 						<span class="health-icon dashicons dashicons-<?php echo esc_attr( $this->get_health_icon( $report['overall_health'] ) ); ?>"></span>
-						<span class="health-label"><?php echo esc_html( ucfirst( $report['overall_health'] ) ); ?></span>
+						<span class="wp-mcp-ai-health-label"><?php echo esc_html( ucfirst( $report['overall_health'] ) ); ?></span>
 					</div>
 
 					<!-- Summary Stats -->
@@ -613,9 +613,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					<div class="load-system-health">
 						<div class="health-card health-<?php echo esc_attr( $system_metrics['health_status'] ); ?>">
 							<h3><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></h3>
-							<div class="health-indicator">
+							<div class="wp-mcp-ai-health-indicator">
 								<span class="health-icon dashicons dashicons-<?php echo esc_attr( $this->get_health_icon( $system_metrics['health_status'] ) ); ?>"></span>
-								<span class="health-label"><?php echo esc_html( ucfirst( $system_metrics['health_status'] ) ); ?></span>
+								<span class="wp-mcp-ai-health-label"><?php echo esc_html( ucfirst( $system_metrics['health_status'] ) ); ?></span>
 							</div>
 						</div>
 
@@ -734,7 +734,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						color: #666;
 						text-transform: uppercase;
 					}
-					.health-indicator {
+					.wp-mcp-ai-health-indicator {
 						display: flex;
 						align-items: center;
 						justify-content: center;
@@ -743,14 +743,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					.health-icon {
 						font-size: 32px;
 					}
-					.health-label {
+					.wp-mcp-ai-health-label {
 						font-size: 24px;
 						font-weight: bold;
 					}
-					.health-excellent .health-icon, .health-excellent .health-label { color: #46b450; }
-					.health-good .health-icon, .health-good .health-label { color: #46b450; }
-					.health-warning .health-icon, .health-warning .health-label { color: #f0b849; }
-					.health-critical .health-icon, .health-critical .health-label { color: #dc3232; }
+					.health-excellent .health-icon, .health-excellent .wp-mcp-ai-health-label { color: #46b450; }
+					.health-good .health-icon, .health-good .wp-mcp-ai-health-label { color: #46b450; }
+					.health-warning .health-icon, .health-warning .wp-mcp-ai-health-label { color: #f0b849; }
+					.health-critical .health-icon, .health-critical .wp-mcp-ai-health-label { color: #dc3232; }
 					.capacity-value, .utilization-value, .tools-value {
 						font-size: 36px;
 						font-weight: bold;
@@ -1329,14 +1329,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			?>
 			<div class="wp-mcp-ai-overview-dashboard">
 				<!-- Executive Header -->
-				<div class="orchestration-header executive-header">
-					<div class="header-left">
+				<div class="wp-mcp-ai-orchestration-header executive-header">
+					<div class="wp-mcp-ai-header-left">
 						<h2><?php esc_html_e( 'Orchestration Layer Executive Dashboard', 'mcp-ai-wpoos' ); ?></h2>
 						<p class="description">
 							<?php esc_html_e( 'Real-time overview of your AI orchestration system - agents, professions, tools, health, and performance metrics at a glance.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</div>
-					<div class="header-right">
+					<div class="wp-mcp-ai-header-right">
 						<div class="status-indicators">
 							<div class="status-item">
 								<span class="dashicons dashicons-heart status-icon-<?php echo esc_attr( $health['memory_status'] ); ?>"></span>
@@ -1359,7 +1359,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						</div>
 						<div class="metric-body">
 							<div class="metric-primary"><?php echo esc_html( count( $professions ) ); ?></div>
-							<div class="metric-label"><?php esc_html_e( 'AI Professions', 'mcp-ai-wpoos' ); ?></div>
+							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'AI Professions', 'mcp-ai-wpoos' ); ?></div>
 							<div class="metric-stats">
 								<?php
 								foreach ( $role_counts as $role => $count ) {
@@ -1384,7 +1384,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						</div>
 						<div class="metric-body">
 							<div class="metric-primary"><?php echo esc_html( $total_tools ); ?></div>
-							<div class="metric-label"><?php esc_html_e( 'Total Assignments', 'mcp-ai-wpoos' ); ?></div>
+							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Total Assignments', 'mcp-ai-wpoos' ); ?></div>
 							<div class="metric-stats">
 								<?php
 								$avg_tools = count( $professions ) > 0 ? round( $total_tools / count( $professions ), 1 ) : 0;
@@ -1406,7 +1406,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						</div>
 						<div class="metric-body">
 							<div class="metric-primary"><?php echo esc_html( ucfirst( $health['memory_status'] ) ); ?></div>
-							<div class="metric-label"><?php esc_html_e( 'Overall Status', 'mcp-ai-wpoos' ); ?></div>
+							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Overall Status', 'mcp-ai-wpoos' ); ?></div>
 							<div class="metric-stats">
 								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Memory: %s%%', 'mcp-ai-wpoos' ), number_format( $health['memory_usage'], 1 ) ) ); ?></span>
 								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Errors: %s%%', 'mcp-ai-wpoos' ), number_format( $health['error_rate'], 1 ) ) ); ?></span>
@@ -1428,7 +1428,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							<div class="metric-primary">
 								<span class="dashicons dashicons-<?php echo $team_ready ? 'yes-alt' : 'warning'; ?>"></span>
 							</div>
-							<div class="metric-label">
+							<div class="wp-mcp-ai-metric-label">
 								<?php echo $team_ready ? esc_html__( 'Teams Ready', 'mcp-ai-wpoos' ) : esc_html__( 'Setup Required', 'mcp-ai-wpoos' ); ?>
 							</div>
 							<div class="metric-stats">
@@ -1762,7 +1762,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					font-size: 48px;
 				}
 				
-				.metric-label {
+				.wp-mcp-ai-metric-label {
 					font-size: 13px;
 					color: #666;
 					margin-bottom: 15px;
@@ -2195,64 +2195,64 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		?>
 		<div class="wp-mcp-ai-agents-view">
 			<!-- Header with Real-Time Status -->
-			<div class="orchestration-header">
-				<div class="header-left">
+			<div class="wp-mcp-ai-orchestration-header">
+				<div class="wp-mcp-ai-header-left">
 					<h3><?php esc_html_e( 'Multi-Agent Orchestration Dashboard', 'mcp-ai-wpoos' ); ?></h3>
 					<p class="description">
 						<?php esc_html_e( 'DeepSeek V4-inspired multi-agent coordination with real-time performance monitoring and professional workforce management.', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
-				<div class="header-right">
-					<div class="health-indicator health-<?php echo esc_attr( $health['memory_status'] ); ?>">
+				<div class="wp-mcp-ai-header-right">
+					<div class="wp-mcp-ai-health-indicator wp-mcp-ai-health-<?php echo esc_attr( $health['memory_status'] ); ?>">
 						<span class="dashicons dashicons-heart"></span>
-						<span class="health-label"><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></span>
-						<span class="health-value"><?php echo esc_html( ucfirst( $health['memory_status'] ) ); ?></span>
+						<span class="wp-mcp-ai-health-label"><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></span>
+						<span class="wp-mcp-ai-health-value"><?php echo esc_html( ucfirst( $health['memory_status'] ) ); ?></span>
 					</div>
 				</div>
 			</div>
 
 			<!-- Key Metrics Cards -->
-			<div class="orchestration-metrics-grid">
-				<div class="metric-card">
-					<div class="metric-icon">
+			<div class="wp-mcp-ai-orchestration-metrics-grid">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-groups"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Agent Role Types', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value"><?php echo esc_html( count( $agent_roles ) ); ?></div>
-						<div class="metric-subtitle"><?php esc_html_e( 'Available Roles', 'mcp-ai-wpoos' ); ?></div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Agent Role Types', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value"><?php echo esc_html( count( $agent_roles ) ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Available Roles', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
 				
-				<div class="metric-card">
-					<div class="metric-icon">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-businessperson"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Configured Professions', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value"><?php echo esc_html( count( $professions ) ); ?></div>
-						<div class="metric-subtitle"><?php esc_html_e( 'Deployable Agents', 'mcp-ai-wpoos' ); ?></div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Configured Professions', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value"><?php echo esc_html( count( $professions ) ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Deployable Agents', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
 				
-				<div class="metric-card">
-					<div class="metric-icon">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-performance"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Memory Usage', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value"><?php echo esc_html( number_format( $health['memory_usage'], 1 ) ); ?>%</div>
-						<div class="metric-subtitle"><?php esc_html_e( 'of allocated budget', 'mcp-ai-wpoos' ); ?></div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Memory Usage', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value"><?php echo esc_html( number_format( $health['memory_usage'], 1 ) ); ?>%</div>
+						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'of allocated budget', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
 				
-				<div class="metric-card">
-					<div class="metric-icon">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-warning"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Error Rate', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value"><?php echo esc_html( number_format( $health['error_rate'], 1 ) ); ?>%</div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Error Rate', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value"><?php echo esc_html( number_format( $health['error_rate'], 1 ) ); ?>%</div>
 						<div class="metric-subtitle status-<?php echo esc_attr( $health['error_status'] ); ?>">
 							<?php echo esc_html( ucfirst( $health['error_status'] ) ); ?>
 						</div>
@@ -2521,7 +2521,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				}
 				
 				/* Enhanced Orchestration Styles */
-				.orchestration-header {
+				.wp-mcp-ai-orchestration-header {
 					display: flex;
 					justify-content: space-between;
 					align-items: flex-start;
@@ -2533,7 +2533,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 				}
 				
-				.health-indicator {
+				.wp-mcp-ai-health-indicator {
 					display: flex;
 					align-items: center;
 					gap: 8px;
@@ -2544,48 +2544,48 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					font-size: 13px;
 				}
 				
-				.health-indicator.health-warning {
+				.wp-mcp-ai-health-indicator.health-warning {
 					border-left-color: #FF9800;
 				}
 				
-				.health-indicator.health-critical {
+				.wp-mcp-ai-health-indicator.health-critical {
 					border-left-color: #F44336;
 				}
 				
-				.health-indicator .dashicons {
+				.wp-mcp-ai-health-indicator .dashicons {
 					font-size: 20px;
 				}
 				
-				.health-indicator.health-good .dashicons {
+				.wp-mcp-ai-health-indicator.health-good .dashicons {
 					color: #4CAF50;
 				}
 				
-				.health-indicator.health-warning .dashicons {
+				.wp-mcp-ai-health-indicator.health-warning .dashicons {
 					color: #FF9800;
 				}
 				
-				.health-indicator.health-critical .dashicons {
+				.wp-mcp-ai-health-indicator.health-critical .dashicons {
 					color: #F44336;
 				}
 				
-				.health-label {
+				.wp-mcp-ai-health-label {
 					font-weight: 600;
 					color: #666;
 				}
 				
-				.health-value {
+				.wp-mcp-ai-health-value {
 					font-weight: bold;
 					color: #1d2327;
 				}
 				
-				.orchestration-metrics-grid {
+				.wp-mcp-ai-orchestration-metrics-grid {
 					display: grid;
 					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 					gap: 20px;
 					margin: 20px 0;
 				}
 				
-				.metric-card {
+				.wp-mcp-ai-metric-card {
 					background: #fff;
 					border: 1px solid #ddd;
 					border-radius: 4px;
@@ -2596,35 +2596,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					transition: all 0.2s;
 				}
 				
-				.metric-card:hover {
+				.wp-mcp-ai-metric-card:hover {
 					box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 					transform: translateY(-2px);
 				}
 				
-				.metric-icon {
+				.wp-mcp-ai-metric-icon {
 					font-size: 40px;
 					color: #2271b1;
 					line-height: 1;
 				}
 				
-				.metric-icon .dashicons {
+				.wp-mcp-ai-metric-icon .dashicons {
 					width: 40px;
 					height: 40px;
 					font-size: 40px;
 				}
 				
-				.metric-content {
+				.wp-mcp-ai-metric-content {
 					flex: 1;
 				}
 				
-				.metric-label {
+				.wp-mcp-ai-metric-label {
 					font-size: 13px;
 					color: #666;
 					margin-bottom: 5px;
 					font-weight: 500;
 				}
 				
-				.metric-value {
+				.wp-mcp-ai-metric-value {
 					font-size: 32px;
 					font-weight: bold;
 					color: #1d2327;
@@ -2632,22 +2632,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					margin-bottom: 5px;
 				}
 				
-				.metric-subtitle {
+				.wp-mcp-ai-metric-subtitle {
 					font-size: 12px;
 					color: #999;
 				}
 				
-				.metric-subtitle.status-good {
+				.wp-mcp-ai-metric-subtitle.status-good {
 					color: #4CAF50;
 					font-weight: 600;
 				}
 				
-				.metric-subtitle.status-warning {
+				.wp-mcp-ai-metric-subtitle.status-warning {
 					color: #FF9800;
 					font-weight: 600;
 				}
 				
-				.metric-subtitle.status-critical {
+				.wp-mcp-ai-metric-subtitle.status-critical {
 					color: #F44336;
 					font-weight: 600;
 				}
@@ -2956,42 +2956,42 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		?>
 		<div class="wp-mcp-ai-professions-view">
 			<!-- Header with Status -->
-			<div class="orchestration-header">
-				<div class="header-left">
+			<div class="wp-mcp-ai-orchestration-header">
+				<div class="wp-mcp-ai-header-left">
 					<h3><?php esc_html_e( 'AI Professions & Specialist Workforce', 'mcp-ai-wpoos' ); ?></h3>
 					<p class="description">
 						<?php esc_html_e( 'Manage your deployable AI workforce. Professions are configured assistants with specific roles, expertise, tools, and knowledge bases ready for multi-agent coordination.', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
-				<div class="header-right">
-					<div class="health-indicator health-<?php echo esc_attr( $health['memory_status'] ); ?>">
+				<div class="wp-mcp-ai-header-right">
+					<div class="wp-mcp-ai-health-indicator wp-mcp-ai-health-<?php echo esc_attr( $health['memory_status'] ); ?>">
 						<span class="dashicons dashicons-businessperson"></span>
-						<span class="health-label"><?php esc_html_e( 'Workforce Status', 'mcp-ai-wpoos' ); ?></span>
-						<span class="health-value"><?php echo esc_html( count( $professions ) ); ?> <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
+						<span class="wp-mcp-ai-health-label"><?php esc_html_e( 'Workforce Status', 'mcp-ai-wpoos' ); ?></span>
+						<span class="wp-mcp-ai-health-value"><?php echo esc_html( count( $professions ) ); ?> <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
 					</div>
 				</div>
 			</div>
 
 			<!-- Key Metrics Cards -->
-			<div class="orchestration-metrics-grid">
-				<div class="metric-card">
-					<div class="metric-icon">
+			<div class="wp-mcp-ai-orchestration-metrics-grid">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-groups"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Total Professions', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value"><?php echo esc_html( count( $professions ) ); ?></div>
-						<div class="metric-subtitle"><?php esc_html_e( 'Configured Agents', 'mcp-ai-wpoos' ); ?></div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Total Professions', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value"><?php echo esc_html( count( $professions ) ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Configured Agents', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
 				
-				<div class="metric-card">
-					<div class="metric-icon">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-admin-tools"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Avg Tools per Profession', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value">
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Avg Tools per Profession', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value">
 							<?php
 							$total_tools = 0;
 							foreach ( $professions as $prof ) {
@@ -3001,34 +3001,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							echo esc_html( $avg_tools );
 							?>
 						</div>
-						<div class="metric-subtitle"><?php esc_html_e( 'Tool Assignments', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Tool Assignments', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
 				
-				<div class="metric-card">
-					<div class="metric-icon">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-chart-line"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Specialization Rate', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value">
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Specialization Rate', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value">
 							<?php
 							$specialist_count = isset( $role_counts['specialist'] ) ? $role_counts['specialist'] : 0;
 							$spec_rate        = count( $professions ) > 0 ? round( ( $specialist_count / count( $professions ) ) * 100 ) : 0;
 							echo esc_html( $spec_rate );
 							?>%
 						</div>
-						<div class="metric-subtitle"><?php esc_html_e( 'Domain Experts', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Domain Experts', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
 				
-				<div class="metric-card">
-					<div class="metric-icon">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-networking"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Team Readiness', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value">
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Team Readiness', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value">
 							<?php
 							// Team ready if we have at least planner, executor, and critic
 							$has_planner  = isset( $role_counts['planner'] ) && $role_counts['planner'] > 0;
@@ -3601,42 +3601,42 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		?>
 		<div class="wp-mcp-ai-teams-view">
 			<!-- Header with Status -->
-			<div class="orchestration-header">
-				<div class="header-left">
+			<div class="wp-mcp-ai-orchestration-header">
+				<div class="wp-mcp-ai-header-left">
 					<h3><?php esc_html_e( 'AI Teams & Multi-Agent Coordination', 'mcp-ai-wpoos' ); ?></h3>
 					<p class="description">
 						<?php esc_html_e( 'Manage teams of AI professions that work together on complex tasks. Teams coordinate agents with different roles for collaborative problem-solving and workflow orchestration.', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
-				<div class="header-right">
-					<div class="health-indicator health-<?php echo esc_attr( $health['memory_status'] ); ?>">
+				<div class="wp-mcp-ai-header-right">
+					<div class="wp-mcp-ai-health-indicator wp-mcp-ai-health-<?php echo esc_attr( $health['memory_status'] ); ?>">
 						<span class="dashicons dashicons-networking"></span>
-						<span class="health-label"><?php esc_html_e( 'Teams Status', 'mcp-ai-wpoos' ); ?></span>
-						<span class="health-value"><?php echo esc_html( count( $teams ) ); ?> <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
+						<span class="wp-mcp-ai-health-label"><?php esc_html_e( 'Teams Status', 'mcp-ai-wpoos' ); ?></span>
+						<span class="wp-mcp-ai-health-value"><?php echo esc_html( count( $teams ) ); ?> <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
 					</div>
 				</div>
 			</div>
 
 			<!-- Key Metrics Cards -->
-			<div class="orchestration-metrics-grid">
-				<div class="metric-card">
-					<div class="metric-icon">
+			<div class="wp-mcp-ai-orchestration-metrics-grid">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-networking"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Total Teams', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value"><?php echo esc_html( count( $teams ) ); ?></div>
-						<div class="metric-subtitle"><?php esc_html_e( 'Configured Teams', 'mcp-ai-wpoos' ); ?></div>
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Total Teams', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value"><?php echo esc_html( count( $teams ) ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Configured Teams', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
 				
-				<div class="metric-card">
-					<div class="metric-icon">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-groups"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Avg Members per Team', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value">
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Avg Members per Team', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value">
 							<?php
 							$total_members = 0;
 							foreach ( $teams as $team ) {
@@ -3646,17 +3646,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							echo esc_html( $avg_members );
 							?>
 						</div>
-						<div class="metric-subtitle"><?php esc_html_e( 'Team Size', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Team Size', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
 				
-				<div class="metric-card">
-					<div class="metric-icon">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-admin-settings"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Orchestration Modes', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value">
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Orchestration Modes', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value">
 							<?php
 							$modes = array();
 							foreach ( $teams as $team ) {
@@ -3667,17 +3667,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							echo esc_html( count( array_unique( $modes ) ) );
 							?>
 						</div>
-						<div class="metric-subtitle"><?php esc_html_e( 'Different Strategies', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Different Strategies', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
 				
-				<div class="metric-card">
-					<div class="metric-icon">
+				<div class="wp-mcp-ai-metric-card">
+					<div class="wp-mcp-ai-metric-icon">
 						<span class="dashicons dashicons-yes-alt"></span>
 					</div>
-					<div class="metric-content">
-						<div class="metric-label"><?php esc_html_e( 'Team Readiness', 'mcp-ai-wpoos' ); ?></div>
-						<div class="metric-value">
+					<div class="wp-mcp-ai-metric-content">
+						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Team Readiness', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-value">
 							<?php
 							$ready_teams = 0;
 							foreach ( $teams as $team ) {
@@ -3688,7 +3688,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							echo esc_html( $ready_teams . '/' . count( $teams ) );
 							?>
 						</div>
-						<div class="metric-subtitle"><?php esc_html_e( 'Ready for Deployment', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Ready for Deployment', 'mcp-ai-wpoos' ); ?></div>
 					</div>
 				</div>
 			</div>
