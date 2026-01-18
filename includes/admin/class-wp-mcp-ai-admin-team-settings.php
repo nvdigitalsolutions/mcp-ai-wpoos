@@ -82,6 +82,9 @@ class WP_MCP_AI_Admin_Team_Settings {
 			$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
 		}
 
+		// Get post type for links.
+		$post_type = class_exists( 'WP_MCP_AI_Team_CPT' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
+
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Team Settings', 'mcp-ai-wpoos' ); ?></h1>
@@ -173,13 +176,13 @@ class WP_MCP_AI_Admin_Team_Settings {
 
 			<h2><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos' ); ?></h2>
 			<p>
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_team' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type ) ); ?>" class="button">
 					<?php esc_html_e( 'View All Teams', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_team' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . $post_type ) ); ?>" class="button">
 					<?php esc_html_e( 'Create New Team', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_team&page=wp-mcp-ai-test-team' ) ); ?>" class="button button-secondary">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type . '&page=wp-mcp-ai-test-team' ) ); ?>" class="button button-secondary">
 					<?php esc_html_e( 'Test Team', 'mcp-ai-wpoos' ); ?>
 				</a>
 			</p>

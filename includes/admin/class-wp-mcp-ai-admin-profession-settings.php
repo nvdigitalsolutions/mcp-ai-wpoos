@@ -82,6 +82,9 @@ class WP_MCP_AI_Admin_Profession_Settings {
 			$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
 		}
 
+		// Get post type for links.
+		$post_type = class_exists( 'WP_MCP_AI_Profession_CPT' ) ? WP_MCP_AI_Profession_CPT::POST_TYPE : 'mcp_ai_profession';
+
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Profession Settings', 'mcp-ai-wpoos' ); ?></h1>
@@ -173,13 +176,13 @@ class WP_MCP_AI_Admin_Profession_Settings {
 
 			<h2><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos' ); ?></h2>
 			<p>
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type ) ); ?>" class="button">
 					<?php esc_html_e( 'View All Professions', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ); ?>" class="button">
+				<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . $post_type ) ); ?>" class="button">
 					<?php esc_html_e( 'Create New Profession', 'mcp-ai-wpoos' ); ?>
 				</a>
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession&page=wp-mcp-ai-test-profession' ) ); ?>" class="button button-secondary">
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type . '&page=wp-mcp-ai-test-profession' ) ); ?>" class="button button-secondary">
 					<?php esc_html_e( 'Test Profession', 'mcp-ai-wpoos' ); ?>
 				</a>
 			</p>
