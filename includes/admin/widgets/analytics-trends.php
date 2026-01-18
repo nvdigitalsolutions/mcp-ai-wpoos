@@ -93,25 +93,27 @@ if ( $has_analytics ) {
 			if (typeof Chart !== 'undefined') {
 				var ctx = document.getElementById('wp-mcp-ai-analytics-trend-chart');
 				if (ctx) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var dailyUsage = <?php echo wp_json_encode( $trend_data['daily_usage'] ); ?>;
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var trendInfo = <?php echo wp_json_encode( $trend_data['trend'] ); ?>;
-					
+
 					// Prepare data points for chart.
 					var labels = [];
 					var dataPoints = [];
 					var trendLine = [];
 					var dayIndex = 0;
-					
+
 					for (var date in dailyUsage) {
 						labels.push(date);
 						dataPoints.push(dailyUsage[date]);
-						
+
 						// Calculate trend line point: y = slope * x + intercept
 						var trendValue = trendInfo.slope * dayIndex + trendInfo.intercept;
 						trendLine.push(Math.max(0, trendValue));
 						dayIndex++;
 					}
-					
+
 					new Chart(ctx.getContext('2d'), {
 						type: 'line',
 						data: {

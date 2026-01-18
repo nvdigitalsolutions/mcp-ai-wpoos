@@ -46,6 +46,10 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'connection_id'     => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for QuickBooks. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos-pro' ),
+				),
 				'report'            => array(
 					'type'        => 'string',
 					'description' => __( 'Name of the QuickBooks report to request, such as ProfitAndLoss.', 'mcp-ai-wpoos-pro' ),
@@ -94,15 +98,62 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 			return new WP_Error( 'wp_mcp_ai_quickbooks_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$settings    = WP_MCP_AI_Admin_Settings::get_settings();
-		$company_id  = isset( $settings['quickbooks_company_id'] ) ? trim( (string) $settings['quickbooks_company_id'] ) : '';
-		$api_key     = isset( $settings['quickbooks_api_key'] ) ? trim( (string) $settings['quickbooks_api_key'] ) : '';
+		// Get connection_id if provided.
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
+
+		// Try to get credentials from connection first, then fall back to settings.
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+			if ( null === $connection ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_not_found',
+					__( 'Connection not found. Please check the connection ID.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Validate connection type.
+			if ( empty( $connection['connection_type'] ) || 'quickbooks' !== $connection['connection_type'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_wrong_connection_type',
+					__( 'This connection is not a QuickBooks connection.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Check if connection is enabled.
+			if ( empty( $connection['enabled'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_disabled',
+					__( 'This connection is disabled. Please enable it in Remote Sites settings.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Get credentials from connection.
+			$company_id = ! empty( $connection['company_id'] ) ? trim( (string) $connection['company_id'] ) : '';
+			$api_key    = ! empty( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+
+			// QuickBooks uses OAuth tokens, check for client_secret as the token
+			if ( ! empty( $connection['client_secret'] ) ) {
+				$api_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+			}
+		} else {
+			// Fallback to settings (old approach - for backward compatibility).
+			$settings   = WP_MCP_AI_Admin_Settings::get_settings();
+			$company_id = isset( $settings['quickbooks_company_id'] ) ? trim( (string) $settings['quickbooks_company_id'] ) : '';
+			$api_key    = isset( $settings['quickbooks_api_key'] ) ? trim( (string) $settings['quickbooks_api_key'] ) : '';
+
+			// Show deprecation notice in logs if using settings.
+			if ( '' !== $company_id && '' !== $api_key ) {
+				error_log( 'WP MCP AI: Settings-based QuickBooks configuration is deprecated. Please migrate to Remote Sites connections.' );
+			}
+		}
+
 		$report_name = isset( $arguments['report'] ) ? trim( sanitize_text_field( $arguments['report'] ) ) : '';
 
 		if ( '' === $company_id || '' === $api_key ) {
 			return new WP_Error(
 				'wp_mcp_ai_quickbooks_missing_credentials',
-				__( 'QuickBooks credentials are not configured. Add the company ID and API key in the WP oOS settings.', 'mcp-ai-wpoos-pro' )
+				__( 'QuickBooks credentials are not configured. Add the company ID and API key in the WP oOS settings or use a Remote Sites connection.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -156,7 +207,9 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 			$endpoint = add_query_arg( $query_args, $endpoint );
 		}
 
-		$timeout = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
+		// Get timeout from settings (not connection-specific).
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$timeout  = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
 
 		$response = wp_remote_get(
 			$endpoint,

@@ -9,7 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
-require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader-skin.php';
+if ( ! class_exists( 'WP_Upgrader_Skin' ) ) {
+	require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader-skin.php';
+}
 
 /**
  * Silent Upgrader Skin

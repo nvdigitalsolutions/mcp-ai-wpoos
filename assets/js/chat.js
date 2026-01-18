@@ -4125,6 +4125,248 @@
         }
     }
 
+    /**
+     * Render CPT action buttons from configuration.
+     * 
+     * @param {Object} state - Chat state object
+     */
+    function renderCptActionButtons(state) {
+        if (!state || !state.cptActionsContainer) {
+            return;
+        }
+
+        const container = state.cptActionsContainer;
+        
+        // Clear existing buttons
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+
+        let actions = [];
+        if (state.config && Array.isArray(state.config.cptActions)) {
+            actions = state.config.cptActions;
+        }
+
+        if (actions.length === 0) {
+            return;
+        }
+
+        actions.forEach(function(action) {
+            if (!action || typeof action !== 'object') {
+                return;
+            }
+
+            const label = action.label || action.action || 'Action';
+            const actionType = action.action || '';
+            const classes = action.classes || 'button button-primary button-large';
+            const icon = action.icon || 'dashicons-plus-alt';
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'wp-mcp-ai-chat__cpt-action ' + classes;
+            button.dataset.action = actionType;
+            
+            // Add icon if specified
+            if (icon) {
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'dashicons ' + icon;
+                button.appendChild(iconSpan);
+                button.appendChild(document.createTextNode(' '));
+            }
+            
+            button.appendChild(document.createTextNode(label));
+
+            button.setAttribute('aria-label', label);
+            button.setAttribute('title', label);
+
+            // Add click handler
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                handleCptActionClick(state, action, button);
+            });
+
+            container.appendChild(button);
+        });
+    }
+
+    /**
+     * Handle CPT action button click.
+     * Extracts conversation data and triggers the configured action.
+     * 
+     * @param {Object} state - Chat state object
+     * @param {Object} action - Action configuration
+     * @param {HTMLElement} button - The clicked button element
+     */
+    function handleCptActionClick(state, action, button) {
+        if (!state || !action) {
+            console.warn('[NV oOS] CPT action click - missing state or action');
+            return;
+        }
+
+        const actionType = action.action || '';
+        
+        if (!actionType) {
+            if (window.console && console.warn) {
+                console.warn('[NV oOS] CPT action has no action type configured');
+            }
+            return;
+        }
+
+        console.log('[NV oOS] CPT action button clicked:', actionType);
+
+        // Get conversation data
+        const conversationData = extractConversationData(state);
+        
+        console.log('[NV oOS] Conversation data extracted:', {
+            action: actionType,
+            message_count: (conversationData.messages || []).length,
+            has_tool_results: Object.keys(conversationData.toolResults || {}).length > 0,
+            tool_names: Object.keys(conversationData.toolResults || {}).join(', ')
+        });
+        
+        // Trigger custom event that can be handled by page-specific JavaScript
+        const eventDetail = {
+            action: actionType,
+            conversation: conversationData,
+            state: state,
+            button: button
+        };
+        
+        const event = new CustomEvent('wp-mcp-ai-cpt-action', {
+            bubbles: true,
+            detail: eventDetail
+        });
+        
+        console.log('[NV oOS] Dispatching wp-mcp-ai-cpt-action event');
+        
+        // Check if any event listeners are registered (for debugging)
+        const hasResearchPage = document.querySelector('.wp-mcp-ai-research-page');
+        console.log('[NV oOS] Research page element present:', !!hasResearchPage);
+        
+        // Dispatch on both container and document to ensure reliable delivery.
+        // Event bubbling from container to document is not always reliable due to
+        // timing issues and DOM attachment state, so we dispatch on both targets.
+        state.container.dispatchEvent(event);
+        
+        const documentEvent = new CustomEvent('wp-mcp-ai-cpt-action', {
+            bubbles: true,
+            detail: eventDetail
+        });
+        document.dispatchEvent(documentEvent);
+        
+        // Add a small delay to check if event was handled
+        setTimeout(() => {
+            console.log('[NV oOS] Event dispatched. If no handler logs appear above, the research page JavaScript may not be loaded.');
+        }, 100);
+    }
+
+    /**
+     * Extract useful data from conversation for CPT operations.
+     * Checks for structured tool results first, then falls back to text extraction.
+     * 
+     * @param {Object} state - Chat state object
+     * @return {Object} Extracted conversation data
+     */
+    function extractConversationData(state) {
+        if (!state || !Array.isArray(state.conversation)) {
+            return {
+                messages: [],
+                lastAssistantMessage: '',
+                lastUserMessage: '',
+                fullText: '',
+                toolResults: {}
+            };
+        }
+
+        // Check for structured tool results first
+        const toolResults = {};
+        console.log('[NV oOS] Extracting tool results from state.lastToolResults:', {
+            exists: !!(state.lastToolResults),
+            type: typeof state.lastToolResults,
+            keys: state.lastToolResults ? Object.keys(state.lastToolResults) : []
+        });
+        
+        if (state.lastToolResults && typeof state.lastToolResults === 'object') {
+            for (const toolName in state.lastToolResults) {
+                if (Object.prototype.hasOwnProperty.call(state.lastToolResults, toolName)) {
+                    toolResults[toolName] = state.lastToolResults[toolName].result;
+                    console.log('[NV oOS] Added tool result:', toolName);
+                }
+            }
+        } else {
+            console.log('[NV oOS] No lastToolResults in state, checking conversation messages for tool results');
+        }
+
+        const messages = state.conversation;
+        const textParts = [];
+        let lastAssistantMessage = '';
+        let lastUserMessage = '';
+
+        // Extract text from each message
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const msg = messages[i];
+            if (!msg) {
+                continue;
+            }
+
+            const role = msg.role || '';
+            let content = '';
+
+            // Check for tool messages and extract their results
+            if (role === 'tool' && msg.content && msg.name) {
+                console.log('[NV oOS] Found tool message:', msg.name);
+                try {
+                    // Try to parse tool result as JSON
+                    const toolResult = JSON.parse(msg.content);
+                    toolResults[msg.name] = toolResult;
+                    console.log('[NV oOS] Parsed tool result for:', msg.name, {
+                        success: toolResult.success,
+                        hasQuestions: !!(toolResult.questions),
+                        questionCount: (toolResult.questions || []).length
+                    });
+                } catch (e) {
+                    console.warn('[NV oOS] Failed to parse tool result as JSON:', msg.name, e);
+                    // Store as plain text if not JSON
+                    toolResults[msg.name] = msg.content;
+                }
+            }
+
+            if (typeof msg.content === 'string') {
+                content = msg.content;
+            } else if (Array.isArray(msg.content)) {
+                // Extract text from content segments
+                const textSegments = msg.content
+                    .filter(function(segment) {
+                        return segment && segment.type === 'text' && segment.text;
+                    })
+                    .map(function(segment) {
+                        return segment.text;
+                    });
+                content = textSegments.join('\n');
+            }
+
+            if (content) {
+                textParts.push(content);
+                
+                if (role === 'assistant' && !lastAssistantMessage) {
+                    lastAssistantMessage = content;
+                } else if (role === 'user' && !lastUserMessage) {
+                    lastUserMessage = content;
+                }
+            }
+        }
+
+        console.log('[NV oOS] Extraction complete. Tool results found:', Object.keys(toolResults));
+
+        return {
+            messages: state.conversation,
+            lastAssistantMessage: lastAssistantMessage,
+            lastUserMessage: lastUserMessage,
+            fullText: textParts.reverse().join('\n\n'),
+            toolResults: toolResults // Include structured tool results
+        };
+    }
+
     function initialiseExistingSpeechButtons(state) {
         if (!state || !state.messagesEl) {
             return;
@@ -8497,6 +8739,58 @@
         return normalizedResult;
     }
 
+    /**
+     * Store tool result for CPT actions.
+     * Stores the raw result data for certain tools so CPT action buttons
+     * can access the structured data built by the assistant.
+     * 
+     * @param {Object} state - Chat state object
+     * @param {string} toolName - Name of the tool
+     * @param {*} result - Tool result data
+     */
+    function storeToolResultForCptActions(state, toolName, result) {
+        if (!state || !toolName) {
+            return;
+        }
+
+        // Only store results for CPT-related research tools
+        const cptTools = [
+            'research_quiz_topic',
+            'research_place',
+            'research_eca',
+            'research_policy',
+            'research_product'
+        ];
+
+        if (cptTools.indexOf(toolName) === -1) {
+            return;
+        }
+
+        // Store the raw result data
+        if (!state.lastToolResults) {
+            state.lastToolResults = Object.create(null);
+        }
+
+        state.lastToolResults[toolName] = {
+            result: result,
+            timestamp: Date.now(),
+            toolName: toolName
+        };
+
+        // Trigger custom event to notify CPT buttons that new data is available
+        if (state.container) {
+            const event = new CustomEvent('wp-mcp-ai-tool-result-stored', {
+                bubbles: true,
+                detail: {
+                    toolName: toolName,
+                    result: result,
+                    state: state
+                }
+            });
+            state.container.dispatchEvent(event);
+        }
+    }
+
     function parseToolMessagePayload(content, seen) {
         if (content === null || typeof content === 'undefined') {
             return null;
@@ -9801,6 +10095,9 @@
 
             state.conversation.push(toolMessage);
 
+            // Store tool result for CPT actions
+            storeToolResultForCptActions(state, toolName, result);
+
             // Log for debugging
             if (window.console && console.log) {
                 console.log('[NV oOS] Added async tool result to conversation:', {
@@ -10185,6 +10482,7 @@
             const historyList = container.querySelector('.wp-mcp-ai-chat__history-list');
             const historyRefresh = container.querySelector('.wp-mcp-ai-chat__history-refresh');
             const historyLoadMore = container.querySelector('.wp-mcp-ai-chat__history-load-more');
+            const cptActionsContainer = container.querySelector('.wp-mcp-ai-chat__cpt-actions');
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
@@ -10308,10 +10606,13 @@
                 recordingShouldProcess: false,
                 pendingMessageBundle: [], // Queue for bundling rapid user inputs
                 messageBundleTimer: null, // Timer for message bundling delay
+                cptActionsContainer: cptActionsContainer,
+                lastToolResults: Object.create(null), // Store last results from each tool for CPT actions
             };
 
             initialiseExistingSpeechButtons(state);
             renderToolShortcuts(state);
+            renderCptActionButtons(state);
 
             // Initialize tool shortcuts collapsed state
             if (state.toolShortcutsContainer) {
@@ -11112,6 +11413,11 @@
             payload.professional_prompt = state.config.professionalPrompt;
         }
 
+        // Include additional tools if provided (for context-specific tools like research pages).
+        if (state.config.additionalTools && Array.isArray(state.config.additionalTools)) {
+            payload.additional_tools = state.config.additionalTools;
+        }
+
         // Include provider/model/temperature overrides if provided (for professional selector usage).
         if (state.config.provider || state.config.model || state.config.temperature) {
             payload.options = payload.options || {};
@@ -11390,15 +11696,57 @@
                     //
                     // Solution: Keep streaming element, finalize it with buttons, add to conversation manually,
                     // and RETURN EARLY to avoid calling handleChatResponse which would create duplicate.
+                    //
+                    // CRITICAL: Extract final content from finalData if no streaming content received.
+                    // This handles cases where the complete response arrives without streaming chunks.
+                    let finalContent = streamResult.content || '';
+                    
+                    // If no streaming content, extract from finalData structure
+                    if (!finalContent && streamResult.finalData && streamResult.finalData.data) {
+                        const chatData = streamResult.finalData.data;
+                        if (chatData.choices && chatData.choices[0] && chatData.choices[0].message) {
+                            finalContent = extractTextFromContent(chatData.choices[0].message.content) || '';
+                        } else if (chatData.content) {
+                            finalContent = extractTextFromContent(chatData.content) || '';
+                        }
+                        
+                        // Log extraction for debugging
+                        if (finalContent && window.console && console.log) {
+                            console.log('[NV oOS] Extracted final content from finalData (no streaming chunks):', {
+                                contentLength: finalContent.length,
+                                contentSample: finalContent.substring(0, 100)
+                            });
+                        }
+                    }
+                    
                     const shouldKeepStreamingElement = streamingMessageElement && 
                                                       streamingMessageElement.parentNode &&
-                                                      streamResult.content &&
-                                                      streamResult.content.trim();
+                                                      finalContent &&
+                                                      finalContent.trim();
                     
                     if (shouldKeepStreamingElement) {
                         // Streaming element has the final content - keep it and finalize
                         if (window.console && console.log) {
-                            console.log('[NV oOS] Keeping streaming element (has content) and finalizing with buttons');
+                            console.log('[NV oOS] Keeping streaming element (has content) and finalizing with buttons:', {
+                                finalContentLength: finalContent.length,
+                                wasExtractedFromFinalData: !streamResult.content,
+                                streamingElementInDOM: streamingMessageElement.parentNode !== null
+                            });
+                        }
+                        
+                        // Update streaming element with final content if we extracted it from finalData
+                        // This ensures the bubble displays the complete message text
+                        if (finalContent && (!streamResult.content || finalContent !== streamResult.content)) {
+                            const renderedHtml = renderMarkdown(finalContent);
+                            if (renderedHtml && renderedHtml.trim()) {
+                                streamingMessageElement.innerHTML = renderedHtml;
+                            } else {
+                                streamingMessageElement.innerHTML = escapeHtml(finalContent).replace(/\n/g, '<br />');
+                            }
+                            
+                            if (window.console && console.log) {
+                                console.log('[NV oOS] Updated streaming element with final content from finalData');
+                            }
                         }
                         
                         // Extract usage/cost/capability flags from finalData (Phase 7 Enhancement)
@@ -11519,8 +11867,8 @@
                         }
                         
                         // Finalize the streaming element with buttons and badges
-                        attachSpeechButton(streamingMessageElement, state, streamResult.content);
-                        attachCopyButton(streamingMessageElement, streamResult.content);
+                        attachSpeechButton(streamingMessageElement, state, finalContent);
+                        attachCopyButton(streamingMessageElement, finalContent);
                         attachDeleteButton(streamingMessageElement, state, 'assistant');
                         
                         // Attach usage and cost badges if data is available (Phase 7 Enhancement)
@@ -11532,13 +11880,13 @@
                         }
                         
                         // Add the assistant message to conversation with usage/cost metadata
-                        const displayPayload = { text: streamResult.content };
+                        const displayPayload = { text: finalContent };
                         const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload, {
                             usage: aggregatedUsage,
                             cost: aggregatedCost,
                             capabilityFlags: capabilityFlags.length > 0 ? capabilityFlags : null
                         });
-                        const assistantMessage = createConversationMessage('assistant', streamResult.content, displayMetadata);
+                        const assistantMessage = createConversationMessage('assistant', finalContent, displayMetadata);
                         state.conversation.push(assistantMessage);
                         
                         // Process tool_results if present (add them to conversation)

@@ -99,7 +99,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 
 		check_admin_referer( 'wp_mcp_ai_dlq_bulk_action' );
 
-		$action  = isset( $_POST['action'] ) ? sanitize_key( $_POST['action'] ) : '';
+		$action   = isset( $_POST['action'] ) ? sanitize_key( $_POST['action'] ) : '';
 		$item_ids = isset( $_POST['dlq_items'] ) ? array_map( 'sanitize_key', wp_unslash( $_POST['dlq_items'] ) ) : array();
 
 		if ( empty( $action ) || empty( $item_ids ) ) {
@@ -481,8 +481,8 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 		$retry_url = wp_nonce_url(
 			add_query_arg(
 				array(
-					'action'  => 'wp_mcp_ai_dlq_single_action',
-					'item_id' => $item_id,
+					'action'     => 'wp_mcp_ai_dlq_single_action',
+					'item_id'    => $item_id,
 					'dlq_action' => 'retry',
 				),
 				admin_url( 'admin-post.php' )
@@ -500,15 +500,15 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 			$dismiss_url = wp_nonce_url(
 				add_query_arg(
 					array(
-						'action'  => 'wp_mcp_ai_dlq_single_action',
-						'item_id' => $item_id,
+						'action'     => 'wp_mcp_ai_dlq_single_action',
+						'item_id'    => $item_id,
 						'dlq_action' => 'dismiss',
 					),
 					admin_url( 'admin-post.php' )
 				),
 				'wp_mcp_ai_dlq_dismiss_' . $item_id
 			);
-			$actions[] = sprintf(
+			$actions[]   = sprintf(
 				'<a href="%s">%s</a>',
 				esc_url( $dismiss_url ),
 				esc_html__( 'Dismiss', 'mcp-ai-wpoos' )
@@ -527,7 +527,7 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 			),
 			'wp_mcp_ai_dlq_delete_' . $item_id
 		);
-		$actions[] = sprintf(
+		$actions[]  = sprintf(
 			'<a href="%s" onclick="return confirm(\'%s\')">%s</a>',
 			esc_url( $delete_url ),
 			esc_js( __( 'Are you sure you want to delete this item?', 'mcp-ai-wpoos' ) ),

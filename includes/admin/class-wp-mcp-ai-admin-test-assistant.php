@@ -191,8 +191,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 										?>
 									</td>
 									<td>
-										<button 
-											type="button" 
+										<button
+											type="button"
 											class="button button-primary wp-mcp-ai-test-assistant-btn"
 											data-assistant-id="<?php echo esc_attr( $assistant->ID ); ?>"
 											data-assistant-title="<?php echo esc_attr( $assistant->post_title ); ?>"

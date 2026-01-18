@@ -20,7 +20,7 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		}
 
 		// Enable project management.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_project_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -78,7 +78,7 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		}
 
 		// Enable project management.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_project_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -140,7 +140,7 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		}
 
 		// Enable project management.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_project_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -217,7 +217,7 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test AJAX handler security checks.
-	 * 
+	 *
 	 * Note: AJAX handler was removed in favor of inline rendering.
 	 * This test is kept for reference but marked as skipped.
 	 */
@@ -227,7 +227,7 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test AJAX handler returns config and instance ID.
-	 * 
+	 *
 	 * Note: AJAX handler was removed in favor of inline rendering.
 	 * This test is kept for reference but marked as skipped.
 	 */
@@ -248,7 +248,7 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		}
 
 		// Enable project management.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_project_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -301,7 +301,7 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		}
 
 		// Enable project management.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_project_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -358,7 +358,7 @@ class WP_MCP_AI_PM_AI_Assistant_Metabox_Test extends WP_UnitTestCase {
 		}
 
 		// Enable project management.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_project_management'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 

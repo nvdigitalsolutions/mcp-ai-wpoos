@@ -86,7 +86,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 			return;
 		}
 
-		wp_nonce_field( 'wp_mcp_ai_save_profession_datasets', 'wp_mcp_ai_profession_datasets_nonce' );
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
 
 		// Get currently assigned datasets.
 		$preferred_datasets = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
@@ -105,7 +105,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 
 			<?php if ( ! empty( $post->post_name ) ) : ?>
 				<p class="description" style="margin-bottom: 15px;">
-					<strong><?php esc_html_e( 'Profession Slug:', 'mcp-ai-wpoos' ); ?></strong> 
+					<strong><?php esc_html_e( 'Profession Slug:', 'mcp-ai-wpoos' ); ?></strong>
 					<code><?php echo esc_html( $post->post_name ); ?></code>
 					<br>
 					<em><?php esc_html_e( 'Auto-assignment is based on this slug in the dataset mappings file.', 'mcp-ai-wpoos' ); ?></em>
@@ -162,16 +162,16 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 						$is_checked   = in_array( $dataset_json, $selected_datasets_json, true );
 						$tags_string  = isset( $dataset_info['tags'] ) ? implode( ' ', $dataset_info['tags'] ) : '';
 						?>
-						<tr class="wp-mcp-ai-dataset-row" 
-							data-category="<?php echo esc_attr( $dataset_info['category'] ); ?>" 
-							data-name="<?php echo esc_attr( strtolower( $dataset_info['name'] ) ); ?>" 
+						<tr class="wp-mcp-ai-dataset-row"
+							data-category="<?php echo esc_attr( $dataset_info['category'] ); ?>"
+							data-name="<?php echo esc_attr( strtolower( $dataset_info['name'] ) ); ?>"
 							data-description="<?php echo esc_attr( strtolower( $dataset_info['description'] ) ); ?>"
 							data-tags="<?php echo esc_attr( $tags_string ); ?>">
 							<td>
-								<input type="checkbox" 
-									name="profession_preferred_datasets[]" 
-									value="<?php echo esc_attr( $dataset_json ); ?>" 
-									class="wp-mcp-ai-dataset-checkbox" 
+								<input type="checkbox"
+									name="profession_preferred_datasets[]"
+									value="<?php echo esc_attr( $dataset_json ); ?>"
+									class="wp-mcp-ai-dataset-checkbox"
 									<?php checked( $is_checked ); ?>>
 							</td>
 							<td>
@@ -239,42 +239,42 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 		<script type="text/javascript">
 		( function() {
 			var maxDatasets = 10;
-			
+
 			document.addEventListener( 'DOMContentLoaded', function() {
 				var checkboxes = document.querySelectorAll( '.wp-mcp-ai-dataset-checkbox' );
 				var categoryFilter = document.getElementById( 'wp-mcp-ai-dataset-category-filter' );
 				var searchInput = document.getElementById( 'wp-mcp-ai-dataset-search' );
 				var rows = document.querySelectorAll( '.wp-mcp-ai-dataset-row' );
-				
+
 				// Handle checkbox selection with max limit.
 				checkboxes.forEach( function( checkbox ) {
 					checkbox.addEventListener( 'change', function() {
 						var checked = document.querySelectorAll( '.wp-mcp-ai-dataset-checkbox:checked' );
-						
+
 						if ( checked.length > maxDatasets ) {
 							// Uncheck the first checked item.
 							checked[0].checked = false;
 						}
 					} );
 				} );
-				
+
 				// Handle filtering.
 				function filterDatasets() {
 					var category = categoryFilter.value.toLowerCase();
 					var search = searchInput.value.toLowerCase().trim();
-					
+
 					rows.forEach( function( row ) {
 						var rowCategory = row.getAttribute( 'data-category' ).toLowerCase();
 						var rowName = row.getAttribute( 'data-name' ).toLowerCase();
 						var rowDesc = row.getAttribute( 'data-description' ).toLowerCase();
 						var rowTags = row.getAttribute( 'data-tags' ).toLowerCase();
-						
+
 						var categoryMatch = ! category || rowCategory === category;
-						var searchMatch = ! search || 
-							rowName.indexOf( search ) !== -1 || 
+						var searchMatch = ! search ||
+							rowName.indexOf( search ) !== -1 ||
 							rowDesc.indexOf( search ) !== -1 ||
 							rowTags.indexOf( search ) !== -1;
-						
+
 						if ( categoryMatch && searchMatch ) {
 							row.style.display = '';
 						} else {
@@ -282,11 +282,11 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 						}
 					} );
 				}
-				
+
 				if ( categoryFilter ) {
 					categoryFilter.addEventListener( 'change', filterDatasets );
 				}
-				
+
 				if ( searchInput ) {
 					searchInput.addEventListener( 'input', filterDatasets );
 				}
@@ -305,19 +305,12 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
-		if ( ! isset( $_POST['wp_mcp_ai_profession_datasets_nonce'] ) ) {
+		if ( ! $this->can_save( $post_id ) ) {
 			return;
 		}
 
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_datasets_nonce'] ) ), 'wp_mcp_ai_save_profession_datasets' ) ) {
-			return;
-		}
-
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return;
-		}
-
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_datasets_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_datasets_nonce'] ) ), 'wp_mcp_ai_profession_datasets_save' ) ) {
 			return;
 		}
 

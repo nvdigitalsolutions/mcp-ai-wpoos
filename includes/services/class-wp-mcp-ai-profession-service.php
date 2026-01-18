@@ -209,4 +209,171 @@ class WP_MCP_AI_Profession_Service {
 	public function get_category_counts() {
 		return $this->repository->get_category_counts();
 	}
+
+	/**
+	 * Get profession configured for specific agent role.
+	 *
+	 * Retrieves profession data including orchestration configuration.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $profession_slug Profession slug.
+	 * @param string $agent_role      Optional. Filter by role (planner, executor, critic, specialist).
+	 * @return array|WP_Error Profession with orchestration config, or error if not found or wrong role.
+	 */
+	public function get_profession_for_agent_role( $profession_slug, $agent_role = '' ) {
+		$profession = $this->get_profession( $profession_slug );
+
+		if ( is_wp_error( $profession ) ) {
+			return $profession;
+		}
+
+		// Add orchestration configuration.
+		$orchestration               = $this->get_orchestration_config( $profession['id'] );
+		$profession['orchestration'] = $orchestration;
+
+		// If role filter specified, validate it matches.
+		if ( ! empty( $agent_role ) && $orchestration['agent_role'] !== $agent_role ) {
+			return new WP_Error(
+				'wp_mcp_ai_wrong_agent_role',
+				sprintf(
+					/* translators: 1: profession slug, 2: expected role, 3: actual role */
+					__( 'Profession "%1$s" has role "%3$s", expected "%2$s".', 'mcp-ai-wpoos' ),
+					$profession_slug,
+					$agent_role,
+					$orchestration['agent_role']
+				)
+			);
+		}
+
+		return $profession;
+	}
+
+	/**
+	 * Get all professions by agent role.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param string $agent_role Role filter (planner, executor, critic, specialist, generalist).
+	 * @return array Array of professions with orchestration config.
+	 */
+	public function get_professions_by_agent_role( $agent_role ) {
+		$args = array(
+			'post_type'      => 'mcp_ai_profession',
+			'posts_per_page' => -1,
+			'post_status'    => 'publish',
+			'meta_query'     => array(
+				array(
+					'key'   => WP_MCP_AI_Profession_CPT::META_AGENT_ROLE,
+					'value' => sanitize_key( $agent_role ),
+				),
+			),
+		);
+
+		$query = new WP_Query( $args );
+
+		if ( ! $query->have_posts() ) {
+			return array();
+		}
+
+		$professions = array();
+		foreach ( $query->posts as $post ) {
+			$profession                      = $this->transform_profession_for_display( $post );
+			$profession['orchestration']     = $this->get_orchestration_config( $post->ID );
+			$professions[ $post->post_name ] = $profession;
+		}
+
+		wp_reset_postdata();
+
+		return $professions;
+	}
+
+	/**
+	 * Get orchestration configuration for profession.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param int $profession_id Profession post ID.
+	 * @return array Orchestration config with all fields.
+	 */
+	public function get_orchestration_config( $profession_id ) {
+		return array(
+			'agent_role'            => get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true ) : 'generalist',
+			'task_patterns'         => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, true ) : '{}', true ),
+			'decision_criteria'     => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, true ) : '{}', true ),
+			'orchestration_rules'   => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, true ) : '{}', true ),
+			'quality_metrics'       => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, true ) : '{}', true ),
+			'tool_execution_order'  => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, true ) : '[]', true ),
+			'confidence_thresholds' => json_decode( get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) ? get_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, true ) : '{}', true ),
+		);
+	}
+
+	/**
+	 * Update orchestration configuration for profession.
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param int   $profession_id Profession post ID.
+	 * @param array $config        Orchestration config to update.
+	 * @return bool True on success, false on failure.
+	 */
+	public function update_orchestration_config( $profession_id, $config ) {
+		$updated = true;
+
+		if ( isset( $config['agent_role'] ) ) {
+			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, sanitize_key( $config['agent_role'] ) );
+		}
+
+		if ( isset( $config['task_patterns'] ) ) {
+			$json    = is_array( $config['task_patterns'] ) ? wp_json_encode( $config['task_patterns'] ) : $config['task_patterns'];
+			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TASK_PATTERNS, $json );
+		}
+
+		if ( isset( $config['decision_criteria'] ) ) {
+			$json    = is_array( $config['decision_criteria'] ) ? wp_json_encode( $config['decision_criteria'] ) : $config['decision_criteria'];
+			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_DECISION_CRITERIA, $json );
+		}
+
+		if ( isset( $config['orchestration_rules'] ) ) {
+			$json    = is_array( $config['orchestration_rules'] ) ? wp_json_encode( $config['orchestration_rules'] ) : $config['orchestration_rules'];
+			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_ORCHESTRATION_RULES, $json );
+		}
+
+		if ( isset( $config['quality_metrics'] ) ) {
+			$json    = is_array( $config['quality_metrics'] ) ? wp_json_encode( $config['quality_metrics'] ) : $config['quality_metrics'];
+			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_QUALITY_METRICS, $json );
+		}
+
+		if ( isset( $config['tool_execution_order'] ) ) {
+			$json    = is_array( $config['tool_execution_order'] ) ? wp_json_encode( $config['tool_execution_order'] ) : $config['tool_execution_order'];
+			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_TOOL_EXECUTION_ORDER, $json );
+		}
+
+		if ( isset( $config['confidence_thresholds'] ) ) {
+			$json    = is_array( $config['confidence_thresholds'] ) ? wp_json_encode( $config['confidence_thresholds'] ) : $config['confidence_thresholds'];
+			$updated = $updated && update_post_meta( $profession_id, WP_MCP_AI_Profession_CPT::META_CONFIDENCE_THRESHOLDS, $json );
+		}
+
+		return $updated;
+	}
+
+	/**
+	 * Transform profession for orchestration (includes orchestration metadata).
+	 *
+	 * @since 1.9.0
+	 *
+	 * @param mixed $profession Profession post object, ID, or slug.
+	 * @return array Profession data with orchestration config.
+	 */
+	public function transform_profession_for_orchestration( $profession ) {
+		$base = $this->transform_profession_for_assistant( $profession );
+
+		if ( is_wp_error( $base ) ) {
+			return $base;
+		}
+
+		$orchestration = $this->get_orchestration_config( $base['id'] );
+
+		return array_merge( $base, array( 'orchestration' => $orchestration ) );
+	}
 }

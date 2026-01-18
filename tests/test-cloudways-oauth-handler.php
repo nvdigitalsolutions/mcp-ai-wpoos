@@ -32,7 +32,7 @@ class Test_Cloudways_OAuth_Handler extends WP_UnitTestCase {
 	 * Test token validation with expired token.
 	 */
 	public function test_is_token_valid_returns_false_when_token_expired() {
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                               = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['cloudways_access_token']     = 'test_token';
 		$settings['cloudways_token_expires_at'] = time() - 100; // Expired 100 seconds ago.
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -44,7 +44,7 @@ class Test_Cloudways_OAuth_Handler extends WP_UnitTestCase {
 	 * Test token validation with valid token.
 	 */
 	public function test_is_token_valid_returns_true_when_token_valid() {
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                               = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['cloudways_access_token']     = 'test_token';
 		$settings['cloudways_token_expires_at'] = time() + 3600; // Expires in 1 hour.
 		update_option( 'wp_mcp_ai_settings', $settings );

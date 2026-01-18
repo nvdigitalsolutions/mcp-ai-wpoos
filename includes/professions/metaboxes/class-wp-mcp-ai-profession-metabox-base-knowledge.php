@@ -68,6 +68,8 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 			wp_die( esc_html__( 'You do not have permission to edit this profession.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
 		}
 
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
+
 		// Enqueue media library scripts.
 		wp_enqueue_media();
 		wp_enqueue_script( 'jquery' );
@@ -220,12 +222,12 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 				<label for="wp-mcp-ai-profession-vector-store-id">
 					<strong><?php esc_html_e( 'Vector Store ID', 'mcp-ai-wpoos' ); ?></strong>
 				</label>
-				<input 
-					type="text" 
-					id="wp-mcp-ai-profession-vector-store-id" 
-					name="wp_mcp_ai_profession_vector_store_id" 
-					value="<?php echo esc_attr( $vector_store_id ); ?>" 
-					class="widefat" 
+				<input
+					type="text"
+					id="wp-mcp-ai-profession-vector-store-id"
+					name="wp_mcp_ai_profession_vector_store_id"
+					value="<?php echo esc_attr( $vector_store_id ); ?>"
+					class="widefat"
 					placeholder="<?php esc_attr_e( 'e.g., vs_abc123', 'mcp-ai-wpoos' ); ?>"
 				/>
 				<span class="description">
@@ -247,9 +249,9 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 						<strong><?php echo esc_html( $category['label'] ); ?>:</strong><br>
 						<?php foreach ( $category['types'] as $mime_type ) : ?>
 							<label style="display: inline-block; margin-right: 15px; margin-top: 5px;">
-								<input 
-									type="checkbox" 
-									name="wp_mcp_ai_profession_mime_types[]" 
+								<input
+									type="checkbox"
+									name="wp_mcp_ai_profession_mime_types[]"
 									value="<?php echo esc_attr( $mime_type ); ?>"
 									<?php checked( in_array( $mime_type, $supported_mime_types, true ) ); ?>
 								/>
@@ -336,7 +338,7 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 
 					selection.map(function(attachment) {
 						attachment = attachment.toJSON();
-						
+
 						// Check if already added.
 						if (list.find('li[data-id="' + attachment.id + '"]').length > 0) {
 							return;
@@ -349,7 +351,7 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 						listItem.append(
 							$('<span>').addClass('wp-mcp-ai-memory-file-title').text(title)
 						);
-						
+
 						if (sizeLabel) {
 							listItem.append(
 								$('<span>').addClass('wp-mcp-ai-memory-file-size').text('(' + sizeLabel + ')')
@@ -400,6 +402,11 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 			return;
 		}
 
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_base_knowledge_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_base_knowledge_nonce'] ) ), 'wp_mcp_ai_profession_base_knowledge_save' ) ) {
+			return;
+		}
+
 		// Save memory files.
 		if ( isset( $_POST['wp_mcp_ai_profession_memory_files'] ) ) {
 			$memory_files = array_map( 'absint', (array) $_POST['wp_mcp_ai_profession_memory_files'] );
@@ -420,7 +427,7 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 
 		// Save supported MIME types.
 		if ( isset( $_POST['wp_mcp_ai_profession_mime_types'] ) ) {
-			$mime_types = array_map( 'sanitize_text_field', (array) $_POST['wp_mcp_ai_profession_mime_types'] );
+			$mime_types = array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['wp_mcp_ai_profession_mime_types'] ) );
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES, $mime_types );
 		} else {
 			delete_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES );

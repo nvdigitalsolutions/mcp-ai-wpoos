@@ -36,6 +36,9 @@ function wp_mcp_ai_init_project_management_admin() {
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-ai-actions.php';
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-bulk-ai.php';
 
+	// Load settings page.
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-settings-page.php';
+
 	// Initialize metaboxes.
 	WP_MCP_AI_Project_Metabox::init();
 	WP_MCP_AI_Task_Metabox::init();
@@ -87,8 +90,8 @@ add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_project_management_admin
  * Register project management custom post types.
  */
 function wp_mcp_ai_register_project_management_post_types() {
-	// Only register if project management is enabled and not base version.
-	if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+	// Only register if project management is enabled and not base version, unless Pro addon is active.
+	if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 		return;
 	}
 

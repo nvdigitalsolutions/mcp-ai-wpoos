@@ -165,7 +165,7 @@ class WP_MCP_AI_Pro_Dashboard_Helper {
 		// If chart data provided or can be generated, localize the script.
 		if ( null === $chart_data && class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 			$dashboard = WP_MCP_AI_Pro_Dashboard::get_instance();
-			
+
 			// Try to get chart data via reflection (private method).
 			try {
 				$reflection = new ReflectionClass( $dashboard );
@@ -221,7 +221,7 @@ class WP_MCP_AI_Pro_Dashboard_Helper {
 			'responsive'          => true,
 			'maintainAspectRatio' => true,
 			'plugins'             => array(
-				'legend' => array(
+				'legend'  => array(
 					'display'  => true,
 					'position' => 'bottom',
 				),

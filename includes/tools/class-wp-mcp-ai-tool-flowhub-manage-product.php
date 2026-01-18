@@ -51,58 +51,62 @@ class WP_MCP_AI_Tool_Flowhub_Manage_Product implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'      => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for Flowhub. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos' ),
+				),
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: "create" or "update".', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'create', 'update' ),
 				),
-				'product_id'  => array(
+				'product_id'    => array(
 					'type'        => 'string',
 					'description' => __( 'Product ID (required for update action).', 'mcp-ai-wpoos' ),
 				),
-				'name'        => array(
+				'name'          => array(
 					'type'        => 'string',
 					'description' => __( 'Product name.', 'mcp-ai-wpoos' ),
 				),
-				'description' => array(
+				'description'   => array(
 					'type'        => 'string',
 					'description' => __( 'Product description.', 'mcp-ai-wpoos' ),
 				),
-				'category'    => array(
+				'category'      => array(
 					'type'        => 'string',
 					'description' => __( 'Product category (e.g., "flower", "concentrate", "edible").', 'mcp-ai-wpoos' ),
 				),
-				'price'       => array(
+				'price'         => array(
 					'type'        => 'number',
 					'description' => __( 'Product price.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 				),
-				'thc_percent' => array(
+				'thc_percent'   => array(
 					'type'        => 'number',
 					'description' => __( 'THC percentage content.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
-				'cbd_percent' => array(
+				'cbd_percent'   => array(
 					'type'        => 'number',
 					'description' => __( 'CBD percentage content.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
-				'strain_type' => array(
+				'strain_type'   => array(
 					'type'        => 'string',
 					'description' => __( 'Strain type (e.g., "indica", "sativa", "hybrid").', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'indica', 'sativa', 'hybrid', 'cbd' ),
 				),
-				'brand'       => array(
+				'brand'         => array(
 					'type'        => 'string',
 					'description' => __( 'Product brand name.', 'mcp-ai-wpoos' ),
 				),
-				'sku'         => array(
+				'sku'           => array(
 					'type'        => 'string',
 					'description' => __( 'Product SKU/barcode.', 'mcp-ai-wpoos' ),
 				),
-				'timeout'     => array(
+				'timeout'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,
@@ -159,7 +163,38 @@ class WP_MCP_AI_Tool_Flowhub_Manage_Product implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		$client       = new WP_MCP_AI_Flowhub_Client();
+		// Get connection_id if provided.
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
+
+		// Validate connection if provided.
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+			if ( null === $connection ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_not_found',
+					__( 'Connection not found. Please check the connection ID.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Validate connection type.
+			if ( empty( $connection['connection_type'] ) || 'flowhub' !== $connection['connection_type'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_wrong_connection_type',
+					__( 'This connection is not a Flowhub connection.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Check if connection is enabled.
+			if ( empty( $connection['enabled'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_disabled',
+					__( 'This connection is disabled. Please enable it in Remote Sites settings.', 'mcp-ai-wpoos' )
+				);
+			}
+		}
+
+		$client       = new WP_MCP_AI_Flowhub_Client( $connection_id );
 		$product_data = array();
 
 		if ( isset( $arguments['name'] ) ) {

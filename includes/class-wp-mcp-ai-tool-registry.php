@@ -415,6 +415,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Data Visualization.
 				'create_chart'                       => 'wordpress-core',
 
+				// Excel and Spreadsheet Tools - Pro features.
+				'pro_excel'                          => 'external-tools',
+
 				// Assistant management.
 				'create_assistant'                   => 'wordpress-core',
 
@@ -502,6 +505,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'vision_object_localization'         => 'external-tools',
 				'schedule_notify_sms'                => 'external-tools',
 				'web_search'                         => 'external-tools',
+				'search_gmail'                       => 'external-tools',
+				'search_drive'                       => 'external-tools',
 				'crawl4ai_price_lookup'              => 'external-tools',
 				'run_crawl4ai_job'                   => 'external-tools',
 				'scrape_product'                     => 'external-tools',
@@ -859,6 +864,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Auth0_Token'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php',
 				'WP_MCP_AI_Tool_Get_NHC_Active_Storms'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-nhc-active-storms.php',
 				'WP_MCP_AI_Tool_Search_Attachments'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-attachments.php',
+				'WP_MCP_AI_Tool_Search_Gmail'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-gmail.php',
+				'WP_MCP_AI_Tool_Search_Drive'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-drive.php',
 				'WP_MCP_AI_Tool_Web_Search'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.php',
 				'WP_MCP_AI_Tool_Crawl4AI_Price_Lookup'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crawl4ai-price-lookup.php',
 				'WP_MCP_AI_Tool_Get_GDACS_Events'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-gdacs-events.php',
@@ -910,6 +917,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Profession'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-profession.php',
 				'WP_MCP_AI_Tool_Save_Profession'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-profession.php',
 				'WP_MCP_AI_Tool_Profession_Stats'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-profession-stats.php',
+				// Agent coordination tools (DeepSeek V4 multi-agent orchestration).
+				'WP_MCP_AI_Tool_Create_Agent_Team'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-agent-team.php',
+				'WP_MCP_AI_Tool_Delegate_To_Agent'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delegate-to-agent.php',
+				'WP_MCP_AI_Tool_Aggregate_Agent_Results'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-aggregate-agent-results.php',
 				// Google Maps Platform tools.
 				'WP_MCP_AI_Tool_Geocode_Address'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-geocode-address.php',
 				'WP_MCP_AI_Tool_Search_Places'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-places.php',
@@ -938,7 +949,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-filter.php',
 				'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-recommended-datasets.php',
 				// Deep Research tool (Pro).
-				'WP_MCP_AI_Tool_Deep_Research'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-deep-research.php',
+				'WP_MCP_AI_Tool_Deep_Research'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-deep-research.php',
+				// Excel and Spreadsheet Tools - Pro feature for AI-powered formula generation.
+				'WP_MCP_AI_Tool_Pro_Excel'                 => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-pro-excel.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.

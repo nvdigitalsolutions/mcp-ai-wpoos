@@ -309,12 +309,12 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 					require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 				}
 				$client = new WP_MCP_AI_Huggingface_Client();
-				
+
 				// Use configured Hugging Face TTS model or default to facebook/mms-tts-eng.
 				if ( ! isset( $options['model'] ) || '' === $options['model'] ) {
 					$options['model'] = 'facebook/mms-tts-eng';
 				}
-				
+
 				$speech = $client->generate_speech( $text, $options );
 				break;
 

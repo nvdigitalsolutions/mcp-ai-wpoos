@@ -113,9 +113,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 					<div id="openai-test-result" style="margin: 15px 0;"></div>
 
-					<button 
-						type="button" 
-						class="button button-primary test-provider" 
+					<button
+						type="button"
+						class="button button-primary test-provider"
 						data-provider="openai"
 						<?php echo esc_attr( empty( $settings['openai_api_key'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test OpenAI Connection', 'mcp-ai-wpoos' ); ?>
@@ -160,9 +160,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 					<div id="gemini-test-result" style="margin: 15px 0;"></div>
 
-					<button 
-						type="button" 
-						class="button button-primary test-provider" 
+					<button
+						type="button"
+						class="button button-primary test-provider"
 						data-provider="gemini"
 						<?php echo esc_attr( empty( $settings['gemini_api_key'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Gemini Connection', 'mcp-ai-wpoos' ); ?>
@@ -219,9 +219,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 					<div id="huggingface-test-result" style="margin: 15px 0;"></div>
 
-					<button 
-						type="button" 
-						class="button button-primary test-provider" 
+					<button
+						type="button"
+						class="button button-primary test-provider"
 						data-provider="huggingface"
 						<?php echo esc_attr( empty( $settings['huggingface_api_key'] ) || empty( $settings['huggingface_endpoint_url'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Hugging Face Connection', 'mcp-ai-wpoos' ); ?>
@@ -267,9 +267,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 					<div id="ollama-test-result" style="margin: 15px 0;"></div>
 
-					<button 
-						type="button" 
-						class="button button-primary test-provider" 
+					<button
+						type="button"
+						class="button button-primary test-provider"
 						data-provider="ollama"
 						<?php echo esc_attr( empty( $settings['ollama_endpoint_url'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Ollama Connection', 'mcp-ai-wpoos' ); ?>
@@ -319,9 +319,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 					<div id="lm_studio-test-result" style="margin: 15px 0;"></div>
 
-					<button 
-						type="button" 
-						class="button button-primary test-provider" 
+					<button
+						type="button"
+						class="button button-primary test-provider"
 						data-provider="lm_studio"
 						<?php echo esc_attr( empty( $settings['lm_studio_endpoint_url'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test LM Studio Connection', 'mcp-ai-wpoos' ); ?>
@@ -392,9 +392,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 					<div id="cloudflare-test-result" style="margin: 15px 0;"></div>
 
-					<button 
-						type="button" 
-						class="button button-primary test-provider" 
+					<button
+						type="button"
+						class="button button-primary test-provider"
 						data-provider="cloudflare"
 						<?php echo esc_attr( empty( $settings['enable_cloudflare'] ) || empty( $settings['cloudflare_api_token'] ) || empty( $settings['cloudflare_account_id'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Cloudflare Connection', 'mcp-ai-wpoos' ); ?>
@@ -439,9 +439,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 					<div id="google_maps-test-result" style="margin: 15px 0;"></div>
 
-					<button 
-						type="button" 
-						class="button button-primary test-provider" 
+					<button
+						type="button"
+						class="button button-primary test-provider"
 						data-provider="google_maps"
 						<?php echo esc_attr( empty( $settings['google_maps_api_key'] ) ? 'disabled' : '' ); ?>>
 						<?php esc_html_e( 'Test Google Maps Connection', 'mcp-ai-wpoos' ); ?>
@@ -537,7 +537,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				<!-- Troubleshooting -->
 				<div class="card">
 					<h2><?php esc_html_e( '9. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
-					
+
 					<h3><?php esc_html_e( 'Common Issues:', 'mcp-ai-wpoos' ); ?></h3>
 					<ul>
 						<li>
@@ -623,13 +623,13 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			jQuery(document).ready(function($) {
 				// Ensure ajaxurl is defined (should be by WordPress, but adding as fallback).
 				var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
-				
+
 				// Test provider connection.
 				$('.test-provider').on('click', function() {
 					var button = $(this);
 					var provider = button.data('provider');
 					var resultDiv = $('#' + provider + '-test-result');
-					
+
 					button.prop('disabled', true).text('<?php esc_attr_e( 'Testing...', 'mcp-ai-wpoos' ); ?>');
 					resultDiv.html('<p><?php esc_html_e( 'Testing connection...', 'mcp-ai-wpoos' ); ?></p>');
 
@@ -645,7 +645,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							if (response.success) {
 								var message = response.data.message;
 								var details = '';
-								
+
 								if (response.data.details) {
 									details = '<ul>';
 									$.each(response.data.details, function(key, value) {
@@ -653,7 +653,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 									});
 									details += '</ul>';
 								}
-								
+
 								resultDiv.html(
 									'<div class="notice notice-success inline"><p><strong>' +
 									'<?php esc_html_e( 'Success!', 'mcp-ai-wpoos' ); ?>' +
@@ -987,7 +987,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						'message' => __( 'Hugging Face connection successful!', 'mcp-ai-wpoos' ),
 						'details' => array(
 							__( 'Endpoint', 'mcp-ai-wpoos' ) => $settings['huggingface_endpoint_url'],
-							__( 'Model', 'mcp-ai-wpoos' )    => isset( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
+							__( 'Model', 'mcp-ai-wpoos' ) => isset( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
 						),
 					)
 				);

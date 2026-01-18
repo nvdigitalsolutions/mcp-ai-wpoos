@@ -116,8 +116,8 @@ class WP_MCP_AI_Report_Generator {
 
 		if ( 'full' === $scope ) {
 			$data['compliance_status'] = $this->get_compliance_status();
-			$data['evidence'] = $this->get_evidence_summary();
-			$data['frameworks'] = $this->get_frameworks_status();
+			$data['evidence']          = $this->get_evidence_summary();
+			$data['frameworks']        = $this->get_frameworks_status();
 		}
 
 		return $data;
@@ -139,18 +139,18 @@ class WP_MCP_AI_Report_Generator {
 		// Fallback to sample data.
 		return array(
 			array(
-				'control_id'   => 'A.5.1',
-				'category'     => 'A.5',
-				'name'         => 'Policies for information security',
-				'status'       => 'implemented',
+				'control_id'          => 'A.5.1',
+				'category'            => 'A.5',
+				'name'                => 'Policies for information security',
+				'status'              => 'implemented',
 				'implementation_date' => '2024-01-15',
 				'last_review_date'    => '2025-10-01',
 			),
 			array(
-				'control_id'   => 'A.8.2',
-				'category'     => 'A.8',
-				'name'         => 'Privileged access rights',
-				'status'       => 'implemented',
+				'control_id'          => 'A.8.2',
+				'category'            => 'A.8',
+				'name'                => 'Privileged access rights',
+				'status'              => 'implemented',
 				'implementation_date' => '2024-02-01',
 				'last_review_date'    => '2025-11-01',
 			),
@@ -173,26 +173,26 @@ class WP_MCP_AI_Report_Generator {
 		// Fallback to sample data.
 		return array(
 			array(
-				'risk_id'      => 'R-001',
-				'title'        => 'Unauthorized access to API keys',
-				'category'     => 'authentication',
-				'likelihood'   => 3,
-				'impact'       => 5,
-				'risk_score'   => 15,
-				'risk_level'   => 'high',
-				'treatment'    => 'reduce',
-				'status'       => 'open',
+				'risk_id'    => 'R-001',
+				'title'      => 'Unauthorized access to API keys',
+				'category'   => 'authentication',
+				'likelihood' => 3,
+				'impact'     => 5,
+				'risk_score' => 15,
+				'risk_level' => 'high',
+				'treatment'  => 'reduce',
+				'status'     => 'open',
 			),
 			array(
-				'risk_id'      => 'R-002',
-				'title'        => 'Data loss from third-party AI provider',
-				'category'     => 'third_party',
-				'likelihood'   => 2,
-				'impact'       => 4,
-				'risk_score'   => 8,
-				'risk_level'   => 'medium',
-				'treatment'    => 'reduce',
-				'status'       => 'open',
+				'risk_id'    => 'R-002',
+				'title'      => 'Data loss from third-party AI provider',
+				'category'   => 'third_party',
+				'likelihood' => 2,
+				'impact'     => 4,
+				'risk_score' => 8,
+				'risk_level' => 'medium',
+				'treatment'  => 'reduce',
+				'status'     => 'open',
 			),
 		);
 	}
@@ -243,11 +243,11 @@ class WP_MCP_AI_Report_Generator {
 		if ( class_exists( 'WP_MCP_AI_Pro_Database' ) ) {
 			global $wpdb;
 			$evidence_table = $wpdb->prefix . 'mcp_ai_evidence';
-			$count          = $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table" );
+			$count          = $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is hardcoded
 
 			return array(
 				'total_evidence' => (int) $count,
-				'valid_evidence' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table WHERE is_valid = 1" ),
+				'valid_evidence' => (int) $wpdb->get_var( "SELECT COUNT(*) FROM $evidence_table WHERE is_valid = 1" ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is hardcoded
 			);
 		}
 
@@ -264,8 +264,14 @@ class WP_MCP_AI_Report_Generator {
 	 */
 	private function get_frameworks_status() {
 		return array(
-			'iso27001' => array( 'status' => 'compliant', 'percentage' => 56 ),
-			'gdpr'     => array( 'status' => 'compliant', 'percentage' => 95 ),
+			'iso27001' => array(
+				'status'     => 'compliant',
+				'percentage' => 56,
+			),
+			'gdpr'     => array(
+				'status'     => 'compliant',
+				'percentage' => 95,
+			),
 		);
 	}
 
@@ -277,14 +283,14 @@ class WP_MCP_AI_Report_Generator {
 	 * @return array
 	 */
 	private function generate_html_report( $data, $report_id ) {
-		$upload_dir = wp_upload_dir();
+		$upload_dir  = wp_upload_dir();
 		$reports_dir = $upload_dir['basedir'] . '/mcp-ai-reports';
 
 		if ( ! file_exists( $reports_dir ) ) {
 			wp_mkdir_p( $reports_dir );
 		}
 
-		$filename = sprintf( 'compliance-report-%s.html', date( 'Y-m-d-His' ) );
+		$filename = sprintf( 'compliance-report-%s.html', gmdate( 'Y-m-d-His' ) );
 		$filepath = $reports_dir . '/' . $filename;
 
 		$html = $this->build_html_report( $data );
@@ -365,12 +371,12 @@ class WP_MCP_AI_Report_Generator {
 					</tr>
 					<tr>
 						<td>ISO 27001:2022</td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['implemented']; ?></td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['partial']; ?></td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['planned']; ?></td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['na']; ?></td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['total']; ?></td>
-						<td><?php echo (int) $data['compliance_status']['iso27001']['percentage']; ?>%</td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['implemented'] ); ?></td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['partial'] ); ?></td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['planned'] ); ?></td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['na'] ); ?></td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['total'] ); ?></td>
+						<td><?php echo absint( $data['compliance_status']['iso27001']['percentage'] ); ?>%</td>
 					</tr>
 				</table>
 			<?php endif; ?>
@@ -420,9 +426,9 @@ class WP_MCP_AI_Report_Generator {
 							<td><?php echo esc_html( $risk['risk_id'] ); ?></td>
 							<td><?php echo esc_html( $risk['title'] ); ?></td>
 							<td><?php echo esc_html( $risk['category'] ); ?></td>
-							<td><?php echo (int) $risk['likelihood']; ?></td>
-							<td><?php echo (int) $risk['impact']; ?></td>
-							<td><?php echo (int) $risk['risk_score']; ?></td>
+							<td><?php echo absint( $risk['likelihood'] ); ?></td>
+							<td><?php echo absint( $risk['impact'] ); ?></td>
+							<td><?php echo absint( $risk['risk_score'] ); ?></td>
 							<td class="risk-<?php echo esc_attr( $risk['risk_level'] ); ?>">
 								<?php echo esc_html( ucfirst( $risk['risk_level'] ) ); ?>
 							</td>
@@ -454,7 +460,7 @@ class WP_MCP_AI_Report_Generator {
 			<?php endif; ?>
 
 			<p style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px;">
-				Generated by NV oOS Pro Dashboard v<?php echo esc_html( $data['metadata']['plugin_version'] ); ?> 
+				Generated by NV oOS Pro Dashboard v<?php echo esc_html( $data['metadata']['plugin_version'] ); ?>
 				on <?php echo esc_html( current_time( 'mysql' ) ); ?>
 			</p>
 		</body>
@@ -478,7 +484,7 @@ class WP_MCP_AI_Report_Generator {
 			wp_mkdir_p( $reports_dir );
 		}
 
-		$filename = sprintf( 'compliance-report-%s.csv', date( 'Y-m-d-His' ) );
+		$filename = sprintf( 'compliance-report-%s.csv', gmdate( 'Y-m-d-His' ) );
 		$filepath = $reports_dir . '/' . $filename;
 
 		$fp = fopen( $filepath, 'w' );
@@ -566,7 +572,7 @@ class WP_MCP_AI_Report_Generator {
 			wp_mkdir_p( $reports_dir );
 		}
 
-		$filename = sprintf( 'compliance-report-%s.json', date( 'Y-m-d-His' ) );
+		$filename = sprintf( 'compliance-report-%s.json', gmdate( 'Y-m-d-His' ) );
 		$filepath = $reports_dir . '/' . $filename;
 
 		$json = wp_json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );

@@ -89,6 +89,9 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments The tool arguments.
+	 * @param array $context   The tool context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate image_id.
@@ -239,7 +242,8 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Get original image title for variations.
-		$original_title  = get_the_title( $original_id );
+		$original_title = get_the_title( $original_id );
+		/* translators: %s: Original image title */
 		$variation_title = $original_title ? sprintf( __( '%s - Variation', 'mcp-ai-wpoos' ), $original_title ) : __( 'Image Variation', 'mcp-ai-wpoos' );
 
 		// Create attachment.
@@ -256,7 +260,9 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Generate metadata.
-		require_once ABSPATH . 'wp-admin/includes/image.php';
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
 		$metadata = wp_generate_attachment_metadata( $attachment_id, $file_path );
 		wp_update_attachment_metadata( $attachment_id, $metadata );
 

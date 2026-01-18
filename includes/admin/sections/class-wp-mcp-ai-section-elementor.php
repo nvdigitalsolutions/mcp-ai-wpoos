@@ -91,8 +91,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 				$fields['enable_elementor_widgets'] = array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Elementor Widgets', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable Elementor widgets', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Activate AI Chat widget for Elementor page builder with SSE streaming support.', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Elementor AI widgets', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enable AI Chat widgets for Elementor page builder. Part of base plugin (no Pro addon required).', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				);
 
@@ -116,8 +116,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 			$content = '<div style="background: ' . ( $elementor_active ? '#d5f0db' : '#f0f0f1' ) . '; border-left: 4px solid ' . ( $elementor_active ? '#0a5f1a' : '#646970' ) . '; padding: 1rem; margin: 1rem 0;">';
 
 			if ( $elementor_active ) {
-				$content .= '<h4 style="margin-top: 0; color: #0a5f1a;">' . esc_html__( '✓ Elementor Active', 'mcp-ai-wpoos' ) . '</h4>';
-				$content .= '<p>' . esc_html__( 'Elementor is installed and active. AI Chat widgets are available.', 'mcp-ai-wpoos' ) . '</p>';
+				$content .= '<h4 style="margin-top: 0; color: #0a5f1a;">' . esc_html__( '✓ Elementor Active - Widgets Automatically Enabled', 'mcp-ai-wpoos' ) . '</h4>';
+				$content .= '<p>' . esc_html__( 'Elementor is installed and active. All AI Chat widgets are automatically available in the Elementor editor.', 'mcp-ai-wpoos' ) . '</p>';
 				if ( defined( 'ELEMENTOR_VERSION' ) ) {
 					$content .= '<p><strong>' . esc_html__( 'Version:', 'mcp-ai-wpoos' ) . '</strong> ' . esc_html( ELEMENTOR_VERSION ) . '</p>';
 				}
@@ -127,7 +127,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 				$content .= '<ol>';
 				$content .= '<li>' . esc_html__( 'Install Elementor plugin from WordPress.org', 'mcp-ai-wpoos' ) . '</li>';
 				$content .= '<li>' . esc_html__( 'Activate the plugin', 'mcp-ai-wpoos' ) . '</li>';
-				$content .= '<li>' . esc_html__( 'Return to this page to configure integration settings', 'mcp-ai-wpoos' ) . '</li>';
+				$content .= '<li>' . esc_html__( 'Widgets will be automatically available in Elementor editor', 'mcp-ai-wpoos' ) . '</li>';
 				$content .= '</ol>';
 			}
 
@@ -157,32 +157,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 			$content .= '<li>' . esc_html__( 'Markdown rendering and code syntax highlighting', 'mcp-ai-wpoos' ) . '</li>';
 			$content .= '</ul>';
 
-			// Debug information.
-			$is_base_version  = wp_mcp_ai_is_base_version();
-			$constant_defined = defined( 'WP_MCP_AI_BASE_VERSION' );
-			$constant_value   = $constant_defined ? WP_MCP_AI_BASE_VERSION : 'not defined';
-
-			$content .= '<div style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 1rem; margin-top: 1rem;">';
-			$content .= '<p style="margin: 0;"><strong>' . esc_html__( 'Current Configuration:', 'mcp-ai-wpoos' ) . '</strong></p>';
-			$content .= '<ul style="margin: 0.5rem 0 0 1.5rem;">';
-			$content .= '<li><strong>WP_MCP_AI_BASE_VERSION:</strong> ';
-			if ( $constant_defined ) {
-				$content .= '<code>' . esc_html( $constant_value ? 'true' : 'false' ) . '</code>';
-			} else {
-				$content .= '<code>not defined</code> (defaults to base version)';
-			}
-			$content .= '</li>';
-			$content .= '<li><strong>Mode:</strong> ';
-			$content .= $is_base_version ? '<strong style="color: #8b6c00;">Base Version</strong> (widgets disabled)' : '<strong style="color: #0a5f1a;">Full Version</strong> (widgets enabled)';
-			$content .= '</li>';
-			$content .= '</ul>';
-			$content .= '</div>';
-
-			if ( $is_base_version ) {
-				$content .= '<p style="margin-top: 1rem; background: #fef7e0; border-left: 4px solid #8b6c00; padding: 1rem;"><strong>' . esc_html__( 'To Enable Elementor Widgets:', 'mcp-ai-wpoos' ) . '</strong><br>' . esc_html__( 'Add this to wp-config.php:', 'mcp-ai-wpoos' ) . '<br><code style="background: #fff; padding: 0.25rem 0.5rem; display: inline-block; margin-top: 0.5rem;">define( \'WP_MCP_AI_BASE_VERSION\', false );</code></p>';
-			} else {
-				$content .= '<p style="margin-top: 1rem; background: #d5f0db; border-left: 4px solid #0a5f1a; padding: 1rem;"><strong style="color: #0a5f1a;">✓ ' . esc_html__( 'Elementor Widgets Enabled', 'mcp-ai-wpoos' ) . '</strong><br>' . esc_html__( 'Full Version mode is active. All widgets are available.', 'mcp-ai-wpoos' ) . '</p>';
-			}
+			// Elementor widgets are part of the base plugin and do not require Pro addon.
+			// Check the "Enable Elementor Widgets" checkbox above to make them available in the editor.
+			$content .= '<p style="margin-top: 1rem; background: #d5f0db; border-left: 4px solid #0a5f1a; padding: 1rem;"><strong style="color: #0a5f1a;">✓ ' . esc_html__( 'Part of Base Plugin', 'mcp-ai-wpoos' ) . '</strong><br>' . esc_html__( 'Elementor widgets are included in the base plugin (no Pro addon required). Check the "Enable Elementor Widgets" checkbox above to make them available in the Elementor editor.', 'mcp-ai-wpoos' ) . '</p>';
 
 			$content .= '</div>';
 

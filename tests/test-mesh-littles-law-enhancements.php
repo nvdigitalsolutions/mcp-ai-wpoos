@@ -96,10 +96,26 @@ class Test_Mesh_Littles_Law_Enhancements extends WP_UnitTestCase {
 	public function test_mesh_health_status() {
 		$settings = array(
 			'mesh_peer_sites' => array(
-				array( 'name' => 'peer1', 'url' => 'https://peer1.example.com', 'api_key' => 'key1' ),
-				array( 'name' => 'peer2', 'url' => 'https://peer2.example.com', 'api_key' => 'key2' ),
-				array( 'name' => 'peer3', 'url' => 'https://peer3.example.com', 'api_key' => 'key3' ),
-				array( 'name' => 'peer4', 'url' => 'https://peer4.example.com', 'api_key' => 'key4' ),
+				array(
+					'name'    => 'peer1',
+					'url'     => 'https://peer1.example.com',
+					'api_key' => 'key1',
+				),
+				array(
+					'name'    => 'peer2',
+					'url'     => 'https://peer2.example.com',
+					'api_key' => 'key2',
+				),
+				array(
+					'name'    => 'peer3',
+					'url'     => 'https://peer3.example.com',
+					'api_key' => 'key3',
+				),
+				array(
+					'name'    => 'peer4',
+					'url'     => 'https://peer4.example.com',
+					'api_key' => 'key4',
+				),
 			),
 		);
 
@@ -107,10 +123,26 @@ class Test_Mesh_Littles_Law_Enhancements extends WP_UnitTestCase {
 
 		// Scenario: All peers healthy = excellent.
 		$health_metrics = array(
-			'peer1' => array( 'status' => 'healthy', 'success_rate' => 99, 'last_update' => time() ),
-			'peer2' => array( 'status' => 'healthy', 'success_rate' => 98, 'last_update' => time() ),
-			'peer3' => array( 'status' => 'healthy', 'success_rate' => 97, 'last_update' => time() ),
-			'peer4' => array( 'status' => 'healthy', 'success_rate' => 96, 'last_update' => time() ),
+			'peer1' => array(
+				'status'       => 'healthy',
+				'success_rate' => 99,
+				'last_update'  => time(),
+			),
+			'peer2' => array(
+				'status'       => 'healthy',
+				'success_rate' => 98,
+				'last_update'  => time(),
+			),
+			'peer3' => array(
+				'status'       => 'healthy',
+				'success_rate' => 97,
+				'last_update'  => time(),
+			),
+			'peer4' => array(
+				'status'       => 'healthy',
+				'success_rate' => 96,
+				'last_update'  => time(),
+			),
 		);
 
 		update_option( 'wp_mcp_ai_mesh_health_metrics', $health_metrics );
@@ -203,8 +235,16 @@ class Test_Mesh_Littles_Law_Enhancements extends WP_UnitTestCase {
 	public function test_mesh_recommendation_critical_scenario() {
 		$settings = array(
 			'mesh_peer_sites' => array(
-				array( 'name' => 'peer1', 'url' => 'https://peer1.example.com', 'api_key' => 'key1' ),
-				array( 'name' => 'peer2', 'url' => 'https://peer2.example.com', 'api_key' => 'key2' ),
+				array(
+					'name'    => 'peer1',
+					'url'     => 'https://peer1.example.com',
+					'api_key' => 'key1',
+				),
+				array(
+					'name'    => 'peer2',
+					'url'     => 'https://peer2.example.com',
+					'api_key' => 'key2',
+				),
 			),
 		);
 
@@ -212,8 +252,16 @@ class Test_Mesh_Littles_Law_Enhancements extends WP_UnitTestCase {
 
 		// All peers down.
 		$health_metrics = array(
-			'peer1' => array( 'status' => 'down', 'success_rate' => 20, 'last_update' => time() ),
-			'peer2' => array( 'status' => 'down', 'success_rate' => 15, 'last_update' => time() ),
+			'peer1' => array(
+				'status'       => 'down',
+				'success_rate' => 20,
+				'last_update'  => time(),
+			),
+			'peer2' => array(
+				'status'       => 'down',
+				'success_rate' => 15,
+				'last_update'  => time(),
+			),
 		);
 
 		update_option( 'wp_mcp_ai_mesh_health_metrics', $health_metrics );

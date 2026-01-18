@@ -58,7 +58,7 @@ $unique_id = wp_unique_id( 'wp-mcp-ai-assistant-selector-' );
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
-			'class' => 'wp-block-mcp-ai-wpoos-assistant-selector',
+			'class'         => 'wp-block-mcp-ai-wpoos-assistant-selector',
 			'data-block-id' => $unique_id,
 		)
 	);
@@ -78,7 +78,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	<select id="<?php echo esc_attr( $unique_id ); ?>-select" class="wp-mcp-ai-assistant-selector__select">
 		<option value=""><?php esc_html_e( '— Select an assistant —', 'mcp-ai-wpoos' ); ?></option>
 		<?php foreach ( $assistants as $assistant ) : ?>
-			<option 
+			<option
 				value="<?php echo esc_attr( $assistant['id'] ); ?>"
 				data-tools="<?php echo esc_attr( wp_json_encode( $assistant['tools'] ) ); ?>"
 				data-shortcuts="<?php echo esc_attr( wp_json_encode( $assistant['shortcuts'] ) ); ?>"

@@ -80,8 +80,8 @@ class WP_MCP_AI_Job_Queue_Manager {
 		}
 
 		// Determine priority using SLA Manager if available and enabled.
-		$priority  = self::PRIORITY_NORMAL;
-		$sla_tier  = null;
+		$priority = self::PRIORITY_NORMAL;
+		$sla_tier = null;
 
 		if ( class_exists( 'WP_MCP_AI_SLA_Manager' ) && WP_MCP_AI_SLA_Manager::is_enabled() ) {
 			// Check for explicit SLA tier.
@@ -353,7 +353,7 @@ class WP_MCP_AI_Job_Queue_Manager {
 		// Max retries exceeded - move to dead letter queue.
 		if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
 			$retry_history = isset( $queue[ $job_id ]['retry_history'] ) ? $queue[ $job_id ]['retry_history'] : array();
-			
+
 			// Build retry history from queue data.
 			for ( $i = 0; $i <= $retry_count; $i++ ) {
 				$retry_history[] = array(

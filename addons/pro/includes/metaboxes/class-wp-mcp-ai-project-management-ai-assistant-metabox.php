@@ -211,16 +211,16 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			$context['due_date']      = get_post_meta( $post->ID, '_task_due_date', true );
 			$context['assigned_to']   = absint( get_post_meta( $post->ID, '_task_assigned_to', true ) );
 		} elseif ( 'mcp_ai_event' === $post->post_type ) {
-			$context['start_date']  = get_post_meta( $post->ID, '_event_start_date', true );
-			$context['end_date']    = get_post_meta( $post->ID, '_event_end_date', true );
-			$context['location']    = get_post_meta( $post->ID, '_event_location', true );
-			$context['event_type']  = get_post_meta( $post->ID, '_event_type', true );
-			$context['all_day']     = (bool) get_post_meta( $post->ID, '_event_all_day', true );
+			$context['start_date'] = get_post_meta( $post->ID, '_event_start_date', true );
+			$context['end_date']   = get_post_meta( $post->ID, '_event_end_date', true );
+			$context['location']   = get_post_meta( $post->ID, '_event_location', true );
+			$context['event_type'] = get_post_meta( $post->ID, '_event_type', true );
+			$context['all_day']    = (bool) get_post_meta( $post->ID, '_event_all_day', true );
 		} elseif ( 'mcp_ai_project' === $post->post_type ) {
-			$context['project_status']   = get_post_meta( $post->ID, '_project_status', true );
-			$context['start_date']       = get_post_meta( $post->ID, '_project_start_date', true );
-			$context['end_date']         = get_post_meta( $post->ID, '_project_end_date', true );
-			$context['budget']           = get_post_meta( $post->ID, '_project_budget', true );
+			$context['project_status']        = get_post_meta( $post->ID, '_project_status', true );
+			$context['start_date']            = get_post_meta( $post->ID, '_project_start_date', true );
+			$context['end_date']              = get_post_meta( $post->ID, '_project_end_date', true );
+			$context['budget']                = get_post_meta( $post->ID, '_project_budget', true );
 			$context['completion_percentage'] = absint( get_post_meta( $post->ID, '_project_completion', true ) );
 		}
 
@@ -315,10 +315,10 @@ class WP_MCP_AI_Project_Management_AI_Assistant_Metabox {
 			<?php $this->render_ai_quick_actions( $post ); ?>
 
 			<!-- Open Assistant button -->
-			<button 
-				type="button" 
-				class="button button-primary button-large wp-mcp-ai-pm-open-assistant" 
-				data-post-id="<?php echo esc_attr( $post->ID ); ?>" 
+			<button
+				type="button"
+				class="button button-primary button-large wp-mcp-ai-pm-open-assistant"
+				data-post-id="<?php echo esc_attr( $post->ID ); ?>"
 				data-post-type="<?php echo esc_attr( $post->post_type ); ?>"
 				disabled
 			>

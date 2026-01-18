@@ -124,11 +124,11 @@ class WP_MCP_AI_Task_Metabox {
 				<label for="task_due_date">
 					<strong><?php esc_html_e( 'Due Date:', 'mcp-ai-wpoos-pro' ); ?></strong>
 				</label><br>
-				<input 
-					type="date" 
-					id="task_due_date" 
-					name="task_due_date" 
-					value="<?php echo esc_attr( $due_date ); ?>" 
+				<input
+					type="date"
+					id="task_due_date"
+					name="task_due_date"
+					value="<?php echo esc_attr( $due_date ); ?>"
 					class="widefat"
 				/>
 			</p>
@@ -180,7 +180,7 @@ class WP_MCP_AI_Task_Metabox {
 
 		// Save status.
 		if ( isset( $_POST['task_status'] ) ) {
-			$status = sanitize_key( $_POST['task_status'] );
+			$status         = sanitize_key( $_POST['task_status'] );
 			$valid_statuses = array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' );
 			if ( in_array( $status, $valid_statuses, true ) ) {
 				update_post_meta( $post_id, '_task_status', $status );
@@ -189,7 +189,7 @@ class WP_MCP_AI_Task_Metabox {
 
 		// Save priority.
 		if ( isset( $_POST['task_priority'] ) ) {
-			$priority = sanitize_key( $_POST['task_priority'] );
+			$priority         = sanitize_key( $_POST['task_priority'] );
 			$valid_priorities = array( 'low', 'medium', 'high', 'urgent' );
 			if ( in_array( $priority, $valid_priorities, true ) ) {
 				update_post_meta( $post_id, '_task_priority', $priority );

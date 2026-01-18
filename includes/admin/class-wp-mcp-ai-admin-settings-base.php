@@ -193,8 +193,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				return $available_providers;
 			}
 
-			$sanitized           = array();
-			$seen                = array();
+			$sanitized = array();
+			$seen      = array();
 
 			foreach ( $priority_list as $provider ) {
 				$provider = sanitize_key( $provider );

@@ -134,12 +134,12 @@ class WP_MCP_AI_Information_Labelling {
 		<div class="wp-mcp-ai-classification-selector">
 			<?php foreach ( $levels as $level => $data ) : ?>
 				<label class="wp-mcp-ai-classification-option">
-					<input type="radio" 
-						   name="wp_mcp_ai_classification" 
-						   value="<?php echo esc_attr( $level ); ?>"
-						   <?php checked( $current_classification, $level ); ?>>
-					<span class="wp-mcp-ai-classification-label" 
-						  style="color: <?php echo esc_attr( $data['color'] ); ?>;">
+					<input type="radio"
+							name="wp_mcp_ai_classification"
+							value="<?php echo esc_attr( $level ); ?>"
+							<?php checked( $current_classification, $level ); ?>>
+					<span class="wp-mcp-ai-classification-label"
+							style="color: <?php echo esc_attr( $data['color'] ); ?>;">
 						<span class="wp-mcp-ai-classification-icon"><?php echo esc_html( $data['icon'] ); ?></span>
 						<strong><?php echo esc_html( $data['label'] ); ?></strong>
 					</span>
@@ -164,7 +164,7 @@ class WP_MCP_AI_Information_Labelling {
 	public function save_classification_meta( $post_id ) {
 		// Check nonce.
 		if ( ! isset( $_POST['wp_mcp_ai_classification_nonce'] ) ||
-			 ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_classification_nonce'] ) ), 'wp_mcp_ai_classification_nonce' ) ) {
+			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_classification_nonce'] ) ), 'wp_mcp_ai_classification_nonce' ) ) {
 			return;
 		}
 

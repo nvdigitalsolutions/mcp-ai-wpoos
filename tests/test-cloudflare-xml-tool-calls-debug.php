@@ -43,7 +43,7 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 		);
 
 		$tool_executed = false;
-		$tool_result = null;
+		$tool_result   = null;
 
 		$tools = array(
 			array(
@@ -59,7 +59,7 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 					),
 					'required'   => array( 'expression' ),
 				),
-				'function'    => function( $args ) use ( &$tool_executed, &$tool_result ) {
+				'function'    => function ( $args ) use ( &$tool_executed, &$tool_result ) {
 					$tool_executed = true;
 					$tool_result = $args;
 					// Simple eval for testing (never use in production!)
@@ -145,7 +145,7 @@ class Test_Cloudflare_Run_With_Tools_XML_Debug extends WP_UnitTestCase {
 		$parse_method = $reflection->getMethod( 'parse_xml_tool_calls' );
 		$parse_method->setAccessible( true );
 		$parsed = $parse_method->invoke( $this->client, $content );
-		
+
 		$this->assertIsArray( $parsed );
 		$this->assertNotEmpty( $parsed );
 		$this->assertEquals( 'get_weather', $parsed[0]['function']['name'] );

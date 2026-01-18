@@ -126,4 +126,3 @@ class WP_MCP_AI_Elementor_Widget_Registration_Error_Handling_Test extends WP_Uni
 		$this->assertStringContainsString( 'WP_DEBUG', $content, 'Error logging should check WP_DEBUG constant' );
 	}
 }
-

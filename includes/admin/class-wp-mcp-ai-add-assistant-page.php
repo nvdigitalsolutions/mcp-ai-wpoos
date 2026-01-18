@@ -147,7 +147,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 									<img src="<?php echo esc_url( $thumbnail_url ); ?>" alt="<?php echo esc_attr( $profession->post_title ); ?>">
 								</div>
 							<?php endif; ?>
-							
+
 							<div class="professional-header">
 								<h3><?php echo esc_html( $profession->post_title ); ?></h3>
 								<?php if ( $category ) : ?>
@@ -217,7 +217,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 				<div class="wp-mcp-ai-modal-body">
 					<form id="wp-mcp-ai-create-form">
 						<input type="hidden" name="profession_id" id="profession-id" value="">
-						
+
 						<p>
 							<label for="assistant-title">
 								<strong><?php esc_html_e( 'Assistant Title', 'mcp-ai-wpoos' ); ?> <span class="required">*</span></strong>
@@ -232,12 +232,14 @@ class WP_MCP_AI_Add_Assistant_Page {
 							</label>
 							<select id="assistant-provider" name="provider" class="regular-text widefat">
 								<option value=""><?php esc_html_e( '-- Use Template Default --', 'mcp-ai-wpoos' ); ?></option>
-								<option value="openai"><?php esc_html_e( 'OpenAI', 'mcp-ai-wpoos' ); ?></option>
-								<option value="gemini"><?php esc_html_e( 'Google Gemini', 'mcp-ai-wpoos' ); ?></option>
-								<option value="anthropic"><?php esc_html_e( 'Anthropic Claude', 'mcp-ai-wpoos' ); ?></option>
-								<option value="ollama"><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></option>
-								<option value="lm_studio"><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></option>
-								<option value="cloudflare"><?php esc_html_e( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ); ?></option>
+								<?php
+								$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
+								foreach ( $available_providers as $provider_slug => $provider_label ) {
+									?>
+									<option value="<?php echo esc_attr( $provider_slug ); ?>"><?php echo esc_html( $provider_label ); ?></option>
+									<?php
+								}
+								?>
 							</select>
 							<span class="description"><?php esc_html_e( 'Override the template default if needed', 'mcp-ai-wpoos' ); ?></span>
 						</p>

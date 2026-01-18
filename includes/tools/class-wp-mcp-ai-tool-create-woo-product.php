@@ -15,11 +15,14 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
 
 /**
  * Creates draft WooCommerce products using a reference identifier.
  */
 class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Content_Media;
+
 	/**
 	 * Determine whether WooCommerce is available.
 	 *
@@ -215,6 +218,84 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 			'required'             => array( 'reference' ),
 			'additionalProperties' => false,
 		);
+
+		// Merge content media parameters for long description.
+		$schema['properties'] = array_merge( $schema['properties'], $this->get_content_media_parameters() );
+
+		// Add separate parameters for short description media.
+		$schema['properties']['short_description_images'] = array(
+			'type'        => 'array',
+			'description' => __( 'Array of images to embed in the short description. Maximum 2 images.', 'mcp-ai-wpoos' ),
+			'items'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'source'  => array(
+						'description' => __( 'Image source - either attachment ID (integer) or URL (string)', 'mcp-ai-wpoos' ),
+						'anyOf'       => array(
+							array( 'type' => 'integer' ),
+							array( 'type' => 'string' ),
+						),
+					),
+					'caption' => array(
+						'type'        => 'string',
+						'description' => __( 'Optional caption for the image', 'mcp-ai-wpoos' ),
+					),
+					'alt'     => array(
+						'type'        => 'string',
+						'description' => __( 'Optional alt text for accessibility', 'mcp-ai-wpoos' ),
+					),
+				),
+				'required'   => array( 'source' ),
+			),
+			'maxItems'    => 2,
+		);
+
+		$schema['properties']['short_description_charts'] = array(
+			'type'        => 'array',
+			'description' => __( 'Array of charts to embed in the short description. Maximum 1 chart.', 'mcp-ai-wpoos' ),
+			'items'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'type'  => array(
+						'type'        => 'string',
+						'description' => __( 'Chart type', 'mcp-ai-wpoos' ),
+						'enum'        => array( 'bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea' ),
+					),
+					'title' => array(
+						'type'        => 'string',
+						'description' => __( 'Chart title', 'mcp-ai-wpoos' ),
+					),
+					'data'  => array(
+						'type'        => 'object',
+						'description' => __( 'Chart data with labels and datasets', 'mcp-ai-wpoos' ),
+					),
+				),
+				'required'   => array( 'type', 'data' ),
+			),
+			'maxItems'    => 1,
+		);
+
+		$schema['properties']['variation_images'] = array(
+			'type'        => 'array',
+			'description' => __( 'Array of images for product variations. Each image should specify which variation it belongs to.', 'mcp-ai-wpoos' ),
+			'items'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'variation_attributes' => array(
+						'type'        => 'object',
+						'description' => __( 'Attributes identifying the variation (e.g., {"Size": "Large", "Color": "Red"})', 'mcp-ai-wpoos' ),
+					),
+					'image_id'             => array(
+						'type'        => 'integer',
+						'description' => __( 'Attachment ID of the variation image', 'mcp-ai-wpoos' ),
+						'minimum'     => 1,
+					),
+				),
+				'required'   => array( 'variation_attributes', 'image_id' ),
+			),
+		);
+
+		return $schema;
 	}
 
 	/**
@@ -278,11 +359,28 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		$product->set_sku( $reference );
 
 		if ( '' !== $description ) {
-			$product->set_description( $description );
+			// Embed content media in long description.
+			$description_with_media = $this->embed_content_media( $description, $arguments );
+			$product->set_description( $description_with_media );
 		}
 
 		if ( '' !== $description2 ) {
-			$product->set_short_description( $description2 );
+			// Support content media in short description as well.
+			// Use separate parameters with limits (2 images, 1 chart max).
+			$short_desc_args = array();
+			if ( isset( $arguments['short_description_images'] ) ) {
+				$short_desc_args['content_images'] = array_slice( $arguments['short_description_images'], 0, 2 );
+			}
+			if ( isset( $arguments['short_description_charts'] ) ) {
+				$short_desc_args['content_charts'] = array_slice( $arguments['short_description_charts'], 0, 1 );
+			}
+
+			if ( ! empty( $short_desc_args ) ) {
+				$description2_with_media = $this->embed_content_media( $description2, $short_desc_args );
+				$product->set_short_description( $description2_with_media );
+			} else {
+				$product->set_short_description( $description2 );
+			}
 		}
 
 		if ( 'simple' === $product_type && '' !== $local_price ) {
@@ -383,6 +481,11 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 
 		if ( ! empty( $attachments ) ) {
 			$saved_product = wc_get_product( $product_id );
+		}
+
+		// Handle variation images if provided.
+		if ( isset( $arguments['variation_images'] ) && is_array( $arguments['variation_images'] ) ) {
+			$this->assign_variation_images( $product_id, $arguments['variation_images'], $messages );
 		}
 
 		// Handle product categories.
@@ -633,9 +736,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		if ( '' !== $base_url ) {
-			if ( ! class_exists( 'WP_Http' ) ) {
-				require_once ABSPATH . WPINC . '/class-http.php';
-			}
+			// WP_Http is autoloaded in WordPress core, no require needed.
 			$absolute = WP_Http::make_absolute_url( $candidate, $base_url );
 			if ( $absolute && wp_http_validate_url( $absolute ) ) {
 				return esc_url_raw( $absolute );
@@ -956,6 +1057,95 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	protected function sanitize_dimension( $dimension ) {
 		return wc_format_decimal( $dimension );
+	}
+
+	/**
+	 * Assigns images to product variations.
+	 *
+	 * @param int   $product_id       Product ID.
+	 * @param array $variation_images Array of variation image configurations.
+	 * @param array $messages         Messages array to append to.
+	 */
+	protected function assign_variation_images( $product_id, $variation_images, &$messages ) {
+		$product = wc_get_product( $product_id );
+
+		if ( ! $product || ! $product->is_type( 'variable' ) ) {
+			$messages[] = __( 'Variation images can only be assigned to variable products.', 'mcp-ai-wpoos' );
+			return;
+		}
+
+		$variations = $product->get_children();
+
+		if ( empty( $variations ) ) {
+			$messages[] = __( 'No variations found to assign images to.', 'mcp-ai-wpoos' );
+			return;
+		}
+
+		$assigned_count = 0;
+
+		foreach ( $variation_images as $var_image_config ) {
+			if ( empty( $var_image_config['variation_attributes'] ) || empty( $var_image_config['image_id'] ) ) {
+				continue;
+			}
+
+			$target_attributes = $var_image_config['variation_attributes'];
+			$image_id          = absint( $var_image_config['image_id'] );
+
+			// Verify the image exists.
+			if ( ! wp_get_attachment_url( $image_id ) ) {
+				$messages[] = sprintf(
+					/* translators: %d: Image ID */
+					__( 'Image ID %d does not exist and was skipped.', 'mcp-ai-wpoos' ),
+					$image_id
+				);
+				continue;
+			}
+
+			// Find matching variation.
+			foreach ( $variations as $variation_id ) {
+				$variation = wc_get_product( $variation_id );
+
+				if ( ! $variation ) {
+					continue;
+				}
+
+				$variation_attrs = $variation->get_attributes();
+				$matches         = true;
+
+				// Check if all target attributes match this variation.
+				foreach ( $target_attributes as $attr_name => $attr_value ) {
+					$attr_key = 'attribute_' . sanitize_title( $attr_name );
+
+					if ( ! isset( $variation_attrs[ $attr_key ] ) ||
+						sanitize_title( $variation_attrs[ $attr_key ] ) !== sanitize_title( $attr_value ) ) {
+						$matches = false;
+						break;
+					}
+				}
+
+				if ( $matches ) {
+					$variation->set_image_id( $image_id );
+					$variation->save();
+					++$assigned_count;
+					break;
+				}
+			}
+		}
+
+		if ( $assigned_count > 0 ) {
+			$messages[] = sprintf(
+				/* translators: %d: Number of variations */
+				_n(
+					'Image assigned to %d variation.',
+					'Images assigned to %d variations.',
+					$assigned_count,
+					'mcp-ai-wpoos'
+				),
+				$assigned_count
+			);
+		} else {
+			$messages[] = __( 'No matching variations found for the provided variation images.', 'mcp-ai-wpoos' );
+		}
 	}
 
 	/**

@@ -51,11 +51,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 			<label for="<?php echo esc_attr( $name ); ?>">
 				<?php echo esc_html( $label ); ?>
 			</label>
-			<input 
-				type="<?php echo esc_attr( $type ); ?>" 
-				id="<?php echo esc_attr( $name ); ?>" 
-				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]" 
-				value="<?php echo esc_attr( $value ); ?>" 
+			<input
+				type="<?php echo esc_attr( $type ); ?>"
+				id="<?php echo esc_attr( $name ); ?>"
+				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]"
+				value="<?php echo esc_attr( $value ); ?>"
 				class="<?php echo esc_attr( $class ); ?>"
 			/>
 			<?php if ( ! empty( $description ) ) : ?>
@@ -94,10 +94,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 			<label for="<?php echo esc_attr( $name ); ?>">
 				<?php echo esc_html( $label ); ?>
 			</label>
-			<textarea 
-				id="<?php echo esc_attr( $name ); ?>" 
-				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]" 
-				rows="<?php echo esc_attr( $rows ); ?>" 
+			<textarea
+				id="<?php echo esc_attr( $name ); ?>"
+				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]"
+				rows="<?php echo esc_attr( $rows ); ?>"
 				cols="<?php echo esc_attr( $cols ); ?>"
 				class="<?php echo esc_attr( $class ); ?>"
 			><?php echo esc_textarea( $value ); ?></textarea>
@@ -120,11 +120,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 
 			?>
 			<label for="<?php echo esc_attr( $name ); ?>">
-				<input 
-					type="checkbox" 
-					id="<?php echo esc_attr( $name ); ?>" 
-					name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]" 
-					value="1" 
+				<input
+					type="checkbox"
+					id="<?php echo esc_attr( $name ); ?>"
+					name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]"
+					value="1"
 					<?php checked( $checked ); ?>
 				/>
 				<?php echo esc_html( $label ); ?>
@@ -153,9 +153,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 			<label for="<?php echo esc_attr( $name ); ?>">
 				<?php echo esc_html( $label ); ?>
 			</label>
-			<select 
-				id="<?php echo esc_attr( $name ); ?>" 
-				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]" 
+			<select
+				id="<?php echo esc_attr( $name ); ?>"
+				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]"
 				class="<?php echo esc_attr( $class ); ?>"
 			>
 				<?php foreach ( $options as $option_value => $option_label ) : ?>
@@ -190,11 +190,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 			<label for="<?php echo esc_attr( $name ); ?>">
 				<?php echo esc_html( $label ); ?>
 			</label>
-			<input 
-				type="number" 
-				id="<?php echo esc_attr( $name ); ?>" 
-				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]" 
-				value="<?php echo esc_attr( $value ); ?>" 
+			<input
+				type="number"
+				id="<?php echo esc_attr( $name ); ?>"
+				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]"
+				value="<?php echo esc_attr( $value ); ?>"
 				class="<?php echo esc_attr( $class ); ?>"
 				<?php
 				if ( '' !== $min ) :
@@ -227,11 +227,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 			<label for="<?php echo esc_attr( $name ); ?>">
 				<?php echo esc_html( $label ); ?>
 			</label>
-			<input 
-				type="color" 
-				id="<?php echo esc_attr( $name ); ?>" 
-				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]" 
-				value="<?php echo esc_attr( $value ); ?>" 
+			<input
+				type="color"
+				id="<?php echo esc_attr( $name ); ?>"
+				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]"
+				value="<?php echo esc_attr( $value ); ?>"
 				class="wp-color-picker"
 			/>
 			<?php if ( ! empty( $description ) ) : ?>

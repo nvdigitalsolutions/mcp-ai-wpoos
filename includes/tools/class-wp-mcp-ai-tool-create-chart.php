@@ -24,7 +24,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
 
 	const CHARTJS_VERSION = '4.4.0';
-	const CHARTJS_CDN_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
 
 	/**
 	 * {@inheritdoc}
@@ -461,62 +460,65 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	protected function generate_chart_html( array $config, $width, $height ) {
 		$chart_id    = 'chart-' . wp_generate_password( 8, false );
 		$config_json = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
-		$chartjs_url = esc_url( self::CHARTJS_CDN_URL );
+		$chartjs_url = esc_url( plugins_url( 'assets/js/vendor/chart.min.js', WP_MCP_AI_FILE ) );
 
-		$html = <<<HTML
+		ob_start();
+		?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chart</title>
-    <script src="{$chartjs_url}"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-            background-color: #f5f5f5;
-        }
-        .chart-container {
-            max-width: 100%;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        canvas {
-            max-width: 100%;
-        }
-    </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Chart</title>
+	<?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
+	<script src="<?php echo esc_url( $chartjs_url ); ?>"></script>
+	<style>
+		body {
+			margin: 0;
+			padding: 20px;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+			background-color: #f5f5f5;
+		}
+		.chart-container {
+			max-width: 100%;
+			margin: 0 auto;
+			background: white;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+		canvas {
+			max-width: 100%;
+		}
+	</style>
 </head>
 <body>
-    <div class="chart-container">
-        <canvas id="{$chart_id}" width="{$width}" height="{$height}"></canvas>
-    </div>
-    <script>
-        (function() {
-            function initChart() {
-                if (typeof Chart === 'undefined') {
-                    setTimeout(initChart, 50);
-                    return;
-                }
-                const ctx = document.getElementById('{$chart_id}').getContext('2d');
-                const chartConfig = {$config_json};
-                new Chart(ctx, chartConfig);
-            }
-            
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initChart);
-            } else {
-                initChart();
-            }
-        })();
-    </script>
+	<div class="chart-container">
+		<canvas id="<?php echo esc_attr( $chart_id ); ?>" width="<?php echo esc_attr( $width ); ?>" height="<?php echo esc_attr( $height ); ?>"></canvas>
+	</div>
+	<script>
+		(function() {
+			function initChart() {
+				if (typeof Chart === 'undefined') {
+					setTimeout(initChart, 50);
+					return;
+				}
+				const ctx = document.getElementById(<?php echo wp_json_encode( $chart_id ); ?>).getContext('2d');
+				const chartConfig = <?php echo wp_json_encode( json_decode( $config_json, true ) ); ?>;
+				new Chart(ctx, chartConfig);
+			}
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', initChart);
+			} else {
+				initChart();
+			}
+		})();
+	</script>
 </body>
 </html>
-HTML;
+		<?php
+		$html = ob_get_clean();
 
 		return $html;
 	}
@@ -675,9 +677,7 @@ HTML;
 			'read-only',       // Does not modify site data (unless saving attachment).
 			'requires-capability',  // Requires user capabilities.
 			'write',           // Can create attachments when save_as_attachment is true.
-			'local-only',      // Works entirely locally, Chart.js loaded from CDN.
-			'external-api',    // Loads Chart.js from CDN.
-			'network-dependent', // Requires internet for Chart.js CDN.
+			'local-only',      // Works entirely locally, Chart.js loaded from local assets.
 		);
 	}
 
@@ -703,13 +703,7 @@ HTML;
 			),
 			'dependencies'          => array(
 				'required_extensions' => array(), // No PHP extensions required.
-				'external_services'   => array(
-					'chartjs_cdn' => array(
-						'url'      => self::CHARTJS_CDN_URL,
-						'required' => true,
-						'purpose'  => 'Chart.js library loading',
-					),
-				),
+				'external_services'   => array(),
 			),
 			'orchestration_hints'   => array(
 				'can_run_parallel' => true,   // Multiple charts can be generated simultaneously.

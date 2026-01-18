@@ -75,8 +75,8 @@ class WP_MCP_AI_Credential_Repository {
 
 		// Search through all assistants' credentials.
 		$query = $wpdb->prepare(
-			"SELECT post_id, meta_value 
-			FROM {$wpdb->postmeta} 
+			"SELECT post_id, meta_value
+			FROM {$wpdb->postmeta}
 			WHERE meta_key = %s",
 			$this->credentials_meta_key
 		);
@@ -243,8 +243,8 @@ class WP_MCP_AI_Credential_Repository {
 		global $wpdb;
 
 		$query = $wpdb->prepare(
-			"SELECT post_id, meta_value 
-			FROM {$wpdb->postmeta} 
+			"SELECT post_id, meta_value
+			FROM {$wpdb->postmeta}
 			WHERE meta_key = %s",
 			$this->credentials_meta_key
 		);
@@ -280,8 +280,8 @@ class WP_MCP_AI_Credential_Repository {
 		global $wpdb;
 
 		$query = $wpdb->prepare(
-			"SELECT post_id, meta_value 
-			FROM {$wpdb->postmeta} 
+			"SELECT post_id, meta_value
+			FROM {$wpdb->postmeta}
 			WHERE meta_key = %s",
 			$this->credentials_meta_key
 		);

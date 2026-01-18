@@ -51,33 +51,37 @@ class WP_MCP_AI_Tool_Flowhub_Manage_Customer implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'       => array(
+				'connection_id' => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for Flowhub. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos' ),
+				),
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: "create" or "update".', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'create', 'update' ),
 				),
-				'customer_id'  => array(
+				'customer_id'   => array(
 					'type'        => 'string',
 					'description' => __( 'Customer ID (required for update action).', 'mcp-ai-wpoos' ),
 				),
-				'first_name'   => array(
+				'first_name'    => array(
 					'type'        => 'string',
 					'description' => __( 'Customer first name.', 'mcp-ai-wpoos' ),
 				),
-				'last_name'    => array(
+				'last_name'     => array(
 					'type'        => 'string',
 					'description' => __( 'Customer last name.', 'mcp-ai-wpoos' ),
 				),
-				'email'        => array(
+				'email'         => array(
 					'type'        => 'string',
 					'description' => __( 'Customer email address.', 'mcp-ai-wpoos' ),
 					'format'      => 'email',
 				),
-				'phone'        => array(
+				'phone'         => array(
 					'type'        => 'string',
 					'description' => __( 'Customer phone number.', 'mcp-ai-wpoos' ),
 				),
-				'address'      => array(
+				'address'       => array(
 					'type'        => 'object',
 					'description' => __( 'Customer address details.', 'mcp-ai-wpoos' ),
 					'properties'  => array(
@@ -93,11 +97,11 @@ class WP_MCP_AI_Tool_Flowhub_Manage_Customer implements WP_MCP_AI_Tool_Interface
 					'description' => __( 'Date of birth (YYYY-MM-DD format).', 'mcp-ai-wpoos' ),
 					'format'      => 'date',
 				),
-				'medical_id'   => array(
+				'medical_id'    => array(
 					'type'        => 'string',
 					'description' => __( 'Medical cannabis ID number.', 'mcp-ai-wpoos' ),
 				),
-				'timeout'      => array(
+				'timeout'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,
@@ -154,7 +158,38 @@ class WP_MCP_AI_Tool_Flowhub_Manage_Customer implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		$client        = new WP_MCP_AI_Flowhub_Client();
+		// Get connection_id if provided.
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
+
+		// Validate connection if provided.
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+			if ( null === $connection ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_not_found',
+					__( 'Connection not found. Please check the connection ID.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Validate connection type.
+			if ( empty( $connection['connection_type'] ) || 'flowhub' !== $connection['connection_type'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_wrong_connection_type',
+					__( 'This connection is not a Flowhub connection.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			// Check if connection is enabled.
+			if ( empty( $connection['enabled'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_disabled',
+					__( 'This connection is disabled. Please enable it in Remote Sites settings.', 'mcp-ai-wpoos' )
+				);
+			}
+		}
+
+		$client        = new WP_MCP_AI_Flowhub_Client( $connection_id );
 		$customer_data = array();
 
 		if ( isset( $arguments['first_name'] ) ) {

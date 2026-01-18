@@ -526,11 +526,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// 2. tool_choice is not already set by user
 		// 3. tools are present
 		$provider = isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : '';
-		
+
 		if ( 'cloudflare' === $provider && ! isset( $options['tool_choice'] ) && ! empty( $options['tools'] ) ) {
 			// Default to "auto" for chat-client to let model decide when tools are needed
 			$options['tool_choice'] = 'auto';
-			
+
 			WP_MCP_AI_Logger::log_event(
 				'chat_client_tool_choice_default',
 				'Set default tool_choice="auto" for Cloudflare chat-client',
@@ -540,7 +540,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				)
 			);
 		}
-		
+
 		return $options;
 	}
 

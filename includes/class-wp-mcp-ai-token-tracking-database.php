@@ -113,7 +113,9 @@ class WP_MCP_AI_Token_Tracking_Database {
 			KEY user_timestamp (user_id,timestamp)
 		) $charset_collate;";
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		if ( ! function_exists( 'dbDelta' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		}
 		dbDelta( $sql );
 
 		// Verify table was created.
@@ -151,7 +153,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 		$output_tokens = absint( $output_tokens );
 		$total_tokens  = $input_tokens + $output_tokens;
 
-		if ( ! $user_id || ! $provider || ! $model || $total_tokens === 0 ) {
+		if ( ! $user_id || ! $provider || ! $model || 0 === $total_tokens ) {
 			return false;
 		}
 
@@ -316,7 +318,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
-			SELECT 
+			SELECT
 				SUM(cost_usd) as total_cost,
 				SUM(total_tokens) as total_tokens,
 				SUM(CASE WHEN is_estimated = 1 THEN cost_usd ELSE 0 END) as estimated_cost,
@@ -365,7 +367,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
-			SELECT 
+			SELECT
 				provider,
 				SUM(cost_usd) as total_cost,
 				SUM(total_tokens) as total_tokens
@@ -399,7 +401,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
-			SELECT 
+			SELECT
 				provider,
 				model,
 				SUM(cost_usd) as total_cost,
@@ -434,7 +436,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
-			SELECT 
+			SELECT
 				tool,
 				SUM(cost_usd) as total_cost,
 				SUM(total_tokens) as total_tokens
@@ -468,7 +470,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
-			SELECT 
+			SELECT
 				DATE(timestamp) as date,
 				SUM(cost_usd) as total_cost,
 				SUM(total_tokens) as total_tokens
@@ -503,7 +505,7 @@ class WP_MCP_AI_Token_Tracking_Database {
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table_name is escaped with esc_sql() above.
 		$query = "
-			SELECT 
+			SELECT
 				user_id,
 				SUM(cost_usd) as total_cost,
 				SUM(total_tokens) as total_tokens

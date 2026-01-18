@@ -1,0 +1,456 @@
+/**
+ * Research Page Styles
+ *
+ * Styles for the CPT Research & Add pages with chat interface.
+ *
+ * @package WP_MCP_AI_Pro
+ */
+
+/* Research Page Container */
+.wp-mcp-ai-research-page {
+	margin-top: 20px;
+}
+
+.wp-mcp-ai-research-container {
+	display: flex;
+	gap: 30px;
+	margin-top: 20px;
+}
+
+/* Sidebar */
+.wp-mcp-ai-research-sidebar {
+	flex: 0 0 300px;
+	min-width: 300px;
+}
+
+.wrap .wp-mcp-ai-research-intro,
+.wrap .wp-mcp-ai-research-tips,
+.wrap .wp-mcp-ai-research-examples,
+.wrap .wp-mcp-ai-research-actions,
+.wrap .wp-mcp-ai-research-preview {
+	background: #fff !important;
+	border: 1px solid #ccd0d4 !important;
+	border-radius: 4px;
+	padding: 20px;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.wrap .wp-mcp-ai-research-preview {
+	border-color: #2271b1 !important;
+	background: #f0f6fc !important;
+}
+
+.wrap .wp-mcp-ai-research-intro h2,
+.wrap .wp-mcp-ai-research-tips h3,
+.wrap .wp-mcp-ai-research-examples h3,
+.wrap .wp-mcp-ai-research-actions h3,
+.wrap .wp-mcp-ai-research-preview h3 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	font-size: 14px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: #1d2327;
+}
+
+.wrap .wp-mcp-ai-research-preview h3 {
+	color: #2271b1;
+}
+
+.wp-mcp-ai-research-intro ol {
+	margin: 0;
+	padding-left: 20px;
+	color: #50575e;
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+.wp-mcp-ai-research-intro ol li {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-research-tips ul {
+	margin: 0;
+	padding-left: 0;
+	list-style: none;
+	color: #50575e;
+	font-size: 13px;
+}
+
+.wp-mcp-ai-research-tips ul li {
+	margin-bottom: 12px;
+	padding-left: 20px;
+	position: relative;
+}
+
+.wp-mcp-ai-research-tips ul li::before {
+	content: "•";
+	position: absolute;
+	left: 0;
+	color: #2271b1;
+	font-weight: bold;
+	font-size: 16px;
+}
+
+.wp-mcp-ai-research-tips ul li strong {
+	color: #1d2327;
+}
+
+/* Example Queries */
+.wp-mcp-ai-example-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.wp-mcp-ai-example-list li {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-example-query {
+	width: 100%;
+	text-align: left;
+	white-space: normal;
+	height: auto;
+	padding: 10px 12px;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.wp-mcp-ai-example-query:hover {
+	background: #f6f7f7;
+	border-color: #2271b1;
+	color: #2271b1;
+}
+
+/* Main Content Area */
+.wp-mcp-ai-research-main {
+	flex: 1;
+	min-width: 0;
+}
+
+.wrap .wp-mcp-ai-research-chat {
+	background: #fff !important;
+	border: 1px solid #ccd0d4 !important;
+	border-radius: 4px;
+	padding: 20px;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+	margin-bottom: 20px;
+}
+
+/* Research Data Preview */
+.wp-mcp-ai-research-create-section {
+	background: #f0f6fc;
+	border: 2px solid #2271b1;
+	border-radius: 4px;
+	padding: 20px;
+	margin-top: 20px;
+}
+
+.wp-mcp-ai-research-data-preview {
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-research-data-preview h3 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	color: #1d2327;
+}
+
+#wp-mcp-ai-research-data-content {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	padding: 15px;
+	max-height: 400px;
+	overflow-y: auto;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+#wp-mcp-ai-research-data-content h4 {
+	margin-top: 0;
+	margin-bottom: 10px;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+#wp-mcp-ai-research-data-content p {
+	margin-bottom: 10px;
+}
+
+#wp-mcp-ai-research-data-content strong {
+	color: #1d2327;
+	font-weight: 600;
+}
+
+/* Create Actions */
+.wp-mcp-ai-research-create-actions {
+	text-align: center;
+}
+
+.wp-mcp-ai-create-place-btn,
+.wp-mcp-ai-create-quiz-btn {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-research-create-actions .description {
+	margin-top: 10px;
+	color: #646970;
+	font-style: italic;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 1280px) {
+	.wp-mcp-ai-research-container {
+		flex-direction: column;
+	}
+
+	.wp-mcp-ai-research-sidebar {
+		flex: 1;
+		min-width: 100%;
+	}
+}
+
+/* Quick Actions Buttons */
+.wp-mcp-ai-research-actions p {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-research-actions .button {
+	width: 100%;
+}
+
+/* Loading States */
+.wp-mcp-ai-research-chat.loading {
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.wp-mcp-ai-research-chat.loading::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 24px;
+	height: 24px;
+	margin: -12px 0 0 -12px;
+	border: 3px solid #f3f3f3;
+	border-top: 3px solid #2271b1;
+	border-radius: 50%;
+	animation: wp-mcp-ai-spin 1s linear infinite;
+}
+
+@keyframes wp-mcp-ai-spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+/* Success Messages */
+.wp-mcp-ai-success-message {
+	background: #d7f1de;
+	border-left: 4px solid #00a32a;
+	padding: 12px;
+	margin: 15px 0;
+	border-radius: 2px;
+}
+
+.wp-mcp-ai-success-message p {
+	margin: 0;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+/* Error Messages */
+.wp-mcp-ai-error-message {
+	background: #fcf0f1;
+	border-left: 4px solid #d63638;
+	padding: 12px;
+	margin: 15px 0;
+	border-radius: 2px;
+}
+
+.wp-mcp-ai-error-message p {
+	margin: 0;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+/* Button Enhancements */
+.wp-mcp-ai-create-place-btn .dashicons,
+.wp-mcp-ai-create-quiz-btn .dashicons {
+	line-height: inherit;
+}
+
+/* Ensure chat interface fits properly */
+.wp-mcp-ai-research-chat .wp-mcp-ai-chat-container {
+	max-width: 100%;
+}
+
+/* Add to Database Button - Full Width */
+.wp-mcp-ai-add-to-database-btn {
+	width: 100%;
+	text-align: center;
+}
+
+.wp-mcp-ai-add-to-database-btn .dashicons {
+	margin-top: 3px;
+}
+
+/* Quiz Preview Styles */
+.wp-mcp-ai-preview-content {
+	background: #fff;
+	border-radius: 4px;
+	padding: 15px;
+	margin-top: 10px;
+}
+
+.wp-mcp-ai-preview-loading {
+	text-align: center;
+	padding: 20px;
+}
+
+.wp-mcp-ai-preview-loading .spinner {
+	float: none;
+	margin: 0 auto 10px;
+}
+
+.wp-mcp-ai-preview-loading p {
+	margin: 0;
+	color: #646970;
+	font-size: 13px;
+}
+
+.wp-mcp-ai-preview-error {
+	color: #d63638;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-preview-header {
+	margin-bottom: 15px;
+	padding-bottom: 15px;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.wp-mcp-ai-preview-title {
+	margin: 0 0 8px 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-preview-meta {
+	margin: 0;
+	font-size: 12px;
+	color: #646970;
+}
+
+.wp-mcp-ai-preview-question {
+	margin-bottom: 15px;
+	padding: 12px;
+	background: #f9fafb;
+	border-radius: 4px;
+	border-left: 3px solid #2271b1;
+}
+
+.wp-mcp-ai-preview-question-text {
+	margin: 0 0 10px 0;
+	font-size: 13px;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-preview-options {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.wp-mcp-ai-preview-options li {
+	margin-bottom: 6px;
+	font-size: 12px;
+	color: #50575e;
+	padding: 6px 8px;
+	background: #fff;
+	border-radius: 3px;
+	border: 1px solid #e5e7eb;
+}
+
+.wp-mcp-ai-preview-options li.wp-mcp-ai-correct-option {
+	background: #d7f1de;
+	border-color: #00a32a;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-correct-badge {
+	color: #00a32a;
+	font-weight: bold;
+	margin-left: 4px;
+}
+
+.wp-mcp-ai-preview-more {
+	margin: 10px 0 0 0;
+	padding: 10px;
+	text-align: center;
+	font-size: 12px;
+	color: #646970;
+	font-style: italic;
+	background: #f9fafb;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-preview-empty {
+	margin: 0;
+	padding: 20px;
+	text-align: center;
+	font-size: 13px;
+	color: #646970;
+	font-style: italic;
+}
+
+/* Pagination Controls */
+.wp-mcp-ai-preview-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 15px;
+	padding-top: 15px;
+	border-top: 1px solid #e5e7eb;
+}
+
+.wp-mcp-ai-preview-pagination .button {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 12px;
+	font-size: 12px;
+}
+
+.wp-mcp-ai-preview-pagination .button .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
+
+.wp-mcp-ai-preview-pagination .button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.wp-mcp-ai-preview-page-info {
+	font-size: 12px;
+	color: #646970;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-preview-page-info .wp-mcp-ai-preview-current-page {
+	color: #2271b1;
+	font-weight: 600;
+}
+
+/* Smooth transition for updates */
+.wp-mcp-ai-preview-data {
+	transition: opacity 0.3s ease;
+}

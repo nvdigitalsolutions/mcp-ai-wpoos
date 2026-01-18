@@ -79,29 +79,29 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'topic'            => array(
+				'topic'           => array(
 					'type'        => 'string',
 					'description' => __( 'The research topic or question to investigate.', 'mcp-ai-wpoos' ),
 				),
-				'depth'            => array(
+				'depth'           => array(
 					'type'        => 'string',
 					'description' => __( 'Research depth level.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'basic', 'standard', 'comprehensive' ),
 					'default'     => 'standard',
 				),
-				'focus_areas'      => array(
+				'focus_areas'     => array(
 					'type'        => 'array',
 					'description' => __( 'Optional specific aspects to focus on (e.g., "technical", "historical", "economic").', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'include_sources'  => array(
+				'include_sources' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include source citations in the research report.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
-				'run_mode'         => array(
+				'run_mode'        => array(
 					'type'        => 'string',
 					'description' => __( 'Execution mode: "immediate" runs synchronously, "background" schedules via WordPress cron for long-running research.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'immediate', 'background' ),
@@ -162,11 +162,11 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
-		$topic          = sanitize_text_field( $arguments['topic'] );
-		$depth          = isset( $arguments['depth'] ) ? sanitize_key( $arguments['depth'] ) : 'standard';
-		$focus_areas    = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] ) ? array_map( 'sanitize_text_field', $arguments['focus_areas'] ) : array();
+		$topic           = sanitize_text_field( $arguments['topic'] );
+		$depth           = isset( $arguments['depth'] ) ? sanitize_key( $arguments['depth'] ) : 'standard';
+		$focus_areas     = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] ) ? array_map( 'sanitize_text_field', $arguments['focus_areas'] ) : array();
 		$include_sources = isset( $arguments['include_sources'] ) ? (bool) $arguments['include_sources'] : true;
-		$run_mode       = isset( $arguments['run_mode'] ) ? sanitize_key( $arguments['run_mode'] ) : 'immediate';
+		$run_mode        = isset( $arguments['run_mode'] ) ? sanitize_key( $arguments['run_mode'] ) : 'immediate';
 
 		// Validate depth.
 		if ( ! in_array( $depth, array( 'basic', 'standard', 'comprehensive' ), true ) ) {
@@ -271,7 +271,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	protected function gather_information( $topic, $depth, $focus_areas, $context ) {
 		// Check if web search tool is available.
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry        = WP_MCP_AI_Tool_Registry::get_instance();
 		$web_search_tool = $registry->get_tool( 'web_search' );
 
 		if ( ! $web_search_tool ) {
@@ -475,7 +475,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Check if there's a dedicated deep research model configured.
 		if ( ! empty( $settings['deep_research_model'] ) ) {
 			$research_model = sanitize_text_field( $settings['deep_research_model'] );
-			
+
 			// Parse provider from model string (format: "provider:model" or just "model").
 			$parts = explode( ':', $research_model, 2 );
 			if ( count( $parts ) === 2 ) {
@@ -504,7 +504,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! empty( $settings['openai_api_key'] ) && class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$client = new WP_MCP_AI_OpenAI_Client();
 			// Prefer gpt-4o for research (multimodal, fast, cost-effective) or fall back to configured default.
-			$model  = ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4o';
+			$model = ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4o';
 			return array(
 				'client'   => $client,
 				'provider' => 'openai',
@@ -515,7 +515,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! empty( $settings['gemini_api_key'] ) && class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$client = new WP_MCP_AI_Gemini_Client();
 			// Prefer gemini-3-pro for deep research (1M context, agentic capabilities) or fall back to configured default.
-			$model  = ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3-pro';
+			$model = ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3-pro';
 			return array(
 				'client'   => $client,
 				'provider' => 'gemini',
@@ -526,7 +526,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! empty( $settings['anthropic_api_key'] ) && class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			$client = new WP_MCP_AI_Anthropic_Client();
 			// Prefer claude-opus-4.5 for comprehensive research (highest intelligence, 200K context, persistent memory).
-			$model  = 'claude-opus-4.5';
+			$model = 'claude-opus-4.5';
 			return array(
 				'client'   => $client,
 				'provider' => 'anthropic',
@@ -755,10 +755,10 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Add sources if requested.
 		if ( $include_sources && ! empty( $search_results['sources'] ) ) {
-			$report['sources'] = $search_results['sources'];
+			$report['sources']      = $search_results['sources'];
 			$report['source_count'] = count( $search_results['sources'] );
 		} else {
-			$report['sources'] = array();
+			$report['sources']      = array();
 			$report['source_count'] = 0;
 		}
 
@@ -912,7 +912,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		set_transient( 'wp_mcp_ai_research_job_' . $job_id, $job_status, DAY_IN_SECONDS );
 
 		// Create tool instance and execute research.
-		$tool = new self();
+		$tool   = new self();
 		$result = $tool->execute(
 			array(
 				'topic'           => $topic,
@@ -927,7 +927,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		);
 
 		// Update job with results.
-		$job_status['status'] = is_wp_error( $result ) ? 'failed' : 'completed';
+		$job_status['status']       = is_wp_error( $result ) ? 'failed' : 'completed';
 		$job_status['completed_at'] = time();
 
 		if ( is_wp_error( $result ) ) {

@@ -108,7 +108,7 @@ if ( empty( $groups ) ) {
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
-			'class' => 'wp-block-mcp-ai-wpoos-tools-grid',
+			'class'         => 'wp-block-mcp-ai-wpoos-tools-grid',
 			'data-block-id' => $unique_id,
 		)
 	);
@@ -156,10 +156,10 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 			<label for="<?php echo esc_attr( $unique_id . '-search' ); ?>" class="wp-block-mcp-ai-wpoos-tools-grid__filter-label">
 				<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
 			</label>
-			<input 
-				type="search" 
+			<input
+				type="search"
 				id="<?php echo esc_attr( $unique_id . '-search' ); ?>"
-				class="wp-mcp-ai-tools-grid__search-input" 
+				class="wp-mcp-ai-tools-grid__search-input"
 				placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
 				aria-label="<?php esc_attr_e( 'Search tools', 'mcp-ai-wpoos' ); ?>"
 			>
@@ -214,8 +214,8 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 						?>
 						<li class="<?php echo esc_attr( $item_class ); ?>" data-tool-slug="<?php echo esc_attr( $tool['slug'] ); ?>">
 							<div class="wp-block-mcp-ai-wpoos-tools-grid__item-header">
-								<input 
-									type="checkbox" 
+								<input
+									type="checkbox"
 									class="wp-mcp-ai-tools-grid__checkbox"
 									id="<?php echo esc_attr( $unique_id . '-' . $tool['slug'] ); ?>"
 									value="<?php echo esc_attr( $tool['slug'] ); ?>"

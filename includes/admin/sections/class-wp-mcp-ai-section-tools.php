@@ -329,6 +329,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables the quiz/assessment system for tutors. Provides 7 tools for creating quizzes, managing submissions, and grading. Includes automatic JetEngine CCT synchronization when available. Requires edit_posts capability to create quizzes. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+				'enable_media_toolkit'                 => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Media Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable media template management (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the Media Toolkit for creating and managing reusable templates for the Graphic Editor Plus tool. Templates allow you to save operation configurations (logo positions, resize settings, AI prompts) and apply them to multiple images via AI assistants or batch operations. Requires upload_files capability. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 
 				// Media fields.
 				'enable_ai_media_library'              => array(
@@ -426,6 +433,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables AI-powered places management for attractions, businesses, and locations. Provides 6+ tools for creating, searching, listing, and managing places with Google Maps integration. Includes geocoding, radius search, and place data enrichment. Enhances all geospatial and mapping tools. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// ECA Management fields.
+				'enable_eca_management'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable ECA Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Extra-Curricular Activities (ECA) management toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered Extra-Curricular Activities management for schools. Provides tools for creating and managing ECAs (clubs, societies, sports), managing student enrollments, viewing schedules, and syncing with iSAMS. Includes 5+ tools for comprehensive ECA administration. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Health and Wellness Management fields.
+				'enable_health_wellness_management'    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Health & Wellness Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Health and Wellness management toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered health and wellness management for individuals, families, and pets. Provides 30+ tools for managing members, medical records, policies, checkups, prescriptions, and allergies. Includes secure health data storage with proper access controls. Always ensure HIPAA/GDPR compliance for healthcare deployments. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -490,6 +515,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'icon'   => 'dashicons-list-view',
 					'fields' => array(), // Custom rendering, no form fields.
 				),
+				'features'       => array(
+					'id'     => 'features',
+					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-admin-tools',
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management' ),
+				),
 				'configuration'  => array(
 					'id'     => 'configuration',
 					'label'  => __( 'Configuration', 'mcp-ai-wpoos' ),
@@ -504,7 +535,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 				'external_tools' => array(
 					'id'     => 'external_tools',
-					'label'  => __( 'External Tools', 'mcp-ai-wpoos' ),
+					'label'  => __( 'GitHub OAuth', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-site-alt3',
 					'fields' => array(
 						'github_client_id',
@@ -521,12 +552,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						'enable_woocommerce_tools',
 						'enable_elementor_widgets',
 					),
-				),
-				'features'       => array(
-					'id'     => 'features',
-					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management' ),
 				),
 				'media'          => array(
 					'id'     => 'media',
@@ -644,7 +669,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		}
 
 		/**
-		 * Render External Tools footer content.
+		 * Render GitHub OAuth footer content.
 		 */
 		private function render_external_tools_footer() {
 			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
@@ -783,11 +808,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<th scope="row"></th>
 				<td>
 					<p class="description">
-						<strong><?php esc_html_e( 'About External Tools:', 'mcp-ai-wpoos' ); ?></strong>
+						<strong><?php esc_html_e( 'About GitHub OAuth:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						echo wp_kses_post(
 							__(
-								'External tools are third-party service integrations that extend AI capabilities beyond WordPress. Configure API credentials here to enable tools that interact with external platforms and services.',
+								'GitHub OAuth integration allows AI assistants to interact with your GitHub repositories, create Codespaces, and develop custom tools. Configure your OAuth credentials to enable GitHub integration.',
 								'mcp-ai-wpoos'
 							)
 						);
@@ -1362,7 +1387,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							);
 							$is_active  = ( $group['id'] === $active_subtab );
 							?>
-							<a href="<?php echo esc_url( $subtab_url ); ?>" 
+							<a href="<?php echo esc_url( $subtab_url ); ?>"
 								class="wp-mcp-ai-subtab <?php echo esc_attr( $is_active ? 'wp-mcp-ai-subtab-active' : '' ); ?>"
 								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
@@ -1457,11 +1482,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 									</span>
 								<?php endif; ?>
 							</label>
-							<input type="search" 
-									id="tool_search" 
-									name="tool_search" 
-									value="<?php echo esc_attr( $search ); ?>" 
-									placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>" 
+							<input type="search"
+									id="tool_search"
+									name="tool_search"
+									value="<?php echo esc_attr( $search ); ?>"
+									placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
 									style="width: 100%;">
 						</div>
 
@@ -1502,35 +1527,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					(function($) {
 						$('#wp-mcp-ai-filter-tools').on('click', function() {
 							const $button = $(this);
-							
+
 							// Add loading state
 							$button.addClass('is-loading').prop('disabled', true);
-							
+
 							const search = $('#tool_search').val();
 							const group = $('#tool_group').val();
 							const url = new URL(window.location.href);
-							
+
 							// Update URL parameters.
 							url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
 							url.searchParams.set('tab', 'tools');
 							url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
-							
+
 							if (search) {
 								url.searchParams.set('tool_search', search);
 							} else {
 								url.searchParams.delete('tool_search');
 							}
-							
+
 							if (group) {
 								url.searchParams.set('tool_group', group);
 							} else {
 								url.searchParams.delete('tool_group');
 							}
-							
+
 							// Navigate to filtered URL.
 							window.location.href = url.toString();
 						});
-						
+
 						// Allow Enter key to trigger filter.
 						$('#tool_search, #tool_group').on('keypress', function(e) {
 							if (e.which === 13) {
@@ -1596,7 +1621,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								foreach ( $tools as $tool ) :
 									$slug        = $tool->get_slug();
 									$description = $tool->get_description();
-									$name        = $this->get_tool_display_name( $slug );
+									$name        = $this->get_tool_display_name( $slug, $tool );
 
 									// Check if tool has dependencies.
 									$dependencies = $this->check_tool_dependencies( $slug );
@@ -1632,8 +1657,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 										<td>
 											<?php if ( $is_available ) : ?>
 												<label class="wp-mcp-ai-toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
-													<input type="checkbox" 
-															class="wp-mcp-ai-tool-toggle" 
+													<input type="checkbox"
+															class="wp-mcp-ai-tool-toggle"
 															data-tool-slug="<?php echo esc_attr( $slug ); ?>"
 															<?php checked( $is_enabled ); ?>
 															style="opacity: 0; width: 0; height: 0;">
@@ -1646,8 +1671,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 									</tr>
 									<?php
 									// Badge row - always show to display status.
-									$has_pro_badge   = $this->is_pro_tool( $slug );
-									$status_label    = $this->get_tool_status_label( $slug );
+									$has_pro_badge    = $this->is_pro_tool( $slug );
+									$status_label     = $this->get_tool_status_label( $slug );
 									$has_status_label = ! empty( $status_label );
 									?>
 									<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>-badges" class="wp-mcp-ai-tool-badges-row">
@@ -1661,7 +1686,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 													<?php esc_html_e( 'Pro', 'mcp-ai-wpoos' ); ?>
 												</span>
 											<?php endif; ?>
-											<?php if ( $has_status_label ) :
+											<?php
+											if ( $has_status_label ) :
 												$label_config = $this->get_status_label_config( $status_label );
 												?>
 												<span class="wp-mcp-ai-tool-status-label <?php echo esc_attr( $label_config['class'] ); ?>" style="display: inline-block; padding: 2px 5px; background: <?php echo esc_attr( $label_config['color'] ); ?>; color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -1729,11 +1755,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		/**
 		 * Get display name for a tool.
 		 *
-		 * @param string $slug Tool slug.
+		 * @param string                   $slug Tool slug.
+		 * @param WP_MCP_AI_Tool_Interface $tool Optional. Tool instance to get name from.
 		 * @return string Display name.
 		 */
-		private function get_tool_display_name( $slug ) {
-			// Convert slug to title case.
+		private function get_tool_display_name( $slug, $tool = null ) {
+			// If tool instance provided, use its get_name() method.
+			if ( $tool && method_exists( $tool, 'get_name' ) ) {
+				return $tool->get_name();
+			}
+
+			// Fallback: convert slug to title case.
 			$name = str_replace( '_', ' ', $slug );
 			return ucwords( $name );
 		}

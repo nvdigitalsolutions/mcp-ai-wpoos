@@ -25,15 +25,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 	 * - WP_MCP_AI_Settings_Validator: Input validation
 	 */
 	class WP_MCP_AI_Admin_Settings {
-		const DEFAULT_MEMORY_MAX_FILE_BYTES  = 5242880; // 5 MB.
-		const OPTION_NAME                    = 'wp_mcp_ai_settings';
-		const SETTINGS_GROUP                 = 'wp_mcp_ai_settings_group';
-		const PAGE_SLUG                      = 'wp-mcp-ai-settings';
-		const SIMPLE_JWT_LOGIN_PLUGIN        = 'simple-jwt-login/simple-jwt-login.php';
-		const GMAIL_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/gmail.readonly';
-		const GMAIL_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
-		const GMAIL_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
-		const GMAIL_PROFILE_ENDPOINT         = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
+		const DEFAULT_MEMORY_MAX_FILE_BYTES         = 5242880; // 5 MB.
+		const OPTION_NAME                           = 'wp_mcp_ai_settings';
+		const SETTINGS_GROUP                        = 'wp_mcp_ai_settings_group';
+		const PAGE_SLUG                             = 'wp-mcp-ai-settings';
+		const SIMPLE_JWT_LOGIN_PLUGIN               = 'simple-jwt-login/simple-jwt-login.php';
+		const GMAIL_OAUTH_SCOPE                     = 'https://www.googleapis.com/auth/gmail.readonly';
+		const GMAIL_OAUTH_AUTHORIZE_ENDPOINT        = 'https://accounts.google.com/o/oauth2/v2/auth';
+		const GMAIL_OAUTH_TOKEN_ENDPOINT            = 'https://oauth2.googleapis.com/token';
+		const GMAIL_PROFILE_ENDPOINT                = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
+		const GOOGLE_DRIVE_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly';
+		const GOOGLE_DRIVE_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
+		const GOOGLE_DRIVE_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 
 		/**
 		 * Cached settings for the current request.
@@ -94,8 +97,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );.
 
 			// Delegate OAuth handlers to the OAuth manager component.
+			// Note: OAuth callback is now handled via admin_init in the OAuth manager itself.
+			// We only need the 'start' action here as it uses admin-post.php properly.
 			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_start', array( $this->oauth_manager, 'handle_gmail_oauth_start' ) );
-			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_callback', array( $this->oauth_manager, 'handle_gmail_oauth_callback' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_drive_oauth_start', array( $this->oauth_manager, 'handle_google_drive_oauth_start' ) );
 			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this->settings_base, 'filter_memory_max_file_bytes' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
 			// Legacy settings page notices disabled - now handled by WP_MCP_AI_Settings_Dashboard.
@@ -111,6 +116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_brave_search_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_mubert_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -200,6 +206,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						'web_search_provider' => array( 'brave' ),
 					),
 					'inactive_message' => __( 'Set the web search provider to Brave to activate this connector.', 'mcp-ai-wpoos' ),
+				),
+				'mubert'           => array(
+					'label'            => __( 'Mubert', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'mubert_api_key' ),
+					'fields'           => array(
+						'mubert_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Enables royalty-free background music generation with 150+ genres and 50+ moods.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Request an API key from Mubert (business@mubert.com) before using the generate_music tool.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://mubert.com',
 				),
 				'ita_tariff_rates' => array(
 					'label'            => __( 'ITA Tariff Rates', 'mcp-ai-wpoos' ),
@@ -977,10 +993,37 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		/**
 		 * Returns the list of available provider choices.
 		 *
-		 * @return array
+		 * This method returns only providers that are both enabled (via enable_* checkbox)
+		 * and properly configured (have required API keys/endpoints). Works in both base
+		 * and pro modes, and handles cases where Model_Config may not be loaded.
+		 *
+		 * @since 1.0.0
+		 * @return array Associative array of provider slug => label for enabled providers.
 		 */
 		public static function get_available_providers() {
-			return array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			// Try to use Model_Config if available for accurate filtering.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$model_config_path = trailingslashit( WP_MCP_AI_PATH ) . 'includes' . DIRECTORY_SEPARATOR . 'class-wp-mcp-ai-model-config.php';
+				if ( file_exists( $model_config_path ) ) {
+					require_once $model_config_path;
+				}
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) && method_exists( 'WP_MCP_AI_Model_Config', 'get_available_providers' ) ) {
+				return WP_MCP_AI_Model_Config::get_available_providers();
+			}
+
+			// Fallback: Return all providers if Model_Config is not available.
+			// This ensures backward compatibility and prevents breaking the UI.
+			return array(
+				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
+				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+				'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
+				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
+				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
+				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**
@@ -1965,6 +2008,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_mcp_ai_gmail_section'
 			);
 
+			// Google Drive OAuth section removed - now handled in PRO addon's Remote Sites feature.
+
 			add_settings_section(
 				'wp_mcp_ai_chat_colors_section',
 				__( 'Chat Appearance', 'mcp-ai-wpoos' ),
@@ -2205,6 +2250,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['brave_search_api_key'] ) ) {
 				$clean['brave_search_api_key'] = trim( sanitize_text_field( $settings['brave_search_api_key'] ) );
+			}
+
+			if ( isset( $settings['mubert_api_key'] ) ) {
+				$clean['mubert_api_key'] = trim( sanitize_text_field( $settings['mubert_api_key'] ) );
 			}
 
 			if ( isset( $settings['ita_tariff_api_key'] ) ) {
@@ -2749,11 +2798,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			</div>
 
 			<?php $this->render_error_log_section(); ?>
-			
+
 			<?php $this->render_token_usage_section(); ?>
-			
+
 			<?php $this->render_tool_token_limits_section(); ?>
-			
+
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
 					<h2 class="wp-mcp-ai-connector-checklist__title"><?php esc_html_e( 'Connector Checklist', 'mcp-ai-wpoos' ); ?></h2>
@@ -3371,10 +3420,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					?>
 				</tbody>
 			</table>
-			<button type="button" class="button" id="wp-mcp-ai-add-peer" 
-				data-placeholder-name="<?php esc_attr_e( 'e.g., Production Site', 'mcp-ai-wpoos' ); ?>" 
-				data-placeholder-url="https://example.com" 
-				data-placeholder-key="mesh_..." 
+			<button type="button" class="button" id="wp-mcp-ai-add-peer"
+				data-placeholder-name="<?php esc_attr_e( 'e.g., Production Site', 'mcp-ai-wpoos' ); ?>"
+				data-placeholder-url="https://example.com"
+				data-placeholder-key="mesh_..."
 				data-btn-remove="<?php esc_attr_e( 'Remove', 'mcp-ai-wpoos' ); ?>"><?php esc_html_e( 'Add Peer Site', 'mcp-ai-wpoos' ); ?></button>
 		</div>
 		<p class="description"><?php esc_html_e( 'Add peer sites that this site can query. Each peer requires a friendly name, the root URL of the remote site, and the inbound API key from that remote site.', 'mcp-ai-wpoos' ); ?></p>
@@ -3949,14 +3998,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_cloudways_server_id_field() {
 			$settings = self::get_settings();
 			?>
-		<input 
-			type="text" 
+		<input
+			type="text"
 			id="wp-mcp-ai-cloudways-server-id"
-			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_server_id]" 
-			value="<?php echo esc_attr( $settings['cloudways_server_id'] ); ?>" 
-			class="regular-text" 
-			autocomplete="off" 
-			readonly 
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_server_id]"
+			value="<?php echo esc_attr( $settings['cloudways_server_id'] ); ?>"
+			class="regular-text"
+			autocomplete="off"
+			readonly
 			aria-describedby="wp-mcp-ai-cloudways-server-id-description"
 			aria-label="<?php esc_attr_e( 'Cloudways Server ID', 'mcp-ai-wpoos' ); ?>"
 		/>
@@ -3971,14 +4020,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_cloudways_app_id_field() {
 			$settings = self::get_settings();
 			?>
-		<input 
-			type="text" 
+		<input
+			type="text"
 			id="wp-mcp-ai-cloudways-app-id"
-			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_app_id]" 
-			value="<?php echo esc_attr( $settings['cloudways_app_id'] ); ?>" 
-			class="regular-text" 
-			autocomplete="off" 
-			readonly 
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_app_id]"
+			value="<?php echo esc_attr( $settings['cloudways_app_id'] ); ?>"
+			class="regular-text"
+			autocomplete="off"
+			readonly
 			aria-describedby="wp-mcp-ai-cloudways-app-id-description"
 			aria-label="<?php esc_attr_e( 'Cloudways Application ID', 'mcp-ai-wpoos' ); ?>"
 		/>
@@ -4596,9 +4645,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			// Final fallback to minimal hardcoded list.
 			$choices = array(
-				'gpt-4o'        => __( 'GPT-4o', 'mcp-ai-wpoos' ),
-				'gpt-4o-mini'   => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
-				'gpt-4-turbo'   => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
+				'gpt-4o'      => __( 'GPT-4o', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini' => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
+				'gpt-4-turbo' => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
 			);
 
 			/**
@@ -5403,6 +5452,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			return $max_bytes;
 		}
+
+		// Google Drive OAuth field rendering methods removed - now handled in PRO addon's Remote Sites feature.
 	}
 }
 

@@ -32,7 +32,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 *
 	 * @var array<string>
 	 */
-	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'none' );
+	const AUTH_TYPES = array( 'application_password', 'basic_auth', 'jwt', 'woocommerce', 'custom_header', 'none' );
 
 	/**
 	 * Get all configured remote site connections.
@@ -63,7 +63,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array|null Connection data or null if not found.
 	 */
 	public static function get_connection( $connection_id ) {
-		$connections = self::get_all_connections();
+		$connections   = self::get_all_connections();
 		$connection_id = sanitize_key( $connection_id );
 
 		if ( isset( $connections[ $connection_id ] ) ) {
@@ -90,20 +90,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$connection_id = self::generate_connection_id();
 		} else {
 			$connection_id = sanitize_key( $connection_data['id'] );
-			$is_update = isset( $connections[ $connection_id ] );
+			$is_update     = isset( $connections[ $connection_id ] );
 		}
 
 		// If updating and password/token fields are empty, preserve existing values.
 		if ( $is_update ) {
 			$existing_connection = $connections[ $connection_id ];
-			
+
 			// Preserve existing password if not provided.
 			if ( empty( $connection_data['password'] ) && ! empty( $existing_connection['password'] ) ) {
 				$connection_data['password'] = $existing_connection['password'];
 				// Mark as already encrypted.
 				$connection_data['_password_encrypted'] = true;
 			}
-			
+
 			// Preserve existing token if not provided.
 			if ( empty( $connection_data['token'] ) && ! empty( $existing_connection['token'] ) ) {
 				$connection_data['token'] = $existing_connection['token'];
@@ -113,14 +113,74 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 			// Preserve existing consumer_key if not provided.
 			if ( empty( $connection_data['consumer_key'] ) && ! empty( $existing_connection['consumer_key'] ) ) {
-				$connection_data['consumer_key'] = $existing_connection['consumer_key'];
+				$connection_data['consumer_key']            = $existing_connection['consumer_key'];
 				$connection_data['_consumer_key_encrypted'] = true;
 			}
 
 			// Preserve existing consumer_secret if not provided.
 			if ( empty( $connection_data['consumer_secret'] ) && ! empty( $existing_connection['consumer_secret'] ) ) {
-				$connection_data['consumer_secret'] = $existing_connection['consumer_secret'];
+				$connection_data['consumer_secret']            = $existing_connection['consumer_secret'];
 				$connection_data['_consumer_secret_encrypted'] = true;
+			}
+
+			// Preserve existing api_key if not provided.
+			if ( empty( $connection_data['api_key'] ) && ! empty( $existing_connection['api_key'] ) ) {
+				$connection_data['api_key']            = $existing_connection['api_key'];
+				$connection_data['_api_key_encrypted'] = true;
+			}
+
+			// Preserve existing api_secret if not provided.
+			if ( empty( $connection_data['api_secret'] ) && ! empty( $existing_connection['api_secret'] ) ) {
+				$connection_data['api_secret']            = $existing_connection['api_secret'];
+				$connection_data['_api_secret_encrypted'] = true;
+			}
+
+			// Preserve existing client_id if not provided.
+			if ( empty( $connection_data['client_id'] ) && ! empty( $existing_connection['client_id'] ) ) {
+				$connection_data['client_id'] = $existing_connection['client_id'];
+			}
+
+			// Preserve existing client_secret if not provided.
+			if ( empty( $connection_data['client_secret'] ) && ! empty( $existing_connection['client_secret'] ) ) {
+				$connection_data['client_secret']            = $existing_connection['client_secret'];
+				$connection_data['_client_secret_encrypted'] = true;
+			}
+
+			// Preserve existing app_id if not provided.
+			if ( empty( $connection_data['app_id'] ) && ! empty( $existing_connection['app_id'] ) ) {
+				$connection_data['app_id'] = $existing_connection['app_id'];
+			}
+
+			// Preserve existing app_secret if not provided.
+			if ( empty( $connection_data['app_secret'] ) && ! empty( $existing_connection['app_secret'] ) ) {
+				$connection_data['app_secret']            = $existing_connection['app_secret'];
+				$connection_data['_app_secret_encrypted'] = true;
+			}
+
+			// Preserve existing refresh_token (Gmail) if not provided.
+			if ( empty( $connection_data['refresh_token'] ) && ! empty( $existing_connection['refresh_token'] ) ) {
+				$connection_data['refresh_token']            = $existing_connection['refresh_token'];
+				$connection_data['_refresh_token_encrypted'] = true;
+			}
+
+			// Preserve existing user_email (Gmail) if not provided.
+			if ( empty( $connection_data['user_email'] ) && ! empty( $existing_connection['user_email'] ) ) {
+				$connection_data['user_email'] = $existing_connection['user_email'];
+			}
+
+			// Preserve existing location_id if not provided.
+			if ( empty( $connection_data['location_id'] ) && ! empty( $existing_connection['location_id'] ) ) {
+				$connection_data['location_id'] = $existing_connection['location_id'];
+			}
+
+			// Preserve existing company_id if not provided.
+			if ( empty( $connection_data['company_id'] ) && ! empty( $existing_connection['company_id'] ) ) {
+				$connection_data['company_id'] = $existing_connection['company_id'];
+			}
+
+			// Preserve existing sandbox_mode if not provided.
+			if ( ! isset( $connection_data['sandbox_mode'] ) && isset( $existing_connection['sandbox_mode'] ) ) {
+				$connection_data['sandbox_mode'] = $existing_connection['sandbox_mode'];
 			}
 
 			// Preserve created timestamp.
@@ -140,16 +200,29 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'id'              => $connection_id,
 			'name'            => sanitize_text_field( $connection_data['name'] ),
 			'url'             => esc_url_raw( trailingslashit( $connection_data['url'] ) ),
+			'connection_type' => isset( $connection_data['connection_type'] ) ? sanitize_key( $connection_data['connection_type'] ) : 'wordpress',
 			'auth_type'       => sanitize_key( $connection_data['auth_type'] ),
 			'username'        => isset( $connection_data['username'] ) ? sanitize_text_field( $connection_data['username'] ) : '',
 			'password'        => isset( $connection_data['password'] ) ? $connection_data['password'] : '',
 			'token'           => isset( $connection_data['token'] ) ? $connection_data['token'] : '',
 			'consumer_key'    => isset( $connection_data['consumer_key'] ) ? $connection_data['consumer_key'] : '',
 			'consumer_secret' => isset( $connection_data['consumer_secret'] ) ? $connection_data['consumer_secret'] : '',
+			'api_key'         => isset( $connection_data['api_key'] ) ? $connection_data['api_key'] : '',
+			'api_secret'      => isset( $connection_data['api_secret'] ) ? $connection_data['api_secret'] : '',
+			'client_id'       => isset( $connection_data['client_id'] ) ? sanitize_text_field( $connection_data['client_id'] ) : '',
+			'client_secret'   => isset( $connection_data['client_secret'] ) ? $connection_data['client_secret'] : '',
+			'app_id'          => isset( $connection_data['app_id'] ) ? sanitize_text_field( $connection_data['app_id'] ) : '',
+			'app_secret'      => isset( $connection_data['app_secret'] ) ? $connection_data['app_secret'] : '',
+			'location_id'     => isset( $connection_data['location_id'] ) ? sanitize_text_field( $connection_data['location_id'] ) : '',
+			'company_id'      => isset( $connection_data['company_id'] ) ? sanitize_text_field( $connection_data['company_id'] ) : '',
+			'sandbox_mode'    => ! empty( $connection_data['sandbox_mode'] ),
 			'has_woocommerce' => ! empty( $connection_data['has_woocommerce'] ),
 			'enabled'         => ! empty( $connection_data['enabled'] ),
 			'created'         => isset( $connection_data['created'] ) ? $connection_data['created'] : current_time( 'mysql' ),
 			'updated'         => current_time( 'mysql' ),
+			// Gmail-specific fields.
+			'refresh_token'   => isset( $connection_data['refresh_token'] ) ? $connection_data['refresh_token'] : '',
+			'user_email'      => isset( $connection_data['user_email'] ) ? sanitize_email( $connection_data['user_email'] ) : '',
 		);
 
 		// Encrypt sensitive data (only if not already encrypted).
@@ -167,6 +240,26 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		if ( ! empty( $connection['consumer_secret'] ) && empty( $connection_data['_consumer_secret_encrypted'] ) ) {
 			$connection['consumer_secret'] = self::encrypt_value( $connection['consumer_secret'] );
+		}
+
+		if ( ! empty( $connection['api_key'] ) && empty( $connection_data['_api_key_encrypted'] ) ) {
+			$connection['api_key'] = self::encrypt_value( $connection['api_key'] );
+		}
+
+		if ( ! empty( $connection['api_secret'] ) && empty( $connection_data['_api_secret_encrypted'] ) ) {
+			$connection['api_secret'] = self::encrypt_value( $connection['api_secret'] );
+		}
+
+		if ( ! empty( $connection['client_secret'] ) && empty( $connection_data['_client_secret_encrypted'] ) ) {
+			$connection['client_secret'] = self::encrypt_value( $connection['client_secret'] );
+		}
+
+		if ( ! empty( $connection['app_secret'] ) && empty( $connection_data['_app_secret_encrypted'] ) ) {
+			$connection['app_secret'] = self::encrypt_value( $connection['app_secret'] );
+		}
+
+		if ( ! empty( $connection['refresh_token'] ) && empty( $connection_data['_refresh_token_encrypted'] ) ) {
+			$connection['refresh_token'] = self::encrypt_value( $connection['refresh_token'] );
 		}
 
 		$connections[ $connection_id ] = $connection;
@@ -197,7 +290,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return bool True on success, false on failure.
 	 */
 	public static function delete_connection( $connection_id ) {
-		$connections = self::get_all_connections();
+		$connections   = self::get_all_connections();
 		$connection_id = sanitize_key( $connection_id );
 
 		if ( ! isset( $connections[ $connection_id ] ) ) {
@@ -235,6 +328,18 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return $validation;
 		}
 
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
+
+		// Handle Flowhub connections separately.
+		if ( 'flowhub' === $connection_type ) {
+			return self::test_flowhub_connection( $connection );
+		}
+
+		// Handle EZuite ERP connections separately.
+		if ( 'ezuite_erp' === $connection_type ) {
+			return self::test_ezuite_connection( $connection );
+		}
+
 		// Test basic WordPress REST API access.
 		$response = self::make_request( $connection, 'wp/v2/types' );
 
@@ -243,12 +348,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		$results = array(
-			'success'         => true,
-			'wordpress'       => true,
-			'woocommerce'     => false,
-			'site_name'       => '',
-			'site_url'        => $connection['url'],
-			'message'         => __( 'Connection successful.', 'wp-mcp-ai-pro' ),
+			'success'     => true,
+			'wordpress'   => true,
+			'woocommerce' => false,
+			'site_name'   => '',
+			'site_url'    => $connection['url'],
+			'message'     => __( 'Connection successful.', 'wp-mcp-ai-pro' ),
 		);
 
 		// Test WooCommerce API access if enabled.
@@ -271,6 +376,178 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Test Flowhub API connection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_flowhub_connection( $connection ) {
+		if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-flowhub-client.php';
+		}
+
+		$connection_id = isset( $connection['id'] ) ? $connection['id'] : null;
+		$client        = new WP_MCP_AI_Flowhub_Client( $connection_id );
+
+		// Test with a simple inventory request.
+		$response = $client->get_inventory( array( 'limit' => 1 ) );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$results = array(
+			'success' => true,
+			'flowhub' => true,
+			'message' => __( 'Flowhub connection successful. API credentials verified.', 'wp-mcp-ai-pro' ),
+		);
+
+		// Add inventory count if available.
+		if ( isset( $response['total'] ) ) {
+			$results['inventory_count'] = absint( $response['total'] );
+			/* translators: %d: number of inventory items */
+			$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'wp-mcp-ai-pro' ), $results['inventory_count'] );
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Test EZuite ERP API connection.
+	 *
+	 * Makes a simple API call to verify the connection and API key.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $connection Connection data.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_ezuite_connection( $connection ) {
+		// Validate required fields.
+		if ( empty( $connection['url'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_url',
+				__( 'EZuite API URL is required.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		if ( empty( $connection['api_key'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_missing_api_key',
+				__( 'EZuite API key is required.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Decrypt the API key.
+		$api_key = self::decrypt_value( $connection['api_key'] );
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_api_key',
+				__( 'Invalid or corrupted API key.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Prepare a simple test request - use LX_ItemPull with a limit to minimize data.
+		$url = untrailingslashit( $connection['url'] );
+
+		$request_body = array(
+			'API_Key'    => $api_key,
+			'API_Action' => 'LX_ItemPull',
+			'API_Body'   => array(
+				array(
+					'Location_Code' => 'ALL',
+					'Limit'         => 1, // Only fetch 1 item to test connection.
+				),
+			),
+		);
+
+		$args = array(
+			'method'  => 'POST',
+			'timeout' => 30,
+			'headers' => array(
+				'Content-Type' => 'application/json',
+			),
+			'body'    => wp_json_encode( $request_body ),
+		);
+
+		// Make the request.
+		$response = wp_remote_request( $url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_connection_failed',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Failed to connect to EZuite API: %s', 'wp-mcp-ai-pro' ),
+					$response->get_error_message()
+				)
+			);
+		}
+
+		$status_code = wp_remote_retrieve_response_code( $response );
+		$body        = wp_remote_retrieve_body( $response );
+
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_api_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'EZuite API returned error status %d. Please check your API URL and credentials.', 'wp-mcp-ai-pro' ),
+					$status_code
+				)
+			);
+		}
+
+		// Parse the JSON response.
+		$data = json_decode( $body, true );
+
+		if ( null === $data || ! is_array( $data ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_invalid_response',
+				__( 'EZuite API returned invalid JSON response.', 'wp-mcp-ai-pro' )
+			);
+		}
+
+		// Check the response status.
+		$ezuite_status = isset( $data['Status_Code'] ) ? absint( $data['Status_Code'] ) : 0;
+
+		if ( 200 !== $ezuite_status ) {
+			$error_message = isset( $data['Message'] ) ? sanitize_text_field( $data['Message'] ) : __( 'Unknown error', 'wp-mcp-ai-pro' );
+			return new WP_Error(
+				'wp_mcp_ai_pro_ezuite_error',
+				sprintf(
+					/* translators: 1: status code, 2: error message */
+					__( 'EZuite API error (Status: %1$d): %2$s', 'wp-mcp-ai-pro' ),
+					$ezuite_status,
+					$error_message
+				)
+			);
+		}
+
+		// Connection successful!
+		$results = array(
+			'success'    => true,
+			'ezuite_erp' => true,
+			'api_url'    => $connection['url'],
+			'message'    => __( 'EZuite ERP connection successful. API credentials verified.', 'wp-mcp-ai-pro' ),
+		);
+
+		// Add item count if available in response.
+		if ( isset( $data['Response_Body'] ) && is_array( $data['Response_Body'] ) ) {
+			$item_count = count( $data['Response_Body'] );
+			if ( $item_count > 0 ) {
+				/* translators: %d: number of items retrieved */
+				$results['message'] = sprintf( __( 'EZuite ERP connection successful. Retrieved %d test item(s).', 'wp-mcp-ai-pro' ), $item_count );
+			}
+		}
+
+		return $results;
+	}
+
+	/**
 	 * Make an authenticated HTTP request to a remote site.
 	 *
 	 * @since 1.0.0
@@ -284,7 +561,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	public static function make_request( $connection, $endpoint, $method = 'GET', $body = array() ) {
 		$connection_id = isset( $connection['id'] ) ? $connection['id'] : '';
 		$start_time    = microtime( true );
-		
+
 		$url = self::build_api_url( $connection['url'], $endpoint, $connection );
 
 		if ( is_wp_error( $url ) ) {
@@ -295,7 +572,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// For WooCommerce authentication, add consumer key/secret to URL.
 		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
 		if ( 'woocommerce' === $auth_type ) {
-			$consumer_key = isset( $connection['consumer_key'] ) ? self::decrypt_value( $connection['consumer_key'] ) : '';
+			$consumer_key    = isset( $connection['consumer_key'] ) ? self::decrypt_value( $connection['consumer_key'] ) : '';
 			$consumer_secret = isset( $connection['consumer_secret'] ) ? self::decrypt_value( $connection['consumer_secret'] ) : '';
 
 			if ( ! empty( $consumer_key ) && ! empty( $consumer_secret ) ) {
@@ -314,12 +591,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'timeout' => 30,
 			'headers' => self::get_auth_headers( $connection ),
 		);
-		
+
 		// Add compression support for large responses.
 		$args['headers']['Accept-Encoding'] = 'gzip, deflate';
 
 		if ( ! empty( $body ) && in_array( $args['method'], array( 'POST', 'PUT', 'PATCH' ), true ) ) {
-			$args['body'] = wp_json_encode( $body );
+			$args['body']                    = wp_json_encode( $body );
 			$args['headers']['Content-Type'] = 'application/json';
 		}
 
@@ -332,11 +609,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				return $cached_result;
 			}
 		}
-		
+
 		// Request deduplication - check if this exact request is already in progress.
-		$dedup_key = self::get_dedup_key( $connection_id, $endpoint, $method, $body );
+		$dedup_key   = self::get_dedup_key( $connection_id, $endpoint, $method, $body );
 		$in_progress = get_transient( $dedup_key );
-		
+
 		if ( false !== $in_progress ) {
 			// Another request is in progress - wait briefly and check cache.
 			usleep( 100000 ); // Wait 0.1 seconds.
@@ -349,20 +626,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 			// If no cached result yet, proceed with request (acceptable race condition).
 		}
-		
+
 		// Mark this request as in progress.
 		set_transient( $dedup_key, true, 30 );
 
 		// Perform request with retry logic.
 		$response = self::make_request_with_retry( $url, $args );
-		
+
 		// Clear deduplication lock.
 		delete_transient( $dedup_key );
 
 		if ( is_wp_error( $response ) ) {
 			$duration = microtime( true ) - $start_time;
 			self::record_health_metric( $connection_id, false, $duration );
-			
+
 			return new WP_Error(
 				'wp_mcp_ai_pro_request_failed',
 				sprintf(
@@ -374,12 +651,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
-		$body = wp_remote_retrieve_body( $response );
+		$body        = wp_remote_retrieve_body( $response );
 
 		if ( $status_code >= 400 ) {
 			$duration = microtime( true ) - $start_time;
 			self::record_health_metric( $connection_id, false, $duration );
-			
+
 			$error_message = sprintf(
 				/* translators: %d: HTTP status code */
 				__( 'HTTP error %d', 'wp-mcp-ai-pro' ),
@@ -400,13 +677,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( null === $decoded ) {
 			$duration = microtime( true ) - $start_time;
 			self::record_health_metric( $connection_id, false, $duration );
-			
+
 			return new WP_Error(
 				'wp_mcp_ai_pro_json_error',
 				__( 'Invalid JSON response from remote site.', 'wp-mcp-ai-pro' )
 			);
 		}
-		
+
 		// Record successful request for health monitoring.
 		$duration = microtime( true ) - $start_time;
 		self::record_health_metric( $connection_id, true, $duration );
@@ -415,12 +692,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( 'GET' === $args['method'] && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			// Use per-connection cache TTL if set, otherwise default to 5 minutes.
 			$cache_ttl = isset( $connection['cache_ttl'] ) ? absint( $connection['cache_ttl'] ) : 5 * MINUTE_IN_SECONDS;
-			
+
 			// Validate cache_ttl is within acceptable range (0-3600 seconds).
 			if ( $cache_ttl > 3600 ) {
 				$cache_ttl = 3600; // Cap at 1 hour.
 			}
-			
+
 			// Skip caching if TTL is 0 (disabled for this connection).
 			if ( $cache_ttl > 0 ) {
 				/**
@@ -574,6 +851,75 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			}
 		}
 
+		// Validate connection type specific requirements.
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
+
+		if ( 'ezuite_erp' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_ezuite_credentials',
+					__( 'API key is required for EZuite ERP connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
+
+		if ( 'isams' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_isams_credentials',
+					__( 'API key and API secret are required for iSAMS connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
+
+		if ( 'flowhub' === $connection_type ) {
+			if ( empty( $connection['api_key'] ) || empty( $connection['client_id'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_flowhub_credentials',
+					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
+
+		if ( 'payhere' === $connection_type ) {
+			if ( empty( $connection['app_id'] ) || empty( $connection['app_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_payhere_credentials',
+					__( 'App ID and app secret are required for PayHere connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
+
+		if ( 'quickbooks' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_quickbooks_credentials',
+					__( 'Client ID and client secret are required for QuickBooks connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+		}
+
+		if ( 'gmail' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_gmail_credentials',
+					__( 'OAuth Client ID and client secret are required for Gmail connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
+		}
+
+		if ( 'google_drive' === $connection_type ) {
+			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_missing_google_drive_credentials',
+					__( 'OAuth Client ID and client secret are required for Google Drive connections.', 'wp-mcp-ai-pro' )
+				);
+			}
+			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
+			// Note: folder_id is optional - if not provided, full drive access within granted scopes
+		}
+
 		return true;
 	}
 
@@ -601,16 +947,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 */
 	protected static function migrate_connection_ids( $connections ) {
 		$needs_migration = false;
-		$migrated = array();
+		$migrated        = array();
 
 		foreach ( $connections as $key => $connection ) {
 			$lowercase_key = strtolower( $key );
-			
+
 			// Check if key needs migration.
 			if ( $key !== $lowercase_key ) {
 				$needs_migration = true;
 				// Update the id field to match the new lowercase key.
-				$connection['id'] = $lowercase_key;
+				$connection['id']           = $lowercase_key;
 				$migrated[ $lowercase_key ] = $connection;
 			} else {
 				$migrated[ $key ] = $connection;
@@ -626,14 +972,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
-	 * Encrypt a sensitive value.
+	 * Encrypt a sensitive value for storage.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @param string $value Value to encrypt.
 	 * @return string Encrypted value.
 	 */
-	protected static function encrypt_value( $value ) {
+	public static function encrypt_value( $value ) {
 		if ( empty( $value ) ) {
 			return '';
 		}
@@ -642,8 +988,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$key = wp_salt( 'auth' );
 
 		// Simple XOR encryption (WordPress doesn't have built-in encryption).
-		$encrypted = '';
-		$key_length = strlen( $key );
+		$encrypted    = '';
+		$key_length   = strlen( $key );
 		$value_length = strlen( $value );
 
 		for ( $i = 0; $i < $value_length; $i++ ) {
@@ -661,16 +1007,16 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @param string $encrypted Encrypted value.
 	 * @return string Decrypted value.
 	 */
-	protected static function decrypt_value( $encrypted ) {
+	public static function decrypt_value( $encrypted ) {
 		if ( empty( $encrypted ) ) {
 			return '';
 		}
 
-		$key = wp_salt( 'auth' );
+		$key       = wp_salt( 'auth' );
 		$encrypted = base64_decode( $encrypted );
 
-		$decrypted = '';
-		$key_length = strlen( $key );
+		$decrypted        = '';
+		$key_length       = strlen( $key );
 		$encrypted_length = strlen( $encrypted );
 
 		for ( $i = 0; $i < $encrypted_length; $i++ ) {
@@ -791,28 +1137,28 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return;
 		}
 
-		$health_key = 'remote_health_' . sanitize_key( $connection_id );
+		$health_key  = 'remote_health_' . sanitize_key( $connection_id );
 		$health_data = get_transient( $health_key );
 
 		if ( false === $health_data ) {
 			$health_data = array(
-				'success_count' => 0,
-				'failure_count' => 0,
+				'success_count'  => 0,
+				'failure_count'  => 0,
 				'total_duration' => 0,
-				'request_count' => 0,
-				'last_success' => 0,
-				'last_failure' => 0,
+				'request_count'  => 0,
+				'last_success'   => 0,
+				'last_failure'   => 0,
 			);
 		}
 
-		$health_data['request_count']++;
+		++$health_data['request_count'];
 		$health_data['total_duration'] += $duration;
 
 		if ( $success ) {
-			$health_data['success_count']++;
+			++$health_data['success_count'];
 			$health_data['last_success'] = time();
 		} else {
-			$health_data['failure_count']++;
+			++$health_data['failure_count'];
 			$health_data['last_failure'] = time();
 		}
 
@@ -829,25 +1175,25 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array Health metrics.
 	 */
 	public static function get_health_metrics( $connection_id ) {
-		$health_key = 'remote_health_' . sanitize_key( $connection_id );
+		$health_key  = 'remote_health_' . sanitize_key( $connection_id );
 		$health_data = get_transient( $health_key );
 
 		if ( false === $health_data ) {
 			return array(
 				'success_count' => 0,
 				'failure_count' => 0,
-				'success_rate' => 100,
-				'avg_duration' => 0,
+				'success_rate'  => 100,
+				'avg_duration'  => 0,
 				'request_count' => 0,
-				'last_success' => null,
-				'last_failure' => null,
-				'status' => 'unknown',
+				'last_success'  => null,
+				'last_failure'  => null,
+				'status'        => 'unknown',
 			);
 		}
 
 		$total_requests = $health_data['request_count'];
-		$success_rate = $total_requests > 0 ? ( $health_data['success_count'] / $total_requests ) * 100 : 100;
-		$avg_duration = $total_requests > 0 ? $health_data['total_duration'] / $total_requests : 0;
+		$success_rate   = $total_requests > 0 ? ( $health_data['success_count'] / $total_requests ) * 100 : 100;
+		$avg_duration   = $total_requests > 0 ? $health_data['total_duration'] / $total_requests : 0;
 
 		// Determine status.
 		$status = 'healthy';
@@ -860,12 +1206,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		return array(
 			'success_count' => $health_data['success_count'],
 			'failure_count' => $health_data['failure_count'],
-			'success_rate' => round( $success_rate, 2 ),
-			'avg_duration' => round( $avg_duration, 3 ),
+			'success_rate'  => round( $success_rate, 2 ),
+			'avg_duration'  => round( $avg_duration, 3 ),
 			'request_count' => $total_requests,
-			'last_success' => $health_data['last_success'] > 0 ? $health_data['last_success'] : null,
-			'last_failure' => $health_data['last_failure'] > 0 ? $health_data['last_failure'] : null,
-			'status' => $status,
+			'last_success'  => $health_data['last_success'] > 0 ? $health_data['last_success'] : null,
+			'last_failure'  => $health_data['last_failure'] > 0 ? $health_data['last_failure'] : null,
+			'status'        => $status,
 		);
 	}
 }

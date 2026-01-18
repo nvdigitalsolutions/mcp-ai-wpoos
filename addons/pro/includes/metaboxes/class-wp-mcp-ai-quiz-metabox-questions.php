@@ -105,11 +105,11 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 	 * @return void
 	 */
 	protected function render_question_row( $index, $question = array() ) {
-		$question_text   = isset( $question['question'] ) ? $question['question'] : '';
-		$type            = isset( $question['type'] ) ? $question['type'] : 'multiple_choice';
-		$points          = isset( $question['points'] ) ? $question['points'] : 1;
-		$correct_answer  = isset( $question['correct_answer'] ) ? $question['correct_answer'] : '';
-		$options         = isset( $question['options'] ) && is_array( $question['options'] ) ? $question['options'] : array( '', '', '' );
+		$question_text  = isset( $question['question'] ) ? $question['question'] : '';
+		$type           = isset( $question['type'] ) ? $question['type'] : 'multiple_choice';
+		$points         = isset( $question['points'] ) ? $question['points'] : 1;
+		$correct_answer = isset( $question['correct_answer'] ) ? $question['correct_answer'] : '';
+		$options        = isset( $question['options'] ) && is_array( $question['options'] ) ? $question['options'] : array( '', '', '' );
 		?>
 		<div class="quiz-question-row" data-index="<?php echo esc_attr( $index ); ?>">
 			<div class="question-header">
@@ -125,8 +125,8 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 					<label>
 						<strong><?php esc_html_e( 'Question Text:', 'mcp-ai-wpoos-pro' ); ?></strong>
 					</label>
-					<textarea 
-						name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][question]" 
+					<textarea
+						name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][question]"
 						class="widefat question-text"
 						rows="3"
 						required
@@ -149,10 +149,10 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 						<label>
 							<strong><?php esc_html_e( 'Points:', 'mcp-ai-wpoos-pro' ); ?></strong>
 						</label>
-						<input 
-							type="number" 
-							name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][points]" 
-							value="<?php echo esc_attr( $points ); ?>" 
+						<input
+							type="number"
+							name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][points]"
+							value="<?php echo esc_attr( $points ); ?>"
 							min="1"
 							step="1"
 							class="small-text"
@@ -168,10 +168,10 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 						foreach ( $options as $opt_index => $option_value ) {
 							?>
 							<div class="option-row">
-								<input 
-									type="text" 
-									name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][options][]" 
-									value="<?php echo esc_attr( $option_value ); ?>" 
+								<input
+									type="text"
+									name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][options][]"
+									value="<?php echo esc_attr( $option_value ); ?>"
 									placeholder="<?php esc_attr_e( 'Option text', 'mcp-ai-wpoos-pro' ); ?>"
 									class="widefat"
 								/>
@@ -191,10 +191,10 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 					<label>
 						<strong><?php esc_html_e( 'Correct Answer (for grading reference):', 'mcp-ai-wpoos-pro' ); ?></strong>
 					</label>
-					<input 
-						type="text" 
-						name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][correct_answer]" 
-						value="<?php echo esc_attr( $correct_answer ); ?>" 
+					<input
+						type="text"
+						name="wp_mcp_ai_questions[<?php echo esc_attr( $index ); ?>][correct_answer]"
+						value="<?php echo esc_attr( $correct_answer ); ?>"
 						class="widefat"
 						placeholder="<?php esc_attr_e( 'Optional: Enter the correct answer', 'mcp-ai-wpoos-pro' ); ?>"
 					/>
@@ -229,8 +229,8 @@ class WP_MCP_AI_Quiz_Metabox_Questions extends WP_MCP_AI_Quiz_Metabox_Base {
 		}
 
 		// Process questions.
-		$questions     = array();
-		$total_points  = 0;
+		$questions    = array();
+		$total_points = 0;
 
 		if ( isset( $_POST['wp_mcp_ai_questions'] ) && is_array( $_POST['wp_mcp_ai_questions'] ) ) {
 			foreach ( $_POST['wp_mcp_ai_questions'] as $question_data ) {

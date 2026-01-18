@@ -26,7 +26,7 @@ class WP_MCP_AI_Test_Helper {
 		$admin_id  = wp_create_user( 'test_admin_' . $unique_id, 'password', 'admin_' . $unique_id . '@example.com' );
 		$admin     = new WP_User( $admin_id );
 		$admin->set_role( 'administrator' );
-		
+
 		return $admin_id;
 	}
 
@@ -50,14 +50,14 @@ class WP_MCP_AI_Test_Helper {
 		}
 
 		$request = new WP_REST_Request( $method, $route );
-		
+
 		// Add nonce for authentication.
 		$nonce = wp_create_nonce( 'wp_rest' );
 		$request->set_header( 'X-WP-Nonce', $nonce );
-		
+
 		// Set nonce in $_SERVER for wp_verify_nonce checks.
 		$_SERVER['HTTP_X_WP_NONCE'] = $nonce;
-		
+
 		// Add parameters.
 		if ( ! empty( $params ) ) {
 			if ( 'GET' === $method ) {
@@ -66,7 +66,7 @@ class WP_MCP_AI_Test_Helper {
 				$request->set_body_params( $params );
 			}
 		}
-		
+
 		return $request;
 	}
 
@@ -87,7 +87,7 @@ class WP_MCP_AI_Test_Helper {
 				'_wp_mcp_ai_provider'    => 'openai',
 			),
 		);
-		
+
 		$args = wp_parse_args( $args, $defaults );
 		return wp_insert_post( $args );
 	}

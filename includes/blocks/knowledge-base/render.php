@@ -41,7 +41,7 @@ $type_names = array_map(
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
-			'class' => 'wp-block-mcp-ai-wpoos-knowledge-base',
+			'class'              => 'wp-block-mcp-ai-wpoos-knowledge-base',
 			'data-block-id'      => $unique_id,
 			'data-allowed-types' => $allowed_types,
 			'data-max-files'     => $max_files,
@@ -93,9 +93,9 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 				);
 				?>
 			</p>
-			<input 
-				type="file" 
-				class="wp-block-mcp-ai-wpoos-knowledge-base__file-input" 
+			<input
+				type="file"
+				class="wp-block-mcp-ai-wpoos-knowledge-base__file-input"
 				id="<?php echo esc_attr( $unique_id ); ?>-input"
 				accept="<?php echo esc_attr( $allowed_types ); ?>"
 				multiple

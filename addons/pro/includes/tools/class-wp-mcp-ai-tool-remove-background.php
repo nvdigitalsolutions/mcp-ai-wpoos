@@ -227,32 +227,32 @@ try:
     from rembg import remove
     from PIL import Image
     import io
-    
+
     if len(sys.argv) != 3:
         print("Usage: script.py <input> <output>", file=sys.stderr)
         sys.exit(1)
-    
+
     input_path = sys.argv[1]
     output_path = sys.argv[2]
-    
+
     if not os.path.exists(input_path):
         print(f"Input file not found: {input_path}", file=sys.stderr)
         sys.exit(1)
-    
+
     # Read input image.
     with open(input_path, 'rb') as f:
         input_data = f.read()
-    
+
     # Remove background.
     output_data = remove(input_data)
-    
+
     # Save output image.
     with open(output_path, 'wb') as f:
         f.write(output_data)
-    
+
     print("success")
     sys.exit(0)
-    
+
 except ImportError as e:
     print(f"rembg not installed: {e}", file=sys.stderr)
     print("Install with: pipx install rembg (recommended) or use venv", file=sys.stderr)

@@ -69,29 +69,11 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	 */
 	public function render( $post ) {
 		// Enqueue model selector JavaScript.
-		if ( ! wp_script_is( 'wp-mcp-ai-model-selector', 'enqueued' ) ) {
-			wp_enqueue_script(
-				'wp-mcp-ai-model-selector',
-				WP_MCP_AI_URL . 'assets/js/admin-model-selector.js',
-				array( 'jquery' ),
-				WP_MCP_AI_VERSION,
-				true
-			);
+		// Script is registered globally in WP_MCP_AI_Admin_Scripts with localization.
+		// We just need to enqueue it here for this metabox.
+		wp_enqueue_script( 'wp-mcp-ai-model-selector' );
 
-			// Localize script for AJAX (only once).
-			wp_localize_script(
-				'wp-mcp-ai-model-selector',
-				'wpMcpAiModelSelector',
-				array(
-					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
-					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
-					'selectModelText' => __( '— Select Model —', 'mcp-ai-wpoos' ),
-					'errorMessage'    => __( 'Failed to load models. Please try again.', 'mcp-ai-wpoos' ),
-				)
-			);
-		}
-
-		wp_nonce_field( 'wp_mcp_ai_save_profession_defaults', 'wp_mcp_ai_profession_defaults_nonce' );
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
 
 		$default_provider     = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_provider', true );
 		$default_model        = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_model', true );
@@ -157,12 +139,14 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 					<strong><?php esc_html_e( 'AI Provider', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="profession_default_provider" id="profession_default_provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#profession_default_model">
-					<option value="openai" <?php selected( $default_provider, 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'mcp-ai-wpoos' ); ?></option>
-					<option value="gemini" <?php selected( $default_provider, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'mcp-ai-wpoos' ); ?></option>
-					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'mcp-ai-wpoos' ); ?></option>
-					<option value="ollama" <?php selected( $default_provider, 'ollama' ); ?>><?php esc_html_e( 'Ollama (Local)', 'mcp-ai-wpoos' ); ?></option>
-					<option value="lm_studio" <?php selected( $default_provider, 'lm_studio' ); ?>><?php esc_html_e( 'LM Studio', 'mcp-ai-wpoos' ); ?></option>
-					<option value="cloudflare" <?php selected( $default_provider, 'cloudflare' ); ?>><?php esc_html_e( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ); ?></option>
+					<?php
+					$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
+					foreach ( $available_providers as $provider_slug => $provider_label ) {
+						?>
+						<option value="<?php echo esc_attr( $provider_slug ); ?>" <?php selected( $default_provider, $provider_slug ); ?>><?php echo esc_html( $provider_label ); ?></option>
+						<?php
+					}
+					?>
 				</select>
 			</p>
 
@@ -207,19 +191,12 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
-		if ( ! isset( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) ) {
+		if ( ! $this->can_save( $post_id ) ) {
 			return;
 		}
 
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) ), 'wp_mcp_ai_save_profession_defaults' ) ) {
-			return;
-		}
-
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return;
-		}
-
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) ), 'wp_mcp_ai_profession_defaults_save' ) ) {
 			return;
 		}
 

@@ -30,7 +30,51 @@
 .wp-mcp-ai-chat__control-buttons {
     display: flex;
     justify-content: flex-start;
+    align-items: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* CPT Action Buttons */
+.wp-mcp-ai-chat__cpt-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: auto;
+}
+
+.wp-mcp-ai-chat__cpt-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+}
+
+.wp-mcp-ai-chat__cpt-action .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+.wp-mcp-ai-chat__cpt-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wp-mcp-ai-chat__cpt-action:active {
+    transform: translateY(0);
+}
+
+.wp-mcp-ai-chat__cpt-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .wp-mcp-ai-chat__history-toggle,

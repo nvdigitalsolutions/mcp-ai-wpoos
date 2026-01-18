@@ -19,9 +19,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 	 * for an access token via POST to /oauth/access_token endpoint.
 	 */
 	class WP_MCP_AI_Cloudways_OAuth_Handler {
-		const CLOUDWAYS_API_BASE              = 'https://api.cloudways.com/api/v1';
-		const CLOUDWAYS_OAUTH_TOKEN_ENDPOINT  = 'https://api.cloudways.com/api/v1/oauth/access_token';
-		const CLOUDWAYS_SERVERS_ENDPOINT      = 'https://api.cloudways.com/api/v1/server';
+		const CLOUDWAYS_API_BASE             = 'https://api.cloudways.com/api/v1';
+		const CLOUDWAYS_OAUTH_TOKEN_ENDPOINT = 'https://api.cloudways.com/api/v1/oauth/access_token';
+		const CLOUDWAYS_SERVERS_ENDPOINT     = 'https://api.cloudways.com/api/v1/server';
 
 		/**
 		 * Handle the 1-click connection flow for Cloudways.
@@ -89,10 +89,10 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 			}
 
 			// Store the access token and expiry time.
-			$settings['cloudways_access_token']      = $access_token;
-			$settings['cloudways_token_expires_at']  = time() + $expires_in;
-			$settings['cloudways_connected']         = true;
-			$settings['cloudways_connection_time']   = time();
+			$settings['cloudways_access_token']     = $access_token;
+			$settings['cloudways_token_expires_at'] = time() + $expires_in;
+			$settings['cloudways_connected']        = true;
+			$settings['cloudways_connection_time']  = time();
 
 			if ( ! empty( $account_info['account_name'] ) ) {
 				$settings['cloudways_account_name'] = sanitize_text_field( $account_info['account_name'] );
@@ -179,7 +179,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudways_OAuth_Handler' ) ) {
 			$body        = wp_remote_retrieve_body( $response );
 
 			if ( 200 !== (int) $status_code ) {
-				$decoded = json_decode( $body, true );
+				$decoded       = json_decode( $body, true );
 				$error_message = '';
 
 				if ( is_array( $decoded ) && isset( $decoded['message'] ) ) {

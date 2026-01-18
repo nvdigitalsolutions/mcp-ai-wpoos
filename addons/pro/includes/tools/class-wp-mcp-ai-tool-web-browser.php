@@ -69,39 +69,39 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'url'                 => array(
+				'url'                => array(
 					'type'        => 'string',
 					'format'      => 'uri',
 					'description' => __( 'The URL to navigate to.', 'wp-mcp-ai-pro' ),
 				),
-				'action'              => array(
+				'action'             => array(
 					'type'        => 'string',
 					'enum'        => array( 'navigate', 'screenshot', 'pdf', 'extract', 'click', 'type', 'submit' ),
 					'description' => __( 'The action to perform.', 'wp-mcp-ai-pro' ),
 					'default'     => 'navigate',
 				),
-				'selector'            => array(
+				'selector'           => array(
 					'type'        => 'string',
 					'description' => __( 'CSS selector for element-specific actions (click, type, extract).', 'wp-mcp-ai-pro' ),
 				),
-				'text'                => array(
+				'text'               => array(
 					'type'        => 'string',
 					'description' => __( 'Text to type into an element (for type action).', 'wp-mcp-ai-pro' ),
 				),
-				'wait_for'            => array(
+				'wait_for'           => array(
 					'type'        => 'string',
 					'enum'        => array( 'load', 'domcontentloaded', 'networkidle' ),
 					'description' => __( 'When to consider navigation complete.', 'wp-mcp-ai-pro' ),
 					'default'     => 'load',
 				),
-				'timeout'             => array(
+				'timeout'            => array(
 					'type'        => 'integer',
 					'minimum'     => 5,
 					'maximum'     => self::MAX_TIMEOUT,
 					'description' => __( 'Operation timeout in seconds.', 'wp-mcp-ai-pro' ),
 					'default'     => self::DEFAULT_TIMEOUT,
 				),
-				'screenshot_options'  => array(
+				'screenshot_options' => array(
 					'type'        => 'object',
 					'description' => __( 'Screenshot configuration (for screenshot action).', 'wp-mcp-ai-pro' ),
 					'properties'  => array(
@@ -116,7 +116,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 						),
 					),
 				),
-				'pdf_options'         => array(
+				'pdf_options'        => array(
 					'type'        => 'object',
 					'description' => __( 'PDF generation configuration (for pdf action).', 'wp-mcp-ai-pro' ),
 					'properties'  => array(
@@ -131,7 +131,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 						),
 					),
 				),
-				'extract_content'     => array(
+				'extract_content'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to extract page content after navigation.', 'wp-mcp-ai-pro' ),
 					'default'     => false,
@@ -282,14 +282,14 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Get action and validate.
-		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'navigate';
+		$action        = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'navigate';
 		$valid_actions = array( 'navigate', 'screenshot', 'pdf', 'extract', 'click', 'type', 'submit' );
 		if ( ! in_array( $action, $valid_actions, true ) ) {
 			$action = 'navigate';
 		}
 
 		// Check if remote service is configured.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings    = WP_MCP_AI_Admin_Settings::get_settings();
 		$service_url = self::resolve_service_url( $settings, $context );
 
 		if ( ! empty( $service_url ) ) {
@@ -405,7 +405,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Add metadata.
-		$result['mode'] = 'playwright_service';
+		$result['mode']        = 'playwright_service';
 		$result['service_url'] = $service_url;
 
 		return $result;
@@ -554,9 +554,9 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * @return true|WP_Error True if allowed, WP_Error if rate limited.
 	 */
 	protected function check_rate_limit( $user_id ) {
-		$transient_key  = 'wp_mcp_ai_web_browser_' . $user_id;
-		$current_count  = get_transient( $transient_key );
-		$max_per_hour = 20; // Allow up to 20 browser actions per hour.
+		$transient_key = 'wp_mcp_ai_web_browser_' . $user_id;
+		$current_count = get_transient( $transient_key );
+		$max_per_hour  = 20; // Allow up to 20 browser actions per hour.
 
 		/**
 		 * Filter the maximum browser actions allowed per hour per user.

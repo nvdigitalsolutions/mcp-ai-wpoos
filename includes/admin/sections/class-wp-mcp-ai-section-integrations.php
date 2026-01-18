@@ -77,25 +77,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 */
 		public function get_fields() {
 			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-			$pro_notice    = $is_pro_active ? '' : ' ' . __( '<strong>(Requires Pro addon)</strong>', 'mcp-ai-wpoos' );
+			$gmail_notice  = $is_pro_active ? ' ' . __( '<em>(Pro also supports multiple connections via Remote Sites.)</em>', 'mcp-ai-wpoos' ) : ' ' . __( '<em>(Base supports 1 connection. Pro enables multiple via Remote Sites.)</em>', 'mcp-ai-wpoos' );
+			$drive_notice  = $is_pro_active ? ' ' . __( '<em>(Pro also supports multiple connections via Remote Sites.)</em>', 'mcp-ai-wpoos' ) : ' ' . __( '<em>(Base supports 1 connection. Pro enables multiple via Remote Sites.)</em>', 'mcp-ai-wpoos' );
 
 			return array(
 				// Gmail OAuth.
 				'gmail_client_id'                   => array(
 					'type'         => 'text',
 					'label'        => __( 'Gmail OAuth Client ID', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'mcp-ai-wpoos' ) . $gmail_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'off',
-					'disabled'     => ! $is_pro_active,
 				),
 				'gmail_client_secret'               => array(
 					'type'         => 'password',
 					'label'        => __( 'Gmail OAuth Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $gmail_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
+				),
+
+				// Google Drive OAuth.
+				'google_drive_client_id'            => array(
+					'type'         => 'text',
+					'label'        => __( 'Google Drive OAuth Client ID', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Google Drive integration.', 'mcp-ai-wpoos' ) . $drive_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+				),
+				'google_drive_client_secret'        => array(
+					'type'         => 'password',
+					'label'        => __( 'Google Drive OAuth Client Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ) . $drive_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
 				),
 
 				// Crawl4AI.
@@ -122,6 +137,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						/* translators: %s: URL to Brave Search API */
 						__( 'API key for Brave Search integration. Get your API key from %s.', 'mcp-ai-wpoos' ),
 						'<a href="https://brave.com/search/api/" target="_blank">Brave Search API</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+
+				// Mubert Music API.
+				'mubert_api_key'                    => array(
+					'type'         => 'password',
+					'label'        => __( 'Mubert API Key', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Mubert contact */
+						__( 'API key for Mubert music generation service. Request an API key from %s.', 'mcp-ai-wpoos' ),
+						'<a href="mailto:business@mubert.com">business@mubert.com</a>'
 					),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
@@ -229,98 +257,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
-				// PayHere Settings.
-				'payhere_app_id'                    => array(
-					'type'         => 'text',
-					'label'        => __( 'PayHere App ID', 'mcp-ai-wpoos' ),
-					'description'  => sprintf(
-						/* translators: %s: PayHere dashboard URL */
-						__( 'Your PayHere App ID. Required for payment retrieval tools. Get your credentials from <a href="%s" target="_blank">PayHere Settings</a> under API Keys.', 'mcp-ai-wpoos' ),
-						'https://www.payhere.lk/merchant/settings/api-keys'
-					),
-					'placeholder'  => 'app-...',
-					'autocomplete' => 'off',
-				),
-				'payhere_app_secret'                => array(
-					'type'         => 'password',
-					'label'        => __( 'PayHere App Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your PayHere App Secret. Keep this secure and never share it publicly.', 'mcp-ai-wpoos' ),
-					'placeholder'  => 'secret-...',
-					'autocomplete' => 'new-password',
-				),
-				'payhere_sandbox_mode'              => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'PayHere Sandbox Mode', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable sandbox mode for testing', 'mcp-ai-wpoos' ),
-					'description'    => __( 'When enabled, all PayHere API requests will use the sandbox environment. Disable for production use with real transactions.', 'mcp-ai-wpoos' ),
-					'default'        => false,
-				),
-
-				// Flowhub Settings.
-				'flowhub_api_key'                   => array(
-					'type'         => 'password',
-					'label'        => __( 'Flowhub API Key', 'mcp-ai-wpoos' ),
-					'description'  => sprintf(
-						/* translators: %s: Flowhub API request URL */
-						__( 'Your Flowhub API Key for cannabis dispensary integration. Required for Flowhub tools. Request credentials from <a href="%s" target="_blank">Flowhub API Integration Form</a>.', 'mcp-ai-wpoos' ),
-						'https://flowhub.com/api-integration-request'
-					),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-				),
-				'flowhub_client_id'                 => array(
-					'type'         => 'text',
-					'label'        => __( 'Flowhub Client ID', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your Flowhub OAuth2 Client ID for authentication.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'off',
-				),
-				'flowhub_client_secret'             => array(
-					'type'         => 'password',
-					'label'        => __( 'Flowhub Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your Flowhub OAuth2 Client Secret. Keep this secure and never share it publicly.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-				),
-				'flowhub_location_id'               => array(
-					'type'         => 'text',
-					'label'        => __( 'Flowhub Location ID', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Your dispensary Location ID. Each location requires separate credentials.', 'mcp-ai-wpoos' ),
-					'placeholder'  => '',
-					'autocomplete' => 'off',
-				),
-
-				// QuickBooks.
-				'quickbooks_api_key'                => array(
-					'type'         => 'password',
-					'label'        => __( 'QuickBooks API Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API key for QuickBooks integration.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
-				'quickbooks_company_id'             => array(
-					'type'        => 'text',
-					'label'       => __( 'QuickBooks Company ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'Your QuickBooks company (realm) ID.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => '',
-					'disabled'    => ! $is_pro_active,
-				),
-				'quickbooks_client_id'              => array(
-					'type'        => 'text',
-					'label'       => __( 'QuickBooks Client ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => '',
-					'disabled'    => ! $is_pro_active,
-				),
-				'quickbooks_client_secret'          => array(
-					'type'         => 'password',
-					'label'        => __( 'QuickBooks Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
+				// PayHere, Flowhub, iSAMS, and QuickBooks connections have been moved to Remote Sites.
+				// These settings have been removed. Please use Remote Sites page to manage these connections.
 
 				// Google Analytics.
 				'google_analytics_property_id'      => array(
@@ -420,34 +358,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
-				// iSAMS School Management System.
-				'isams_api_url'                     => array(
-					'type'        => 'text',
-					'label'       => __( 'iSAMS API URL', 'mcp-ai-wpoos' ),
-					'description' => sprintf(
-						/* translators: %s: URL to iSAMS documentation */
-						__( 'Your iSAMS instance URL (e.g., https://yourschool.isams.cloud/). Get your credentials from your iSAMS administrator. %s', 'mcp-ai-wpoos' ),
-						'<a href="https://developer.isams.com/" target="_blank">' . __( 'iSAMS API Documentation', 'mcp-ai-wpoos' ) . '</a>'
-					) . $pro_notice,
-					'placeholder' => 'https://yourschool.isams.cloud/',
-					'disabled'    => ! $is_pro_active,
-				),
-				'isams_api_key'                     => array(
-					'type'         => 'text',
-					'label'        => __( 'iSAMS API Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API key provided by your iSAMS administrator.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'off',
-					'disabled'     => ! $is_pro_active,
-				),
-				'isams_api_secret'                  => array(
-					'type'         => 'password',
-					'label'        => __( 'iSAMS API Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API secret provided by your iSAMS administrator. Keep this secure.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder'  => '',
-					'autocomplete' => 'new-password',
-					'disabled'     => ! $is_pro_active,
-				),
+				// iSAMS, PayHere, Flowhub, and QuickBooks have been moved to Remote Sites.
+				// Use admin.php?page=wp-mcp-ai-remote-sites to manage these connections.
 			);
 		}
 
@@ -467,6 +379,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'fields' => array( 'gmail_client_id', 'gmail_client_secret' ),
 					'pro'    => true,
 				),
+				'google_drive'     => array(
+					'id'     => 'google_drive',
+					'label'  => $is_pro_active ? __( 'Google Drive', 'mcp-ai-wpoos' ) : __( 'Google Drive (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-cloud',
+					'fields' => array( 'google_drive_client_id', 'google_drive_client_secret' ),
+					'pro'    => true,
+				),
 				'crawl4ai'         => array(
 					'id'     => 'crawl4ai',
 					'label'  => __( 'Crawl4AI', 'mcp-ai-wpoos' ),
@@ -479,18 +398,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'icon'   => 'dashicons-search',
 					'fields' => array( 'brave_search_api_key' ),
 				),
-				'payhere'          => array(
-					'id'     => 'payhere',
-					'label'  => __( 'PayHere', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-money-alt',
-					'fields' => array( 'payhere_app_id', 'payhere_app_secret', 'payhere_sandbox_mode' ),
+				'mubert'           => array(
+					'id'     => 'mubert',
+					'label'  => __( 'Mubert', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-format-audio',
+					'fields' => array( 'mubert_api_key' ),
 				),
-				'flowhub'          => array(
-					'id'     => 'flowhub',
-					'label'  => __( 'Flowhub', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-store',
-					'fields' => array( 'flowhub_api_key', 'flowhub_client_id', 'flowhub_client_secret', 'flowhub_location_id' ),
-				),
+				// PayHere, Flowhub, iSAMS, and QuickBooks have been moved to Remote Sites.
 				'removebg'         => array(
 					'id'     => 'removebg',
 					'label'  => __( 'remove.bg', 'mcp-ai-wpoos' ),
@@ -516,13 +430,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_client_id', 'mailjet_client_secret' ),
 					'pro'    => true,
 				),
-				'quickbooks'       => array(
-					'id'     => 'quickbooks',
-					'label'  => $is_pro_active ? __( 'QuickBooks', 'mcp-ai-wpoos' ) : __( 'QuickBooks (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-money-alt',
-					'fields' => array( 'quickbooks_api_key', 'quickbooks_company_id', 'quickbooks_client_id', 'quickbooks_client_secret' ),
-					'pro'    => true,
-				),
+				// QuickBooks and iSAMS moved to Remote Sites.
 				'google_analytics' => array(
 					'id'     => 'google_analytics',
 					'label'  => $is_pro_active ? __( 'Google Analytics', 'mcp-ai-wpoos' ) : __( 'Google Analytics (Pro)', 'mcp-ai-wpoos' ),
@@ -542,13 +450,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
 				),
-				'isams'            => array(
-					'id'     => 'isams',
-					'label'  => $is_pro_active ? __( 'iSAMS', 'mcp-ai-wpoos' ) : __( 'iSAMS (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-welcome-learn-more',
-					'fields' => array( 'isams_api_url', 'isams_api_key', 'isams_api_secret' ),
-					'pro'    => true,
-				),
+				// iSAMS moved to Remote Sites.
 			);
 		}
 
@@ -628,24 +530,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				case 'gmail':
 					$this->render_gmail_footer();
 					break;
+				case 'google_drive':
+					$this->render_google_drive_footer();
+					break;
 				case 'brave_search':
 					$this->render_brave_search_footer();
 					break;
-				case 'payhere':
-					$this->render_payhere_footer();
+				case 'mubert':
+					$this->render_mubert_footer();
 					break;
-				case 'flowhub':
-					$this->render_flowhub_footer();
-					break;
+				// PayHere, Flowhub, QuickBooks, and iSAMS moved to Remote Sites.
 				case 'meta':
 					$this->render_meta_footer();
 					break;
 				case 'tiktok':
 					$this->render_tiktok_footer();
 					break;
-				case 'quickbooks':
-					$this->render_quickbooks_footer();
-					break;
+				// QuickBooks and iSAMS moved to Remote Sites.
 				case 'cloudways':
 					$this->render_cloudways_footer();
 					break;
@@ -655,28 +556,53 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				case 'mailjet':
 					$this->render_mailjet_footer();
 					break;
-				case 'isams':
-					$this->render_isams_footer();
-					break;
+				// iSAMS moved to Remote Sites.
 			}
 		}
 
 		/**
 		 * Render Gmail footer content.
 		 */
-	/**
-	 * Render Gmail footer content.
-	 */
-	private function render_gmail_footer() {
-		$settings        = WP_MCP_AI_Admin_Settings::get_settings();
-		$gmail_connected = ! empty( $settings['gmail_refresh_token'] );
-		$gmail_email     = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
-		$has_credentials = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
-		$oauth_connect_url = wp_nonce_url(
-			admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
-			'wp_mcp_ai_gmail_oauth_start'
-		);
-		?>
+		/**
+		 * Render Gmail footer content.
+		 */
+		private function render_gmail_footer() {
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$gmail_connected   = ! empty( $settings['gmail_refresh_token'] );
+			$gmail_email       = isset( $settings['gmail_user_email'] ) ? $settings['gmail_user_email'] : '';
+			$has_credentials   = ! empty( $settings['gmail_client_id'] ) && ! empty( $settings['gmail_client_secret'] );
+			$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$oauth_connect_url = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_start' ),
+				'wp_mcp_ai_gmail_oauth_start'
+			);
+
+			// Check for success or error messages.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$gmail_success = isset( $_GET['gmail_success'] ) ? sanitize_text_field( wp_unslash( $_GET['gmail_success'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$gmail_error = isset( $_GET['gmail_error'] ) ? sanitize_text_field( wp_unslash( $_GET['gmail_error'] ) ) : '';
+			?>
+			<?php if ( $gmail_success ) : ?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div class="notice notice-success inline" style="margin: 0 0 15px;">
+						<p><?php echo esc_html( $gmail_success ); ?></p>
+					</div>
+				</td>
+			</tr>
+		<?php endif; ?>
+			<?php if ( $gmail_error ) : ?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div class="notice notice-error inline" style="margin: 0 0 15px;">
+						<p><?php echo esc_html( $gmail_error ); ?></p>
+					</div>
+				</td>
+			</tr>
+		<?php endif; ?>
 		<tr>
 			<th scope="row"><?php esc_html_e( 'Gmail Connection', 'mcp-ai-wpoos' ); ?></th>
 			<td>
@@ -774,10 +700,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<li><?php esc_html_e( 'Create OAuth 2.0 credentials (Web application type)', 'mcp-ai-wpoos' ); ?></li>
 						<li>
 							<?php
+							$gmail_redirect_uri = add_query_arg(
+								array( 'wp_mcp_ai_oauth' => 'gmail_callback' ),
+								admin_url( 'admin.php' )
+							);
 							printf(
 								/* translators: %s: Callback URL */
 								esc_html__( 'Set Authorized redirect URI to: %s', 'mcp-ai-wpoos' ),
-								'<br><code>' . esc_html( admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_callback' ) ) . '</code>'
+								'<br><code>' . esc_html( $gmail_redirect_uri ) . '</code>'
 							);
 							?>
 						</li>
@@ -802,8 +732,186 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</ul>
 			</td>
 		</tr>
-		<?php
-	}
+			<?php
+		}
+
+		/**
+		 * Render Google Drive footer content.
+		 */
+		private function render_google_drive_footer() {
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$drive_connected   = ! empty( $settings['google_drive_refresh_token'] );
+			$drive_email       = isset( $settings['google_drive_user_email'] ) ? $settings['google_drive_user_email'] : '';
+			$has_credentials   = ! empty( $settings['google_drive_client_id'] ) && ! empty( $settings['google_drive_client_secret'] );
+			$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$oauth_connect_url = wp_nonce_url(
+				admin_url( 'admin-post.php?action=wp_mcp_ai_google_drive_oauth_start' ),
+				'wp_mcp_ai_google_drive_oauth_start'
+			);
+
+			// Check for success or error messages.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$drive_success = isset( $_GET['drive_success'] ) ? sanitize_text_field( wp_unslash( $_GET['drive_success'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$drive_error = isset( $_GET['drive_error'] ) ? sanitize_text_field( wp_unslash( $_GET['drive_error'] ) ) : '';
+			?>
+			<?php if ( $drive_success ) : ?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div class="notice notice-success inline" style="margin: 0 0 15px;">
+						<p><?php echo esc_html( $drive_success ); ?></p>
+					</div>
+				</td>
+			</tr>
+		<?php endif; ?>
+			<?php if ( $drive_error ) : ?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div class="notice notice-error inline" style="margin: 0 0 15px;">
+						<p><?php echo esc_html( $drive_error ); ?></p>
+					</div>
+				</td>
+			</tr>
+		<?php endif; ?>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Google Drive Connection', 'mcp-ai-wpoos' ); ?></th>
+			<td>
+				<?php if ( $drive_connected ) : ?>
+					<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #155724;">
+							<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+							<strong><?php esc_html_e( 'Connected to Google Drive', 'mcp-ai-wpoos' ); ?></strong>
+							<?php if ( $drive_email ) : ?>
+								<?php
+								printf(
+									/* translators: %s: Google account email address */
+									esc_html__( 'as %s', 'mcp-ai-wpoos' ),
+									'<code>' . esc_html( $drive_email ) . '</code>'
+								);
+								?>
+							<?php endif; ?>
+						</p>
+					</div>
+					<p>
+						<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
+							<?php esc_html_e( 'Reconnect Google Drive Account', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</p>
+					<p class="description">
+						<?php
+						echo wp_kses_post(
+							__(
+								'Your Google Drive account is connected. You can now use Google Drive integration tools to search and read files.',
+								'mcp-ai-wpoos'
+							)
+						);
+						?>
+					</p>
+				<?php elseif ( $has_credentials ) : ?>
+					<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #856404;">
+							<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+							<strong><?php esc_html_e( 'Google Drive Not Connected', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+					</div>
+					<p>
+						<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button button-primary">
+							<?php esc_html_e( 'Connect Google Drive Account', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</p>
+					<p class="description">
+						<?php
+						echo wp_kses_post(
+							__(
+								'Click the button above to authorize WP MCP AI to access your Google Drive account. You will be redirected to Google to grant permissions.',
+								'mcp-ai-wpoos'
+							)
+						);
+						?>
+					</p>
+					<p class="description">
+						<strong><?php esc_html_e( 'Required Permissions:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><code>drive.readonly</code>: <?php esc_html_e( 'Read access to Drive files', 'mcp-ai-wpoos' ); ?></li>
+						<li><code>drive.metadata.readonly</code>: <?php esc_html_e( 'Read access to Drive file metadata', 'mcp-ai-wpoos' ); ?></li>
+					</ul>
+				<?php else : ?>
+					<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #721c24;">
+							<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+							<strong><?php esc_html_e( 'Google Drive OAuth Credentials Required', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+					</div>
+					<p class="description">
+						<?php
+						echo wp_kses_post(
+							__(
+								'To connect your Google Drive account, first configure your Google Drive OAuth Client ID and Client Secret in the fields above, then save your settings.',
+								'mcp-ai-wpoos'
+							)
+						);
+						?>
+					</p>
+					<p class="description">
+						<strong><?php esc_html_e( 'Setup Instructions:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ol style="margin-left: 20px;">
+						<li>
+							<?php
+							printf(
+								/* translators: %s: URL to Google Cloud Console */
+								wp_kses_post( __( 'Go to <a href="%s" target="_blank">Google Cloud Console</a>', 'mcp-ai-wpoos' ) ),
+								esc_url( 'https://console.cloud.google.com/' )
+							);
+							?>
+						</li>
+						<li><?php esc_html_e( 'Create a new project or select an existing one', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Enable the Google Drive API for your project', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Create OAuth 2.0 credentials (Web application type)', 'mcp-ai-wpoos' ); ?></li>
+						<li>
+							<?php
+							$drive_redirect_uri = add_query_arg(
+								array( 'wp_mcp_ai_oauth' => 'google_drive_callback' ),
+								admin_url( 'admin.php' )
+							);
+							printf(
+								/* translators: %s: Callback URL */
+								esc_html__( 'Set Authorized redirect URI to: %s', 'mcp-ai-wpoos' ),
+								'<br><code>' . esc_html( $drive_redirect_uri ) . '</code>'
+							);
+							?>
+						</li>
+						<li><?php esc_html_e( 'Copy the Client ID and Client Secret to the fields above', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Save your settings', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Click the "Connect Google Drive Account" button that will appear', 'mcp-ai-wpoos' ); ?></li>
+					</ol>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<p class="description">
+					<strong><?php esc_html_e( 'About Google Drive Integration:', 'mcp-ai-wpoos' ); ?></strong>
+				</p>
+				<ul style="list-style: disc; margin-left: 20px;">
+					<li><?php esc_html_e( 'OAuth 2.0 credentials are obtained from Google Cloud Console', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Access tokens are automatically refreshed when expired', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Supports searching and reading Drive files', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Requires drive.readonly and drive.metadata.readonly scopes for read access', 'mcp-ai-wpoos' ); ?></li>
+						<?php if ( $is_pro_active ) : ?>
+						<li><?php esc_html_e( 'Pro users can configure multiple Google Drive connections via Remote Sites', 'mcp-ai-wpoos' ); ?></li>
+					<?php else : ?>
+						<li><?php esc_html_e( 'Base version supports 1 connection. Upgrade to Pro for multiple connections', 'mcp-ai-wpoos' ); ?></li>
+					<?php endif; ?>
+				</ul>
+			</td>
+		</tr>
+			<?php
+		}
 
 		/**
 		 * Render Brave Search footer content.
@@ -828,12 +936,48 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		}
 
 		/**
+		 * Render Mubert footer content.
+		 */
+		private function render_mubert_footer() {
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Mubert Connection', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-mubert-connection" class="button button-secondary">
+							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span id="wp-mcp-ai-mubert-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Enter your Mubert API key in the field above, then click "Test Connection" to verify it works. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'About Mubert Integration:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Generate royalty-free background music with 150+ genres and 50+ moods', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Request an API key from business@mubert.com', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Used by the generate_music tool for AI-powered music creation', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Supports track durations from 15 seconds to 25 minutes', 'mcp-ai-wpoos' ); ?></li>
+					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
 		 * Render PayHere footer content.
 		 */
 		private function render_payhere_footer() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
 			$has_credentials = ! empty( $settings['payhere_app_id'] ) && ! empty( $settings['payhere_app_secret'] );
-			$is_sandbox = ! empty( $settings['payhere_sandbox_mode'] );
+			$is_sandbox      = ! empty( $settings['payhere_sandbox_mode'] );
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'PayHere Configuration', 'mcp-ai-wpoos' ); ?></th>
@@ -924,8 +1068,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Flowhub footer content.
 		 */
 		private function render_flowhub_footer() {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$has_credentials = ! empty( $settings['flowhub_api_key'] ) && ! empty( $settings['flowhub_client_id'] ) && ! empty( $settings['flowhub_client_secret'] ) && ! empty( $settings['flowhub_location_id'] );
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_credentials = ! empty( $settings['flowhub_api_key'] ) && ! empty( $settings['flowhub_client_id'] );
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Flowhub Connection', 'mcp-ai-wpoos' ); ?></th>
@@ -1034,10 +1178,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Meta footer content.
 		 */
 		private function render_meta_footer() {
-			$settings         = WP_MCP_AI_Admin_Settings::get_settings();
-			$meta_connected   = ! empty( $settings['meta_access_token'] );
-			$meta_user_name   = isset( $settings['meta_connected_user_name'] ) ? $settings['meta_connected_user_name'] : '';
-			$has_credentials  = ! empty( $settings['meta_app_id'] ) && ! empty( $settings['meta_app_secret'] );
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$meta_connected    = ! empty( $settings['meta_access_token'] );
+			$meta_user_name    = isset( $settings['meta_connected_user_name'] ) ? $settings['meta_connected_user_name'] : '';
+			$has_credentials   = ! empty( $settings['meta_app_id'] ) && ! empty( $settings['meta_app_secret'] );
 			$oauth_connect_url = wp_nonce_url(
 				admin_url( 'admin-post.php?action=wp_mcp_ai_meta_oauth_start' ),
 				'wp_mcp_ai_meta_oauth_start'
@@ -1107,11 +1251,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 							// Get scopes from OAuth handler constant.
 							$scopes             = WP_MCP_AI_Meta_OAuth_Handler::META_OAUTH_SCOPES;
 							$scope_descriptions = array(
-								'pages_manage_posts'              => __( 'Manage Facebook Page posts', 'mcp-ai-wpoos' ),
-								'instagram_basic'                 => __( 'Access Instagram account information', 'mcp-ai-wpoos' ),
-								'instagram_content_publish'       => __( 'Publish Instagram content', 'mcp-ai-wpoos' ),
-								'whatsapp_business_management'    => __( 'Manage WhatsApp Business account', 'mcp-ai-wpoos' ),
-								'whatsapp_business_messaging'     => __( 'Send WhatsApp Business messages', 'mcp-ai-wpoos' ),
+								'pages_manage_posts' => __( 'Manage Facebook Page posts', 'mcp-ai-wpoos' ),
+								'instagram_basic'    => __( 'Access Instagram account information', 'mcp-ai-wpoos' ),
+								'instagram_content_publish' => __( 'Publish Instagram content', 'mcp-ai-wpoos' ),
+								'whatsapp_business_management' => __( 'Manage WhatsApp Business account', 'mcp-ai-wpoos' ),
+								'whatsapp_business_messaging' => __( 'Send WhatsApp Business messages', 'mcp-ai-wpoos' ),
 							);
 							foreach ( explode( ',', $scopes ) as $scope ) {
 								$scope       = trim( $scope );
@@ -1507,7 +1651,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 							$subtab_url = add_query_arg( $url_args, admin_url( 'admin.php' ) );
 							$is_active  = ( $group['id'] === $active_subtab );
 							?>
-							<a href="<?php echo esc_url( $subtab_url ); ?>" 
+							<a href="<?php echo esc_url( $subtab_url ); ?>"
 								class="wp-mcp-ai-subtab <?php echo esc_attr( $is_active ? 'wp-mcp-ai-subtab-active' : '' ); ?>"
 								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>

@@ -166,7 +166,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Chart_Settings' ) ) {
 				<h2><?php esc_html_e( 'Preview Current Data', 'mcp-ai-wpoos' ); ?></h2>
 				<p class="description">
 					<?php
-					echo sprintf(
+					printf(
 						/* translators: %s: Link to Pro Dashboard */
 						esc_html__( 'View the charts on the %s to see your changes.', 'mcp-ai-wpoos' ),
 						'<a href="' . esc_url( admin_url( 'admin.php?page=nvoos-pro-dashboard' ) ) . '">' . esc_html__( 'Pro Dashboard', 'mcp-ai-wpoos' ) . '</a>'

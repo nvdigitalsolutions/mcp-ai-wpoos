@@ -22,7 +22,7 @@ class Test_Remote_Site_Manager_ID_Normalization extends WP_UnitTestCase {
 		// Create a connection with mixed-case ID directly in the database
 		// to simulate the old behavior.
 		$mixed_case_id = 'conn_AbCdEfGhIjKl';
-		$connections = array(
+		$connections   = array(
 			$mixed_case_id => array(
 				'id'              => $mixed_case_id,
 				'name'            => 'Test Connection',
@@ -39,7 +39,7 @@ class Test_Remote_Site_Manager_ID_Normalization extends WP_UnitTestCase {
 				'updated'         => current_time( 'mysql' ),
 			),
 		);
-		
+
 		update_option( 'wp_mcp_ai_pro_remote_sites', $connections );
 
 		// Get all connections - this should trigger migration.

@@ -147,9 +147,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					<label for="wp-mcp-ai-metabox-tool-search" style="font-weight: 600;">
 						<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
 					</label>
-					<input type="search" 
-							id="wp-mcp-ai-metabox-tool-search" 
-							placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>" 
+					<input type="search"
+							id="wp-mcp-ai-metabox-tool-search"
+							placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
 							style="flex: 1; max-width: 300px;">
 
 					<label for="wp-mcp-ai-metabox-tool-group" style="font-weight: 600; margin-left: 10px;">
@@ -199,7 +199,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						groups.forEach( function( group ) {
 							var groupId = '';
 							var summary = group.querySelector( 'summary' );
-							
+
 							// Extract group ID from classes or data attributes.
 							if ( summary ) {
 								var summaryId = summary.getAttribute( 'id' ) || '';
@@ -231,8 +231,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								}
 
 								// Check if search term matches.
-								var searchMatches = ! searchTerm || 
-									toolName.indexOf( searchTerm ) !== -1 || 
+								var searchMatches = ! searchTerm ||
+									toolName.indexOf( searchTerm ) !== -1 ||
 									toolDesc.indexOf( searchTerm ) !== -1;
 
 								// Show/hide item based on both filters.
@@ -256,7 +256,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						var existingMessage = toolsContainer.querySelector( '.wp-mcp-ai-no-results-message' );
 						var allGroups = toolsContainer.querySelectorAll( '.wp-mcp-ai-tools__group' );
 						var visibleGroups = 0;
-						
+
 						allGroups.forEach( function( group ) {
 							if ( group.style.display !== 'none' ) {
 								visibleGroups++;
@@ -281,7 +281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					// Attach event listeners.
 					searchInput.addEventListener( 'input', filterTools );
 					groupSelect.addEventListener( 'change', filterTools );
-					
+
 					clearButton.addEventListener( 'click', function() {
 						searchInput.value = '';
 						groupSelect.value = '';
@@ -339,10 +339,10 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			$default_shortcuts_map = $this->get_default_prebuilt_shortcuts_map( $selected_tools, $post->ID );
-			
+
 			// Group tools by category for better organization.
 			$tool_groups = $this->group_tools_for_shortcuts( $selected_tools );
-			
+
 			// Render search and filter UI.
 			$this->render_shortcuts_search_filter( $tool_groups );
 
@@ -355,7 +355,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 
 				$group_label = $this->get_group_label_for_shortcuts( $group_name );
-				
+
 				echo '<div class="wp-mcp-ai-prebuilt-shortcuts__group" data-group="' . esc_attr( $group_name ) . '">';
 				echo '<h4 class="wp-mcp-ai-prebuilt-shortcuts__group-title">' . esc_html( $group_label ) . ' <span class="wp-mcp-ai-prebuilt-shortcuts__group-count">(' . count( $group_tools ) . ')</span></h4>';
 
@@ -395,7 +395,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					echo '</span>';
 					echo '</summary>';
 					echo '<div class="wp-mcp-ai-prebuilt-shortcuts__content">';
-					
+
 					if ( $tool_description ) {
 						echo '<p class="wp-mcp-ai-prebuilt-shortcuts__tool-description"><em>' . esc_html( $tool_description ) . '</em></p>';
 					}
@@ -557,7 +557,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					++$tool_index;
 				}
-				
+
 				echo '</div>'; // Close group.
 			}
 
@@ -746,7 +746,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					continue;
 				}
 
-				$group = $this->categorize_tool_for_shortcuts( $slug );
+				$group              = $this->categorize_tool_for_shortcuts( $slug );
 				$groups[ $group ][] = $slug;
 			}
 
@@ -851,9 +851,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					<label for="wp-mcp-ai-shortcuts-search" style="font-weight: 600;">
 						<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
 					</label>
-					<input type="search" 
-							id="wp-mcp-ai-shortcuts-search" 
-							placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>" 
+					<input type="search"
+							id="wp-mcp-ai-shortcuts-search"
+							placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
 							style="flex: 1; max-width: 300px;">
 
 					<label for="wp-mcp-ai-shortcuts-category" style="font-weight: 600; margin-left: 10px;">
@@ -927,15 +927,15 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								var toolName = tool.querySelector( '.wp-mcp-ai-prebuilt-shortcuts__summary-title' );
 								var toolText = toolName ? toolName.textContent.toLowerCase() : '';
 								var toolSlug = tool.getAttribute( 'data-tool' ) || '';
-								
+
 								// Get current mode for this tool.
 								var modeRadio = tool.querySelector( 'input[type="radio"][value="custom"]:checked' );
 								var toolMode = modeRadio ? 'custom' : 'inherit';
 
-								var searchMatches = ! searchTerm || 
-									toolText.indexOf( searchTerm ) !== -1 || 
+								var searchMatches = ! searchTerm ||
+									toolText.indexOf( searchTerm ) !== -1 ||
 									toolSlug.indexOf( searchTerm ) !== -1;
-								
+
 								var modeMatches = ! selectedMode || toolMode === selectedMode;
 
 								if ( searchMatches && modeMatches ) {
@@ -975,7 +975,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					searchInput.addEventListener( 'input', filterShortcuts );
 					categorySelect.addEventListener( 'change', filterShortcuts );
 					modeSelect.addEventListener( 'change', filterShortcuts );
-					
+
 					clearButton.addEventListener( 'click', function() {
 						searchInput.value = '';
 						categorySelect.value = '';
@@ -3109,7 +3109,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		<div class="wp-mcp-ai-tool-shortcuts">
 			<h3><?php esc_html_e( 'Custom Prompt Shortcuts', 'mcp-ai-wpoos' ); ?></h3>
 			<p class="description"><?php esc_html_e( 'Create custom prompts that aren\'t tied to specific tools. These appear alongside tool-provided shortcuts in the chat interface.', 'mcp-ai-wpoos' ); ?></p>
-			
+
 			<div class="notice notice-info inline" style="margin: 1rem 0; padding: 10px;">
 				<p style="margin: 0.5em 0;"><strong><?php esc_html_e( 'Tip:', 'mcp-ai-wpoos' ); ?></strong></p>
 				<ul style="margin: 0.5em 0 0.5em 1.5em;">
@@ -3133,7 +3133,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$hidden           = isset( $shortcut['hidden'] ) && $shortcut['hidden'];
 					$summary_fallback = sprintf( $summary_template, intval( $index ) + 1 );
 					$tool_label       = isset( $tool_options[ $tool ] ) ? $tool_options[ $tool ] : $tool_default;
-					
+
 					$item_class = 'wp-mcp-ai-tool-shortcuts__item';
 					if ( $hidden ) {
 						$item_class .= ' wp-mcp-ai-tool-shortcuts__item--hidden';
@@ -3151,11 +3151,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					>
 						<summary class="wp-mcp-ai-tool-shortcuts__summary">
 							<span class="wp-mcp-ai-tool-shortcuts__summary-title">
-								<?php 
+								<?php
 								if ( $hidden ) {
 									echo '<span class="dashicons dashicons-hidden" style="font-size: 16px; opacity: 0.5;"></span> ';
 								}
-								echo esc_html( '' !== $label ? $label : $summary_fallback ); 
+								echo esc_html( '' !== $label ? $label : $summary_fallback );
 								?>
 							</span>
 							<span class="wp-mcp-ai-tool-shortcuts__summary-tool"><?php echo esc_html( $tool_label ); ?></span>
@@ -3247,7 +3247,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			</p>
 		</div>
 
-		<?php $this->render_custom_shortcuts_styles(); ?>
+			<?php $this->render_custom_shortcuts_styles(); ?>
 
 		<template id="wp-mcp-ai-tool-shortcut-template">
 			<details

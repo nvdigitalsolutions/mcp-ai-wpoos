@@ -50,6 +50,8 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 	 * @return void
 	 */
 	public function render( $post ) {
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
+
 		$expertise      = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
 		$default_tools  = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
 		$knowledge_base = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true );
@@ -104,10 +106,10 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 							<!-- Search and Filter Controls -->
 							<div class="profession-tools-controls" style="margin-bottom: 15px;">
 								<div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px;">
-									<input 
-										type="text" 
-										id="profession-tools-search" 
-										class="regular-text" 
+									<input
+										type="text"
+										id="profession-tools-search"
+										class="regular-text"
 										placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
 										aria-label="<?php esc_attr_e( 'Search tools', 'mcp-ai-wpoos' ); ?>"
 										style="flex: 1; min-width: 200px;"
@@ -142,13 +144,13 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 											$count_color = '#d63638'; // Red - too few.
 										}
 										?>
-										<strong style="color: <?php echo esc_attr( $count_color ); ?>;" id="tools-count-number"><?php echo esc_html( $current_count ); ?></strong> 
+										<strong style="color: <?php echo esc_attr( $count_color ); ?>;" id="tools-count-number"><?php echo esc_html( $current_count ); ?></strong>
 										<span id="tools-count-label"><?php esc_html_e( 'selected', 'mcp-ai-wpoos' ); ?></span>
 										<small style="color: #999; margin-left: 5px;">
 											(
 											<?php
 											/* translators: %d: Recommended tool count */
-											printf( esc_html__( 'recommended: %d', 'mcp-ai-wpoos' ), $recommended_count );
+											printf( esc_html__( 'recommended: %d', 'mcp-ai-wpoos' ), absint( $recommended_count ) );
 											?>
 											)
 										</small>
@@ -165,20 +167,20 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 									$tool_desc  = method_exists( $tool, 'get_description' ) ? $tool->get_description() : '';
 									$is_checked = in_array( $tool_slug, $default_tools, true );
 									?>
-									<div class="profession-tool-item" 
+									<div class="profession-tool-item"
 										style="margin-bottom: 8px; padding: 8px; background: #f9f9f9; border-radius: 3px;"
 										data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
 										data-tool-name="<?php echo esc_attr( strtolower( $tool_name ) ); ?>"
 										data-tool-description="<?php echo esc_attr( strtolower( $tool_desc ) ); ?>"
 										data-initially-checked="<?php echo $is_checked ? '1' : '0'; ?>">
 										<label style="display: inline-flex; align-items: flex-start; cursor: pointer; width: 100%;">
-											<input 
-												type="checkbox" 
+											<input
+												type="checkbox"
 												class="profession-tool-checkbox"
-												name="profession_default_tools[]" 
-												value="<?php echo esc_attr( $tool_slug ); ?>" 
-												<?php checked( $is_checked ); ?> 
-												style="margin-right: 8px; margin-top: 2px;" 
+												name="profession_default_tools[]"
+												value="<?php echo esc_attr( $tool_slug ); ?>"
+												<?php checked( $is_checked ); ?>
+												style="margin-right: 8px; margin-top: 2px;"
 											/>
 											<span style="flex: 1;">
 												<strong><?php echo esc_html( $tool_name ); ?></strong>
@@ -203,7 +205,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 								printf(
 									/* translators: %d: Recommended tool count from settings */
 									esc_html__( 'Select the default tools that should be pre-selected when creating assistants with this profession. Recommended: %d tools (configurable in Settings → Advanced). Aim for tools that align with this profession\'s expertise.', 'mcp-ai-wpoos' ),
-									$recommended_count
+									absint( $recommended_count )
 								);
 								?>
 							</p>
@@ -403,6 +405,15 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
+		if ( ! $this->can_save( $post_id ) ) {
+			return;
+		}
+
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_expertise_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_expertise_nonce'] ) ), 'wp_mcp_ai_profession_expertise_save' ) ) {
+			return;
+		}
+
 		// Save expertise.
 		if ( isset( $_POST['profession_expertise'] ) && is_array( $_POST['profession_expertise'] ) ) {
 			$expertise = array_map( 'sanitize_text_field', wp_unslash( $_POST['profession_expertise'] ) );

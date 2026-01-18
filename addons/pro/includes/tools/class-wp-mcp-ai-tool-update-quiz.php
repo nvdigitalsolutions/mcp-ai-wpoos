@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Check permissions: must be author or have edit_others_posts capability.
-		$is_author = absint( $quiz->post_author ) === $current_user_id;
+		$is_author       = absint( $quiz->post_author ) === $current_user_id;
 		$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
 
 		if ( ! $is_author && ! $can_edit_others ) {
@@ -246,12 +246,12 @@ class WP_MCP_AI_Tool_Update_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		);
 
 		// Get updated quiz data.
-		$quiz            = get_post( $quiz_id );
-		$description     = get_post_meta( $quiz_id, '_mcp_ai_quiz_description', true );
-		$time_limit      = get_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', true );
-		$questions       = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
-		$total_points    = get_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', true );
-		$passing_score   = get_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', true );
+		$quiz          = get_post( $quiz_id );
+		$description   = get_post_meta( $quiz_id, '_mcp_ai_quiz_description', true );
+		$time_limit    = get_post_meta( $quiz_id, '_mcp_ai_quiz_time_limit', true );
+		$questions     = get_post_meta( $quiz_id, '_mcp_ai_quiz_questions', true );
+		$total_points  = get_post_meta( $quiz_id, '_mcp_ai_quiz_total_points', true );
+		$passing_score = get_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', true );
 
 		return array(
 			'summary'        => sprintf(

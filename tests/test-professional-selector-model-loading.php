@@ -497,7 +497,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 		wp_set_current_user( $this->user_id );
 
 		// Configure Hugging Face settings.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                             = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['huggingface_api_key']      = 'test_hf_api_key';
 		$settings['huggingface_endpoint_url'] = 'https://api-inference.huggingface.co';
 		$settings['huggingface_model']        = 'meta-llama/Llama-3.2-3B-Instruct';
@@ -571,7 +571,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 		wp_set_current_user( $this->user_id );
 
 		// Configure Anthropic settings.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                      = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['anthropic_api_key'] = 'test_anthropic_api_key';
 		$settings['anthropic_model']   = 'claude-sonnet-4.5';
 		update_option( 'wp_mcp_ai_settings', $settings );

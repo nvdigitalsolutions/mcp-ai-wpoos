@@ -31,8 +31,9 @@ class WP_MCP_AI_Place_CPT {
 	 * Initialize the class.
 	 */
 	public static function init() {
-		// Only available in Full Version (not Base Version).
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Only available in Full Version (not Base Version), unless Pro addon is active.
+		// When Pro addon is active (WP_MCP_AI_PRO_VERSION defined), features should work even in base mode.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
 			return;
 		}
@@ -67,15 +68,15 @@ class WP_MCP_AI_Place_CPT {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$post_type    = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type     = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_place_page = ( $post_type === self::POST_TYPE );
 
 		if ( ! $is_place_page ) {
 			return;
 		}
 
-		// Check if in Base Version.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Check if in Base Version without Pro addon.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			?>
 			<div class="notice notice-warning">
 				<p><strong><?php esc_html_e( 'Places Management Not Available', 'mcp-ai-wpoos-pro' ); ?></strong></p>
@@ -269,8 +270,8 @@ class WP_MCP_AI_Place_CPT {
 				break;
 
 			case 'location':
-				$address = get_post_meta( $post_id, '_place_address', true );
-				$city    = '';
+				$address    = get_post_meta( $post_id, '_place_address', true );
+				$city       = '';
 				$components = get_post_meta( $post_id, '_place_address_components', true );
 				if ( is_array( $components ) && ! empty( $components['city'] ) ) {
 					$city = $components['city'];
