@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  * Provides a tool for generating royalty-free background music via Mubert API.
  */
 class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -341,14 +342,16 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
 
 		// Get local WordPress URL using utility class for SoC compliance.
-		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
+		$local_url    = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
+		$summary_text = sprintf(
+			/* translators: %s: music file name */
+			__( 'Generated music file: %s', 'mcp-ai-wpoos' ),
+			$title
+		);
 
 		return array(
-			'summary'            => sprintf(
-				/* translators: %s: music file name */
-				__( 'Generated music file: %s', 'mcp-ai-wpoos' ),
-				$title
-			),
+			'message'            => $summary_text,
+			'summary'            => $summary_text,
 			'attachment_id'      => (int) $attachment_id,
 			'file'               => $file_path,
 			'file_name'          => wp_basename( $file_path ),
