@@ -144,7 +144,9 @@
 				'<div class="wp-mcp-ai-loading"><span class="spinner is-active"></span> Loading team members...</div>'
 			);
 
-			const ajaxUrl = wpMcpAiChat.restUrl + 'teams/' + this.currentTeamId + '/members';
+			// Ensure REST URL has trailing slash before concatenating path
+			const restUrl = wpMcpAiChat.restUrl.endsWith('/') ? wpMcpAiChat.restUrl : wpMcpAiChat.restUrl + '/';
+			const ajaxUrl = restUrl + 'teams/' + this.currentTeamId + '/members';
 			console.log('Loading team members from:', ajaxUrl);
 
 			// Use WordPress REST API to get team meta
@@ -302,11 +304,11 @@
 				resultAggregation: this.resultAggregation,
 				teamMembers: this.teamMembers.map(m => m.id),
 				userId: (window.wpMcpAiChat && typeof window.wpMcpAiChat.currentUserId !== 'undefined') ? window.wpMcpAiChat.currentUserId : 0,
-				messagesEndpoint: baseRestUrl + '/chat-client',
-				toolsEndpoint: baseRestUrl + '/tools',
-				filesEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.filesEndpoint) ? window.wpMcpAiChat.filesEndpoint : baseRestUrl + '/files/',
-				transcriptsEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.transcriptsEndpoint) ? window.wpMcpAiChat.transcriptsEndpoint : baseRestUrl + '/chat-transcripts',
-				crawl4aiTaskEndpoint: baseRestUrl + '/crawl4ai/task/',
+				messagesEndpoint: baseRestUrl + 'chat-client',
+				toolsEndpoint: baseRestUrl + 'tools',
+				filesEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.filesEndpoint) ? window.wpMcpAiChat.filesEndpoint : baseRestUrl + 'files/',
+				transcriptsEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.transcriptsEndpoint) ? window.wpMcpAiChat.transcriptsEndpoint : baseRestUrl + 'chat-transcripts',
+				crawl4aiTaskEndpoint: baseRestUrl + 'crawl4ai/task/',
 				uploadEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.uploadEndpoint) ? window.wpMcpAiChat.uploadEndpoint : '/wp-json/wp/v2/media',
 				sessionKey: this.generateSessionKey(),
 				enableStreaming: true,
@@ -382,11 +384,11 @@
 				professionId: memberId,
 				teamId: this.currentTeamId,
 				userId: (window.wpMcpAiChat && typeof window.wpMcpAiChat.currentUserId !== 'undefined') ? window.wpMcpAiChat.currentUserId : 0,
-				messagesEndpoint: baseRestUrl + '/chat-client',
-				toolsEndpoint: baseRestUrl + '/tools',
-				filesEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.filesEndpoint) ? window.wpMcpAiChat.filesEndpoint : baseRestUrl + '/files/',
-				transcriptsEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.transcriptsEndpoint) ? window.wpMcpAiChat.transcriptsEndpoint : baseRestUrl + '/chat-transcripts',
-				crawl4aiTaskEndpoint: baseRestUrl + '/crawl4ai/task/',
+				messagesEndpoint: baseRestUrl + 'chat-client',
+				toolsEndpoint: baseRestUrl + 'tools',
+				filesEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.filesEndpoint) ? window.wpMcpAiChat.filesEndpoint : baseRestUrl + 'files/',
+				transcriptsEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.transcriptsEndpoint) ? window.wpMcpAiChat.transcriptsEndpoint : baseRestUrl + 'chat-transcripts',
+				crawl4aiTaskEndpoint: baseRestUrl + 'crawl4ai/task/',
 				uploadEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.uploadEndpoint) ? window.wpMcpAiChat.uploadEndpoint : '/wp-json/wp/v2/media',
 				sessionKey: this.generateSessionKey(),
 				enableStreaming: true,
