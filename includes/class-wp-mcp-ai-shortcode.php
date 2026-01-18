@@ -990,7 +990,8 @@ class WP_MCP_AI_Shortcode {
 						title="<?php echo esc_attr__( 'Switch between unified team and individual member modes', 'mcp-ai-wpoos' ); ?>"
 					>
 						<svg class="wp-mcp-ai-chat__team-mode-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-							<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+							<!-- Switch/Shuffle icon - clearly indicates mode toggling -->
+							<path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>
 						</svg>
 						<span class="screen-reader-text"><?php esc_html_e( 'Team mode toggle', 'mcp-ai-wpoos' ); ?></span>
 					</button>
