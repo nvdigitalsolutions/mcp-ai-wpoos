@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Creates charts using Chart.js and returns HTML/JavaScript or saves as attachment.
@@ -22,6 +23,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  * - Storage Layer: Optionally saves chart as HTML file attachment
  */
 class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
+
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	const CHARTJS_VERSION = '4.4.0';
 
@@ -297,7 +300,28 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				return $storage;
 			}
 
+			$type_labels = array(
+				'bar'       => __( 'Bar Chart', 'mcp-ai-wpoos' ),
+				'line'      => __( 'Line Chart', 'mcp-ai-wpoos' ),
+				'pie'       => __( 'Pie Chart', 'mcp-ai-wpoos' ),
+				'doughnut'  => __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
+				'radar'     => __( 'Radar Chart', 'mcp-ai-wpoos' ),
+				'polarArea' => __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
+				'scatter'   => __( 'Scatter Chart', 'mcp-ai-wpoos' ),
+				'bubble'    => __( 'Bubble Chart', 'mcp-ai-wpoos' ),
+			);
+			$chart_label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'mcp-ai-wpoos' );
+
+			$message = sprintf(
+				/* translators: 1: chart type, 2: file name */
+				__( 'Successfully created %1$s and saved as %2$s', 'mcp-ai-wpoos' ),
+				$chart_label,
+				$storage['file_name']
+			);
+
 			return array(
+				'message'       => $message,
+				'text'          => $message,
 				'chart_type'    => $chart_type,
 				'attachment_id' => $storage['attachment_id'],
 				'url'           => $storage['url'],
@@ -310,7 +334,27 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
+		$type_labels = array(
+			'bar'       => __( 'Bar Chart', 'mcp-ai-wpoos' ),
+			'line'      => __( 'Line Chart', 'mcp-ai-wpoos' ),
+			'pie'       => __( 'Pie Chart', 'mcp-ai-wpoos' ),
+			'doughnut'  => __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
+			'radar'     => __( 'Radar Chart', 'mcp-ai-wpoos' ),
+			'polarArea' => __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
+			'scatter'   => __( 'Scatter Chart', 'mcp-ai-wpoos' ),
+			'bubble'    => __( 'Bubble Chart', 'mcp-ai-wpoos' ),
+		);
+		$chart_label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'mcp-ai-wpoos' );
+
+		$message = sprintf(
+			/* translators: %s: chart type */
+			__( 'Successfully created %s', 'mcp-ai-wpoos' ),
+			$chart_label
+		);
+
 		return array(
+			'message'       => $message,
+			'text'          => $message,
 			'chart_type'    => $chart_type,
 			'html'          => $html,
 			'chart_config'  => $chart_config,
