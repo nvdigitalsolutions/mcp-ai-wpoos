@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-chart-fixed-height',
-        'version' => 'dev-copilot/update-chart-fixed-height',
-        'reference' => '0b96cd760728a3a485af311e71998300cd16ebb0',
+        'pretty_version' => 'dev-copilot/fix-fatal-error-overview-page',
+        'version' => 'dev-copilot/fix-fatal-error-overview-page',
+        'reference' => '3d088ec24b81ee837b1535e8de025b6f43b97da2',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-chart-fixed-height',
-            'version' => 'dev-copilot/update-chart-fixed-height',
-            'reference' => '0b96cd760728a3a485af311e71998300cd16ebb0',
+            'pretty_version' => 'dev-copilot/fix-fatal-error-overview-page',
+            'version' => 'dev-copilot/fix-fatal-error-overview-page',
+            'reference' => '3d088ec24b81ee837b1535e8de025b6f43b97da2',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

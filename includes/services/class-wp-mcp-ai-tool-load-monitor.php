@@ -513,7 +513,7 @@ class WP_MCP_AI_Tool_Load_Monitor {
 			return 'batch';
 		}
 		
-		$registry = WP_MCP_AI_Tool_Registry::instance();
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$tool     = $registry->get_tool( $tool_slug );
 		
 		if ( ! $tool ) {
