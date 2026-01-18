@@ -752,6 +752,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-groups"></span>
 			<?php esc_html_e( 'Agents', 'mcp-ai-wpoos' ); ?>
 </a>
+<a href="<?php echo esc_url( $this->get_view_url( 'professions' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'professions' === $active_view ? 'active' : ''; ?>">
+<span class="dashicons dashicons-businessperson"></span>
+			<?php esc_html_e( 'Professions', 'mcp-ai-wpoos' ); ?>
+</a>
 </nav>
 
 <!-- Hidden field to preserve view during form submission -->
@@ -772,6 +776,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					break;
 				case 'agents':
 					$this->render_agents_view();
+					break;
+				case 'professions':
+					$this->render_professions_view();
 					break;
 				case 'overview':
 				default:
@@ -1035,6 +1042,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'label'  => __( 'Agents', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						// Agents view is read-only, no editable fields.
+					),
+				),
+				'professions' => array(
+					'label'  => __( 'Professions', 'mcp-ai-wpoos' ),
+					'fields' => array(
+						// Professions view is read-only, no editable fields.
 					),
 				),
 			);
