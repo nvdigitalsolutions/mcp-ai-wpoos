@@ -538,7 +538,7 @@ class WP_MCP_AI_Tool_Recommendations {
 	 * @param array $tool_categories Tool categories array.
 	 * @return array Recommendations array.
 	 */
-	protected static function process_tools_from_categories( $tool_categories ) {
+	private static function process_tools_from_categories( $tool_categories ) {
 		$recommendations = array();
 
 		foreach ( $tool_categories as $category => $data ) {
@@ -560,7 +560,7 @@ class WP_MCP_AI_Tool_Recommendations {
 	 * @param array $recommendations Existing recommendations array.
 	 * @return array Updated recommendations array.
 	 */
-	protected static function add_tools_from_registry( $recommendations ) {
+	private static function add_tools_from_registry( $recommendations ) {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		if ( ! $registry ) {
 			return $recommendations;
