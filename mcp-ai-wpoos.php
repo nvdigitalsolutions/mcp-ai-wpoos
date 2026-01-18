@@ -701,6 +701,30 @@ if ( is_admin() ) {
 		wp_mcp_ai_container()->get( 'admin.test_team' );
 	}
 
+	// Load profession settings page (submenu of Professions CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-settings.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-settings.php';
+		wp_mcp_ai_container()->get( 'admin.profession_settings' );
+	}
+
+	// Load team settings page (submenu of Teams CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-settings.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-settings.php';
+		wp_mcp_ai_container()->get( 'admin.team_settings' );
+	}
+
+	// Load profession research page (submenu of Professions CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-research-page.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-research-page.php';
+		wp_mcp_ai_container()->get( 'admin.profession_research' );
+	}
+
+	// Load team research page (submenu of Teams CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-research-page.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-research-page.php';
+		wp_mcp_ai_container()->get( 'admin.team_research' );
+	}
+
 	// Load add assistant page (submenu of AI Assistants CPT - renamed to Create Assistant).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-assistant-page.php';
 

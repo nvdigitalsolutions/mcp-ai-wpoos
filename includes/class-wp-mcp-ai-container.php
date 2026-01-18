@@ -473,6 +473,34 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'admin.profession_settings',
+			function () {
+				return new WP_MCP_AI_Admin_Profession_Settings();
+			}
+		);
+
+		$this->singleton(
+			'admin.team_settings',
+			function () {
+				return new WP_MCP_AI_Admin_Team_Settings();
+			}
+		);
+
+		$this->singleton(
+			'admin.profession_research',
+			function () {
+				return new WP_MCP_AI_Admin_Profession_Research_Page();
+			}
+		);
+
+		$this->singleton(
+			'admin.team_research',
+			function () {
+				return new WP_MCP_AI_Admin_Team_Research_Page();
+			}
+		);
+
+		$this->singleton(
 			'admin.ajax_handlers',
 			function () {
 				return new WP_MCP_AI_Admin_AJAX_Handlers();
