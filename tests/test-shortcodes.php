@@ -595,4 +595,58 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
 		$this->assertStringContainsString( 'data-template="classic"', $markup, 'Template should default to classic when not specified.' );
 	}
+
+	/**
+	 * Test that per-instance config includes all required REST endpoints.
+	 *
+	 * This verifies that each chat instance has uploadEndpoint, toolsEndpoint,
+	 * filesEndpoint, transcriptsEndpoint, and other required configuration values
+	 * in its per-instance config, preventing the "Chat configuration missing expected
+	 * PHP-localized values" error.
+	 */
+	public function test_per_instance_config_includes_required_endpoints() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Endpoint Test Assistant',
+			)
+		);
+
+		wp_scripts()->reset();
+
+		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+
+		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertArrayHasKey( $handle, wp_scripts()->registered );
+
+		$registered = wp_scripts()->registered[ $handle ];
+
+		// Get the inline script that contains the per-instance config.
+		$instance_config = implode( "\n", $registered->extra['before'] ?? array() );
+
+		// Parse the JSON config to verify all required endpoints are present.
+		preg_match( '/wpMcpAiChatInstances\["[^"]+"\]\s*=\s*({.*?});/', $instance_config, $matches );
+		$this->assertNotEmpty( $matches, 'Should find instance config in inline script.' );
+
+		if ( ! empty( $matches[1] ) ) {
+			$config = json_decode( $matches[1], true );
+			$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
+
+			// Verify all required endpoint keys are present in per-instance config.
+			$required_endpoints = array( 'uploadEndpoint', 'toolsEndpoint', 'filesEndpoint', 'transcriptsEndpoint', 'restUrl', 'messagesEndpoint' );
+			foreach ( $required_endpoints as $endpoint ) {
+				$this->assertArrayHasKey( $endpoint, $config, "Instance config should have {$endpoint} key." );
+				$this->assertNotEmpty( $config[ $endpoint ], "{$endpoint} should not be empty." );
+				$this->assertIsString( $config[ $endpoint ], "{$endpoint} should be a string." );
+			}
+
+			// Verify uploadEndpoint is set correctly (was previously missing).
+			$this->assertStringContainsString( '/wp/v2/media', $config['uploadEndpoint'], 'uploadEndpoint should point to WordPress media endpoint.' );
+
+			// Verify toolsEndpoint is set correctly.
+			$this->assertStringContainsString( '/tools', $config['toolsEndpoint'], 'toolsEndpoint should point to tools endpoint.' );
+		}
+	}
 }

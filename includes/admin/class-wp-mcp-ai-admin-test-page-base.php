@@ -185,6 +185,7 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 				'restUrl'             => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace ) ) ) ),
 				'uploadEndpoint'      => esc_url_raw( $this->normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
 				'filesEndpoint'       => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace . '/files' ) ) ) ),
+				'toolsEndpoint'       => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/tools' ) ) ),
 				'transcriptsEndpoint' => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-transcripts' ) ) ),
 				'historyPerPage'      => 20,
 				'currentUserId'       => get_current_user_id(),
