@@ -478,55 +478,180 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	/**
 	 * Execute a creation task
 	 *
-	 * Provides execution plan for content/resource creation tasks.
+	 * Executes content creation using save_post/create_post, optionally with research.
 	 *
 	 * @param array $task Task data.
 	 * @param array $context Execution context.
-	 * @return array Creation execution plan with tool recommendations.
+	 * @return array Creation results with created content IDs.
 	 */
 	protected function execute_creation_task( $task, $context ) {
 		$description = isset( $task['description'] ) ? $task['description'] : '';
 		$parameters  = isset( $task['parameters'] ) ? $task['parameters'] : array();
 
-		// Build execution plan for creation.
-		$execution_plan = array(
+		$results = array(
 			'type'        => 'creation',
 			'description' => $description,
-			'plan'        => array(
-				'steps'                => array(
-					array(
-						'step'        => 1,
-						'action'      => 'research_content',
-						'tools'       => array( 'web_search', 'get_recent_posts' ),
-						'description' => __( 'Research and gather information for creation', 'mcp-ai-wpoos' ),
-					),
-					array(
-						'step'        => 2,
-						'action'      => 'create_draft',
-						'tools'       => array( 'create_post' ),
-						'description' => __( 'Create initial draft or prototype', 'mcp-ai-wpoos' ),
-					),
-					array(
-						'step'        => 3,
-						'action'      => 'refine_and_publish',
-						'tools'       => array( 'save_post' ),
-						'description' => __( 'Refine and finalize the created content', 'mcp-ai-wpoos' ),
-					),
-				),
-				'estimated_tool_calls' => 3,
-				'parallel_execution'   => false,
-			),
+			'steps'       => array(),
 		);
 
-		// Add task-specific parameters.
-		if ( ! empty( $parameters['content_type'] ) ) {
-			$execution_plan['content_type'] = $parameters['content_type'];
-		}
-		if ( ! empty( $parameters['requirements'] ) ) {
-			$execution_plan['requirements'] = $parameters['requirements'];
+		// Step 1: Research content (optional, if research enabled).
+		if ( ! empty( $parameters['research'] ) && $this->tool_registry->is_tool_registered( 'web_search' ) ) {
+			$research_result = $this->execute_tool_with_context(
+				'web_search',
+				array(
+					'query' => isset( $parameters['research_query'] ) ? $parameters['research_query'] : $description,
+					'limit' => 5,
+				),
+				$context
+			);
+
+			$results['steps'][] = array(
+				'step'   => 1,
+				'action' => 'research_content',
+				'tool'   => 'web_search',
+				'status' => is_wp_error( $research_result ) ? 'failed' : 'completed',
+				'result' => $research_result,
+			);
+
+			// Extract research insights for content.
+			if ( ! is_wp_error( $research_result ) && isset( $research_result['results'] ) ) {
+				$parameters['research_insights'] = $research_result['results'];
+			}
+		} else {
+			$results['steps'][] = array(
+				'step'   => 1,
+				'action' => 'research_content',
+				'status' => 'skipped',
+				'reason' => __( 'Research not requested or web_search tool unavailable', 'mcp-ai-wpoos' ),
+			);
 		}
 
-		return $execution_plan;
+		// Step 2: Create content draft.
+		$post_title   = isset( $parameters['title'] ) ? $parameters['title'] : $description;
+		$post_content = isset( $parameters['content'] ) ? $parameters['content'] : $this->generate_content_from_task( $task, $parameters );
+		$post_type    = isset( $parameters['post_type'] ) ? $parameters['post_type'] : 'post';
+		$post_status  = isset( $parameters['status'] ) ? $parameters['status'] : 'draft';
+
+		$create_result = $this->execute_tool_with_context(
+			'save_post',
+			array(
+				'title'   => $post_title,
+				'content' => $post_content,
+				'status'  => $post_status,
+				'type'    => $post_type,
+			),
+			$context
+		);
+
+		$results['steps'][] = array(
+			'step'   => 2,
+			'action' => 'create_draft',
+			'tool'   => 'save_post',
+			'status' => is_wp_error( $create_result ) ? 'failed' : 'completed',
+			'result' => $create_result,
+		);
+
+		if ( is_wp_error( $create_result ) ) {
+			$results['status'] = 'failed';
+			$results['error']  = $create_result->get_error_message();
+			return $results;
+		}
+
+		// Extract post ID from result.
+		$post_id = null;
+		if ( isset( $create_result['post_id'] ) ) {
+			$post_id = $create_result['post_id'];
+		} elseif ( isset( $create_result['id'] ) ) {
+			$post_id = $create_result['id'];
+		}
+
+		// Step 3: Refine and publish (if requested).
+		if ( ! empty( $parameters['publish'] ) && $post_id && 'draft' === $post_status ) {
+			$publish_result = $this->execute_tool_with_context(
+				'save_post',
+				array(
+					'id'     => $post_id,
+					'status' => 'publish',
+				),
+				$context
+			);
+
+			$results['steps'][] = array(
+				'step'   => 3,
+				'action' => 'refine_and_publish',
+				'tool'   => 'save_post',
+				'status' => is_wp_error( $publish_result ) ? 'failed' : 'completed',
+				'result' => $publish_result,
+			);
+		} else {
+			$results['steps'][] = array(
+				'step'   => 3,
+				'action' => 'refine_and_publish',
+				'status' => 'skipped',
+				'reason' => __( 'Publish not requested or post creation failed', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$results['created_content'] = array(
+			'post_id'    => $post_id,
+			'post_title' => $post_title,
+			'post_type'  => $post_type,
+			'status'     => ! empty( $parameters['publish'] ) && $post_id ? 'publish' : $post_status,
+		);
+
+		$results['status'] = 'completed';
+		return $results;
+	}
+
+	/**
+	 * Generate content from task parameters
+	 *
+	 * @param array $task Task data.
+	 * @param array $parameters Task parameters.
+	 * @return string Generated content.
+	 */
+	protected function generate_content_from_task( $task, $parameters ) {
+		$content = '';
+
+		// Add task description as intro.
+		if ( ! empty( $task['description'] ) ) {
+			$content .= '<p>' . esc_html( $task['description'] ) . '</p>';
+		}
+
+		// Add research insights if available.
+		if ( ! empty( $parameters['research_insights'] ) ) {
+			$content .= '<h2>' . esc_html__( 'Research Insights', 'mcp-ai-wpoos' ) . '</h2>';
+			$content .= '<ul>';
+			foreach ( $parameters['research_insights'] as $insight ) {
+				if ( isset( $insight['title'] ) ) {
+					$content .= '<li>';
+					if ( isset( $insight['url'] ) ) {
+						$content .= '<a href="' . esc_url( $insight['url'] ) . '">' . esc_html( $insight['title'] ) . '</a>';
+					} else {
+						$content .= esc_html( $insight['title'] );
+					}
+					if ( isset( $insight['snippet'] ) ) {
+						$content .= '<p>' . esc_html( $insight['snippet'] ) . '</p>';
+					}
+					$content .= '</li>';
+				}
+			}
+			$content .= '</ul>';
+		}
+
+		// Add custom sections if provided.
+		if ( ! empty( $parameters['sections'] ) && is_array( $parameters['sections'] ) ) {
+			foreach ( $parameters['sections'] as $section ) {
+				if ( isset( $section['heading'] ) ) {
+					$content .= '<h2>' . esc_html( $section['heading'] ) . '</h2>';
+				}
+				if ( isset( $section['content'] ) ) {
+					$content .= wp_kses_post( $section['content'] );
+				}
+			}
+		}
+
+		return $content;
 	}
 
 	/**
