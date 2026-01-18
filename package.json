@@ -31,10 +31,13 @@
 	"dependencies": {
 		"@microsoft/fetch-event-source": "^2.0.1",
 		"@neplex/vectorizer": "^0.0.5",
+		"@types/pdfkit": "^0.17.4",
 		"chart.js": "^4.4.1",
+		"docx": "^9.5.1",
 		"dompurify": "^3.3.0",
 		"ky": "^1.14.0",
-		"marked": "^17.0.0"
+		"marked": "^17.0.0",
+		"pdfkit": "^0.17.2"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.28.5",
