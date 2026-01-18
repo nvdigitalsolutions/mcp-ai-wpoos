@@ -748,6 +748,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-admin-tools"></span>
 			<?php esc_html_e( 'Tools', 'mcp-ai-wpoos' ); ?>
 </a>
+<a href="<?php echo esc_url( $this->get_view_url( 'agents' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'agents' === $active_view ? 'active' : ''; ?>">
+<span class="dashicons dashicons-groups"></span>
+			<?php esc_html_e( 'Agents', 'mcp-ai-wpoos' ); ?>
+</a>
 </nav>
 
 <!-- Hidden field to preserve view during form submission -->
@@ -765,6 +769,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					break;
 				case 'tools':
 					$this->render_tools_view();
+					break;
+				case 'agents':
+					$this->render_agents_view();
 					break;
 				case 'overview':
 				default:
@@ -1024,6 +1031,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						// Tools view is read-only, no editable fields.
 					),
 				),
+				'agents'     => array(
+					'label'  => __( 'Agents', 'mcp-ai-wpoos' ),
+					'fields' => array(
+						// Agents view is read-only, no editable fields.
+					),
+				),
 			);
 		}
 
@@ -1054,6 +1067,374 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer methods.
 			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
 		}
+
+	/**
+	 * Render agents view.
+	 *
+	 * Displays all available agent roles and their orchestration capabilities.
+	 * Shows DeepSeek V4-inspired multi-agent coordination features.
+	 */
+	private function render_agents_view() {
+		?>
+		<div class="wp-mcp-ai-agents-view">
+			<h3><?php esc_html_e( 'Agent Roles & Multi-Agent Orchestration', 'mcp-ai-wpoos' ); ?></h3>
+			<p class="description">
+				<?php esc_html_e( 'Configure and manage AI agent roles for DeepSeek V4-inspired multi-agent coordination. Agents can work individually or as coordinated teams to handle complex tasks.', 'mcp-ai-wpoos' ); ?>
+			</p>
+
+			<div class="notice notice-info inline" style="margin: 20px 0;">
+				<p>
+					<span class="dashicons dashicons-info" style="vertical-align: middle; color: #2271b1;"></span>
+					<strong><?php esc_html_e( 'Multi-Agent Orchestration:', 'mcp-ai-wpoos' ); ?></strong>
+					<?php esc_html_e( 'This system enables complex workflows where specialized agents collaborate - planners break down tasks, executors implement solutions, critics validate quality, and specialists handle domain-specific work.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<?php
+			// Get available agent roles.
+			$agent_roles = $this->get_available_agent_roles();
+			
+			if ( ! empty( $agent_roles ) ) {
+				?>
+				<div class="wp-mcp-ai-agents-grid">
+					<?php foreach ( $agent_roles as $role ) : ?>
+						<div class="wp-mcp-ai-agent-card">
+							<div class="agent-card-header">
+								<span class="dashicons <?php echo esc_attr( $role['icon'] ); ?>"></span>
+								<h4><?php echo esc_html( $role['name'] ); ?></h4>
+							</div>
+							<div class="agent-card-body">
+								<p class="description"><?php echo esc_html( $role['description'] ); ?></p>
+								
+								<?php if ( ! empty( $role['capabilities'] ) ) : ?>
+									<div class="agent-capabilities">
+										<strong><?php esc_html_e( 'Capabilities:', 'mcp-ai-wpoos' ); ?></strong>
+										<ul>
+											<?php foreach ( $role['capabilities'] as $capability ) : ?>
+												<li><?php echo esc_html( $capability ); ?></li>
+											<?php endforeach; ?>
+										</ul>
+									</div>
+								<?php endif; ?>
+
+								<?php if ( ! empty( $role['recommended_tools'] ) ) : ?>
+									<div class="agent-tools">
+										<strong><?php esc_html_e( 'Recommended Tools:', 'mcp-ai-wpoos' ); ?></strong>
+										<div class="tool-badges">
+											<?php foreach ( array_slice( $role['recommended_tools'], 0, 5 ) as $tool ) : ?>
+												<span class="tool-badge"><?php echo esc_html( $tool ); ?></span>
+											<?php endforeach; ?>
+											<?php if ( count( $role['recommended_tools'] ) > 5 ) : ?>
+												<span class="tool-badge-more">
+													+<?php echo esc_html( count( $role['recommended_tools'] ) - 5 ); ?> more
+												</span>
+											<?php endif; ?>
+										</div>
+									</div>
+								<?php endif; ?>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+				<?php
+			} else {
+				?>
+				<div class="notice notice-warning inline">
+					<p><?php esc_html_e( 'No agent roles found. Agent roles are loaded from the agents directory.', 'mcp-ai-wpoos' ); ?></p>
+				</div>
+				<?php
+			}
+			?>
+
+			<!-- Multi-Agent Coordination Tools -->
+			<div class="wp-mcp-ai-agent-tools-section" style="margin-top: 30px;">
+				<h3><?php esc_html_e( 'Multi-Agent Coordination Tools', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'The following tools enable multi-agent workflows and team coordination:', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<div class="coordination-tools-grid">
+					<?php
+					$coordination_tools = array(
+						array(
+							'name'        => 'create_agent_team',
+							'label'       => __( 'Create Agent Team', 'mcp-ai-wpoos' ),
+							'description' => __( 'Compose multi-agent teams dynamically from available professions', 'mcp-ai-wpoos' ),
+							'icon'        => 'dashicons-groups',
+						),
+						array(
+							'name'        => 'delegate_to_agent',
+							'label'       => __( 'Delegate to Agent', 'mcp-ai-wpoos' ),
+							'description' => __( 'Delegate subtasks to specialized agents within a team', 'mcp-ai-wpoos' ),
+							'icon'        => 'dashicons-networking',
+						),
+						array(
+							'name'        => 'aggregate_agent_results',
+							'label'       => __( 'Aggregate Agent Results', 'mcp-ai-wpoos' ),
+							'description' => __( 'Combine outputs from multiple agents using various strategies', 'mcp-ai-wpoos' ),
+							'icon'        => 'dashicons-chart-bar',
+						),
+					);
+
+					foreach ( $coordination_tools as $tool ) :
+						?>
+						<div class="coordination-tool-card">
+							<span class="<?php echo esc_attr( $tool['icon'] ); ?>" style="font-size: 32px; color: #2271b1;"></span>
+							<h4><?php echo esc_html( $tool['label'] ); ?></h4>
+							<p class="description"><?php echo esc_html( $tool['description'] ); ?></p>
+							<code class="tool-slug"><?php echo esc_html( $tool['name'] ); ?></code>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			</div>
+
+			<!-- Quick Actions -->
+			<div class="wp-mcp-ai-agent-actions" style="margin-top: 30px;">
+				<h4><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos' ); ?></h4>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession' ) ); ?>" class="button button-secondary">
+						<?php esc_html_e( 'Manage Professions', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_team' ) ); ?>" class="button button-secondary">
+						<?php esc_html_e( 'Manage Teams', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools' ) ); ?>" class="button button-secondary">
+						<?php esc_html_e( 'View All Tools', 'mcp-ai-wpoos' ); ?>
+					</a>
+				</p>
+			</div>
+
+			<!-- Styling -->
+			<style>
+				.wp-mcp-ai-agents-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+					gap: 20px;
+					margin: 20px 0;
+				}
+				
+				.wp-mcp-ai-agent-card {
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					padding: 20px;
+					box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+				}
+				
+				.agent-card-header {
+					display: flex;
+					align-items: center;
+					gap: 10px;
+					margin-bottom: 15px;
+					padding-bottom: 15px;
+					border-bottom: 1px solid #eee;
+				}
+				
+				.agent-card-header .dashicons {
+					font-size: 32px;
+					width: 32px;
+					height: 32px;
+					color: #2271b1;
+				}
+				
+				.agent-card-header h4 {
+					margin: 0;
+					color: #1d2327;
+				}
+				
+				.agent-card-body {
+					font-size: 14px;
+				}
+				
+				.agent-capabilities,
+				.agent-tools {
+					margin-top: 15px;
+					padding-top: 10px;
+					border-top: 1px solid #f0f0f0;
+				}
+				
+				.agent-capabilities ul {
+					margin: 5px 0;
+					padding-left: 20px;
+				}
+				
+				.agent-capabilities li {
+					margin: 5px 0;
+					color: #666;
+				}
+				
+				.tool-badges {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 5px;
+					margin-top: 8px;
+				}
+				
+				.tool-badge,
+				.tool-badge-more {
+					background: #f0f0f1;
+					padding: 3px 8px;
+					border-radius: 3px;
+					font-size: 11px;
+					color: #666;
+				}
+				
+				.tool-badge-more {
+					background: #2271b1;
+					color: #fff;
+				}
+				
+				.coordination-tools-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+					gap: 20px;
+					margin: 20px 0;
+				}
+				
+				.coordination-tool-card {
+					background: #f8f9fa;
+					border: 1px solid #ddd;
+					border-left: 4px solid #2271b1;
+					padding: 20px;
+					border-radius: 4px;
+					text-align: center;
+				}
+				
+				.coordination-tool-card h4 {
+					margin: 10px 0;
+					color: #1d2327;
+				}
+				
+				.coordination-tool-card .tool-slug {
+					display: inline-block;
+					margin-top: 10px;
+					padding: 4px 8px;
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 3px;
+					font-size: 12px;
+					color: #d63638;
+				}
+			</style>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get available agent roles.
+	 *
+	 * @return array Array of agent role data.
+	 */
+	private function get_available_agent_roles() {
+		$roles = array();
+
+		// Check if agent role classes are available.
+		$agent_classes = array(
+			'planner'    => 'WP_MCP_AI_Agent_Role_Planner',
+			'executor'   => 'WP_MCP_AI_Agent_Role_Executor',
+			'critic'     => 'WP_MCP_AI_Agent_Role_Critic',
+			'specialist' => 'WP_MCP_AI_Agent_Role_Base', // Generic specialist.
+		);
+
+		foreach ( $agent_classes as $role_type => $class_name ) {
+			if ( class_exists( $class_name ) ) {
+				try {
+					if ( 'specialist' === $role_type ) {
+						// Generic specialist role.
+						$roles[] = array(
+							'type'               => 'specialist',
+							'name'               => __( 'Specialist', 'mcp-ai-wpoos' ),
+							'description'        => __( 'Domain-specific expert agent that handles specialized tasks requiring deep knowledge in a particular area.', 'mcp-ai-wpoos' ),
+							'icon'               => 'dashicons-lightbulb',
+							'capabilities'       => array(
+								__( 'Domain expertise', 'mcp-ai-wpoos' ),
+								__( 'Technical accuracy', 'mcp-ai-wpoos' ),
+								__( 'Specialized problem solving', 'mcp-ai-wpoos' ),
+							),
+							'recommended_tools'  => array(),
+						);
+					} else {
+						$role_instance = new $class_name();
+						
+						$roles[] = array(
+							'type'               => $role_type,
+							'name'               => $role_instance->get_role_name(),
+							'description'        => $role_instance->get_role_description(),
+							'icon'               => $this->get_role_icon( $role_type ),
+							'capabilities'       => $this->format_capabilities( $role_instance->get_capabilities() ),
+							'recommended_tools'  => $role_instance->get_recommended_tools(),
+						);
+					}
+				} catch ( Exception $e ) {
+					// Skip roles that fail to instantiate.
+					continue;
+				}
+			}
+		}
+
+		// If no agent roles loaded, provide default generic role.
+		if ( empty( $roles ) ) {
+			$roles[] = array(
+				'type'              => 'generalist',
+				'name'              => __( 'Generalist Agent', 'mcp-ai-wpoos' ),
+				'description'       => __( 'General-purpose AI agent capable of handling a wide variety of tasks.', 'mcp-ai-wpoos' ),
+				'icon'              => 'dashicons-admin-generic',
+				'capabilities'      => array(
+					__( 'Multi-domain tasks', 'mcp-ai-wpoos' ),
+					__( 'Flexible problem solving', 'mcp-ai-wpoos' ),
+				),
+				'recommended_tools' => array(),
+			);
+		}
+
+		return $roles;
+	}
+
+	/**
+	 * Get icon for agent role type.
+	 *
+	 * @param string $role_type Role type identifier.
+	 * @return string Dashicon class.
+	 */
+	private function get_role_icon( $role_type ) {
+		$icons = array(
+			'planner'    => 'dashicons-list-view',
+			'executor'   => 'dashicons-hammer',
+			'critic'     => 'dashicons-yes-alt',
+			'specialist' => 'dashicons-lightbulb',
+		);
+
+		return isset( $icons[ $role_type ] ) ? $icons[ $role_type ] : 'dashicons-admin-generic';
+	}
+
+	/**
+	 * Format capabilities for display.
+	 *
+	 * @param array $capabilities Raw capability flags.
+	 * @return array Formatted capability descriptions.
+	 */
+	private function format_capabilities( $capabilities ) {
+		$formatted = array();
+		
+		$capability_labels = array(
+			'can-delegate'      => __( 'Can delegate tasks to other agents', 'mcp-ai-wpoos' ),
+			'can-plan'          => __( 'Can create execution plans', 'mcp-ai-wpoos' ),
+			'can-execute'       => __( 'Can execute tasks directly', 'mcp-ai-wpoos' ),
+			'can-critique'      => __( 'Can validate and improve results', 'mcp-ai-wpoos' ),
+			'requires-feedback' => __( 'Requires validation from other agents', 'mcp-ai-wpoos' ),
+			'can-coordinate'    => __( 'Can coordinate team workflows', 'mcp-ai-wpoos' ),
+		);
+
+		foreach ( $capabilities as $capability ) {
+			if ( isset( $capability_labels[ $capability ] ) ) {
+				$formatted[] = $capability_labels[ $capability ];
+			} else {
+				$formatted[] = ucfirst( str_replace( array( '-', '_' ), ' ', $capability ) );
+			}
+		}
+
+		return $formatted;
+	}
 
 		/**
 		 * Get health icon for status.
