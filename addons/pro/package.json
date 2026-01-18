@@ -7,17 +7,17 @@
 		"postinstall": "echo 'Pro addon dependencies installed successfully'"
 	},
 	"dependencies": {
+		"@turf/turf": "^7.3.2",
 		"chart.js": "^4.4.7",
 		"docx": "^9.5.1",
 		"exceljs": "^4.4.0",
 		"fluent-ffmpeg": "^2.1.3",
 		"ics": "^3.8.1",
 		"katex": "^0.16.11",
-		"mjml": "^4.15.3",
+		"mjml": "^4.18.0",
 		"pdfkit": "^0.17.2",
 		"prettier": "^3.4.2",
-		"sharp": "^0.33.5",
-		"turf": "^7.1.0"
+		"sharp": "^0.33.5"
 	},
 	"keywords": [
 		"wordpress",
