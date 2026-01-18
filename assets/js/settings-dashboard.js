@@ -104,7 +104,8 @@
 			}, {
 				success: function(response) {
 					if (response.success) {
-						window.location.reload();
+						// Use window.location.href instead of reload() to prevent browser form resubmission
+						window.location.href = window.location.href;
 					} else {
 						alert(response.data.message || 'Failed to reset user token usage.');
 						$button.prop('disabled', false).text('Reset');
@@ -143,7 +144,8 @@
 			}, {
 				success: function(response) {
 					if (response.success) {
-						window.location.reload();
+						// Use window.location.href instead of reload() to prevent browser form resubmission
+						window.location.href = window.location.href;
 					} else {
 						alert(response.data.message || 'Failed to reset all token usage.');
 						$button.prop('disabled', false).text('Reset All Users\' Token Usage');
@@ -212,7 +214,7 @@
 						} else {
 							$button.text('Saved!');
 							setTimeout(function() {
-								window.location.reload();
+								window.location.href = window.location.href;
 							}, 1000);
 						}
 					} else {
@@ -285,7 +287,7 @@
 						} else {
 							$message.text(response.data.message).addClass('notice notice-success');
 							setTimeout(function() {
-								window.location.reload();
+								window.location.href = window.location.href;
 							}, 1500);
 						}
 					} else {
@@ -430,7 +432,8 @@
 				success: function(response) {
 					if (response.success) {
 						alert(response.data.message);
-						window.location.reload();
+						// Use window.location.href instead of reload() to prevent browser form resubmission
+						window.location.href = window.location.href;
 					} else {
 						alert(response.data.message || 'Failed to assign tiers.');
 						$button.prop('disabled', false).text('Apply');
@@ -639,7 +642,7 @@
 							
 							self.showNotice('Preset applied successfully. Reloading page...', 'success');
 							setTimeout(function() {
-								window.location.reload();
+								window.location.href = window.location.href;
 							}, 1000);
 						} else {
 							self.showNotice(response.data.message || 'Failed to apply preset.', 'error');
@@ -725,7 +728,8 @@
 				success: function(response) {
 					if (response.success) {
 						alert(response.data.message || 'Recommendations applied successfully!');
-						window.location.reload();
+						// Use window.location.href instead of reload() to prevent browser form resubmission
+						window.location.href = window.location.href;
 					} else {
 						alert(response.data.message || 'Failed to apply recommendations.');
 						$button.prop('disabled', false).text('Apply Recommended Settings to All Tools');
