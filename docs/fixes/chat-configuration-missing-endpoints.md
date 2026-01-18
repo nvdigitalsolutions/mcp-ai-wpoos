@@ -58,7 +58,11 @@ $config = array(
 Run the new test to verify the fix:
 
 ```bash
+# Using composer (if configured):
 composer run test -- tests/test-shortcodes.php --filter test_per_instance_config_includes_required_endpoints
+
+# Or directly with PHPUnit:
+./vendor/bin/phpunit tests/test-shortcodes.php --filter test_per_instance_config_includes_required_endpoints
 ```
 
 ## Why This Fixes the Issue
