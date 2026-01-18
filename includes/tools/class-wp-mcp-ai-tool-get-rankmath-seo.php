@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Retrieves Rank Math SEO insights for a single post.
  */
 class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Check whether the tool can be registered.
 	 *
@@ -193,13 +194,16 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$schema_data = $this->get_schema_data( $post_id );
 
+		$summary_text = sprintf(
+			/* translators: 1: post title, 2: SEO score */
+			__( 'Rank Math SEO for "%1$s": Score %2$d/100', 'mcp-ai-wpoos' ),
+			get_the_title( $post ),
+			$seo_score ? $seo_score : 0
+		);
+
 		$result = array(
-			'summary'   => sprintf(
-				/* translators: 1: post title, 2: SEO score */
-				__( 'Rank Math SEO for "%1$s": Score %2$d/100', 'mcp-ai-wpoos' ),
-				get_the_title( $post ),
-				$seo_score ? $seo_score : 0
-			),
+			'message'   => $summary_text,
+			'summary'   => $summary_text,
 			'post'      => array(
 				'ID'        => $post->ID,
 				'title'     => get_the_title( $post ),
