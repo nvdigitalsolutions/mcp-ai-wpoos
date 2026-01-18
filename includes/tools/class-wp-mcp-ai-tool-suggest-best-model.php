@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Recommends the best OpenAI model based on task requirements.
  */
 class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Cost calculation factor for low cost requirement.
 	 *
@@ -146,6 +147,12 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 			return $recommendation;
 		}
 
+		$summary_text = sprintf(
+			/* translators: %s: model name */
+			__( 'Recommended model: %s', 'mcp-ai-wpoos' ),
+			$recommendation['model']
+		);
+
 		return array(
 			'success'           => true,
 			'recommended_model' => $recommendation['model'],
@@ -154,11 +161,8 @@ class WP_MCP_AI_Tool_Suggest_Best_Model implements WP_MCP_AI_Tool_Interface, WP_
 			'estimated_cost'    => $recommendation['estimated_cost'],
 			'context_window'    => $recommendation['context_window'],
 			'capabilities'      => $recommendation['capabilities'],
-			'summary'           => sprintf(
-				/* translators: %s: model name */
-				__( 'Recommended model: %s', 'mcp-ai-wpoos' ),
-				$recommendation['model']
-			),
+			'message'           => $summary_text,
+			'summary'           => $summary_text,
 		);
 	}
 
