@@ -95,6 +95,14 @@ class WP_MCP_AI_Profession_CPT {
 	const META_AGENT_ROLE = '_wp_mcp_ai_profession_agent_role';
 
 	/**
+	 * Meta key for secondary agent roles (JSON array of additional roles).
+	 * Enables professions to have multiple role capabilities (e.g., QA Engineer = critic + planner).
+	 *
+	 * @since 1.9.1
+	 */
+	const META_AGENT_SECONDARY_ROLES = '_wp_mcp_ai_profession_secondary_roles';
+
+	/**
 	 * Meta key for task patterns (JSON: workflow templates).
 	 *
 	 * @since 1.9.0
@@ -410,12 +418,27 @@ class WP_MCP_AI_Profession_CPT {
 			self::META_AGENT_ROLE,
 			array(
 				'type'              => 'string',
-				'description'       => __( 'Agent role for multi-agent orchestration (planner, executor, critic, specialist, generalist)', 'mcp-ai-wpoos' ),
+				'description'       => __( 'Primary agent role for multi-agent orchestration (planner, executor, critic, specialist, generalist)', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => 'sanitize_key',
 				'auth_callback'     => '__return_true',
 				'show_in_rest'      => false,
 				'default'           => 'generalist',
+			)
+		);
+
+		// Secondary agent roles (orchestration).
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_AGENT_SECONDARY_ROLES,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Secondary agent roles for multi-role professions (JSON array)', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+				'default'           => '[]',
 			)
 		);
 
