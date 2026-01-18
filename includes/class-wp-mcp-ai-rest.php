@@ -4855,6 +4855,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
+
+// Get driver assistant - required for team coordination.
+$driver_assistant_id = get_post_meta( $team_id, '_wp_mcp_ai_team_driver_assistant', true );
+
+// If not set on team, try global default.
+if ( ! $driver_assistant_id ) {
+$driver_assistant_id = get_option( 'wp_mcp_ai_team_default_driver_assistant', 0 );
+}
+
+if ( ! $driver_assistant_id ) {
+return new WP_Error(
+'wp_mcp_ai_no_driver_assistant',
+__( 'Team does not have a driver assistant configured. Please assign a driver assistant in the team settings or Team edit page.', 'mcp-ai-wpoos' ),
+array( 'status' => 400 )
+);
+}
+
+// Validate driver assistant exists.
+$driver_assistant_post = get_post( $driver_assistant_id );
+if ( ! $driver_assistant_post || 'mcp_ai_assistant' !== $driver_assistant_post->post_type ) {
+return new WP_Error(
+'wp_mcp_ai_invalid_driver_assistant',
+__( 'Driver assistant is invalid or no longer exists. Please update team settings.', 'mcp-ai-wpoos' ),
+array( 'status' => 400 )
+);
+}
+
 			// Get team members.
 			$team_members = get_post_meta( $team_id, '_wp_mcp_ai_team_members', true );
 			if ( ! is_array( $team_members ) || empty( $team_members ) ) {
@@ -4895,7 +4922,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				array(
 					'team_id'            => $team_id,
 					'team_name'          => $team_post->post_title,
-					'member_count'       => count( $team_members ),
+					'driver_assistant'   => $driver_assistant_id,
+				'member_count'       => count( $team_members ),
 					'orchestration_mode' => $orchestration_mode,
 					'result_aggregation' => $result_aggregation,
 					'message_count'      => count( $messages ),

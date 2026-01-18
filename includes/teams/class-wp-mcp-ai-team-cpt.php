@@ -68,6 +68,13 @@ class WP_MCP_AI_Team_CPT {
 	const META_RESULT_AGGREGATION_STRATEGY = '_wp_mcp_ai_team_result_aggregation';
 
 	/**
+	 * Meta key for driver assistant ID (the assistant that orchestrates the team).
+	 *
+	 * @since 1.9.1
+	 */
+	const META_DRIVER_ASSISTANT = '_wp_mcp_ai_team_driver_assistant';
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -239,6 +246,20 @@ class WP_MCP_AI_Team_CPT {
 				'show_in_rest'      => false,
 			)
 		);
+
+		// Driver assistant.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_DRIVER_ASSISTANT,
+			array(
+				'type'              => 'integer',
+				'description'       => __( 'The assistant that orchestrates and drives the team', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'sanitize_callback' => 'absint',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
 	}
 
 	/**
@@ -346,6 +367,15 @@ class WP_MCP_AI_Team_CPT {
 			self::POST_TYPE,
 			'normal',
 			'default'
+		);
+
+		add_meta_box(
+			'wp-mcp-ai-team-driver-assistant',
+			__( 'Driver Assistant', 'mcp-ai-wpoos' ),
+			array( $this, 'render_driver_assistant_meta_box' ),
+			self::POST_TYPE,
+			'side',
+			'high'
 		);
 
 		add_meta_box(
@@ -577,6 +607,71 @@ class WP_MCP_AI_Team_CPT {
 	}
 
 	/**
+	 * Render the driver assistant meta box.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @since 1.9.1
+	 */
+	public function render_driver_assistant_meta_box( $post ) {
+		wp_nonce_field( 'wp_mcp_ai_team_driver_assistant_meta', 'wp_mcp_ai_team_driver_assistant_meta_nonce' );
+
+		$driver_assistant_id = get_post_meta( $post->ID, self::META_DRIVER_ASSISTANT, true );
+
+		// Get all published assistants.
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'post_status'    => 'publish',
+			)
+		);
+
+		?>
+		<div class="wp-mcp-ai-driver-assistant">
+			<p class="description">
+				<?php esc_html_e( 'The driver assistant orchestrates the team and coordinates member responses. Required for team testing.', 'mcp-ai-wpoos' ); ?>
+			</p>
+
+			<?php if ( empty( $assistants ) ) : ?>
+				<p class="notice notice-warning inline" style="margin: 10px 0;">
+					<?php
+					printf(
+						/* translators: %s: URL to create assistant */
+						esc_html__( 'No assistants found. Please %s first.', 'mcp-ai-wpoos' ),
+						'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_assistant' ) ) . '">' . esc_html__( 'create an assistant', 'mcp-ai-wpoos' ) . '</a>'
+					);
+					?>
+				</p>
+			<?php else : ?>
+				<p>
+					<label for="wp-mcp-ai-driver-assistant">
+						<strong><?php esc_html_e( 'Select Assistant', 'mcp-ai-wpoos' ); ?></strong>
+					</label>
+				</p>
+				<select name="wp_mcp_ai_driver_assistant" id="wp-mcp-ai-driver-assistant" class="widefat" style="margin-bottom: 10px;">
+					<option value=""><?php esc_html_e( '-- Select Driver Assistant --', 'mcp-ai-wpoos' ); ?></option>
+					<?php foreach ( $assistants as $assistant ) : ?>
+						<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $driver_assistant_id, $assistant->ID ); ?>>
+							<?php echo esc_html( $assistant->post_title ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+				
+				<?php if ( $driver_assistant_id ) : ?>
+					<p style="margin-top: 10px;">
+						<a href="<?php echo esc_url( get_edit_post_link( $driver_assistant_id ) ); ?>" class="button button-small">
+							<?php esc_html_e( 'Edit Driver Assistant', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</p>
+				<?php endif; ?>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Render the default settings meta box.
 	 *
 	 * @param WP_Post $post Post object.
@@ -738,6 +833,16 @@ class WP_MCP_AI_Team_CPT {
 			if ( isset( $_POST['wp_mcp_ai_result_aggregation'] ) ) {
 				$aggregation_strategy = sanitize_key( wp_unslash( $_POST['wp_mcp_ai_result_aggregation'] ) );
 				update_post_meta( $post_id, self::META_RESULT_AGGREGATION_STRATEGY, $aggregation_strategy );
+			}
+		}
+
+		// Save driver assistant.
+		if ( isset( $_POST['wp_mcp_ai_team_driver_assistant_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_team_driver_assistant_meta_nonce'] ) ), 'wp_mcp_ai_team_driver_assistant_meta' ) ) {
+			$driver_assistant_id = isset( $_POST['wp_mcp_ai_driver_assistant'] ) ? absint( wp_unslash( $_POST['wp_mcp_ai_driver_assistant'] ) ) : 0;
+			if ( $driver_assistant_id > 0 ) {
+				update_post_meta( $post_id, self::META_DRIVER_ASSISTANT, $driver_assistant_id );
+			} else {
+				delete_post_meta( $post_id, self::META_DRIVER_ASSISTANT );
 			}
 		}
 	}
