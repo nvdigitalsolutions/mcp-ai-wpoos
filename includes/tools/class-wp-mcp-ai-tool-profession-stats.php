@@ -42,7 +42,7 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
-			'properties'           => array(),
+			'properties'           => new stdClass(),
 			'additionalProperties' => false,
 		);
 	}
