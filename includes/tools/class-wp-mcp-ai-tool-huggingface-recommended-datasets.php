@@ -187,7 +187,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' ) ) {
 			// Get recommendations.
 			$recommendations = $this->get_recommendations( $use_case, $category, $limit, $preferred_datasets );
 
+			$summary_text = sprintf(
+				/* translators: %1$d: Number of recommendations, %2$s: Use case */
+				__( 'Found %1$d recommended datasets for use case: %2$s', 'mcp-ai-wpoos' ),
+				count( $recommendations ),
+				$use_case
+			);
+
 			return array(
+				'message'         => $summary_text,
+				'summary'         => $summary_text,
 				'use_case'        => $use_case,
 				'category'        => $category,
 				'recommendations' => $recommendations,
