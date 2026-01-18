@@ -810,28 +810,540 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		}
 
 		/**
-		 * Render overview view.
+		 * Render overview view - Executive Dashboard.
+		 *
+		 * Comprehensive overview of orchestration system with real-time metrics,
+		 * charts, health monitoring, and quick actions.
 		 */
 		private function render_overview_view() {
-			$fields = $this->get_fields();
-
-			// Overview fields: intro, health status, presets, and stats.
-			$overview_fields = array(
-				'orchestration_intro',
-				'health_status',
-				'configuration_presets',
-				'orchestration_stats',
-			);
-
-			foreach ( $overview_fields as $key ) {
-				if ( isset( $fields[ $key ] ) ) {
-					$field = $fields[ $key ];
-					if ( 'html' === $field['type'] ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in getter methods.
-						echo $field['content'];
-					}
-				}
+			$health      = $this->get_orchestration_health_metrics();
+			$professions = $this->get_professions_list();
+			$agent_roles = $this->get_available_agent_roles();
+			$role_counts = $this->count_professions_by_role( $professions );
+			
+			// Calculate executive metrics.
+			$total_tools = 0;
+			foreach ( $professions as $prof ) {
+				$total_tools += $prof['tools_count'];
 			}
+			
+			// Team readiness check.
+			$has_planner  = isset( $role_counts['planner'] ) && $role_counts['planner'] > 0;
+			$has_executor = isset( $role_counts['executor'] ) && $role_counts['executor'] > 0;
+			$has_critic   = isset( $role_counts['critic'] ) && $role_counts['critic'] > 0;
+			$team_ready   = $has_planner && $has_executor && $has_critic;
+			
+			?>
+			<div class="wp-mcp-ai-overview-dashboard">
+				<!-- Executive Header -->
+				<div class="orchestration-header executive-header">
+					<div class="header-left">
+						<h2><?php esc_html_e( 'Orchestration Layer Executive Dashboard', 'mcp-ai-wpoos' ); ?></h2>
+						<p class="description">
+							<?php esc_html_e( 'Real-time overview of your AI orchestration system - agents, professions, tools, health, and performance metrics at a glance.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					</div>
+					<div class="header-right">
+						<div class="status-indicators">
+							<div class="status-item">
+								<span class="dashicons dashicons-heart status-icon-<?php echo esc_attr( $health['memory_status'] ); ?>"></span>
+								<span class="status-label"><?php esc_html_e( 'System', 'mcp-ai-wpoos' ); ?></span>
+							</div>
+							<div class="status-item">
+								<span class="dashicons dashicons-<?php echo $team_ready ? 'yes-alt' : 'warning'; ?> status-icon-<?php echo $team_ready ? 'good' : 'warning'; ?>"></span>
+								<span class="status-label"><?php esc_html_e( 'Teams', 'mcp-ai-wpoos' ); ?></span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Executive Metrics Grid -->
+				<div class="executive-metrics-grid">
+					<div class="executive-metric-card">
+						<div class="metric-header">
+							<span class="dashicons dashicons-groups"></span>
+							<h4><?php esc_html_e( 'Workforce', 'mcp-ai-wpoos' ); ?></h4>
+						</div>
+						<div class="metric-body">
+							<div class="metric-primary"><?php echo esc_html( count( $professions ) ); ?></div>
+							<div class="metric-label"><?php esc_html_e( 'AI Professions', 'mcp-ai-wpoos' ); ?></div>
+							<div class="metric-stats">
+								<?php
+								foreach ( $role_counts as $role => $count ) {
+									if ( $count > 0 ) {
+										echo '<span class="role-stat">' . esc_html( ucfirst( $role ) . ': ' . $count ) . '</span>';
+									}
+								}
+								?>
+							</div>
+						</div>
+						<div class="metric-footer">
+							<a href="<?php echo esc_url( $this->get_view_url( 'professions' ) ); ?>" class="metric-link">
+								<?php esc_html_e( 'Manage Professions', 'mcp-ai-wpoos' ); ?> →
+							</a>
+						</div>
+					</div>
+
+					<div class="executive-metric-card">
+						<div class="metric-header">
+							<span class="dashicons dashicons-admin-tools"></span>
+							<h4><?php esc_html_e( 'Tools & Capabilities', 'mcp-ai-wpoos' ); ?></h4>
+						</div>
+						<div class="metric-body">
+							<div class="metric-primary"><?php echo esc_html( $total_tools ); ?></div>
+							<div class="metric-label"><?php esc_html_e( 'Total Assignments', 'mcp-ai-wpoos' ); ?></div>
+							<div class="metric-stats">
+								<?php
+								$avg_tools = count( $professions ) > 0 ? round( $total_tools / count( $professions ), 1 ) : 0;
+								?>
+								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Avg per Agent: %s', 'mcp-ai-wpoos' ), $avg_tools ) ); ?></span>
+							</div>
+						</div>
+						<div class="metric-footer">
+							<a href="<?php echo esc_url( $this->get_view_url( 'tools' ) ); ?>" class="metric-link">
+								<?php esc_html_e( 'View All Tools', 'mcp-ai-wpoos' ); ?> →
+							</a>
+						</div>
+					</div>
+
+					<div class="executive-metric-card status-<?php echo esc_attr( $health['memory_status'] ); ?>">
+						<div class="metric-header">
+							<span class="dashicons dashicons-performance"></span>
+							<h4><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></h4>
+						</div>
+						<div class="metric-body">
+							<div class="metric-primary"><?php echo esc_html( ucfirst( $health['memory_status'] ) ); ?></div>
+							<div class="metric-label"><?php esc_html_e( 'Overall Status', 'mcp-ai-wpoos' ); ?></div>
+							<div class="metric-stats">
+								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Memory: %s%%', 'mcp-ai-wpoos' ), number_format( $health['memory_usage'], 1 ) ) ); ?></span>
+								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Errors: %s%%', 'mcp-ai-wpoos' ), number_format( $health['error_rate'], 1 ) ) ); ?></span>
+							</div>
+						</div>
+						<div class="metric-footer">
+							<a href="<?php echo esc_url( $this->get_view_url( 'thresholds' ) ); ?>" class="metric-link">
+								<?php esc_html_e( 'Configure Thresholds', 'mcp-ai-wpoos' ); ?> →
+							</a>
+						</div>
+					</div>
+
+					<div class="executive-metric-card <?php echo $team_ready ? 'status-good' : 'status-warning'; ?>">
+						<div class="metric-header">
+							<span class="dashicons dashicons-networking"></span>
+							<h4><?php esc_html_e( 'Team Coordination', 'mcp-ai-wpoos' ); ?></h4>
+						</div>
+						<div class="metric-body">
+							<div class="metric-primary">
+								<span class="dashicons dashicons-<?php echo $team_ready ? 'yes-alt' : 'warning'; ?>"></span>
+							</div>
+							<div class="metric-label">
+								<?php echo $team_ready ? esc_html__( 'Teams Ready', 'mcp-ai-wpoos' ) : esc_html__( 'Setup Required', 'mcp-ai-wpoos' ); ?>
+							</div>
+							<div class="metric-stats">
+								<?php if ( ! $team_ready ) : ?>
+									<span class="role-stat warning">
+										<?php
+										$missing = array();
+										if ( ! $has_planner ) {
+											$missing[] = 'Planner';
+										}
+										if ( ! $has_executor ) {
+											$missing[] = 'Executor';
+										}
+										if ( ! $has_critic ) {
+											$missing[] = 'Critic';
+										}
+										echo esc_html( sprintf( __( 'Missing: %s', 'mcp-ai-wpoos' ), implode( ', ', $missing ) ) );
+										?>
+									</span>
+								<?php else : ?>
+									<span class="role-stat"><?php esc_html_e( 'All core roles present', 'mcp-ai-wpoos' ); ?></span>
+								<?php endif; ?>
+							</div>
+						</div>
+						<div class="metric-footer">
+							<a href="<?php echo esc_url( $this->get_view_url( 'agents' ) ); ?>" class="metric-link">
+								<?php esc_html_e( 'View Agent Roles', 'mcp-ai-wpoos' ); ?> →
+							</a>
+						</div>
+					</div>
+				</div>
+
+				<!-- Analytics Charts Section -->
+				<div class="orchestration-charts-section executive-charts">
+					<h3>
+						<span class="dashicons dashicons-chart-line"></span>
+						<?php esc_html_e( 'Orchestration Analytics Overview', 'mcp-ai-wpoos' ); ?>
+					</h3>
+					
+					<div class="charts-row">
+						<div class="chart-container chart-third">
+							<h5><?php esc_html_e( 'Workforce by Role', 'mcp-ai-wpoos' ); ?></h5>
+							<canvas id="wp-mcp-ai-overview-workforce-chart" height="200"></canvas>
+						</div>
+						
+						<div class="chart-container chart-third">
+							<h5><?php esc_html_e( 'Tool Distribution', 'mcp-ai-wpoos' ); ?></h5>
+							<canvas id="wp-mcp-ai-overview-tools-chart" height="200"></canvas>
+						</div>
+						
+						<div class="chart-container chart-third">
+							<h5><?php esc_html_e( 'System Capacity', 'mcp-ai-wpoos' ); ?></h5>
+							<canvas id="wp-mcp-ai-overview-capacity-chart" height="200"></canvas>
+						</div>
+					</div>
+				</div>
+
+				<!-- Quick Actions Section -->
+				<div class="executive-actions-section">
+					<h3>
+						<span class="dashicons dashicons-admin-generic"></span>
+						<?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos' ); ?>
+					</h3>
+					
+					<div class="action-cards-grid">
+						<div class="action-card">
+							<span class="dashicons dashicons-plus-alt action-icon"></span>
+							<h4><?php esc_html_e( 'Create Profession', 'mcp-ai-wpoos' ); ?></h4>
+							<p><?php esc_html_e( 'Add a new AI profession with specific role and tools', 'mcp-ai-wpoos' ); ?></p>
+							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ); ?>" class="button button-primary">
+								<?php esc_html_e( 'Create New', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</div>
+
+						<div class="action-card">
+							<span class="dashicons dashicons-groups action-icon"></span>
+							<h4><?php esc_html_e( 'Build Team', 'mcp-ai-wpoos' ); ?></h4>
+							<p><?php esc_html_e( 'Compose multi-agent teams for complex workflows', 'mcp-ai-wpoos' ); ?></p>
+							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_team' ) ); ?>" class="button button-primary">
+								<?php esc_html_e( 'Build Team', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</div>
+
+						<div class="action-card">
+							<span class="dashicons dashicons-admin-settings action-icon"></span>
+							<h4><?php esc_html_e( 'Configure Settings', 'mcp-ai-wpoos' ); ?></h4>
+							<p><?php esc_html_e( 'Adjust orchestration settings and thresholds', 'mcp-ai-wpoos' ); ?></p>
+							<a href="<?php echo esc_url( $this->get_view_url( 'settings' ) ); ?>" class="button button-secondary">
+								<?php esc_html_e( 'Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</div>
+
+						<div class="action-card">
+							<span class="dashicons dashicons-chart-bar action-icon"></span>
+							<h4><?php esc_html_e( 'View Analytics', 'mcp-ai-wpoos' ); ?></h4>
+							<p><?php esc_html_e( 'Deep dive into agents and professions performance', 'mcp-ai-wpoos' ); ?></p>
+							<a href="<?php echo esc_url( $this->get_view_url( 'agents' ) ); ?>" class="button button-secondary">
+								<?php esc_html_e( 'View Details', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</div>
+					</div>
+				</div>
+
+				<!-- Chart Initialization -->
+				<script type="text/javascript">
+				/* <![CDATA[ */
+				jQuery(document).ready(function($) {
+					if (typeof Chart === 'undefined') {
+						console.warn('Chart.js not loaded - overview charts will not display');
+						return;
+					}
+					
+					var overviewChartData = {
+						workforce: <?php echo wp_json_encode( $this->get_agent_role_distribution_data() ); ?>,
+						tools: <?php echo wp_json_encode( $this->get_profession_tool_distribution_data() ); ?>,
+						capacity: <?php echo wp_json_encode( $this->get_workload_tier_distribution_data() ); ?>
+					};
+					
+					// Workforce Pie Chart
+					var workforceCanvas = document.getElementById('wp-mcp-ai-overview-workforce-chart');
+					if (workforceCanvas && overviewChartData.workforce.datasets[0].data.length > 0) {
+						new Chart(workforceCanvas.getContext('2d'), {
+							type: 'pie',
+							data: overviewChartData.workforce,
+							options: {
+								responsive: true,
+								maintainAspectRatio: false,
+								plugins: {
+									legend: {
+										display: true,
+										position: 'bottom',
+										labels: { padding: 10, font: { size: 11 } }
+									}
+								}
+							}
+						});
+					}
+					
+					// Tools Distribution Bar Chart
+					var toolsCanvas = document.getElementById('wp-mcp-ai-overview-tools-chart');
+					if (toolsCanvas) {
+						new Chart(toolsCanvas.getContext('2d'), {
+							type: 'bar',
+							data: overviewChartData.tools,
+							options: {
+								responsive: true,
+								maintainAspectRatio: false,
+								plugins: { legend: { display: false } },
+								scales: {
+									y: { beginAtZero: true, ticks: { stepSize: 1 } }
+								}
+							}
+						});
+					}
+					
+					// Capacity Bar Chart
+					var capacityCanvas = document.getElementById('wp-mcp-ai-overview-capacity-chart');
+					if (capacityCanvas) {
+						new Chart(capacityCanvas.getContext('2d'), {
+							type: 'bar',
+							data: overviewChartData.capacity,
+							options: {
+								responsive: true,
+								maintainAspectRatio: false,
+								plugins: { legend: { display: false } },
+								scales: {
+									y: {
+										beginAtZero: true,
+										ticks: {
+											callback: function(value) {
+												return value >= 1000 ? (value/1000) + 'K' : value;
+											}
+										}
+									}
+								}
+							}
+						});
+					}
+				});
+				/* ]]> */
+				</script>
+
+				<!-- Enhanced Styling -->
+				<style>
+				.executive-header {
+					background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+					color: white;
+					border: none;
+					padding: 30px;
+				}
+				
+				.executive-header .description {
+					color: rgba(255,255,255,0.9);
+					font-size: 14px;
+				}
+				
+				.status-indicators {
+					display: flex;
+					gap: 20px;
+				}
+				
+				.status-item {
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					gap: 5px;
+				}
+				
+				.status-icon-good { color: #4CAF50; font-size: 32px; }
+				.status-icon-warning { color: #FF9800; font-size: 32px; }
+				.status-icon-critical { color: #F44336; font-size: 32px; }
+				
+				.status-label {
+					font-size: 11px;
+					text-transform: uppercase;
+					opacity: 0.9;
+				}
+				
+				.executive-metrics-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+					gap: 20px;
+					margin: 30px 0;
+				}
+				
+				.executive-metric-card {
+					background: white;
+					border: 1px solid #ddd;
+					border-radius: 8px;
+					overflow: hidden;
+					transition: all 0.3s;
+					border-top: 4px solid #2271b1;
+				}
+				
+				.executive-metric-card.status-warning {
+					border-top-color: #FF9800;
+				}
+				
+				.executive-metric-card.status-critical {
+					border-top-color: #F44336;
+				}
+				
+				.executive-metric-card.status-good {
+					border-top-color: #4CAF50;
+				}
+				
+				.executive-metric-card:hover {
+					box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+					transform: translateY(-4px);
+				}
+				
+				.metric-header {
+					padding: 20px 20px 10px;
+					display: flex;
+					align-items: center;
+					gap: 10px;
+					border-bottom: 1px solid #f0f0f0;
+				}
+				
+				.metric-header .dashicons {
+					font-size: 24px;
+					color: #2271b1;
+				}
+				
+				.metric-header h4 {
+					margin: 0;
+					font-size: 14px;
+					font-weight: 600;
+					color: #1d2327;
+				}
+				
+				.metric-body {
+					padding: 20px;
+					text-align: center;
+				}
+				
+				.metric-primary {
+					font-size: 48px;
+					font-weight: bold;
+					color: #2271b1;
+					line-height: 1;
+					margin-bottom: 10px;
+				}
+				
+				.metric-primary .dashicons {
+					font-size: 48px;
+				}
+				
+				.metric-label {
+					font-size: 13px;
+					color: #666;
+					margin-bottom: 15px;
+					font-weight: 500;
+				}
+				
+				.metric-stats {
+					display: flex;
+					flex-direction: column;
+					gap: 5px;
+					font-size: 12px;
+					color: #999;
+				}
+				
+				.role-stat {
+					background: #f8f9fa;
+					padding: 4px 8px;
+					border-radius: 3px;
+				}
+				
+				.role-stat.warning {
+					background: #fff3e0;
+					color: #f57c00;
+				}
+				
+				.metric-footer {
+					padding: 15px 20px;
+					background: #f8f9fa;
+					border-top: 1px solid #f0f0f0;
+				}
+				
+				.metric-link {
+					color: #2271b1;
+					text-decoration: none;
+					font-size: 13px;
+					font-weight: 500;
+					transition: color 0.2s;
+				}
+				
+				.metric-link:hover {
+					color: #135e96;
+				}
+				
+				.executive-charts {
+					margin: 30px 0;
+				}
+				
+				.executive-charts h3 {
+					display: flex;
+					align-items: center;
+					gap: 10px;
+					margin-bottom: 20px;
+					font-size: 18px;
+				}
+				
+				.chart-third {
+					min-width: 300px;
+				}
+				
+				.executive-actions-section {
+					margin: 30px 0;
+					padding: 30px;
+					background: white;
+					border: 1px solid #ddd;
+					border-radius: 8px;
+				}
+				
+				.executive-actions-section h3 {
+					display: flex;
+					align-items: center;
+					gap: 10px;
+					margin: 0 0 20px 0;
+					font-size: 18px;
+				}
+				
+				.action-cards-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					gap: 20px;
+				}
+				
+				.action-card {
+					padding: 25px;
+					border: 2px solid #f0f0f0;
+					border-radius: 8px;
+					text-align: center;
+					transition: all 0.3s;
+				}
+				
+				.action-card:hover {
+					border-color: #2271b1;
+					background: #f8f9fa;
+				}
+				
+				.action-icon {
+					font-size: 40px;
+					color: #2271b1;
+					margin-bottom: 15px;
+				}
+				
+				.action-card h4 {
+					margin: 0 0 10px 0;
+					font-size: 16px;
+					color: #1d2327;
+				}
+				
+				.action-card p {
+					margin: 0 0 15px 0;
+					font-size: 13px;
+					color: #666;
+					line-height: 1.5;
+				}
+				
+				.action-card .button {
+					margin: 0;
+				}
+				</style>
+			</div>
+			<?php
 		}
 
 		/**
