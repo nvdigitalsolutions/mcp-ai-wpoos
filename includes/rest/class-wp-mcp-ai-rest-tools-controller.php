@@ -658,7 +658,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		$limit        = absint( $request->get_param( 'limit' ) ) ?: 10;
 		$assistant_id = $request->get_param( 'assistant_id' );
-		
+
 		// Sanitize assistant_id: keep as string if it's a unified team ID, otherwise convert to int.
 		if ( $assistant_id ) {
 			$assistant_id = self::sanitize_assistant_id( $assistant_id );

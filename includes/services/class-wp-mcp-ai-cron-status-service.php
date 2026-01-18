@@ -310,7 +310,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			// Filter by assistant_id if specified (for multi-widget isolation).
 			if ( null !== $assistant_id ) {
 				$job_assistant_id = isset( $metadata['context']['assistant_id'] ) ? $metadata['context']['assistant_id'] : null;
-				
+
 				// Normalize job assistant ID to match the filter type (string or int).
 				$job_assistant_id = $this->normalize_assistant_id_for_comparison( $job_assistant_id, $assistant_id );
 
@@ -383,7 +383,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			// Filter by assistant_id if specified (for multi-widget isolation).
 			if ( null !== $assistant_id ) {
 				$job_assistant_id = isset( $metadata['args']['assistant_id'] ) ? $metadata['args']['assistant_id'] : null;
-				
+
 				// Normalize job assistant ID to match the filter type (string or int).
 				$job_assistant_id = $this->normalize_assistant_id_for_comparison( $job_assistant_id, $assistant_id );
 
