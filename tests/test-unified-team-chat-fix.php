@@ -207,4 +207,81 @@ class Test_Unified_Team_Chat_Fix extends WP_UnitTestCase {
 		$this->assertEquals( 'user', $captured_messages[1]['role'] );
 		$this->assertEquals( 'Hello', $captured_messages[1]['content'] );
 	}
+
+	/**
+	 * Test that system prompt is not duplicated if already present.
+	 */
+	public function test_system_prompt_not_duplicated() {
+		// Create a profession with system prompt.
+		$profession_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Test Assistant',
+				'post_status' => 'publish',
+			)
+		);
+
+		$system_prompt = 'You are a helpful assistant.';
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_system_prompt', $system_prompt );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_provider', 'openai' );
+		update_post_meta( $profession_id, '_wp_mcp_ai_profession_model', 'gpt-4' );
+
+		// Mock the router to capture the messages parameter.
+		$captured_messages = null;
+		$mock_client       = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
+		$mock_client->method( 'create_chat_completion' )
+			->willReturnCallback(
+				function ( $messages, $options ) use ( &$captured_messages ) {
+					$captured_messages = $messages;
+					return array(
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'Test response',
+								),
+							),
+						),
+					);
+				}
+			);
+
+		// Replace the client in REST controller.
+		$reflection = new ReflectionClass( $this->rest_controller );
+		$property   = $reflection->getProperty( 'client' );
+		$property->setAccessible( true );
+		$property->setValue( $this->rest_controller, $mock_client );
+
+		// Test messages that ALREADY include a system message.
+		$messages = array(
+			array(
+				'role'    => 'system',
+				'content' => 'Existing system message',
+			),
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		// Use reflection to call invoke_team_member.
+		$method = $reflection->getMethod( 'invoke_team_member' );
+		$method->setAccessible( true );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-client' );
+		$result  = $method->invoke( $this->rest_controller, $profession_id, $messages, $request );
+
+		// Verify system prompt was NOT duplicated.
+		$this->assertNotNull( $captured_messages );
+		$this->assertIsArray( $captured_messages );
+		$this->assertCount( 2, $captured_messages, 'Should still have 2 messages (not 3)' );
+
+		// First message should be the EXISTING system message (not replaced).
+		$this->assertEquals( 'system', $captured_messages[0]['role'] );
+		$this->assertEquals( 'Existing system message', $captured_messages[0]['content'] );
+
+		// Second message should be the user message.
+		$this->assertEquals( 'user', $captured_messages[1]['role'] );
+		$this->assertEquals( 'Hello', $captured_messages[1]['content'] );
+	}
 }

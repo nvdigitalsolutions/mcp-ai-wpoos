@@ -5209,16 +5209,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Add system prompt if available.
 			if ( ! empty( $profession_config['system_prompt'] ) ) {
-				// Prepend system message to messages array.
-				$messages = array_merge(
-					array(
+				// Check if first message is already a system message.
+				$has_system_message = false;
+				if ( ! empty( $messages ) && isset( $messages[0]['role'] ) && 'system' === $messages[0]['role'] ) {
+					$has_system_message = true;
+				}
+
+				// Only prepend system message if one doesn't already exist.
+				if ( ! $has_system_message ) {
+					// Prepend system message to messages array.
+					$messages = array_merge(
 						array(
-							'role'    => 'system',
-							'content' => $profession_config['system_prompt'],
+							array(
+								'role'    => 'system',
+								'content' => $profession_config['system_prompt'],
+							),
 						),
-					),
-					$messages
-				);
+						$messages
+					);
+				}
 			}
 
 			// Add tools if available.
