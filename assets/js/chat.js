@@ -10700,6 +10700,52 @@
                 });
             }
 
+            // Handle team mode toggle
+            const teamModeToggle = container.querySelector('.wp-mcp-ai-chat__team-mode-toggle');
+            if (teamModeToggle && instanceConfig.teamData) {
+                teamModeToggle.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+
+                    const currentMode = teamModeToggle.getAttribute('data-mode');
+                    const newMode = currentMode === 'individual' ? 'unified' : 'individual';
+
+                    // Update button state
+                    teamModeToggle.setAttribute('data-mode', newMode);
+                    
+                    if (newMode === 'unified') {
+                        teamModeToggle.setAttribute('aria-label', 'Switch to individual member mode');
+                        teamModeToggle.setAttribute('title', 'Currently in unified team mode - all members coordinate');
+                        
+                        // Update assistant ID to unified team format
+                        state.config.assistantId = 'unified_team_' + instanceConfig.teamData.id;
+                        
+                        console.log('[Team Mode] Switched to unified mode:', state.config.assistantId);
+                    } else {
+                        teamModeToggle.setAttribute('aria-label', 'Switch to unified team mode');
+                        teamModeToggle.setAttribute('title', 'Switch between unified team and individual member modes');
+                        
+                        // Revert to original assistant ID (first team member or original assistant)
+                        if (instanceConfig.teamData.members && instanceConfig.teamData.members.length > 0) {
+                            state.config.assistantId = 'team_' + instanceConfig.teamData.id + '_member_' + instanceConfig.teamData.members[0];
+                        }
+                        
+                        console.log('[Team Mode] Switched to individual mode:', state.config.assistantId);
+                    }
+
+                    // Start a new conversation when switching modes
+                    startNewConversation(state);
+                    
+                    // Show notification
+                    const modeLabel = newMode === 'unified' ? 'Unified Team Mode' : 'Individual Member Mode';
+                    setStatus(container, 'Switched to ' + modeLabel);
+                    setTimeout(function() {
+                        clearStatus(container);
+                    }, 2000);
+                });
+            }
+
             // Initialize save, export and quota monitoring UI controls
             const saveButton = container.querySelector('.wp-mcp-ai-chat__save');
             const exportButton = container.querySelector('.wp-mcp-ai-chat__export');

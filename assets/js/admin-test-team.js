@@ -21,6 +21,11 @@
 		currentTeamTitle: null,
 		currentMemberId: null,
 		teamMembers: [],
+		orchestrationMode: null,
+		resultAggregation: null,
+		multiAgentEnabled: false,
+		supportsUnifiedMode: false,
+		isUnifiedMode: false,
 
 		/**
 		 * Initialize the modal handler
@@ -78,6 +83,12 @@
 					$btn.data('member-title')
 				);
 			});
+
+			// Unified team mode button
+			this.selectorContainer.on('click', '.wp-mcp-ai-unified-team-btn', (e) => {
+				e.preventDefault();
+				this.activateUnifiedMode();
+			});
 		},
 
 		/**
@@ -114,6 +125,11 @@
 			// Clear selections
 			this.currentMemberId = null;
 			this.teamMembers = [];
+			this.isUnifiedMode = false;
+			this.orchestrationMode = null;
+			this.resultAggregation = null;
+			this.multiAgentEnabled = false;
+			this.supportsUnifiedMode = false;
 
 			// Clear containers
 			this.selectorContainer.empty();
@@ -142,6 +158,10 @@
 				success: (data) => {
 					console.log('Team members loaded successfully:', data);
 					this.teamMembers = data.members || [];
+					this.orchestrationMode = data.orchestration_mode || 'sequential';
+					this.resultAggregation = data.result_aggregation || 'consensus';
+					this.multiAgentEnabled = data.multi_agent_enabled || false;
+					this.supportsUnifiedMode = data.supports_unified_mode || false;
 					this.renderMemberSelector();
 				},
 				error: (xhr, status, error) => {
@@ -188,7 +208,24 @@
 			}
 
 			let html = '<div class="wp-mcp-ai-team-members">';
-			html += '<h3>Select a team member to chat with:</h3>';
+
+			// Show unified team button if multi-agent is enabled and team has multiple members
+			if (this.supportsUnifiedMode) {
+				html += '<div class="wp-mcp-ai-unified-mode-section">';
+				html += '<h3>🤖 Multi-Agent Team Mode (DeepSeek V4 Orchestration)</h3>';
+				html += '<p class="description">Team members will coordinate automatically using ';
+				html += '<strong>' + this.escapeHtml(this.orchestrationMode || 'sequential') + '</strong> orchestration ';
+				html += 'with <strong>' + this.escapeHtml(this.resultAggregation || 'consensus') + '</strong> result aggregation.</p>';
+				html += '<button type="button" class="button button-primary button-hero wp-mcp-ai-unified-team-btn">';
+				html += '<span class="dashicons dashicons-groups"></span> ';
+				html += 'Chat with Entire Team (Recommended)';
+				html += '</button>';
+				html += '</div>';
+				html += '<div class="wp-mcp-ai-mode-divider"><span>OR</span></div>';
+			}
+
+			// Individual member selection
+			html += '<h3>' + (this.supportsUnifiedMode ? 'Test Individual Members' : 'Select a team member to chat with:') + '</h3>';
 			html += '<div class="wp-mcp-ai-team-members-grid">';
 
 			this.teamMembers.forEach((member) => {
@@ -209,6 +246,84 @@
 
 			html += '</div></div>';
 			this.selectorContainer.html(html);
+		},
+
+		/**
+		 * Activate unified team mode - chat with all members as one coordinated team
+		 */
+		activateUnifiedMode() {
+			this.isUnifiedMode = true;
+			this.currentMemberId = null;
+
+			// Update active state
+			this.selectorContainer.find('.wp-mcp-ai-team-member-btn').removeClass('active');
+			this.selectorContainer.find('.wp-mcp-ai-unified-team-btn').addClass('active');
+
+			// Initialize unified team chat
+			this.initializeUnifiedTeamChat();
+		},
+
+		/**
+		 * Initialize unified team chat interface
+		 */
+		initializeUnifiedTeamChat() {
+			// Clear previous chat container
+			this.chatContainer.empty();
+
+			// Create unique instance ID for this unified team chat
+			const instanceId = 'wp-mcp-ai-unified-team-chat-' + this.currentTeamId + '-' + Date.now();
+
+			// Build chat HTML structure
+			const chatHTML = this.buildChatHTML(instanceId, this.currentTeamTitle + ' (Multi-Agent Team)');
+			this.chatContainer.html(chatHTML);
+
+			// Initialize chat instance configuration
+			if (!window.wpMcpAiChatInstances) {
+				window.wpMcpAiChatInstances = {};
+			}
+
+			// Build endpoints from base REST URL
+			const baseRestUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) ? window.wpMcpAiChat.restUrl : '/wp-json/mcp-ai/v1';
+
+			// Get file upload configuration from global config
+			const fileAccept = (window.wpMcpAiChat && window.wpMcpAiChat.fileAccept) ? window.wpMcpAiChat.fileAccept : '';
+			const allowedImageMimes = (window.wpMcpAiChat && window.wpMcpAiChat.allowedImageMimes) ? window.wpMcpAiChat.allowedImageMimes : [];
+			const allowedFileMimes = (window.wpMcpAiChat && window.wpMcpAiChat.allowedFileMimes) ? window.wpMcpAiChat.allowedFileMimes : [];
+			const allowedExtensions = (window.wpMcpAiChat && window.wpMcpAiChat.allowedExtensions) ? window.wpMcpAiChat.allowedExtensions : [];
+
+			// Create assistant ID for unified team mode
+			const assistantId = 'unified_team_' + this.currentTeamId;
+
+			window.wpMcpAiChatInstances[instanceId] = {
+				assistantId: assistantId,
+				teamId: this.currentTeamId,
+				isUnifiedTeam: true,
+				orchestrationMode: this.orchestrationMode,
+				resultAggregation: this.resultAggregation,
+				teamMembers: this.teamMembers.map(m => m.id),
+				userId: (window.wpMcpAiChat && typeof window.wpMcpAiChat.currentUserId !== 'undefined') ? window.wpMcpAiChat.currentUserId : 0,
+				messagesEndpoint: baseRestUrl + '/chat-client',
+				toolsEndpoint: baseRestUrl + '/tools',
+				filesEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.filesEndpoint) ? window.wpMcpAiChat.filesEndpoint : baseRestUrl + '/files/',
+				transcriptsEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.transcriptsEndpoint) ? window.wpMcpAiChat.transcriptsEndpoint : baseRestUrl + '/chat-transcripts',
+				crawl4aiTaskEndpoint: baseRestUrl + '/crawl4ai/task/',
+				uploadEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.uploadEndpoint) ? window.wpMcpAiChat.uploadEndpoint : '/wp-json/wp/v2/media',
+				sessionKey: this.generateSessionKey(),
+				enableStreaming: true,
+				canUploadAttachments: true,
+				saveTranscript: true,
+				allowSensitiveTools: true,
+				toolShortcuts: [],
+				fileAccept: fileAccept,
+				allowedImageMimes: allowedImageMimes,
+				allowedFileMimes: allowedFileMimes,
+				allowedExtensions: allowedExtensions,
+				restNonce: (window.wpMcpAiChat && window.wpMcpAiChat.nonce) ? window.wpMcpAiChat.nonce : '',
+				historyPerPage: 20,
+			};
+
+			// Trigger chat.js initialization
+			this.initializeChatInstance(instanceId);
 		},
 
 		/**
