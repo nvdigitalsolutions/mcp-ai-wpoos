@@ -6,6 +6,10 @@
  * Allows testing a team by creating temporary assistants for each team member and chatting with them.
  * Uses base class for better SoC and code reuse.
  *
+ * IMPORTANT: Teams require a "driver assistant" to coordinate team operations. The driver assistant
+ * acts as the orchestrator that manages communication between team members and aggregates their
+ * responses. Without a driver assistant, teams cannot function properly.
+ *
  * @package WP_MCP_AI
  */
 
@@ -141,6 +145,42 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 			<div class="wrap">
 				<h1><?php echo esc_html__( 'Test AI Teams', 'mcp-ai-wpoos' ); ?></h1>
 				<p><?php echo esc_html__( 'Test your AI teams directly from the admin dashboard. Click "Test" next to any team to create temporary assistants for each team member and validate the team configuration.', 'mcp-ai-wpoos' ); ?></p>
+
+				<?php
+				// Check if any teams are missing driver assistants.
+				$teams_missing_driver = array();
+				foreach ( $teams as $team ) {
+					$driver_id = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_DRIVER_ASSISTANT, true );
+					if ( ! $driver_id ) {
+						$driver_id = get_option( 'wp_mcp_ai_team_default_driver_assistant', 0 );
+					}
+					if ( ! $driver_id ) {
+						$teams_missing_driver[] = $team;
+					}
+				}
+
+				if ( ! empty( $teams_missing_driver ) ) :
+					?>
+					<div class="notice notice-warning">
+						<p>
+							<strong><?php esc_html_e( 'Configuration Required:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php
+							printf(
+								/* translators: %d: number of teams */
+								esc_html( _n( '%d team is missing a driver assistant and cannot be tested.', '%d teams are missing driver assistants and cannot be tested.', count( $teams_missing_driver ), 'mcp-ai-wpoos' ) ),
+								absint( count( $teams_missing_driver ) )
+							);
+							?>
+							<?php
+							printf(
+								/* translators: %s: URL to team settings */
+								esc_html__( 'Please assign driver assistants in %s or on individual team edit pages.', 'mcp-ai-wpoos' ),
+								'<a href="' . esc_url( admin_url( 'edit.php?post_type=' . $post_type . '&page=wp-mcp-ai-team-settings' ) ) . '">' . esc_html__( 'Team Settings', 'mcp-ai-wpoos' ) . '</a>'
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
 
 				<?php if ( empty( $teams ) ) : ?>
 					<div class="notice notice-warning">
