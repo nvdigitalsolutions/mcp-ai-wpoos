@@ -118,6 +118,38 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Automatically execute long-running tools (video generation, image generation, etc.) asynchronously via WordPress cron to prevent PHP timeouts. When enabled, tools with "async", "long-running", or "may-timeout" capability flags will be queued immediately and return a job_id for status polling.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'section_multi_agent'             => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Multi-Agent Orchestration', 'mcp-ai-wpoos' ) . '</h3><p class="description">' . esc_html__( 'Control multi-agent coordination features inspired by DeepSeek V4 patterns. These features enable sophisticated agent role management, profession-based AI workforce, and team-based workflows.', 'mcp-ai-wpoos' ) . '</p>',
+				),
+				'enable_agent_roles'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Agent Role System', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable agent roles (Planner, Executor, Critic, Specialist)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enable the agent role abstraction layer for multi-agent coordination. Agent roles define specialized behaviors (planning, execution, validation, domain expertise) that can be assigned to AI professions. Disabling this will hide the Agents view from the orchestration dashboard.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'enable_professions'              => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable AI Professions', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable profession-based AI workforce management', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enable the AI professions custom post type for creating specialized AI assistants with specific roles, tools, and expertise. Professions are the deployable agents used in multi-agent workflows. Disabling this will hide the Professions view and limit multi-agent capabilities.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'enable_multi_agent_teams'        => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Multi-Agent Teams', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable team-based multi-agent coordination', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enable creating teams of AI professions that work together on complex tasks. Teams allow agents with different roles (Planner, Executor, Critic) to collaborate, with automatic task delegation and result aggregation. Requires Agent Roles and Professions to be enabled.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
+				'enable_agent_coordination_tools' => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Agent Coordination Tools', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable create_agent_team, delegate_to_agent, aggregate_agent_results tools', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enable specialized tools for multi-agent coordination: create_agent_team (compose teams), delegate_to_agent (task delegation), and aggregate_agent_results (result merging). These tools allow AI assistants to orchestrate other AI assistants for complex workflows.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
 				'async_tool_timeout'              => array(
 					'type'        => 'number',
 					'label'       => __( 'Async Tool Timeout (seconds)', 'mcp-ai-wpoos' ),
@@ -748,14 +780,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-admin-tools"></span>
 			<?php esc_html_e( 'Tools', 'mcp-ai-wpoos' ); ?>
 </a>
+			<?php
+			// Conditionally show Agents tab if agent roles are enabled.
+			$enable_agent_roles = WP_MCP_AI_Settings_Registry::get_setting( 'enable_agent_roles', true );
+			if ( $enable_agent_roles ) :
+				?>
 <a href="<?php echo esc_url( $this->get_view_url( 'agents' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'agents' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-groups"></span>
 			<?php esc_html_e( 'Agents', 'mcp-ai-wpoos' ); ?>
 </a>
+				<?php
+			endif;
+
+			// Conditionally show Professions tab if professions are enabled.
+			$enable_professions = WP_MCP_AI_Settings_Registry::get_setting( 'enable_professions', true );
+			if ( $enable_professions ) :
+				?>
 <a href="<?php echo esc_url( $this->get_view_url( 'professions' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'professions' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-businessperson"></span>
 			<?php esc_html_e( 'Professions', 'mcp-ai-wpoos' ); ?>
 </a>
+				<?php
+			endif;
+			?>
 </nav>
 
 <!-- Hidden field to preserve view during form submission -->
@@ -775,10 +822,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					$this->render_tools_view();
 					break;
 				case 'agents':
-					$this->render_agents_view();
+					// Check if agent roles are enabled.
+					$enable_agent_roles = WP_MCP_AI_Settings_Registry::get_setting( 'enable_agent_roles', true );
+					if ( $enable_agent_roles ) {
+						$this->render_agents_view();
+					} else {
+						echo '<div class="notice notice-warning inline"><p>';
+						esc_html_e( 'Agent Roles are currently disabled. Enable them in Settings to view this dashboard.', 'mcp-ai-wpoos' );
+						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
+						echo '</p></div>';
+					}
 					break;
 				case 'professions':
-					$this->render_professions_view();
+					// Check if professions are enabled.
+					$enable_professions = WP_MCP_AI_Settings_Registry::get_setting( 'enable_professions', true );
+					if ( $enable_professions ) {
+						$this->render_professions_view();
+					} else {
+						echo '<div class="notice notice-warning inline"><p>';
+						esc_html_e( 'AI Professions are currently disabled. Enable them in Settings to view this dashboard.', 'mcp-ai-wpoos' );
+						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
+						echo '</p></div>';
+					}
 					break;
 				case 'overview':
 				default:
@@ -1038,6 +1103,51 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						</div>
 					</div>
 				</div>
+
+				<?php
+				// Show feature status notice if any multi-agent features are disabled.
+				$enable_agent_roles              = WP_MCP_AI_Settings_Registry::get_setting( 'enable_agent_roles', true );
+				$enable_professions              = WP_MCP_AI_Settings_Registry::get_setting( 'enable_professions', true );
+				$enable_multi_agent_teams        = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
+				$enable_agent_coordination_tools = WP_MCP_AI_Settings_Registry::get_setting( 'enable_agent_coordination_tools', true );
+				
+				$disabled_features = array();
+				if ( ! $enable_agent_roles ) {
+					$disabled_features[] = __( 'Agent Roles', 'mcp-ai-wpoos' );
+				}
+				if ( ! $enable_professions ) {
+					$disabled_features[] = __( 'AI Professions', 'mcp-ai-wpoos' );
+				}
+				if ( ! $enable_multi_agent_teams ) {
+					$disabled_features[] = __( 'Multi-Agent Teams', 'mcp-ai-wpoos' );
+				}
+				if ( ! $enable_agent_coordination_tools ) {
+					$disabled_features[] = __( 'Agent Coordination Tools', 'mcp-ai-wpoos' );
+				}
+				
+				if ( ! empty( $disabled_features ) ) :
+					?>
+					<div class="notice notice-info inline" style="margin: 20px 0;">
+						<p>
+							<span class="dashicons dashicons-info" style="vertical-align: middle; color: #2271b1;"></span>
+							<strong><?php esc_html_e( 'Multi-Agent Features Status:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %s: comma-separated list of disabled features */
+									__( 'The following features are currently disabled: %s.', 'mcp-ai-wpoos' ),
+									implode( ', ', $disabled_features )
+								)
+							);
+							?>
+							<a href="<?php echo esc_url( $this->get_view_url( 'settings' ) ); ?>">
+								<?php esc_html_e( 'Enable them in Settings', 'mcp-ai-wpoos' ); ?> →
+							</a>
+						</p>
+					</div>
+					<?php
+				endif;
+				?>
 
 				<!-- Chart Initialization -->
 				<script type="text/javascript">
@@ -1361,6 +1471,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'enable_auto_async_execution',
 				'async_tool_timeout',
 				'cron_job_retention_period',
+				'section_multi_agent', // Section header.
+				'enable_agent_roles',
+				'enable_professions',
+				'enable_multi_agent_teams',
+				'enable_agent_coordination_tools',
 			);
 
 			echo '<h3>' . esc_html__( 'Orchestration Features', 'mcp-ai-wpoos' ) . '</h3>';
@@ -1369,7 +1484,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			echo '<table class="form-table" role="presentation">';
 			foreach ( $settings_fields as $key ) {
 				if ( isset( $fields[ $key ] ) ) {
-					$this->render_field( $key, $fields[ $key ] );
+					$field = $fields[ $key ];
+					if ( 'html' === $field['type'] ) {
+						// Close table for section headers, render HTML, reopen table.
+						echo '</table>';
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in field definition.
+						echo $field['content'];
+						echo '<table class="form-table" role="presentation">';
+					} else {
+						$this->render_field( $key, $field );
+					}
 				}
 			}
 			echo '</table>';
