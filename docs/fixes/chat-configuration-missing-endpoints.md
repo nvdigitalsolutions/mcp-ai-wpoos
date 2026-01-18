@@ -2,7 +2,7 @@
 
 ## Issue
 
-Chat widgets on certain pages (like team pages) showed this error in the browser console:
+Chat widgets on certain pages (like team pages and admin pages) showed this error in the browser console:
 
 ```
 [NV oOS] Chat configuration missing expected PHP-localized values. Check shortcode setup and plugin settings.
@@ -11,9 +11,17 @@ Array(1)
 length: 1
 ```
 
+The error appeared in two contexts:
+1. **Frontend pages** with chat shortcodes (team pages, etc.)
+2. **Admin pages** with chat modals (Build Assistant page, Test pages)
+
 ## Root Cause
 
-The error occurred because the per-instance configuration array in `WP_MCP_AI_Shortcode::render_shortcode()` (around line 693) was missing the `uploadEndpoint` key.
+### Frontend Issue
+The per-instance configuration array in `WP_MCP_AI_Shortcode::render_shortcode()` (around line 693) was missing the `uploadEndpoint` key.
+
+### Admin Pages Issue
+Admin pages that use chat modals (`WP_MCP_AI_Build_Assistant_Page` and `WP_MCP_AI_Admin_Test_Page_Base`) were missing the `toolsEndpoint` key in their global config localization.
 
 The chat JavaScript code has two layers of configuration:
 
@@ -33,6 +41,7 @@ If the per-instance config is missing `uploadEndpoint`, it falls back to the glo
 
 ## Solution
 
+### Frontend Fix
 Added `uploadEndpoint` to the per-instance configuration array:
 
 ```php
@@ -48,10 +57,30 @@ $config = array(
 );
 ```
 
+### Admin Pages Fix
+Added `toolsEndpoint` to the global configuration in admin pages:
+
+```php
+wp_localize_script(
+    'wp-mcp-ai-chat',
+    'wpMcpAiChat',
+    array(
+        'restUrl'             => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace ) ) ),
+        'uploadEndpoint'      => esc_url_raw( $this->normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+        'filesEndpoint'       => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace . '/files' ) ) ) ),
+        'toolsEndpoint'       => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/tools' ) ) ), // ADDED
+        'transcriptsEndpoint' => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-transcripts' ) ) ),
+        // ... other config values
+    )
+);
+```
+
 ## Changes Made
 
 1. **includes/class-wp-mcp-ai-shortcode.php (line 698)**: Added `uploadEndpoint` to per-instance config array
-2. **tests/test-shortcodes.php**: Added `test_per_instance_config_includes_required_endpoints()` to verify all required endpoints are present in per-instance config
+2. **includes/admin/class-wp-mcp-ai-build-assistant-page.php (line 167)**: Added `toolsEndpoint` to Build Assistant page global config
+3. **includes/admin/class-wp-mcp-ai-admin-test-page-base.php (line 188)**: Added `toolsEndpoint` to Test pages base class global config
+4. **tests/test-shortcodes.php**: Added `test_per_instance_config_includes_required_endpoints()` to verify all required endpoints are present in per-instance config
 
 ## Testing
 
@@ -67,6 +96,7 @@ composer run test -- tests/test-shortcodes.php --filter test_per_instance_config
 
 ## Why This Fixes the Issue
 
+### Frontend Fix
 By ensuring each chat instance has its own complete configuration including `uploadEndpoint`, we eliminate the dependency on the global config fallback. Each instance is now self-sufficient and will work correctly even if:
 
 - The global config is incomplete
@@ -74,9 +104,19 @@ By ensuring each chat instance has its own complete configuration including `upl
 - Multiple instances exist on the same page
 - The page is loaded in different contexts (Elementor editor, regular page, etc.)
 
+### Admin Pages Fix
+By adding `toolsEndpoint` to the global config in admin pages, chat modals/popups can now:
+
+- Execute tools like transcription and voice chat
+- Access the tools REST API endpoint
+- Function properly in the Build Assistant page prompt tab
+- Work correctly in all Test pages (Assistant, Profession, Team)
+
 ## Related Files
 
 - `includes/class-wp-mcp-ai-shortcode.php` - Shortcode renderer with per-instance config
+- `includes/admin/class-wp-mcp-ai-build-assistant-page.php` - Build Assistant page with chat modal
+- `includes/admin/class-wp-mcp-ai-admin-test-page-base.php` - Base class for Test pages with chat modals
 - `assets/js/chat.js` - Chat JavaScript that merges configs
 - `tests/test-shortcodes.php` - Test suite for shortcode functionality
 
