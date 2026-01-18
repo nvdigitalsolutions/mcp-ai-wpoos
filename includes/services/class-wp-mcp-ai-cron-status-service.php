@@ -68,7 +68,7 @@ class WP_MCP_AI_Cron_Status_Service {
 	 *
 	 * @param int      $user_id User ID to filter jobs by (0 for all if admin).
 	 * @param int      $limit   Maximum number of jobs to return (default 10).
-	 * @param int|null $assistant_id Optional assistant ID to filter jobs for specific chat widget.
+	 * @param int|string|null $assistant_id Optional assistant ID to filter jobs for specific chat widget. Can be int or string (e.g., "unified_team_123").
 	 * @return array Array of job status objects.
 	 */
 	public function get_status_summary( $user_id = 0, $limit = 10, $assistant_id = null ) {
@@ -258,7 +258,7 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Supports filtering by assistant_id for multi-widget isolation.
 	 *
 	 * @param int      $user_id User ID to filter by.
-	 * @param int|null $assistant_id Optional assistant ID to filter by.
+	 * @param int|string|null $assistant_id Optional assistant ID to filter by. Can be int or string (e.g., "unified_team_123").
 	 * @return array Array of async tool jobs formatted like cron jobs.
 	 */
 	protected function get_async_tool_jobs( $user_id, $assistant_id = null ) {
@@ -309,7 +309,17 @@ class WP_MCP_AI_Cron_Status_Service {
 
 			// Filter by assistant_id if specified (for multi-widget isolation).
 			if ( null !== $assistant_id ) {
-				$job_assistant_id = isset( $metadata['context']['assistant_id'] ) ? absint( $metadata['context']['assistant_id'] ) : 0;
+				$job_assistant_id = isset( $metadata['context']['assistant_id'] ) ? $metadata['context']['assistant_id'] : null;
+				
+				// Normalize both IDs for comparison.
+				// If assistant_id filter is string (e.g., "unified_team_123"), keep it as string.
+				// If job has string assistant_id, keep it as string.
+				// Otherwise convert to int for comparison.
+				if ( is_string( $assistant_id ) ) {
+					$job_assistant_id = isset( $metadata['context']['assistant_id'] ) ? sanitize_text_field( $metadata['context']['assistant_id'] ) : '';
+				} else {
+					$job_assistant_id = isset( $metadata['context']['assistant_id'] ) ? absint( $metadata['context']['assistant_id'] ) : 0;
+				}
 
 				if ( $job_assistant_id !== $assistant_id ) {
 					continue;
@@ -337,7 +347,7 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * the number of concurrent jobs becomes significant.
 	 *
 	 * @param int      $user_id User ID to filter by.
-	 * @param int|null $assistant_id Optional assistant ID to filter by.
+	 * @param int|string|null $assistant_id Optional assistant ID to filter by. Can be int or string (e.g., "unified_team_123").
 	 * @return array Array of video generation jobs formatted like cron jobs.
 	 */
 	protected function get_video_generation_jobs( $user_id, $assistant_id = null ) {
@@ -379,7 +389,17 @@ class WP_MCP_AI_Cron_Status_Service {
 
 			// Filter by assistant_id if specified (for multi-widget isolation).
 			if ( null !== $assistant_id ) {
-				$job_assistant_id = isset( $metadata['args']['assistant_id'] ) ? absint( $metadata['args']['assistant_id'] ) : 0;
+				$job_assistant_id = isset( $metadata['args']['assistant_id'] ) ? $metadata['args']['assistant_id'] : null;
+				
+				// Normalize both IDs for comparison.
+				// If assistant_id filter is string (e.g., "unified_team_123"), keep it as string.
+				// If job has string assistant_id, keep it as string.
+				// Otherwise convert to int for comparison.
+				if ( is_string( $assistant_id ) ) {
+					$job_assistant_id = isset( $metadata['args']['assistant_id'] ) ? sanitize_text_field( $metadata['args']['assistant_id'] ) : '';
+				} else {
+					$job_assistant_id = isset( $metadata['args']['assistant_id'] ) ? absint( $metadata['args']['assistant_id'] ) : 0;
+				}
 
 				if ( $job_assistant_id !== $assistant_id ) {
 					continue;
@@ -538,7 +558,7 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Supports filtering by assistant_id for multi-widget isolation.
 	 *
 	 * @param int      $user_id User ID to filter by.
-	 * @param int|null $assistant_id Optional assistant ID to filter by.
+	 * @param int|string|null $assistant_id Optional assistant ID to filter by. Can be int or string (e.g., "unified_team_123").
 	 * @return array Array with counts: pending, running, completed, failed, total.
 	 */
 	public function get_status_counts( $user_id = 0, $assistant_id = null ) {

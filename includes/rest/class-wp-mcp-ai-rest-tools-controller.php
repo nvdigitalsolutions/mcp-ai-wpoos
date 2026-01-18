@@ -230,10 +230,10 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_cron_status_request' ),
 					'args'                => array(
 						'assistant_id' => array(
-							'description'       => __( 'Filter jobs by assistant ID for multi-widget isolation.', 'mcp-ai-wpoos' ),
-							'type'              => 'integer',
+							'description'       => __( 'Filter jobs by assistant ID for multi-widget isolation. Can be an integer assistant ID or a string like "unified_team_123" for unified team chats.', 'mcp-ai-wpoos' ),
+							'type'              => array( 'integer', 'string' ),
 							'required'          => false,
-							'sanitize_callback' => 'absint',
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'limit'        => array(
 							'description'       => __( 'Maximum number of jobs to return.', 'mcp-ai-wpoos' ),
@@ -657,7 +657,12 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$user_id = $this->get_current_user_id();
 
 		$limit        = absint( $request->get_param( 'limit' ) ) ?: 10;
-		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+		$assistant_id = $request->get_param( 'assistant_id' );
+		
+		// Sanitize assistant_id: keep as string if it's a unified team ID, otherwise convert to int.
+		if ( $assistant_id ) {
+			$assistant_id = $this->sanitize_assistant_id( $assistant_id );
+		}
 
 		$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id ?: null );
 		$counts = $service->get_status_counts( $user_id, $assistant_id ?: null );
@@ -727,5 +732,50 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$sanitized = preg_replace( '/\.{2,}/', '', $sanitized );
 
 		return $sanitized;
+	}
+
+	/**
+	 * Sanitize assistant ID parameter.
+	 *
+	 * Assistant IDs can be either:
+	 * - Integer post IDs (e.g., 8901)
+	 * - Unified team IDs (e.g., "unified_team_8901")
+	 * - Profession test IDs (e.g., "profession_123")
+	 *
+	 * This sanitization preserves string identifiers while converting numeric strings to integers.
+	 *
+	 * @param mixed $assistant_id Assistant ID to sanitize.
+	 * @return int|string|null Sanitized assistant ID (int for numeric, string for prefixed IDs).
+	 */
+	public function sanitize_assistant_id( $assistant_id ) {
+		if ( empty( $assistant_id ) ) {
+			return null;
+		}
+
+		// If it's already an integer, return it.
+		if ( is_int( $assistant_id ) ) {
+			return $assistant_id;
+		}
+
+		// If it's a string, check if it's a special identifier.
+		if ( is_string( $assistant_id ) ) {
+			$sanitized = sanitize_text_field( $assistant_id );
+
+			// Check for unified team or profession prefix.
+			if ( 0 === strpos( $sanitized, 'unified_team_' ) || 0 === strpos( $sanitized, 'profession_' ) ) {
+				return $sanitized;
+			}
+
+			// If it's a numeric string, convert to integer.
+			if ( is_numeric( $sanitized ) ) {
+				return absint( $sanitized );
+			}
+
+			// Otherwise return the sanitized string (defensive fallback).
+			return $sanitized;
+		}
+
+		// Fallback for unexpected types - try to convert to int.
+		return absint( $assistant_id );
 	}
 }

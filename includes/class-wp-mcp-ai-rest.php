@@ -914,7 +914,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $request->get_param( 'assistant_id' );
 			if ( $assistant_id ) {
-				$assistant_id = absint( $assistant_id );
+				// Keep string-based IDs (unified_team_*, profession_*) as strings, convert numeric to int.
+				if ( is_string( $assistant_id ) && ( 0 === strpos( $assistant_id, 'unified_team_' ) || 0 === strpos( $assistant_id, 'profession_' ) ) ) {
+					$assistant_id = sanitize_text_field( $assistant_id );
+				} elseif ( is_numeric( $assistant_id ) ) {
+					$assistant_id = absint( $assistant_id );
+				} else {
+					$assistant_id = sanitize_text_field( $assistant_id );
+				}
 			}
 
 			// Get status summary and counts with optional assistant filter.
