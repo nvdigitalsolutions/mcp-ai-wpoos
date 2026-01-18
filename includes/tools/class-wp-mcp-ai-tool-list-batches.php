@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -147,13 +148,16 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$has_more = isset( $result['has_more'] ) ? $result['has_more'] : false;
 		$last_id  = isset( $result['last_id'] ) ? $result['last_id'] : null;
 
+		$summary_text = $this->generate_summary( $batches, $has_more );
+
 		$response = array(
 			'success'     => true,
 			'batches'     => $batches,
 			'total_count' => count( $batches ),
 			'has_more'    => $has_more,
 			'last_id'     => $last_id,
-			'summary'     => $this->generate_summary( $batches, $has_more ),
+			'message'     => $summary_text,
+			'summary'     => $summary_text,
 		);
 
 		return $response;

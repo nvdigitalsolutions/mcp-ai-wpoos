@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provide a concise view of JetFormBuilder forms for the assistant.
  */
 class WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether JetFormBuilder appears to be available.
 	 *

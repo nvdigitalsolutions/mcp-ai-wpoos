@@ -23,6 +23,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Follows separation of concerns: handles WordPress integration while delegating API calls to client.
  */
 class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -167,7 +168,10 @@ class WP_MCP_AI_Tool_PayHere_Get_Payment implements WP_MCP_AI_Tool_Interface, WP
 		);
 
 		$result = array_merge(
-			array( 'summary' => $summary ),
+			array(
+				'message' => $summary,
+				'summary' => $summary,
+			),
 			$result
 		);
 

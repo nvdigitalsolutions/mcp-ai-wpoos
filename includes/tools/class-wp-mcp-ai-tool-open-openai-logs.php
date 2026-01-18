@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides a link so administrators can inspect OpenAI API logs.
  */
 class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -63,8 +64,11 @@ class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
+		$summary_text = __( 'OpenAI Logs Dashboard', 'mcp-ai-wpoos' );
+
 		return array(
-			'summary'     => __( 'OpenAI Logs Dashboard', 'mcp-ai-wpoos' ),
+			'message'     => $summary_text,
+			'summary'     => $summary_text,
 			'label'       => __( 'OpenAI Logs Dashboard', 'mcp-ai-wpoos' ),
 			'url'         => 'https://platform.openai.com/logs',
 			'description' => __( 'Visit the OpenAI platform logs dashboard to review recent API requests, usage details, and error messages.', 'mcp-ai-wpoos' ),

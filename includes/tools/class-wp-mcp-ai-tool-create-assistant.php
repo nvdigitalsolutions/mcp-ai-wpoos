@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Allows users to create AI assistants with custom instructions and knowledge base.
  */
 class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Maximum size for base knowledge documents (in bytes).
 	 * OpenAI has a 512MB limit per file, but we'll use 10MB as a safe default.

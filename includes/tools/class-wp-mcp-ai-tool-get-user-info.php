@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Returns basic information about a WordPress user.
  */
 class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */

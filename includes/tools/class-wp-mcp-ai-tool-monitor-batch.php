@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Option name for storing monitored batches.
 	 */
@@ -193,6 +194,8 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			wp_schedule_event( time(), $check_interval, self::CRON_HOOK );
 		}
 
+		$summary_text = $this->generate_summary( $batch_id, $check_interval, $callback_hook );
+
 		// Return success with monitoring details.
 		return array(
 			'success'        => true,
@@ -202,7 +205,8 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'current_status' => $batch['status'],
 			'callback_hook'  => $callback_hook ? $callback_hook : 'none',
 			'auto_download'  => $auto_download,
-			'summary'        => $this->generate_summary( $batch_id, $check_interval, $callback_hook ),
+			'message'        => $summary_text,
+			'summary'        => $summary_text,
 		);
 	}
 

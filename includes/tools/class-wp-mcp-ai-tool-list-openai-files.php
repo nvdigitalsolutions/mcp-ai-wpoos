@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Lists files uploaded to OpenAI for the current user or organization.
  */
 class WP_MCP_AI_Tool_List_OpenAI_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -141,16 +142,19 @@ class WP_MCP_AI_Tool_List_OpenAI_Files implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$has_more = isset( $result['has_more'] ) ? $result['has_more'] : false;
 
+		$summary_text = sprintf(
+			/* translators: %d: number of files */
+			__( 'Found %d files in OpenAI storage.', 'mcp-ai-wpoos' ),
+			count( $files )
+		);
+
 		return array(
 			'success'     => true,
 			'files'       => $files,
 			'total_count' => count( $files ),
 			'has_more'    => $has_more,
-			'summary'     => sprintf(
-				/* translators: %d: number of files */
-				__( 'Found %d files in OpenAI storage.', 'mcp-ai-wpoos' ),
-				count( $files )
-			),
+			'message'     => $summary_text,
+			'summary'     => $summary_text,
 		);
 	}
 

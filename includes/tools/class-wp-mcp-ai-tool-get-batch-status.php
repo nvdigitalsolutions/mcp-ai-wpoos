@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -132,6 +133,7 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 			'request_counts' => isset( $result['request_counts'] ) ? $result['request_counts'] : array(),
 			'metadata'       => isset( $result['metadata'] ) ? $result['metadata'] : array(),
 			'summary'        => $this->generate_summary( $result ),
+			'message'        => $this->generate_summary( $result ), // Chat client display
 			'raw_result'     => $result,
 		);
 

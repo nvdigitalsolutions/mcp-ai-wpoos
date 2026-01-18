@@ -18,6 +18,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
  * Provides a summary of recent WooCommerce orders.
  */
 class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether WooCommerce is available.
 	 *
@@ -135,12 +136,15 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			);
 		}
 
+		$summary_text = sprintf(
+			/* translators: %d: number of orders */
+			__( 'Found %d recent order(s)', 'mcp-ai-wpoos' ),
+			count( $results )
+		);
+
 		return array(
-			'summary' => sprintf(
-				/* translators: %d: number of orders */
-				__( 'Found %d recent order(s)', 'mcp-ai-wpoos' ),
-				count( $results )
-			),
+			'message' => $summary_text, // Chat client display
+			'summary' => $summary_text, // Backward compatibility
 			'orders'  => $results,
 			'count'   => count( $results ),
 		);

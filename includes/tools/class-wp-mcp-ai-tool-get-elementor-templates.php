@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides Elementor template listings with metadata suitable for assistants.
  */
 class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether Elementor (or Elementor Pro) is available.
 	 *
@@ -189,12 +190,15 @@ class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface
 			wp_reset_postdata();
 		}
 
+		$summary_text = sprintf(
+			/* translators: %d: number of templates */
+			__( 'Found %d Elementor template(s)', 'mcp-ai-wpoos' ),
+			count( $results )
+		);
+
 		return array(
-			'summary'   => sprintf(
-				/* translators: %d: number of templates */
-				__( 'Found %d Elementor template(s)', 'mcp-ai-wpoos' ),
-				count( $results )
-			),
+			'message'   => $summary_text, // Chat client display
+			'summary'   => $summary_text, // Backward compatibility
 			'templates' => $results,
 			'count'     => count( $results ),
 		);

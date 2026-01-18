@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Checks WordPress site security and warns about potential risks for using this plugin.
  */
 class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Capability required to run the tool.
 	 */

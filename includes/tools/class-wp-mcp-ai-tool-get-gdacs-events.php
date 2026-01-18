@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Fetches tropical cyclone and flood events from GDACS.
  */
 class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * GDACS endpoint for tropical cyclone and flood events.
 	 */
@@ -153,9 +154,11 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$sanitised_events = $this->sanitize_payload( $decoded );
 		$event_count      = is_array( $sanitised_events ) ? count( $sanitised_events ) : 0;
+		$summary_text     = sprintf( __( 'Found %d GDACS events', 'mcp-ai-wpoos' ), $event_count );
 
 		return array(
-			'summary'   => sprintf( __( 'Found %d GDACS events', 'mcp-ai-wpoos' ), $event_count ),
+			'message'   => $summary_text,
+			'summary'   => $summary_text,
 			'model'     => self::DEFAULT_MODEL,
 			'from_date' => isset( $query_args['fromdate'] ) ? $query_args['fromdate'] : null,
 			'to_date'   => isset( $query_args['todate'] ) ? $query_args['todate'] : null,

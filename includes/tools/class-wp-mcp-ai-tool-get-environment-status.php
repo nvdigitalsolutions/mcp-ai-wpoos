@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Summarises WordPress, PHP, plugin, and assistant state for troubleshooting.
  */
 class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -147,13 +148,16 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
+		$summary_text = sprintf(
+			/* translators: 1: plugin count, 2: total warnings */
+			__( 'Environment status: %1$d plugin(s) checked, %2$d warning(s)', 'mcp-ai-wpoos' ),
+			count( $summary['plugin_statuses'] ),
+			count( $summary['warnings'] )
+		);
+
 		return array(
-			'summary'     => sprintf(
-				/* translators: 1: plugin count, 2: total warnings */
-				__( 'Environment status: %1$d plugin(s) checked, %2$d warning(s)', 'mcp-ai-wpoos' ),
-				count( $summary['plugin_statuses'] ),
-				count( $summary['warnings'] )
-			),
+			'message'     => $summary_text, // Chat client display
+			'summary'     => $summary_text, // Backward compatibility
 			'environment' => $summary,
 		);
 	}

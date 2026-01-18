@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides a link so administrators can review OpenAI usage analytics.
  */
 class WP_MCP_AI_Tool_Open_OpenAI_Usage implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -63,8 +64,11 @@ class WP_MCP_AI_Tool_Open_OpenAI_Usage implements WP_MCP_AI_Tool_Interface, WP_M
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
+		$summary_text = __( 'OpenAI Usage Dashboard', 'mcp-ai-wpoos' );
+		
 		return array(
-			'summary'     => __( 'OpenAI Usage Dashboard', 'mcp-ai-wpoos' ),
+			'message'     => $summary_text,
+			'summary'     => $summary_text,
 			'label'       => __( 'OpenAI Usage Dashboard', 'mcp-ai-wpoos' ),
 			'url'         => 'https://platform.openai.com/usage',
 			'description' => __( 'Visit the OpenAI platform usage dashboard to review billing, quotas, and consumption analytics.', 'mcp-ai-wpoos' ),
