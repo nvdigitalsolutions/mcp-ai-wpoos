@@ -1454,8 +1454,468 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 *
 		 * @param string $status Health status.
 		 * @return string Icon name.
-		 */
-		protected function get_health_icon( $status ) {
+
+	/**
+	 * Render professions view.
+	 *
+	 * Displays all configured AI professions (concrete agent instances).
+	 * Shows profession details, assigned roles, tools, and expertise.
+	 */
+	private function render_professions_view() {
+		?>
+		<div class="wp-mcp-ai-professions-view">
+			<h3><?php esc_html_e( 'AI Professions & Specialists', 'mcp-ai-wpoos' ); ?></h3>
+			<p class="description">
+				<?php esc_html_e( 'Professions are configured AI assistants with specific roles, expertise, tools, and knowledge bases. They are the deployable agents used in multi-agent teams and workflows.', 'mcp-ai-wpoos' ); ?>
+			</p>
+
+			<div class="notice notice-info inline" style="margin: 20px 0;">
+				<p>
+					<span class="dashicons dashicons-info" style="vertical-align: middle; color: #2271b1;"></span>
+					<strong><?php esc_html_e( 'Professions vs Agent Roles:', 'mcp-ai-wpoos' ); ?></strong>
+					<?php esc_html_e( 'Agent Roles are abstract templates (Planner, Executor, etc.). Professions are concrete implementations - specific AI assistants configured for particular domains like "WordPress Developer", "SEO Consultant", or "Legal Advisor".', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<?php
+			// Get professions.
+			$professions = $this->get_professions_list();
+			
+			if ( ! empty( $professions ) ) {
+				?>
+				<div class="professions-stats" style="margin: 20px 0;">
+					<div class="stats-summary">
+						<span class="stat-item">
+							<strong><?php echo esc_html( count( $professions ) ); ?></strong>
+							<?php esc_html_e( 'Total Professions', 'mcp-ai-wpoos' ); ?>
+						</span>
+						<?php
+						$role_counts = $this->count_professions_by_role( $professions );
+						foreach ( $role_counts as $role => $count ) :
+							if ( $count > 0 ) :
+								?>
+								<span class="stat-item">
+									<strong><?php echo esc_html( $count ); ?></strong>
+									<?php echo esc_html( ucfirst( $role ) . 's' ); ?>
+								</span>
+								<?php
+							endif;
+						endforeach;
+						?>
+					</div>
+				</div>
+
+				<div class="wp-mcp-ai-professions-grid">
+					<?php foreach ( $professions as $profession ) : ?>
+						<div class="wp-mcp-ai-profession-card">
+							<div class="profession-card-header">
+								<div class="profession-icon-title">
+									<span class="dashicons <?php echo esc_attr( $this->get_profession_icon( $profession ) ); ?>"></span>
+									<div>
+										<h4><?php echo esc_html( $profession['title'] ); ?></h4>
+										<?php if ( ! empty( $profession['role'] ) ) : ?>
+											<span class="profession-role-badge <?php echo esc_attr( $profession['role'] ); ?>">
+												<?php echo esc_html( ucfirst( $profession['role'] ) ); ?>
+											</span>
+										<?php endif; ?>
+									</div>
+								</div>
+								<a href="<?php echo esc_url( $profession['edit_url'] ); ?>" class="button button-small">
+									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+								</a>
+							</div>
+							
+							<div class="profession-card-body">
+								<?php if ( ! empty( $profession['description'] ) ) : ?>
+									<p class="profession-description"><?php echo esc_html( wp_trim_words( $profession['description'], 20 ) ); ?></p>
+								<?php endif; ?>
+
+								<?php if ( ! empty( $profession['expertise'] ) ) : ?>
+									<div class="profession-expertise">
+										<strong><?php esc_html_e( 'Expertise:', 'mcp-ai-wpoos' ); ?></strong>
+										<div class="expertise-tags">
+											<?php foreach ( array_slice( $profession['expertise'], 0, 4 ) as $expertise ) : ?>
+												<span class="expertise-tag"><?php echo esc_html( $expertise ); ?></span>
+											<?php endforeach; ?>
+											<?php if ( count( $profession['expertise'] ) > 4 ) : ?>
+												<span class="expertise-tag-more">
+													+<?php echo esc_html( count( $profession['expertise'] ) - 4 ); ?>
+												</span>
+											<?php endif; ?>
+										</div>
+									</div>
+								<?php endif; ?>
+
+								<?php if ( ! empty( $profession['tools_count'] ) ) : ?>
+									<div class="profession-meta">
+										<span class="dashicons dashicons-admin-tools"></span>
+										<?php
+										printf(
+											/* translators: %d: number of tools */
+											esc_html( _n( '%d tool configured', '%d tools configured', $profession['tools_count'], 'mcp-ai-wpoos' ) ),
+											esc_html( $profession['tools_count'] )
+										);
+										?>
+									</div>
+								<?php endif; ?>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+				<?php
+			} else {
+				?>
+				<div class="notice notice-warning inline">
+					<p>
+						<?php
+						echo wp_kses_post(
+							sprintf(
+								/* translators: %s: link to create profession */
+								__( 'No professions found. %s to get started with multi-agent orchestration.', 'mcp-ai-wpoos' ),
+								'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'Create your first profession', 'mcp-ai-wpoos' ) . '</a>'
+							)
+						);
+						?>
+					</p>
+				</div>
+				<?php
+			}
+			?>
+
+			<!-- Profession Management Section -->
+			<div class="wp-mcp-ai-profession-management" style="margin-top: 30px;">
+				<h3><?php esc_html_e( 'Profession Management', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Create and configure AI professions to build your multi-agent workforce.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<div class="management-grid">
+					<div class="management-card">
+						<span class="dashicons dashicons-plus-alt" style="font-size: 48px; color: #2271b1;"></span>
+						<h4><?php esc_html_e( 'Create New Profession', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description"><?php esc_html_e( 'Define a new AI specialist with custom tools, expertise, and knowledge base.', 'mcp-ai-wpoos' ); ?></p>
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ); ?>" class="button button-primary">
+							<?php esc_html_e( 'Create Profession', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</div>
+
+					<div class="management-card">
+						<span class="dashicons dashicons-list-view" style="font-size: 48px; color: #2271b1;"></span>
+						<h4><?php esc_html_e( 'Manage All Professions', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description"><?php esc_html_e( 'View, edit, and organize all configured AI professions.', 'mcp-ai-wpoos' ); ?></p>
+						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession' ) ); ?>" class="button button-secondary">
+							<?php esc_html_e( 'View All', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</div>
+
+					<div class="management-card">
+						<span class="dashicons dashicons-groups" style="font-size: 48px; color: #2271b1;"></span>
+						<h4><?php esc_html_e( 'Build Agent Teams', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description"><?php esc_html_e( 'Combine professions into coordinated teams for complex workflows.', 'mcp-ai-wpoos' ); ?></p>
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_team' ) ); ?>" class="button button-secondary">
+							<?php esc_html_e( 'Create Team', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Styling -->
+			<style>
+				.professions-stats {
+					background: #f8f9fa;
+					padding: 15px 20px;
+					border-radius: 4px;
+					border-left: 4px solid #2271b1;
+				}
+				
+				.stats-summary {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 20px;
+				}
+				
+				.stat-item {
+					font-size: 14px;
+					color: #666;
+				}
+				
+				.stat-item strong {
+					color: #2271b1;
+					font-size: 18px;
+					margin-right: 5px;
+				}
+				
+				.wp-mcp-ai-professions-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+					gap: 20px;
+					margin: 20px 0;
+				}
+				
+				.wp-mcp-ai-profession-card {
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					padding: 20px;
+					box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+					transition: box-shadow 0.2s;
+				}
+				
+				.wp-mcp-ai-profession-card:hover {
+					box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+				}
+				
+				.profession-card-header {
+					display: flex;
+					justify-content: space-between;
+					align-items: flex-start;
+					margin-bottom: 15px;
+					padding-bottom: 15px;
+					border-bottom: 1px solid #eee;
+				}
+				
+				.profession-icon-title {
+					display: flex;
+					align-items: flex-start;
+					gap: 12px;
+					flex: 1;
+				}
+				
+				.profession-icon-title .dashicons {
+					font-size: 32px;
+					width: 32px;
+					height: 32px;
+					color: #2271b1;
+					flex-shrink: 0;
+				}
+				
+				.profession-card-header h4 {
+					margin: 0 0 5px 0;
+					color: #1d2327;
+					font-size: 16px;
+				}
+				
+				.profession-role-badge {
+					display: inline-block;
+					padding: 2px 8px;
+					border-radius: 3px;
+					font-size: 11px;
+					font-weight: 600;
+					text-transform: uppercase;
+				}
+				
+				.profession-role-badge.planner {
+					background: #e3f2fd;
+					color: #1976d2;
+				}
+				
+				.profession-role-badge.executor {
+					background: #fff3e0;
+					color: #f57c00;
+				}
+				
+				.profession-role-badge.critic {
+					background: #f3e5f5;
+					color: #7b1fa2;
+				}
+				
+				.profession-role-badge.specialist {
+					background: #e8f5e9;
+					color: #388e3c;
+				}
+				
+				.profession-role-badge.generalist {
+					background: #f5f5f5;
+					color: #616161;
+				}
+				
+				.profession-card-body {
+					font-size: 14px;
+				}
+				
+				.profession-description {
+					margin: 0 0 15px 0;
+					color: #666;
+					line-height: 1.6;
+				}
+				
+				.profession-expertise {
+					margin: 15px 0;
+					padding-top: 10px;
+					border-top: 1px solid #f0f0f0;
+				}
+				
+				.expertise-tags {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 5px;
+					margin-top: 8px;
+				}
+				
+				.expertise-tag,
+				.expertise-tag-more {
+					background: #f0f0f1;
+					padding: 3px 10px;
+					border-radius: 3px;
+					font-size: 12px;
+					color: #666;
+				}
+				
+				.expertise-tag-more {
+					background: #2271b1;
+					color: #fff;
+					font-weight: 600;
+				}
+				
+				.profession-meta {
+					margin-top: 10px;
+					padding-top: 10px;
+					border-top: 1px solid #f0f0f0;
+					color: #666;
+					font-size: 13px;
+					display: flex;
+					align-items: center;
+					gap: 5px;
+				}
+				
+				.profession-meta .dashicons {
+					font-size: 16px;
+					width: 16px;
+					height: 16px;
+				}
+				
+				.management-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+					gap: 20px;
+					margin: 20px 0;
+				}
+				
+				.management-card {
+					background: #fff;
+					border: 2px solid #ddd;
+					padding: 30px 20px;
+					border-radius: 4px;
+					text-align: center;
+					transition: all 0.2s;
+				}
+				
+				.management-card:hover {
+					border-color: #2271b1;
+					box-shadow: 0 2px 8px rgba(34, 113, 177, 0.1);
+				}
+				
+				.management-card h4 {
+					margin: 15px 0 10px;
+					color: #1d2327;
+				}
+				
+				.management-card .description {
+					min-height: 40px;
+					margin-bottom: 15px;
+				}
+			</style>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get list of professions.
+	 *
+	 * @return array Array of profession data.
+	 */
+	private function get_professions_list() {
+		$professions = array();
+
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_profession',
+				'post_status'    => 'publish',
+				'posts_per_page' => 100,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		if ( $query->have_posts() ) {
+			while ( $query->have_posts() ) {
+				$query->the_post();
+				$post_id = get_the_ID();
+
+				// Get profession metadata.
+				$agent_role   = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true );
+				$expertise    = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
+				$tools        = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
+				$description  = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
+
+				$professions[] = array(
+					'id'          => $post_id,
+					'title'       => get_the_title(),
+					'description' => $description ? $description : get_the_excerpt(),
+					'role'        => $agent_role ? $agent_role : 'generalist',
+					'expertise'   => is_array( $expertise ) ? $expertise : array(),
+					'tools_count' => is_array( $tools ) ? count( $tools ) : 0,
+					'edit_url'    => get_edit_post_link( $post_id ),
+				);
+			}
+			wp_reset_postdata();
+		}
+
+		return $professions;
+	}
+
+	/**
+	 * Count professions by role.
+	 *
+	 * @param array $professions Array of profession data.
+	 * @return array Role counts.
+	 */
+	private function count_professions_by_role( $professions ) {
+		$counts = array(
+			'planner'    => 0,
+			'executor'   => 0,
+			'critic'     => 0,
+			'specialist' => 0,
+			'generalist' => 0,
+		);
+
+		foreach ( $professions as $profession ) {
+			$role = isset( $profession['role'] ) ? $profession['role'] : 'generalist';
+			if ( isset( $counts[ $role ] ) ) {
+				++$counts[ $role ];
+			}
+		}
+
+		return $counts;
+	}
+
+	/**
+	 * Get icon for profession based on role.
+	 *
+	 * @param array $profession Profession data.
+	 * @return string Dashicon class.
+	 */
+	private function get_profession_icon( $profession ) {
+		$role = isset( $profession['role'] ) ? $profession['role'] : 'generalist';
+		
+		$icons = array(
+			'planner'    => 'dashicons-list-view',
+			'executor'   => 'dashicons-hammer',
+			'critic'     => 'dashicons-yes-alt',
+			'specialist' => 'dashicons-lightbulb',
+			'generalist' => 'dashicons-admin-generic',
+		);
+
+		return isset( $icons[ $role ] ) ? $icons[ $role ] : 'dashicons-businessperson';
+	}
+
+	/**
+	 * Get health icon for status.
+	 *
+	 * @param string $status Health status.
+	 * @return string Icon name.
+	 */
+	protected function get_health_icon( $status ) {
 			$icons = array(
 				'good'     => 'yes-alt',
 				'fair'     => 'info',
