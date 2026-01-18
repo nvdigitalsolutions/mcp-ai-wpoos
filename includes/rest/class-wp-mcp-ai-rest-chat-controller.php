@@ -766,10 +766,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$session_key      = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
 		$messages         = $request->get_param( 'messages' );
 
-		// Check if this is a virtual team assistant ID (unified_team_* or team_*_member_*).
+		// Check if this is a virtual team assistant ID.
 		// These are constructed by the Test Team interface and don't correspond to real assistant posts.
+		// Format: unified_team_{digits} or team_{digits}_member_{digits}
 		$is_virtual_team_assistant = is_string( $assistant_id_raw ) && 
-			( 0 === strpos( $assistant_id_raw, 'unified_team_' ) || 0 === strpos( $assistant_id_raw, 'team_' ) );
+			preg_match( '/^(unified_team_\d+|team_\d+_member_\d+)$/', $assistant_id_raw );
 		
 		// Sanitize assistant_id based on type.
 		if ( $is_virtual_team_assistant ) {

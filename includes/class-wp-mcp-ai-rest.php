@@ -3644,8 +3644,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'has_session_key'        => isset( $payload['sessionKey'] ),
 					'has_cost'               => isset( $payload['cost'] ),
 					'payload_keys'           => array_keys( $payload ),
-					'data_has_choices'       => isset( $payload['data']['choices'] ),
-					'data_has_message'       => isset( $payload['data']['choices'][0]['message'] ),
+					'data_has_choices'       => isset( $payload['data']['choices'] ) && is_array( $payload['data']['choices'] ) && count( $payload['data']['choices'] ) > 0,
+					'data_has_message'       => isset( $payload['data']['choices'] ) && is_array( $payload['data']['choices'] ) && count( $payload['data']['choices'] ) > 0 && isset( $payload['data']['choices'][0]['message'] ),
 					'endpoint'               => $request->get_route(),
 				)
 			);
