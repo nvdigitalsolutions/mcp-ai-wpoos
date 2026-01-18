@@ -5201,25 +5201,34 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$provider = isset( $settings['provider'] ) ? $settings['provider'] : 'openai';
 			}
 
-			// Make a simplified AI request for this member.
-			$ai_request_options = array(
-				'messages'       => $messages,
-				'provider'       => $provider,
-				'model'          => $model,
-				'system_prompt'  => isset( $profession_config['system_prompt'] ) ? $profession_config['system_prompt'] : '',
-				'tools'          => isset( $profession_config['tools'] ) ? $profession_config['tools'] : array(),
-				'max_iterations' => 1, // Single turn for team members.
+			// Prepare options for create_chat_completion.
+			$options = array(
+				'provider' => $provider,
+				'model'    => $model,
 			);
 
-			// Get AI provider instance.
-			$ai_provider = $this->get_ai_provider_instance( $provider );
-			if ( is_wp_error( $ai_provider ) ) {
-				return $ai_provider;
+			// Add system prompt if available.
+			if ( ! empty( $profession_config['system_prompt'] ) ) {
+				// Prepend system message to messages array.
+				$messages = array_merge(
+					array(
+						array(
+							'role'    => 'system',
+							'content' => $profession_config['system_prompt'],
+						),
+					),
+					$messages
+				);
 			}
 
-			// Make the AI request.
+			// Add tools if available.
+			if ( ! empty( $profession_config['tools'] ) && is_array( $profession_config['tools'] ) ) {
+				$options['tools'] = $profession_config['tools'];
+			}
+
+			// Make the AI request using the router.
 			try {
-				$response = $ai_provider->request( $ai_request_options );
+				$response = $this->client->create_chat_completion( $messages, $options );
 
 				if ( is_wp_error( $response ) ) {
 					return $response;
