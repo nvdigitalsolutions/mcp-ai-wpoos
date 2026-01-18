@@ -521,18 +521,60 @@ class WP_MCP_AI_Tool_Recommendations {
 	public static function get_all_recommendations() {
 		$recommendations = array();
 
-		// Get all tools from registry.
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		if ( $registry ) {
-			$registry->init();
-			$registered_tools = $registry->get_tools();
+		// Get all tools from tool categories first.
+		// This ensures preset application works for all defined tools.
+		$tool_categories = self::get_tool_categories();
+		$recommendations = self::process_tools_from_categories( $tool_categories );
 
-			foreach ( $registered_tools as $tool ) {
-				if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
-					$slug = $tool->get_slug();
-					if ( ! empty( $slug ) ) {
-						$recommendations[ $slug ] = self::get_tool_recommendation( $slug );
+		// Also get tools from registry to catch any dynamically registered tools.
+		$recommendations = self::add_tools_from_registry( $recommendations );
+
+		return $recommendations;
+	}
+
+	/**
+	 * Process tools from categories and generate recommendations.
+	 *
+	 * @param array $tool_categories Tool categories array.
+	 * @return array Recommendations array.
+	 */
+	private static function process_tools_from_categories( $tool_categories ) {
+		$recommendations = array();
+
+		foreach ( $tool_categories as $category => $data ) {
+			if ( isset( $data['tools'] ) && is_array( $data['tools'] ) ) {
+				foreach ( $data['tools'] as $tool_slug ) {
+					if ( ! empty( $tool_slug ) ) {
+						$recommendations[ $tool_slug ] = self::get_tool_recommendation( $tool_slug );
 					}
+				}
+			}
+		}
+
+		return $recommendations;
+	}
+
+	/**
+	 * Add dynamically registered tools from registry to recommendations.
+	 *
+	 * @param array $recommendations Existing recommendations array.
+	 * @return array Updated recommendations array.
+	 */
+	private static function add_tools_from_registry( $recommendations ) {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		if ( ! $registry ) {
+			return $recommendations;
+		}
+
+		$registry->init();
+		$registered_tools = $registry->get_tools();
+
+		foreach ( $registered_tools as $tool ) {
+			if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
+				$slug = $tool->get_slug();
+				if ( ! empty( $slug ) && ! isset( $recommendations[ $slug ] ) ) {
+					// Only add if not already in recommendations from categories.
+					$recommendations[ $slug ] = self::get_tool_recommendation( $slug );
 				}
 			}
 		}
