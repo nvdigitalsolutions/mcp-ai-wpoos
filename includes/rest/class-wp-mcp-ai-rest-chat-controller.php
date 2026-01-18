@@ -761,11 +761,27 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		$main_controller->hydrate_request_body_params( $request );
 
-		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
-		$session_key  = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
-		$messages     = $request->get_param( 'messages' );
+		// Get assistant_id as raw value first to check for virtual team IDs.
+		$assistant_id_raw = $request->get_param( 'assistant_id' );
+		$session_key      = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
+		$messages         = $request->get_param( 'messages' );
 
-		if ( ! $assistant_id ) {
+		// Check if this is a virtual team assistant ID (unified_team_* or team_*_member_*).
+		// These are constructed by the Test Team interface and don't correspond to real assistant posts.
+		$is_virtual_team_assistant = is_string( $assistant_id_raw ) && 
+			( 0 === strpos( $assistant_id_raw, 'unified_team_' ) || 0 === strpos( $assistant_id_raw, 'team_' ) );
+		
+		// Sanitize assistant_id based on type.
+		if ( $is_virtual_team_assistant ) {
+			// Keep as string for virtual team IDs.
+			$assistant_id = sanitize_text_field( $assistant_id_raw );
+		} else {
+			// Convert to integer for real assistant post IDs.
+			$assistant_id = absint( $assistant_id_raw );
+		}
+
+		// Validate assistant_id is provided.
+		if ( ! $assistant_id || ( is_string( $assistant_id ) && '' === trim( $assistant_id ) ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_missing_assistant',
 				__( 'Assistant ID is required to save a transcript.', 'mcp-ai-wpoos' ),
@@ -789,12 +805,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		// Validate assistant access.
-		// Allow virtual team assistant IDs (unified_team_* or team_*_member_*) for team testing.
-		// These are constructed by the Test Team interface and don't correspond to real assistant posts.
-		$is_virtual_team_assistant = is_string( $assistant_id ) && 
-			( 0 === strpos( $assistant_id, 'unified_team_' ) || 0 === strpos( $assistant_id, 'team_' ) );
-		
+		// Validate assistant access for real assistant IDs only.
 		if ( ! $is_virtual_team_assistant ) {
 			// For real assistant IDs, validate that the post exists and user has access.
 			$assistant_post = $main_controller->validate_assistant_access( $assistant_id );
