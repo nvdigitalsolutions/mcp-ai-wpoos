@@ -176,7 +176,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 								// Get orchestration settings for multi-agent coordination.
 								$orchestration_mode  = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
 								$result_aggregation  = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
-								$multi_agent_enabled = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
+								$multi_agent_enabled = class_exists( 'WP_MCP_AI_Settings_Registry' ) ? WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true ) : true;
 
 								$member_count = is_array( $team_members ) ? count( $team_members ) : 0;
 
@@ -200,9 +200,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 										if ( $member && 'mcp_ai_profession' === $member->post_type ) {
 											$member_names[] = $member->post_title;
 
-											// Get profession metadata.
-											$category  = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
-											$expertise = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
+											// Get profession metadata (only if Profession CPT class is loaded).
+											$category  = '';
+											$expertise = array();
+											if ( class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+												$category  = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
+												$expertise = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
+											}
 
 											$category_labels = array(
 												'advisory'   => __( 'Advisory/Consulting', 'mcp-ai-wpoos' ),
