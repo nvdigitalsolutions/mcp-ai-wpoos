@@ -150,17 +150,18 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		// Convert expertise to lowercase for matching.
 		$expertise_lower = array_map( 'strtolower', $expertise );
 
+		// Check for critic keywords FIRST (prioritize validation/QA roles).
+		// QA and quality assurance roles are fundamentally about validation and critique.
+		if ( $this->has_keywords( $title, array( 'qa engineer', 'quality assurance', 'quality engineer', 'editor', 'reviewer', 'qa', 'quality', 'validator', 'inspector', 'auditor', 'tester' ) ) ||
+			$this->has_keywords( $expertise_lower, array( 'quality assurance', 'editing', 'reviewing', 'validation', 'inspection', 'testing', 'qa' ) ) ) {
+			return 'critic';
+		}
+
 		// Check for planner keywords.
 		if ( $this->has_keywords( $title, array( 'project manager', 'coordinator', 'planner', 'strategist', 'product manager' ) ) ||
 			$this->has_keywords( $expertise_lower, array( 'project management', 'coordination', 'planning', 'strategy' ) ) ||
 			'advisory' === $category ) {
 			return 'planner';
-		}
-
-		// Check for critic keywords.
-		if ( $this->has_keywords( $title, array( 'editor', 'reviewer', 'qa', 'quality', 'validator', 'inspector', 'auditor' ) ) ||
-			$this->has_keywords( $expertise_lower, array( 'editing', 'reviewing', 'quality assurance', 'validation', 'inspection' ) ) ) {
-			return 'critic';
 		}
 
 		// Check for specialist categories.
