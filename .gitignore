@@ -68,6 +68,34 @@ composer.phar
 /vendor/*/*/.gitattributes
 /vendor/*/*/*/.gitattributes
 
+# Pro addon node_modules - Document Generation Toolkit
+# Ignore all node_modules in pro addon by default
+/addons/pro/node_modules/*
+
+# But keep document generation dependencies (negation)
+# These are needed at runtime for PDF/Word/Excel generation tools
+!/addons/pro/node_modules/pdfkit/
+!/addons/pro/node_modules/docx/
+!/addons/pro/node_modules/exceljs/
+
+# Keep their direct dependencies as well
+!/addons/pro/node_modules/png-js/
+!/addons/pro/node_modules/fontkit/
+!/addons/pro/node_modules/linebreak/
+!/addons/pro/node_modules/@xmldom/
+!/addons/pro/node_modules/archiver/
+!/addons/pro/node_modules/jszip/
+
+# Exclude test and build files from node_modules packages
+/addons/pro/node_modules/*/test/
+/addons/pro/node_modules/*/tests/
+/addons/pro/node_modules/*/.github/
+/addons/pro/node_modules/*/docs/
+/addons/pro/node_modules/*/examples/
+/addons/pro/node_modules/*/*.md
+!/addons/pro/node_modules/*/README.md
+!/addons/pro/node_modules/*/LICENSE*
+
 # Minified assets (generated during build)
 *.min.css
 *.min.js
