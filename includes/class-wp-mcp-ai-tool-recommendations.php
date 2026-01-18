@@ -521,7 +521,20 @@ class WP_MCP_AI_Tool_Recommendations {
 	public static function get_all_recommendations() {
 		$recommendations = array();
 
-		// Get all tools from registry.
+		// Get all tools from tool categories first.
+		// This ensures preset application works for all defined tools.
+		$tool_categories = self::get_tool_categories();
+		foreach ( $tool_categories as $category => $data ) {
+			if ( isset( $data['tools'] ) && is_array( $data['tools'] ) ) {
+				foreach ( $data['tools'] as $tool_slug ) {
+					if ( ! empty( $tool_slug ) ) {
+						$recommendations[ $tool_slug ] = self::get_tool_recommendation( $tool_slug );
+					}
+				}
+			}
+		}
+
+		// Also get tools from registry to catch any dynamically registered tools.
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		if ( $registry ) {
 			$registry->init();
@@ -530,7 +543,8 @@ class WP_MCP_AI_Tool_Recommendations {
 			foreach ( $registered_tools as $tool ) {
 				if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
 					$slug = $tool->get_slug();
-					if ( ! empty( $slug ) ) {
+					if ( ! empty( $slug ) && ! isset( $recommendations[ $slug ] ) ) {
+						// Only add if not already in recommendations from categories.
 						$recommendations[ $slug ] = self::get_tool_recommendation( $slug );
 					}
 				}
