@@ -19,6 +19,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  */
 class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
 
+	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -196,7 +198,10 @@ class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		$result = array_merge(
-			array( 'summary' => $summary ),
+			array(
+				'message' => $summary,
+				'summary' => $summary,
+			),
 			$result
 		);
 
