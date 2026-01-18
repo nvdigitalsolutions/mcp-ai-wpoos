@@ -1043,17 +1043,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					<div class="charts-row">
 						<div class="chart-container chart-third">
 							<h5><?php esc_html_e( 'Workforce by Role', 'mcp-ai-wpoos' ); ?></h5>
-							<canvas id="wp-mcp-ai-overview-workforce-chart" height="200"></canvas>
+							<canvas id="wp-mcp-ai-overview-workforce-chart" height="250"></canvas>
 						</div>
 						
 						<div class="chart-container chart-third">
 							<h5><?php esc_html_e( 'Tool Distribution', 'mcp-ai-wpoos' ); ?></h5>
-							<canvas id="wp-mcp-ai-overview-tools-chart" height="200"></canvas>
+							<canvas id="wp-mcp-ai-overview-tools-chart" height="250"></canvas>
 						</div>
 						
 						<div class="chart-container chart-third">
 							<h5><?php esc_html_e( 'System Capacity', 'mcp-ai-wpoos' ); ?></h5>
-							<canvas id="wp-mcp-ai-overview-capacity-chart" height="200"></canvas>
+							<canvas id="wp-mcp-ai-overview-capacity-chart" height="250"></canvas>
 						</div>
 					</div>
 				</div>
@@ -1809,7 +1809,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						<p class="chart-description">
 							<?php esc_html_e( 'Distribution of configured AI professions by their assigned agent role type.', 'mcp-ai-wpoos' ); ?>
 						</p>
-						<canvas id="wp-mcp-ai-agent-role-distribution-chart" height="250"></canvas>
+						<canvas id="wp-mcp-ai-agent-role-distribution-chart" height="300"></canvas>
 					</div>
 					
 					<div class="chart-container chart-half">
@@ -1817,7 +1817,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						<p class="chart-description">
 							<?php esc_html_e( 'Maximum token allocation per request based on system resource tier.', 'mcp-ai-wpoos' ); ?>
 						</p>
-						<canvas id="wp-mcp-ai-workload-tier-chart" height="250"></canvas>
+						<canvas id="wp-mcp-ai-workload-tier-chart" height="300"></canvas>
 					</div>
 				</div>
 			</div>
@@ -2223,6 +2223,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					border: 1px solid #e0e0e0;
 					border-radius: 4px;
 					padding: 15px;
+					position: relative;
+				}
+				
+				.chart-container canvas {
+					max-height: 300px;
+				}
+				
+				.chart-container.chart-half {
+					min-height: 300px;
+				}
+				
+				.chart-container.chart-third {
+					min-height: 250px;
 				}
 				
 				.chart-container h5 {
@@ -2592,7 +2605,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							<p class="chart-description">
 								<?php esc_html_e( 'Breakdown of your AI workforce by assigned agent role type.', 'mcp-ai-wpoos' ); ?>
 							</p>
-							<canvas id="wp-mcp-ai-profession-role-chart" height="250"></canvas>
+							<canvas id="wp-mcp-ai-profession-role-chart" height="300"></canvas>
 						</div>
 						
 						<div class="chart-container chart-half">
@@ -2600,7 +2613,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							<p class="chart-description">
 								<?php esc_html_e( 'Number of professions by tool count assigned to them.', 'mcp-ai-wpoos' ); ?>
 							</p>
-							<canvas id="wp-mcp-ai-profession-tools-chart" height="250"></canvas>
+							<canvas id="wp-mcp-ai-profession-tools-chart" height="300"></canvas>
 						</div>
 					</div>
 				</div>
