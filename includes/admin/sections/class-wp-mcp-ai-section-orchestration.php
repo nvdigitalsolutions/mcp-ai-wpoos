@@ -77,6 +77,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'    => 'html',
 					'content' => $this->get_health_status_content(),
 				),
+				'load_monitoring'                 => array(
+					'type'    => 'html',
+					'content' => $this->get_load_monitoring_content(),
+				),
+				'performance_statistics'          => array(
+					'type'    => 'html',
+					'content' => $this->get_performance_statistics_content(),
+				),
 				'configuration_presets'           => array(
 					'type'    => 'html',
 					'content' => $this->get_presets_content(),
@@ -571,6 +579,356 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 				// Return safe fallback.
 				return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Health status temporarily unavailable.', 'mcp-ai-wpoos' ) . '</p></div>';
+			}
+		}
+
+		/**
+		 * Get load monitoring content HTML.
+		 *
+		 * @return string
+		 */
+		private function get_load_monitoring_content() {
+			try {
+				// Check if Load Monitor is available.
+				if ( ! class_exists( 'WP_MCP_AI_Tool_Load_Monitor' ) ) {
+					return '<div class="notice notice-info inline"><p>' . esc_html__( 'Load monitoring not available. Phase 2.1 implementation required.', 'mcp-ai-wpoos' ) . '</p></div>';
+				}
+
+				$monitor = new WP_MCP_AI_Tool_Load_Monitor();
+				$system_metrics = $monitor->get_system_load_metrics();
+
+				ob_start();
+				?>
+				<!-- Load Monitoring Dashboard -->
+				<div class="wp-mcp-ai-load-monitoring">
+					<h2>
+						<?php esc_html_e( 'Load Monitoring & Capacity', 'mcp-ai-wpoos' ); ?>
+						<span class="dashicons dashicons-chart-line" style="font-size: 24px; vertical-align: middle;"></span>
+					</h2>
+					<p class="description">
+						<?php esc_html_e( 'Real-time tool execution load monitored via Little\'s Law (L = λ × W). Capacity-aware routing prevents system overload.', 'mcp-ai-wpoos' ); ?>
+					</p>
+
+					<!-- System Health Overview -->
+					<div class="load-system-health">
+						<div class="health-card health-<?php echo esc_attr( $system_metrics['health_status'] ); ?>">
+							<h3><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></h3>
+							<div class="health-indicator">
+								<span class="health-icon dashicons dashicons-<?php echo esc_attr( $this->get_health_icon( $system_metrics['health_status'] ) ); ?>"></span>
+								<span class="health-label"><?php echo esc_html( ucfirst( $system_metrics['health_status'] ) ); ?></span>
+							</div>
+						</div>
+
+						<div class="capacity-card">
+							<h3><?php esc_html_e( 'Available Capacity', 'mcp-ai-wpoos' ); ?></h3>
+							<div class="capacity-value">
+								<?php echo esc_html( number_format( $system_metrics['available_capacity'], 1 ) ); ?>%
+							</div>
+							<div class="capacity-bar">
+								<div class="capacity-fill" style="width: <?php echo esc_attr( $system_metrics['available_capacity'] ); ?>%;"></div>
+							</div>
+						</div>
+
+						<div class="utilization-card">
+							<h3><?php esc_html_e( 'Utilization', 'mcp-ai-wpoos' ); ?></h3>
+							<div class="utilization-value">
+								<?php echo esc_html( number_format( $system_metrics['overall_utilization'] * 100, 1 ) ); ?>%
+							</div>
+						</div>
+
+						<div class="tools-card">
+							<h3><?php esc_html_e( 'Active Tools', 'mcp-ai-wpoos' ); ?></h3>
+							<div class="tools-value">
+								<?php echo esc_html( $system_metrics['active_tools'] ); ?>
+							</div>
+						</div>
+					</div>
+
+					<!-- Top Tools by Load -->
+					<?php if ( ! empty( $system_metrics['top_tools'] ) ) : ?>
+					<div class="top-tools-section">
+						<h3><?php esc_html_e( 'Top Tools by Utilization', 'mcp-ai-wpoos' ); ?></h3>
+						<table class="wp-list-table widefat fixed striped">
+							<thead>
+								<tr>
+									<th><?php esc_html_e( 'Tool', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Arrival Rate (λ)', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Service Time (W)', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Queue Length (L)', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Utilization', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Capacity', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'SLA Tier', 'mcp-ai-wpoos' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php
+								$count = 0;
+								foreach ( $system_metrics['top_tools'] as $tool_slug => $metrics ) :
+									if ( ++$count > 10 ) {
+										break;
+									}
+									$utilization_pct = $metrics['utilization'] * 100;
+									$utilization_class = $utilization_pct > 85 ? 'critical' : ( $utilization_pct > 70 ? 'warning' : 'good' );
+									?>
+									<tr>
+										<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
+										<td><?php echo esc_html( number_format( $metrics['arrival_rate'], 3 ) ); ?>/s</td>
+										<td><?php echo esc_html( number_format( $metrics['service_time'], 2 ) ); ?>s</td>
+										<td><?php echo esc_html( number_format( $metrics['queue_length'], 2 ) ); ?></td>
+										<td class="utilization-<?php echo esc_attr( $utilization_class ); ?>">
+											<?php echo esc_html( number_format( $utilization_pct, 1 ) ); ?>%
+										</td>
+										<td>
+											<span class="capacity-score" style="color: <?php echo $metrics['capacity_score'] > 70 ? '#46b450' : ( $metrics['capacity_score'] > 30 ? '#f0b849' : '#dc3232' ); ?>;">
+												<?php echo esc_html( number_format( $metrics['capacity_score'], 0 ) ); ?>
+											</span>
+										</td>
+										<td>
+											<span class="sla-tier sla-<?php echo esc_attr( $metrics['sla_tier'] ); ?>">
+												<?php echo esc_html( ucfirst( str_replace( '_', ' ', $metrics['sla_tier'] ) ) ); ?>
+											</span>
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+					<?php endif; ?>
+
+					<!-- Recommendations -->
+					<?php if ( ! empty( $system_metrics['recommendations'] ) ) : ?>
+					<div class="recommendations-section">
+						<h3><?php esc_html_e( 'Recommendations', 'mcp-ai-wpoos' ); ?></h3>
+						<ul class="recommendations-list">
+							<?php foreach ( $system_metrics['recommendations'] as $recommendation ) : ?>
+								<li><?php echo esc_html( $recommendation ); ?></li>
+							<?php endforeach; ?>
+						</ul>
+					</div>
+					<?php endif; ?>
+				</div>
+
+				<style>
+					.wp-mcp-ai-load-monitoring {
+						background: #fff;
+						padding: 20px;
+						margin: 20px 0;
+						border: 1px solid #ccd0d4;
+						box-shadow: 0 1px 1px rgba(0,0,0,.04);
+					}
+					.load-system-health {
+						display: grid;
+						grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+						gap: 15px;
+						margin: 20px 0;
+					}
+					.health-card, .capacity-card, .utilization-card, .tools-card {
+						background: #f8f9fa;
+						padding: 20px;
+						border-radius: 8px;
+						text-align: center;
+					}
+					.health-card h3, .capacity-card h3, .utilization-card h3, .tools-card h3 {
+						margin: 0 0 15px;
+						font-size: 14px;
+						color: #666;
+						text-transform: uppercase;
+					}
+					.health-indicator {
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						gap: 10px;
+					}
+					.health-icon {
+						font-size: 32px;
+					}
+					.health-label {
+						font-size: 24px;
+						font-weight: bold;
+					}
+					.health-excellent .health-icon, .health-excellent .health-label { color: #46b450; }
+					.health-good .health-icon, .health-good .health-label { color: #46b450; }
+					.health-warning .health-icon, .health-warning .health-label { color: #f0b849; }
+					.health-critical .health-icon, .health-critical .health-label { color: #dc3232; }
+					.capacity-value, .utilization-value, .tools-value {
+						font-size: 36px;
+						font-weight: bold;
+						color: #2271b1;
+						margin: 10px 0;
+					}
+					.capacity-bar {
+						height: 12px;
+						background: #e0e0e0;
+						border-radius: 6px;
+						overflow: hidden;
+						margin-top: 10px;
+					}
+					.capacity-fill {
+						height: 100%;
+						background: linear-gradient(90deg, #46b450, #2271b1);
+						transition: width 0.3s ease;
+					}
+					.top-tools-section {
+						margin: 30px 0;
+					}
+					.utilization-good { color: #46b450; }
+					.utilization-warning { color: #f0b849; }
+					.utilization-critical { color: #dc3232; font-weight: bold; }
+					.sla-tier {
+						display: inline-block;
+						padding: 3px 8px;
+						border-radius: 3px;
+						font-size: 11px;
+						font-weight: 600;
+						text-transform: uppercase;
+					}
+					.sla-realtime { background: #e7f5ff; color: #0c5aa7; }
+					.sla-near_realtime { background: #fff3cd; color: #856404; }
+					.sla-batch { background: #f0f0f0; color: #666; }
+					.recommendations-section {
+						margin: 30px 0;
+						background: #fff3cd;
+						padding: 15px;
+						border-left: 4px solid #f0b849;
+						border-radius: 4px;
+					}
+					.recommendations-list {
+						margin: 10px 0 0 20px;
+					}
+					.recommendations-list li {
+						margin: 5px 0;
+					}
+				</style>
+				<?php
+				return ob_get_clean();
+
+			} catch ( Exception $e ) {
+				// Log error.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						'Load monitoring rendering failed: ' . $e->getMessage(),
+						array(
+							'component' => 'orchestration_section',
+							'method'    => 'get_load_monitoring_content',
+						)
+					);
+				}
+
+				return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Load monitoring temporarily unavailable.', 'mcp-ai-wpoos' ) . '</p></div>';
+			}
+		}
+
+		/**
+		 * Get performance statistics content HTML.
+		 *
+		 * @return string
+		 */
+		private function get_performance_statistics_content() {
+			try {
+				// Check if Load Monitor is available.
+				if ( ! class_exists( 'WP_MCP_AI_Tool_Load_Monitor' ) ) {
+					return '<div class="notice notice-info inline"><p>' . esc_html__( 'Performance statistics not available.', 'mcp-ai-wpoos' ) . '</p></div>';
+				}
+
+				$monitor = new WP_MCP_AI_Tool_Load_Monitor();
+				$system_metrics = $monitor->get_system_load_metrics();
+
+				// Get performance stats for top 5 tools.
+				$top_tools = array_slice( $system_metrics['top_tools'], 0, 5, true );
+				$stats = array();
+				
+				foreach ( $top_tools as $tool_slug => $metrics ) {
+					$stats[ $tool_slug ] = $monitor->get_tool_performance_stats( $tool_slug, 24 );
+				}
+
+				ob_start();
+				?>
+				<!-- Performance Statistics -->
+				<div class="wp-mcp-ai-performance-stats">
+					<h2>
+						<?php esc_html_e( 'Performance Statistics', 'mcp-ai-wpoos' ); ?>
+						<span class="dashicons dashicons-chart-bar" style="font-size: 24px; vertical-align: middle;"></span>
+					</h2>
+					<p class="description">
+						<?php esc_html_e( 'P50/P95/P99 latency metrics and success rates for the last 24 hours.', 'mcp-ai-wpoos' ); ?>
+					</p>
+
+					<?php if ( ! empty( $stats ) ) : ?>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Tool', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Total Executions', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Success Rate', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Avg Duration', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'P50 Latency', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'P95 Latency', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'P99 Latency', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $stats as $tool_slug => $tool_stats ) : ?>
+								<tr>
+									<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
+									<td><?php echo esc_html( number_format( $tool_stats['total_count'] ) ); ?></td>
+									<td>
+										<span style="color: <?php echo $tool_stats['success_rate'] > 95 ? '#46b450' : ( $tool_stats['success_rate'] > 80 ? '#f0b849' : '#dc3232' ); ?>;">
+											<?php echo esc_html( number_format( $tool_stats['success_rate'], 1 ) ); ?>%
+										</span>
+									</td>
+									<td><?php echo esc_html( number_format( $tool_stats['avg_duration'], 3 ) ); ?>s</td>
+									<td><?php echo esc_html( number_format( $tool_stats['p50_latency'], 3 ) ); ?>s</td>
+									<td><?php echo esc_html( number_format( $tool_stats['p95_latency'], 3 ) ); ?>s</td>
+									<td><?php echo esc_html( number_format( $tool_stats['p99_latency'], 3 ) ); ?>s</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+
+					<div class="performance-explanation" style="margin-top: 20px; padding: 15px; background: #f0f6fc; border-left: 4px solid #2271b1; border-radius: 4px;">
+						<h4 style="margin-top: 0;"><?php esc_html_e( 'Understanding Latency Metrics', 'mcp-ai-wpoos' ); ?></h4>
+						<ul style="margin: 10px 0 0 20px;">
+							<li><strong>P50 (Median):</strong> <?php esc_html_e( '50% of executions completed faster than this time', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>P95:</strong> <?php esc_html_e( '95% of executions completed faster (acceptable user experience)', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>P99:</strong> <?php esc_html_e( '99% of executions completed faster (outlier detection)', 'mcp-ai-wpoos' ); ?></li>
+						</ul>
+					</div>
+					<?php else : ?>
+					<div class="notice notice-info inline">
+						<p><?php esc_html_e( 'No performance data available yet. Statistics will appear after tool executions.', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+					<?php endif; ?>
+				</div>
+
+				<style>
+					.wp-mcp-ai-performance-stats {
+						background: #fff;
+						padding: 20px;
+						margin: 20px 0;
+						border: 1px solid #ccd0d4;
+						box-shadow: 0 1px 1px rgba(0,0,0,.04);
+					}
+					.wp-mcp-ai-performance-stats table {
+						margin-top: 20px;
+					}
+				</style>
+				<?php
+				return ob_get_clean();
+
+			} catch ( Exception $e ) {
+				// Log error.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						'Performance statistics rendering failed: ' . $e->getMessage(),
+						array(
+							'component' => 'orchestration_section',
+							'method'    => 'get_performance_statistics_content',
+						)
+					);
+				}
+
+				return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Performance statistics temporarily unavailable.', 'mcp-ai-wpoos' ) . '</p></div>';
 			}
 		}
 
