@@ -73,27 +73,15 @@ class WP_MCP_AI_Admin_Team_Settings {
 		}
 
 		// Get current settings.
-		$default_provider            = get_option( 'wp_mcp_ai_team_default_provider', '' );
-		$default_model               = get_option( 'wp_mcp_ai_team_default_model', '' );
-		$default_temperature         = get_option( 'wp_mcp_ai_team_default_temperature', 0.7 );
-		$default_driver_assistant_id = get_option( 'wp_mcp_ai_team_default_driver_assistant', 0 );
+		$default_provider    = get_option( 'wp_mcp_ai_team_default_provider', '' );
+		$default_model       = get_option( 'wp_mcp_ai_team_default_model', '' );
+		$default_temperature = get_option( 'wp_mcp_ai_team_default_temperature', 0.7 );
 
 		// Get available providers.
 		$available_providers = array();
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
 		}
-
-		// Get all published assistants.
-		$assistants = get_posts(
-			array(
-				'post_type'      => 'mcp_ai_assistant',
-				'posts_per_page' => -1,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-				'post_status'    => 'publish',
-			)
-		);
 
 		// Get post type for links.
 		$post_type = class_exists( 'WP_MCP_AI_Team_CPT' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
@@ -117,39 +105,6 @@ class WP_MCP_AI_Admin_Team_Settings {
 				
 				<table class="form-table" role="presentation">
 					<tbody>
-						<tr>
-							<th scope="row">
-								<label for="wp_mcp_ai_team_default_driver_assistant">
-									<?php esc_html_e( 'Default Driver Assistant', 'mcp-ai-wpoos' ); ?>
-								</label>
-							</th>
-							<td>
-								<?php if ( empty( $assistants ) ) : ?>
-									<p class="description" style="color: #d63638;">
-										<?php
-										printf(
-											/* translators: %s: URL to create assistant */
-											esc_html__( 'No assistants found. Please %s to enable team testing.', 'mcp-ai-wpoos' ),
-											'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_assistant' ) ) . '">' . esc_html__( 'create an assistant', 'mcp-ai-wpoos' ) . '</a>'
-										);
-										?>
-									</p>
-								<?php else : ?>
-									<select name="wp_mcp_ai_team_default_driver_assistant" id="wp_mcp_ai_team_default_driver_assistant" class="regular-text">
-										<option value=""><?php esc_html_e( '-- No Default (Must set per team) --', 'mcp-ai-wpoos' ); ?></option>
-										<?php foreach ( $assistants as $assistant ) : ?>
-											<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $default_driver_assistant_id, $assistant->ID ); ?>>
-												<?php echo esc_html( $assistant->post_title ); ?>
-											</option>
-										<?php endforeach; ?>
-									</select>
-									<p class="description">
-										<?php esc_html_e( 'Optional: The driver assistant ID can be used for tracking and logging team coordination activities.', 'mcp-ai-wpoos' ); ?>
-									</p>
-								<?php endif; ?>
-							</td>
-						</tr>
-
 						<tr>
 							<th scope="row">
 								<label for="wp_mcp_ai_team_default_provider">
@@ -240,11 +195,6 @@ class WP_MCP_AI_Admin_Team_Settings {
 	 * Save settings.
 	 */
 	private function save_settings() {
-		// Sanitize and save driver assistant.
-		if ( isset( $_POST['wp_mcp_ai_team_default_driver_assistant'] ) ) {
-			update_option( 'wp_mcp_ai_team_default_driver_assistant', absint( wp_unslash( $_POST['wp_mcp_ai_team_default_driver_assistant'] ) ) );
-		}
-
 		// Sanitize and save provider.
 		if ( isset( $_POST['wp_mcp_ai_team_default_provider'] ) ) {
 			update_option( 'wp_mcp_ai_team_default_provider', sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_team_default_provider'] ) ) );
