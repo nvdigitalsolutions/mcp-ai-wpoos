@@ -77,15 +77,13 @@ class WP_MCP_AI_Chart_JS_Helper {
 			return;
 		}
 
-		// Check if we're on the token manager tab.
+		// Check if we're on the token manager or orchestration tab.
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		// Only enqueue on token_manager tab (empty tab means overview, not token_manager).
-		if ( 'token_manager' !== $active_tab ) {
-			return;
+		// Enqueue on token_manager and orchestration tabs.
+		if ( 'token_manager' === $active_tab || 'orchestration' === $active_tab ) {
+			self::enqueue_chart_js();
 		}
-
-		self::enqueue_chart_js();
 	}
 
 	/**
