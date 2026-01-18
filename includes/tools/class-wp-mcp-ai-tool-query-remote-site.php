@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Allows AI assistants to query other WordPress sites running wp-mcp-ai.
  */
 class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */

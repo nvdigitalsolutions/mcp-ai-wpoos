@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * automatic failover and retry logic for resilient distributed compute.
  */
 class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
