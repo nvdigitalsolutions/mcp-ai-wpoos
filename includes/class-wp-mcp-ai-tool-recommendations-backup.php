@@ -50,48 +50,35 @@ class WP_MCP_AI_Tool_Recommendations {
 
 	/**
 	 * Tool categories and their characteristics
-	 * 
-	 * Updated 2026-01-18: Comprehensive coverage of all 202 tools with 2026 industry standards
-	 * Token multipliers based on GPT-4o/4o-mini, Claude 3.5, and Gemini 2.0 capabilities
 	 *
 	 * @var array
 	 */
 	protected static $tool_categories = array(
 		// High resource tools - complex operations, large outputs.
-		// 2026 Standard: 2.5x multiplier (was 2.0x) - AI models now handle more context efficiently
 		'high_resource'      => array(
-			'multiplier'      => 2.5,
+			'multiplier'      => 2.0,
 			'preferred_model' => 'gpt-4o',
 			'description'     => 'Complex operations requiring extensive processing and large outputs',
 			'tools'           => array(
 				'run_crawl4ai_job',
-				'run_crawl4ai_job_validated',
 				'submit_document_prompt',
 				'search_content',
-				'search_content_validated',
 				'web_search',
-				'web_search_validated',
-				'deep_research',
 				'query_mesh_intelligent',
-				'google_analytics_report',
-				'quickbooks_report',
+				'get_google_analytics_report',
+				'get_quickbooks_report',
 				'reliefweb_reports',
 				'get_site_summary',
-				'semantic_content_search',
-				'batch_embed_content',
-				'pro_excel',
 			),
 		),
 
 		// Medium resource tools - moderate complexity.
-		// 2026 Standard: 1.7x multiplier (was 1.5x) - Better model efficiency allows slight increase
 		'medium_resource'    => array(
-			'multiplier'      => 1.7,
+			'multiplier'      => 1.5,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'Moderate complexity operations with medium-sized outputs',
 			'tools'           => array(
 				'get_recent_posts',
-				'get_recent_posts_validated',
 				'get_woo_products',
 				'get_woo_recent_orders',
 				'get_jetengine_items',
@@ -101,32 +88,22 @@ class WP_MCP_AI_Tool_Recommendations {
 				'get_site_health',
 				'check_site_security',
 				'get_system_logs',
-				'get_system_logs_validated',
 				'get_facebook_instagram_insights',
 				'get_linkedin_insights',
 				'get_tiktok_insights',
 				'get_google_business_insights',
 				'search_gmail',
-				'search_drive',
 				'query_remote_site',
-				'woo_orders',
-				'woo_products',
-				'get_jetformbuilder_submissions',
-				'list_openai_files',
-				'get_openai_file_details',
-				'analyze_file_suitability',
 			),
 		),
 
 		// Low resource tools - simple operations.
-		// 2026 Standard: 1.0x multiplier (unchanged) - Simple operations remain efficient
 		'low_resource'       => array(
 			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'Simple operations with minimal token requirements',
 			'tools'           => array(
 				'get_user_info',
-				'get_user_info_validated',
 				'get_update_status',
 				'count_tokens',
 				'get_cron_job',
@@ -136,106 +113,44 @@ class WP_MCP_AI_Tool_Recommendations {
 				'probe_remote_mcp',
 				'get_jetformbuilder_forms',
 				'list_jetengine_routes',
-				'list_jetengine_rest_routes',
 				'crawl4ai_price_lookup',
 				'get_import_duty',
-				'get_all_import_status',
-				'list_all_export_templates',
-				'list_all_import_templates',
-				'list_professions',
-				'get_profession',
-				'get_profession_stats',
-				'profession_stats',
-				'list_available_models',
-				'get_model_information',
-				'list_batches',
-				'get_batch_status',
-				'list_vector_stores',
-				'get_vector_store',
-				'check_video_status',
-				'get_video_metadata',
 			),
 		),
 
 		// Image/Media generation tools - specialized models.
-		// 2026 Standard: 1.8x multiplier (was 1.5x) - More complex image generation workflows
 		'image_generation'   => array(
-			'multiplier'      => 1.8,
+			'multiplier'      => 1.5,
 			'preferred_model' => 'default', // Let assistant handle model selection.
 			'description'     => 'Image and media generation operations',
 			'tools'           => array(
 				'generate_openai_image',
-				'generate_openai_image_validated',
 				'generate_gemini_image',
-				'generate_gemini_image_validated',
-				'generate_cloudflareai_image',
 				'edit_gemini_image',
-				'edit_gemini_image_validated',
-				'edit_openai_image',
-				'create_image_variation',
-				'graphic_editor_plus',
-				'image_base',
-				'generate_image_alt_text',
-				'generate_image_alt_text_validated',
-				'generate_image_caption',
-				'generate_image_caption_validated',
 				'vision_object_localization',
 				'vision_product_search',
-				'vectorize_image',
-				'resize_image',
-				'crop_image',
-				'rotate_image',
-				'convert_image_format',
-				'remove_background',
-			),
-		),
-
-		// Video generation and processing - high complexity.
-		// 2026 Standard: 2.2x multiplier (NEW category)
-		'video_processing'   => array(
-			'multiplier'      => 2.2,
-			'preferred_model' => 'default',
-			'description'     => 'Video generation, analysis, and processing operations',
-			'tools'           => array(
-				'generate_veo_video',
-				'generate_veo_video_validated',
-				'generate_sora_video',
-				'generate_sora_video_validated',
-				'analyze_video',
-				'extract_video_frames',
-				'generate_video_caption',
 			),
 		),
 
 		// Audio/Speech tools.
-		// 2026 Standard: 1.6x multiplier (was 1.5x) - Better audio processing
 		'audio_processing'   => array(
-			'multiplier'      => 1.6,
+			'multiplier'      => 1.5,
 			'preferred_model' => 'default',
 			'description'     => 'Audio processing and speech operations',
 			'tools'           => array(
 				'generate_openai_speech',
-				'generate_openai_speech_validated',
 				'transcribe_openai_audio',
-				'transcribe_openai_audio_validated',
-				'generate_music',
-				'generate_music_validated',
 			),
 		),
 
 		// Content creation tools - need good quality models.
-		// 2026 Standard: 1.8x multiplier (was 1.5x) - More sophisticated content generation
 		'content_creation'   => array(
-			'multiplier'      => 1.8,
+			'multiplier'      => 1.5,
 			'preferred_model' => 'gpt-4o',
 			'description'     => 'Content creation and management operations',
 			'tools'           => array(
 				'save_post',
-				'save_post_validated',
-				'create_post',
-				'create_post_validated',
 				'create_woo_product',
-				'create_woo_product_validated',
 				'create_wpcode_snippet',
 				'post_facebook_instagram',
 				'post_linkedin_update',
@@ -243,43 +158,29 @@ class WP_MCP_AI_Tool_Recommendations {
 				'post_tiktok_video',
 				'send_mailjet_email',
 				'send_group_email',
-				'send_group_email_validated',
-				'newsletter_create_email',
-				'create_term',
-				'update_term',
-				'update_option',
 			),
 		),
 
 		// API/External tools - variable complexity.
-		// 2026 Standard: 1.4x multiplier (was 1.2x) - More complex API integrations
 		'api_operations'     => array(
-			'multiplier'      => 1.4,
+			'multiplier'      => 1.2,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'External API calls and integrations',
 			'tools'           => array(
 				'run_openai_external_action',
 				'invoke_jetengine_route',
-				'jetengine',
-				'elementor',
 				'get_rankmath_seo',
 				'open_openai_logs',
 				'open_openai_usage',
-				'openai_usage_analytics',
 				'create_google_calendar_event',
 				'get_nhc_active_storms',
 				'get_gdacs_events',
 				'get_open_meteo_forecast',
-				'geocode_address',
-				'search_places',
-				'gemini_geospatial_query',
-				'generic_rest',
-				'remote_wp_connection',
+				'get_jetformbuilder_submissions',
 			),
 		),
 
 		// Messaging/Communication tools.
-		// 2026 Standard: 1.0x multiplier (unchanged) - Lightweight operations
 		'messaging'          => array(
 			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
@@ -288,16 +189,10 @@ class WP_MCP_AI_Tool_Recommendations {
 				'schedule_notify_sms',
 				'send_telegram_message',
 				'send_whatsapp_message',
-				'newsletter_add_subscriber',
-				'newsletter_get_emails',
-				'newsletter_get_subscriber_stats',
-				'newsletter_get_subscribers',
-				'newsletter_unsubscribe',
 			),
 		),
 
 		// Security/Auth tools - lightweight but critical.
-		// 2026 Standard: 1.0x multiplier (unchanged)
 		'security_auth'      => array(
 			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
@@ -305,13 +200,10 @@ class WP_MCP_AI_Tool_Recommendations {
 			'tools'           => array(
 				'generate_auth0_token',
 				'generate_simple_jwt_token',
-				'moderate_content',
-				'analyze_comment_content',
 			),
 		),
 
 		// Cache/Performance tools - minimal token usage.
-		// 2026 Standard: 0.8x multiplier (unchanged)
 		'cache_performance'  => array(
 			'multiplier'      => 0.8,
 			'preferred_model' => 'gpt-4o-mini',
@@ -324,26 +216,19 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Scheduling/Automation tools.
-		// 2026 Standard: 1.1x multiplier (was 1.0x) - More complex automation workflows
 		'scheduling'         => array(
-			'multiplier'      => 1.1,
+			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'Scheduling and automation operations',
 			'tools'           => array(
 				'create_cron_job',
-				'create_cron_job_validated',
 				'delete_cron_job',
-				'trigger_all_export',
-				'trigger_all_import',
-				'create_batch',
-				'monitor_batch',
 			),
 		),
 
 		// Dataset/Data operations - HuggingFace and external data sources.
-		// 2026 Standard: 1.5x multiplier (was 1.3x) - Larger dataset operations
 		'dataset_operations' => array(
-			'multiplier'      => 1.5,
+			'multiplier'      => 1.3,
 			'preferred_model' => 'gpt-4o-mini',
 			'description'     => 'Dataset queries and data retrieval from external sources',
 			'tools'           => array(
@@ -358,111 +243,6 @@ class WP_MCP_AI_Tool_Recommendations {
 				'huggingface_dataset_is_valid',
 				'huggingface_dataset_filter',
 				'huggingface_recommended_datasets',
-			),
-		),
-
-		// Agent coordination tools - DeepSeek V4 orchestration (NEW).
-		// 2026 Standard: 2.0x multiplier - Complex multi-agent operations
-		'agent_coordination' => array(
-			'multiplier'      => 2.0,
-			'preferred_model' => 'gpt-4o',
-			'description'     => 'Multi-agent orchestration and coordination operations',
-			'tools'           => array(
-				'create_agent_team',
-				'delegate_to_agent',
-				'aggregate_agent_results',
-				'create_assistant',
-				'create_assistant_validated',
-				'save_profession',
-			),
-		),
-
-		// E-commerce operations (NEW).
-		// 2026 Standard: 1.6x multiplier - Product management complexity
-		'ecommerce'          => array(
-			'multiplier'      => 1.6,
-			'preferred_model' => 'gpt-4o-mini',
-			'description'     => 'E-commerce and product management operations',
-			'tools'           => array(
-				'scrape_product',
-				'scrape_product_validated',
-				'lookup_product_price',
-				'product_actualization',
-				'payhere_get_payment',
-				'flowhub_create_order',
-				'flowhub_get_customers',
-				'flowhub_get_inventory',
-				'flowhub_get_orders',
-				'flowhub_get_products',
-				'flowhub_manage_customer',
-				'flowhub_manage_product',
-			),
-		),
-
-		// AI Model management (NEW).
-		// 2026 Standard: 1.3x multiplier - Model research and configuration
-		'model_management'   => array(
-			'multiplier'      => 1.3,
-			'preferred_model' => 'gpt-4o-mini',
-			'description'     => 'AI model discovery, configuration, and management',
-			'tools'           => array(
-				'add_model_config',
-				'discover_new_models',
-				'research_model',
-				'suggest_best_model',
-			),
-		),
-
-		// Vector and embeddings operations (NEW).
-		// 2026 Standard: 1.7x multiplier - Complex vector operations
-		'vector_operations'  => array(
-			'multiplier'      => 1.7,
-			'preferred_model' => 'gpt-4o-mini',
-			'description'     => 'Vector store and embedding operations',
-			'tools'           => array(
-				'create_text_embeddings',
-				'create_vector_store',
-				'manage_vector_store_files',
-			),
-		),
-
-		// Site and plugin management (NEW).
-		// 2026 Standard: 1.2x multiplier - Installation and configuration
-		'site_management'    => array(
-			'multiplier'      => 1.2,
-			'preferred_model' => 'gpt-4o-mini',
-			'description'     => 'WordPress site and plugin management',
-			'tools'           => array(
-				'install_and_activate_plugin',
-				'install_and_activate_theme',
-				'site_creator',
-				'get_elementor_templates',
-				'import_elementor_template_kit',
-			),
-		),
-
-		// GitHub operations (NEW).
-		// 2026 Standard: 1.5x multiplier - Code repository management
-		'github_operations'  => array(
-			'multiplier'      => 1.5,
-			'preferred_model' => 'gpt-4o-mini',
-			'description'     => 'GitHub repository and codespace operations',
-			'tools'           => array(
-				'github_repository_operations',
-				'list_github_repositories',
-				'manage_github_codespace',
-			),
-		),
-
-		// Charts and visualization (NEW).
-		// 2026 Standard: 1.4x multiplier - Data visualization complexity
-		'visualization'      => array(
-			'multiplier'      => 1.4,
-			'preferred_model' => 'gpt-4o-mini',
-			'description'     => 'Data visualization and chart generation',
-			'tools'           => array(
-				'create_chart',
-				'create_chart_validated',
 			),
 		),
 	);
@@ -549,26 +329,17 @@ class WP_MCP_AI_Tool_Recommendations {
 	 */
 	protected static function get_recommendation_reason( $category, $tool_slug ) {
 		$reasons = array(
-			'high_resource'      => __( 'This tool performs complex operations or generates large outputs, requiring higher token limits for optimal performance.', 'mcp-ai-wpoos' ),
-			'medium_resource'    => __( 'This tool handles moderate complexity operations. A balanced token limit provides good performance without excessive resource usage.', 'mcp-ai-wpoos' ),
-			'low_resource'       => __( 'This tool performs simple operations with minimal token requirements. Standard limits are sufficient.', 'mcp-ai-wpoos' ),
-			'image_generation'   => __( 'Image generation tools have specialized requirements. Let the assistant choose the best model for image tasks.', 'mcp-ai-wpoos' ),
-			'video_processing'   => __( 'Video generation and processing requires substantial resources. Higher token limits ensure quality output.', 'mcp-ai-wpoos' ),
-			'audio_processing'   => __( 'Audio processing tools benefit from specialized models. Token usage varies based on audio length.', 'mcp-ai-wpoos' ),
-			'content_creation'   => __( 'Content creation requires high-quality language models for best results. Moderate token limits ensure quality output.', 'mcp-ai-wpoos' ),
-			'api_operations'     => __( 'External API operations have moderate complexity. Slightly elevated limits account for API response processing.', 'mcp-ai-wpoos' ),
-			'messaging'          => __( 'Messaging operations are typically lightweight and don\'t require elevated token limits.', 'mcp-ai-wpoos' ),
-			'security_auth'      => __( 'Security and authentication operations are critical but lightweight, using standard token limits.', 'mcp-ai-wpoos' ),
-			'cache_performance'  => __( 'Cache operations are simple and fast, requiring minimal token processing.', 'mcp-ai-wpoos' ),
-			'scheduling'         => __( 'Scheduling operations have standard complexity and work well with default token limits.', 'mcp-ai-wpoos' ),
-			'dataset_operations' => __( 'Dataset operations handle large amounts of data. Elevated token limits improve data processing efficiency.', 'mcp-ai-wpoos' ),
-			'agent_coordination' => __( 'Multi-agent orchestration involves complex coordination and communication. Higher token limits ensure effective agent interactions.', 'mcp-ai-wpoos' ),
-			'ecommerce'          => __( 'E-commerce operations handle product data and transactions. Moderate token limits balance performance and cost.', 'mcp-ai-wpoos' ),
-			'model_management'   => __( 'AI model management involves configuration and research. Moderate token limits support model analysis.', 'mcp-ai-wpoos' ),
-			'vector_operations'  => __( 'Vector and embedding operations process high-dimensional data. Elevated token limits improve accuracy.', 'mcp-ai-wpoos' ),
-			'site_management'    => __( 'Site management tools handle WordPress installations and configurations. Moderate limits provide flexibility.', 'mcp-ai-wpoos' ),
-			'github_operations'  => __( 'GitHub operations manage code repositories and development workflows. Moderate limits support code analysis.', 'mcp-ai-wpoos' ),
-			'visualization'      => __( 'Data visualization tools create charts and graphs. Moderate limits support complex visualizations.', 'mcp-ai-wpoos' ),
+			'high_resource'     => __( 'This tool performs complex operations or generates large outputs, requiring higher token limits for optimal performance.', 'mcp-ai-wpoos' ),
+			'medium_resource'   => __( 'This tool handles moderate complexity operations. A balanced token limit provides good performance without excessive resource usage.', 'mcp-ai-wpoos' ),
+			'low_resource'      => __( 'This tool performs simple operations with minimal token requirements. Standard limits are sufficient.', 'mcp-ai-wpoos' ),
+			'image_generation'  => __( 'Image generation tools have specialized requirements. Let the assistant choose the best model for image tasks.', 'mcp-ai-wpoos' ),
+			'audio_processing'  => __( 'Audio processing tools benefit from specialized models. Token usage varies based on audio length.', 'mcp-ai-wpoos' ),
+			'content_creation'  => __( 'Content creation requires high-quality language models for best results. Moderate token limits ensure quality output.', 'mcp-ai-wpoos' ),
+			'api_operations'    => __( 'External API operations have moderate complexity. Slightly elevated limits account for API response processing.', 'mcp-ai-wpoos' ),
+			'messaging'         => __( 'Messaging operations are typically lightweight and don\'t require elevated token limits.', 'mcp-ai-wpoos' ),
+			'security_auth'     => __( 'Security and authentication operations are critical but lightweight, using standard token limits.', 'mcp-ai-wpoos' ),
+			'cache_performance' => __( 'Cache operations are simple and fast, requiring minimal token processing.', 'mcp-ai-wpoos' ),
+			'scheduling'        => __( 'Scheduling operations have standard complexity and work well with default token limits.', 'mcp-ai-wpoos' ),
 		);
 
 		return isset( $reasons[ $category ] ) ? $reasons[ $category ] : __( 'Recommended settings based on tool analysis.', 'mcp-ai-wpoos' );
