@@ -150,6 +150,50 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Enable specialized tools for multi-agent coordination: create_agent_team (compose teams), delegate_to_agent (task delegation), and aggregate_agent_results (result merging). These tools allow AI assistants to orchestrate other AI assistants for complex workflows.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'profession_default_provider'     => array(
+					'type'        => 'select',
+					'label'       => __( 'Professions Default Provider', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default AI provider for all professions. Individual professions can override this setting.', 'mcp-ai-wpoos' ),
+					'options'     => array( '' => __( '-- Use Global Default --', 'mcp-ai-wpoos' ) ) + WP_MCP_AI_Admin_Settings::get_available_providers(),
+					'default'     => '',
+				),
+				'profession_default_model'        => array(
+					'type'        => 'text',
+					'label'       => __( 'Professions Default Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default AI model for all professions (e.g., gpt-4o, claude-3-5-sonnet-20241022). Leave empty to use provider default.', 'mcp-ai-wpoos' ),
+					'default'     => '',
+				),
+				'profession_default_temperature'  => array(
+					'type'        => 'number',
+					'label'       => __( 'Professions Default Temperature', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default creativity/randomness setting for professions (0.0 = deterministic, 1.0 = creative). Individual professions can override.', 'mcp-ai-wpoos' ),
+					'default'     => 0.7,
+					'min'         => 0,
+					'max'         => 1,
+					'step'        => 0.1,
+				),
+				'team_default_provider'           => array(
+					'type'        => 'select',
+					'label'       => __( 'Teams Default Provider', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default AI provider for all team members. Individual teams can override this setting.', 'mcp-ai-wpoos' ),
+					'options'     => array( '' => __( '-- Use Global Default --', 'mcp-ai-wpoos' ) ) + WP_MCP_AI_Admin_Settings::get_available_providers(),
+					'default'     => '',
+				),
+				'team_default_model'              => array(
+					'type'        => 'text',
+					'label'       => __( 'Teams Default Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default AI model for all team members (e.g., gpt-4o, claude-3-5-sonnet-20241022). Leave empty to use provider default.', 'mcp-ai-wpoos' ),
+					'default'     => '',
+				),
+				'team_default_temperature'        => array(
+					'type'        => 'number',
+					'label'       => __( 'Teams Default Temperature', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default creativity/randomness setting for teams (0.0 = deterministic, 1.0 = creative). Individual teams can override.', 'mcp-ai-wpoos' ),
+					'default'     => 0.7,
+					'min'         => 0,
+					'max'         => 1,
+					'step'        => 0.1,
+				),
 				'async_tool_timeout'              => array(
 					'type'        => 'number',
 					'label'       => __( 'Async Tool Timeout (seconds)', 'mcp-ai-wpoos' ),
@@ -1529,6 +1573,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'enable_professions',
 				'enable_multi_agent_teams',
 				'enable_agent_coordination_tools',
+				'profession_default_provider',
+				'profession_default_model',
+				'profession_default_temperature',
+				'team_default_provider',
+				'team_default_model',
+				'team_default_temperature',
 			);
 
 			echo '<h3>' . esc_html__( 'Orchestration Features', 'mcp-ai-wpoos' ) . '</h3>';
@@ -2679,11 +2729,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 									<span class="dashicons <?php echo esc_attr( $this->get_profession_icon( $profession ) ); ?>"></span>
 									<div>
 										<h4><?php echo esc_html( $profession['title'] ); ?></h4>
-										<?php if ( ! empty( $profession['role'] ) ) : ?>
-											<span class="profession-role-badge <?php echo esc_attr( $profession['role'] ); ?>">
-												<?php echo esc_html( ucfirst( $profession['role'] ) ); ?>
-											</span>
-										<?php endif; ?>
+										<div class="profession-roles">
+											<?php if ( ! empty( $profession['role'] ) ) : ?>
+												<span class="profession-role-badge profession-role-primary <?php echo esc_attr( $profession['role'] ); ?>">
+													<?php echo esc_html( ucfirst( $profession['role'] ) ); ?>
+												</span>
+											<?php endif; ?>
+											<?php if ( ! empty( $profession['secondary_roles'] ) ) : ?>
+												<?php foreach ( $profession['secondary_roles'] as $secondary_role ) : ?>
+													<span class="profession-role-badge profession-role-secondary <?php echo esc_attr( $secondary_role ); ?>">
+														<?php echo esc_html( ucfirst( $secondary_role ) ); ?>
+													</span>
+												<?php endforeach; ?>
+											<?php endif; ?>
+										</div>
 									</div>
 								</div>
 								<a href="<?php echo esc_url( $profession['edit_url'] ); ?>" class="button button-small">
@@ -2901,6 +2960,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					font-size: 16px;
 				}
 				
+				.profession-roles {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 4px;
+					margin-top: 5px;
+				}
+				
 				.profession-role-badge {
 					display: inline-block;
 					padding: 2px 8px;
@@ -2910,9 +2976,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					text-transform: uppercase;
 				}
 				
+				.profession-role-badge.profession-role-primary {
+					font-size: 12px;
+					padding: 3px 10px;
+					font-weight: 700;
+					border: 2px solid transparent;
+				}
+				
+				.profession-role-badge.profession-role-secondary {
+					font-size: 10px;
+					padding: 2px 6px;
+					opacity: 0.85;
+				}
+				
 				.profession-role-badge.planner {
 					background: #e3f2fd;
 					color: #1976d2;
+				}
+				
+				.profession-role-badge.profession-role-primary.planner {
+					border-color: #1976d2;
 				}
 				
 				.profession-role-badge.executor {
@@ -2920,9 +3003,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					color: #f57c00;
 				}
 				
+				.profession-role-badge.profession-role-primary.executor {
+					border-color: #f57c00;
+				}
+				
 				.profession-role-badge.critic {
 					background: #f3e5f5;
 					color: #7b1fa2;
+				}
+				
+				.profession-role-badge.profession-role-primary.critic {
+					border-color: #7b1fa2;
 				}
 				
 				.profession-role-badge.specialist {
@@ -2930,9 +3021,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					color: #388e3c;
 				}
 				
+				.profession-role-badge.profession-role-primary.specialist {
+					border-color: #388e3c;
+				}
+				
 				.profession-role-badge.generalist {
 					background: #f5f5f5;
 					color: #616161;
+				}
+				
+				.profession-role-badge.profession-role-primary.generalist {
+					border-color: #616161;
 				}
 				
 				.profession-card-body {
@@ -3271,6 +3370,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 									?>
 								</div>
 								
+								<?php if ( ! empty( $team['role_composition'] ) ) : ?>
+									<div class="team-roles">
+										<strong><?php esc_html_e( 'Agent Roles:', 'mcp-ai-wpoos' ); ?></strong>
+										<div class="team-role-badges">
+											<?php foreach ( $team['role_composition'] as $role => $count ) : ?>
+												<span class="team-role-badge <?php echo esc_attr( $role ); ?>">
+													<?php echo esc_html( ucfirst( $role ) ); ?> (<?php echo esc_html( $count ); ?>)
+												</span>
+											<?php endforeach; ?>
+										</div>
+									</div>
+								<?php endif; ?>
+								
 								<?php if ( ! empty( $team['result_aggregation'] ) ) : ?>
 									<div class="team-aggregation">
 										<strong><?php esc_html_e( 'Result Aggregation:', 'mcp-ai-wpoos' ); ?></strong>
@@ -3442,6 +3554,55 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					height: 16px;
 				}
 				
+				.team-roles {
+					margin-top: 10px;
+					padding: 8px;
+					background: #f9f9f9;
+					border-radius: 3px;
+					font-size: 12px;
+				}
+				
+				.team-role-badges {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 4px;
+					margin-top: 5px;
+				}
+				
+				.team-role-badge {
+					display: inline-block;
+					padding: 2px 6px;
+					border-radius: 3px;
+					font-size: 10px;
+					font-weight: 600;
+					text-transform: uppercase;
+				}
+				
+				.team-role-badge.planner {
+					background: #e3f2fd;
+					color: #1976d2;
+				}
+				
+				.team-role-badge.executor {
+					background: #fff3e0;
+					color: #f57c00;
+				}
+				
+				.team-role-badge.critic {
+					background: #f3e5f5;
+					color: #7b1fa2;
+				}
+				
+				.team-role-badge.specialist {
+					background: #e8f5e9;
+					color: #388e3c;
+				}
+				
+				.team-role-badge.generalist {
+					background: #f5f5f5;
+					color: #616161;
+				}
+				
 				.team-aggregation {
 					margin-top: 10px;
 					padding: 8px;
@@ -3483,6 +3644,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$orchestration_mode   = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
 				$result_aggregation   = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
 
+				// Get agent role composition from team members.
+				$role_composition = array();
+				if ( is_array( $members ) && ! empty( $members ) ) {
+					foreach ( $members as $member_id ) {
+						$primary_role = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true );
+						if ( ! empty( $primary_role ) ) {
+							$normalized = strtolower( trim( $primary_role ) );
+							if ( ! isset( $role_composition[ $normalized ] ) ) {
+								$role_composition[ $normalized ] = 0;
+							}
+							++$role_composition[ $normalized ];
+						}
+					}
+				}
+
 				$teams[] = array(
 					'id'                  => $post_id,
 					'title'               => get_the_title(),
@@ -3490,6 +3666,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'member_count'        => is_array( $members ) ? count( $members ) : 0,
 					'orchestration_mode'  => $orchestration_mode ? $orchestration_mode : 'sequential',
 					'result_aggregation'  => $result_aggregation ? $result_aggregation : '',
+					'role_composition'    => $role_composition,
 					'edit_url'            => get_edit_post_link( $post_id ),
 				);
 			}
@@ -3523,22 +3700,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$post_id = get_the_ID();
 
 				// Get profession metadata.
-				$agent_role   = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true );
-				$expertise    = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
-				$tools        = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
-				$description  = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
+				$agent_role        = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true );
+				$secondary_roles   = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_AGENT_SECONDARY_ROLES, true );
+				$expertise         = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
+				$tools             = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
+				$description       = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
 
 				// Normalize role to lowercase for consistency.
 				$normalized_role = $agent_role ? strtolower( trim( $agent_role ) ) : 'generalist';
+				
+				// Parse secondary roles (stored as JSON array).
+				$secondary_roles_array = array();
+				if ( ! empty( $secondary_roles ) ) {
+					$decoded = is_string( $secondary_roles ) ? json_decode( $secondary_roles, true ) : $secondary_roles;
+					if ( is_array( $decoded ) ) {
+						$secondary_roles_array = array_map( 'strtolower', array_map( 'trim', $decoded ) );
+					}
+				}
 
 				$professions[] = array(
-					'id'          => $post_id,
-					'title'       => get_the_title(),
-					'description' => $description ? $description : get_the_excerpt(),
-					'role'        => $normalized_role,
-					'expertise'   => is_array( $expertise ) ? $expertise : array(),
-					'tools_count' => is_array( $tools ) ? count( $tools ) : 0,
-					'edit_url'    => get_edit_post_link( $post_id ),
+					'id'              => $post_id,
+					'title'           => get_the_title(),
+					'description'     => $description ? $description : get_the_excerpt(),
+					'role'            => $normalized_role,
+					'secondary_roles' => $secondary_roles_array,
+					'expertise'       => is_array( $expertise ) ? $expertise : array(),
+					'tools_count'     => is_array( $tools ) ? count( $tools ) : 0,
+					'edit_url'        => get_edit_post_link( $post_id ),
 				);
 			}
 			wp_reset_postdata();
