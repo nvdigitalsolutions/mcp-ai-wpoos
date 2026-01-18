@@ -1329,7 +1329,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			?>
 			<div class="wp-mcp-ai-overview-dashboard">
 				<!-- Executive Header -->
-				<div class="orchestration-header executive-header">
+				<div class="wp-mcp-ai-orchestration-header executive-header">
 					<div class="wp-mcp-ai-header-left">
 						<h2><?php esc_html_e( 'Orchestration Layer Executive Dashboard', 'mcp-ai-wpoos' ); ?></h2>
 						<p class="description">
@@ -2533,7 +2533,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 				}
 				
-				.health-indicator {
+				.wp-mcp-ai-health-indicator {
 					display: flex;
 					align-items: center;
 					gap: 8px;
@@ -2544,7 +2544,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					font-size: 13px;
 				}
 				
-				.health-indicator.health-warning {
+				.wp-mcp-ai-health-indicator.health-warning {
 					border-left-color: #FF9800;
 				}
 				
@@ -2560,7 +2560,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					color: #4CAF50;
 				}
 				
-				.health-indicator.health-warning .dashicons {
+				.wp-mcp-ai-health-indicator.health-warning .dashicons {
 					color: #FF9800;
 				}
 				
@@ -2578,7 +2578,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					color: #1d2327;
 				}
 				
-				.orchestration-metrics-grid {
+				.wp-mcp-ai-orchestration-metrics-grid {
 					display: grid;
 					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 					gap: 20px;
@@ -2607,13 +2607,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					line-height: 1;
 				}
 				
-				.metric-icon .dashicons {
+				.wp-mcp-ai-metric-icon .dashicons {
 					width: 40px;
 					height: 40px;
 					font-size: 40px;
 				}
 				
-				.metric-content {
+				.wp-mcp-ai-metric-content {
 					flex: 1;
 				}
 				
