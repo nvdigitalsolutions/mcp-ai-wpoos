@@ -1085,15 +1085,106 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 	 * Render agents view.
 	 *
 	 * Displays all available agent roles and their orchestration capabilities.
-	 * Shows DeepSeek V4-inspired multi-agent coordination features.
+	 * Shows DeepSeek V4-inspired multi-agent coordination features with real-time metrics.
 	 */
 	private function render_agents_view() {
+		$agent_roles = $this->get_available_agent_roles();
+		$health      = $this->get_orchestration_health_metrics();
+		$professions = $this->get_professions_list();
+		
 		?>
 		<div class="wp-mcp-ai-agents-view">
-			<h3><?php esc_html_e( 'Agent Roles & Multi-Agent Orchestration', 'mcp-ai-wpoos' ); ?></h3>
-			<p class="description">
-				<?php esc_html_e( 'Configure and manage AI agent roles for DeepSeek V4-inspired multi-agent coordination. Agents can work individually or as coordinated teams to handle complex tasks.', 'mcp-ai-wpoos' ); ?>
-			</p>
+			<!-- Header with Real-Time Status -->
+			<div class="orchestration-header">
+				<div class="header-left">
+					<h3><?php esc_html_e( 'Multi-Agent Orchestration Dashboard', 'mcp-ai-wpoos' ); ?></h3>
+					<p class="description">
+						<?php esc_html_e( 'DeepSeek V4-inspired multi-agent coordination with real-time performance monitoring and professional workforce management.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</div>
+				<div class="header-right">
+					<div class="health-indicator health-<?php echo esc_attr( $health['memory_status'] ); ?>">
+						<span class="dashicons dashicons-heart"></span>
+						<span class="health-label"><?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></span>
+						<span class="health-value"><?php echo esc_html( ucfirst( $health['memory_status'] ) ); ?></span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Key Metrics Cards -->
+			<div class="orchestration-metrics-grid">
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-groups"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Agent Role Types', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value"><?php echo esc_html( count( $agent_roles ) ); ?></div>
+						<div class="metric-subtitle"><?php esc_html_e( 'Available Roles', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-businessperson"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Configured Professions', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value"><?php echo esc_html( count( $professions ) ); ?></div>
+						<div class="metric-subtitle"><?php esc_html_e( 'Deployable Agents', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-performance"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Memory Usage', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value"><?php echo esc_html( number_format( $health['memory_usage'], 1 ) ); ?>%</div>
+						<div class="metric-subtitle"><?php esc_html_e( 'of allocated budget', 'mcp-ai-wpoos' ); ?></div>
+					</div>
+				</div>
+				
+				<div class="metric-card">
+					<div class="metric-icon">
+						<span class="dashicons dashicons-warning"></span>
+					</div>
+					<div class="metric-content">
+						<div class="metric-label"><?php esc_html_e( 'Error Rate', 'mcp-ai-wpoos' ); ?></div>
+						<div class="metric-value"><?php echo esc_html( number_format( $health['error_rate'], 1 ) ); ?>%</div>
+						<div class="metric-subtitle status-<?php echo esc_attr( $health['error_status'] ); ?>">
+							<?php echo esc_html( ucfirst( $health['error_status'] ) ); ?>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Charts Section -->
+			<div class="orchestration-charts-section">
+				<h4>
+					<span class="dashicons dashicons-chart-bar"></span>
+					<?php esc_html_e( 'Orchestration Analytics', 'mcp-ai-wpoos' ); ?>
+				</h4>
+				
+				<div class="charts-row">
+					<div class="chart-container chart-half">
+						<h5><?php esc_html_e( 'Profession Role Distribution', 'mcp-ai-wpoos' ); ?></h5>
+						<p class="chart-description">
+							<?php esc_html_e( 'Distribution of configured AI professions by their assigned agent role type.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<canvas id="wp-mcp-ai-agent-role-distribution-chart" height="250"></canvas>
+					</div>
+					
+					<div class="chart-container chart-half">
+						<h5><?php esc_html_e( 'Workload Tier Token Capacity', 'mcp-ai-wpoos' ); ?></h5>
+						<p class="chart-description">
+							<?php esc_html_e( 'Maximum token allocation per request based on system resource tier.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<canvas id="wp-mcp-ai-workload-tier-chart" height="250"></canvas>
+					</div>
+				</div>
+			</div>
 
 			<div class="notice notice-info inline" style="margin: 20px 0;">
 				<p>
@@ -1328,7 +1419,290 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					font-size: 12px;
 					color: #d63638;
 				}
+				
+				/* Enhanced Orchestration Styles */
+				.orchestration-header {
+					display: flex;
+					justify-content: space-between;
+					align-items: flex-start;
+					margin-bottom: 20px;
+					padding: 20px;
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+				}
+				
+				.health-indicator {
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					padding: 10px 15px;
+					border-radius: 4px;
+					background: #f8f9fa;
+					border-left: 4px solid #4CAF50;
+					font-size: 13px;
+				}
+				
+				.health-indicator.health-warning {
+					border-left-color: #FF9800;
+				}
+				
+				.health-indicator.health-critical {
+					border-left-color: #F44336;
+				}
+				
+				.health-indicator .dashicons {
+					font-size: 20px;
+				}
+				
+				.health-indicator.health-good .dashicons {
+					color: #4CAF50;
+				}
+				
+				.health-indicator.health-warning .dashicons {
+					color: #FF9800;
+				}
+				
+				.health-indicator.health-critical .dashicons {
+					color: #F44336;
+				}
+				
+				.health-label {
+					font-weight: 600;
+					color: #666;
+				}
+				
+				.health-value {
+					font-weight: bold;
+					color: #1d2327;
+				}
+				
+				.orchestration-metrics-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					gap: 20px;
+					margin: 20px 0;
+				}
+				
+				.metric-card {
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					padding: 20px;
+					display: flex;
+					gap: 15px;
+					align-items: flex-start;
+					transition: all 0.2s;
+				}
+				
+				.metric-card:hover {
+					box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+					transform: translateY(-2px);
+				}
+				
+				.metric-icon {
+					font-size: 40px;
+					color: #2271b1;
+					line-height: 1;
+				}
+				
+				.metric-icon .dashicons {
+					width: 40px;
+					height: 40px;
+					font-size: 40px;
+				}
+				
+				.metric-content {
+					flex: 1;
+				}
+				
+				.metric-label {
+					font-size: 13px;
+					color: #666;
+					margin-bottom: 5px;
+					font-weight: 500;
+				}
+				
+				.metric-value {
+					font-size: 32px;
+					font-weight: bold;
+					color: #1d2327;
+					line-height: 1;
+					margin-bottom: 5px;
+				}
+				
+				.metric-subtitle {
+					font-size: 12px;
+					color: #999;
+				}
+				
+				.metric-subtitle.status-good {
+					color: #4CAF50;
+					font-weight: 600;
+				}
+				
+				.metric-subtitle.status-warning {
+					color: #FF9800;
+					font-weight: 600;
+				}
+				
+				.metric-subtitle.status-critical {
+					color: #F44336;
+					font-weight: 600;
+				}
+				
+				.orchestration-charts-section {
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					padding: 20px;
+					margin: 20px 0;
+					box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+				}
+				
+				.orchestration-charts-section h4 {
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					margin: 0 0 15px 0;
+					color: #1d2327;
+					font-size: 16px;
+					font-weight: 600;
+				}
+				
+				.orchestration-charts-section h4 .dashicons {
+					color: #2271b1;
+				}
+				
+				.charts-row {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+					gap: 20px;
+					margin-top: 20px;
+				}
+				
+				.chart-container {
+					background: #f8f9fa;
+					border: 1px solid #e0e0e0;
+					border-radius: 4px;
+					padding: 15px;
+				}
+				
+				.chart-container h5 {
+					margin: 0 0 5px 0;
+					color: #1d2327;
+					font-size: 14px;
+					font-weight: 600;
+				}
+				
+				.chart-description {
+					font-size: 12px;
+					color: #666;
+					margin: 0 0 15px 0;
+					line-height: 1.4;
+				}
 			</style>
+			
+			<!-- Chart.js Initialization -->
+			<script type="text/javascript">
+			/* <![CDATA[ */
+			jQuery(document).ready(function($) {
+				// Only initialize if Chart.js is loaded
+				if (typeof Chart === 'undefined') {
+					console.warn('Chart.js not loaded - charts will not display');
+					return;
+				}
+				
+				// Chart data
+				var chartData = {
+					roleDistribution: <?php echo wp_json_encode( $this->get_agent_role_distribution_data() ); ?>,
+					workloadTier: <?php echo wp_json_encode( $this->get_workload_tier_distribution_data() ); ?>
+				};
+				
+				// Agent Role Distribution Pie Chart
+				var roleCanvas = document.getElementById('wp-mcp-ai-agent-role-distribution-chart');
+				if (roleCanvas && chartData.roleDistribution.datasets[0].data.length > 0) {
+					new Chart(roleCanvas.getContext('2d'), {
+						type: 'doughnut',
+						data: chartData.roleDistribution,
+						options: {
+							responsive: true,
+							maintainAspectRatio: false,
+							plugins: {
+								legend: {
+									display: true,
+									position: 'right',
+									labels: {
+										padding: 15,
+										font: {
+											size: 12
+										}
+									}
+								},
+								tooltip: {
+									callbacks: {
+										label: function(context) {
+											var label = context.label || '';
+											var value = context.parsed || 0;
+											var total = context.dataset.data.reduce((a, b) => a + b, 0);
+											var percentage = ((value / total) * 100).toFixed(1);
+											return label + ': ' + value + ' (' + percentage + '%)';
+										}
+									}
+								}
+							}
+						}
+					});
+				} else if (roleCanvas) {
+					// Show message if no data
+					roleCanvas.parentElement.innerHTML = '<p style="text-align:center;color:#999;padding:50px 0;"><?php esc_html_e( 'No profession data available. Create professions to see distribution.', 'mcp-ai-wpoos' ); ?></p>';
+				}
+				
+				// Workload Tier Capacity Bar Chart
+				var tierCanvas = document.getElementById('wp-mcp-ai-workload-tier-chart');
+				if (tierCanvas) {
+					new Chart(tierCanvas.getContext('2d'), {
+						type: 'bar',
+						data: {
+							labels: chartData.workloadTier.labels,
+							datasets: chartData.workloadTier.datasets
+						},
+						options: {
+							responsive: true,
+							maintainAspectRatio: false,
+							plugins: {
+								legend: {
+									display: false
+								},
+								tooltip: {
+									callbacks: {
+										label: function(context) {
+											return context.parsed.y.toLocaleString() + ' tokens';
+										}
+									}
+								}
+							},
+							scales: {
+								y: {
+									beginAtZero: true,
+									ticks: {
+										callback: function(value) {
+											return value.toLocaleString();
+										}
+									},
+									title: {
+										display: true,
+										text: '<?php esc_html_e( 'Max Tokens per Request', 'mcp-ai-wpoos' ); ?>'
+									}
+								}
+							}
+						}
+					});
+				}
+			});
+			/* ]]> */
+			</script>
 		</div>
 		<?php
 	}
@@ -1907,6 +2281,180 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		);
 
 		return isset( $icons[ $role ] ) ? $icons[ $role ] : 'dashicons-businessperson';
+	}
+
+	/**
+	 * Get agent role distribution data for pie chart.
+	 *
+	 * @return array Chart.js formatted data.
+	 */
+	private function get_agent_role_distribution_data() {
+		$professions = $this->get_professions_list();
+		$role_counts = $this->count_professions_by_role( $professions );
+		
+		$labels = array();
+		$data   = array();
+		$colors = array(
+			'rgba(33, 150, 243, 0.8)',  // Blue - Planner.
+			'rgba(255, 152, 0, 0.8)',   // Orange - Executor.
+			'rgba(156, 39, 176, 0.8)',  // Purple - Critic.
+			'rgba(76, 175, 80, 0.8)',   // Green - Specialist.
+			'rgba(158, 158, 158, 0.8)', // Gray - Generalist.
+		);
+		
+		$role_labels = array(
+			'planner'    => __( 'Planners', 'mcp-ai-wpoos' ),
+			'executor'   => __( 'Executors', 'mcp-ai-wpoos' ),
+			'critic'     => __( 'Critics', 'mcp-ai-wpoos' ),
+			'specialist' => __( 'Specialists', 'mcp-ai-wpoos' ),
+			'generalist' => __( 'Generalists', 'mcp-ai-wpoos' ),
+		);
+		
+		$chart_colors = array();
+		foreach ( $role_counts as $role => $count ) {
+			if ( $count > 0 ) {
+				$labels[]       = isset( $role_labels[ $role ] ) ? $role_labels[ $role ] : ucfirst( $role );
+				$data[]         = $count;
+				$chart_colors[] = array_shift( $colors );
+			}
+		}
+		
+		return array(
+			'labels'   => $labels,
+			'datasets' => array(
+				array(
+					'data'            => $data,
+					'backgroundColor' => $chart_colors,
+					'borderWidth'     => 1,
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get orchestration health metrics data.
+	 *
+	 * @return array Health metrics.
+	 */
+	private function get_orchestration_health_metrics() {
+		$health = array(
+			'memory_usage'      => 0,
+			'memory_status'     => 'good',
+			'error_rate'        => 0,
+			'error_status'      => 'good',
+			'active_jobs'       => 0,
+			'queue_depth'       => 0,
+			'avg_response_time' => 0,
+			'sla_compliance'    => 100,
+		);
+		
+		// Get memory usage.
+		if ( class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
+			$resource_manager   = WP_MCP_AI_Resource_Manager::instance();
+			$memory_limit       = $resource_manager->get_memory_limit();
+			$memory_usage       = memory_get_usage();
+			$health['memory_usage'] = ( $memory_usage / $memory_limit ) * 100;
+			
+			$memory_warning  = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold', 70 );
+			$memory_critical = WP_MCP_AI_Settings_Registry::get_setting( 'memory_critical_threshold', 85 );
+			
+			if ( $health['memory_usage'] >= $memory_critical ) {
+				$health['memory_status'] = 'critical';
+			} elseif ( $health['memory_usage'] >= $memory_warning ) {
+				$health['memory_status'] = 'warning';
+			}
+		}
+		
+		// Get active cron jobs.
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			$cached_count = WP_MCP_AI_Cache_Helper::get( 'active_cron_count' );
+			$health['active_jobs'] = $cached_count !== false ? $cached_count : 0;
+		}
+		
+		// Get error rate from recent logs.
+		$recent_errors   = get_option( 'wp_mcp_ai_recent_errors', array() );
+		$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
+		
+		$total_events = count( $recent_activity );
+		$total_errors = count( $recent_errors );
+		
+		if ( $total_events > 0 ) {
+			$health['error_rate'] = ( $total_errors / $total_events ) * 100;
+			
+			$error_warning  = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_warning_threshold', 5 );
+			$error_critical = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_critical_threshold', 10 );
+			
+			if ( $health['error_rate'] >= $error_critical ) {
+				$health['error_status'] = 'critical';
+			} elseif ( $health['error_rate'] >= $error_warning ) {
+				$health['error_status'] = 'warning';
+			}
+		}
+		
+		return $health;
+	}
+
+	/**
+	 * Get workload tier distribution data.
+	 *
+	 * @return array Chart.js formatted data.
+	 */
+	private function get_workload_tier_distribution_data() {
+		// Determine current tier.
+		if ( class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
+			$resource_manager = WP_MCP_AI_Resource_Manager::instance();
+			$memory_limit     = $resource_manager->get_memory_limit();
+			
+			$low_threshold    = 128 * 1024 * 1024;    // 128MB.
+			$medium_threshold = 512 * 1024 * 1024; // 512MB.
+			
+			if ( $memory_limit < $low_threshold ) {
+				$current_tier = 'low';
+			} elseif ( $memory_limit < $medium_threshold ) {
+				$current_tier = 'medium';
+			} else {
+				$current_tier = 'high';
+			}
+			
+			// Get token limits for each tier.
+			$low_tokens    = WP_MCP_AI_Settings_Registry::get_setting( 'low_tier_max_tokens', 2000 );
+			$medium_tokens = WP_MCP_AI_Settings_Registry::get_setting( 'medium_tier_max_tokens', 8000 );
+			$high_tokens   = WP_MCP_AI_Settings_Registry::get_setting( 'high_tier_max_tokens', 32000 );
+			
+			return array(
+				'current_tier' => $current_tier,
+				'labels'       => array(
+					__( 'Low Tier', 'mcp-ai-wpoos' ),
+					__( 'Medium Tier', 'mcp-ai-wpoos' ),
+					__( 'High Tier', 'mcp-ai-wpoos' ),
+				),
+				'tokens'       => array( $low_tokens, $medium_tokens, $high_tokens ),
+				'datasets'     => array(
+					array(
+						'label'           => __( 'Token Capacity', 'mcp-ai-wpoos' ),
+						'data'            => array( $low_tokens, $medium_tokens, $high_tokens ),
+						'backgroundColor' => array(
+							'rgba(255, 193, 7, 0.8)',  // Amber - Low.
+							'rgba(33, 150, 243, 0.8)', // Blue - Medium.
+							'rgba(76, 175, 80, 0.8)',  // Green - High.
+						),
+						'borderWidth'     => 1,
+					),
+				),
+			);
+		}
+		
+		return array(
+			'current_tier' => 'medium',
+			'labels'       => array( __( 'Low', 'mcp-ai-wpoos' ), __( 'Medium', 'mcp-ai-wpoos' ), __( 'High', 'mcp-ai-wpoos' ) ),
+			'tokens'       => array( 2000, 8000, 32000 ),
+			'datasets'     => array(
+				array(
+					'data'            => array( 2000, 8000, 32000 ),
+					'backgroundColor' => array( '#FFC107', '#2196F3', '#4CAF50' ),
+				),
+			),
+		);
 	}
 
 	/**
