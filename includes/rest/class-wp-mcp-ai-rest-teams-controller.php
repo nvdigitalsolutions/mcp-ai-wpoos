@@ -187,12 +187,20 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 			);
 		}
 
+		// Get team post to access title.
+		$team_post = get_post( $team_id );
+
 		// Get team members from meta.
 		$team_members = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
 
 		if ( ! is_array( $team_members ) ) {
 			$team_members = array();
 		}
+
+		// Get team orchestration settings for multi-agent coordination.
+		$orchestration_mode         = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
+		$result_aggregation         = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
+		$enable_multi_agent_teams   = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
 
 		// Build member data.
 		$members = array();
@@ -256,9 +264,14 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 
 		return new WP_REST_Response(
 			array(
-				'team_id' => $team_id,
-				'members' => $members,
-				'count'   => count( $members ),
+				'team_id'                  => $team_id,
+				'team_title'               => $team_post ? $team_post->post_title : '',
+				'members'                  => $members,
+				'count'                    => count( $members ),
+				'orchestration_mode'       => $orchestration_mode ? $orchestration_mode : 'sequential',
+				'result_aggregation'       => $result_aggregation ? $result_aggregation : 'consensus',
+				'multi_agent_enabled'      => $enable_multi_agent_teams,
+				'supports_unified_mode'    => $enable_multi_agent_teams && count( $members ) > 1,
 			),
 			200
 		);

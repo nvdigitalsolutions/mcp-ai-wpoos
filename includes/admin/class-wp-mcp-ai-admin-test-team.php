@@ -261,7 +261,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 						<div class="wp-mcp-ai-test-modal__body">
 							<div class="wp-mcp-ai-test-team-info">
 								<p class="description">
-									<?php echo esc_html__( 'Testing team by creating temporary assistants for each team member. Select a team member below to start chatting and validate the team configuration.', 'mcp-ai-wpoos' ); ?>
+									<?php echo esc_html__( 'Test team coordination with DeepSeek V4 multi-agent orchestration. When multi-agent mode is enabled, the entire team responds as one coordinated unit. You can also test individual team members separately.', 'mcp-ai-wpoos' ); ?>
 								</p>
 							</div>
 							<!-- Team member selector -->
