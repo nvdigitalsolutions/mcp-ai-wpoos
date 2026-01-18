@@ -621,6 +621,9 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
 
+	// Load DeepSeek V4 Orchestration Dashboard.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
+
 	// Load ISO 27001 Asset Inventory System (Control A.5.9).
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-asset-inventory-admin.php';
