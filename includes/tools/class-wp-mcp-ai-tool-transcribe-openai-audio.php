@@ -14,12 +14,14 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides a tool for transcribing or translating audio attachments via OpenAI.
  */
 class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_MODEL   = 'whisper-1';
 	const DEFAULT_FORMAT  = 'verbose_json';
@@ -329,6 +331,10 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 		// Normalize response format across providers.
 		$text = isset( $result['text'] ) ? $result['text'] : '';
 
+		$message = ! empty( $result['translated'] )
+			? __( 'Successfully translated audio to English text.', 'mcp-ai-wpoos' )
+			: __( 'Successfully transcribed audio to text.', 'mcp-ai-wpoos' );
+
 		$payload = array(
 			'attachment_id'   => $attachment_id,
 			'file_name'       => $audio['file_name'],
@@ -336,6 +342,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			'file_size'       => $audio['file_size'],
 			'model'           => isset( $result['model'] ) ? $result['model'] : $options['model'],
 			'text'            => $text,
+			'message'         => $message,
 			'translated'      => ! empty( $result['translated'] ),
 			'response_format' => isset( $result['format'] ) ? $result['format'] : 'json',
 		);

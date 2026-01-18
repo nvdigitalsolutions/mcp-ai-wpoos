@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides a tool for generating speech audio via multiple AI providers.
@@ -29,6 +30,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  * but the tool now supports OpenAI, Google/Gemini, Cloudflare, and Hugging Face providers.
  */
 class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	const DEFAULT_MODEL  = 'tts-1';
 	const DEFAULT_VOICE  = 'alloy';
 	const DEFAULT_FORMAT = 'mp3';
@@ -350,6 +352,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 			return $storage;
 		}
 
+		$message = sprintf(
+			/* translators: 1: voice name, 2: audio format */
+			__( 'Successfully generated speech audio using voice "%1$s" in %2$s format.', 'mcp-ai-wpoos' ),
+			$speech['voice'],
+			strtoupper( $format )
+		);
+
 		$result = array(
 			'attachment_id' => $storage['attachment_id'],
 			'url'           => $storage['url'],
@@ -360,6 +369,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 			'format'        => $format,
 			'model'         => $speech['model'],
 			'voice'         => $speech['voice'],
+			'text'          => $message,
+			'message'       => $message,
 		);
 
 		if ( isset( $speech['speed'] ) && null !== $speech['speed'] ) {
