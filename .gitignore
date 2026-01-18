@@ -68,15 +68,42 @@ composer.phar
 /vendor/*/*/.gitattributes
 /vendor/*/*/*/.gitattributes
 
-# Pro addon node_modules - Document Generation Toolkit
+# Pro addon node_modules - Enhanced Toolkits
 # Ignore all node_modules in pro addon by default
 /addons/pro/node_modules/*
 
-# But keep document generation dependencies (negation)
-# These are needed at runtime for PDF/Word/Excel generation tools
+# But keep production dependencies (negation patterns)
+# These are needed at runtime for various pro toolkits
+
+# Document Generation Toolkit (PDF/Word/Excel)
 !/addons/pro/node_modules/pdfkit/
 !/addons/pro/node_modules/docx/
 !/addons/pro/node_modules/exceljs/
+
+# Media Toolkit (Image Processing)
+!/addons/pro/node_modules/sharp/
+
+# Quiz System (Math Rendering)
+!/addons/pro/node_modules/katex/
+
+# Project Management (Calendar Export)
+!/addons/pro/node_modules/ics/
+
+# Health & Wellness / Business Analytics (Data Visualization)
+!/addons/pro/node_modules/chart.js/
+
+# Code Tools (Formatting)
+!/addons/pro/node_modules/prettier/
+
+# Email Tools (Template Generation)
+!/addons/pro/node_modules/mjml/
+
+# Places Management (Geospatial Analysis)
+!/addons/pro/node_modules/turf/
+!/addons/pro/node_modules/@turf/
+
+# Social Media / Video Tools (Video Processing)
+!/addons/pro/node_modules/fluent-ffmpeg/
 
 # Keep their direct dependencies as well
 !/addons/pro/node_modules/png-js/
