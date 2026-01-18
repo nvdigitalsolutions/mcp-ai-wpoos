@@ -4736,6 +4736,36 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Check if this is a team member test request with format "team_123_member_456".
+			// This format is used when testing individual team members from the test team page.
+			if ( is_string( $assistant_id ) && preg_match( '/^team_(\d+)_member_(\d+)$/', $assistant_id, $matches ) ) {
+				$team_id   = absint( $matches[1] );
+				$member_id = absint( $matches[2] );
+
+				if ( $member_id > 0 ) {
+					// Verify the member (profession) exists.
+					$profession_post = get_post( $member_id );
+					if ( $profession_post && 'mcp_ai_profession' === $profession_post->post_type ) {
+						// Check if profession has an associated assistant.
+						$associated_assistant = get_post_meta( $member_id, '_wp_mcp_ai_profession_associated_assistant', true );
+						$associated_assistant = absint( $associated_assistant );
+
+						if ( $associated_assistant > 0 ) {
+							// Verify the associated assistant exists and is published.
+							$assistant_post = get_post( $associated_assistant );
+							if ( $assistant_post && 'mcp_ai_assistant' === $assistant_post->post_type && 'publish' === $assistant_post->post_status ) {
+								// Use the profession's associated assistant.
+								return $associated_assistant;
+							}
+						}
+
+						// No valid associated assistant - return 0 to allow profession-only testing.
+						// The profession will be treated as a temporary primary role.
+						return 0;
+					}
+				}
+			}
+
 			// Check if this is a profession test request with format "profession_123".
 			if ( is_string( $assistant_id ) && 0 === strpos( $assistant_id, 'profession_' ) ) {
 				// Extract profession ID.
