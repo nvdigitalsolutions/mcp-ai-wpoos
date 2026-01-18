@@ -55,58 +55,58 @@ class WP_MCP_AI_Tool_Flowhub_Manage_Product implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'string',
 					'description' => __( 'Optional Remote Sites connection ID for Flowhub. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos' ),
 				),
-				'action'      => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: "create" or "update".', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'create', 'update' ),
 				),
-				'product_id'  => array(
+				'product_id'    => array(
 					'type'        => 'string',
 					'description' => __( 'Product ID (required for update action).', 'mcp-ai-wpoos' ),
 				),
-				'name'        => array(
+				'name'          => array(
 					'type'        => 'string',
 					'description' => __( 'Product name.', 'mcp-ai-wpoos' ),
 				),
-				'description' => array(
+				'description'   => array(
 					'type'        => 'string',
 					'description' => __( 'Product description.', 'mcp-ai-wpoos' ),
 				),
-				'category'    => array(
+				'category'      => array(
 					'type'        => 'string',
 					'description' => __( 'Product category (e.g., "flower", "concentrate", "edible").', 'mcp-ai-wpoos' ),
 				),
-				'price'       => array(
+				'price'         => array(
 					'type'        => 'number',
 					'description' => __( 'Product price.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 				),
-				'thc_percent' => array(
+				'thc_percent'   => array(
 					'type'        => 'number',
 					'description' => __( 'THC percentage content.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
-				'cbd_percent' => array(
+				'cbd_percent'   => array(
 					'type'        => 'number',
 					'description' => __( 'CBD percentage content.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
-				'strain_type' => array(
+				'strain_type'   => array(
 					'type'        => 'string',
 					'description' => __( 'Strain type (e.g., "indica", "sativa", "hybrid").', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'indica', 'sativa', 'hybrid', 'cbd' ),
 				),
-				'brand'       => array(
+				'brand'         => array(
 					'type'        => 'string',
 					'description' => __( 'Product brand name.', 'mcp-ai-wpoos' ),
 				),
-				'sku'         => array(
+				'sku'           => array(
 					'type'        => 'string',
 					'description' => __( 'Product SKU/barcode.', 'mcp-ai-wpoos' ),
 				),
-				'timeout'     => array(
+				'timeout'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,

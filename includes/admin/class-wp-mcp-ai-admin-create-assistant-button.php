@@ -275,9 +275,15 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 			wp_send_json_error( array( 'message' => __( 'No file provided.', 'mcp-ai-wpoos' ) ) );
 		}
 
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/media.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
+		if ( ! function_exists( 'wp_handle_upload' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		if ( ! function_exists( 'wp_read_audio_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+		}
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
 
 		// Validate file type.
 		$allowed_types = array( 'txt', 'md', 'pdf', 'doc', 'docx' );

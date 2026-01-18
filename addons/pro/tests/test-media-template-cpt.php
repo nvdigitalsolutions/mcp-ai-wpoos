@@ -110,6 +110,40 @@ class Test_Media_Template_CPT_Admin_Notice extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that CPT is registered when Pro addon is active even in base mode.
+	 */
+	public function test_cpt_registered_when_pro_active_in_base_mode() {
+		// Enable media toolkit.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_media_toolkit' => true,
+			)
+		);
+
+		// Simulate base version mode.
+		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
+			define( 'WP_MCP_AI_BASE_VERSION', true );
+		}
+
+		// Pro addon constant should already be defined when the pro addon is loaded.
+		// In this test environment, WP_MCP_AI_PRO_VERSION should be defined.
+		$this->assertTrue( defined( 'WP_MCP_AI_PRO_VERSION' ), 'Pro addon should be active in this test environment' );
+
+		// Initialize CPT - should succeed because Pro is active.
+		WP_MCP_AI_Media_Template_CPT::init();
+
+		// Trigger init action to register post type.
+		do_action( 'init' );
+
+		// Check if post type is registered even in base mode when Pro is active.
+		$this->assertTrue( post_type_exists( 'mcp_ai_media_tpl' ) );
+
+		// Check if taxonomy is registered.
+		$this->assertTrue( taxonomy_exists( 'mcp_ai_tpl_category' ) );
+	}
+
+	/**
 	 * Test that template meta can be saved and retrieved.
 	 */
 	public function test_template_meta_save_and_retrieve() {
@@ -187,8 +221,8 @@ class Test_Media_Template_CPT_Admin_Notice extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'last_used', $new_columns );
 
 		// Verify order (columns should be after title).
-		$keys = array_keys( $new_columns );
-		$title_index = array_search( 'title', $keys, true );
+		$keys            = array_keys( $new_columns );
+		$title_index     = array_search( 'title', $keys, true );
 		$operation_index = array_search( 'operation', $keys, true );
 
 		$this->assertGreaterThan( $title_index, $operation_index );

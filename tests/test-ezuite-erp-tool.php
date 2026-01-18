@@ -274,7 +274,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Test extends WP_UnitTestCase {
 		wp_set_current_user( $this->admin_id );
 
 		// Create a WordPress connection instead of EZuite ERP.
-		$connection_id = $this->create_test_connection( 'wordpress' );
+		$connection_id = $this->create_test_connection( 'WordPress' );
 
 		$result = $this->tool->execute(
 			array(

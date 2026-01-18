@@ -19,3 +19,4 @@ require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-pr
 require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-defaults.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-playbook.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-datasets.php';
+require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-agent-orchestration.php';

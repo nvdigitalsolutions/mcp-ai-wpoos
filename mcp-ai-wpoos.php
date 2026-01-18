@@ -6,7 +6,7 @@
  * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
- * Tested up to: 6.7.1
+ * Tested up to: 6.7
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
@@ -16,6 +16,8 @@
  * Network: true
  *
  * @package WP_MCP_AI
+ *
+ * phpcs:disable WordPress.Files.FileName.InvalidClassFileName
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
@@ -464,6 +466,9 @@ require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
 // This includes token budget manager and performance monitor services.
 require_once WP_MCP_AI_PATH . 'includes/services-init.php';
 
+// Load agent roles (DeepSeek V4 orchestration enhancements - Phase 1).
+require_once WP_MCP_AI_PATH . 'includes/agents-init.php';
+
 // Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
@@ -570,7 +575,6 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php';
 	// Performance monitor CCT is now loaded via services-init.php.
 	require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-performance-blocks.php';
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-simple-jwt-login-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php';
@@ -587,6 +591,11 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php';
 }
 
+// Load Elementor integration for all versions (base and full).
+// Elementor widgets are part of the base plugin and do not require Pro addon.
+// Widgets are automatically available when Elementor plugin is installed.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
+
 // Load assistant builder blocks for all versions (base and full).
 // These blocks provide Gutenberg block editor support for the AI Chat, Assistant Selector,.
 // Tools Grid, Knowledge Base, and full Assistant Builder components.
@@ -602,6 +611,9 @@ if ( ! $skip_buffering ) {
 // Frontend AJAX handlers for Performance widgets are now only available with Pro addon.
 
 if ( is_admin() ) {
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-scripts.php';
+	WP_MCP_AI_Admin_Scripts::init();
+
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-token-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-crawl4ai-monitor.php';
@@ -736,7 +748,7 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-chart-settings.php';
-	
+
 	// Initialize Pro Dashboard components.
 	new WP_MCP_AI_Pro_Database();
 	new WP_MCP_AI_Pro_License();
@@ -834,6 +846,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 	/**
 	 * Main plugin container class.
 	 */
+	// phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed,Squiz.Commenting.ClassComment.Missing -- Plugin container class documented in file header
 	final class WP_MCP_AI {
 		/**
 		 * Singleton instance.
@@ -1050,15 +1063,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// Check if this is an Elementor action.
 			if ( strpos( $action, 'elementor' ) === 0 ) {
-				// Suppress display_errors to prevent debug output from breaking JSON responses.
-				// We cannot use WP_DEBUG_DISPLAY here because we need to suppress errors.
-				// specifically for Elementor AJAX requests to prevent breaking the editor.
-				// Error suppression is intentional: some hosts disable ini_set changes,
-				// and we prefer graceful degradation over throwing warnings.
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed, WordPress.PHP.NoSilencedErrors.Discouraged -- Required for Elementor editor compatibility.
-					@ini_set( 'display_errors', '0' );
-				}
+				// Note: Previously we suppressed display_errors via ini_set for Elementor compatibility.
+				// This has been removed per WordPress.org plugin guidelines.
+				// Elementor handles its own error suppression when needed.
 
 				// Track the current buffer level before starting our buffer.
 				// This allows us to clean only the buffer(s) we create.
@@ -1067,6 +1074,10 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				// Start output buffering to catch any stray output that could break JSON responses.
 				// This protects against any echoed content, warnings, or notices that occur.
 				// during the Elementor save process.
+				//
+				// WordPress.org Compliance Note: This ob_start() is properly closed.
+				// Cleanup handled by clean_elementor_output_buffer() on shutdown hook (line 1078).
+				// The buffer is cleaned via ob_end_clean() in a loop (lines 1114-1117).
 				ob_start();
 
 				// Register a shutdown function to clean the buffer before Elementor sends its response.
@@ -1123,6 +1134,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 * at the correct time according to WordPress 6.7+ requirements.
 		 * This prevents "_load_textdomain_just_in_time was called incorrectly" warnings.
 		 *
+		 * Elementor integration is part of the base plugin (not requiring Pro addon).
+		 * Widgets can be enabled/disabled via the settings checkbox.
+		 *
 		 * @since 1.1.0
 		 */
 		public function init_elementor_integration() {
@@ -1163,16 +1177,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			if ( 'elementor' === $action && current_user_can( 'edit_posts' ) ) {
 				remove_action( 'admin_enqueue_scripts', 'wp_auth_check_load' );
 
-				// Prevent debug output from breaking Elementor's JSON responses.
-				// When WP_DEBUG is enabled, PHP warnings/notices can break the editor.
-				// We cannot use WP_DEBUG_DISPLAY here because we need to suppress errors.
-				// specifically for Elementor editor to prevent breaking the UI.
-				// Error suppression is intentional: some hosts disable ini_set changes,
-				// and we prefer graceful degradation over throwing warnings.
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed, WordPress.PHP.NoSilencedErrors.Discouraged -- Required for Elementor editor compatibility.
-					@ini_set( 'display_errors', '0' );
-				}
+				// Note: Previously we suppressed display_errors via ini_set for Elementor compatibility.
+				// This has been removed per WordPress.org plugin guidelines.
+				// Elementor handles its own error suppression when needed.
 			}
 		}
 	}

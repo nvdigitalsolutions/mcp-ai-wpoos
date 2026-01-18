@@ -86,7 +86,7 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 			?>
 			<div class="wp-mcp-ai-widget-stat">
 				<span class="wp-mcp-ai-widget-label"><?php esc_html_e( 'Dead Letter Queue', 'mcp-ai-wpoos' ); ?></span>
-				<span class="wp-mcp-ai-widget-value <?php echo $has_items ? 'wp-mcp-ai-widget-value--warning' : 'wp-mcp-ai-widget-value--success'; ?>">
+				<span class="wp-mcp-ai-widget-value <?php echo esc_attr( $has_items ? 'wp-mcp-ai-widget-value--warning' : 'wp-mcp-ai-widget-value--success' ); ?>">
 					<?php
 					if ( $has_items ) {
 						printf(
@@ -137,7 +137,7 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 
 			<div class="wp-mcp-ai-widget-stat">
 				<span class="wp-mcp-ai-widget-label"><?php esc_html_e( 'SLA Compliance', 'mcp-ai-wpoos' ); ?></span>
-				<span class="wp-mcp-ai-widget-value <?php echo $has_issues ? 'wp-mcp-ai-widget-value--warning' : 'wp-mcp-ai-widget-value--success'; ?>">
+				<span class="wp-mcp-ai-widget-value <?php echo esc_attr( $has_issues ? 'wp-mcp-ai-widget-value--warning' : 'wp-mcp-ai-widget-value--success' ); ?>">
 					<?php
 					if ( $has_issues ) {
 						if ( $critical_count > 0 ) {

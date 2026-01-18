@@ -211,19 +211,19 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 
 		foreach ( $submissions as $submission ) {
 			if ( 'graded' === $submission['status'] ) {
-				$graded_count++;
+				++$graded_count;
 				if ( isset( $submission['passed'] ) ) {
 					if ( $submission['passed'] ) {
-						$passed_count++;
+						++$passed_count;
 					} else {
-						$failed_count++;
+						++$failed_count;
 					}
 				}
 				if ( isset( $submission['percentage'] ) ) {
 					$scores[] = $submission['percentage'];
 				}
 			} else {
-				$pending_count++;
+				++$pending_count;
 			}
 		}
 
@@ -231,8 +231,8 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 
 		// Status overview chart.
 		$charts['status_overview'] = array(
-			'type' => 'doughnut',
-			'data' => array(
+			'type'    => 'doughnut',
+			'data'    => array(
 				'labels'   => array(
 					__( 'Graded', 'mcp-ai-wpoos-pro' ),
 					__( 'Pending', 'mcp-ai-wpoos-pro' ),
@@ -255,7 +255,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 			'options' => array(
 				'responsive' => true,
 				'plugins'    => array(
-					'title' => array(
+					'title'  => array(
 						'display' => true,
 						'text'    => __( 'Submission Status', 'mcp-ai-wpoos-pro' ),
 					),
@@ -270,8 +270,8 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 		// Pass/fail chart (only if there are graded submissions).
 		if ( $graded_count > 0 ) {
 			$charts['pass_fail'] = array(
-				'type' => 'doughnut',
-				'data' => array(
+				'type'    => 'doughnut',
+				'data'    => array(
 					'labels'   => array(
 						__( 'Passed', 'mcp-ai-wpoos-pro' ),
 						__( 'Failed', 'mcp-ai-wpoos-pro' ),
@@ -294,7 +294,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 				'options' => array(
 					'responsive' => true,
 					'plugins'    => array(
-						'title' => array(
+						'title'  => array(
 							'display' => true,
 							'text'    => sprintf(
 								/* translators: %d: passing score */
@@ -315,7 +315,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 				$bins = array_fill( 0, 10, 0 );
 				foreach ( $scores as $score ) {
 					$bin_index = min( floor( $score / 10 ), 9 );
-					$bins[ $bin_index ]++;
+					++$bins[ $bin_index ];
 				}
 
 				$labels = array();
@@ -326,8 +326,8 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 				}
 
 				$charts['score_distribution'] = array(
-					'type' => 'bar',
-					'data' => array(
+					'type'    => 'bar',
+					'data'    => array(
 						'labels'   => $labels,
 						'datasets' => array(
 							array(

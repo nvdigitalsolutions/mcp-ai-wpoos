@@ -287,7 +287,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				// Adjust args for Veo 2.0 compatibility before fallback.
 				// Veo 2.0 has different constraints than Veo 3.1:
 				// - Requires minimum 5 seconds duration (Veo 3.1 allows 4)
-				// - Only supports 720p resolution (Veo 3.1 supports up to 1080p)
+				// - Only supports 720p resolution (Veo 3.1 supports up to 1080p).
 				$veo_2_args = $args;
 
 				// Adjust duration if below Veo 2.0 minimum.
@@ -545,7 +545,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			if ( '1080p' === $resolution && self::REQUIRED_1080P_DURATION !== $duration ) {
 				$duration = self::REQUIRED_1080P_DURATION;
 			}
-		} else {
+		} elseif ( $is_veo_2 ) {
 			// Veo 2.0: Resolution parameter not supported - keep as null.
 			// Log if resolution was requested (will be ignored regardless of value).
 			if ( isset( $args['resolution'] ) ) {
@@ -899,11 +899,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Support both old and new API response structures for backward compatibility.
 		$video_uri = null;
 
-		// New structure (2025): response.generateVideoResponse.generatedSamples[0].video.uri
+		// New structure (2025): response.generateVideoResponse.generatedSamples[0].video.uri.
 		if ( isset( $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'] ) ) {
 			$video_uri = $result['response']['generateVideoResponse']['generatedSamples'][0]['video']['uri'];
 		} elseif ( isset( $result['response']['predictions'][0]['videoUri'] ) ) {
-			// Old structure (legacy): response.predictions[0].videoUri
+			// Old structure (legacy): response.predictions[0].videoUri.
 			$video_uri = $result['response']['predictions'][0]['videoUri'];
 		}
 
@@ -2012,7 +2012,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Generate attachment metadata.
-		require_once ABSPATH . 'wp-admin/includes/image.php';
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
 		$attach_data = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
 		wp_update_attachment_metadata( $attachment_id, $attach_data );
 
@@ -2181,7 +2183,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			// This handles cases where the video was uploaded by a separate process.
 			// (e.g., webhook, external service) without the job_id metadata.
 			// Extract the unique ID portion from the expected filename for flexible matching.
-			// Expected: veo-video-veo_XXXXX.mp4, but file might be veo-video-XXXXX.mp4
+			// Expected: veo-video-veo_XXXXX.mp4, but file might be veo-video-XXXXX.mp4.
 
 			// Validate expected_filename format before proceeding with pattern extraction.
 			if ( ! preg_match( '/^veo-video-(.+)\.mp4$/', $expected_filename, $matches ) ) {
@@ -2192,8 +2194,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			// Extract the unique ID portion, handling both formats:
 			// - veo_69264137e396a4_03027627 (from job_id).
 			// - 69264137e396a4_03027627 (from external upload).
-			$filename_id = $matches[1]; // e.g., "veo_69264137e396a4_03027627"
-			$unique_id   = str_replace( 'veo_', '', $filename_id ); // e.g., "69264137e396a4_03027627"
+			$filename_id = $matches[1]; // e.g., "veo_69264137e396a4_03027627".
+			$unique_id   = str_replace( 'veo_', '', $filename_id ); // e.g., "69264137e396a4_03027627".
 
 			// Search for veo video attachments created recently (within last hour).
 			// Only search for videos with veo metadata to avoid false positives.

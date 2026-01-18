@@ -127,4 +127,123 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		$this->assertEquals( 0.00110, $pricing['o3-mini']['input'], 'o3-mini input price should be $0.00110' );
 		$this->assertEquals( 0.00440, $pricing['o3-mini']['output'], 'o3-mini output price should be $0.00440' );
 	}
+
+	/**
+	 * Test update_model_costs requires authentication.
+	 */
+	public function test_update_model_costs_requires_auth() {
+		// Ensure user is not logged in.
+		wp_set_current_user( 0 );
+
+		// Simulate AJAX request without authentication.
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_update_model_costs' );
+
+		// Capture output.
+		ob_start();
+		try {
+			WP_MCP_AI_Model_Pricing_Checker::update_model_costs();
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		// Verify error response.
+		$this->assertStringContainsString( 'You must be logged in', $output );
+	}
+
+	/**
+	 * Test update_model_costs requires manage_options capability.
+	 */
+	public function test_update_model_costs_requires_capability() {
+		// Create a user without manage_options capability.
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		// Simulate AJAX request.
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_update_model_costs' );
+
+		// Capture output.
+		ob_start();
+		try {
+			WP_MCP_AI_Model_Pricing_Checker::update_model_costs();
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		// Verify error response.
+		$this->assertStringContainsString( 'You do not have permission', $output );
+	}
+
+	/**
+	 * Test update_model_costs with no price changes.
+	 */
+	public function test_update_model_costs_no_changes() {
+		// Create admin user.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		// Clear price changes.
+		delete_option( WP_MCP_AI_Model_Pricing_Checker::OPTION_PRICE_CHANGES );
+
+		// Simulate AJAX request.
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_update_model_costs' );
+
+		// Capture output.
+		ob_start();
+		try {
+			WP_MCP_AI_Model_Pricing_Checker::update_model_costs();
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		// Verify error response.
+		$this->assertStringContainsString( 'No pricing changes', $output );
+	}
+
+	/**
+	 * Test update_model_costs validates pricing values.
+	 */
+	public function test_update_model_costs_validates_pricing() {
+		// Create admin user.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		// Set invalid price changes (negative and too high values).
+		$invalid_changes = array(
+			array(
+				'model'      => 'test-model-negative',
+				'provider'   => 'test',
+				'old_input'  => 0.001,
+				'new_input'  => -0.5, // Invalid: negative.
+				'old_output' => 0.002,
+				'new_output' => 0.003,
+			),
+			array(
+				'model'      => 'test-model-too-high',
+				'provider'   => 'test',
+				'old_input'  => 0.001,
+				'new_input'  => 15.0, // Invalid: too high.
+				'old_output' => 0.002,
+				'new_output' => 0.003,
+			),
+		);
+		update_option( WP_MCP_AI_Model_Pricing_Checker::OPTION_PRICE_CHANGES, $invalid_changes );
+
+		// Simulate AJAX request.
+		$_POST['nonce'] = wp_create_nonce( 'wp_mcp_ai_update_model_costs' );
+
+		// Capture output.
+		ob_start();
+		try {
+			WP_MCP_AI_Model_Pricing_Checker::update_model_costs();
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+		$output = ob_get_clean();
+
+		// Verify error response mentions invalid pricing.
+		$this->assertStringContainsString( 'Invalid pricing values', $output );
+	}
 }

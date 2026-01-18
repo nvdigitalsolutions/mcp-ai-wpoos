@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new medical record for a member including lab results, diagnoses, treatments, vaccinations, imaging, or procedures.', 'mcp-ai-wpoos-pro' );
+		return __( 'Creates a new medical record or updates an existing one if medical_record_id is provided. Includes lab results, diagnoses, treatments, vaccinations, imaging, or procedures.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -41,38 +41,42 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'   => array(
+				'medical_record_id' => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional medical record ID. If provided, updates the existing record instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
+				'member_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this record belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'record_type' => array(
+				'record_type'       => array(
 					'type'        => 'string',
 					'description' => __( 'Type of medical record (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'lab-result', 'diagnosis', 'treatment', 'vaccination', 'imaging', 'procedure', 'hospitalization' ),
 				),
-				'title'       => array(
+				'title'             => array(
 					'type'        => 'string',
 					'description' => __( 'Record title (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'date'        => array(
+				'date'              => array(
 					'type'        => 'string',
 					'description' => __( 'Date of record (YYYY-MM-DD) (optional, defaults to today)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'provider'    => array(
+				'provider'          => array(
 					'type'        => 'string',
 					'description' => __( 'Healthcare provider or facility name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'details'     => array(
+				'details'           => array(
 					'type'        => 'string',
 					'description' => __( 'Detailed information about the medical record (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 10000,
 				),
-				'notes'       => array(
+				'notes'             => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
@@ -117,6 +121,29 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create medical records.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Check if this is an update operation.
+		$record_id = isset( $arguments['medical_record_id'] ) ? absint( $arguments['medical_record_id'] ) : 0;
+		$is_update = false;
+
+		if ( $record_id ) {
+			// Verify record exists and user has permission to update it.
+			$existing_record = get_post( $record_id );
+
+			if ( ! $existing_record || 'mcp_ai_medical_record' !== $existing_record->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_record_not_found', __( 'Medical record not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author       = absint( $existing_record->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this medical record.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Validate required fields.
 		$member_id   = isset( $arguments['member_id'] ) ? absint( $arguments['member_id'] ) : 0;
 		$record_type = isset( $arguments['record_type'] ) ? sanitize_key( $arguments['record_type'] ) : '';
@@ -151,49 +178,99 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_invalid_date', __( 'Invalid date format. Use YYYY-MM-DD.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		// Create medical record post.
-		$post_data = array(
-			'post_type'    => 'mcp_ai_medical_record',
-			'post_title'   => $title,
-			'post_content' => $details,
-			'post_excerpt' => $notes,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		);
+		if ( $is_update ) {
+			// Update existing medical record.
+			$post_data = array(
+				'ID'           => $record_id,
+				'post_title'   => $title,
+				'post_content' => $details,
+				'post_excerpt' => $notes,
+			);
 
-		$record_id = wp_insert_post( $post_data, true );
+			$result = wp_update_post( $post_data, true );
 
-		if ( is_wp_error( $record_id ) ) {
-			return $record_id;
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Set record type taxonomy.
+			wp_set_object_terms( $record_id, $record_type, 'mcp_ai_record_type' );
+
+			// Update record metadata.
+			update_post_meta( $record_id, '_medical_record_member_id', $member_id );
+			update_post_meta( $record_id, '_medical_record_date', $date );
+
+			if ( $provider ) {
+				update_post_meta( $record_id, '_medical_record_provider', $provider );
+			}
+
+			$record = get_post( $record_id );
+
+			return array(
+				'success'   => true,
+				'message'   => __( 'Medical record updated successfully.', 'mcp-ai-wpoos-pro' ),
+				'record_id' => $record_id,
+				'record'    => array(
+					'id'          => $record_id,
+					'member_id'   => $member_id,
+					'record_type' => $record_type,
+					'title'       => $title,
+					'date'        => $date,
+					'provider'    => $provider,
+					'details'     => $details,
+					'notes'       => $notes,
+					'updated_at'  => $record->post_modified,
+				),
+				'updated'   => true,
+			);
+		} else {
+			// Create medical record post.
+			$post_data = array(
+				'post_type'    => 'mcp_ai_medical_record',
+				'post_title'   => $title,
+				'post_content' => $details,
+				'post_excerpt' => $notes,
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			);
+
+			$record_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $record_id ) ) {
+				return $record_id;
+			}
+
+			// Set record type taxonomy.
+			wp_set_object_terms( $record_id, $record_type, 'mcp_ai_record_type' );
+
+			// Save record metadata.
+			update_post_meta( $record_id, '_medical_record_member_id', $member_id );
+			update_post_meta( $record_id, '_medical_record_date', $date );
+
+			if ( $provider ) {
+				update_post_meta( $record_id, '_medical_record_provider', $provider );
+			}
+
+			$record = get_post( $record_id );
+
+			return array(
+				'success'   => true,
+				'message'   => __( 'Medical record created successfully.', 'mcp-ai-wpoos-pro' ),
+				'record_id' => $record_id,
+				'record'    => array(
+					'id'          => $record_id,
+					'member_id'   => $member_id,
+					'record_type' => $record_type,
+					'title'       => $title,
+					'date'        => $date,
+					'provider'    => $provider,
+					'details'     => $details,
+					'notes'       => $notes,
+					'created_at'  => $record->post_date,
+				),
+				'updated'   => false,
+			);
 		}
-
-		// Set record type taxonomy.
-		wp_set_object_terms( $record_id, $record_type, 'mcp_ai_record_type' );
-
-		// Save record metadata.
-		update_post_meta( $record_id, '_medical_record_member_id', $member_id );
-		update_post_meta( $record_id, '_medical_record_date', $date );
-
-		if ( $provider ) {
-			update_post_meta( $record_id, '_medical_record_provider', $provider );
-		}
-
-		return array(
-			'success'   => true,
-			'message'   => __( 'Medical record created successfully.', 'mcp-ai-wpoos-pro' ),
-			'record_id' => $record_id,
-			'record'    => array(
-				'id'          => $record_id,
-				'member_id'   => $member_id,
-				'record_type' => $record_type,
-				'title'       => $title,
-				'date'        => $date,
-				'provider'    => $provider,
-				'details'     => $details,
-				'notes'       => $notes,
-				'created_at'  => current_time( 'mysql' ),
-			),
-		);
 	}
 
 	/**

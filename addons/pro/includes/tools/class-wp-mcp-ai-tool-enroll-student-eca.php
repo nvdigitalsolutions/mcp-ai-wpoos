@@ -43,29 +43,29 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'student_id'    => array(
+				'student_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress post ID of the student (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'eca_id'        => array(
+				'eca_id'              => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress post ID of the ECA (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'enrollment_type' => array(
+				'enrollment_type'     => array(
 					'type'        => 'string',
 					'description' => __( 'Type of enrollment', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'confirmed', 'waitlist', 'preference', 'trial' ),
 					'default'     => 'confirmed',
 				),
-				'payment_status' => array(
+				'payment_status'      => array(
 					'type'        => 'string',
 					'description' => __( 'Payment status (for paid ECAs)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pending', 'paid', 'partial', 'waived' ),
 					'default'     => 'pending',
 				),
-				'notes'         => array(
+				'notes'               => array(
 					'type'        => 'string',
 					'description' => __( 'Enrollment notes or comments', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
@@ -120,7 +120,7 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Validate inputs.
 		$student_id = isset( $arguments['student_id'] ) ? absint( $arguments['student_id'] ) : 0;
-		$eca_id = isset( $arguments['eca_id'] ) ? absint( $arguments['eca_id'] ) : 0;
+		$eca_id     = isset( $arguments['eca_id'] ) ? absint( $arguments['eca_id'] ) : 0;
 
 		if ( ! $student_id || ! $eca_id ) {
 			return new WP_Error(
@@ -157,9 +157,9 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Get enrollment parameters.
-		$enrollment_type = isset( $arguments['enrollment_type'] ) ? sanitize_key( $arguments['enrollment_type'] ) : 'confirmed';
-		$payment_status = isset( $arguments['payment_status'] ) ? sanitize_key( $arguments['payment_status'] ) : 'pending';
-		$notes = isset( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '';
+		$enrollment_type     = isset( $arguments['enrollment_type'] ) ? sanitize_key( $arguments['enrollment_type'] ) : 'confirmed';
+		$payment_status      = isset( $arguments['payment_status'] ) ? sanitize_key( $arguments['payment_status'] ) : 'pending';
+		$notes               = isset( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '';
 		$skip_capacity_check = isset( $arguments['skip_capacity_check'] ) ? (bool) $arguments['skip_capacity_check'] : false;
 
 		// Validate enrollment type.
@@ -179,7 +179,7 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Check year group eligibility.
 		$student_year_group = get_post_meta( $student_id, '_student_year_group', true );
-		$eca_year_groups = get_post_meta( $eca_id, '_eca_year_groups', true );
+		$eca_year_groups    = get_post_meta( $eca_id, '_eca_year_groups', true );
 
 		if ( is_array( $eca_year_groups ) && ! empty( $eca_year_groups ) && $student_year_group ) {
 			if ( ! in_array( $student_year_group, $eca_year_groups, true ) ) {
@@ -197,7 +197,7 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Check if ECA requires payment.
 		$is_paid = get_post_meta( $eca_id, '_eca_is_paid', true ) === 'yes';
-		$cost = 0;
+		$cost    = 0;
 		if ( $is_paid ) {
 			$cost = floatval( get_post_meta( $eca_id, '_eca_cost', true ) );
 		}
@@ -319,7 +319,7 @@ class WP_MCP_AI_Tool_Enroll_Student_ECA implements WP_MCP_AI_Tool_Interface, WP_
 	private function sync_enrollment_to_isams( $student_id, $eca_id, $enrollment_data ) {
 		// Check if both student and ECA are synced with iSAMS.
 		$student_isams_id = get_post_meta( $student_id, '_student_isams_id', true );
-		$eca_isams_id = get_post_meta( $eca_id, '_eca_isams_sync_id', true );
+		$eca_isams_id     = get_post_meta( $eca_id, '_eca_isams_sync_id', true );
 
 		if ( empty( $student_isams_id ) || empty( $eca_isams_id ) ) {
 			return null;

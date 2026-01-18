@@ -34,6 +34,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 		 * Render the complete tools orchestration view.
 		 *
 		 * @return string HTML output or fallback on error.
+		 * @throws Exception If the tool registry is not available.
 		 */
 		public static function render_tools_view() {
 			try {
@@ -247,7 +248,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 							require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-editable-capability-flags-renderer.php';
 						}
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer.
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
 						echo WP_MCP_AI_Editable_Capability_Flags_Renderer::render( $tool_slug, $capability_flags, $has_custom_flags, $force_sync );
 						?>
 					</td>
@@ -520,21 +521,21 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 					<h4 style="margin-top: 0;"><?php esc_html_e( 'Tools Summary', 'mcp-ai-wpoos' ); ?></h4>
 					<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
 						<?php
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_stat_card method.
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
 						echo self::render_stat_card( $stats['total_tools'], __( 'Total Tools', 'mcp-ai-wpoos' ), '#2271b1' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
 						echo self::render_stat_card( $stats['tools_with_capabilities'], __( 'With Capabilities', 'mcp-ai-wpoos' ), '#46b450' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
 						echo self::render_stat_card( $stats['tools_with_model_reqs'], __( 'With Model Reqs', 'mcp-ai-wpoos' ), '#8c68cd' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
 						echo self::render_stat_card( $stats['tools_with_rules'], __( 'With Rules', 'mcp-ai-wpoos' ), '#2271b1' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
 						echo self::render_stat_card( $stats['read_only_tools'], __( 'Read-only', 'mcp-ai-wpoos' ), '#46b450' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
 						echo self::render_stat_card( $stats['state_changing_tools'], __( 'State-changing', 'mcp-ai-wpoos' ), '#d63638' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
 						echo self::render_stat_card( $stats['external_api_tools'], __( 'External API', 'mcp-ai-wpoos' ), '#2271b1' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
 						echo self::render_stat_card( $stats['long_running_tools'], __( 'Long-running', 'mcp-ai-wpoos' ), '#f0b849' );
 						?>
 					</div>

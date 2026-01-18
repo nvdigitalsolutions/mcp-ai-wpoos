@@ -38,28 +38,39 @@ class WP_MCP_AI_Media_Collection_CPT {
 	 * Initialize the class.
 	 */
 	public static function init() {
-		// Only available in Full Version (not Base Version).
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
-			// Still show notice if accessing media collection pages.
-			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
-			return;
-		}
-
-		// Only initialize if media toolkit is enabled.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		if ( empty( $settings['enable_media_toolkit'] ) ) {
-			// Show notice if trying to access media collection pages when disabled.
-			add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
-			return;
-		}
-
+		// Always register post type and show notices, so admin pages are visible.
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 		add_action( 'init', array( __CLASS__, 'register_taxonomy' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'show_disabled_notice' ) );
+
+		// Check if feature is available and enabled before initializing full functionality.
+		// Only available in Full Version (not Base Version), unless Pro addon is active.
+		// When Pro addon is active (WP_MCP_AI_PRO_VERSION defined), features should work even in base mode.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			// Base version without Pro - only show notices, don't initialize functionality.
+			return;
+		}
+
+		// Check if media toolkit is enabled in settings.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_media_toolkit'] ) ) {
+			// Feature disabled - only show notices, don't initialize functionality.
+			return;
+		}
+
+		// Feature is available and enabled - initialize full functionality.
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register_meta_boxes' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'save_collection_meta' ), 5, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'show_info_notice' ) );
 		add_filter( 'manage_' . self::POST_TYPE . '_posts_columns', array( __CLASS__, 'add_admin_columns' ) );
 		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( __CLASS__, 'render_admin_columns' ), 10, 2 );
+
+		// Phase 4: Bulk actions and admin enhancements.
+		add_filter( 'bulk_actions-edit-' . self::POST_TYPE, array( __CLASS__, 'add_bulk_actions' ) );
+		add_filter( 'handle_bulk_actions-edit-' . self::POST_TYPE, array( __CLASS__, 'handle_bulk_actions' ), 10, 3 );
+		add_filter( 'post_row_actions', array( __CLASS__, 'add_row_actions' ), 10, 2 );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
+		add_action( 'wp_ajax_mcp_ai_quick_process_collection', array( __CLASS__, 'ajax_quick_process_collection' ) );
 
 		// Load metabox classes.
 		self::load_metabox_classes();
@@ -77,14 +88,14 @@ class WP_MCP_AI_Media_Collection_CPT {
 
 		// Check if we're on a media collection post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type   = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type          = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_collection_page = ( $post_type === self::POST_TYPE );
 		if ( ! $is_collection_page && $screen->post_type !== self::POST_TYPE ) {
 			return;
 		}
 
-		// Check if in Base Version.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+		// Check if in Base Version without Pro addon.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			?>
 			<div class="notice notice-warning">
 				<p>
@@ -338,8 +349,8 @@ class WP_MCP_AI_Media_Collection_CPT {
 			$new_columns[ $key ] = $label;
 
 			if ( 'title' === $key ) {
-				$new_columns['item_count']   = __( 'Items', 'mcp-ai-wpoos-pro' );
-				$new_columns['templates']    = __( 'Templates', 'mcp-ai-wpoos-pro' );
+				$new_columns['item_count']     = __( 'Items', 'mcp-ai-wpoos-pro' );
+				$new_columns['templates']      = __( 'Templates', 'mcp-ai-wpoos-pro' );
 				$new_columns['last_processed'] = __( 'Last Processed', 'mcp-ai-wpoos-pro' );
 			}
 		}
@@ -380,6 +391,185 @@ class WP_MCP_AI_Media_Collection_CPT {
 					echo '<em>' . esc_html__( 'Never', 'mcp-ai-wpoos-pro' ) . '</em>';
 				}
 				break;
+		}
+	}
+
+	/**
+	 * Add bulk actions for media collections (Phase 4).
+	 *
+	 * @param array $actions Existing bulk actions.
+	 * @return array Modified bulk actions.
+	 */
+	public static function add_bulk_actions( $actions ) {
+		$actions['process_collections'] = __( 'Process Collections', 'mcp-ai-wpoos-pro' );
+		$actions['export_collections']  = __( 'Export', 'mcp-ai-wpoos-pro' );
+		return $actions;
+	}
+
+	/**
+	 * Handle bulk actions for media collections (Phase 4).
+	 *
+	 * @param string $redirect_to Redirect URL.
+	 * @param string $doaction    Action being taken.
+	 * @param array  $post_ids    Array of post IDs.
+	 * @return string Modified redirect URL.
+	 */
+	public static function handle_bulk_actions( $redirect_to, $doaction, $post_ids ) {
+		if ( 'process_collections' === $doaction ) {
+			// Process collections using the process_collection tool.
+			$processed = 0;
+			$errors    = 0;
+
+			// Load tool.
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Process_Collection' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-process-collection.php';
+			}
+
+			$tool = new WP_MCP_AI_Tool_Process_Collection();
+
+			foreach ( $post_ids as $post_id ) {
+				$result = $tool->execute(
+					array( 'collection_id' => $post_id ),
+					array( 'user_id' => get_current_user_id() )
+				);
+
+				if ( ! empty( $result['success'] ) ) {
+					++$processed;
+				} else {
+					++$errors;
+				}
+			}
+
+			$redirect_to = add_query_arg( 'processed_collections', $processed, $redirect_to );
+			if ( $errors > 0 ) {
+				$redirect_to = add_query_arg( 'processing_errors', $errors, $redirect_to );
+			}
+		} elseif ( 'export_collections' === $doaction ) {
+			// Export collections as JSON.
+			$collections = array();
+			foreach ( $post_ids as $post_id ) {
+				$post = get_post( $post_id );
+				if ( $post && self::POST_TYPE === $post->post_type ) {
+					$collections[] = array(
+						'title'       => $post->post_title,
+						'description' => $post->post_content,
+						'items'       => get_post_meta( $post_id, '_mcp_ai_collection_items', true ),
+						'templates'   => get_post_meta( $post_id, '_mcp_ai_collection_templates', true ),
+						'categories'  => wp_get_object_terms( $post_id, self::TAXONOMY_CATEGORY, array( 'fields' => 'names' ) ),
+					);
+				}
+			}
+
+			if ( ! empty( $collections ) ) {
+				// Store in transient for download.
+				$transient_key = 'mcp_ai_collection_export_' . get_current_user_id();
+				set_transient( $transient_key, wp_json_encode( $collections, JSON_PRETTY_PRINT ), HOUR_IN_SECONDS );
+				$redirect_to = add_query_arg( 'exported_collections', count( $collections ), $redirect_to );
+				$redirect_to = add_query_arg( 'export_key', $transient_key, $redirect_to );
+			}
+		}
+
+		return $redirect_to;
+	}
+
+	/**
+	 * Add custom row actions (Phase 4).
+	 *
+	 * @param array   $actions Existing actions.
+	 * @param WP_Post $post    Post object.
+	 * @return array Modified actions.
+	 */
+	public static function add_row_actions( $actions, $post ) {
+		if ( self::POST_TYPE === $post->post_type ) {
+			// Add quick process action.
+			$actions['quick_process'] = sprintf(
+				'<a href="#" class="quick-process-collection" data-collection-id="%d">%s</a>',
+				$post->ID,
+				__( 'Quick Process', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		return $actions;
+	}
+
+	/**
+	 * Enqueue admin assets (Phase 4).
+	 *
+	 * @param string $hook Current admin page hook.
+	 */
+	public static function enqueue_admin_assets( $hook ) {
+		$screen = get_current_screen();
+		if ( ! $screen || ! in_array( $screen->id, array( self::POST_TYPE, 'edit-' . self::POST_TYPE ), true ) ) {
+			return;
+		}
+
+		// Enqueue admin CSS (shared with templates).
+		wp_enqueue_style(
+			'mcp-ai-media-collection-admin',
+			WP_MCP_AI_PRO_URL . 'assets/css/media-template-admin.css',
+			array(),
+			WP_MCP_AI_PRO_VERSION
+		);
+
+		// Enqueue admin JS.
+		wp_enqueue_script(
+			'mcp-ai-media-collection-admin',
+			WP_MCP_AI_PRO_URL . 'assets/js/media-collection-admin.js',
+			array( 'jquery' ),
+			WP_MCP_AI_PRO_VERSION,
+			true
+		);
+
+		// Localize script.
+		wp_localize_script(
+			'mcp-ai-media-collection-admin',
+			'mcpAiMediaCollection',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'mcp_ai_media_collection_admin' ),
+				'i18n'    => array(
+					'processSuccess' => __( 'Collection processed successfully!', 'mcp-ai-wpoos-pro' ),
+					'processError'   => __( 'Failed to process collection.', 'mcp-ai-wpoos-pro' ),
+					'processing'     => __( 'Processing collection...', 'mcp-ai-wpoos-pro' ),
+					'confirmProcess' => __( 'Are you sure you want to process this collection? This will apply all assigned templates to all items.', 'mcp-ai-wpoos-pro' ),
+				),
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler for quick process collection (Phase 4).
+	 */
+	public static function ajax_quick_process_collection() {
+		// Check nonce.
+		check_ajax_referer( 'mcp_ai_media_collection_admin', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get collection ID.
+		$collection_id = isset( $_POST['collection_id'] ) ? absint( $_POST['collection_id'] ) : 0;
+		if ( ! $collection_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid collection ID.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Use the process_collection tool.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Process_Collection' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-process-collection.php';
+		}
+
+		$tool   = new WP_MCP_AI_Tool_Process_Collection();
+		$result = $tool->execute(
+			array( 'collection_id' => $collection_id ),
+			array( 'user_id' => get_current_user_id() )
+		);
+
+		if ( ! empty( $result['success'] ) ) {
+			wp_send_json_success( $result );
+		} else {
+			wp_send_json_error( $result );
 		}
 	}
 }

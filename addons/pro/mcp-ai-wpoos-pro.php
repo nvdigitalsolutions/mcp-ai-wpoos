@@ -356,6 +356,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-schedule-notify-sms.php',
 			// Email and communication tools.
 			'WP_MCP_AI_Pro_Tool_Search_Gmail'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-gmail.php',
+			'WP_MCP_AI_Pro_Tool_Search_Drive'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-drive.php',
 			'WP_MCP_AI_Pro_Tool_Send_Mailjet_Email'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-mailjet-email.php',
 			// Google Workspace tools.
 			'WP_MCP_AI_Pro_Tool_Create_Google_Calendar_Event' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-create-google-calendar-event.php',
@@ -530,6 +531,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Pro_Tool_Elementor' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-elementor.php',
 			);
 			$pro_tools       = array_merge( $pro_tools, $elementor_tools );
+		}
+
+		// Add Media Toolkit tools if enabled.
+		if ( ! empty( $settings['enable_media_toolkit'] ) ) {
+			$media_toolkit_tools = array(
+				'WP_MCP_AI_Tool_List_Media_Templates'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-media-templates.php',
+				'WP_MCP_AI_Tool_Apply_Media_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-media-template.php',
+				'WP_MCP_AI_Tool_Create_Media_Template'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-media-template.php',
+				'WP_MCP_AI_Tool_Process_Collection'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-process-collection.php',
+				'WP_MCP_AI_Tool_Apply_Collection_Template' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-apply-collection-template.php',
+			);
+			$pro_tools           = array_merge( $pro_tools, $media_toolkit_tools );
 		}
 
 		/**
@@ -825,12 +838,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['delete_policy']   = 'wordpress-core';
 			$pro_tools['search_policies'] = 'wordpress-core';
 			// Prescription Management (CRUD + Search).
-			$pro_tools['create_prescription']   = 'wordpress-core';
-			$pro_tools['list_prescriptions']    = 'wordpress-core';
-			$pro_tools['get_prescription']      = 'wordpress-core';
-			$pro_tools['update_prescription']   = 'wordpress-core';
-			$pro_tools['delete_prescription']   = 'wordpress-core';
-			$pro_tools['search_prescriptions']  = 'wordpress-core';
+			$pro_tools['create_prescription']  = 'wordpress-core';
+			$pro_tools['list_prescriptions']   = 'wordpress-core';
+			$pro_tools['get_prescription']     = 'wordpress-core';
+			$pro_tools['update_prescription']  = 'wordpress-core';
+			$pro_tools['delete_prescription']  = 'wordpress-core';
+			$pro_tools['search_prescriptions'] = 'wordpress-core';
 			// Medical Record Management (CRUD + Search).
 			$pro_tools['create_medical_record']  = 'wordpress-core';
 			$pro_tools['list_medical_records']   = 'wordpress-core';
@@ -839,12 +852,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['delete_medical_record']  = 'wordpress-core';
 			$pro_tools['search_medical_records'] = 'wordpress-core';
 			// Checkup/Appointment Management (CRUD + Specialized).
-			$pro_tools['create_checkup']         = 'wordpress-core';
-			$pro_tools['list_checkups']          = 'wordpress-core';
-			$pro_tools['get_checkup']            = 'wordpress-core';
-			$pro_tools['update_checkup']         = 'wordpress-core';
-			$pro_tools['delete_checkup']         = 'wordpress-core';
-			$pro_tools['get_upcoming_checkups']  = 'wordpress-core';
+			$pro_tools['create_checkup']        = 'wordpress-core';
+			$pro_tools['list_checkups']         = 'wordpress-core';
+			$pro_tools['get_checkup']           = 'wordpress-core';
+			$pro_tools['update_checkup']        = 'wordpress-core';
+			$pro_tools['delete_checkup']        = 'wordpress-core';
+			$pro_tools['get_upcoming_checkups'] = 'wordpress-core';
 			// Allergy Management (CRUD).
 			$pro_tools['create_allergy'] = 'wordpress-core';
 			$pro_tools['list_allergies'] = 'wordpress-core';
@@ -966,6 +979,11 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
 				'user_requests_per_minute'   => 20,
 			)
 		);
+	}
+
+	// Seed media template presets if media toolkit is enabled.
+	if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
+		WP_MCP_AI_Media_Template_Presets::seed_presets();
 	}
 
 	flush_rewrite_rules();

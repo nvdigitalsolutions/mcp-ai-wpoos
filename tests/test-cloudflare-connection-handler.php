@@ -32,7 +32,7 @@ class Test_Cloudflare_Connection_Handler extends WP_UnitTestCase {
 	 * Test connection status when connected.
 	 */
 	public function test_is_connected_returns_true_when_connected() {
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                         = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['cloudflare_connected'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -67,10 +67,10 @@ class Test_Cloudflare_Connection_Handler extends WP_UnitTestCase {
 	 */
 	public function test_disconnect_clears_connection_status() {
 		// Set up connected state.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$settings['cloudflare_connected']      = true;
+		$settings                               = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['cloudflare_connected']       = true;
 		$settings['cloudflare_connection_time'] = time();
-		$settings['cloudflare_zone_name']      = 'example.com';
+		$settings['cloudflare_zone_name']       = 'example.com';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$this->assertTrue( WP_MCP_AI_Cloudflare_Connection_Handler::is_connected() );

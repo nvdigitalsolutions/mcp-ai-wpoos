@@ -80,6 +80,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_toggle_tool'            => 'handle_toggle_tool',
 				'wp_ajax_wp_mcp_ai_reseed_professions'     => 'handle_reseed_professions',
 				'wp_ajax_wp_mcp_ai_reseed_teams'           => 'handle_reseed_teams',
+				'wp_ajax_wp_mcp_ai_seed_orchestration'     => 'handle_seed_orchestration',
 				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
 				'wp_ajax_wp_mcp_ai_regenerate_playbook'    => 'handle_regenerate_playbook',
 				'wp_ajax_wp_mcp_ai_sync_all_playbooks'     => 'handle_sync_all_playbooks',
@@ -841,8 +842,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$service = new WP_MCP_AI_Mubert_Music_Service();
 
 			// Temporarily override the API key for testing.
-			$original_settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$test_settings     = $original_settings;
+			$original_settings               = WP_MCP_AI_Admin_Settings::get_settings();
+			$test_settings                   = $original_settings;
 			$test_settings['mubert_api_key'] = $api_key;
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $test_settings );
 
@@ -1057,9 +1058,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Test a simple API call with the token to verify it works.
-			$test_url = $api_url . 'api/school/terms';
+			$test_url      = $api_url . 'api/school/terms';
 			$test_response = wp_remote_get(
-				add_query_arg( array( 'page' => 1, 'pageSize' => 1 ), $test_url ),
+				add_query_arg(
+					array(
+						'page'     => 1,
+						'pageSize' => 1,
+					),
+					$test_url
+				),
 				array(
 					'headers' => array(
 						'Authorization' => 'Bearer ' . $data['token'],
@@ -2328,6 +2335,67 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'updated'  => $updated,
 					'errors'   => count( $errors ),
 					'warnings' => count( $warnings ),
+				)
+			);
+		}
+
+		/**
+		 * Handle agent orchestration seeding AJAX request.
+		 *
+		 * Seeds agent roles and task patterns for professions based on
+		 * category and expertise heuristics.
+		 *
+		 * @since 1.9.0
+		 */
+		private function handle_seed_orchestration() {
+			check_ajax_referer( 'wp_mcp_ai_seed_orchestration', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
+					)
+				);
+				return;
+			}
+
+			// Get force flag.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with rest_sanitize_boolean.
+			$force = isset( $_POST['force'] ) ? rest_sanitize_boolean( wp_unslash( $_POST['force'] ) ) : false;
+
+			// Load orchestration seeder.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Orchestration_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-orchestration-seeder.php';
+			}
+
+			$seeder = new WP_MCP_AI_Profession_Orchestration_Seeder();
+			$result = $seeder->seed_all( $force );
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: Error message */
+							__( 'Failed to seed orchestration settings: %s', 'mcp-ai-wpoos' ),
+							$result->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$message = sprintf(
+				/* translators: 1: Number of agent roles seeded, 2: Number of task patterns seeded */
+				__( 'Orchestration settings seeded successfully. Agent roles assigned: %1$d, Task patterns created: %2$d', 'mcp-ai-wpoos' ),
+				isset( $result['roles_seeded'] ) ? $result['roles_seeded'] : 0,
+				isset( $result['patterns_seeded'] ) ? $result['patterns_seeded'] : 0
+			);
+
+			wp_send_json_success(
+				array(
+					'message'         => $message,
+					'roles_seeded'    => isset( $result['roles_seeded'] ) ? $result['roles_seeded'] : 0,
+					'patterns_seeded' => isset( $result['patterns_seeded'] ) ? $result['patterns_seeded'] : 0,
 				)
 			);
 		}

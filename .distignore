@@ -74,11 +74,18 @@ webpack.config.js
 # Temporary files
 *.log
 *.bak
+*.backup
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
 *~
+
+# Binary files
+*.node
+*.dll
+*.so
+*.dylib
 
 # Environment files
 .env

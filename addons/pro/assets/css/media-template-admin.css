@@ -1,0 +1,371 @@
+/**
+ * Media Template Admin UI Enhancements (Phase 4)
+ *
+ * Provides enhanced styling for the Media Template admin interface including
+ * preview cards, quick actions, and improved visual hierarchy.
+ *
+ * @package WP_MCP_AI
+ */
+
+/* Template List Enhancements */
+.wp-list-table.widefat.media-templates {
+	border-collapse: separate;
+	border-spacing: 0 8px;
+}
+
+.wp-list-table.media-templates tbody tr {
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	transition: all 0.2s ease;
+}
+
+.wp-list-table.media-templates tbody tr:hover {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	transform: translateY(-1px);
+}
+
+/* Operation Column Badge Styling */
+.wp-list-table .column-operation {
+	font-weight: 500;
+}
+
+.operation-badge {
+	display: inline-block;
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.operation-badge.resize {
+	background: #e3f2fd;
+	color: #1976d2;
+}
+
+.operation-badge.logo {
+	background: #f3e5f5;
+	color: #7b1fa2;
+}
+
+.operation-badge.ai {
+	background: #e8f5e9;
+	color: #388e3c;
+}
+
+/* Usage Stats Styling */
+.column-usage_count {
+	text-align: center;
+	font-weight: 600;
+	color: #2196f3;
+}
+
+.column-last_used {
+	color: #666;
+	font-size: 13px;
+}
+
+/* Template Preview Card */
+.template-preview-card {
+	position: relative;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	padding: 20px;
+	margin: 20px 0;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.template-preview-card h3 {
+	margin: 0 0 15px 0;
+	color: #1d2327;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.template-preview-info {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 15px;
+	margin-bottom: 15px;
+}
+
+.template-preview-info-item {
+	padding: 12px;
+	background: #f8f9fa;
+	border-radius: 6px;
+}
+
+.template-preview-info-item label {
+	display: block;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #666;
+	margin-bottom: 5px;
+	font-weight: 600;
+}
+
+.template-preview-info-item .value {
+	font-size: 14px;
+	color: #1d2327;
+	font-weight: 500;
+}
+
+.template-preview-summary {
+	padding: 15px;
+	background: #fffbf0;
+	border-left: 4px solid #ffc107;
+	border-radius: 4px;
+	font-size: 14px;
+	color: #333;
+}
+
+/* Quick Actions Buttons */
+.quick-actions {
+	margin-top: 15px;
+	padding-top: 15px;
+	border-top: 1px solid #e0e0e0;
+	display: flex;
+	gap: 10px;
+}
+
+.quick-action-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	border: none;
+	border-radius: 6px;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	text-decoration: none;
+}
+
+.quick-action-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.quick-action-btn.primary {
+	background: #2271b1;
+	color: #fff;
+}
+
+.quick-action-btn.primary:hover {
+	background: #135e96;
+	color: #fff;
+}
+
+.quick-action-btn.secondary {
+	background: #f0f0f1;
+	color: #2c3338;
+}
+
+.quick-action-btn.secondary:hover {
+	background: #dcdcde;
+	color: #2c3338;
+}
+
+.quick-action-btn .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
+
+/* Admin Notice Enhancements */
+.media-template-info-notice {
+	border-left: 4px solid #2271b1;
+	padding: 15px 20px;
+}
+
+.media-template-info-notice p:last-child {
+	margin-bottom: 0;
+}
+
+.media-template-info-notice code {
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 12px;
+}
+
+/* Row Actions Enhancement */
+.row-actions {
+	font-size: 13px;
+}
+
+.row-actions span.duplicate a {
+	color: #2271b1;
+}
+
+.row-actions span.duplicate a:hover {
+	color: #135e96;
+}
+
+.row-actions span.quick-apply a {
+	color: #00a32a;
+	font-weight: 500;
+}
+
+.row-actions span.quick-apply a:hover {
+	color: #008a20;
+}
+
+/* Bulk Actions Notice */
+.updated.template-bulk-action {
+	border-left: 4px solid #00a32a;
+	padding: 12px 15px;
+}
+
+.updated.template-bulk-action p {
+	margin: 0.5em 0;
+	font-size: 14px;
+}
+
+/* Loading States */
+.template-processing {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 16px;
+	background: #f0f0f1;
+	border-radius: 6px;
+	font-size: 13px;
+	color: #2c3338;
+}
+
+.template-processing .spinner {
+	float: none;
+	margin: 0;
+}
+
+/* Template Thumbnail Column */
+.column-thumbnail {
+	width: 80px;
+	text-align: center;
+}
+
+.template-thumbnail {
+	width: 60px;
+	height: 60px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	font-size: 24px;
+	font-weight: 600;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.template-thumbnail.resize {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.template-thumbnail.logo {
+	background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.template-thumbnail.ai {
+	background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Export Download Link */
+.template-export-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 18px;
+	background: #00a32a;
+	color: #fff;
+	text-decoration: none;
+	border-radius: 6px;
+	font-weight: 500;
+	box-shadow: 0 2px 4px rgba(0, 163, 42, 0.2);
+	transition: all 0.2s ease;
+}
+
+.template-export-link:hover {
+	background: #008a20;
+	color: #fff;
+	transform: translateY(-1px);
+	box-shadow: 0 3px 8px rgba(0, 163, 42, 0.3);
+}
+
+.template-export-link .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+}
+
+/* Media Library Integration */
+.attachment-info .template-quick-apply {
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid #ddd;
+}
+
+.attachment-info .template-quick-apply label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.attachment-info .template-quick-apply select {
+	width: 100%;
+	margin-bottom: 10px;
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 782px) {
+	.template-preview-info {
+		grid-template-columns: 1fr;
+	}
+
+	.quick-actions {
+		flex-direction: column;
+	}
+
+	.quick-action-btn {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+/* Animation for Success Messages */
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.template-success-message {
+	animation: slideIn 0.3s ease;
+	background: #e8f5e9;
+	border-left: 4px solid #00a32a;
+	padding: 12px 15px;
+	margin: 15px 0;
+	border-radius: 4px;
+	color: #1d2327;
+}
+
+.template-error-message {
+	animation: slideIn 0.3s ease;
+	background: #ffebee;
+	border-left: 4px solid #d32f2f;
+	padding: 12px 15px;
+	margin: 15px 0;
+	border-radius: 4px;
+	color: #1d2327;
+}

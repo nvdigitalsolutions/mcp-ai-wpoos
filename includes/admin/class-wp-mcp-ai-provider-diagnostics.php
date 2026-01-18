@@ -987,7 +987,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						'message' => __( 'Hugging Face connection successful!', 'mcp-ai-wpoos' ),
 						'details' => array(
 							__( 'Endpoint', 'mcp-ai-wpoos' ) => $settings['huggingface_endpoint_url'],
-							__( 'Model', 'mcp-ai-wpoos' )    => isset( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
+							__( 'Model', 'mcp-ai-wpoos' ) => isset( $settings['huggingface_model'] ) ? $settings['huggingface_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
 						),
 					)
 				);

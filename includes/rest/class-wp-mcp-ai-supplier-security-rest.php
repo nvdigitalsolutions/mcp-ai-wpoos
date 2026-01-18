@@ -228,11 +228,13 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 		$supplier_security = WP_MCP_AI_Supplier_Security::get_instance();
 		$suppliers         = $supplier_security->get_suppliers();
 
-		return rest_ensure_response( array(
-			'success'   => true,
-			'suppliers' => array_values( $suppliers ),
-			'count'     => count( $suppliers ),
-		) );
+		return rest_ensure_response(
+			array(
+				'success'   => true,
+				'suppliers' => array_values( $suppliers ),
+				'count'     => count( $suppliers ),
+			)
+		);
 	}
 
 	/**
@@ -242,7 +244,7 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_supplier( $request ) {
-		$supplier_id = sanitize_text_field( $request->get_param( 'id' ) );
+		$supplier_id       = sanitize_text_field( $request->get_param( 'id' ) );
 		$supplier_security = WP_MCP_AI_Supplier_Security::get_instance();
 		$supplier          = $supplier_security->get_supplier( $supplier_id );
 
@@ -254,10 +256,12 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 			);
 		}
 
-		return rest_ensure_response( array(
-			'success'  => true,
-			'supplier' => $supplier,
-		) );
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'supplier' => $supplier,
+			)
+		);
 	}
 
 	/**
@@ -267,11 +271,11 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function update_supplier( $request ) {
-		$supplier_id = sanitize_text_field( $request->get_param( 'id' ) );
+		$supplier_id       = sanitize_text_field( $request->get_param( 'id' ) );
 		$supplier_security = WP_MCP_AI_Supplier_Security::get_instance();
 
 		// Get sanitized data.
-		$data = array();
+		$data   = array();
 		$params = $request->get_params();
 
 		// Sanitize each field.
@@ -304,11 +308,13 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 			);
 		}
 
-		return rest_ensure_response( array(
-			'success'  => true,
-			'supplier' => $supplier_security->get_supplier( $supplier_id ),
-			'message'  => __( 'Supplier updated successfully', 'mcp-ai-wpoos' ),
-		) );
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'supplier' => $supplier_security->get_supplier( $supplier_id ),
+				'message'  => __( 'Supplier updated successfully', 'mcp-ai-wpoos' ),
+			)
+		);
 	}
 
 	/**
@@ -318,7 +324,7 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_supplier( $request ) {
-		$supplier_id = sanitize_text_field( $request->get_param( 'id' ) );
+		$supplier_id       = sanitize_text_field( $request->get_param( 'id' ) );
 		$supplier_security = WP_MCP_AI_Supplier_Security::get_instance();
 
 		$success = $supplier_security->delete_supplier( $supplier_id );
@@ -331,10 +337,12 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 			);
 		}
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'message' => __( 'Supplier deleted successfully', 'mcp-ai-wpoos' ),
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'message' => __( 'Supplier deleted successfully', 'mcp-ai-wpoos' ),
+			)
+		);
 	}
 
 	/**
@@ -344,16 +352,18 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_suppliers_by_category( $request ) {
-		$category = sanitize_text_field( $request->get_param( 'category' ) );
+		$category          = sanitize_text_field( $request->get_param( 'category' ) );
 		$supplier_security = WP_MCP_AI_Supplier_Security::get_instance();
 		$suppliers         = $supplier_security->get_suppliers_by_category( $category );
 
-		return rest_ensure_response( array(
-			'success'   => true,
-			'category'  => $category,
-			'suppliers' => array_values( $suppliers ),
-			'count'     => count( $suppliers ),
-		) );
+		return rest_ensure_response(
+			array(
+				'success'   => true,
+				'category'  => $category,
+				'suppliers' => array_values( $suppliers ),
+				'count'     => count( $suppliers ),
+			)
+		);
 	}
 
 	/**
@@ -363,16 +373,18 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_suppliers_by_risk( $request ) {
-		$risk = sanitize_text_field( $request->get_param( 'risk' ) );
+		$risk              = sanitize_text_field( $request->get_param( 'risk' ) );
 		$supplier_security = WP_MCP_AI_Supplier_Security::get_instance();
 		$suppliers         = $supplier_security->get_suppliers_by_risk( $risk );
 
-		return rest_ensure_response( array(
-			'success'   => true,
-			'risk'      => $risk,
-			'suppliers' => array_values( $suppliers ),
-			'count'     => count( $suppliers ),
-		) );
+		return rest_ensure_response(
+			array(
+				'success'   => true,
+				'risk'      => $risk,
+				'suppliers' => array_values( $suppliers ),
+				'count'     => count( $suppliers ),
+			)
+		);
 	}
 
 	/**
@@ -385,11 +397,13 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 		$supplier_security = WP_MCP_AI_Supplier_Security::get_instance();
 		$suppliers         = $supplier_security->get_suppliers_due_for_review();
 
-		return rest_ensure_response( array(
-			'success'   => true,
-			'suppliers' => array_values( $suppliers ),
-			'count'     => count( $suppliers ),
-		) );
+		return rest_ensure_response(
+			array(
+				'success'   => true,
+				'suppliers' => array_values( $suppliers ),
+				'count'     => count( $suppliers ),
+			)
+		);
 	}
 
 	/**
@@ -402,10 +416,12 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 		$supplier_security = WP_MCP_AI_Supplier_Security::get_instance();
 		$stats             = $supplier_security->get_statistics();
 
-		return rest_ensure_response( array(
-			'success'    => true,
-			'statistics' => $stats,
-		) );
+		return rest_ensure_response(
+			array(
+				'success'    => true,
+				'statistics' => $stats,
+			)
+		);
 	}
 
 	/**
@@ -434,11 +450,13 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 			);
 		}
 
-		return rest_ensure_response( array(
-			'success'  => true,
-			'message'  => __( 'Incident recorded successfully', 'mcp-ai-wpoos' ),
-			'incident' => $incident,
-		) );
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'message'  => __( 'Incident recorded successfully', 'mcp-ai-wpoos' ),
+				'incident' => $incident,
+			)
+		);
 	}
 
 	/**
@@ -451,10 +469,12 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 		$supplier_security = WP_MCP_AI_Supplier_Security::get_instance();
 		$sbom              = $supplier_security->generate_sbom();
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'sbom'    => $sbom,
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'sbom'    => $sbom,
+			)
+		);
 	}
 
 	/**
@@ -467,10 +487,12 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 		$supplier_security = WP_MCP_AI_Supplier_Security::get_instance();
 		$results           = $supplier_security->scan_dependencies();
 
-		return rest_ensure_response( array(
-			'success' => true,
-			'results' => $results,
-		) );
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'results' => $results,
+			)
+		);
 	}
 
 	/**
@@ -515,7 +537,7 @@ class WP_MCP_AI_Supplier_Security_REST extends WP_REST_Controller {
 // Initialize REST API.
 add_action(
 	'rest_api_init',
-	function() {
+	function () {
 		$controller = new WP_MCP_AI_Supplier_Security_REST();
 		$controller->register_routes();
 	}

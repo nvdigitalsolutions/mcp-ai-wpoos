@@ -180,9 +180,9 @@ class WP_MCP_AI_Tool_Research_Product implements WP_MCP_AI_Tool_Interface, WP_MC
 			),
 			'create_tool'    => 'create_woo_product',
 			'tool_arguments' => array(
-				'reference'  => $reference,
-				'title'      => sprintf( __( 'Replace with actual product name for: %s', 'mcp-ai-wpoos-pro' ), $query ),
-				'brand'      => __( 'Replace with actual brand name', 'mcp-ai-wpoos-pro' ),
+				'reference' => $reference,
+				'title'     => sprintf( __( 'Replace with actual product name for: %s', 'mcp-ai-wpoos-pro' ), $query ),
+				'brand'     => __( 'Replace with actual brand name', 'mcp-ai-wpoos-pro' ),
 				// Additional fields to be filled based on research.
 			),
 		);

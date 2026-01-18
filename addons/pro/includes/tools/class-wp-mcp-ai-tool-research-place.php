@@ -48,11 +48,11 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'query'            => array(
+				'query'             => array(
 					'type'        => 'string',
 					'description' => __( 'The place to research (e.g., "Eiffel Tower Paris", "Central Park New York", "Tokyo Tower")', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_details'  => array(
+				'include_details'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to include detailed information like hours, amenities, and ratings', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -124,8 +124,8 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			);
 		}
 
-		$query            = sanitize_text_field( $arguments['query'] );
-		$include_details  = isset( $arguments['include_details'] ) ? (bool) $arguments['include_details'] : true;
+		$query             = sanitize_text_field( $arguments['query'] );
+		$include_details   = isset( $arguments['include_details'] ) ? (bool) $arguments['include_details'] : true;
 		$use_google_places = isset( $arguments['use_google_places'] ) ? (bool) $arguments['use_google_places'] : true;
 
 		// Check cache first.
@@ -307,7 +307,7 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$prompt .= "}\n";
 		$prompt .= "```\n\n";
 
-		$prompt .= "Use web search to find official and authoritative sources. ";
+		$prompt .= 'Use web search to find official and authoritative sources. ';
 		$prompt .= "Include source URLs in the 'sources' array. ";
 		$prompt .= "If information is not available, use null for that field.\n";
 
@@ -528,30 +528,30 @@ class WP_MCP_AI_Tool_Research_Place implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Build place data structure.
 		$place_data = array(
-			'success'        => true,
-			'query'          => $query,
-			'name'           => sanitize_text_field( $data['name'] ),
-			'description'    => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
-			'place_type'     => isset( $data['place_type'] ) ? sanitize_text_field( $data['place_type'] ) : '',
-			'address'        => isset( $data['address'] ) ? sanitize_text_field( $data['address'] ) : '',
-			'street'         => isset( $data['street'] ) ? sanitize_text_field( $data['street'] ) : '',
-			'city'           => isset( $data['city'] ) ? sanitize_text_field( $data['city'] ) : '',
-			'state'          => isset( $data['state'] ) ? sanitize_text_field( $data['state'] ) : '',
-			'country'        => isset( $data['country'] ) ? sanitize_text_field( $data['country'] ) : '',
-			'postal_code'    => isset( $data['postal_code'] ) ? sanitize_text_field( $data['postal_code'] ) : '',
-			'latitude'       => isset( $data['latitude'] ) ? floatval( $data['latitude'] ) : null,
-			'longitude'      => isset( $data['longitude'] ) ? floatval( $data['longitude'] ) : null,
-			'phone'          => isset( $data['phone'] ) ? sanitize_text_field( $data['phone'] ) : '',
-			'email'          => isset( $data['email'] ) ? sanitize_email( $data['email'] ) : '',
-			'website'        => isset( $data['website'] ) ? esc_url_raw( $data['website'] ) : '',
-			'rating'         => isset( $data['rating'] ) ? floatval( $data['rating'] ) : null,
-			'price_level'    => isset( $data['price_level'] ) ? absint( $data['price_level'] ) : null,
-			'business_hours' => isset( $data['business_hours'] ) && is_array( $data['business_hours'] ) ? $data['business_hours'] : array(),
-			'amenities'      => isset( $data['amenities'] ) && is_array( $data['amenities'] ) ? array_map( 'sanitize_text_field', $data['amenities'] ) : array(),
-			'google_place_id' => isset( $data['google_place_id'] ) ? sanitize_text_field( $data['google_place_id'] ) : '',
-			'sources'        => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
-			'researched_at'  => current_time( 'mysql' ),
-			'research_model' => $research_result['model'],
+			'success'           => true,
+			'query'             => $query,
+			'name'              => sanitize_text_field( $data['name'] ),
+			'description'       => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
+			'place_type'        => isset( $data['place_type'] ) ? sanitize_text_field( $data['place_type'] ) : '',
+			'address'           => isset( $data['address'] ) ? sanitize_text_field( $data['address'] ) : '',
+			'street'            => isset( $data['street'] ) ? sanitize_text_field( $data['street'] ) : '',
+			'city'              => isset( $data['city'] ) ? sanitize_text_field( $data['city'] ) : '',
+			'state'             => isset( $data['state'] ) ? sanitize_text_field( $data['state'] ) : '',
+			'country'           => isset( $data['country'] ) ? sanitize_text_field( $data['country'] ) : '',
+			'postal_code'       => isset( $data['postal_code'] ) ? sanitize_text_field( $data['postal_code'] ) : '',
+			'latitude'          => isset( $data['latitude'] ) ? floatval( $data['latitude'] ) : null,
+			'longitude'         => isset( $data['longitude'] ) ? floatval( $data['longitude'] ) : null,
+			'phone'             => isset( $data['phone'] ) ? sanitize_text_field( $data['phone'] ) : '',
+			'email'             => isset( $data['email'] ) ? sanitize_email( $data['email'] ) : '',
+			'website'           => isset( $data['website'] ) ? esc_url_raw( $data['website'] ) : '',
+			'rating'            => isset( $data['rating'] ) ? floatval( $data['rating'] ) : null,
+			'price_level'       => isset( $data['price_level'] ) ? absint( $data['price_level'] ) : null,
+			'business_hours'    => isset( $data['business_hours'] ) && is_array( $data['business_hours'] ) ? $data['business_hours'] : array(),
+			'amenities'         => isset( $data['amenities'] ) && is_array( $data['amenities'] ) ? array_map( 'sanitize_text_field', $data['amenities'] ) : array(),
+			'google_place_id'   => isset( $data['google_place_id'] ) ? sanitize_text_field( $data['google_place_id'] ) : '',
+			'sources'           => isset( $data['sources'] ) && is_array( $data['sources'] ) ? array_map( 'esc_url_raw', $data['sources'] ) : array(),
+			'researched_at'     => current_time( 'mysql' ),
+			'research_model'    => $research_result['model'],
 			'research_provider' => $research_result['provider'],
 		);
 

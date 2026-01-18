@@ -1671,41 +1671,57 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Qwen family - Alibaba's multilingual models.
+			'Qwen/Qwen3-Coder-30B-A3B-Instruct'            => array(
+				'name'                   => 'Qwen 3 Coder 30B A3B Instruct',
+				'provider'               => 'huggingface',
+				'tpm'                    => 50000,
+				'rpm'                    => 100,
+				'tpd'                    => 1000000,
+				'rpd'                    => 5000,
+				'context_window'         => 32768,
+				'max_completion_tokens'  => 8192,
+				'fallback_model'         => 'Qwen/Qwen2.5-32B-Instruct',
+				'cost_per_1k'            => 0.001,
+				'status'                 => 'active',
+			),
 			'Qwen/Qwen2.5-72B-Instruct'                    => array(
-				'name'           => 'Qwen 2.5 72B Instruct',
-				'provider'       => 'huggingface',
-				'tpm'            => 50000,
-				'rpm'            => 100,
-				'tpd'            => 1000000,
-				'rpd'            => 5000,
-				'context_window' => 32768,
-				'fallback_model' => 'Qwen/Qwen2.5-32B-Instruct',
-				'cost_per_1k'    => 0.001,
-				'status'         => 'active',
+				'name'                   => 'Qwen 2.5 72B Instruct',
+				'provider'               => 'huggingface',
+				'tpm'                    => 50000,
+				'rpm'                    => 100,
+				'tpd'                    => 1000000,
+				'rpd'                    => 5000,
+				'context_window'         => 32768,
+				'max_completion_tokens'  => 8192,
+				'fallback_model'         => 'Qwen/Qwen2.5-32B-Instruct',
+				'cost_per_1k'            => 0.001,
+				'status'                 => 'active',
 			),
 			'Qwen/Qwen2.5-32B-Instruct'                    => array(
-				'name'           => 'Qwen 2.5 32B Instruct',
-				'provider'       => 'huggingface',
-				'tpm'            => 70000,
-				'rpm'            => 140,
-				'tpd'            => 1400000,
-				'rpd'            => 7000,
-				'context_window' => 32768,
-				'fallback_model' => 'Qwen/Qwen2.5-7B-Instruct',
-				'cost_per_1k'    => 0.0005,
-				'status'         => 'active',
+				'name'                   => 'Qwen 2.5 32B Instruct',
+				'provider'               => 'huggingface',
+				'tpm'                    => 70000,
+				'rpm'                    => 140,
+				'tpd'                    => 1400000,
+				'rpd'                    => 7000,
+				'context_window'         => 32768,
+				'max_completion_tokens'  => 8192,
+				'fallback_model'         => 'Qwen/Qwen2.5-7B-Instruct',
+				'cost_per_1k'            => 0.0005,
+				'status'                 => 'active',
 			),
 			'Qwen/Qwen2.5-7B-Instruct'                     => array(
-				'name'           => 'Qwen 2.5 7B Instruct',
-				'provider'       => 'huggingface',
-				'tpm'            => 120000,
-				'rpm'            => 240,
-				'tpd'            => 2400000,
-				'rpd'            => 12000,
-				'context_window' => 32768,
-				'fallback_model' => 'microsoft/Phi-3-mini-4k-instruct',
-				'cost_per_1k'    => 0.0002,
-				'status'         => 'active',
+				'name'                   => 'Qwen 2.5 7B Instruct',
+				'provider'               => 'huggingface',
+				'tpm'                    => 120000,
+				'rpm'                    => 240,
+				'tpd'                    => 2400000,
+				'rpd'                    => 12000,
+				'context_window'         => 32768,
+				'max_completion_tokens'  => 8192,
+				'fallback_model'         => 'microsoft/Phi-3-mini-4k-instruct',
+				'cost_per_1k'            => 0.0002,
+				'status'                 => 'active',
 			),
 			// Specialized Hugging Face models.
 			'google/gemma-2-9b-it-hf'                      => array(
@@ -2080,7 +2096,7 @@ class WP_MCP_AI_Model_Config {
 		}
 
 		// Integer fields.
-		$int_fields = array( 'tpm', 'rpm', 'tpd', 'rpd', 'context_window' );
+		$int_fields = array( 'tpm', 'rpm', 'tpd', 'rpd', 'context_window', 'max_completion_tokens' );
 		foreach ( $int_fields as $field ) {
 			if ( isset( $config[ $field ] ) ) {
 				$sanitized[ $field ] = absint( $config[ $field ] );
@@ -2119,34 +2135,55 @@ class WP_MCP_AI_Model_Config {
 	/**
 	 * Get available providers from settings.
 	 *
+	 * Returns only providers that are both enabled (via enable_* checkbox)
+	 * and properly configured (have required API keys/endpoints).
+	 *
 	 * @return array Array of available providers.
 	 */
 	public static function get_available_providers() {
 		$settings  = get_option( 'wp_mcp_ai_settings', array() );
 		$providers = array();
 
-		if ( ! empty( $settings['openai_api_key'] ) ) {
+		// Check enable_openai setting (defaults to false if not set).
+		$enable_openai = isset( $settings['enable_openai'] ) ? $settings['enable_openai'] : false;
+		if ( $enable_openai && ! empty( $settings['openai_api_key'] ) ) {
 			$providers['openai'] = __( 'OpenAI', 'mcp-ai-wpoos' );
 		}
 
-		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+		// Check enable_anthropic setting (defaults to false if not set).
+		$enable_anthropic = isset( $settings['enable_anthropic'] ) ? $settings['enable_anthropic'] : false;
+		if ( $enable_anthropic && ! empty( $settings['anthropic_api_key'] ) ) {
 			$providers['anthropic'] = __( 'Anthropic (Claude)', 'mcp-ai-wpoos' );
 		}
 
-		if ( ! empty( $settings['gemini_api_key'] ) ) {
+		// Check enable_gemini setting (defaults to false if not set).
+		$enable_gemini = isset( $settings['enable_gemini'] ) ? $settings['enable_gemini'] : false;
+		if ( $enable_gemini && ! empty( $settings['gemini_api_key'] ) ) {
 			$providers['gemini'] = __( 'Google Gemini', 'mcp-ai-wpoos' );
 		}
 
-		if ( ! empty( $settings['ollama_endpoint_url'] ) ) {
+		// Check enable_ollama setting (defaults to false if not set).
+		$enable_ollama = isset( $settings['enable_ollama'] ) ? $settings['enable_ollama'] : false;
+		if ( $enable_ollama && ! empty( $settings['ollama_endpoint_url'] ) ) {
 			$providers['ollama'] = __( 'Ollama (Local)', 'mcp-ai-wpoos' );
 		}
 
-		if ( ! empty( $settings['lm_studio_endpoint_url'] ) ) {
+		// Check enable_lm_studio setting (defaults to false if not set).
+		$enable_lm_studio = isset( $settings['enable_lm_studio'] ) ? $settings['enable_lm_studio'] : false;
+		if ( $enable_lm_studio && ! empty( $settings['lm_studio_endpoint_url'] ) ) {
 			$providers['lm_studio'] = __( 'LM Studio (Local)', 'mcp-ai-wpoos' );
 		}
 
-		if ( ! empty( $settings['enable_cloudflare'] ) && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
+		// Check enable_cloudflare setting (defaults to false if not set).
+		$enable_cloudflare = isset( $settings['enable_cloudflare'] ) ? $settings['enable_cloudflare'] : false;
+		if ( $enable_cloudflare && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
 			$providers['cloudflare'] = __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' );
+		}
+
+		// Check enable_huggingface setting (defaults to false if not set).
+		$enable_huggingface = isset( $settings['enable_huggingface'] ) ? $settings['enable_huggingface'] : false;
+		if ( $enable_huggingface && ! empty( $settings['huggingface_api_key'] ) ) {
+			$providers['huggingface'] = __( 'Hugging Face', 'mcp-ai-wpoos' );
 		}
 
 		return $providers;

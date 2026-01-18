@@ -83,9 +83,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list if Model Config unavailable.
 			if ( empty( $openai_models ) ) {
 				$openai_models = array(
-					'gpt-4o'        => 'GPT-4o',
-					'gpt-4o-mini'   => 'GPT-4o Mini',
-					'gpt-4-turbo'   => 'GPT-4 Turbo',
+					'gpt-4o'      => 'GPT-4o',
+					'gpt-4o-mini' => 'GPT-4o Mini',
+					'gpt-4-turbo' => 'GPT-4 Turbo',
 				);
 			}
 
@@ -336,7 +336,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'vad_audio_threshold'                => array(
 					'type'        => 'number',
 					'label'       => __( 'VAD Audio Level Threshold (dB)', 'mcp-ai-wpoos' ),
-					'description'  => __( 'Audio level threshold for detecting speech vs silence. Default: -50dB. Lower values (e.g., -60dB) are more sensitive and detect quieter speech. Higher values (e.g., -40dB) require louder speech and ignore more background noise.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Audio level threshold for detecting speech vs silence. Default: -50dB. Lower values (e.g., -60dB) are more sensitive and detect quieter speech. Higher values (e.g., -40dB) require louder speech and ignore more background noise.', 'mcp-ai-wpoos' ),
 					'default'     => '-50',
 					'min'         => '-70',
 					'max'         => '-30',
@@ -714,12 +714,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'The default model to use for Cloudflare Workers AI text-to-image generation. Stable Diffusion XL Base is recommended for general purpose use.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'@cf/stabilityai/stable-diffusion-xl-base-1.0' => 'Stable Diffusion XL Base 1.0 (Recommended)',
-						'@cf/bytedance/stable-diffusion-xl-lightning'  => 'Stable Diffusion XL Lightning (Fast)',
-						'@cf/black-forest-labs/flux-1-schnell'         => 'Flux-1 Schnell',
-						'@cf/black-forest-labs/flux-2-dev'             => 'Flux-2 Dev',
-						'@cf/leonardo/lucid-origin'                    => 'Leonardo Lucid Origin',
-						'@cf/leonardo/phoenix-1.0'                     => 'Leonardo Phoenix 1.0',
-						'@cf/lykon/dreamshaper-8-lcm'                  => 'Dreamshaper 8 LCM',
+						'@cf/bytedance/stable-diffusion-xl-lightning' => 'Stable Diffusion XL Lightning (Fast)',
+						'@cf/black-forest-labs/flux-1-schnell' => 'Flux-1 Schnell',
+						'@cf/black-forest-labs/flux-2-dev' => 'Flux-2 Dev',
+						'@cf/leonardo/lucid-origin'        => 'Leonardo Lucid Origin',
+						'@cf/leonardo/phoenix-1.0'         => 'Leonardo Phoenix 1.0',
+						'@cf/lykon/dreamshaper-8-lcm'      => 'Dreamshaper 8 LCM',
 					),
 					'default'     => '@cf/stabilityai/stable-diffusion-xl-base-1.0',
 				),
@@ -766,8 +766,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Cloudflare STT Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Speech-to-Text model for audio transcription. Whisper provides standard transcription. Deepgram Flux offers advanced features with turn detection for conversational AI.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'@cf/openai/whisper'   => __( 'Whisper (Standard - OpenAI Whisper)', 'mcp-ai-wpoos' ),
-						'@cf/deepgram/flux'    => __( 'Deepgram Flux (Advanced - Turn Detection)', 'mcp-ai-wpoos' ),
+						'@cf/openai/whisper' => __( 'Whisper (Standard - OpenAI Whisper)', 'mcp-ai-wpoos' ),
+						'@cf/deepgram/flux'  => __( 'Deepgram Flux (Advanced - Turn Detection)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => '@cf/openai/whisper',
 				),
@@ -783,6 +783,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'online' => __( 'Excel Online (Cloud features)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'modern',
+					'pro_badge'   => true,
 				),
 				'excel_enable_lambda'                => array(
 					'type'           => 'checkbox',
@@ -790,6 +791,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'checkbox_label' => __( 'Generate LAMBDA and custom functions for advanced Excel scenarios', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, the Pro Excel tool can generate LAMBDA functions for custom, reusable, and recursive formulas. LAMBDA makes Excel Turing-complete, enabling advanced programming capabilities. Requires Excel 2021+ or Microsoft 365.', 'mcp-ai-wpoos' ),
 					'default'        => true,
+					'pro_badge'      => true,
 				),
 				'excel_max_complexity'               => array(
 					'type'        => 'select',
@@ -802,6 +804,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						'advanced' => __( 'Advanced (LAMBDA, recursive, expert-level)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'moderate',
+					'pro_badge'   => true,
 				),
 				'excel_include_comments'             => array(
 					'type'           => 'checkbox',
@@ -809,17 +812,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'checkbox_label' => __( 'Add explanatory comments to generated formulas', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, generated formulas include inline comments explaining each step and component. This makes formulas easier to understand and maintain, especially for complex calculations.', 'mcp-ai-wpoos' ),
 					'default'        => true,
+					'pro_badge'      => true,
 				),
 				'excel_optimization_level'           => array(
 					'type'        => 'select',
 					'label'       => __( 'Formula Optimization', 'mcp-ai-wpoos' ),
 					'description' => __( 'Choose how formulas are optimized. Readability prioritizes clear, maintainable code. Performance focuses on calculation speed and efficiency. Balanced provides a compromise between the two.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'readability'  => __( 'Readability (Clear, maintainable formulas)', 'mcp-ai-wpoos' ),
-						'performance'  => __( 'Performance (Fast, efficient calculations)', 'mcp-ai-wpoos' ),
-						'balanced'     => __( 'Balanced (Compromise between both)', 'mcp-ai-wpoos' ),
+						'readability' => __( 'Readability (Clear, maintainable formulas)', 'mcp-ai-wpoos' ),
+						'performance' => __( 'Performance (Fast, efficient calculations)', 'mcp-ai-wpoos' ),
+						'balanced'    => __( 'Balanced (Compromise between both)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'balanced',
+					'pro_badge'   => true,
 				),
 
 				// Google Maps Settings.
@@ -1162,7 +1167,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				}
 			}
 
-			$sanitized       = array();
+			$sanitized = array();
 
 			if ( ! is_array( $priority_list ) ) {
 				return $valid_providers;

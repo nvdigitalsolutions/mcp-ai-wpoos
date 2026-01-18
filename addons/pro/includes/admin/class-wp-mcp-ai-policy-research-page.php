@@ -93,16 +93,16 @@ class WP_MCP_AI_Policy_Research_Page {
 			'wp-mcp-ai-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'       => admin_url( 'admin-ajax.php' ),
-				'nonce'         => wp_create_nonce( 'wp_mcp_ai_research_policy' ),
-				'addNewUrl'     => admin_url( 'post-new.php?post_type=mcp_ai_policy' ),
-				'researchTool'  => 'research_policy',
-				'strings'       => array(
-					'researching'       => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
-					'error'             => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'          => __( 'Creating policy...', 'mcp-ai-wpoos-pro' ),
-					'created'           => __( 'Policy created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate'     => __( 'Create a policy with the researched information?', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_policy' ),
+				'addNewUrl'    => admin_url( 'post-new.php?post_type=mcp_ai_policy' ),
+				'researchTool' => 'research_policy',
+				'strings'      => array(
+					'researching'   => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
+					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'creating'      => __( 'Creating policy...', 'mcp-ai-wpoos-pro' ),
+					'created'       => __( 'Policy created successfully!', 'mcp-ai-wpoos-pro' ),
+					'confirmCreate' => __( 'Create a policy with the researched information?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -144,18 +144,19 @@ class WP_MCP_AI_Policy_Research_Page {
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
-							<li><?php esc_html_e( 'Use the AI assistant to research an insurance policy type', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Ask questions like "Research pet health insurance coverage options"', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Review coverage details, requirements, and terms', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Click "Create Policy from Research" to add it to your database', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Search existing policies or research new ones on the web', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Use deep research for comprehensive policy analysis', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Find similar policies with semantic search', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create policy entries directly in your database', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ol>
 					</div>
 
 					<div class="wp-mcp-ai-research-tips">
 						<h3><?php esc_html_e( 'Research Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
-							<li><strong><?php esc_html_e( 'Be specific:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Include policy type and coverage needs', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Ask for details:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Request coverage limits, deductibles, and exclusions', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Search first:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Check existing policies to avoid duplicates', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Deep research:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Use for comprehensive policy analysis', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Find similar:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Use semantic search for related policies', 'mcp-ai-wpoos-pro' ); ?></li>
 							<li><strong><?php esc_html_e( 'Compare options:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Research multiple policy types or providers', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
@@ -194,9 +195,10 @@ class WP_MCP_AI_Policy_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface.
+							// Render chat interface with comprehensive policy tools.
+							// Includes research, creation, management, and content discovery tools.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_policy,create_policy,get_policy,web_search,deep_research,search_content,semantic_content_search"]'
 							);
 							?>
 						</div>

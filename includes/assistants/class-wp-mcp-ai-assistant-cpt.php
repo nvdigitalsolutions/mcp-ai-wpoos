@@ -746,7 +746,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					continue;
 				}
 
-				$group = $this->categorize_tool_for_shortcuts( $slug );
+				$group              = $this->categorize_tool_for_shortcuts( $slug );
 				$groups[ $group ][] = $slug;
 			}
 
@@ -3247,7 +3247,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			</p>
 		</div>
 
-		<?php $this->render_custom_shortcuts_styles(); ?>
+			<?php $this->render_custom_shortcuts_styles(); ?>
 
 		<template id="wp-mcp-ai-tool-shortcut-template">
 			<details

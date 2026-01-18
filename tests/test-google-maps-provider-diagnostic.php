@@ -75,8 +75,8 @@ class WP_MCP_AI_Google_Maps_Provider_Diagnostic_Test extends WP_UnitTestCase {
 	 */
 	public function test_google_maps_provider_is_recognized() {
 		// Set up a valid API key.
-		$settings                          = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['google_maps_api_key']   = 'test_google_maps_api_key';
+		$settings                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['google_maps_api_key'] = 'test_google_maps_api_key';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		// Simulate AJAX request - it will fail on the actual API call but should be recognized.
@@ -103,8 +103,8 @@ class WP_MCP_AI_Google_Maps_Provider_Diagnostic_Test extends WP_UnitTestCase {
 	 */
 	public function test_google_maps_appears_in_configured_list() {
 		// Set up a valid API key.
-		$settings                          = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$settings['google_maps_api_key']   = 'test_google_maps_api_key';
+		$settings                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['google_maps_api_key'] = 'test_google_maps_api_key';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		// Check that the configured provider logic would include Google Maps.

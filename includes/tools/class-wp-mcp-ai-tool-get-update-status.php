@@ -69,7 +69,9 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
-		require_once ABSPATH . 'wp-admin/includes/update.php';
+		if ( ! function_exists( 'wp_version_check' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/update.php';
+		}
 
 		$component_type      = isset( $arguments['component_type'] ) ? sanitize_key( $arguments['component_type'] ) : '';
 		$valid_component_map = array(

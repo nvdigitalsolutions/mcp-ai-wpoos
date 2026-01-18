@@ -63,7 +63,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array|null Connection data or null if not found.
 	 */
 	public static function get_connection( $connection_id ) {
-		$connections = self::get_all_connections();
+		$connections   = self::get_all_connections();
 		$connection_id = sanitize_key( $connection_id );
 
 		if ( isset( $connections[ $connection_id ] ) ) {
@@ -90,7 +90,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$connection_id = self::generate_connection_id();
 		} else {
 			$connection_id = sanitize_key( $connection_data['id'] );
-			$is_update = isset( $connections[ $connection_id ] );
+			$is_update     = isset( $connections[ $connection_id ] );
 		}
 
 		// If updating and password/token fields are empty, preserve existing values.
@@ -113,25 +113,25 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 			// Preserve existing consumer_key if not provided.
 			if ( empty( $connection_data['consumer_key'] ) && ! empty( $existing_connection['consumer_key'] ) ) {
-				$connection_data['consumer_key'] = $existing_connection['consumer_key'];
+				$connection_data['consumer_key']            = $existing_connection['consumer_key'];
 				$connection_data['_consumer_key_encrypted'] = true;
 			}
 
 			// Preserve existing consumer_secret if not provided.
 			if ( empty( $connection_data['consumer_secret'] ) && ! empty( $existing_connection['consumer_secret'] ) ) {
-				$connection_data['consumer_secret'] = $existing_connection['consumer_secret'];
+				$connection_data['consumer_secret']            = $existing_connection['consumer_secret'];
 				$connection_data['_consumer_secret_encrypted'] = true;
 			}
 
 			// Preserve existing api_key if not provided.
 			if ( empty( $connection_data['api_key'] ) && ! empty( $existing_connection['api_key'] ) ) {
-				$connection_data['api_key'] = $existing_connection['api_key'];
+				$connection_data['api_key']            = $existing_connection['api_key'];
 				$connection_data['_api_key_encrypted'] = true;
 			}
 
 			// Preserve existing api_secret if not provided.
 			if ( empty( $connection_data['api_secret'] ) && ! empty( $existing_connection['api_secret'] ) ) {
-				$connection_data['api_secret'] = $existing_connection['api_secret'];
+				$connection_data['api_secret']            = $existing_connection['api_secret'];
 				$connection_data['_api_secret_encrypted'] = true;
 			}
 
@@ -142,7 +142,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 			// Preserve existing client_secret if not provided.
 			if ( empty( $connection_data['client_secret'] ) && ! empty( $existing_connection['client_secret'] ) ) {
-				$connection_data['client_secret'] = $existing_connection['client_secret'];
+				$connection_data['client_secret']            = $existing_connection['client_secret'];
 				$connection_data['_client_secret_encrypted'] = true;
 			}
 
@@ -153,13 +153,13 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 			// Preserve existing app_secret if not provided.
 			if ( empty( $connection_data['app_secret'] ) && ! empty( $existing_connection['app_secret'] ) ) {
-				$connection_data['app_secret'] = $existing_connection['app_secret'];
+				$connection_data['app_secret']            = $existing_connection['app_secret'];
 				$connection_data['_app_secret_encrypted'] = true;
 			}
 
 			// Preserve existing refresh_token (Gmail) if not provided.
 			if ( empty( $connection_data['refresh_token'] ) && ! empty( $existing_connection['refresh_token'] ) ) {
-				$connection_data['refresh_token'] = $existing_connection['refresh_token'];
+				$connection_data['refresh_token']            = $existing_connection['refresh_token'];
 				$connection_data['_refresh_token_encrypted'] = true;
 			}
 
@@ -290,7 +290,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return bool True on success, false on failure.
 	 */
 	public static function delete_connection( $connection_id ) {
-		$connections = self::get_all_connections();
+		$connections   = self::get_all_connections();
 		$connection_id = sanitize_key( $connection_id );
 
 		if ( ! isset( $connections[ $connection_id ] ) ) {
@@ -328,7 +328,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return $validation;
 		}
 
-		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
 
 		// Handle Flowhub connections separately.
 		if ( 'flowhub' === $connection_type ) {
@@ -348,12 +348,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		$results = array(
-			'success'         => true,
-			'wordpress'       => true,
-			'woocommerce'     => false,
-			'site_name'       => '',
-			'site_url'        => $connection['url'],
-			'message'         => __( 'Connection successful.', 'wp-mcp-ai-pro' ),
+			'success'     => true,
+			'wordpress'   => true,
+			'woocommerce' => false,
+			'site_name'   => '',
+			'site_url'    => $connection['url'],
+			'message'     => __( 'Connection successful.', 'wp-mcp-ai-pro' ),
 		);
 
 		// Test WooCommerce API access if enabled.
@@ -529,10 +529,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 		// Connection successful!
 		$results = array(
-			'success'     => true,
-			'ezuite_erp'  => true,
-			'api_url'     => $connection['url'],
-			'message'     => __( 'EZuite ERP connection successful. API credentials verified.', 'wp-mcp-ai-pro' ),
+			'success'    => true,
+			'ezuite_erp' => true,
+			'api_url'    => $connection['url'],
+			'message'    => __( 'EZuite ERP connection successful. API credentials verified.', 'wp-mcp-ai-pro' ),
 		);
 
 		// Add item count if available in response.
@@ -572,7 +572,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// For WooCommerce authentication, add consumer key/secret to URL.
 		$auth_type = isset( $connection['auth_type'] ) ? $connection['auth_type'] : 'none';
 		if ( 'woocommerce' === $auth_type ) {
-			$consumer_key = isset( $connection['consumer_key'] ) ? self::decrypt_value( $connection['consumer_key'] ) : '';
+			$consumer_key    = isset( $connection['consumer_key'] ) ? self::decrypt_value( $connection['consumer_key'] ) : '';
 			$consumer_secret = isset( $connection['consumer_secret'] ) ? self::decrypt_value( $connection['consumer_secret'] ) : '';
 
 			if ( ! empty( $consumer_key ) && ! empty( $consumer_secret ) ) {
@@ -596,7 +596,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$args['headers']['Accept-Encoding'] = 'gzip, deflate';
 
 		if ( ! empty( $body ) && in_array( $args['method'], array( 'POST', 'PUT', 'PATCH' ), true ) ) {
-			$args['body'] = wp_json_encode( $body );
+			$args['body']                    = wp_json_encode( $body );
 			$args['headers']['Content-Type'] = 'application/json';
 		}
 
@@ -611,7 +611,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// Request deduplication - check if this exact request is already in progress.
-		$dedup_key = self::get_dedup_key( $connection_id, $endpoint, $method, $body );
+		$dedup_key   = self::get_dedup_key( $connection_id, $endpoint, $method, $body );
 		$in_progress = get_transient( $dedup_key );
 
 		if ( false !== $in_progress ) {
@@ -651,7 +651,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
-		$body = wp_remote_retrieve_body( $response );
+		$body        = wp_remote_retrieve_body( $response );
 
 		if ( $status_code >= 400 ) {
 			$duration = microtime( true ) - $start_time;
@@ -852,7 +852,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// Validate connection type specific requirements.
-		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'wordpress';
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : 'WordPress';
 
 		if ( 'ezuite_erp' === $connection_type ) {
 			if ( empty( $connection['api_key'] ) ) {
@@ -947,7 +947,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 */
 	protected static function migrate_connection_ids( $connections ) {
 		$needs_migration = false;
-		$migrated = array();
+		$migrated        = array();
 
 		foreach ( $connections as $key => $connection ) {
 			$lowercase_key = strtolower( $key );
@@ -956,7 +956,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( $key !== $lowercase_key ) {
 				$needs_migration = true;
 				// Update the id field to match the new lowercase key.
-				$connection['id'] = $lowercase_key;
+				$connection['id']           = $lowercase_key;
 				$migrated[ $lowercase_key ] = $connection;
 			} else {
 				$migrated[ $key ] = $connection;
@@ -988,8 +988,8 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$key = wp_salt( 'auth' );
 
 		// Simple XOR encryption (WordPress doesn't have built-in encryption).
-		$encrypted = '';
-		$key_length = strlen( $key );
+		$encrypted    = '';
+		$key_length   = strlen( $key );
 		$value_length = strlen( $value );
 
 		for ( $i = 0; $i < $value_length; $i++ ) {
@@ -1012,11 +1012,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return '';
 		}
 
-		$key = wp_salt( 'auth' );
+		$key       = wp_salt( 'auth' );
 		$encrypted = base64_decode( $encrypted );
 
-		$decrypted = '';
-		$key_length = strlen( $key );
+		$decrypted        = '';
+		$key_length       = strlen( $key );
 		$encrypted_length = strlen( $encrypted );
 
 		for ( $i = 0; $i < $encrypted_length; $i++ ) {
@@ -1137,28 +1137,28 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return;
 		}
 
-		$health_key = 'remote_health_' . sanitize_key( $connection_id );
+		$health_key  = 'remote_health_' . sanitize_key( $connection_id );
 		$health_data = get_transient( $health_key );
 
 		if ( false === $health_data ) {
 			$health_data = array(
-				'success_count' => 0,
-				'failure_count' => 0,
+				'success_count'  => 0,
+				'failure_count'  => 0,
 				'total_duration' => 0,
-				'request_count' => 0,
-				'last_success' => 0,
-				'last_failure' => 0,
+				'request_count'  => 0,
+				'last_success'   => 0,
+				'last_failure'   => 0,
 			);
 		}
 
-		$health_data['request_count']++;
+		++$health_data['request_count'];
 		$health_data['total_duration'] += $duration;
 
 		if ( $success ) {
-			$health_data['success_count']++;
+			++$health_data['success_count'];
 			$health_data['last_success'] = time();
 		} else {
-			$health_data['failure_count']++;
+			++$health_data['failure_count'];
 			$health_data['last_failure'] = time();
 		}
 
@@ -1175,25 +1175,25 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * @return array Health metrics.
 	 */
 	public static function get_health_metrics( $connection_id ) {
-		$health_key = 'remote_health_' . sanitize_key( $connection_id );
+		$health_key  = 'remote_health_' . sanitize_key( $connection_id );
 		$health_data = get_transient( $health_key );
 
 		if ( false === $health_data ) {
 			return array(
 				'success_count' => 0,
 				'failure_count' => 0,
-				'success_rate' => 100,
-				'avg_duration' => 0,
+				'success_rate'  => 100,
+				'avg_duration'  => 0,
 				'request_count' => 0,
-				'last_success' => null,
-				'last_failure' => null,
-				'status' => 'unknown',
+				'last_success'  => null,
+				'last_failure'  => null,
+				'status'        => 'unknown',
 			);
 		}
 
 		$total_requests = $health_data['request_count'];
-		$success_rate = $total_requests > 0 ? ( $health_data['success_count'] / $total_requests ) * 100 : 100;
-		$avg_duration = $total_requests > 0 ? $health_data['total_duration'] / $total_requests : 0;
+		$success_rate   = $total_requests > 0 ? ( $health_data['success_count'] / $total_requests ) * 100 : 100;
+		$avg_duration   = $total_requests > 0 ? $health_data['total_duration'] / $total_requests : 0;
 
 		// Determine status.
 		$status = 'healthy';
@@ -1206,12 +1206,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		return array(
 			'success_count' => $health_data['success_count'],
 			'failure_count' => $health_data['failure_count'],
-			'success_rate' => round( $success_rate, 2 ),
-			'avg_duration' => round( $avg_duration, 3 ),
+			'success_rate'  => round( $success_rate, 2 ),
+			'avg_duration'  => round( $avg_duration, 3 ),
 			'request_count' => $total_requests,
-			'last_success' => $health_data['last_success'] > 0 ? $health_data['last_success'] : null,
-			'last_failure' => $health_data['last_failure'] > 0 ? $health_data['last_failure'] : null,
-			'status' => $status,
+			'last_success'  => $health_data['last_success'] > 0 ? $health_data['last_success'] : null,
+			'last_failure'  => $health_data['last_failure'] > 0 ? $health_data['last_failure'] : null,
+			'status'        => $status,
 		);
 	}
 }

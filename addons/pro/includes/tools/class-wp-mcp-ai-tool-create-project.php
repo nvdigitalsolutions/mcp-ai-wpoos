@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new project for managing tasks and events. Projects can have a name, description, start/end dates, status, and assigned members.', 'mcp-ai-wpoos-pro' );
+		return __( 'Creates a new project for managing tasks and events or updates an existing one if project_id is provided. Projects can have a name, description, start/end dates, status, and assigned members.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,6 +43,10 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'project_id'  => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional project ID. If provided, updates the existing project instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'name'        => array(
 					'type'        => 'string',
 					'description' => __( 'Project name (required)', 'mcp-ai-wpoos-pro' ),
@@ -88,7 +92,9 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro', 'database-write' );
+			'pro',
+			'database-write',
+		);
 	}
 
 	/**
@@ -121,6 +127,30 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		if ( is_multisite() && ! is_user_member_of_blog( $current_user_id, get_current_blog_id() ) ) {
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Check if this is an update operation.
+		$project_id       = isset( $arguments['project_id'] ) ? absint( $arguments['project_id'] ) : 0;
+		$is_update        = false;
+		$existing_project = null;
+
+		if ( $project_id ) {
+			// Verify project exists and user has permission to update it.
+			$existing_project = get_post( $project_id );
+
+			if ( ! $existing_project || 'mcp_ai_project' !== $existing_project->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_project_not_found', __( 'Project not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$is_author       = absint( $existing_project->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this project.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
 		}
 
 		// Validate and sanitize inputs.
@@ -157,51 +187,105 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			}
 		}
 
-		// Create project post.
-		$post_data = array(
-			'post_type'    => 'mcp_ai_project',
-			'post_title'   => $name,
-			'post_content' => $description,
-			'post_status'  => 'publish',
-			'post_author'  => $current_user_id,
-		);
+		if ( $is_update ) {
+			// Update existing project.
+			$post_data = array(
+				'ID'           => $project_id,
+				'post_title'   => $name,
+				'post_content' => $description,
+			);
 
-		$project_id = wp_insert_post( $post_data, true );
+			$result = wp_update_post( $post_data, true );
 
-		if ( is_wp_error( $project_id ) ) {
-			return $project_id;
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Update project metadata.
+			update_post_meta( $project_id, '_project_status', $status );
+
+			if ( $start_date ) {
+				update_post_meta( $project_id, '_project_start_date', $start_date );
+			}
+
+			if ( $end_date ) {
+				update_post_meta( $project_id, '_project_end_date', $end_date );
+			}
+
+			if ( ! empty( $assigned_to ) ) {
+				update_post_meta( $project_id, '_project_assigned_to', $assigned_to );
+			}
+
+			$project = get_post( $project_id );
+
+			return array(
+				'success'    => true,
+				'message'    => sprintf(
+					/* translators: %s: project name */
+					__( 'Project updated: %s', 'mcp-ai-wpoos-pro' ),
+					$name
+				),
+				'project_id' => $project_id,
+				'project'    => array(
+					'id'          => $project_id,
+					'name'        => $name,
+					'description' => $description,
+					'status'      => $status,
+					'start_date'  => $start_date,
+					'end_date'    => $end_date,
+					'assigned_to' => $assigned_to,
+					'updated_at'  => $project->post_modified,
+				),
+				'updated'    => true,
+			);
+		} else {
+			// Create project post.
+			$post_data = array(
+				'post_type'    => 'mcp_ai_project',
+				'post_title'   => $name,
+				'post_content' => $description,
+				'post_status'  => 'publish',
+				'post_author'  => $current_user_id,
+			);
+
+			$project_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $project_id ) ) {
+				return $project_id;
+			}
+
+			// Save project metadata.
+			update_post_meta( $project_id, '_project_status', $status );
+
+			if ( $start_date ) {
+				update_post_meta( $project_id, '_project_start_date', $start_date );
+			}
+
+			if ( $end_date ) {
+				update_post_meta( $project_id, '_project_end_date', $end_date );
+			}
+
+			if ( ! empty( $assigned_to ) ) {
+				update_post_meta( $project_id, '_project_assigned_to', $assigned_to );
+			}
+
+			return array(
+				'success'    => true,
+				'message'    => __( 'Project created successfully.', 'mcp-ai-wpoos-pro' ),
+				'project_id' => $project_id,
+				'project'    => array(
+					'id'          => $project_id,
+					'name'        => $name,
+					'description' => $description,
+					'status'      => $status,
+					'start_date'  => $start_date,
+					'end_date'    => $end_date,
+					'assigned_to' => $assigned_to,
+					'created_at'  => current_time( 'mysql' ),
+				),
+				'updated'    => false,
+			);
 		}
-
-		// Save project metadata.
-		update_post_meta( $project_id, '_project_status', $status );
-
-		if ( $start_date ) {
-			update_post_meta( $project_id, '_project_start_date', $start_date );
-		}
-
-		if ( $end_date ) {
-			update_post_meta( $project_id, '_project_end_date', $end_date );
-		}
-
-		if ( ! empty( $assigned_to ) ) {
-			update_post_meta( $project_id, '_project_assigned_to', $assigned_to );
-		}
-
-		return array(
-			'success'    => true,
-			'message'    => __( 'Project created successfully.', 'mcp-ai-wpoos-pro' ),
-			'project_id' => $project_id,
-			'project'    => array(
-				'id'          => $project_id,
-				'name'        => $name,
-				'description' => $description,
-				'status'      => $status,
-				'start_date'  => $start_date,
-				'end_date'    => $end_date,
-				'assigned_to' => $assigned_to,
-				'created_at'  => current_time( 'mysql' ),
-			),
-		);
 	}
 
 	/**

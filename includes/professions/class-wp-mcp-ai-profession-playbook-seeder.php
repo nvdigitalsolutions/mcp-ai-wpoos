@@ -269,8 +269,9 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 
 		// Keep the first (most recent) attachment, remove the rest from profession.
 		$keep_attachment_id = $attachments[0]->ID;
+		$attachment_count   = count( $attachments );
 
-		for ( $i = 1; $i < count( $attachments ); $i++ ) {
+		for ( $i = 1; $i < $attachment_count; $i++ ) {
 			$attachment_id = $attachments[ $i ]->ID;
 
 			// Remove from profession's memory files.
@@ -379,7 +380,7 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 			// Safety checks: Only delete if:
 			// 1. Has playbook hash (system-created)
 			// 2. No profession association (orphaned)
-			// 3. File is in the system playbook directory
+			// 3. File is in the system playbook directory.
 			if ( empty( $hash ) || ! empty( $profession_id ) ) {
 				$skipped_ids[] = $attachment_id;
 				continue;
@@ -466,7 +467,9 @@ class WP_MCP_AI_Profession_Playbook_Seeder {
 		}
 
 		// Generate attachment metadata.
-		require_once ABSPATH . 'wp-admin/includes/image.php';
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
 		$attach_data = wp_generate_attachment_metadata( $attachment_id, $target_file );
 		wp_update_attachment_metadata( $attachment_id, $attach_data );
 
