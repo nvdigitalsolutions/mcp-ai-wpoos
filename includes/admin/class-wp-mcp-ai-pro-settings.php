@@ -86,6 +86,41 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		}
 
 		/**
+		 * Get individual pro toolkit status information.
+		 *
+		 * Returns enable/disable status of each individual pro toolkit.
+		 *
+		 * @return array Individual toolkit status information.
+		 */
+		public static function get_individual_toolkit_status() {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+			$toolkits = array(
+				'enable_media_toolkit'                => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
+				'enable_document_generation_toolkit'  => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
+				'enable_quiz_system'                  => __( 'Quiz System', 'mcp-ai-wpoos' ),
+				'enable_project_management'           => __( 'Project Management', 'mcp-ai-wpoos' ),
+				'enable_health_wellness_management'   => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
+				'enable_places_management'            => __( 'Places Management', 'mcp-ai-wpoos' ),
+				'enable_eca_management'               => __( 'ECA Management', 'mcp-ai-wpoos' ),
+				'enable_woocommerce_tools'            => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
+				'enable_jetengine_tools'              => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
+				'enable_elementor_widgets'            => __( 'Elementor Widgets', 'mcp-ai-wpoos' ),
+				'enable_ai_cpt_management'            => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
+			);
+
+			$toolkit_status = array();
+			foreach ( $toolkits as $setting_key => $toolkit_name ) {
+				$toolkit_status[ $setting_key ] = array(
+					'name'    => $toolkit_name,
+					'enabled' => ! empty( $settings[ $setting_key ] ),
+				);
+			}
+
+			return $toolkit_status;
+		}
+
+		/**
 		 * Get pro toolkit status information.
 		 *
 		 * Returns status of various pro features and configurations.
@@ -267,6 +302,38 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		}
 
 		/**
+		 * Render individual pro toolkits status section.
+		 *
+		 * @param array $toolkit_status Individual toolkit status.
+		 * @return void
+		 */
+		private static function render_individual_toolkits_status( $toolkit_status ) {
+			?>
+			<h3><?php esc_html_e( 'Individual Pro Toolkits', 'mcp-ai-wpoos' ); ?></h3>
+			<table class="wp-list-table widefat fixed striped">
+				<thead>
+					<tr>
+						<th style="width: 40%;"><?php esc_html_e( 'Toolkit Name', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $toolkit_status as $setting_key => $toolkit_info ) : ?>
+						<tr>
+							<td><strong><?php echo esc_html( $toolkit_info['name'] ); ?></strong></td>
+							<td>
+								<span class="wp-mcp-ai-status-badge <?php echo $toolkit_info['enabled'] ? 'enabled' : 'disabled'; ?>">
+									<?php echo $toolkit_info['enabled'] ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
+								</span>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<?php
+		}
+
+		/**
 		 * Render the Pro Settings page.
 		 *
 		 * @return void
@@ -277,9 +344,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
-			$packages       = self::get_npm_packages();
-			$pro_status     = self::get_pro_toolkit_status();
-			$total_packages = count( $packages['dependencies'] ) + count( $packages['devDependencies'] );
+			$packages         = self::get_npm_packages();
+			$pro_status       = self::get_pro_toolkit_status();
+			$toolkit_status   = self::get_individual_toolkit_status();
+			$total_packages   = count( $packages['dependencies'] ) + count( $packages['devDependencies'] );
 			?>
 			<div class="wrap wp-mcp-ai-pro-settings">
 				<h1>
@@ -313,6 +381,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					<div class="wp-mcp-ai-settings-column">
 						<div class="wp-mcp-ai-settings-card">
 							<?php self::render_pro_toolkit_status( $pro_status ); ?>
+							
+							<div style="margin-top: 30px;"></div>
+							
+							<?php self::render_individual_toolkits_status( $toolkit_status ); ?>
 						</div>
 					</div>
 
