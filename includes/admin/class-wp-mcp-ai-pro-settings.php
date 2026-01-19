@@ -152,7 +152,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		public static function get_pro_toolkit_status() {
 			$status = array(
 				'pro_dashboard_enabled' => defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) && WP_MCP_AI_PRO_DASHBOARD_ENABLED,
-				'base_version'          => defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION,
+				'base_version'          => ! defined( 'WP_MCP_AI_PRO_VERSION' ),
 				'debug_mode'            => defined( 'WP_DEBUG' ) && WP_DEBUG,
 				'php_version'           => PHP_VERSION,
 				'wp_version'            => get_bloginfo( 'version' ),
