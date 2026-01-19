@@ -96,7 +96,7 @@ async function buildAll() {
 
 	// Copy PDFKit data files (fonts, color profiles)
 	console.log('📄 Copying PDFKit data files...');
-	const pdfkitDataSrc = path.join(__dirname, 'node_modules', 'pdfkit', 'js', 'data');
+	const pdfkitDataSrc = path.join(__dirname, 'addons', 'pro', 'node_modules', 'pdfkit', 'js', 'data');
 	const pdfkitDataDest = path.join(outputDir, 'data');
 	if (fs.existsSync(pdfkitDataSrc)) {
 		copyDir(pdfkitDataSrc, pdfkitDataDest);
