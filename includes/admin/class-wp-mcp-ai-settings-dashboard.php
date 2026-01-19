@@ -226,6 +226,64 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// This is critical for display-only sections (like Overview) that have no editable fields,.
 			// and for preserving settings from other tabs.
 			$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+
+			// Log critical provider keys BEFORE merge to help diagnose data loss issues.
+			if ( $enable_logging ) {
+				$provider_keys = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url', 'lm_studio_endpoint_url' );
+				$existing_providers = array();
+				$sanitized_providers = array();
+				foreach ( $provider_keys as $key ) {
+					if ( isset( $existing_settings[ $key ] ) && ! empty( $existing_settings[ $key ] ) ) {
+						$existing_providers[ $key ] = '(exists)';
+					}
+					if ( isset( $sanitized_new[ $key ] ) ) {
+						$sanitized_providers[ $key ] = empty( $sanitized_new[ $key ] ) ? '(EMPTY!)' : '(has value)';
+					}
+				}
+				if ( ! empty( $existing_providers ) || ! empty( $sanitized_providers ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Settings] Provider keys - Existing: %s, Sanitized: %s',
+							empty( $existing_providers ) ? 'none' : wp_json_encode( $existing_providers ),
+							empty( $sanitized_providers ) ? 'none' : wp_json_encode( $sanitized_providers )
+						)
+					);
+				}
+			}
+
+			// CRITICAL FIX: Filter out empty provider keys from sanitized data to prevent accidental deletion.
+			// This protects against bugs where subtab sanitization might incorrectly include empty provider fields.
+			// Provider keys should only come from the Providers tab sections, never from General or other tabs.
+			$sensitive_keys = array(
+				'openai_api_key',
+				'gemini_api_key',
+				'anthropic_api_key',
+				'huggingface_api_key',
+				'ollama_endpoint_url',
+				'lm_studio_endpoint_url',
+				'cloudflare_account_id',
+				'cloudflare_api_token',
+				'brave_search_api_key',
+				'mubert_api_key',
+			);
+
+			foreach ( $sensitive_keys as $key ) {
+				// If a sensitive key is present in sanitized data but is empty/null,
+				// remove it to prevent overwriting existing values during merge.
+				if ( isset( $sanitized_new[ $key ] ) && empty( $sanitized_new[ $key ] ) ) {
+					if ( $enable_logging ) {
+						error_log(
+							sprintf(
+								'[NV oOS Settings] CRITICAL: Removing empty %s from sanitized data to prevent data loss (tab=%s)',
+								$key,
+								$active_tab
+							)
+						);
+					}
+					unset( $sanitized_new[ $key ] );
+				}
+			}
+
 			$merged_settings   = array_merge( $existing_settings, $sanitized_new );
 
 			// Save to database and log result.
