@@ -263,18 +263,30 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				}
 			}
 
-			// Check for other Pro addon packages.
-			$pro_packages = array(
-				'@turf/turf',
-				'@types/pdfkit',
-				'fluent-ffmpeg',
-				'ics',
-				'katex',
-				'mjml',
-				'prettier',
-				'sharp',
+			// Check for Pro addon packages in vendor directory.
+			$pro_vendor_packages = array(
+				'@turf/turf'     => 'turf/dist/esm/index.js',
+				'@types/pdfkit'  => false, // TypeScript types only, no runtime file.
+				'fluent-ffmpeg'  => 'fluent-ffmpeg/index.js',
+				'ics'            => 'ics/index.js',
+				'katex'          => 'katex/dist/katex.min.js',
+				'mjml'           => 'mjml/lib/index.js',
+				'prettier'       => 'prettier/standalone.js',
+				'sharp'          => 'sharp/lib/index.js',
 			);
-			if ( in_array( $package, $pro_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// @types packages don't have runtime files.
+				if ( false === $pro_vendor_packages[ $package ] ) {
+					return true; // TypeScript type definitions are always available.
+				}
+				$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $pro_vendor_packages[ $package ];
+				if ( file_exists( $vendor_path ) ) {
+					return true;
+				}
+			}
+
+			// Fallback: Check Pro node_modules (for development).
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$pro_node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
 				if ( file_exists( $pro_node_modules_path ) ) {
 					return true;

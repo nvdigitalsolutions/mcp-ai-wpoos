@@ -4,7 +4,7 @@ This guide explains how to integrate and use the newly enhanced tools that lever
 
 ## Overview
 
-The Pro addon now includes 3 new tools and 3 helper services that utilize NPM packages installed in `/addons/pro/node_modules/`:
+The Pro addon now includes 3 new tools and 3 helper services that utilize NPM packages installed in the base plugin's `node_modules/` directory (managed from the root `package.json`):
 
 ### New Tools (v1.1.0)
 

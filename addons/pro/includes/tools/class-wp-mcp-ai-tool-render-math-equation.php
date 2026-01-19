@@ -121,6 +121,9 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if quiz system is enabled.
@@ -181,8 +184,8 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Render with KaTeX.
-		$start_time = microtime( true );
-		$result     = $this->render_with_katex( $render_params );
+		$start_time  = microtime( true );
+		$result      = $this->render_with_katex( $render_params );
 		$render_time = microtime( true ) - $start_time;
 
 		if ( ! $result || isset( $result['error'] ) ) {
@@ -205,13 +208,13 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'success'      => true,
-			'message'      => __( 'Math equation rendered successfully with KaTeX.', 'mcp-ai-wpoos-pro' ),
-			'latex'        => $latex,
-			'html'         => $result['html'],
-			'mathml'       => isset( $result['mathml'] ) ? $result['mathml'] : null,
-			'render_time'  => round( $render_time * 1000, 2 ) . 'ms',
-			'cached'       => false,
+			'success'     => true,
+			'message'     => __( 'Math equation rendered successfully with KaTeX.', 'mcp-ai-wpoos-pro' ),
+			'latex'       => $latex,
+			'html'        => $result['html'],
+			'mathml'      => isset( $result['mathml'] ) ? $result['mathml'] : null,
+			'render_time' => round( $render_time * 1000, 2 ) . 'ms',
+			'cached'      => false,
 		);
 	}
 
@@ -221,9 +224,11 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 	 * @return bool True if KaTeX is available.
 	 */
 	private function check_katex_availability() {
-		// Check if katex package exists in node_modules.
-		$katex_path = WP_MCP_AI_PRO_PATH . 'node_modules/katex/katex.js';
-		if ( ! file_exists( $katex_path ) ) {
+		// Check if package exists in vendor directory (production) or node_modules (development).
+		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/katex/dist/katex.min.js';
+		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/katex/katex.js';
+
+		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
 			return false;
 		}
 
@@ -240,9 +245,9 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 	 */
 	private function render_with_katex( $params ) {
 		// In a production implementation, this would:
-		// 1. Call a Node.js script that uses KaTeX
-		// 2. Pass parameters as JSON
-		// 3. Return the rendered HTML/MathML
+		// 1. Call a Node.js script that uses KaTeX.
+		// 2. Pass parameters as JSON.
+		// 3. Return the rendered HTML/MathML.
 		//
 		// For this implementation, we'll create a placeholder that demonstrates
 		// the pattern. In production, you would set up a Node.js service or

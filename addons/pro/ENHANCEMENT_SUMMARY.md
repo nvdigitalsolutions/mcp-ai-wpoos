@@ -203,7 +203,7 @@ All NPM package integrations follow a consistent 3-layer architecture:
 
 ### Integration Testing
 ⚠️ Requires Node.js environment setup
-- NPM packages must be installed in `addons/pro/node_modules/`
+- NPM packages are managed in the base plugin's `node_modules/` (via root `package.json`)
 - Filter implementations must be added by end users
 - See NPM_INTEGRATION_GUIDE.md for setup instructions
 
@@ -289,7 +289,7 @@ All NPM package integrations follow a consistent 3-layer architecture:
 
 ### Optional (for full functionality)
 - FFmpeg binary (for video processing)
-- NPM packages in `addons/pro/node_modules/`:
+- NPM packages in the base plugin's `node_modules/` (installed via `npm install` from the root):
   - fluent-ffmpeg@2.1.3
   - prettier@3.4.2
   - mjml@4.18.0
