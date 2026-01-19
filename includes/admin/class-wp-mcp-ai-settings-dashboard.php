@@ -180,16 +180,22 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Find subtab from section-specific subtab fields (subtab_sectionid format).
 			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
 			$active_subtab = '';
+			$active_section_id = '';
 			foreach ( $_POST as $key => $value ) {
 				if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
 					$active_subtab = sanitize_key( $value );
+					// Extract section ID from field name (e.g., subtab_providers => providers).
+					$active_section_id = sanitize_key( str_replace( 'subtab_', '', $key ) );
 					break; // Use the first subtab found.
 				}
 			}
 
-			// Fallback to legacy 'subtab' field for backward compatibility.
+			// Fallback to legacy 'subtab' and 'connection' fields for backward compatibility.
 			if ( empty( $active_subtab ) && isset( $_POST['subtab'] ) ) {
 				$active_subtab = sanitize_key( $_POST['subtab'] );
+			}
+			if ( empty( $active_subtab ) && isset( $_POST['connection'] ) ) {
+				$active_subtab = sanitize_key( $_POST['connection'] );
 			}
 
 			// Check if logging is enabled for diagnostic purposes.
@@ -293,7 +299,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			foreach ( $sensitive_keys as $key ) {
 				// If a sensitive key is present in sanitized data but is empty/null,
 				// remove it to prevent overwriting existing values during merge.
-				if ( isset( $sanitized_new[ $key ] ) && empty( $sanitized_new[ $key ] ) ) {
+				// BUT allow false values (for checkboxes) and 0 values.
+				if ( isset( $sanitized_new[ $key ] ) && '' === $sanitized_new[ $key ] ) {
 					if ( $enable_logging ) {
 						error_log(
 							sprintf(
