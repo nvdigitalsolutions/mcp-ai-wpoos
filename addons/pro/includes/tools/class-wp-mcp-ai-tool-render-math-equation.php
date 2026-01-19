@@ -221,9 +221,11 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 	 * @return bool True if KaTeX is available.
 	 */
 	private function check_katex_availability() {
-		// Check if katex package exists in node_modules.
-		$katex_path = WP_MCP_AI_PRO_PATH . 'node_modules/katex/katex.js';
-		if ( ! file_exists( $katex_path ) ) {
+		// Check if package exists in vendor directory (production) or node_modules (development).
+		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/katex/dist/katex.min.js';
+		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/katex/katex.js';
+
+		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
 			return false;
 		}
 

@@ -238,9 +238,11 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 	 * @return bool True if ICS is available.
 	 */
 	private function check_ics_availability() {
-		// Check if ics package exists in node_modules.
-		$ics_path = WP_MCP_AI_PRO_PATH . 'node_modules/ics/dist/index.js';
-		if ( ! file_exists( $ics_path ) ) {
+		// Check if package exists in vendor directory (production) or node_modules (development).
+		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/ics/index.js';
+		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/ics/dist/index.js';
+
+		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
 			return false;
 		}
 

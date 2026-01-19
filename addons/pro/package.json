@@ -4,12 +4,10 @@
 	"description": "Pro Add-on for NV Digital Open Operator System (oOS) - Enhanced Toolkits with Document Generation, Image Processing, Math Rendering, Calendar Export, Data Visualization, Code Formatting, Email Templates, Geospatial Analysis, and Video Processing",
 	"private": true,
 	"scripts": {
-		"postinstall": "echo 'Pro addon dependencies are managed in the base plugin package.json'"
+		"postinstall": "node scripts/copy-dependencies.js",
+		"build": "node scripts/copy-dependencies.js"
 	},
 	"dependencies": {
-		"_comment": "NOTE: All production dependencies are managed in the base plugin's package.json. This file is kept for documentation purposes only. Dependencies are installed in the base plugin's node_modules to ensure they are available in production builds."
-	},
-	"peerDependencies": {
 		"@turf/turf": "^7.3.2",
 		"@types/pdfkit": "^0.17.4",
 		"chart.js": "^4.4.7",
