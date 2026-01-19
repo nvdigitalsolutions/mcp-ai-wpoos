@@ -16,6 +16,25 @@ This quick reference provides fast access to the most common tasks and commands 
 
 ## 🚀 Quick Start
 
+### Requirements
+
+**Minimum:**
+- WordPress 6.0+
+- PHP 7.4+ (PHP 8.0+ recommended)
+- MySQL 5.7+ or MariaDB 10.3+
+
+**Optional (for enhanced features):**
+- **Node.js 14+**: For image vectorization (`vectorize_image` tool)
+- **PHP Functions**: `proc_open`, `proc_close`, `proc_terminate`
+  - Required for Node.js integration and Process Service
+  - Often disabled on shared hosting
+  - **Can be enabled on Cloudways**: Settings & Packages → Application Settings → PHP FPM → Remove from `disable_functions`
+- **JetEngine**: For CCT storage and content tools
+- **WooCommerce**: For e-commerce tools
+- **Elementor**: For page builder widgets
+
+**Note**: Plugin works without optional requirements, but some features will be unavailable. See [deployment troubleshooting](getting-started/installation-setup/deployment-troubleshooting.md) for details.
+
 ### Installation (30 seconds)
 ```bash
 # 1. Upload plugin
