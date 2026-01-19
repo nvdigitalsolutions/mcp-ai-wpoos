@@ -244,6 +244,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			// Check for other Pro addon packages.
 			$pro_packages = array(
 				'@turf/turf',
+				'@types/pdfkit',
 				'fluent-ffmpeg',
 				'ics',
 				'katex',
