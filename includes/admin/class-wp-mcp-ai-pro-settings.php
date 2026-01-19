@@ -266,7 +266,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			// Check for Pro addon packages in vendor directory.
 			$pro_vendor_packages = array(
 				'@turf/turf'     => 'turf/dist/esm/index.js',
-				'@types/pdfkit'  => false, // TypeScript types only, no runtime file
+				'@types/pdfkit'  => false, // TypeScript types only, no runtime file.
 				'fluent-ffmpeg'  => 'fluent-ffmpeg/index.js',
 				'ics'            => 'ics/index.js',
 				'katex'          => 'katex/dist/katex.min.js',
@@ -275,9 +275,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'sharp'          => 'sharp/lib/index.js',
 			);
 			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-				// @types packages don't have runtime files
+				// @types packages don't have runtime files.
 				if ( false === $pro_vendor_packages[ $package ] ) {
-					return true; // TypeScript type definitions are always available
+					return true; // TypeScript type definitions are always available.
 				}
 				$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $pro_vendor_packages[ $package ];
 				if ( file_exists( $vendor_path ) ) {
