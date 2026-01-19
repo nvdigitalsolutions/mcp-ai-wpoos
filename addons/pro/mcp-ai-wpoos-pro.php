@@ -190,6 +190,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// This ensures translations are loaded at the correct time for WordPress 6.7+.
 		add_action( 'init', 'wp_mcp_ai_pro_load_textdomain', 1 );
 
+		// Load NPM integration filter handlers.
+		// This enables Node.js microservice integration for Prettier, MJML, and fluent-ffmpeg.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/npm-integration-filters.php';
+
 		// Load Pro tool interfaces (extend Core interfaces).
 		// Pro tools can implement additional interfaces for advanced features.
 
@@ -310,6 +314,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Remote_WP_Connection'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-remote-wp-connection.php',
 			// Generic REST API Connection tool.
 			'WP_MCP_AI_Tool_Generic_REST_API'             => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generic-rest-api.php',
+			// NPM Package Enhanced Tools (new in 1.1.0).
+			'WP_MCP_AI_Tool_Format_Code_Prettier'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-format-code-prettier.php',
+			'WP_MCP_AI_Tool_Generate_Email_Template'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-email-template.php',
+			'WP_MCP_AI_Tool_Transcode_Video'              => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-transcode-video.php',
 			// EZuite ERP Connection tool.
 			'WP_MCP_AI_Tool_EZuite_ERP'                   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ezuite-erp.php',
 			'WP_MCP_AI_Tool_EZuite_ERP_Get_Products'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ezuite-erp-get-products.php',
