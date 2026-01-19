@@ -8,6 +8,7 @@
 	},
 	"dependencies": {
 		"@turf/turf": "^7.3.2",
+		"@types/pdfkit": "^0.17.4",
 		"chart.js": "^4.4.7",
 		"docx": "^9.5.1",
 		"exceljs": "^4.4.0",

@@ -77,6 +77,7 @@ composer.phar
 
 # Document Generation Toolkit (PDF/Word/Excel)
 !/addons/pro/node_modules/pdfkit/
+!/addons/pro/node_modules/@types/
 !/addons/pro/node_modules/docx/
 !/addons/pro/node_modules/exceljs/
 
