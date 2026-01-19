@@ -54,6 +54,16 @@ if ( ! defined( 'WP_MCP_AI_URL' ) ) {
 }
 
 /**
+ * Define base version mode constant.
+ * 
+ * Defaults to false (full mode with all 109+ tools).
+ * Set to true in wp-config.php to enable base mode (74 core tools only).
+ */
+if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
+	define( 'WP_MCP_AI_BASE_VERSION', false );
+}
+
+/**
  * Check PHP version compatibility before loading any classes.
  *
  * This plugin requires PHP 7.4 or later. On older PHP versions, class files
@@ -338,12 +348,12 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	/**
 	 * Check if base version mode is enabled.
 	 *
-	 * Full version is enabled by default, providing all 105+ tools.
-	 * To enable base version mode (only core 74 tools), add this to wp-config.php:
+	 * Full version is enabled by default, providing all 109+ tools.
+	 * Base version mode is only active if explicitly set to true in wp-config.php:
 	 * define( 'WP_MCP_AI_BASE_VERSION', true );
 	 *
-	 * Base version mode excludes tools requiring third-party plugins
-	 * (WooCommerce, JetEngine, Elementor, etc.) and external API integrations.
+	 * Base version mode limits the plugin to core 74 tools, excluding tools that require
+	 * third-party plugins (WooCommerce, JetEngine, Elementor, etc.) and external API integrations.
 	 *
 	 * @return bool Whether base version mode is active.
 	 */
