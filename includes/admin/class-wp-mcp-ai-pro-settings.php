@@ -200,9 +200,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		}
 
 		/**
-		 * Check if a package is installed by looking for vendor files.
+		 * Check if a package is installed by looking for vendor files or bundled builds.
 		 *
-		 * Simple check to see if package exists in node_modules or vendor directory.
+		 * Checks for packages in vendor directories or bundled into built JavaScript files.
 		 *
 		 * @param string $package Package name.
 		 * @return bool True if package appears to be installed.
@@ -214,6 +214,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			}
 			if ( '@neplex/vectorizer' === $package ) {
 				return file_exists( WP_MCP_AI_PATH . 'assets/js/vendor/neplex-vectorizer/' );
+			}
+
+			// Check for packages bundled into chat-bundle.min.js via esbuild.
+			$bundled_packages = array(
+				'@microsoft/fetch-event-source',
+				'dompurify',
+				'marked',
+				'ky',
+			);
+			if ( in_array( $package, $bundled_packages, true ) ) {
+				return file_exists( WP_MCP_AI_PATH . 'assets/js/chat-bundle.min.js' );
 			}
 
 			// For other packages, check node_modules (if present).
