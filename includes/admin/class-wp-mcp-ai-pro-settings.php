@@ -238,11 +238,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		$disabled_functions = ini_get( 'disable_functions' );
 		$disabled_list = $disabled_functions ? array_map( 'trim', explode( ',', $disabled_functions ) ) : array();
 
+		// Check if any systems have issues.
+		$systems_with_issues = array_filter(
+			$results,
+			function( $s ) {
+				return ! $s['all_available'];
+			}
+		);
+		$has_any_issues = ! $all_critical_ok || count( $systems_with_issues ) > 0;
+
 		return array(
 			'systems'          => $results,
 			'disabled_list'    => $disabled_list,
 			'all_critical_ok'  => $all_critical_ok,
-			'has_any_issues'   => ! $all_critical_ok || count( array_filter( $results, function( $s ) { return ! $s['all_available']; } ) ) > 0,
+			'has_any_issues'   => $has_any_issues,
 		);
 	}
 
