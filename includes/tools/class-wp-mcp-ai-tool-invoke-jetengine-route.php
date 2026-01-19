@@ -20,7 +20,7 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface,
 	 * @return bool
 	 */
 	public static function is_available() {
-		return WP_MCP_AI_JetEngine_Tool_Handlers::is_available();
+		return class_exists( 'WP_MCP_AI_JetEngine_Tool_Handlers' ) && WP_MCP_AI_JetEngine_Tool_Handlers::is_available();
 	}
 
 	/**
