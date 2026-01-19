@@ -39,6 +39,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 * Get npm package information from package.json.
 		 *
 		 * Parses package.json to extract dependencies and devDependencies.
+		 * Now includes Pro addon packages as well.
 		 * Lightweight approach that doesn't require npm CLI.
 		 *
 		 * @return array Array containing dependencies and devDependencies.
@@ -81,6 +82,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			// Extract project metadata.
 			$packages['name']    = isset( $package_data['name'] ) ? $package_data['name'] : 'unknown';
 			$packages['version'] = isset( $package_data['version'] ) ? $package_data['version'] : 'unknown';
+
+			// Merge in Pro addon packages if available.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$pro_package_json_path = WP_MCP_AI_PRO_PATH . 'package.json';
+				if ( file_exists( $pro_package_json_path ) ) {
+					$pro_json_content = file_get_contents( $pro_package_json_path );
+					if ( false !== $pro_json_content ) {
+						$pro_package_data = json_decode( $pro_json_content, true );
+						if ( null !== $pro_package_data ) {
+							// Merge Pro dependencies.
+							if ( isset( $pro_package_data['dependencies'] ) && is_array( $pro_package_data['dependencies'] ) ) {
+								$packages['dependencies'] = array_merge( $packages['dependencies'], $pro_package_data['dependencies'] );
+							}
+							// Pro addon doesn't have devDependencies, but check anyway.
+							if ( isset( $pro_package_data['devDependencies'] ) && is_array( $pro_package_data['devDependencies'] ) ) {
+								$packages['devDependencies'] = array_merge( $packages['devDependencies'], $pro_package_data['devDependencies'] );
+							}
+						}
+					}
+				}
+			}
 
 			return $packages;
 		}
